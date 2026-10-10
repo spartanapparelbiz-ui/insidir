@@ -1,0 +1,21 @@
+{
+  "name": "insidir-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
+    "ingest": "node src/ingest-cli.mjs",
+    "migrate": "node src/migrate.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/server.mjs && node --check src/sec.mjs && node --check src/api.mjs && node --check src/db.mjs && node --check src/auth.mjs && node --check src/analysis.mjs && node --check src/ingest.mjs"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.2.5",
+    "pg": "^8.16.0"
+  }
+}
