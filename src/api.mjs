@@ -60,11 +60,11 @@ async function route(req,res){
     const search=(u.searchParams.get("q")||"").trim().slice(0,100);
     const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
     const offset=Math.min(1000,Math.max(0,Number(u.searchParams.get("offset"))||0));
-    const rows=await query(\`SELECT accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,
+    const rows=await query(`SELECT accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,
       is_amendment,source_url,xml_url,owner_names,retrieved_at
       FROM sec_filings WHERE ingest_status='parsed'
       AND ($1::text IS NULL OR ticker=$1) AND ($2::text = '' OR issuer_name ILIKE '%'||$2||'%' OR title ILIKE '%'||$2||'%')
-      ORDER BY published_at DESC NULLS LAST,accession DESC LIMIT $3 OFFSET $4\`,[t,search,limit,offset]);
+      ORDER BY published_at DESC NULLS LAST,accession DESC LIMIT $3 OFFSET $4`,[t,search,limit,offset]);
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC EDGAR",note:"Publication is not transaction time."});
   }
   if(p.startsWith("/v1/filings/") && m==="GET"){
@@ -80,26 +80,26 @@ async function route(req,res){
     const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
     const category=u.searchParams.get("category")||null;
     if(category && !["reported_purchase","reported_sale","other"].includes(category))throw failure(400,"Invalid category");
-    const rows=await query(\`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
+    const rows=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
       JOIN sec_filings f ON f.accession=t.accession
       WHERE ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
-      ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4\`,[t,category,limit,offset]);
+      ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
   }
   if(p==="/v1/companies" && m==="GET"){
     const search=(u.searchParams.get("q")||"").trim().slice(0,60);
-    const rows=await query(\`SELECT DISTINCT ON (issuer_cik) issuer_cik,issuer_name,ticker,published_at
+    const rows=await query(`SELECT DISTINCT ON (issuer_cik) issuer_cik,issuer_name,ticker,published_at
       FROM sec_filings WHERE ingest_status='parsed' AND issuer_cik IS NOT NULL
       AND ($1::text = '' OR ticker ILIKE $1||'%' OR issuer_name ILIKE '%'||$1||'%')
-      ORDER BY issuer_cik,published_at DESC NULLS LAST LIMIT 100\`,[search]);
+      ORDER BY issuer_cik,published_at DESC NULLS LAST LIMIT 100`,[search]);
     return json(res,200,{items:rows.rows});
   }
   if(p==="/v1/clusters" && m==="GET"){
     const days=positive(u.searchParams.get("days"),7,30),minOwners=positive(u.searchParams.get("minOwners"),2,10);
     if(minOwners<2)throw failure(400,"minOwners >= 2 required");
-    const rows=await query(\`SELECT issuer_cik,ticker,owner_cik,category,derivative,transaction_date,estimated_value,source_url
+    const rows=await query(`SELECT issuer_cik,ticker,owner_cik,category,derivative,transaction_date,estimated_value,source_url
       FROM sec_transactions WHERE transaction_date >= (current_date-$1::integer)
-      AND category='reported_purchase' AND NOT derivative AND owner_cik IS NOT NULL\`,[days]);
+      AND category='reported_purchase' AND NOT derivative AND owner_cik IS NOT NULL`,[days]);
     const data=rows.rows.map(r=>({issuerCik:r.issuer_cik,ticker:r.ticker,ownerCik:r.owner_cik,
       category:r.category,derivative:r.derivative,transactionDate:r.transaction_date?.toISOString().slice(0,10),
       estimatedValue:r.estimated_value===null?null:Number(r.estimated_value),sourceUrl:r.source_url}));
@@ -109,10 +109,10 @@ async function route(req,res){
   }
   if(p==="/v1/insiders" && m==="GET"){
     const q=(u.searchParams.get("q")||"").trim().slice(0,80);
-    const rows=await query(\`SELECT owner_cik,MAX(owner_name) AS owner_name,COUNT(DISTINCT accession)::integer AS filings,
+    const rows=await query(`SELECT owner_cik,MAX(owner_name) AS owner_name,COUNT(DISTINCT accession)::integer AS filings,
       MAX(transaction_date) AS last_transaction_date FROM sec_transactions
       WHERE owner_cik IS NOT NULL AND ($1::text='' OR owner_name ILIKE '%'||$1||'%')
-      GROUP BY owner_cik ORDER BY last_transaction_date DESC NULLS LAST LIMIT 100\`,[q]);
+      GROUP BY owner_cik ORDER BY last_transaction_date DESC NULLS LAST LIMIT 100`,[q]);
     return json(res,200,{items:rows.rows});
   }
   if(p==="/v1/me" && m==="GET")return json(res,200,{user:await requireUser(req)});
@@ -123,10 +123,10 @@ async function route(req,res){
   }
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req);
-    const results=await query(\`SELECT t.id,t.ticker,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
+    const results=await query(`SELECT t.id,t.ticker,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
       FROM sec_transactions t JOIN watchlist w ON w.ticker=t.ticker
       JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
-      ORDER BY f.published_at DESC LIMIT 100\`,[user.id]);
+      ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     return json(res,200,{items:results.rows,delivery:"in_app_on_demand",note:"No email or push notifications are active."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
