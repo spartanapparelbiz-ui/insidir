@@ -50,13 +50,32 @@ web/
 - `data-parallax`, `data-parallax-x` and `data-parallax-scale` drive parallax layers. `data-progress="travel|exit|enter"` exposes the scroll progress as the CSS variable `--p` for custom scrubbing, such as the hero fading out.
 - `data-magnetic` makes a button follow the pointer slightly. `body[data-smooth]` turns on inertial wheel scrolling (desktop only).
 
+Reveals wait until the page has faded in, so entrance staggers are always seen. Anything still hidden is revealed the moment it receives keyboard focus. In-page links move focus to their target as well as scrolling to it.
+
 Everything runs from a single `requestAnimationFrame` loop and animates only `transform`, `opacity`, `filter` and `clip-path`. Under `prefers-reduced-motion`, all content shows immediately with no movement. Without JavaScript, nothing is hidden.
 
 ## Imagery
 
-The photographs were taken from the design reference images. The baked-in interface text was removed with a column-wise fill, and the crops were upscaled 4× with ESRGAN (`@upscalerjs/esrgan-thick`, run locally through TensorFlow.js). The reference avatars were too small to recover and showed real public figures, so people appear as initials avatars instead. Company marks come from Simple Icons (CC0), except Microsoft, which is drawn from four squares. The trademarks belong to their owners.
+All photography is self-hosted in `web/assets/img/` and was upscaled 4× with ESRGAN (`@upscalerjs/esrgan-thick`, run locally through TensorFlow.js):
 
-To swap in higher-resolution originals, replace the files in `web/assets/img/` and keep the same names and aspect ratios.
+- The hero, sign-in, sign-up and dashboard skyline are cropped from the design reference images. The baked-in interface text was removed with a column-wise fill.
+- The section cards, side photos, bull, NYSE facade and the Brooklyn Bridge call to action come from the clean photo collage supplied with the brief.
+
+To swap in higher-resolution originals, replace a file and keep its name and roughly its aspect ratio. Each page crops with `object-fit: cover`.
+
+People appear as initials avatars: the reference portraits were too small to recover, and they depicted real public figures. Company marks come from Simple Icons (CC0), except Microsoft, which is drawn from four squares. The trademarks belong to their owners.
+
+## Differences from the reference
+
+These are intentional:
+
+- The product screens' greeting and market status follow the visitor's clock and New York market hours.
+- The company chart opens on **1Y**, because its axis spans January to December.
+- The filing outline lists "Item 6. [Reserved]", which is correct for a fiscal-2023 10-K.
+- Gain and loss text uses slightly darker green and red so it meets WCAG AA contrast. Charts keep the brighter reference colours (`--green-chart`, `--red-chart`).
+- Small "Sample data" labels mark illustrative figures.
+- Under 860px, a menu button opens the product navigation.
+- The reference's mock-up artefacts are not reproduced: a Microsoft logo on an Apple alert, a duplicated "About" link, and a stray comma.
 
 ## Before launch
 
