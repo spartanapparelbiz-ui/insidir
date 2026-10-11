@@ -22,7 +22,7 @@
   /* keyboard focus can jump to a card that has not scrolled into view yet: show it at once */
   document.addEventListener("focusin", e => {
     for (let n = e.target; n && n !== document.body; n = n.parentElement) {
-      if (n.matches("[data-reveal]:not(.is-in),[data-split]:not(.is-in)")) n.classList.add("is-in");
+      if (n.matches("[data-reveal]:not(.is-in),[data-split]:not(.is-in)")) { n.style.setProperty("--delay", "0s"); n.classList.add("is-in"); }
     }
   });
 

@@ -304,6 +304,20 @@
     }, { passive: true });
   }
 
+  /* Keyboard focus must never land on something still waiting to animate in. */
+  document.addEventListener("focusin", e => {
+    let node = e.target;
+    while (node && node !== document.body) {
+      if (node.nodeType === 1 && node.hasAttribute("data-observed") && !node.classList.contains("is-in")) {
+        node.style.setProperty("--delay", "0s");
+        if (io) io.unobserve(node);
+        pending.delete(node);
+        reveal(node);
+      }
+      node = node.parentNode;
+    }
+  });
+
   /* ---------- anchor links glide to their section ---------- */
   function scrollToTarget(target) {
     // Marketing nav auto-hides on scroll, so it only needs a partial offset; the sticky product header always covers the top.

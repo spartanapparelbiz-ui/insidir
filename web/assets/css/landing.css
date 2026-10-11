@@ -54,7 +54,8 @@
 .hero__parallax,.hero__drift{position:absolute;inset:0}
 /* the photo keeps its own aspect ratio (object-fit:cover by hand) so the haze patch
    below stays locked to the same spot of the picture at every viewport size */
-.hero__frame{position:absolute;left:var(--fx,55%);top:var(--fy,40%);width:max(100%,calc(var(--hero-h) * 1.8721));aspect-ratio:2400/1282;
+/* 5% vertical overscan: the hero sits above the strip, so its parallax already starts slightly offset */
+.hero__frame{position:absolute;left:var(--fx,55%);top:var(--fy,40%);width:max(100%,calc(var(--hero-h) * 1.8721 * 1.05));aspect-ratio:2400/1282;
   transform:translate(calc(var(--fx,55%) * -1),calc(var(--fy,40%) * -1))}
 .hero__zoom{position:absolute;inset:0;transform-origin:52% 46%}
 .js .hero__zoom{transform:scale(1.14)}
@@ -123,7 +124,7 @@
   mask-image:linear-gradient(270deg,#000 var(--solid,60%),rgba(0,0,0,.55) calc(var(--solid,60%) + (100% - var(--solid,60%)) * .45),transparent 100%)}
 /* no will-change here: Chromium skips repainting a lazily loaded image inside a
    will-change layer under a mask-image container (translate3d still composites it) */
-.band__layer{position:absolute;inset:-14% -8%;will-change:auto}
+.band__layer{position:absolute;inset:-22% min(-12%,-40px);will-change:auto}
 /* the inner edge of each photo dissolves into a soft cream haze (as in the reference) so copy over it stays crisp */
 .band__side::after{content:"";position:absolute;inset:0;pointer-events:none}
 .band__side--left::after{background:linear-gradient(90deg,rgba(246,243,236,0) var(--wash,60%),rgba(246,243,236,.42) calc(var(--wash,60%) + (100% - var(--wash,60%)) * .5),rgba(246,243,236,.78))}
@@ -146,7 +147,7 @@
 /* ---------- A more informed market ---------- */
 .informed{--side-w:34%;--solid:70%;--wash:62%;padding:calc(38 * var(--u)) 0 calc(46 * var(--u))}
 .informed .band__side--left img{object-position:50% 35%}
-.informed .band__side--right{--side-w:31%;--solid:66%}
+.informed .band__side--right{--side-w:31%;--solid:66%;--wash:78%}
 .informed .band__side--right img{object-position:62% 30%}
 .landing .informed__title{font-size:max(34px,calc(55 * var(--u)))}
 .landing .informed__sub{max-width:32em;margin-top:calc(10 * var(--u))}
@@ -160,7 +161,7 @@
    ========================================================= */
 .dark-band{position:relative;overflow:hidden;isolation:isolate;background:var(--land-dark);color:var(--on-dark)}
 .dark-band__bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
-.dark-band__layer{position:absolute;inset:-5.5% 0}
+.dark-band__layer{position:absolute;inset:-9% 0}
 .dark-band__layer img{width:100%;height:100%;object-fit:cover}
 .moves .dark-band__layer img{object-position:22% 50%}
 .dark-band__bg::after{content:"";position:absolute;inset:0;
@@ -228,8 +229,10 @@
 .lens__media{aspect-ratio:390/197;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.08);transition:box-shadow .7s var(--ease-out)}
 /* left-to-right wipe; the clip lives on the frame so the observed host stays measurable */
 .js [data-reveal="wipe"]{opacity:1;transform:none}
-.js [data-reveal="wipe"]>.media{clip-path:inset(0 100% 0 0);transition:clip-path 1.35s var(--ease-in-out) var(--delay,0s),box-shadow .7s var(--ease-out)}
-.js [data-reveal="wipe"].is-in>.media{clip-path:inset(0 0 0 0)}
+/* (opacity hides the hairline a fully clipped frame can leave at fractional widths) */
+.js [data-reveal="wipe"]>.media{clip-path:inset(0 100% 0 0);opacity:0;
+  transition:clip-path 1.35s var(--ease-in-out) var(--delay,0s),opacity .2s linear var(--delay,0s),box-shadow .7s var(--ease-out)}
+.js [data-reveal="wipe"].is-in>.media{clip-path:inset(0 0 0 0);opacity:1}
 .lens__title{margin-top:calc(15 * var(--u));font-family:var(--serif);font-weight:560;font-size:max(19px,calc(23.5 * var(--u)));line-height:1.25;
   letter-spacing:-.012em;font-variation-settings:"opsz" 24;color:var(--ink)}
 .lens__text{margin-top:calc(6 * var(--u));font-size:max(13.5px,calc(15 * var(--u)));line-height:1.53;color:var(--muted);letter-spacing:.004em}
@@ -260,7 +263,7 @@
 .pricing .band__side--right{--side-w:26%;--solid:58%;--wash:40%}
 .pricing .band__side--right img{object-position:78% 45%}
 .pricing .band__side--right .band__layer{left:22%;right:-38%}
-.pricing .band__side--right{-webkit-mask-image:linear-gradient(270deg,#000 42%,rgba(0,0,0,.5) 58%,transparent 76%);mask-image:linear-gradient(270deg,#000 42%,rgba(0,0,0,.5) 58%,transparent 76%)}
+.pricing .band__side--right{-webkit-mask-image:linear-gradient(270deg,#000 40%,rgba(0,0,0,.5) 54%,transparent 66%);mask-image:linear-gradient(270deg,#000 40%,rgba(0,0,0,.5) 54%,transparent 66%)}
 .landing .pricing__title{font-size:max(30px,calc(43 * var(--u)))}
 .landing .pricing__sub{margin-top:calc(2 * var(--u));font-size:max(15px,calc(17.3 * var(--u)));color:var(--ink-2)}
 .plans{display:grid;grid-template-columns:repeat(2,calc(435 * var(--u)));justify-content:center;gap:calc(15 * var(--u));
@@ -273,7 +276,7 @@
 .plan__name{font-family:var(--serif);font-weight:580;font-size:max(22px,calc(26.9 * var(--u)));line-height:1.2;letter-spacing:-.01em;
   font-variation-settings:"opsz" 24}
 .plan__price{display:flex;align-items:baseline;justify-content:center;gap:calc(8 * var(--u));margin-top:calc(-3 * var(--u))}
-.plan__amount{font-family:var(--serif);font-weight:500;font-size:max(42px,calc(55 * var(--u)));line-height:1;letter-spacing:-.03em;
+.plan__amount{font-family:var(--serif);font-weight:560;font-size:max(42px,calc(55 * var(--u)));line-height:1;letter-spacing:-.03em;
   font-variation-settings:"opsz" 60;font-variant-numeric:tabular-nums;color:var(--ink)}
 .plan__per{font-size:max(15px,calc(18 * var(--u)));color:var(--ink-2)}
 .plan__list{display:inline-grid;gap:calc(4.5 * var(--u));text-align:left;margin-top:calc(6 * var(--u))}
@@ -325,9 +328,10 @@
   text-align:center;color:#fff;background:#2b2219;padding:56px 0}
 .cta__bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
 .cta__layer{position:absolute;inset:-16% 0}
-/* golden-hour glow low over the skyline */
-.cta__layer::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;
-  background:radial-gradient(ellipse 52% 42% at 40% 58%,rgba(255,168,84,.55),rgba(255,168,84,0) 72%)}
+/* golden-hour light on the skyline at both sides, kept away from the copy */
+.cta__layer::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(ellipse 26% 40% at 18% 50%,rgba(255,170,92,.2),rgba(255,170,92,0) 100%),
+    radial-gradient(ellipse 30% 44% at 84% 46%,rgba(255,170,92,.22),rgba(255,170,92,0) 100%)}
 /* dusky, sepia grade like the reference strip */
 .cta__img{width:100%;height:100%;object-fit:cover;object-position:50% 62%;transform-origin:60% 50%;filter:sepia(.24) saturate(1.06) brightness(.84) contrast(1.05);
   animation:ctaDrift 26s ease-in-out infinite alternate}
@@ -364,6 +368,7 @@
   .records .band__side--left,.records .band__side--right{--side-w:18%}
   .landing .records__cols{grid-template-columns:repeat(2,1fr);row-gap:26px;min-width:0;width:min(64%,600px)}
   .records .col:nth-child(3) .col__rule{display:none}
+  .pricing .band__side--right .band__layer{left:6%}
 }
 @media (max-width:1200px){
   .pcard--sm .pcard__text br,.lens__text br{display:none}
@@ -393,7 +398,12 @@
   .band__side{position:relative;display:block;width:100%!important;height:220px;top:auto;bottom:auto;
     -webkit-mask-image:linear-gradient(180deg,#000 45%,transparent 100%)!important;mask-image:linear-gradient(180deg,#000 45%,transparent 100%)!important}
   .band__side--right{display:none}
+  /* a short band needs more overscan so its parallax never exposes an edge */
+  .band__layer{inset:-32% -8%}
   .band__content{margin-top:-48px;padding:0 var(--gutter)}
+  .band__side--left::after{background:linear-gradient(180deg,rgba(246,243,236,0) 38%,rgba(246,243,236,.5) 72%,rgba(246,243,236,.9))}
+  /* the exchange facade carries lettering of its own, so the heading sits just below it */
+  .records .band__content{margin-top:-14px}
 
   .cols{width:100%!important;min-width:0!important}
   .informed__cols{grid-template-columns:1fr;row-gap:26px;margin-top:36px}
@@ -439,7 +449,7 @@
 @media (prefers-reduced-motion:reduce){
   .js .hero__zoom,.js.is-ready .hero__zoom{animation:none;transform:none}
   .cta__img{animation:none;transform:none}
-  .js [data-reveal="wipe"]>.media{clip-path:none}
+  .js [data-reveal="wipe"]>.media{clip-path:none;opacity:1}
   .hero__cue span::after{animation:none;transform:none}
   .hero__content{transform:none;opacity:1}
   .js .plan__badge[data-reveal]{transform:none}
