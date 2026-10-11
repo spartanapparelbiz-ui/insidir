@@ -19,6 +19,13 @@
     if (host && host.classList.contains("is-in")) host.classList.add("is-settled");
   });
 
+  /* keyboard focus can jump to a card that has not scrolled into view yet: show it at once */
+  document.addEventListener("focusin", e => {
+    for (let n = e.target; n && n !== document.body; n = n.parentElement) {
+      if (n.matches("[data-reveal]:not(.is-in),[data-split]:not(.is-in)")) n.classList.add("is-in");
+    }
+  });
+
   const hero = document.querySelector(".hero");
   const drift = hero && hero.querySelector(".hero__drift");
   if (!hero || !drift || reduce || !finePointer) return;

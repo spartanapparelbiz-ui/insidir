@@ -161,7 +161,7 @@ table{border-collapse:collapse;width:100%}
 
 /* ---------- Pills, chips, tabs ---------- */
 .pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:500}
-.pill--green{background:var(--green-bg);color:var(--green)}
+.pill--green{background:#eaf4ed;color:#0d7d43}
 .pill--badge{background:var(--badge);color:#f3eee2;height:26px;padding:0 12px;font-size:12.5px;border-radius:6px}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
 .dot--live{position:relative}
@@ -213,7 +213,7 @@ table{border-collapse:collapse;width:100%}
 .app-header__inner{height:100%;display:flex;align-items:center;gap:clamp(16px,3vw,44px);
   width:min(100% - var(--gutter)*2,1464px);margin-inline:auto}
 .app-header .logo{font-size:31px;margin-right:6px}
-.app-nav{display:flex;align-items:stretch;flex-shrink:0;gap:clamp(16px,2.2vw,34px);height:100%;font-size:14px;font-weight:450;color:var(--ink-2);
+.app-nav{display:flex;align-items:stretch;flex-shrink:0;gap:clamp(16px,2.6vw,40px);height:100%;font-size:14px;font-weight:450;color:var(--ink-2);
   overflow-x:auto;scrollbar-width:none}
 .app-nav::-webkit-scrollbar{display:none}
 .app-nav a{position:relative;display:flex;align-items:center;white-space:nowrap;transition:color .25s}
@@ -222,7 +222,7 @@ table{border-collapse:collapse;width:100%}
 .app-nav__indicator{position:absolute;bottom:-1px;left:0;height:2px;background:var(--ink);border-radius:2px;
   transition:transform .55s var(--ease-out),width .55s var(--ease-out)}
 .app-nav{position:relative}
-.app-search{margin-left:auto;position:relative;flex:0 1 330px;min-width:180px}
+.app-search{margin-left:auto;position:relative;flex:0 1 400px;min-width:180px}
 .app-search svg{position:absolute;left:12px;top:50%;width:16px;height:16px;transform:translateY(-50%);color:var(--ink-2);pointer-events:none}
 .app-search input{width:100%;height:38px;padding:0 12px 0 36px;border:1px solid var(--line-2);border-radius:8px;background:#fff;font-size:13.5px;
   transition:border-color .25s,box-shadow .25s,width .4s}
@@ -318,7 +318,7 @@ table{border-collapse:collapse;width:100%}
 /* Split headings: words rise out of a mask */
 .split-word{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em}
 .split-word>span{display:inline-block;will-change:transform}
-.js [data-split] .split-word>span{transform:translate3d(0,108%,0) rotate(2deg);transform-origin:0 100%;
+.js [data-split] .split-word>span{transform:translate3d(0,122%,0) rotate(2deg);transform-origin:0 100%;
   transition:transform 1.15s var(--ease-out);transition-delay:calc(var(--delay,0s) + var(--wi,0) * 55ms)}
 .js [data-split].is-in .split-word>span{transform:none}
 

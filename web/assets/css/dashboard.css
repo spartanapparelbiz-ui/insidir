@@ -5,7 +5,7 @@
 .dash-page{
   --dash-pt:41px;                 /* space between the app header and the greeting */
   --dash-line:#ece9e2;            /* row separators */
-  --dash-head:#f5f4ef;            /* tinted table head */
+  --dash-head:#f7f6f1;            /* tinted table head (as light as the reference; th text stays 4.7:1) */
   --dash-muted:#6c6b66;
   background:linear-gradient(180deg,var(--paper) 0,var(--paper) 360px,#f6f5f0 70%,#f3f1eb 100%);
 }
@@ -36,7 +36,11 @@
 .dash-sky__mist{position:absolute;right:0;bottom:0;height:var(--mist);width:100%;
   background:url(../img/dash-skyline.jpg) right bottom / 100% 2400% no-repeat;
   filter:blur(2.5px) saturate(.9);opacity:.95;transform-origin:50% 0;
-  -webkit-mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%)}
+  /* fades down, and on wide screens also fades out past the content edge (--edge = page margin) */
+  --edge:max(clamp(16px,1.82vw,34px),(100vw - 1464px) / 2);
+  -webkit-mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%),linear-gradient(270deg,transparent calc(var(--edge) - 120px),#000 calc(var(--edge) - 20px));
+          mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%),linear-gradient(270deg,transparent calc(var(--edge) - 120px),#000 calc(var(--edge) - 20px));
+  -webkit-mask-composite:source-in;mask-composite:intersect}
 
 .js .dash-sky__img{animation:dashSkyIn 2.6s var(--ease-out) .15s both}
 .js .dash-sky__mist{animation:dashMistIn 2.6s var(--ease-out) .45s both}

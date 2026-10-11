@@ -35,6 +35,10 @@
 /* once the cream bar slides in (or the mobile menu opens) the logo turns ink */
 .landing .site-nav.is-scrolled,.landing .site-nav.is-open{--logo-color:var(--ink)}
 .landing .site-nav:not(.is-scrolled) .site-nav__logo{text-shadow:0 1px 18px rgba(0,0,0,.28)}
+/* a soft light halo keeps the dark links legible where a spire or column passes behind them */
+.landing .site-nav:not(.is-scrolled) .site-nav__links a,.landing .site-nav:not(.is-scrolled) .site-nav__signin{
+  text-shadow:0 0 2px rgba(250,247,240,.7),0 0 14px rgba(250,247,240,.9)}
+.landing .site-nav__links a,.landing .site-nav__signin{transition:text-shadow .5s var(--ease-out)}
 .landing .site-nav__logo{font-size:clamp(28px,calc(1.2vw + 13px),36px);transition:color .5s var(--ease-out),text-shadow .5s}
 .landing .site-nav__actions .btn--sm{--bh:clamp(36px,calc(.9vw + 23px),40px);padding:0 clamp(16px,1.3vw,24px)}
 
@@ -67,8 +71,8 @@
 /* the building beside the Empire State and a smudge in the top-right sky are softened in place */
 .hero__glow{position:absolute;left:68.3%;top:51%;width:6.4%;height:14%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(252,249,241,.96),rgba(252,249,241,.78) 45%,rgba(252,249,241,0))}
-.hero__mend{position:absolute;left:94.9%;top:.4%;width:2.3%;height:11%;pointer-events:none;
-  background:linear-gradient(180deg,#eaebee,#efeeea);
+.hero__mend{position:absolute;left:94.9%;top:0;width:2.3%;height:10%;pointer-events:none;
+  background:linear-gradient(180deg,#ebecee,#f0efeb);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%,#000 88%,transparent),linear-gradient(180deg,transparent,#000 14%,#000 84%,transparent);
   -webkit-mask-composite:source-in;
   mask-image:linear-gradient(90deg,transparent,#000 40%,#000 88%,transparent),linear-gradient(180deg,transparent,#000 14%,#000 84%,transparent);

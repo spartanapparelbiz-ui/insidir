@@ -71,7 +71,7 @@
 .segmented--sell button[data-value="sells"].is-active{color:var(--red)}
 
 /* Status pill */
-.status{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:7px;background:var(--green-bg);color:var(--green);font-size:13.5px;font-weight:500}
+.status{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:7px;background:#eaf4ed;color:#0d7d43;font-size:13.5px;font-weight:500}
 
 /* Charts */
 .sparkline{display:block;overflow:visible}
