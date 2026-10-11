@@ -100,11 +100,18 @@
     const left = door("l"), right = door("r");
     centre.appendChild(bloom);
     frame.append(left, right);
-    /* clones join the load-in zoom exactly where the original is */
+    /* clones join the load-in zoom exactly where the original is, and stand still once it is over
+       (so hiding them off-screen never replays it) */
+    const clones = [left, right].map(d => d.querySelector(".hero__zoom"));
+    const still = () => clones.forEach(c => c.classList.add("fx-still"));
     try {
       const run = zoom.getAnimations()[0];
-      if (run) [left, right].forEach(d => d.querySelector(".hero__zoom").getAnimations().forEach(a => { a.currentTime = run.currentTime; }));
-    } catch (_) { /* Web Animations unavailable: clones simply start with the page */ }
+      if (run && run.playState !== "finished") {
+        clones.forEach(c => c.getAnimations().forEach(a => { a.currentTime = run.currentTime; }));
+        run.finished.then(still, still);
+      } else if (root.classList.contains("is-ready")) still();
+      else setTimeout(still, 4000);
+    } catch (_) { setTimeout(still, 4000); }
   }
 
   /* the eyebrow spreads apart letter by letter (animating letter-spacing would reflow every frame).
@@ -211,12 +218,28 @@
 
   /* At p = 0 the hero renders exactly as without effects; depth layers for the copy switch on
      once the page leaves the top (a class flip at that threshold only, no layout reads). */
-  let live = null;
+  let live = null, heroNear = true;
   function updateLive() {
-    const on = pinned && window.scrollY > 1;
+    const on = pinned && heroNear && window.scrollY > 1;
     if (on !== live) { live = on; top.classList.toggle("fx-live", on); }
   }
-  window.addEventListener("scroll", updateLive, { passive: true });
+  window.addEventListener("scroll", () => { if (heroNear || live) updateLive(); }, { passive: true });
+
+  /* Heavy layers exist only while their scene is on (or near) the screen: the photo slices, the
+     bloom and every will-change are dropped once the hero has scrolled away, the informed photos
+     are promoted only while the band is around. */
+  top.classList.add("fx-on");
+  if ("IntersectionObserver" in window) {
+    const near = new IntersectionObserver(entries => entries.forEach(e => {
+      if (e.target === hero) {
+        heroNear = e.isIntersecting;
+        top.classList.toggle("fx-on", heroNear);
+        updateLive();
+      } else top.classList.toggle("fx-on-i", e.isIntersecting);
+    }), { rootMargin: "40% 0px 40% 0px" });
+    near.observe(hero);
+    near.observe(stage);
+  }
 
   measure();
   window.addEventListener("resize", requestMeasure);
