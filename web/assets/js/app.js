@@ -220,6 +220,7 @@
       group.appendChild(thumb);
       const buttons = [...group.querySelectorAll("[role=tab],button")].filter(b => b !== thumb);
       const place = b => {
+        if (!b.offsetWidth) return; // hidden (e.g. inactive tab panel); re-placed when it becomes visible
         thumb.style.width = b.offsetWidth + "px";
         thumb.style.height = b.offsetHeight + "px";
         thumb.style.transform = `translate(${b.offsetLeft}px,${b.offsetTop}px)`;
@@ -236,6 +237,9 @@
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const cur = buttons.find(x => x.classList.contains("is-active")) || initial; place(cur); });
       initial.classList.add("is-active");
       initial.setAttribute("aria-selected", "true");
+      if ("ResizeObserver" in window) {
+        new ResizeObserver(() => { const cur = buttons.find(x => x.classList.contains("is-active")) || initial; place(cur); }).observe(group);
+      }
     });
   }
 

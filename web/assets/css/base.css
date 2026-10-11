@@ -324,9 +324,11 @@ table{border-collapse:collapse;width:100%}
 
 /* Lines that draw (sparklines, rules, charts) */
 .js [data-draw] path.line{stroke-dasharray:var(--len,1000);stroke-dashoffset:var(--len,1000);transition:stroke-dashoffset 1.8s var(--ease-in-out) var(--delay,0s)}
-.js [data-draw] .area{opacity:0;transition:opacity 1.2s var(--ease-out) calc(var(--delay,0s) + .6s)}
+/* fills sweep in behind the line, in step with the stroke */
+.js [data-draw] .area{opacity:0;clip-path:inset(0 100% 0 0);
+  transition:opacity .5s var(--ease-out) var(--delay,0s),clip-path 1.8s var(--ease-in-out) var(--delay,0s)}
 .js [data-draw].is-in path.line{stroke-dashoffset:0}
-.js [data-draw].is-in .area{opacity:1}
+.js [data-draw].is-in .area{opacity:1;clip-path:inset(0 0 0 0)}
 
 /* Dividers that grow */
 .js [data-rule]{transform:scaleY(0);transform-origin:top;transition:transform 1.2s var(--ease-out) var(--delay,0s)}
@@ -349,7 +351,7 @@ table{border-collapse:collapse;width:100%}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
   .js [data-reveal],.js [data-split] .split-word>span,.js [data-rule]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .js [data-draw] path.line{stroke-dashoffset:0!important}
-  .js [data-draw] .area{opacity:1!important}
+  .js [data-draw] .area{opacity:1!important;clip-path:none!important}
   [data-parallax],[data-scrub]{transform:none!important}
 }
 

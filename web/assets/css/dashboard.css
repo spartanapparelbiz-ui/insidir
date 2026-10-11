@@ -84,6 +84,9 @@
    so a row revealed below the fold never waits on a stale load-time delay */
 .js .index-card.is-in [data-draw] path.line,.js .dash-panel.is-in [data-draw] path.line{stroke-dashoffset:0}
 .js .index-card.is-in [data-draw] .area,.js .dash-panel.is-in [data-draw] .area{opacity:1}
+/* the soft fill under each sparkline wipes in left-to-right in step with the drawing line */
+.js .dash .sparkline .area{opacity:1;clip-path:inset(0 100% 0 0);transition:clip-path 1.8s var(--ease-in-out) var(--delay,0s)}
+.js .dash .index-card.is-in .sparkline .area,.js .dash .dash-panel.is-in .sparkline .area,.js .dash .sparkline.is-in .area{clip-path:inset(0 0 0 0)}
 
 /* ---------------------------------------------------------------
    Panels grid
@@ -289,5 +292,6 @@
 
 @media (prefers-reduced-motion:reduce){
   .dash-sky__layer{transform:none!important;opacity:1!important}
+  .js .dash .sparkline .area{clip-path:none}
   .index-card:hover{translate:none}
 }

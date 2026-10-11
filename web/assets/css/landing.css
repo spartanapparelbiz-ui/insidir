@@ -284,7 +284,7 @@
 .plan__list{margin-bottom:calc(11 * var(--u))}
 .plan--pro .plan__list{margin-bottom:calc(10 * var(--u))}
 /* the badge straddles the card's top border, right of the title and clear of it at every width */
-.plan__badge{--badge-h:max(24px,calc(28 * var(--u)));position:absolute;top:calc(var(--badge-h) * -.36);right:calc(70 * var(--u));height:var(--badge-h);
+.plan__badge{--badge-h:max(24px,calc(28 * var(--u)));position:absolute;top:calc(var(--badge-h) * -.36);right:calc(58 * var(--u));height:var(--badge-h);
   font-size:max(12px,calc(12.6 * var(--u)));font-weight:500;padding:0 calc(11 * var(--u));border-radius:calc(var(--badge-h) * .36);
   background:#544a39;color:#f6f1e6;box-shadow:0 4px 12px -6px rgba(40,32,20,.45);z-index:1}
 .js .plan__badge[data-reveal]{transform:translateY(8px) scale(.55);
@@ -352,6 +352,7 @@
 @media (max-width:1600px){
   .informed .band__side--left{--side-w:calc((100% - 780px) / 2 + 30px)}
   .informed .band__side--right{--side-w:calc((100% - 780px) / 2 + 10px)}
+  .informed .band__side--right img{object-position:22% 30%}
   .records .band__side--left{--side-w:calc((100% - 940px) / 2 + 24px)}
   .records .band__side--right{--side-w:calc((100% - 940px) / 2 + 10px)}
   .pricing .band__side--left{--side-w:calc((100% - 680px) / 2 + 30px)}
