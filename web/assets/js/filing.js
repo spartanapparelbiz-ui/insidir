@@ -107,6 +107,10 @@
 
   /* ---------- scrollspy ---------- */
   let spyLocked = false;
+  // After an outline jump the chosen item stays active (even if the document
+  // cannot scroll it all the way up) until the reader scrolls on their own.
+  let hold = null, holdTop = 0;
+  const release = () => { if (hold) { hold = null; requestSpy(); } };
   function runSpy() {
     const s = scroller();
     const top = s.top(), h = s.height(), max = s.max();
@@ -117,6 +121,8 @@
     let idx = 0;
     tops.forEach((t, i) => { if (t <= line) idx = i; });
     if (max > 0 && top >= max - 2) idx = spy.length - 1;
+    if (hold && Math.abs(top - holdTop) > 40) hold = null; // moved on (find-in-page, focus, scrollbar...)
+    if (hold) idx = Math.max(0, spy.findIndex(x => x.link === hold));
 
     const visibleGroups = new Set();
     spy.forEach((x, i) => {
@@ -186,8 +192,12 @@
   }
   ["wheel", "touchstart", "keydown"].forEach(type => {
     pane.addEventListener(type, cancelAnim, { passive: true });
-    window.addEventListener(type, e => { if (isMobile() || !pane.contains(e.target)) cancelAnim(); }, { passive: true });
+    window.addEventListener(type, e => {
+      if (isMobile() || !pane.contains(e.target)) cancelAnim();
+      if (type !== "keydown" || /^(Arrow|Page|Home|End| )/.test(e.key)) release();
+    }, { passive: true });
   });
+  pane.addEventListener("pointerdown", release, { passive: true });
 
   /* ---------- wheel handoff: the page settles first, then the pane reads ----------
      At load the pane runs past the fold. Scrolling down over it first glides the
@@ -230,9 +240,12 @@
     const margin = isMobile() ? 0 : 18;
     const to = clamp(s.pos(target) - s.offset() - margin, 0, Math.max(0, s.max()));
     const spyLink = spyLinks.includes(link) ? link : spyNext(link);
+    hold = null;
     if (spyLink) { spyLocked = true; setActive(spyLink); }
     const finish = () => {
       spyLocked = false;
+      hold = spyLink;
+      holdTop = s.top();
       runSpy();
       target.focus({ preventScroll: true });
     };

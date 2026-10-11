@@ -6,7 +6,6 @@
   --toc-w:18.125em;
   --col-gap:2.875em;
   --doc-ink:#141414;
-  --doc-muted:#585858;
   --doc-line:#cfcfcc;
   --toc-ink:#7a7975;
   --toc-blue:#2457e6;
@@ -137,7 +136,8 @@
 
 /* ---------- Typeset document ---------- */
 .doc{font-family:var(--doc-font);color:var(--doc-ink);padding:0 3.25em 4em;font-size:1em;font-feature-settings:normal;
-  -webkit-font-smoothing:auto}
+  -webkit-font-smoothing:auto;
+  --delay:0s} /* the frame's data-delay sets --delay, which would otherwise inherit into every reveal in the document */
 .doc section{scroll-margin-top:1.25em}
 .doc section:focus{outline:none}
 
@@ -163,7 +163,7 @@
 .doc-item h4{margin-top:1em;font-family:var(--doc-font);font-weight:700;font-style:italic;font-size:1.06em;line-height:1.4;letter-spacing:0;color:#222}
 .doc-item p{margin-top:.6em;font-size:1.125em;line-height:1.62;color:#262626;text-align:justify;hyphens:auto}
 .doc-item h3+p{margin-top:.75em}
-.doc-muted{color:#6b6b6b!important;font-style:italic}
+.doc-item .doc-muted{color:#6b6b6b;font-style:italic}
 
 .doc-end{max-width:56em;margin:2.5em auto 0;padding-top:0;text-align:center}
 .doc-end__rule{display:block;height:1px;background:#dedcd7;margin-bottom:2em}

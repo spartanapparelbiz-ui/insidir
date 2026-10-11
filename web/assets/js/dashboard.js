@@ -12,7 +12,7 @@
   const logo = (t, size) => (I.logo ? I.logo(t, size) : "");
   const spark = (seed, opts) => {
     if (!I.series || !I.sparkline) return "";
-    return I.sparkline(I.series(seed, opts.n || 30, { start: 100, drift: 1.1, vol: 2.4 }), opts);
+    return I.sparkline(I.series(seed, opts.n || 30, { start: 100, drift: opts.drift || 1.1, vol: opts.vol || 2.4 }), opts);
   };
   const secs = ms => (ms / 1000).toFixed(3) + "s";
 
@@ -43,7 +43,7 @@
     { name: "Josh Hawley", ticker: "TSLA", type: "buy", date: "Jan 5, 2024" },
     { name: "Mark Warner", ticker: "AAPL", type: "sell", date: "Jan 4, 2024" }
   ];
-  const CARD_SEEDS = { spx: "idx55", ndx: "idx2", dji: "idx77", rut: "idx139" };
+  const CARD_SEEDS = { spx: "idx130", ndx: "idx141", dji: "idx109", rut: "idx156" };
 
   const company = t => `company.html?ticker=${encodeURIComponent(t)}`;
   const txLabel = type => (type === "buy" ? '<span class="buy">Buy</span>' : '<span class="sell">Sell</span>');
@@ -117,7 +117,7 @@
 
   /* ---------- index card sparklines ---------- */
   $$("[data-spark]").forEach((host, i) => {
-    host.innerHTML = spark(CARD_SEEDS[host.dataset.spark] || "idx" + i, { width: 124, height: 62, color: "var(--green)", n: 30 });
+    host.innerHTML = spark(CARD_SEEDS[host.dataset.spark] || "idx" + i, { width: 124, height: 62, color: "var(--green)", n: 30, stroke: 1.9, drift: 1.25, vol: 3.4 });
     const svg = host.querySelector("svg");
     const card = host.closest("[data-delay]");
     if (svg && card) svg.dataset.delay = String(parseFloat(card.dataset.delay || "0") + 260);
@@ -185,6 +185,23 @@
     const d = tr ? parseFloat(tr.style.getPropertyValue("--delay")) * 1000 : 0;
     svg.dataset.delay = String(Math.round(d + 120));
   });
+
+  /* ---------- panels that start below the fold reveal promptly when scrolled to ----------
+     (the long on-load stagger only makes sense for what is visible at first paint) */
+  (function rebaseOffscreen() {
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    $$(".dash-grid [data-reveal]").forEach(panel => {
+      const r = panel.getBoundingClientRect();
+      if (r.top < vh * 0.9) return;
+      const base = Math.round((r.left / Math.max(1, window.innerWidth)) * 240);
+      panel.dataset.delay = String(base);
+      $$(".row-in", panel).forEach((tr, i) => tr.style.setProperty("--delay", secs(base + 220 + i * 60)));
+      $$(".dash-spark-cell svg", panel).forEach(svg => {
+        const tr = svg.closest("tr");
+        svg.dataset.delay = String(Math.round(parseFloat(tr.style.getPropertyValue("--delay")) * 1000 + 120));
+      });
+    });
+  })();
 
   /* ---------- whole-row links (watchlist, filings) ---------- */
   $$("tbody").forEach(body => {
@@ -312,6 +329,18 @@
     el.animate([{ boxShadow: "0 0 0 0 rgba(18,20,23,0)" }, { boxShadow: "0 0 0 3px rgba(18,20,23,.12)" }, { boxShadow: "0 0 0 0 rgba(18,20,23,0)" }],
       { duration: 1400, delay: 450, easing: "ease-out" });
   }
+  // Arriving with a hash (e.g. from "Political Trades" in the header on another page): the browser
+  // aligns the target while its entrance transform is still applied, so settle it on layout position.
+  function alignHash() {
+    if (location.hash.length < 2) return;
+    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (!target || !target.closest(".dash")) return;
+    let y = 0;
+    for (let el = target; el; el = el.offsetParent) y += el.offsetTop;
+    window.scrollTo(0, Math.max(0, y - 84));
+  }
+  window.addEventListener("load", () => requestAnimationFrame(alignHash), { once: true });
+
   document.addEventListener("click", e => {
     const a = e.target.closest("a[href*='#']");
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;

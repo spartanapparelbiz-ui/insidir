@@ -33,7 +33,7 @@
       cik: "0000789019", growth: 1.21, vol: 0.011, five: 2.4, ceo: ["Satya Nadella", "Chairman & CEO", "Buy", 74908] },
     TSLA: { name: "Tesla, Inc.", short: "Tesla", logo: "tesla", sector: "Consumer Cyclical", exchange: "Nasdaq", price: 195.22, change: -0.80,
       cap: "622.8B", volume: "96.3M", pe: "49.8", industry: "Auto Manufacturers", website: "tesla.com",
-      cik: "0001318605", growth: 0.88, vol: 0.026, five: 4.2 },
+      cik: "0001318605", growth: 0.88, vol: 0.02, five: 4.2 },
     META: { name: "Meta Platforms, Inc.", short: "Meta", logo: "meta", sector: "Communication Services", exchange: "Nasdaq", price: 301.12, change: 1.20,
       cap: "773.9B", volume: "15.2M", pe: "26.1", industry: "Internet Content & Information", website: "meta.com",
       cik: "0001326801", growth: 1.44, vol: 0.016, five: 1.9, ceo: ["Mark Zuckerberg", "Chair & CEO", "Sell", 99960] },
@@ -138,12 +138,14 @@
   }
   function niceTicks(min, max) {
     const span = max - min || Math.abs(max) * 0.02 || 1;
-    const raw = span / 3.2;
+    const raw = span / 4;
     const p = Math.pow(10, Math.floor(Math.log10(raw)));
     const step = [1, 2, 2.5, 5, 10].map(m => m * p).find(s => s >= raw - 1e-12);
     const decimals = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9) + (String(step / p).includes(".") ? 1 : 0));
     const ticks = [];
-    for (let t = Math.floor(min / step) * step; t <= max + 1e-9; t += step) ticks.push(+t.toFixed(6));
+    let start = Math.floor(min / step) * step;
+    if (min - start > step * 0.5) start += step; // don't stretch the plot far below the data
+    for (let t = start; t <= max + 1e-9; t += step) ticks.push(+t.toFixed(6));
     return { ticks, decimals };
   }
   const money = v => {
@@ -192,10 +194,10 @@
   const RANGES = {
     "1D": () => {
       const open = last / (1 + P.change / 100);
-      const values = bridge(T + "-1d", 79, open, last, 0.0011);
+      const values = bridge(T + "-1d", 196, open, last, 0.00072);
       const labels = [], pos = [];
       for (let k = 0; k <= 13; k++) { const m = 570 + k * 30; labels.push(m % 60 === 0 || k === 0 ? hm(m) : ""); pos.push(k / 13); }
-      return { values, labels, pos, caption: "1 day, 9:30 to 16:00 ET", tip: i => `${hm(570 + i * 5)} ET` };
+      return { values, labels, pos, caption: "1 day, 9:30 to 16:00 ET", tip: i => `${hm(570 + i * 2)} ET` };
     },
     "1W": () => {
       const closes = base.slice(N - 6), values = [];
@@ -283,7 +285,7 @@
     const values = r.values;
     const min = Math.min(...values), max = Math.max(...values);
     const { ticks, decimals } = niceTicks(min, max);
-    const green = values[values.length - 1] >= values[0] || key === "1Y";
+    const green = values[values.length - 1] >= values[0];
     const color = green ? "var(--green)" : "var(--red)";
 
     host.classList.toggle("no-anim", !animate);
@@ -360,7 +362,7 @@
     svg.insertBefore(mk(W - padR, W - padR, topY, bottomY, "grid grid--v"), area);
   }
 
-  drawChart(currentRange, { delay: reduce ? 0 : 820 });
+  drawChart(currentRange, { delay: reduce ? 0 : 560 });
 
   if (rangeGroup) {
     rangeGroup.addEventListener("segment-change", e => {
