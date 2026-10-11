@@ -134,6 +134,9 @@
     const active = host.dataset.active || "";
     host.classList.add("app-header");
     host.innerHTML = `<div class="app-header__inner">
+      <button class="icon-btn app-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
       <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir.</a>
       <nav class="app-nav" aria-label="Product">
         ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
@@ -155,7 +158,22 @@
           <button role="menuitem" type="button" data-signout>Sign out</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Product">
+      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
+    </nav>`;
+
+    const menuBtn = host.querySelector(".app-menu-btn"), menu = host.querySelector(".app-mobile-nav");
+    const setMenu = open => {
+      menu.classList.toggle("is-open", open);
+      menuBtn.setAttribute("aria-expanded", String(open));
+      menuBtn.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
+    };
+    menuBtn.addEventListener("click", e => { e.stopPropagation(); setMenu(!menu.classList.contains("is-open")); });
+    menu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
+    document.addEventListener("click", e => { if (!menu.contains(e.target)) setMenu(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && menu.classList.contains("is-open")) { setMenu(false); menuBtn.focus(); } });
+    window.addEventListener("resize", () => { if (innerWidth > 860) setMenu(false); });
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');

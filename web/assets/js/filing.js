@@ -115,7 +115,6 @@
     const s = scroller();
     const top = s.top(), h = s.height(), max = s.max();
     const viewTop = top + s.offset();
-    const viewBottom = top + h;
     const line = viewTop + Math.max(72, (h - s.offset()) * 0.28);
     const tops = spy.map(x => s.pos(x.el));
     let idx = 0;
@@ -124,16 +123,12 @@
     if (hold && Math.abs(top - holdTop) > 40) hold = null; // moved on (find-in-page, focus, scrollbar...)
     if (hold) idx = Math.max(0, spy.findIndex(x => x.link === hold));
 
-    const visibleGroups = new Set();
-    spy.forEach((x, i) => {
-      const start = tops[i];
-      const end = i + 1 < tops.length ? tops[i + 1] : start + x.el.offsetHeight;
-      const visible = end > viewTop + 8 && start < viewBottom - 24;
-      const isAct = !spyLocked ? i === idx : x.link === active;
-      x.link.classList.toggle("is-visible", visible && !isAct);
-      if (visible || isAct) visibleGroups.add(x.group);
-    });
-    parts.forEach(p => p.classList.toggle("is-current", visibleGroups.has(p.dataset.group)));
+    // The section after the current one is tinted ("up next"), and the part label
+    // of the current section (or, on the cover, of the next one) turns navy.
+    const cur = spyLocked ? Math.max(0, spy.findIndex(x => x.link === active)) : idx;
+    spy.forEach((x, i) => x.link.classList.toggle("is-next", i === cur + 1));
+    const group = spy[cur].group || (spy[cur + 1] ? spy[cur + 1].group : "");
+    parts.forEach(p => p.classList.toggle("is-current", p.dataset.group === group));
     if (!spyLocked) setActive(spy[idx].link);
 
     // reading progress + cover drift
@@ -149,20 +144,10 @@
       coverInner.style.setProperty("--cx", cx.toFixed(4));
     }
   }
-  /* the outline card docks under the header once the page has moved */
-  function dock() {
-    const docked = !isMobile() && !toc.classList.contains("is-collapsed") &&
-      toc.getBoundingClientRect().top <= appHeaderH() + 21 && window.scrollY > 4;
-    if (docked !== toc.classList.contains("is-docked")) toc.classList.toggle("is-docked", docked);
-  }
   let ticking = false;
   const requestSpy = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; runSpy(); }); } };
   pane.addEventListener("scroll", requestSpy, { passive: true });
-  let dockTick = false;
-  window.addEventListener("scroll", () => {
-    if (isMobile()) requestSpy();
-    if (!dockTick) { dockTick = true; requestAnimationFrame(() => { dockTick = false; dock(); }); }
-  }, { passive: true });
+  window.addEventListener("scroll", () => { if (isMobile()) requestSpy(); }, { passive: true });
 
   /* ---------- eased scrolling for outline jumps ---------- */
   let anim = null;
@@ -199,42 +184,6 @@
   });
   pane.addEventListener("pointerdown", release, { passive: true });
 
-  /* ---------- wheel handoff: the page settles first, then the pane reads ----------
-     At load the pane runs past the fold. Scrolling down over it first glides the
-     window until the pane sits under the header, then the pane itself scrolls. */
-  let winTarget = null, winRaf = 0;
-  function stopWindowGlide() { if (winRaf) cancelAnimationFrame(winRaf); winRaf = 0; winTarget = null; }
-  function windowGlideTo(y) {
-    if (reduce) { window.scrollTo(0, y); return; }
-    winTarget = y;
-    if (winRaf) return;
-    const step = () => {
-      const cur = window.scrollY;
-      const next = cur + (winTarget - cur) * 0.2;
-      if (Math.abs(winTarget - next) < 0.6) { window.scrollTo(0, winTarget); winRaf = 0; winTarget = null; return; }
-      window.scrollTo(0, next);
-      winRaf = requestAnimationFrame(step);
-    };
-    winRaf = requestAnimationFrame(step);
-  }
-  pane.addEventListener("wheel", e => {
-    if (isMobile() || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    if (e.deltaY <= 0) { stopWindowGlide(); return; }
-    const base = winTarget === null ? window.scrollY : winTarget;
-    const frameTop = frame.getBoundingClientRect().top + (window.scrollY - base);
-    const maxWin = document.documentElement.scrollHeight - window.innerHeight;
-    const room = Math.min(frameTop - (appHeaderH() + 20), maxWin - base);
-    if (room <= 0.5) return; // pane already in place: native pane scrolling
-    e.preventDefault();
-    cancelAnim();
-    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
-    const d = e.deltaY * unit;
-    const win = Math.min(d, room);
-    windowGlideTo(base + win);
-    if (d > win) pane.scrollTop += d - win;
-  }, { passive: false });
-  window.addEventListener("wheel", e => { if (!pane.contains(e.target)) stopWindowGlide(); }, { passive: true });
-
   function goTo(target, link, instant) {
     const s = scroller();
     const margin = isMobile() ? 0 : 18;
@@ -262,8 +211,7 @@
     if (!a) return;
     const target = targetOf(a);
     if (!target) return;
-    e.preventDefault();
-    e.stopPropagation(); // keep the global anchor handler from scrolling the window
+    e.preventDefault(); // the global anchor handler skips prevented clicks, so the window stays put
     goTo(target, a);
     history.replaceState(null, "", a.hash);
   });
@@ -292,7 +240,6 @@
         };
       } else {
         toc.classList.remove("is-collapsed");
-        dock();
         const to = toc.getBoundingClientRect().height;
         placeIndicator(active, true);
         toc.animate([{ height: from + "px" }, { height: to + "px" }], { duration: 680, easing: "cubic-bezier(.16,1,.3,1)" });
@@ -357,7 +304,6 @@
     }
     placeIndicator(active, true);
     requestSpy();
-    dock();
   }
   window.addEventListener("resize", relayout);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => placeIndicator(active, true));

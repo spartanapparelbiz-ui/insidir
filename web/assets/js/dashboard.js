@@ -25,11 +25,11 @@
     { time: "3h ago", name: "Brian Chesky", ticker: "ABNB", type: "buy", value: "$10.8M" }
   ];
   const WATCH = [
-    { ticker: "AAPL", price: "168.21", d: "+0.6%", w: "+2.4%", m: "+8.1%", seed: "idx35" },
-    { ticker: "NVDA", price: "146.33", d: "+2.3%", w: "+6.8%", m: "+23.4%", seed: "idx106" },
-    { ticker: "MSFT", price: "443.21", d: "+0.4%", w: "+1.9%", m: "+5.6%", seed: "idx91" },
-    { ticker: "TSLA", price: "195.22", d: "-0.8%", w: "+4.2%", m: "+12.1%", seed: "idx77", red: true },
-    { ticker: "META", price: "301.12", d: "+1.2%", w: "+3.1%", m: "+11.8%", seed: "idx109" }
+    { ticker: "AAPL", price: "168.21", d: "+0.6%", w: "+2.4%", m: "+8.1%", seed: "sp266" },
+    { ticker: "NVDA", price: "146.33", d: "+2.3%", w: "+6.8%", m: "+23.4%", seed: "sp2859" },
+    { ticker: "MSFT", price: "443.21", d: "+0.4%", w: "+1.9%", m: "+5.6%", seed: "sp1067" },
+    { ticker: "TSLA", price: "195.22", d: "-0.8%", w: "+4.2%", m: "+12.1%", seed: "sp2673", red: true },
+    { ticker: "META", price: "301.12", d: "+1.2%", w: "+3.1%", m: "+11.8%", seed: "sp2220" }
   ];
   const FILINGS = [
     { ticker: "AAPL", form: "8-K", date: "Jan 8, 2024" },
@@ -43,7 +43,8 @@
     { name: "Josh Hawley", ticker: "TSLA", type: "buy", date: "Jan 5, 2024" },
     { name: "Mark Warner", ticker: "AAPL", type: "sell", date: "Jan 4, 2024" }
   ];
-  const CARD_SEEDS = { spx: "idx130", ndx: "idx141", dji: "idx109", rut: "idx156" };
+  // Seeds chosen for a steady zig-zag climb like the reference sparklines.
+  const CARD_SEEDS = { spx: "sp18", ndx: "sp670", dji: "sp985", rut: "sp435" };
 
   const company = t => `company.html?ticker=${encodeURIComponent(t)}`;
   const txLabel = type => (type === "buy" ? '<span class="buy">Buy</span>' : '<span class="sell">Sell</span>');
@@ -117,7 +118,7 @@
 
   /* ---------- index card sparklines ---------- */
   $$("[data-spark]").forEach((host, i) => {
-    host.innerHTML = spark(CARD_SEEDS[host.dataset.spark] || "idx" + i, { width: 124, height: 62, color: "var(--green)", n: 30, stroke: 1.9, drift: 1.25, vol: 3.4 });
+    host.innerHTML = spark(CARD_SEEDS[host.dataset.spark] || "sp" + i, { width: 128, height: 66, color: "var(--green-chart)", n: 24, stroke: 1.8, drift: 1.1, vol: 2.6 });
     const svg = host.querySelector("svg");
     const card = host.closest("[data-delay]");
     if (svg && card) svg.dataset.delay = String(parseFloat(card.dataset.delay || "0") + 260);
@@ -152,7 +153,7 @@
         <td class="c">${chg(r.d)}</td>
         <td class="c">${chg(r.w)}</td>
         <td class="c">${chg(r.m)}</td>
-        <td class="c dash-spark-cell">${spark(r.seed, { width: 88, height: 36, color: r.red ? "var(--red)" : "var(--green)", n: 26 })}</td>
+        <td class="c dash-spark-cell">${spark(r.seed, { width: 90, height: 40, color: r.red ? "var(--red-chart)" : "var(--green-chart)", n: 20, stroke: 1.6, drift: 1.1, vol: 2.5 })}</td>
       </tr>`).join("");
   }
 

@@ -125,6 +125,17 @@
     const end = w[n - 1], k = Math.log(to / from);
     return w.map((v, i) => +(from * Math.exp(v - end * i / (n - 1) + k * i / (n - 1))).toFixed(2));
   }
+  // Light centred moving average so generated series read like the reference trace
+  // rather than raw noise; endpoints are pinned back to their original values.
+  function smooth(values, radius) {
+    const n = values.length, out = values.map((_, i) => {
+      let sum = 0, c = 0;
+      for (let k = Math.max(0, i - radius); k <= Math.min(n - 1, i + radius); k++) { sum += values[k]; c++; }
+      return sum / c;
+    });
+    const d0 = values[0] - out[0], d1 = values[n - 1] - out[n - 1];
+    return out.map((v, i) => +(v + d0 + (d1 - d0) * i / (n - 1)).toFixed(2));
+  }
   // Adds intermediate points (with a little texture) between existing ones.
   function densify(values, k, seed, vol) {
     const r = rng(seed), out = [];
@@ -181,7 +192,7 @@
      ------------------------------------------------------------------ */
   const N = 261;
   const base = T === "AAPL" ? AAPL_1Y.slice()
-    : bridge(T + "-1y", N, P.price / P.growth, P.price, P.vol || 0.015);
+    : smooth(bridge(T + "-1y", N, P.price / P.growth, P.price, P.vol || 0.015), 2);
   const last = base[N - 1];
   const doyAt = i => i / (N - 1) * 364;
   const idxAt = doy => Math.max(0, Math.min(N - 1, Math.round(doy / 364 * (N - 1))));
@@ -266,6 +277,8 @@
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.content = `Price chart, key statistics, insider activity, SEC filings, financials and ownership for ${P.name} (${T}), compiled from public records.`;
 
+  $$(".co-stats dd", main).forEach(dd => dd.classList.toggle("is-long", dd.textContent.trim().length > 24));
+
   // stats rows enter one after another
   $$(".co-stats > div", main).forEach((row, i) => row.style.setProperty("--delay", (0.62 + i * 0.075).toFixed(3) + "s"));
 
@@ -288,9 +301,9 @@
     const green = values[values.length - 1] >= values[0];
     const color = green ? "var(--green-chart, var(--green))" : "var(--red-chart, var(--red))";
 
-    // Insert with transitions off so the path's first computed dash offset is its
-    // real length (not the CSS fallback), otherwise a stray segment flashes.
-    host.classList.add("no-anim");
+    // Instant redraws (resize) insert with transitions off; animated draws rely on
+    // motion.js, which measures each path before it is first painted.
+    if (!animate) host.classList.add("no-anim");
     host.style.setProperty("--delay", (delay / 1000).toFixed(2) + "s");
     const svg = I.areaChart(host, values, {
       labels: r.labels, ticks, color,
@@ -300,17 +313,10 @@
     tuneAxes(svg, r, ticks, decimals);
     svg.setAttribute("aria-label", `${P.short} share price, ${r.caption}. From $${values[0].toFixed(2)} to $${values[values.length - 1].toFixed(2)}. Sample data.`);
     if (caption) caption.textContent = `Price history, ${r.caption}`;
-    const line = svg.querySelector("path.line");
-    if (line && !line.style.getPropertyValue("--len")) {
-      try { line.style.setProperty("--len", Math.ceil(line.getTotalLength()) + 1); } catch (_) { /* not rendered */ }
-    }
-    if (line) void getComputedStyle(line).strokeDashoffset;
-    if (animate) {
-      host.classList.remove("no-anim");
-    } else {
+    if (!animate) {
       svg.classList.add("is-in");
       svg.dataset.observed = "1";
-      if (line) void getComputedStyle(line).strokeDashoffset;
+      void svg.getBoundingClientRect();
       raf2(() => host.classList.remove("no-anim"));
     }
     return svg;
@@ -338,7 +344,10 @@
     const yTexts = texts.filter(t => t.getAttribute("text-anchor") !== "middle");
     let lastRight = -Infinity;
     xTexts.forEach((t, i) => {
-      const x = padL + (r.pos[i] ?? i / (xTexts.length - 1)) * plotW;
+      let x = padL + (r.pos[i] ?? i / (xTexts.length - 1)) * plotW;
+      const tw = t.textContent && t.getComputedTextLength ? t.getComputedTextLength() : 0;
+      // short month names straddle the frame edge like the reference; longer labels are nudged inside
+      if (tw > 32) x = Math.max(x, padL + tw / 2 - 14);
       t.setAttribute("x", x.toFixed(1));
       t.setAttribute("y", (H - 8 + 20 * u).toFixed(1));
       if (vlines[i]) { vlines[i].setAttribute("x1", x.toFixed(1)); vlines[i].setAttribute("x2", x.toFixed(1)); }
@@ -349,7 +358,7 @@
     });
     yTexts.forEach((t, i) => {
       t.setAttribute("x", (W - padR + 12 + 28 * u).toFixed(1));
-      t.setAttribute("y", (+t.getAttribute("y") + 5 * u).toFixed(1));
+      t.setAttribute("y", (+t.getAttribute("y") + 2 * u).toFixed(1));
       if (ticks[i] != null) t.textContent = ticks[i].toFixed(decimals);
     });
     // frame: a top rule a little above the highest tick and a closing rule on the right
@@ -376,6 +385,7 @@
 
   if (rangeGroup) {
     rangeGroup.addEventListener("segment-change", e => {
+      $$("button", rangeGroup).forEach(b => { b.tabIndex = b === e.detail.button ? 0 : -1; });
       const key = e.detail && e.detail.value;
       if (!key || key === currentRange || !RANGES[key]) return;
       currentRange = key;
