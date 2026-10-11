@@ -65,3 +65,24 @@ test("path traversal outside the web root is refused", async () => {
     }
   });
 });
+
+test("text assets are compressed when the client accepts it", async () => {
+  await withServer(async base => {
+    const { request } = await import("node:http");
+    const u = new URL(base);
+    const get = enc => new Promise((resolve, reject) => {
+      const req = request({ host: u.hostname, port: u.port, path: "/assets/css/base.css", headers: enc ? { "accept-encoding": enc } : {} }, res => {
+        const chunks = []; res.on("data", c => chunks.push(c)); res.on("end", () => resolve({ headers: res.headers, size: Buffer.concat(chunks).length }));
+      });
+      req.on("error", reject); req.end();
+    });
+    const plain = await get(null), br = await get("gzip, deflate, br"), gz = await get("gzip");
+    assert.equal(plain.headers["content-encoding"], undefined);
+    assert.equal(br.headers["content-encoding"], "br");
+    assert.equal(gz.headers["content-encoding"], "gzip");
+    assert.ok(br.size < plain.size / 2 && gz.size < plain.size / 2);
+    assert.match(br.headers.vary, /Accept-Encoding/);
+    const img = await fetch(base + "/assets/img/hero.jpg", { headers: { "accept-encoding": "br" } });
+    assert.equal(img.headers.get("content-encoding"), null);
+  });
+});

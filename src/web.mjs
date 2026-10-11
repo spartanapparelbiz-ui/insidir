@@ -1,4 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
+import { brotliCompressSync, gzipSync, constants as zlib } from "node:zlib";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -57,6 +58,24 @@ async function findFile(pathname) {
   return null;
 }
 
+// Text assets are compressed once per file version and kept in memory.
+const compressible = new Set([".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt", ".xml"]);
+const compressedCache = new Map();
+function negotiate(req, ext, file, mtimeMs, body) {
+  if (!compressible.has(ext) || body.length < 1024) return null;
+  const accept = String(req.headers["accept-encoding"] || "");
+  const encoding = /\bbr\b/.test(accept) ? "br" : /\bgzip\b/.test(accept) ? "gzip" : null;
+  if (!encoding) return null;
+  const key = encoding + ":" + file;
+  const hit = compressedCache.get(key);
+  if (hit && hit.mtimeMs === mtimeMs) return { encoding, body: hit.body };
+  const out = encoding === "br"
+    ? brotliCompressSync(body, { params: { [zlib.BROTLI_PARAM_QUALITY]: 9, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length } })
+    : gzipSync(body, { level: 9 });
+  compressedCache.set(key, { mtimeMs, body: out });
+  return { encoding, body: out };
+}
+
 export async function serveStatic(req, res) {
   const method = req.method || "GET";
   if (method !== "GET" && method !== "HEAD") return false;
@@ -69,13 +88,17 @@ export async function serveStatic(req, res) {
     status = 404;
     try { await stat(file); } catch { return false; }
   }
-  const body = await readFile(file);
+  const [raw, info] = await Promise.all([readFile(file), stat(file)]);
   const ext = extname(file).toLowerCase();
   const immutable = /\/assets\/(fonts|img|icons)\//.test(file.split(sep).join("/"));
+  const packed = negotiate(req, ext, file, info.mtimeMs, raw);
+  const body = packed ? packed.body : raw;
   res.writeHead(status, {
     ...securityHeaders,
     "Content-Type": types[ext] || "application/octet-stream",
     "Content-Length": body.length,
+    ...(packed ? { "Content-Encoding": packed.encoding } : {}),
+    ...(compressible.has(ext) ? { "Vary": "Accept-Encoding" } : {}),
     "Cache-Control": ext === ".html" ? "no-cache" : immutable ? "public, max-age=604800" : "public, max-age=3600"
   });
   res.end(method === "HEAD" ? undefined : body);

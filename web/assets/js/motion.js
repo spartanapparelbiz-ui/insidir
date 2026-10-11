@@ -280,6 +280,11 @@
       el.style.setProperty("--p", clamp(p).toFixed(4));
     }
     trackVelocity(y);
+    // At the very end of the page, elements inside the observer's bottom margin can never
+    // intersect; reveal whatever is on screen once the bottom is reached.
+    const atEnd = y + h >= root.scrollHeight - 2;
+    if (atEnd && !frame.atEnd) setTimeout(revealStragglers, 120);
+    frame.atEnd = atEnd;
     lastY = y;
   }
   /* Scroll velocity for skew/stretch effects. Written only to elements that opt in
@@ -379,6 +384,7 @@
     while (node && node !== document.body) {
       if (node.nodeType === 1 && node.hasAttribute("data-observed") && !node.classList.contains("is-in")) {
         node.style.setProperty("--delay", "0s");
+        node.style.setProperty("--rd", ".18s");
         if (io) io.unobserve(node);
         pending.delete(node);
         reveal(node);
