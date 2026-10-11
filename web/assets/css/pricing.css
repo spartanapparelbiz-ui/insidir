@@ -48,16 +48,15 @@
    while the photo settles from a zoom */
 .pr-strip__frame::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:#ece6da;
   transform-origin:50% 0;transform:scaleY(0)}
-.js .pr-strip__frame::before{transform:none}
+.js .pr-strip__frame::before{transform:none;transition:transform 1.5s var(--ease-in-out) .05s}
+.js .pr-strip--right .pr-strip__frame::before{transition-delay:.2s}
+.js.is-ready .pr-strip__frame::before{transform:scaleY(0)}
 .js .pr-strip__layer img{transform:scale(1.24)}
-.js.is-ready .pr-strip__frame::before{transform:scaleY(0);animation:prStripWipe 1.5s var(--ease-in-out) .05s backwards}
-.js.is-ready .pr-strip--right .pr-strip__frame::before{animation-delay:.2s}
 .js.is-ready .pr-strip__layer img{animation:prStripZoom 2.8s var(--ease-out) .05s both}
 /* the sun ignites once the strip has been unveiled, then breathes */
 .js .pr-strip__flare{opacity:0}
 .js.is-ready .pr-strip__flare{animation:prFlareIn 1.8s var(--ease-out) .85s both,prFlare 6s ease-in-out 2.65s infinite alternate}
 .js.is-ready .pr-strip--right .pr-strip__layer img{animation-delay:.2s}
-@keyframes prStripWipe{from{transform:none}to{transform:scaleY(0)}}
 @keyframes prStripZoom{from{transform:scale(1.24)}to{transform:scale(1)}}
 
 /* ---------- Centre panel ---------- */
