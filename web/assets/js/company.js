@@ -192,7 +192,7 @@
      ------------------------------------------------------------------ */
   const N = 261;
   const base = T === "AAPL" ? AAPL_1Y.slice()
-    : smooth(bridge(T + "-1y", N, P.price / P.growth, P.price, P.vol || 0.015), 2);
+    : smooth(bridge(T + "-1y", N, P.price / P.growth, P.price, P.vol || 0.015), 1);
   const last = base[N - 1];
   const doyAt = i => i / (N - 1) * 364;
   const idxAt = doy => Math.max(0, Math.min(N - 1, Math.round(doy / 364 * (N - 1))));
@@ -277,7 +277,7 @@
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.content = `Price chart, key statistics, insider activity, SEC filings, financials and ownership for ${P.name} (${T}), compiled from public records.`;
 
-  $$(".co-stats dd", main).forEach(dd => dd.classList.toggle("is-long", dd.textContent.trim().length > 24));
+  $$(".co-stats dd[data-f]", main).forEach(dd => dd.classList.toggle("is-long", dd.textContent.trim().length > 24));
 
   // stats rows enter one after another
   $$(".co-stats > div", main).forEach((row, i) => row.style.setProperty("--delay", (0.62 + i * 0.075).toFixed(3) + "s"));
