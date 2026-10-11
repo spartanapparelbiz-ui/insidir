@@ -26,7 +26,8 @@
     secOutline: svg(`<circle cx="10" cy="10" r="9.1" fill="#fff" stroke="#4874c2" stroke-width="1.6"/>${doc("#4874c2")}`),
     political: svg(`<circle cx="10" cy="10" r="10" fill="#e0373d"/><path d="M7.9.2A10 10 0 0 0 7.9 19.8Z" fill="#dbe2e9"/>
       <path d="M9.4 14.7h7.2M10 13.4h6M10.7 13.1V10.3M13 13.1V10.3M15.3 13.1V10.3M10 9.9h6M10.6 9.7a2.4 2.4 0 0 1 4.8 0M13 7.3V5.8" ${stroke} stroke="#fff" stroke-width="1.2"/>`),
-    price: svg(`<circle cx="10" cy="10" r="10" fill="#1f5ff0"/><path d="M5.4 12.8 8.5 9.7l2.3 2.3 3.8-4.1M12 7.8h2.7v2.7" ${stroke} stroke="#fff" stroke-width="1.6"/>`)
+    price: svg(`<circle cx="10" cy="10" r="10" fill="#1f5ff0"/><path d="M5.4 12.8 8.5 9.7l2.3 2.3 3.8-4.1M12 7.8h2.7v2.7" ${stroke} stroke="#fff" stroke-width="1.6"/>`),
+    priceDown: svg(`<circle cx="10" cy="10" r="10" fill="#1f5ff0"/><path d="M5.4 7.2 8.5 10.3l2.3-2.3 3.8 4.1M12 12.2h2.7V9.5" ${stroke} stroke="#fff" stroke-width="1.6"/>`)
   };
   const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
   const EXT = ICONS.external || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
@@ -55,7 +56,7 @@
       facts: [["Form", "10-Q · quarterly report"], ["Filer", "Meta Platforms, Inc."]] },
     { time: "Yesterday", dot: "green", type: "buy", ticker: "MSFT", form: "4", text: "Director purchase reported on Form 4 (4,500 shares)",
       facts: [["Form", "Form 4"], ["Filed by", "Company director"], ["Transaction", "Purchase"], ["Shares", "4,500"]] },
-    { time: "Yesterday", dot: "red", type: "price", ticker: "TSLA", text: "Down 6% in the last hour",
+    { time: "Yesterday", dot: "red", type: "price", ticker: "TSLA", down: true, text: "Down 6% in the last hour",
       facts: [["Move", "−6%"], ["Window", "Last hour"], ["Threshold", "Greater than 5%"]] },
     { time: "Yesterday", dot: "green", type: "political", ticker: "AAPL", chamber: "house", text: "Periodic transaction report: AAPL purchase ($15K\u2013\u2060$50K)",
       facts: [["Disclosure", "Periodic transaction report"], ["Filer", "House member"], ["Asset", "AAPL stock"], ["Amount", "$15,001–$50,000"]] },
@@ -97,7 +98,7 @@
 
   function alertHTML(a, i) {
     const t = TYPES[a.type];
-    const icon = a.type === "sec" ? (a.outline ? ICON.secOutline : ICON.sec) : ICON[a.type];
+    const icon = a.type === "sec" ? (a.outline ? ICON.secOutline : ICON.sec) : a.type === "price" && a.down ? ICON.priceDown : ICON[a.type];
     const id = `alert-${i + 1}`;
     return `<tbody class="alert alert-in" data-index="${i}" data-group="${t.group}" data-ticker="${a.ticker}">
       <tr class="alert-row">
