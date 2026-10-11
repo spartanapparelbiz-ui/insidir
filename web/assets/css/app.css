@@ -35,7 +35,7 @@
 .data-table tbody tr{transition:background .25s}
 .data-table tbody tr:hover{background:#faf8f3}
 .data-table--head-tint thead th{background:#f8f7f3}
-.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 
 /* Cells */
 .ticker{font-weight:600;color:var(--blue);letter-spacing:.01em}

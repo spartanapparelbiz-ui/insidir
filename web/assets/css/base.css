@@ -200,7 +200,7 @@ table{border-collapse:collapse;width:100%}
   padding:12px var(--gutter) 28px;display:grid;gap:4px;transform:translateY(-12px);opacity:0;visibility:hidden;
   transition:opacity .4s var(--ease-out),transform .5s var(--ease-out),visibility 0s .5s}
 .mobile-menu a{font-family:var(--serif);font-size:26px;padding:10px 0;border-bottom:1px solid var(--line);letter-spacing:-.02em}
-.mobile-menu .btn{margin-top:16px;font-family:var(--sans)}
+.mobile-menu .btn{margin-top:16px;font-family:var(--sans);font-size:15px;letter-spacing:-.005em;padding:0 22px;border-bottom:0}
 .site-nav.is-open+.mobile-menu{opacity:1;transform:none;visibility:visible;transition-delay:0s}
 
 /* ---------- App header (signed-in product) ---------- */
@@ -232,11 +232,25 @@ table{border-collapse:collapse;width:100%}
 .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:var(--cream-3)}
 .avatar--sm{width:28px;height:28px}
 .avatar--xs{width:24px;height:24px}
-@media (max-width:1100px){.app-search{flex-basis:220px}}
+/* Between tablet and small desktop the search collapses to an icon and expands while focused,
+   leaving room for all seven product links. */
+@media (max-width:1240px){
+  .app-header__inner{gap:20px}
+  .app-nav{gap:18px;font-size:13.5px}
+  .app-search{flex:0 0 40px;min-width:40px;transition:flex-basis .45s var(--ease-out)}
+  .app-search input{padding:0 0 0 38px;border-color:transparent;background:transparent;cursor:pointer}
+  .app-search input::placeholder{color:transparent}
+  .app-search:hover input{background:var(--cream-2)}
+  .app-search:focus-within{flex-basis:240px}
+  .app-search:focus-within input{border-color:var(--ink);background:#fff;cursor:text}
+  .app-search:focus-within input::placeholder{color:#9b9890}
+}
 @media (max-width:860px){
   .app-header__inner{gap:12px}
   .app-nav{display:none}
-  .app-search{flex:1 1 auto;min-width:0}
+  .app-search,.app-search:focus-within{flex:1 1 auto;min-width:0}
+  .app-search input{padding:0 12px 0 36px;border-color:var(--line-2);background:#fff;cursor:text}
+  .app-search input::placeholder{color:#9b9890}
 }
 
 /* ---------- Footer ---------- */
@@ -274,7 +288,9 @@ table{border-collapse:collapse;width:100%}
 .js [data-reveal="mask"]{opacity:1;clip-path:inset(100% 0 0 0)}
 .js [data-reveal="mask-x"]{opacity:1;clip-path:inset(0 100% 0 0)}
 .js [data-reveal="card"]{transform:translate3d(0,56px,0) scale(.98)}
-.js [data-reveal].is-in{opacity:1;transform:none;filter:none;clip-path:inset(0 0 0 0)}
+.js [data-reveal].is-in{opacity:1;transform:none;filter:none}
+/* mask reveals end slightly outside the box so shadows and focus rings are not clipped */
+.js [data-reveal="mask"].is-in,.js [data-reveal="mask-x"].is-in{clip-path:inset(-40px -40px -40px -40px)}
 /* image inside a revealed frame settles from a gentle zoom */
 .js [data-reveal] .media img,.js [data-reveal].media img{transform:scale(1.18)}
 .js [data-reveal].is-in .media img,.js [data-reveal].is-in.media img{transform:scale(1)}

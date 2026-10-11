@@ -24,9 +24,12 @@
   const vh = () => window.innerHeight || root.clientHeight;
 
   /* ---------- page ready curtain ---------- */
+  const pending = new Set();
   function ready() {
     if (root.classList.contains("is-ready")) return;
     root.classList.add("is-ready");
+    // Reveals that intersected before the page faded in start now, so their stagger is seen.
+    setTimeout(() => { pending.forEach(reveal); pending.clear(); }, 80);
   }
   const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   document.addEventListener("DOMContentLoaded", () => {
@@ -107,18 +110,36 @@
   }
 
   /* ---------- reveal observer ---------- */
+  function reveal(el) {
+    el.classList.add("is-in");
+    if (el.hasAttribute("data-count") && !el.dataset.counted) { el.dataset.counted = "1"; runCount(el); }
+  }
   const io = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const el = entry.target;
       if (entry.isIntersecting) {
-        el.classList.add("is-in");
-        if (el.hasAttribute("data-count") && !el.dataset.counted) { el.dataset.counted = "1"; runCount(el); }
+        if (root.classList.contains("is-ready")) reveal(el); else pending.add(el);
         if (!el.hasAttribute("data-reveal-repeat")) io.unobserve(el);
       } else if (el.hasAttribute("data-reveal-repeat")) {
         el.classList.remove("is-in");
       }
     });
   }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 }) : null;
+
+  /* Elements already on screen but inside the bottom margin of a page that
+     cannot scroll would never intersect; reveal them once the page settles. */
+  function revealStragglers() {
+    const h = vh();
+    document.querySelectorAll("[data-observed]:not(.is-in)").forEach(el => {
+      if (el.hasAttribute("data-reveal-repeat")) return;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      if (r.top < h && r.bottom > 0) {
+        if (io) io.unobserve(el);
+        if (root.classList.contains("is-ready")) reveal(el); else pending.add(el);
+      }
+    });
+  }
 
   function applyDelay(el, ms) {
     if (ms) el.style.setProperty("--delay", (ms / 1000).toFixed(3) + "s");
@@ -237,7 +258,7 @@
     while (node && node !== document.body && node !== root) {
       if (node.nodeType === 1) {
         const s = getComputedStyle(node);
-        if (/(auto|scroll)/.test(s.overflowY) && node.scrollHeight > node.clientHeight + 1) {
+        if (/(auto|scroll)/.test(s.overflowY) && node.scrollHeight > node.clientHeight + 24) {
           if ((dy > 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 1) || (dy < 0 && node.scrollTop > 0)) return node;
         }
       }
@@ -267,12 +288,17 @@
 
   /* ---------- anchor links glide to their section ---------- */
   function scrollToTarget(target) {
-    const navH = (nav() && nav().offsetHeight) || 0;
-    const y = target.getBoundingClientRect().top + window.scrollY - (target.dataset.scrollOffset ? parseFloat(target.dataset.scrollOffset) : navH * 0.6);
+    // Marketing nav auto-hides on scroll, so it only needs a partial offset; the sticky product header always covers the top.
+    const site = nav(), app = document.querySelector(".app-header");
+    const offset = target.dataset.scrollOffset ? parseFloat(target.dataset.scrollOffset)
+      : app ? app.offsetHeight + 24
+      : site ? site.offsetHeight * 0.6 : 0;
+    const y = target.getBoundingClientRect().top + window.scrollY - offset;
     if (smooth.enabled) smooth.to(y);
     else window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
   }
   document.addEventListener("click", e => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest('a[href^="#"]');
     if (!a) return;
     const id = a.getAttribute("href");
@@ -311,6 +337,8 @@
     magnetic(document);
     enableSmooth();
     frame();
+    setTimeout(revealStragglers, 1200);
+    window.addEventListener("load", () => setTimeout(revealStragglers, 300));
   }
   if (document.readyState === "complete") init();
   else {
