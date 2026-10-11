@@ -255,11 +255,13 @@
       return;
     }
 
-    // Hold the scroll container's height while rows travel so moving rows are never clipped.
+    // Hold the table's height while rows leave, then glide it to the new height
+    // (in the stacked layouts the panels below follow smoothly instead of jumping).
+    let startH = 0;
     if (tabpanel) {
-      tabpanel.style.minHeight = tabpanel.offsetHeight + "px";
-      clearTimeout(tabpanel._release);
-      tabpanel._release = setTimeout(() => { if (token === filterToken) tabpanel.style.minHeight = ""; }, 1100);
+      startH = tabpanel.getBoundingClientRect().height;
+      if (tabpanel._hAnim) { tabpanel._hAnim.cancel(); tabpanel._hAnim = null; }
+      tabpanel.style.height = startH + "px";
     }
     const visibleBefore = rows.filter(r => !r.hidden);
     const leaving = visibleBefore.filter(r => !want(r));
@@ -268,6 +270,16 @@
     const swap = () => {
       if (token !== filterToken) return;
       rows.forEach(r => { r.hidden = !want(r); });
+      if (tabpanel) {
+        tabpanel.style.height = "";
+        const endH = tabpanel.getBoundingClientRect().height;
+        if (Math.abs(endH - startH) > 1) {
+          const anim = tabpanel.animate([{ height: startH + "px" }, { height: endH + "px" }],
+            { duration: 560, easing: "cubic-bezier(.16,1,.3,1)" });
+          tabpanel._hAnim = anim;
+          anim.onfinish = () => { if (tabpanel._hAnim === anim) tabpanel._hAnim = null; };
+        }
+      }
       shown.forEach((r, i) => {
         const before = firstTop.get(r);
         if (before === undefined) {
@@ -338,7 +350,9 @@
     if (!target || !target.closest(".dash")) return;
     let y = 0;
     for (let el = target; el; el = el.offsetParent) y += el.offsetTop;
-    window.scrollTo(0, Math.max(0, y - 84));
+    const header = document.querySelector(".app-header");
+    const offset = parseFloat(target.dataset.scrollOffset) || (header ? header.offsetHeight + 12 : 84);
+    window.scrollTo(0, Math.max(0, y - offset));
   }
   window.addEventListener("load", () => requestAnimationFrame(alignHash), { once: true });
 

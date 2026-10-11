@@ -1,6 +1,6 @@
 /* Dashboard layout. Builds on base.css + app.css primitives; only page layout,
    sizing and the skyline hero live here. Measurements follow the reference
-   dashboard rendered at a 1530px-wide viewport. */
+   dashboard (its browser viewport is ~1513px wide; the shell caps at 1464px). */
 
 .dash-page{
   --dash-pt:41px;                 /* space between the app header and the greeting */
@@ -10,7 +10,7 @@
   background:linear-gradient(180deg,var(--paper) 0,var(--paper) 360px,#f6f5f0 70%,#f3f1eb 100%);
 }
 
-.dash{width:min(100% - 2*clamp(16px,2.2vw,34px),1464px);padding:var(--dash-pt) 0 48px}
+.dash{width:min(100% - 2*clamp(16px,1.82vw,34px),1464px);padding:var(--dash-pt) 0 48px}
 
 /* ---------------------------------------------------------------
    Hero: greeting, market clock, hazy skyline, index cards
@@ -54,8 +54,9 @@
 .dash-status{display:flex;flex-direction:column;align-items:flex-end;gap:10px;margin-top:-13px}
 .dash-status__row{display:flex;align-items:center;gap:19px}
 .dash-market{height:37px;padding:0 15px 0 13px;border-radius:8px;gap:9px;font-size:15px;font-weight:600;letter-spacing:-.005em;
-  background:#e7f3eb;transition:background .4s,color .4s}
-.dash-market .dot{width:11px;height:11px}
+  background:#eaf4ed;color:#0d7d43;transition:background .4s,color .4s}  /* 4.6:1 text contrast */
+.dash-market .dot{width:11px;height:11px;color:var(--green-chart)}
+.dash-market.is-closed .dot{color:#9a978f}
 .dash-market.is-closed{background:#efede7;color:#6c6b66}
 .dash-clock{display:inline-flex;gap:15px;font-size:14px;letter-spacing:-.012em;color:var(--dash-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .dash-status .sample-note{font-size:11.5px;color:#6f6e69}
@@ -79,6 +80,10 @@
 .index-card__spark{position:absolute;right:16px;top:47px;width:clamp(92px,8.4vw,128px);height:66px;pointer-events:none}
 .index-card__spark .sparkline{width:100%;height:100%}
 .index-card:hover .index-card__spark .area{opacity:1;filter:saturate(1.3)}
+/* sparklines draw with their card / table row entrance (not only when the svg itself is seen),
+   so a row revealed below the fold never waits on a stale load-time delay */
+.js .index-card.is-in [data-draw] path.line,.js .dash-panel.is-in [data-draw] path.line{stroke-dashoffset:0}
+.js .index-card.is-in [data-draw] .area,.js .dash-panel.is-in [data-draw] .area{opacity:1}
 
 /* ---------------------------------------------------------------
    Panels grid
@@ -151,7 +156,9 @@
 .dash .dash-table--insider th:last-child{padding-right:24px}
 .dash .dash-table--insider th:nth-child(2){padding-left:8px}
 .dash-table--insider td:first-child{font-size:13px}
-.dash-table--insider .w-time{width:16%}.dash-table--insider .w-person{width:33.6%}.dash-table--insider .w-co{width:12.5%}
+/* centred labels wider than their column overhang both sides evenly instead of spilling right */
+.th-fit{display:inline-block;margin:0 -14px}
+.dash-table--insider .w-time{width:16%}.dash-table--insider .w-person{width:34.3%}.dash-table--insider .w-co{width:11.8%}
 .dash-table--insider .w-tx{width:19.6%}.dash-table--insider .w-val{width:18.3%}
 
 /* Watchlist */
@@ -191,7 +198,7 @@
 .dash .dash-table--political td:first-child{padding-left:0}
 .dash-table--political .dash-avatar{width:36px;height:36px;font-size:13px}
 .dash-table--political .person{gap:11px}
-.dash-table--political .w-person{width:47.6%}.dash-table--political .w-tk{width:15.9%}.dash-table--political .w-tx{width:12.5%}.dash-table--political .w-date{width:24%}
+.dash-table--political .w-person{width:46.6%}.dash-table--political .w-tk{width:15.4%}.dash-table--political .w-tx{width:12.5%}.dash-table--political .w-date{width:25.5%}
 .dash .dash-table--political td:last-child{text-align:right;padding-right:0}
 /* horizontal-scroll affordance (classes toggled by dashboard.js) */
 .dash-body.is-scrollable{--fl:22px;--fr:40px;
@@ -205,7 +212,7 @@
    Responsive
    --------------------------------------------------------------- */
 /* Three columns get tight below ~1510px: tighten avatars, logos and type a touch */
-@media (min-width:1400px) and (max-width:1514px){
+@media (min-width:1400px) and (max-width:1509px){
   .dash-grid{grid-template-columns:minmax(0,37.5fr) minmax(0,37.6fr) minmax(0,24.9fr)}
   .dash-table--insider .w-time{width:15.2%}.dash-table--insider .w-person{width:36.5%}.dash-table--insider .w-co{width:15%}
   .dash-table--insider .w-tx{width:18.5%}.dash-table--insider .w-val{width:14.8%}
@@ -228,8 +235,11 @@
 /* Tablet: two columns, filings + political side by side underneath */
 @media (max-width:1399px){
   .dash-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .dash-side{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px}
+  .dash-side{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px;align-items:start}
   .dash-political{display:block}
+  .dash-political .panel__head{padding-top:15px}
+  .dash-political .dash-body{margin-top:12px}
+  .dash-table--political .w-person{width:40%}.dash-table--political .w-tk{width:18%}.dash-table--political .w-tx{width:16%}.dash-table--political .w-date{width:26%}
 }
 @media (max-width:1199px){
   .index-cards{grid-template-columns:repeat(2,minmax(0,1fr))}

@@ -207,7 +207,7 @@
       const open = last / (1 + P.change / 100);
       const values = bridge(T + "-1d", 196, open, last, 0.00072);
       const labels = [], pos = [];
-      for (let k = 0; k <= 13; k++) { const m = 570 + k * 30; labels.push(m % 60 === 0 || k === 0 ? hm(m) : ""); pos.push(k / 13); }
+      for (let k = 0; k <= 13; k++) { const m = 570 + k * 30; labels.push((m % 60 === 0 && k > 1) || k === 0 ? hm(m) : ""); pos.push(k / 13); }
       return { values, labels, pos, caption: "1 day, 9:30 to 16:00 ET", tip: i => `${hm(570 + i * 2)} ET` };
     },
     "1W": () => {
@@ -633,10 +633,25 @@
     $$(".co-chart__host svg, .co-stats", panel).forEach(el => el.classList.remove("is-in"));
   }
 
+  // app.js measures the range thumb on resize even while the Overview is hidden
+  // (giving it zero size), so put it back under the active range when shown.
+  function placeRangeThumb() {
+    const thumb = rangeGroup && rangeGroup.querySelector(".seg-thumb");
+    const cur = rangeGroup && (rangeGroup.querySelector(".is-active") || rangeGroup.querySelector('[aria-selected="true"]'));
+    if (!thumb || !cur || !cur.offsetWidth) return;
+    thumb.style.transition = "none";
+    thumb.style.width = cur.offsetWidth + "px";
+    thumb.style.height = cur.offsetHeight + "px";
+    thumb.style.transform = `translate(${cur.offsetLeft}px,${cur.offsetTop}px)`;
+    void thumb.offsetWidth;
+    thumb.style.transition = "";
+  }
+
   function enterPanel(panel, animate) {
     resetPanel(panel);
     panel.hidden = false;
     const isOverview = panel.id === "panel-overview";
+    if (isOverview) placeRangeThumb();
     const stats = panel.querySelector(".co-stats");
     if (stats) $$(":scope > div", stats).forEach((row, i) => row.style.setProperty("--delay", (0.08 + i * 0.06).toFixed(2) + "s"));
     if (isOverview && (chartDirty || (host && Math.abs(host.clientWidth - lastWidth) > 2))) drawChart(currentRange, { delay: 0 });
@@ -727,7 +742,7 @@
      Unknown ticker
      ------------------------------------------------------------------ */
   function renderMissing() {
-    const shown = rawTicker.trim().toUpperCase().slice(0, 12) || "this ticker";
+    const shown = rawTicker.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, "").slice(0, 12) || "this ticker";
     document.title = `${shown} not found — insidir.`;
     $$(".co-head, .co-tabs-wrap, .co-panel", main).forEach(el => { el.hidden = true; });
     const box = $("[data-missing]", main);

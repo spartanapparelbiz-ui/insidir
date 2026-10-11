@@ -312,19 +312,24 @@
   setActive(spyLinks[0], true);
   runSpy();
   requestAnimationFrame(() => placeIndicator(active, true));
-  window.addEventListener("load", () => {
+  // Sections named in the URL (on load, or when the hash is edited/followed later)
+  // open in the pane. The browser's own fragment scroll also moves the window; on
+  // desktop the pane does the scrolling, so the window is put back afterwards.
+  function openFromHash(instant) {
     const id = decodeURIComponent(location.hash.slice(1));
     const target = id && document.getElementById(id);
     const link = target && allLinks.find(a => targetOf(a) === target);
-    if (link) {
-      // The browser's own fragment scroll moves the window; on desktop the
-      // pane does the scrolling, so put the window back once that has run.
-      goTo(target, link, true);
-      if (!isMobile()) {
-        const reset = () => { window.scrollTo(0, 0); goTo(target, link, true); };
-        requestAnimationFrame(() => setTimeout(reset, 30));
-      }
-    } else {
+    if (!link) return false;
+    goTo(target, link, instant);
+    if (!isMobile()) {
+      const reset = () => { window.scrollTo(0, 0); if (instant) goTo(target, link, true); };
+      requestAnimationFrame(() => setTimeout(reset, 30));
+    }
+    return true;
+  }
+  window.addEventListener("hashchange", () => openFromHash(false));
+  window.addEventListener("load", () => {
+    if (!openFromHash(true)) {
       placeIndicator(active, true);
       runSpy();
     }

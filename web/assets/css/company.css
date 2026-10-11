@@ -48,14 +48,16 @@
 
 /* ---------- Tabs ---------- */
 .co-tabs-wrap{margin-top:calc(55*var(--u))}
-.co-tabs{gap:calc(30*var(--u))}
+.co-tabs{gap:calc(30*var(--u));border-bottom:0;padding-bottom:1px;
+  /* the rule is painted inside the scroll box so the indicator can sit on it instead of being clipped */
+  background:linear-gradient(var(--line),var(--line)) 0 100%/100% 1px no-repeat}
 .co-tabs [role=tab]{display:inline-flex;flex-direction:column;align-items:center;padding:calc(12*var(--u)) calc(14.5*var(--u)) calc(19*var(--u));
   font-size:calc(22.5*var(--u));line-height:1.25;color:#55565a;letter-spacing:-.006em;border-radius:6px 6px 0 0;flex:none}
 .co-tabs [role=tab]::after{content:attr(data-text);height:0;visibility:hidden;overflow:hidden;font-weight:600;pointer-events:none}
 .co-tabs [role=tab]:hover{color:var(--ink)}
 .co-tabs [role=tab][aria-selected="true"]{color:var(--ink);font-weight:600}
 .co-tabs [role=tab]:focus-visible{outline-offset:-4px}
-.co-tabs .tabs__indicator{height:3px;width:0;border-radius:2px 2px 0 0;background:var(--ink)}
+.co-tabs .tabs__indicator{bottom:0;height:4px;width:0;border-radius:2px;background:var(--ink)}
 
 /* ---------- Panels (tab content) ---------- */
 .co-panel{margin-top:calc(35*var(--u))}
@@ -148,11 +150,11 @@
 /* SEC filings list */
 .co-filings{border-top:1px solid var(--co-line)}
 .co-filings>li+li{border-top:1px solid var(--co-line)}
-.co-filing{display:grid;grid-template-columns:calc(100*var(--u)) minmax(0,1fr) calc(190*var(--u)) calc(160*var(--u));align-items:center;gap:calc(24*var(--u));
+.co-filing{display:grid;grid-template-columns:max(calc(100*var(--u)),84px) minmax(0,1fr) calc(190*var(--u)) calc(160*var(--u));align-items:center;gap:calc(24*var(--u));
   padding:calc(18*var(--u)) calc(30*var(--u));color:inherit;position:relative;
   transition:background .3s}
 a.co-filing:hover{background:#faf8f3}
-.co-form{display:inline-flex;align-items:center;justify-content:center;min-width:calc(78*var(--u));height:calc(34*var(--u));padding:0 10px;border-radius:6px;
+.co-form{display:inline-flex;align-items:center;justify-content:center;min-width:max(calc(88*var(--u)),76px);height:calc(34*var(--u));padding:0 10px;border-radius:6px;
   background:var(--badge);color:#f3eee2;font-size:max(12.3px,calc(15*var(--u)));font-weight:600;letter-spacing:.02em;justify-self:start;white-space:nowrap}
 .co-form--light{background:var(--cream-2);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
 .co-filing__title{display:block;font-size:max(15.6px,calc(19*var(--u)));font-weight:500;color:var(--ink);line-height:1.35}
@@ -232,7 +234,7 @@ a.co-filing:hover .co-filing__go svg.ext{transform:translate(2px,-2px)}
   .co-stats{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;column-gap:40px}
   .co-stats>div{padding:14px 0}
   .co-stats>div:nth-last-child(2){border-bottom:1px solid var(--co-line)}
-  .co-filing{grid-template-columns:calc(100*var(--u)) minmax(0,1fr) auto}
+  .co-filing{grid-template-columns:max(calc(100*var(--u)),84px) minmax(0,1fr) auto}
   .co-filing__go{grid-column:2/-1;justify-self:start;margin-top:-6px}
 }
 @media (max-width:860px){
@@ -246,7 +248,6 @@ a.co-filing:hover .co-filing__go svg.ext{transform:translate(2px,-2px)}
   .co-logo{width:64px;height:64px;margin-left:0}
   .co-title{font-size:32px}
   .co-meta{font-size:15.5px;margin-top:6px}
-  .co-meta__dot{margin:0 9px}
   .co-price{gap:12px}
   .co-price__value{font-size:28px}
   .co-price__chg{font-size:16px}
@@ -264,6 +265,7 @@ a.co-filing:hover .co-filing__go svg.ext{transform:translate(2px,-2px)}
   .co-chart__host .area-chart .axis{font-size:12px}
   .co-stats{grid-template-columns:minmax(0,1fr)}
   .co-stats>div{font-size:16px;padding:13px 0}
+  .co-stats dd.is-long{font-size:1em;letter-spacing:0}
   .co-stats>div:nth-last-child(2){border-bottom:1px solid var(--co-line)}
   .co-card__head{padding:18px 18px 14px}
   .co-card__title,.co-news__note h2{font-size:24px}
@@ -279,12 +281,17 @@ a.co-filing:hover .co-filing__go svg.ext{transform:translate(2px,-2px)}
   .co-filing__go{grid-column:2;margin-top:0}
   .co-filing__title{font-size:15.5px}
   .co-filing__desc{font-size:13.5px}
-  .co-form{font-size:12.5px;height:28px;min-width:56px}
+  .co-form{font-size:12.5px;height:28px;min-width:0;width:100%;padding:0 6px}
   .co-news{grid-template-columns:minmax(0,1fr);gap:14px}
   .co-story{min-height:0;padding:18px}
   .co-story__title{font-size:20px}
   .co-card__foot{padding:14px 18px}
   .co-pct{min-width:180px}
+  .co-card .table-scroll{background:
+    linear-gradient(90deg,#fff 30%,rgba(255,255,255,0)) left/36px 100% no-repeat local,
+    linear-gradient(270deg,#fff 30%,rgba(255,255,255,0)) right/36px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(20,18,12,.14),transparent) left/12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(20,18,12,.14),transparent) right/12px 100% no-repeat scroll}
 }
 @media (max-width:420px){
   .co-quote{flex-wrap:wrap;gap:14px}
