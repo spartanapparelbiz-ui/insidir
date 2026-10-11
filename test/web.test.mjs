@@ -1,0 +1,67 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { serveStatic } from "../src/web.mjs";
+
+async function withServer(fn) {
+  const server = createServer((req, res) => {
+    serveStatic(req, res).then(done => { if (!done) { res.writeHead(404); res.end("none"); } });
+  });
+  await new Promise(r => server.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try { await fn(base); } finally { server.close(); }
+}
+const raw = (base, path) => new Promise((resolve, reject) => {
+  // fetch() normalises "..", so send the raw request line to exercise traversal handling
+  import("node:http").then(({ request }) => {
+    const u = new URL(base);
+    const req = request({ host: u.hostname, port: u.port, path, method: "GET" }, res => {
+      let body = ""; res.on("data", c => body += c); res.on("end", () => resolve({ status: res.statusCode, body, headers: res.headers }));
+    });
+    req.on("error", reject); req.end();
+  });
+});
+
+test("website root serves the landing page with security headers", async () => {
+  await withServer(async base => {
+    const res = await fetch(base + "/");
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get("content-type"), /text\/html/);
+    assert.match(res.headers.get("content-security-policy"), /default-src 'self'/);
+    assert.equal(res.headers.get("x-content-type-options"), "nosniff");
+    assert.match(await res.text(), /insidir\./);
+  });
+});
+
+test("assets get correct types and long-lived caching for fonts and images", async () => {
+  await withServer(async base => {
+    const css = await fetch(base + "/assets/css/base.css");
+    assert.equal(css.status, 200);
+    assert.match(css.headers.get("content-type"), /text\/css/);
+    const font = await fetch(base + "/assets/fonts/Inter-normal-latin.woff2");
+    assert.equal(font.headers.get("content-type"), "font/woff2");
+    assert.match(font.headers.get("cache-control"), /max-age=604800/);
+  });
+});
+
+test("extensionless page paths resolve and unknown pages fall back to 404.html", async () => {
+  await withServer(async base => {
+    assert.equal((await fetch(base + "/pricing")).status, 200);
+    const missing = await fetch(base + "/no-such-page");
+    assert.equal(missing.status, 404);
+    assert.match(missing.headers.get("content-type"), /text\/html/);
+    const missingAsset = await fetch(base + "/assets/nope.js");
+    assert.equal(missingAsset.status, 404);
+    assert.equal(await missingAsset.text(), "none");
+  });
+});
+
+test("path traversal outside the web root is refused", async () => {
+  await withServer(async base => {
+    for (const p of ["/../package.json", "/%2e%2e/package.json", "/..%2fpackage.json", "/assets/../../src/config.mjs", "/%00index.html"]) {
+      const r = await raw(base, p);
+      assert.notEqual(r.status, 200, p);
+      assert.doesNotMatch(r.body, /insidir-engine|DATABASE_URL/, p);
+    }
+  });
+});

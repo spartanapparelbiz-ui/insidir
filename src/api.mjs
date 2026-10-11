@@ -5,6 +5,7 @@ import { query,health } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
 import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin } from "./auth.mjs";
+import { serveStatic } from "./web.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
 function isLimited(key,limit=15,windowMs=15*60*1000){
@@ -47,7 +48,8 @@ async function route(req,res){
     return json(res,204,{});
   }
   if(!["GET","HEAD","POST","DELETE"].includes(m))throw failure(405,"Method not allowed");
-  if(p==="/" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"backend only",documentation:"/v1/sources",advice:false});
+  if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
   if(p==="/healthz" && m==="GET"){const h=await health();return json(res,h.ok?200:503,{...h,secUserAgentConfigured:secReady()})}
   if(p==="/v1/sources" && m==="GET")return json(res,200,{sources:sourceRegistry,disclaimer:"Sources marked disabled are not ingested or republished."});
   if(p==="/v1/status" && m==="GET"){

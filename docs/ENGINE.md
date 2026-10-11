@@ -1,6 +1,6 @@
 # Insidir financial intelligence engine
 
-This repository contains **backend code only**. It does not change Insidir's website or design.
+This document covers the backend engine. The website in `web/` is described in [WEBSITE.md](WEBSITE.md); the engine serves it on every non-API path.
 
 ## Implemented
 - SEC current-filings Atom feed ingestion with declared User-Agent, rate control, bounded fetches, retry/backoff, and safe SEC URL allowlisting.
@@ -22,6 +22,7 @@ This repository contains **backend code only**. It does not change Insidir's web
 Run npm run ingest for a manual ingestion. This fetches up to 35 current filings by default; it is not a complete history backfill. Already parsed accessions are skipped.
 
 ## API (JSON)
+- GET /v1 – service information
 - GET /healthz – database and SEC configuration check
 - GET /v1/status – latest ingestion and filing count
 - GET /v1/sources – source availability and permissions
@@ -48,7 +49,7 @@ Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use
 - Paid investment advice, personalized signals and compensation for securities analysis can implicate securities regulations; get relevant review before enabling.
 
 ## Deployment
-Deploy this repository as **insidir-engine**, a separate Railway service beside the existing insidir-web function, connected to Railway PostgreSQL. Set DATABASE_URL to a Railway PostgreSQL reference variable and provide the SEC operator identity. The existing website still fetches its own /api/filings; **integrating it with this engine is a separate task** requiring backend URL or reverse proxy configuration but no visual redesign.
+Deploy this repository as **insidir-engine** on Railway, connected to Railway PostgreSQL. Set DATABASE_URL to a Railway PostgreSQL reference variable and provide the SEC operator identity. The same service serves the website from `web/` (the API lives under `/v1`), so sign-in cookies and API calls stay same-origin. The pages call the API with relative `/v1/...` paths, so if `web/` is hosted elsewhere, put it behind a reverse proxy that forwards `/v1` to this engine on the same domain.
 
 ## Honest limitations
 - Tests use synthetic fixtures, not claims about current transactions.
