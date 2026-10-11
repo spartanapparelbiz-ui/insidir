@@ -57,13 +57,13 @@
       facts: [["Form", "Form 4"], ["Filed by", "Company director"], ["Transaction", "Purchase"], ["Shares", "4,500"]] },
     { time: "Yesterday", dot: "red", type: "price", ticker: "TSLA", text: "Down 6% in the last hour",
       facts: [["Move", "−6%"], ["Window", "Last hour"], ["Threshold", "Greater than 5%"]] },
-    { time: "Yesterday", dot: "green", type: "political", ticker: "AAPL", chamber: "house", text: "Periodic transaction report: AAPL purchase ($15K–$50K)",
+    { time: "Yesterday", dot: "green", type: "political", ticker: "AAPL", chamber: "house", text: "Periodic transaction report: AAPL purchase ($15K\u2013\u2060$50K)",
       facts: [["Disclosure", "Periodic transaction report"], ["Filer", "House member"], ["Asset", "AAPL stock"], ["Amount", "$15,001–$50,000"]] },
     { time: "2d ago", dot: "red", type: "sell", ticker: "ABNB", form: "4", text: "Officer sale reported on Form 4 (18,250 shares)",
       facts: [["Form", "Form 4"], ["Filed by", "Company officer"], ["Transaction", "Sale"], ["Shares", "18,250"]] },
     { time: "2d ago", dot: "green", type: "sec", ticker: "MSFT", form: "8-K", text: "8-K: Results of operations filed",
       facts: [["Form", "8-K · current report"], ["Item", "2.02 Results of operations"], ["Filer", "Microsoft Corporation"]] },
-    { time: "2d ago", dot: "red", type: "political", ticker: "TSLA", chamber: "senate", text: "Periodic transaction report: TSLA sale ($1K–$15K)",
+    { time: "2d ago", dot: "red", type: "political", ticker: "TSLA", chamber: "senate", text: "Periodic transaction report: TSLA sale ($1K\u2013\u2060$15K)",
       facts: [["Disclosure", "Periodic transaction report"], ["Filer", "Senator"], ["Asset", "TSLA stock"], ["Amount", "$1,001–$15,000"]] }
   ];
 
@@ -128,13 +128,41 @@
   const status = document.getElementById("alerts-status");
 
   /* ---------- rows reveal as they scroll into view ---------- */
-  let firstBatch = true;
-  const rowIO = !reduce && "IntersectionObserver" in window ? new IntersectionObserver(entries => {
-    const incoming = entries.filter(e => e.isIntersecting && !e.target.classList.contains("is-in") && !e.target.hidden)
-      .map(e => e.target).sort((a, b) => a.dataset.index - b.dataset.index);
-    const base = firstBatch ? 0.36 : 0.02;
-    incoming.forEach((g, k) => { g.style.setProperty("--delay", (base + k * 0.065).toFixed(3) + "s"); g.classList.add("is-in"); });
+  // Like motion.js reveals, rows that intersect before the page curtain lifts wait for it,
+  // so the first stagger is actually seen.
+  const root = document.documentElement;
+  let firstBatch = true, waiting = false;
+  const queued = new Set();
+  function whenReady(fn) {
+    if (root.classList.contains("is-ready")) { fn(); return; }
+    if (waiting) return;
+    waiting = true;
+    const mo = new MutationObserver(() => {
+      if (!root.classList.contains("is-ready")) return;
+      mo.disconnect();
+      setTimeout(() => { waiting = false; fn(); }, 80);
+    });
+    mo.observe(root, { attributes: true, attributeFilter: ["class"] });
+  }
+  // One stagger clock for every batch: a row that intersects a moment later (e.g. while the panel
+  // is still rising) queues behind the rows already scheduled instead of jumping ahead of them.
+  let lastAt = 0;
+  function flushRows() {
+    const incoming = [...queued].filter(g => !g.hidden && !g.classList.contains("is-in"))
+      .sort((a, b) => a.dataset.index - b.dataset.index);
+    queued.clear();
+    const now = performance.now();
+    incoming.forEach(g => {
+      const at = Math.max(now + (firstBatch ? 300 : 20), lastAt + 65);
+      lastAt = at;
+      g.style.setProperty("--delay", ((at - now) / 1000).toFixed(3) + "s");
+      g.classList.add("is-in");
+    });
     if (incoming.length) firstBatch = false;
+  }
+  const rowIO = !reduce && "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting && !e.target.classList.contains("is-in") && !e.target.hidden) queued.add(e.target); });
+    if (queued.size) whenReady(flushRows);
   }, { rootMargin: "0px 0px -4% 0px", threshold: 0 }) : null;
   groups.forEach(g => rowIO ? rowIO.observe(g) : g.classList.add("is-in"));
 

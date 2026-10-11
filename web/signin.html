@@ -40,13 +40,12 @@
               <div class="field__msg"><p class="field__error" id="signin-email-error"></p></div>
             </div>
 
-            <div class="field auth-field" data-reveal="up">
-              <div class="field__row">
-                <label class="label" for="signin-password">Password</label>
-                <button class="auth-link auth-link--muted" type="button" data-auth-toast="Password reset isn't available yet.">Forgot password?</button>
-              </div>
+            <div class="field auth-field auth-field--forgot" data-reveal="up">
+              <label class="label" for="signin-password">Password</label>
               <input class="input" id="signin-password" name="password" type="password" autocomplete="current-password"
                      maxlength="128" required aria-describedby="signin-password-error">
+              <!-- after the input in DOM (tab order: email, password, then this); shown on the label row -->
+              <button class="auth-link auth-link--muted auth-forgot" type="button" data-auth-toast="Password reset isn't available yet.">Forgot password?</button>
               <div class="field__msg"><p class="field__error" id="signin-password-error"></p></div>
             </div>
 

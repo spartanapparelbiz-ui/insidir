@@ -139,7 +139,7 @@
     }
 
     links.forEach((a, i) => a.addEventListener("click", e => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0) return;
       e.preventDefault(); // motion.js leaves default-prevented anchor clicks alone
       if (mobileQuery.matches && toc.open) toc.open = false;
       locked = true;

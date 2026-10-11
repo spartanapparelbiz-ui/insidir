@@ -326,6 +326,9 @@
     e.preventDefault();
     scrollToTarget(target);
     history.replaceState(null, "", id);
+    // Keep keyboard and screen-reader position in step with the scroll (skip links, contents lists).
+    if (!target.matches("a,button,input,select,textarea,[tabindex]")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
   });
 
   /* ---------- magnetic hover ---------- */

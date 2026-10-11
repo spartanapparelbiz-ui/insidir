@@ -89,6 +89,8 @@ ul,ol{padding:0;list-style:none}
 table{border-collapse:collapse;width:100%}
 ::selection{background:#1214171a}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:4px}
+/* sections focused programmatically after an in-page jump don't need a ring */
+[tabindex="-1"]:focus:not(:focus-visible),main:focus,section[tabindex="-1"]:focus{outline:none}
 .on-dark :focus-visible{outline-color:var(--on-dark)}
 
 .skip-link{position:absolute;left:12px;top:-60px;z-index:1000;background:var(--ink);color:var(--on-dark);

@@ -20,7 +20,7 @@
 
 .pr-strip{position:relative;min-width:0;background:#ece6da}
 .pr-strip__frame{position:sticky;top:0;height:100vh;max-height:100%;overflow:hidden;background:#3a2e22;isolation:isolate}
-.pr-strip__layer{position:absolute;inset:-6% 0;will-change:transform;
+.pr-strip__layer{position:absolute;inset:-6% 0;
   transform:translate3d(0,clamp(-5%,calc((var(--p,.5) - .5) * -30%),5%),0)}
 .pr-strip__layer img{width:100%;height:100%;object-fit:cover;transform-origin:50% 40%}
 .pr-strip--left .pr-strip__layer img{object-position:74% 50%}
@@ -43,17 +43,21 @@
 .pr-strip--right .pr-strip__frame::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(20,14,8,0) 55%,rgba(20,14,8,.28))}
 
-/* load: strips are unveiled bottom-up while the photo settles from a zoom */
-.js .pr-strip__frame{clip-path:inset(100% 0 0 0)}
+/* load: strips are unveiled bottom-up (a curtain that collapses upward; transform only, since a
+   clip-path animation on the sticky frame can leave Chromium not painting the photo afterwards)
+   while the photo settles from a zoom */
+.pr-strip__frame::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:#ece6da;
+  transform-origin:50% 0;transform:scaleY(0)}
+.js .pr-strip__frame::before{transform:none}
 .js .pr-strip__layer img{transform:scale(1.24)}
-.js.is-ready .pr-strip__frame{animation:prStripWipe 1.5s var(--ease-in-out) .05s both}
-.js.is-ready .pr-strip--right .pr-strip__frame{animation-delay:.2s}
+.js.is-ready .pr-strip__frame::before{transform:scaleY(0);animation:prStripWipe 1.5s var(--ease-in-out) .05s backwards}
+.js.is-ready .pr-strip--right .pr-strip__frame::before{animation-delay:.2s}
 .js.is-ready .pr-strip__layer img{animation:prStripZoom 2.8s var(--ease-out) .05s both}
 /* the sun ignites once the strip has been unveiled, then breathes */
 .js .pr-strip__flare{opacity:0}
 .js.is-ready .pr-strip__flare{animation:prFlareIn 1.8s var(--ease-out) .85s both,prFlare 6s ease-in-out 2.65s infinite alternate}
 .js.is-ready .pr-strip--right .pr-strip__layer img{animation-delay:.2s}
-@keyframes prStripWipe{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes prStripWipe{from{transform:none}to{transform:scaleY(0)}}
 @keyframes prStripZoom{from{transform:scale(1.24)}to{transform:scale(1)}}
 
 /* ---------- Centre panel ---------- */
@@ -208,7 +212,7 @@
 }
 @media (max-width:420px){
   .pricing-page .site-nav__actions .btn--sm{padding:0 12px}
-  .pr-title{font-size:32px}
+  .pr-title{font-size:30px}
   .pr-table table{min-width:0;font-size:13.5px}
   .pr-table th,.pr-table td{padding:10px 8px}
   .pr-table th:first-child,.pr-table td:first-child{padding-left:14px}
@@ -218,7 +222,7 @@
 }
 
 @media (prefers-reduced-motion:reduce){
-  .js .pr-strip__frame{clip-path:none;animation:none}
+  .pr-strip__frame::before{display:none}
   .js .pr-strip__layer img{transform:none;animation:none}
   .pr-strip__layer{transform:none}
   .pr-strip__flare,.pr-strip__flare::before,.js.is-ready .pr-strip__flare{animation:none;opacity:1;transform:none}

@@ -14,7 +14,7 @@
 .auth-body{background:var(--auth-bg)}
 
 .auth{
-  --k:clamp(13px,min(1.046vw,1.68vh),18px);      /* 16px at 1530 x 950 */
+  --k:clamp(12px,min(1.046vw,1.68vh),18px);      /* 16px at 1530 x 950 */
   --form-w:max(calc(var(--k)*29.4),29.4vw);      /* 470px at 1530 */
   --form-max:560px;
   --logo-out:calc(var(--form-w)*.06);            /* logo sits just left of the form edge */
@@ -22,9 +22,9 @@
   --sub:max(16px,calc(var(--k)*1.36));
   --text:max(15px,calc(var(--k)*1.12));
   --label:max(14.5px,calc(var(--k)*1.1));
-  --input-h:max(46px,calc(var(--k)*3.6));
-  --btn-h:max(48px,calc(var(--k)*3.8));
-  --alt-h:max(46px,calc(var(--k)*3.6));
+  --input-h:max(44px,calc(var(--k)*3.6));
+  --btn-h:max(46px,calc(var(--k)*3.8));
+  --alt-h:max(44px,calc(var(--k)*3.6));
   --gap-sub:calc(var(--k)*.6);
   --gap-head:calc(var(--k)*2.6);
   --gap-label:calc(var(--k)*.65);
@@ -33,8 +33,8 @@
   --gap-or:calc(var(--k)*2.5);
   --gap-alt:calc(var(--k)*1.8);
   --gap-switch:calc(var(--k)*2.5);
-  --block:calc(var(--k)*41.6);                   /* height of the heading-to-footer block */
-  --top-row:calc(var(--k)*5.3);                    /* logo row */
+  --block:calc(var(--k)*43.2);                   /* measured height of the heading-to-footer block */
+  --top-row:calc(var(--k)*5);                    /* logo row */
   position:relative;
   display:grid;
   grid-template-columns:minmax(0,49fr) minmax(0,51fr);
@@ -48,23 +48,24 @@
   --form-w:max(calc(var(--k)*34.5),35vw);        /* 552px at 1530 */
   --form-max:640px;
   --logo-out:calc(var(--form-w)*.075);
-  --btn-h:max(48px,calc(var(--k)*3.6));
+  --btn-h:max(46px,calc(var(--k)*3.6));
   --gap-head:calc(var(--k)*2.2);
   --gap-field:calc(var(--k)*1.45);
   --gap-btn:calc(var(--k)*1.8);
   --gap-or:calc(var(--k)*1.4);
   --gap-alt:calc(var(--k)*1.2);
   --gap-switch:calc(var(--k)*1.3);
-  --block:calc(var(--k)*44.7);
+  --block:calc(var(--k)*46.8);
   grid-template-columns:minmax(0,60.8fr) minmax(0,39.2fr);
 }
+.auth--signup:has(.auth-plan:not([hidden])){--block:calc(var(--k)*49.6)} /* ?plan=pro badge */
 
 /* ---------- Form panel ---------- */
 .auth-panel{position:relative;z-index:1;display:flex;min-width:0;background:var(--auth-bg)}
 .auth-panel__inner{
   --fw:min(var(--form-w),var(--form-max),100% - var(--k)*4);
   display:flex;flex-direction:column;width:100%;
-  padding:calc(var(--k)*1.9) 0 calc(var(--k)*1.6);
+  padding:calc(var(--k)*1.9) 0 calc(var(--k)*1.4);
 }
 .auth-brand{align-self:flex-start;margin-left:max(var(--k)*1.75,(100% - var(--fw))/2 - var(--logo-out))}
 .auth-logo{font-size:calc(var(--k)*2.6);font-weight:640;letter-spacing:-.03em;font-variation-settings:"opsz" 30;color:var(--ink);padding:4px 0;transition:opacity .3s}
@@ -74,9 +75,9 @@
   /* anchored from the top (not centred) so inline errors only grow downwards;
      the top margin balances the estimated block in the space below the logo */
   width:var(--fw);
-  margin:max(var(--k)*1.6,(100vh - var(--top-row) - var(--block))*.47) auto 0;
-  margin-top:max(var(--k)*1.6,(100svh - var(--top-row) - var(--block))*.47);
-  padding-bottom:calc(var(--k)*1.2);
+  margin:max(var(--k)*1.4,(100vh - var(--top-row) - var(--block))*.54) auto 0;
+  margin-top:max(var(--k)*1.4,(100svh - var(--top-row) - var(--block))*.54);
+  padding-bottom:calc(var(--k)*.6);
 }
 
 .auth-plan{margin-bottom:calc(var(--k)*1.1)}
@@ -97,6 +98,9 @@
   transition:color .3s}
 .field__row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:var(--gap-label)}
 .field__row .label{margin-bottom:0}
+.auth-field--forgot{position:relative}
+.auth-field .auth-forgot{position:absolute;top:0;right:0;height:calc(var(--label)*1.3);display:flex;align-items:center}
+.auth-field .auth-forgot::after{bottom:calc(50% - .78em)}
 
 .auth .input{
   height:var(--input-h);padding:0 calc(var(--k)*1.05);border:1px solid #e4e1da;border-radius:7px;background:#fcfbf8;

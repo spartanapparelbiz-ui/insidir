@@ -5,12 +5,12 @@
 /* Sizes follow the reference tile scaled by --t (one reference pixel in CSS px). The tile's logo
    is drawn at 24.3px against the shell's 31px logo, so --t:1.26px keeps the page in the same
    proportion to the header as in the reference; column positions follow the full-width layout. */
-.alerts-main{--t:1.26px;--row-line:#ece9e2;padding-top:calc(var(--t) * 12)}
+.alerts-main{--t:1.26px;--row-line:#ece9e2;padding-top:calc(var(--t) * 17)}
 
 /* ---------- Heading ---------- */
 .alerts-head{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title action" "sub sub";column-gap:24px;align-items:start}
 .alerts-title{grid-area:title;font-size:calc(var(--t) * 41);font-weight:530;line-height:1.04;letter-spacing:-.03em;color:#0d0f12}
-.alerts-sub{grid-area:sub;margin-top:calc(var(--t) * 5.5);font-size:calc(var(--t) * 14.8);line-height:1.5;color:var(--muted);letter-spacing:-.004em}
+.alerts-sub{grid-area:sub;margin-top:calc(var(--t) * 1.5);font-size:calc(var(--t) * 14.8);line-height:1.5;color:var(--muted);letter-spacing:-.004em}
 .alerts-manage{grid-area:action;align-self:start;margin-top:calc(var(--t) * 3.5);--bh:calc(var(--t) * 39);padding:0 calc(var(--t) * 21.5);
   font-size:calc(var(--t) * 12.4);border-radius:6px;background:#0f1215;box-shadow:0 1px 2px rgba(0,0,0,.2),0 0 0 1px rgba(255,255,255,.06) inset}
 .alerts-manage:hover{background:#23272c}
@@ -19,7 +19,7 @@
   background-color .35s var(--ease-out),box-shadow .35s var(--ease-out)}
 
 /* ---------- Filter pills ---------- */
-.alert-filters-scroll{margin-top:calc(var(--t) * 13.5);position:relative}
+.alert-filters-scroll{margin-top:calc(var(--t) * 20.5);position:relative}
 .alert-filters{position:relative;display:flex;gap:5px;isolation:isolate}
 /* widths share the row in the reference's proportions (flex-grow --g, no padding in the basis) */
 .alert-filter,.alert-filters__fill{flex:var(--g,100) 1 0;height:calc(var(--t) * 42);border-radius:8px;border:1px solid #ebe8e1;background:#f2f1ed}
@@ -70,7 +70,7 @@
 .alert-dot--red{color:#ee2b26}
 .alert-dot.dot--live::after{inset:-5px;border-width:1.5px;animation-duration:2.6s}
 
-.alert-type{display:flex;align-items:center;gap:clamp(12px,2.4vw - 13px,24px);font-size:calc(var(--t) * 12.7);font-weight:450;white-space:nowrap;letter-spacing:-.006em}
+.alert-type{display:flex;align-items:center;gap:clamp(12px,3vw - 16px,30px);font-size:calc(var(--t) * 12.7);font-weight:450;white-space:nowrap;letter-spacing:-.006em}
 .alert-icon{width:calc(var(--t) * 17.5);height:calc(var(--t) * 17.5);flex:none;border-radius:50%;display:inline-flex;transition:transform .5s var(--ease-out)}
 .alert-icon svg{width:100%;height:100%}
 .alert-row:hover .alert-icon{transform:scale(1.08)}
@@ -190,17 +190,22 @@ html.drawer-lock{overflow:hidden}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1099px){
-  .alerts-table{table-layout:auto}
-  .alerts-table .c-time{width:118px}
-  .alerts-table .c-type{width:182px}
+  .alerts-table .c-time{width:17%}
+  .alerts-table .c-type{width:21%}
   .alerts-table .c-desc{width:auto}
-  .alerts-table .c-co{width:104px}
-  .alert-toggle{white-space:normal;padding:12px 0;margin:-12px 0}
-  .alerts-table .alert-row td{height:56px}
-  .alert-chev{right:14px}
+  .alerts-table .c-co{width:12.5%}
+  .alert-toggle{white-space:normal;padding:12px 0;margin:-12px 0;line-height:1.4}
+  .alert-chev{right:12px}
   .alert-detail__card{margin-left:24px}
 }
+/* the shell's logo steps down here, so the page scale follows */
+@media (max-width:980px){
+  .alerts-main{--t:1.15px}
+}
 @media (max-width:860px){
+  .alerts-table .c-time{width:19%}
+  .alerts-table .c-type{width:23.5%}
+  .alerts-table .c-co{width:13.5%}
   .alert-detail__card{grid-template-columns:1fr}
   .alert-links{justify-content:flex-start}
   .alert-links .alert-src:first-child{margin-left:-12px}
@@ -211,7 +216,7 @@ html.drawer-lock{overflow:hidden}
     mask-image:linear-gradient(90deg,transparent 0,#000 var(--gutter),#000 calc(100% - var(--gutter)),transparent 100%)}
   .alert-filters-scroll::-webkit-scrollbar{display:none}
   .alert-filters{width:max-content;padding:0 var(--gutter)}
-  .alert-filter{flex:none}
+  .alert-filter{flex:none;padding:0 20px}
   .alert-filters__fill{display:none}
 }
 @media (max-width:760px){
@@ -223,6 +228,7 @@ html.drawer-lock{overflow:hidden}
   .alert-filters-scroll{margin-top:22px}
   .alert-filter{height:44px;padding:0 16px;font-size:14.5px}
   .alert-filters__thumb{height:44px}
+  .alerts-panel{margin-top:10px}
 
   /* rows become stacked cards */
   .alerts-table,.alerts-table tbody,.alerts-table tr,.alerts-table td{display:block;width:auto}
@@ -235,10 +241,13 @@ html.drawer-lock{overflow:hidden}
   .alerts-table td.cell-type{grid-area:type}
   .alerts-table td.cell-desc{grid-area:desc}
   .alerts-table td.cell-co{grid-area:co;padding:0;text-align:right}
-  .cell-time .cell-in{gap:12px}
+  .cell-time .cell-in{gap:10px}
   .alerts-table .alert-row td{font-size:14px}
-  .alert-type{gap:9px}
+  .alert-time{font-size:13.5px}
+  .alert-dot{width:8px;height:8px}
+  .alert-type{gap:9px;font-size:14px}
   .alert-icon{width:18px;height:18px}
+  .alerts-table .ticker{font-size:14px}
   .alert-toggle{white-space:normal;font-size:15px;line-height:1.45;padding:2px 0;margin:-2px 0;color:var(--ink)}
   .alert-chev{display:none}
   .alert-detail__card{margin:0 18px 16px;padding:14px 16px 12px}
