@@ -213,22 +213,6 @@
     });
   });
 
-  /* ---------- reveal safety net ----------
-     motion.js ignores the bottom 8% of the viewport. These pages are a single
-     screen that often cannot scroll, so the last line could otherwise stay
-     hidden. Anything that is actually on screen is revealed. */
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!("IntersectionObserver" in window)) return;
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-in");
-        io.unobserve(entry.target);
-      });
-    }, { threshold: 0 });
-    document.querySelectorAll(".auth [data-reveal], .auth [data-split]").forEach(el => io.observe(el));
-  });
-
   /* ---------- pointer parallax on the photo (desktop) ---------- */
   const layer = document.querySelector("[data-auth-parallax]");
   if (layer && finePointer && !reduce) {

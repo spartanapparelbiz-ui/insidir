@@ -1,32 +1,40 @@
 /* Auth pages (signin.html, signup.html).
-   Split screen: a light form panel on the left and a full-bleed photograph
-   on the right that wipes in, settles from a zoom, drifts slowly (Ken Burns)
-   and follows the pointer a little on desktop. Layout only — buttons, inputs,
-   motion primitives and tokens come from base.css. */
+   Split screen like the reference: a light form panel and a full-bleed
+   photograph that wipes in, settles from a zoom, drifts slowly (Ken Burns)
+   and follows the pointer a little on desktop. Sign in also shows a narrow
+   photo strip on the far left, as in the reference, so the form reads as a
+   cream sheet laid over the photography.
+   Every size on desktop derives from one unit (--k) that follows the smaller
+   of the viewport's width and height, so the composition keeps the
+   reference's proportions from 1024px to 1920px wide without overflowing
+   short screens. Buttons, inputs, motion primitives and tokens come from
+   base.css; this file only adds layout and the page's own motion. */
 
-:root{--auth-bg:#f8f7f2}
+:root{--auth-bg:#f9f8f4}
 .auth-body{background:var(--auth-bg)}
 
 .auth{
-  /* sizes scale gently with the viewport so the composition matches the
-     reference at desktop widths; vertical gaps also respect short screens */
-  --form-w:clamp(318px,22.4vw,376px);
-  --title:clamp(35px,3.02vw,53px);
-  --logo-out:clamp(8px,.9vw,16px);
-  --pad-x:clamp(24px,3.4vw,56px);
-  --pad-top:clamp(20px,2.6vh,30px);
-  --input-h:clamp(44px,5.6vh,52px);
-  --btn-h:clamp(46px,6.1vh,57px);
-  --alt-h:clamp(44px,5.7vh,53px);
-  --gap-sub:clamp(4px,.7vh,8px);
-  --gap-head:clamp(22px,3.9vh,36px);
-  --gap-label:9px;
-  --gap-field:clamp(16px,2.7vh,26px);
-  --gap-btn:clamp(16px,2.3vh,22px);
-  --gap-or:clamp(18px,3vh,28px);
-  --gap-alt:clamp(14px,2.2vh,22px);
-  --gap-switch:clamp(18px,2.9vh,28px);
-  --est-h:min(45vh + 250px,690px); /* approx. logo row + form block height, used to balance the block vertically */
+  --k:clamp(13px,min(1.046vw,1.68vh),18px);      /* 16px at 1530 x 950 */
+  --form-w:max(calc(var(--k)*29.4),29.4vw);      /* 470px at 1530 */
+  --form-max:560px;
+  --logo-out:calc(var(--form-w)*.06);            /* logo sits just left of the form edge */
+  --title:calc(var(--k)*3.75);
+  --sub:max(16px,calc(var(--k)*1.3));
+  --text:max(15px,calc(var(--k)*1.12));
+  --label:max(14.5px,calc(var(--k)*1.1));
+  --input-h:max(46px,calc(var(--k)*3.6));
+  --btn-h:max(48px,calc(var(--k)*3.8));
+  --alt-h:max(46px,calc(var(--k)*3.6));
+  --gap-sub:calc(var(--k)*.6);
+  --gap-head:calc(var(--k)*2.6);
+  --gap-label:calc(var(--k)*.65);
+  --gap-field:calc(var(--k)*1.9);
+  --gap-btn:calc(var(--k)*1.9);
+  --gap-or:calc(var(--k)*2.5);
+  --gap-alt:calc(var(--k)*1.8);
+  --gap-switch:calc(var(--k)*2.5);
+  --block:calc(var(--k)*41.6);                   /* height of the heading-to-footer block */
+  --top-row:calc(var(--k)*5.3);                    /* logo row */
   position:relative;
   display:grid;
   grid-template-columns:minmax(0,49fr) minmax(0,51fr);
@@ -34,68 +42,72 @@
   min-height:100svh;
   background:var(--auth-bg);
 }
+/* reference proportions: photo strip 9.3% | form panel 46.1% | photo 44.6% */
+.auth--signin{grid-template-columns:minmax(0,9.3fr) minmax(0,46.1fr) minmax(0,44.6fr)}
 .auth--signup{
-  --form-w:clamp(352px,27.6vw,468px);
-  --logo-out:clamp(14px,2.1vw,34px);
-  --gap-head:clamp(18px,2.9vh,28px);
-  --gap-field:clamp(12px,2vh,20px);
-  --gap-btn:clamp(16px,2.6vh,26px);
-  --btn-h:clamp(46px,5.9vh,55px);
-  --gap-or:clamp(12px,1.9vh,18px);
-  --gap-alt:clamp(10px,1.5vh,14px);
-  --gap-switch:clamp(10px,1.6vh,16px);
-  --est-h:min(53vh + 250px,760px);
-  grid-template-columns:minmax(0,60fr) minmax(0,40fr);
+  --form-w:max(calc(var(--k)*34.5),35vw);        /* 552px at 1530 */
+  --form-max:640px;
+  --logo-out:calc(var(--form-w)*.075);
+  --btn-h:max(48px,calc(var(--k)*3.6));
+  --gap-head:calc(var(--k)*2.2);
+  --gap-field:calc(var(--k)*1.45);
+  --gap-btn:calc(var(--k)*1.8);
+  --gap-or:calc(var(--k)*1.4);
+  --gap-alt:calc(var(--k)*1.2);
+  --gap-switch:calc(var(--k)*1.3);
+  --block:calc(var(--k)*44.7);
+  grid-template-columns:minmax(0,60.8fr) minmax(0,39.2fr);
 }
 
 /* ---------- Form panel ---------- */
 .auth-panel{position:relative;z-index:1;display:flex;min-width:0;background:var(--auth-bg)}
 .auth-panel__inner{
-  display:flex;flex-direction:column;
-  width:min(100% - var(--pad-x)*2, var(--form-w) + var(--logo-out)*2);
-  margin-inline:auto;
-  padding:var(--pad-top) 0 clamp(18px,3vh,32px);
+  --fw:min(var(--form-w),var(--form-max),100% - var(--k)*4);
+  display:flex;flex-direction:column;width:100%;
+  padding:calc(var(--k)*1.9) 0 calc(var(--k)*1.6);
 }
-.auth-brand{align-self:flex-start}
-.auth-logo{font-size:clamp(28px,2.45vw,40px);font-weight:560;font-variation-settings:"opsz" 32;color:var(--ink);padding:4px 0;transition:opacity .3s}
+.auth-brand{align-self:flex-start;margin-left:max(var(--k)*1.75,(100% - var(--fw))/2 - var(--logo-out))}
+.auth-logo{font-size:calc(var(--k)*2.6);font-weight:600;font-variation-settings:"opsz" 36;color:var(--ink);padding:4px 0;transition:opacity .3s}
 .auth-logo:hover{opacity:.72}
 
 .auth-card{
-  /* anchored from the top (not centred) so inline errors only grow downwards */
-  width:min(100%,var(--form-w));
-  margin:clamp(24px,calc((100vh - var(--est-h)) * .42),340px) auto 0;
-  padding-bottom:clamp(8px,2vh,24px);
+  /* anchored from the top (not centred) so inline errors only grow downwards;
+     the top margin balances the estimated block in the space below the logo */
+  width:var(--fw);
+  margin:max(var(--k)*1.6,(100vh - var(--top-row) - var(--block))*.47) auto 0;
+  margin-top:max(var(--k)*1.6,(100svh - var(--top-row) - var(--block))*.47);
+  padding-bottom:calc(var(--k)*1.2);
 }
 
-.auth-plan{margin-bottom:18px}
-.auth-plan .pill{gap:8px}
+.auth-plan{margin-bottom:calc(var(--k)*1.1)}
+.auth-plan .pill{gap:8px;height:28px;font-size:13px}
 .auth-plan .dot{width:6px;height:6px;background:#d9b26a}
 
 .auth-title{
-  font-family:var(--serif);font-weight:580;font-size:var(--title);line-height:1.08;letter-spacing:-.03em;
-  font-variation-settings:"opsz" 32;color:#0d0f11;text-wrap:balance;
+  font-family:var(--serif);font-weight:520;font-size:var(--title);line-height:1.06;letter-spacing:-.03em;
+  font-variation-settings:"opsz" 60;color:#0e1013;text-wrap:balance;
 }
-.auth-sub{margin-top:var(--gap-sub);font-size:clamp(16px,1.3vw,20.5px);line-height:1.45;color:#5f5e5b}
+.auth-sub{margin-top:var(--gap-sub);font-size:var(--sub);line-height:1.4;color:#66645f;letter-spacing:-.005em}
 
 /* ---------- Form ---------- */
 .auth-form{margin-top:var(--gap-head)}
 .auth-field{gap:0}
 .auth-field+.auth-field{margin-top:var(--gap-field)}
-.auth-field .label{display:block;margin-bottom:var(--gap-label);font-size:clamp(14.5px,1.11vw,17.5px);font-weight:600;color:#2a2e36;
+.auth-field .label{display:block;margin-bottom:var(--gap-label);font-size:var(--label);line-height:1.3;font-weight:600;color:#262a31;
   transition:color .3s}
 .field__row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:var(--gap-label)}
 .field__row .label{margin-bottom:0}
 
 .auth .input{
-  height:var(--input-h);padding:0 16px;border:1px solid #e2dfd7;border-radius:7px;background:#fdfcf9;
-  font-size:clamp(15px,1.14vw,18px);color:var(--ink);
+  height:var(--input-h);padding:0 calc(var(--k)*1.05);border:1px solid #e4e1da;border-radius:7px;background:#fcfbf8;
+  font-size:var(--text);color:var(--ink);
   box-shadow:0 0 0 0 rgba(18,20,23,0),0 1px 0 rgba(20,18,12,.015);
   transition:border-color .35s var(--ease-out),background-color .35s var(--ease-out),box-shadow .55s var(--ease-out);
 }
-.auth .input::placeholder{color:#aaa69f;transition:color .3s,transform .3s}
-.auth .input:hover{border-color:#d2cec4}
+.auth .input::placeholder{color:#a9a59e;transition:color .3s}
+.auth .input:hover{border-color:#d3cfc5}
 .auth .input:focus{outline:none;border-color:#16181b;background:#fff;box-shadow:0 0 0 4px rgba(18,20,23,.075),0 8px 22px -14px rgba(18,20,23,.35)}
-.auth .input:focus::placeholder{color:#c4c0b9}
+.auth .input:focus::placeholder{color:#c6c2bb}
 .auth-field:focus-within .label{color:var(--ink)}
 .auth .input[aria-invalid="true"]{border-color:#d4454b;background:#fffdfc}
 .auth .input[aria-invalid="true"]:focus{box-shadow:0 0 0 4px rgba(212,69,75,.13)}
@@ -106,15 +118,15 @@
   transition:grid-template-rows .45s var(--ease-out),opacity .35s var(--ease-out)}
 .field__msg>*,.form-alert__inner{min-height:0;overflow:hidden}
 .auth-field.is-invalid .field__msg,.form-alert.is-visible{grid-template-rows:1fr;opacity:1}
-.field__error{padding-top:8px;font-size:13.5px;line-height:1.4;color:#b3333a;display:flex;gap:7px;align-items:flex-start;
+.field__error{padding-top:8px;font-size:max(13.5px,calc(var(--k)*.88));line-height:1.4;color:#b3333a;display:flex;gap:7px;align-items:flex-start;
   transform:translateY(-4px);transition:transform .45s var(--ease-out)}
 .auth-field.is-invalid .field__error{transform:none}
-.field__error::before{content:"";flex:none;width:14px;height:14px;margin-top:2px;border-radius:50%;background:currentColor;
+.field__error::before{content:"";flex:none;width:14px;height:14px;margin-top:.15em;border-radius:50%;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm-.9 4v5h1.8V4H7.1zm0 6.4v1.8h1.8v-1.8H7.1z'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm-.9 4v5h1.8V4H7.1zm0 6.4v1.8h1.8v-1.8H7.1z'/%3E%3C/svg%3E") center/contain no-repeat}
 
 /* password helper appears on focus, on the label row (no layout shift) */
-.field__hint{font-size:clamp(13px,.95vw,15px);color:#6f6c68;white-space:nowrap;opacity:0;transform:translateX(8px);
+.field__hint{font-size:max(13px,calc(var(--k)*.9));color:#6f6c68;white-space:nowrap;opacity:0;transform:translateX(8px);
   transition:opacity .35s var(--ease-out),transform .5s var(--ease-out),color .3s}
 .auth-field--password:focus-within .field__hint,.auth-field--password.is-invalid .field__hint{opacity:1;transform:none}
 .field__hint.is-met{color:#13824a}
@@ -122,7 +134,7 @@
 
 /* ---------- Buttons ---------- */
 .auth-submit{margin-top:var(--gap-btn)}
-.auth-btn{--bh:var(--btn-h);border-radius:7px;font-size:clamp(15.5px,1.18vw,18.5px);font-weight:600;background:#111417;letter-spacing:-.01em}
+.auth-btn{--bh:var(--btn-h);border-radius:7px;font-size:max(15.5px,calc(var(--k)*1.14));font-weight:600;background:#0f1317;letter-spacing:-.01em}
 .auth-btn:disabled{cursor:progress}
 .auth-btn__label{transition:opacity .3s}
 .auth-btn__spinner{width:16px;height:16px;margin-right:-26px;border-radius:50%;border:2px solid rgba(255,255,255,.28);border-top-color:#fff;
@@ -133,24 +145,24 @@
 @keyframes authSpin{to{rotate:360deg}}
 
 .form-alert__text{margin-top:14px;padding:11px 14px 11px 40px;position:relative;border-radius:7px;background:#fbeeec;border:1px solid #f0d3cf;
-  color:#9f2a31;font-size:14px;line-height:1.45}
+  color:#9f2a31;font-size:max(14px,calc(var(--k)*.9));line-height:1.45}
 .form-alert__text::before{content:"";position:absolute;left:14px;top:13px;width:16px;height:16px;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm-.9 4v5h1.8V4H7.1zm0 6.4v1.8h1.8v-1.8H7.1z'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm-.9 4v5h1.8V4H7.1zm0 6.4v1.8h1.8v-1.8H7.1z'/%3E%3C/svg%3E") center/contain no-repeat}
 .form-alert.is-shake .form-alert__text{animation:authNudge .5s var(--ease-out)}
 @keyframes authNudge{0%,100%{transform:none}25%{transform:translateX(-5px)}55%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
 
-.auth-or{margin-top:var(--gap-or);text-align:center;font-size:clamp(15px,1.1vw,17.5px);color:#6b6965}
+.auth-or{margin-top:var(--gap-or);text-align:center;font-size:var(--text);line-height:1.45;color:#6d6a65}
 
 .auth-alt{margin-top:var(--gap-alt)}
-.auth-google{--bh:var(--alt-h);border-radius:7px;background:#fff;border-color:#e2dfd7;font-size:clamp(15px,1.14vw,18px);font-weight:600;gap:12px;color:#1b1e22}
+.auth-google{--bh:var(--alt-h);border-radius:7px;background:#fff;border-color:#e4e1da;font-size:var(--text);font-weight:600;gap:calc(var(--k)*.8);color:#1b1e22}
 .auth-google:hover{background:#fff;border-color:#cfcabf;box-shadow:0 12px 28px -16px rgba(20,18,12,.4);transform:translateY(-1px)}
 .auth-google:active{transform:translateY(0)}
-.auth-google__g{width:clamp(20px,1.6vw,26px);height:clamp(20px,1.6vw,26px);flex:none;transition:transform .6s var(--ease-out)}
-.auth-google:hover .auth-google__g{transform:rotate(-12deg) scale(1.06)}
+.btn.auth-google svg.auth-google__g{width:max(20px,calc(var(--k)*1.6));height:max(20px,calc(var(--k)*1.6));flex:none;transition:transform .6s var(--ease-out)}
+.btn.auth-google:hover svg.auth-google__g{transform:rotate(-12deg) scale(1.06)}
 
-.auth-switch{margin-top:var(--gap-switch);text-align:center;font-size:clamp(15px,1.1vw,17.5px);color:#625f5b}
-.auth-switch strong{font-weight:600;color:var(--ink)}
+.auth-switch{margin-top:var(--gap-switch);text-align:center;font-size:var(--text);line-height:1.45;color:#66635e}
+.auth-switch strong{font-weight:650;color:var(--ink)}
 
 /* text links with an underline that draws in */
 .auth-link{position:relative;display:inline-block;color:inherit}
@@ -158,78 +170,87 @@
   transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease-out)}
 .auth-link:hover::after,.auth-link:focus-visible::after{transform:scaleX(1);transform-origin:left}
 .auth-switch .auth-link{color:var(--ink)}
-.auth-link--muted{font-size:clamp(13.5px,1vw,16px);color:#6f6c68;transition:color .3s}
+.auth-link--muted{font-size:max(13.5px,calc(var(--k)*.96));color:#64615c;transition:color .3s}
 .auth-link--muted:hover{color:var(--ink)}
 
-/* ---------- Photo panel ---------- */
 /* toasts sit centred under the form instead of on the panel seam */
-.auth-body--signin .toast{left:24.5%}
-.auth-body--signup .toast{left:30%}
+.auth-body--signin .toast{left:32.4%}
+.auth-body--signup .toast{left:30.4%}
 
-.auth-media{position:sticky;top:0;align-self:start;height:100vh;height:100svh;min-width:0;overflow:hidden;background:var(--auth-bg)}
-.auth-media__frame{position:absolute;inset:0;overflow:hidden;background:#2b2722}
-.auth-media__frame.grain::after{z-index:3;opacity:.06}
-.auth-media__layer{position:absolute;inset:-26px;will-change:transform}
-.auth--signup .auth-media__layer{right:calc(-26px - 4%)} /* keeps the photo's pale right edge off-canvas */
+/* ---------- Photos ---------- */
+.auth-media,.auth-edge{position:sticky;top:0;align-self:start;height:100vh;height:100svh;min-width:0;overflow:hidden;background:var(--auth-bg)}
+.auth-edge{order:-1}
+.auth-media__frame,.auth-edge__frame{position:absolute;inset:0;overflow:hidden;background:#2b2722}
+.auth-media__frame.grain::after,.auth-edge__frame.grain::after{z-index:3;opacity:.06}
+.auth-media__layer{position:absolute;inset:-14px;will-change:transform}
+.auth--signup .auth-media__layer{right:calc(-14px - 2.2%)} /* keeps the photo's pale right edge off-canvas */
 .auth-media__scroll{position:absolute;inset:0}
-.auth-media__drift{position:absolute;inset:0;transform-origin:62% 58%}
-.auth-media__img{width:100%;height:100%;object-fit:cover;object-position:50% 58%;transform-origin:60% 55%}
-.auth--signup .auth-media__img{object-position:50% 52%}
+.auth-media__drift{position:absolute;inset:0;transform-origin:58% 56%}
+.auth-media__img,.auth-edge__img{width:100%;height:100%;object-fit:cover;object-position:50% 50%;transform-origin:60% 55%}
+.auth--signup .auth-media__img{object-position:50% 50%}
 .auth-media__shade{position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:linear-gradient(180deg,rgba(12,10,8,.10) 0%,rgba(12,10,8,0) 22%,rgba(12,10,8,0) 70%,rgba(12,10,8,.20) 100%)}
+  background:linear-gradient(180deg,rgba(12,10,8,.08) 0%,rgba(12,10,8,0) 20%,rgba(12,10,8,0) 74%,rgba(12,10,8,.16) 100%)}
+/* the strip on the left of sign in: the office with plants, a touch darker so the sheet stays the focus */
+.auth-edge__img{object-position:12% 50%;transform-origin:30% 50%}
+.auth-edge__frame::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,rgba(12,10,8,.10),rgba(12,10,8,0) 70%,rgba(12,10,8,.14))}
 
-/* load choreography: wipe in from the right, image settles from a zoom, then a slow drift */
+/* load choreography: wipe in from the outer edges, images settle from a zoom, then a slow drift */
 .js .auth-media__frame{clip-path:inset(0 0 0 100%)}
 .js.is-ready .auth-media__frame{animation:authWipe 1.55s var(--ease-in-out) .05s both}
-.js .auth-media__img{transform:scale(1.2)}
+.js .auth-media__img{transform:scale(1.16)}
 .js.is-ready .auth-media__img{animation:authSettle 2.8s var(--ease-out) .05s both}
-.js.is-ready .auth-media__drift{animation:authDrift 28s ease-in-out 2.6s infinite alternate}
+.js.is-ready .auth-media__drift{animation:authDrift 30s ease-in-out 2.6s infinite alternate}
+.js .auth-edge__frame{clip-path:inset(0 100% 0 0)}
+.js.is-ready .auth-edge__frame{animation:authWipeRight 1.3s var(--ease-in-out) .3s both}
+.js .auth-edge__img{transform:scale(1.2)}
+.js.is-ready .auth-edge__img{animation:authSettle 2.6s var(--ease-out) .3s both}
 @keyframes authWipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+@keyframes authWipeRight{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes authWipeDown{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
-@keyframes authSettle{from{transform:scale(1.2);filter:brightness(.78) saturate(.9)}to{transform:scale(1);filter:none}}
-@keyframes authDrift{from{transform:scale(1)}to{transform:scale(1.075) translate3d(-1.2%,-.8%,0)}}
+@keyframes authSettle{from{transform:scale(1.16);filter:brightness(.78) saturate(.9)}to{transform:scale(1);filter:none}}
+@keyframes authDrift{from{transform:scale(1)}to{transform:scale(1.045) translate3d(-.8%,-.6%,0)}}
 
-/* hold the form choreography until the page curtain lifts (motion.js adds .is-ready) */
-.js:not(.is-ready) .auth [data-reveal].is-in{opacity:0}
-.js:not(.is-ready) .auth [data-reveal="up"].is-in{transform:translate3d(0,36px,0)}
-.js:not(.is-ready) .auth [data-reveal="down"].is-in{transform:translate3d(0,-24px,0)}
-.js:not(.is-ready) .auth [data-split].is-in .split-word>span{transform:translate3d(0,108%,0) rotate(2deg)}
 .auth [data-reveal="up"]{--rd:1s}
+
+/* ---------- Narrower desktops: sign in drops the left strip ---------- */
+@media (max-width:1100px){
+  .auth--signin{grid-template-columns:minmax(0,52fr) minmax(0,48fr)}
+  .auth-edge{display:none}
+  .auth-body--signin .toast{left:26%}
+}
 
 /* ---------- Tablet / mobile: photo becomes a banner above the form ---------- */
 @media (max-width:900px){
-  .auth,.auth--signup{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;--form-w:min(100%,440px);
-    --title:clamp(34px,8.6vw,44px);--input-h:48px;--btn-h:50px;--alt-h:48px;
-    --gap-head:26px;--gap-field:18px;--gap-btn:22px;--gap-or:22px;--gap-alt:16px;--gap-switch:22px}
+  .auth,.auth--signin,.auth--signup{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;
+    --title:clamp(34px,8.6vw,46px);--sub:16.5px;--text:16px;--label:15px;--input-h:50px;--btn-h:52px;--alt-h:50px;
+    --gap-sub:6px;--gap-head:26px;--gap-label:9px;--gap-field:18px;--gap-btn:22px;--gap-or:22px;--gap-alt:16px;--gap-switch:22px}
   .auth-media{order:-1;position:relative;height:clamp(170px,30vh,280px)}
   .auth-media__layer{inset:-10px}
   .auth-media__scroll{inset:-64px 0} /* overscan for the scroll parallax (data-parallax) */
-  .auth--signup .auth-media__layer{right:calc(-10px - 4%)}
+  .auth--signup .auth-media__layer{right:calc(-10px - 2.2%)}
   .auth-media__img{object-position:50% 46%}
   .auth--signin .auth-media__img{object-position:50% 40%}
   .auth-media__shade{background:linear-gradient(180deg,rgba(10,9,8,.66) 0%,rgba(10,9,8,.3) 30%,rgba(10,9,8,0) 56%,rgba(10,9,8,0) 76%,rgba(10,9,8,.16) 100%)}
   .auth-panel{position:static}
-  .auth-panel__inner{position:static;width:min(100% - var(--gutter)*2,440px);padding:0 0 40px}
-  .auth-brand{position:absolute;z-index:4;top:18px;left:var(--gutter)}
+  .auth-panel__inner{--fw:100%;position:static;width:min(100% - var(--gutter)*2,440px);margin-inline:auto;padding:0 0 40px}
+  .auth-brand{position:absolute;z-index:4;top:18px;left:var(--gutter);margin:0}
   .auth-logo{color:#fff;font-size:28px;text-shadow:0 1px 2px rgba(0,0,0,.35),0 2px 22px rgba(0,0,0,.4)}
   .auth-card{margin:0 auto;padding:30px 0 8px}
   .auth-body .toast{left:50%}
+  .btn.auth-google svg.auth-google__g{width:22px;height:22px}
   /* the banner unveils top-down so the white logo always lands on the photo */
   .js.is-ready .auth-media__frame{animation-name:authWipeDown;animation-duration:1.3s}
   .auth-brand{--delay:.6s!important}
 }
 @media (max-width:420px){
-  .auth-sub{font-size:15.5px}
+  .auth,.auth--signin,.auth--signup{--sub:15.5px}
   .field__hint{font-size:12.5px}
-}
-/* very short desktop windows: let the form breathe and scroll */
-@media (min-width:901px) and (max-height:640px){
-  .auth-card{margin-top:20px}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .js .auth-media__frame,.js.is-ready .auth-media__frame{animation:none;clip-path:none}
-  .js .auth-media__img,.js.is-ready .auth-media__img{animation:none;transform:none;filter:none}
+  .js .auth-media__frame,.js.is-ready .auth-media__frame,.js .auth-edge__frame,.js.is-ready .auth-edge__frame{animation:none;clip-path:none}
+  .js .auth-media__img,.js.is-ready .auth-media__img,.js .auth-edge__img,.js.is-ready .auth-edge__img{animation:none;transform:none;filter:none}
   .js.is-ready .auth-media__drift{animation:none;transform:none}
   .auth-media__layer{transform:none!important}
   .auth-btn__spinner{animation:none;border-top-color:rgba(255,255,255,.9);border-right-color:rgba(255,255,255,.9)}

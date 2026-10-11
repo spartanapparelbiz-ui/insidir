@@ -36,7 +36,8 @@
 
     const barHeight = () => (mobileQuery.matches && summary ? summary.getBoundingClientRect().height : 0);
     const stickyOffset = () => headerHeight() + barHeight();
-    const landingGap = () => (mobileQuery.matches ? 20 : 28);
+    // same gap the CSS uses for the sticky contents and heading scroll-margin
+    const landingGap = () => parseFloat(getComputedStyle(document.body).getPropertyValue("--legal-land")) || (mobileQuery.matches ? 20 : 28);
     const spyLine = () => Math.round(stickyOffset() + landingGap() + Math.min(innerHeight * 0.12, 90));
 
     function placeMarker(instant) {
@@ -45,8 +46,9 @@
       // links' offsetParent, and their reveal transform would skew a rect.
       const item = links[active].closest("li") || links[active];
       if (instant) marker.style.transition = "none";
-      marker.style.setProperty("--y", item.offsetTop + 6 + "px");
-      marker.style.height = Math.max(18, item.offsetHeight - 12) + "px";
+      const h = Math.max(18, Math.round(item.offsetHeight * 0.66));
+      marker.style.setProperty("--y", item.offsetTop + (item.offsetHeight - h) / 2 + "px");
+      marker.style.height = h + "px";
       if (instant) { void marker.offsetWidth; marker.style.transition = ""; }
     }
 
@@ -138,8 +140,7 @@
 
     links.forEach((a, i) => a.addEventListener("click", e => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
-      e.preventDefault();
-      e.stopPropagation(); // motion.js would otherwise handle the same anchor
+      e.preventDefault(); // motion.js leaves default-prevented anchor clicks alone
       if (mobileQuery.matches && toc.open) toc.open = false;
       locked = true;
       glideDone = false;
@@ -269,6 +270,13 @@
     });
   }
 
+  /* The document-wide anchor glide in motion.js cancels the skip link's native
+     jump, which also cancels the focus move; keep the native behaviour here. */
+  function keepSkipLinkNative() {
+    document.querySelectorAll(".skip-link").forEach(a => a.addEventListener("click", e => e.stopPropagation()));
+  }
+
+  keepSkipLinkNative();
   cascadeFirstScreen();
   initCopyLinks();
   initToc();

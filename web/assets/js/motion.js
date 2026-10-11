@@ -105,7 +105,13 @@
   /* ---------- svg line drawing ---------- */
   function prepareDraw(el) {
     el.querySelectorAll("path.line").forEach(p => {
-      try { p.style.setProperty("--len", Math.ceil(p.getTotalLength()) + 1); } catch (_) { /* not rendered yet */ }
+      try {
+        // Set the real length without animating from the CSS fallback, which would flash a stray segment.
+        p.style.transition = "none";
+        p.style.setProperty("--len", Math.ceil(p.getTotalLength()) + 1);
+        void p.getBoundingClientRect();
+        p.style.transition = "";
+      } catch (_) { /* not rendered yet */ }
     });
   }
 

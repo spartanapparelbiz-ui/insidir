@@ -1,10 +1,10 @@
 /* Company profile page (company.html).
    Layout only — tokens, buttons, panels, tabs, segmented, tables and the chart
-   come from base.css / app.css. Sizes are expressed in a design unit (--u) that
-   equals 1px at >=1530px wide and scales down with the viewport, so the page keeps
-   the reference proportions on smaller desktops. */
+   come from base.css / app.css. Sizes are expressed in a design unit (--u):
+   1u = 1/1400 of the content width (capped where .app-main stops growing), so the
+   page keeps the reference proportions on smaller desktops. */
 
-.co{--u:clamp(.68px,.06536vw,1px);--co-line:#efece5;--co-blue:#2c5fe0}
+.co{--u:clamp(.68px,.0669vw,1.046px);--co-line:#efece5;--co-blue:#2c5fe0}
 .co [hidden]{display:none!important}
 
 /* ---------- Header block ---------- */
