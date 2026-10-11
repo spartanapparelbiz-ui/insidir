@@ -1,14 +1,17 @@
 /* Pricing page: a paper centre panel framed by two full-height photo strips.
-   Sizes are expressed in --u (one unit of the reference mock-up) so the whole
-   composition keeps the reference proportions across desktop widths; every
-   size has a readable floor. */
+   Sizes are expressed in --u (one pixel of the reference mock-up) so the plans
+   keep the reference proportions. --u follows the viewport width (the mock-up
+   is a 1530px-wide render) but is also held to the viewport height, so the whole
+   composition fits the first screen on short laptop windows the way it does in
+   the reference, and it stops growing past the reference size on large monitors.
+   Every size has a readable floor. */
 
 .pricing-page{
   --pr-paper:#f9f7f2;
   --pr-card:#fdfcf9;
   --pr-line:#e7e4dc;
   --pr-check:#2ea375;
-  --u:clamp(1px,.11438vw,1.85px);
+  --u:clamp(1px,min(.11438vw,.1842vh),1.75px);
   background:var(--pr-paper);
 }
 
@@ -17,10 +20,10 @@
 
 .pr-strip{position:relative;min-width:0;background:#ece6da}
 .pr-strip__frame{position:sticky;top:0;height:100vh;max-height:100%;overflow:hidden;background:#3a2e22;isolation:isolate}
-.pr-strip__layer{position:absolute;inset:-12% 0;will-change:transform;
-  transform:translate3d(0,clamp(-8%,calc((var(--p,.5) - .5) * -24%),8%),0)}
+.pr-strip__layer{position:absolute;inset:-6% 0;will-change:transform;
+  transform:translate3d(0,clamp(-5%,calc((var(--p,.5) - .5) * -30%),5%),0)}
 .pr-strip__layer img{width:100%;height:100%;object-fit:cover;transform-origin:50% 40%}
-.pr-strip--left .pr-strip__layer img{object-position:46% 50%}
+.pr-strip--left .pr-strip__layer img{object-position:84% 50%}
 .pr-strip--right .pr-strip__layer img{object-position:81% 50%}
 /* warm sun glint on the left strip: a hot core, a soft halo and faint rays that turn slowly */
 .pr-strip__flare{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
@@ -33,7 +36,7 @@
   animation:prRays 40s linear infinite}
 @keyframes prFlare{from{opacity:.82}to{opacity:1}}
 @keyframes prRays{to{rotate:360deg}}
-.pr-strip__layer img{filter:contrast(1.06) saturate(1.1)}
+.pr-strip__layer img{filter:contrast(1.04) saturate(1.04)}
 .pr-strip--right .pr-strip__frame::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(20,14,8,0) 55%,rgba(20,14,8,.28))}
 
@@ -45,7 +48,7 @@
 .js.is-ready .pr-strip__layer img{animation:prStripZoom 2.8s var(--ease-out) .05s both}
 .js.is-ready .pr-strip--right .pr-strip__layer img{animation-delay:.2s}
 @keyframes prStripWipe{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
-@keyframes prStripZoom{from{transform:scale(1.24)}to{transform:scale(1.03)}}
+@keyframes prStripZoom{from{transform:scale(1.24)}to{transform:scale(1)}}
 
 /* ---------- Centre panel ---------- */
 .pr-panel{position:relative;min-width:0;background:var(--pr-paper)}
@@ -58,7 +61,7 @@
   background:var(--pr-paper);color:var(--ink);--logo-color:var(--ink)}
 .pricing-page .site-nav.is-scrolled{background:rgba(249,247,242,.86);-webkit-backdrop-filter:saturate(1.3) blur(14px);backdrop-filter:saturate(1.3) blur(14px);
   box-shadow:0 1px 0 rgba(18,20,23,.07)}
-.pricing-page .site-nav__inner{width:100%;margin:0;padding:0 calc(30 * var(--u)) 0 calc(21 * var(--u));
+.pricing-page .site-nav__inner{width:100%;max-width:calc(640 * var(--u));margin:0 auto;padding:0 calc(30 * var(--u)) 0 calc(21 * var(--u));
   grid-template-columns:auto auto minmax(0,1fr);gap:0}
 .pricing-page .site-nav__logo{font-size:max(26px,calc(22 * var(--u)))}
 .pricing-page .site-nav__links{margin-left:calc(38 * var(--u));gap:calc(30 * var(--u));font-size:max(14px,calc(10 * var(--u)));color:var(--ink-2)}
@@ -67,13 +70,9 @@
 .pricing-page .site-nav__links a[aria-current="page"]:hover::after{transform:scaleX(1);transform-origin:left}
 .pricing-page .site-nav__actions{justify-self:stretch;gap:0;font-size:max(14px,calc(10 * var(--u)))}
 .pricing-page .site-nav__signin{margin-left:calc(30 * var(--u));margin-right:auto;color:var(--ink-2)}
-.pricing-page .site-nav__actions .btn--sm{--bh:max(36px,calc(40 * var(--u)));padding:0 calc(20 * var(--u));
-  font-size:max(14px,calc(13.4 * var(--u)));border-radius:max(6px,calc(4 * var(--u)))}
+.pricing-page .site-nav__actions .btn--sm{--bh:max(36px,calc(38 * var(--u)));padding:0 calc(19 * var(--u));
+  font-size:max(14px,calc(12.6 * var(--u)));border-radius:max(6px,calc(4 * var(--u)))}
 .pricing-page .mobile-menu{z-index:49}
-.pricing-page .mobile-menu .btn{font-size:16px;padding:0 22px;border-bottom:0;--bh:50px}
-
-/* revealed blocks keep their overflow visible (shadows, hover lifts, focus rings) */
-.js .pricing-page [data-reveal],.js .pricing-page [data-reveal].is-in{clip-path:none}
 
 /* ---------- Hero + plans ---------- */
 .pr-hero{text-align:center;padding:calc(16 * var(--u)) calc(20 * var(--u)) 0}
@@ -132,15 +131,15 @@
 /* ---------- Compare table ---------- */
 .pr-compare,.pr-faq{width:min(100% - calc(40 * var(--u)),calc(582 * var(--u)));margin-inline:auto}
 .pr-compare{margin-top:calc(72 * var(--u))}
-.pr-section-title{text-align:center;font-family:var(--serif);font-weight:500;font-size:max(26px,calc(22 * var(--u)));line-height:1.12;
+.pr-section-title{text-align:center;font-family:var(--serif);font-weight:500;font-size:max(28px,calc(21 * var(--u)));line-height:1.12;
   letter-spacing:-.022em;font-variation-settings:"opsz" 48;color:var(--ink)}
 .pr-table{margin-top:calc(18 * var(--u));background:var(--pr-card);border:1px solid var(--pr-line);border-radius:max(8px,calc(5 * var(--u)));
   overflow:hidden;box-shadow:0 1px 2px rgba(20,18,12,.03)}
 .pr-table__scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
-.pr-table table{border-collapse:separate;border-spacing:0;font-size:max(14px,calc(11.2 * var(--u)));font-variant-numeric:tabular-nums;min-width:460px}
-.pr-table th,.pr-table td{padding:calc(11 * var(--u)) calc(16 * var(--u));text-align:left;vertical-align:middle;border-bottom:1px solid #eeebe4}
-.pr-table thead th{font-family:var(--sans);font-size:max(11.5px,calc(9.4 * var(--u)));font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:#8a8984;background:#f7f5ef;padding-block:calc(10 * var(--u))}
+.pr-table table{border-collapse:separate;border-spacing:0;font-size:max(14px,calc(9 * var(--u)));line-height:1.45;font-variant-numeric:tabular-nums;min-width:460px}
+.pr-table th,.pr-table td{padding:max(12px,calc(8.6 * var(--u))) max(16px,calc(14 * var(--u)));text-align:left;vertical-align:middle;border-bottom:1px solid #eeebe4}
+.pr-table thead th{font-family:var(--sans);font-size:max(11px,calc(7 * var(--u)));font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:#8a8984;background:#f7f5ef;padding-block:max(11px,calc(7.4 * var(--u)))}
 .pr-table thead th.is-pro{color:var(--ink)}
 .pr-table tbody tr:last-child th,.pr-table tbody tr:last-child td{border-bottom:0}
 .pr-table tbody th{font-weight:500;color:var(--ink);width:44%}
@@ -149,15 +148,15 @@
 .pr-table .is-pro{background:rgba(18,20,23,.022)}
 .pr-table tbody tr{transition:background-color .3s}
 .pr-table tbody tr:hover{background:#f8f6f0}
-.pr-yes{display:inline-flex;align-items:center;gap:calc(8 * var(--u));color:var(--ink)}
-.pr-yes .pr-check{width:max(12px,calc(12 * var(--u)))}
+.pr-yes{display:inline-flex;align-items:center;gap:max(7px,calc(6 * var(--u)));color:var(--ink)}
+.pr-yes .pr-check{width:max(12px,calc(9 * var(--u)))}
 .pr-none{color:#aaa69d}
 .js .pr-table tbody [data-reveal="up"]{transform:translate3d(0,14px,0);--rd:.9s}
 .js .pr-table tbody [data-reveal="up"].is-in{transform:none}
 
 /* ---------- FAQ ---------- */
-.pr-faq{margin-top:calc(64 * var(--u));padding-bottom:calc(84 * var(--u))}
-.pr-faq__grid{margin-top:calc(16 * var(--u));display:grid;grid-template-columns:1fr 1fr;gap:calc(8 * var(--u));align-items:start}
+.pr-faq{margin-top:calc(64 * var(--u));padding-bottom:calc(72 * var(--u))}
+.pr-faq__grid{margin-top:calc(18 * var(--u));display:grid;grid-template-columns:1fr 1fr;gap:max(10px,calc(7 * var(--u)));align-items:start}
 .pr-faq__item{background:var(--pr-card);border:1px solid var(--pr-line);border-radius:max(6px,calc(3.5 * var(--u)));
   transition:border-color .35s var(--ease-out),box-shadow .5s var(--ease-out)}
 .js .pr-faq__item[data-reveal]{transition:border-color .35s var(--ease-out),box-shadow .5s var(--ease-out),
@@ -165,22 +164,22 @@
 .pr-faq__item:hover{border-color:#d8d3c7}
 .pr-faq__item.is-open{box-shadow:0 14px 34px -22px rgba(20,18,12,.3)}
 .pr-faq__item summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:calc(12 * var(--u));cursor:pointer;
-  padding:calc(12 * var(--u)) calc(15 * var(--u));font-size:max(14px,calc(11.2 * var(--u)));line-height:1.35;color:var(--ink-2);border-radius:inherit}
+  padding:max(14px,calc(10 * var(--u))) max(16px,calc(13 * var(--u)));font-size:max(14.5px,calc(9.2 * var(--u)));line-height:1.35;color:var(--ink-2);border-radius:inherit}
 .pr-faq__item summary::-webkit-details-marker{display:none}
 .pr-faq__item summary:focus-visible{outline-offset:-2px}
-.pr-plus{position:relative;flex:none;width:max(11px,calc(10 * var(--u)));height:max(11px,calc(10 * var(--u)));
+.pr-plus{position:relative;flex:none;width:max(11px,calc(7.6 * var(--u)));height:max(11px,calc(7.6 * var(--u)));
   transition:transform .55s var(--ease-out)}
 .pr-plus::before,.pr-plus::after{content:"";position:absolute;left:0;right:0;top:50%;height:1.5px;margin-top:-.75px;background:currentColor;border-radius:1px}
 .pr-plus::after{transform:rotate(90deg);transition:transform .55s var(--ease-out)}
 .pr-faq__item.is-open .pr-plus{transform:rotate(180deg)}
 .pr-faq__item.is-open .pr-plus::after{transform:rotate(0deg)}
 .pr-faq__body{overflow:hidden}
-.pr-faq__body p{padding:0 calc(15 * var(--u)) calc(15 * var(--u));font-size:max(14px,calc(10.8 * var(--u)));line-height:1.6;color:var(--muted)}
+.pr-faq__body p{padding:0 max(16px,calc(13 * var(--u))) max(16px,calc(12 * var(--u)));font-size:max(14px,calc(8.8 * var(--u)));line-height:1.62;color:var(--muted)}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1180px){
   .pr-shell{grid-template-columns:11% minmax(0,1fr) 9.5%}
-  .pricing-page{--u:clamp(1px,.1281vw,1.6px)}
+  .pricing-page{--u:clamp(1px,min(.1281vw,.1842vh),1.6px)}
 }
 @media (max-width:900px){
   .pricing-page{--u:clamp(1px,.1563vw,1.3px);--nav-h:64px}
@@ -214,7 +213,7 @@
 
 @media (prefers-reduced-motion:reduce){
   .js .pr-strip__frame{clip-path:none;animation:none}
-  .js .pr-strip__layer img{transform:scale(1.03);animation:none}
+  .js .pr-strip__layer img{transform:none;animation:none}
   .pr-strip__layer{transform:none}
   .pr-strip__flare,.pr-strip__flare::before{animation:none}
   .js .pr-check path{stroke-dashoffset:0}

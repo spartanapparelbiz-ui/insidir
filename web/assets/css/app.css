@@ -2,7 +2,7 @@
    Page files add layout only; reuse these primitives. */
 
 .app-body{background:var(--paper);min-height:100vh;display:flex;flex-direction:column}
-.app-main{flex:1;width:min(100% - var(--gutter)*2,1400px);margin-inline:auto;padding:36px 0 56px}
+.app-main{flex:1;width:min(100% - var(--gutter)*2,1464px);margin-inline:auto;padding:36px 0 56px}
 .app-main--narrow{width:min(100% - var(--gutter)*2,1120px)}
 
 /* Page heading row */
@@ -80,7 +80,7 @@
 .area-chart .grid--v{stroke:#f2efe8}
 .area-chart .axis{font:12px var(--sans);fill:var(--muted-2)}
 .crosshair__line{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3}
-.crosshair__dot{fill:#fff;stroke:var(--green);stroke-width:2}
+.crosshair__dot{fill:#fff;stroke:var(--green-chart);stroke-width:2}
 .chart-tip{position:absolute;transform:translate(-50%,calc(-100% - 14px));background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;
   padding:5px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
 

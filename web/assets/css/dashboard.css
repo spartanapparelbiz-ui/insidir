@@ -17,8 +17,9 @@
    --------------------------------------------------------------- */
 .dash-hero{position:relative}
 
-/* The skyline is anchored to the top edge of the index row: its photo ends where the cards
-   begin and a blurred mirror of it continues behind them (visible through the gaps). */
+/* The skyline is anchored to the top edge of the index row: the photo ends where the cards
+   begin and a hazy continuation of it runs on behind them (visible through the gaps). Both the
+   container and the photo layer fade in from the left, so no edge shows at any width. */
 .dash-sky{--sky-h:clamp(96px,10.85vw,166px);--mist:96px;
   position:absolute;z-index:-1;pointer-events:none;overflow:hidden;
   left:38.2%;right:calc(50% - 50vw);bottom:calc(100% - var(--mist));height:calc(var(--sky-h) + var(--mist) + 4px);
@@ -234,8 +235,7 @@
   .dash-status__row{flex-wrap:wrap;gap:8px 16px}
   /* the skyline becomes a horizon band between the greeting and the cards */
   .dash-sky{left:0;--sky-h:clamp(80px,19vw,140px)}
-  .index-cards{margin-top:calc(var(--sky-h,120px) - 14px)}
-  .index-cards{--sky-h:clamp(80px,19vw,140px)}
+  .index-cards{--sky-h:clamp(80px,19vw,140px);margin-top:calc(var(--sky-h) - 14px)}
   .dash-table--insider{min-width:470px}
   .dash-table--watch{min-width:480px}
 }

@@ -29,7 +29,7 @@
   --ink:#121417;
   --ink-2:#2b2d30;
   --muted:#5f5f5c;
-  --muted-2:#8a8984;
+  --muted-2:#73726d;
   --on-dark:#f4f1ea;
   --on-dark-muted:#b9b5ac;
 
@@ -39,9 +39,11 @@
   --line-dark:rgba(255,255,255,.1);
 
   /* Signals */
-  --green:#16a05a;
+  --green:#0f8547;          /* text: 4.7:1 on white */
+  --green-chart:#16a05a;    /* lines and fills keep the reference's brighter green */
   --green-bg:#e5f3ea;
-  --red:#e0484e;
+  --red:#cc3a40;            /* text: 4.9:1 on white */
+  --red-chart:#e0484e;
   --red-bg:#fbe9e8;
   --blue:#1f4fd6;
   --badge:#4b4436;
@@ -57,7 +59,7 @@
   --radius:6px;
   --radius-lg:10px;
   --nav-h:76px;
-  --app-h:64px;
+  --app-h:72px;
 
   /* Elevation */
   --shadow-sm:0 1px 2px rgba(20,18,12,.06);
@@ -207,8 +209,8 @@ table{border-collapse:collapse;width:100%}
 .app-header{position:sticky;top:0;z-index:100;height:var(--app-h);background:rgba(251,250,246,.86);
   -webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
 .app-header__inner{height:100%;display:flex;align-items:center;gap:clamp(16px,3vw,44px);
-  width:min(100% - var(--gutter)*2,1400px);margin-inline:auto}
-.app-header .logo{font-size:28px;margin-right:4px}
+  width:min(100% - var(--gutter)*2,1464px);margin-inline:auto}
+.app-header .logo{font-size:31px;margin-right:6px}
 .app-nav{display:flex;align-items:stretch;gap:clamp(16px,2.2vw,34px);height:100%;font-size:14px;font-weight:450;color:var(--ink-2);
   overflow-x:auto;scrollbar-width:none}
 .app-nav::-webkit-scrollbar{display:none}

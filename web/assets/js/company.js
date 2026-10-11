@@ -286,9 +286,11 @@
     const min = Math.min(...values), max = Math.max(...values);
     const { ticks, decimals } = niceTicks(min, max);
     const green = values[values.length - 1] >= values[0];
-    const color = green ? "var(--green)" : "var(--red)";
+    const color = green ? "var(--green-chart, var(--green))" : "var(--red-chart, var(--red))";
 
-    host.classList.toggle("no-anim", !animate);
+    // Insert with transitions off so the path's first computed dash offset is its
+    // real length (not the CSS fallback), otherwise a stray segment flashes.
+    host.classList.add("no-anim");
     host.style.setProperty("--delay", (delay / 1000).toFixed(2) + "s");
     const svg = I.areaChart(host, values, {
       labels: r.labels, ticks, color,
@@ -298,9 +300,17 @@
     tuneAxes(svg, r, ticks, decimals);
     svg.setAttribute("aria-label", `${P.short} share price, ${r.caption}. From $${values[0].toFixed(2)} to $${values[values.length - 1].toFixed(2)}. Sample data.`);
     if (caption) caption.textContent = `Price history, ${r.caption}`;
-    if (!animate) {
+    const line = svg.querySelector("path.line");
+    if (line && !line.style.getPropertyValue("--len")) {
+      try { line.style.setProperty("--len", Math.ceil(line.getTotalLength()) + 1); } catch (_) { /* not rendered */ }
+    }
+    if (line) void getComputedStyle(line).strokeDashoffset;
+    if (animate) {
+      host.classList.remove("no-anim");
+    } else {
       svg.classList.add("is-in");
       svg.dataset.observed = "1";
+      if (line) void getComputedStyle(line).strokeDashoffset;
       raf2(() => host.classList.remove("no-anim"));
     }
     return svg;

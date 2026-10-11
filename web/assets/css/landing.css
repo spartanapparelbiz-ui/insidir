@@ -104,7 +104,9 @@
   mask-image:linear-gradient(90deg,#000 var(--solid,60%),rgba(0,0,0,.55) calc(var(--solid,60%) + (100% - var(--solid,60%)) * .45),transparent 100%)}
 .band__side--right{right:0;-webkit-mask-image:linear-gradient(270deg,#000 var(--solid,60%),rgba(0,0,0,.55) calc(var(--solid,60%) + (100% - var(--solid,60%)) * .45),transparent 100%);
   mask-image:linear-gradient(270deg,#000 var(--solid,60%),rgba(0,0,0,.55) calc(var(--solid,60%) + (100% - var(--solid,60%)) * .45),transparent 100%)}
-.band__layer{position:absolute;inset:-14% -8%}
+/* no will-change here: Chromium skips repainting a lazily loaded image inside a
+   will-change layer under a mask-image container (translate3d still composites it) */
+.band__layer{position:absolute;inset:-14% -8%;will-change:auto}
 .band__layer img{width:100%;height:100%;object-fit:cover}
 .lp-img-fade .band__layer img,.lp-img-fade .dark-band__layer img,.lp-img-fade .cta__img,.lp-img-fade .media img{opacity:0;transition:opacity 1.2s var(--ease-out)}
 .lp-img-fade .band__layer img.is-loaded,.lp-img-fade .dark-band__layer img.is-loaded,.lp-img-fade .cta__img.is-loaded,.lp-img-fade .media img.is-loaded{opacity:1}

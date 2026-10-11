@@ -57,7 +57,7 @@
   let gid = 0;
   function sparkline(values, { width = 120, height = 36, color, fill = true, stroke = 1.6 } = {}) {
     const up = values[values.length - 1] >= values[0];
-    const c = color || (up ? "var(--green)" : "var(--red)");
+    const c = color || (up ? "var(--green-chart)" : "var(--red-chart)");
     const min = Math.min(...values), max = Math.max(...values);
     const pad = stroke + 1;
     const x = i => (i / (values.length - 1)) * (width - pad * 2) + pad;
@@ -71,7 +71,7 @@
   }
 
   /* ---------- interactive area chart ---------- */
-  function areaChart(host, values, { labels = [], ticks = [], color = "var(--green)", format = v => v.toFixed(2) } = {}) {
+  function areaChart(host, values, { labels = [], ticks = [], color = "var(--green-chart)", format = v => v.toFixed(2) } = {}) {
     host.innerHTML = "";
     const W = host.clientWidth || 640, H = host.clientHeight || 300;
     const padL = 8, padR = 46, padT = 14, padB = 30;
