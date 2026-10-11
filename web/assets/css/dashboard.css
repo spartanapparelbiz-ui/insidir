@@ -190,12 +190,12 @@
    Responsive
    --------------------------------------------------------------- */
 /* Three columns get tight below ~1510px: tighten avatars, logos and type a touch */
-@media (min-width:1400px) and (max-width:1509px){
+@media (min-width:1400px) and (max-width:1514px){
   .dash-grid{grid-template-columns:minmax(0,37.5fr) minmax(0,37.6fr) minmax(0,24.9fr)}
   .dash-table--insider .w-time{width:15.2%}.dash-table--insider .w-person{width:36.5%}.dash-table--insider .w-co{width:15%}
   .dash-table--insider .w-tx{width:18.5%}.dash-table--insider .w-val{width:14.8%}
   .dash-table--watch .w-sym{width:21%}.dash-table--watch .w-price{width:14%}.dash-table--watch .w-chg{width:14.2%}.dash-table--watch .w-chart{width:22.4%}
-  .dash-table--political .w-person{width:45%}.dash-table--political .w-tk{width:15.5%}.dash-table--political .w-tx{width:11.5%}.dash-table--political .w-date{width:28%}
+  .dash-table--political .w-person{width:43%}.dash-table--political .w-tk{width:16.5%}.dash-table--political .w-tx{width:11.5%}.dash-table--political .w-date{width:29%}
   .dash .dash-table{font-size:13.5px}
   .dash .dash-table th{font-size:12.5px}
   .dash-avatar{width:34px;height:34px;font-size:12.5px}

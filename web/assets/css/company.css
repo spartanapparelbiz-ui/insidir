@@ -139,8 +139,8 @@ a.co-filing:hover{background:#faf8f3}
 .co-form{display:inline-flex;align-items:center;justify-content:center;min-width:calc(72*var(--u));height:calc(34*var(--u));padding:0 10px;border-radius:6px;
   background:var(--badge);color:#f3eee2;font-size:calc(15*var(--u));font-weight:600;letter-spacing:.02em;justify-self:start;white-space:nowrap}
 .co-form--light{background:var(--cream-2);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
-.co-filing__title{font-size:calc(19*var(--u));font-weight:500;color:var(--ink);line-height:1.35}
-.co-filing__desc{margin-top:2px;font-size:calc(16*var(--u));color:var(--muted)}
+.co-filing__title{display:block;font-size:calc(19*var(--u));font-weight:500;color:var(--ink);line-height:1.35}
+.co-filing__desc{display:block;margin-top:2px;font-size:calc(16*var(--u));color:var(--muted)}
 .co-filing__date{font-size:calc(17*var(--u));color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .co-filing__go{display:inline-flex;align-items:center;gap:6px;font-size:calc(15*var(--u));font-weight:500;color:var(--co-blue);white-space:nowrap}
 .co-filing__go svg{width:16px;height:16px;transition:transform .4s var(--ease-out)}

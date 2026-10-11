@@ -527,7 +527,7 @@
       </div>
       <div class="table-scroll"><table class="data-table co-table co-fin">
         <caption class="sr-only">${esc(P.name)} annual financial summary (illustrative)</caption>
-        <thead><tr><th scope="col">Metric</th><th scope="col" class="num">FY2021</th><th scope="col" class="num">FY2022</th><th scope="col" class="num">FY2023</th><th scope="col" class="num">Change</th><th scope="col" class="num">Trend</th></tr></thead>
+        <thead><tr><th scope="col">Metric</th><th scope="col" class="num">FY2021</th><th scope="col" class="num">FY2022</th><th scope="col" class="num">FY2023</th><th scope="col" class="num">YoY</th><th scope="col" class="num">Trend</th></tr></thead>
         <tbody>${rows.map(([label, vals, fmt, pts], i) => `<tr class="row-in" style="--delay:${(0.1 + i * 0.08).toFixed(2)}s">
           <td>${label}</td>${vals.map(v => `<td class="num">${fmt(v)}</td>`).join("")}
           <td class="num">${yoy(vals[1], vals[2], pts)}</td><td class="num">${bars(vals)}</td></tr>`).join("")}</tbody>

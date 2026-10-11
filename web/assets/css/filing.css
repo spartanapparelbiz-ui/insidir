@@ -82,6 +82,7 @@
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .45s var(--ease-out),background-color .3s}
 .toc__link{color:var(--toc-ink);font-weight:450}
 .toc__link:hover{color:var(--ink-2)}
+.toc__link:not(.is-active):hover{background:rgba(20,18,12,.035)}
 .toc__link.is-visible{color:var(--toc-blue-soft)}
 .toc__link.is-active{color:var(--toc-blue);font-weight:600}
 .toc__part{color:var(--toc-blue);font-weight:600;letter-spacing:-.005em}

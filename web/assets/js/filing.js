@@ -21,12 +21,12 @@
   // On phones the document is one very tall block in the page flow; revealing it
   // as a single card would keep it hidden until 12% of it is on screen, so the
   // cover lines (which reveal individually) carry the entrance instead.
+  const isMobile = () => mobileMQ.matches;
   const frame = document.querySelector(".doc-frame");
-  if (frame && isMobileNow()) frame.removeAttribute("data-reveal");
+  if (frame && isMobile()) frame.removeAttribute("data-reveal");
   // Chips that start off-screen in the horizontal bar would otherwise wait for
   // their own (staggered) reveal; the bar animates in as one piece instead.
-  if (isMobileNow()) toc.querySelectorAll(".toc__list > li[data-reveal]").forEach(li => li.removeAttribute("data-reveal"));
-  function isMobileNow() { return mobileMQ.matches; }
+  if (isMobile()) toc.querySelectorAll(".toc__list > li[data-reveal]").forEach(li => li.removeAttribute("data-reveal"));
 
   const allLinks = [...toc.querySelectorAll('a[href^="#"]')];
   const spyLinks = allLinks.filter(a => a.classList.contains("toc__link"));
@@ -34,7 +34,6 @@
   const targetOf = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
   const spy = spyLinks.map(a => ({ link: a, el: targetOf(a), group: a.dataset.group || "" })).filter(s => s.el);
 
-  const isMobile = () => mobileMQ.matches;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const appHeaderH = () => {
     const h = document.querySelector(".app-header");
@@ -311,7 +310,7 @@
     const p = bar.querySelector("p");
     const strong = document.createElement("strong");
     strong.textContent = q; // user text is only ever inserted as text
-    p.append("Full-text search for “", strong, "” is available when connected to the Insidir engine. Showing the latest 10-K.");
+    p.append("Full-text search for \u201C", strong, "\u201D is available when connected to the Insidir engine. Showing the latest 10-K.");
     slot.appendChild(bar);
     const input = document.getElementById("app-search-input");
     if (input && !input.value) input.value = q;

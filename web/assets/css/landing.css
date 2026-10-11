@@ -234,10 +234,10 @@
 .landing .pricing__sub{margin-top:calc(2 * var(--u));font-size:max(15px,calc(17.3 * var(--u)));color:var(--ink-2)}
 .plans{display:grid;grid-template-columns:repeat(2,calc(435 * var(--u)));justify-content:center;gap:calc(15 * var(--u));
   margin-top:calc(10 * var(--u))}
-.plan{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;background:rgba(251,250,246,.82);border:1px solid rgba(18,20,23,.08);border-radius:8px;
+.plan{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;background:rgba(251,250,246,.9);border:1px solid rgba(18,20,23,.08);border-radius:8px;
   padding:calc(12 * var(--u)) calc(52 * var(--u)) calc(12 * var(--u));min-width:290px;
   box-shadow:0 1px 2px rgba(20,18,12,.04),0 22px 50px -30px rgba(20,18,12,.35);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:box-shadow .6s var(--ease-out),border-color .6s var(--ease-out)}
+  transition:box-shadow .6s var(--ease-out),border-color .6s var(--ease-out)}
 @media (hover:hover){.plan:hover{border-color:rgba(18,20,23,.16);box-shadow:0 1px 2px rgba(20,18,12,.05),0 30px 60px -28px rgba(20,18,12,.42)}}
 .plan__name{font-family:var(--serif);font-weight:580;font-size:max(22px,calc(26.9 * var(--u)));line-height:1.2;letter-spacing:-.01em;
   font-variation-settings:"opsz" 24}
