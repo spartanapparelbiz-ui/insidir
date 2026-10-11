@@ -17,6 +17,8 @@
   --legal-ink-soft:#6b6a66;             /* body copy: 5.2:1 on --paper */
   --legal-land:28px;                    /* gap between the header and a heading after a jump */
 }
+/* the privacy tile sets its longer contents a little further from the divider */
+.legal-page--privacy{--toc-gap:calc(21 * var(--s));--legal-num:calc(50 * var(--s))}
 html:has(.legal-page){scroll-padding-top:calc(var(--app-h) + var(--legal-land))}
 
 .legal{padding-top:calc(21 * var(--s));padding-bottom:calc(104 * var(--s))}
@@ -63,7 +65,7 @@ html:has(.legal-page){scroll-padding-top:calc(var(--app-h) + var(--legal-land))}
 .legal-section h2:focus{outline:none}
 .legal-section h2:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
 .legal-num{position:absolute;left:calc(-1 * var(--legal-num));top:0;font-variant-numeric:lining-nums}
-.legal-section p,.legal-list li{font-size:calc(15.5 * var(--s));line-height:calc(26 * var(--s));color:var(--legal-ink-soft)}
+.legal-section p,.legal-list li{font-size:calc(15.5 * var(--s));line-height:calc(26 * var(--s));color:var(--legal-ink-soft);text-wrap:pretty}
 .legal-section p+p,.legal-list+p{margin-top:calc(10 * var(--s))}
 .legal-section strong{font-weight:600;color:var(--ink-2)}
 .legal-section code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;padding:1px 5px;border-radius:4px;

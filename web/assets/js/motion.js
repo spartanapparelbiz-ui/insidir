@@ -120,14 +120,19 @@
     el.classList.add("is-in");
     if (el.hasAttribute("data-count") && !el.dataset.counted) { el.dataset.counted = "1"; runCount(el); }
   }
+  // Mask reveals start fully clipped, and a fully clipped element never reports as
+  // intersecting, so they are triggered by their parent instead.
+  const maskHosts = new Map();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const el = entry.target;
+      const targets = [...(maskHosts.get(el) || [])];
+      if (el.hasAttribute("data-observed")) targets.push(el);
       if (entry.isIntersecting) {
-        if (root.classList.contains("is-ready")) reveal(el); else pending.add(el);
-        if (!el.hasAttribute("data-reveal-repeat")) io.unobserve(el);
+        targets.forEach(t => { if (root.classList.contains("is-ready")) reveal(t); else pending.add(t); });
+        if (!el.hasAttribute("data-reveal-repeat")) { io.unobserve(el); maskHosts.delete(el); }
       } else if (el.hasAttribute("data-reveal-repeat")) {
-        el.classList.remove("is-in");
+        targets.forEach(t => t.classList.remove("is-in"));
       }
     });
   }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 }) : null;
@@ -170,6 +175,13 @@
       el.dataset.observed = "1";
       if (reduce || !io) {
         el.classList.add("is-in");
+        return;
+      }
+      if (/^mask/.test(el.getAttribute("data-reveal") || "") && el.parentElement) {
+        const host = el.parentElement;
+        if (!maskHosts.has(host)) maskHosts.set(host, []);
+        maskHosts.get(host).push(el);
+        io.observe(host);
         return;
       }
       io.observe(el);

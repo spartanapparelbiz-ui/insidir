@@ -321,7 +321,7 @@ table{border-collapse:collapse;width:100%}
 .js [data-rule="x"]{transform:scaleX(0);transform-origin:left}
 
 /* Parallax layers get their transform from JS each frame */
-[data-parallax],[data-scrub]{will-change:transform}
+/* (no will-change here: promoting masked parallax layers can leave lazy images unpainted in Chromium) */
 
 /* Scroll progress indicator */
 .scroll-progress{position:fixed;left:0;top:0;height:2px;width:100%;z-index:200;pointer-events:none;

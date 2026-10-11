@@ -23,20 +23,23 @@
 .pr-strip__layer{position:absolute;inset:-6% 0;will-change:transform;
   transform:translate3d(0,clamp(-5%,calc((var(--p,.5) - .5) * -30%),5%),0)}
 .pr-strip__layer img{width:100%;height:100%;object-fit:cover;transform-origin:50% 40%}
-.pr-strip--left .pr-strip__layer img{object-position:84% 50%}
+.pr-strip--left .pr-strip__layer img{object-position:74% 50%}
 .pr-strip--right .pr-strip__layer img{object-position:81% 50%}
-/* warm sun glint on the left strip: a hot core, a soft halo and faint rays that turn slowly */
+/* sun bursting between the columns on the left strip (as in the reference): a white-hot core,
+   a warm bloom sized to the composition, and faint rays that turn slowly */
 .pr-strip__flare{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
-  background:radial-gradient(circle at 97% 33%,rgba(255,255,250,.95) 0,rgba(255,244,216,.85) 2.2%,rgba(255,214,150,.5) 9%,rgba(255,196,120,.16) 22%,rgba(255,190,110,0) 42%),
-    radial-gradient(90% 26% at 100% 33%,rgba(255,206,140,.32),rgba(255,206,140,0) 70%);
-  animation:prFlare 6s ease-in-out 2s infinite alternate}
-.pr-strip__flare::before{content:"";position:absolute;left:97%;top:33%;width:220%;aspect-ratio:1;translate:-50% -50%;
+  background:radial-gradient(circle calc(120 * var(--u)) at 95% 33%,#fff 0,rgba(255,253,245,.98) 10%,rgba(255,243,214,.84) 24%,rgba(255,224,168,.5) 46%,rgba(255,206,136,.18) 74%,rgba(255,200,130,0) 100%),
+    radial-gradient(130% 30% at 100% 33%,rgba(255,206,140,.3),rgba(255,206,140,0) 70%);
+  transform-origin:95% 33%}
+.pr-strip__flare::before{content:"";position:absolute;left:95%;top:33%;width:220%;aspect-ratio:1;translate:-50% -50%;
   background:repeating-conic-gradient(from 8deg,rgba(255,236,200,0) 0deg 9deg,rgba(255,236,200,.5) 10deg,rgba(255,236,200,0) 11.5deg 20deg);
   -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.5) 14%,transparent 42%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.5) 14%,transparent 42%);
   animation:prRays 40s linear infinite}
-@keyframes prFlare{from{opacity:.82}to{opacity:1}}
+@keyframes prFlare{from{opacity:1}to{opacity:.86}}
+@keyframes prFlareIn{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:none}}
 @keyframes prRays{to{rotate:360deg}}
 .pr-strip__layer img{filter:contrast(1.04) saturate(1.04)}
+.pr-strip--left .pr-strip__layer img{filter:contrast(1.06) saturate(.86) brightness(1.03)}
 .pr-strip--right .pr-strip__frame::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(20,14,8,0) 55%,rgba(20,14,8,.28))}
 
@@ -46,6 +49,9 @@
 .js.is-ready .pr-strip__frame{animation:prStripWipe 1.5s var(--ease-in-out) .05s both}
 .js.is-ready .pr-strip--right .pr-strip__frame{animation-delay:.2s}
 .js.is-ready .pr-strip__layer img{animation:prStripZoom 2.8s var(--ease-out) .05s both}
+/* the sun ignites once the strip has been unveiled, then breathes */
+.js .pr-strip__flare{opacity:0}
+.js.is-ready .pr-strip__flare{animation:prFlareIn 1.8s var(--ease-out) .85s both,prFlare 6s ease-in-out 2.65s infinite alternate}
 .js.is-ready .pr-strip--right .pr-strip__layer img{animation-delay:.2s}
 @keyframes prStripWipe{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes prStripZoom{from{transform:scale(1.24)}to{transform:scale(1)}}
@@ -215,7 +221,7 @@
   .js .pr-strip__frame{clip-path:none;animation:none}
   .js .pr-strip__layer img{transform:none;animation:none}
   .pr-strip__layer{transform:none}
-  .pr-strip__flare,.pr-strip__flare::before{animation:none}
+  .pr-strip__flare,.pr-strip__flare::before,.js.is-ready .pr-strip__flare{animation:none;opacity:1;transform:none}
   .js .pr-check path{stroke-dashoffset:0}
   .js .pr-badge{opacity:1;transform:none}
   .pr-card:hover{transform:none}

@@ -19,7 +19,7 @@
   --form-max:560px;
   --logo-out:calc(var(--form-w)*.06);            /* logo sits just left of the form edge */
   --title:calc(var(--k)*3.75);
-  --sub:max(16px,calc(var(--k)*1.3));
+  --sub:max(16px,calc(var(--k)*1.36));
   --text:max(15px,calc(var(--k)*1.12));
   --label:max(14.5px,calc(var(--k)*1.1));
   --input-h:max(46px,calc(var(--k)*3.6));
@@ -67,7 +67,7 @@
   padding:calc(var(--k)*1.9) 0 calc(var(--k)*1.6);
 }
 .auth-brand{align-self:flex-start;margin-left:max(var(--k)*1.75,(100% - var(--fw))/2 - var(--logo-out))}
-.auth-logo{font-size:calc(var(--k)*2.6);font-weight:600;font-variation-settings:"opsz" 36;color:var(--ink);padding:4px 0;transition:opacity .3s}
+.auth-logo{font-size:calc(var(--k)*2.6);font-weight:640;letter-spacing:-.03em;font-variation-settings:"opsz" 30;color:var(--ink);padding:4px 0;transition:opacity .3s}
 .auth-logo:hover{opacity:.72}
 
 .auth-card{
@@ -84,8 +84,8 @@
 .auth-plan .dot{width:6px;height:6px;background:#d9b26a}
 
 .auth-title{
-  font-family:var(--serif);font-weight:520;font-size:var(--title);line-height:1.06;letter-spacing:-.03em;
-  font-variation-settings:"opsz" 60;color:#0e1013;text-wrap:balance;
+  font-family:var(--serif);font-weight:600;font-size:var(--title);line-height:1.06;letter-spacing:-.018em;
+  font-variation-settings:"opsz" 60;color:#0d0f12;text-wrap:balance;
 }
 .auth-sub{margin-top:var(--gap-sub);font-size:var(--sub);line-height:1.4;color:#66645f;letter-spacing:-.005em}
 
