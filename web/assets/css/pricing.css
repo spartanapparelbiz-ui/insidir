@@ -11,7 +11,7 @@
   --pr-card:#fdfcf9;
   --pr-line:#e7e4dc;
   --pr-check:#2ea375;
-  --u:clamp(1px,min(.11438vw,.1842vh),1.75px);
+  --u:clamp(1px,min(.11438vw,.1953vh),1.75px);
   background:var(--pr-paper);
 }
 
@@ -179,7 +179,7 @@
 /* ---------- Responsive ---------- */
 @media (max-width:1180px){
   .pr-shell{grid-template-columns:11% minmax(0,1fr) 9.5%}
-  .pricing-page{--u:clamp(1px,min(.1281vw,.1842vh),1.6px)}
+  .pricing-page{--u:clamp(1px,min(.1281vw,.1953vh),1.6px)}
 }
 @media (max-width:900px){
   .pricing-page{--u:clamp(1px,.1563vw,1.3px);--nav-h:64px}
