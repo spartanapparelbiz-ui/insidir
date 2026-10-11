@@ -41,8 +41,11 @@
   transition:transform .62s cubic-bezier(.3,1.28,.52,1),width .5s var(--ease-out),opacity .6s var(--ease-out) .1s,scale .7s var(--ease-out) .1s}
 /* pills slide in from the left, then the thumb settles under the active pill */
 .js .alert-filters [data-reveal="left"]:not(.is-in){transform:translate3d(-28px,0,0)}
-.js .alert-filters__thumb{opacity:0;scale:.9}
-.js .alert-filters:has(.alert-filter.is-in) .alert-filters__thumb{opacity:1;scale:1;transition-delay:0s,0s,.45s,.45s}
+/* hidden only where :has() can bring it back; otherwise the active pill would lose its thumb */
+@supports selector(:has(a)){
+  .js .alert-filters__thumb{opacity:0;scale:.9}
+  .js .alert-filters:has(.alert-filter.is-in) .alert-filters__thumb{opacity:1;scale:1;transition-delay:0s,0s,.45s,.45s}
+}
 
 /* ---------- Table panel ---------- */
 .alerts-panel{margin-top:calc(var(--t) * 7);overflow:hidden;border-color:#e9e6de;border-radius:9px;background:rgba(255,255,255,.9);

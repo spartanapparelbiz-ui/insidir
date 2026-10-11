@@ -78,7 +78,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc
 html.has-smooth{scroll-behavior:auto}
 body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;
-  font-feature-settings:"cv11","ss01";overflow-x:clip}
+  font-feature-settings:"cv11","ss01";overflow-x:hidden;overflow-x:clip}
 img,svg,video{display:block;max-width:100%}
 img{height:auto}
 a{color:inherit;text-decoration:none}
@@ -348,7 +348,7 @@ table{border-collapse:collapse;width:100%}
 @keyframes curtainFailsafe{to{opacity:1}}
 
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
   .js [data-reveal],.js [data-split] .split-word>span,.js [data-rule]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .js [data-draw] path.line{stroke-dashoffset:0!important}
   .js [data-draw] .area{opacity:1!important;clip-path:none!important}
@@ -363,6 +363,7 @@ table{border-collapse:collapse;width:100%}
 
 /* ---------- Monogram avatars (no third-party portraits) ---------- */
 .monogram{--mg:#7a6a55;display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:50%;
+  background:var(--mg); /* fallback where color-mix() is unsupported */
   background:radial-gradient(120% 120% at 30% 20%,color-mix(in srgb,var(--mg) 55%,#fff) 0%,var(--mg) 70%);
   color:#fff;font-family:var(--serif);font-weight:600;font-size:11.5px;letter-spacing:.02em;line-height:1;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}

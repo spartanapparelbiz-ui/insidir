@@ -15,7 +15,8 @@
                                 reaches the viewport bottom — use on a tall wrapper around a sticky stage)
    data-words                  splits text into <span class="w" style="--i:n"> words and sets --n on the
                                element, for per-word scrubbing in CSS together with --p
-   html --vel                  smoothed scroll velocity, -1..1 (for skew / stretch effects)
+   data-vel                    element (and its descendants) get --vel: smoothed scroll velocity -1..1,
+                               positive when scrolling down, easing back to 0 at rest
    data-magnetic               element follows the pointer a little on hover
    body[data-smooth]           inertial wheel scrolling (desktop pointer only)
 
@@ -231,6 +232,9 @@
     scope.querySelectorAll("[data-progress]").forEach(el => {
       if (!progressEls.includes(el)) progressEls.push(el);
     });
+    scope.querySelectorAll("[data-vel]").forEach(el => {
+      if (!velEls.includes(el)) velEls.push(el);
+    });
   }
 
   const nav = () => document.querySelector(".site-nav");
@@ -278,20 +282,26 @@
     trackVelocity(y);
     lastY = y;
   }
-  let vel = 0, velY = window.scrollY, velT = performance.now(), velRaf = 0;
+  /* Scroll velocity for skew/stretch effects. Written only to elements that opt in
+     with [data-vel] (and inherited by their descendants), so the whole document is
+     not restyled on every frame. */
+  let vel = 0, velY = window.scrollY, velT = performance.now(), velRaf = 0, velEls = [];
+  function writeVel() {
+    const v = vel.toFixed(3);
+    for (const el of velEls) el.style.setProperty("--vel", v);
+  }
   function trackVelocity(y) {
-    if (reduce) return;
+    if (reduce || !velEls.length) { velY = y; velT = performance.now(); return; }
     const now = performance.now(), dt = Math.max(8, now - velT);
     const raw = clamp((y - velY) / dt / 3, -1, 1);   // ~3px per ms of scroll = full strength
-    vel += (raw - vel) * 0.25;
+    vel += (raw - vel) * 0.35;
     velY = y; velT = now;
-    root.style.setProperty("--vel", vel.toFixed(3));
+    writeVel();
     cancelAnimationFrame(velRaf);
     const settle = () => {                           // ease back to rest once scrolling stops
       vel *= 0.86;
       if (Math.abs(vel) < 0.002) vel = 0;
-      root.style.setProperty("--vel", vel.toFixed(3));
-      velT = performance.now(); velY = window.scrollY;
+      writeVel();
       if (vel) velRaf = requestAnimationFrame(settle);
     };
     velRaf = requestAnimationFrame(settle);
@@ -324,11 +334,18 @@
       this.start();
     }
   };
+  // Computed overflow rarely changes, so cache it per element instead of calling
+  // getComputedStyle up the whole ancestor chain on every wheel event.
+  const overflowCache = new WeakMap();
+  function canScrollY(node) {
+    let v = overflowCache.get(node);
+    if (v === undefined) { v = /(auto|scroll)/.test(getComputedStyle(node).overflowY); overflowCache.set(node, v); }
+    return v;
+  }
   function scrollableAncestor(node, dy) {
     while (node && node !== document.body && node !== root) {
       if (node.nodeType === 1) {
-        const s = getComputedStyle(node);
-        if (/(auto|scroll)/.test(s.overflowY) && node.scrollHeight > node.clientHeight + 24) {
+        if (canScrollY(node) && node.scrollHeight > node.clientHeight + 24) {
           if ((dy > 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 1) || (dy < 0 && node.scrollTop > 0)) return node;
         }
       }

@@ -5,8 +5,11 @@
 
   function initMenu() {
     const nav = document.querySelector(".site-nav");
+    // The nav slides away while scrolling down; bring it back when keyboard focus enters it.
+    if (nav) nav.addEventListener("focusin", () => nav.classList.remove("is-hidden"));
     const btn = nav && nav.querySelector(".site-nav__menu");
     if (!btn) return;
+    if (!btn.hasAttribute("aria-controls") && document.getElementById("mobile-menu")) btn.setAttribute("aria-controls", "mobile-menu");
     const close = () => { nav.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); };
     btn.addEventListener("click", () => {
       const open = !nav.classList.contains("is-open");
@@ -15,7 +18,14 @@
       btn.setAttribute("aria-expanded", String(open));
     });
     document.querySelectorAll(".mobile-menu a").forEach(a => a.addEventListener("click", close));
-    document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape" || !nav.classList.contains("is-open")) return;
+      // focus inside the menu would be stranded on a hidden link: hand it back to the toggle
+      const menu = document.querySelector(".mobile-menu");
+      const inside = menu && menu.contains(document.activeElement);
+      close();
+      if (inside) btn.focus();
+    });
   }
 
   /* <details class="accordion__item"> opens and closes with a height animation */

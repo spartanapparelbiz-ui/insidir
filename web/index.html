@@ -48,6 +48,8 @@
 <main id="main">
 
   <!-- ============ HERO ============ -->
+  <!-- .fx-top: one pinned journey through the hero, feature strip and "A more informed market" (fx-top.css/js) -->
+  <div class="fx-top" data-progress="pin">
   <section class="hero" id="top" data-progress="exit" aria-labelledby="hero-title">
     <div class="hero__bg" aria-hidden="true">
       <div class="hero__parallax" data-parallax="0.32">
@@ -68,6 +70,7 @@
     <div class="hero__content container">
       <p class="hero__eyebrow eyebrow" data-reveal="fade" data-delay="120">Institutional insights. For every investor.</p>
       <h1 class="hero__title" id="hero-title" data-split data-delay="200">Turn public records <br>into an edge.</h1>
+      <div class="hero__lower">
       <p class="hero__sub" data-reveal="up" data-delay="620">Track insider filings, political activity, SEC disclosures, <br class="br-lg"> and company data — all in one powerful platform.</p>
       <div class="hero__actions" data-stagger="110" data-delay="780">
         <a class="btn btn--dark hero__btn" href="signup.html" data-reveal="up" data-magnetic="0.25">
@@ -76,10 +79,12 @@
         </a>
         <a class="btn btn--light hero__btn" href="#how" data-reveal="up">See how it works</a>
       </div>
+      </div>
     </div>
 
     <a class="hero__cue" href="#coverage" aria-label="Scroll to content"><span></span></a>
   </section>
+  <div class="fx-top__run" aria-hidden="true"></div>
 
   <!-- ============ FEATURE STRIP ============ -->
   <section class="strip" id="coverage" aria-label="What insidir. covers">
@@ -108,6 +113,7 @@
 
   <!-- ============ A MORE INFORMED MARKET ============ -->
   <section class="band informed" id="about" aria-labelledby="about-title">
+   <div class="informed__stage">
     <div class="band__side band__side--left" aria-hidden="true">
       <div class="band__layer" data-parallax="0.08" data-parallax-x="0.05">
         <img src="assets/img/informed-left.jpg" alt="" width="1000" height="886" loading="lazy" decoding="async">
@@ -121,7 +127,7 @@
 
     <div class="band__content informed__content">
       <h2 class="sec-title informed__title" id="about-title" data-split>A more informed market.</h2>
-      <p class="sec-sub informed__sub" data-reveal="up" data-delay="200">Public records contain <strong>powerful clues.</strong> We make them easy to find, easy to understand, and easy to use — so you can make better investment decisions.</p>
+      <p class="sec-sub informed__sub" data-reveal="up" data-delay="200" data-words>Public records contain <strong>powerful clues.</strong> We make them easy to find, easy to understand, and easy to use — so you can make better investment decisions.</p>
       <div class="cols cols--3 informed__cols" data-stagger="120" data-delay="250">
         <div class="col" data-reveal="up">
           <h3 class="col__title">Real data</h3>
@@ -139,10 +145,13 @@
         </div>
       </div>
     </div>
+   </div>
   </section>
+  </div><!-- /.fx-top -->
 
   <!-- ============ SEE WHAT MOVES ============ -->
-  <section class="dark-band moves on-dark" id="how" aria-labelledby="how-title">
+  <section class="dark-band moves on-dark fx-moves" id="how" aria-labelledby="how-title" data-progress="travel">
+   <div class="fx-moves__stage">
     <div class="dark-band__bg" aria-hidden="true">
       <div class="dark-band__layer" data-parallax="0.07">
         <img src="assets/img/moves-bg.jpg" alt="" width="1920" height="500" loading="lazy" decoding="async">
@@ -181,10 +190,11 @@
         </article>
       </div>
     </div>
+   </div>
   </section>
 
   <!-- ============ FOUR CRITICAL LENSES ============ -->
-  <section class="lenses" id="product" aria-labelledby="product-title">
+  <section class="lenses fx-lenses" id="product" aria-labelledby="product-title" data-progress="enter" data-progress-span="0.85">
     <h2 class="sec-title lenses__title" id="product-title" data-split>One platform. Four critical lenses.</h2>
     <p class="sec-sub lenses__sub" data-reveal="up" data-delay="200">Different angles. A clearer picture.</p>
     <div class="lenses__grid">
@@ -212,12 +222,13 @@
   </section>
 
   <!-- ============ RESEARCH FASTER ============ -->
-  <section class="dark-band research on-dark" aria-labelledby="research-title">
+  <section class="dark-band research on-dark fx-research" aria-labelledby="research-title" data-progress="enter" data-progress-span="0.8">
     <div class="dark-band__bg" aria-hidden="true">
       <div class="dark-band__layer" data-parallax="0.07">
         <img src="assets/img/research-bg.jpg" alt="" width="1920" height="414" loading="lazy" decoding="async">
       </div>
     </div>
+    <div class="fx-word" aria-hidden="true" data-progress="travel"><span class="fx-word__text">Research</span></div>
     <div class="dark-band__inner">
       <h2 class="sec-title research__title" id="research-title" data-split>Research faster. Decide with confidence.</h2>
       <p class="sec-sub research__sub" data-reveal="up" data-delay="200">Powerful tools to help you go from public records to real insight.</p>
@@ -263,7 +274,8 @@
   </section>
 
   <!-- ============ BUILT ON OFFICIAL RECORDS ============ -->
-  <section class="band records" id="data" aria-labelledby="data-title">
+  <section class="band records" id="data" aria-labelledby="data-title" data-progress="enter">
+    <div class="records__marquee" aria-hidden="true" data-vel><div class="records__track"><span>SEC · EDGAR · FORM 4 · 10-K · 10-Q · 8-K · CONGRESSIONAL DISCLOSURES ·</span><span>SEC · EDGAR · FORM 4 · 10-K · 10-Q · 8-K · CONGRESSIONAL DISCLOSURES ·</span></div></div>
     <div class="band__side band__side--left" aria-hidden="true">
       <div class="band__layer" data-parallax="0.08" data-parallax-x="0.04">
         <img src="assets/img/records-left.jpg" alt="" width="1100" height="658" loading="lazy" decoding="async">
@@ -302,7 +314,7 @@
   </section>
 
   <!-- ============ PRICING ============ -->
-  <section class="band pricing" id="pricing" aria-labelledby="pricing-title">
+  <section class="band pricing" id="pricing" aria-labelledby="pricing-title" data-progress="enter">
     <div class="band__side band__side--left" aria-hidden="true">
       <div class="band__layer" data-parallax="0.1" data-parallax-x="0.04">
         <img src="assets/img/pricing-left.jpg" alt="" width="1084" height="988" loading="lazy" decoding="async">
@@ -349,7 +361,7 @@
   <section class="faq" id="faq" aria-labelledby="faq-title">
     <h2 class="faq__title" id="faq-title" data-split>Frequently asked questions.</h2>
     <div class="faq__grid">
-      <div class="faq__col" data-stagger="90" data-delay="150">
+      <div class="faq__col" data-stagger="200" data-delay="150">
         <details class="faq__item" data-accordion data-reveal="up">
           <summary><span>What data does insidir. include?</span><i class="faq__icon" aria-hidden="true"></i></summary>
           <div class="faq__body" data-accordion-body><p>insidir. organizes public records in one place: SEC filings such as insider Forms 3, 4 and 5, annual and quarterly reports (10-K, 10-Q) and current reports (8-K), alongside congressional financial disclosures and company data. Every record links back to its official source.</p></div>
@@ -359,7 +371,7 @@
           <div class="faq__body" data-accordion-body><p>New SEC filings are checked every 15 minutes through the day and appear as soon as they are processed. Each record shows both when it was published and when the underlying transaction took place.</p></div>
         </details>
       </div>
-      <div class="faq__col" data-stagger="90" data-delay="240">
+      <div class="faq__col" data-stagger="200" data-delay="250">
         <details class="faq__item" data-accordion data-reveal="up">
           <summary><span>Is insidir. suitable for individual investors?</span><i class="faq__icon" aria-hidden="true"></i></summary>
           <div class="faq__body" data-accordion-body><p>Yes. insidir. makes the same public information institutions rely on easy to search and understand. It is a research tool, not investment advice, so always do your own diligence.</p></div>
@@ -373,7 +385,7 @@
   </section>
 
   <!-- ============ FINAL CTA ============ -->
-  <section class="cta on-dark" aria-labelledby="cta-title">
+  <section class="cta on-dark" aria-labelledby="cta-title" data-progress="enter">
     <div class="cta__bg" aria-hidden="true">
       <div class="cta__layer" data-parallax="0.16">
         <img class="cta__img" src="assets/img/cta-bg.jpg" alt="" width="1812" height="708" loading="lazy" decoding="async">

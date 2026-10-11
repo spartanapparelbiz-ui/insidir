@@ -134,7 +134,7 @@ html:has(.legal-page){scroll-padding-top:calc(var(--app-h) + var(--legal-land))}
   .legal-toc__current.is-swapping{opacity:0;transform:translate3d(0,6px,0);transition:none}
   .legal-toc__chev{flex:none;width:18px;height:18px;color:var(--ink-2);transition:transform .45s var(--ease-out)}
   .legal-toc[open] .legal-toc__chev{transform:rotate(180deg)}
-  .legal-toc__nav{position:absolute;top:100%;left:0;right:0;max-height:min(calc(100svh - var(--app-h) - 76px),500px);overflow:auto;overscroll-behavior:contain;
+  .legal-toc__nav{position:absolute;top:100%;left:0;right:0;max-height:min(calc(100vh - var(--app-h) - 76px),500px);max-height:min(calc(100svh - var(--app-h) - 76px),500px);overflow:auto;overscroll-behavior:contain;
     background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
     box-shadow:0 24px 40px -24px rgba(20,18,12,.28);padding:6px var(--gutter) 14px}
   .legal-toc__list a{padding:9px 0;font-size:15.5px;line-height:23px;border-bottom:1px solid #efece5}
@@ -165,7 +165,7 @@ html:has(.legal-page){scroll-padding-top:calc(var(--app-h) + var(--legal-land))}
    404 — Page not found
    ========================================================= */
 .nf-page{background:var(--cream)}
-.nf-hero{position:relative;isolation:isolate;overflow:hidden;min-height:max(640px,100svh);display:flex;justify-content:center;
+.nf-hero{position:relative;isolation:isolate;overflow:hidden;min-height:max(640px,100vh);min-height:max(640px,100svh);display:flex;justify-content:center;
   padding:calc(var(--nav-h) + clamp(56px,14vh,150px)) 0 clamp(220px,34vh,360px)}
 
 /* faded skyline that rises into place and keeps rising as you scroll */

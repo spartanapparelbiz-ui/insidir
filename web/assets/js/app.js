@@ -149,13 +149,13 @@
       </form>
       <a class="icon-btn" href="alerts.html" aria-label="Alerts (3 new)">${icons.bell}<span class="badge-dot"></span></a>
       <div class="user-menu">
-        <button class="user-menu__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">${monogram("Jordan Davis", "monogram--lg")}</button>
-        <div class="user-menu__panel" role="menu">
+        <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu">${monogram("Jordan Davis", "monogram--lg")}</button>
+        <div class="user-menu__panel" id="user-menu-panel">
           <div class="who"><strong>Jordan Davis</strong>jordan@example.com</div>
-          <a role="menuitem" href="pricing.html">Plan &amp; billing</a>
-          <a role="menuitem" href="alerts.html">Alert settings</a>
-          <a role="menuitem" href="privacy.html">Privacy</a>
-          <button role="menuitem" type="button" data-signout>Sign out</button>
+          <a href="pricing.html">Plan &amp; billing</a>
+          <a href="alerts.html">Alert settings</a>
+          <a href="privacy.html">Privacy</a>
+          <button type="button" data-signout>Sign out</button>
         </div>
       </div>
     </div>
@@ -202,7 +202,16 @@
     const setOpen = open => { panel.classList.toggle("is-open", open); btn.setAttribute("aria-expanded", String(open)); };
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!panel.classList.contains("is-open")); });
     document.addEventListener("click", e => { if (!panel.contains(e.target)) setOpen(false); });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    // Disclosure menu: Escape returns focus to the button; tabbing away closes it.
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape" || !panel.classList.contains("is-open")) return;
+      const inside = panel.contains(document.activeElement);
+      setOpen(false);
+      if (inside) btn.focus();
+    });
+    host.querySelector(".user-menu").addEventListener("focusout", e => {
+      if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+    });
     host.querySelector("[data-signout]").addEventListener("click", async () => {
       try { await api("/v1/auth/logout", { method: "POST" }); } catch (_) { /* engine not attached */ }
       location.href = "signin.html";
