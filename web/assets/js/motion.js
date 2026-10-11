@@ -10,7 +10,12 @@
    data-rule="x|y"             divider grows in
    data-parallax="0.2"         translateY by speed x distance from viewport centre
    data-parallax-x="-0.1"      same on the X axis
-   data-progress="travel|exit|enter"  sets --p (0..1) on the element for CSS-driven scrubbing
+   data-progress="travel|exit|enter|pin"  sets --p (0..1) on the element for CSS-driven scrubbing
+                               (pin: 0 when the element's top reaches the viewport top, 1 when its bottom
+                                reaches the viewport bottom — use on a tall wrapper around a sticky stage)
+   data-words                  splits text into <span class="w" style="--i:n"> words and sets --n on the
+                               element, for per-word scrubbing in CSS together with --p
+   html --vel                  smoothed scroll velocity, -1..1 (for skew / stretch effects)
    data-magnetic               element follows the pointer a little on hover
    body[data-smooth]           inertial wheel scrolling (desktop pointer only)
 
@@ -65,6 +70,32 @@
       });
     };
     walk(el);
+  }
+
+  /* ---------- words for scroll-scrubbed reading effects ---------- */
+  function splitWords(el) {
+    if (el.dataset.wordsDone) return;
+    el.dataset.wordsDone = "1";
+    let i = 0;
+    const walk = node => {
+      [...node.childNodes].forEach(child => {
+        if (child.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach(part => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(" ")); return; }
+            const w = document.createElement("span");
+            w.className = "w";
+            w.textContent = part;
+            w.style.setProperty("--i", i++);
+            frag.appendChild(w);
+          });
+          child.replaceWith(frag);
+        } else if (child.nodeType === 1 && child.tagName !== "BR") walk(child);
+      });
+    };
+    walk(el);
+    el.style.setProperty("--n", i);
   }
 
   /* ---------- count-up numbers ---------- */
@@ -168,6 +199,7 @@
       if (!el.hasAttribute("data-stagger")) applyDelay(el, parseFloat(el.dataset.delay));
     });
     scope.querySelectorAll("[data-split]").forEach(splitText);
+    scope.querySelectorAll("[data-words]").forEach(splitWords);
     scope.querySelectorAll("[data-draw]").forEach(prepareDraw);
     const targets = scope.querySelectorAll("[data-reveal],[data-split],[data-draw],[data-rule],[data-count]");
     targets.forEach(el => {
@@ -238,11 +270,31 @@
       const mode = el.dataset.progress || "travel";
       let p;
       if (mode === "exit") p = -r.top / Math.max(1, r.height);
+      else if (mode === "pin") p = -r.top / Math.max(1, r.height - h);
       else if (mode === "enter") p = (h - r.top) / (h * parseFloat(el.dataset.progressSpan || "0.75"));
       else p = (h - r.top) / (h + r.height);
       el.style.setProperty("--p", clamp(p).toFixed(4));
     }
+    trackVelocity(y);
     lastY = y;
+  }
+  let vel = 0, velY = window.scrollY, velT = performance.now(), velRaf = 0;
+  function trackVelocity(y) {
+    if (reduce) return;
+    const now = performance.now(), dt = Math.max(8, now - velT);
+    const raw = clamp((y - velY) / dt / 3, -1, 1);   // ~3px per ms of scroll = full strength
+    vel += (raw - vel) * 0.25;
+    velY = y; velT = now;
+    root.style.setProperty("--vel", vel.toFixed(3));
+    cancelAnimationFrame(velRaf);
+    const settle = () => {                           // ease back to rest once scrolling stops
+      vel *= 0.86;
+      if (Math.abs(vel) < 0.002) vel = 0;
+      root.style.setProperty("--vel", vel.toFixed(3));
+      velT = performance.now(); velY = window.scrollY;
+      if (vel) velRaf = requestAnimationFrame(settle);
+    };
+    velRaf = requestAnimationFrame(settle);
   }
   function requestFrame() {
     if (!ticking) { ticking = true; requestAnimationFrame(frame); }

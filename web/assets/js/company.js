@@ -185,6 +185,8 @@
   main.dataset.ticker = T;
 
   if (!P) { renderMissing(); return; }
+  // One page heading per page: the not-found block (with its own h1) is not needed for a known ticker.
+  { const unused = main.querySelector("[data-missing]"); if (unused) unused.remove(); }
 
   /* ------------------------------------------------------------------
      Series for every chart range (all derived from one 1Y base so the
@@ -744,7 +746,7 @@
   function renderMissing() {
     const shown = rawTicker.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, "").slice(0, 12) || "this ticker";
     document.title = `${shown} not found — insidir.`;
-    $$(".co-head, .co-tabs-wrap, .co-panel", main).forEach(el => { el.hidden = true; });
+    $$(".co-head, .co-tabs-wrap, .co-panel", main).forEach(el => { el.remove(); });
     const box = $("[data-missing]", main);
     if (!box) return;
     box.hidden = false;
