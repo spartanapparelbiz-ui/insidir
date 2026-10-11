@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alerts — insidir.</title>
+  <meta name="description" content="Get notified when new filings, trades, or events match your interests: insider trades, SEC filings, political trades and price moves.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js')</script>
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/alerts.css">
+  <script defer src="assets/js/motion.js"></script>
+  <script defer src="assets/js/site.js"></script>
+  <script defer src="assets/js/app.js"></script>
+  <script defer src="assets/js/alerts.js"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-header data-active="alerts"></header>
+
+  <main id="main" class="app-main alerts-main">
+    <div class="alerts-head">
+      <h1 class="page-title alerts-title" data-split>Alerts</h1>
+      <p class="page-sub alerts-sub" data-reveal="up" data-delay="140">Get notified when new filings, trades, or events match your interests.</p>
+      <button class="btn btn--dark alerts-manage" type="button" id="manage-alerts" aria-haspopup="dialog" aria-controls="alerts-drawer"
+        data-reveal="fade" data-delay="260" data-magnetic="0.14">Manage alerts</button>
+    </div>
+
+    <div class="alert-filters-scroll">
+      <div class="alert-filters" role="tablist" aria-label="Filter alerts by type" data-stagger="70" data-delay="240">
+        <button class="alert-filter" type="button" role="tab" id="tab-all" data-filter="all" aria-selected="true" aria-controls="alerts-panel" style="--g:63" data-reveal="left">All</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-insider" data-filter="insider" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:126" data-reveal="left">Insider Trades</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-filings" data-filter="filings" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:108" data-reveal="left">SEC Filings</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-political" data-filter="political" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:136" data-reveal="left">Political Trades</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-price" data-filter="price" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:118" data-reveal="left">Price Moves</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-watchlist" data-filter="watchlist" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:102" data-reveal="left">Watchlist</button>
+        <span class="alert-filters__fill" aria-hidden="true" style="--g:43" data-reveal="left"></span>
+        <span class="alert-filters__thumb" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <section class="panel alerts-panel" id="alerts-panel" role="tabpanel" aria-labelledby="tab-all" data-reveal="up" data-delay="320">
+      <table class="data-table alerts-table">
+        <caption class="sr-only">Recent alerts. Select a row to show its source links.</caption>
+        <colgroup><col class="c-time"><col class="c-type"><col class="c-desc"><col class="c-co"></colgroup>
+        <thead>
+          <tr><th scope="col">Time</th><th scope="col">Type</th><th scope="col">Description</th><th scope="col" class="c-co-head">Company</th></tr>
+        </thead>
+        <!-- alert rows are rendered by assets/js/alerts.js (one <tbody> per alert) -->
+      </table>
+      <div class="alerts-empty" hidden>
+        <span class="alerts-empty__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </span>
+        <p class="alerts-empty__title">Nothing matches this filter yet</p>
+        <p class="alerts-empty__text">When a new filing, trade, or event fits, it will appear here.</p>
+        <button class="btn btn--light btn--sm" type="button" data-show-all>Show all alerts</button>
+      </div>
+    </section>
+    <p class="sr-only" id="alerts-status" aria-live="polite"></p>
+  </main>
+
+  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Not investment advice.</span>
+    <span class="sample-note">Sample data shown for illustration</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+
+  <div class="drawer" id="alerts-drawer" aria-hidden="true">
+    <div class="drawer__backdrop" data-drawer-close></div>
+    <div class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-desc" tabindex="-1">
+      <div class="drawer__head">
+        <div>
+          <h2 class="drawer__title" id="drawer-title">Manage alerts</h2>
+          <p class="drawer__desc" id="drawer-desc">Choose which events create an alert.</p>
+        </div>
+        <button class="drawer__close" type="button" aria-label="Close" data-drawer-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <ul class="prefs">
+        <li class="pref" style="--i:0">
+          <label class="pref__text" for="pref-insider"><span class="pref__label">Insider trades on my watchlist</span>
+            <span class="pref__hint">Form 4 purchases and sales by officers and directors</span></label>
+          <button class="switch" type="button" role="switch" id="pref-insider" data-pref="insiderWatchlist" aria-checked="true"><span class="switch__knob"></span></button>
+        </li>
+        <li class="pref" style="--i:1">
+          <label class="pref__text" for="pref-filings"><span class="pref__label">New SEC filings for my watchlist</span>
+            <span class="pref__hint">8-K, 10-Q, 10-K and other EDGAR filings</span></label>
+          <button class="switch" type="button" role="switch" id="pref-filings" data-pref="filingsWatchlist" aria-checked="true"><span class="switch__knob"></span></button>
+        </li>
+        <li class="pref" style="--i:2">
+          <label class="pref__text" for="pref-political"><span class="pref__label">Political trades &amp; disclosures</span>
+            <span class="pref__hint">Periodic transaction reports from members of Congress</span></label>
+          <button class="switch" type="button" role="switch" id="pref-political" data-pref="political" aria-checked="true"><span class="switch__knob"></span></button>
+        </li>
+        <li class="pref" style="--i:3">
+          <label class="pref__text" for="pref-price"><span class="pref__label">Price moves greater than 5%</span>
+            <span class="pref__hint">Large moves on the companies you follow</span></label>
+          <button class="switch" type="button" role="switch" id="pref-price" data-pref="priceMoves" aria-checked="false"><span class="switch__knob"></span></button>
+        </li>
+        <li class="pref is-disabled" style="--i:4">
+          <label class="pref__text" for="pref-digest"><span class="pref__label">Weekly digest email <span class="soon">Coming soon</span></span>
+            <span class="pref__hint">A weekly summary of activity on your watchlist</span></label>
+          <button class="switch" type="button" role="switch" id="pref-digest" data-pref="weeklyDigest" aria-checked="false" aria-disabled="true" disabled><span class="switch__knob"></span></button>
+        </li>
+      </ul>
+      <div class="drawer__foot" style="--i:5">
+        <p class="drawer__note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <span>Alerts appear in the app. Email and push delivery are not available yet.</span>
+        </p>
+        <button class="btn btn--dark btn--block drawer__save" type="button" data-save-prefs>Save preferences</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
