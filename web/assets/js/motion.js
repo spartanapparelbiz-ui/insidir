@@ -397,7 +397,9 @@
   function scrollToTarget(target) {
     // Marketing nav auto-hides on scroll, so it only needs a partial offset; the sticky product header always covers the top.
     const site = nav(), app = document.querySelector(".app-header");
+    const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
     const offset = target.dataset.scrollOffset ? parseFloat(target.dataset.scrollOffset)
+      : margin ? margin
       : app ? app.offsetHeight + 24
       : site ? site.offsetHeight * 0.6 : 0;
     const y = target.getBoundingClientRect().top + window.scrollY - offset;

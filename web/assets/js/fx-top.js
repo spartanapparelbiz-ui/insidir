@@ -20,6 +20,11 @@
   const informed = top.querySelector(".informed");
   const stage = informed && informed.querySelector(".informed__stage");
 
+  /* the paragraph is read word by word: motion.js splits it at DOMContentLoaded (this deferred
+     script runs first). Only with motion allowed, so reduced motion keeps the untouched text. */
+  const reading = informed && informed.querySelector(".informed__sub");
+  if (reading) reading.setAttribute("data-words", "");
+
   /* ---------- feature strip: titles roll up letter by letter like a ticker board ---------- */
   function tickerTitles() {
     strip && strip.querySelectorAll(".strip__title").forEach(title => {
@@ -94,11 +99,14 @@
     const centre = layer("fx-slice--c");
     zoom.replaceWith(centre);
     centre.appendChild(zoom);
-    const door = side => layer("fx-slice--" + side, zoom.cloneNode(true));
-    const bloom = document.createElement("div");
-    bloom.className = "fx-bloom";
+    const el = cls => { const d = document.createElement("div"); d.className = cls; return d; };
+    const door = side => {
+      const d = layer("fx-slice--" + side, zoom.cloneNode(true));
+      d.appendChild(el("fx-shade"));
+      return d;
+    };
     const left = door("l"), right = door("r");
-    centre.appendChild(bloom);
+    centre.append(el("fx-wash"), el("fx-bloom"));
     frame.append(left, right);
     /* clones join the load-in zoom exactly where the original is, and stand still once it is over
        (so hiding them off-screen never replays it) */
@@ -181,6 +189,9 @@
     s.setProperty("--fx-a2", ((Dh + B) / L).toFixed(5));
     s.setProperty("--fx-ar", ((Dh + B + Di * 0.86) / L).toFixed(5));
     doorGeometry();
+    nearEnd = top.offsetTop + top.offsetHeight + V * 0.4;
+    bandStart = top.offsetTop + informed.offsetTop;
+    updateNear();
     if (window.Insidir && Insidir.refresh) Insidir.refresh();
   }
 
@@ -218,28 +229,26 @@
 
   /* At p = 0 the hero renders exactly as without effects; depth layers for the copy switch on
      once the page leaves the top (a class flip at that threshold only, no layout reads). */
-  let live = null, heroNear = true;
+  let live = null, heroNear = true, bandNear = false, nearEnd = Infinity, bandStart = 0;
   function updateLive() {
     const on = pinned && heroNear && window.scrollY > 1;
     if (on !== live) { live = on; top.classList.toggle("fx-live", on); }
   }
-  window.addEventListener("scroll", () => { if (heroNear || live) updateLive(); }, { passive: true });
-
   /* Heavy layers exist only while their scene is on (or near) the screen: the photo slices, the
-     bloom and every will-change are dropped once the hero has scrolled away, the informed photos
-     are promoted only while the band is around. */
-  top.classList.add("fx-on");
-  if ("IntersectionObserver" in window) {
-    const near = new IntersectionObserver(entries => entries.forEach(e => {
-      if (e.target === hero) {
-        heroNear = e.isIntersecting;
-        top.classList.toggle("fx-on", heroNear);
-        updateLive();
-      } else top.classList.toggle("fx-on-i", e.isIntersecting);
-    }), { rootMargin: "40% 0px 40% 0px" });
-    near.observe(hero);
-    near.observe(stage);
+     bloom and every will-change are dropped once the wrapper has scrolled away; the informed photos
+     are promoted only while the band is around. The scenes sit at the top of the document, so a
+     scroll-position check (offsets measured on resize) decides it synchronously, before the frame
+     is drawn, even after an instant jump. */
+  function updateNear() {
+    const y = window.scrollY, V = window.innerHeight;
+    const hero = !pinned || y < nearEnd;
+    const band = pinned && y + V * 1.4 > bandStart && y < nearEnd;
+    if (hero !== heroNear) { heroNear = hero; top.classList.toggle("fx-on", hero); }
+    if (band !== bandNear) { bandNear = band; top.classList.toggle("fx-on-i", band); }
+    updateLive();
   }
+  top.classList.add("fx-on");
+  window.addEventListener("scroll", updateNear, { passive: true });
 
   measure();
   window.addEventListener("resize", requestMeasure);

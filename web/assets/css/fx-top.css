@@ -44,10 +44,10 @@
   .js .strip__rule[data-rule]{transform-origin:50% 100%;transition:transform .9s cubic-bezier(.72,0,.14,1) var(--delay,0s)}
   /* fast scrolling slides the copy between the fixed rules like a running ticker */
   .strip__title,.strip__sub{translate:calc(var(--vel,0) * var(--drift,0) * 1px) 0}
-  .strip__item:nth-child(1){--drift:-8}
-  .strip__item:nth-child(2){--drift:-15}
-  .strip__item:nth-child(3){--drift:-22}
-  .strip__item:nth-child(4){--drift:-29}
+  .strip__item:nth-child(1){--drift:-5}
+  .strip__item:nth-child(2){--drift:-9}
+  .strip__item:nth-child(3){--drift:-13}
+  .strip__item:nth-child(4){--drift:-17}
 
   /* ---------- light version of "reading the record" (no pin) ---------- */
   .js:not(.fx-pin) .informed__title .split-word{overflow:visible}
@@ -86,8 +86,14 @@
 /* the stage is the first screen (taller screens than 1000px get a full-height stage) */
 .fx-pin .hero{position:sticky;top:0;z-index:0;--hero-v:max(640px,100vh)}
 /* the whole picture drifts up a little slower than the strip that glides over it */
-.fx-pin .hero__frame{perspective:var(--fx-persp,1100px);perspective-origin:var(--fx-pox,50.6%) 46%;translate:0 calc(var(--gl) * var(--fx-b,34vh) * -.62)}
-.fx-pin .fx-slice{will-change:transform;overflow:hidden}
+.fx-pin .fx-on .hero__frame{perspective:var(--fx-persp,1100px);perspective-origin:var(--fx-pox,50.6%) 46%}
+.fx-pin .hero__frame{translate:0 calc(var(--gl) * var(--fx-b,34vh) * -.62)}
+.fx-pin .fx-slice{overflow:hidden}
+.fx-pin .fx-on .fx-slice{will-change:transform}
+/* off-screen (hero scrolled away): no photo layers at all */
+.fx-pin .fx-top:not(.fx-on) .hero__bg{visibility:hidden}
+.fx-pin .fx-top:not(.fx-on) .fx-slice--l,.fx-pin .fx-top:not(.fx-on) .fx-slice--r,.fx-pin .fx-top:not(.fx-on) .fx-bloom{display:none}
+.fx-pin .fx-slice>.hero__zoom.fx-still{animation:none;transform:none}
 /* each slice is cropped to its own part of the photograph (small layers), the image stack inside
    stays aligned to the full frame */
 .fx-pin .fx-slice--c{left:20%;right:24%}
@@ -96,30 +102,44 @@
 .fx-pin .fx-slice--l>.hero__zoom{right:auto;width:322.581%}
 .fx-pin .fx-slice--r{left:70%}
 .fx-pin .fx-slice--r>.hero__zoom{left:-233.333%;right:auto;width:333.333%}
-/* centre: the skyline, feathered under the doors; it pushes in toward the street and the horizon */
+/* centre: the skyline. Its edges dissolve under the doors into the stage colour (a wash painted
+   once into the layer, so no mask has to be composited every frame); it pushes in toward the street */
+.fx-wash{display:none}
+.fx-pin .fx-wash{display:block;position:absolute;inset:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-.2' y='-.2' width='1.4' height='1.4'%3E%3CfeGaussianBlur stdDeviation='.98 .4'/%3E%3C/filter%3E%3Cg filter='url(%23b)' fill='%23e9e2d4'%3E%3Cpolygon points='-10,-10 16.43,-10 11.79,12 8.57,30 6.43,56 3.57,76 2.14,110 -10,110'/%3E%3Cpolygon points='94.29,-10 110,-10 110,110 91.43,110 93.75,60 94.46,40'/%3E%3C/g%3E%3C/svg%3E") 0 0/100% 100% no-repeat}
 .fx-pin .fx-slice--c{
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-.2' y='-.2' width='1.4' height='1.4'%3E%3CfeGaussianBlur stdDeviation='.98 .4'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='16.43,-10 11.79,12 8.57,30 6.43,56 3.57,76 2.14,110 92.14,110 94.46,60 95.18,40 95,-10'/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-.2' y='-.2' width='1.4' height='1.4'%3E%3CfeGaussianBlur stdDeviation='.98 .4'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='16.43,-10 11.79,12 8.57,30 6.43,56 3.57,76 2.14,110 92.14,110 94.46,60 95.18,40 95,-10'/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;
   transform-origin:54.64% 90%;
   transform:translate3d(calc(var(--hd) * 5.9%),calc(var(--hd) * -7.5%),0) scale(calc(1 + var(--hd) * .6 + var(--gp) * .07))}
-.fx-pin .fx-live .fx-slice--c{filter:saturate(calc(1 + var(--hd) * .16)) contrast(calc(1 + var(--hd) * .07))}
 /* left: colonnade + the man on the steps; right: Empire State + the flag building.
-   Each swings away on its outer hinge, slides out (distance solved in fx-top.js) and falls into shadow. */
-.fx-pin .fx-slice--l,.fx-pin .fx-slice--r{visibility:visible}
+   Each swings away on its outer hinge, slides out (distance solved in fx-top.js) and falls into shadow.
+   The door outline is cut on the (static) image stack inside, so it is painted once, never masked per frame. */
+.fx-pin .fx-on .fx-slice--l,.fx-pin .fx-on .fx-slice--r{visibility:visible}
+.fx-pin .fx-slice--l>.hero__zoom{clip-path:polygon(-6% -6%,30.2% -6%,27.6% 12%,25.8% 30%,24.6% 56%,23% 76%,22.2% 106%,-6% 106%)}
+.fx-pin .fx-slice--r>.hero__zoom{clip-path:polygon(106% -6%,72.2% -6%,72.3% 40%,71.9% 60%,70.6% 106%,106% 106%)}
 .fx-pin .fx-slice--l{transform-origin:0 50%;
-  clip-path:polygon(-20% -6%,97.4% -6%,89% 12%,83.2% 30%,79.4% 56%,74.2% 76%,71.6% 106%,-20% 106%);
   transform:translate3d(calc(var(--hd) * var(--fx-dlx,-17%)),0,0) rotateY(calc(var(--hd) * 60deg)) scale(calc(1 + var(--hd) * .45))}
 .fx-pin .fx-slice--r{transform-origin:100% 50%;
-  clip-path:polygon(120% -6%,7.33% -6%,7.67% 40%,6.33% 60%,2% 106%,120% 106%);
   transform:translate3d(calc(var(--hd) * var(--fx-drx,17%)),0,0) rotateY(calc(var(--hd) * -60deg)) scale(calc(1 + var(--hd) * .45))}
-.fx-pin .fx-live .fx-slice--l,.fx-pin .fx-live .fx-slice--r{filter:brightness(calc(1 - var(--hd) * .5)) saturate(calc(1 - var(--hd) * .2))}
+/* shadow falls across each door as it turns from the light (only its opacity moves) */
+.fx-shade{display:none}
+.fx-pin .fx-shade{display:block;position:absolute;inset:0;pointer-events:none;opacity:calc(var(--hd) * .9)}
+.fx-pin .fx-on .fx-shade{will-change:opacity}
+.fx-pin .fx-shade::before{content:"";position:absolute;inset:0}
+.fx-pin .fx-slice--l .fx-shade::before{background:linear-gradient(90deg,rgba(16,11,6,.32),rgba(16,11,6,.62));
+  clip-path:polygon(-20% -6%,97.4% -6%,89% 12%,83.2% 30%,79.4% 56%,74.2% 76%,71.6% 106%,-20% 106%)}
+.fx-pin .fx-slice--r .fx-shade::before{background:linear-gradient(270deg,rgba(16,11,6,.32),rgba(16,11,6,.62));
+  clip-path:polygon(120% -6%,7.33% -6%,7.67% 40%,6.33% 60%,2% 106%,120% 106%)}
 /* a warm bloom grows out of the haze on the horizon (it lives in the centre slice and travels with it) */
-.fx-pin .fx-bloom{visibility:visible;position:absolute;left:54.64%;top:70%;width:71.43%;aspect-ratio:1.8;margin:-19.84% 0 0 -35.71%;pointer-events:none;
+.fx-pin .fx-on .fx-bloom{visibility:visible}
+.fx-pin .fx-bloom{position:absolute;left:54.64%;top:70%;width:71.43%;aspect-ratio:1.8;margin:-19.84% 0 0 -35.71%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(255,238,204,.78),rgba(255,214,150,.38) 40%,rgba(255,200,130,.1) 72%,rgba(255,200,130,0));
-  opacity:calc(var(--hd) * .7);transform:scale(calc(.35 + var(--hd) * .75 + var(--gp) * .2));will-change:transform,opacity}
-.fx-pin .hero__haze{opacity:calc(1 - clamp(0,var(--hp) / .55,1));will-change:opacity}
+  opacity:calc(var(--hd) * .7);transform:scale(calc(.35 + var(--hd) * .75 + var(--gp) * .2))}
+.fx-pin .fx-on .fx-bloom{will-change:transform,opacity}
+.fx-pin .hero__haze{opacity:calc(1 - clamp(0,var(--hp) / .55,1))}
+.fx-pin .fx-on .hero__haze{will-change:opacity}
 /* the city dims a little while the next scene plays over it */
-.fx-pin .hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:#1a130b;opacity:calc(var(--gp) * .2);will-change:opacity}
+.fx-pin .hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:#1a130b;opacity:calc(var(--gp) * .2)}
+.fx-pin .fx-on .hero::after{will-change:opacity}
 
 /* copy: eyebrow spreads, headline breaks apart in depth, the rest sinks.
    Depth layers for the copy only switch on once the page leaves the top (.fx-live, see fx-top.js),
@@ -174,7 +194,8 @@
   .fx-pin .informed__stage::before{background:radial-gradient(ellipse 42% 80% at 50% 50%,rgba(251,249,244,.9),rgba(251,249,244,0) 100%)}
 }
 /* photographs start enlarged and pushed outward, then glide in to their resting edges */
-.fx-pin .informed .band__side{--k:calc((1 - var(--ia)) * (1 - var(--ia)));opacity:calc(1 - var(--k) * .55);will-change:transform}
+.fx-pin .informed .band__side{--k:calc((1 - var(--ia)) * (1 - var(--ia)));opacity:calc(1 - var(--k) * .55)}
+.fx-pin .fx-on-i .informed .band__side{will-change:transform}
 .fx-pin .informed .band__side--left{transform-origin:100% 50%;transform:translate3d(calc(var(--k) * -30%),0,0) scale(calc(1 + var(--k) * .34))}
 .fx-pin .informed .band__side--right{transform-origin:0 50%;transform:translate3d(calc(var(--k) * 30%),0,0) scale(calc(1 + var(--k) * .34))}
 /* heading words resolve out of the blur */
