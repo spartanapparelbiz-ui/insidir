@@ -180,7 +180,7 @@
 /* ---------- Photos ---------- */
 .auth-media,.auth-edge{position:sticky;top:0;align-self:start;height:100vh;height:100svh;min-width:0;overflow:hidden;background:var(--auth-bg)}
 .auth-edge{order:-1}
-.auth-media__frame,.auth-edge__frame{position:absolute;inset:0;overflow:hidden;background:#2b2722}
+.auth-media__frame,.auth-edge__frame{position:absolute;inset:0;overflow:hidden;background:#2b2722;isolation:isolate} /* keeps shade + grain inside the frame */
 .auth-media__frame.grain::after,.auth-edge__frame.grain::after{z-index:3;opacity:.06}
 .auth-media__layer{position:absolute;inset:-14px;will-change:transform}
 .auth--signup .auth-media__layer{right:calc(-14px - 2.2%)} /* keeps the photo's pale right edge off-canvas */
@@ -232,7 +232,7 @@
   .auth-media__img{object-position:50% 46%}
   .auth--signin .auth-media__img{object-position:50% 40%}
   .auth-media__shade{background:linear-gradient(180deg,rgba(10,9,8,.66) 0%,rgba(10,9,8,.3) 30%,rgba(10,9,8,0) 56%,rgba(10,9,8,0) 76%,rgba(10,9,8,.16) 100%)}
-  .auth-panel{position:static}
+  .auth-panel{position:static;z-index:auto}
   .auth-panel__inner{--fw:100%;position:static;width:min(100% - var(--gutter)*2,440px);margin-inline:auto;padding:0 0 40px}
   .auth-brand{position:absolute;z-index:4;top:18px;left:var(--gutter);margin:0}
   .auth-logo{color:#fff;font-size:28px;text-shadow:0 1px 2px rgba(0,0,0,.35),0 2px 22px rgba(0,0,0,.4)}
