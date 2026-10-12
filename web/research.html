@@ -26,7 +26,7 @@
       <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
       <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
     </form>
-    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">Start by entering a ticker to connect available official SEC records.</p>
+    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">No portfolio or brokerage connection needed. Enter a ticker to explore available SEC records.</p>
   </header>
 
   <div id="research-results" hidden>
@@ -105,6 +105,14 @@
             <button class="btn btn--dark research-save" id="research-save" type="submit">Save research note</button>
           </form>
           <p id="research-review-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save notes privately to your account.</p>
+        </section>
+        <section class="panel research-panel research-next" aria-labelledby="research-portfolio-title">
+          <p class="research-eyebrow">OPTIONAL / AFTER RESEARCH</p>
+          <h2 id="research-portfolio-title">Follow the stocks you care about.</h2>
+          <p>You can use every research page without connecting a brokerage. To track the stocks you own, add them manually for free, or use read-only brokerage sync when it becomes available.</p>
+          <div class="live-actions">
+            <a class="research-text-link" href="portfolio.html">Add holdings or view connection options →</a>
+          </div>
         </section>
         <section class="panel research-panel research-next" aria-labelledby="research-next-title">
           <p class="research-eyebrow">05 / YOUR CONTROL</p>
