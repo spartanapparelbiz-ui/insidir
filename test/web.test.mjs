@@ -69,6 +69,18 @@ test("research desk is served without replacing the site's brand", async () => {
   });
 });
 
+test("read-only portfolio page loads without placing orders", async () => {
+  await withServer(async base => {
+    const result=await fetch(base+"/portfolio.html");
+    assert.equal(result.status,200);
+    const content=await result.text();
+    assert.match(content,/Secure, read-only access/);
+    assert.match(content,/assets\/css\/base.css/);
+    assert.match(content,/id="portfolio-disconnect"/);
+    assert.doesNotMatch(content,/placeOrder|trade-if-available/);
+    assert.equal((await fetch(base+"/assets/js/portfolio.js")).status,200);
+  });
+});
 test("path traversal outside the web root is refused", async () => {
   await withServer(async base => {
     for (const p of ["/../package.json", "/%2e%2e/package.json", "/..%2fpackage.json", "/assets/../../src/config.mjs", "/%00index.html"]) {

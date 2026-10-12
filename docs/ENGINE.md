@@ -9,6 +9,7 @@ This document covers the backend engine. The website in `web/` is described in [
 - Public API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
 - Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
 - Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, account deletion. **Signup is disabled by default.**
+- Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
 - Optional 15-minute automatic poller or secured on-demand/cron ingestion.
 
@@ -30,6 +31,19 @@ Signed-in users may save a private research status (`researching`, `watching`, `
 The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, returning selected 8-K, 10-K, 10-Q, proxy and beneficial-ownership disclosures, four reported XBRL measures (when available), and a chronological evidence brief combining SEC filings with already imported Form 4 transactions. Ticker mapping uses the SEC official `company_tickers.json`, not fuzzy company-name matching. The shared SEC client uses host/path allowlists, the configured real operator User-Agent, throttling, bounded responses, retry handling and 15-minute memory caching (ticker mapping for 24 hours). No scraped document text or AI-generated interpretation is presented. API responses explicitly report missing facts and coverage caveats.
 
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
+
+## Read-only brokerage connections (optional)
+This feature is OFF by default (`BROKERAGE_CONNECT_ENABLED=0`). It relies on SnapTrade **OAuth Apps** and a user's pre-existing **SnapTrade Personal** connections, not Commercial user-secret registration or direct Fidelity credentials. Create a Test app in the SnapTrade Dashboard, register the exact callback URI `https://YOUR_DOMAIN/v1/me/brokerage/callback`, and obtain a client ID and client secret. Test OAuth apps are limited to five users; production usage requires approval. Set `SNAPTRADE_OAUTH_CLIENT_ID`, `SNAPTRADE_OAUTH_CLIENT_SECRET`, `SNAPTRADE_OAUTH_REDIRECT_URI`, and an independently generated 32-byte hexadecimal `BROKERAGE_ENCRYPTION_KEY`; then set `BROKERAGE_CONNECT_ENABLED=1`.
+
+**Do not set the encryption key in a public repository.** Save it in hosting secrets, back it up securely, and do not rotate it until existing encrypted tokens can be migrated. Never use the example placeholder callback in production. Sign-in accounts must be enabled and the main server (`npm start`) must run with PostgreSQL. Migrations now include `sql/004_brokerage_oauth.sql`. `npm run web` only shows the disconnected preview.
+
+Connection steps: signed-in user chooses Connect on `portfolio.html` → POST `/v1/me/brokerage/connect` generates a one-time PKCE and state → user consents to `read` access in SnapTrade Personal → SnapTrade redirects to `/v1/me/brokerage/callback` → server validates and consumes state, exchanges the code, verifies the granted scope, and encrypts access and refresh tokens in PostgreSQL. User shares only the accounts they authorized with SnapTrade. GET `/v1/me/brokerage/portfolio` reads investments and positions on demand without storing the account snapshot, excludes non-stock holdings from SEC ticker-based matching, and displays source-backed imported Form 4 disclosures from the last 30 days when available. Ticker matching is only a lead for manual investigation; it cannot establish security identity on its own. SnapTrade positions and quotes may be delayed and records may be incomplete.
+
+DELETE `/v1/me/brokerage` calls the OAuth revocation endpoint before erasing stored credentials. Local account deletion also attempts to revoke active access first; if the provider cannot confirm revocation, the request fails rather than silently abandoning the grant. Users can independently revoke Insidir's access in SnapTrade Personal → Settings → Connected apps.
+
+OAuth is strictly read-only: the authorization URL requests only `read`; the database accepts only `read`; no trading endpoints are available or called. This phase is **not** a regulated portfolio manager or execution feature. It does not provide individual trade recommendations. Get legal/compliance review and broker permissions before adding personalized advice or orders. Confirm the provider's terms, privacy and cybersecurity requirements before production. Before broad launch, add independent penetration/security review, durable audit logs, account consent tracking and integration monitoring.
+
+API endpoints (authenticated): GET `/v1/me/brokerage/status`; POST `/v1/me/brokerage/connect`; GET `/v1/me/brokerage/callback`; GET `/v1/me/brokerage/portfolio`; DELETE `/v1/me/brokerage`. Mutations require a trusted same-origin request. No provider credentials or OAuth tokens are returned to the browser.
 
 ## API (JSON)
 - GET /v1 – service information
@@ -69,4 +83,4 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - The original issuer search and Form 4 database cover imported data only; the intelligence ticker lookup covers the current official SEC mapping, which the SEC says may be incomplete.
 - SEC company facts and company submissions may be temporarily unavailable, outdated, or lack a particular ticker or metric; the interface states the limitation rather than inventing results.
 - Grouping may double count amended filings. It is not an investment forecast.
-- No Stripe payments, paid entitlements, authorized political feed, crypto watcher, social scan, or push notifications have been activated.
+- No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.

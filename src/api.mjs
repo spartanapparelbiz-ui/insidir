@@ -9,6 +9,7 @@ import { serveStatic } from "./web.mjs";
 import { billingRoutes } from "./billing.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { getCompanyIntelligence } from "./intelligence.mjs";
+import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
 function isLimited(key,limit=15,windowMs=15*60*1000){
@@ -55,6 +56,45 @@ async function route(req,res){
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
   if(p==="/healthz" && m==="GET"){const h=await health();return json(res,h.ok?200:503,{...h,secUserAgentConfigured:secReady()})}
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json); if(result!==false) return result; }
+  if(p==="/v1/me/brokerage/callback" && m==="GET"){
+    // Top-level OAuth redirect uses the existing signed-in session; state is single-use and bound to this user.
+    let outcome="error";
+    try {
+      const user=await requireUser(req);
+      await finishBrokerageLink(user.id,{
+        state:u.searchParams.get("state"),code:u.searchParams.get("code"),error:u.searchParams.get("error")
+      });
+      outcome="connected";
+    } catch(e) {
+      if(e.status===401)outcome="signin";
+      else if(e.message==="Brokerage authorization was cancelled")outcome="cancelled";
+    }
+    res.writeHead(303,{"Location":outcome==="signin"?"/signin.html":"/portfolio.html?connection="+outcome,
+      "Cache-Control":"no-store","Referrer-Policy":"no-referrer",
+      "X-Content-Type-Options":"nosniff"});
+    return res.end();
+  }
+  if(p==="/v1/me/brokerage/status" && m==="GET"){
+    const user=await requireUser(req);
+    return json(res,200,await connectionStatus(user.id));
+  }
+  if(p==="/v1/me/brokerage/portfolio" && m==="GET"){
+    const user=await requireUser(req);
+    if(isLimited("portfolio:"+user.id,12,60*1000))throw failure(429,"Too many portfolio refreshes");
+    return json(res,200,await readPortfolio(user.id));
+  }
+  if(p==="/v1/me/brokerage/connect" && m==="POST"){
+    if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    const user=await requireUser(req);
+    if(isLimited("broker-connect:"+user.id,4,15*60*1000))throw failure(429,"Too many connection attempts");
+    return json(res,200,{url:await startBrokerageLink(user.id),permission:"read"});
+  }
+  if(p==="/v1/me/brokerage" && m==="DELETE"){
+    if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    const user=await requireUser(req);
+    await deletePendingBrokerage(user.id);
+    return json(res,200,{disconnected:await disconnectBrokerage(user.id)});
+  }
   if(p==="/v1/sources" && m==="GET")return json(res,200,{sources:sourceRegistry,disclaimer:"Sources marked disabled are not ingested or republished."});
   if(p==="/v1/status" && m==="GET"){
     const last=await query("SELECT started_at,finished_at,status,discovered,parsed,failed,skipped FROM ingest_runs ORDER BY id DESC LIMIT 1");
@@ -185,6 +225,8 @@ async function route(req,res){
     }
     if(p==="/v1/me" && m==="DELETE"){
       const user=await requireUser(req);
+      // Revoke an active third-party grant before removing local account data.
+      await disconnectBrokerage(user.id);
       await query("DELETE FROM users WHERE id=$1",[user.id]);
       return json(res,200,{deleted:true},{"Set-Cookie":clearCookie()});
     }
