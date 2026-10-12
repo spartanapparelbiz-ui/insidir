@@ -62,10 +62,12 @@
       const r=await request("/v1/me/brokerage/status");
       el("portfolio-login").hidden=true;
       el("portfolio-connect").hidden=!r.available||r.connected;
-      el("portfolio-refresh").hidden=!r.connected;
+      el("portfolio-refresh").hidden=!r.connected||!r.available;
       el("portfolio-disconnect").hidden=!r.connected;
-      el("portfolio-results").hidden=!r.connected;
-      if(!r.available){setStatus("Brokerage connections are not configured yet. Research Desk is still available.");return;}
+      el("portfolio-results").hidden=!r.connected||!r.available;
+      if(!r.available){setStatus(r.connected?
+        "Existing brokerage permission found, but portfolio access is disabled. You can disconnect below.":
+        "Brokerage connections are not configured yet. Research Desk is still available.");return;}
       if(!r.connected){setStatus("No connected brokerage. You can grant read-only access through SnapTrade Personal.");return;}
       setStatus("SnapTrade read-only access connected. Fetching investment accounts…");
       await refresh();
