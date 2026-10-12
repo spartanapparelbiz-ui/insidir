@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Your portfolio — insidir.</title>
+  <meta name="description" content="Connect brokerage holdings read-only and investigate relevant SEC disclosures. No trades are placed.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/research.css">
+  <link rel="stylesheet" href="assets/css/portfolio.css">
+  <script defer src="assets/js/app.js"></script>
+  <script defer src="assets/js/portfolio.js"></script>
+</head>
+<body class="portfolio-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-header data-active="portfolio"></header>
+  <main id="main" class="app-main portfolio-desk">
+    <section class="portfolio-hero">
+      <p class="research-eyebrow">INSIDIR / PRIVATE PORTFOLIO</p>
+      <h1>Your holdings.<br>The bigger picture.</h1>
+      <p class="research-lead">Connect a brokerage in read-only mode and explore public SEC records related to stocks you own. Your brokerage keeps control of your assets. Insidir never submits trades.</p>
+      <p class="portfolio-warning">Brokerage balances and prices may be delayed. Related SEC filings are matched by ticker only and are not investment recommendations.</p>
+    </section>
+    <section class="portfolio-connection panel" aria-labelledby="portfolio-connection-title">
+      <div>
+        <p class="research-eyebrow">01 / CONNECTION</p>
+        <h2 id="portfolio-connection-title">Secure, read-only access.</h2>
+        <p class="portfolio-description">Connection is managed by SnapTrade Personal. You authorize access there, not with your brokerage password on Insidir. Fidelity and other eligible brokers depend on SnapTrade's supported connections.</p>
+        <p id="portfolio-status" role="status" aria-live="polite">Checking brokerage connection…</p>
+        <div class="portfolio-actions">
+          <button id="portfolio-connect" class="btn btn--dark" type="button" hidden>Connect brokerage</button>
+          <button id="portfolio-refresh" class="btn btn--light" type="button" hidden>Refresh view</button>
+          <button id="portfolio-disconnect" class="btn btn--light" type="button" hidden>Disconnect access</button>
+          <a id="portfolio-login" class="btn btn--dark" href="signin.html" hidden>Sign in</a>
+        </div>
+        <p class="research-small">Only the <strong>read</strong> permission is requested. Your brokerage holdings are fetched when you open this page, not stored in Insidir's database.</p>
+      </div>
+    </section>
+    <section id="portfolio-results" hidden>
+      <div class="portfolio-section-heading">
+        <div><p class="research-eyebrow">02 / ACCOUNTS</p><h2>Connected investments.</h2></div>
+        <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
+      </div>
+      <div id="portfolio-accounts" class="portfolio-accounts"></div>
+      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title">
+        <p class="research-eyebrow">03 / SEC EVIDENCE</p>
+        <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
+        <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
+        <div id="portfolio-activity"></div>
+      </section>
+    </section>
+    <section class="portfolio-next panel" aria-labelledby="portfolio-next-title">
+      <p class="research-eyebrow">04 / WHAT'S NEXT</p>
+      <h2 id="portfolio-next-title">Research first. Your decision.</h2>
+      <p>Use the Research Desk to examine original SEC filings, financial disclosures, and reporting dates. Insidir's current brokerage connection cannot trade, suggest personalized orders, or enable automatic strategies.</p>
+      <a class="btn btn--dark" href="research.html">Open Research Desk →</a>
+    </section>
+  </main>
+  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Data may be delayed. No investment advice or execution.</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+</body>
+</html>
