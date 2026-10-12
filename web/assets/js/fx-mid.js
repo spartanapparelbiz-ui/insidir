@@ -130,6 +130,25 @@
       { rootMargin: "20% 0px" }).observe(research);
   }
 
+  /* See what moves: the empty band below the centred content of the 100vh stage, which the lenses
+     section slides over (fx-mid.css). Measured on resize only. */
+  const movesStage = moves && moves.querySelector(".fx-moves__stage");
+  const movesInner = moves && moves.querySelector(".dark-band__inner");
+  if (movesStage && movesInner) {
+    let queued = 0;
+    const gap = () => {
+      queued = 0;
+      const g = Math.max(0, (movesStage.getBoundingClientRect().height - movesInner.getBoundingClientRect().height) / 2);
+      moves.style.setProperty("--mv-gap", g.toFixed(2) + "px");
+      if (window.Insidir && Insidir.refresh) Insidir.refresh();
+    };
+    const queue = () => { if (!queued) queued = requestAnimationFrame(gap); };
+    gap();
+    window.addEventListener("resize", queue);
+    if ("ResizeObserver" in window) new ResizeObserver(queue).observe(movesInner);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queue);
+  }
+
   /* the tilt styles only apply while the desktop scene runs */
   const sync = () => { if (moves) moves.classList.toggle("fx-tilt", on()); };
   sync();

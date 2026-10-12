@@ -309,6 +309,15 @@ table{border-collapse:collapse;width:100%}
 .js [data-reveal="mask-x"]{opacity:1;clip-path:inset(0 100% 0 0)}
 .js [data-reveal="card"]{transform:translate3d(0,56px,0) scale(.98)}
 .js [data-reveal].is-in{opacity:1;transform:none;filter:none}
+/* once revealed, the layer hint is dropped (the reveal transition itself is composited while it runs), so
+   finished reveals stop costing a compositor layer each; split heading words below do the same.
+   (Reduced motion keeps the hint: nothing moves there, and its rendering stays exactly as before.) */
+@media (prefers-reduced-motion:no-preference){
+  .js [data-reveal].is-in,.js [data-split].is-in .split-word>span{will-change:auto}
+  /* keyboard focus never waits for a reveal: a reveal holding focus skips its (possibly staggered, delayed)
+     transition and shows its resting state at once (motion.js marks it revealed on focusin) */
+  .js [data-reveal]:focus-within{transition:none!important}
+}
 /* mask reveals end slightly outside the box so shadows and focus rings are not clipped */
 .js [data-reveal="mask"].is-in,.js [data-reveal="mask-x"].is-in{clip-path:inset(-40px -40px -40px -40px)}
 /* image inside a revealed frame settles from a gentle zoom */

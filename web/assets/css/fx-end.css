@@ -9,6 +9,21 @@
    fx-end.js sizes each scene's span so it always completes before the page runs out of scroll.
    Scrubbed values are plain calc() on --p: transform / opacity / clip-path, plus a small blur on the CTA words. */
 
+/* per-frame scrub values as registered numbers (see fx-top.css) */
+@property --cq{syntax:"<number>";inherits:true;initial-value:0}
+@property --ce{syntax:"<number>";inherits:true;initial-value:0}
+@property --lt{syntax:"<number>";inherits:true;initial-value:0}
+@property --le{syntax:"<number>";inherits:true;initial-value:0}
+@property --bt{syntax:"<number>";inherits:true;initial-value:0}
+@property --st{syntax:"<number>";inherits:true;initial-value:0}
+@property --se{syntax:"<number>";inherits:true;initial-value:0}
+@property --zt{syntax:"<number>";inherits:true;initial-value:0}
+@property --zr{syntax:"<number>";inherits:true;initial-value:0}
+@property --ot{syntax:"<number>";inherits:true;initial-value:0}
+@property --oe{syntax:"<number>";inherits:true;initial-value:0}
+@property --aq{syntax:"<number>";inherits:true;initial-value:0}
+@property --sq{syntax:"<number>";inherits:true;initial-value:0}
+
 /* the outlined marquee is decoration that only exists while motion is allowed */
 .records__marquee{display:none}
 

@@ -13,6 +13,8 @@
    data-progress="travel|exit|enter|pin"  sets --p (0..1) on the element for CSS-driven scrubbing
                                (pin: 0 when the element's top reaches the viewport top, 1 when its bottom
                                 reaches the viewport bottom — use on a tall wrapper around a sticky stage)
+   data-progress-max="0.6"     optional cap for --p: once a scene is finished before p = 1, capping it stops
+                               restyling the scene's subtree for the rest of its travel
    data-words                  splits text into <span class="w" style="--i:n"> words and sets --n on the
                                element, for per-word scrubbing in CSS together with --p
    data-vel                    element (and its descendants) get --vel: smoothed scroll velocity -1..1,
@@ -241,12 +243,21 @@
   const progressBar = () => document.querySelector(".scroll-progress");
   let lastY = window.scrollY, navEl = null, barEl = null, ticking = false;
 
+  /* Every layout read of a frame happens before its first style write: interleaving them (read a
+     rect, write a transform, read the next rect...) forced a synchronous style recalc per element. */
+  const parallaxRects = [], progressRects = [];
   function frame() {
     ticking = false;
     const y = window.scrollY, h = vh();
     navEl = navEl || nav();
     barEl = barEl || progressBar();
 
+    // reads
+    const max = barEl ? root.scrollHeight - h : 0;
+    for (let i = 0; i < parallaxEls.length; i++) parallaxRects[i] = (parallaxEls[i].parentElement || parallaxEls[i]).getBoundingClientRect();
+    for (let i = 0; i < progressEls.length; i++) progressRects[i] = progressEls[i].getBoundingClientRect();
+
+    // writes
     if (navEl) {
       const threshold = parseFloat(navEl.dataset.solidAfter || "24");
       navEl.classList.toggle("is-scrolled", y > threshold);
@@ -256,12 +267,9 @@
         else if (goingUp || y < h * 0.5) navEl.classList.remove("is-hidden");
       }
     }
-    if (barEl) {
-      const max = root.scrollHeight - h;
-      barEl.style.setProperty("--progress", max > 0 ? (y / max).toFixed(4) : 0);
-    }
-    for (const el of parallaxEls) {
-      const r = (el.parentElement || el).getBoundingClientRect();
+    if (barEl) barEl.style.setProperty("--progress", max > 0 ? (y / max).toFixed(4) : 0);
+    for (let i = 0; i < parallaxEls.length; i++) {
+      const el = parallaxEls[i], r = parallaxRects[i];
       if (r.bottom < -h * 0.5 || r.top > h * 1.5) continue;
       const offset = (r.top + r.height / 2) - h / 2;
       const sy = parseFloat(el.dataset.parallax || "0");
@@ -269,15 +277,17 @@
       const scale = parseFloat(el.dataset.parallaxScale || "1");
       el.style.transform = `translate3d(${(-offset * sx).toFixed(1)}px,${(-offset * sy).toFixed(1)}px,0)` + (scale !== 1 ? ` scale(${scale})` : "");
     }
-    for (const el of progressEls) {
-      const r = el.getBoundingClientRect();
+    for (let i = 0; i < progressEls.length; i++) {
+      const el = progressEls[i], r = progressRects[i];
       const mode = el.dataset.progress || "travel";
       let p;
       if (mode === "exit") p = -r.top / Math.max(1, r.height);
       else if (mode === "pin") p = -r.top / Math.max(1, r.height - h);
       else if (mode === "enter") p = (h - r.top) / (h * parseFloat(el.dataset.progressSpan || "0.75"));
       else p = (h - r.top) / (h + r.height);
-      el.style.setProperty("--p", clamp(p).toFixed(4));
+      const v = clamp(p, 0, el.dataset.progressMax ? parseFloat(el.dataset.progressMax) : 1).toFixed(4);
+      // unchanged progress is not rewritten (a no-op write still restyles the whole subtree)
+      if (el.__p !== v) { el.__p = v; el.style.setProperty("--p", v); }
     }
     trackVelocity(y);
     // At the very end of the page, elements inside the observer's bottom margin can never

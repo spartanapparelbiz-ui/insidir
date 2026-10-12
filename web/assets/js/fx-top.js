@@ -106,7 +106,9 @@
       return d;
     };
     const left = door("l"), right = door("r");
-    centre.append(el("fx-wash"), el("fx-bloom"));
+    /* fx-sky: a golden-hour sky with light shafts that takes over the hazy centre of the photograph
+       while it is pushed in (the photo's own sky there is an even, retouched wash) */
+    centre.append(el("fx-sky"), el("fx-wash"), el("fx-bloom"));
     frame.append(left, right);
     /* clones join the load-in zoom exactly where the original is, and stand still once it is over
        (so hiding them off-screen never replays it) */
@@ -190,6 +192,7 @@
     s.setProperty("--fx-ar", ((Dh + B + Di * 0.86) / L).toFixed(5));
     doorGeometry();
     nearEnd = top.offsetTop + top.offsetHeight + V * 0.4;
+    copyOffAt = top.offsetTop + Dh * 0.66;
     bandStart = top.offsetTop + informed.offsetTop;
     updateNear();
     if (window.Insidir && Insidir.refresh) Insidir.refresh();
@@ -210,8 +213,8 @@
       const z = -w * Math.sin(TURN), cx = dir * w * Math.cos(TURN);
       return (target - O) * (P - z) / P - cx - hinge + O;
     };
-    const left = solve(fl, 0.252 * fw * GROW, 1, hw * 0.115);
-    const right = solve(fl + fw, (1 - 0.719) * fw * GROW, -1, hw * 0.885);
+    const left = solve(fl, 0.252 * fw * GROW, 1, hw * 0.125);
+    const right = solve(fl + fw, (1 - 0.719) * fw * GROW, -1, hw * 0.866);
     const s = frame.style;
     s.setProperty("--fx-persp", P.toFixed(1) + "px");
     s.setProperty("--fx-pox", (O - fl).toFixed(1) + "px");
@@ -229,7 +232,7 @@
 
   /* At p = 0 the hero renders exactly as without effects; depth layers for the copy switch on
      once the page leaves the top (a class flip at that threshold only, no layout reads). */
-  let live = null, heroNear = true, bandNear = false, nearEnd = Infinity, bandStart = 0;
+  let live = null, heroNear = true, bandNear = false, nearEnd = Infinity, bandStart = 0, copyOff = false, copyOffAt = Infinity;
   function updateLive() {
     const on = pinned && heroNear && window.scrollY > 1;
     if (on !== live) { live = on; top.classList.toggle("fx-live", on); }
@@ -245,6 +248,9 @@
     const band = pinned && y + V * 1.4 > bandStart && y < nearEnd;
     if (hero !== heroNear) { heroNear = hero; top.classList.toggle("fx-on", hero); }
     if (band !== bandNear) { bandNear = band; top.classList.toggle("fx-on-i", band); }
+    /* once the doors are open the hero copy has fully faded (see fx-top.css) */
+    const off = pinned && y > copyOffAt;
+    if (off !== copyOff) { copyOff = off; top.classList.toggle("fx-copy-off", off); }
     updateLive();
   }
   top.classList.add("fx-on");

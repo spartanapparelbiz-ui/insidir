@@ -70,7 +70,9 @@
 
   /* ---------- scroll-driven bits ---------- */
   let scrollDirty = true;
-  const velocity = () => parseFloat(root.style.getPropertyValue("--vel")) || 0;
+  // motion.js writes --vel only on [data-vel] elements (the marquee is one), not on <html>
+  const velHost = (track && track.closest("[data-vel]")) || root;
+  const velocity = () => parseFloat(velHost.style.getPropertyValue("--vel")) || 0;
   const progressOf = el => el.classList.contains("fxe-lock") ? 1 : (parseFloat(el.style.getPropertyValue("--p")) || 0);
   function scrolled() {
     const y = scrollY, dy = y - lastY;

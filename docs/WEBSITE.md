@@ -15,7 +15,7 @@ Without the engine, the product screens show their built-in sample data, and the
 
 | Page | File | Notes |
 | --- | --- | --- |
-| Landing | `index.html` | Full-viewport hero, nine animated sections, FAQ, final call to action |
+| Landing | `index.html` | Scroll-scrubbed scenes. The hero photo splits into doors that open onto the skyline. A ticker strip and word-by-word reading lead into a card deal and aperture-lens reveals. Research cards stand up, and an outlined records marquee runs behind its section. The bronze bull charges in, then the closing call to action opens like a portal (styles and scripts in `fx-top`, `fx-mid` and `fx-end`) |
 | Pricing | `pricing.html` | Free and Pro plans, comparison table, FAQ |
 | Sign in / Sign up | `signin.html`, `signup.html` | Wired to the engine's auth API, with client-side validation |
 | Dashboard | `dashboard.html` | Market cards, insider activity filter, watchlist, filings, political trades |
@@ -47,12 +47,15 @@ web/
 
 - `data-reveal="up|down|left|right|scale|blur|fade|mask|mask-x|card"` animates an element in the first time it scrolls into view. Use `data-delay="120"` to delay it, or put `data-stagger="90"` on a parent to cascade its children.
 - `data-split` makes heading words rise out of a mask. `data-count` makes a number count up to its final text. `data-draw` draws SVG chart lines. `data-rule` grows dividers.
-- `data-parallax`, `data-parallax-x` and `data-parallax-scale` drive parallax layers. `data-progress="travel|exit|enter"` exposes the scroll progress as the CSS variable `--p` for custom scrubbing, such as the hero fading out.
+- `data-parallax`, `data-parallax-x` and `data-parallax-scale` drive parallax layers.
+- `data-progress="travel|exit|enter|pin"` exposes scroll progress as the CSS variable `--p` (0 to 1). Use `pin` on a tall wrapper around a `position: sticky` stage to scrub a pinned scene. `data-progress-max` stops updating once a scene has finished.
+- `data-words` splits text into indexed words (`--i`, `--n`) for scroll-scrubbed reading effects.
+- `data-vel` gives an element and its descendants `--vel`, the smoothed scroll velocity from −1 to 1. Use it for skew and stretch while scrolling fast.
 - `data-magnetic` makes a button follow the pointer slightly. `body[data-smooth]` turns on inertial wheel scrolling (desktop only).
 
 Reveals wait until the page has faded in, so entrance staggers are always seen. Anything still hidden is revealed the moment it receives keyboard focus. In-page links move focus to their target as well as scrolling to it.
 
-Everything runs from a single `requestAnimationFrame` loop and animates only `transform`, `opacity`, `filter` and `clip-path`. Under `prefers-reduced-motion`, all content shows immediately with no movement. Without JavaScript, nothing is hidden.
+Everything runs from a single `requestAnimationFrame` loop that reads layout before writing styles. Only `transform`, `opacity`, `filter` and `clip-path` are animated. Per-frame scrub values are registered with `@property`, so they are cheap to update. Pinned scenes and 3D effects run on desktops 900px and wider; smaller and touch screens get lighter reveal-based versions. Under `prefers-reduced-motion`, all content shows immediately with no movement. Without JavaScript, nothing is hidden.
 
 ## Imagery
 

@@ -15,13 +15,20 @@
 @property --ip{syntax:"<number>";inherits:true;initial-value:0}
 @property --ia{syntax:"<number>";inherits:true;initial-value:1}
 @property --q{syntax:"<number>";inherits:true;initial-value:1}
+/* scrubbed numbers shared by the fx files: registered, they are computed once where declared instead of
+   being re-substituted as token streams in every descendant's styles (every scroll frame restyles a scene) */
+@property --t{syntax:"<number>";inherits:true;initial-value:0}
+@property --k{syntax:"<number>";inherits:true;initial-value:0}
+@property --i{syntax:"<number>";inherits:true;initial-value:0}
+@property --o{syntax:"<number>";inherits:true;initial-value:0}
+@property --s{syntax:"<number>";inherits:true;initial-value:0}
 
 /* ---------- scaffolding that is layout-neutral everywhere ---------- */
 .fx-top__run,.fx-top__mark{display:none}
 .fx-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
   -webkit-user-select:none;user-select:none}
 .fx-slice{position:absolute;inset:0}
-.fx-slice--l,.fx-slice--r,.fx-bloom{visibility:hidden}
+.fx-slice--l,.fx-slice--r,.fx-bloom,.fx-sky{visibility:hidden}
 .fx-ew__w{white-space:nowrap}
 .fx-ew__l{display:inline-block}
 
@@ -88,11 +95,15 @@
 /* the whole picture drifts up a little slower than the strip that glides over it */
 .fx-pin .fx-on .hero__frame{perspective:var(--fx-persp,1100px);perspective-origin:var(--fx-pox,50.6%) 46%}
 .fx-pin .hero__frame{translate:0 calc(var(--gl) * var(--fx-b,34vh) * -.62)}
-.fx-pin .fx-slice{overflow:hidden}
+/* only the centre slice crops its (wider) image stack; the doors are cut by their own clip-path, so their
+   slices must not clip: Chromium clips a composited child of a 3D-turned overflow box (the shade) along a
+   wrong edge, which showed as a diagonal seam at the foot of the right door */
+.fx-pin .fx-slice--c{overflow:hidden}
 .fx-pin .fx-on .fx-slice{will-change:transform}
 /* off-screen (hero scrolled away): no photo layers at all */
 .fx-pin .fx-top:not(.fx-on) .hero__bg{visibility:hidden}
-.fx-pin .fx-top:not(.fx-on) .fx-slice--l,.fx-pin .fx-top:not(.fx-on) .fx-slice--r,.fx-pin .fx-top:not(.fx-on) .fx-bloom{display:none}
+.fx-pin .fx-top:not(.fx-on) .fx-slice--l,.fx-pin .fx-top:not(.fx-on) .fx-slice--r,.fx-pin .fx-top:not(.fx-on) .fx-bloom,
+.fx-pin .fx-top:not(.fx-on) .fx-sky{display:none}
 .fx-pin .fx-slice>.hero__zoom.fx-still{animation:none;transform:none}
 /* each slice is cropped to its own part of the photograph (small layers), the image stack inside
    stays aligned to the full frame */
@@ -103,19 +114,45 @@
 .fx-pin .fx-slice--r{left:70%}
 .fx-pin .fx-slice--r>.hero__zoom{left:-233.333%;right:auto;width:333.333%}
 /* centre: the skyline. Its edges dissolve under the doors into the stage colour (a wash painted
-   once into the layer, so no mask has to be composited every frame); it pushes in toward the street */
+   once into the layer, so no mask has to be composited every frame); it pushes in toward the street,
+   cropping into the lower skyline so the towers fill the opening and the retouched strips of the
+   photograph (beside both doors) travel out under the door edges */
 .fx-wash{display:none}
 .fx-pin .fx-wash{display:block;position:absolute;inset:0;pointer-events:none;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-.2' y='-.2' width='1.4' height='1.4'%3E%3CfeGaussianBlur stdDeviation='.98 .4'/%3E%3C/filter%3E%3Cg filter='url(%23b)' fill='%23e9e2d4'%3E%3Cpolygon points='-10,-10 16.43,-10 11.79,12 8.57,30 6.43,56 3.57,76 2.14,110 -10,110'/%3E%3Cpolygon points='94.29,-10 110,-10 110,110 91.43,110 93.75,60 94.46,40'/%3E%3C/g%3E%3C/svg%3E") 0 0/100% 100% no-repeat}
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-.2' y='-.2' width='1.4' height='1.4'%3E%3CfeGaussianBlur stdDeviation='.98 .4'/%3E%3C/filter%3E%3Cg filter='url(%23b)' fill='%23e9e2d4'%3E%3Cpolygon points='-10,-10 16.43,-10 11.79,12 8.57,30 6.43,56 3.57,76 2.14,110 -10,110'/%3E%3Cpolygon points='98.6,-10 110,-10 110,110 91.43,110 93.75,60 94.46,40 95,32 95.2,22 95.5,16 96.4,12.5 97.5,9 98,4'/%3E%3C/g%3E%3C/svg%3E") 0 0/100% 100% no-repeat}
 .fx-pin .fx-slice--c{
-  transform-origin:54.64% 90%;
-  transform:translate3d(calc(var(--hd) * 5.9%),calc(var(--hd) * -7.5%),0) scale(calc(1 + var(--hd) * .6 + var(--gp) * .07))}
+  transform-origin:54.64% 92%;
+  transform:translate3d(calc(var(--hd) * 3%),calc(var(--hd) * -5%),0) scale(calc(1 + var(--hd) * .8 + var(--gp) * .07))}
+/* golden-hour sky over the opening: deepening amber toward the top, a sun glow on the horizon and
+   irregular light shafts fanning up behind the towers. Static paint in its own layer; only its opacity
+   follows the doors (0 at rest, so p = 0 renders the untouched photograph). It covers the retouched
+   centre of the photo (image x 20..76%, y 0..72%) and fades out above the rooftops. */
+.fx-sky{display:none}
+.fx-pin .fx-sky{display:block;position:absolute;left:0;right:0;top:0;height:72%;pointer-events:none;opacity:var(--hd);
+  background:
+    conic-gradient(from -78deg at 61.4% 100%,
+      rgba(255,240,212,0) 0deg,rgba(255,240,212,.2) 4deg,rgba(255,240,212,0) 9deg,
+      rgba(255,240,212,0) 15deg,rgba(255,240,212,.32) 19deg,rgba(255,240,212,.06) 25deg,rgba(255,240,212,0) 29deg,
+      rgba(255,240,212,.16) 36deg,rgba(255,240,212,0) 43deg,
+      rgba(255,240,212,0) 52deg,rgba(255,240,212,.38) 58deg,rgba(255,240,212,.12) 64deg,rgba(255,240,212,0) 68deg,
+      rgba(255,240,212,.24) 75deg,rgba(255,240,212,0) 80deg,
+      rgba(255,240,212,0) 88deg,rgba(255,240,212,.3) 95deg,rgba(255,240,212,0) 103deg,
+      rgba(255,240,212,0) 110deg,rgba(255,240,212,.18) 116deg,rgba(255,240,212,0) 121deg,
+      rgba(255,240,212,.26) 130deg,rgba(255,240,212,0) 138deg,
+      rgba(255,240,212,0) 146deg,rgba(255,240,212,.14) 151deg,rgba(255,240,212,0) 156deg,rgba(255,240,212,0) 360deg),
+    radial-gradient(ellipse 56% 62% at 61.4% 100%,rgba(255,220,160,.95),rgba(255,206,140,.5) 42%,rgba(255,206,140,0) 100%),
+    linear-gradient(180deg,#a3a9ad 0%,#c4b8a2 34%,#e2c79b 64%,#f2d4a0 86%,#f5daa8 100%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 96.5%,transparent 100%),linear-gradient(180deg,#000 0,#000 80%,transparent 99%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 96.5%,transparent 100%),linear-gradient(180deg,#000 0,#000 80%,transparent 99%);
+  mask-composite:intersect}
+.fx-pin .fx-on .fx-sky{visibility:visible;will-change:opacity}
 /* left: colonnade + the man on the steps; right: Empire State + the flag building.
    Each swings away on its outer hinge, slides out (distance solved in fx-top.js) and falls into shadow.
    The door outline is cut on the (static) image stack inside, so it is painted once, never masked per frame. */
 .fx-pin .fx-on .fx-slice--l,.fx-pin .fx-on .fx-slice--r{visibility:visible}
 .fx-pin .fx-slice--l>.hero__zoom{clip-path:polygon(-6% -6%,30.2% -6%,27.6% 12%,25.8% 30%,24.6% 56%,23% 76%,22.2% 106%,-6% 106%)}
-.fx-pin .fx-slice--r>.hero__zoom{clip-path:polygon(106% -6%,72.2% -6%,72.3% 40%,71.9% 60%,70.6% 106%,106% 106%)}
+.fx-pin .fx-slice--r>.hero__zoom{clip-path:polygon(106% -6%,74.6% -6%,74.3% 4%,74% 9%,73.4% 12.5%,72.9% 16%,72.7% 22%,72.6% 32%,72.3% 40%,71.9% 60%,70.6% 106%,106% 106%)}
 .fx-pin .fx-slice--l{transform-origin:0 50%;
   transform:translate3d(calc(var(--hd) * var(--fx-dlx,-17%)),0,0) rotateY(calc(var(--hd) * 60deg)) scale(calc(1 + var(--hd) * .45))}
 .fx-pin .fx-slice--r{transform-origin:100% 50%;
@@ -128,7 +165,7 @@
 .fx-pin .fx-slice--l .fx-shade::before{background:linear-gradient(90deg,rgba(16,11,6,.32),rgba(16,11,6,.62));
   clip-path:polygon(-20% -6%,97.4% -6%,89% 12%,83.2% 30%,79.4% 56%,74.2% 76%,71.6% 106%,-20% 106%)}
 .fx-pin .fx-slice--r .fx-shade::before{background:linear-gradient(270deg,rgba(16,11,6,.32),rgba(16,11,6,.62));
-  clip-path:polygon(120% -6%,7.33% -6%,7.67% 40%,6.33% 60%,2% 106%,120% 106%)}
+  clip-path:polygon(120% -6%,15.33% -6%,14.33% 4%,13.33% 9%,11.33% 12.5%,9.67% 16%,9% 22%,8.67% 32%,7.67% 40%,6.33% 60%,2% 106%,120% 106%)}
 /* a warm bloom grows out of the haze on the horizon (it lives in the centre slice and travels with it) */
 .fx-pin .fx-on .fx-bloom{visibility:visible}
 .fx-pin .fx-bloom{position:absolute;left:54.64%;top:70%;width:71.43%;aspect-ratio:1.8;margin:-19.84% 0 0 -35.71%;pointer-events:none;
@@ -166,6 +203,10 @@
 .fx-pin .hero__actions{translate:0 calc(clamp(0,(var(--hp) - .06) / .3,1) * 26px)}
 .fx-pin .hero__cue{opacity:calc(1 - var(--hp) * 7);transition:none}
 .fx-pin .hero__cue span{transform-origin:50% 100%;transform:scaleY(calc(1 - clamp(0,var(--hp) / .12,1)))}
+/* doors open: the faded letters of the eyebrow (an aria-hidden copy) leave the render tree, so they are not
+   restyled every frame, and the faded scroll cue stops dripping, until the page comes back up */
+.fx-pin .fx-copy-off .fx-ew{display:none}
+.fx-pin .fx-copy-off .hero__cue:not(:focus-visible) span::after{animation-play-state:paused}
 /* keyboard focus always finds the hero controls in view */
 .fx-pin .hero__lower:focus-within{opacity:1;transform:none}
 .fx-pin .hero__lower:focus-within .hero__actions{translate:none}
