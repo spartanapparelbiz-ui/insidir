@@ -1,0 +1,27 @@
+/* Polished editorial auth panels matching the Insidir V2 concept. */
+.v2-auth.auth-body{background:#faf9f6}
+.v2-auth .auth{--auth-bg:#faf9f6;--title:clamp(44px,4vw,65px);--sub:clamp(13px,1.12vw,16px);--text:14px;--label:12px;--input-h:51px;--btn-h:53px;--gap-label:9px;--gap-field:20px;--gap-head:33px;--gap-sub:15px;--gap-btn:25px;--gap-switch:28px;--block:510px}
+.v2-auth .auth--signin{grid-template-columns:minmax(0,9fr) minmax(0,45fr) minmax(0,46fr)}
+.v2-auth .auth--signup{grid-template-columns:minmax(0,53fr) minmax(0,47fr);--block:620px;--gap-field:17px;--gap-head:27px}
+.v2-auth .auth-brand{margin-left:max(28px,calc((100% - var(--fw))/2))}
+.v2-auth .auth-logo{font:630 34px/1.15 var(--serif);letter-spacing:-.065em}
+.v2-auth .auth-panel__inner{padding-top:33px}
+.v2-auth .auth-card{margin-top:max(45px,(100svh - var(--block))*.38);padding-bottom:35px;max-width:470px}
+.v2-auth .auth--signup .auth-card{max-width:500px}
+.v2-auth .auth-title{font-weight:540;letter-spacing:-.046em;color:#101415}
+.v2-auth .auth-sub{line-height:1.65;max-width:430px;color:#6b6c66}
+.v2-auth .auth .input{border-color:#dddcd5;background:#fff;border-radius:5px}
+.v2-auth .auth-field .label{font-weight:600;letter-spacing:.01em}
+.v2-auth .auth-btn{border-radius:5px;font:600 13px var(--sans);background:#151a1c;color:#fff}
+.v2-auth .auth-btn:hover{background:#293132}
+.v2-auth .auth-switch{color:#777871;font-size:12px;margin-top:27px}
+.v2-auth .auth-switch strong{color:#171c1e}
+.v2-auth .auth-media__shade{background:linear-gradient(180deg,rgba(14,17,16,.05),rgba(14,17,16,.15))}
+.v2-auth .auth-media__img{filter:saturate(.9) contrast(1.06)}
+.v2-auth .auth-card [data-reveal]{transition-duration:.7s}
+.v2-auth .auth-legal{font:400 11px/1.65 var(--sans);color:#85867e;margin:19px 0 0}
+.v2-auth .auth-legal a{text-decoration:underline;text-underline-offset:3px;color:#42473f}
+.v2-auth .auth-caption{position:absolute;bottom:35px;right:35px;padding:12px 17px;background:rgba(10,16,17,.56);color:#f7f4ed;border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);font:500 10px var(--sans);letter-spacing:.14em;z-index:3}
+@media(max-width:1100px){.v2-auth .auth--signin,.v2-auth .auth--signup{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.v2-auth .auth-edge{display:none}}
+@media(max-width:760px){.v2-auth .auth--signin,.v2-auth .auth--signup{grid-template-columns:1fr}.v2-auth .auth-panel__inner{min-height:100svh;padding-top:25px}.v2-auth .auth-card{width:min(100% - 52px,460px);margin:clamp(45px,8vh,95px) auto 0}.v2-auth .auth-brand{margin-left:28px}.v2-auth .auth-media{display:none}.v2-auth .auth-caption{display:none}}
+@media(prefers-reduced-motion:reduce){.v2-auth .auth-card [data-reveal]{transition:none!important}}

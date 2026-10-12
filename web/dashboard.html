@@ -11,16 +11,18 @@
   <link rel="stylesheet" href="assets/css/brief.css">
   <script defer src="assets/js/app.js"></script>
   <script defer src="assets/js/brief.js"></script>
+  <link rel="stylesheet" href="assets/css/v2-app.css">
+  <link rel="stylesheet" href="assets/css/v2-dashboard.css">
 </head>
-<body class="app-body brief-page">
+<body class="app-body brief-page v2-app">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="dashboard"></header>
   <main id="main" class="app-main brief-main">
     <section class="brief-hero" aria-labelledby="brief-title">
       <div class="brief-hero__copy">
         <p class="brief-kicker">INSIDIR / THE PUBLIC RECORD</p>
-        <h1 id="brief-title">The facts behind<br>the market.</h1>
-        <p class="brief-intro">See what insiders reported. Trace the filing. Follow the evidence—not a prediction.</p>
+        <h1 id="brief-title" data-greeting>Good morning.</h1>
+        <p class="brief-intro">Search a stock to start your research. See what was disclosed, trace original SEC filings, and follow the evidence.</p>
         <form action="research.html" method="get" class="brief-search" role="search">
           <label class="sr-only" for="brief-ticker">Stock ticker</label>
           <input id="brief-ticker" name="ticker" type="text" placeholder="Research a company — AAPL, MSFT, NVDA…" maxlength="15" autocomplete="off" spellcheck="false" required>

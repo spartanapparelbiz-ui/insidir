@@ -1,416 +1,98 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Financial intelligence for your next move — insidir.</title>
-  <meta name="description" content="Research what public financial records reveal. Investigate the evidence, connect the context, and make investing decisions on your terms.">
-  <meta name="theme-color" content="#f7f4ec">
-  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/img/hero.jpg" as="image">
-  <script>document.documentElement.classList.add('js')</script>
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/landing.css">
-  <link rel="stylesheet" href="assets/css/fx-top.css">
-  <link rel="stylesheet" href="assets/css/fx-mid.css">
-  <link rel="stylesheet" href="assets/css/fx-end.css">
-  <script defer src="assets/js/motion.js"></script>
-  <script defer src="assets/js/site.js"></script>
-  <script defer src="assets/js/landing.js"></script>
-  <script defer src="assets/js/fx-top.js"></script>
-  <script defer src="assets/js/fx-mid.js"></script>
-  <script defer src="assets/js/fx-end.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8f7f3">
+<title>Insidir — Financial intelligence from the public record</title>
+<meta name="description" content="Explore original SEC filings, insider ownership disclosures, and financial evidence. Make your own investment decisions with the public record in view.">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/img/hero.jpg" as="image">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/v2-landing.css">
+<script defer src="assets/js/v2-landing.js"></script>
 </head>
-<body class="landing" data-smooth>
-<a class="skip-link" href="#main">Skip to content</a>
-
-<header class="site-nav" data-solid-after="24">
-  <div class="site-nav__inner container-wide">
-    <a class="site-nav__logo logo" href="index.html" aria-label="insidir. home">insidir.</a>
-    <nav class="site-nav__links" aria-label="Primary">
-      <a href="index.html#product">Product</a><a href="index.html#data">Data</a><a href="pricing.html">Pricing</a><a href="index.html#about">About</a>
+<body class="v2-landing">
+<a href="#main" class="skip-link">Skip to content</a>
+<header class="lv-nav" id="lv-nav">
+  <div class="lv-nav__inner">
+    <a href="index.html" class="lv-wordmark" aria-label="Insidir homepage">insidir.</a>
+    <nav class="lv-nav__links" aria-label="Primary navigation">
+      <a href="#product">Product</a><a href="#sources">Our data</a><a href="#pricing">Pricing</a><a href="#how">How it works</a>
     </nav>
-    <div class="site-nav__actions">
-      <a class="site-nav__signin" href="signin.html">Sign in</a>
-      <a class="btn btn--dark btn--sm" href="signup.html" data-magnetic="0.2">Get started</a>
-      <button class="site-nav__menu" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><span></span></button>
-    </div>
+    <div class="lv-nav__actions"><a href="signin.html" class="lv-signin">Sign in</a><a href="signup.html" class="lv-button lv-button--dark lv-button--sm">Get started <span aria-hidden="true">↗</span></a></div>
+    <button id="lv-menu-button" class="lv-menu-button" type="button" aria-expanded="false" aria-controls="lv-menu" aria-label="Open navigation"><span></span><span></span></button>
   </div>
+  <nav id="lv-menu" class="lv-mobile" aria-label="Mobile navigation" hidden>
+    <a href="#product">Product</a><a href="#sources">Our data</a><a href="#pricing">Pricing</a><a href="#how">How it works</a><a href="signin.html">Sign in</a><a href="signup.html">Get started →</a>
+  </nav>
 </header>
-<div class="mobile-menu" id="mobile-menu">
-  <a href="index.html#product">Product</a><a href="index.html#data">Data</a><a href="pricing.html">Pricing</a><a href="index.html#about">About</a><a href="signin.html">Sign in</a>
-  <a class="btn btn--dark btn--block" href="signup.html">Get started</a>
-</div>
-<div class="scroll-progress" aria-hidden="true"></div>
-
 <main id="main">
-
-  <!-- ============ HERO ============ -->
-  <!-- .fx-top: one pinned journey through the hero, feature strip and "A more informed market" (fx-top.css/js) -->
-  <div class="fx-top" data-progress="pin">
-  <section class="hero" id="top" data-progress="exit" aria-labelledby="hero-title">
-    <div class="hero__bg" aria-hidden="true">
-      <div class="hero__parallax" data-parallax="0.32">
-        <div class="hero__drift">
-          <div class="hero__frame">
-            <div class="hero__zoom">
-              <img class="hero__img" src="assets/img/hero.jpg" alt="" width="2400" height="1282" decoding="async" fetchpriority="high">
-              <span class="hero__patch"></span>
-              <span class="hero__glow"></span>
-              <span class="hero__mend"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="hero__haze"></div>
+  <section class="lv-hero" aria-labelledby="lv-hero-title">
+    <div class="lv-hero__photo" aria-hidden="true"></div>
+    <div class="lv-hero__veil" aria-hidden="true"></div>
+    <div class="lv-hero__content">
+      <span class="lv-eyebrow">A CLEARER VIEW OF PUBLIC INFORMATION</span>
+      <h1 id="lv-hero-title">Turn public records<br>into an edge.</h1>
+      <p>Investigate insider activity, original SEC filings, and the financial evidence behind companies. Know what was reported. Decide for yourself.</p>
+      <div class="lv-hero__actions"><a class="lv-button lv-button--dark" href="signup.html">Start researching free <span aria-hidden="true">→</span></a><a class="lv-button lv-button--light" href="#how">See how it works</a></div>
+      <span class="lv-hero__note">Research first. No brokerage connection required.</span>
     </div>
-
-    <div class="hero__content container">
-      <p class="hero__eyebrow eyebrow" data-reveal="fade" data-delay="120">Powerful information. Your decisions.</p>
-      <h1 class="hero__title" id="hero-title" data-split data-delay="200">Turn public records <br>into an edge.</h1>
-      <div class="hero__lower">
-      <p class="hero__sub" data-reveal="up" data-delay="620">Investigate the public intelligence behind stocks. Make your own trading decisions, <br class="br-lg"> with user-approved automation planned for supported brokers.</p>
-      <div class="hero__actions" data-stagger="110" data-delay="780">
-        <a class="btn btn--dark hero__btn" href="signup.html" data-reveal="up" data-magnetic="0.25">
-          <span>Get started free</span>
-          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="btn btn--light hero__btn" href="#how" data-reveal="up">See how it works</a>
-      </div>
-      </div>
-    </div>
-
-    <a class="hero__cue" href="#coverage" aria-label="Scroll to content"><span></span></a>
-  </section>
-  <div class="fx-top__run" aria-hidden="true"></div>
-
-  <!-- ============ FEATURE STRIP ============ -->
-  <section class="strip" id="coverage" aria-label="What insidir. covers" data-vel>
-    <ul class="strip__list" data-stagger="110">
-      <li class="strip__item" data-reveal="up">
-        <span class="strip__title">Insider trades</span>
-        <span class="strip__sub">Source-linked SEC disclosures</span>
-      </li>
-      <li class="strip__item" data-reveal="up">
-        <span class="strip__rule" data-rule="y" aria-hidden="true"></span>
-        <span class="strip__title">Political activity</span>
-        <span class="strip__sub">Broader sources planned</span>
-      </li>
-      <li class="strip__item" data-reveal="up">
-        <span class="strip__rule" data-rule="y" aria-hidden="true"></span>
-        <span class="strip__title">SEC filings</span>
-        <span class="strip__sub">Original public filings</span>
-      </li>
-      <li class="strip__item" data-reveal="up">
-        <span class="strip__rule" data-rule="y" aria-hidden="true"></span>
-        <span class="strip__title">Connected research</span>
-        <span class="strip__sub">People, companies, timelines</span>
-      </li>
-    </ul>
+    <a class="lv-scroll" href="#product" aria-label="Explore the product"><span></span>SCROLL TO EXPLORE</a>
   </section>
 
-  <!-- ============ A MORE INFORMED MARKET ============ -->
-  <section class="band informed" id="about" aria-labelledby="about-title">
-   <div class="informed__stage">
-    <div class="band__side band__side--left" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.08" data-parallax-x="0.05">
-        <img src="assets/img/informed-left.jpg" alt="" width="1000" height="886" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="band__side band__side--right" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.12" data-parallax-x="-0.05">
-        <img src="assets/img/informed-right.jpg" alt="" width="996" height="756" loading="lazy" decoding="async">
-      </div>
-    </div>
-
-    <div class="band__content informed__content">
-      <h2 class="sec-title informed__title" id="about-title" data-split>The full picture, in public view.</h2>
-      <p class="sec-sub informed__sub" data-reveal="up" data-delay="200">Public records hold <strong>details worth finding.</strong> Insidir brings the evidence into focus so you can investigate what happened, when it became public, and what it could mean.</p>
-      <div class="cols cols--3 informed__cols" data-stagger="120" data-delay="250">
-        <div class="col" data-reveal="up">
-          <h3 class="col__title">Original evidence</h3>
-          <p class="col__text">Start with source-linked SEC insider disclosures. More authorized public datasets are planned.</p>
-        </div>
-        <div class="col" data-reveal="up">
-          <span class="col__rule" data-rule="y" aria-hidden="true"></span>
-          <h3 class="col__title">Connected context</h3>
-          <p class="col__text">See the people, companies, transactions and dates behind a filing.</p>
-        </div>
-        <div class="col" data-reveal="up">
-          <span class="col__rule" data-rule="y" aria-hidden="true"></span>
-          <h3 class="col__title">Your call</h3>
-          <p class="col__text">Use research to inform decisions you make in your own brokerage account.</p>
-        </div>
-      </div>
-    </div>
-   </div>
-  </section>
-  </div><!-- /.fx-top -->
-
-  <!-- ============ SEE WHAT MOVES ============ -->
-  <section class="dark-band moves on-dark fx-moves" id="how" aria-labelledby="how-title" data-progress="travel" data-progress-max="0.6667">
-   <div class="fx-moves__stage">
-    <div class="dark-band__bg" aria-hidden="true">
-      <div class="dark-band__layer" data-parallax="0.07">
-        <img src="assets/img/moves-bg.jpg" alt="" width="1920" height="500" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="dark-band__inner">
-      <h2 class="sec-title moves__title" id="how-title" data-split>See what the headlines miss.</h2>
-      <p class="sec-sub moves__sub" data-reveal="up" data-delay="200">Follow information hidden in plain sight. Understand the filing, <br class="br-lg"> trace the timeline, and check the original record.</p>
-      <div class="cards cards--3" data-stagger="130" data-delay="150">
-        <article class="pcard" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/moves-people.jpg" alt="" width="1040" height="338" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Follow the money. <br>Check the record.</h3>
-              <p class="pcard__text">Investigate reported insider trades <br>and the filings behind them.</p>
-            </div>
-          </div>
-        </article>
-        <article class="pcard" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/moves-policy.jpg" alt="" width="1040" height="339" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Follow policy and power.</h3>
-              <p class="pcard__text">Government and political data <br>are planned pending permissions.</p>
-            </div>
-          </div>
-        </article>
-        <article class="pcard" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/moves-wallst.jpg" alt="" width="1040" height="341" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Go beyond the headlines.</h3>
-              <p class="pcard__text">Search public filings to find <br>details a headline might miss.</p>
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-   </div>
+  <section class="lv-features" aria-label="What you can investigate">
+    <a href="filings.html" class="lv-feature"><span class="lv-feature__icon" aria-hidden="true">▤</span><span><strong>SEC filings</strong><small>Original public disclosures</small></span></a>
+    <a href="dashboard.html#insider-activity" class="lv-feature"><span class="lv-feature__icon" aria-hidden="true">↗</span><span><strong>Insider transactions</strong><small>Reported ownership changes</small></span></a>
+    <a href="#sources" class="lv-feature"><span class="lv-feature__icon" aria-hidden="true">⌑</span><span><strong>Financial facts</strong><small>Reported figures and periods</small></span></a>
+    <a href="research.html" class="lv-feature"><span class="lv-feature__icon" aria-hidden="true">⌕</span><span><strong>Connected research</strong><small>Source-linked company context</small></span></a>
   </section>
 
-  <!-- ============ FOUR CRITICAL LENSES ============ -->
-  <section class="lenses fx-lenses" id="product" aria-labelledby="product-title" data-progress="enter" data-progress-span="0.85">
-    <h2 class="sec-title lenses__title" id="product-title" data-split>Four ways to look deeper.</h2>
-    <p class="sec-sub lenses__sub" data-reveal="up" data-delay="200">Start with the evidence. Follow where it leads.</p>
-    <div class="lenses__grid">
-      <article class="lens">
-        <div class="lens__wipe" data-reveal="wipe" data-delay="0"><div class="lens__media media"><img src="assets/img/lens-insider.jpg" alt="" width="800" height="394" loading="lazy" decoding="async"></div></div>
-        <h3 class="lens__title" data-reveal="up" data-delay="260">Insider Trades</h3>
-        <p class="lens__text" data-reveal="up" data-delay="340">Examine imported Form 4 trades <br>with links to official filings.</p>
-      </article>
-      <article class="lens">
-        <div class="lens__wipe" data-reveal="wipe" data-delay="130"><div class="lens__media media"><img src="assets/img/lens-political.jpg" alt="" width="800" height="395" loading="lazy" decoding="async"></div></div>
-        <h3 class="lens__title" data-reveal="up" data-delay="390">Political Activity</h3>
-        <p class="lens__text" data-reveal="up" data-delay="470">Additional public datasets are <br>planned, subject to permissions.</p>
-      </article>
-      <article class="lens">
-        <div class="lens__wipe" data-reveal="wipe" data-delay="260"><div class="lens__media media"><img src="assets/img/lens-sec.jpg" alt="" width="768" height="380" loading="lazy" decoding="async"></div></div>
-        <h3 class="lens__title" data-reveal="up" data-delay="520">SEC Filings</h3>
-        <p class="lens__text" data-reveal="up" data-delay="600">Review source-linked SEC records <br>and disclosure dates.</p>
-      </article>
-      <article class="lens">
-        <div class="lens__wipe" data-reveal="wipe" data-delay="390"><div class="lens__media media"><img src="assets/img/lens-company.jpg" alt="" width="800" height="394" loading="lazy" decoding="async"></div></div>
-        <h3 class="lens__title" data-reveal="up" data-delay="650">Company Research</h3>
-        <p class="lens__text" data-reveal="up" data-delay="730">Connect companies, reporting <br>people and transactions.</p>
-      </article>
+  <section class="lv-overview lv-section" id="product">
+    <div class="lv-overview__copy">
+      <span class="lv-eyebrow">BUILT FOR PEOPLE WHO ASK WHY</span>
+      <h2>Everything you need<br>to research a stock.</h2>
+      <p>Turn scattered public disclosures into something you can actually investigate. One research desk. Original sources. Clear reporting dates.</p>
+      <a href="research.html" class="lv-text-link">Explore the Research Desk <span aria-hidden="true">↗</span></a>
+      <div class="lv-overview__numbers"><span><b>01</b> Find the company</span><span><b>02</b> Follow the record</span><span><b>03</b> Make your own call</span></div>
+    </div>
+    <div class="lv-overview__photo" role="img" aria-label="Golden hour over Wall Street buildings"></div>
+  </section>
+
+  <section class="lv-dark lv-section" id="how">
+    <div class="lv-dark__head"><span class="lv-eyebrow">THE INSIDIR METHOD</span><h2>Clarity, before conviction.</h2><p>Research the public record as it exists, not as somebody tells you to interpret it.</p></div>
+    <div class="lv-cards">
+      <article class="lv-card"><img src="assets/img/moves-people.jpg" alt="People walking through a financial district" loading="lazy"><div><span>01 / DISCOVER</span><h3>Find the evidence.</h3><p>Search companies and recently imported insider transactions.</p></div></article>
+      <article class="lv-card"><img src="assets/img/moves-policy.jpg" alt="Architectural detail in New York" loading="lazy"><div><span>02 / VERIFY</span><h3>Trace the filing.</h3><p>Follow original SEC sources and distinguish trade dates from publication dates.</p></div></article>
+      <article class="lv-card"><img src="assets/img/moves-wallst.jpg" alt="Wall Street sign and surrounding architecture" loading="lazy"><div><span>03 / CONNECT</span><h3>See the context.</h3><p>Review selected corporate filings and reported fundamentals in one place.</p></div></article>
+    </div>
+    <div class="lv-dark__bottom"><p>Not trading signals. Not invented predictions.<br><strong>Evidence you can verify.</strong></p><a class="lv-button lv-button--outline" href="dashboard.html">Explore Insidir <span aria-hidden="true">↗</span></a></div>
+  </section>
+
+  <section class="lv-source lv-section" id="sources">
+    <div class="lv-source__photo" role="img" aria-label="New York Stock Exchange architecture"></div>
+    <div class="lv-source__copy">
+      <span class="lv-eyebrow">GROUNDED IN THE SOURCE</span>
+      <h2>Know where every<br>finding comes from.</h2>
+      <p>Real SEC Form 4 transactions, company submissions, and reported XBRL financial facts. Every available finding points back to official information with the relevant dates and limitations.</p>
+      <div class="lv-source__list"><div><strong>01</strong><span><b>Original documents</b><small>Inspect public SEC filings directly.</small></span></div><div><strong>02</strong><span><b>Dates in context</b><small>Disclosure dates are not transaction dates.</small></span></div><div><strong>03</strong><span><b>Your own research</b><small>Save private notes and follow the companies you choose.</small></span></div></div>
+      <a href="research.html?ticker=AAPL" class="lv-text-link">See company research <span aria-hidden="true">↗</span></a>
     </div>
   </section>
 
-  <!-- ============ RESEARCH FASTER ============ -->
-  <section class="dark-band research on-dark fx-research" aria-labelledby="research-title" data-progress="enter" data-progress-span="0.8">
-    <div class="dark-band__bg" aria-hidden="true">
-      <div class="dark-band__layer" data-parallax="0.07">
-        <img src="assets/img/research-bg.jpg" alt="" width="1920" height="414" loading="lazy" decoding="async">
-      </div>
+  <section class="lv-pricing lv-section" id="pricing">
+    <div class="lv-pricing__header"><span class="lv-eyebrow">SIMPLE BY DESIGN</span><h2>Start with the evidence.</h2><p>Explore the public record before deciding whether to upgrade.</p></div>
+    <div class="lv-plans">
+      <article class="lv-plan"><p>ESSENTIAL</p><h3>Free</h3><div class="lv-price">$0 <span>/month</span></div><ul><li>Access public-record research</li><li>Search companies and SEC filings</li><li>Follow eligible reported insider activity</li><li>Manually enter holdings, if you choose</li></ul><a class="lv-button lv-button--dark" href="signup.html">Get started free ↗</a></article>
+      <article class="lv-plan lv-plan--pro"><div class="lv-plan__top"><p>INSIDIR PRO</p><span>COMING INTO FOCUS</span></div><h3>Go deeper.</h3><div class="lv-price">$39 <span>/month · planned</span></div><ul><li>Deeper research tools as available</li><li>Expanded saved research workflows</li><li>Additional company intelligence</li><li>Pro access activates only after checkout is live</li></ul><a class="lv-button lv-button--dark" href="pricing.html">Explore Pro ↗</a></article>
     </div>
-    <div class="fx-word" aria-hidden="true" data-progress="travel"><span class="fx-word__text">Research</span></div>
-    <div class="dark-band__inner">
-      <h2 class="sec-title research__title" id="research-title" data-split>Investigate deeply. Decide for yourself.</h2>
-      <p class="sec-sub research__sub" data-reveal="up" data-delay="200">From official disclosures to clear research — without handing over control of your trades.</p>
-      <div class="cards cards--4" data-stagger="110" data-delay="150">
-        <article class="pcard pcard--sm" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/research-search.jpg" alt="" width="800" height="299" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Find the evidence</h3>
-              <p class="pcard__text">Search imported filings by company, <br>insider or transaction.</p>
-            </div>
-          </div>
-        </article>
-        <article class="pcard pcard--sm" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/research-alerts.jpg" alt="" width="800" height="299" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Follow what matters</h3>
-              <p class="pcard__text">Review source-backed activity <br>matching your watchlist.</p>
-            </div>
-          </div>
-        </article>
-        <article class="pcard pcard--sm" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/research-filters.jpg" alt="" width="760" height="288" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">See the timing</h3>
-              <p class="pcard__text">Compare transaction dates <br>with disclosure dates.</p>
-            </div>
-          </div>
-        </article>
-        <article class="pcard pcard--sm" data-reveal="card">
-          <div class="pcard__inner">
-            <div class="pcard__media media"><img src="assets/img/research-discover.jpg" alt="" width="800" height="298" loading="lazy" decoding="async"></div>
-            <div class="pcard__body">
-              <h3 class="pcard__title">Make your move</h3>
-              <p class="pcard__text">Understand the information, then <br>decide whether to trade yourself.</p>
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
+    <p class="lv-pricing__note">Insidir does not currently place trades or give personalized investment recommendations. Pro checkout and entitlements are subject to activation.</p>
   </section>
 
-  <!-- ============ BUILT ON OFFICIAL RECORDS ============ -->
-  <section class="band records" id="data" aria-labelledby="data-title" data-progress="enter">
-    <div class="records__marquee" aria-hidden="true" data-vel><div class="records__track"><span>SEC · EDGAR · FORM 4 · 10-K · 10-Q · 8-K · CONGRESSIONAL DISCLOSURES ·</span><span>SEC · EDGAR · FORM 4 · 10-K · 10-Q · 8-K · CONGRESSIONAL DISCLOSURES ·</span></div></div>
-    <div class="band__side band__side--left" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.08" data-parallax-x="0.04">
-        <img src="assets/img/records-left.jpg" alt="" width="1100" height="658" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="band__side band__side--right" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.12" data-parallax-x="-0.04">
-        <img src="assets/img/records-right.jpg" alt="" width="1000" height="748" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="band__content records__content">
-      <h2 class="sec-title records__title" id="data-title" data-split>Grounded in the source.</h2>
-      <p class="sec-sub records__sub" data-reveal="up" data-delay="200">Insidir starts with imported SEC ownership filings and original source links. <br class="br-lg"> Broader public data and brokerage integrations are on the roadmap.</p>
-      <div class="cols cols--4 records__cols" data-stagger="110" data-delay="250">
-        <div class="col" data-reveal="up">
-          <h3 class="col__title">Official sources</h3>
-          <p class="col__text">Original SEC disclosures, <br class="br-lg"> linked for verification.</p>
-        </div>
-        <div class="col" data-reveal="up">
-          <span class="col__rule" data-rule="y" aria-hidden="true"></span>
-          <h3 class="col__title">Timely updates</h3>
-          <p class="col__text">Trade dates and publication <br class="br-lg"> dates shown separately.</p>
-        </div>
-        <div class="col" data-reveal="up">
-          <span class="col__rule" data-rule="y" aria-hidden="true"></span>
-          <h3 class="col__title">Broad coverage</h3>
-          <p class="col__text">Expanded government and <br class="br-lg"> institutional coverage planned.</p>
-        </div>
-        <div class="col" data-reveal="up">
-          <span class="col__rule" data-rule="y" aria-hidden="true"></span>
-          <h3 class="col__title">Transparent by design</h3>
-          <p class="col__text">Trace research back to <br class="br-lg"> its original evidence.</p>
-        </div>
-      </div>
-    </div>
+  <section class="lv-cta">
+    <div class="lv-cta__image" aria-hidden="true"></div>
+    <div class="lv-cta__content"><span class="lv-eyebrow">YOUR NEXT QUESTION STARTS HERE</span><h2>See beyond<br>the headline.</h2><p>When the information matters, the original record matters more.</p><a class="lv-button lv-button--light" href="signup.html">Start researching free ↗</a></div>
   </section>
-
-  <!-- ============ PRICING ============ -->
-  <section class="band pricing" id="pricing" aria-labelledby="pricing-title" data-progress="enter">
-    <div class="band__side band__side--left" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.1" data-parallax-x="0.04">
-        <img src="assets/img/pricing-left.jpg" alt="" width="1084" height="988" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="band__side band__side--right" aria-hidden="true">
-      <div class="band__layer" data-parallax="0.14" data-parallax-x="-0.05">
-        <img src="assets/img/pricing-right.jpg" alt="" width="1100" height="963" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="band__content pricing__content">
-      <h2 class="sec-title pricing__title" id="pricing-title" data-split>Simple, transparent pricing.</h2>
-      <p class="sec-sub pricing__sub" data-reveal="up" data-delay="160">Get started for free. Upgrade anytime.</p>
-      <div class="plans" data-stagger="140" data-delay="200">
-        <article class="plan" data-reveal="card" aria-labelledby="plan-free">
-          <h3 class="plan__name" id="plan-free">Free</h3>
-          <p class="plan__price"><span class="plan__amount" data-count data-delay="350">$0</span><span class="plan__per">/month</span></p>
-          <ul class="plan__list" data-stagger="80" data-delay="450">
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Basic search</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Recent SEC filings</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Limited results</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Watchlists (up to 5)</li>
-          </ul>
-          <a class="btn btn--dark btn--block plan__btn" href="signup.html">Get started free</a>
-        </article>
-        <article class="plan plan--pro" data-reveal="card" aria-labelledby="plan-pro">
-          <span class="plan__badge pill pill--badge" data-reveal="scale" data-delay="700">For deeper research</span>
-          <h3 class="plan__name" id="plan-pro">Pro</h3>
-          <p class="plan__price"><span class="plan__amount" data-count data-delay="450">$39</span><span class="plan__per">/month</span></p>
-          <ul class="plan__list" data-stagger="80" data-delay="550">
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Research filters</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Watchlist activity</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Imported Form 4 history</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Unlimited watchlists</li>
-            <li data-reveal="fade" data-draw><svg viewBox="0 0 16 16" aria-hidden="true"><path class="line" d="M2.5 8.6l3.4 3.2 7.6-7.6"/></svg>Original filing links</li>
-          </ul>
-          <a class="btn btn--dark btn--block plan__btn" href="signup.html?plan=pro">Start Pro</a>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ FAQ ============ -->
-  <section class="faq" id="faq" aria-labelledby="faq-title">
-    <h2 class="faq__title" id="faq-title" data-split>Frequently asked questions.</h2>
-    <div class="faq__grid">
-      <div class="faq__col" data-stagger="200" data-delay="150">
-        <details class="faq__item" data-accordion data-reveal="up">
-          <summary><span>What data does insidir. include?</span><i class="faq__icon" aria-hidden="true"></i></summary>
-          <div class="faq__body" data-accordion-body><p>Insidir starts with imported SEC Form 4 ownership filings, reporting people, companies and transaction dates. Wider political, institutional and government records are planned where access and commercial use are permitted.</p></div>
-        </details>
-        <details class="faq__item" data-accordion data-reveal="up">
-          <summary><span>How often is the data updated?</span><i class="faq__icon" aria-hidden="true"></i></summary>
-          <div class="faq__body" data-accordion-body><p>The engine can check for new SEC filings on a scheduled basis. Coverage depends on ingestion health; use the dates and original filing links to verify how recent each record is.</p></div>
-        </details>
-      </div>
-      <div class="faq__col" data-stagger="200" data-delay="250">
-        <details class="faq__item" data-accordion data-reveal="up">
-          <summary><span>Can Insidir place trades for me?</span><i class="faq__icon" aria-hidden="true"></i></summary>
-          <div class="faq__body" data-accordion-body><p>Not yet. Today you can research the evidence and choose whether to trade through your own broker. Connected portfolios and permission-based automated trading are planned only for supported brokerages, after necessary approvals. No trades are placed by Insidir today.</p></div>
-        </details>
-        <details class="faq__item" data-accordion data-reveal="up">
-          <summary><span>Can I upgrade or cancel at any time?</span><i class="faq__icon" aria-hidden="true"></i></summary>
-          <div class="faq__body" data-accordion-body><p>Free research access and the $39 monthly Pro plan are listed above. Once checkout is configured, paid subscriptions can be managed or canceled in the billing portal.</p></div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ FINAL CTA ============ -->
-  <section class="cta on-dark" aria-labelledby="cta-title" data-progress="enter">
-    <div class="cta__bg" aria-hidden="true">
-      <div class="cta__layer" data-parallax="0.16">
-        <img class="cta__img" src="assets/img/cta-bg.jpg" alt="" width="1812" height="708" loading="lazy" decoding="async">
-      </div>
-    </div>
-    <div class="cta__content">
-      <h2 class="cta__title" id="cta-title" data-split>Find the evidence. Make your move.</h2>
-      <p class="cta__sub" data-reveal="up" data-delay="220">Research public disclosures, follow the source, and make your own decisions. User-controlled automation is on the roadmap.</p>
-      <div class="cta__actions" data-stagger="110" data-delay="360">
-        <a class="btn btn--dark cta__btn cta__btn--dark" href="signup.html" data-reveal="up" data-magnetic="0.25">
-          <span>Get started free</span>
-          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="btn btn--light cta__btn" href="#how" data-reveal="up">See how it works</a>
-      </div>
-    </div>
-  </section>
-
 </main>
-
-<footer class="site-footer"><div class="container-wide site-footer__inner">
-  <a class="logo" href="index.html">insidir.</a>
-  <nav aria-label="Footer"><a href="pricing.html">Pricing</a><a href="signin.html">Sign in</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
-  <p class="site-footer__legal">© <span data-year>2026</span> insidir. Information is compiled from public records for research purposes and is not investment advice.
-  Filing data originates from SEC EDGAR; verify against the original source before acting.</p>
-</div></footer>
+<footer class="lv-footer"><div><a class="lv-wordmark" href="index.html">insidir.</a><p>Financial research, rooted in the public record.<br>Not investment advice.</p></div><nav aria-label="Footer"><a href="research.html">Research</a><a href="pricing.html">Pricing</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="signin.html">Sign in</a></nav><small>© 2026 Insidir.</small></footer>
 </body>
 </html>

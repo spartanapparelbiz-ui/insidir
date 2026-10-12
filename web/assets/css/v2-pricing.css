@@ -1,0 +1,13 @@
+.v2-price-page .lv-nav{position:relative;background:#fbfaf7;border-bottom:1px solid #e8e6df}
+.v2-price-page .lv-pricing{padding-top:clamp(70px,8vw,130px);background:#f6f4ef}
+.v2-price-page .lv-pricing h1{font:520 clamp(50px,5.5vw,84px)/1.02 var(--serif);letter-spacing:-.055em;margin:19px 0}
+.v2-price-page .lv-plan{text-align:left}
+.vp-faq{display:grid;grid-template-columns:.8fr 1.2fr;max-width:1220px;gap:60px;padding:100px 24px;margin:auto}
+.vp-faq h2{font:520 clamp(41px,4vw,64px)/1.04 var(--serif);letter-spacing:-.05em;margin:19px 0}
+.vp-faq__items{border-top:1px solid #d9d9d2}
+.vp-faq details{border-bottom:1px solid #d9d9d2;padding:21px 0}
+.vp-faq summary{font:560 16px/1.5 var(--serif);cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:15px}
+.vp-faq summary:after{content:"+";font:500 24px var(--sans)}
+.vp-faq details[open] summary:after{content:"−"}
+.vp-faq details p{font:400 13px/1.85 var(--sans);color:#72756d;margin-top:14px;max-width:640px}
+@media(max-width:750px){.vp-faq{grid-template-columns:1fr;gap:20px;padding:70px 25px}.v2-price-page .lv-pricing h1{font-size:50px}}

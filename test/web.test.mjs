@@ -74,7 +74,7 @@ test("production dashboard uses readable evidence components without fake market
     const res=await fetch(base+"/dashboard.html");
     assert.equal(res.status,200);
     const html=await res.text();
-    assert.match(html,/The facts behind/);
+    assert.match(html,/data-greeting/);
     assert.match(html,/assets\/css\/brief.css/);
     assert.match(html,/assets\/js\/brief.js/);
     assert.match(html,/id="brief-transactions"/);
@@ -96,8 +96,36 @@ test("sign-in only offers implemented methods, landing retains original visuals"
     }
     const html=await (await fetch(base+"/index.html")).text();
     assert.match(html,/assets\/img\/hero.jpg/);
-    const effect=await (await fetch(base+"/assets/js/fx-top.js")).text();
-    assert.match(effect,/max-width: 0px/);
+    const effect=await (await fetch(base+"/assets/js/v2-landing.js")).text();
+    assert.match(effect,/lv-menu-button/);
+  });
+});
+
+test("V2 site provides working navigation and public research entry points",async()=>{
+  await withServer(async base=>{
+    const pages=["/","/dashboard.html","/signin.html","/signup.html","/research.html",
+      "/company.html","/explore.html","/filings.html","/filing.html","/watchlist.html",
+      "/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html"];
+    for(const url of pages){
+      const r=await fetch(base+url);
+      assert.equal(r.status,200,url);
+      assert.match(await r.text(),/insidir[.]/i,url);
+    }
+    const nav=await(await fetch(base+"/assets/js/app.js")).text();
+    for(const p of ["dashboard.html","research.html","explore.html","filings.html","watchlist.html","portfolio.html"])assert.ok(nav.includes(p),p);
+    const homepage=await(await fetch(base+"/")).text();
+    assert.match(homepage,/v2-landing.css/);
+    assert.match(homepage,/assets\/img\/hero.jpg/);
+    assert.doesNotMatch(homepage,/Markets open|invented returns|automatic trades now/i);
+    const dashboard=await(await fetch(base+"/dashboard.html")).text();
+    assert.match(dashboard,/v2-dashboard.css/);
+    assert.match(dashboard,/id="brief-transactions"/);
+    const company=await(await fetch(base+"/company.html")).text();
+    assert.match(company,/v2-company.js/);
+    const collections=await(await fetch(base+"/assets/js/v2-collections.js")).text();
+    assert.match(collections,/\/v1\/companies/);
+    assert.match(collections,/\/v1\/filings/);
+    assert.match(collections,/\/v1\/me\/watchlist/);
   });
 });
 
