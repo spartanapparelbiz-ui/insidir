@@ -165,9 +165,8 @@
       }
 
       if (!res || res.status === 404 || res.status === 405) {
-        toast("Preview mode — opening the demo dashboard");
-        setPending(true, "Opening dashboard…");
-        goToDashboard(900);
+        setPending(false);
+        showAlert("Account service is currently unavailable. Please try again later.");
         return;
       }
       if (res.ok) {
