@@ -22,6 +22,8 @@ export async function migrate() {
     await client.query(researchSchema);
     const brokerageSchema=await readFile(new URL("../sql/004_brokerage_oauth.sql",import.meta.url),"utf8");
     await client.query(brokerageSchema);
+    const manualSchema=await readFile(new URL("../sql/005_manual_holdings.sql",import.meta.url),"utf8");
+    await client.query(manualSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}
