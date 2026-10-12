@@ -8,6 +8,7 @@ import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,chec
 import { serveStatic } from "./web.mjs";
 import { billingRoutes } from "./billing.mjs";
 import { validateResearchDecision } from "./research.mjs";
+import { getCompanyIntelligence } from "./intelligence.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
 function isLimited(key,limit=15,windowMs=15*60*1000){
@@ -90,6 +91,22 @@ async function route(req,res){
       WHERE ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
+  }
+  if(p==="/v1/intelligence" && m==="GET"){
+    const t=ticker(u.searchParams.get("ticker"));
+    const ip=req.socket.remoteAddress||"unknown";
+    if(isLimited("intelligence:"+ip,20,60*1000))throw failure(429,"Too many intelligence requests. Try again shortly.");
+    if(!secReady())throw failure(503,"SEC_USER_AGENT not configured for official SEC research");
+    const transactions=await query(`SELECT t.id,t.issuer_cik,t.ticker,t.owner_name,t.category,t.transaction_date,
+      t.transaction_code,t.derivative,t.estimated_value,t.source_url,f.published_at
+      FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+      WHERE t.ticker=$1 AND f.ingest_status='parsed'
+      ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST LIMIT 30`,[t]);
+    let intel;
+    try {intel=await getCompanyIntelligence(t,transactions.rows);}
+    catch(err) {console.warn("SEC intelligence lookup failed:",err?.message);throw failure(503,"SEC data temporarily unavailable. Try again later.");}
+    if(!intel)throw failure(404,"Ticker not found in the SEC's official company mapping. This does not establish that a company does not exist.");
+    return json(res,200,{...intel,disclaimer:"Descriptive public-record intelligence only; not personalized investment advice or an executable trading signal."});
   }
   if(p==="/v1/companies" && m==="GET"){
     const search=(u.searchParams.get("q")||"").trim().slice(0,60);
