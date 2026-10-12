@@ -1,0 +1,50 @@
+/* Dark intelligence desk: original SEC figures only, no fake prices. */
+body.v2-app.brief-page{--app-bg:#0e1214;--app-surface:#161b1d;--app-border:#31383a;background:#0e1214;color:#f1f2eb}
+body.v2-app.brief-page .app-main{padding-top:25px}
+body.v2-app.brief-page .app-footer{background:#0e1214;border-color:#303638;color:#8c9998}
+body.v2-app.brief-page .app-footer a{color:#c5cdca}
+body.v2-app.brief-page .brief-hero{background:#171d1e;min-height:265px;border-radius:8px;border:1px solid #343d3e}
+body.v2-app.brief-page .brief-hero__copy{max-width:810px;padding:41px 40px}
+body.v2-app.brief-page .brief-hero__image{inset:0 0 0 24%;opacity:.87;background:linear-gradient(90deg,#171d1e 1%,rgba(23,29,30,.9) 32%,rgba(23,29,30,.52) 74%,rgba(23,29,30,.38)),url("../img/signin.jpg") center 48% /cover no-repeat}
+body.v2-app.brief-page .brief-hero h1{font:510 clamp(49px,5vw,70px)/1.07 var(--serif);letter-spacing:-.04em;margin:10px 0}
+body.v2-app.brief-page .brief-intro{color:#c5ceca;font-size:13px;line-height:1.7}
+body.v2-app.brief-page .brief-hero__note{color:#aab5ad}
+body.v2-app.brief-page .brief-search{max-width:540px;margin-top:18px;background:#131718;border-color:#454f50;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+body.v2-app.brief-page .brief-search input{color:#f2f6f2;background:#181e20;border:0}
+body.v2-app.brief-page .brief-search input::placeholder{color:#a7b2ae}
+body.v2-app.brief-page .brief-search button{color:#101619;background:#e9e6dd;border-color:#454e4c}
+body.v2-app.brief-page .brief-search button:hover{background:#fff}
+body.v2-app.brief-page .brief-index{border-color:#31383a;background:transparent;gap:12px;margin:20px 0 24px;border:0}
+body.v2-app.brief-page .brief-index>div{border:1px solid #30393a!important;border-radius:7px;background:#181d1f;padding:20px 21px;min-width:0}
+body.v2-app.brief-page .brief-index strong{color:#f5f4ee;font-size:25px}
+body.v2-app.brief-page .brief-index small{color:#8f9a96}
+body.v2-app.brief-page .brief-label{color:#a0aaa5}
+body.v2-app.brief-page .brief-layout{grid-template-columns:minmax(0,1.5fr) minmax(310px,.8fr);gap:16px}
+body.v2-app.brief-page .brief-panel{background:#161b1d;border-color:#313a3b;border-radius:8px;box-shadow:none}
+body.v2-app.brief-page .brief-panel h2{color:#f6f5f1}
+body.v2-app.brief-page .brief-desc{color:#a0aca7}
+body.v2-app.brief-page .brief-panel .brief-kicker{color:#a6afaa}
+body.v2-app.brief-page .brief-panel__link{color:#e1e5dd}
+body.v2-app.brief-page .brief-tabs button{color:#bac4c0;border-color:#3c4545}
+body.v2-app.brief-page .brief-tabs button[aria-pressed=true]{color:#181e1d;background:#f0efea;border-color:#f0efea}
+body.v2-app.brief-page .brief-table th{color:#a1ada8;background:#1f2627;border-color:#364042;font-size:10px}
+body.v2-app.brief-page .brief-table td{color:#cbd2ce;border-color:#30393a;font-size:12px}
+body.v2-app.brief-page .brief-table a{color:#f5f4ef}
+body.v2-app.brief-page .brief-table tbody tr:hover{background:#222b2d}
+body.v2-app.brief-page .brief-tag{color:#cbd3cc;background:#303839}
+body.v2-app.brief-page .brief-tag--buy{color:#87d4a9;background:#183728}
+body.v2-app.brief-page .brief-tag--sell{color:#e7a59c;background:#402a2a}
+body.v2-app.brief-page .brief-empty{color:#a6b3af}
+body.v2-app.brief-page .brief-footnote{color:#8f9b96}
+body.v2-app.brief-page .brief-filing{border-color:#333e3d}
+body.v2-app.brief-page .brief-filing__title{color:#f5f6f1}
+body.v2-app.brief-page .brief-filing__date,body.v2-app.brief-page .brief-filing__meta{color:#9eaba6}
+body.v2-app.brief-page .brief-filing__meta a{color:#e4ece4;text-decoration:underline;text-underline-offset:3px}
+body.v2-app.brief-page .brief-watch{border:1px solid #30393a;background:#181e20;border-radius:8px}
+body.v2-app.brief-page .brief-watch p{color:#aeb8b3}
+body.v2-app.brief-page .brief-watch__link{color:#e6ede7}
+body.v2-app.brief-page .brief-watchlist a{padding:5px 8px;margin:3px;border:1px solid #465352;border-radius:4px;text-decoration:none}
+body.v2-app.brief-page .brief-watchlist a:hover{background:#293333}
+body.v2-app.brief-page .brief-right{font-variant-numeric:tabular-nums}
+@media(max-width:1140px){body.v2-app.brief-page .brief-layout{grid-template-columns:1fr}body.v2-app.brief-page .brief-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){body.v2-app.brief-page .brief-hero__copy{padding:28px 22px}body.v2-app.brief-page .brief-hero__image{inset:0;opacity:.4}body.v2-app.brief-page .brief-rail{grid-template-columns:1fr}body.v2-app.brief-page .brief-index{gap:8px}body.v2-app.brief-page .brief-index>div{padding:13px}body.v2-app.brief-page .brief-index strong{font-size:20px}body.v2-app.brief-page .brief-table-wrap{padding-inline:10px}}
