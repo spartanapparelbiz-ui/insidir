@@ -7,11 +7,9 @@
 
   const NAV = [
     ["dashboard", "Dashboard", "dashboard.html"],
+    ["research", "Research", "research.html"],
     ["companies", "Companies", "company.html?ticker=AAPL"],
-    ["insiders", "Insiders", "dashboard.html#insider-activity"],
-    ["filings", "SEC Filings", "filing.html"],
-    ["political", "Political Trades", "dashboard.html#political-trades"],
-    ["markets", "Markets", "dashboard.html#markets"],
+    ["insiders", "Insider Trades", "dashboard.html#insider-activity"],
     ["alerts", "Alerts", "alerts.html"]
   ];
 
@@ -147,12 +145,13 @@
         <label class="sr-only" for="app-search-input">Search companies, insiders, or filings</label>
         <input id="app-search-input" name="ticker" type="search" autocomplete="off" placeholder="Search companies, insiders, or filings..." >
       </form>
-      <a class="icon-btn" href="alerts.html" aria-label="Alerts (3 new)">${icons.bell}<span class="badge-dot"></span></a>
+      <a class="icon-btn" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
       <div class="user-menu">
-        <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu">${monogram("Jordan Davis", "monogram--lg")}</button>
+        <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu">${monogram("Account", "monogram--lg")}</button>
         <div class="user-menu__panel" id="user-menu-panel">
-          <div class="who"><strong>Jordan Davis</strong>jordan@example.com</div>
-          <a href="pricing.html">Plan &amp; billing</a>
+          <div class="who"><strong>Account</strong><span data-account-email>Sign in to see your details</span></div>
+          <a href="billing.html">Plan &amp; billing</a>
+          <a href="signin.html" data-account-signin>Sign in</a>
           <a href="alerts.html">Alert settings</a>
           <a href="privacy.html">Privacy</a>
           <button type="button" data-signout>Sign out</button>
@@ -163,6 +162,13 @@
       ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
     </nav>`;
 
+    api("/v1/me").then(data => {
+      if (!data.user || !data.user.email) return;
+      const email = String(data.user.email);
+      host.querySelector("[data-account-email]").textContent = email;
+      const signin = host.querySelector("[data-account-signin]");
+      if (signin) signin.hidden = true;
+    }).catch(() => {});
     const menuBtn = host.querySelector(".app-menu-btn"), menu = host.querySelector(".app-mobile-nav");
     const setMenu = open => {
       menu.classList.toggle("is-open", open);
