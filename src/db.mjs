@@ -20,6 +20,8 @@ export async function migrate() {
     await client.query(billingSchema);
     const researchSchema=await readFile(new URL("../sql/003_research_decisions.sql",import.meta.url),"utf8");
     await client.query(researchSchema);
+    const brokerageSchema=await readFile(new URL("../sql/004_brokerage_oauth.sql",import.meta.url),"utf8");
+    await client.query(brokerageSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}
