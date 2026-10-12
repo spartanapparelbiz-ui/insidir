@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Research desk — insidir.</title>
+  <meta name="description" content="Review source-backed SEC insider transactions and record your own investing research. No automated trading.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/research.css">
+  <script defer src="assets/js/app.js"></script>
+  <script defer src="assets/js/research.js"></script>
+</head>
+<body class="research-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header data-app-header data-active="research"></header>
+<main id="main" class="app-main research-desk">
+  <header class="research-head">
+    <p class="research-eyebrow">INSIDIR / RESEARCH DESK</p>
+    <h1>Know the record.<br>Make your own call.</h1>
+    <p class="research-lead">Investigate official insider filings, consider the timing, and save a private review. Insidir does not place trades or make personalized buy/sell recommendations.</p>
+    <form class="research-search" id="research-search" role="search">
+      <label class="sr-only" for="research-ticker">Company ticker</label>
+      <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
+      <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">Start by entering a ticker. Only records imported from SEC EDGAR will appear.</p>
+  </header>
+
+  <div id="research-results" hidden>
+    <section class="research-summary" aria-labelledby="research-company">
+      <div>
+        <p class="research-eyebrow">COMPANY / SOURCE-BACKED RESEARCH</p>
+        <h2 id="research-company">Company</h2>
+        <p class="research-small" id="research-coverage">Imported SEC Form 4 records only</p>
+      </div>
+      <a class="research-text-link" id="research-company-link" href="company.html">View company records →</a>
+    </section>
+
+    <div class="research-metrics" aria-label="Loaded record summary">
+      <div class="research-metric"><span>Transactions shown</span><strong id="research-count">—</strong><small>Up to 75 imported records</small></div>
+      <div class="research-metric"><span>Reporting people shown</span><strong id="research-owners">—</strong><small>Distinct names in this selection</small></div>
+      <div class="research-metric"><span>Latest filing published</span><strong id="research-latest">—</strong><small>Not the same as the trade date</small></div>
+    </div>
+
+    <div class="research-grid">
+      <div class="research-primary">
+        <section class="panel research-panel" aria-labelledby="research-transactions-title">
+          <div class="research-panel-head">
+            <div>
+              <p class="research-eyebrow">01 / INVESTIGATE</p>
+              <h2 id="research-transactions-title">Reported insider activity</h2>
+            </div>
+            <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a>
+          </div>
+          <p class="research-explain">Transactions are reported after they occur. Purchases, sales, option exercises, grants and amendments have different meanings; a filing is not a trading signal.</p>
+          <div id="research-transactions" aria-live="polite"></div>
+        </section>
+        <section class="panel research-panel" aria-labelledby="research-filings-title">
+          <div class="research-panel-head">
+            <div>
+              <p class="research-eyebrow">02 / VERIFY</p>
+              <h2 id="research-filings-title">Original filings</h2>
+            </div>
+          </div>
+          <p class="research-explain">Always check the source, publication date, transaction code and any amendments before acting.</p>
+          <div id="research-filings"></div>
+        </section>
+      </div>
+
+      <aside class="research-sidebar">
+        <section class="panel research-panel" aria-labelledby="research-review-title">
+          <p class="research-eyebrow">03 / YOUR DECISION</p>
+          <h2 id="research-review-title">Private research journal</h2>
+          <p class="research-explain">Record your independent assessment. This is a research note, not a trade order.</p>
+          <form id="research-review-form">
+            <label for="research-review-status">Research status</label>
+            <select id="research-review-status" name="reviewStatus">
+              <option value="researching">Researching</option>
+              <option value="watching">Watching</option>
+              <option value="passed">Passed for now</option>
+            </select>
+            <label for="research-review-notes">What did you learn?</label>
+            <textarea id="research-review-notes" name="notes" rows="7" maxlength="1500" placeholder="Sources checked, dates to verify, concerns, and what would change your mind."></textarea>
+            <button class="btn btn--dark research-save" id="research-save" type="submit">Save research note</button>
+          </form>
+          <p id="research-review-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save notes privately to your account.</p>
+        </section>
+        <section class="panel research-panel research-next" aria-labelledby="research-next-title">
+          <p class="research-eyebrow">04 / YOUR CONTROL</p>
+          <h2 id="research-next-title">Act on your terms.</h2>
+          <p>Insidir does not execute securities orders today. If you choose to trade, review the risks and place any order independently through your broker.</p>
+          <div class="research-method"><strong>Manual execution</strong><span>Outside Insidir, at your brokerage</span></div>
+          <div class="research-method"><strong>Permission-based automation</strong><span>Not available · Requires supported brokers and regulatory approval</span></div>
+          <p class="research-small">Brokerage connectivity and trading are roadmap capabilities, not features included in a current subscription.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+<footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. For research, not individualized investment advice.</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+</body>
+</html>
