@@ -74,11 +74,24 @@ test("read-only portfolio page loads without placing orders", async () => {
     const result=await fetch(base+"/portfolio.html");
     assert.equal(result.status,200);
     const content=await result.text();
-    assert.match(content,/Secure, read-only access/);
+    assert.match(content,/Connect a brokerage later/);
     assert.match(content,/assets\/css\/base.css/);
     assert.match(content,/id="portfolio-disconnect"/);
     assert.doesNotMatch(content,/placeOrder|trade-if-available/);
     assert.equal((await fetch(base+"/assets/js/portfolio.js")).status,200);
+  });
+});
+test("manual portfolio entry is visible without a brokerage connection", async () => {
+  await withServer(async base => {
+    const res=await fetch(base+"/portfolio.html");
+    assert.equal(res.status,200);
+    const html=await res.text();
+    assert.match(html,/Add your holdings/);
+    assert.match(html,/id="manual-form"/);
+    assert.match(html,/assets\/js\/manual-holdings.js/);
+    assert.match(html,/no brokerage connection/i);
+    const script=await fetch(base+"/assets/js/manual-holdings.js");
+    assert.equal(script.status,200);
   });
 });
 test("path traversal outside the web root is refused", async () => {

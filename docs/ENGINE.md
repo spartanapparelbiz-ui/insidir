@@ -32,6 +32,11 @@ The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, r
 
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
 
+## Free manual portfolio (no brokerage or vendor account)
+Manually entered stock tickers and share counts work with existing user accounts and PostgreSQL. No paid market-data API or brokerage permissions are needed. The portfolio page shows these entries **above** the optional SnapTrade section. Each ticker links to its SEC Research Desk, and the page displays the most recent imported ownership transaction in the past 30 days when available. This is a ticker-only matching aid, not proof of security identity or a recommendation.
+
+Run `npm run migrate` (server startup migrates automatically) to create `manual_holdings` from `sql/005_manual_holdings.sql`. API: `GET /v1/me/manual-holdings`; `POST /v1/me/manual-holdings` JSON `{"ticker":"AAPL","quantity":"2.5"}` to create/update; `DELETE /v1/me/manual-holdings/AAPL` to remove. All endpoints require a signed-in session; writes require the existing same-origin CSRF check. Holdings are private and automatically deleted with the user account. A user can store up to 100 entries with 8 decimal places of share precision. No prices or portfolio values are estimated. **Leave BROKERAGE_CONNECT_ENABLED=0** until a paid vendor connection is desired and configured.
+
 ## Read-only brokerage connections (optional)
 This feature is OFF by default (`BROKERAGE_CONNECT_ENABLED=0`). It relies on SnapTrade **OAuth Apps** and a user's pre-existing **SnapTrade Personal** connections, not Commercial user-secret registration or direct Fidelity credentials. Create a Test app in the SnapTrade Dashboard, register the exact callback URI `https://YOUR_DOMAIN/v1/me/brokerage/callback`, and obtain a client ID and client secret. Test OAuth apps are limited to five users; production usage requires approval. Set `SNAPTRADE_OAUTH_CLIENT_ID`, `SNAPTRADE_OAUTH_CLIENT_SECRET`, `SNAPTRADE_OAUTH_REDIRECT_URI`, and an independently generated 32-byte hexadecimal `BROKERAGE_ENCRYPTION_KEY`; then set `BROKERAGE_CONNECT_ENABLED=1`.
 

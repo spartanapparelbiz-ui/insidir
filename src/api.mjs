@@ -9,6 +9,7 @@ import { serveStatic } from "./web.mjs";
 import { billingRoutes } from "./billing.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { getCompanyIntelligence } from "./intelligence.mjs";
+import { validateManualHolding } from "./manual-holdings.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -178,6 +179,23 @@ async function route(req,res){
     return json(res,200,{items:rows.rows});
   }
   if(p==="/v1/me" && m==="GET")return json(res,200,{user:await requireUser(req)});
+  if(p==="/v1/me/manual-holdings" && m==="GET"){
+    const user=await requireUser(req);
+    const holdings=await query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
+    const tickers=holdings.rows.map(row=>row.ticker);
+    let secItems=[];
+    if(tickers.length){
+      const records=await query(`SELECT DISTINCT ON(t.ticker) t.ticker,t.owner_name,t.category,t.transaction_date,
+        t.source_url,f.published_at
+        FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+        WHERE t.ticker=ANY($1::text[]) AND f.ingest_status='parsed'
+          AND f.published_at>=now()-interval '30 days'
+        ORDER BY t.ticker,f.published_at DESC,t.transaction_date DESC NULLS LAST`,[tickers]);
+      secItems=records.rows;
+    }
+    return json(res,200,{items:holdings.rows,recentSecActivity:secItems,source:"user-entered",
+      disclaimer:"Self-reported quantities, not broker-verified positions or live prices. SEC ticker matching does not constitute investment advice."});
+  }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req);
     const w=await query("SELECT ticker,created_at FROM watchlist WHERE user_id=$1 ORDER BY ticker",[user.id]);
@@ -246,6 +264,24 @@ async function route(req,res){
       const user=await requireUser(req),t=ticker(u.searchParams.get("ticker"));
       const deleted=await query("DELETE FROM research_decisions WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
       return json(res,200,{deleted:deleted.rowCount>0,ticker:t});
+    }
+    if(p==="/v1/me/manual-holdings" && m==="POST"){
+      const user=await requireUser(req);
+      if(isLimited("holding-write:"+user.id,40,15*60*1000))throw failure(429,"Too many holding updates");
+      const item=validateManualHolding(await body(req));
+      const record=await query(`INSERT INTO manual_holdings(user_id,ticker,quantity)
+        SELECT $1,$2,$3 WHERE
+        (SELECT count(*) FROM manual_holdings WHERE user_id=$1)<100
+        OR EXISTS(SELECT 1 FROM manual_holdings WHERE user_id=$1 AND ticker=$2)
+        ON CONFLICT(user_id,ticker) DO UPDATE SET quantity=EXCLUDED.quantity,updated_at=now()
+        RETURNING ticker,quantity,updated_at`,[user.id,item.ticker,item.quantity]);
+      if(!record.rowCount)throw failure(409,"100 holdings maximum");
+      return json(res,200,{item:record.rows[0],source:"user-entered",executed:false});
+    }
+    if(p.startsWith("/v1/me/manual-holdings/") && m==="DELETE"){
+      const user=await requireUser(req),t=ticker(p.slice("/v1/me/manual-holdings/".length));
+      const deleted=await query("DELETE FROM manual_holdings WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
+      return json(res,200,{deleted:deleted.rowCount>0,ticker:t,executed:false});
     }
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req),x=await body(req),t=ticker(x.ticker);
