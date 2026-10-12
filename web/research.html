@@ -20,13 +20,13 @@
   <header class="research-head">
     <p class="research-eyebrow">INSIDIR / RESEARCH DESK</p>
     <h1>Know the record.<br>Make your own call.</h1>
-    <p class="research-lead">Investigate official insider filings, consider the timing, and save a private review. Insidir does not place trades or make personalized buy/sell recommendations.</p>
+    <p class="research-lead">Investigate public SEC records, connect filings with reported financial facts, and save a private review. Insidir does not place trades or make personalized buy/sell recommendations.</p>
     <form class="research-search" id="research-search" role="search">
       <label class="sr-only" for="research-ticker">Company ticker</label>
       <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
       <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
     </form>
-    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">Start by entering a ticker. Only records imported from SEC EDGAR will appear.</p>
+    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">Start by entering a ticker to connect available official SEC records.</p>
   </header>
 
   <div id="research-results" hidden>
@@ -47,10 +47,28 @@
 
     <div class="research-grid">
       <div class="research-primary">
+        <section class="panel research-panel" aria-labelledby="research-intelligence-title">
+          <div class="research-panel-head">
+            <div><p class="research-eyebrow">01 / OFFICIAL INTELLIGENCE</p>
+              <h2 id="research-intelligence-title">The evidence brief.</h2></div>
+          </div>
+          <p class="research-explain">Selected company disclosures and XBRL financial facts from SEC EDGAR. Every finding points to an original filing; no market prediction is generated.</p>
+          <p id="intel-status" class="research-feedback" role="status" aria-live="polite">Checking additional SEC sources…</p>
+          <div id="intel-overview" hidden>
+            <p class="intel-summary" id="intel-summary"></p>
+            <h3 class="intel-heading">Records worth examining</h3>
+            <div id="intel-findings" class="intel-findings"></div>
+            <h3 class="intel-heading">Reported financial facts</h3>
+            <div id="intel-facts" class="intel-facts"></div>
+            <h3 class="intel-heading">Other company disclosures</h3>
+            <div id="intel-filings"></div>
+            <p class="research-small" id="intel-caveats"></p>
+          </div>
+        </section>
         <section class="panel research-panel" aria-labelledby="research-transactions-title">
           <div class="research-panel-head">
             <div>
-              <p class="research-eyebrow">01 / INVESTIGATE</p>
+              <p class="research-eyebrow">02 / INVESTIGATE</p>
               <h2 id="research-transactions-title">Reported insider activity</h2>
             </div>
             <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a>
@@ -61,7 +79,7 @@
         <section class="panel research-panel" aria-labelledby="research-filings-title">
           <div class="research-panel-head">
             <div>
-              <p class="research-eyebrow">02 / VERIFY</p>
+              <p class="research-eyebrow">03 / VERIFY</p>
               <h2 id="research-filings-title">Original filings</h2>
             </div>
           </div>
@@ -72,7 +90,7 @@
 
       <aside class="research-sidebar">
         <section class="panel research-panel" aria-labelledby="research-review-title">
-          <p class="research-eyebrow">03 / YOUR DECISION</p>
+          <p class="research-eyebrow">04 / YOUR DECISION</p>
           <h2 id="research-review-title">Private research journal</h2>
           <p class="research-explain">Record your independent assessment. This is a research note, not a trade order.</p>
           <form id="research-review-form">
@@ -89,7 +107,7 @@
           <p id="research-review-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save notes privately to your account.</p>
         </section>
         <section class="panel research-panel research-next" aria-labelledby="research-next-title">
-          <p class="research-eyebrow">04 / YOUR CONTROL</p>
+          <p class="research-eyebrow">05 / YOUR CONTROL</p>
           <h2 id="research-next-title">Act on your terms.</h2>
           <p>Insidir does not execute securities orders today. If you choose to trade, review the risks and place any order independently through your broker.</p>
           <div class="research-method"><strong>Manual execution</strong><span>Outside Insidir, at your brokerage</span></div>

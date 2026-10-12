@@ -101,9 +101,16 @@ async function throttle() {
 export function allowedSecUrl(input) {
   try {
     const u = new URL(input);
-    return u.protocol === "https:" && u.hostname === "www.sec.gov" &&
-      (/^\/Archives\/edgar\/data\/\d+\/\d{18}\//.test(u.pathname) ||
-       u.pathname === "/cgi-bin/browse-edgar");
+    if (u.protocol !== "https:" || u.username || u.password || u.port) return false;
+    if (u.hostname === "data.sec.gov") {
+      return !u.search && !u.hash &&
+        (/^\/submissions\/CIK\d{10}\.json$/.test(u.pathname) ||
+         /^\/api\/xbrl\/companyfacts\/CIK\d{10}\.json$/.test(u.pathname));
+    }
+    return u.hostname === "www.sec.gov" &&
+      ((/^\/Archives\/edgar\/data\/\d+\/\d{18}\//.test(u.pathname) ||
+        u.pathname === "/cgi-bin/browse-edgar") ||
+        (!u.search && !u.hash && u.pathname === "/files/company_tickers.json"));
   } catch { return false; }
 }
 export async function secFetch(url, { json = false } = {}) {
@@ -124,7 +131,7 @@ export async function secFetch(url, { json = false } = {}) {
         continue;
       }
       if (!response.ok) throw new Error("SEC responded " + response.status);
-      const maxLength = json ? 2_000_000 : 5_000_000;
+      const maxLength = json && url.startsWith("https://data.sec.gov/api/xbrl/companyfacts/") ? 12_000_000 : json ? 3_000_000 : 5_000_000;
       const size = Number(response.headers.get("content-length") || 0);
       if (size > maxLength) throw new Error("SEC response too large");
       const body = await response.text();

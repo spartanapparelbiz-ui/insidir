@@ -7,6 +7,7 @@ This document covers the backend engine. The website in `web/` is described in [
 - EDGAR accession directory and Form 4 ownership XML parsing. **P/A non-derivative purchases** and **S/D sales** are distinguished from awards, exercises, derivative trades and other events.
 - PostgreSQL persistence, accession deduplication, transactional writes, ingestion audit records, and a Postgres advisory lock to prevent overlapping workers.
 - Public API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
+- Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
 - Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, account deletion. **Signup is disabled by default.**
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
 - Optional 15-minute automatic poller or secured on-demand/cron ingestion.
@@ -26,6 +27,8 @@ The `/research.html?ticker=AAPL` page organizes imported SEC Form 4 activity and
 
 Signed-in users may save a private research status (`researching`, `watching`, `passed`) and up to 1500 characters of notes. Run `npm run migrate` on deployment to create `research_decisions` from `sql/003_research_decisions.sql`. The data is tied to the authenticated user and is deleted with the user account. Requests are same-origin only for writes.
 
+The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, returning selected 8-K, 10-K, 10-Q, proxy and beneficial-ownership disclosures, four reported XBRL measures (when available), and a chronological evidence brief combining SEC filings with already imported Form 4 transactions. Ticker mapping uses the SEC official `company_tickers.json`, not fuzzy company-name matching. The shared SEC client uses host/path allowlists, the configured real operator User-Agent, throttling, bounded responses, retry handling and 15-minute memory caching (ticker mapping for 24 hours). No scraped document text or AI-generated interpretation is presented. API responses explicitly report missing facts and coverage caveats.
+
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
 
 ## API (JSON)
@@ -37,6 +40,7 @@ There is **no brokerage integration, trade execution, trade recommendation engin
 - GET /v1/filings/{18-digit accession} – original record with parsed transaction rows
 - GET /v1/transactions?ticker=&category=reported_purchase
 - GET /v1/companies?q= ; GET /v1/insiders?q=
+- GET /v1/intelligence?ticker=AAPL – selected company SEC filings, XBRL facts, original-source links, and deterministic research brief (SEC_USER_AGENT required)
 - GET /v1/clusters?days=7&minOwners=2 – descriptive, not predictive; amendments can duplicate event counts
 
 ## Account API
@@ -62,6 +66,7 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 ## Honest limitations
 - Tests use synthetic fixtures, not claims about current transactions.
 - Live SEC fetching, data completeness, and outage recovery need verification in production.
-- Issuer search only covers imported data.
+- The original issuer search and Form 4 database cover imported data only; the intelligence ticker lookup covers the current official SEC mapping, which the SEC says may be incomplete.
+- SEC company facts and company submissions may be temporarily unavailable, outdated, or lack a particular ticker or metric; the interface states the limitation rather than inventing results.
 - Grouping may double count amended filings. It is not an investment forecast.
 - No Stripe payments, paid entitlements, authorized political feed, crypto watcher, social scan, or push notifications have been activated.

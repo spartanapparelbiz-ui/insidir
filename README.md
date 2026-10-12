@@ -13,8 +13,9 @@
 
 ## Engine (`src/`)
 - Real SEC Form 4 XML transaction parsing, with verified source references
+- SEC-backed intelligence API: official ticker-to-CIK lookup, company submissions (8-K / 10-K / 10-Q / selected disclosures), and XBRL facts, presented as provenance-linked research observations. Works for SEC-mapped symbols even when the imported Form 4 database has no matching transaction.
 - PostgreSQL ingestion, deduplication, source dates and audit history
-- APIs for filings, purchases and sales, company and insider search, and descriptive purchase clusters
+- APIs for filings, purchases and sales, company and insider search, descriptive purchase clusters, and `GET /v1/intelligence?ticker=AAPL`
 - Account sessions, gated watchlists, and a private research-review journal (`GET/POST/DELETE /v1/me/research-decisions`). Reviews can be researching, watching, or passed; they are **never** orders.
 - Politician, government, social platform, and crypto sources stay **disabled until legal and data permissions are verified**
 - Brokerage connections, personalized trading suggestions, and automated order execution are **not implemented** and require brokerage authorization plus appropriate regulatory review before launch
