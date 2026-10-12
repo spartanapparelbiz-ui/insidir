@@ -1,122 +1,24 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Apple Inc. (AAPL) — insidir.</title>
-  <meta name="description" content="Investigate a company through Insidir: its reported SEC insider transactions, official filings and disclosure dates.">
-  <meta name="theme-color" content="#f7f4ec">
-  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <script>document.documentElement.classList.add('js')</script>
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/company.css">
-  <script defer src="assets/js/motion.js"></script>
-  <script defer src="assets/js/site.js"></script>
-  <script defer src="assets/js/app.js"></script>
-  <script defer src="assets/js/live-research.js"></script>
-  <link rel="stylesheet" href="assets/css/v2-app.css">
-</head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Company intelligence — insidir.</title><meta name="description" content="Explore original SEC disclosures, financial facts and ownership transaction reporting for public companies.">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v2-company.css">
+<script defer src="assets/js/app.js"></script><script defer src="assets/js/v2-company.js"></script></head>
 <body class="app-body v2-app">
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header data-app-header data-active="companies"></header>
-
-  <main id="main" class="app-main co" data-ticker="AAPL">
-    <!-- Company header -->
-    <section class="co-head" aria-label="Company summary" data-stagger="110" data-delay="120">
-      <div class="co-id">
-        <div class="co-logo" data-reveal="scale">
-          <img data-f="logo" src="assets/icons/apple.svg" width="104" height="104" alt="Apple logo" decoding="async">
-        </div>
-        <div class="co-name">
-          <h1 class="co-title" data-f="name" data-split>Apple Inc.</h1>
-          <p class="co-meta" data-reveal="up"><span class="co-meta__list">
-            <span class="co-meta__item" data-f="ticker">AAPL</span><span class="sr-only">, </span><span class="co-meta__item" data-f="sector">Technology</span><span class="sr-only">, </span><span class="co-meta__item" data-f="exchange">Nasdaq</span>
-          </span></p>
-        </div>
-      </div>
-      <div class="co-quote">
-        <p class="co-price" data-reveal="up">
-          <span class="sr-only">Last price </span><span class="co-price__value" data-f="price" data-count data-count-duration="1600" data-delay="420">$168.21</span>
-          <span class="co-price__chg chg up" data-f="change">+0.60%</span>
-        </p>
-        <div class="co-watch-wrap" data-reveal="up">
-          <button class="btn btn--dark co-watch" type="button" data-watch data-on="false">
-            <svg class="co-watch__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
-            <span class="co-watch__label">Add to watchlist</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section tabs -->
-    <div class="co-tabs-wrap" data-reveal="fade" data-delay="380">
-      <div class="tabs co-tabs" role="tablist" aria-label="Company sections">
-        <button role="tab" type="button" id="tab-overview" data-tab="overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
-        <button role="tab" type="button" id="tab-insider-activity" data-tab="insider-activity" aria-controls="panel-insider-activity" aria-selected="false" tabindex="-1">Insider Activity</button>
-        <button role="tab" type="button" id="tab-sec-filings" data-tab="sec-filings" aria-controls="panel-sec-filings" aria-selected="false" tabindex="-1">SEC Filings</button>
-        <button role="tab" type="button" id="tab-financials" data-tab="financials" aria-controls="panel-financials" aria-selected="false" tabindex="-1">Financials</button>
-        <button role="tab" type="button" id="tab-ownership" data-tab="ownership" aria-controls="panel-ownership" aria-selected="false" tabindex="-1">Ownership</button>
-        <button role="tab" type="button" id="tab-news" data-tab="news" aria-controls="panel-news" aria-selected="false" tabindex="-1">News</button>
-        <span class="tabs__indicator" aria-hidden="true"></span>
-      </div>
-    </div>
-
-    <!-- Overview -->
-    <section class="co-panel is-active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
-      <div class="co-overview">
-        <div class="panel co-chart" data-reveal="up" data-delay="460">
-          <div class="co-chart__bar">
-            <p class="sr-only" data-chart-caption aria-live="polite">Price history, 1 year</p>
-            <span class="sample-note co-chart__note">Sample data for illustration</span>
-            <div class="segmented co-range" data-segmented role="tablist" aria-label="Chart range">
-              <button type="button" role="tab" data-value="1D" aria-selected="false" aria-controls="price-chart" tabindex="-1">1D</button>
-              <button type="button" role="tab" data-value="1W" aria-selected="false" aria-controls="price-chart" tabindex="-1">1W</button>
-              <button type="button" role="tab" data-value="1M" aria-selected="false" aria-controls="price-chart" tabindex="-1">1M</button>
-              <button type="button" role="tab" data-value="3M" aria-selected="false" aria-controls="price-chart" tabindex="-1">3M</button>
-              <button type="button" role="tab" data-value="1Y" aria-selected="true" aria-controls="price-chart">1Y</button>
-              <button type="button" role="tab" data-value="5Y" aria-selected="false" aria-controls="price-chart" tabindex="-1">5Y</button>
-            </div>
-          </div>
-          <div class="chart-host co-chart__host" id="price-chart"></div>
-          <noscript><p class="co-noscript">Enable JavaScript to view the interactive price chart.</p></noscript>
-        </div>
-
-        <dl class="stat-list co-stats" data-stats data-reveal="fade" aria-label="Key statistics">
-          <div class="row-in"><dt>Market Cap</dt><dd data-f="cap">2.63T</dd></div>
-          <div class="row-in"><dt>Volume</dt><dd data-f="volume">34.2M</dd></div>
-          <div class="row-in"><dt>P/E (TTM)</dt><dd data-f="pe">28.4</dd></div>
-          <div class="row-in"><dt>52W Range</dt><dd data-f="range">124.17 – 199.62</dd></div>
-          <div class="row-in"><dt>Sector</dt><dd data-f="sector">Technology</dd></div>
-          <div class="row-in"><dt>Industry</dt><dd data-f="industry">Consumer Electronics</dd></div>
-          <div class="row-in"><dt>Website</dt><dd><a class="co-site" data-f="website" href="https://www.apple.com" target="_blank" rel="noopener noreferrer"><span>apple.com</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg><span class="sr-only"> (opens in a new tab)</span></a></dd></div>
-        </dl>
-      </div>
-    </section>
-
-    <!-- Other sections are rendered by company.js from the sample profile -->
-    <section class="co-panel" id="panel-insider-activity" role="tabpanel" aria-labelledby="tab-insider-activity" tabindex="0" hidden></section>
-    <section class="co-panel" id="panel-sec-filings" role="tabpanel" aria-labelledby="tab-sec-filings" tabindex="0" hidden></section>
-    <section class="co-panel" id="panel-financials" role="tabpanel" aria-labelledby="tab-financials" tabindex="0" hidden></section>
-    <section class="co-panel" id="panel-ownership" role="tabpanel" aria-labelledby="tab-ownership" tabindex="0" hidden></section>
-    <section class="co-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0" hidden></section>
-
-    <!-- Unknown ticker -->
-    <section class="co-missing" data-missing hidden aria-labelledby="missing-title">
-      <p class="eyebrow co-missing__eyebrow" data-reveal="up">Company profile</p>
-      <h1 class="co-missing__title" id="missing-title" data-split>We don’t have a profile for <span data-missing-ticker>XYZ</span> yet</h1>
-      <p class="co-missing__copy" data-reveal="up" data-delay="160">This preview includes sample profiles for a handful of companies. Pick one below, or head back to the dashboard.</p>
-      <ul class="co-missing__list" data-missing-list data-stagger="70" data-delay="240"></ul>
-      <div class="co-missing__actions" data-reveal="up" data-delay="420">
-        <a class="btn btn--dark" href="dashboard.html" data-magnetic="0.2">Back to dashboard</a>
-        <a class="btn btn--light" href="filing.html">Browse SEC filings</a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Not investment advice.</span>
-    <span class="sample-note">Sample data shown for illustration</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
-</body>
-</html>
+<a class="skip-link" href="#main">Skip to content</a>
+<header data-app-header data-active="companies"></header>
+<main class="app-main company-v2" id="main">
+<div class="cv-breadcrumb"><a href="explore.html">Companies</a><span>›</span><span id="cv-bread-ticker">Research</span></div>
+<div class="cv-heading"><div class="cv-heading__left"><div class="cv-symbol" id="cv-symbol" aria-hidden="true">⌕</div><div><p class="cv-kicker">OFFICIAL COMPANY RECORD</p><h1 id="cv-name">Company intelligence</h1><p id="cv-details">Enter a ticker to investigate SEC disclosures.</p></div></div><div class="cv-heading__actions"><button type="button" id="cv-follow" class="btn btn--dark" hidden>Save to watchlist</button><a id="cv-sec" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer" class="cv-link">SEC EDGAR ↗</a></div></div>
+<form id="cv-search" class="cv-search" role="search"><label class="sr-only" for="cv-ticker">Stock ticker</label><input id="cv-ticker" type="search" placeholder="Search a stock ticker — e.g. AAPL" autocomplete="off" maxlength="15" required><button type="submit" class="btn btn--dark">Investigate ↗</button></form>
+<p role="status" aria-live="polite" id="cv-status" class="cv-status">Start with an official SEC ticker.</p>
+<nav class="cv-tabs" aria-label="Research sections"><a href="#cv-summary">Overview</a><a href="#cv-facts">Financial facts</a><a href="#cv-filings">Filings</a><a href="#cv-transactions">Insider activity</a></nav>
+<div class="cv-overview" id="cv-summary"><div class="cv-brief cv-panel"><p class="cv-kicker">EVIDENCE BRIEF</p><h2>The public record, connected.</h2><p id="cv-description">Company filings, reported financial facts, and insider transaction disclosures will appear here when available. No price prediction is generated.</p><p class="cv-source-note">Public information isn't individualized financial advice. Dates and filing types are shown with their original context.</p></div><div class="cv-stat-grid"><div class="cv-stat cv-panel"><span>Selected SEC company filings</span><strong id="cv-filing-count">—</strong><small>Official submissions</small></div><div class="cv-stat cv-panel"><span>Financial facts available</span><strong id="cv-fact-count">—</strong><small>Official SEC XBRL</small></div><div class="cv-stat cv-panel"><span>Imported Form 4 transactions</span><strong id="cv-transaction-count">—</strong><small>Available in Insidir</small></div></div></div>
+<section class="cv-section" id="cv-facts"><div class="cv-section__heading"><div><p class="cv-kicker">01 / REPORTED FUNDAMENTALS</p><h2>Company facts.</h2><p>Figures are taken from SEC filings. Different reporting periods should not be compared as if they were the same.</p></div></div><div class="cv-facts" id="cv-facts-grid"><p class="cv-empty">Choose a ticker to see available XBRL financial facts.</p></div></section>
+<section class="cv-section" id="cv-filings"><div class="cv-section__heading"><div><p class="cv-kicker">02 / OFFICIAL SOURCE DOCUMENTS</p><h2>Company filings.</h2><p>Selected company reports from SEC EDGAR, including dates and amendments.</p></div><a href="filings.html" class="cv-link">Explore all filings ↗</a></div><div class="cv-panel cv-table-wrap"><table class="cv-table"><thead><tr><th>Form</th><th>Document</th><th>Filed</th><th>Source</th></tr></thead><tbody id="cv-filings-list"><tr><td class="cv-empty" colspan="4">Search a ticker to begin.</td></tr></tbody></table></div></section>
+<section class="cv-section" id="cv-transactions"><div class="cv-section__heading"><div><p class="cv-kicker">03 / REPORTED OWNERSHIP</p><h2>Insider transactions.</h2><p>Filing publication dates and transaction dates can differ; not every disclosed transaction is a market purchase or sale.</p></div></div><div class="cv-panel cv-table-wrap"><table class="cv-table"><thead><tr><th>Reporting person</th><th>Transaction</th><th>Trade date</th><th>Published</th><th>Est. value</th></tr></thead><tbody id="cv-transactions-list"><tr><td class="cv-empty" colspan="5">Search a ticker to begin.</td></tr></tbody></table></div></section>
+<div class="cv-bottom"><p>Keep investigating. The SEC record is the starting point, not the conclusion.</p><a href="research.html" id="cv-research" class="btn btn--dark">Open full Research Desk ↗</a></div>
+</main>
+<footer class="app-footer"><div class="container-wide"><span>© 2026 insidir. Public-record research; no investment advice.</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+</body></html>
