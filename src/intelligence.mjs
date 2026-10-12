@@ -125,11 +125,12 @@ export async function getCompanyIntelligence(ticker,transactions=[],fetcher=secF
   const cik=company.cik;
   const [submissions,factsResult] = await Promise.all([
     cached("submissions:"+cik,TTL,()=>fetcher("https://data.sec.gov/submissions/CIK"+cik+".json",{json:true})),
-    cached("facts:"+cik,TTL,()=>fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+cik+".json",{json:true}))
+    cached("facts:"+cik,TTL,async()=>extractFinancialFacts(
+      await fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+cik+".json",{json:true}),cik))
       .then(value=>({value})).catch(()=>({value:null}))
   ]);
   const filings=extractFilings(submissions,cik);
-  const facts=factsResult.value?extractFinancialFacts(factsResult.value,cik):[];
+  const facts=factsResult.value||[];
   const matchedTransactions=transactions.filter(x=>!x.issuer_cik||String(Number(x.issuer_cik))===String(Number(cik)));
   return {company:{...company,name:typeof submissions.name==="string"?submissions.name.slice(0,150):company.name},
     filings,facts,brief:buildEvidenceBrief({company,filings,facts,transactions:matchedTransactions}),
