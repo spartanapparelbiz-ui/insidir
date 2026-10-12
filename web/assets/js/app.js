@@ -8,6 +8,7 @@
   const NAV = [
     ["dashboard", "Dashboard", "dashboard.html"],
     ["research", "Research", "research.html"],
+    ["portfolio", "Portfolio", "portfolio.html"],
     ["companies", "Companies", "company.html?ticker=AAPL"],
     ["insiders", "Insider Trades", "dashboard.html#insider-activity"],
     ["alerts", "Alerts", "alerts.html"]
