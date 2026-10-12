@@ -74,7 +74,7 @@ test("read-only portfolio page loads without placing orders", async () => {
     const result=await fetch(base+"/portfolio.html");
     assert.equal(result.status,200);
     const content=await result.text();
-    assert.match(content,/Secure, read-only access/);
+    assert.match(content,/Connect a brokerage later/);
     assert.match(content,/assets\/css\/base.css/);
     assert.match(content,/id="portfolio-disconnect"/);
     assert.doesNotMatch(content,/placeOrder|trade-if-available/);
