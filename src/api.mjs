@@ -7,6 +7,7 @@ import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
 import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin } from "./auth.mjs";
 import { serveStatic } from "./web.mjs";
 import { billingRoutes } from "./billing.mjs";
+import { validateResearchDecision } from "./research.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
 function isLimited(key,limit=15,windowMs=15*60*1000){
@@ -125,6 +126,14 @@ async function route(req,res){
     const w=await query("SELECT ticker,created_at FROM watchlist WHERE user_id=$1 ORDER BY ticker",[user.id]);
     return json(res,200,{items:w.rows});
   }
+  if(p==="/v1/me/research-decisions" && m==="GET"){
+    const user=await requireUser(req);
+    const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
+    const saved=await query(`SELECT ticker,review_status,notes,created_at,updated_at
+      FROM research_decisions WHERE user_id=$1 AND ($2::text IS NULL OR ticker=$2)
+      ORDER BY updated_at DESC LIMIT 100`,[user.id,t]);
+    return json(res,200,{items:saved.rows,note:"Private research notes only. No orders or trade instructions are sent."});
+  }
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req);
     const results=await query(`SELECT t.id,t.ticker,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
@@ -161,6 +170,23 @@ async function route(req,res){
       const user=await requireUser(req);
       await query("DELETE FROM users WHERE id=$1",[user.id]);
       return json(res,200,{deleted:true},{"Set-Cookie":clearCookie()});
+    }
+    if(p==="/v1/me/research-decisions" && m==="POST"){
+      const user=await requireUser(req),x=await body(req);
+      if(!x || typeof x!=="object" || Array.isArray(x))throw failure(400,"Invalid review");
+      const t=ticker(x.ticker),review=validateResearchDecision(x);
+      const saved=await query(`INSERT INTO research_decisions(user_id,ticker,review_status,notes)
+        VALUES($1,$2,$3,$4)
+        ON CONFLICT(user_id,ticker) DO UPDATE SET review_status=EXCLUDED.review_status,
+        notes=EXCLUDED.notes,updated_at=now()
+        RETURNING ticker,review_status,notes,created_at,updated_at`,
+        [user.id,t,review.reviewStatus,review.notes]);
+      return json(res,200,{item:saved.rows[0],executed:false});
+    }
+    if(p==="/v1/me/research-decisions" && m==="DELETE"){
+      const user=await requireUser(req),t=ticker(u.searchParams.get("ticker"));
+      const deleted=await query("DELETE FROM research_decisions WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
+      return json(res,200,{deleted:deleted.rowCount>0,ticker:t});
     }
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req),x=await body(req),t=ticker(x.ticker);
