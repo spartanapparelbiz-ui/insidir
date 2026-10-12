@@ -1,6 +1,6 @@
 # Insidir
 
-**Financial intelligence from public records.** This repository contains the Insidir engine (SEC ingestion and API) and the Insidir website.
+**Public information. Deeper investigation. Decisions on your terms.** Insidir is building an intelligence-powered investing experience: find overlooked information in lawful public records, connect the evidence, and decide how to act. The current release contains an SEC-focused research engine and website; brokerage trading, AI analysis, and user-authorized automation are roadmap features, not live capabilities.
 
 ## Website (`web/`)
 - Marketing landing page with scroll-driven animation, a pricing page, sign-in and sign-up, and Terms and Privacy pages
@@ -15,7 +15,8 @@
 - PostgreSQL ingestion, deduplication, source dates and audit history
 - APIs for filings, purchases and sales, company and insider search, and descriptive purchase clusters
 - Account sessions and gated watchlist support
-- Politician, social platform and crypto sources stay **disabled until legal and data permissions are verified**
+- Politician, government, social platform, and crypto sources stay **disabled until legal and data permissions are verified**
+- Brokerage connections, personalized trading suggestions, and automated order execution are **not implemented** and require brokerage authorization plus appropriate regulatory review before launch
 
 [Setup, API and deployment documentation](docs/ENGINE.md) · [Environment template](.env.example)
 
