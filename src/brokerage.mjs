@@ -106,12 +106,13 @@ async function tokenRequest(fields) {
     body:new URLSearchParams(fields)
   });
 }
-export function validateReadTokens(value) {
+export function validateReadTokens(value,{refresh=false}={}) {
+  const scope=refresh && value?.scope==null?"read":value?.scope;
   if(!value||typeof value.access_token!=="string"||!value.access_token||
     typeof value.refresh_token!=="string"||!value.refresh_token||
-    typeof value.scope!=="string"||value.scope.trim()!=="read"||
+    typeof scope!=="string"||scope.trim()!=="read"||
     typeof value.expires_in!=="number"||value.expires_in<60||value.expires_in>86400||
-    value.token_type?.toLowerCase()!=="bearer")
+    typeof value.token_type!=="string"||value.token_type.toLowerCase()!=="bearer")
     throw fault(502,"Brokerage did not grant the required read-only scope");
   return {access:value.access_token,refresh:value.refresh_token,expiresAt:new Date(Date.now()+value.expires_in*1000)};
 }
@@ -168,7 +169,7 @@ async function validAccessToken(userId) {
     }
     const newTokens=validateReadTokens(await tokenRequest({
       grant_type:"refresh_token",refresh_token:decryptBrokerageToken(v.refresh_encrypted,userId,"refresh")
-    }));
+    }),{refresh:true});
     await client.query(`UPDATE brokerage_oauth_tokens SET access_encrypted=$2,refresh_encrypted=$3,
       expires_at=$4,updated_at=now() WHERE user_id=$1`,[userId,
       encryptBrokerageToken(newTokens.access,userId,"access"),
