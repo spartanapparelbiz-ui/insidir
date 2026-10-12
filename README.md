@@ -6,6 +6,7 @@
 - Marketing landing page with scroll-driven animation, a pricing page, sign-in and sign-up, and Terms and Privacy pages
 - Product screens: dashboard, company profile, alerts, research desk, and a Form 10-K filing viewer
 - Research desk (`research.html?ticker=AAPL`) connects imported SEC transactions and original filing links to a private, user-authored research journal. Saving a research review never submits an order.
+- Portfolio screen (`portfolio.html`) supports optional read-only SnapTrade Personal OAuth connections. User tokens are encrypted server-side and holdings are fetched on demand; equity holdings can open the SEC Research Desk and see recent, clearly labeled ticker-only filing matches. Requires a registered SnapTrade OAuth application and production approval.
 - Static HTML, CSS and JS with no build step and no third-party requests. Fonts and imagery are self-hosted
 - `npm run web` serves the site without a database at http://localhost:5173. `npm start` serves it from the engine alongside the API
 
@@ -18,7 +19,7 @@
 - APIs for filings, purchases and sales, company and insider search, descriptive purchase clusters, and `GET /v1/intelligence?ticker=AAPL`
 - Account sessions, gated watchlists, and a private research-review journal (`GET/POST/DELETE /v1/me/research-decisions`). Reviews can be researching, watching, or passed; they are **never** orders.
 - Politician, government, social platform, and crypto sources stay **disabled until legal and data permissions are verified**
-- Brokerage connections, personalized trading suggestions, and automated order execution are **not implemented** and require brokerage authorization plus appropriate regulatory review before launch
+- Read-only brokerage connections are **implemented but disabled by default** until the owner configures a registered SnapTrade OAuth application, secret encryption, redirect URI, and brokerage provider access. Personalized trading suggestions and automated order execution are **not implemented** and require separate brokerage permissions and appropriate regulatory review.
 
 [Setup, API and deployment documentation](docs/ENGINE.md) · [Environment template](.env.example)
 
