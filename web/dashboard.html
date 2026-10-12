@@ -1,156 +1,80 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard — insidir.</title>
-  <meta name="description" content="Explore your Insidir research desk: source-linked insider disclosures, watchlist activity and official filings.">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Market intelligence — insidir.</title>
+  <meta name="description" content="Investigate real SEC disclosures, insider transactions, and source-linked financial research.">
   <meta name="theme-color" content="#f7f4ec">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/dashboard.css">
-  <script defer src="assets/js/motion.js"></script>
-  <script defer src="assets/js/site.js"></script>
+  <link rel="stylesheet" href="assets/css/brief.css">
   <script defer src="assets/js/app.js"></script>
-  <script defer src="assets/js/live-research.js"></script>
+  <script defer src="assets/js/brief.js"></script>
 </head>
-<body class="app-body dash-page">
+<body class="app-body brief-page">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="dashboard"></header>
-
-  <main id="main" class="app-main dash">
-    <!-- Greeting, market status and the index row sit over a hazy skyline -->
-    <section class="dash-hero" data-progress="exit" aria-labelledby="dash-greeting">
-      <div class="dash-hero__row">
-        <div class="dash-hero__copy">
-          <h1 class="dash-greeting" id="dash-greeting" data-split data-greeting>Good morning.</h1>
-          <p class="dash-sub" data-reveal="up" data-delay="320">Follow the evidence. Decide what matters.</p>
-        </div>
-        <div class="dash-status" data-reveal="fade" data-delay="520">
-          <div class="dash-status__row">
-            <span class="status dash-market" data-market-status><span class="dot dot--live" aria-hidden="true"></span><span data-market-label>Markets open</span></span>
-            <time class="dash-clock" data-clock><span data-clock-date>Mon, Jan 8, 2024</span><span data-clock-time>9:42 AM ET</span></time>
-          </div>
-          <span class="sample-note">Sample data</span>
-        </div>
+  <main id="main" class="app-main brief-main">
+    <section class="brief-hero" aria-labelledby="brief-title">
+      <div class="brief-hero__copy">
+        <p class="brief-kicker">INSIDIR / THE PUBLIC RECORD</p>
+        <h1 id="brief-title">The facts behind<br>the market.</h1>
+        <p class="brief-intro">See what insiders reported. Trace the filing. Follow the evidence—not a prediction.</p>
+        <form action="research.html" method="get" class="brief-search" role="search">
+          <label class="sr-only" for="brief-ticker">Stock ticker</label>
+          <input id="brief-ticker" name="ticker" type="text" placeholder="Research a company — AAPL, MSFT, NVDA…" maxlength="15" autocomplete="off" spellcheck="false" required>
+          <button type="submit">Investigate <span aria-hidden="true">↗</span></button>
+        </form>
+        <p class="brief-hero__note">No brokerage connection needed · Research based on publicly reported information</p>
       </div>
-
-      <div class="index-cards" id="markets" data-scroll-offset="84" role="list" aria-label="Market indices (sample data)">
-        <div class="dash-sky" aria-hidden="true">
-          <div class="dash-sky__layer">
-            <img class="dash-sky__img" src="assets/img/dash-skyline.jpg" width="1846" height="328" alt="" decoding="async" fetchpriority="high">
-            <div class="dash-sky__mist"></div>
-          </div>
-        </div>
-        <article class="index-card" role="listitem" data-reveal="up" data-delay="260">
-          <h2 class="index-card__label">S&amp;P 500</h2>
-          <p class="index-card__value" data-count data-delay="360">4,763.12</p>
-          <p class="index-card__chg pos"><span data-count data-delay="560">+28.41</span><span data-count data-delay="620">+0.60%</span></p>
-          <div class="index-card__spark" data-spark="spx"></div>
-        </article>
-        <article class="index-card" role="listitem" data-reveal="up" data-delay="350">
-          <h2 class="index-card__label">NASDAQ</h2>
-          <p class="index-card__value" data-count data-delay="450">14,972.31</p>
-          <p class="index-card__chg pos"><span data-count data-delay="650">+112.63</span><span data-count data-delay="710">+0.76%</span></p>
-          <div class="index-card__spark" data-spark="ndx"></div>
-        </article>
-        <article class="index-card" role="listitem" data-reveal="up" data-delay="440">
-          <h2 class="index-card__label">DOW JONES</h2>
-          <p class="index-card__value" data-count data-delay="540">37,585.24</p>
-          <p class="index-card__chg pos"><span data-count data-delay="740">+183.31</span><span data-count data-delay="800">+0.49%</span></p>
-          <div class="index-card__spark" data-spark="dji"></div>
-        </article>
-        <article class="index-card" role="listitem" data-reveal="up" data-delay="530">
-          <h2 class="index-card__label">RUSSELL 2000</h2>
-          <p class="index-card__value" data-count data-delay="630">1,970.18</p>
-          <p class="index-card__chg pos"><span data-count data-delay="830">+14.21</span><span data-count data-delay="890">+0.73%</span></p>
-          <div class="index-card__spark" data-spark="rut"></div>
-        </article>
-      </div>
+      <div class="brief-hero__image" aria-hidden="true"></div>
     </section>
-
-    <div class="dash-grid">
-      <!-- Insider activity -->
-      <section class="panel dash-panel dash-insider" id="insider-activity" data-scroll-offset="84" aria-labelledby="ia-title" data-reveal="up" data-delay="620">
-        <div class="panel__head">
-          <h2 class="panel__title" id="ia-title">Insider activity</h2>
-          <a class="view-all view-all--boxed" href="alerts.html#insider">View all <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <div class="brief-index" aria-label="Data coverage">
+      <div><span class="brief-label">SOURCE</span><strong>SEC EDGAR</strong><small>Public company filings</small></div>
+      <div><span class="brief-label">IMPORTED FILINGS</span><strong id="brief-indexed">—</strong><small>Successfully parsed records</small></div>
+      <div><span class="brief-label">LAST IMPORT</span><strong id="brief-import">—</strong><small>Not a real-time market feed</small></div>
+      <div><span class="brief-label">COVERAGE</span><strong>Form 4</strong><small>Reported ownership changes</small></div>
+    </div>
+    <div class="brief-layout">
+      <section class="brief-panel brief-activity" id="insider-activity" aria-labelledby="brief-activity-title">
+        <div class="brief-panel__head">
+          <div><p class="brief-kicker">01 / OWNERSHIP DISCLOSURES</p><h2 id="brief-activity-title">Insider activity.</h2>
+            <p class="brief-desc">Transactions reported to the SEC. Publication can happen days after the transaction.</p></div>
+          <a href="research.html" class="brief-panel__link">Research a company ↗</a>
         </div>
-        <div class="dash-filter">
-          <div class="segmented segmented--sell" data-segmented role="tablist" aria-label="Filter insider transactions">
-            <button type="button" role="tab" id="ia-tab-all" data-value="all" aria-selected="true" aria-controls="ia-panel">All</button>
-            <button type="button" role="tab" id="ia-tab-buys" data-value="buys" aria-selected="false" aria-controls="ia-panel" tabindex="-1">Buys</button>
-            <button type="button" role="tab" id="ia-tab-sells" data-value="sells" aria-selected="false" aria-controls="ia-panel" tabindex="-1">Sells</button>
-          </div>
+        <div class="brief-tabs" role="group" aria-label="Filter insider transactions">
+          <button type="button" data-filter="all" aria-pressed="true">All activity</button>
+          <button type="button" data-filter="reported_purchase" aria-pressed="false">Purchases</button>
+          <button type="button" data-filter="reported_sale" aria-pressed="false">Sales</button>
         </div>
-        <div class="dash-body table-scroll" id="ia-panel" role="tabpanel" aria-labelledby="ia-tab-all">
-          <table class="data-table dash-table dash-table--insider">
-            <caption class="sr-only">Recent insider transactions (sample data)</caption>
-            <colgroup><col class="w-time"><col class="w-person"><col class="w-co"><col class="w-tx"><col class="w-val"></colgroup>
-            <thead><tr><th scope="col">Time</th><th scope="col">Insider</th><th scope="col" class="c"><span class="th-fit">Company</span></th><th scope="col" class="c"><span class="th-fit">Transaction</span></th><th scope="col" class="num">Value</th></tr></thead>
-            <tbody data-rows="insider"></tbody>
+        <div class="brief-table-wrap">
+          <table class="brief-table">
+            <caption class="sr-only">Imported SEC ownership transactions</caption>
+            <thead><tr><th scope="col">Transaction date</th><th scope="col">Reporting person</th><th scope="col">Company</th><th scope="col">Reported type</th><th scope="col" class="brief-right">Est. value</th></tr></thead>
+            <tbody id="brief-transactions"><tr><td colspan="5" class="brief-empty">Loading reported transactions…</td></tr></tbody>
           </table>
         </div>
-        <p class="sr-only" aria-live="polite" data-filter-status></p>
+        <p class="brief-footnote">Values are estimates from filed quantities and prices, when supplied. A filing is not a buy or sell signal.</p>
       </section>
-
-      <!-- Watchlist -->
-      <section class="panel dash-panel dash-watch" id="watchlist" data-scroll-offset="84" aria-labelledby="wl-title" data-reveal="up" data-delay="710">
-        <div class="panel__head">
-          <h2 class="panel__title" id="wl-title">Watchlist</h2>
-          <a class="view-all" href="company.html?ticker=AAPL">View all <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        </div>
-        <div class="dash-body table-scroll">
-          <table class="data-table dash-table dash-table--watch">
-            <caption class="sr-only">Watchlist (sample data)</caption>
-            <colgroup><col class="w-sym"><col class="w-price"><col class="w-chg"><col class="w-chg"><col class="w-chg"><col class="w-chart"></colgroup>
-            <thead><tr><th scope="col">Symbol</th><th scope="col">Price</th><th scope="col" class="c">1D</th><th scope="col" class="c">1W</th><th scope="col" class="c">1M</th><th scope="col" class="c">Chart</th></tr></thead>
-            <tbody data-rows="watch"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <div class="dash-side">
-        <!-- Recent filings -->
-        <section class="panel dash-panel dash-filings" id="recent-filings" data-scroll-offset="84" aria-labelledby="rf-title" data-reveal="up" data-delay="800">
-          <div class="panel__head">
-            <h2 class="panel__title" id="rf-title">Recent filings</h2>
-            <a class="view-all" href="filing.html">View all <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <aside class="brief-rail">
+        <section class="brief-panel brief-filings" aria-labelledby="brief-filings-title">
+          <div class="brief-panel__head">
+            <div><p class="brief-kicker">02 / SOURCE DOCUMENTS</p><h2 id="brief-filings-title">Latest filings.</h2></div>
           </div>
-          <div class="dash-body table-scroll">
-            <table class="data-table dash-table dash-table--filings">
-              <caption class="sr-only">Recent SEC filings (sample data)</caption>
-              <colgroup><col class="w-co"><col class="w-form"><col class="w-date"></colgroup>
-              <thead><tr><th scope="col">Company</th><th scope="col" class="c">Form</th><th scope="col">Date</th></tr></thead>
-              <tbody data-rows="filings"></tbody>
-            </table>
-          </div>
+          <div id="brief-filings" class="brief-filing-list"><p class="brief-empty">Loading SEC filings…</p></div>
+          <p class="brief-footnote">Original SEC filings, listed by publication date.</p>
         </section>
-
-        <!-- Political trades -->
-        <section class="panel dash-panel dash-political" id="political-trades" data-scroll-offset="84" aria-labelledby="pt-title" data-reveal="up" data-delay="890">
-          <div class="panel__head">
-            <h2 class="panel__title" id="pt-title">Political trades</h2>
-            <a class="view-all" href="alerts.html#political">View all <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          </div>
-          <div class="dash-body table-scroll">
-            <table class="data-table dash-table dash-table--political">
-              <caption class="sr-only">Recent trades disclosed by members of Congress (sample data)</caption>
-              <colgroup><col class="w-person"><col class="w-tk"><col class="w-tx"><col class="w-date"></colgroup>
-              <thead class="dash-vh"><tr><th scope="col">Member</th><th scope="col">Ticker</th><th scope="col">Transaction</th><th scope="col">Date</th></tr></thead>
-              <tbody data-rows="political"></tbody>
-            </table>
-          </div>
+        <section class="brief-watch" aria-labelledby="brief-watch-title">
+          <p class="brief-kicker">03 / PERSONAL RESEARCH</p>
+          <h2 id="brief-watch-title">Keep your own watch.</h2>
+          <p>Track the companies you care about. A connected brokerage or portfolio isn't required.</p>
+          <div id="brief-watchlist" class="brief-watchlist"><p>Checking your watchlist…</p></div>
+          <a href="portfolio.html" class="brief-watch__link">Portfolio options, when you're ready ↗</a>
         </section>
-      </div>
+      </aside>
     </div>
   </main>
-
-  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Not investment advice.</span>
-    <span class="sample-note">Sample data shown for illustration</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Public-record research only. No individualized investment advice.</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
 </body>
 </html>

@@ -45,7 +45,6 @@
               <input class="input" id="signin-password" name="password" type="password" autocomplete="current-password"
                      maxlength="128" required aria-describedby="signin-password-error">
               <!-- after the input in DOM (tab order: email, password, then this); shown on the label row -->
-              <button class="auth-link auth-link--muted auth-forgot" type="button" data-auth-toast="Password reset isn't available yet.">Forgot password?</button>
               <div class="field__msg"><p class="field__error" id="signin-password-error"></p></div>
             </div>
 
@@ -60,20 +59,6 @@
               <div class="form-alert__inner"><p class="form-alert__text"></p></div>
             </div>
           </form>
-
-          <p class="auth-or" data-reveal="up">or continue with</p>
-
-          <div class="auth-alt" data-reveal="up">
-            <button class="btn btn--light btn--block auth-google" type="button" data-auth-toast="Google sign-in isn't available yet.">
-              <svg class="auth-google__g" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.11A12 12 0 0 0 12 24z"/>
-                <path fill="#FBBC05" d="M5.27 14.27A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.27V6.62H1.26A12 12 0 0 0 0 12c0 1.94.46 3.77 1.26 5.38l4.01-3.11z"/>
-                <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.26 6.62l4.01 3.11C6.22 6.88 8.87 4.77 12 4.77z"/>
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-          </div>
 
           <p class="auth-switch" data-reveal="up">Don't have an account? <a class="auth-link" href="signup.html"><strong>Get started</strong></a></p>
         </div>

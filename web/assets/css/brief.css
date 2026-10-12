@@ -1,0 +1,61 @@
+/* Public-record dashboard. The same ivory / charcoal / serif Insidir design system. */
+.brief-page{background:var(--cream);color:var(--ink)}
+.brief-main{max-width:1320px;padding-top:35px;padding-bottom:76px}
+.brief-kicker,.brief-label{font:600 10px/1.5 var(--sans);letter-spacing:.14em;color:#716e65;text-transform:uppercase}
+.brief-hero{display:flex;min-height:390px;position:relative;overflow:hidden;border-radius:6px;background:#16191b;color:#f6f2e9;isolation:isolate}
+.brief-hero__copy{z-index:1;position:relative;flex:1;padding:clamp(32px,4vw,62px) clamp(24px,4vw,62px);max-width:800px}
+.brief-hero .brief-kicker{color:#c4bdae}
+.brief-hero h1{font:500 clamp(51px,5vw,76px)/1.03 var(--serif);letter-spacing:-.045em;margin:18px 0 15px}
+.brief-intro{font:400 clamp(14px,1.2vw,17px)/1.6 var(--sans);color:#d7d1c7;max-width:570px}
+.brief-hero__image{position:absolute;inset:0 0 0 43%;z-index:0;background:linear-gradient(90deg,#16191b 0%,rgba(22,25,27,.93) 15%,rgba(22,25,27,.55) 65%,rgba(22,25,27,.36)),url("../img/dash-skyline.jpg") 50% 50%/cover no-repeat;opacity:.84}
+.brief-search{margin-top:29px;max-width:620px;display:flex;align-items:stretch;background:#fff;border:1px solid rgba(255,255,255,.9);border-radius:5px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.brief-search input{min-width:0;flex:1;padding:15px 16px;border:0;background:#fff;font:400 13px/1.4 var(--sans);color:var(--ink)}
+.brief-search input:focus{outline:2px solid #b1a48e;outline-offset:-2px}
+.brief-search button{background:var(--cream-2);color:var(--ink);border:0;border-left:1px solid #ded8ca;cursor:pointer;padding:0 22px;white-space:nowrap;font:600 13px/1.5 var(--sans)}
+.brief-search button:hover{background:#e2ddd3}
+.brief-hero__note{color:#c3bdb3;font-size:11px;line-height:1.6;margin:13px 0 0}
+.brief-index{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:5px;background:var(--paper);margin:18px 0 28px}
+.brief-index>div{padding:21px 24px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.brief-index>div+div{border-left:1px solid var(--line)}
+.brief-index strong{font:500 25px/1.25 var(--serif);letter-spacing:-.02em;overflow-wrap:anywhere}
+.brief-index small{color:var(--muted);font-size:11px;line-height:1.5}
+.brief-layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(320px,1fr);gap:20px;align-items:start}
+.brief-panel{border:1px solid var(--line);border-radius:6px;background:var(--paper);min-width:0;box-shadow:var(--shadow-sm)}
+.brief-panel__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 28px 12px}
+.brief-panel h2,.brief-watch h2{font:500 clamp(28px,2.3vw,36px)/1.12 var(--serif);letter-spacing:-.032em;margin:6px 0 9px}
+.brief-desc{font-size:12px;line-height:1.65;color:var(--muted);max-width:510px}
+.brief-panel__link{font-size:11px;flex-shrink:0;color:var(--ink);text-decoration:underline;text-underline-offset:4px;padding-top:6px}
+.brief-tabs{padding:12px 27px 18px;display:flex;gap:7px;flex-wrap:wrap}
+.brief-tabs button{font:500 12px var(--sans);border:1px solid var(--line);background:transparent;color:var(--muted);padding:9px 14px;border-radius:4px;cursor:pointer}
+.brief-tabs button[aria-pressed="true"]{background:#1d2122;color:#fff;border-color:#1d2122}
+.brief-table-wrap{overflow-x:auto;padding:0 17px 6px}
+.brief-table{width:100%;min-width:610px;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;table-layout:auto}
+.brief-table th{padding:12px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;color:#69665f;font-weight:600;font-size:10px;letter-spacing:.02em;white-space:nowrap;background:#f5f2eb}
+.brief-table td{padding:16px 10px;line-height:1.5;border-bottom:1px solid #ebe7de;vertical-align:middle;color:#44423e;white-space:nowrap}
+.brief-table td:nth-child(2){white-space:normal;min-width:155px}
+.brief-table tbody tr:hover{background:#faf8f3}
+.brief-table a{color:#171b1e;text-underline-offset:3px;text-decoration-thickness:1px;font-weight:600}
+.brief-right{text-align:right!important}
+.brief-tag{display:inline-block;font-size:10px;padding:4px 7px;border-radius:3px;background:#eeeae2;color:#373934}
+.brief-tag--buy{background:#e8f1e9;color:#15633c}
+.brief-tag--sell{background:#f8eaea;color:#a32d36}
+.brief-empty{color:var(--muted);font-size:12px;line-height:1.7;padding:22px!important;white-space:normal!important}
+.brief-footnote{font-size:10.5px;line-height:1.65;color:var(--muted);margin:0;padding:15px 28px 22px}
+.brief-rail{display:flex;flex-direction:column;gap:18px;min-width:0}
+.brief-filing-list{padding:0 25px}
+.brief-filing{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 15px;padding:13px 3px;border-bottom:1px solid var(--line)}
+.brief-filing__title{font:550 13px var(--sans);color:var(--ink);text-decoration:none}
+.brief-filing__title:hover{text-decoration:underline}
+.brief-filing__date{font:400 11px var(--sans);color:var(--muted);text-align:right;white-space:nowrap}
+.brief-filing__meta{font:400 10px var(--sans);color:var(--muted);grid-column:1/-1}
+.brief-watch{padding:29px;border-radius:6px;background:#222625;color:#eeeae2}
+.brief-watch .brief-kicker{color:#bcb5a7}
+.brief-watch h2{color:#fff}
+.brief-watch>p:not(.brief-kicker),.brief-watchlist{color:#c9c4b8;font-size:12px;line-height:1.75}
+.brief-watchlist{margin:15px 0;border-top:1px solid rgba(255,255,255,.15);padding-top:13px}
+.brief-watchlist a,.brief-watch__link{color:#f9f5ed;text-decoration:underline;text-underline-offset:4px}
+.brief-watchlist a{display:inline-block;margin:4px 7px 4px 0}
+.brief-watch__link{font-size:11px}
+@media(max-width:1080px){.brief-layout{grid-template-columns:minmax(0,1fr)}.brief-panel__head{padding:23px 20px 10px}.brief-tabs{padding:10px 20px 17px}.brief-filing-list{padding:0 20px}}
+@media(max-width:760px){.brief-main{padding-top:16px}.brief-hero{min-height:350px}.brief-hero__image{inset:0;opacity:.3}.brief-hero h1{font-size:clamp(43px,10vw,59px)}.brief-hero__copy{padding:28px 21px}.brief-search{margin-top:20px}.brief-search button{padding:0 12px}.brief-index{grid-template-columns:repeat(2,minmax(0,1fr))}.brief-index>div{padding:16px}.brief-index>div+div{border-left:0}.brief-index>div:nth-child(2n){border-left:1px solid var(--line)}.brief-index>div:nth-child(n+3){border-top:1px solid var(--line)}.brief-index strong{font-size:22px}}
+@media(prefers-reduced-motion:no-preference){.brief-hero__copy{animation:brief-enter .65s ease-out both}@keyframes brief-enter{from{opacity:.5;transform:translateY(12px)}to{opacity:1;transform:none}}}
