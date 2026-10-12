@@ -12,7 +12,7 @@
     "ingest": "node src/ingest-cli.mjs",
     "migrate": "node src/migrate.mjs",
     "test": "node --test test/*.test.mjs",
-    "check": "node --check src/server.mjs && node --check src/sec.mjs && node --check src/api.mjs && node --check src/db.mjs && node --check src/auth.mjs && node --check src/analysis.mjs && node --check src/intelligence.mjs && node --check src/brokerage.mjs && node --check web/assets/js/portfolio.js && node --check src/research.mjs && node --check web/assets/js/research.js && node --check src/ingest.mjs && node --check src/web.mjs && node --check src/web-server.mjs",
+    "check": "node --check src/server.mjs && node --check src/sec.mjs && node --check src/api.mjs && node --check src/db.mjs && node --check src/auth.mjs && node --check src/analysis.mjs && node --check src/intelligence.mjs && node --check src/brokerage.mjs && node --check src/manual-holdings.mjs && node --check web/assets/js/manual-holdings.js && node --check web/assets/js/portfolio.js && node --check src/research.mjs && node --check web/assets/js/research.js && node --check src/ingest.mjs && node --check src/web.mjs && node --check src/web-server.mjs",
     "web": "node src/web-server.mjs"
   },
   "dependencies": {
