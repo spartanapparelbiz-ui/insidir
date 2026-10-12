@@ -28,6 +28,8 @@ test("OAuth accepts only exact read scope, rejects trade and malformed tokens",(
     assert.throws(()=>validateReadTokens({...base,scope}),{status:502});
   }
   assert.throws(()=>validateReadTokens({...base,refresh_token:null}),{status:502});
+  assert.equal(validateReadTokens({...base,scope:undefined},{refresh:true}).refresh,"refresh");
+  assert.throws(()=>validateReadTokens({...base,scope:"read trade"},{refresh:true}),{status:502});
   assert.equal(oauthChallenge("test-verifier").length,43);
   assert.equal(typeof brokerageConfigured(),"boolean");
 });
