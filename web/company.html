@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apple Inc. (AAPL) — insidir.</title>
+  <meta name="description" content="Price chart, key statistics, insider activity, SEC filings, financials and ownership for Apple Inc. (AAPL), compiled from public records.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js')</script>
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/company.css">
+  <script defer src="assets/js/motion.js"></script>
+  <script defer src="assets/js/site.js"></script>
+  <script defer src="assets/js/app.js"></script>
+  <script defer src="assets/js/company.js"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-header data-active="companies"></header>
+
+  <main id="main" class="app-main co" data-ticker="AAPL">
+    <!-- Company header -->
+    <section class="co-head" aria-label="Company summary" data-stagger="110" data-delay="120">
+      <div class="co-id">
+        <div class="co-logo" data-reveal="scale">
+          <img data-f="logo" src="assets/icons/apple.svg" width="104" height="104" alt="Apple logo" decoding="async">
+        </div>
+        <div class="co-name">
+          <h1 class="co-title" data-f="name" data-split>Apple Inc.</h1>
+          <p class="co-meta" data-reveal="up"><span class="co-meta__list">
+            <span class="co-meta__item" data-f="ticker">AAPL</span><span class="sr-only">, </span><span class="co-meta__item" data-f="sector">Technology</span><span class="sr-only">, </span><span class="co-meta__item" data-f="exchange">Nasdaq</span>
+          </span></p>
+        </div>
+      </div>
+      <div class="co-quote">
+        <p class="co-price" data-reveal="up">
+          <span class="sr-only">Last price </span><span class="co-price__value" data-f="price" data-count data-count-duration="1600" data-delay="420">$168.21</span>
+          <span class="co-price__chg chg up" data-f="change">+0.60%</span>
+        </p>
+        <div class="co-watch-wrap" data-reveal="up">
+          <button class="btn btn--dark co-watch" type="button" data-watch data-on="false">
+            <svg class="co-watch__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
+            <span class="co-watch__label">Add to watchlist</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section tabs -->
+    <div class="co-tabs-wrap" data-reveal="fade" data-delay="380">
+      <div class="tabs co-tabs" role="tablist" aria-label="Company sections">
+        <button role="tab" type="button" id="tab-overview" data-tab="overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
+        <button role="tab" type="button" id="tab-insider-activity" data-tab="insider-activity" aria-controls="panel-insider-activity" aria-selected="false" tabindex="-1">Insider Activity</button>
+        <button role="tab" type="button" id="tab-sec-filings" data-tab="sec-filings" aria-controls="panel-sec-filings" aria-selected="false" tabindex="-1">SEC Filings</button>
+        <button role="tab" type="button" id="tab-financials" data-tab="financials" aria-controls="panel-financials" aria-selected="false" tabindex="-1">Financials</button>
+        <button role="tab" type="button" id="tab-ownership" data-tab="ownership" aria-controls="panel-ownership" aria-selected="false" tabindex="-1">Ownership</button>
+        <button role="tab" type="button" id="tab-news" data-tab="news" aria-controls="panel-news" aria-selected="false" tabindex="-1">News</button>
+        <span class="tabs__indicator" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <section class="co-panel is-active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+      <div class="co-overview">
+        <div class="panel co-chart" data-reveal="up" data-delay="460">
+          <div class="co-chart__bar">
+            <p class="sr-only" data-chart-caption aria-live="polite">Price history, 1 year</p>
+            <span class="sample-note co-chart__note">Sample data for illustration</span>
+            <div class="segmented co-range" data-segmented role="tablist" aria-label="Chart range">
+              <button type="button" role="tab" data-value="1D" aria-selected="false" aria-controls="price-chart" tabindex="-1">1D</button>
+              <button type="button" role="tab" data-value="1W" aria-selected="false" aria-controls="price-chart" tabindex="-1">1W</button>
+              <button type="button" role="tab" data-value="1M" aria-selected="false" aria-controls="price-chart" tabindex="-1">1M</button>
+              <button type="button" role="tab" data-value="3M" aria-selected="false" aria-controls="price-chart" tabindex="-1">3M</button>
+              <button type="button" role="tab" data-value="1Y" aria-selected="true" aria-controls="price-chart">1Y</button>
+              <button type="button" role="tab" data-value="5Y" aria-selected="false" aria-controls="price-chart" tabindex="-1">5Y</button>
+            </div>
+          </div>
+          <div class="chart-host co-chart__host" id="price-chart"></div>
+          <noscript><p class="co-noscript">Enable JavaScript to view the interactive price chart.</p></noscript>
+        </div>
+
+        <dl class="stat-list co-stats" data-stats data-reveal="fade" aria-label="Key statistics">
+          <div class="row-in"><dt>Market Cap</dt><dd data-f="cap">2.63T</dd></div>
+          <div class="row-in"><dt>Volume</dt><dd data-f="volume">34.2M</dd></div>
+          <div class="row-in"><dt>P/E (TTM)</dt><dd data-f="pe">28.4</dd></div>
+          <div class="row-in"><dt>52W Range</dt><dd data-f="range">124.17 – 199.62</dd></div>
+          <div class="row-in"><dt>Sector</dt><dd data-f="sector">Technology</dd></div>
+          <div class="row-in"><dt>Industry</dt><dd data-f="industry">Consumer Electronics</dd></div>
+          <div class="row-in"><dt>Website</dt><dd><a class="co-site" data-f="website" href="https://www.apple.com" target="_blank" rel="noopener noreferrer"><span>apple.com</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg><span class="sr-only"> (opens in a new tab)</span></a></dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Other sections are rendered by company.js from the sample profile -->
+    <section class="co-panel" id="panel-insider-activity" role="tabpanel" aria-labelledby="tab-insider-activity" tabindex="0" hidden></section>
+    <section class="co-panel" id="panel-sec-filings" role="tabpanel" aria-labelledby="tab-sec-filings" tabindex="0" hidden></section>
+    <section class="co-panel" id="panel-financials" role="tabpanel" aria-labelledby="tab-financials" tabindex="0" hidden></section>
+    <section class="co-panel" id="panel-ownership" role="tabpanel" aria-labelledby="tab-ownership" tabindex="0" hidden></section>
+    <section class="co-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0" hidden></section>
+
+    <!-- Unknown ticker -->
+    <section class="co-missing" data-missing hidden aria-labelledby="missing-title">
+      <p class="eyebrow co-missing__eyebrow" data-reveal="up">Company profile</p>
+      <h1 class="co-missing__title" id="missing-title" data-split>We don’t have a profile for <span data-missing-ticker>XYZ</span> yet</h1>
+      <p class="co-missing__copy" data-reveal="up" data-delay="160">This preview includes sample profiles for a handful of companies. Pick one below, or head back to the dashboard.</p>
+      <ul class="co-missing__list" data-missing-list data-stagger="70" data-delay="240"></ul>
+      <div class="co-missing__actions" data-reveal="up" data-delay="420">
+        <a class="btn btn--dark" href="dashboard.html" data-magnetic="0.2">Back to dashboard</a>
+        <a class="btn btn--light" href="filing.html">Browse SEC filings</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Not investment advice.</span>
+    <span class="sample-note">Sample data shown for illustration</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+</body>
+</html>

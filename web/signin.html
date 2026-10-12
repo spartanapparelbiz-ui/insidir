@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — insidir.</title>
+  <meta name="description" content="Sign in to your insidir. account to follow insider filings, political trades and SEC disclosures.">
+  <meta name="theme-color" content="#f9f8f4">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/img/signin.jpg" as="image">
+  <script>document.documentElement.classList.add('js')</script>
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/auth.css">
+  <script defer src="assets/js/motion.js"></script>
+  <script defer src="assets/js/site.js"></script>
+  <script defer src="assets/js/auth.js"></script>
+</head>
+<body class="auth-body auth-body--signin">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <main id="main" class="auth auth--signin">
+    <section class="auth-panel" aria-labelledby="auth-title">
+      <div class="auth-panel__inner">
+        <div class="auth-brand" data-reveal="down" data-delay="60">
+          <a class="logo auth-logo" href="index.html" aria-label="insidir. home">insidir.</a>
+        </div>
+
+        <div class="auth-card" data-stagger="70" data-delay="140">
+          <h1 id="auth-title" class="auth-title" data-split>Welcome back.</h1>
+          <p class="auth-sub" data-reveal="up">Sign in to your account.</p>
+
+          <form class="auth-form" data-auth-form="login" action="#" method="post" novalidate>
+            <div class="field auth-field" data-reveal="up">
+              <label class="label" for="signin-email">Email</label>
+              <input class="input" id="signin-email" name="email" type="email" inputmode="email" autocomplete="email"
+                     autocapitalize="none" spellcheck="false" placeholder="you@example.com" maxlength="254" required
+                     aria-describedby="signin-email-error">
+              <div class="field__msg"><p class="field__error" id="signin-email-error"></p></div>
+            </div>
+
+            <div class="field auth-field auth-field--forgot" data-reveal="up">
+              <label class="label" for="signin-password">Password</label>
+              <input class="input" id="signin-password" name="password" type="password" autocomplete="current-password"
+                     maxlength="128" required aria-describedby="signin-password-error">
+              <!-- after the input in DOM (tab order: email, password, then this); shown on the label row -->
+              <button class="auth-link auth-link--muted auth-forgot" type="button" data-auth-toast="Password reset isn't available yet.">Forgot password?</button>
+              <div class="field__msg"><p class="field__error" id="signin-password-error"></p></div>
+            </div>
+
+            <div class="auth-submit" data-reveal="up">
+              <button class="btn btn--dark btn--block auth-btn" type="submit" data-pending-label="Signing in…">
+                <span class="auth-btn__spinner" aria-hidden="true"></span>
+                <span class="auth-btn__label">Sign in</span>
+              </button>
+            </div>
+
+            <div class="form-alert" aria-live="polite" aria-atomic="true">
+              <div class="form-alert__inner"><p class="form-alert__text"></p></div>
+            </div>
+          </form>
+
+          <p class="auth-or" data-reveal="up">or continue with</p>
+
+          <div class="auth-alt" data-reveal="up">
+            <button class="btn btn--light btn--block auth-google" type="button" data-auth-toast="Google sign-in isn't available yet.">
+              <svg class="auth-google__g" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.11A12 12 0 0 0 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.27A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.27V6.62H1.26A12 12 0 0 0 0 12c0 1.94.46 3.77 1.26 5.38l4.01-3.11z"/>
+                <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.26 6.62l4.01 3.11C6.22 6.88 8.87 4.77 12 4.77z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+          </div>
+
+          <p class="auth-switch" data-reveal="up">Don't have an account? <a class="auth-link" href="signup.html"><strong>Get started</strong></a></p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="auth-media" aria-hidden="true">
+      <div class="auth-media__frame grain">
+        <div class="auth-media__layer" data-auth-parallax>
+          <div class="auth-media__scroll" data-parallax="0.1">
+            <div class="auth-media__drift">
+              <img class="auth-media__img" src="assets/img/signin.jpg" width="584" height="1056" alt="" decoding="async" fetchpriority="high">
+            </div>
+          </div>
+        </div>
+        <div class="auth-media__shade"></div>
+      </div>
+    </aside>
+
+    <div class="auth-edge" aria-hidden="true">
+      <div class="auth-edge__frame grain">
+        <picture style="display:contents"><source media="(max-width: 1100px)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><img class="auth-edge__img" src="assets/img/signup.jpg" width="508" height="1056" alt="" decoding="async"></picture>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

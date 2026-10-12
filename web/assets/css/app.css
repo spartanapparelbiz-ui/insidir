@@ -1,0 +1,109 @@
+/* Shared product UI (dashboard, company, alerts, filings, legal).
+   Page files add layout only; reuse these primitives. */
+
+.app-body{background:var(--paper);min-height:100vh;display:flex;flex-direction:column}
+.app-main{flex:1;width:min(100% - var(--gutter)*2,1464px);margin-inline:auto;padding:36px 0 56px}
+.app-main--narrow{width:min(100% - var(--gutter)*2,1120px)}
+
+/* Page heading row */
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;margin-bottom:28px}
+.page-title{font-family:var(--serif);font-weight:500;font-size:clamp(38px,4vw,56px);line-height:1;letter-spacing:-.035em;font-variation-settings:"opsz" 60}
+.page-sub{margin-top:10px;font-size:16px;color:var(--muted)}
+
+/* Panels */
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(20,18,12,.03);
+  transition:box-shadow .5s var(--ease-out),transform .5s var(--ease-out),border-color .5s}
+.panel--pad{padding:22px 24px}
+.panel:where(.is-hoverable):hover{box-shadow:var(--shadow);border-color:var(--line-2)}
+.panel__head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px 14px}
+.panel__title{font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.15;letter-spacing:-.02em}
+.view-all{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap;
+  padding:6px 10px;margin:-6px -10px;border-radius:6px;transition:background .25s,color .25s}
+.view-all svg{width:14px;height:14px;transition:transform .4s var(--ease-out)}
+.view-all:hover{background:var(--cream);color:var(--ink)}
+.view-all:hover svg{transform:translateX(3px)}
+.view-all--boxed{margin:0;padding:7px 12px;border:1px solid var(--line);background:#fff}
+
+/* Data tables */
+.data-table{width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.data-table th{font-size:12.5px;font-weight:450;color:var(--muted-2);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.data-table td{padding:12px;border-bottom:1px solid #efece5;white-space:nowrap;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:0}
+.data-table th:first-child,.data-table td:first-child{padding-left:24px}
+.data-table th:last-child,.data-table td:last-child{padding-right:24px}
+.data-table .num{text-align:right}
+.data-table tbody tr{transition:background .25s}
+.data-table tbody tr:hover{background:#faf8f3}
+.data-table--head-tint thead th{background:#f8f7f3}
+.table-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+
+/* Cells */
+.ticker{font-weight:600;color:var(--blue);letter-spacing:.01em}
+.ticker:hover{text-decoration:underline;text-underline-offset:3px}
+.sym{display:inline-flex;align-items:center;gap:12px;font-weight:600;color:var(--ink)}
+.ticker-logo{width:22px;height:22px;object-fit:contain;flex:none}
+.ticker-logo--text{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:var(--cream-2);font-size:11px;font-weight:700;color:var(--ink-2)}
+.person{display:inline-flex;align-items:center;gap:10px;color:var(--ink)}
+.buy{color:var(--green);font-weight:500}
+.sell{color:var(--red);font-weight:500}
+.chg{font-variant-numeric:tabular-nums}
+.chg.up{color:var(--green)}
+.chg.down{color:var(--red)}
+
+/* Underline tabs (company sections, alerts) */
+/* the divider is drawn inside the strip so overflow-x:auto doesn't clip the indicator */
+.tabs{display:flex;gap:clamp(20px,3vw,48px);box-shadow:inset 0 -1px 0 var(--line);position:relative;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs [role=tab],.tabs a{position:relative;padding:12px 0 14px;font-size:15px;color:var(--ink-2);white-space:nowrap;transition:color .25s}
+.tabs [role=tab]:hover,.tabs a:hover{color:var(--ink)}
+.tabs [aria-selected="true"],.tabs a[aria-current="page"]{color:var(--ink);font-weight:600}
+.tabs__indicator{position:absolute;left:0;bottom:0;height:2px;background:var(--ink);transition:transform .55s var(--ease-out),width .55s var(--ease-out)}
+
+/* Segmented pill groups with a sliding thumb (data-segmented, see app.js) */
+.segmented{position:relative;display:inline-flex;gap:6px;padding:0;isolation:isolate}
+.segmented button{position:relative;z-index:1;height:34px;padding:0 16px;border-radius:7px;font-size:13.5px;color:var(--ink-2);
+  border:1px solid var(--line);background:#f7f6f2;transition:color .3s,border-color .3s,background .3s}
+.segmented button:hover{color:var(--ink)}
+.segmented button.is-active{color:var(--ink);font-weight:600;background:transparent;border-color:transparent}
+.segmented .seg-thumb{position:absolute;left:0;top:0;z-index:0;border-radius:7px;background:#fff;border:1px solid var(--line-2);
+  box-shadow:0 1px 3px rgba(20,18,12,.08);transition:transform .5s var(--ease-out),width .5s var(--ease-out)}
+.segmented--sell button[data-value="sells"]{color:var(--red)}
+.segmented--sell button[data-value="sells"].is-active{color:var(--red)}
+
+/* Status pill */
+.status{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:7px;background:#eaf4ed;color:#0d7d43;font-size:13.5px;font-weight:500}
+
+/* Charts */
+.sparkline{display:block;overflow:visible}
+.chart-host{position:relative;width:100%;height:300px}
+.area-chart{display:block;overflow:visible}
+.area-chart .grid{stroke:#ece9e1;stroke-width:1}
+.area-chart .grid--v{stroke:#f2efe8}
+.area-chart .axis{font:12px var(--sans);fill:var(--muted-2)}
+.crosshair__line{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3}
+.crosshair__dot{fill:#fff;stroke:var(--green-chart);stroke-width:2}
+.chart-tip{position:absolute;transform:translate(-50%,calc(-100% - 14px));background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;
+  padding:5px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+
+/* Definition list (key stats) */
+.stat-list{display:grid}
+.stat-list>div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #efece5;font-size:14.5px}
+.stat-list>div:last-child{border-bottom:0}
+.stat-list dt{color:var(--ink-2)}
+.stat-list dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+
+/* Sample-data notice (the product shows illustrative data until the engine is connected) */
+.sample-note{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted-2)}
+.sample-note::before{content:"";width:6px;height:6px;border-radius:50%;background:#c9a96a}
+
+/* Row entrance used by JS-rendered tables */
+.js .row-in{opacity:0;transform:translateY(10px);transition:opacity .7s var(--ease-out) var(--delay,0s),transform .8s var(--ease-out) var(--delay,0s)}
+.js .is-in .row-in,.js .row-in.is-in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.js .row-in{opacity:1!important;transform:none!important}}
+
+@media (max-width:700px){
+  .app-main{padding:24px 0 40px}
+  .panel__head{padding:16px 18px 12px}
+  .data-table th:first-child,.data-table td:first-child{padding-left:18px}
+  .data-table th:last-child,.data-table td:last-child{padding-right:18px}
+}

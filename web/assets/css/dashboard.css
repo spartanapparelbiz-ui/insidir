@@ -1,0 +1,301 @@
+/* Dashboard layout. Builds on base.css + app.css primitives; only page layout,
+   sizing and the skyline hero live here. Measurements follow the reference
+   dashboard (its browser viewport is ~1513px wide; the shell caps at 1464px). */
+
+.dash-page{
+  --dash-pt:41px;                 /* space between the app header and the greeting */
+  --dash-line:#ece9e2;            /* row separators */
+  --dash-head:#f7f6f1;            /* tinted table head (as light as the reference; th text stays 4.7:1) */
+  --dash-muted:#6c6b66;
+  background:linear-gradient(180deg,var(--paper) 0,var(--paper) 360px,#f6f5f0 70%,#f3f1eb 100%);
+}
+
+.dash{width:min(100% - 2*clamp(16px,1.82vw,34px),1464px);padding:var(--dash-pt) 0 48px}
+
+/* ---------------------------------------------------------------
+   Hero: greeting, market clock, hazy skyline, index cards
+   --------------------------------------------------------------- */
+.dash-hero{position:relative}
+
+/* The skyline is anchored to the top edge of the index row: the photo ends where the cards
+   begin and a hazy continuation of it runs on behind them (visible through the gaps). Both the
+   container and the photo layer fade in from the left, so no edge shows at any width. */
+.dash-sky{--sky-h:clamp(96px,10.85vw,166px);--mist:96px;
+  position:absolute;z-index:-1;pointer-events:none;overflow:hidden;
+  left:38.2%;right:calc(50% - 50vw);bottom:calc(100% - var(--mist));height:calc(var(--sky-h) + var(--mist) + 4px);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 4%,#000 9%);
+          mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 4%,#000 9%)}
+.dash-sky__layer{position:absolute;top:0;bottom:0;right:0;width:calc(var(--sky-h) * 5.628);transform-origin:60% 100%;
+  transform:translate3d(0,calc(var(--p,0) * 70px),0);opacity:calc(1 - var(--p,0) * .55);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 4%,#000 9%);
+          mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 4%,#000 9%)}
+.dash-sky__img{position:absolute;right:0;bottom:var(--mist);height:var(--sky-h);width:100%;max-width:none;object-fit:cover;object-position:100% 100%;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%);mask-image:linear-gradient(180deg,transparent 0,#000 7%)}
+/* hazy continuation of the towers behind the card row: the photo's bottom rows stretched
+   downward and fading out (shows through the gaps and the translucent cards) */
+.dash-sky__mist{position:absolute;right:0;bottom:0;height:var(--mist);width:100%;
+  background:url(../img/dash-skyline.jpg) right bottom / 100% 2400% no-repeat;
+  filter:blur(2.5px) saturate(.9);opacity:.95;transform-origin:50% 0;
+  /* fades down, and on wide screens also fades out past the content edge (--edge = page margin) */
+  --edge:max(clamp(16px,1.82vw,34px),(100vw - 1464px) / 2);
+  -webkit-mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%),linear-gradient(270deg,transparent calc(var(--edge) - 120px),#000 calc(var(--edge) - 20px));
+          mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%),linear-gradient(270deg,transparent calc(var(--edge) - 120px),#000 calc(var(--edge) - 20px));
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+
+.js .dash-sky__img{animation:dashSkyIn 2.6s var(--ease-out) .15s both}
+.js .dash-sky__mist{animation:dashMistIn 2.6s var(--ease-out) .45s both}
+@keyframes dashSkyIn{from{opacity:0;transform:translate3d(0,14px,0) scale(1.06)}}
+@keyframes dashMistIn{from{opacity:0;transform:scaleY(.4)}}
+
+.dash-hero__row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px 32px;padding:0 22px 0 21px}
+.dash-greeting{font-family:var(--serif);font-weight:570;font-size:clamp(40px,3.99vw,61px);line-height:1;letter-spacing:-.032em;
+  font-variation-settings:"opsz" 60;color:var(--ink)}
+/* the greeting's large serif needs a deeper start so rotated ascenders never peek above the mask before it rises */
+.js .dash-greeting[data-split]:not(.is-in) .split-word>span{transform:translate3d(0,124%,0) rotate(2deg)}
+.dash-sub{margin-top:6px;font-family:var(--serif);font-weight:460;font-size:clamp(20px,1.95vw,30px);line-height:1.2;letter-spacing:-.018em;
+  color:var(--ink);font-variation-settings:"opsz" 40}
+
+.dash-status{display:flex;flex-direction:column;align-items:flex-end;gap:10px;margin-top:-13px}
+.dash-status__row{display:flex;align-items:center;gap:19px}
+.dash-market{height:37px;padding:0 15px 0 13px;border-radius:8px;gap:9px;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  background:#eaf4ed;color:#0d7d43;transition:background .4s,color .4s}  /* 4.6:1 text contrast */
+.dash-market .dot{width:11px;height:11px;color:var(--green-chart)}
+.dash-market.is-closed .dot{color:#9a978f}
+.dash-market.is-closed{background:#efede7;color:#6c6b66}
+.dash-clock{display:inline-flex;gap:15px;font-size:14px;letter-spacing:-.012em;color:var(--dash-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dash-status .sample-note{font-size:11.5px;color:#6f6e69}
+.dash-clock [data-clock-date]{letter-spacing:-.024em}
+
+/* Index cards */
+.index-cards{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:26px}
+.index-card{position:relative;min-height:136px;padding:15px 20px 19px 24px;border-radius:10px;
+  background:rgba(252,251,248,.95);border:1px solid rgba(40,34,20,.075);
+  -webkit-backdrop-filter:blur(10px) saturate(1.05);backdrop-filter:blur(10px) saturate(1.05);
+  box-shadow:0 1px 2px rgba(20,18,12,.035),0 10px 24px -18px rgba(20,18,12,.18)}
+.js .index-card[data-reveal],.index-card{
+  transition:opacity 1.1s var(--ease-out) var(--delay,0s),transform 1.2s var(--ease-out) var(--delay,0s),
+    translate .55s var(--ease-out),box-shadow .55s var(--ease-out),border-color .55s,background-color .55s}
+.index-card:hover{translate:0 -3px;background:rgba(255,255,255,.98);border-color:rgba(40,34,20,.12);
+  box-shadow:0 2px 4px rgba(20,18,12,.04),0 18px 36px -20px rgba(20,18,12,.28)}
+.index-card__label{font-family:var(--sans);font-size:clamp(14px,1.115vw,17px);font-weight:470;line-height:1.2;letter-spacing:0;color:var(--ink-2)}
+.index-card__value{margin-top:8px;font-family:var(--serif);font-weight:540;font-size:clamp(27px,2.36vw,36px);line-height:1.08;letter-spacing:-.02em;
+  font-variation-settings:"opsz" 60;color:var(--ink);white-space:nowrap}
+.index-card__chg{margin-top:12px;display:flex;gap:clamp(12px,1.18vw,18px);font-size:clamp(14px,1.115vw,17px);font-weight:540;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.index-card__spark{position:absolute;right:16px;top:47px;width:clamp(92px,8.4vw,128px);height:66px;pointer-events:none}
+.index-card__spark .sparkline{width:100%;height:100%}
+.index-card:hover .index-card__spark .area{opacity:1;filter:saturate(1.3)}
+/* sparklines draw with their card / table row entrance (not only when the svg itself is seen),
+   so a row revealed below the fold never waits on a stale load-time delay */
+.js .index-card.is-in [data-draw] path.line,.js .dash-panel.is-in [data-draw] path.line{stroke-dashoffset:0}
+.js .index-card.is-in [data-draw] .area,.js .dash-panel.is-in [data-draw] .area{opacity:1}
+/* the soft fill under each sparkline wipes in left-to-right in step with the drawing line */
+.js .dash .sparkline .area{opacity:1;clip-path:inset(0 100% 0 0);transition:clip-path 1.8s var(--ease-in-out) var(--delay,0s)}
+.js .dash .index-card.is-in .sparkline .area,.js .dash .dash-panel.is-in .sparkline .area,.js .dash .sparkline.is-in .area{clip-path:inset(0 0 0 0)}
+
+/* ---------------------------------------------------------------
+   Panels grid
+   --------------------------------------------------------------- */
+.dash-grid{display:grid;grid-template-columns:minmax(0,35.9fr) minmax(0,38.7fr) minmax(0,25.4fr);gap:13px;margin-top:18px;align-items:stretch}
+.dash-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.dash-political{flex:1}
+
+.dash-panel{min-width:0;border-color:#e9e6de;background:#fcfbf8;
+  box-shadow:0 1px 2px rgba(20,18,12,.03),0 12px 28px -22px rgba(20,18,12,.14)}
+/* reveal transition (opacity/transform with stagger delay) + undelayed hover elevation */
+.js .dash-panel[data-reveal]{transition:opacity 1.1s var(--ease-out) var(--delay,0s),transform 1.2s var(--ease-out) var(--delay,0s),
+  box-shadow .55s var(--ease-out),border-color .55s}
+.dash-panel:hover{border-color:#ddd8cc;box-shadow:0 2px 4px rgba(20,18,12,.035),0 22px 44px -26px rgba(20,18,12,.3)}
+
+.dash-panel .panel__head{padding:15px 22px 0 25px;align-items:flex-start}
+.dash-panel .panel__title{font-size:29px;font-weight:540;line-height:31px;letter-spacing:-.022em;font-variation-settings:"opsz" 60}
+.dash-panel .view-all{font-size:13.5px;font-weight:450;color:var(--ink-2);margin:-1px -10px -6px}
+.dash-panel .view-all svg{width:14px;height:14px}
+.dash-insider .view-all--boxed{height:34px;padding:0 9px 0 11px;margin:3px -1px 0 0;border-color:#e9e6de;border-radius:7px;gap:8px;background:#fdfcfa;
+  box-shadow:0 1px 2px rgba(20,18,12,.04);transition:background .25s,color .25s,border-color .25s,box-shadow .35s}
+.dash-insider .view-all--boxed:hover{background:#fff;border-color:var(--line-2);box-shadow:0 6px 16px -10px rgba(20,18,12,.3)}
+
+/* Three-column layout: the narrow right column sits a little tighter, as in the reference */
+@media (min-width:1400px){
+  .dash-side .panel__head{padding-left:20px;padding-right:17px}
+  .dash-side .panel__title{font-size:26px}
+  .dash-watch .view-all{margin-right:0}
+}
+
+.dash-filter{padding:11px 22px 0}
+.dash-filter .segmented{gap:4px}
+.dash-filter .segmented button{height:39px;padding:0 19px;border-radius:8px;font-size:14px;background:#f2f1ed;border-color:#ebe8e1}
+.dash-filter .segmented button.is-active{background:transparent;border-color:transparent}
+.dash-filter .segmented .seg-thumb{border-radius:8px;border-color:#dcd8ce;box-shadow:0 1px 3px rgba(20,18,12,.08),0 4px 10px -6px rgba(20,18,12,.18)}
+.dash-filter .segmented--sell button[data-value="sells"]{background:#fdf2f1;border-color:#f6dedb}
+.dash-filter .segmented--sell button[data-value="sells"].is-active{background:transparent;border-color:transparent}
+.dash-filter .segmented:has([data-value="sells"].is-active) .seg-thumb{background:#fffafa;border-color:#efc9c5}
+.dash-filter .segmented:has([data-value="buys"].is-active) .seg-thumb{border-color:#c9dfd0}
+
+/* ---------------------------------------------------------------
+   Tables
+   --------------------------------------------------------------- */
+.dash-body{padding:0 20px}
+.dash .dash-table{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:14px;color:var(--ink-2)}
+.dash .dash-table th{height:44px;padding:0 5px;font-size:13px;font-weight:400;color:#6f6e69;border-bottom:0;vertical-align:middle}
+.dash .dash-table td{padding:0 5px;border-bottom:1px solid var(--dash-line);vertical-align:middle}
+.dash .dash-table th:first-child,.dash .dash-table td:first-child{padding-left:6px}
+.dash .dash-table th:last-child,.dash .dash-table td:last-child{padding-right:6px}
+.dash .dash-table tbody tr:last-child td{border-bottom:0}
+.dash .dash-table .c{text-align:center}
+.dash .dash-table .num{text-align:right}
+.dash .dash-table tbody tr{transition:background .3s}
+.dash .dash-table tbody tr:hover{background:#faf8f3}
+.dash-muted{color:var(--dash-muted)}
+.dash .ticker{font-weight:600;letter-spacing:.005em}
+.dash .buy,.dash .sell{font-weight:450}
+.dash .chg{font-weight:450}
+.dash .person{gap:12px;color:var(--ink-2)}
+.dash-avatar{width:38px;height:38px;font-size:13.5px;letter-spacing:.03em}
+.dash-table--insider .person__name{font-size:13.5px;letter-spacing:-.014em}
+
+/* Insider activity */
+.dash-insider .dash-body{margin-top:17px}
+.dash .dash-table--insider thead th{background:var(--dash-head);height:45px}
+.dash-table--insider thead th:first-child{border-radius:7px 0 0 7px}
+.dash-table--insider thead th:last-child{border-radius:0 7px 7px 0;padding-right:11px}
+.dash-table--insider td{height:54px}
+.dash-table--insider td:last-child{padding-right:11px;color:var(--ink-2)}
+.dash .dash-table--insider th:last-child{padding-right:24px}
+.dash .dash-table--insider th:nth-child(2){padding-left:8px}
+.dash-table--insider td:first-child{font-size:13px}
+/* centred labels wider than their column overhang both sides evenly instead of spilling right */
+.th-fit{display:inline-block;margin:0 -14px}
+.dash-table--insider .w-time{width:16%}.dash-table--insider .w-person{width:34.3%}.dash-table--insider .w-co{width:11.8%}
+.dash-table--insider .w-tx{width:19.6%}.dash-table--insider .w-val{width:18.3%}
+
+/* Watchlist */
+.dash-watch .dash-body{padding:0 26px 0 22px;margin-top:15px}
+.dash .dash-table--watch thead th{height:48px;border-top:1px solid var(--dash-line);border-bottom:1px solid var(--dash-line)}
+.dash-table--watch td{height:56px;font-size:14px}
+.dash-table--watch tbody tr:last-child td{border-bottom:1px solid var(--dash-line)}
+.dash-table--watch .w-sym{width:25.2%}.dash-table--watch .w-price{width:13.3%}.dash-table--watch .w-chg{width:13.83%}.dash-table--watch .w-chart{width:20%}
+.dash-sym{gap:20px;font-weight:650;color:var(--ink);letter-spacing:.005em}
+.dash-sym .ticker-logo{width:26px;height:26px;transition:transform .5s var(--ease-out)}
+.dash-price{color:var(--ink-2);font-variant-numeric:proportional-nums}
+.dash-spark-cell .sparkline{margin-left:auto;margin-right:-5px}
+.dash-table--watch th:last-child{padding-left:20px}
+.is-link{cursor:pointer}
+.is-link:hover .dash-sym .ticker-logo{transform:scale(1.12)}
+.is-link:focus-within{background:#faf8f3}
+.dash-sym:focus-visible{outline-offset:4px}
+
+/* Recent filings */
+.dash-filings .dash-body{padding:0 23px 7px 15px;margin-top:15px}
+.dash .dash-table--filings thead th{height:38px;border-top:1px solid var(--dash-line);border-bottom:1px solid var(--dash-line)}
+.dash .dash-table--filings th:first-child{padding-left:2px}
+.dash-table--filings td{height:44.5px;font-size:14.5px}
+.dash .dash-table--filings td:first-child{padding-left:6px}
+.dash-table--filings td:nth-child(2){font-variant-numeric:normal}
+.dash-table--filings .dash-sym{gap:24px}
+.dash-table--filings .dash-sym .ticker-logo{width:25px;height:25px}
+.dash-table--filings .w-co{width:33.5%}.dash-table--filings .w-form{width:32.8%}.dash-table--filings .w-date{width:33.7%}
+.dash-table--filings th:last-child,.dash-table--filings td:last-child{padding-left:16px}
+
+/* Political trades */
+.dash-political{display:flex;flex-direction:column}
+.dash-political .panel__head{padding-top:7px}
+.dash-political .dash-body{padding:0 19px 2px 18px;margin-top:8px}
+.dash-table--political tbody tr:first-child td{border-top:1px solid var(--dash-line)}
+.dash-table--political td{height:45px}
+.dash .dash-table--political td:first-child{padding-left:0}
+.dash-table--political .dash-avatar{width:36px;height:36px;font-size:13px}
+.dash-table--political .person{gap:11px}
+.dash-table--political .w-person{width:46.6%}.dash-table--political .w-tk{width:15.4%}.dash-table--political .w-tx{width:12.5%}.dash-table--political .w-date{width:25.5%}
+.dash .dash-table--political td:last-child{text-align:right;padding-right:0}
+/* horizontal-scroll affordance (classes toggled by dashboard.js) */
+.dash-body.is-scrollable{--fl:22px;--fr:40px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%);
+          mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%)}
+.dash-body.is-scrollable.at-start{--fl:0px}
+.dash-body.is-scrollable.at-end{--fr:0px}
+.dash-vh th{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0!important}
+
+/* ---------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------- */
+/* Three columns get tight below ~1510px: tighten avatars, logos and type a touch */
+@media (min-width:1400px) and (max-width:1509px){
+  .dash-grid{grid-template-columns:minmax(0,37.5fr) minmax(0,37.6fr) minmax(0,24.9fr)}
+  .dash-table--insider .w-time{width:15.2%}.dash-table--insider .w-person{width:36.5%}.dash-table--insider .w-co{width:15%}
+  .dash-table--insider .w-tx{width:18.5%}.dash-table--insider .w-val{width:14.8%}
+  .dash-table--watch .w-sym{width:21%}.dash-table--watch .w-price{width:14%}.dash-table--watch .w-chg{width:14.2%}.dash-table--watch .w-chart{width:22.4%}
+  .dash-table--political .w-person{width:43%}.dash-table--political .w-tk{width:16.5%}.dash-table--political .w-tx{width:11.5%}.dash-table--political .w-date{width:29%}
+  .dash .dash-table{font-size:13.5px}
+  .dash .dash-table th{font-size:12.5px}
+  .dash-avatar{width:34px;height:34px;font-size:12.5px}
+  .dash .person{gap:10px}
+  .dash-table--insider .person__name{font-size:13px}
+  .dash-table--watch td,.dash-table--filings td{font-size:14px}
+  .dash-sym{gap:14px}
+  .dash-sym .ticker-logo,.dash-table--filings .dash-sym .ticker-logo{width:23px;height:23px}
+  .dash-spark-cell .sparkline{width:76px}
+  .dash-table--political .dash-avatar{width:30px;height:30px;font-size:11.5px}
+  .dash-table--political .person{gap:9px}
+  .dash-table--political td{font-size:13px}
+  .dash-table--political td:last-child{font-size:13px}
+}
+/* Tablet: two columns, filings + political side by side underneath */
+@media (max-width:1399px){
+  .dash-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .dash-side{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px;align-items:start}
+  .dash-political{display:block}
+  .dash-political .panel__head{padding-top:15px}
+  .dash-political .dash-body{margin-top:12px}
+  .dash-table--political .w-person{width:40%}.dash-table--political .w-tk{width:18%}.dash-table--political .w-tx{width:16%}.dash-table--political .w-date{width:26%}
+}
+@media (max-width:1199px){
+  .index-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .index-card__value{font-size:clamp(27px,3vw,35px)}
+  .index-card__label,.index-card__chg{font-size:clamp(14px,1.5vw,17px)}
+  .index-card__spark{width:clamp(96px,12vw,124px)}
+  .dash-sky{left:30%}
+}
+@media (max-width:1099px){
+  .dash-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:859px){
+  .dash-page{--dash-pt:32px}
+  .dash-side{grid-template-columns:minmax(0,1fr)}
+  .dash-hero__row{flex-direction:column;align-items:flex-start;gap:18px;padding:0 4px}
+  .dash-status{align-items:flex-start;margin-top:0;gap:8px}
+  .dash-status__row{flex-wrap:wrap;gap:8px 16px}
+  /* the skyline becomes a horizon band between the greeting and the cards */
+  .dash-sky{left:0;--sky-h:clamp(80px,19vw,140px)}
+  .index-cards{--sky-h:clamp(80px,19vw,140px);margin-top:calc(var(--sky-h) - 14px)}
+  .dash-table--insider{min-width:470px}
+  .dash-table--watch{min-width:480px}
+}
+@media (max-width:600px){
+  .dash-page{--dash-pt:26px}
+  .dash{padding-bottom:36px}
+  .dash-greeting{font-size:40px}
+  .dash-sub{font-size:20px;margin-top:8px}
+  .index-cards{gap:10px}
+  .index-card{min-height:0;padding:13px 14px 12px}
+  .index-card__label{font-size:13px;letter-spacing:.01em}
+  .index-card__value{font-size:25px;margin-top:6px}
+  .index-card__chg{font-size:13px;gap:10px;margin-top:6px}
+  .index-card__spark{position:relative;right:auto;top:auto;width:100%;height:38px;margin-top:10px}
+  .dash-panel .panel__head{padding:13px 16px 0 18px;min-height:54px}
+  .dash-panel .panel__title{font-size:23px}
+  .dash-body,.dash-watch .dash-body,.dash-filings .dash-body{padding:0 12px}
+  .dash-political .dash-body{padding:0 12px 4px 14px}
+  .dash-filter{padding:6px 16px 0}
+  .dash-table--political{min-width:330px}
+  .dash-table--filings{min-width:300px}
+}
+@media (max-width:420px){
+  .dash-filter .segmented button{padding:0 16px}
+  .dash-greeting{font-size:36px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .dash-sky__layer{transform:none!important;opacity:1!important}
+  .js .dash .sparkline .area{clip-path:none}
+  .index-card:hover{translate:none}
+}
