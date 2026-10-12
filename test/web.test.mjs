@@ -56,6 +56,19 @@ test("extensionless page paths resolve and unknown pages fall back to 404.html",
   });
 });
 
+test("research desk is served without replacing the site's brand", async () => {
+  await withServer(async base => {
+    const res = await fetch(base + "/research.html");
+    assert.equal(res.status, 200);
+    const page = await res.text();
+    assert.match(page, /Source-backed|source-backed|official insider filings/i);
+    assert.match(page, /assets\/css\/base.css/);
+    assert.match(page, /research-review-form/);
+    const js = await fetch(base + "/assets/js/research.js");
+    assert.equal(js.status, 200);
+  });
+});
+
 test("path traversal outside the web root is refused", async () => {
   await withServer(async base => {
     for (const p of ["/../package.json", "/%2e%2e/package.json", "/..%2fpackage.json", "/assets/../../src/config.mjs", "/%00index.html"]) {
