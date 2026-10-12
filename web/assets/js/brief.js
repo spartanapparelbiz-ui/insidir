@@ -92,6 +92,11 @@
     }
   }
   document.addEventListener("DOMContentLoaded",()=>{
+    const greeting=document.querySelector("[data-greeting]");
+    if(greeting){
+      const h=new Date().getHours();
+      greeting.textContent=h>=5&&h<12?"Good morning.":h>=12&&h<18?"Good afternoon.":"Good evening.";
+    }
     const input=$("brief-ticker");
     input?.closest("form")?.addEventListener("submit",event=>{
       const t=ticker(input.value);
