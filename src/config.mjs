@@ -8,7 +8,12 @@ export const config = Object.freeze({
   cookieSecure: process.env.COOKIE_SECURE !== "0",
   origins: new Set((process.env.ALLOWED_ORIGINS || "").split(",").map(v => v.trim()).filter(Boolean)),
   maxPerRun: Math.min(100, Math.max(1, Number(process.env.SEC_MAX_FILINGS_PER_RUN || 35))),
-  timeoutMs: Math.min(30000, Math.max(4000, Number(process.env.SEC_TIMEOUT_MS || 15000)))
+  timeoutMs: Math.min(30000, Math.max(4000, Number(process.env.SEC_TIMEOUT_MS || 15000))),
+  brokerageConnectEnabled: process.env.BROKERAGE_CONNECT_ENABLED === "1",
+  snaptradeOAuthClientId: process.env.SNAPTRADE_OAUTH_CLIENT_ID || "",
+  snaptradeOAuthClientSecret: process.env.SNAPTRADE_OAUTH_CLIENT_SECRET || "",
+  snaptradeOAuthRedirectUri: process.env.SNAPTRADE_OAUTH_REDIRECT_URI || "",
+  brokerageEncryptionKey: process.env.BROKERAGE_ENCRYPTION_KEY || ""
 });
 export function secReady() {
   return /.+\s.+@[^@\s]+\.[^@\s]+/.test(config.userAgent);
