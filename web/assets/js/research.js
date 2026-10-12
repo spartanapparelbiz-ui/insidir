@@ -107,6 +107,67 @@
       rows + '</tbody></table></div>';
   }
   let selectedTicker = "";
+  const usd = value => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "Unavailable";
+    return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:2}).format(n);
+  };
+  function renderIntelFindings(findings) {
+    const host=byId("intel-findings");
+    if (!findings.length) {
+      host.innerHTML='<p class="research-empty">No qualifying disclosures in the recent company history. This does not mean no relevant filing exists.</p>';
+      return;
+    }
+    host.innerHTML=findings.map(item=>
+      '<article class="intel-finding"><time>'+esc(displayDate(item.reportedAt))+'</time><div>'+
+      '<h4>'+esc(item.title)+'</h4><p>'+esc(item.explanation)+'</p>'+
+      sourceLink(item.sourceUrl,"Verify at SEC")+'</div></article>').join("");
+  }
+  function renderIntelFacts(facts) {
+    byId("intel-facts").innerHTML = facts.length ? facts.map(f=>
+      '<div class="intel-fact"><span>'+esc(f.label)+'</span><strong>'+esc(usd(f.value))+
+      '</strong><small>Period '+esc(f.start?displayDate(f.start)+" – ":"")+esc(displayDate(f.periodEnd))+
+      ' · '+esc(f.form)+' · filed '+esc(displayDate(f.filedAt))+'</small>'+
+      '<small>'+sourceLink(f.sourceUrl,"Source filing")+'</small></div>').join("") :
+      '<p class="research-empty">No comparable XBRL facts were available from the SEC for this company.</p>';
+  }
+  function renderIntelFilings(filings) {
+    const host=byId("intel-filings");
+    if(!filings.length){host.innerHTML='<p class="research-empty">No selected SEC company filings found.</p>';return;}
+    host.innerHTML='<div class="research-table-scroll"><table class="research-table"><thead><tr>'+
+      '<th>Type</th><th>Filed</th><th>Original document</th></tr></thead><tbody>'+
+      filings.map(f=>'<tr><td><strong>'+esc(f.form)+'</strong><small>'+esc(f.headline)+'</small></td>'+
+        '<td>'+esc(displayDate(f.filedAt))+'</td><td>'+sourceLink(f.sourceUrl,"Read filing")+'</td></tr>').join("")+
+      '</tbody></table></div>';
+  }
+  async function loadIntelligence(ticker) {
+    const host=byId("intel-overview");
+    host.hidden=true;
+    setFeedback("intel-status","Connecting official SEC company submissions and financial facts…");
+    try {
+      const data=await request("/v1/intelligence?ticker="+encodeURIComponent(ticker));
+      if(selectedTicker!==ticker)return;
+      const filings=Array.isArray(data.filings)?data.filings:[];
+      const facts=Array.isArray(data.facts)?data.facts:[];
+      const brief=data.brief||{};
+      host.hidden=false;
+      byId("intel-summary").textContent=brief.summary||"No intelligence summary available.";
+      byId("research-company").textContent=String(data.company?.name||ticker)+" ("+ticker+")";
+      renderIntelFindings(Array.isArray(brief.findings)?brief.findings:[]);
+      renderIntelFacts(facts);
+      renderIntelFilings(filings);
+      byId("intel-caveats").textContent=[
+        ...(Array.isArray(brief.caveats)?brief.caveats:[]),
+        ...(Array.isArray(data.warnings)?data.warnings:[])
+      ].join(" ");
+      setFeedback("intel-status","Official SEC data retrieved. Evidence is descriptive, not a recommendation.");
+    } catch (err) {
+      if(selectedTicker!==ticker)return;
+      host.hidden=true;
+      setFeedback("intel-status","Additional SEC intelligence is unavailable: "+err.message+
+        ". Imported insider research below may still be accessible.",true);
+    }
+  }
   async function loadReview(ticker) {
     const status = byId("research-review-status");
     const notes = byId("research-review-notes");
@@ -159,12 +220,13 @@
       byId("research-owners").textContent = String(new Set(transactions.map(x => x.owner_name).filter(Boolean)).size);
       byId("research-latest").textContent = filings.length ?
         displayDate(filings.reduce((latest, item) => item.published_at && item.published_at > latest ? item.published_at : latest, "")) : "None imported";
-      byId("research-coverage").textContent = "Only imported SEC Form 4 records are included; this is not a complete market history.";
+      byId("research-coverage").textContent = "Imported SEC Form 4 records and available public SEC company disclosures. Coverage is not exhaustive.";
       renderTransactions(transactions);
       renderFilings(filings);
       byId("research-results").hidden = false;
       setFeedback("research-feedback", "Displaying imported records for " + ticker + ". No live prices, politician trades or simulated signals.");
       loadReview(ticker);
+      loadIntelligence(ticker);
     } catch (err) {
       if (selectedTicker !== ticker) return;
       setFeedback("research-feedback", err.message + ". No sample data has been substituted.", true);
