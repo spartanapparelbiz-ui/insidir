@@ -27,4 +27,16 @@
 .portfolio-next>a{margin-top:8px;display:inline-flex}
 .portfolio-small-link{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 .portfolio-small-link:hover{color:var(--blue)}
+.manual-holdings-form{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:21px 0 12px}
+.manual-holdings-form>div{min-width:150px;flex:1}
+.manual-holdings-form label{font-size:12px;font-weight:600;display:block;margin-bottom:8px}
+.manual-holdings-form input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:5px;border:1px solid var(--line-2);background:var(--white);color:var(--ink);font:inherit}
+.manual-holdings-form button{min-height:46px}
+.manual-holdings-form input:focus{outline:2px solid var(--blue);outline-offset:2px}
+.manual-holdings-form button:disabled{opacity:.5;cursor:wait}
+.manual-holdings-table .manual-remove{background:transparent;border:1px solid var(--line-2);color:var(--ink);border-radius:5px;padding:7px 10px;cursor:pointer;font:inherit;font-size:12px}
+.manual-holdings-table .manual-remove:hover{background:var(--cream-2)}
+#manual-content .portfolio-section-heading{margin-top:23px}
+#manual-content .portfolio-activity{padding:20px;margin-top:20px}
+@media(max-width:720px){.manual-holdings-form>div,.manual-holdings-form button{width:100%;flex:auto}}
 @media(max-width:720px){.portfolio-desk{padding-top:26px}.portfolio-account,.portfolio-connection,.portfolio-activity,.portfolio-next{padding:18px}.portfolio-section-heading{display:block}.portfolio-account-head{flex-direction:column}.portfolio-value{text-align:left}}
