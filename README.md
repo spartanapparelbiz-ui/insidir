@@ -6,6 +6,7 @@
 - Marketing landing page with scroll-driven animation, a pricing page, sign-in and sign-up, and Terms and Privacy pages
 - Product screens: dashboard, company profile, alerts, research desk, and a Form 10-K filing viewer
 - Research desk (`research.html?ticker=AAPL`) connects imported SEC transactions and original filing links to a private, user-authored research journal. Saving a research review never submits an order.
+- **Free manual holdings:** signed-in users add tickers and share quantities directly in `portfolio.html`, then see source-linked imported Form 4 activity and links to Research Desk. No Plaid, SnapTrade, live price feed, paid API, or brokerage credentials required. Entries are explicitly user-reported and editable/removable.
 - Portfolio screen (`portfolio.html`) supports optional read-only SnapTrade Personal OAuth connections. User tokens are encrypted server-side and holdings are fetched on demand; equity holdings can open the SEC Research Desk and see recent, clearly labeled ticker-only filing matches. Requires a registered SnapTrade OAuth application and production approval.
 - Static HTML, CSS and JS with no build step and no third-party requests. Fonts and imagery are self-hosted
 - `npm run web` serves the site without a database at http://localhost:5173. `npm start` serves it from the engine alongside the API
