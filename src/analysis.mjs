@@ -22,6 +22,8 @@ export function clusterPurchases(rows, {days=7,minOwners=2,asOf=new Date()}={}) 
 }
 export const sourceRegistry=Object.freeze([
   {id:"sec-form4",name:"SEC Form 4",status:"enabled",type:"public regulatory filings",scope:"Corporate ownership disclosures; reported purchases and sales verified from transaction codes."},
+  {id:"sec-submissions",name:"SEC EDGAR company submissions",status:"enabled_when_configured",type:"public regulatory filings",scope:"Current reports, annual and quarterly reports, proxy and selected ownership disclosures; all source-linked. Requires SEC_USER_AGENT."},
+  {id:"sec-companyfacts",name:"SEC XBRL company facts",status:"enabled_when_configured",type:"structured public financial statements",scope:"Reported revenue, income, assets and operating cash flow for SEC issuers where XBRL coverage exists."},
   {id:"house-financial",name:"U.S. House financial disclosures",status:"disabled_pending_permissions",type:"political disclosure",scope:"No scraping, ingestion, or commercial redistribution until legal/licensing review."},
   {id:"senate-financial",name:"U.S. Senate financial disclosures",status:"disabled_pending_permissions",type:"political disclosure",scope:"No scraping, ingestion, or commercial redistribution until legal/licensing review."},
   {id:"political-social",name:"Public figure social posts",status:"disabled_pending_permissions",type:"third-party social data",scope:"No social-media ingest without authorized API, approved license, and provenance checks."},
