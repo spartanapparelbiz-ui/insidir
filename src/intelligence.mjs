@@ -15,6 +15,12 @@ function cached(key, lifetime, work) {
   return promise;
 }
 const isDate = value => typeof value==="string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+const canonicalDate = value => {
+  if (value instanceof Date) return Number.isNaN(value.getTime())?null:value.toISOString().slice(0,10);
+  if (isDate(value)) return value;
+  if (typeof value==="string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value))) return value.slice(0,10);
+  return null;
+};
 const accessionOk = value => typeof value === "string" && /^\d{10}-\d{2}-\d{6}$/.test(value);
 const docOk = value => typeof value === "string" && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,149}$/.test(value);
 const cikOk = value => typeof value === "string" && /^\d{10}$/.test(value);
@@ -98,13 +104,14 @@ export function buildEvidenceBrief({company,filings=[],facts=[],transactions=[]}
   for(const t of transactions.slice(0,20)){
     const action=t.category==="reported_purchase"?"a reported non-derivative purchase":
       t.category==="reported_sale"?"a reported non-derivative sale":"another Form 4 transaction";
-    if (!isDate(String(t.published_at||"").slice(0,10))) continue;
+    const filed=canonicalDate(t.published_at),tradeDate=canonicalDate(t.transaction_date);
+    if (!filed) continue;
     items.push({id:"ownership:"+t.id,kind:"insider_disclosure",
       title:"Insider disclosure published",
       explanation:(t.owner_name||"A reporting person")+" disclosed "+action+
-        (t.transaction_date?" dated "+String(t.transaction_date).slice(0,10):"")+
+        (tradeDate?" dated "+tradeDate:"")+
         ". Filing publication can occur after the transaction; verify amendments and transaction codes.",
-      reportedAt:String(t.published_at).slice(0,10),source:"SEC Form 4",sourceUrl:t.source_url});
+      reportedAt:filed,source:"SEC Form 4",sourceUrl:t.source_url});
   }
   items.sort((a,b)=>b.reportedAt.localeCompare(a.reportedAt)||a.id.localeCompare(b.id));
   return {
