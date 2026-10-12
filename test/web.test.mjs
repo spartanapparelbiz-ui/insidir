@@ -56,6 +56,19 @@ test("extensionless page paths resolve and unknown pages fall back to 404.html",
   });
 });
 
+test("new users land in research before choosing an optional portfolio", async () => {
+  await withServer(async base => {
+    const auth=await (await fetch(base+"/assets/js/auth.js")).text();
+    assert.match(auth, /const RESEARCH_DESK = "research.html"/);
+    assert.match(auth, /location.assign\(RESEARCH_DESK\)/);
+    const signup=await (await fetch(base+"/signup.html")).text();
+    assert.match(signup,/No brokerage connection or portfolio setup required/);
+    const desk=await (await fetch(base+"/research.html")).text();
+    assert.match(desk,/No portfolio or brokerage connection needed/);
+    assert.match(desk,/href="portfolio.html"/);
+  });
+});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
