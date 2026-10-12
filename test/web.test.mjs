@@ -69,6 +69,38 @@ test("new users land in research before choosing an optional portfolio", async (
   });
 });
 
+test("production dashboard uses readable evidence components without fake market data", async () => {
+  await withServer(async base => {
+    const res=await fetch(base+"/dashboard.html");
+    assert.equal(res.status,200);
+    const html=await res.text();
+    assert.match(html,/The facts behind/);
+    assert.match(html,/assets\/css\/brief.css/);
+    assert.match(html,/assets\/js\/brief.js/);
+    assert.match(html,/id="brief-transactions"/);
+    assert.match(html,/id="brief-filings"/);
+    assert.doesNotMatch(html,/Jan 8, 2024|Markets open|S&P 500|sample data/i);
+    const script=await fetch(base+"/assets/js/brief.js");
+    assert.equal(script.status,200);
+    const js=await script.text();
+    assert.match(js,/\/v1\/transactions\?limit=50/);
+    assert.match(js,/\/v1\/filings\?limit=10/);
+  });
+});
+test("sign-in only offers implemented methods, landing retains original visuals",async()=>{
+  await withServer(async base => {
+    for(const path of ["/signup.html","/signin.html"]){
+      const html=await (await fetch(base+path)).text();
+      assert.match(html,/data-auth-form/);
+      assert.doesNotMatch(html,/Continue with Google|data-auth-toast=/);
+    }
+    const html=await (await fetch(base+"/index.html")).text();
+    assert.match(html,/assets\/img\/hero.jpg/);
+    const effect=await (await fetch(base+"/assets/js/fx-top.js")).text();
+    assert.match(effect,/max-width: 0px/);
+  });
+});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
