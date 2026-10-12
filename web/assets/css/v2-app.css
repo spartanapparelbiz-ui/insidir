@@ -1,0 +1,77 @@
+/* INSIDIR V2 — editorial market-research application. Navigation persists across all product pages. */
+body.v2-app{--app-bg:#f7f7f5;--app-surface:#fff;--app-border:#e5e5e0;background:var(--app-bg);color:#151717;min-height:100vh}
+body.v2-app .app-header{position:fixed;inset:0 auto 0 0;width:222px;height:100dvh;z-index:120;background:#101416;border-right:1px solid #262c2e;color:#d5dcda;backdrop-filter:none;box-shadow:none}
+body.v2-app .app-header__inner{height:100%;width:100%;padding:29px 15px 20px;display:flex;flex-direction:column;gap:0;align-items:stretch;box-sizing:border-box}
+body.v2-app .app-header .logo{font-family:var(--serif);color:#f9f7f2;font-size:31px;margin:0 0 26px 10px;line-height:1.2;letter-spacing:-.045em}
+body.v2-app .app-nav{display:flex!important;position:relative;flex-direction:column;gap:4px;align-items:stretch;flex:0 0 auto;height:auto;width:100%;overflow:visible;margin:12px 0 0;font-size:13px;color:#a3aaa8}
+body.v2-app .app-nav a{padding:11px 13px;min-height:40px;display:flex;align-items:center;border-radius:6px;font-weight:450;line-height:1.25;white-space:normal}
+body.v2-app .app-nav a:hover{color:#fff;background:#202728}
+body.v2-app .app-nav a[aria-current=page]{color:#fff;background:#252d2f;font-weight:600}
+body.v2-app .app-nav__indicator{display:none}
+body.v2-app .app-search{margin:0;order:-1;flex:0 0 auto;min-width:0;width:100%;max-width:100%;position:relative}
+body.v2-app .app-search svg{color:#919d9a;left:12px;width:14px;height:14px}
+body.v2-app .app-search input{cursor:text;background:#1b2224!important;border:1px solid #30393b!important;color:#faf9f5!important;width:100%;height:39px;border-radius:6px;font-size:11px;padding:0 8px 0 33px;box-shadow:none!important}
+body.v2-app .app-search input::placeholder{color:#a7aeab!important;font-size:10.5px}
+body.v2-app .app-search:focus-within{flex:0 0 auto;width:100%}
+body.v2-app .app-header .icon-btn:not(.app-menu-btn){margin:auto 4px 0;align-self:flex-start;width:42px;height:42px;color:#c6cfca}
+body.v2-app .app-header .icon-btn:not(.app-menu-btn):hover{background:#242c2e}
+body.v2-app .user-menu{margin:9px 4px 0;padding:13px 4px 3px;border-top:1px solid #30383a;width:calc(100% - 8px)}
+body.v2-app .user-menu__btn{color:#ece9df;border:1px solid #3b4243;border-radius:50%;width:35px;height:35px;display:grid;place-items:center;background:#242b2d}
+body.v2-app .user-menu__panel{right:auto;left:calc(100% + 8px);top:auto;bottom:0;z-index:100;background:#fff;color:#1b1d1d;box-shadow:0 15px 45px rgba(0,0,0,.25)}
+body.v2-app .app-mobile-nav{display:none}
+body.v2-app .app-main{width:auto!important;max-width:none!important;margin:0 0 0 222px;padding:clamp(23px,3vw,44px) clamp(22px,3vw,52px) 80px;flex:1;min-width:0;box-sizing:border-box}
+body.v2-app .app-main--narrow{max-width:none}
+body.v2-app .app-footer{margin-left:222px;background:var(--app-bg);border-color:var(--app-border);color:#7e8581}
+body.v2-app .app-footer .container-wide{max-width:none;width:calc(100% - 72px)}
+body.v2-app .panel{border-color:var(--app-border);background:var(--app-surface);box-shadow:0 1px 3px rgba(19,22,20,.02);border-radius:9px}
+body.v2-app .page-head{margin-top:14px}
+body.v2-app .page-title{font-weight:530;letter-spacing:-.045em}
+body.v2-app .btn--dark{background:#171c1c;border-color:#171c1c;color:#fff}
+body.v2-app .btn--light{background:#fff;color:#1c2020;border-color:#deded8}
+body.v2-app .research-desk{padding-top:44px;max-width:none}
+body.v2-app .research-head{padding:10px 0 28px}
+body.v2-app .research-head h1{font-weight:520;font-size:clamp(43px,4.7vw,73px);letter-spacing:-.046em}
+body.v2-app .research-grid{grid-template-columns:minmax(0,1.65fr) minmax(300px,.72fr);gap:18px}
+body.v2-app .research-panel{border-radius:8px}
+body.v2-app .research-sidebar{align-self:start}
+body.v2-app .research-search{border-radius:7px;overflow:hidden}
+body.v2-app .research-search input{background:#fff}
+body.v2-app .research-metrics>div{background:#fff;border:1px solid var(--app-border);border-radius:8px}
+body.v2-app .portfolio-desk{padding-top:36px;max-width:none}
+body.v2-app .portfolio-hero h1{font-weight:520}
+body.v2-app .portfolio-connection,body.v2-app .portfolio-activity,body.v2-app .portfolio-next,body.v2-app .portfolio-account{border-radius:8px;background:#fff;border-color:var(--app-border)}
+body.v2-app .alerts-main,body.v2-app .filing,body.v2-app .co{padding-top:42px}
+body.v2-app .tabs{margin-top:10px}
+body.v2-app .data-table{font-size:13px}
+body.v2-app .data-table th{font-size:11px}
+body.v2-app a:focus-visible,body.v2-app button:focus-visible{outline:2px solid #ae9b76;outline-offset:3px}
+body.v2-app .user-menu__panel button{color:#1b1d1d}
+@media(min-width:1550px){body.v2-app .app-main{padding-left:clamp(40px,5vw,90px);padding-right:clamp(40px,5vw,90px)}}
+@media(max-width:1150px){body.v2-app .research-grid{grid-template-columns:minmax(0,1fr)}body.v2-app .research-sidebar{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}}
+@media(max-width:860px){
+body.v2-app .app-header{position:sticky;inset:0 0 auto;width:100%;height:66px;background:#101416}
+body.v2-app .app-header__inner{height:66px;width:100%;padding:0 16px;display:flex;flex-direction:row;align-items:center;gap:12px}
+body.v2-app .app-menu-btn{display:inline-flex!important;color:#fff;flex-shrink:0;margin:0}
+body.v2-app .app-header .logo{margin:0 auto 0 0;font-size:27px;flex-shrink:0}
+body.v2-app .app-nav{display:none!important}
+body.v2-app .app-search{order:0;flex:0 1 250px;width:clamp(100px,32vw,240px);margin:0}
+body.v2-app .app-search:focus-within{flex:0 1 250px}
+body.v2-app .app-header .icon-btn:not(.app-menu-btn){margin:0;width:35px;height:35px;align-self:center}
+body.v2-app .user-menu{margin:0;width:auto;padding:0;border:0}
+body.v2-app .user-menu__panel{right:0;left:auto;top:45px;bottom:auto}
+body.v2-app .app-mobile-nav{display:flex;inset:66px 0 auto;background:#14191b;border-color:#3b4445;color:#edf0ed;padding:18px 25px;flex-direction:column;max-height:calc(100dvh - 66px);overflow:auto}
+body.v2-app .app-mobile-nav a{color:#edf0ed;border-color:#323a3b}
+body.v2-app .app-mobile-nav a[aria-current=page]::after{background:#fff}
+body.v2-app .app-main{margin:0;padding:25px 20px 62px}
+body.v2-app .app-footer{margin-left:0}
+body.v2-app .research-grid{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+body.v2-app .app-header__inner{gap:7px;padding:0 11px}
+body.v2-app .app-header .logo{font-size:22px}
+body.v2-app .app-search{flex:0 1 140px;width:clamp(60px,32vw,140px)}
+body.v2-app .app-search:focus-within{flex:0 1 140px;width:clamp(60px,32vw,140px)}
+body.v2-app .app-search input::placeholder{font-size:0}
+body.v2-app .app-main{padding:20px 14px 55px}
+body.v2-app .app-footer .container-wide{width:calc(100% - 32px)}
+}
