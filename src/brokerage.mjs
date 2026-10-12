@@ -215,8 +215,8 @@ export async function readPortfolio(userId) {
     } catch(e){error=e.status===401?"Connection needs attention":"Positions temporarily unavailable";}
     positions.forEach(p=>{if(p.researchTicker)researchTickers.add(p.researchTicker);});
     accounts.push({id:a.id,name:String(a.display_name||"Brokerage account").slice(0,100),
-      maskedNumber:String(a.masked_account_number||"").slice(-12),kind:"investment",
-      netValue:Number.isFinite(Number(a.net_value?.amount))?Number(a.net_value.amount):null,
+      maskedNumber:"••••"+String(a.masked_account_number||"").replace(/\D/g,"").slice(-4),kind:"investment",
+      netValue:a.net_value?.amount!=null&&Number.isFinite(Number(a.net_value.amount))?Number(a.net_value.amount):null,
       currency:String(a.net_value?.currency||"").slice(0,5),
       positionsAsOf,accountSyncedAt:a.sync_status?.positions||null,
       positions,error});
@@ -242,10 +242,14 @@ export async function disconnectBrokerage(userId) {
   // Revoke refresh token before local deletion. If provider fails, allow retry so a live grant isn't silently abandoned.
   const refresh=decryptBrokerageToken(exists.rows[0].refresh_encrypted,userId,"refresh");
   const d=await metadata();
-  await jsonRequest(d.revocation,{method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded",
-      Authorization:"Basic "+Buffer.from(config.snaptradeOAuthClientId+":"+config.snaptradeOAuthClientSecret).toString("base64")},
-    body:new URLSearchParams({token:refresh,token_type_hint:"refresh_token"})});
+  let response;
+  try {
+    response=await fetch(d.revocation,{method:"POST",redirect:"error",signal:AbortSignal.timeout(12000),
+      headers:{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded",
+        Authorization:"Basic "+Buffer.from(config.snaptradeOAuthClientId+":"+config.snaptradeOAuthClientSecret).toString("base64")},
+      body:new URLSearchParams({token:refresh,token_type_hint:"refresh_token"})});
+  }catch{throw fault(503,"Could not reach the brokerage to revoke access. Try again.");}
+  if(!response.ok)throw fault(503,"Brokerage revocation was not confirmed. Try again.");
   await query("DELETE FROM brokerage_oauth_tokens WHERE user_id=$1",[userId]);
   return true;
 }
