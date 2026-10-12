@@ -77,10 +77,10 @@
   tickerTitles();
 
   /* ---------- pinned desktop scenes ---------- */
-  const pinQuery = matchMedia(
-    "(min-width: 901px) and (min-height: 640px) and (hover: hover) and (pointer: fine)," +
-    " (min-width: 1200px) and (min-height: 640px)"
-  );
+  // Prefer the readable in-flow hero while the full-screen pinned transition is unstable.
+  // All image, text, and section entrance animations continue to run normally.
+  // Re-enable the pin only after visual regression tests cover every scroll position.
+  const pinQuery = matchMedia("(max-width: 0px)");
   if (!hero || !strip || !informed || !stage) return;
 
   let built = false;
