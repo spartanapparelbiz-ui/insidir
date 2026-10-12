@@ -9,7 +9,6 @@
     ["dashboard", "Dashboard", "dashboard.html"],
     ["research", "Research", "research.html"],
     ["portfolio", "Portfolio", "portfolio.html"],
-    ["companies", "Companies", "company.html?ticker=AAPL"],
     ["insiders", "Insider Trades", "dashboard.html#insider-activity"],
     ["alerts", "Alerts", "alerts.html"]
   ];
@@ -141,14 +140,14 @@
         ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>
       </nav>
-      <form class="app-search" role="search" action="company.html">
+      <form class="app-search" role="search" action="research.html">
         ${icons.search}
-        <label class="sr-only" for="app-search-input">Search companies, insiders, or filings</label>
-        <input id="app-search-input" name="ticker" type="search" autocomplete="off" placeholder="Search companies, insiders, or filings..." >
+        <label class="sr-only" for="app-search-input">Research by stock ticker</label>
+        <input id="app-search-input" name="ticker" type="search" autocomplete="off" placeholder="Research a ticker (e.g. AAPL)" >
       </form>
       <a class="icon-btn" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
       <div class="user-menu">
-        <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu">${monogram("Account", "monogram--lg")}</button>
+        <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 19.5c.5-4 3-6 6.5-6s6 2 6.5 6"/></svg></button>
         <div class="user-menu__panel" id="user-menu-panel">
           <div class="who"><strong>Account</strong><span data-account-email>Sign in to see your details</span></div>
           <a href="billing.html">Plan &amp; billing</a>
@@ -199,7 +198,14 @@
     form.addEventListener("submit", e => {
       const q = input.value.trim().toUpperCase();
       if (!q) { e.preventDefault(); return; }
-      if (!/^[A-Z.]{1,6}$/.test(q)) { e.preventDefault(); location.href = "filing.html?q=" + encodeURIComponent(input.value.trim()); }
+      if (!/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(q)) {
+        e.preventDefault();
+        input.setCustomValidity("Enter a valid stock ticker");
+        input.reportValidity();
+        return;
+      }
+      input.setCustomValidity("");
+      input.value = q;
     });
     document.addEventListener("keydown", e => {
       if (e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); input.focus(); }
