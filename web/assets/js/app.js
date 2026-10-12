@@ -8,10 +8,24 @@
   const NAV = [
     ["dashboard", "Dashboard", "dashboard.html"],
     ["research", "Research", "research.html"],
+    ["companies", "Companies", "explore.html"],
     ["portfolio", "Portfolio", "portfolio.html"],
+    ["watchlist", "Watchlist", "watchlist.html"],
+    ["filings", "SEC Filings", "filings.html"],
     ["insiders", "Insider Trades", "dashboard.html#insider-activity"],
     ["alerts", "Alerts", "alerts.html"]
   ];
+  const NAV_PATHS = {
+    dashboard:'<path d="M3 10 12 3l9 7v10h-6v-6H9v6H3z"/>',
+    research:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+    companies:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h8M8 11h8M8 15h8"/>',
+    portfolio:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18m-11 4 3-3 3 3"/>',
+    watchlist:'<path d="m12 3 2.8 5.7L21 9.6l-4.5 4.4 1.1 6.2L12 17.2l-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/>',
+    filings:'<path d="M6 2h8l5 5v15H6zM14 2v6h5M9 12h7M9 16h7"/>',
+    insiders:'<path d="M4 19h16M6 16l4-5 3 3 5-7M17 7h2v3"/>',
+    alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 8-3 9-3 9h18s-3-1-3-9M10 21h4"/>'
+  };
+  const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+NAV_PATHS[key]+'</svg></span>';
 
   const icons = {
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
@@ -137,7 +151,7 @@
       </button>
       <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir.</a>
       <nav class="app-nav" aria-label="Product">
-        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
+        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>
       </nav>
       <form class="app-search" role="search" action="research.html">
@@ -159,7 +173,7 @@
       </div>
     </div>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Product">
-      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
+      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
     </nav>`;
 
     api("/v1/me").then(data => {
