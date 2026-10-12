@@ -9,7 +9,7 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
   const EMAIL_RE = /^[^@\s]{1,100}@[^@\s]{1,150}\.[^@\s]{2,20}$/;
-  const DASHBOARD = "dashboard.html";
+  const RESEARCH_DESK = "research.html";
 
   const toast = msg => {
     if (window.Insidir && typeof window.Insidir.toast === "function") window.Insidir.toast(msg);
@@ -141,8 +141,8 @@
       });
     });
 
-    function goToDashboard(delay) {
-      setTimeout(() => { location.assign(DASHBOARD); }, delay);
+    function goToResearch(delay) {
+      setTimeout(() => { location.assign(RESEARCH_DESK); }, delay);
     }
 
     form.addEventListener("submit", async e => {
@@ -171,7 +171,7 @@
       }
       if (res.ok) {
         setPending(true, mode === "register" ? "Account created" : "Signed in");
-        goToDashboard(reduce ? 0 : 350);
+        goToResearch(reduce ? 0 : 350);
         return;
       }
 
