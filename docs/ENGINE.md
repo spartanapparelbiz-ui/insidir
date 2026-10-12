@@ -21,6 +21,13 @@ This document covers the backend engine. The website in `web/` is described in [
 
 Run npm run ingest for a manual ingestion. This fetches up to 35 current filings by default; it is not a complete history backfill. Already parsed accessions are skipped.
 
+## Source-backed research and review journal
+The `/research.html?ticker=AAPL` page organizes imported SEC Form 4 activity and its original filing references. Each transaction distinguishes the underlying transaction date from the filing's publication date, including transaction codes, derivative classification and amendments. Empty datasets are shown as unavailable rather than replaced with sample signals.
+
+Signed-in users may save a private research status (`researching`, `watching`, `passed`) and up to 1500 characters of notes. Run `npm run migrate` on deployment to create `research_decisions` from `sql/003_research_decisions.sql`. The data is tied to the authenticated user and is deleted with the user account. Requests are same-origin only for writes.
+
+There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
+
 ## API (JSON)
 - GET /v1 – service information
 - GET /healthz – database and SEC configuration check
@@ -37,6 +44,7 @@ Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.
 - POST /v1/auth/register, POST /v1/auth/login, POST /v1/auth/logout
 - GET /v1/me, DELETE /v1/me
 - GET /v1/me/watchlist, POST /v1/me/watchlist with JSON {"ticker":"AAPL"}, DELETE /v1/me/watchlist/AAPL
+- GET /v1/me/research-decisions?ticker=AAPL; POST /v1/me/research-decisions with JSON {"ticker":"AAPL","reviewStatus":"watching","notes":"Read the original filing"}; DELETE /v1/me/research-decisions?ticker=AAPL
 - GET /v1/me/alerts – computed on demand; email/push delivery is **not** implemented
 
 Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use HttpOnly/Secure/SameSite=Lax. Before making public registrations available add distributed rate-limiting, email verification, final privacy/retention policies and a working account-deletion UI.

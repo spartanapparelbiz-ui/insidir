@@ -4,7 +4,8 @@
 
 ## Website (`web/`)
 - Marketing landing page with scroll-driven animation, a pricing page, sign-in and sign-up, and Terms and Privacy pages
-- Product screens: dashboard, company profile, alerts, and a Form 10-K filing viewer
+- Product screens: dashboard, company profile, alerts, research desk, and a Form 10-K filing viewer
+- Research desk (`research.html?ticker=AAPL`) connects imported SEC transactions and original filing links to a private, user-authored research journal. Saving a research review never submits an order.
 - Static HTML, CSS and JS with no build step and no third-party requests. Fonts and imagery are self-hosted
 - `npm run web` serves the site without a database at http://localhost:5173. `npm start` serves it from the engine alongside the API
 
@@ -14,7 +15,7 @@
 - Real SEC Form 4 XML transaction parsing, with verified source references
 - PostgreSQL ingestion, deduplication, source dates and audit history
 - APIs for filings, purchases and sales, company and insider search, and descriptive purchase clusters
-- Account sessions and gated watchlist support
+- Account sessions, gated watchlists, and a private research-review journal (`GET/POST/DELETE /v1/me/research-decisions`). Reviews can be researching, watching, or passed; they are **never** orders.
 - Politician, government, social platform, and crypto sources stay **disabled until legal and data permissions are verified**
 - Brokerage connections, personalized trading suggestions, and automated order execution are **not implemented** and require brokerage authorization plus appropriate regulatory review before launch
 
