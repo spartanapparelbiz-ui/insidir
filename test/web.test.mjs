@@ -62,7 +62,7 @@ test("new users land in research before choosing an optional portfolio", async (
     assert.match(auth, /const RESEARCH_DESK = "research.html"/);
     assert.match(auth, /location.assign\(RESEARCH_DESK\)/);
     const signup=await (await fetch(base+"/signup.html")).text();
-    assert.match(signup,/No brokerage connection or portfolio setup required/);
+    assert.match(signup,/No credit card or brokerage connection required/);
     const desk=await (await fetch(base+"/research.html")).text();
     assert.match(desk,/No portfolio or brokerage connection needed/);
     assert.match(desk,/href="portfolio.html"/);
@@ -75,19 +75,19 @@ test("production dashboard uses readable evidence components without fake market
     assert.equal(res.status,200);
     const html=await res.text();
     assert.match(html,/data-greeting/);
-    assert.match(html,/assets\/css\/brief.css/);
-    assert.match(html,/assets\/js\/brief.js/);
-    assert.match(html,/id="brief-transactions"/);
-    assert.match(html,/id="brief-filings"/);
+    assert.match(html,/assets\/css\/v3-app.css/);
+    assert.match(html,/assets\/js\/v3-dashboard.js/);
+    assert.match(html,/id="v3-trades"/);
+    assert.match(html,/id="v3-filings"/);
     assert.doesNotMatch(html,/Jan 8, 2024|Markets open|S&P 500|sample data/i);
-    const script=await fetch(base+"/assets/js/brief.js");
+    const script=await fetch(base+"/assets/js/v3-dashboard.js");
     assert.equal(script.status,200);
     const js=await script.text();
-    assert.match(js,/\/v1\/transactions\?limit=50/);
-    assert.match(js,/\/v1\/filings\?limit=10/);
+    assert.match(js,/\/v1\/transactions\?limit=60/);
+    assert.match(js,/\/v1\/filings\?limit=15/);
   });
 });
-test("sign-in only offers implemented methods, landing retains original visuals",async()=>{
+test("sign-in only offers implemented methods, public landing is research-first",async()=>{
   await withServer(async base => {
     for(const path of ["/signup.html","/signin.html"]){
       const html=await (await fetch(base+path)).text();
@@ -95,17 +95,17 @@ test("sign-in only offers implemented methods, landing retains original visuals"
       assert.doesNotMatch(html,/Continue with Google|data-auth-toast=/);
     }
     const html=await (await fetch(base+"/index.html")).text();
-    assert.match(html,/assets\/img\/hero.jpg/);
-    const effect=await (await fetch(base+"/assets/js/v2-landing.js")).text();
-    assert.match(effect,/lv-menu-button/);
+    assert.match(html,/v3-site.css/);
+    const effect=await (await fetch(base+"/assets/js/v3-site.js")).text();
+    assert.match(effect,/is3-toggle/);
   });
 });
 
-test("V2 site provides working navigation and public research entry points",async()=>{
+test("V3 site provides working navigation and public research entry points",async()=>{
   await withServer(async base=>{
     const pages=["/","/dashboard.html","/signin.html","/signup.html","/research.html",
       "/company.html","/explore.html","/filings.html","/filing.html","/watchlist.html",
-      "/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html"];
+      "/portfolio.html","/alerts.html","/pricing.html","/billing.html","/account.html","/company-info.html","/terms.html","/privacy.html"];
     for(const url of pages){
       const r=await fetch(base+url);
       assert.equal(r.status,200,url);
@@ -114,12 +114,12 @@ test("V2 site provides working navigation and public research entry points",asyn
     const nav=await(await fetch(base+"/assets/js/app.js")).text();
     for(const p of ["dashboard.html","research.html","explore.html","filings.html","watchlist.html","portfolio.html"])assert.ok(nav.includes(p),p);
     const homepage=await(await fetch(base+"/")).text();
-    assert.match(homepage,/v2-landing.css/);
-    assert.match(homepage,/assets\/img\/hero.jpg/);
+    assert.match(homepage,/v3-site.css/);
+    assert.match(homepage,/id="is3-live-filings"/);
     assert.doesNotMatch(homepage,/Markets open|invented returns|automatic trades now/i);
     const dashboard=await(await fetch(base+"/dashboard.html")).text();
-    assert.match(dashboard,/v2-dashboard.css/);
-    assert.match(dashboard,/id="brief-transactions"/);
+    assert.match(dashboard,/v3-dashboard.js/);
+    assert.match(dashboard,/id="v3-trades"/);
     const company=await(await fetch(base+"/company.html")).text();
     assert.match(company,/v2-company.js/);
     const collections=await(await fetch(base+"/assets/js/v2-collections.js")).text();
@@ -167,6 +167,35 @@ test("manual portfolio entry is visible without a brokerage connection", async (
     assert.equal(script.status,200);
   });
 });
+test("V3 marketing legal and account assets are available without fake performance",async()=>{
+  await withServer(async base=>{
+    const home=await(await fetch(base+"/")).text();
+    assert.match(home,/Research the market/);
+    assert.match(home,/Aethric LLC/);
+    assert.match(home,/id="is3-live-filings"/);
+    assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
+    const pricing=await(await fetch(base+"/pricing.html")).text();
+    assert.match(pricing,/\$39/);
+    assert.match(pricing,/PLANNED/);
+    const terms=await(await fetch(base+"/terms.html")).text();
+    const privacy=await(await fetch(base+"/privacy.html")).text();
+    assert.match(terms,/Aethric LLC/);
+    assert.match(privacy,/Aethric LLC/);
+    assert.match(terms,/hello@aethric.llc/);
+    const account=await(await fetch(base+"/account.html")).text();
+    assert.match(account,/id="account-delete"/);
+    const app=await(await fetch(base+"/assets/js/app.js")).text();
+    assert.match(app,/account.html/);
+    const scripts=["v3-site.js","v3-dashboard.js","v3-account.js"];
+    for(const item of scripts){
+      assert.equal((await fetch(base+"/assets/js/"+item)).status,200,item);
+    }
+    for(const asset of ["v3-site.css","v3-app.css","v3-static.css","v3-account.css"]){
+      assert.equal((await fetch(base+"/assets/css/"+asset)).status,200,asset);
+    }
+  });
+});
+
 test("path traversal outside the web root is refused", async () => {
   await withServer(async base => {
     for (const p of ["/../package.json", "/%2e%2e/package.json", "/..%2fpackage.json", "/assets/../../src/config.mjs", "/%00index.html"]) {
