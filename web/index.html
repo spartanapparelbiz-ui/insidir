@@ -1,154 +1,88 @@
 <!doctype html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0f1112">
-<meta name="description" content="Insidir is a research workspace for people who invest with context. Explore SEC filings, insider transactions, reported financial facts, and your private watchlist.">
-<title>Insidir — Research the market with greater context.</title>
-<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="theme-color" content="#f8f8f6">
+<meta name="description" content="Insidir brings company filings, insider transactions and reported financial facts into one clear research experience. Find what matters, then verify it at the source.">
+<title>Insidir — Know more about the companies you follow.</title>
+<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
 <link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v3-site.css">
-<link rel="stylesheet" href="assets/css/v4-presentation.css">
-<script defer src="assets/js/entity-media.js?v=real-assets-2"></script>
-<script defer src="assets/js/v3-site.js?v=source-presentation-v5"></script>
-<script defer src="assets/js/v4-explorer.js"></script>
-<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-2">
-<link rel="stylesheet" href="assets/css/v5-media.css?v=1">
-<link rel="stylesheet" href="assets/css/v5-polish.css?v=1">
-</head>
-<body class="is3">
+<link rel="stylesheet" href="assets/css/v6-marketing.css?v=1">
+<script defer src="assets/js/v6-site.js?v=1"></script>
+</head><body class="v6-site">
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="is3-nav">
-  <div class="is3-shell is3-nav__inner">
-    <a class="is3-logo" href="/" aria-label="Insidir homepage">insidir.</a>
-    <nav class="is3-links" aria-label="Main navigation"><a href="#product">Product</a><a href="#workflow">How it works</a><a href="#data">Sources</a><a href="#plans">Pricing</a><a href="#faq">FAQ</a></nav>
-    <div class="is3-nav__end"><a class="is3-nav__signin" href="signin.html">Sign in</a><a class="is3-button is3-button--light is3-button--small" href="signup.html">Get started <span aria-hidden="true">↗</span></a></div>
-    <button class="is3-mobile-button" id="is3-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="is3-mobile"><span></span><span></span></button>
-  </div>
-  <nav class="is3-mobile" id="is3-mobile" aria-label="Mobile menu" hidden><a href="#product">Product</a><a href="#workflow">How it works</a><a href="#data">Sources</a><a href="#plans">Pricing</a><a href="#faq">FAQ</a><a href="signin.html">Sign in</a><a href="signup.html">Get started →</a></nav>
-</header>
+<header class="v6-nav"><div class="v6-wrap v6-nav__inner">
+  <a class="v6-logo" href="index.html" aria-label="Insidir home">insidir.</a>
+  <nav class="v6-nav__links" aria-label="Site navigation"><a href="#product">Product</a><a href="#why">Why Insidir</a><a href="#data">What we cover</a><a href="#plans">Pricing</a></nav>
+  <div class="v6-nav__actions"><a class="v6-signin" href="signin.html">Sign in</a><a class="v6-btn v6-btn--ink v6-btn--short" href="signup.html">Get started <span aria-hidden="true">↗</span></a><button class="v6-menu-btn" id="v6-menu-button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu" type="button"><span></span><span></span></button></div>
+</div><nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden><a href="#product">Product</a><a href="#why">Why Insidir</a><a href="#data">What we cover</a><a href="#plans">Pricing</a><a href="signin.html">Sign in</a><a href="signup.html">Get started ↗</a></nav></header>
 <main id="main">
-<section class="is3-hero" aria-labelledby="hero-title">
-  <div class="is3-hero__visual" aria-hidden="true"></div>
-  <div class="is3-shell is3-hero__center">
-    <p class="is3-eyebrow">A BETTER WAY TO RESEARCH WHAT MOVES MARKETS</p>
-    <h1 id="hero-title">Research the market<br><em>with greater context.</em></h1>
-    <p class="is3-hero__description">Filings. Insider activity. Company fundamentals. The public information that matters, structured in one place so you can investigate what others overlook.</p>
-    <div class="is3-actions"><a class="is3-button is3-button--light" href="signup.html">Start researching free <span aria-hidden="true">↗</span></a><a class="is3-button is3-button--outline" href="#product">Explore the platform <span aria-hidden="true">→</span></a></div>
-    <div class="v5-hero-index" aria-hidden="true"><span>01 / DISCOVER</span><i></i><span>02 / VERIFY</span><i></i><span>03 / CONTEXT</span></div><p class="is3-quiet"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> No card required to explore · No brokerage connection required</p><div class="is4-hero-trail" aria-label="Insidir research workflow"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Find the company</span><i aria-hidden="true"></i><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-search"></use></svg> Read original filings</span><i aria-hidden="true"></i><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg> Save your research</span></div>
-  </div>
-  <div class="is3-shell v5-hero-live-wrap"><div class="v5-hero-live" aria-label="Recent SEC disclosure preview"><span class="v5-hero-live__status"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg> FROM THE SEC RECORD</span><div class="v5-hero-live__record" id="v5-hero-latest" aria-live="polite">Checking recently imported filings…</div><a href="filings.html" aria-label="Open SEC filing library">Explore records ↗</a></div></div>
-  <div class="is3-hero__rail is3-shell"><span>SEC EDGAR / SOURCE-LINKED RESEARCH</span><span>INFORMATION, NOT INVESTMENT ADVICE</span><a href="#product" aria-label="Scroll to explore">SCROLL TO EXPLORE ↓</a></div>
-</section>
+  <section class="v6-hero" aria-labelledby="v6-hero-heading"><div class="v6-hero__texture" aria-hidden="true"></div>
+    <div class="v6-wrap v6-hero__inner">
+      <div class="v6-announcement"><span class="v6-announcement__mark" aria-hidden="true"></span> Intelligence for independent investors <span aria-hidden="true">↗</span></div>
+      <h1 id="v6-hero-heading">See what the<br><em>market sees.</em><br>And what it misses.</h1>
+      <p class="v6-hero__lead">Insider activity, company filings and financial context—organized for people who want to understand a company, not just watch its price.</p>
+      <div class="v6-hero__actions"><a class="v6-btn v6-btn--ink" href="signup.html">Start researching free <span aria-hidden="true">↗</span></a><a class="v6-btn v6-btn--outline" href="#product">See how Insidir works <span aria-hidden="true">↓</span></a></div>
+      <p class="v6-hero__note">Start free. No brokerage connection required.</p>
+      <div class="v6-hero__graphic" aria-hidden="true"><span class="v6-graphic__left">DISCLOSURE</span><span class="v6-graphic__line"></span><span class="v6-graphic__core">i.</span><span class="v6-graphic__line"></span><span class="v6-graphic__right">CONTEXT</span></div>
+    </div>
+  </section>
+  <section class="v6-intro-strip" aria-label="What Insidir brings together"><div class="v6-wrap v6-intro-strip__inner"><span>INSIDER ACTIVITY</span><i></i><span>COMPANY FILINGS</span><i></i><span>FINANCIAL FACTS</span><i></i><span>PERSONAL RESEARCH</span></div></section>
 
-<section class="is3-proof" aria-label="Research areas"><div class="is3-shell is3-proof__grid">
-  <a href="filings.html"><span class="is3-proof__number">01</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg><strong>Corporate filings</strong><span>10-K · 10-Q · 8-K and Form 4</span><span aria-hidden="true">↗</span></a>
-  <a href="dashboard.html#insider-activity"><span class="is3-proof__number">02</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg><strong>Insider activity</strong><span>Reported ownership changes</span><span aria-hidden="true">↗</span></a>
-  <a href="company.html?ticker=AAPL"><span class="is3-proof__number">03</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg><strong>Financial context</strong><span>Reported figures and periods</span><span aria-hidden="true">↗</span></a>
-  <a href="watchlist.html"><span class="is3-proof__number">04</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg><strong>Your own research</strong><span>Watchlists and private notes</span><span aria-hidden="true">↗</span></a>
-</div></section>
-
-<section class="is3-section is3-shell is3-product" id="product">
-  <div class="is3-section-head"><p class="is3-eyebrow">THE PRODUCT / INSIDIR WORKSPACE</p><div class="is3-section-head__split"><h2>From raw disclosure<br>to a clearer picture.</h2><p>Searching the market shouldn't mean bouncing between documents and disconnected tools. Start with a company, follow the evidence, and keep your own research in one workspace.</p></div></div>
-  <div class="is3-window" aria-label="Preview of Insidir's actual SEC research workspace">
-    <div class="is3-window__top"><span class="is3-window__dots"><i></i><i></i><i></i></span><span>INSIDIR / RESEARCH WORKSPACE</span><a href="dashboard.html">OPEN LIVE WORKSPACE ↗</a></div>
-    <div class="is3-window__body">
-      <aside class="is3-window__nav"><a class="is3-logo" href="dashboard.html">insidir.</a><span class="is3-window__active"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#layers"></use></svg> Dashboard</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Research</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#building"></use></svg> Companies</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> SEC filings</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg> Watchlist</span><div class="is3-window__nav-end">RESEARCH FIRST<br>NOT TRADING ADVICE</div></aside>
-      <div class="is3-window__content">
-        <div class="is3-window__headline"><div><p class="is3-eyebrow">WORKSPACE / PUBLIC RECORDS</p><h3>Start with the evidence.</h3><p>Look up a company. Follow its filings. Keep track of what you find.</p></div><a href="research.html?ticker=AAPL" class="is3-window__open">RESEARCH AAPL ↗</a></div>
-        <a href="research.html?ticker=AAPL" class="is3-window__search"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> <span>Investigate a company by ticker</span><strong>AAPL <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-up-right"></use></svg></strong></a>
-        <div class="is3-window__columns">
-          <div class="is3-window__pane"><div class="is3-window__label">LATEST IMPORTED FILINGS <small>LIVE DATA</small></div><div id="is3-live-filings" class="is3-window__records"><p class="is3-window__loading">Connecting to the latest imported SEC records…</p></div></div>
-          <div class="is3-window__pane"><div class="is3-window__label">RESEARCH PATH <small>YOUR WORKFLOW</small></div><div class="is3-window__step"><b>01</b><div><strong>Find the filing</strong><small>Search for what the company reported</small></div></div><div class="is3-window__step"><b>02</b><div><strong>Check the context</strong><small>Identify forms, periods, and ownership codes</small></div></div><div class="is3-window__step"><b>03</b><div><strong>Keep your notes</strong><small>Save conclusions in your private journal</small></div></div><a href="research.html" class="is3-inline-link">OPEN THE RESEARCH DESK →</a></div>
-        </div>
+  <section class="v6-section v6-product" id="product"><div class="v6-wrap">
+    <div class="v6-kicker">A MORE CONNECTED WAY TO RESEARCH</div>
+    <div class="v6-section__heading"><h2>Everything tells<br><em>part of the story.</em></h2><p>Insider transactions mean something different when you see who filed, what was reported, and when it actually happened. Insidir keeps the pieces together, with the underlying documents one click away.</p></div>
+    <div class="v6-product__composition">
+      <a href="research.html" class="v6-story v6-story--ink">
+        <div class="v6-story__top"><span>INSIDIR RESEARCH</span><span aria-hidden="true">↗</span></div>
+        <div class="v6-story__visual" aria-hidden="true"><div class="v6-orbit"><div class="v6-orbit__ring"></div><div class="v6-orbit__ring v6-orbit__ring--two"></div><div class="v6-orbit__center">i.</div><span class="v6-orbit__label v6-orbit__label--a">Filings</span><span class="v6-orbit__label v6-orbit__label--b">Insiders</span><span class="v6-orbit__label v6-orbit__label--c">Facts</span></div></div>
+        <div class="v6-story__bottom"><h3>See the whole picture.</h3><p>Move from a single disclosure to company research without losing the source.</p><span>Explore the Research Desk <span aria-hidden="true">→</span></span></div>
+      </a>
+      <div class="v6-product__secondary">
+        <a href="filings.html" class="v6-story v6-story--soft"><div class="v6-story__top"><span>CORPORATE DISCLOSURES</span><span aria-hidden="true">↗</span></div><div class="v6-story__type" aria-hidden="true"><span>10-K</span><span>8-K</span><span>Form 4</span></div><h3>Go straight to the filing.</h3><p>Original documents, publication dates and filing classifications—not an anonymous summary.</p></a>
+        <a href="watchlist.html" class="v6-story v6-story--warm"><div class="v6-story__top"><span>YOUR OWN RESEARCH</span><span aria-hidden="true">↗</span></div><div class="v6-story__book" aria-hidden="true"><div></div><div></div><div></div></div><h3>Keep your thinking together.</h3><p>Watchlists and private notes, connected to the tickers you're investigating.</p></a>
       </div>
     </div>
-  </div>
-  <p class="is3-product__caption">This is a connected product preview. Filing rows load from Insidir's imported SEC dataset; unavailable data is not replaced with examples.</p>
-</section>
+  </div></section>
 
+  <section class="v6-section v6-live" id="data" aria-labelledby="v6-live-title"><div class="v6-wrap">
+    <div class="v6-section__heading v6-section__heading--center"><div class="v6-kicker">THE INFORMATION IS REAL</div><h2 id="v6-live-title">Look closer.<br><em>Right now.</em></h2><p>Explore the most recently imported ownership disclosures. Each result links back to the company research and original records. No sample trades, made-up market figures or simulated portfolios.</p></div>
+    <div class="v6-live__head"><span><span class="v6-live__pulse" aria-hidden="true"></span> Recent filings from the imported SEC feed</span><a href="filings.html">Open the filing library ↗</a></div>
+    <div class="v6-live__list" id="v6-live-records" aria-live="polite"><p class="v6-live__empty">Retrieving the latest imported disclosures…</p></div>
+    <div class="v6-live__foot"><span>Imported data may be delayed or partial. Original SEC sources are provided where available.</span><a href="research.html">Open complete research ↗</a></div>
+  </div></section>
 
-<section class="is4-explorer is3-section" id="live-research" aria-labelledby="is4-explorer-title">
- <div class="is3-shell">
-  <div class="is3-section-head">
-   <p class="is3-eyebrow">OPEN THE WORKSPACE / COMPANY INTELLIGENCE</p>
-   <div class="is3-section-head__split"><h2 id="is4-explorer-title">Look past the ticker.</h2><p>This isn't a screenshot. Select a company to inspect its latest available corporate filings and reported fundamentals—directly from the SEC-backed Insidir research service.</p></div>
-  </div>
-  <div class="is4-explorer__shell">
-   <div class="is4-explorer__toolbar">
-    <div><p>RESEARCH TARGET</p><div class="is4-explorer__tickers" role="group" aria-label="Choose a stock ticker">
-     <button type="button" data-scan-ticker="AAPL" aria-pressed="true">AAPL</button>
-     <button type="button" data-scan-ticker="MSFT" aria-pressed="false">MSFT</button>
-     <button type="button" data-scan-ticker="NVDA" aria-pressed="false">NVDA</button>
-     <button type="button" data-scan-ticker="TSLA" aria-pressed="false">TSLA</button>
-    </div></div>
-    <a id="is4-open-research" href="research.html?ticker=AAPL">FULL COMPANY RESEARCH <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-up-right"></use></svg></a>
-   </div>
-   <div class="is4-explorer__content">
-    <div class="is4-explorer__identity">
-     <div class="is4-explorer__symbol" id="is4-explorer-symbol"><span class="ins-media ins-media--company ins-media--lg"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" loading="lazy" alt="Apple logo"></span></div>
-     <div><span class="is4-explorer__label">PUBLIC COMPANY / SEC EDGAR</span><h3 id="is4-company-name">Select a company</h3><p id="is4-company-ticker">AAPL · Official SEC submissions and reported financial facts</p></div>
-     <span class="is4-explorer__status" id="is4-explorer-status" role="status" aria-live="polite"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Ready to investigate</span>
+  <section class="v6-statement" id="why"><div class="v6-wrap v6-statement__inner"><div class="v6-kicker">BETTER QUESTIONS. BETTER CONTEXT.</div><h2>More signal.<br><em>Less speculation.</em></h2><p>The most useful detail is often buried inside a filing, not a headline. Insidir makes it easier to find, compare and investigate—while leaving the investment decision with you.</p><a class="v6-btn v6-btn--light" href="signup.html">Build your research workspace ↗</a><div class="v6-statement__decoration" aria-hidden="true">insidir.</div></div></section>
+
+  <section class="v6-section v6-process"><div class="v6-wrap"><div class="v6-kicker">MADE FOR ACTUAL RESEARCH</div><div class="v6-section__heading"><h2>From curiosity<br><em>to conviction.</em></h2><p>Not another feed to scroll. A straightforward path from the company you care about to the source material that can inform your own thinking.</p></div>
+    <div class="v6-process__rows">
+      <a href="explore.html" class="v6-process__row"><span class="v6-process__icon">⌕</span><h3>Find your company.</h3><p>Start with a ticker, then open connected research on its disclosures and business.</p><span class="v6-process__arrow">↗</span></a>
+      <a href="research.html" class="v6-process__row"><span class="v6-process__icon">≡</span><h3>Understand the evidence.</h3><p>Read insider filings, company reports, reporting dates and available financial facts.</p><span class="v6-process__arrow">↗</span></a>
+      <a href="watchlist.html" class="v6-process__row"><span class="v6-process__icon">◇</span><h3>Make it your research.</h3><p>Save tickers and your own notes so your investigation has a history.</p><span class="v6-process__arrow">↗</span></a>
     </div>
-    <div class="is4-explorer__grid">
-     <div class="is4-explorer__panel">
-      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> <span>OFFICIAL COMPANY FILINGS</span><span>FORM / DATE</span></div>
-      <div id="is4-explorer-filings" class="is4-explorer__records"><p class="is4-explorer__empty">Choose a ticker above to load official company disclosures. Original filing links will appear here.</p></div>
-     </div>
-     <div class="is4-explorer__panel">
-      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg> <span>REPORTED FINANCIAL FACTS</span><span>SEC XBRL</span></div>
-      <div id="is4-explorer-facts" class="is4-explorer__records"><p class="is4-explorer__empty">Financial measures will appear with their reported accounting periods, when available.</p></div>
-     </div>
+  </div></section>
+
+  <section class="v6-editorial"><div class="v6-wrap v6-editorial__grid"><div class="v6-editorial__type" aria-hidden="true"><span>INS</span><span>IDE</span><span>THE</span><span>STORY.</span></div><div class="v6-editorial__copy"><div class="v6-kicker">DETAILS WORTH NOTICING</div><h2>The date matters.<br>So does the source.</h2><p>An insider's reported transaction date can differ from the filing date. An amendment may revise an earlier filing. And a grant isn't necessarily a market purchase.</p><p>Insidir helps you inspect those differences rather than turning every disclosure into a simplistic buy or sell signal.</p><a href="filings.html">Explore SEC disclosures <span aria-hidden="true">↗</span></a></div></div></section>
+
+  <section class="v6-section v6-benefits"><div class="v6-wrap"><div class="v6-section__heading v6-section__heading--center"><div class="v6-kicker">A RESEARCH DESK THAT STAYS OUT OF YOUR WAY</div><h2>Serious tools.<br><em>Without the clutter.</em></h2><p>A clean place to dig into reported ownership activity and corporate information—on your phone or desktop.</p></div>
+    <div class="v6-benefits__grid"><div><span class="v6-benefit__icon">↗</span><h3>Connected by ticker</h3><p>Start with a company and follow filings, reported insiders and facts without resetting your search.</p></div><div><span class="v6-benefit__icon">◫</span><h3>Source-linked research</h3><p>Trace available filings back to SEC EDGAR, with disclosure dates and reporting periods.</p></div><div><span class="v6-benefit__icon">⌑</span><h3>Your private workspace</h3><p>Build a watchlist and research journal associated with your account—not a public social feed.</p></div></div>
+  </div></section>
+
+  <section class="v6-section v6-pricing" id="plans"><div class="v6-wrap"><div class="v6-section__heading v6-section__heading--center"><div class="v6-kicker">ACCESS INSIDIR</div><h2>Start exploring.<br><em>Go further later.</em></h2><p>Start with the available free research. Pro is planned and will only become purchasable once its features and checkout are verified.</p></div>
+    <div class="v6-pricing__grid">
+      <article class="v6-price"><div class="v6-price__label">FREE <span>AVAILABLE</span></div><h3>For curious investors.</h3><div class="v6-price__number">$0<small> / month</small></div><p>Explore company disclosures and keep your research together.</p><ul><li>Imported SEC Form 4 activity</li><li>Selected company filings and facts</li><li>Private watchlist and research notes</li><li>Optional manually entered holdings</li></ul><a class="v6-btn v6-btn--ink" href="signup.html">Get started free ↗</a></article>
+      <article class="v6-price v6-price--pro"><div class="v6-price__label">PRO <span>COMING LATER</span></div><h3>For deeper research.</h3><div class="v6-price__number">$39<small> / month · proposed</small></div><p>Additional historical and research tools are being developed.</p><ul><li>More flexible historical investigation</li><li>Expanded research organization</li><li>Plan details confirmed before billing</li><li>Cancellation controls when available</li></ul><a class="v6-btn v6-btn--outline" href="pricing.html">Explore Pro plans ↗</a></article>
     </div>
-    <section class="ins-explorer-people" aria-labelledby="ins-explorer-people-title">
-      <div class="ins-explorer-people__header"><div><p class="is4-explorer__label">OWNERSHIP DISCLOSURES</p><h4 id="ins-explorer-people-title">Reporting people</h4></div><span>IMPORTED FORM 4 RECORDS · NOT INVESTMENT SIGNALS</span></div>
-      <div id="ins-explorer-people" class="ins-explorer-people__grid" aria-live="polite"><p class="is4-explorer__empty">Loading reported insiders for this company…</p></div>
-      <p class="ins-media-credits">Verified public portraits, where available, are linked to their Wikimedia Commons source and license. Not all reporting people have public photographs.</p>
-    </section>
-    <div class="is4-explorer__bottom"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Original sources. Reported periods. No price prediction.</span><a href="company.html?ticker=AAPL" id="is4-company-details">View complete company record <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-right"></use></svg></a></div>
-   </div>
-  </div>
- </div>
-</section>
+  </div></section>
 
-<section class="is3-section is3-shell is3-capabilities" id="workflow">
-  <div class="is3-section-head"><p class="is3-eyebrow">THE RESEARCH PROCESS</p><div class="is3-section-head__split"><h2>Go beyond<br>the headline.</h2><p>Understand the original reporting, not just someone else's interpretation. Every action below links to research you can inspect yourself.</p></div></div>
-  <div class="is3-capabilities__grid">
-    <article class="is3-capability"><span>01 / DISCOVER</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg></div><h3>Find the companies worth investigating.</h3><p>Start with a ticker or browse companies covered in the imported filings. Find the underlying documents instead of relying on summaries alone.</p><a href="explore.html">Browse companies ↗</a></article>
-    <article class="is3-capability"><span>02 / UNDERSTAND</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg></div><h3>Put the filings in context.</h3><p>Review reported financial measures alongside period dates. Distinguish insider transactions from grants, exercises, and amended disclosures.</p><a href="company.html?ticker=AAPL">Explore company intelligence ↗</a></article>
-    <article class="is3-capability"><span>03 / REMEMBER</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg></div><h3>Build a record of your thinking.</h3><p>Save companies to a watchlist, write private research notes, and come back when new information is available.</p><a href="research.html">Open private research ↗</a></article>
-  </div>
-</section>
+  <section class="v6-section v6-faq"><div class="v6-wrap"><div class="v6-kicker">GOOD TO KNOW</div><div class="v6-faq__layout"><div><h2>Questions,<br><em>answered.</em></h2><p>Research with clear boundaries and no surprises.</p></div><div class="v6-faq__items">
+    <details><summary>Does Insidir place trades for me?</summary><p>No. Insidir is research software, not a broker or investment adviser. It does not execute orders or provide individualized investment recommendations.</p></details>
+    <details><summary>Where does the information come from?</summary><p>Imported SEC Form 4 disclosures and selected SEC company submissions and XBRL financial facts. Sources are linked when available; coverage can be partial or delayed.</p></details>
+    <details><summary>Do I need a brokerage account?</summary><p>No. Explore research and save a watchlist without linking a brokerage. You can also enter holdings manually if you choose.</p></details>
+    <details><summary>Can I subscribe to Pro today?</summary><p>Not yet. $39 per month is a proposed plan. Secure checkout and any paid entitlements must be verified before subscriptions can become available.</p></details>
+    <details><summary>Who runs Insidir?</summary><p>Insidir is operated by Aethric LLC. The <a href="terms.html">Terms</a>, <a href="privacy.html">Privacy Policy</a> and <a href="company-info.html">Company</a> pages explain more.</p></details>
+  </div></div></div></section>
 
-<section class="is3-interlude"><div class="is3-shell is3-interlude__inner"><p class="is3-eyebrow">INVEST WITH CONTEXT, NOT NOISE</p><h2>Know what was reported.<br>Know when it happened.<br><em>Know where to look next.</em></h2><p>Insidir brings the sources together. The decision stays yours.</p></div></section>
-
-<section class="is3-section is3-shell is3-detail">
-  <div class="is3-detail__copy"><p class="is3-eyebrow">FOR THE DETAIL-ORIENTED</p><h2>A filing is more<br>than a headline.</h2><p>A company may report an insider transaction today that happened days earlier. An amended filing may update an earlier disclosure. Those details matter.</p><p>Insidir preserves source links, disclosure dates, reporting periods, and transaction classifications so you can inspect the record instead of guessing.</p><a class="is3-button is3-button--outline" href="filings.html">Explore the filing library ↗</a></div>
-  <div class="is3-detail__document"><div class="is3-detail__stripe">SEC / FORM 4 / FILING INTELLIGENCE</div><div class="is3-detail__docbody"><span>THE DOCUMENT MATTERS</span><h3>Trade date ≠ filing date.</h3><p>Separate when ownership changed from when the public learned about it.</p><div class="is3-detail__rows"><div><small>Transaction date</small><strong>Reported in the filing</strong></div><div><small>Publication date</small><strong>Reported separately</strong></div><div><small>Transaction type</small><strong>Purchase / Sale / Other</strong></div><div><small>Original record</small><strong>Linked to SEC EDGAR ↗</strong></div></div></div><div class="is3-detail__docfooter">NO ARTIFICIAL TRADE SIGNALS. ORIGINAL SOURCE ALWAYS AVAILABLE.</div></div>
-</section>
-
-<section class="is3-section is3-sources" id="data"><div class="is3-shell"><p class="is3-eyebrow">THE DATA / VERIFIED SOURCES</p><div class="is3-section-head__split"><h2>Source-first.<br>By design.</h2><p>Insidir uses public SEC EDGAR records, including Form 4 ownership filings, company submissions, and available XBRL financial facts. We show the type and scope of each record rather than imply broader coverage than we have.</p></div><div class="is3-sources__grid">
-  <div><span>01</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg><h3>Ownership disclosures</h3><p>Imported Form 4 insider transactions, including dates, reporting names and original filing links.</p></div>
-  <div><span>02</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg><h3>Corporate submissions</h3><p>Selected 10-K, 10-Q, 8-K and other company disclosures sourced from official submissions.</p></div>
-  <div><span>03</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg><h3>Financial statements</h3><p>Reported XBRL figures with their accounting concepts, source filings and fiscal periods.</p></div>
-  <div><span>04</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#book-open"></use></svg><h3>Personal research</h3><p>Your own saved tickers and private notes. Optional manual portfolio entries, no brokerage required.</p></div>
-</div><div class="is3-sources__foot"><span>Additional markets, broker connections and automated trading are not currently part of the live research service.</span><a href="research.html">Verify with the research desk ↗</a></div></div></section>
-
-<section class="is3-section is3-shell is3-plans" id="plans"><div class="is3-section-head"><p class="is3-eyebrow">PLANS / SIMPLE BY DEFAULT</p><div class="is3-section-head__split"><h2>Start free.<br>Research further.</h2><p>No credit card to explore public SEC research. Paid access will only become available after checkout and plan entitlements are verified.</p></div></div>
-<div class="is3-plans__grid"><article class="is3-plan"><div class="is3-plan__top"><span>FREE ACCESS</span><span>AVAILABLE</span></div><h3>Research, at your pace.</h3><div class="is4-plan-icon"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#circle-check"></use></svg> Accessible research</div><div class="is3-plan__price">$0 <small>/ month</small></div><p>Get a feel for the information before committing.</p><ul><li>Browse imported SEC filings</li><li>Look up company intelligence</li><li>Explore reported insider activity</li><li>Save research and watchlists with an account</li><li>Optional manual portfolio tracking</li></ul><a class="is3-button is3-button--light" href="signup.html">Start for free ↗</a></article><article class="is3-plan is3-plan--pro"><div class="is3-plan__top"><span>INSIDIR PRO</span><span>PLANNED</span></div><h3>A deeper research workflow.</h3><div class="is4-plan-icon"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#layers"></use></svg> Future research workflows</div><div class="is3-plan__price">$39 <small>/ month · proposed</small></div><p>Additional research capabilities are being developed.</p><ul><li>Expanded research workflows, when released</li><li>More flexible historical investigation</li><li>Additional saved research organization</li><li>Clear terms and cancellation controls before billing</li><li>No trading permission required</li></ul><a class="is3-button is3-button--outline" href="pricing.html">See planned Pro access ↗</a></article></div>
-</section>
-
-<section class="is3-section is3-shell is3-faq" id="faq"><div class="is3-section-head"><p class="is3-eyebrow">FREQUENT QUESTIONS</p><div class="is3-section-head__split"><h2>Before you begin.</h2><p>What the product does today, and what it doesn't.</p></div></div><div class="is3-faq__items">
-<details><summary>Is Insidir a brokerage or trading platform?</summary><p>No. Insidir provides research tools and public-record information. It does not place trades or make individualized investment recommendations.</p></details>
-<details><summary>Do I need to connect a brokerage to use it?</summary><p>No. Search a stock or filing immediately. Your portfolio is optional, and manual holdings are free.</p></details>
-<details><summary>Where do company and insider records come from?</summary><p>Official SEC EDGAR Form 4 records and company submissions, with available SEC XBRL financial facts. Imported coverage may be partial or delayed; original filing links are provided for verification.</p></details>
-<details><summary>Is the Pro plan charging $39 today?</summary><p>No. $39 per month is the proposed Pro price. Payment and access remain unavailable until the production billing flow is enabled and verified.</p></details>
-<details><summary>Who operates Insidir?</summary><p>Insidir is operated by Aethric LLC. Read the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a> for important information about using the service.</p></details>
-</div></section>
-
-<section class="is3-bottom"><div class="is3-shell is3-bottom__inner"><p class="is3-eyebrow">YOUR NEXT QUESTION IS WORTH INVESTIGATING</p><h2>See the bigger picture.</h2><p>Open the record. Follow the context. Make your own decision.</p><a href="signup.html" class="is3-button is3-button--light">Start researching free ↗</a></div></section>
+  <section class="v6-final"><div class="v6-wrap"><div class="v6-kicker">IT STARTS WITH A BETTER QUESTION</div><h2>Get closer to<br><em>what matters.</em></h2><p>A clearer way to investigate the market. No noise, no fabricated signals.</p><a class="v6-btn v6-btn--ink" href="signup.html">Start researching free ↗</a></div></section>
 </main>
-<footer class="is3-footer"><div class="is3-shell"><div class="is3-footer__grid"><div><a class="is3-logo" href="/">insidir.</a><p>Market research for people who want the context behind the story. Built around information you can verify.</p></div><nav aria-label="Product links"><strong>Platform</strong><a href="dashboard.html">Dashboard</a><a href="research.html">Research</a><a href="explore.html">Companies</a><a href="filings.html">SEC filings</a></nav><nav aria-label="Account links"><strong>Account</strong><a href="signup.html">Get started</a><a href="signin.html">Sign in</a><a href="pricing.html">Pricing</a><a href="billing.html">Billing</a></nav><nav aria-label="Company links"><strong>Company & legal</strong><a href="company-info.html">Aethric LLC</a><a href="terms.html">Terms of service</a><a href="privacy.html">Privacy policy</a><a href="mailto:hello@aethric.llc">Contact</a></nav></div>
-<div class="is3-footer__bottom"><span>© 2026 Aethric LLC. Insidir is a research service, not a broker-dealer or investment adviser.</span><span>Public-record data may be delayed or incomplete.</span></div></div></footer>
+<footer class="v6-footer"><div class="v6-wrap"><div class="v6-footer__top"><div><a class="v6-logo" href="index.html">insidir.</a><p>A better way to understand the companies you follow.</p></div><div><strong>Explore</strong><a href="dashboard.html">Dashboard</a><a href="research.html">Research</a><a href="explore.html">Companies</a><a href="filings.html">Filings</a></div><div><strong>Company</strong><a href="company-info.html">Aethric LLC</a><a href="pricing.html">Pricing</a><a href="mailto:hello@aethric.llc">Contact</a></div><div><strong>Legal</strong><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="billing.html">Billing</a></div></div><div class="v6-footer__bottom"><span>© 2026 Aethric LLC. Insidir is independent research software, not a broker-dealer or investment adviser.</span><span>Data may be delayed or incomplete.</span></div></div></footer>
 </body></html>
