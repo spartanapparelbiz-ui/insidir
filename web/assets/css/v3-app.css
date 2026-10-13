@@ -144,3 +144,12 @@ body.v2-app.v3-app .manual-holdings-form input{background:#121b18!important}
 @media(max-width:1160px){.v3-board{grid-template-columns:1fr}.v3-board__rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.v3-board__rail .v3-method{grid-column:1/-1}}
 @media(max-width:760px){body.v2-app.v3-app .app-header{background:#111718}.v3-intro{display:block}.v3-intro .v3-plain-link{display:inline-block;margin-top:16px}.v3-main{padding-top:22px!important}.v3-quicklinks{grid-template-columns:1fr}.v3-board__rail{grid-template-columns:1fr}.v3-board__rail .v3-method{grid-column:auto}.v3-module__head{padding:19px 16px 13px}.v3-filters{padding:0 16px 12px}.v3-module__foot{padding:13px 17px}.v3-bottom-note{display:block}.v3-bottom-note a{display:inline-block;margin-top:12px}}
 @media(max-width:450px){.v3-searchbox button{padding:9px 12px;font-size:10px}.v3-topline{font-size:9px;display:block}.v3-topline span:last-child{display:block;margin-top:6px}.v3-intro h1{font-size:43px}body.v2-app.v3-app .research-head h1{font-size:42px}}
+
+/* Product navigation and account menu must stay inside the same surface palette. */
+body.v2-app.v3-app .user-menu__panel{background:#19211e;border:1px solid #455348;color:#edf2e8;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+body.v2-app.v3-app .user-menu__panel a,body.v2-app.v3-app .user-menu__panel button{color:#e5eee3}
+body.v2-app.v3-app .user-menu__panel a:hover,body.v2-app.v3-app .user-menu__panel button:hover{background:#2a382f;color:#fff}
+body.v2-app.v3-app .user-menu__panel .who{border-bottom-color:#344138}
+body.v2-app.v3-app .user-menu__panel .who span{color:#a6b5a7}
+body.v2-app.v3-app .app-mobile-nav{background:#141d1a;border-color:#354439}
+body.v2-app.v3-app .app-header .icon-btn:hover{background:#29372c}
