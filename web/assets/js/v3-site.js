@@ -28,8 +28,9 @@ if(host){
       }
       host.innerHTML=items.length?items.map(x=>{
         const t=ticker(x.ticker),href=t?"research.html?ticker="+encodeURIComponent(t):"filings.html";
-        return '<a class="is3-window__row" href="'+esc(href)+'"><span>'+esc(t||x.form_type||"SEC")+'</span><span>'+esc(x.issuer_name||"SEC ownership filing")+'</span><span>'+esc(date(x.published_at))+'</span></a>';
+        return '<a class="is3-window__row" href="'+esc(href)+'"><span>'+esc(t||x.form_type||"SEC")+'</span><span class="v5-preview-identity">'+(window.InsidirMedia?.logo(t,"sm")||"")+'<strong>'+esc(x.issuer_name||"SEC ownership filing")+'</strong></span><span>'+esc(date(x.published_at))+'</span></a>';
       }).join(""):'<p class="is3-window__loading">No filings have been imported yet. Explore public-company research instead.</p>';
+      window.InsidirMedia?.hydrate(host);
     }).catch(()=>{const hero=document.getElementById("v5-hero-latest");if(hero)hero.textContent="Latest filing preview temporarily unavailable.";host.innerHTML='<p class="is3-window__loading">Recent filing feed is temporarily unavailable. <a href="filings.html">Open the filing library →</a></p>';});
 }
 if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
