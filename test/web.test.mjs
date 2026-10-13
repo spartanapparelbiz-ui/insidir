@@ -129,6 +129,39 @@ test("V3 site provides working navigation and public research entry points",asyn
   });
 });
 
+test("V4 interface icons and sourced visual panels load across public and product pages",async()=>{
+  await withServer(async base=>{
+    const icons=await fetch(base+"/assets/icons/interface.svg");
+    assert.equal(icons.status,200);
+    assert.match(icons.headers.get("content-type"),/image\/svg\+xml/);
+    const sprite=await icons.text();
+    for(const id of ["file-text","file-check","activity","search","bookmark","chart-columns","shield-check","building"])
+      assert.match(sprite,new RegExp('id="'+id+'"'));
+    const home=await(await fetch(base+"/")).text();
+    assert.match(home,/assets\/css\/v4-presentation.css/);
+    assert.match(home,/assets\/js\/v4-explorer.js/);
+    assert.match(home,/id="is4-explorer-filings"/);
+    assert.match(home,/id="is4-explorer-facts"/);
+    assert.match(home,/data-scan-ticker="AAPL"/);
+    const explorer=await(await fetch(base+"/assets/js/v4-explorer.js")).text();
+    assert.match(explorer,/\/v1\/intelligence\?ticker=/);
+    assert.match(explorer,/sourceUrl/);
+    const dash=await(await fetch(base+"/dashboard.html")).text();
+    assert.match(dash,/v4-dashboard.css/);
+    assert.match(dash,/v4-dashboard.js/);
+    assert.match(dash,/id="v4-inspector-body"/);
+    assert.match(dash,/id="v4-activity-chart"/);
+    const derived=await(await fetch(base+"/assets/js/v4-dashboard.js")).text();
+    assert.match(derived,/insidir:filings-loaded/);
+    assert.match(derived,/insidir:transactions-loaded/);
+    assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
+    for(const p of ["/research.html","/company.html","/filings.html"]){
+      const html=await(await fetch(base+p)).text();
+      assert.match(html,/v4-interior.css/);
+    }
+  });
+});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
