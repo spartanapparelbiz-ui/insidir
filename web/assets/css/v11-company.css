@@ -265,3 +265,6 @@ body.v11-company-page.v2-app.v3-app.v6-app .c11-kpi strong{color:#eff7f9!importa
  .c12-activity-board{grid-template-columns:1fr}
  body.v11-company-page.v2-app.v3-app.v6-app .c11-tabs.cv-tabs{gap:17px}
 }
+
+/* Apple publishes a black SVG mark; preserve its transparency and brighten only on dark pages. */
+body.v11-company-page.v2-app.v3-app.v6-app #cv-symbol .ins-media[data-real-source*="Apple_logo_black"] img{filter:invert(1)!important}
