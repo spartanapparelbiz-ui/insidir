@@ -29,7 +29,7 @@ const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "X-Frame-Options": "DENY",
-  "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https://cdn.simpleicons.org https://www.google.com https://upload.wikimedia.org; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://en.wikipedia.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https://upload.wikimedia.org https://thumb.wikimedia.org; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 };
 
 function resolvePath(pathname) {
