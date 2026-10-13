@@ -172,11 +172,14 @@ async function route(req,res){
   }
   if(p==="/v1/insiders" && m==="GET"){
     const q=(u.searchParams.get("q")||"").trim().slice(0,80);
-    const rows=await query(`SELECT owner_cik,MAX(owner_name) AS owner_name,COUNT(DISTINCT accession)::integer AS filings,
+    const rows=await query(`SELECT owner_cik,
+      (ARRAY_AGG(owner_name ORDER BY transaction_date DESC NULLS LAST))[1] AS owner_name,
+      (ARRAY_AGG(ticker ORDER BY transaction_date DESC NULLS LAST))[1] AS ticker,
+      COUNT(DISTINCT accession)::integer AS filings,
       MAX(transaction_date) AS last_transaction_date FROM sec_transactions
       WHERE owner_cik IS NOT NULL AND ($1::text='' OR owner_name ILIKE '%'||$1||'%')
       GROUP BY owner_cik ORDER BY last_transaction_date DESC NULLS LAST LIMIT 100`,[q]);
-    return json(res,200,{items:rows.rows});
+    return json(res,200,{items:rows.rows,source:"SEC Form 4"});
   }
   if(p==="/v1/me" && m==="GET")return json(res,200,{user:await requireUser(req)});
   if(p==="/v1/me/manual-holdings" && m==="GET"){
@@ -195,6 +198,15 @@ async function route(req,res){
     }
     return json(res,200,{items:holdings.rows,recentSecActivity:secItems,source:"user-entered",
       disclaimer:"Self-reported quantities, not broker-verified positions or live prices. SEC ticker matching does not constitute investment advice."});
+  }
+  if(p==="/v1/me/people" && m==="GET"){
+    const user=await requireUser(req);
+    const results=await query(`SELECT fp.owner_cik,fp.created_at,
+      (SELECT owner_name FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS owner_name,
+      (SELECT ticker FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS ticker,
+      (SELECT MAX(transaction_date) FROM sec_transactions WHERE owner_cik=fp.owner_cik) AS last_transaction_date
+      FROM followed_people fp WHERE fp.user_id=$1 ORDER BY fp.created_at DESC LIMIT 150`,[user.id]);
+    return json(res,200,{items:results.rows,source:"SEC Form 4"});
   }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req);
@@ -282,6 +294,20 @@ async function route(req,res){
       const user=await requireUser(req),t=ticker(p.slice("/v1/me/manual-holdings/".length));
       const deleted=await query("DELETE FROM manual_holdings WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
       return json(res,200,{deleted:deleted.rowCount>0,ticker:t,executed:false});
+    }
+    if(p==="/v1/me/people" && m==="POST"){
+      const user=await requireUser(req),x=await body(req),cik=String(x.owner_cik??"").trim();
+      if(!/^\d{1,12}$/.test(cik))throw failure(400,"Valid reporting-person SEC CIK required");
+      const person=await query("SELECT 1 FROM sec_transactions WHERE owner_cik=$1 LIMIT 1",[cik]);
+      if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
+      await query("INSERT INTO followed_people(user_id,owner_cik) VALUES($1,$2) ON CONFLICT DO NOTHING",[user.id,cik]);
+      return json(res,200,{saved:true,owner_cik:cik});
+    }
+    if(p.startsWith("/v1/me/people/") && m==="DELETE"){
+      const user=await requireUser(req),cik=decodeURIComponent(p.slice("/v1/me/people/".length));
+      if(!/^\d{1,12}$/.test(cik))throw failure(400,"Invalid SEC reporting-person CIK");
+      await query("DELETE FROM followed_people WHERE user_id=$1 AND owner_cik=$2",[user.id,cik]);
+      return json(res,200,{deleted:true,owner_cik:cik});
     }
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req),x=await body(req),t=ticker(x.ticker);
