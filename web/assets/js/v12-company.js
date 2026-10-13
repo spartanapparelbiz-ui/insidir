@@ -11,11 +11,8 @@ const finite = v => typeof v === "number" && Number.isFinite(v);
 const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-const LOCAL_MARKS = Object.freeze({
-  AAPL: { src: "assets/icons/apple.svg", invert: true }, MSFT: { src: "assets/icons/microsoft.svg" },
-  NVDA: { src: "assets/icons/nvidia.svg", name: "NVIDIA" }, GOOGL: { src: "assets/icons/google.svg" }, GOOG: { src: "assets/icons/google.svg" },
-  TSLA: { src: "assets/icons/tesla.svg" }, META: { src: "assets/icons/meta.svg" }, ABNB: { src: "assets/icons/airbnb.svg" }
-});
+// Brand casing the SEC and Wikidata names don't carry.
+const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
 const POPULAR = [["NVDA", "NVIDIA"], ["AAPL", "Apple"], ["MSFT", "Microsoft"], ["GOOGL", "Alphabet"], ["AMZN", "Amazon"], ["META", "Meta Platforms"],
   ["TSLA", "Tesla"], ["AVGO", "Broadcom"], ["JPM", "JPMorgan Chase"], ["LLY", "Eli Lilly"], ["V", "Visa"], ["WMT", "Walmart"],
   ["XOM", "Exxon Mobil"], ["KO", "Coca-Cola"], ["NFLX", "Netflix"], ["COST", "Costco"]];
@@ -202,7 +199,7 @@ function stripLegal(name) {
 }
 /* Display name: brand casing for curated marks, the SEC's mixed-case name, then Wikidata's label. */
 function companyName() {
-  const local = LOCAL_MARKS[state.ticker]?.name;
+  const local = BRAND_NAMES[state.ticker];
   if (local) return local;
   const sec = state.intel?.company?.name, label = state.profile?.label;
   if (sec && /[a-z]/.test(sec)) return stripLegal(sec);
@@ -232,60 +229,28 @@ function renderIdentity() {
   if (state.intel || state.profile) document.title = `${name} (${state.ticker})${finite(quote()?.price) ? " " + money(quote().price, quote().currency, { precise: true }) : ""} — insidir.`;
   renderAbout();
 }
+/* Logos come from /v1/company/logo (server-resolved, same origin) and are prepared by
+ * brand-mark.js for this dark page: baked-in boxes removed, dark marks lifted. No tile, no
+ * stand-in letter: without a real logo the slot is hidden. */
 function renderLogo() {
-  const host = $("cx-logo");
-  const name = companyName();
-  const local = LOCAL_MARKS[state.ticker];
-  const remote = state.profile?.logo?.url && safeUrl(state.profile.logo.url, ["wikimedia.org"]);
-  const monogram = () => { host.className = "cx-logo is-monogram"; host.innerHTML = esc((name || state.ticker).replace(/^The /i, "").charAt(0).toUpperCase()); };
-  host.setAttribute("aria-label", name + " logo");
-  if (!local && !remote) { if (state.profileDone) monogram(); return; }
-  const src = local ? local.src : remote;
+  const host = $("cx-logo"), brand = host.closest(".cx-brand");
+  const src = "/v1/company/logo?ticker=" + encodeURIComponent(state.ticker);
+  host.setAttribute("aria-label", companyName() + " logo");
   if (host.dataset.src === src) return;
   host.dataset.src = src;
-  const img = new Image();
-  if (!local) img.crossOrigin = "anonymous";
-  img.alt = "";
-  img.decoding = "async";
-  img.referrerPolicy = "no-referrer";
-  img.onload = () => {
-    if (host.dataset.src !== src) return;
-    const cls = ["cx-logo"];
-    const ratio = img.naturalWidth / Math.max(1, img.naturalHeight);
-    if (ratio > 1.6) cls.push("is-wide");
-    if (local?.invert) cls.push("is-inverted");
-    else if (!local) {
-      const tone = logoTone(img);
-      if (tone === "dark-neutral") cls.push("is-inverted");
-      else if (tone === "dark-color") cls.push("is-tile");
-    }
-    host.className = cls.join(" ");
+  const seq = state.seq;
+  const prepare = window.InsidirBrand?.prepare;
+  (prepare ? prepare(src) : Promise.resolve(null)).then(mark => {
+    if (seq !== state.seq || host.dataset.src !== src) return;
+    brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
+    if (!mark) { host.hidden = true; host.replaceChildren(); return; }
+    const img = new Image();
+    img.alt = "";
+    img.src = mark.url;
+    host.className = "cx-logo";
+    host.hidden = false;
     host.replaceChildren(img);
-  };
-  img.onerror = () => { if (host.dataset.src === src) monogram(); };
-  img.src = src;
-}
-/* Logos drawn for light backgrounds would vanish on this dark page: detect dark marks. */
-function logoTone(img) {
-  try {
-    const c = document.createElement("canvas"), size = 48;
-    c.width = size; c.height = Math.max(8, Math.round(size / Math.max(.25, img.naturalWidth / Math.max(1, img.naturalHeight))));
-    const g = c.getContext("2d", { willReadFrequently: true });
-    g.drawImage(img, 0, 0, c.width, c.height);
-    const data = g.getImageData(0, 0, c.width, c.height).data;
-    let lum = 0, sat = 0, n = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 128) continue;
-      const r = data[i] / 255, gr = data[i + 1] / 255, b = data[i + 2] / 255;
-      lum += .2126 * r + .7152 * gr + .0722 * b;
-      sat += Math.max(r, gr, b) - Math.min(r, gr, b);
-      n++;
-    }
-    if (!n) return "light";
-    lum /= n; sat /= n;
-    if (lum >= .42) return n > c.width * c.height * .9 && lum > .9 ? "dark-color" : "light";
-    return sat < .18 ? "dark-neutral" : "dark-color";
-  } catch { return "dark-color"; } // Unreadable pixels: a light tile keeps any mark visible.
+  });
 }
 
 /* ---------- key facts ---------- */
@@ -731,7 +696,8 @@ function resetView() {
   state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null;
   state.annualMetric = "revenue"; state.filingFilter = "all"; state.insiderFilter = "all";
   statusNotes.clear(); setStatus("");
-  $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
+  $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").hidden = false; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
+  $("cx-logo").closest(".cx-brand").classList.remove("is-wide-logo");
   $("cx-name").innerHTML = '<span class="cx-skel cx-skel--title"></span>';
   $("cx-description").innerHTML = '<span class="cx-skel"></span><span class="cx-skel"></span><span class="cx-skel cx-skel--short"></span>';
   $("cx-price").innerHTML = '<span class="cx-skel cx-skel--price"></span>'; $("cx-change").textContent = ""; $("cx-quote-meta").textContent = "Loading market data…";
@@ -766,9 +732,9 @@ async function load(ticker) {
   loadMarket(state.range, seq);
   getJSON("/v1/intelligence?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.intel = d; note("intel", (d.warnings || []).join(" ")); })
     .catch(e => { if (seq !== state.seq) return; state.intelError = e.status === 404 ? "This ticker is not in the SEC's official company list." : "SEC data is temporarily unavailable: " + e.message; note("intel", state.intelError); })
-    .finally(() => { if (seq !== state.seq) return; renderAll(); renderLogo(); });
+    .finally(() => { if (seq !== state.seq) return; renderAll(); });
   getJSON("/v1/company/profile?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.profile = d?.matched ? d : null; })
-    .catch(() => {}).finally(() => { if (seq !== state.seq) return; state.profileDone = true; renderAll(); renderLogo(); });
+    .catch(() => {}).finally(() => { if (seq !== state.seq) return; state.profileDone = true; renderAll(); });
   getJSON("/v1/company/insiders?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.insiders = d; })
     .catch(async e => {
       if (seq !== state.seq) return;
@@ -786,10 +752,13 @@ function showPicker() {
   $("cx-report").hidden = true; $("cx-picker").hidden = false;
   document.title = "Company research — insidir.";
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
-    const mark = LOCAL_MARKS[t];
-    const icon = mark ? `<img class="cx-mark${mark.invert ? " is-inverted" : ""}" src="${esc(mark.src)}" alt="">` : avatar(n, null, "sm");
-    return `<a href="company.html?ticker=${encodeURIComponent(t)}">${icon}<div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
+    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
+  for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
+    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo)).then(mark => {
+      if (mark) slot.innerHTML = `<img src="${mark.url}" alt="">`; else slot.remove();
+    });
+  }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };
 

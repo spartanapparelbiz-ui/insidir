@@ -89,14 +89,12 @@ body.cx-page .app-menu-btn{color:#fff}
 .cx-top{display:grid;grid-template-columns:minmax(300px,430px) minmax(0,1fr) minmax(290px,380px);gap:22px;align-items:stretch}
 .cx-identity{padding:0 10px 0 4px;display:flex;flex-direction:column;min-width:0}
 .cx-brand{display:flex;align-items:center;gap:22px;min-width:0}
-.cx-logo{flex:0 0 auto;width:92px;height:92px;display:grid;place-items:center;border-radius:18px;position:relative;overflow:hidden}
+.cx-logo{flex:0 0 auto;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
+.cx-logo[hidden]{display:none}
 .cx-logo img{max-width:100%;max-height:100%;object-fit:contain;display:block}
-.cx-logo.is-loading{background:#131a21}
-.cx-logo.is-tile{background:#f4f6f8;padding:12px}
-.cx-logo.is-wide{width:132px;height:72px}
-.cx-logo.is-wide.is-tile{padding:10px 12px}
-.cx-logo.is-inverted img{filter:invert(1) brightness(1.05)}
-.cx-logo.is-monogram{background:linear-gradient(140deg,#1e3a2c,#123024 55%,#0d211a);border:1px solid #23463a;color:#d9f6e7;font:650 40px/1 var(--serif)}
+.cx-brand.is-wide-logo{flex-direction:column;align-items:flex-start;gap:18px}
+.cx-brand.is-wide-logo .cx-logo{width:auto;height:64px;max-width:min(100%,300px);justify-content:flex-start}
+.cx-brand.is-wide-logo .cx-logo img{height:100%;width:auto}
 .cx-brand__text{min-width:0}
 .cx-brand h1{margin:0;font:700 clamp(32px,2.9vw,46px)/1.05 var(--sans);letter-spacing:-.025em;color:#fff;overflow-wrap:anywhere}
 .cx-listing{margin:10px 0 0;display:flex;align-items:center;gap:10px;font-size:17px;color:var(--cx-text-2);letter-spacing:.01em}
@@ -306,8 +304,8 @@ body.cx-page .cx-footer a:hover{color:#fff}
 .cx-picker__grid a{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--cx-surface);border:1px solid var(--cx-line);border-radius:12px}
 .cx-picker__grid a:hover{border-color:#3a4652;background:#121920}
 .cx-picker__grid b{font-size:15px;color:#fff}.cx-picker__grid div span{display:block;font-size:12.5px;color:var(--cx-muted)}
-.cx-picker__grid img.cx-mark{width:34px;height:34px;object-fit:contain;flex:none}
-.cx-picker__grid img.cx-mark.is-inverted{filter:invert(1)}
+.cx-picker__grid .cx-mark{width:40px;height:34px;flex:none;display:flex;align-items:center;justify-content:center}
+.cx-picker__grid .cx-mark img{max-width:100%;max-height:100%;object-fit:contain}
 .cx-report[hidden]{display:none}
 
 /* ---------- Responsive ---------- */
@@ -335,9 +333,8 @@ body.cx-page .cx-footer a:hover{color:#fff}
   .cx-main{width:calc(100% - 28px)}
   .cx-overview,.cx-overview.no-about{grid-template-columns:1fr}
   .cx-brand{gap:16px}
-  .cx-logo{width:68px;height:68px;border-radius:14px}
-  .cx-logo.is-wide{width:104px;height:56px}
-  .cx-logo.is-monogram{font-size:30px}
+  .cx-logo{width:68px;height:68px}
+  .cx-brand.is-wide-logo .cx-logo{height:50px}
   .cx-description{font-size:16px;margin-top:22px}
   .cx-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .cx-actions .cx-btn--primary{grid-column:1/-1;justify-content:center}
