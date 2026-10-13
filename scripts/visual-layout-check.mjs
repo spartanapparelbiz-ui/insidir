@@ -116,10 +116,10 @@ try{
      return {name:color("#cv-name"),headline:color("#cv-summary h2"),snapshot:color("#c11-snapshot-heading"),tabs:back("#c11-report-tabs"),panel:back(".c11-panel"),logoBack:back("#cv-symbol .ins-media"),highlights:!!document.getElementById("c12-financial-highlights")};
    });
    for(const key of ["name","headline","snapshot"]){
-     const found=darkContrast[key].match(/\\d+/g)?.map(Number)||[];
+     const found=darkContrast[key].match(/[0-9]+/g)?.map(Number)||[];
      assert.ok(found.length===3 && found.every(v=>v>=175),key+" should be readable light text, found "+JSON.stringify(darkContrast));
    }
-   assert.ok(!/rgb\\(255,\\s*255,\\s*255\\)/.test(darkContrast.tabs),"Finance tabs must never have a white background");
+   assert.ok(!darkContrast.tabs.includes("255, 255, 255"),"Finance tabs must never have a white background");
    assert.ok(darkContrast.highlights,"Multi-panel finance report missing");
    const companyGeometry=await page.evaluate(()=>({
      overflow:document.documentElement.scrollWidth-innerWidth,
