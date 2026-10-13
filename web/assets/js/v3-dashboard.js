@@ -9,22 +9,28 @@ const source=v=>{try{const u=new URL(String(v));return u.protocol==="https:"&&["
 const research=t=>tick(t)?"research.html?ticker="+encodeURIComponent(tick(t)):"research.html";
 const srcLink=v=>{const u=source(v);return u?'<a href="'+E(u)+'" target="_blank" rel="noopener noreferrer">SEC source ↗</a>':"Not available"};
 async function api(path){const r=await fetch(path,{credentials:"same-origin",headers:{Accept:"application/json"}});let j;try{j=await r.json()}catch{throw Error("Research service unavailable")};if(!r.ok){let e=Error(j?.error||"Request failed");e.status=r.status;throw e;}return j;}
+const media=window.InsidirMedia;
+const companyLogo=t=>media?media.logo(t,"sm"):"";
+const personPortrait=(name,t)=>media?media.portrait(name,t,"sm"):"";
 let trades=[],filter="all";
 const formatCategory=c=>c==="reported_purchase"?"Purchase":c==="reported_sale"?"Sale":"Other Form 4";
 function renderTrades(){
  const items=trades.filter(x=>filter==="all"||x.category===filter).slice(0,14);
- $("v3-trades").innerHTML=items.length?items.map(x=>{const t=tick(x.ticker);return '<tr><td>'+E(x.owner_name||"Reporting person")+'</td><td>'+(t?'<a href="'+E(research(t))+'">'+E(t)+'</a>':"—")+'</td><td>'+E(date(x.transaction_date))+'</td><td><span class="v3-category'+(x.category==="reported_purchase"?" v3-category--buy":x.category==="reported_sale"?" v3-category--sell":"")+'">'+formatCategory(x.category)+'</span></td><td>'+E(money(x.estimated_value))+'</td></tr>'}).join(""):'<tr><td colspan="5" class="v3-empty">No matching imported Form 4 transactions. This is not a statement about all market activity.</td></tr>';
+ $("v3-trades").innerHTML=items.length?items.map(x=>{const t=tick(x.ticker);return '<tr><td><div class="ins-person-cell">'+personPortrait(x.owner_name,t)+'<span class="ins-person-cell__name">'+E(x.owner_name||"Reporting person")+'</span></div></td><td>'+(t?'<a class="ins-company-cell" href="'+E(research(t))+'">'+companyLogo(t)+'<span>'+E(t)+'</span></a>':"—")+'</td><td>'+E(date(x.transaction_date))+'</td><td><span class="v3-category'+(x.category==="reported_purchase"?" v3-category--buy":x.category==="reported_sale"?" v3-category--sell":"")+'">'+formatCategory(x.category)+'</span></td><td>'+E(money(x.estimated_value))+'</td></tr>'}).join(""):'<tr><td colspan="5" class="v3-empty">No matching imported Form 4 transactions. This is not a statement about all market activity.</td></tr>';
+ media?.hydrate($("v3-trades"));
 }
 async function loadTrades(){try{const j=await api("/v1/transactions?limit=60");trades=Array.isArray(j.items)?j.items:[];renderTrades();document.dispatchEvent(new CustomEvent("insidir:transactions-loaded",{detail:trades}));}catch(e){document.dispatchEvent(new CustomEvent("insidir:transactions-error",{detail:"Unavailable"}));$("v3-trades").innerHTML='<tr><td colspan="5" class="v3-empty">'+E(e.message)+'</td></tr>';}}
 async function loadFilings(){
  try{const j=await api("/v1/filings?limit=15");const arr=Array.isArray(j.items)?j.items:[];document.dispatchEvent(new CustomEvent("insidir:filings-loaded",{detail:arr}));
- $("v3-filings").innerHTML=arr.length?arr.slice(0,10).map(x=>{const t=tick(x.ticker);return '<tr><td><a href="'+E(research(t))+'">'+E(x.issuer_name||t||"Issuer")+'</a><span class="v3-table__sub">'+E(t)+'</span></td><td>'+E(x.form_type||"4")+'</td><td>'+E(date(x.published_at))+'</td><td>'+srcLink(x.source_url)+'</td></tr>'}).join(""):'<tr><td colspan="4" class="v3-empty">No imported SEC filings are available yet. Browse company research for other disclosures.</td></tr>';
+ $("v3-filings").innerHTML=arr.length?arr.slice(0,10).map(x=>{const t=tick(x.ticker);return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+'<div><a href="'+E(research(t))+'">'+E(x.issuer_name||t||"Issuer")+'</a><span class="v3-table__sub">'+E(t)+'</span></div></div></td><td>'+E(x.form_type||"4")+'</td><td>'+E(date(x.published_at))+'</td><td>'+srcLink(x.source_url)+'</td></tr>'}).join(""):'<tr><td colspan="4" class="v3-empty">No imported SEC filings are available yet. Browse company research for other disclosures.</td></tr>';
+ media?.hydrate($("v3-filings"));
  $("v3-coverage").textContent=arr.length+" recently imported filing"+(arr.length===1?"":"s")+" loaded. This is not the full SEC dataset.";
  }catch(e){document.dispatchEvent(new CustomEvent("insidir:filings-error",{detail:"Unavailable"}));$("v3-filings").innerHTML='<tr><td colspan="4" class="v3-empty">'+E(e.message)+'</td></tr>';}
 }
 async function loadWatchlist(){
  try{const j=await api("/v1/me/watchlist");const arr=Array.isArray(j.items)?j.items:[];
- $("v3-watchlist").innerHTML=arr.length?arr.slice(0,9).map(x=>'<a class="v3-row" href="'+E(research(x.ticker))+'"><strong>'+E(x.ticker)+'</strong><span>Explore disclosures</span><b>↗</b></a>').join(""):'<p class="v3-empty">No saved tickers. <a href="watchlist.html">Add the companies you follow →</a></p>';
+ $("v3-watchlist").innerHTML=arr.length?arr.slice(0,9).map(x=>'<a class="v3-row ins-identity-row" href="'+E(research(x.ticker))+'">'+companyLogo(x.ticker)+'<strong>'+E(x.ticker)+'</strong><span>Explore disclosures</span><b>↗</b></a>').join(""):'<p class="v3-empty">No saved tickers. <a href="watchlist.html">Add the companies you follow →</a></p>';
+ media?.hydrate($("v3-watchlist"));
  }catch(e){$("v3-watchlist").innerHTML=e.status===401?'<p class="v3-empty">Your watchlist appears here after sign-in. <a href="signin.html">Sign in →</a></p>':'<p class="v3-empty">'+E(e.message)+'</p>';}
 }
 async function loadNotes(){
