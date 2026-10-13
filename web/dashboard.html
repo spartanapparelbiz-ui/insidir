@@ -1,82 +1,32 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Market intelligence — insidir.</title>
-  <meta name="description" content="Investigate real SEC disclosures, insider transactions, and source-linked financial research.">
-  <meta name="theme-color" content="#f7f4ec">
-  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/brief.css">
-  <script defer src="assets/js/app.js"></script>
-  <script defer src="assets/js/brief.js"></script>
-  <link rel="stylesheet" href="assets/css/v2-app.css">
-  <link rel="stylesheet" href="assets/css/v2-dashboard.css">
-</head>
-<body class="app-body brief-page v2-app">
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header data-app-header data-active="dashboard"></header>
-  <main id="main" class="app-main brief-main">
-    <section class="brief-hero" aria-labelledby="brief-title">
-      <div class="brief-hero__copy">
-        <p class="brief-kicker">INSIDIR / THE PUBLIC RECORD</p>
-        <h1 id="brief-title" data-greeting>Good morning.</h1>
-        <p class="brief-intro">Search a stock to start your research. See what was disclosed, trace original SEC filings, and follow the evidence.</p>
-        <form action="research.html" method="get" class="brief-search" role="search">
-          <label class="sr-only" for="brief-ticker">Stock ticker</label>
-          <input id="brief-ticker" name="ticker" type="text" placeholder="Research a company — AAPL, MSFT, NVDA…" maxlength="15" autocomplete="off" spellcheck="false" required>
-          <button type="submit">Investigate <span aria-hidden="true">↗</span></button>
-        </form>
-        <p class="brief-hero__note">No brokerage connection needed · Research based on publicly reported information</p>
-      </div>
-      <div class="brief-hero__image" aria-hidden="true"></div>
-    </section>
-    <div class="brief-index" aria-label="Data coverage">
-      <div><span class="brief-label">SOURCE</span><strong>SEC EDGAR</strong><small>Public company filings</small></div>
-      <div><span class="brief-label">IMPORTED FILINGS</span><strong id="brief-indexed">—</strong><small>Successfully parsed records</small></div>
-      <div><span class="brief-label">LAST IMPORT</span><strong id="brief-import">—</strong><small>Not a real-time market feed</small></div>
-      <div><span class="brief-label">COVERAGE</span><strong>Form 4</strong><small>Reported ownership changes</small></div>
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research workspace — insidir.</title><meta name="description" content="Explore recently imported SEC filings, insider disclosures and your own watchlist. All source-linked, no fake market prices."><meta name="theme-color" content="#101314">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css">
+<script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js"></script></head>
+<body class="app-body v2-app v3-app v3-workspace">
+<a class="skip-link" href="#main">Skip to content</a>
+<header data-app-header data-active="dashboard"></header>
+<main class="app-main v3-main" id="main">
+  <div class="v3-topline"><span>INSIDIR / YOUR RESEARCH WORKSPACE</span><span id="v3-current-date">PUBLIC RECORDS · NOT LIVE QUOTES</span></div>
+  <section class="v3-intro"><div><p class="v3-eyebrow">WELCOME TO INSIDIR</p><h1 data-greeting>Good morning.</h1><p>Everything worth checking starts with the source. Pick a company, inspect the record, and continue your research.</p></div><a class="v3-plain-link" href="research.html">Open Research Desk ↗</a></section>
+  <section class="v3-searchbox" aria-label="Company research"><form action="research.html" id="v3-search" role="search"><label class="sr-only" for="v3-ticker">Company ticker</label><span aria-hidden="true" class="v3-searchbox__icon">⌕</span><input id="v3-ticker" name="ticker" placeholder="Search a stock ticker, e.g. AAPL, MSFT, NVDA" autocomplete="off" spellcheck="false" maxlength="15" required><button type="submit">Research company <span aria-hidden="true">→</span></button></form><p>No brokerage account or subscription required to begin.</p></section>
+  <div class="v3-quicklinks"><a href="explore.html"><span>01 / DISCOVER</span><strong>Company directory</strong><small>Explore imported issuers</small><b aria-hidden="true">↗</b></a><a href="filings.html"><span>02 / VERIFY</span><strong>SEC filing library</strong><small>Follow the original records</small><b aria-hidden="true">↗</b></a><a href="watchlist.html"><span>03 / FOLLOW</span><strong>Your watchlist</strong><small>Track chosen tickers</small><b aria-hidden="true">↗</b></a></div>
+  <section class="v3-board" aria-label="Live research information">
+    <div class="v3-board__main">
+      <div class="v3-module" id="filing-updates"><div class="v3-module__head"><div><p class="v3-eyebrow">01 / WHAT WAS FILED</p><h2>Recent SEC filings</h2><p>Imported public ownership filings. Click to inspect the source.</p></div><a href="filings.html">All filings ↗</a></div>
+      <div class="v3-table-scroll"><table class="v3-table"><thead><tr><th>Company</th><th>Form</th><th>Published (UTC)</th><th>Original record</th></tr></thead><tbody id="v3-filings"><tr><td colspan="4" class="v3-empty">Retrieving SEC filings…</td></tr></tbody></table></div><div class="v3-module__foot"><span id="v3-coverage">Showing imported records, not a real-time market feed.</span></div></div>
+      <div class="v3-module" id="insider-activity"><div class="v3-module__head"><div><p class="v3-eyebrow">02 / REPORTED OWNERSHIP</p><h2>Insider activity</h2><p>Reported transactions are not the same as trading signals.</p></div><a href="filings.html">See original filings ↗</a></div>
+      <div class="v3-filters" role="group" aria-label="Filter reported transactions"><button type="button" data-filter="all" aria-pressed="true">All</button><button type="button" data-filter="reported_purchase" aria-pressed="false">Reported purchases</button><button type="button" data-filter="reported_sale" aria-pressed="false">Reported sales</button></div>
+      <div class="v3-table-scroll"><table class="v3-table"><thead><tr><th>Reporting person</th><th>Company</th><th>Transaction date</th><th>Category</th><th>Estimated value</th></tr></thead><tbody id="v3-trades"><tr><td colspan="5" class="v3-empty">Retrieving reported transactions…</td></tr></tbody></table></div><div class="v3-module__foot">Transaction codes and amendments matter. Verify source documents before drawing conclusions.</div></div>
     </div>
-    <div class="brief-layout">
-      <section class="brief-panel brief-activity" id="insider-activity" aria-labelledby="brief-activity-title">
-        <div class="brief-panel__head">
-          <div><p class="brief-kicker">01 / OWNERSHIP DISCLOSURES</p><h2 id="brief-activity-title">Insider activity.</h2>
-            <p class="brief-desc">Transactions reported to the SEC. Publication can happen days after the transaction.</p></div>
-          <a href="research.html" class="brief-panel__link">Research a company ↗</a>
-        </div>
-        <div class="brief-tabs" role="group" aria-label="Filter insider transactions">
-          <button type="button" data-filter="all" aria-pressed="true">All activity</button>
-          <button type="button" data-filter="reported_purchase" aria-pressed="false">Purchases</button>
-          <button type="button" data-filter="reported_sale" aria-pressed="false">Sales</button>
-        </div>
-        <div class="brief-table-wrap">
-          <table class="brief-table">
-            <caption class="sr-only">Imported SEC ownership transactions</caption>
-            <thead><tr><th scope="col">Transaction date</th><th scope="col">Reporting person</th><th scope="col">Company</th><th scope="col">Reported type</th><th scope="col" class="brief-right">Est. value</th></tr></thead>
-            <tbody id="brief-transactions"><tr><td colspan="5" class="brief-empty">Loading reported transactions…</td></tr></tbody>
-          </table>
-        </div>
-        <p class="brief-footnote">Values are estimates from filed quantities and prices, when supplied. A filing is not a buy or sell signal.</p>
-      </section>
-      <aside class="brief-rail">
-        <section class="brief-panel brief-filings" aria-labelledby="brief-filings-title">
-          <div class="brief-panel__head">
-            <div><p class="brief-kicker">02 / SOURCE DOCUMENTS</p><h2 id="brief-filings-title">Latest filings.</h2></div>
-          </div>
-          <div id="brief-filings" class="brief-filing-list"><p class="brief-empty">Loading SEC filings…</p></div>
-          <p class="brief-footnote">Original SEC filings, listed by publication date.</p>
-        </section>
-        <section class="brief-watch" aria-labelledby="brief-watch-title">
-          <p class="brief-kicker">03 / PERSONAL RESEARCH</p>
-          <h2 id="brief-watch-title">Keep your own watch.</h2>
-          <p>Track the companies you care about. A connected brokerage or portfolio isn't required.</p>
-          <div id="brief-watchlist" class="brief-watchlist"><p>Checking your watchlist…</p></div>
-          <a href="portfolio.html" class="brief-watch__link">Portfolio options, when you're ready ↗</a>
-        </section>
-      </aside>
-    </div>
-  </main>
-  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Public-record research only. No individualized investment advice.</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
-</body>
-</html>
+    <aside class="v3-board__rail">
+      <section class="v3-module v3-watch" aria-labelledby="v3-watch-title"><div class="v3-module__head"><div><p class="v3-eyebrow">03 / FOLLOWED COMPANIES</p><h2 id="v3-watch-title">Your watchlist</h2></div><a href="watchlist.html">Manage ↗</a></div><div id="v3-watchlist" class="v3-rows"><p class="v3-empty">Checking your watchlist…</p></div><div class="v3-module__foot">Private to your account. No brokerage connection needed.</div></section>
+      <section class="v3-module" aria-labelledby="v3-notes-title"><div class="v3-module__head"><div><p class="v3-eyebrow">04 / CONTINUE INVESTIGATING</p><h2 id="v3-notes-title">Saved research</h2></div><a href="research.html">Write notes ↗</a></div><div id="v3-notes" class="v3-rows"><p class="v3-empty">Checking your research…</p></div><div class="v3-module__foot">A research note never submits a trade.</div></section>
+      <section class="v3-method" aria-labelledby="v3-method-title"><p class="v3-eyebrow">THE INSIDIR METHOD</p><h2 id="v3-method-title">Investigate first.</h2><p>Find the company. Read the filing. Compare reported periods. Record your own interpretation.</p><a href="research.html?ticker=AAPL">Explore a company example ↗</a></section>
+    </aside>
+  </section>
+  <section class="v3-bottom-note"><div><span>ABOUT THIS WORKSPACE</span><p>Insidir currently imports a subset of SEC ownership disclosures and pulls selected company reports and financial facts on demand. Missing records are not replaced with simulated figures.</p></div><a href="company-info.html">Learn about Insidir ↗</a></section>
+</main>
+<footer class="app-footer"><div class="container-wide"><span>© 2026 Aethric LLC · Insidir is independent research, not investment advice.</span><nav aria-label="Legal"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+</body></html>
