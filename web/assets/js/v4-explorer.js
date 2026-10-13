@@ -33,7 +33,10 @@ async function load(t){
  if(!allowed.has(t))return;
  selection=t;
  for(const btn of document.querySelectorAll("[data-scan-ticker]"))btn.setAttribute("aria-pressed",String(btn.dataset.scanTicker===t));
- $("is4-explorer-symbol").textContent=t.slice(0,1);
+ const brand=window.InsidirMedia;
+ const symbol=$("is4-explorer-symbol");
+ symbol.innerHTML=brand?brand.logo(t,"lg"):"";
+ brand?.hydrate(symbol);
  $("is4-company-ticker").textContent=t+" · Loading official SEC disclosures";
  $("is4-open-research").href="research.html?ticker="+encodeURIComponent(t);
  $("is4-company-details").href="company.html?ticker="+encodeURIComponent(t);
