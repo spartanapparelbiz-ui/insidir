@@ -11,6 +11,43 @@ const host=$("is4-explorer-filings"),facts=$("is4-explorer-facts"),status=$("is4
 if(!host||!facts||!status||!name)return;
 const allowed=new Set(["AAPL","MSFT","NVDA","TSLA"]);
 const cache=new Map();let inFlight=null,selection="AAPL";
+const peopleCache=new Map();let peopleFlight=null;
+async function loadPeople(t){
+ const host=$("ins-explorer-people");if(!host)return;
+ if(peopleCache.has(t)){renderPeople(peopleCache.get(t),t);return;}
+ if(peopleFlight)peopleFlight.abort();
+ const ac=new AbortController();peopleFlight=ac;
+ host.innerHTML='<p class="is4-explorer__empty">Checking publicly reported ownership disclosures…</p>';
+ try{
+  const r=await fetch("/v1/transactions?ticker="+encodeURIComponent(t)+"&limit=25",{credentials:"same-origin",headers:{Accept:"application/json"},signal:ac.signal});
+  if(!r.ok)throw Error("Imported Form 4 activity is unavailable");
+  const data=await r.json();
+  if(selection!==t)return;
+  const records=Array.isArray(data.items)?data.items:[];
+  peopleCache.set(t,records);renderPeople(records,t);
+ }catch(e){
+  if(e.name==="AbortError"||selection!==t)return;
+  host.innerHTML='<p class="is4-explorer__empty">Insider records unavailable. <a href="research.html?ticker='+encodeURIComponent(t)+'">Check the Research Desk →</a></p>';
+ }finally{if(peopleFlight===ac)peopleFlight=null;}
+}
+function renderPeople(records,t){
+ const host=$("ins-explorer-people");if(!host)return;
+ const found=new Set(),people=[];
+ for(const x of records){
+  const n=String(x.owner_name||"").trim();
+  if(!n||found.has(n.toUpperCase()))continue;
+  found.add(n.toUpperCase());
+  people.push({name:n,category:x.category});
+  if(people.length===8)break;
+ }
+ host.innerHTML=people.length?people.map(x=>'<div class="ins-explorer-person">'+
+  (window.InsidirMedia?.portrait(x.name,t,"md")||"")+
+  '<div class="ins-explorer-person__copy"><strong>'+esc(x.name)+'</strong><small>'+
+  (x.category==="reported_purchase"?"Reported purchase":x.category==="reported_sale"?"Reported sale":"Form 4 ownership activity")+
+  '</small></div></div>').join(""):
+  '<p class="is4-explorer__empty">No imported insider transactions are available for this company in the current dataset.</p>';
+ window.InsidirMedia?.hydrate(host);
+}
 function setStatus(message,state){status.textContent=message;status.dataset.state=state;}
 function render(data,ticker){
  const company=data?.company||{};
@@ -33,6 +70,7 @@ async function load(t){
  if(!allowed.has(t))return;
  selection=t;
  for(const btn of document.querySelectorAll("[data-scan-ticker]"))btn.setAttribute("aria-pressed",String(btn.dataset.scanTicker===t));
+ void loadPeople(t);
  const brand=window.InsidirMedia;
  const symbol=$("is4-explorer-symbol");
  symbol.innerHTML=brand?brand.logo(t,"lg"):"";
