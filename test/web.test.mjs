@@ -28,7 +28,7 @@ test("newspaper design uses existing repository imagery and live SEC research",a
    const dash=await(await fetch(base+"/dashboard.html")).text();
    assert.match(home,/v9-hero__visual/);
    assert.match(home,/v9-feature-list/);
-   assert.match(home,/assets\/img\/hero\.jpg/);
+   assert.match(home,/v12-terminal/);
    assert.match(home,/id="v6-live-records"/);
    assert.doesNotMatch(home,/class="is3-window"|mock-dashboard/);
    assert.match(dash,/v9-desk__hero/);
@@ -136,7 +136,7 @@ test("new public site and top-navigation app offer live product routes",async()=
   const paths=["/index.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html","/account.html","/company-info.html"];
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
-  assert.match(home,/Know more/);
+  assert.match(home,/Know what moves/);
   assert.match(home,/id="v6-live-records"/);
   assert.doesNotMatch(home,/is3-window|fake dashboard|01 \/ DISCOVER|02 \/ VERIFY/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
@@ -239,7 +239,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
 test("V7 long editorial site and shared application styling are served",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
  assert.match(home,/assets\/css\/v9-landing.css\?v=1/);
- assert.match(home,/Know more/);
+ assert.match(home,/Know what moves/);
  assert.match(home,/v9-feature/);
   assert.match(home,/v9-workflow__rows/);
   assert.match(home,/assets\/css\/v9-landing.css\?v=1/);
@@ -292,7 +292,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/Know more/);
+  assert.match(home,/Know what moves/);
   assert.match(home,/id="v6-live-records"/);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
@@ -345,7 +345,7 @@ test("V10 editorial photography, SEC people directory and verified identity asse
  const dash=await(await fetch(base+"/dashboard.html")).text();
  const people=await(await fetch(base+"/people.html")).text();
  assert.match(home,/v10-editorial.css/);
- assert.match(home,/v10-faces/);
+ assert.match(home,/v12-portrait-strip/);
  assert.match(home,/assets\/icons\/nvidia.svg/);
  assert.match(dash,/v10-people-preview/);
  assert.match(dash,/v10-people.js/);
@@ -381,5 +381,23 @@ test("Company report ships the market-terminal design for every ticker without e
   assert.match(header,/Search tickers, companies, or people/);
   assert.match(header,/\/v1\/search\?q=/);
   assert.match(header,/company\.html\?ticker=/);
+ });
+});
+
+test("V12 dark landing ships real SEC-powered research controls and no invented market prices",async()=>{
+ await withServer(async base=>{
+  const response=await fetch(base+"/");
+  const html=await response.text();
+  assert.match(html,/v12-home\.css\?v=1/);
+  assert.match(html,/v12-home\.js\?v=1/);
+  for(const id of ["v12-demo-chart","v12-demo-facts","v12-demo-open","v12-demo-source","v6-live-records","v6-menu-button"])assert.match(html,new RegExp('id="'+id+'"'),id);
+  for(const ticker of ["AAPL","NVDA","MSFT","GOOGL"])assert.match(html,new RegExp('data-v12-ticker="'+ticker+'"'));
+  assert.doesNotMatch(html,/fake customer reviews|fake dashboard|[+]1\.73%|market cap \$3\.33T/i);
+  const js=await(await fetch(base+"/assets/js/v12-home.js")).text();
+  assert.match(js,/\/v1\/intelligence\?ticker=/);
+  assert.match(js,/financialHistory/);
+  assert.match(js,/SEC service temporarily unavailable/);
+  assert.doesNotMatch(js,/Math\.random|fakeQuote|fakeReturns/);
+  assert.equal((await fetch(base+"/assets/css/v12-home.css")).status,200);
  });
 });
