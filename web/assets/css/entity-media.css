@@ -13,6 +13,9 @@
 .ins-media>a{display:grid;place-items:center;overflow:hidden;border-radius:inherit}
 .ins-media--person a img{object-fit:cover;object-position:center 32%;padding:0}
 .ins-media--missing>img{display:none}
+.ins-media--pending>svg{display:block!important}
+.ins-media--pending>img{opacity:0}
+.ins-media--pending>a{opacity:0}
 .ins-media--company:not(.ins-media--missing)>svg{display:none}
 .ins-media--person:not(.ins-media--missing)>svg{display:none}
 .ins-person-cell,.ins-company-cell{display:flex;align-items:center;gap:10px;min-width:0}
