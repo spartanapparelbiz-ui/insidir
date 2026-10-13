@@ -104,6 +104,7 @@ try{
    await page.locator('[data-insider-filter="reported_purchase"]').click();
    assert.equal(await page.locator("#cv-transactions-list tr").count(),1,"Insider transactions must filter");
    await page.locator("#cv-follow").click();
+   await page.waitForFunction(()=>document.querySelector("#cv-follow")?.textContent.includes("Following"),null,{timeout:10000});
    assert.match(await page.locator("#cv-follow").innerText(),/Following/,"Watchlist action should persist through the API");
    await page.locator("#cv-ticker").fill("MSFT");
    await page.locator('#cv-search button[type="submit"]').click();
