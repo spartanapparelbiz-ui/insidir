@@ -1,0 +1,43 @@
+/* Insidir sign-in and sign-up — no stock-photo wall, no faux Apple/Google sign-in.
+   Real email/password forms remain attached to existing auth.js. */
+body.v3-auth.v6-auth{background:#f9f9f7!important;color:#1c1d1f!important;--auth-bg:#f9f9f7}
+body.v3-auth.v6-auth .auth{--auth-bg:#f9f9f7!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,.92fr)!important;min-height:100svh!important;background:#f9f9f7!important}
+body.v3-auth.v6-auth .auth-panel{background:#f9f9f7!important;min-height:100svh}
+body.v3-auth.v6-auth .auth-panel__inner{min-height:100svh!important;padding:34px clamp(24px,4.3vw,75px) 38px!important;max-width:750px;margin-inline:auto;display:flex!important;flex-direction:column}
+body.v3-auth.v6-auth .auth-brand{margin:0!important;align-self:flex-start}
+body.v3-auth.v6-auth .auth-brand .logo,body.v3-auth.v6-auth .auth-logo{font:650 33px/1 var(--serif)!important;letter-spacing:-.07em!important;color:#141719!important}
+body.v3-auth.v6-auth .auth-card{width:min(100%,435px)!important;max-width:435px!important;margin:auto!important;padding:60px 0!important;align-self:center}
+body.v3-auth.v6-auth .auth-title{font:520 clamp(48px,4.3vw,69px)/1.04 var(--serif)!important;letter-spacing:-.06em!important;color:#16191a!important}
+body.v3-auth.v6-auth .auth-sub{font:400 14px/1.85 var(--sans)!important;max-width:380px!important;color:#727874!important;margin-top:17px!important}
+body.v3-auth.v6-auth .auth-form{margin-top:35px!important}
+body.v3-auth.v6-auth .auth-field+.auth-field{margin-top:20px!important}
+body.v3-auth.v6-auth .auth-field .label{font:600 11px/1.6 var(--sans)!important;color:#303433!important;margin-bottom:8px!important}
+body.v3-auth.v6-auth .auth .input{height:50px!important;width:100%!important;padding:0 14px!important;border:1px solid #dde0dc!important;border-radius:8px!important;color:#1a1c1a!important;background:#fff!important;box-shadow:none!important;font-size:13px!important}
+body.v3-auth.v6-auth .auth .input::placeholder{color:#9a9f9a!important}
+body.v3-auth.v6-auth .auth .input:focus{outline:2px solid #b9bcb9!important;outline-offset:2px!important}
+body.v3-auth.v6-auth .field__hint{color:#777d76!important}
+body.v3-auth.v6-auth .auth-submit{margin-top:25px!important}
+body.v3-auth.v6-auth .auth-btn{height:51px!important;border:0!important;border-radius:8px!important;background:#181a1d!important;color:#fff!important;font:650 12px var(--sans)!important}
+body.v3-auth.v6-auth .auth-btn:hover{background:#383a3d!important}
+body.v3-auth.v6-auth .auth-switch{color:#737972!important;font-size:12px!important;text-align:center;margin-top:28px!important}
+body.v3-auth.v6-auth .auth-switch strong{color:#16191c!important}
+body.v3-auth.v6-auth .auth-legal{color:#8c928d!important;font-size:11px!important;text-align:center;line-height:1.7!important;margin-top:16px!important}
+body.v3-auth.v6-auth .auth-legal a{color:#454b46!important;text-decoration:underline;text-underline-offset:3px}
+body.v3-auth.v6-auth .auth-media{position:relative;display:flex!important;flex-direction:column;justify-content:center!important;align-items:center!important;min-height:100svh!important;background:#191b1e!important;color:#fff!important;overflow:hidden!important}
+body.v3-auth.v6-auth .auth-media__frame,body.v3-auth.v6-auth .auth-edge{display:none!important}
+body.v3-auth.v6-auth .v6-auth-story{padding:70px clamp(30px,6vw,100px);position:relative;z-index:2;max-width:740px}
+body.v3-auth.v6-auth .v6-auth-story__label{font:650 10px var(--sans);letter-spacing:.16em;color:#b4b7b4}
+body.v3-auth.v6-auth .v6-auth-story h2{font:500 clamp(52px,5.6vw,91px)/1.08 var(--serif);letter-spacing:-.06em;color:#f7f7f5;margin:28px 0}
+body.v3-auth.v6-auth .v6-auth-story h2 em{font-style:normal;color:#a9aca9}
+body.v3-auth.v6-auth .v6-auth-story p{font-size:14px;line-height:1.9;color:#b5bab6;max-width:450px}
+body.v3-auth.v6-auth .v6-auth-story__rule{margin-top:70px;padding-top:21px;border-top:1px solid #45484a;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#acb0ac;font:570 10px var(--sans);letter-spacing:.06em}
+body.v3-auth.v6-auth .auth-media:before{content:"";position:absolute;inset:0;opacity:.35;background-image:linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:116px 100%,100% 115px;mask-image:linear-gradient(90deg,transparent,black)}
+body.v3-auth.v6-auth .auth-media:after{content:"i.";position:absolute;right:-40px;bottom:-130px;font:600 500px/1 var(--serif);letter-spacing:-.12em;color:rgba(255,255,255,.025);pointer-events:none}
+@media(max-width:800px){
+ body.v3-auth.v6-auth .auth{grid-template-columns:1fr!important}
+ body.v3-auth.v6-auth .auth-media{display:none!important}
+ body.v3-auth.v6-auth .auth-panel,.v3-auth.v6-auth .auth-panel__inner{min-height:100svh!important}
+ body.v3-auth.v6-auth .auth-card{margin:auto!important;padding:62px 0!important;max-width:480px!important}
+}
+@media(max-width:480px){body.v3-auth.v6-auth .auth-panel__inner{padding:25px 24px 35px!important}body.v3-auth.v6-auth .auth-card{width:100%!important;padding:55px 0!important}body.v3-auth.v6-auth .auth-title{font-size:49px!important}}
+@media(prefers-reduced-motion:reduce){body.v3-auth.v6-auth *{transition:none!important;animation:none!important}}
