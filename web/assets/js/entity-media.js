@@ -67,7 +67,7 @@ function logo(ticker, size="sm"){
  const t=normalizeTicker(ticker),brand=brands[t],sz=["sm","md","lg"].includes(size)?size:"sm";
  if(!brand)return '<span class="ins-media ins-media--company ins-media--'+sz+' ins-media--missing" title="Company logo not verified" aria-label="Company logo unavailable">'+building+'</span>';
  const [slug,domain]=brand;
- const url=slug?"https://cdn.simpleicons.org/"+slug+"/e9f0e7":favicon(domain);
+ const url=slug?"https://cdn.simpleicons.org/"+slug:favicon(domain);
  return '<span class="ins-media ins-media--company ins-media--'+sz+'" title="Brand mark for '+html(t)+'">'+
    '<img loading="lazy" decoding="async" alt="" src="'+html(url)+'" data-logo-fallback="'+html(slug?favicon(domain):"")+'">'+building+'</span>';
 }
