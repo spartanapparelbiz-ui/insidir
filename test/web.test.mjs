@@ -110,7 +110,7 @@ test("new public site and top-navigation app offer live product routes",async()=
   const paths=["/index.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html","/account.html","/company-info.html"];
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
-  assert.match(home,/See what the/);
+  assert.match(home,/The market is loud/);
   assert.match(home,/id="v6-live-records"/);
   assert.doesNotMatch(home,/is3-window|fake dashboard|01 \/ DISCOVER|02 \/ VERIFY/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
@@ -262,7 +262,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/See what the/);
+  assert.match(home,/The market is loud/);
   assert.match(home,/id="v6-live-records"/);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
