@@ -172,12 +172,13 @@ test("real research data and original document icons remain available",async()=>
   assert.match(derived,/insidir:filings-loaded/);
   assert.match(derived,/insidir:transactions-loaded/);
   assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
-  for(const p of ["/research.html","/company.html","/filings.html"])assert.match(await(await fetch(base+p)).text(),/v6-app\.css/);
+  for(const p of ["/research.html","/filings.html"])assert.match(await(await fetch(base+p)).text(),/v6-app\.css/);
  });
 });
 test("real logos and carefully matched free-license portraits are available without synthetic faces",async()=>{
   await withServer(async base=>{
-    for(const page of ["/dashboard.html","/company.html","/explore.html","/filings.html","/watchlist.html","/research.html"]){
+    assert.match(await(await fetch(base+"/company.html")).text(),/assets\/js\/entity-media\.js/,"Company report keeps curated portraits");
+    for(const page of ["/dashboard.html","/explore.html","/filings.html","/watchlist.html","/research.html"]){
       const res=await fetch(base+page);
       assert.equal(res.status,200,page);
       const html=await res.text();
@@ -227,7 +228,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
   assert.match(appCSS,/flex-direction:row!important/);
   assert.match(appCSS,/\.app-mobile-nav\.is-open/);
   assert.doesNotMatch(appCSS,/fixed\s+sidebar/);
-  for(const p of ["/research.html","/company.html","/explore.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/account.html"]){
+  for(const p of ["/research.html","/explore.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/account.html"]){
    const html=await(await fetch(base+p)).text();
    assert.match(html,/v6-app\.css/,p);
    assert.match(html,/v6-app/,p);
@@ -245,7 +246,7 @@ test("V7 long editorial site and shared application styling are served",async()=
   assert.match(home,/assets\/js\/v9-motion.js\?v=1/);
  assert.match(home,/v9-intro__grid/);
  assert.doesNotMatch(home,/v6-orbit|v6-graphic__core/);
- const pages=["dashboard.html","research.html","company.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html"];
+ const pages=["dashboard.html","research.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html"];
  for(const page of pages){const r=await fetch(base+"/"+page);assert.equal(r.status,200,page);const html=await r.text();assert.match(html,/v9-dashboard.css\?v=1|v9-interior.css\?v=1/,page);}
  for(const asset of ["v9-landing.css","v9-dashboard.css","v9-interior.css"]){assert.equal((await fetch(base+"/assets/css/"+asset)).status,200);}
 });});
@@ -358,22 +359,28 @@ test("V10 editorial photography, SEC people directory and verified identity asse
  });
 });
 
-test("Universal company report does not embed fake prices and ships SEC-only interactive sections",async()=>{
+test("Company report ships the market-terminal design for every ticker without embedded prices",async()=>{
  await withServer(async base=>{
   const html=await(await fetch(base+"/company.html?ticker=MSFT")).text();
-  assert.match(html,/v11-company.css/);
-  assert.match(html,/v11-company.js/);
-  for(const id of ["cv-name","c11-chart","c11-history-table","cv-filings-list","cv-transactions-list","c11-owner-list","cv-follow"]){
-    assert.match(html,new RegExp('id="'+id+'"'),"Expected source-backed company section "+id);
+  assert.match(html,/v12-company\.css/);
+  assert.match(html,/v12-company\.js/);
+  assert.match(html,/data-app-header data-active="companies"/);
+  for(const id of ["cx-name","cx-logo","cx-price","cx-change","cx-chart","cx-facts","cx-tabs","cx-fin-rows","cx-filing-rows","cx-insider-rows","cx-statements","cx-filings-table","cx-insiders-table","cx-people-sec","cx-announcements","cx-headlines","cx-watch","cx-alert","cx-share"]){
+    assert.match(html,new RegExp('id="'+id+'"'),"Expected company report section "+id);
   }
-  assert.doesNotMatch(html,/\$163\.42|\$1\.98T|S&P 500|NASDAQ \+.*%/);
-  const code=await(await fetch(base+"/assets/js/v11-company.js")).text();
-  assert.match(code,/\/v1\/intelligence\?ticker=/);
-  assert.match(code,/\/v1\/transactions\?ticker=/);
-  assert.match(code,/\/v1\/filings\?ticker=/);
-  assert.match(code,/\/v1\/me\/watchlist/);
-  assert.match(code,/financialHistory/);
+  for(const label of ["Market cap","Enterprise value","P/E ratio","Revenue (TTM)","Net income (TTM)","Employees","Headquarters","Founded","Website"])assert.ok(html.includes(label),"Key fact "+label);
+  for(const tab of ["Overview","Financials","SEC filings","Insider activity","People","News"])assert.match(html,new RegExp('role="tab"[^>]*>'+tab+'<'),"Tab "+tab);
+  for(const range of ["1D","1W","1M","3M","1Y","5Y"])assert.match(html,new RegExp('data-range="'+range+'"'));
+  assert.doesNotMatch(html,/\$\d{2,}\.\d{2}|\$\d+(\.\d+)?[TBM]\b/,"No hard-coded prices or valuations in the page");
+  const code=await(await fetch(base+"/assets/js/v12-company.js")).text();
+  for(const route of ["/v1/intelligence?ticker=","/v1/market/chart?ticker=","/v1/company/profile?ticker=","/v1/company/insiders?ticker=","/v1/company/news?ticker=","/v1/me/watchlist","/v1/search?q="])assert.ok(code.includes(route),route);
   assert.doesNotMatch(code,/Math\.random|mockPrice|syntheticPrice/);
+  const css=await fetch(base+"/assets/css/v12-company.css");
+  assert.equal(css.status,200);
+  const header=await(await fetch(base+"/assets/js/app.js")).text();
+  assert.match(header,/Search tickers, companies, or people/);
+  assert.match(header,/\/v1\/search\?q=/);
+  assert.match(header,/company\.html\?ticker=/);
  });
 });
 

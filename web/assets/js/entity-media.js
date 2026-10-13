@@ -73,6 +73,7 @@ function hydrate(root=document){
   if(img.complete&&img.naturalWidth>0)cell?.classList.remove("ins-media--pending","ins-media--missing");
  }
 }
-window.InsidirMedia=Object.freeze({logo,portrait,hydrate,knownBrand:t=>Boolean(marks[normalizeTicker(t)])});
+function photo(name,ticker){const slug=images[normalizeTicker(ticker)+":"+normalize(name)];return slug?photos[slug]:null;}
+window.InsidirMedia=Object.freeze({logo,portrait,photo,hydrate,knownBrand:t=>Boolean(marks[normalizeTicker(t)])});
 document.addEventListener("DOMContentLoaded",()=>hydrate());
 })();

@@ -11,6 +11,7 @@ const amount = v => {
   const n = Number(s);
   return Number.isFinite(n) && Math.abs(n) < 1e15 ? n : null;
 };
+const flag = v => /^(1|true)$/i.test(val(v) || "");
 const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
 export function parseAtom(xml) {
@@ -47,9 +48,11 @@ export function parseOwnership(xml, filing) {
   const owners = list(root.reportingOwner).map(o => ({
     cik: scalar(o?.reportingOwnerId?.rptOwnerCik),
     name: scalar(o?.reportingOwnerId?.rptOwnerName) || "Unspecified reporting owner",
-    isDirector: val(o?.reportingOwnerRelationship?.isDirector) === "1",
-    isOfficer: val(o?.reportingOwnerRelationship?.isOfficer) === "1",
-    officerTitle: scalar(o?.reportingOwnerRelationship?.officerTitle)
+    isDirector: flag(o?.reportingOwnerRelationship?.isDirector),
+    isOfficer: flag(o?.reportingOwnerRelationship?.isOfficer),
+    isTenPercentOwner: flag(o?.reportingOwnerRelationship?.isTenPercentOwner),
+    officerTitle: scalar(o?.reportingOwnerRelationship?.officerTitle),
+    otherText: scalar(o?.reportingOwnerRelationship?.otherText)
   }));
   const ticker = scalar(issuer.issuerTradingSymbol)?.toUpperCase() || null;
   const transactions = [];
@@ -76,6 +79,7 @@ export function parseOwnership(xml, filing) {
         shares, pricePerShare: price,
         estimatedValue: shares != null && price != null && shares >= 0 && price >= 0 ? Math.round(shares * price * 100) / 100 : null,
         directOwnership: val(t?.ownershipNature?.directOrIndirectOwnership) || null,
+        sharesAfter: amount(t?.postTransactionAmounts?.sharesOwnedFollowingTransaction),
         sourceUrl: filing.sourceUrl
       });
     }
@@ -95,7 +99,8 @@ export function parseOwnership(xml, filing) {
 let nextRequest = 0;
 async function throttle() {
   const wait = Math.max(0, nextRequest - Date.now());
-  nextRequest = Math.max(nextRequest, Date.now()) + 350;
+  // SEC fair access allows up to 10 requests per second; stay comfortably below it.
+  nextRequest = Math.max(nextRequest, Date.now()) + 125;
   if (wait) await new Promise(r => setTimeout(r, wait));
 }
 export function allowedSecUrl(input) {

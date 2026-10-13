@@ -19,7 +19,7 @@ Without the engine, the product screens show their built-in sample data, and the
 | Pricing | `pricing.html` | Free and Pro plans, comparison table, FAQ |
 | Sign in / Sign up | `signin.html`, `signup.html` | Wired to the engine's auth API, with client-side validation |
 | Dashboard | `dashboard.html` | Market cards, insider activity filter, watchlist, filings, political trades |
-| Company | `company.html?ticker=AAPL` | Price chart with ranges and tabs for insider activity, filings, financials, ownership and news |
+| Company | `company.html?ticker=AAPL` | V12 dark market terminal for any SEC-listed ticker: delayed price chart (1D–5Y), key facts, and Overview, Financials, SEC filings, Insider activity, People and News tabs (`v12-company.css`, `v12-company.js`). Without a ticker it shows a company picker |
 | Alerts | `alerts.html` | Type filters, expandable rows, "Manage alerts" drawer |
 | Filing viewer | `filing.html` | Form 10-K outline with scrollspy, plus a document pane |
 | Terms / Privacy | `terms.html`, `privacy.html` | Numbered sections with a sticky table of contents |
@@ -79,6 +79,10 @@ These are intentional:
 - Small "Sample data" labels mark illustrative figures.
 - Under 860px, a menu button opens the product navigation.
 - The reference's mock-up artefacts are not reproduced: a Microsoft logo on an Apple alert, a duplicated "About" link, and a stray comma.
+
+## Company report data
+
+The company page calls `/v1/intelligence`, `/v1/market/chart`, `/v1/company/profile`, `/v1/company/insiders` and `/v1/company/news` in parallel and renders each section as its data arrives. Every value is sourced: SEC EDGAR/XBRL for financials, filings and Form 4 activity; Yahoo Finance for delayed prices; Wikidata/Wikipedia for founding year, employees, website, logo, leadership photos and the description. Calculated values (market cap = price × shares outstanding, enterprise value = market cap + debt − cash and short-term investments, P/E = price ÷ trailing diluted EPS) explain their inputs in a tooltip and are skipped for foreign issuers whose listed shares may be ADRs. Logos drawn for light backgrounds are detected in the browser and inverted or placed on a light tile so they stay visible on the dark page.
 
 ## Before launch
 
