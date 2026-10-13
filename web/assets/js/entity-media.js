@@ -6,10 +6,17 @@
 (() => {
 "use strict";
 const marks=Object.freeze({
-  AAPL:{name:"Apple",src:"https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",source:"https://commons.wikimedia.org/wiki/File:Apple_logo_black.svg"},
-  MSFT:{name:"Microsoft",src:"https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",source:"https://commons.wikimedia.org/wiki/File:Microsoft_logo.svg"},
-  NVDA:{name:"NVIDIA",src:"https://upload.wikimedia.org/wikipedia/commons/4/48/Nvidia_Logo.svg",source:"https://commons.wikimedia.org/wiki/File:Nvidia_Logo.svg"},
-  TSLA:{name:"Tesla",src:"https://upload.wikimedia.org/wikipedia/commons/b/bb/Tesla_T_symbol.svg",source:"https://commons.wikimedia.org/wiki/File:Tesla_T_symbol.svg"}
+ AAPL:{name:"Apple",src:"assets/icons/apple.svg",source:"https://commons.wikimedia.org/wiki/File:Apple_logo_black.svg"},
+ MSFT:{name:"Microsoft",src:"assets/icons/microsoft.svg",source:"https://commons.wikimedia.org/wiki/File:Microsoft_logo.svg"},
+ NVDA:{name:"NVIDIA",src:"assets/icons/nvidia.svg",source:"https://commons.wikimedia.org/wiki/File:Nvidia_Logo.svg"},
+ TSLA:{name:"Tesla",src:"assets/icons/tesla.svg",source:"https://commons.wikimedia.org/wiki/File:Tesla_T_symbol.svg"},
+ META:{name:"Meta",src:"assets/icons/meta.svg",source:"https://about.meta.com/brand/resources/meta/company-brand/"},
+ GOOGL:{name:"Alphabet / Google",src:"assets/icons/google.svg",source:"https://about.google/brand-resource-center/"},
+ GOOG:{name:"Alphabet / Google",src:"assets/icons/google.svg",source:"https://about.google/brand-resource-center/"},
+ ABNB:{name:"Airbnb",src:"assets/icons/airbnb.svg",source:"https://www.airbnb.com/press"},
+ AMZN:{name:"Amazon",src:"https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",source:"https://commons.wikimedia.org/wiki/File:Amazon_logo.svg"},
+ NFLX:{name:"Netflix",src:"https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",source:"https://commons.wikimedia.org/wiki/File:Netflix_2015_logo.svg"},
+ IBM:{name:"IBM",src:"https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg",source:"https://commons.wikimedia.org/wiki/File:IBM_logo.svg"}
 });
 const images=Object.freeze({
   "AAPL:COOK TIMOTHY D":"tim-cook",

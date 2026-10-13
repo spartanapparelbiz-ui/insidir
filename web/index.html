@@ -8,7 +8,8 @@
 <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v9-landing.css?v=1">
-<script defer src="assets/js/v6-site.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v10-editorial.css?v=1">
+<script defer src="assets/js/entity-media.js?v=real-assets-3"></script><script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/v9-motion.js?v=1"></script>
 </head>
 <body class="v6-site v9-site">
@@ -16,11 +17,11 @@
 <header class="v6-nav v9-nav">
   <div class="v9-width v6-nav__inner">
     <a class="v6-logo" href="index.html" aria-label="Insidir home">insidir.</a>
-    <nav class="v6-nav__links" aria-label="Main navigation"><a href="#product">Product</a><a href="#approach">Our approach</a><a href="#data">Intelligence</a><a href="#plans">Pricing</a></nav>
+    <nav class="v6-nav__links" aria-label="Main navigation"><a href="#product">Product</a><a href="#approach">Our approach</a><a href="people.html">People</a><a href="#plans">Pricing</a></nav>
     <div class="v6-nav__actions"><a class="v6-signin" href="signin.html">Log in</a><a class="v9-btn v9-btn--ink v9-btn--small" href="signup.html">Get started <span aria-hidden="true">↗</span></a>
     <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button></div>
   </div>
-  <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden><a href="#product">Product</a><a href="#approach">Our approach</a><a href="#data">Intelligence</a><a href="#plans">Pricing</a><a href="signin.html">Log in</a><a href="signup.html">Get started ↗</a></nav>
+  <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden><a href="#product">Product</a><a href="#approach">Our approach</a><a href="people.html">People</a><a href="#plans">Pricing</a><a href="signin.html">Log in</a><a href="signup.html">Get started ↗</a></nav>
 </header>
 <main id="main">
 <section class="v9-hero" aria-labelledby="v6-hero-heading">
@@ -37,6 +38,17 @@
   </div>
 </section>
 <section class="v9-tickerstrip" aria-label="What Insidir connects"><div class="v9-width"><span>ONE PLACE TO CONNECT</span><b>Insider activity</b><i></i><b>Company filings</b><i></i><b>Financial context</b><i></i><b>Your research</b></div></section>
+<section class="v10-brands" aria-label="Public company research shortcuts"><div class="v9-width"><div class="v10-brands__intro"><span class="v9-eyebrow">START WITH A COMPANY</span><p>Recognizable companies. Original filings. Your own conclusions.</p></div><div class="v10-brands__grid">
+<a href="company.html?ticker=AAPL" aria-label="Research Apple"><img src="assets/icons/apple.svg" alt="Apple" loading="lazy"></a>
+<a href="company.html?ticker=MSFT" aria-label="Research Microsoft"><img src="assets/icons/microsoft.svg" alt="Microsoft" loading="lazy"></a>
+<a href="company.html?ticker=NVDA" aria-label="Research NVIDIA"><img src="assets/icons/nvidia.svg" alt="NVIDIA" loading="lazy"></a>
+<a href="company.html?ticker=META" aria-label="Research Meta"><img src="assets/icons/meta.svg" alt="Meta" loading="lazy"></a>
+<a href="company.html?ticker=GOOGL" aria-label="Research Alphabet"><img src="assets/icons/google.svg" alt="Google / Alphabet" loading="lazy"></a>
+<a href="company.html?ticker=TSLA" aria-label="Research Tesla"><img src="assets/icons/tesla.svg" alt="Tesla" loading="lazy"></a>
+<a href="company.html?ticker=ABNB" aria-label="Research Airbnb"><img src="assets/icons/airbnb.svg" alt="Airbnb" loading="lazy"></a></div><p class="v10-brands__note">Company names and marks identify research subjects, not endorsements or customers. Data availability varies.</p></div></section>
+<section class="v10-editorial" aria-labelledby="v10-editorial-title"><div class="v9-width"><div class="v10-editorial__head"><div><p class="v9-eyebrow">THE RESEARCH PERSPECTIVE / 001</p><h2 id="v10-editorial-title">The story behind<br><em>the story.</em></h2></div><a href="explore.html">Explore companies <span aria-hidden="true">↗</span></a></div><div class="v10-editorial__gallery">
+<a class="v10-editorial__lead" href="filings.html"><img src="assets/img/records-left.jpg" alt="Architectural detail of the New York Stock Exchange" loading="lazy" decoding="async"><span><small>THE PUBLIC RECORD</small><strong>Read the source, not just the headline.</strong><b>Explore original disclosures ↗</b></span></a>
+<div class="v10-editorial__stack"><a href="research.html"><img src="assets/img/pricing-left.jpg" alt="Downtown financial district architecture" loading="lazy" decoding="async"><span>Research the details <b>↗</b></span></a><a href="people.html"><img src="assets/img/moves-people.jpg" alt="People moving through the city" loading="lazy" decoding="async"><span>Follow the people <b>↗</b></span></a></div></div></div></section>
 <section class="v9-section v9-intro" id="product"><div class="v9-width v9-intro__grid">
   <div data-v9-reveal><p class="v9-eyebrow">A SMARTER WAY TO LOOK</p><h2>Information is everywhere.<br><em>Clarity isn't.</em></h2></div>
   <div data-v9-reveal><p>Hundreds of sources. Thousands of details. Insidir brings relevant company information into one focused research experience so you can spend less time searching and more time understanding.</p><a class="v9-underlink" href="research.html">Step inside the research desk <span aria-hidden="true">↗</span></a></div>
@@ -49,6 +61,11 @@
     <a href="watchlist.html" class="v9-feature" data-v9-reveal><div class="v9-feature__copy"><span class="v9-eyebrow">YOUR WORKSPACE</span><h3>Make the research yours.</h3><p>Keep a private watchlist and save the thoughts behind your decisions. Pick up whenever a new question appears.</p><span class="v9-arrow">Your workspace ↗</span></div><img src="assets/img/informed-right.jpg" loading="lazy" decoding="async" alt="Desk overlooking Manhattan's skyline"></a>
   </div>
 </div></section>
+<section class="v10-faces" aria-labelledby="v10-faces-title"><div class="v9-width"><div class="v10-faces__heading"><div><p class="v9-eyebrow">PEOPLE, NOT JUST TICKERS</p><h2 id="v10-faces-title">Markets are made<br><em>by people.</em></h2><p>Connect names to businesses and examine the ownership disclosures behind the news.</p><a href="people.html" class="v9-underlink">Explore reporting people ↗</a></div><div class="v10-faces__grid">
+<a href="people.html?q=Tim%20Cook" class="v10-face"><img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/9/9e/Tim_Cook_%282017%2C_cropped%29.jpg" alt="Photograph of Tim Cook"><span><strong>Tim Cook</strong><small>Apple</small></span></a>
+<a href="people.html?q=Satya%20Nadella" class="v10-face"><img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella_%28cropped%29.jpg" alt="Photograph of Satya Nadella"><span><strong>Satya Nadella</strong><small>Microsoft</small></span></a>
+<a href="people.html?q=Jensen%20Huang" class="v10-face"><img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/5/59/Jensen_Huang_%28cropped%29_%282024%29.jpg" alt="Photograph of Jensen Huang"><span><strong>Jensen Huang</strong><small>NVIDIA</small></span></a>
+</div></div><p class="v10-faces__credit">Published portraits via Wikimedia Commons; photo credits and licensing are available from the <a href="https://commons.wikimedia.org/wiki/File:Tim_Cook_(2017,_cropped).jpg" target="_blank" rel="noopener noreferrer">original</a> <a href="https://commons.wikimedia.org/wiki/File:Satya_Nadella_(cropped).jpg" target="_blank" rel="noopener noreferrer">file</a> <a href="https://commons.wikimedia.org/wiki/File:Jensen_Huang_(cropped)_(2024).jpg" target="_blank" rel="noopener noreferrer">pages</a>. Images illustrate individuals; they do not assert recent trades.</p></div></section>
 <section class="v9-statement" id="approach"><div class="v9-width" data-v9-reveal><p class="v9-eyebrow">A DIFFERENT KIND OF MARKET TOOL</p><h2>More than a feed.<br><em>Less than the noise.</em></h2><p>Better research doesn't mean more tabs or another crowded dashboard. It means the right information, connected at the right time.</p><a class="v9-btn v9-btn--light" href="signup.html">Build your research space ↗</a></div></section>
 <section class="v9-section v9-data" id="data"><div class="v9-width">
   <div class="v9-data__heading" data-v9-reveal><div><p class="v9-eyebrow">RECENT DISCLOSURES</p><h2>Go straight<br><em>to the details.</em></h2></div><p>Explore actual imported SEC filings, with publication dates and original source links where available. Data may be incomplete or delayed.</p></div>
