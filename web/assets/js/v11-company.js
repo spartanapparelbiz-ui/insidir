@@ -135,7 +135,7 @@ function renderInsiderPreview(){
  hydrate("c11-insider-preview");
 }
 function renderFilingRows(){
- const all=forms(),filtered=all.filter(f=>filingFilter==="all"||filingFilter==="other"?!/^(10-K|10-Q|8-K)/.test(f.form):String(f.form||"").startsWith(filingFilter));
+ const all=forms(),filtered=all.filter(f=>filingFilter==="all"?true:filingFilter==="other"?!/^(10-K|10-Q|8-K)/.test(f.form):String(f.form||"").startsWith(filingFilter));
  setText("cv-filing-count",String(all.length));
  document.querySelectorAll("[data-form-filter]").forEach(b=>b.classList.toggle("is-active",b.dataset.formFilter===filingFilter));
  setHTML("cv-filings-list",filtered.length?filtered.map(f=>'<tr><td><span class="c11-form-tag">'+escape(f.form||"SEC")+'</span></td><td>'+escape(f.headline||"Public company disclosure")+'</td><td>'+escape(date(f.reportDate))+'</td><td class="c11-num">'+escape(date(f.filedAt))+'</td><td>'+anchor(f.sourceUrl,"View original")+'</td></tr>').join(""):'<tr><td colspan="5">'+empty("No records match this form filter in the available SEC data.")+'</td></tr>');
