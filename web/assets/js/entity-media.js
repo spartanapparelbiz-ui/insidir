@@ -49,7 +49,7 @@ function renderAsset(asset,kind,size){
   const image='<img data-real-image src="'+esc(asset.src)+'" alt="'+esc(label)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
   const wrap=kind==="person"?
     '<a class="ins-media__credit" href="'+esc(asset.source)+'" target="_blank" rel="noopener noreferrer" title="'+esc(label+source)+'">'+image+'</a>':image;
-  return '<span class="ins-media ins-media--'+kind+' ins-media--'+sz+' ins-media--missing" data-real-source="'+esc(asset.source)+'" title="'+esc(label+source)+'">'+(kind==="person"?personSymbol:companySymbol)+wrap+'</span>';
+  return '<span class="ins-media ins-media--'+kind+' ins-media--'+sz+' ins-media--pending" data-real-source="'+esc(asset.source)+'" title="'+esc(label+source)+'">'+(kind==="person"?personSymbol:companySymbol)+wrap+'</span>';
 }
 function logo(ticker,size="sm"){return renderAsset(marks[normalizeTicker(ticker)],"company",size);}
 function portrait(name,ticker,size="sm"){
@@ -61,9 +61,9 @@ function hydrate(root=document){
  for(const img of root.querySelectorAll("img[data-real-image]:not([data-real-ready])")){
   img.dataset.realReady="1";
   const cell=img.closest(".ins-media");
-  img.addEventListener("load",()=>{if(img.naturalWidth>0){cell?.classList.remove("ins-media--missing");}},{once:true});
-  img.addEventListener("error",()=>{cell?.classList.add("ins-media--missing");img.closest("a.ins-media__credit")?.remove();img.remove();},{once:true});
-  if(img.complete&&img.naturalWidth>0)cell?.classList.remove("ins-media--missing");
+  img.addEventListener("load",()=>{if(img.naturalWidth>0){cell?.classList.remove("ins-media--pending","ins-media--missing");}},{once:true});
+  img.addEventListener("error",()=>{cell?.classList.remove("ins-media--pending");cell?.classList.add("ins-media--missing");img.closest("a.ins-media__credit")?.remove();img.remove();},{once:true});
+  if(img.complete&&img.naturalWidth>0)cell?.classList.remove("ins-media--pending","ins-media--missing");
  }
 }
 window.InsidirMedia=Object.freeze({logo,portrait,hydrate,knownBrand:t=>Boolean(marks[normalizeTicker(t)])});
