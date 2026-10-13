@@ -63,6 +63,45 @@
   <p class="is3-product__caption">This is a connected product preview. Filing rows load from Insidir's imported SEC dataset; unavailable data is not replaced with examples.</p>
 </section>
 
+
+<section class="is4-explorer is3-section" id="live-research" aria-labelledby="is4-explorer-title">
+ <div class="is3-shell">
+  <div class="is3-section-head">
+   <p class="is3-eyebrow">OPEN THE WORKSPACE / COMPANY INTELLIGENCE</p>
+   <div class="is3-section-head__split"><h2 id="is4-explorer-title">Look past the ticker.</h2><p>This isn't a screenshot. Select a company to inspect its latest available corporate filings and reported fundamentals—directly from the SEC-backed Insidir research service.</p></div>
+  </div>
+  <div class="is4-explorer__shell">
+   <div class="is4-explorer__toolbar">
+    <div><p>RESEARCH TARGET</p><div class="is4-explorer__tickers" role="group" aria-label="Choose a stock ticker">
+     <button type="button" data-scan-ticker="AAPL" aria-pressed="true">AAPL</button>
+     <button type="button" data-scan-ticker="MSFT" aria-pressed="false">MSFT</button>
+     <button type="button" data-scan-ticker="NVDA" aria-pressed="false">NVDA</button>
+     <button type="button" data-scan-ticker="TSLA" aria-pressed="false">TSLA</button>
+    </div></div>
+    <a id="is4-open-research" href="research.html?ticker=AAPL">FULL COMPANY RESEARCH <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-up-right"></use></svg></a>
+   </div>
+   <div class="is4-explorer__content">
+    <div class="is4-explorer__identity">
+     <div class="is4-explorer__symbol" id="is4-explorer-symbol">A</div>
+     <div><span class="is4-explorer__label">PUBLIC COMPANY / SEC EDGAR</span><h3 id="is4-company-name">Select a company</h3><p id="is4-company-ticker">AAPL · Official SEC submissions and reported financial facts</p></div>
+     <span class="is4-explorer__status" id="is4-explorer-status" role="status" aria-live="polite"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Ready to investigate</span>
+    </div>
+    <div class="is4-explorer__grid">
+     <div class="is4-explorer__panel">
+      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> <span>OFFICIAL COMPANY FILINGS</span><span>FORM / DATE</span></div>
+      <div id="is4-explorer-filings" class="is4-explorer__records"><p class="is4-explorer__empty">Choose a ticker above to load official company disclosures. Original filing links will appear here.</p></div>
+     </div>
+     <div class="is4-explorer__panel">
+      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg> <span>REPORTED FINANCIAL FACTS</span><span>SEC XBRL</span></div>
+      <div id="is4-explorer-facts" class="is4-explorer__records"><p class="is4-explorer__empty">Financial measures will appear with their reported accounting periods, when available.</p></div>
+     </div>
+    </div>
+    <div class="is4-explorer__bottom"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Original sources. Reported periods. No price prediction.</span><a href="company.html?ticker=AAPL" id="is4-company-details">View complete company record <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-right"></use></svg></a></div>
+   </div>
+  </div>
+ </div>
+</section>
+
 <section class="is3-section is3-shell is3-capabilities" id="workflow">
   <div class="is3-section-head"><p class="is3-eyebrow">THE RESEARCH PROCESS</p><div class="is3-section-head__split"><h2>Go beyond<br>the headline.</h2><p>Understand the original reporting, not just someone else's interpretation. Every action below links to research you can inspect yourself.</p></div></div>
   <div class="is3-capabilities__grid">
