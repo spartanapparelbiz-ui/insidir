@@ -24,11 +24,11 @@ const images=Object.freeze({
   "TSLA:ELON MUSK":"elon-musk"
 });
 const photos=Object.freeze({
- "tim-cook":{name:"Tim Cook",src:"https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Tim_Cook_%282017%2C_cropped%29.jpg/250px-Tim_Cook_%282017%2C_cropped%29.jpg",
+ "tim-cook":{name:"Tim Cook",src:"https://upload.wikimedia.org/wikipedia/commons/9/9e/Tim_Cook_%282017%2C_cropped%29.jpg",
    source:"https://commons.wikimedia.org/wiki/File:Tim_Cook_(2017,_cropped).jpg",credit:"Austin Community College / Catalin Abagiu",license:"CC BY 2.0"},
  "satya-nadella":{name:"Satya Nadella",src:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella_%28cropped%29.jpg",
    source:"https://commons.wikimedia.org/wiki/File:Satya_Nadella_(cropped).jpg",credit:"Brian Smale",license:"CC BY-SA 4.0"},
- "jensen-huang":{name:"Jensen Huang",src:"https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Jensen_Huang_%28cropped%29_%282024%29.jpg/250px-Jensen_Huang_%28cropped%29_%282024%29.jpg",
+ "jensen-huang":{name:"Jensen Huang",src:"https://upload.wikimedia.org/wikipedia/commons/5/59/Jensen_Huang_%28cropped%29_%282024%29.jpg",
    source:"https://commons.wikimedia.org/wiki/File:Jensen_Huang_(cropped)_(2024).jpg",credit:"European Commission / Peter Dasilva",license:"CC BY 4.0"},
  "elon-musk":{name:"Elon Musk",src:"https://upload.wikimedia.org/wikipedia/commons/3/30/Elon_Musk_close-up_%28cropped%29.jpg",
    source:"https://commons.wikimedia.org/wiki/File:Elon_Musk_close-up_(cropped).jpg",credit:"U.S. Air Force / Justin Pacheco",license:"Public domain (US federal work)"}
