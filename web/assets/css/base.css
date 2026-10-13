@@ -390,3 +390,20 @@ table{border-collapse:collapse;width:100%}
 .user-menu__panel .who strong{display:block;color:var(--ink);font-size:14px;font-weight:600}
 .user-menu__panel a,.user-menu__panel button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:6px;font-size:14px}
 .user-menu__panel a:hover,.user-menu__panel button:hover{background:var(--cream)}
+
+/* ---------- Header search suggestions and account initial (all product pages) ---------- */
+.app-search__key{position:absolute;right:8px;top:50%;transform:translateY(-50%);font:600 10.5px/1 var(--sans);letter-spacing:.02em;color:#77746c;
+  border:1px solid var(--line-2);border-radius:5px;padding:4px 6px;background:rgba(255,255,255,.6);pointer-events:none}
+.app-search:focus-within .app-search__key{opacity:0}
+.app-search__results{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:130;min-width:280px;max-height:420px;overflow:auto;padding:6px;
+  background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg)}
+.app-search__option{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"badge label" "badge meta";column-gap:10px;align-items:center;
+  padding:8px 9px;border-radius:7px;text-decoration:none;color:inherit}
+.app-search__option[aria-selected="true"],.app-search__option:hover{background:var(--cream)}
+.app-search__badge{grid-area:badge;min-width:52px;text-align:center;font:650 11px/1 var(--sans);letter-spacing:.02em;padding:6px 7px;border-radius:6px;background:var(--cream-2);color:var(--ink)}
+.app-search__badge--person{background:#e8eef7;color:#24406d}
+.app-search__label{grid-area:label;font-size:13.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-search__meta{grid-area:meta;font-size:11.5px;color:var(--muted-2)}
+.app-search__empty{margin:0;padding:12px 10px;font-size:13px;color:var(--muted)}
+.user-menu__initial{display:grid;place-items:center;width:100%;height:100%;font:650 15px/1 var(--sans)}
+@media (max-width:1380px){.app-search__key{display:none}}

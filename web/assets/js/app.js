@@ -12,7 +12,6 @@
     ["companies","Companies","explore.html"],
     ["filings","Filings","filings.html"],
     ["watchlist","Watchlist","watchlist.html"],
-    ["portfolio","Portfolio","portfolio.html"],
     ["alerts","Alerts","alerts.html"]
   ];
   const NAV_PATHS = {
@@ -155,10 +154,13 @@
         ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>
       </nav>
-      <form class="app-search" role="search" action="research.html">
+      <form class="app-search" role="search" action="company.html">
         ${icons.search}
-        <label class="sr-only" for="app-search-input">Research by stock ticker</label>
-        <input id="app-search-input" name="ticker" type="search" autocomplete="off" placeholder="Research a ticker (e.g. AAPL)" >
+        <label class="sr-only" for="app-search-input">Search tickers, companies, or people</label>
+        <input id="app-search-input" name="ticker" type="search" autocomplete="off" spellcheck="false" placeholder="Search tickers, companies, or people…"
+          role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="app-search-results">
+        <kbd class="app-search__key" aria-hidden="true">${/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K"}</kbd>
+        <div class="app-search__results" id="app-search-results" role="listbox" aria-label="Search suggestions" hidden></div>
       </form>
       <a class="icon-btn" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
       <div class="user-menu">
@@ -166,6 +168,7 @@
         <div class="user-menu__panel" id="user-menu-panel">
           <div class="who"><strong>Account</strong><span data-account-email>Sign in to see your details</span></div>
           <a href="account.html">Account center</a>
+          <a href="portfolio.html">Portfolio</a>
           <a href="billing.html">Plan &amp; billing</a>
           <a href="signin.html" data-account-signin>Sign in</a>
           <a href="alerts.html">Alert settings</a>
@@ -182,6 +185,9 @@
       if (!data.user || !data.user.email) return;
       const email = String(data.user.email);
       host.querySelector("[data-account-email]").textContent = email;
+      const initial = email.trim().charAt(0).toUpperCase();
+      const avatar = host.querySelector(".user-menu__btn");
+      if (avatar && /[A-Z0-9]/.test(initial)) { avatar.innerHTML = `<span class="user-menu__initial" aria-hidden="true">${initial}</span>`; avatar.setAttribute("aria-label", "Account menu for " + email); }
       const signin = host.querySelector("[data-account-signin]");
       if (signin) signin.hidden = true;
     }).catch(() => {});
@@ -210,21 +216,74 @@
     window.addEventListener("resize", () => moveTo(current));
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveTo(current));
 
-    const form = host.querySelector(".app-search"), input = form.querySelector("input");
-    form.addEventListener("submit", e => {
-      const q = input.value.trim().toUpperCase();
-      if (!q) { e.preventDefault(); return; }
-      if (!/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(q)) {
-        e.preventDefault();
-        input.setCustomValidity("Enter a valid stock ticker");
-        input.reportValidity();
-        return;
+    const form = host.querySelector(".app-search"), input = form.querySelector("input"), list = form.querySelector(".app-search__results");
+    const tickerPattern = /^[A-Z0-9][A-Z0-9.-]{0,14}$/;
+    const escapeHTML = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    let suggestions = [], activeOption = -1, searchSeq = 0, searchTimer = 0;
+    const closeList = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); activeOption = -1; };
+    const highlight = index => {
+      activeOption = index;
+      list.querySelectorAll("[role=option]").forEach((el, i) => el.setAttribute("aria-selected", String(i === index)));
+      if (index >= 0) input.setAttribute("aria-activedescendant", "app-search-option-" + index); else input.removeAttribute("aria-activedescendant");
+    };
+    const renderList = q => {
+      if (!suggestions.length) {
+        list.innerHTML = `<p class="app-search__empty">${tickerPattern.test(q.toUpperCase()) ? "Press Enter to open " + escapeHTML(q.toUpperCase()) : "No matching companies or people"}</p>`;
+      } else {
+        list.innerHTML = suggestions.map((s, i) => `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option">
+          <span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>
+          <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(s.meta || "")}</span></a>`).join("");
       }
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    };
+    const lookup = async q => {
+      const seq = ++searchSeq;
+      const [companies, people] = await Promise.allSettled([
+        api("/v1/search?q=" + encodeURIComponent(q)),
+        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q)) : Promise.resolve({ items: [] })
+      ]);
+      if (seq !== searchSeq || input.value.trim() !== q) return;
+      suggestions = [
+        ...(companies.status === "fulfilled" ? companies.value.items || [] : []).slice(0, 7).map(c => ({ kind: "company", ticker: c.ticker, label: c.name, meta: "Company", href: "company.html?ticker=" + encodeURIComponent(c.ticker) })),
+        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", label: p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
+      ];
+      renderList(q);
+    };
+    input.addEventListener("input", () => {
       input.setCustomValidity("");
-      input.value = q;
+      const q = input.value.trim();
+      clearTimeout(searchTimer);
+      if (!q) { suggestions = []; closeList(); return; }
+      searchTimer = setTimeout(() => lookup(q).catch(() => {}), 140);
+    });
+    input.addEventListener("keydown", e => {
+      if (list.hidden || !suggestions.length) { if (e.key === "Escape") { closeList(); input.blur(); } return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); highlight((activeOption + 1) % suggestions.length); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); highlight(activeOption <= 0 ? suggestions.length - 1 : activeOption - 1); }
+      else if (e.key === "Escape") { closeList(); }
+    });
+    input.addEventListener("focus", () => { if (input.value.trim() && suggestions.length) renderList(input.value.trim()); });
+    list.addEventListener("pointermove", e => { const opt = e.target.closest("[role=option]"); if (opt) highlight([...list.children].indexOf(opt)); });
+    document.addEventListener("click", e => { if (!form.contains(e.target)) closeList(); });
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (!q) return;
+      const chosen = suggestions[activeOption >= 0 ? activeOption : -1];
+      if (chosen) { location.href = chosen.href; return; }
+      const upper = q.toUpperCase();
+      const exact = suggestions.find(s => s.kind === "company" && s.ticker === upper);
+      if (exact) { location.href = exact.href; return; }
+      if (suggestions[0]) { location.href = suggestions[0].href; return; }
+      if (tickerPattern.test(upper)) { location.href = "company.html?ticker=" + encodeURIComponent(upper); return; }
+      input.setCustomValidity("Choose a company or person from the suggestions");
+      input.reportValidity();
     });
     document.addEventListener("keydown", e => {
-      if (e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); input.focus(); }
+      const typing = /input|textarea|select/i.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
+      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) { e.preventDefault(); input.focus(); input.select(); return; }
+      if (e.key === "/" && !typing) { e.preventDefault(); input.focus(); }
     });
 
     const btn = host.querySelector(".user-menu__btn"), panel = host.querySelector(".user-menu__panel");

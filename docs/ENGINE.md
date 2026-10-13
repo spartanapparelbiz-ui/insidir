@@ -61,6 +61,18 @@ API endpoints (authenticated): GET `/v1/me/brokerage/status`; POST `/v1/me/broke
 - GET /v1/companies?q= ; GET /v1/insiders?q=
 - GET /v1/intelligence?ticker=AAPL – selected company SEC filings, XBRL facts, original-source links, and deterministic research brief (SEC_USER_AGENT required)
 - GET /v1/clusters?days=7&minOwners=2 – descriptive, not predictive; amendments can duplicate event counts
+- GET /v1/search?q=nvidia – ticker and company-name lookup over the SEC's official ticker mapping (one listing per issuer for name matches; every share class for ticker matches)
+- GET /v1/market/chart?ticker=NVDA&range=1Y – delayed price series (1D, 1W, 1M, 3M, 1Y, 5Y) plus the session quote (price, previous close, daily change). `MARKET_DATA_PROVIDER=none` turns market data off
+- GET /v1/company/profile?ticker=NVDA – Wikidata facts matched exactly by SEC CIK (P5531): founding year, latest employee count, official website, logo, leadership and founders with Commons photos, plus the Wikipedia summary
+- GET /v1/company/insiders?ticker=NVDA – the issuer's 16 most recent Form 4/4A filings parsed live from EDGAR: owner, role, transaction codes, net open-market shares, reported value and holdings after
+- GET /v1/company/news?ticker=NVDA – 8-K announcements with item descriptions, and publisher headlines that name the company
+
+`/v1/intelligence` additionally returns `ttm` (trailing twelve months: latest fiscal year + current year-to-date − prior-year year-to-date), `balance` (cash and short-term investments and total debt from one balance-sheet date), `shares` (newest reported shares outstanding), `profile` (exchange, business address, fiscal year end, industry) and `currency`. US GAAP and IFRS (20-F/40-F) taxonomies are supported. The company endpoints need no database; `npm run web` serves them for previews.
+
+### Company report data sources
+- **SEC EDGAR / XBRL** (with `SEC_USER_AGENT`): ticker map, submissions, company facts and Form 4 XML. Requests share one throttle (8 per second, below the SEC's 10-per-second limit); filed ownership documents are cached for 24 hours and summaries for 15 minutes.
+- **Yahoo Finance public chart and news endpoints**: delayed prices and headlines, cached 1–60 minutes by range. These endpoints are unofficial; review Yahoo's terms and switch to a licensed market-data vendor before relying on them commercially. Set `MARKET_DATA_PROVIDER=none` to hide prices.
+- **Wikidata (CC0) and Wikipedia (CC BY-SA 4.0)**: profile facts, logos and portraits (hot-linked from upload.wikimedia.org, which the CSP already allows) and descriptions. The page attributes Wikipedia text and links to the source. Profiles are cached for 24 hours.
 
 ## Account API
 Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.

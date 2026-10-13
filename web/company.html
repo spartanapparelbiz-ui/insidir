@@ -2,93 +2,185 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1016">
-<meta name="description" content="Insidir company intelligence: SEC-sourced financial reports, annual performance charts, original filings and reported insider transactions.">
-<title>Company financial intelligence — insidir.</title>
+<meta name="theme-color" content="#0a0e13">
+<meta name="description" content="Insidir company research: delayed stock price chart, key facts, SEC financials, filings, insider activity, people and news for every SEC-listed company.">
+<title>Company research — insidir.</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/app.css">
-<link rel="stylesheet" href="assets/css/v2-app.css">
-<link rel="stylesheet" href="assets/css/v3-app.css">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
-<link rel="stylesheet" href="assets/css/v6-app.css?v=1">
-<link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v11-company.css?v=2">
-<script defer src="assets/js/entity-media.js?v=real-assets-3"></script>
-<script defer src="assets/js/app.js"></script>
-<script defer src="assets/js/v11-company.js?v=2"></script>
+<link rel="stylesheet" href="assets/css/base.css?v=12">
+<link rel="stylesheet" href="assets/css/v12-company.css?v=1">
+<script defer src="assets/js/entity-media.js?v=real-assets-4"></script>
+<script defer src="assets/js/app.js?v=12"></script>
+<script defer src="assets/js/v12-company.js?v=1"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app v11-company-page">
+<body class="app-body cx-page">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="companies"></header>
-<main class="app-main company-v2 c11-shell" id="main">
-<div class="c11-location"><div><a href="explore.html">COMPANIES</a><span> / </span><strong id="cv-bread-ticker">COMPANY RESEARCH</strong><span class="c11-location__divider"> / </span><span>SEC FINANCIAL INTELLIGENCE</span></div><span class="c11-source-pulse"><i></i> SEC PUBLIC RECORDS</span></div>
-<section class="c11-top" aria-labelledby="cv-name">
- <div class="c11-identity">
-  <div class="c11-identity__line"><span id="cv-symbol" class="c11-logo" aria-hidden="true"></span><div><p class="c11-eyebrow">COMPANY RESEARCH / <span id="c11-ticker-label">—</span></p><h1 id="cv-name">Company intelligence.</h1><p id="cv-details">Choose a public company ticker to begin.</p></div></div>
-  <p class="c11-introduction" id="cv-description">Detailed company financial history, original SEC filings, and reporting-person disclosures in one research workspace.</p>
-  <div class="c11-actions"><button type="button" class="c11-action c11-action--primary" id="cv-follow" hidden>+ Add to watchlist</button><a class="c11-action" id="c11-alerts" href="alerts.html">Alerts ↗</a><button type="button" class="c11-action" id="c11-share">Share ↗</button></div>
-  <form id="cv-search" class="c11-lookup" role="search"><label for="cv-ticker">JUMP TO ANOTHER COMPANY</label><div><input id="cv-ticker" name="ticker" placeholder="Search ticker, e.g. MSFT" type="search" maxlength="15" autocomplete="off" spellcheck="false" required><button type="submit" aria-label="Load company">↗</button></div></form>
- </div>
- <section class="c11-terminal" aria-label="SEC sourced financial performance">
-  <div class="c11-terminal__head"><div><span class="c11-kicker">FINANCIAL PERFORMANCE</span><p>Annual SEC XBRL filings <span id="c11-period-caption">· Latest available fiscal years</span></p></div><span class="c11-terminal__source">10-K / SEC XBRL</span></div>
-  <div class="c11-chart-toolbar"><div class="c11-chart-modes" role="group" aria-label="Financial metric"><button type="button" class="is-active" data-metric="revenue" aria-pressed="true">Revenue</button><button type="button" data-metric="netIncome" aria-pressed="false">Net income</button><button type="button" data-metric="operatingIncome" aria-pressed="false">Operating income</button><button type="button" data-metric="operatingCashFlow" aria-pressed="false">Cash flow</button></div><div class="c11-chart-range" role="group" aria-label="Annual chart range"><button type="button" data-range="3">3Y</button><button class="is-active" type="button" data-range="5">5Y</button><button type="button" data-range="9">ALL</button></div></div>
-  <div class="c11-chart-heading"><div><span id="c11-chart-value">—</span><small id="c11-chart-period">Latest reported fiscal year</small></div><span id="c11-chart-change" class="c11-chart-delta">SEC reporting periods</span></div>
-  <div id="c11-chart" class="c11-chart" aria-live="polite"><p class="c11-empty">Loading verified annual financial history…</p></div>
-  <div class="c11-chart-foot"><span>Annual reported amounts, not stock prices or forecasts</span><a id="c11-chart-source" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Original SEC filing ↗</a></div>
+<main class="cx-main" id="main">
+
+<section class="cx-picker" id="cx-picker" hidden aria-labelledby="cx-picker-title">
+ <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a></nav>
+ <h1 id="cx-picker-title">Research any public company.</h1>
+ <p>Live price history, key facts, SEC financials, filings, insider activity and news for every company in the SEC's official ticker list.</p>
+ <form class="cx-picker__form" id="cx-picker-form" role="search">
+  <label class="sr-only" for="cx-picker-input">Ticker or company name</label>
+  <input id="cx-picker-input" type="search" placeholder="Ticker or company name, e.g. NVDA or Coca-Cola" autocomplete="off" spellcheck="false" required>
+  <button type="submit">Open report</button>
+ </form>
+ <div class="cx-picker__grid" id="cx-picker-grid"></div>
+</section>
+
+<div class="cx-report" id="cx-report">
+ <section class="cx-top" aria-label="Company summary">
+  <div class="cx-identity">
+   <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a><span aria-hidden="true">›</span><span aria-current="page" id="cx-crumb-ticker">—</span></nav>
+   <div class="cx-brand">
+    <span class="cx-logo is-loading" id="cx-logo" role="img" aria-label="Company logo"></span>
+    <div class="cx-brand__text">
+     <h1 id="cx-name"><span class="cx-skel cx-skel--title"></span></h1>
+     <p class="cx-listing" id="cx-listing"><span id="cx-ticker">—</span><span class="cx-dot" aria-hidden="true">•</span><span id="cx-exchange">—</span></p>
+    </div>
+   </div>
+   <p class="cx-description" id="cx-description"><span class="cx-skel"></span><span class="cx-skel"></span><span class="cx-skel cx-skel--short"></span></p>
+   <div class="cx-actions">
+    <button type="button" class="cx-btn cx-btn--primary" id="cx-watch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add to watchlist</span></button>
+    <button type="button" class="cx-btn" id="cx-alert" title="Alerts cover new SEC Form 4 filings for companies on your watchlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Set alert</span></button>
+    <button type="button" class="cx-btn" id="cx-share"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span>Share</span></button>
+   </div>
+  </div>
+
+  <section class="cx-card cx-quote" aria-labelledby="cx-quote-symbol">
+   <div class="cx-quote__head">
+    <div>
+     <p class="cx-quote__symbol" id="cx-quote-symbol">—</p>
+     <div class="cx-quote__price"><strong id="cx-price"><span class="cx-skel cx-skel--price"></span></strong><span class="cx-change" id="cx-change"></span></div>
+     <p class="cx-quote__meta" id="cx-quote-meta">Loading market data…</p>
+    </div>
+    <div class="cx-ranges" role="group" aria-label="Chart range">
+     <button type="button" data-range="1D">1D</button><button type="button" data-range="1W">1W</button><button type="button" data-range="1M">1M</button><button type="button" data-range="3M">3M</button><button type="button" data-range="1Y" class="is-active" aria-pressed="true">1Y</button><button type="button" data-range="5Y">5Y</button>
+    </div>
+   </div>
+   <div class="cx-chart" id="cx-chart" aria-live="polite"><div class="cx-chart__loading"></div></div>
+   <p class="cx-source" id="cx-chart-source">Delayed price data. Not a trading quote.</p>
+  </section>
+
+  <aside class="cx-card cx-facts" aria-labelledby="cx-facts-title">
+   <h2 id="cx-facts-title">Key facts</h2>
+   <dl id="cx-facts">
+    <div><dt>Market cap</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Enterprise value</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>P/E ratio</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Revenue (TTM)</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Net income (TTM)</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Employees</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Headquarters</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Founded</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+    <div><dt>Website</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
+   </dl>
+  </aside>
  </section>
- <aside class="c11-snapshot" aria-labelledby="c11-snapshot-heading">
-  <div class="c11-snapshot__top"><p class="c11-kicker">COMPANY SNAPSHOT</p><h2 id="c11-snapshot-heading">Fundamentals.</h2><p id="c11-snapshot-asof">Reported financial figures</p></div>
-  <div class="c11-snapshot__rows" id="c11-snapshot-rows"><p class="c11-empty">Waiting for company data…</p></div>
-  <div class="c11-snapshot__bottom"><span>MARKET PRICE</span><strong>Not connected</strong><small>Insidir does not display invented quotes, returns, or market capitalization.</small></div>
- </aside>
-</section>
-<div class="c11-service-status" id="cv-status" role="status" aria-live="polite">Loading public company records…</div>
-<nav class="cv-tabs c11-tabs" aria-label="Company report sections" id="c11-report-tabs">
-<button type="button" class="is-active" data-company-tab="cv-summary" aria-selected="true">Overview</button>
-<button type="button" data-company-tab="cv-facts" aria-selected="false">Financials</button>
-<button type="button" data-company-tab="cv-filings" aria-selected="false">SEC filings</button>
-<button type="button" data-company-tab="cv-transactions" aria-selected="false">Insider activity</button>
-<button type="button" data-company-tab="c11-owners" aria-selected="false">Reporting people</button>
-</nav>
-<div class="c11-report">
-<section class="c11-tab-panel" id="cv-summary">
-<div class="c11-section-heading"><div><span class="c11-kicker">01 / COMPANY ANALYSIS</span><h2>Financial intelligence.</h2><p>Original filings and comparable annual SEC fundamentals, connected.</p></div><button class="c11-text-button" type="button" id="c11-print">Print report ↗</button></div>
-<div class="c11-kpi-grid" id="c11-kpis"><p class="c11-empty">Retrieving official financial facts…</p></div>
-<div class="c12-finance-board">
- <article class="c11-panel c12-panel--revenue"><header><div><span class="c11-kicker">EARNINGS / SEC 10-K</span><h3>Revenue history.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Statements ↗</button></header><div id="c11-revenue-graph" class="c11-revenue-graph"><p class="c11-empty">Retrieving annual revenue…</p></div></article>
- <article class="c11-panel c12-panel--ratios"><header><div><span class="c11-kicker">MARGINS / ANNUAL</span><h3>Profitability.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Details ↗</button></header><div id="c11-ratios"><p class="c11-empty">Checking fiscal-year measures…</p></div></article>
- <article class="c11-panel c12-panel--filing-mix"><header><div><span class="c11-kicker">SEC EDGAR</span><h3>Disclosure mix.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">Filings ↗</button></header><div id="c11-filings-summary"><p class="c11-empty">Loading disclosures…</p></div></article>
- <article class="c11-panel c12-panel--quick"><header><div><span class="c11-kicker">LATEST FILED VALUES</span><h3>Key financials.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Full report ↗</button></header><div id="c12-financial-highlights"><p class="c11-empty">Loading latest XBRL facts…</p></div></article>
+
+ <div class="cx-status" id="cx-status" role="status" aria-live="polite"></div>
+
+ <nav class="cx-tabs" role="tablist" aria-label="Company report sections" id="cx-tabs">
+  <button type="button" role="tab" id="tab-overview" aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button>
+  <button type="button" role="tab" id="tab-financials" aria-controls="financials" aria-selected="false" data-tab="financials" tabindex="-1">Financials</button>
+  <button type="button" role="tab" id="tab-filings" aria-controls="filings" aria-selected="false" data-tab="filings" tabindex="-1">SEC filings</button>
+  <button type="button" role="tab" id="tab-insiders" aria-controls="insiders" aria-selected="false" data-tab="insiders" tabindex="-1">Insider activity</button>
+  <button type="button" role="tab" id="tab-people" aria-controls="people" aria-selected="false" data-tab="people" tabindex="-1">People</button>
+  <button type="button" role="tab" id="tab-news" aria-controls="news" aria-selected="false" data-tab="news" tabindex="-1">News</button>
+ </nav>
+
+ <section class="cx-panel" role="tabpanel" id="overview" aria-labelledby="tab-overview">
+  <div class="cx-overview" id="cx-overview">
+   <article class="cx-about" id="cx-about" hidden>
+    <h2 id="cx-about-title"></h2>
+    <p id="cx-about-text"></p>
+    <div class="cx-about__more" id="cx-about-more" hidden></div>
+    <button type="button" class="cx-link" id="cx-about-toggle" aria-expanded="false" aria-controls="cx-about-more">Read full company description <span aria-hidden="true">→</span></button>
+   </article>
+   <article class="cx-card cx-mini" aria-labelledby="cx-fin-title">
+    <header><div><h2 id="cx-fin-title">Financials</h2><p id="cx-fin-period">Trailing twelve months</p></div><button type="button" class="cx-arrow" data-go="financials" aria-label="Open financials">→</button></header>
+    <div id="cx-fin-rows" class="cx-fin-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
+   </article>
+   <article class="cx-card cx-mini" aria-labelledby="cx-filings-title">
+    <header><div><h2 id="cx-filings-title">SEC filings</h2></div><button type="button" class="cx-arrow" data-go="filings" aria-label="Open SEC filings">→</button></header>
+    <div id="cx-filing-rows" class="cx-filing-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
+    <button type="button" class="cx-link" data-go="filings">View all filings <span aria-hidden="true">→</span></button>
+   </article>
+   <article class="cx-card cx-mini" aria-labelledby="cx-insider-title">
+    <header><div><h2 id="cx-insider-title">Recent insider activity</h2></div><button type="button" class="cx-arrow" data-go="insiders" aria-label="Open insider activity">→</button></header>
+    <div id="cx-insider-rows" class="cx-insider-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
+    <button type="button" class="cx-link" data-go="insiders">View all insider activity <span aria-hidden="true">→</span></button>
+   </article>
+  </div>
+ </section>
+
+ <section class="cx-panel" role="tabpanel" id="financials" aria-labelledby="tab-financials" hidden>
+  <div class="cx-section-head"><div><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html">Open in Research Desk <span aria-hidden="true">→</span></a></div>
+  <div class="cx-tiles" id="cx-ttm-tiles"></div>
+  <article class="cx-card cx-block">
+   <header class="cx-block__head"><h3>Annual history</h3>
+    <div class="cx-chips" role="group" aria-label="Annual metric" id="cx-annual-metrics">
+     <button type="button" data-metric="revenue" class="is-active" aria-pressed="true">Revenue</button><button type="button" data-metric="netIncome" aria-pressed="false">Net income</button><button type="button" data-metric="operatingIncome" aria-pressed="false">Operating income</button><button type="button" data-metric="operatingCashFlow" aria-pressed="false">Operating cash flow</button>
+    </div>
+   </header>
+   <div class="cx-bars" id="cx-annual-chart"></div>
+  </article>
+  <article class="cx-card cx-block">
+   <header class="cx-block__head"><h3>Annual statements</h3><span class="cx-badge" id="cx-currency-badge">USD</span></header>
+   <div class="cx-table-wrap" id="cx-statements"></div>
+  </article>
+  <article class="cx-card cx-block">
+   <header class="cx-block__head"><h3>Balance sheet snapshot</h3><span class="cx-badge" id="cx-balance-date">—</span></header>
+   <div class="cx-tiles cx-tiles--compact" id="cx-balance"></div>
+  </article>
+ </section>
+
+ <section class="cx-panel" role="tabpanel" id="filings" aria-labelledby="tab-filings" hidden>
+  <div class="cx-section-head"><div><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
+  <article class="cx-card cx-block">
+   <header class="cx-block__head"><h3><span id="cx-filing-count">—</span> filings</h3>
+    <div class="cx-chips" role="group" aria-label="Filter filings" id="cx-filing-filters">
+     <button type="button" data-filter="all" class="is-active" aria-pressed="true">All</button><button type="button" data-filter="annual" aria-pressed="false">Annual</button><button type="button" data-filter="quarterly" aria-pressed="false">Quarterly</button><button type="button" data-filter="current" aria-pressed="false">Current reports</button><button type="button" data-filter="other" aria-pressed="false">Other</button>
+    </div>
+   </header>
+   <div class="cx-table-wrap"><table class="cx-table"><thead><tr><th scope="col">Form</th><th scope="col">Description</th><th scope="col">Period</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Source</span></th></tr></thead><tbody id="cx-filings-table"></tbody></table></div>
+  </article>
+ </section>
+
+ <section class="cx-panel" role="tabpanel" id="insiders" aria-labelledby="tab-insiders" hidden>
+  <div class="cx-section-head"><div><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary"></div>
+  <article class="cx-card cx-block">
+   <header class="cx-block__head"><h3>Reported transactions</h3>
+    <div class="cx-chips" role="group" aria-label="Filter insider transactions" id="cx-insider-filters">
+     <button type="button" data-filter="all" class="is-active" aria-pressed="true">All</button><button type="button" data-filter="buy" aria-pressed="false">Buys</button><button type="button" data-filter="sell" aria-pressed="false">Sells</button><button type="button" data-filter="other" aria-pressed="false">Awards &amp; other</button>
+    </div>
+   </header>
+   <div class="cx-table-wrap"><table class="cx-table cx-table--insiders"><thead><tr><th scope="col">Insider</th><th scope="col">Transaction</th><th scope="col">Trade date</th><th scope="col">Filed</th><th scope="col" class="num">Shares</th><th scope="col" class="num">Value</th><th scope="col" class="num">Owned after</th><th scope="col"><span class="sr-only">Source</span></th></tr></thead><tbody id="cx-insiders-table"></tbody></table></div>
+  </article>
+ </section>
+
+ <section class="cx-panel" role="tabpanel" id="people" aria-labelledby="tab-people" hidden>
+  <div class="cx-section-head"><div><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html">People directory <span aria-hidden="true">→</span></a></div>
+  <h3 class="cx-subhead">Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
+  <div class="cx-people" id="cx-people-sec"></div>
+  <h3 class="cx-subhead" id="cx-leaders-head" hidden>Leadership &amp; founders <small>from Wikidata</small></h3>
+  <div class="cx-people" id="cx-people-wiki"></div>
+ </section>
+
+ <section class="cx-panel" role="tabpanel" id="news" aria-labelledby="tab-news" hidden>
+  <div class="cx-section-head"><div><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
+  <div class="cx-news">
+   <article class="cx-card cx-block"><header class="cx-block__head"><h3>Company announcements</h3><span class="cx-badge">SEC 8-K</span></header><div id="cx-announcements" class="cx-list"></div></article>
+   <article class="cx-card cx-block"><header class="cx-block__head"><h3>Headlines</h3><span class="cx-badge" id="cx-headline-source">Publishers</span></header><div id="cx-headlines" class="cx-list"></div></article>
+  </div>
+ </section>
+
+ <footer class="cx-sources" id="cx-sources">
+  <p><strong>Sources.</strong> Prices: Yahoo Finance, delayed. Financials, filings and insider activity: SEC EDGAR and XBRL. Company profile: Wikidata (CC0) and Wikipedia (CC BY-SA 4.0). Market cap, enterprise value and P/E are calculated from these sources. Research only, not investment advice.</p>
+ </footer>
 </div>
-<div class="c12-activity-board">
- <article class="c11-panel"><header><div><span class="c11-kicker">LATEST SEC SUBMISSIONS</span><h3>Recent filings.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">View all ↗</button></header><div id="c11-latest-events"><p class="c11-empty">Loading recent disclosures…</p></div></article>
- <article class="c11-panel"><header><div><span class="c11-kicker">FORM 4 / OWNERSHIP</span><h3>Insider activity.</h3></div><button type="button" class="c11-link" data-company-go="cv-transactions">View all ↗</button></header><div id="c11-insider-preview"><p class="c11-empty">Loading reported transactions…</p></div></article>
- <article class="c11-panel"><header><div><span class="c11-kicker">INDIVIDUAL REPORTING OWNERS</span><h3>People to research.</h3></div><button type="button" class="c11-link" data-company-go="c11-owners">View all ↗</button></header><div id="c11-owner-preview"><p class="c11-empty">Loading filing identities…</p></div></article>
-</div>
-</section>
-<section class="c11-tab-panel" id="cv-facts" hidden>
- <div class="c11-section-heading"><div><span class="c11-kicker">02 / XBRL FINANCIALS</span><h2>Financial statements.</h2><p>Full fiscal year history is shown separately from the latest filed measure. Verify period comparability at the SEC source.</p></div><a id="cv-research" class="c11-outline-action" href="research.html">Open research desk ↗</a></div>
- <div class="c11-panel c11-data-panel"><header><div><span class="c11-kicker">ANNUAL STATEMENTS</span><h3>Reported financial history.</h3></div><span class="c11-badge">USD · SEC 10-K</span></header><div id="c11-history-table" class="c11-table-scroll"><p class="c11-empty">Loading XBRL history…</p></div></div>
- <div class="c11-panel c11-data-panel"><header><div><span class="c11-kicker">LATEST FILED FACTS</span><h3>Current reported measures.</h3></div><span id="cv-fact-count" class="c11-badge">—</span></header><div class="c11-facts-grid" id="cv-facts-grid"><p class="c11-empty">Loading metrics…</p></div></div>
-</section>
-<section class="c11-tab-panel" id="cv-filings" hidden>
- <div class="c11-section-heading"><div><span class="c11-kicker">03 / OFFICIAL DISCLOSURES</span><h2>SEC filing library.</h2><p>Original submissions, dates, reporting periods, amendments and verified SEC source documents.</p></div><div class="c11-pager"><span id="cv-filing-count">—</span> selected records</div></div>
- <div class="c11-panel c11-data-panel"><header><div><span class="c11-kicker">FILTER FILINGS</span><h3>Published reports.</h3></div><div class="c11-filter-group" role="group" aria-label="Filter SEC forms"><button type="button" data-form-filter="all" class="is-active">All</button><button type="button" data-form-filter="10-K">Annual</button><button type="button" data-form-filter="10-Q">Quarterly</button><button type="button" data-form-filter="8-K">Current</button><button type="button" data-form-filter="other">Other</button></div></header>
- <div class="c11-table-scroll"><table class="c11-table"><thead><tr><th>FORM</th><th>DOCUMENT</th><th>REPORTED PERIOD</th><th>FILED</th><th>SOURCE</th></tr></thead><tbody id="cv-filings-list"><tr><td colspan="5">Loading SEC filings…</td></tr></tbody></table></div></div>
-</section>
-<section class="c11-tab-panel" id="cv-transactions" hidden>
- <div class="c11-section-heading"><div><span class="c11-kicker">04 / SEC FORM 4</span><h2>Insider disclosures.</h2><p>Reported transactions from actual Form 4 ownership documents. Grants, exercises and dispositions are distinguished.</p></div><span class="c11-pager"><span id="cv-transaction-count">—</span> imported records</span></div>
- <div class="c11-panel c11-data-panel"><header><div><span class="c11-kicker">TRANSACTION FILTER</span><h3>Reported ownership activity.</h3></div><div class="c11-filter-group" role="group" aria-label="Filter ownership transactions"><button type="button" class="is-active" data-insider-filter="all">All</button><button type="button" data-insider-filter="reported_purchase">Purchases</button><button type="button" data-insider-filter="reported_sale">Sales</button><button type="button" data-insider-filter="other">Other</button></div></header>
- <div class="c11-table-scroll"><table class="c11-table"><thead><tr><th>REPORTING PERSON</th><th>TYPE</th><th>TRADE DATE</th><th>REPORTED VALUE</th><th>SEC SOURCE</th></tr></thead><tbody id="cv-transactions-list"><tr><td colspan="5">Loading transactions…</td></tr></tbody></table></div></div>
- <p class="c11-notice">An SEC filing is not a live trade signal. Estimated transaction values may not equal cash proceeds. Publishing and transaction dates can differ.</p>
-</section>
-<section class="c11-tab-panel" id="c11-owners" hidden>
- <div class="c11-section-heading"><div><span class="c11-kicker">05 / REPORTED PEOPLE</span><h2>People behind the record.</h2><p>Reporting persons identified from actual SEC ownership transactions. A reported owner is not necessarily a current executive.</p></div><a href="people.html" class="c11-outline-action">People directory ↗</a></div>
- <div id="c11-owner-list" class="c11-owner-list"><p class="c11-empty">Retrieving names from imported SEC Form 4 disclosures…</p></div>
-</section>
-</div>
-<section class="c11-report-footer"><div><span class="c11-kicker">INSIDIR RESEARCH METHODOLOGY</span><h2>Every number has a source.</h2><p>Insidir organizes information from official SEC filings. Reported financial facts have different fiscal periods, may be amended, and do not include live market pricing. This is independent research software, not an investment recommendation.</p></div><a id="cv-sec" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a></section>
 </main>
-<footer class="app-footer c11-footer"><div class="container-wide"><span>© 2026 Aethric LLC · Insidir.</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+<footer class="app-footer cx-footer"><div class="container-wide"><span>© 2026 Aethric LLC · insidir.</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
 </body></html>
