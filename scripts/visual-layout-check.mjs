@@ -24,14 +24,25 @@ try{
    assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.h1.mid-item.width/2)<7,item.width+"px headline off-center "+JSON.stringify(landing));
-   assert.ok(landing.font.includes("Source Serif"),"Original Source Serif heading lost");
-   assert.ok(!landing.hasFakeDashboard,"Landing has a fake dashboard preview");
-   const cover=page.locator(".v9-hero__visual img");
-   assert.equal(await cover.count(),1,"Editorial landing image missing");
-   const coverWidth=await cover.evaluate(async img=>{await img.decode();return img.naturalWidth;});
-   assert.ok(coverWidth>100,"Landing image not loaded: "+coverWidth);
-   const coverGeometry=await page.locator(".v9-hero__visual").evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
-   assert.ok(Math.abs(coverGeometry.center-item.width/2)<=7,item.width+"px photo cover off center "+JSON.stringify(coverGeometry));
+   assert.ok(landing.font.includes("Inter"),"Finance landing headline typography should use Inter");
+   assert.ok(!landing.hasFakeDashboard,"No fake trading dashboard");
+   const terminal=page.locator(".v9-hero__visual.v12-terminal");
+   assert.equal(await terminal.count(),1,"SEC research preview missing");
+   const preview=await terminal.evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
+   assert.ok(Math.abs(preview.center-item.width/2)<=7,item.width+"px preview off center "+JSON.stringify(preview));
+   const darkTheme=await page.evaluate(()=>({
+    background:getComputedStyle(document.body).backgroundColor,
+    headline:getComputedStyle(document.querySelector("#v6-hero-heading")).color,
+    chartVisible:!!document.querySelector("#v12-demo-chart"),
+    controls:document.querySelectorAll("[data-v12-ticker]").length
+   }));
+   assert.equal(darkTheme.background,"rgb(8, 14, 20)","Homepage must match dark company interface");
+   assert.ok(darkTheme.chartVisible&&darkTheme.controls===4,"Live SEC interactive example unavailable");
+   await page.locator('[data-v12-ticker="AAPL"]').click();
+   assert.equal(await page.locator('[data-v12-ticker="AAPL"]').getAttribute("aria-pressed"),"true");
+   assert.match(await page.locator("#v12-demo-open").getAttribute("href"),/ticker=AAPL/);
+   await page.locator('[data-v12-metric="netIncome"]').click();
+   assert.equal(await page.locator('[data-v12-metric="netIncome"]').getAttribute("aria-pressed"),"true");
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");
      assert.ok(await toggle.isVisible(),item.width+"px mobile menu must be visible");
