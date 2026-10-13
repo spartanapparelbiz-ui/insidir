@@ -16,10 +16,11 @@ function inspector(x){
  latest.textContent=date(x.published_at);
  const t=tick(x.ticker),url=source(x.source_url);
  body.innerHTML='<div class="v4-inspector__form">'+icon("file-text")+' <span>'+esc(x.form_type||"Form 4")+'</span><small>IMPORTED DISCLOSURE</small></div>'+
- '<h3>'+esc(x.issuer_name||t||"Public company")+'</h3>'+
+ '<div class="v4-inspector__identity">'+(window.InsidirMedia?.logo(t,"lg")||"")+'<h3>'+esc(x.issuer_name||t||"Public company")+'</h3></div>'+
  (t?'<a class="v4-inspector__ticker" href="'+esc(research(t))+'">'+esc(t)+' · Research company '+icon("arrow-up-right")+'</a>':'')+
  '<dl><div><dt>Published</dt><dd>'+esc(date(x.published_at))+'</dd></div><div><dt>Form</dt><dd>'+esc(x.form_type||"SEC filing")+'</dd></div><div><dt>Original record</dt><dd>'+(url?"SEC EDGAR link":"Not available")+'</dd></div></dl>'+
  (url?'<a class="v4-inspector__cta" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+icon("external")+' Read original SEC filing</a>':'<a class="v4-inspector__cta" href="filings.html">'+icon("file-search")+' Browse imported filings</a>');
+ window.InsidirMedia?.hydrate(body);
 }
 function activity(rows){
  const host=$("v4-activity-chart");if(!host)return;
