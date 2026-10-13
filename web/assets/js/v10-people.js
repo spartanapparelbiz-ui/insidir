@@ -14,7 +14,7 @@ function card(p){
  const name=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik),saved=following.has(id);
  const photo=media?.portrait(name,t,"lg")||"";
  return '<article class="v10-person-card"><div class="v10-person-card__avatar">'+photo+'<span class="v10-person-card__avatar-note">'+(photo.includes("data-real-image")?"Published portrait":"Source-linked SEC identity")+'</span></div>'+
- '<div class="v10-person-card__identity"><div><strong>'+esc(name)+'</strong><small>'+(t?esc(t)+" · ":"")+"SEC reporting person</small></div><a href="'+esc(link(t))+'" aria-label="Research '+esc(name)+'">↗</a></div>'+
+ '<div class="v10-person-card__identity"><div><strong>'+esc(name)+'</strong><small>'+(t?esc(t)+" · ":"")+'SEC reporting person</small></div><a href="'+esc(link(t))+'" aria-label="Research '+esc(name)+'">↗</a></div>'+
  '<p class="v10-person-card__meta">Latest reported transaction · '+esc(day(p.last_transaction_date))+'</p>'+
  (id?'<button type="button" class="v10-follow-btn'+(saved?" is-following":"")+'" data-person-follow="'+esc(id)+'" aria-pressed="'+saved+'">'+(saved?"Following ✓":"Follow person +")+'</button>':"")+'</article>';
 }
