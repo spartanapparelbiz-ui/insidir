@@ -25,7 +25,8 @@
     insiders:'<path d="M4 19h16M6 16l4-5 3 3 5-7M17 7h2v3"/>',
     alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 8-3 9-3 9h18s-3-1-3-9M10 21h4"/>'
   };
-  const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+NAV_PATHS[key]+'</svg></span>';
+  const NAV_ICONS = {dashboard:"layers",research:"search",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"activity",alerts:"clock"};
+  const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons/interface.svg#'+(NAV_ICONS[key]||"file-text")+'"></use></svg></span>';
 
   const icons = {
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',

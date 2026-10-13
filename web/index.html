@@ -9,7 +9,9 @@
 <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v3-site.css">
+<link rel="stylesheet" href="assets/css/v4-presentation.css">
 <script defer src="assets/js/v3-site.js"></script>
+<script defer src="assets/js/v4-explorer.js"></script>
 </head>
 <body class="is3">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -30,16 +32,16 @@
     <h1 id="hero-title">Research the market<br><em>with greater context.</em></h1>
     <p class="is3-hero__description">Filings. Insider activity. Company fundamentals. The public information that matters, structured in one place so you can investigate what others overlook.</p>
     <div class="is3-actions"><a class="is3-button is3-button--light" href="signup.html">Start researching free <span aria-hidden="true">↗</span></a><a class="is3-button is3-button--outline" href="#product">Explore the platform <span aria-hidden="true">→</span></a></div>
-    <p class="is3-quiet">No card required to explore · No brokerage connection required</p>
+    <p class="is3-quiet"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> No card required to explore · No brokerage connection required</p><div class="is4-hero-trail" aria-label="Insidir research workflow"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Find the company</span><i aria-hidden="true"></i><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-search"></use></svg> Read original filings</span><i aria-hidden="true"></i><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg> Save your research</span></div>
   </div>
   <div class="is3-hero__rail is3-shell"><span>SEC EDGAR / SOURCE-LINKED RESEARCH</span><span>INFORMATION, NOT INVESTMENT ADVICE</span><a href="#product" aria-label="Scroll to explore">SCROLL TO EXPLORE ↓</a></div>
 </section>
 
 <section class="is3-proof" aria-label="Research areas"><div class="is3-shell is3-proof__grid">
-  <a href="filings.html"><span class="is3-proof__number">01</span><strong>Corporate filings</strong><span>10-K · 10-Q · 8-K and Form 4</span><span aria-hidden="true">↗</span></a>
-  <a href="dashboard.html#insider-activity"><span class="is3-proof__number">02</span><strong>Insider activity</strong><span>Reported ownership changes</span><span aria-hidden="true">↗</span></a>
-  <a href="company.html?ticker=AAPL"><span class="is3-proof__number">03</span><strong>Financial context</strong><span>Reported figures and periods</span><span aria-hidden="true">↗</span></a>
-  <a href="watchlist.html"><span class="is3-proof__number">04</span><strong>Your own research</strong><span>Watchlists and private notes</span><span aria-hidden="true">↗</span></a>
+  <a href="filings.html"><span class="is3-proof__number">01</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg><strong>Corporate filings</strong><span>10-K · 10-Q · 8-K and Form 4</span><span aria-hidden="true">↗</span></a>
+  <a href="dashboard.html#insider-activity"><span class="is3-proof__number">02</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg><strong>Insider activity</strong><span>Reported ownership changes</span><span aria-hidden="true">↗</span></a>
+  <a href="company.html?ticker=AAPL"><span class="is3-proof__number">03</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg><strong>Financial context</strong><span>Reported figures and periods</span><span aria-hidden="true">↗</span></a>
+  <a href="watchlist.html"><span class="is3-proof__number">04</span><svg class="is4-proof-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg><strong>Your own research</strong><span>Watchlists and private notes</span><span aria-hidden="true">↗</span></a>
 </div></section>
 
 <section class="is3-section is3-shell is3-product" id="product">
@@ -47,10 +49,10 @@
   <div class="is3-window" aria-label="Preview of Insidir's actual SEC research workspace">
     <div class="is3-window__top"><span class="is3-window__dots"><i></i><i></i><i></i></span><span>INSIDIR / RESEARCH WORKSPACE</span><a href="dashboard.html">OPEN LIVE WORKSPACE ↗</a></div>
     <div class="is3-window__body">
-      <aside class="is3-window__nav"><a class="is3-logo" href="dashboard.html">insidir.</a><span class="is3-window__active">▤ &nbsp; Dashboard</span><span>⌕ &nbsp; Research</span><span>▦ &nbsp; Companies</span><span>⊞ &nbsp; SEC filings</span><span>☆ &nbsp; Watchlist</span><div class="is3-window__nav-end">RESEARCH FIRST<br>NOT TRADING ADVICE</div></aside>
+      <aside class="is3-window__nav"><a class="is3-logo" href="dashboard.html">insidir.</a><span class="is3-window__active"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#layers"></use></svg> Dashboard</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Research</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#building"></use></svg> Companies</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> SEC filings</span><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg> Watchlist</span><div class="is3-window__nav-end">RESEARCH FIRST<br>NOT TRADING ADVICE</div></aside>
       <div class="is3-window__content">
         <div class="is3-window__headline"><div><p class="is3-eyebrow">WORKSPACE / PUBLIC RECORDS</p><h3>Start with the evidence.</h3><p>Look up a company. Follow its filings. Keep track of what you find.</p></div><a href="research.html?ticker=AAPL" class="is3-window__open">RESEARCH AAPL ↗</a></div>
-        <div class="is3-window__search">⌕ &nbsp; Search a company or ticker <span>AAPL</span></div>
+        <a href="research.html?ticker=AAPL" class="is3-window__search"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> <span>Investigate a company by ticker</span><strong>AAPL <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-up-right"></use></svg></strong></a>
         <div class="is3-window__columns">
           <div class="is3-window__pane"><div class="is3-window__label">LATEST IMPORTED FILINGS <small>LIVE DATA</small></div><div id="is3-live-filings" class="is3-window__records"><p class="is3-window__loading">Connecting to the latest imported SEC records…</p></div></div>
           <div class="is3-window__pane"><div class="is3-window__label">RESEARCH PATH <small>YOUR WORKFLOW</small></div><div class="is3-window__step"><b>01</b><div><strong>Find the filing</strong><small>Search for what the company reported</small></div></div><div class="is3-window__step"><b>02</b><div><strong>Check the context</strong><small>Identify forms, periods, and ownership codes</small></div></div><div class="is3-window__step"><b>03</b><div><strong>Keep your notes</strong><small>Save conclusions in your private journal</small></div></div><a href="research.html" class="is3-inline-link">OPEN THE RESEARCH DESK →</a></div>
@@ -61,12 +63,51 @@
   <p class="is3-product__caption">This is a connected product preview. Filing rows load from Insidir's imported SEC dataset; unavailable data is not replaced with examples.</p>
 </section>
 
+
+<section class="is4-explorer is3-section" id="live-research" aria-labelledby="is4-explorer-title">
+ <div class="is3-shell">
+  <div class="is3-section-head">
+   <p class="is3-eyebrow">OPEN THE WORKSPACE / COMPANY INTELLIGENCE</p>
+   <div class="is3-section-head__split"><h2 id="is4-explorer-title">Look past the ticker.</h2><p>This isn't a screenshot. Select a company to inspect its latest available corporate filings and reported fundamentals—directly from the SEC-backed Insidir research service.</p></div>
+  </div>
+  <div class="is4-explorer__shell">
+   <div class="is4-explorer__toolbar">
+    <div><p>RESEARCH TARGET</p><div class="is4-explorer__tickers" role="group" aria-label="Choose a stock ticker">
+     <button type="button" data-scan-ticker="AAPL" aria-pressed="true">AAPL</button>
+     <button type="button" data-scan-ticker="MSFT" aria-pressed="false">MSFT</button>
+     <button type="button" data-scan-ticker="NVDA" aria-pressed="false">NVDA</button>
+     <button type="button" data-scan-ticker="TSLA" aria-pressed="false">TSLA</button>
+    </div></div>
+    <a id="is4-open-research" href="research.html?ticker=AAPL">FULL COMPANY RESEARCH <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-up-right"></use></svg></a>
+   </div>
+   <div class="is4-explorer__content">
+    <div class="is4-explorer__identity">
+     <div class="is4-explorer__symbol" id="is4-explorer-symbol">A</div>
+     <div><span class="is4-explorer__label">PUBLIC COMPANY / SEC EDGAR</span><h3 id="is4-company-name">Select a company</h3><p id="is4-company-ticker">AAPL · Official SEC submissions and reported financial facts</p></div>
+     <span class="is4-explorer__status" id="is4-explorer-status" role="status" aria-live="polite"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Ready to investigate</span>
+    </div>
+    <div class="is4-explorer__grid">
+     <div class="is4-explorer__panel">
+      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> <span>OFFICIAL COMPANY FILINGS</span><span>FORM / DATE</span></div>
+      <div id="is4-explorer-filings" class="is4-explorer__records"><p class="is4-explorer__empty">Choose a ticker above to load official company disclosures. Original filing links will appear here.</p></div>
+     </div>
+     <div class="is4-explorer__panel">
+      <div class="is4-explorer__head"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg> <span>REPORTED FINANCIAL FACTS</span><span>SEC XBRL</span></div>
+      <div id="is4-explorer-facts" class="is4-explorer__records"><p class="is4-explorer__empty">Financial measures will appear with their reported accounting periods, when available.</p></div>
+     </div>
+    </div>
+    <div class="is4-explorer__bottom"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Original sources. Reported periods. No price prediction.</span><a href="company.html?ticker=AAPL" id="is4-company-details">View complete company record <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-right"></use></svg></a></div>
+   </div>
+  </div>
+ </div>
+</section>
+
 <section class="is3-section is3-shell is3-capabilities" id="workflow">
   <div class="is3-section-head"><p class="is3-eyebrow">THE RESEARCH PROCESS</p><div class="is3-section-head__split"><h2>Go beyond<br>the headline.</h2><p>Understand the original reporting, not just someone else's interpretation. Every action below links to research you can inspect yourself.</p></div></div>
   <div class="is3-capabilities__grid">
-    <article class="is3-capability"><span>01 / DISCOVER</span><div class="is3-capability__mark">⌕</div><h3>Find the companies worth investigating.</h3><p>Start with a ticker or browse companies covered in the imported filings. Find the underlying documents instead of relying on summaries alone.</p><a href="explore.html">Browse companies ↗</a></article>
-    <article class="is3-capability"><span>02 / UNDERSTAND</span><div class="is3-capability__mark">▤</div><h3>Put the filings in context.</h3><p>Review reported financial measures alongside period dates. Distinguish insider transactions from grants, exercises, and amended disclosures.</p><a href="company.html?ticker=AAPL">Explore company intelligence ↗</a></article>
-    <article class="is3-capability"><span>03 / REMEMBER</span><div class="is3-capability__mark">⌑</div><h3>Build a record of your thinking.</h3><p>Save companies to a watchlist, write private research notes, and come back when new information is available.</p><a href="research.html">Open private research ↗</a></article>
+    <article class="is3-capability"><span>01 / DISCOVER</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg></div><h3>Find the companies worth investigating.</h3><p>Start with a ticker or browse companies covered in the imported filings. Find the underlying documents instead of relying on summaries alone.</p><a href="explore.html">Browse companies ↗</a></article>
+    <article class="is3-capability"><span>02 / UNDERSTAND</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg></div><h3>Put the filings in context.</h3><p>Review reported financial measures alongside period dates. Distinguish insider transactions from grants, exercises, and amended disclosures.</p><a href="company.html?ticker=AAPL">Explore company intelligence ↗</a></article>
+    <article class="is3-capability"><span>03 / REMEMBER</span><div class="is3-capability__mark"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#bookmark"></use></svg></div><h3>Build a record of your thinking.</h3><p>Save companies to a watchlist, write private research notes, and come back when new information is available.</p><a href="research.html">Open private research ↗</a></article>
   </div>
 </section>
 
@@ -78,14 +119,14 @@
 </section>
 
 <section class="is3-section is3-sources" id="data"><div class="is3-shell"><p class="is3-eyebrow">THE DATA / VERIFIED SOURCES</p><div class="is3-section-head__split"><h2>Source-first.<br>By design.</h2><p>Insidir uses public SEC EDGAR records, including Form 4 ownership filings, company submissions, and available XBRL financial facts. We show the type and scope of each record rather than imply broader coverage than we have.</p></div><div class="is3-sources__grid">
-  <div><span>01</span><h3>Ownership disclosures</h3><p>Imported Form 4 insider transactions, including dates, reporting names and original filing links.</p></div>
-  <div><span>02</span><h3>Corporate submissions</h3><p>Selected 10-K, 10-Q, 8-K and other company disclosures sourced from official submissions.</p></div>
-  <div><span>03</span><h3>Financial statements</h3><p>Reported XBRL figures with their accounting concepts, source filings and fiscal periods.</p></div>
-  <div><span>04</span><h3>Personal research</h3><p>Your own saved tickers and private notes. Optional manual portfolio entries, no brokerage required.</p></div>
+  <div><span>01</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg><h3>Ownership disclosures</h3><p>Imported Form 4 insider transactions, including dates, reporting names and original filing links.</p></div>
+  <div><span>02</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg><h3>Corporate submissions</h3><p>Selected 10-K, 10-Q, 8-K and other company disclosures sourced from official submissions.</p></div>
+  <div><span>03</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#chart-columns"></use></svg><h3>Financial statements</h3><p>Reported XBRL figures with their accounting concepts, source filings and fiscal periods.</p></div>
+  <div><span>04</span><svg class="is4-source-icon" aria-hidden="true"><use href="assets/icons/interface.svg#book-open"></use></svg><h3>Personal research</h3><p>Your own saved tickers and private notes. Optional manual portfolio entries, no brokerage required.</p></div>
 </div><div class="is3-sources__foot"><span>Additional markets, broker connections and automated trading are not currently part of the live research service.</span><a href="research.html">Verify with the research desk ↗</a></div></div></section>
 
 <section class="is3-section is3-shell is3-plans" id="plans"><div class="is3-section-head"><p class="is3-eyebrow">PLANS / SIMPLE BY DEFAULT</p><div class="is3-section-head__split"><h2>Start free.<br>Research further.</h2><p>No credit card to explore public SEC research. Paid access will only become available after checkout and plan entitlements are verified.</p></div></div>
-<div class="is3-plans__grid"><article class="is3-plan"><div class="is3-plan__top"><span>FREE ACCESS</span><span>AVAILABLE</span></div><h3>Research, at your pace.</h3><div class="is3-plan__price">$0 <small>/ month</small></div><p>Get a feel for the information before committing.</p><ul><li>Browse imported SEC filings</li><li>Look up company intelligence</li><li>Explore reported insider activity</li><li>Save research and watchlists with an account</li><li>Optional manual portfolio tracking</li></ul><a class="is3-button is3-button--light" href="signup.html">Start for free ↗</a></article><article class="is3-plan is3-plan--pro"><div class="is3-plan__top"><span>INSIDIR PRO</span><span>PLANNED</span></div><h3>A deeper research workflow.</h3><div class="is3-plan__price">$39 <small>/ month · proposed</small></div><p>Additional research capabilities are being developed.</p><ul><li>Expanded research workflows, when released</li><li>More flexible historical investigation</li><li>Additional saved research organization</li><li>Clear terms and cancellation controls before billing</li><li>No trading permission required</li></ul><a class="is3-button is3-button--outline" href="pricing.html">See planned Pro access ↗</a></article></div>
+<div class="is3-plans__grid"><article class="is3-plan"><div class="is3-plan__top"><span>FREE ACCESS</span><span>AVAILABLE</span></div><h3>Research, at your pace.</h3><div class="is4-plan-icon"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#circle-check"></use></svg> Accessible research</div><div class="is3-plan__price">$0 <small>/ month</small></div><p>Get a feel for the information before committing.</p><ul><li>Browse imported SEC filings</li><li>Look up company intelligence</li><li>Explore reported insider activity</li><li>Save research and watchlists with an account</li><li>Optional manual portfolio tracking</li></ul><a class="is3-button is3-button--light" href="signup.html">Start for free ↗</a></article><article class="is3-plan is3-plan--pro"><div class="is3-plan__top"><span>INSIDIR PRO</span><span>PLANNED</span></div><h3>A deeper research workflow.</h3><div class="is4-plan-icon"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#layers"></use></svg> Future research workflows</div><div class="is3-plan__price">$39 <small>/ month · proposed</small></div><p>Additional research capabilities are being developed.</p><ul><li>Expanded research workflows, when released</li><li>More flexible historical investigation</li><li>Additional saved research organization</li><li>Clear terms and cancellation controls before billing</li><li>No trading permission required</li></ul><a class="is3-button is3-button--outline" href="pricing.html">See planned Pro access ↗</a></article></div>
 </section>
 
 <section class="is3-section is3-shell is3-faq" id="faq"><div class="is3-section-head"><p class="is3-eyebrow">FREQUENT QUESTIONS</p><div class="is3-section-head__split"><h2>Before you begin.</h2><p>What the product does today, and what it doesn't.</p></div></div><div class="is3-faq__items">

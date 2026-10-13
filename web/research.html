@@ -14,6 +14,7 @@
   <script defer src="assets/js/research.js"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
+<link rel="stylesheet" href="assets/css/v4-interior.css">
 </head>
 <body class="research-page v2-app v3-app">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -28,7 +29,7 @@
       <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
       <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
     </form>
-    <p class="research-feedback" id="research-feedback" role="status" aria-live="polite">No portfolio or brokerage connection needed. Enter a ticker to explore available SEC records.</p>
+    <div class="v4-research-trust"><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg> Original SEC sources</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Verify every finding</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#lock"></use></svg> Private saved notes</span></div><p class="research-feedback" id="research-feedback" role="status" aria-live="polite">No portfolio or brokerage connection needed. Enter a ticker to explore available SEC records.</p>
   </header>
 
   <div id="research-results" hidden>
@@ -52,7 +53,7 @@
         <section class="panel research-panel" aria-labelledby="research-intelligence-title">
           <div class="research-panel-head">
             <div><p class="research-eyebrow">01 / OFFICIAL INTELLIGENCE</p>
-              <h2 id="research-intelligence-title">The evidence brief.</h2></div>
+              <h2 id="research-intelligence-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-search"></use></svg> The evidence brief.</h2></div>
           </div>
           <p class="research-explain">Selected company disclosures and XBRL financial facts from SEC EDGAR. Every finding points to an original filing; no market prediction is generated.</p>
           <p id="intel-status" class="research-feedback" role="status" aria-live="polite">Checking additional SEC sources…</p>
@@ -71,7 +72,7 @@
           <div class="research-panel-head">
             <div>
               <p class="research-eyebrow">02 / INVESTIGATE</p>
-              <h2 id="research-transactions-title">Reported insider activity</h2>
+              <h2 id="research-transactions-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg> Reported insider activity</h2>
             </div>
             <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a>
           </div>
@@ -82,7 +83,7 @@
           <div class="research-panel-head">
             <div>
               <p class="research-eyebrow">03 / VERIFY</p>
-              <h2 id="research-filings-title">Original filings</h2>
+              <h2 id="research-filings-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-text"></use></svg> Original filings</h2>
             </div>
           </div>
           <p class="research-explain">Always check the source, publication date, transaction code and any amendments before acting.</p>
@@ -93,7 +94,7 @@
       <aside class="research-sidebar">
         <section class="panel research-panel" aria-labelledby="research-review-title">
           <p class="research-eyebrow">04 / YOUR DECISION</p>
-          <h2 id="research-review-title">Private research journal</h2>
+          <h2 id="research-review-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#book-open"></use></svg> Private research journal</h2>
           <p class="research-explain">Record your independent assessment. This is a research note, not a trade order.</p>
           <form id="research-review-form">
             <label for="research-review-status">Research status</label>
