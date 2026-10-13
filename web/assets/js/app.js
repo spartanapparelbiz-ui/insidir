@@ -6,14 +6,14 @@
   const NS = "http://www.w3.org/2000/svg";
 
   const NAV = [
-    ["dashboard", "Dashboard", "dashboard.html"],
-    ["research", "Research", "research.html"],
-    ["companies", "Companies", "explore.html"],
-    ["portfolio", "Portfolio", "portfolio.html"],
-    ["watchlist", "Watchlist", "watchlist.html"],
-    ["filings", "SEC Filings", "filings.html"],
-    ["insiders", "Insider Trades", "dashboard.html#insider-activity"],
-    ["alerts", "Alerts", "alerts.html"]
+    ["dashboard","Overview","dashboard.html"],
+    ["research","Research","research.html"],
+    ["insiders","Insider activity","dashboard.html#insider-activity"],
+    ["companies","Companies","explore.html"],
+    ["filings","Filings","filings.html"],
+    ["watchlist","Watchlist","watchlist.html"],
+    ["portfolio","Portfolio","portfolio.html"],
+    ["alerts","Alerts","alerts.html"]
   ];
   const NAV_PATHS = {
     dashboard:'<path d="M3 10 12 3l9 7v10h-6v-6H9v6H3z"/>',

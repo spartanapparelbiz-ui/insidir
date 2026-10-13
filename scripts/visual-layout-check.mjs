@@ -1,64 +1,70 @@
-/* Real browser layout regression: verify centered composition at phone and desktop widths.
-   Runs against the same static assets served in production; API calls are allowed to
-   resolve as unavailable because geometry must be correct even during an outage. */
+/* Insidir V6 release gate: actual Chrome geometry and usability, not screenshots of a mock dashboard. */
 import assert from "node:assert/strict";
 import {createServer} from "node:http";
 import {serveStatic} from "../src/web.mjs";
 import {chromium} from "playwright-core";
-
-const server=createServer((req,res)=>{serveStatic(req,res).then(done=>{if(!done){res.writeHead(404);res.end("not found");}}).catch(e=>{res.writeHead(500);res.end(e.message);});});
-await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
-const origin="http://127.0.0.1:"+server.address().port;
-const chrome=process.env.CHROME_BIN||"/usr/bin/google-chrome";
+const server=createServer((req,res)=>{serveStatic(req,res).then(found=>{if(!found){res.writeHead(404);res.end("not found");}}).catch(e=>{res.writeHead(500);res.end(String(e));});});
+await new Promise(ok=>server.listen(0,"127.0.0.1",ok));
+const base="http://127.0.0.1:"+server.address().port;
 let browser;
-const detail=(value)=>Math.round(value*100)/100;
 try{
- browser=await chromium.launch({executablePath:chrome,headless:true,args:["--no-sandbox","--disable-dev-shm-usage"]});
- for(const cfg of [{name:"iPhone width",width:390,height:844},{name:"small iPhone width",width:375,height:812},{name:"desktop width",width:1440,height:900}]){
-  const context=await browser.newContext({viewport:{width:cfg.width,height:cfg.height},deviceScaleFactor:1,hasTouch:cfg.width<600,isMobile:cfg.width<600});
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||"/usr/bin/google-chrome",args:["--no-sandbox","--disable-dev-shm-usage"]});
+ for(const item of [{width:375,height:812},{width:390,height:844},{width:1440,height:900}]){
+  const context=await browser.newContext({viewport:item,deviceScaleFactor:1,isMobile:item.width<600,hasTouch:item.width<600});
   const page=await context.newPage();
   try{
-   await page.goto(origin+"/",{waitUntil:"domcontentloaded",timeout:20000});
+   const issues=[];page.on("pageerror",e=>issues.push(String(e)));
+   await page.goto(base+"/",{waitUntil:"domcontentloaded",timeout:20000});
    const landing=await page.evaluate(()=>{
-    const center=(selector)=>{const e=document.querySelector(selector);if(!e)throw Error("Missing "+selector);const r=e.getBoundingClientRect();return {x:r.x,width:r.width,mid:r.x+r.width/2}};
-    const vw=document.documentElement.clientWidth;
-    const hero=center(".is3-hero__center"),strip=center(".v5-hero-live-wrap"),head=center(".is3-section-head"),nav=center(".is3-nav__inner");
-    return {vw,hero,strip,head,nav,overflow:document.documentElement.scrollWidth-window.innerWidth};
+     const rect=s=>{const e=document.querySelector(s);if(!e)throw Error("Missing "+s);const r=e.getBoundingClientRect();return {x:r.left,mid:r.left+r.width/2,width:r.width,y:r.top};};
+     const hero=rect(".v6-hero__inner"),h1=rect("#v6-hero-heading"),list=rect(".v6-live__list"),head=rect(".v6-nav"),body=document.body;
+     return {hero,h1,list,head,overflow:document.documentElement.scrollWidth-innerWidth,font:getComputedStyle(document.querySelector("h1")).fontFamily,
+       hasFakeDashboard:!!document.querySelector(".is3-window,.mock-dashboard,.preview-dashboard")};
    });
-   assert.ok(Math.abs(landing.hero.mid-cfg.width/2)<=5,cfg.name+": hero off center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.strip.mid-cfg.width/2)<=5,cfg.name+": live filing strip off center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.head.mid-cfg.width/2)<=7,cfg.name+": marketing section headline off center "+JSON.stringify(landing));
-   assert.ok(landing.overflow<=5,cfg.name+": site overflows viewport by "+landing.overflow+"px");
-   await page.locator(".is4-explorer__identity").scrollIntoViewIfNeeded();
-   const mark=await page.evaluate(()=>{
-    const p=document.querySelector(".is4-explorer__symbol"),r=p.getBoundingClientRect(),c=document.querySelector(".is4-explorer__identity").getBoundingClientRect();
-    const logo=p.querySelector(".ins-media"),l=logo.getBoundingClientRect();
-    return {symbolCenter:r.x+r.width/2,photoCenter:l.x+l.width/2,identityCenter:c.x+c.width/2,
-      logoWidth:l.width,imagePosition:getComputedStyle(logo.querySelector("img")).position,
-      identityDirection:getComputedStyle(document.querySelector(".is4-explorer__identity")).flexDirection};
+   assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
+   assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
+   assert.ok(Math.abs(landing.h1.mid-item.width/2)<7,item.width+"px headline off-center "+JSON.stringify(landing));
+   assert.ok(landing.font.includes("Source Serif"),"Original Source Serif heading lost");
+   assert.ok(!landing.hasFakeDashboard,"Landing has a fake dashboard preview");
+   if(item.width<720){
+     const toggle=page.locator("#v6-menu-button");
+     assert.ok(await toggle.isVisible(),item.width+"px mobile menu must be visible");
+     await toggle.click();
+     assert.equal(await toggle.getAttribute("aria-expanded"),"true","Mobile marketing menu doesn't open");
+     assert.ok(await page.locator("#v6-menu").isVisible(),"Marketing menu links inaccessible");
+     await toggle.click();
+   }
+   await page.goto(base+"/dashboard.html",{waitUntil:"domcontentloaded",timeout:20000});
+   const app=await page.evaluate(()=>{
+    const header=document.querySelector(".app-header"),nav=document.querySelector(".app-nav"),main=document.querySelector(".app-main"),h=header.getBoundingClientRect(),m=main.getBoundingClientRect();
+    return {headerX:h.x,headerY:h.y,headerW:h.width,headerH:h.height,mainX:m.x,mainW:m.width,mainY:m.y,
+      navDisplay:getComputedStyle(nav).display,headerPosition:getComputedStyle(header).position,
+      overflow:document.documentElement.scrollWidth-innerWidth,bodyColor:getComputedStyle(document.body).backgroundColor,
+      hasData:!!document.getElementById("v3-filings")&&!!document.getElementById("v3-trades")};
    });
-   assert.ok(Math.abs(mark.photoCenter-mark.symbolCenter)<=2,cfg.name+": logo box off center "+JSON.stringify(mark));
-   assert.equal(mark.imagePosition,"absolute",cfg.name+": logo should be centered in a stable image box");
-   if(cfg.width<600)assert.ok(Math.abs(mark.photoCenter-cfg.width/2)<=10,cfg.name+": mobile company logo off center "+JSON.stringify(mark));
-   await page.goto(origin+"/dashboard.html",{waitUntil:"domcontentloaded",timeout:20000});
-   const dashboard=await page.evaluate(()=>{
-    const main=document.querySelector(".v3-main"),intro=document.querySelector(".v3-intro"),m=main.getBoundingClientRect(),r=intro.getBoundingClientRect();
-    const nav=document.querySelector(".app-header"),side=innerWidth>860?nav.getBoundingClientRect().width:0;
-    const centerExpected=(side+innerWidth)/2;
-    const filler='<tr><td>Verified insider</td><td>MSFT</td><td>Oct 12, 2026</td><td>Purchase</td><td>$10,000</td></tr>';
-    document.getElementById("v3-trades").innerHTML=filler;
-    const row=document.querySelector("#v3-trades tr");
-    const photo=document.createElement("span");photo.className="ins-media ins-media--person ins-media--sm ins-media--missing";photo.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>';
-    row.querySelector("td").prepend(photo);
-    const p=photo.getBoundingClientRect();
-    return {introMid:r.x+r.width/2,expected:centerExpected,mainLeft:m.left,mainWidth:m.width,
-      side,overflow:document.documentElement.scrollWidth-window.innerWidth,
-      rowDisplay:getComputedStyle(row).display,imageBoxMid:p.left+p.width/2};
-   });
-   assert.ok(Math.abs(dashboard.introMid-dashboard.expected)<=8,cfg.name+": dashboard workspace off-center "+JSON.stringify(dashboard));
-   assert.ok(dashboard.overflow<=5,cfg.name+": dashboard overflows by "+dashboard.overflow+"px");
-   if(cfg.width<600)assert.equal(dashboard.rowDisplay,"grid",cfg.name+": mobile record must use stacked card geometry");
-   console.log("Layout verified: "+cfg.name+" / "+cfg.width+"px. Hero, company mark and dashboard centered; overflow "+detail(landing.overflow)+"/"+detail(dashboard.overflow)+"px");
+   assert.ok(app.overflow<=4,item.width+"px dashboard overflow "+JSON.stringify(app));
+   assert.ok(Math.abs(app.headerX)<3&&Math.abs(app.headerW-item.width)<5,"Dashboard has a side navigation, not a top header: "+JSON.stringify(app));
+   assert.ok(app.headerY===0,"Header is not at the top");
+   assert.ok(["sticky","fixed"].includes(app.headerPosition),"Header must remain at top");
+   assert.ok(Math.abs(app.mainX+app.mainW/2-item.width/2)<5,"App main content not centered");
+   assert.ok(app.hasData,"SEC research modules missing");
+   if(item.width>=1140)assert.notEqual(app.navDisplay,"none","Horizontal desktop navigation missing");
+   else {
+    const toggle=page.locator(".app-menu-btn");
+    assert.ok(await toggle.isVisible(),"Product mobile navigation missing");
+    await toggle.click();
+    assert.ok(await page.locator(".app-mobile-nav").isVisible(),"Product mobile menu fails");
+    await toggle.click();
+   }
+   for(const route of ["/signin.html","/signup.html"]){
+    await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:20000});
+    assert.ok(await page.locator("[data-auth-form]").isVisible(),route+" auth form unavailable");
+    const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,serif:getComputedStyle(document.querySelector(".auth-title")).fontFamily}));
+    assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
+    assert.match(auth.serif,/Source Serif/);
+   }
+   console.log("V6 browser verified:",item.width+"px","centered landing","horizontal top navigation","live SEC panels","working auth","no overflow");
+   assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));
   }finally{await context.close()}
  }
-}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
+}finally{await browser?.close();await new Promise(ok=>server.close(ok));}
