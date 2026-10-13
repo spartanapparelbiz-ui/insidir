@@ -15,12 +15,12 @@ function renderTrades(){
  const items=trades.filter(x=>filter==="all"||x.category===filter).slice(0,14);
  $("v3-trades").innerHTML=items.length?items.map(x=>{const t=tick(x.ticker);return '<tr><td>'+E(x.owner_name||"Reporting person")+'</td><td>'+(t?'<a href="'+E(research(t))+'">'+E(t)+'</a>':"—")+'</td><td>'+E(date(x.transaction_date))+'</td><td><span class="v3-category'+(x.category==="reported_purchase"?" v3-category--buy":x.category==="reported_sale"?" v3-category--sell":"")+'">'+formatCategory(x.category)+'</span></td><td>'+E(money(x.estimated_value))+'</td></tr>'}).join(""):'<tr><td colspan="5" class="v3-empty">No matching imported Form 4 transactions. This is not a statement about all market activity.</td></tr>';
 }
-async function loadTrades(){try{const j=await api("/v1/transactions?limit=60");trades=Array.isArray(j.items)?j.items:[];renderTrades();}catch(e){$("v3-trades").innerHTML='<tr><td colspan="5" class="v3-empty">'+E(e.message)+'</td></tr>';}}
+async function loadTrades(){try{const j=await api("/v1/transactions?limit=60");trades=Array.isArray(j.items)?j.items:[];renderTrades();document.dispatchEvent(new CustomEvent("insidir:transactions-loaded",{detail:trades}));}catch(e){document.dispatchEvent(new CustomEvent("insidir:transactions-error",{detail:"Unavailable"}));$("v3-trades").innerHTML='<tr><td colspan="5" class="v3-empty">'+E(e.message)+'</td></tr>';}}
 async function loadFilings(){
- try{const j=await api("/v1/filings?limit=15");const arr=Array.isArray(j.items)?j.items:[];
+ try{const j=await api("/v1/filings?limit=15");const arr=Array.isArray(j.items)?j.items:[];document.dispatchEvent(new CustomEvent("insidir:filings-loaded",{detail:arr}));
  $("v3-filings").innerHTML=arr.length?arr.slice(0,10).map(x=>{const t=tick(x.ticker);return '<tr><td><a href="'+E(research(t))+'">'+E(x.issuer_name||t||"Issuer")+'</a><span class="v3-table__sub">'+E(t)+'</span></td><td>'+E(x.form_type||"4")+'</td><td>'+E(date(x.published_at))+'</td><td>'+srcLink(x.source_url)+'</td></tr>'}).join(""):'<tr><td colspan="4" class="v3-empty">No imported SEC filings are available yet. Browse company research for other disclosures.</td></tr>';
  $("v3-coverage").textContent=arr.length+" recently imported filing"+(arr.length===1?"":"s")+" loaded. This is not the full SEC dataset.";
- }catch(e){$("v3-filings").innerHTML='<tr><td colspan="4" class="v3-empty">'+E(e.message)+'</td></tr>';}
+ }catch(e){document.dispatchEvent(new CustomEvent("insidir:filings-error",{detail:"Unavailable"}));$("v3-filings").innerHTML='<tr><td colspan="4" class="v3-empty">'+E(e.message)+'</td></tr>';}
 }
 async function loadWatchlist(){
  try{const j=await api("/v1/me/watchlist");const arr=Array.isArray(j.items)?j.items:[];
