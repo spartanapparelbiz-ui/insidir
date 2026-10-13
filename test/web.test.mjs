@@ -181,7 +181,7 @@ test("real logos and carefully matched free-license portraits are available with
     assert.doesNotMatch(identity,/ui-avatars|pravatar|randomuser\.me|picsum|Math\.random/);
     const explorer=await(await fetch(base+"/assets/js/v4-explorer.js")).text();
     assert.match(explorer,/InsidirMedia\?\.portrait/);
-    assert.match(explorer,/InsidirMedia\?\.logo/);
+    assert.match(explorer,/brand\.logo\(t,"lg"\)/);
     const research=await(await fetch(base+"/assets/js/research.js")).text();
     assert.match(research,/InsidirMedia\?\.portrait/);
     const company=await(await fetch(base+"/assets/js/v2-company.js")).text();
