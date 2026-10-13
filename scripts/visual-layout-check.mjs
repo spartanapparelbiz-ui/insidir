@@ -26,6 +26,12 @@ try{
    assert.ok(Math.abs(landing.h1.mid-item.width/2)<7,item.width+"px headline off-center "+JSON.stringify(landing));
    assert.ok(landing.font.includes("Source Serif"),"Original Source Serif heading lost");
    assert.ok(!landing.hasFakeDashboard,"Landing has a fake dashboard preview");
+   const cover=page.locator(".ed8-cover img");
+   assert.equal(await cover.count(),1,"Editorial landing image missing");
+   const coverWidth=await cover.evaluate(async img=>{await img.decode();return img.naturalWidth;});
+   assert.ok(coverWidth>100,"Landing image not loaded: "+coverWidth);
+   const coverGeometry=await page.locator(".ed8-cover").evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
+   assert.ok(Math.abs(coverGeometry.center-item.width/2)<=7,item.width+"px photo cover off center "+JSON.stringify(coverGeometry));
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");
      assert.ok(await toggle.isVisible(),item.width+"px mobile menu must be visible");
@@ -48,6 +54,11 @@ try{
    assert.ok(["sticky","fixed"].includes(app.headerPosition),"Header must remain at top");
    assert.ok(Math.abs(app.mainX+app.mainW/2-item.width/2)<5,"App main content not centered");
    assert.ok(app.hasData,"SEC research modules missing");
+   const dashImage=page.locator(".ed8-dash-hero__image img");
+   assert.equal(await dashImage.count(),1,"Dashboard image missing");
+   const imageWidth=await dashImage.evaluate(async img=>{await img.decode();return img.naturalWidth;});
+   assert.ok(imageWidth>100,"Dashboard photo failed to load: "+imageWidth);
+   assert.ok(await page.locator(".ed8-shortcut__image img").count()===3,"Editorial dashboard shortcuts missing image");
    if(item.width>=1140)assert.notEqual(app.navDisplay,"none","Horizontal desktop navigation missing");
    else {
     const toggle=page.locator(".app-menu-btn");
