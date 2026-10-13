@@ -110,6 +110,17 @@ try{
    await page.locator('#cv-search button[type="submit"]').click();
    await page.locator("#cv-name").getByText("MICROSOFT CORPORATION").waitFor({timeout:10000});
    assert.equal(await page.locator(".c11-plot-circle").count(),5,"Company report should work for the next ticker");
+   const darkContrast=await page.evaluate(()=>{
+     const color=s=>getComputedStyle(document.querySelector(s)).color;
+     const back=s=>getComputedStyle(document.querySelector(s)).backgroundColor;
+     return {name:color("#cv-name"),headline:color("#cv-summary h2"),snapshot:color("#c11-snapshot-heading"),tabs:back("#c11-report-tabs"),panel:back(".c11-panel"),logoBack:back("#cv-symbol .ins-media"),highlights:!!document.getElementById("c12-financial-highlights")};
+   });
+   for(const key of ["name","headline","snapshot"]){
+     const found=darkContrast[key].match(/\\d+/g)?.map(Number)||[];
+     assert.ok(found.length===3 && found.every(v=>v>=175),key+" should be readable light text, found "+JSON.stringify(darkContrast));
+   }
+   assert.ok(!/rgb\\(255,\\s*255,\\s*255\\)/.test(darkContrast.tabs),"Finance tabs must never have a white background");
+   assert.ok(darkContrast.highlights,"Multi-panel finance report missing");
    const companyGeometry=await page.evaluate(()=>({
      overflow:document.documentElement.scrollWidth-innerWidth,
      chart:getComputedStyle(document.querySelector("#c11-chart")).width,

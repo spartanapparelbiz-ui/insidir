@@ -67,7 +67,7 @@ function chart(){
 }
 function renderSnapshot(){
  const ids=[["revenue","Revenue"],["netIncome","Net income"],["operatingIncome","Operating income"],["operatingCashFlow","Operating cash flow"],["assets","Total assets"],["equity","Shareholders' equity"]];
- setHTML("c11-snapshot-rows",ids.map(([id,label])=>'<div class="c11-snapshot__row"><span>'+escape(label)+'</span><strong>'+usd(latest(id)?.value)+'</strong></div>').join(""));
+ setHTML("c11-snapshot-rows",ids.map(([id,label])=>'<div class="c11-snapshot__row"><span>'+escape(label)+'</span><strong title="'+escape(latest(id)?.periodEnd?"Period ended "+date(latest(id).periodEnd):"Not reported")+'">'+usd(latest(id)?.value)+'</strong></div>').join(""));
  const asOf=detail?.dataAsOf?date(detail.dataAsOf):"Reported SEC measures";
  setText("c11-snapshot-asof","SEC submissions · Retrieved "+asOf);
 }
@@ -155,6 +155,15 @@ function renderOwnerList(){
  setHTML("c11-owner-list",rows.length?rows.map(x=>'<article class="c11-owner">'+(media?.portrait(x.name,activeTicker,"lg")||"")+'<div><h3>'+escape(x.name)+'</h3><p>'+x.filings+' disclosed transaction'+(x.filings===1?'':'s')+' in the current import · latest '+escape(date(x.last))+'</p><a href="people.html?q='+encodeURIComponent(x.name)+'">Search this reporting person ↗</a></div></article>').join(""):empty("The current SEC import has no reporting-person transactions for this company."));
  hydrate("c11-owner-list");
 }
+function renderFinancialHighlights(){
+ const ids=[["Revenue","revenue"],["Net income","netIncome"],["Operating income","operatingIncome"],["Total assets","assets"],["Operating cash flow","operatingCashFlow"]];
+ const rows=ids.map(([label,id])=>{
+  const item=latest(id);
+  if(!item)return '<div class="c12-finance-row"><div>'+escape(label)+'</div><div><b>—</b><small>Not reported</small></div></div>';
+  return '<div class="c12-finance-row"><div>'+escape(label)+'<small>'+escape(date(item.periodEnd))+'</small></div><div><b>'+escape(usd(item.value))+'</b><small>'+anchor(item.sourceUrl,"SEC filing")+'</small></div></div>';
+ });
+ setHTML("c12-financial-highlights",rows.join(""));
+}
 function renderFinancialTable(){
  const defs=[["Revenue","revenue"],["Gross profit","grossProfit"],["Operating income","operatingIncome"],["Net income","netIncome"],["Operating cash flow","operatingCashFlow"],["Capital expenditures","capex"],["Total assets","assets"],["Total liabilities","liabilities"],["Shareholders' equity","equity"],["Cash & cash equivalents","cash"]];
  let periods=annual("revenue").map(p=>p.periodEnd);
@@ -178,7 +187,7 @@ function renderFacts(){
  setHTML("cv-facts-grid",facts.length?facts.map(f=>'<div class="c11-fact"><span>'+escape(f.label||f.id)+'</span><strong>'+escape(usd(f.value))+'</strong><small>Period '+escape(f.start?date(f.start)+" – ":"")+escape(date(f.periodEnd))+' · '+escape(f.form||"SEC report")+'</small><small>Filed '+escape(date(f.filedAt))+'</small>'+anchor(f.sourceUrl,"Original record")+'</div>').join(""):empty("No current SEC XBRL financial measures were returned."));
 }
 function renderAll(){
- renderSnapshot();renderKPIs();chart();renderRevenueBars();renderRatios();renderFilingSummary();renderEvents();
+ renderSnapshot();renderKPIs();renderFinancialHighlights();chart();renderRevenueBars();renderRatios();renderFilingSummary();renderEvents();
  renderInsiderPreview();renderOwnerPreview();renderFilingRows();renderTransactionRows();renderOwnerList();renderFinancialTable();renderFacts();
 }
 async function fetchWatchlist(t){

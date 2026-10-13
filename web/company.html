@@ -13,10 +13,10 @@
 <link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
 <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v11-company.css?v=1">
+<link rel="stylesheet" href="assets/css/v11-company.css?v=2">
 <script defer src="assets/js/entity-media.js?v=real-assets-3"></script>
 <script defer src="assets/js/app.js"></script>
-<script defer src="assets/js/v11-company.js?v=1"></script>
+<script defer src="assets/js/v11-company.js?v=2"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v11-company-page">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -53,19 +53,18 @@
 </nav>
 <div class="c11-report">
 <section class="c11-tab-panel" id="cv-summary">
-<div class="c11-section-heading"><div><span class="c11-kicker">01 / COMPANY ANALYSIS</span><h2>Company overview.</h2><p>Original filings and comparable annual SEC fundamentals, connected.</p></div><button class="c11-text-button" type="button" id="c11-print">Print report ↗</button></div>
+<div class="c11-section-heading"><div><span class="c11-kicker">01 / COMPANY ANALYSIS</span><h2>Financial intelligence.</h2><p>Original filings and comparable annual SEC fundamentals, connected.</p></div><button class="c11-text-button" type="button" id="c11-print">Print report ↗</button></div>
 <div class="c11-kpi-grid" id="c11-kpis"><p class="c11-empty">Retrieving official financial facts…</p></div>
-<div class="c11-overview-grid">
- <article class="c11-panel c11-panel--wide"><header><div><span class="c11-kicker">REPORTED FINANCIALS</span><h3>Revenue & profitability.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Full financial report ↗</button></header><div id="c11-revenue-graph" class="c11-revenue-graph"><p class="c11-empty">Waiting for annual reports…</p></div></article>
- <article class="c11-panel"><header><div><span class="c11-kicker">FILING COMPOSITION</span><h3>Disclosure activity.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">All filings ↗</button></header><div id="c11-filings-summary"><p class="c11-empty">Loading SEC submissions…</p></div></article>
+<div class="c12-finance-board">
+ <article class="c11-panel c12-panel--revenue"><header><div><span class="c11-kicker">EARNINGS / SEC 10-K</span><h3>Revenue history.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Statements ↗</button></header><div id="c11-revenue-graph" class="c11-revenue-graph"><p class="c11-empty">Retrieving annual revenue…</p></div></article>
+ <article class="c11-panel c12-panel--ratios"><header><div><span class="c11-kicker">MARGINS / ANNUAL</span><h3>Profitability.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Details ↗</button></header><div id="c11-ratios"><p class="c11-empty">Checking fiscal-year measures…</p></div></article>
+ <article class="c11-panel c12-panel--filing-mix"><header><div><span class="c11-kicker">SEC EDGAR</span><h3>Disclosure mix.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">Filings ↗</button></header><div id="c11-filings-summary"><p class="c11-empty">Loading disclosures…</p></div></article>
+ <article class="c11-panel c12-panel--quick"><header><div><span class="c11-kicker">LATEST FILED VALUES</span><h3>Key financials.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">Full report ↗</button></header><div id="c12-financial-highlights"><p class="c11-empty">Loading latest XBRL facts…</p></div></article>
 </div>
-<div class="c11-overview-grid c11-overview-grid--bottom">
- <article class="c11-panel"><header><div><span class="c11-kicker">ANALYTICAL RATIOS</span><h3>Profitability.</h3></div><button type="button" class="c11-link" data-company-go="cv-facts">View financials ↗</button></header><div id="c11-ratios"><p class="c11-empty">Deriving available comparable figures…</p></div></article>
- <article class="c11-panel"><header><div><span class="c11-kicker">THE PUBLIC RECORD</span><h3>Latest developments.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">View source documents ↗</button></header><div id="c11-latest-events"><p class="c11-empty">Loading recent disclosures…</p></div></article>
-</div>
-<div class="c11-overview-grid c11-overview-grid--bottom">
- <article class="c11-panel"><header><div><span class="c11-kicker">FORM 4</span><h3>Reported insider activity.</h3></div><button type="button" class="c11-link" data-company-go="cv-transactions">See all ↗</button></header><div id="c11-insider-preview"><p class="c11-empty">Loading reported ownership records…</p></div></article>
- <article class="c11-panel"><header><div><span class="c11-kicker">REPORTING PERSONS</span><h3>People in the filings.</h3></div><button type="button" class="c11-link" data-company-go="c11-owners">See people ↗</button></header><div id="c11-owner-preview"><p class="c11-empty">Loading ownership disclosures…</p></div></article>
+<div class="c12-activity-board">
+ <article class="c11-panel"><header><div><span class="c11-kicker">LATEST SEC SUBMISSIONS</span><h3>Recent filings.</h3></div><button type="button" class="c11-link" data-company-go="cv-filings">View all ↗</button></header><div id="c11-latest-events"><p class="c11-empty">Loading recent disclosures…</p></div></article>
+ <article class="c11-panel"><header><div><span class="c11-kicker">FORM 4 / OWNERSHIP</span><h3>Insider activity.</h3></div><button type="button" class="c11-link" data-company-go="cv-transactions">View all ↗</button></header><div id="c11-insider-preview"><p class="c11-empty">Loading reported transactions…</p></div></article>
+ <article class="c11-panel"><header><div><span class="c11-kicker">INDIVIDUAL REPORTING OWNERS</span><h3>People to research.</h3></div><button type="button" class="c11-link" data-company-go="c11-owners">View all ↗</button></header><div id="c11-owner-preview"><p class="c11-empty">Loading filing identities…</p></div></article>
 </div>
 </section>
 <section class="c11-tab-panel" id="cv-facts" hidden>

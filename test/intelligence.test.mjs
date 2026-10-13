@@ -112,3 +112,17 @@ test("Full-year financial series use actual SEC dates, reject quarters, de-dupli
  assert.ok(series.revenue.points.every(p=>p.sourceUrl.includes("sec.gov/Archives/")));
  assert.deepEqual(series.netIncome.points,[]);
 });
+
+
+test("SEC taxonomy switches select the newest full-year tag across company types",()=>{
+ const row=(val,start,end,form="10-K")=>({val,start,end,form,fp:"FY",filed:"2026-09-01",accn:ACCESSION});
+ const input={facts:{"us-gaap":{
+  RevenueFromContractWithCustomerExcludingAssessedTax:{units:{USD:[row(50,"2021-01-01","2021-12-31"),row(55,"2022-01-01","2022-12-31")]}},
+  Revenues:{units:{USD:[row(90,"2024-01-01","2024-12-31"),row(110,"2025-01-01","2025-12-31")]}},
+  NetIncomeLoss:{units:{USD:[row(20,"2025-01-01","2025-12-31")]}}
+ }}};
+ const history=extractAnnualSeries(input,CIK);
+ assert.deepEqual(history.revenue.points.map(x=>x.value),[90,110],"An old SEC taxonomy tag must not pin the annual chart to 2022");
+ const facts=extractFinancialFacts(input,CIK);
+ assert.equal(facts.find(x=>x.id==="revenue")?.periodEnd,"2025-12-31","Most recent revenue fact should be used across alternative tags");
+});

@@ -82,10 +82,12 @@ export function extractFinancialFacts(companyFacts,cik) {
     for(const tag of metric.tags){
       const entries=gaap[tag]?.units?.USD;
       if(!Array.isArray(entries))continue;
-      options=entries.filter(x=>x && typeof x==="object" && Number.isFinite(x.val) &&
+      const candidates=entries.filter(x=>x && typeof x==="object" && Number.isFinite(x.val) &&
         isDate(x.filed) && isDate(x.end) && ["10-K","10-Q","10-K/A","10-Q/A"].includes(x.form) &&
         accessionOk(x.accn));
-      if(options.length)break;
+      // Compare candidates across SEC taxonomy alternatives. A stale legacy tag
+      // must not override a more recent company filing.
+      options.push(...candidates);
     }
     if(!options.length)return [];
     options.sort((a,b)=>b.end.localeCompare(a.end)||b.filed.localeCompare(a.filed));
@@ -117,13 +119,13 @@ const annualMetrics=[
 export function extractAnnualSeries(companyFacts,cik){
  const gaap=companyFacts?.facts?.["us-gaap"]||{},output={};
  for(const metric of annualMetrics){
-  let usable=[];
+  let usable=[],latestPeriod="";
   for(const tag of metric.tags){
    const values=gaap[tag]?.units?.USD;
    if(!Array.isArray(values))continue;
    const filtered=values.filter(row=>{
      if(!row||!Number.isFinite(row.val)||!isDate(row.end)||!isDate(row.filed)||!accessionOk(row.accn))return false;
-     if(!["10-K","10-K/A"].includes(row.form)||row.fp && row.fp!=="FY")return false;
+     if(!["10-K","10-K/A"].includes(row.form))return false;
      if(metric.duration){
        if(!isDate(row.start))return false;
        const days=(Date.parse(row.end)-Date.parse(row.start))/86400000;
@@ -131,7 +133,12 @@ export function extractAnnualSeries(companyFacts,cik){
      }
      return true;
    });
-   if(filtered.length){usable=filtered;break}
+   // SEC issuers sometimes change taxonomy concepts. Use the concept with the freshest
+   // comparable annual filing, not the first tag with any historical data.
+   if(filtered.length){
+     const fresh=filtered.reduce((max,row)=>row.end>max?row.end:max,"");
+     if(fresh>latestPeriod){usable=filtered;latestPeriod=fresh}
+   }
   }
   const periods=new Map();
   for(const row of usable){
