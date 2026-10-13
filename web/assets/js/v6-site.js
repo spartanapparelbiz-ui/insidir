@@ -17,7 +17,7 @@ fetch("/v1/filings?limit=6",{credentials:"same-origin",headers:{Accept:"applicat
  const items=Array.isArray(data.items)?data.items.slice(0,6):[];
  if(!items.length){host.innerHTML='<p class="v6-live__empty">No recent imported records available yet. <a href="filings.html">Explore the filing library ↗</a></p>';return;}
  host.innerHTML=items.map(item=>{const t=ticker(item.ticker),href=t?"research.html?ticker="+encodeURIComponent(t):"filings.html";
-  return '<a class="v6-live__row" href="'+esc(href)+'"><span class="v6-live__form">'+esc(item.form_type||"SEC")+'</span><span class="v6-live__issuer">(window.InsidirMedia?.logo(t,"sm")||"")<span class="v10-live-name"><strong>'+esc(item.issuer_name||t||"Reported issuer")+'</strong><small>'+esc(t||"SEC disclosure")+'</small></span></span><span class="v6-live__date-label">Published</span><span class="v6-live__date">'+esc(when(item.published_at))+'</span><span class="v6-live__arrow">↗</span></a>';
+  return '<a class="v6-live__row" href="'+esc(href)+'"><span class="v6-live__form">'+esc(item.form_type||"SEC")+'</span><span class="v6-live__issuer">'+(window.InsidirMedia?.logo(t,"sm")||"")+'<span class="v10-live-name"><strong>'+esc(item.issuer_name||t||"Reported issuer")+'</strong><small>'+esc(t||"SEC disclosure")+'</small></span></span><span class="v6-live__date-label">Published</span><span class="v6-live__date">'+esc(when(item.published_at))+'</span><span class="v6-live__arrow">↗</span></a>';
  }).join("");
  window.InsidirMedia?.hydrate(host);
 }).catch(()=>{host.innerHTML='<p class="v6-live__empty">Recent filings are temporarily unavailable. <a href="filings.html">Open the filing library ↗</a></p>';});

@@ -337,3 +337,21 @@ test("text assets are compressed when the client accepts it", async () => {
     assert.equal(img.headers.get("content-encoding"), null);
   });
 });
+
+test("V10 editorial photography, SEC people directory and verified identity assets are available", async()=>{
+ const home=await(await fetch(base+"/index.html")).text();
+ const dash=await(await fetch(base+"/dashboard.html")).text();
+ const people=await(await fetch(base+"/people.html")).text();
+ assert.match(home,/v10-editorial.css/);
+ assert.match(home,/v10-faces/);
+ assert.match(home,/assets\/icons\/nvidia.svg/);
+ assert.match(dash,/v10-people-preview/);
+ assert.match(dash,/v10-people.js/);
+ assert.match(people,/v10-people-results/);
+ assert.match(people,/v10-followed-results/);
+ const peopleJS=await(await fetch(base+"/assets/js/v10-people.js")).text();
+ assert.match(peopleJS,/\/v1\/me\/people/);
+ assert.match(peopleJS,/\/v1\/insiders/);
+ const css=await fetch(base+"/assets/css/v10-editorial.css");
+ assert.equal(css.status,200);
+});

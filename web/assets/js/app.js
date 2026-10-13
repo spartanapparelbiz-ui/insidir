@@ -8,7 +8,7 @@
   const NAV = [
     ["dashboard","Overview","dashboard.html"],
     ["research","Research","research.html"],
-    ["insiders","Insider activity","dashboard.html#insider-activity"],
+    ["insiders","People","people.html"],
     ["companies","Companies","explore.html"],
     ["filings","Filings","filings.html"],
     ["watchlist","Watchlist","watchlist.html"],

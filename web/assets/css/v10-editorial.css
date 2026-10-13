@@ -180,3 +180,18 @@ body.v2-app.v3-app.v6-app .cl-table td{padding:20px 11px!important}
 }
 @media(max-width:390px){.v10-brands__grid{grid-template-columns:repeat(3,minmax(0,1fr))}.v10-editorial__stack a{height:150px}.v10-faces h2{font-size:53px}.v10-person-card__identity strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.v10-editorial__gallery img,.v10-face img,.v10-brands__grid a,.v10-desk-focus img{transition:none!important;transform:none!important}}
+
+/* Photo-backed editorial framing across source-linked research pages. */
+body.v2-app.v3-app.v6-app .v10-interior-art{position:relative;margin:16px 0 35px;overflow:hidden;height:clamp(230px,28vw,365px);background:#3a4840}
+body.v2-app.v3-app.v6-app .v10-interior-art img{width:100%;height:100%;object-fit:cover;object-position:center 40%;filter:saturate(.8)}
+body.v2-app.v3-app.v6-app .v10-interior-art:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.58),transparent 80%)}
+body.v2-app.v3-app.v6-app .v10-interior-art figcaption{position:absolute;z-index:1;left:clamp(22px,4vw,55px);bottom:clamp(19px,4vw,40px);color:white}
+.v10-interior-art figcaption span{display:block;letter-spacing:.11em;font:700 10px "Inter",sans-serif;margin-bottom:9px}
+.v10-interior-art figcaption strong{display:block;font:520 clamp(36px,5.5vw,76px)/1 "Source Serif 4",Georgia,serif;letter-spacing:-.06em;max-width:700px}
+body.v2-app.v3-app.v6-app .cl-top h1,body.v2-app.v3-app.v6-app .cv-heading h1{font-size:clamp(53px,6.6vw,91px)!important}
+body.v2-app.v3-app.v6-app .cl-search-panel{margin:20px 0 30px!important}
+body.v2-app.v3-app.v6-app .cl-table .ins-media,body.v2-app.v3-app.v6-app .cv-table .ins-media{--ins-size:38px}
+body.v2-app.v3-app.v6-app .cl-table tbody tr:hover td,body.v2-app.v3-app.v6-app .cv-table tbody tr:hover td{background:#e9eee7!important}
+body.v2-app.v3-app.v6-app .cv-stat-grid,body.v2-app.v3-app.v6-app .research-metrics{gap:0!important}
+body.v2-app.v3-app.v6-app .cv-stat,body.v2-app.v3-app.v6-app .research-metric{padding:21px 11px!important}
+@media(max-width:650px){body.v2-app.v3-app.v6-app .v10-interior-art{height:215px;margin:5px 0 25px}.v10-interior-art figcaption strong{font-size:41px}}

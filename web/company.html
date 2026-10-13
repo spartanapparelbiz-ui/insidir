@@ -12,12 +12,14 @@
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
+<link rel="stylesheet" href="assets/css/v10-editorial.css?v=1">
 </head>
 <body class="app-body v2-app v3-app v6-app">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="companies"></header>
 <main class="app-main company-v2" id="main">
 <div class="cv-breadcrumb"><a href="explore.html">Companies</a><span>›</span><span id="cv-bread-ticker">Research</span></div>
+<figure class="v10-interior-art v10-interior-art--company"><img src="assets/img/records-left.jpg" alt="New York Stock Exchange facade" loading="eager"><figcaption><span>THE PUBLIC COMPANY RECORD</span><strong>Look closer.</strong></figcaption></figure>
 <div class="cv-heading"><div class="cv-heading__left"><div class="cv-symbol" id="cv-symbol" aria-hidden="true">⌕</div><div><p class="cv-kicker">OFFICIAL COMPANY RECORD</p><h1 id="cv-name">Company intelligence</h1><p id="cv-details">Enter a ticker to investigate SEC disclosures.</p></div></div><div class="cv-heading__actions"><button type="button" id="cv-follow" class="btn btn--dark" hidden>Save to watchlist</button><a id="cv-sec" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer" class="cv-link">SEC EDGAR ↗</a></div></div>
 <form id="cv-search" class="cv-search" role="search"><label class="sr-only" for="cv-ticker">Stock ticker</label><input id="cv-ticker" type="search" placeholder="Search a stock ticker — e.g. AAPL" autocomplete="off" maxlength="15" required><button type="submit" class="btn btn--dark">Investigate ↗</button></form>
 <p role="status" aria-live="polite" id="cv-status" class="cv-status">Start with an official SEC ticker.</p>
