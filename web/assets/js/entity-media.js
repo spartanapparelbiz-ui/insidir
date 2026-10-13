@@ -25,7 +25,7 @@ const brands={
  JEF:[null,"jefferies.com"],PANW:[null,"paloaltonetworks.com"],CRWD:[null,"crowdstrike.com"],
  NOW:[null,"servicenow.com"],PLTR:[null,"palantir.com"],SNOW:[null,"snowflake.com"],
  DDOG:[null,"datadoghq.com"],NET:[null,"cloudflare.com"],MDB:[null,"mongodb.com"],
- ADBE:["adobe","adobe.com"],HOOD:[null,"robinhood.com"],RBLX:[null,"roblox.com"],
+ HOOD:[null,"robinhood.com"],RBLX:[null,"roblox.com"],
  F:[null,"ford.com"],GM:[null,"gm.com"],TM:[null,"global.toyota"],HMC:[null,"honda.com"],
  PFE:[null,"pfizer.com"],JNJ:[null,"jnj.com"],MRK:[null,"merck.com"],ABBV:[null,"abbvie.com"],
  LLY:[null,"lilly.com"],UNH:[null,"unitedhealthgroup.com"],NVO:[null,"novonordisk.com"],
@@ -37,7 +37,7 @@ const brands={
  MU:[null,"micron.com"],ARM:[null,"arm.com"],AVGO:[null,"broadcom.com"],TXN:[null,"ti.com"],
  BKNG:[null,"bookingholdings.com"],EBAY:[null,"ebayinc.com"],ETSY:[null,"etsy.com"],
  ROKU:[null,"roku.com"],DELL:[null,"dell.com"],HPQ:[null,"hp.com"],HPE:[null,"hpe.com"],
- BRK.A:[null,"berkshirehathaway.com"],BRK.B:[null,"berkshirehathaway.com"]
+ "BRK.A":[null,"berkshirehathaway.com"],"BRK.B":[null,"berkshirehathaway.com"]
 };
 const portraits={
  "AAPL:COOK TIMOTHY D":["Tim Cook","Tim_Cook"],"AAPL:TIM COOK":["Tim Cook","Tim_Cook"],
