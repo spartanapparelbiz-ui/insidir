@@ -19,3 +19,5 @@ jobs:
         run: npm run check
       - name: Unit tests
         run: npm test
+      - name: Verify authentic published brand marks and portraits
+        run: node scripts/verify-media.mjs
