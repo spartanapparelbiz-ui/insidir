@@ -1,3 +1,12 @@
+## Insidir V3 (October 2026)
+
+- Production landing page: centered market-research hero, working SEC filing preview, detailed company/fundamentals/insider workflows, source disclosures, planned $39 Pro pricing, FAQs and an Aethric LLC legal footer.
+- Product workspace: shared dark charcoal visual system across dashboard, SEC Research Desk, company research, filing library/detail, watchlist, portfolio, alerts and billing. The dashboard loads live `/v1/filings`, `/v1/transactions`, authenticated `/v1/me/watchlist` and `/v1/me/research-decisions`. It never substitutes invented stock charts or live market prices.
+- Legal: `/terms.html`, `/privacy.html` and `/company-info.html` identify Aethric LLC as the operator; contact `hello@aethric.llc`. Terms and privacy have not been represented as attorney-reviewed.
+- Account center: `/account.html` uses the existing `/v1/me` and `/v1/auth/logout` endpoints and guarded `DELETE /v1/me` with user confirmation. Sign-up only requests email/password because that's what the backend stores.
+- Production safeguards: no artificial AI answers, no fake politicians' transactions, no trading execution; Pro remains visibly *planned* and cannot charge until the billing integration is activated and verified.
+- Launch checks: `npm run check`, `npm test`, Railway deploy status, `/healthz`, user registration and account lifecycle spot tests. Client-facing public pages do not require external-market-data credentials.
+
 # Insidir
 
 **Public information. Deeper investigation. Decisions on your terms.** Insidir is building an intelligence-powered investing experience: find overlooked information in lawful public records, connect the evidence, and decide how to act. The current release contains an SEC-focused research engine and website; brokerage trading, AI analysis, and user-authorized automation are roadmap features, not live capabilities.

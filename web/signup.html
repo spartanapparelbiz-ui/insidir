@@ -17,8 +17,9 @@
   <script defer src="assets/js/site.js"></script>
   <script defer src="assets/js/auth.js"></script>
   <link rel="stylesheet" href="assets/css/v2-auth.css">
+  <link rel="stylesheet" href="assets/css/v3-static.css">
 </head>
-<body class="auth-body auth-body--signup v2-auth">
+<body class="auth-body auth-body--signup v2-auth v3-auth">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <main id="main" class="auth auth--signup">
@@ -29,20 +30,10 @@
         </div>
 
         <div class="auth-card" data-stagger="65" data-delay="140">
-          <div class="auth-plan" data-plan-badge hidden>
-            <span class="pill pill--badge" data-reveal="up"><span class="dot" aria-hidden="true"></span>Pro plan selected</span>
-          </div>
-          <h1 id="auth-title" class="auth-title" data-split>Create your account.</h1>
-          <p class="auth-sub" data-reveal="up">Start by researching a stock. No brokerage connection or portfolio setup required.</p>
+<h1 id="auth-title" class="auth-title" data-split>Create your account.</h1>
+          <p class="auth-sub" data-reveal="up">Search a stock and follow the evidence. No credit card or brokerage connection required.</p>
 
           <form class="auth-form" data-auth-form="register" action="#" method="post" novalidate>
-            <div class="field auth-field" data-reveal="up">
-              <label class="label" for="signup-name">Full name</label>
-              <input class="input" id="signup-name" name="name" type="text" autocomplete="name" placeholder="John Doe"
-                     maxlength="100" required aria-describedby="signup-name-error">
-              <div class="field__msg"><p class="field__error" id="signup-name-error"></p></div>
-            </div>
-
             <div class="field auth-field" data-reveal="up">
               <label class="label" for="signup-email">Email</label>
               <input class="input" id="signup-email" name="email" type="email" inputmode="email" autocomplete="email"
