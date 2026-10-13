@@ -110,7 +110,7 @@ test("new public site and top-navigation app offer live product routes",async()=
   const paths=["/index.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html","/account.html","/company-info.html"];
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
-  assert.match(home,/See what the/);
+  assert.match(home,/The market is loud/);
   assert.match(home,/id="v6-live-records"/);
   assert.doesNotMatch(home,/is3-window|fake dashboard|01 \/ DISCOVER|02 \/ VERIFY/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
@@ -209,6 +209,18 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
   for(const p of ["/terms.html","/privacy.html","/pricing.html","/company-info.html"])assert.match(await(await fetch(base+p)).text(),/v6-static\.css/);
  });
 });
+test("V7 long editorial site and shared application styling are served",async()=>{await withServer(async base=>{
+ const home=await(await fetch(base+"/")).text();
+ assert.match(home,/assets\/css\/v7-system.css\?v=1/);
+ assert.match(home,/The market is loud/);
+ assert.match(home,/v7-product-art/);
+ assert.match(home,/v7-positioning/);
+ assert.doesNotMatch(home,/v6-orbit|v6-graphic__core/);
+ const pages=["dashboard.html","research.html","company.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html"];
+ for(const page of pages){const r=await fetch(base+"/"+page);assert.equal(r.status,200,page);const html=await r.text();assert.match(html,/v7-unified.css\?v=1/,page);}
+ for(const asset of ["v7-system.css","v7-unified.css"]){assert.equal((await fetch(base+"/assets/css/"+asset)).status,200);}
+});});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
@@ -250,7 +262,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/See what the/);
+  assert.match(home,/The market is loud/);
   assert.match(home,/id="v6-live-records"/);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);

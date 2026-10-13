@@ -1,0 +1,40 @@
+/* Shared Insidir V7: one coherent typographic system on every non-marketing page.
+   Existing working account, SEC and portfolio interactions are retained. */
+body.v2-app.v3-app.v6-app{--v7-ink:#1b1c1e;--v7-paper:#faf9f6;--v7-edge:#e3e0da;background:var(--v7-paper)!important;color:var(--v7-ink)!important;font:400 12px/1.7 var(--sans)}
+body.v2-app.v3-app.v6-app .app-header{background:rgba(250,249,246,.98)!important;border-bottom:1px solid #dfddd8!important;box-shadow:0 3px 14px rgba(0,0,0,.025)!important}
+body.v2-app.v3-app.v6-app .app-header .logo{font-weight:630!important}
+body.v2-app.v3-app.v6-app .app-nav a[aria-current=page]:after{background:#171717!important}
+body.v2-app.v3-app.v6-app .app-main{max-width:1370px!important;padding:clamp(28px,3.5vw,58px) clamp(18px,3vw,45px) 80px!important;background:transparent!important}
+body.v2-app.v3-app.v6-app .v3-intro{padding:29px 0!important}
+body.v2-app.v3-app.v6-app .v3-intro h1{font:560 clamp(46px,5.2vw,70px)/1 var(--serif)!important}
+body.v2-app.v3-app.v6-app .v3-main .v3-eyebrow{letter-spacing:.045em!important;text-transform:none!important}
+body.v2-app.v3-app.v6-app .v3-main .v3-eyebrow::first-letter{text-transform:uppercase}
+body.v2-app.v3-app.v6-app .v3-quicklinks a{border-radius:7px!important;box-shadow:none!important}
+body.v2-app.v3-app.v6-app .v3-module{border-radius:8px!important;box-shadow:0 8px 22px rgba(24,23,20,.035)!important}
+body.v2-app.v3-app.v6-app .v3-module__head h2{font:550 27px/1.15 var(--serif)!important}
+body.v2-app.v3-app.v6-app .v3-module__head h2 .v4-ui-icon{opacity:.65}
+body.v2-app.v3-app.v6-app .v3-board{gap:22px!important}
+body.v2-app.v3-app.v6-app .v3-quicklinks{gap:14px!important}
+body.v2-app.v3-app.v6-app .v4-data-strip{border-radius:6px!important}
+body.v2-app.v3-app.v6-app .v3-table td{font-variant-numeric:tabular-nums}
+body.v2-app.v3-app.v6-app .v3-searchbox{border-radius:6px!important}
+body.v2-app.v3-app.v6-app .v3-searchbox button{border-radius:4px!important}
+body.v2-app.v3-app.v6-app .v3-method{border-radius:6px!important}
+body.v2-app.v3-app.v6-app .research-head h1,body.v2-app.v3-app.v6-app .cv-heading h1,body.v2-app.v3-app.v6-app .cl-top h1{font:540 clamp(43px,5.5vw,69px)/1.07 var(--serif)!important;letter-spacing:-.055em!important}
+body.v2-app.v3-app.v6-app .research-panel,body.v2-app.v3-app.v6-app .cv-panel,body.v2-app.v3-app.v6-app .cl-result{border-radius:7px!important;box-shadow:0 8px 22px rgba(0,0,0,.025)!important}
+body.v2-app.v3-app.v6-app .research-panel h2,body.v2-app.v3-app.v6-app .cv-section h2{font-family:var(--serif)!important;letter-spacing:-.025em}
+body.v2-app.v3-app.v6-app .app-footer{background:#f1efeb!important}
+body.v3-auth.v6-auth .auth-title{font-weight:560!important;letter-spacing:-.052em!important}
+body.v3-auth.v6-auth .v6-auth-story{max-width:640px}
+body.v3-auth.v6-auth .v6-auth-story h2{font-size:clamp(50px,5.5vw,82px);font-weight:550!important}
+body.v3-auth.v6-auth .auth-media{background:#222326!important}
+body.v3-auth.v6-auth .auth-media:before{background-size:25% 100%,100% 90px!important;opacity:.22!important}
+body.v3-auth.v6-auth .auth-media:after{content:"insidir."!important;right:-30px!important;bottom:2%!important;font:570 190px/1 var(--serif)!important;letter-spacing:-.065em!important;color:rgba(255,255,255,.045)!important}
+body.v3-auth.v6-auth .auth .input{border-radius:5px!important}
+body.v3-auth.v6-auth .auth-btn{border-radius:5px!important}
+body.v3-static.v6-static .v3-static__header{padding-top:80px}
+body.v3-static.v6-static h1{font-weight:570!important;letter-spacing:-.052em!important}
+body.v3-static.v6-static .v3-price__card,body.v3-static.v6-static .v3-company__box{border-radius:7px!important;box-shadow:none!important}
+body.v3-static.v6-static .v3-price__button,body.v3-static.v6-static .v3-static__cta{border-radius:4px!important}
+@media(max-width:860px){body.v2-app.v3-app.v6-app .app-main{padding:24px 16px 54px!important}}
+@media(max-width:600px){body.v2-app.v3-app.v6-app .v3-board{gap:13px!important}body.v2-app.v3-app.v6-app .v3-main .v3-intro{padding:24px 15px!important}body.v3-auth.v6-auth .auth-card{padding:30px 0!important}}
