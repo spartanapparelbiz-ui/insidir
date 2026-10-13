@@ -1,4 +1,4 @@
-/* Insidir V6 release gate: actual Chrome geometry and usability, not screenshots of a mock dashboard. */
+/* Insidir V9 browser gate: confirm clean landing, mobile navigation, real images and live workspace. */
 import assert from "node:assert/strict";
 import {createServer} from "node:http";
 import {serveStatic} from "../src/web.mjs";
@@ -26,11 +26,11 @@ try{
    assert.ok(Math.abs(landing.h1.mid-item.width/2)<7,item.width+"px headline off-center "+JSON.stringify(landing));
    assert.ok(landing.font.includes("Source Serif"),"Original Source Serif heading lost");
    assert.ok(!landing.hasFakeDashboard,"Landing has a fake dashboard preview");
-   const cover=page.locator(".ed8-cover img");
+   const cover=page.locator(".v9-hero__visual img");
    assert.equal(await cover.count(),1,"Editorial landing image missing");
    const coverWidth=await cover.evaluate(async img=>{await img.decode();return img.naturalWidth;});
    assert.ok(coverWidth>100,"Landing image not loaded: "+coverWidth);
-   const coverGeometry=await page.locator(".ed8-cover").evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
+   const coverGeometry=await page.locator(".v9-hero__visual").evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
    assert.ok(Math.abs(coverGeometry.center-item.width/2)<=7,item.width+"px photo cover off center "+JSON.stringify(coverGeometry));
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");
@@ -54,11 +54,11 @@ try{
    assert.ok(["sticky","fixed"].includes(app.headerPosition),"Header must remain at top");
    assert.ok(Math.abs(app.mainX+app.mainW/2-item.width/2)<5,"App main content not centered");
    assert.ok(app.hasData,"SEC research modules missing");
-   const dashImage=page.locator(".ed8-dash-hero__image img");
+   const dashImage=page.locator(".v9-desk__hero > img");
    assert.equal(await dashImage.count(),1,"Dashboard image missing");
    const imageWidth=await dashImage.evaluate(async img=>{await img.decode();return img.naturalWidth;});
    assert.ok(imageWidth>100,"Dashboard photo failed to load: "+imageWidth);
-   assert.ok(await page.locator(".ed8-shortcut__image img").count()===3,"Editorial dashboard shortcuts missing image");
+   assert.equal(await page.locator(".v9-desk__links a").count(),3,"Working dashboard shortcuts missing");
    if(item.width>=1140)assert.notEqual(app.navDisplay,"none","Horizontal desktop navigation missing");
    else {
     const toggle=page.locator(".app-menu-btn");
@@ -74,7 +74,7 @@ try{
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
     assert.match(auth.serif,/Source Serif/);
    }
-   console.log("V6 browser verified:",item.width+"px","centered landing","horizontal top navigation","live SEC panels","working auth","no overflow");
+   console.log("V9 browser verified:",item.width+"px","centered landing","horizontal top navigation","live SEC panels","working auth","no overflow");
    assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));
   }finally{await context.close()}
  }
