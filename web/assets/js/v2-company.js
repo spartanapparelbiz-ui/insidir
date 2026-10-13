@@ -16,7 +16,9 @@ async function load(raw){
  if(!t){text("cv-status","Enter a valid stock ticker. No broker connection is required.");return;}
  current=t;
  history.replaceState(null,"","company.html?ticker="+encodeURIComponent(t));
- text("cv-bread-ticker",t);text("cv-symbol",t.slice(0,1));text("cv-name",t);
+ text("cv-bread-ticker",t);const identity=window.InsidirMedia;
+ $("cv-symbol").textContent="";$("cv-symbol").innerHTML=identity?.logo(t,"lg")||"";identity?.hydrate($("cv-symbol"));
+ text("cv-name",t);
  text("cv-details","Loading official company records…");text("cv-status","Connecting SEC filings, XBRL facts, and reported Form 4 transactions…");
  text("cv-filing-count","—");text("cv-fact-count","—");text("cv-transaction-count","—");
  $("cv-follow").hidden=false;
@@ -51,8 +53,9 @@ async function load(raw){
   text("cv-transaction-count",String(arr.length));
   $("cv-transactions-list").innerHTML=arr.length?arr.slice(0,30).map(v=>{
    const kind=v.category==="reported_purchase"?"Reported purchase":v.category==="reported_sale"?"Reported sale":"Other ownership transaction";
-   return '<tr><td>'+esc(v.owner_name||"Reporting person")+'</td><td>'+esc(kind)+'</td><td>'+esc(date(v.transaction_date))+'</td><td>'+esc(date(v.published_at))+'</td><td>'+esc(money(v.estimated_value))+'</td></tr>';
+   return '<tr><td><div class="ins-person-cell">'+(identity?.portrait(v.owner_name,t,"sm")||"")+'<span class="ins-person-cell__name">'+esc(v.owner_name||"Reporting person")+'</span></div></td><td>'+esc(kind)+'</td><td>'+esc(date(v.transaction_date))+'</td><td>'+esc(date(v.published_at))+'</td><td>'+esc(money(v.estimated_value))+'</td></tr>';
   }).join(""):'<tr><td colspan="5" class="cv-empty">No imported Form 4 transactions for this stock in the current dataset.</td></tr>';
+  identity?.hydrate($("cv-transactions-list"));
  }else $("cv-transactions-list").innerHTML='<tr><td colspan="5" class="cv-empty">'+esc(transactions.reason.message)+'</td></tr>';
  if(intel.status!=="fulfilled"&&imported.status==="fulfilled"){
   const fs=Array.isArray(imported.value.items)?imported.value.items:[];

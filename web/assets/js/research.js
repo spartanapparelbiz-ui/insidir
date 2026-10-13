@@ -73,8 +73,9 @@
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
         item.is_amendment ? "Amended filing" : ""
       ].filter(Boolean).join(" · ");
-      return "<tr><td><strong>" + esc(item.owner_name || "Reporting person unavailable") +
-        "</strong><small>" + esc(qualifiers) + "</small></td><td>" + esc(category) +
+      return "<tr><td><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm")||"") +
+        "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
+        "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td>" + esc(category) +
         "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td>" +
         esc(displayCash(item.estimated_value)) + "<small>Estimated filing value</small></td><td>" +
         esc(displayDate(item.published_at)) + "<small>" + sourceLink(item.source_url, "Original SEC filing") +
@@ -84,6 +85,7 @@
       '<caption class="sr-only">Imported SEC Form 4 transactions</caption><thead><tr>' +
       '<th>Reporting person</th><th>Transaction</th><th>Reported value</th><th>Published</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    window.InsidirMedia?.hydrate(host);
   }
   function renderFilings(filings) {
     const host = byId("research-filings");
@@ -95,9 +97,10 @@
       const details = accessionLink(item.accession);
       const local = details ? '<a class="research-text-link" href="' + esc(details) + '">Review parsed details →</a>' : "";
       const original = sourceLink(item.source_url, "SEC source");
-      return "<tr><td><strong>" + esc(item.form_type || "Form 4") +
+      return "<tr><td><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm")||"") +
+        "<div><strong>" + esc(item.form_type || "Form 4") +
         (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(item.issuer_name || "Company") +
-        "</small></td><td>" + esc(displayDate(item.published_at)) +
+        "</small></div></div></td><td>" + esc(displayDate(item.published_at)) +
         "<small>Report period: " + esc(displayDate(item.period_of_report)) +
         "</small></td><td>" + local + "<small>" + original + "</small></td></tr>";
     }).join("");
@@ -105,6 +108,7 @@
       '<caption class="sr-only">Original SEC filings</caption><thead><tr>' +
       '<th>Filing</th><th>Published</th><th>Evidence</th></tr></thead><tbody>' +
       rows + '</tbody></table></div>';
+    window.InsidirMedia?.hydrate(host);
   }
   let selectedTicker = "";
   const usd = value => {

@@ -10,8 +10,10 @@
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v3-site.css">
 <link rel="stylesheet" href="assets/css/v4-presentation.css">
+<script defer src="assets/js/entity-media.js"></script>
 <script defer src="assets/js/v3-site.js"></script>
 <script defer src="assets/js/v4-explorer.js"></script>
+<link rel="stylesheet" href="assets/css/entity-media.css">
 </head>
 <body class="is3">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -82,7 +84,7 @@
    </div>
    <div class="is4-explorer__content">
     <div class="is4-explorer__identity">
-     <div class="is4-explorer__symbol" id="is4-explorer-symbol">A</div>
+     <div class="is4-explorer__symbol" id="is4-explorer-symbol"><span class="ins-media ins-media--company ins-media--lg"><img src="https://cdn.simpleicons.org/apple" loading="lazy" alt="Apple logo"></span></div>
      <div><span class="is4-explorer__label">PUBLIC COMPANY / SEC EDGAR</span><h3 id="is4-company-name">Select a company</h3><p id="is4-company-ticker">AAPL · Official SEC submissions and reported financial facts</p></div>
      <span class="is4-explorer__status" id="is4-explorer-status" role="status" aria-live="polite"><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#search"></use></svg> Ready to investigate</span>
     </div>
@@ -96,6 +98,11 @@
       <div id="is4-explorer-facts" class="is4-explorer__records"><p class="is4-explorer__empty">Financial measures will appear with their reported accounting periods, when available.</p></div>
      </div>
     </div>
+    <section class="ins-explorer-people" aria-labelledby="ins-explorer-people-title">
+      <div class="ins-explorer-people__header"><div><p class="is4-explorer__label">OWNERSHIP DISCLOSURES</p><h4 id="ins-explorer-people-title">Reporting people</h4></div><span>IMPORTED FORM 4 RECORDS · NOT INVESTMENT SIGNALS</span></div>
+      <div id="ins-explorer-people" class="ins-explorer-people__grid" aria-live="polite"><p class="is4-explorer__empty">Loading reported insiders for this company…</p></div>
+      <p class="ins-media-credits">Verified public portraits, where available, are linked to their Wikimedia Commons source and license. Not all reporting people have public photographs.</p>
+    </section>
     <div class="is4-explorer__bottom"><span><svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Original sources. Reported periods. No price prediction.</span><a href="company.html?ticker=AAPL" id="is4-company-details">View complete company record <svg class="is4-icon" aria-hidden="true"><use href="assets/icons/interface.svg#arrow-right"></use></svg></a></div>
    </div>
   </div>
