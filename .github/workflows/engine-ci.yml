@@ -21,3 +21,7 @@ jobs:
         run: npm test
       - name: Verify authentic published brand marks and portraits
         run: node scripts/verify-media.mjs
+      - name: Verify desktop and mobile layout in Chrome
+        run: |
+          npm install --no-save --no-audit --no-fund playwright-core@1.58.0
+          CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/visual-layout-check.mjs

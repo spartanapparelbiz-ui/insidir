@@ -1,0 +1,65 @@
+/* Insidir V5 identity geometry — center REAL artwork without stretching or miscropping. */
+.ins-media{
+  display:inline-flex!important;position:relative!important;align-items:center!important;justify-content:center!important;
+  width:var(--ins-size)!important;height:var(--ins-size)!important;min-width:var(--ins-size)!important;
+  min-height:var(--ins-size)!important;max-width:var(--ins-size)!important;max-height:var(--ins-size)!important;
+  flex:0 0 var(--ins-size)!important;aspect-ratio:1/1!important;box-sizing:border-box!important;
+  margin:0!important;padding:0!important;line-height:1!important;vertical-align:middle!important;
+  overflow:hidden!important;
+}
+.ins-media>svg{
+  position:absolute!important;display:block;width:52%!important;height:52%!important;
+  left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;
+  margin:0!important;padding:0!important;
+}
+.ins-media>img,.ins-media>a{
+  display:block!important;position:absolute!important;inset:0!important;
+  width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
+  margin:0!important;box-sizing:border-box!important;
+}
+.ins-media--company>img{
+  object-fit:contain!important;object-position:50% 50%!important;
+  padding:15%!important;background:transparent;
+}
+.ins-media--company[data-real-source*="Microsoft_logo"]>img,
+.ins-media--company[data-real-source*="Nvidia_Logo"]>img{padding:10%!important}
+.ins-media--person>a{display:block!important;overflow:hidden!important;border-radius:50%!important}
+.ins-media--person>a>img{
+  display:block!important;position:absolute!important;inset:0!important;
+  width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
+  object-fit:cover!important;object-position:50% 30%!important;
+  margin:0!important;padding:0!important;border-radius:50%!important;
+}
+.ins-media--pending>img,.ins-media--pending>a{opacity:0!important;pointer-events:none}
+.ins-media--pending>svg{display:block!important}
+.ins-media--missing>img,.ins-media--missing>a{display:none!important}
+.ins-media--missing>svg{display:block!important}
+.ins-media--company:not(.ins-media--pending):not(.ins-media--missing)>svg,
+.ins-media--person:not(.ins-media--pending):not(.ins-media--missing)>svg{display:none!important}
+.ins-company-cell,.ins-person-cell{display:flex;align-items:center;justify-content:flex-start;gap:11px;min-width:0}
+.ins-company-cell>div,.ins-person-cell>div{min-width:0}
+.ins-explorer-person{align-items:center;min-height:68px;box-sizing:border-box}
+.ins-explorer-person .ins-media{--ins-size:43px}
+.is4-explorer__symbol{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 78px!important;width:78px!important;height:78px!important;padding:0!important;margin:0!important}
+.is4-explorer__symbol>.ins-media{--ins-size:74px}
+body.v2-app.v3-app .cv-symbol{display:flex!important;align-items:center;justify-content:center;padding:0!important}
+body.v2-app.v3-app .cv-symbol>.ins-media{--ins-size:76px}
+body.v2-app.v3-app .v4-inspector__identity{display:flex;align-items:center;gap:13px}
+body.v2-app.v3-app .v4-inspector__identity>.ins-media{--ins-size:52px}
+body.v2-app.v3-app .v3-row.ins-identity-row{align-items:center;gap:9px;grid-template-columns:32px 58px minmax(0,1fr) 12px}
+@media(max-width:950px){
+ .is4-explorer__identity{display:grid!important;grid-template-columns:78px minmax(0,1fr);column-gap:17px;row-gap:14px;align-items:center!important}
+ .is4-explorer__status{grid-column:1/-1;margin:0!important;justify-self:center}
+}
+@media(max-width:640px){
+ .is4-explorer__identity{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;gap:11px!important;padding-bottom:24px!important;width:100%!important}
+ .is4-explorer__identity>div:nth-child(2){text-align:center;max-width:100%;min-width:0}
+ .is4-explorer__identity h3{margin:7px auto!important;line-height:1.15!important}
+ .is4-explorer__identity p{margin-inline:auto;max-width:26ch;overflow-wrap:anywhere}
+ .is4-explorer__status{margin:9px auto 0!important;white-space:normal!important;justify-content:center}
+ .is4-explorer__symbol{flex-basis:68px!important;width:68px!important;height:68px!important}
+ .is4-explorer__symbol>.ins-media{--ins-size:64px}
+ .ins-explorer-people__grid{grid-template-columns:1fr!important}
+ .ins-explorer-person{justify-content:flex-start;max-width:100%}
+ body.v2-app.v3-app .v4-inspector__identity{justify-content:flex-start}
+}
