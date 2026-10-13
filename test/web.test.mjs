@@ -357,3 +357,22 @@ test("V10 editorial photography, SEC people directory and verified identity asse
  assert.equal(css.status,200);
  });
 });
+
+test("Universal company report does not embed fake prices and ships SEC-only interactive sections",async()=>{
+ await withServer(async base=>{
+  const html=await(await fetch(base+"/company.html?ticker=MSFT")).text();
+  assert.match(html,/v11-company.css/);
+  assert.match(html,/v11-company.js/);
+  for(const id of ["cv-name","c11-chart","c11-history-table","cv-filings-list","cv-transactions-list","c11-owner-list","cv-follow"]){
+    assert.match(html,new RegExp('id="'+id+'"'),"Expected source-backed company section "+id);
+  }
+  assert.doesNotMatch(html,/\$163\.42|\$1\.98T|S&P 500|NASDAQ \+.*%/);
+  const code=await(await fetch(base+"/assets/js/v11-company.js")).text();
+  assert.match(code,/\/v1\/intelligence\?ticker=/);
+  assert.match(code,/\/v1\/transactions\?ticker=/);
+  assert.match(code,/\/v1\/filings\?ticker=/);
+  assert.match(code,/\/v1\/me\/watchlist/);
+  assert.match(code,/financialHistory/);
+  assert.doesNotMatch(code,/Math\.random|mockPrice|syntheticPrice/);
+ });
+});

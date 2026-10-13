@@ -67,6 +67,59 @@ try{
     assert.ok(await page.locator(".app-mobile-nav").isVisible(),"Product mobile menu fails");
     await toggle.click();
    }
+
+   // Mock only in this browser test; production reads the actual SEC routes.
+   const source="https://www.sec.gov/Archives/edgar/data/320193/000032019326000077/aapl-report.htm";
+   const records=end=>["2021","2022","2023","2024","2025"].map((y,i)=>({periodEnd:y+"-12-31",start:y+"-01-01",value:end(i),filedAt:(Number(y)+1)+"-02-01",form:"10-K",sourceUrl:source}));
+   await page.route("**/v1/**",async route=>{
+    const url=new URL(route.request().url()),ticker=url.searchParams.get("ticker")||"AAPL";
+    const company=ticker==="MSFT"?"MICROSOFT CORPORATION":"APPLE INC";
+    const history={};
+    for(const [id,label,fn] of [["revenue","Revenue",i=>(i+1)*1e9],["netIncome","Net income",i=>(i-1)*2e8],["operatingIncome","Operating income",i=>(i+1)*4e8],["operatingCashFlow","Operating cash flow",i=>(i+1)*3e8]]){
+      history[id]={label,unit:"USD",points:records(fn)};
+    }
+    const filings=[{form:"10-K",headline:"Annual financial report",filedAt:"2026-02-01",reportDate:"2025-12-31",sourceUrl:source},
+      {form:"10-Q",headline:"Quarterly financial report",filedAt:"2026-08-01",reportDate:"2026-06-30",sourceUrl:source},
+      {form:"8-K",headline:"Company current report",filedAt:"2026-09-01",reportDate:"2026-08-31",sourceUrl:source}];
+    const fixture=url.pathname==="/v1/intelligence"?{company:{ticker,name:company,cik:"0000320193"},facts:[{id:"revenue",label:"Reported revenue",value:5e9,periodEnd:"2025-12-31",form:"10-K",sourceUrl:source}],financialHistory:history,filings,warnings:[],dataAsOf:new Date().toISOString()}
+      :url.pathname==="/v1/transactions"?{items:[{owner_name:"COOK TIMOTHY D",ticker,owner_cik:"12345",category:"reported_sale",estimated_value:325000,transaction_date:"2026-09-12",source_url:source},{owner_name:"OTHER PUBLIC FILER",ticker,owner_cik:"67890",category:"reported_purchase",estimated_value:42000,transaction_date:"2026-07-07",source_url:source}]}
+      :url.pathname==="/v1/filings"?{items:filings}:url.pathname==="/v1/me/watchlist"?route.request().method()==="POST"?{saved:true}:{items:[]}:null;
+    if(fixture!==null)await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(fixture)});
+    else await route.fulfill({status:404,contentType:"application/json",body:"{}"});
+   });
+   await page.goto(base+"/company.html?ticker=AAPL",{waitUntil:"domcontentloaded",timeout:20000});
+   await page.locator("#c11-chart .c11-plot-circle").first().waitFor({timeout:10000});
+   assert.equal(await page.locator("#cv-name").innerText(),"APPLE INC");
+   assert.equal(await page.locator(".c11-plot-circle").count(),5,"Five annual chart points required");
+   await page.locator('[data-range="3"]').click();
+   assert.equal(await page.locator(".c11-plot-circle").count(),3,"Chart period control must change financial series");
+   await page.locator('[data-metric="netIncome"]').click();
+   assert.match(await page.locator("#c11-chart-value").innerText(),/\$/);
+   await page.locator('[data-company-tab="cv-filings"]').click();
+   assert.ok(await page.locator("#cv-filings").isVisible(),"SEC filings tab should open");
+   assert.equal(await page.locator("#cv-filings-list tr").count(),3);
+   await page.locator('[data-form-filter="10-K"]').click();
+   assert.equal(await page.locator("#cv-filings-list tr").count(),1,"Filings should filter to annual reports");
+   await page.locator('[data-company-tab="cv-transactions"]').click();
+   await page.locator('[data-insider-filter="reported_purchase"]').click();
+   assert.equal(await page.locator("#cv-transactions-list tr").count(),1,"Insider transactions must filter");
+   await page.locator("#cv-follow").click();
+   assert.match(await page.locator("#cv-follow").innerText(),/Following/,"Watchlist action should persist through the API");
+   await page.locator("#cv-ticker").fill("MSFT");
+   await page.locator('#cv-search button[type="submit"]').click();
+   await page.locator("#cv-name").getByText("MICROSOFT CORPORATION").waitFor({timeout:10000});
+   assert.equal(await page.locator(".c11-plot-circle").count(),5,"Company report should work for the next ticker");
+   const companyGeometry=await page.evaluate(()=>({
+     overflow:document.documentElement.scrollWidth-innerWidth,
+     chart:getComputedStyle(document.querySelector("#c11-chart")).width,
+     dark:getComputedStyle(document.body).backgroundColor,
+     heroWidth:document.querySelector(".c11-top").getBoundingClientRect().width
+   }));
+   assert.ok(companyGeometry.overflow<=4,item.width+"px universal company report horizontal overflow "+JSON.stringify(companyGeometry));
+   assert.match(companyGeometry.dark,/rgb\((8,\s*14,\s*20|9,\s*15,\s*21)\)/,"Company report should use dark finance UI");
+   assert.deepEqual(issues,[],"Company report browser errors: "+issues.join("; "));
+   await page.unrouteAll();
+
    for(const route of ["/signin.html","/signup.html"]){
     await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:20000});
     assert.ok(await page.locator("[data-auth-form]").isVisible(),route+" auth form unavailable");

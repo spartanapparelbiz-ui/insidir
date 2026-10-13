@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { allowedSecUrl } from "../src/sec.mjs";
-import { secFilingUrl,tickerRecord,extractFilings,extractFinancialFacts,buildEvidenceBrief,getCompanyIntelligence } from "../src/intelligence.mjs";
+import { secFilingUrl,tickerRecord,extractFilings,extractFinancialFacts,extractAnnualSeries,buildEvidenceBrief,getCompanyIntelligence } from "../src/intelligence.mjs";
 const CIK="0000320193";
 const ACCESSION="0000320193-26-000077";
 test("SEC URL allowlist permits fixed API paths but refuses arbitrary hosts and paths",()=>{
@@ -94,4 +94,21 @@ test("intelligence combines SEC map, submissions and facts while excluding misma
   const again=await getCompanyIntelligence("ZXYZ",[],fetcher);
   assert.equal(again.company.ticker,"ZXYZ");
   assert.equal(calls.length,3,"cached SEC fetches should prevent duplicate calls");
+});
+
+
+test("Full-year financial series use actual SEC dates, reject quarters, de-duplicate amended periods and retain source links",()=>{
+ const accession="0000320193-26-000077";
+ const historical=[
+   {val:100,form:"10-K",filed:"2024-02-01",start:"2023-01-01",end:"2023-12-31",fp:"FY",accn:accession},
+   {val:200,form:"10-K",filed:"2025-02-01",start:"2024-01-01",end:"2024-12-31",fp:"FY",accn:accession},
+   {val:220,form:"10-K/A",filed:"2025-03-01",start:"2024-01-01",end:"2024-12-31",fp:"FY",accn:accession},
+   {val:90,form:"10-Q",filed:"2025-08-01",start:"2025-04-01",end:"2025-06-30",fp:"Q2",accn:accession},
+   {val:500,form:"10-K",filed:"2025-08-01",start:"2025-06-01",end:"2025-06-30",fp:"FY",accn:accession}
+ ];
+ const series=extractAnnualSeries({facts:{"us-gaap":{Revenues:{units:{USD:historical}}}}},"0000320193");
+ assert.deepEqual(series.revenue.points.map(p=>p.value),[100,220]);
+ assert.equal(series.revenue.points[1].form,"10-K/A");
+ assert.ok(series.revenue.points.every(p=>p.sourceUrl.includes("sec.gov/Archives/")));
+ assert.deepEqual(series.netIncome.points,[]);
 });
