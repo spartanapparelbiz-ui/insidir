@@ -11,6 +11,7 @@ const sec=v=>{try{const u=new URL(String(v));return u.protocol==="https:"&&(u.ho
 const a=(url,label)=>'<a href="'+E(url)+'">'+E(label)+'</a>';
 const src=(url,label)=>{const u=sec(url);return u?'<a href="'+E(u)+'" target="_blank" rel="noopener noreferrer">'+E(label)+' ↗</a>':"Source not provided"};
 const detail=t=>clean(t)?"company.html?ticker="+encodeURIComponent(clean(t)):"research.html";
+const companyLogo=t=>window.InsidirMedia?.logo(t,"sm")||"";
 const tbody=$("collection-rows"),more=$("collection-more");
 let all=[],offset=0,busy=false,moreAvailable=false;
 const status=s=>{$("collection-status").textContent=s};
@@ -22,12 +23,13 @@ async function request(path,options={}){
 function render(){
  const html=all.map(x=>{
   const t=clean(x.ticker);
-  if(kind==="companies")return '<tr><td>'+E(x.issuer_name||"Reported issuer")+'</td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(d(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
-  if(kind==="filings")return '<tr><td>'+ (t?a(detail(t),t):E(x.issuer_name||"Reporting issuer"))+'<span class="cl-muted">'+E(x.issuer_name||"")+'</span></td><td>'+E(x.form_type||"Form 4")+(x.is_amendment?" · amended":"")+'</td><td>'+E(d(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
-  return '<tr><td>'+ (t?a(detail(t),t):"—")+'</td><td>'+E(d(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
+  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+'<span class="ins-company-cell__name">'+E(x.issuer_name||"Reported issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(d(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
+  if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+'<div>'+ (t?a(detail(t),t):E(x.issuer_name||"Reporting issuer"))+'<span class="cl-muted">'+E(x.issuer_name||"")+'</span></div></div></td><td>'+E(x.form_type||"Form 4")+(x.is_amendment?" · amended":"")+'</td><td>'+E(d(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
+  return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(d(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
  }).join("");
  const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.": "No companies match this search in the imported dataset.";
  tbody.innerHTML=html||'<tr><td class="cl-empty" colspan="4">'+empty+'</td></tr>';
+ window.InsidirMedia?.hydrate(tbody);
  $("collection-count").textContent=all.length+" "+(all.length===1?"record":"records");
  more.hidden=!moreAvailable||kind!=="filings";
 }
