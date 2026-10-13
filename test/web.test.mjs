@@ -172,13 +172,16 @@ test("real logos and carefully matched free-license portraits are available with
       assert.match(html,/assets\/css\/entity-media\.css/,page);
     }
     const identity=await(await fetch(base+"/assets/js/entity-media.js")).text();
-    assert.match(identity,/AAPL:\["apple","apple\.com"\]/);
-    assert.match(identity,/NVDA:\["nvidia","nvidia\.com"\]/);
-    assert.match(identity,/piprop=thumbnail/);
-    assert.match(identity,/pilicense=free/);
-    assert.match(identity,/upload\\\.wikimedia/);
+    assert.match(identity,/Apple_logo_black\.svg/);
+    assert.match(identity,/Nvidia_Logo\.svg/);
+    assert.match(identity,/Jensen_Huang_/);
+    assert.match(identity,/Tim_Cook_/);
+    assert.match(identity,/upload\.wikimedia\.org/);
     assert.match(identity,/Wikimedia Commons/);
-    assert.doesNotMatch(identity,/ui-avatars|pravatar|randomuser\.me|picsum|Math\.random/);
+    assert.doesNotMatch(identity,/ui-avatars|pravatar|randomuser\.me|picsum|Math\.random|simpleicons\.org|s2\/favicons|w\/api\.php/);
+    assert.match(identity,/Satya_Nadella_/);
+    assert.match(identity,/Elon_Musk_close-up_/);
+    assert.match(identity,/naturalWidth>0/);
     const explorer=await(await fetch(base+"/assets/js/v4-explorer.js")).text();
     assert.match(explorer,/InsidirMedia\?\.portrait/);
     assert.match(explorer,/brand\.logo\(t,"lg"\)/);
@@ -188,7 +191,8 @@ test("real logos and carefully matched free-license portraits are available with
     assert.match(company,/identity\?\.portrait/);
     const csp=(await fetch(base+"/")).headers.get("content-security-policy");
     assert.match(csp,/img-src[^;]*https:\/\/upload\.wikimedia\.org/);
-    assert.match(csp,/connect-src 'self' https:\/\/en\.wikipedia\.org/);
+    assert.match(csp,/img-src[^;]*https:\/\/thumb\.wikimedia\.org/);
+    assert.match(csp,/connect-src 'self';/);
     assert.doesNotMatch(csp,/img-src[^;]*\*/);
     const privacy=await(await fetch(base+"/privacy.html")).text();
     assert.match(privacy,/Public logos and portraits/);
