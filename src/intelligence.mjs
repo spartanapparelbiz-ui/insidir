@@ -68,6 +68,11 @@ const metrics = [
   {id:"revenue",label:"Reported revenue",tags:["RevenueFromContractWithCustomerExcludingAssessedTax","Revenues","SalesRevenueNet","RevenueFromContractWithCustomerIncludingAssessedTax"]},
   {id:"netIncome",label:"Reported net income",tags:["NetIncomeLoss"]},
   {id:"assets",label:"Reported total assets",tags:["Assets"]},
+  {id:"operatingIncome",label:"Reported operating income",tags:["OperatingIncomeLoss"]},
+  {id:"grossProfit",label:"Reported gross profit",tags:["GrossProfit"]},
+  {id:"equity",label:"Reported shareholders' equity",tags:["StockholdersEquity"]},
+  {id:"cash",label:"Reported cash and equivalents",tags:["CashAndCashEquivalentsAtCarryingValue"]},
+  {id:"liabilities",label:"Reported total liabilities",tags:["Liabilities"]},
   {id:"operatingCashFlow",label:"Reported operating cash flow",tags:["NetCashProvidedByUsedInOperatingActivities"]}
 ];
 export function extractFinancialFacts(companyFacts,cik) {
@@ -94,6 +99,54 @@ export function extractFinancialFacts(companyFacts,cik) {
     }];
   });
 }
+
+/* Annual SEC XBRL history. Strictly comparable full-year periods, no synthetic price or return values.
+ * Latest filing for the same period wins, and each chart point retains its own SEC accession. */
+const annualMetrics=[
+ {id:"revenue",label:"Revenue",tags:["RevenueFromContractWithCustomerExcludingAssessedTax","Revenues","SalesRevenueNet","RevenueFromContractWithCustomerIncludingAssessedTax"],duration:true},
+ {id:"netIncome",label:"Net income",tags:["NetIncomeLoss"],duration:true},
+ {id:"operatingIncome",label:"Operating income",tags:["OperatingIncomeLoss"],duration:true},
+ {id:"grossProfit",label:"Gross profit",tags:["GrossProfit"],duration:true},
+ {id:"operatingCashFlow",label:"Operating cash flow",tags:["NetCashProvidedByUsedInOperatingActivities"],duration:true},
+ {id:"capex",label:"Capital expenditure",tags:["PaymentsToAcquirePropertyPlantAndEquipment"],duration:true},
+ {id:"assets",label:"Total assets",tags:["Assets"],duration:false},
+ {id:"liabilities",label:"Total liabilities",tags:["Liabilities"],duration:false},
+ {id:"equity",label:"Shareholders' equity",tags:["StockholdersEquity"],duration:false},
+ {id:"cash",label:"Cash and cash equivalents",tags:["CashAndCashEquivalentsAtCarryingValue"],duration:false}
+];
+export function extractAnnualSeries(companyFacts,cik){
+ const gaap=companyFacts?.facts?.["us-gaap"]||{},output={};
+ for(const metric of annualMetrics){
+  let usable=[];
+  for(const tag of metric.tags){
+   const values=gaap[tag]?.units?.USD;
+   if(!Array.isArray(values))continue;
+   const filtered=values.filter(row=>{
+     if(!row||!Number.isFinite(row.val)||!isDate(row.end)||!isDate(row.filed)||!accessionOk(row.accn))return false;
+     if(!["10-K","10-K/A"].includes(row.form)||row.fp && row.fp!=="FY")return false;
+     if(metric.duration){
+       if(!isDate(row.start))return false;
+       const days=(Date.parse(row.end)-Date.parse(row.start))/86400000;
+       if(days<300||days>380)return false;
+     }
+     return true;
+   });
+   if(filtered.length){usable=filtered;break}
+  }
+  const periods=new Map();
+  for(const row of usable){
+    const old=periods.get(row.end);
+    if(!old || row.filed>old.filed || row.filed===old.filed&&row.accn>old.accn)periods.set(row.end,row);
+  }
+  const points=[...periods.values()].sort((a,b)=>a.end.localeCompare(b.end)).slice(-9).map(row=>({
+    periodEnd:row.end,start:metric.duration?row.start:null,value:row.val,
+    filedAt:row.filed,sourceUrl:secFilingUrl(cik,row.accn),form:row.form
+  }));
+  output[metric.id]={label:metric.label,unit:"USD",points,source:"SEC XBRL 10-K full fiscal years"};
+ }
+ return output;
+}
+
 export function buildEvidenceBrief({company,filings=[],facts=[],transactions=[]}) {
   const items=[];
   for(const f of filings.slice(0,10)){
@@ -132,15 +185,18 @@ export async function getCompanyIntelligence(ticker,transactions=[],fetcher=secF
   const cik=company.cik;
   const [submissions,factsResult] = await Promise.all([
     cached("submissions:"+cik,TTL,()=>fetcher("https://data.sec.gov/submissions/CIK"+cik+".json",{json:true})),
-    cached("facts:"+cik,TTL,async()=>extractFinancialFacts(
-      await fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+cik+".json",{json:true}),cik))
+    cached("facts:"+cik,TTL,async()=>{
+      const raw=await fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+cik+".json",{json:true});
+      return {latest:extractFinancialFacts(raw,cik),history:extractAnnualSeries(raw,cik)};
+    })
       .then(value=>({value})).catch(()=>({value:null}))
   ]);
   const filings=extractFilings(submissions,cik);
-  const facts=factsResult.value||[];
+  const facts=factsResult.value?.latest||[];
+  const financialHistory=factsResult.value?.history||{};
   const matchedTransactions=transactions.filter(x=>!x.issuer_cik||String(Number(x.issuer_cik))===String(Number(cik)));
   return {company:{...company,name:typeof submissions.name==="string"?submissions.name.slice(0,150):company.name},
-    filings,facts,brief:buildEvidenceBrief({company,filings,facts,transactions:matchedTransactions}),
+    filings,facts,financialHistory,brief:buildEvidenceBrief({company,filings,facts,transactions:matchedTransactions}),
     dataAsOf:new Date().toISOString(),sources:[
       {name:"Official SEC ticker mapping",url:"https://www.sec.gov/files/company_tickers.json"},
       {name:"SEC EDGAR company submissions",url:"https://data.sec.gov/submissions/CIK"+cik+".json"},
