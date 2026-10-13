@@ -1,0 +1,52 @@
+/* Person-follow research directory; typography-led, rich portrait layouts. */
+body.v2-app.v3-app.v6-app.v10-people-page .app-main{max-width:1370px!important;padding:32px clamp(18px,3.5vw,52px) 95px!important;background:#f8f7f3!important}
+.v10-people-topline{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #d6d8cf;padding:10px 0 25px;font-size:10px;font-weight:650;letter-spacing:.08em}
+.v10-people-hero{display:grid;grid-template-columns:.95fr 1.05fr;align-items:center;gap:5%;padding:68px 0 79px;border-bottom:1px solid #d6d8cf}
+.v10-people-hero h1{font:480 clamp(75px,9.4vw,135px)/.88 "Source Serif 4",Georgia,serif!important;letter-spacing:-.085em!important;margin:24px 0 35px;color:#202921}
+.v10-people-hero h1 em{color:#c2603b;font-style:italic}
+.v10-people-hero p:not(.v10-kicker){color:#656e65;font-size:15px;max-width:450px;line-height:1.8}
+.v10-people-hero>div:first-child>a{display:inline-block;margin-top:28px;border-bottom:1px solid #263c2c;padding-bottom:5px;font-size:12px;font-weight:660}
+.v10-people-hero__image{height:415px;position:relative;overflow:hidden;background:#9da59b}
+.v10-people-hero__image img{width:100%;height:100%;object-fit:cover}
+.v10-people-hero__image span{position:absolute;bottom:18px;left:21px;color:white;font-weight:700;font-size:10px;letter-spacing:.12em}
+.v10-known,.v10-follows{padding:89px 0;border-bottom:1px solid #d6d8cf}
+.v10-known__top{display:flex;align-items:end;justify-content:space-between;gap:26px;margin-bottom:30px}
+.v10-known h2,.v10-follows h2,.v10-directory h2{font:520 clamp(42px,5vw,72px)/1.08 "Source Serif 4",Georgia,serif;letter-spacing:-.06em}
+.v10-known__top p{font-size:12px;line-height:1.8;color:#747d74;max-width:330px}
+.v10-known__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.v10-known__grid>a{position:relative;aspect-ratio:.85;display:block;overflow:hidden;color:white!important;background:#d8dcd5}
+.v10-known__grid img{width:100%;height:100%;object-fit:cover;object-position:center 25%;filter:saturate(.75);transition:transform .35s}
+.v10-known__grid>a:hover img{transform:scale(1.04)}
+.v10-known__grid>a:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+.v10-known__grid span{position:absolute;z-index:1;bottom:18px;left:18px;right:10px;display:flex;flex-direction:column;gap:5px;font:500 clamp(18px,2vw,31px) "Source Serif 4",Georgia,serif}
+.v10-known__grid small{font:700 9px "Inter",sans-serif;letter-spacing:.08em}
+.v10-known__source{font-size:10px;line-height:1.75;color:#7e857d;margin-top:16px}
+.v10-known__source a{text-decoration:underline}
+.v10-follows__head,.v10-directory__head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:26px}
+.v10-follows__head h2{margin-top:10px}
+.v10-follows__head>a,.v10-follow-row>a{font-size:11px;color:#386344}
+.v10-follow-row{display:grid;grid-template-columns:50px minmax(0,1fr) auto auto;gap:17px;align-items:center;border-top:1px solid #d5d8d0;padding:15px 0}
+.v10-follow-row>.ins-media{--ins-size:48px}
+.v10-follow-row strong{font:520 22px "Source Serif 4",Georgia,serif;display:block;letter-spacing:-.035em}
+.v10-follow-row small{display:block;font-size:10px;color:#7e877e;margin-top:5px}
+.v10-follow-row button{cursor:pointer;border:1px solid #c9d0c6;padding:8px 12px;background:transparent;font-size:11px}
+.v10-directory{padding:94px 0 45px}
+.v10-directory__head h2{margin:14px 0 10px}
+.v10-directory__head p:not(.v10-kicker){font-size:13px;color:#777f77}
+.v10-directory__head>span{font-size:11px;color:#818880;white-space:nowrap}
+.v10-people-search{max-width:970px;margin:32px 0 14px}
+.v10-people-search label{font-weight:700;font-size:10px;letter-spacing:.07em}
+.v10-people-search>div{display:flex;border-bottom:2px solid #253429;margin-top:9px}
+.v10-people-search input{background:transparent;border:0;outline:0;flex:1;min-width:0;padding:17px 0;font-size:16px}
+.v10-people-search button{background:#263a2c;color:white;border:0;padding:0 22px;font-size:11px;font-weight:670;cursor:pointer}
+.v10-people-status,.v10-people-empty,.v10-people-disclaimer{font-size:11px;line-height:1.7;color:#798079;margin:16px 0}
+.v10-people-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:35px 18px;margin-top:35px}
+.v10-people-results .v10-person-card__avatar{aspect-ratio:1.18}
+.v10-person-card__avatar-note{position:absolute;z-index:2;bottom:9px;left:9px;padding:5px 8px;background:rgba(249,248,243,.9);color:#434e44;font-size:9px;font-weight:690}
+.v10-person-card__meta{font-size:10px;color:#838980;line-height:1.6;padding:12px 0}
+.v10-follow-btn{display:block;width:100%;text-align:left;color:#345e40;cursor:pointer;border:0;border-bottom:1px solid #b4bdb1;background:transparent;padding:12px 0;font-size:11px;font-weight:680}
+.v10-follow-btn.is-following{color:#5e7e60}
+.v10-follow-btn:disabled{opacity:.5;cursor:wait}
+@media(max-width:950px){.v10-people-hero h1{font-size:80px!important}.v10-people-hero__image{height:340px}.v10-people-results{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:680px){body.v2-app.v3-app.v6-app.v10-people-page .app-main{padding:23px 17px 70px!important}.v10-people-hero{grid-template-columns:1fr;gap:31px;padding:38px 0}.v10-people-hero h1{font-size:82px!important}.v10-people-hero__image{height:250px}.v10-known,.v10-follows{padding:55px 0}.v10-known__top{display:block}.v10-known__top p{margin-top:12px}.v10-known__grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.v10-known__grid span{font-size:20px;left:11px;bottom:11px}.v10-follows__head,.v10-directory__head{display:block}.v10-follows__head>a{display:inline-block;margin-top:15px}.v10-follow-row{grid-template-columns:42px minmax(0,1fr) auto;gap:10px}.v10-follow-row>.ins-media{--ins-size:40px}.v10-follow-row>a{display:none}.v10-follow-row strong{font-size:18px}.v10-follow-row button{font-size:10px;padding:7px}.v10-directory{padding-top:60px}.v10-directory__head>span{display:block;margin-top:15px}.v10-people-results{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 10px}.v10-people-search button{padding-inline:10px;font-size:10px}.v10-people-search input{font-size:13px}.v10-person-card__identity strong{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.v10-known__grid img{transition:none!important}}
