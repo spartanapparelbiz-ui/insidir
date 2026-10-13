@@ -199,6 +199,35 @@ test("real logos and carefully matched free-license portraits are available with
   });
 });
 
+test("Insidir V5 centers authentic images and renders source-backed depth on mobile and desktop",async()=>{
+  await withServer(async base=>{
+    const home=await(await fetch(base+"/")).text();
+    assert.match(home,/assets\/css\/v5-polish\.css\?v=1/);
+    assert.match(home,/assets\/css\/v5-media\.css\?v=1/);
+    assert.match(home,/id="v5-hero-latest"/);
+    const app=await(await fetch(base+"/dashboard.html")).text();
+    assert.match(app,/assets\/css\/v5-polish\.css\?v=1/);
+    assert.match(app,/assets\/css\/v5-media\.css\?v=1/);
+    const sitejs=await(await fetch(base+"/assets/js/v3-site.js")).text();
+    assert.match(sitejs,/v5-hero-latest/);
+    assert.match(sitejs,/items\[0\]/);
+    assert.match(sitejs,/InsidirMedia\?\.logo/);
+    for(const p of ["/company.html","/explore.html","/filings.html","/watchlist.html","/research.html"]){
+      const page=await(await fetch(base+p)).text();
+      assert.match(page,/assets\/css\/v5-media\.css\?v=1/,p);
+    }
+    const media=await(await fetch(base+"/assets/css/v5-media.css")).text();
+    assert.match(media,/object-position:50% 50%/);
+    assert.match(media,/align-items:center!important/);
+    assert.match(media,/\.is4-explorer__identity/);
+    const polish=await(await fetch(base+"/assets/css/v5-polish.css")).text();
+    assert.match(polish,/\.v3-main > \*/);
+    assert.match(polish,/\.v5-hero-live/);
+    assert.match(polish,/\.v3-table tbody tr\{display:grid/);
+    assert.doesNotMatch(polish,/fake-performance|mock-market|invented-return/);
+  });
+});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
