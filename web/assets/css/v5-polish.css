@@ -207,3 +207,33 @@ body.v2-app.v3-app .v3-bottom-note{max-width:1380px;border-color:#4a624e;margin-
 @media(prefers-reduced-motion:reduce){
  .is3-window,.is3-capability,.is4-explorer__entry,body.v2-app.v3-app .v3-module{transition:none!important}
 }
+
+/* The live landing data rows have centered source logos rather than ticker-only initials. */
+.is3-window__row .v5-preview-identity{display:flex;align-items:center;gap:9px;min-width:0}
+.is3-window__row .v5-preview-identity>.ins-media{--ins-size:25px}
+.is3-window__row .v5-preview-identity>strong{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:560 11px/1.45 var(--sans);color:#d5e6d7}
+@media(max-width:640px){
+ /* A vertical mobile research table, not a clipped desktop table. */
+ body.v2-app.v3-app .v3-table-scroll{overflow:visible!important;width:100%}
+ body.v2-app.v3-app .v3-table{display:block;min-width:0!important;width:100%!important;table-layout:auto}
+ body.v2-app.v3-app .v3-table thead{position:absolute;clip-path:inset(50%);height:1px;width:1px;overflow:hidden;white-space:nowrap}
+ body.v2-app.v3-app .v3-table tbody{display:block;width:100%;padding:10px 10px 0}
+ body.v2-app.v3-app .v3-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px;padding:11px 13px;margin:0 0 10px;border:1px solid #506c54;border-radius:7px;background:linear-gradient(145deg,#25382a,#1a291f);box-shadow:0 7px 14px rgba(0,0,0,.13)}
+ body.v2-app.v3-app .v3-table td{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;white-space:normal!important;overflow-wrap:anywhere;min-width:0!important;border:0!important;padding:9px 3px!important;font-size:11px}
+ body.v2-app.v3-app .v3-table td::before{display:block;color:#87a88d;font:650 9px/1.2 var(--sans);letter-spacing:.06em}
+ body.v2-app.v3-app .v3-table td:first-child{grid-column:1/-1;border-bottom:1px solid #425847!important;margin-bottom:4px;padding-bottom:13px!important}
+ body.v2-app.v3-app .v3-table td[colspan]{grid-column:1/-1;margin:0;border:0!important;display:block;padding:15px!important}
+ body.v2-app.v3-app #v3-filings td:first-child::before{content:"COMPANY"}
+ body.v2-app.v3-app #v3-filings td:nth-child(2)::before{content:"FORM"}
+ body.v2-app.v3-app #v3-filings td:nth-child(3)::before{content:"PUBLISHED"}
+ body.v2-app.v3-app #v3-filings td:nth-child(4)::before{content:"SOURCE"}
+ body.v2-app.v3-app #v3-trades td:first-child::before{content:"REPORTING PERSON"}
+ body.v2-app.v3-app #v3-trades td:nth-child(2)::before{content:"COMPANY"}
+ body.v2-app.v3-app #v3-trades td:nth-child(3)::before{content:"TRADE DATE"}
+ body.v2-app.v3-app #v3-trades td:nth-child(4)::before{content:"CATEGORY"}
+ body.v2-app.v3-app #v3-trades td:nth-child(5){grid-column:1/-1;border-top:1px solid #3b5142!important;margin-top:6px}
+ body.v2-app.v3-app #v3-trades td:nth-child(5)::before{content:"REPORTED VALUE"}
+ body.v2-app.v3-app .v3-table td .ins-company-cell{min-width:0;max-width:100%}
+ body.v2-app.v3-app .v3-table td .ins-person-cell{max-width:100%}
+ body.v2-app.v3-app .v3-table td .ins-media{--ins-size:33px}
+}
