@@ -162,6 +162,39 @@ test("V4 interface icons and sourced visual panels load across public and produc
   });
 });
 
+test("real logos and carefully matched free-license portraits are available without synthetic faces",async()=>{
+  await withServer(async base=>{
+    for(const page of ["/","/dashboard.html","/company.html","/explore.html","/filings.html","/watchlist.html","/research.html"]){
+      const res=await fetch(base+page);
+      assert.equal(res.status,200,page);
+      const html=await res.text();
+      assert.match(html,/assets\/js\/entity-media\.js/,page);
+      assert.match(html,/assets\/css\/entity-media\.css/,page);
+    }
+    const identity=await(await fetch(base+"/assets/js/entity-media.js")).text();
+    assert.match(identity,/AAPL:\["apple","apple\.com"\]/);
+    assert.match(identity,/NVDA:\["nvidia","nvidia\.com"\]/);
+    assert.match(identity,/piprop=thumbnail/);
+    assert.match(identity,/pilicense=free/);
+    assert.match(identity,/upload\\\.wikimedia/);
+    assert.match(identity,/Wikimedia Commons/);
+    assert.doesNotMatch(identity,/ui-avatars|pravatar|randomuser\.me|picsum|Math\.random/);
+    const explorer=await(await fetch(base+"/assets/js/v4-explorer.js")).text();
+    assert.match(explorer,/InsidirMedia\?\.portrait/);
+    assert.match(explorer,/InsidirMedia\?\.logo/);
+    const research=await(await fetch(base+"/assets/js/research.js")).text();
+    assert.match(research,/InsidirMedia\?\.portrait/);
+    const company=await(await fetch(base+"/assets/js/v2-company.js")).text();
+    assert.match(company,/identity\?\.portrait/);
+    const csp=(await fetch(base+"/")).headers.get("content-security-policy");
+    assert.match(csp,/img-src[^;]*https:\/\/upload\.wikimedia\.org/);
+    assert.match(csp,/connect-src 'self' https:\/\/en\.wikipedia\.org/);
+    assert.doesNotMatch(csp,/img-src[^;]*\*/);
+    const privacy=await(await fetch(base+"/privacy.html")).text();
+    assert.match(privacy,/Public logos and portraits/);
+  });
+});
+
 test("research desk is served without replacing the site's brand", async () => {
   await withServer(async base => {
     const res = await fetch(base + "/research.html");
