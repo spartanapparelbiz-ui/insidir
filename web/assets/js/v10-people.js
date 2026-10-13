@@ -1,7 +1,7 @@
 /* Real SEC reporting people; saved follows use authenticated account API. */
 (()=>{"use strict";
 const $=id=>document.getElementById(id),media=window.InsidirMedia;
-const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;',"'" :"&#39;"}[c]));
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>c==="&"?"&amp;":c==="<"?"&lt;":c===">"?"&gt;":c==='"'?"&quot;":"&#39;");
 const cik=x=>/^\d{1,12}$/.test(String(x||""))?String(x):"";
 const ticker=x=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(x||"").toUpperCase())?String(x).toUpperCase():"";
 const day=x=>{let d=new Date(x);return x&&!Number.isNaN(d.getTime())?new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d):"Not reported"};
