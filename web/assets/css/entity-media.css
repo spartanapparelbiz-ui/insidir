@@ -1,0 +1,33 @@
+/* Authentic image identities for tickers and verified public executives.
+   When no safe match exists, the icon is deliberately generic, never invented. */
+.ins-media{--ins-size:32px;display:inline-grid;place-items:center;width:var(--ins-size);height:var(--ins-size);flex:0 0 var(--ins-size);position:relative;overflow:hidden;background:#eff2ed;border:1px solid #526554;border-radius:7px;vertical-align:middle;color:#9fbda4;isolation:isolate}
+.ins-media--sm{--ins-size:28px;border-radius:6px}
+.ins-media--md{--ins-size:41px;border-radius:8px}
+.ins-media--lg{--ins-size:63px;border-radius:11px}
+.ins-media--person{border-radius:50%;background:#28332d;border-color:#465a49}
+.ins-media--company{background:#e8f0e5;border-color:#708573;color:#466b4f}
+.ins-media--missing{background:#26352c;border-color:#42594a;color:#8da797}
+.ins-media>svg{height:52%;width:52%;display:block;grid-area:1/1}
+.ins-media>img,.ins-media>a,.ins-media>a>img{grid-area:1/1;width:100%;height:100%;display:block;position:relative;z-index:1}
+.ins-media>img{object-fit:contain;padding:17%;box-sizing:border-box}
+.ins-media>a{display:grid;place-items:center;overflow:hidden;border-radius:inherit}
+.ins-media--person a img{object-fit:cover;object-position:center 32%;padding:0}
+.ins-media--missing>img{display:none}
+.ins-media--company:not(.ins-media--missing)>svg{display:none}
+.ins-media--person:not(.ins-media--missing)>svg{display:none}
+.ins-person-cell,.ins-company-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.ins-person-cell__name,.ins-company-cell__name{min-width:0;overflow-wrap:anywhere}
+.ins-company-cell__ticker{display:block;font-size:10px;color:#92a595;font-weight:450}
+.ins-media-credits{font:400 10px/1.55 var(--sans);color:#8ca391}
+.ins-media-credits a{text-decoration:underline;text-underline-offset:3px;color:#c9dec9}
+.is4-explorer__symbol.ins-media{--ins-size:63px;background:#e8f0e5;border-color:#a6c0a9;color:#29482e;font-size:initial}
+.is4-explorer__symbol.ins-media>img{padding:17%}
+body.v2-app.v3-app .cv-symbol.ins-media{--ins-size:76px;font-size:initial}
+body.v2-app.v3-app .v3-table .ins-media--company{--ins-size:30px}
+body.v2-app.v3-app .v3-table .ins-media--person{--ins-size:28px}
+body.v2-app.v3-app .cl-table .ins-media{--ins-size:33px}
+body.v2-app.v3-app .v4-inspector__identity{display:flex;align-items:center;gap:13px;margin:18px 0 8px}
+body.v2-app.v3-app .v4-inspector__identity h3{margin:0}
+body.v2-app.v3-app .v4-inspector__identity .ins-media{--ins-size:51px}
+body.v2-app.v3-app .cv-section__heading h2 .ins-media{--ins-size:26px}
+@media(max-width:620px){.ins-person-cell,.ins-company-cell{gap:7px}body.v2-app.v3-app .cv-symbol.ins-media{--ins-size:55px}.is4-explorer__symbol.ins-media{--ins-size:51px}}
