@@ -339,6 +339,7 @@ test("text assets are compressed when the client accepts it", async () => {
 });
 
 test("V10 editorial photography, SEC people directory and verified identity assets are available", async()=>{
+ await withServer(async base=>{
  const home=await(await fetch(base+"/index.html")).text();
  const dash=await(await fetch(base+"/dashboard.html")).text();
  const people=await(await fetch(base+"/people.html")).text();
@@ -354,4 +355,5 @@ test("V10 editorial photography, SEC people directory and verified identity asse
  assert.match(peopleJS,/\/v1\/insiders/);
  const css=await fetch(base+"/assets/css/v10-editorial.css");
  assert.equal(css.status,200);
+ });
 });
