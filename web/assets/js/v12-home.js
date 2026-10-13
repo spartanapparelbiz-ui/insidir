@@ -27,7 +27,7 @@ function draw(){
  const grid=[0,.25,.5,.75,1].map(f=>{let val=lower+(upper-lower)*f,y=py(val);return '<line x1="'+left+'" x2="'+(W-right)+'" y1="'+y+'" y2="'+y+'" class="v12-grid-line"/><text x="'+(left-9)+'" y="'+(y+4)+'" text-anchor="end" class="v12-axis">'+esc(money(val))+'</text>'}).join("");
  const marks=dots.map(p=>'<circle class="v12-plot-dot" cx="'+p.x+'" cy="'+p.y+'" r="4"><title>'+esc(day(p.p.periodEnd)+": "+money(p.p.value))+'</title></circle>').join("");
  const years=dots.map(p=>'<text class="v12-axis" text-anchor="middle" x="'+p.x+'" y="'+(H-4)+'">'+esc(p.p.periodEnd.slice(0,4))+'</text>').join("");
- chart.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label+" from annual SEC 10-K reports")+""><defs><linearGradient id="v12-chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#29dca8" stop-opacity=".29"/><stop offset="100%" stop-color="#29dca8" stop-opacity=".015"/></linearGradient></defs>'+grid+'<path d="'+area+'" fill="url(#v12-chart-fill)"/><path d="'+line+'" class="v12-plot-line"/>'+marks+years+'</svg>';
+ chart.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label+" from annual SEC 10-K reports")+'"><defs><linearGradient id="v12-chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#29dca8" stop-opacity=".29"/><stop offset="100%" stop-color="#29dca8" stop-opacity=".015"/></linearGradient></defs>'+grid+'<path d="'+area+'" fill="url(#v12-chart-fill)"/><path d="'+line+'" class="v12-plot-line"/>'+marks+years+'</svg>';
  chart.setAttribute("aria-label",label+" annual SEC financial data, from "+day(points[0].periodEnd)+" to "+day(last.periodEnd));
 }
 function facts(){
