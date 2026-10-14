@@ -16,10 +16,13 @@
 
   const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
   /* The motion of the whole site. Every dot, and every element v13-motion.js moves, uses these numbers:
-     a pointer within the radius pushes with up to `push` per frame, a spring of `spring` pulls home and
-     `damping` keeps what is left each frame (60 fps); a click sends a ring out at `ringSpeed` px/ms,
-     `ringBand` px wide, with `ringForce`, for `ringLife` ms. */
-  const PHYSICS = Object.freeze({ push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900 });
+     a pointer within the radius pushes with up to `push` per frame and drags what it passes along with
+     `drag` of its own movement; a spring of `spring` pulls home and `damping` keeps what is left each frame
+     (60 fps); a click sends a ring out at `ringSpeed` px/ms, `ringBand` px wide, with `ringForce`, for
+     `ringLife` ms; scrolling leaves everything behind by `scroll` of each frame's scroll, so it lags and
+     springs back like the dots were hung on the page. */
+  const PHYSICS = Object.freeze({ push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900, drag: 0.05, scroll: 0.03 });
+  const KICK_MAX = 48;  // px of scroll per frame that count; a jump further than that is one hard flick
   const SANS_STACK = '"Inter", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif';
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -39,20 +42,26 @@
     return Math.sqrt(c) * gap * 0.56;
   }
 
-  /** One step of a dot's spring back to home plus the push from a pointer at (px, py) within r. */
-  function step(x, y, vx, vy, hx, hy, px, py, r) {
+  /** One step of a dot's spring back to home plus the push from a pointer at (px, py) within r, which also
+      drags the dot along with its movement (mx, my) this frame. */
+  function step(x, y, vx, vy, hx, hy, px, py, r, mx, my) {
     const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy;
     if (r > 0 && d2 < r * r) {
       const d = Math.sqrt(d2) + 0.001;
-      const f = (1 - d / r) * PHYSICS.push;
-      vx += (dx / d) * f;
-      vy += (dy / d) * f;
+      const k = 1 - d / r, f = k * PHYSICS.push;
+      vx += (dx / d) * f + (mx || 0) * k * PHYSICS.drag;
+      vy += (dy / d) * f + (my || 0) * k * PHYSICS.drag;
     }
     vx = (vx + (hx - x) * PHYSICS.spring) * PHYSICS.damping;
     vy = (vy + (hy - y) * PHYSICS.spring) * PHYSICS.damping;
     return [x + vx, y + vy, vx, vy];
   }
 
+  /** How strongly a dot at home (hx, hy) takes a scroll kick: an even weave from 0.1 to 1, so a field
+      ripples as the page moves instead of sliding as one sheet. */
+  function weave(hx, hy) {
+    return 0.55 + 0.45 * Math.sin(hx * 0.021 + hy * 0.013);
+  }
   /** Font size that sets `measured` (width at 100px) to fill `width` exactly. */
   function fitSize(measured, width) {
     return measured > 0 ? (width / measured) * 100 : 0;
@@ -73,7 +82,9 @@
         ink: v("--hwf-ink") || PRESET.ink
       },
       dotGap: num("dotGap", field ? 11 : 6),
-      radius: num("radius", field ? 110 : 80),
+      radius: num("radius", field ? 140 : 100),
+      // data-scroll-scatter (px): as the element scrolls up out of view its dots drift apart by up to this much.
+      scatter: num("scrollScatter", 0),
       crop: num("crop", 0.2),
       grain: num("grain", field ? 0 : 0.5),
       fieldCoverage: num("fieldCoverage", 0.12),
@@ -102,6 +113,9 @@
     let w = 0, h = 0, dpr = 1, px = -1e5, py = -1e5, raf = 0, visible = true, awake = true, alive = true;
     let ring = { x: 0, y: 0, t: -1 };
     let dots = new Float32Array(0), count = 0, grainTile = null;
+    let dirs = new Float32Array(0), spread = 0;   // scroll scatter: each dot's drift direction, and how far along it is
+    let mdx = 0, mdy = 0, lastCX = NaN, lastCY = NaN; // pointer movement since the last frame
+    let kx = 0, ky = 0;                               // scroll since the last frame
 
     const layout = () => {
       const rect = root.getBoundingClientRect();
@@ -154,6 +168,15 @@
       }
       dots = new Float32Array(tmp);
       count = tmp.length / 7;
+      // Scatter directions: away from the bottom centre the word stands on, each turned a little and
+      // lengthened or shortened by a fixed hash, so the word comes apart as dots rather than as a zoom.
+      dirs = new Float32Array(count * 2);
+      if (o.scatter > 0) for (let i = 0; i < count; i++) {
+        const hx = dots[i * 7 + 4], hy = dots[i * 7 + 5];
+        const n = Math.sin(i * 12.9898 + hx * 0.37) * 43758.5453, j = n - Math.floor(n);
+        const a = Math.atan2(hy - h * 1.1, hx - w / 2) + (j - 0.5) * 1.1, len = 0.45 + j * 1.1;
+        dirs[i * 2] = Math.cos(a) * len; dirs[i * 2 + 1] = Math.sin(a) * len;
+      }
 
       // A fixed tile of print grain, drawn once and laid over every frame.
       grainTile = null;
@@ -182,6 +205,12 @@
       last = now;
       const steps = Math.floor(acc / FRAME);
       acc -= steps * FRAME;
+      // The pointer's movement and the page's scroll since the last frame, spread over this frame's steps.
+      const mx = steps ? mdx / steps : 0, my = steps ? mdy / steps : 0;
+      const kick = steps ? Math.max(-KICK_MAX, Math.min(KICK_MAX, ky)) * PHYSICS.scroll : 0;
+      const kickX = steps ? Math.max(-KICK_MAX, Math.min(KICK_MAX, kx)) * PHYSICS.scroll : 0;
+      if (steps) { mdx = mdy = 0; kx = ky = 0; }
+      const S = o.scatter * spread;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.fillStyle = o.colors.background;
       ctx.fillRect(0, 0, w, h);
@@ -193,8 +222,9 @@
       for (let i = 0; i < count; i++) {
         const j = i * 7;
         let x = dots[j], y = dots[j + 1], vx = dots[j + 2], vy = dots[j + 3];
-        const hx = dots[j + 4], hy = dots[j + 5];
+        const hx = dots[j + 4] + dirs[i * 2] * S, hy = dots[j + 5] + dirs[i * 2 + 1] * S;
         if (!still) {
+          if (kick || kickX) { const f = weave(dots[j + 4], dots[j + 5]); vx += kickX * f; vy += kick * f; }
           for (let k = 0; k < steps; k++) {
             if (ringAge < PHYSICS.ringLife) {
               const dx = hx - ring.x, dy = hy - ring.y;
@@ -205,7 +235,7 @@
                 vx += (dx / d) * f; vy += (dy / d) * f;
               }
             }
-            const s = step(x, y, vx, vy, hx, hy, px, py, r);
+            const s = step(x, y, vx, vy, hx, hy, px, py, r, mx, my);
             x = s[0]; y = s[1]; vx = s[2]; vy = s[3];
           }
           const slow = Math.abs(vx) + Math.abs(vy) <= 0.02, home = Math.abs(x - hx) + Math.abs(y - hy) <= 0.05;
@@ -241,8 +271,14 @@
     const wake = () => { awake = true; if (!raf && visible && alive) raf = requestAnimationFrame(loop); };
 
     const toLocal = e => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
-    const onMove = e => { if (!o.interactive) return; const p = toLocal(e); px = p[0]; py = p[1]; wake(); };
-    const onLeave = () => { px = -1e5; py = -1e5; wake(); };
+    const onMove = e => {
+      if (!o.interactive) return;
+      const p = toLocal(e); px = p[0]; py = p[1];
+      if (lastCX === lastCX) { mdx += e.clientX - lastCX; mdy += e.clientY - lastCY; }
+      lastCX = e.clientX; lastCY = e.clientY;
+      wake();
+    };
+    const onLeave = () => { px = -1e5; py = -1e5; lastCX = lastCY = NaN; mdx = mdy = 0; wake(); };
     const onDown = e => {
       if (!o.interactive || still) return;
       if (e.button > 0 || (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],[contenteditable]"))) return;
@@ -256,6 +292,15 @@
     draw(performance.now());
     wake();
 
+    // Scroll scatter: how far the element has scrolled up out of view, 0 at rest to 1 once it is gone.
+    const onScatter = () => {
+      if (still) return;
+      const b = root.getBoundingClientRect();
+      const p = b.height > 0 ? Math.max(0, Math.min(1, -b.top / b.height)) : 0;
+      if (p !== spread) { spread = p; wake(); }
+    };
+    if (o.scatter > 0) { window.addEventListener("scroll", onScatter, { passive: true }); onScatter(); }
+
     const host = o.pointerHost || root;
     host.addEventListener("pointermove", onMove);
     const onOut = e => { if (!e.relatedTarget) onLeave(); };
@@ -268,8 +313,9 @@
     const io = new IntersectionObserver(entries => {
       visible = entries[0] ? entries[0].isIntersecting : true;
       if (visible) { wake(); return; }
-      for (let i = 0; i < count; i++) { const j = i * 7; dots[j] = dots[j + 4]; dots[j + 1] = dots[j + 5]; dots[j + 2] = dots[j + 3] = 0; }
-      px = py = -1e5; ring.t = -1; last = 0; acc = 0;
+      const S = o.scatter * spread;
+      for (let i = 0; i < count; i++) { const j = i * 7; dots[j] = dots[j + 4] + dirs[i * 2] * S; dots[j + 1] = dots[j + 5] + dirs[i * 2 + 1] * S; dots[j + 2] = dots[j + 3] = 0; }
+      px = py = -1e5; ring.t = -1; last = 0; acc = 0; mdx = mdy = kx = ky = 0; lastCX = lastCY = NaN;
       draw(performance.now());
     });
     io.observe(root);
@@ -288,8 +334,16 @@
         ring = { x: clientX - b.left, y: clientY - b.top, t: performance.now() };
         wake();
       },
+      /* The page scrolled by (dx, dy) px: the dots are left behind a little and spring back (v13-motion.js
+         calls this once a frame while the page scrolls). */
+      kick(dx, dy) {
+        if (!o.interactive || still || !visible) return;
+        kx += dx || 0; ky += dy || 0;
+        wake();
+      },
       destroy() {
         alive = false;
+        if (o.scatter > 0) window.removeEventListener("scroll", onScatter);
         cancelAnimationFrame(raf);
         ro.disconnect(); io.disconnect();
         host.removeEventListener("pointermove", onMove);
@@ -326,5 +380,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
   else auto();
 
-  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, fitSize, PRESET, PHYSICS });
+  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, weave, fitSize, PRESET, PHYSICS });
 })();

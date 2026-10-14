@@ -95,6 +95,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 /* routes: a function (path, method) → {status, body} */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion });
+  // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
+  await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
   const api = [];
   await context.route("**/v1/**", async route => {
     const url = new URL(route.request().url());

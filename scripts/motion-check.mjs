@@ -40,6 +40,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 
 async function open(path, { width = 1440, reducedMotion = "no-preference", touch = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, reducedMotion, isMobile: touch, hasTouch: touch });
+  // The pointer checks below measure atoms in place, so every scroll-reveal block is shown at once.
+  await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
   await context.route("**/v1/**", r => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mock(new URL(r.request().url()))) }));
   await context.route(/wikimedia/, r => r.fulfill({ status: 200, contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="250" height="320"/>' }));
   const page = await context.newPage();
@@ -90,7 +92,7 @@ try {
         await page.mouse.move(target.left - 24, target.top + target.h / 2, { steps: 4 });
         await page.waitForTimeout(450);
         const pushed = await read();
-        check(pushed[0] > 0.5 && Math.hypot(...pushed) <= 8.5, key + ": an atom near the pointer parts away from it, by a few px", pushed);
+        check(pushed[0] > 0.5 && Math.hypot(...pushed) <= 10.5, key + ": an atom near the pointer parts away from it, by a few px", pushed);
         // Pointer on the atom: it settles back and holds still under the pointer.
         await page.mouse.move(target.left + target.w / 2, target.top + target.h / 2, { steps: 2 });
         await page.waitForTimeout(1500);

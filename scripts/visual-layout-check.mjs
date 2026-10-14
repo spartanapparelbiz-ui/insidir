@@ -12,6 +12,8 @@ try{
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||"/opt/pw-browsers/chromium",args:["--no-sandbox","--disable-dev-shm-usage"]});
  for(const item of [{width:375,height:812},{width:390,height:844},{width:1440,height:900}]){
   const context=await browser.newContext({viewport:item,deviceScaleFactor:1,isMobile:item.width<600,hasTouch:item.width<600});
+  // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
+  await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
   const page=await context.newPage();
   try{
    const issues=[];page.on("pageerror",e=>issues.push(String(e)));

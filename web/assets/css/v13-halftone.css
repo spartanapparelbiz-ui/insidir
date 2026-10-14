@@ -2,11 +2,13 @@
    Insidir V13 — "Halftone". One print-grain dark identity for every page:
    the landing page, sign-in, the product dashboard, company reports, legal.
 
-   Palette (the reference footer's night preset — nothing else is used):
+   Palette (the reference footer's night preset, without its orange):
      night paper  #0c0c0b   background
-     ink          #e9e4da   text, dots at rest, rules
-     warm         #e9762b   the colour a dot warms toward; live signals, hover
-   Every other value is a blend of those three (see the --hf-* tokens).
+     ink          #e9e4da   text, dots, rules, hovers
+   Every other value is a blend of those two (see the --hf-* tokens). Market direction alone has colour:
+   green #2f996a for purchases and rises, red #f94144 for sales and falls; the same red marks errors and
+   destructive actions (--hf-alert). Nothing is orange and nothing glows: --hf-warm is retired and kept
+   only as an alias of ink, so a rule that still names it prints in ink.
 
    Type: JetBrains Mono for everything — tracked uppercase labels, links,
    buttons, tables, body copy, and at 700–800 for display and the wordmark.
@@ -39,11 +41,11 @@
      moves like the wordmark; colours keep plain easing. */
   --hf-spring:linear(0, .0741, .2029, .37, .5519, .7305, .8912, 1.0276, 1.1288, 1.1992, 1.237, 1.247, 1.2354, 1.206, 1.1669, 1.1224, 1.0777, 1.0365, 1.0015, .9736, .9547, .943, .9391, .9407, .9469, .9562, .9669, .978, .9885, .9976, 1.0049, 1.0102, 1.0135, 1.015, 1.0148, 1.0136, 1.0115, 1.0089, 1.0061, 1.0035, 1)!important;
   --hf-spring-dur:.95s!important;
-  --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important;
+  --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var(--hf-ink)!important;
   /* Market direction, for data only: purchases and rises in green, sales and falls in red. Validated as a pair on
      paper, surface and surface-2 (OKLab ΔE 9.6 under deuteranopia, 31.9 normal; ≥4.86:1 contrast), always shown with
      a ▲/▼ glyph or a label so colour never carries the meaning alone. Not for the surface or the chrome. */
-  --hf-up:#2f996a!important;--hf-down:#f94144!important;
+  --hf-up:#2f996a!important;--hf-down:#f94144!important;--hf-alert:var(--hf-down)!important;
   --hf-surface:#151513!important;      /* ink 4% over paper */
   --hf-surface-2:#1b1a18!important;    /* 7% */
   --hf-raise:#222220!important;        /* 10% */
@@ -75,8 +77,8 @@ body.v13{
   --shadow-sm:none!important;--shadow:none!important;--shadow-lg:none!important;
   --app-bg:var(--hf-bg)!important;--app-surface:var(--hf-surface)!important;--app-border:var(--hf-line)!important;
   --v7-ink:var(--hf-ink)!important;--v7-paper:var(--hf-bg)!important;--v7-edge:var(--hf-line)!important;
-  --v9-ink:var(--hf-ink)!important;--v9-paper:var(--hf-bg)!important;--v9-line:var(--hf-line)!important;--v9-gray:var(--hf-muted)!important;--v9-blue:var(--hf-warm)!important;--v9-soft:var(--hf-bg)!important;--v9-muted:var(--hf-muted)!important;
-  --v10-paper:var(--hf-bg)!important;--v10-ink:var(--hf-ink)!important;--v10-muted:var(--hf-muted)!important;--v10-line:var(--hf-line)!important;--v10-orange:var(--hf-warm)!important;
+  --v9-ink:var(--hf-ink)!important;--v9-paper:var(--hf-bg)!important;--v9-line:var(--hf-line)!important;--v9-gray:var(--hf-muted)!important;--v9-blue:var(--hf-ink)!important;--v9-soft:var(--hf-bg)!important;--v9-muted:var(--hf-muted)!important;
+  --v10-paper:var(--hf-bg)!important;--v10-ink:var(--hf-ink)!important;--v10-muted:var(--hf-muted)!important;--v10-line:var(--hf-line)!important;--v10-orange:var(--hf-ink)!important;
   --v12-bg:var(--hf-bg)!important;--v12-panel:var(--hf-surface)!important;--v12-border:var(--hf-line)!important;--v12-ink:var(--hf-ink)!important;--v12-muted:var(--hf-muted)!important;--v12-green:var(--hf-up)!important;--v12-blue:var(--hf-ink)!important;
   --cx-bg:var(--hf-bg)!important;--cx-surface:var(--hf-surface)!important;--cx-surface-2:var(--hf-surface-2)!important;--cx-raise:var(--hf-raise)!important;--cx-line:var(--hf-line)!important;--cx-line-2:var(--hf-line-2)!important;
   --cx-text:var(--hf-ink)!important;--cx-text-2:var(--hf-soft)!important;--cx-muted:var(--hf-muted)!important;--cx-faint:var(--hf-faint)!important;
@@ -93,9 +95,8 @@ body.v13 .auth,body.v13 .auth-panel,body.v13 .auth-panel__inner,body.v13 .auth-c
 /* Print grain over everything (the halftone footer draws its own on canvas). */
 body.v13::after{content:""!important;position:fixed!important;inset:0!important;z-index:2147483000!important;pointer-events:none!important;
   opacity:.045!important;mix-blend-mode:overlay!important;background-image:var(--hf-grain)!important}
-body.v13 ::selection{background:var(--hf-warm)!important;color:var(--hf-bg)!important}
-/* Inside the product a selection is ink on paper: no orange block over figures, and green/red read again when released. */
-body.v13:is(.app-body,.v3-app,.pw-page) ::selection{background:var(--hf-ink)!important;color:var(--hf-bg)!important}
+/* A selection is ink on paper, everywhere. */
+body.v13 ::selection{background:var(--hf-ink)!important;color:var(--hf-bg)!important}
 body.v13 :focus-visible{outline:1px solid var(--hf-ink)!important;outline-offset:3px!important;border-radius:0!important;box-shadow:none!important}
 body.v13 .skip-link{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;border-radius:0!important}
 body.v13 .toast{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 11px/1.6 var(--hf-mono)!important;border-radius:0!important;box-shadow:none!important}
@@ -110,13 +111,11 @@ body.v13{font-size:13px!important;line-height:1.7!important}
 body.v13 :is(h1,h2,h3,h4,.h1,.h2,.h3,.h4,.display,.page-title,.panel__title){font-family:var(--hf-mono)!important;font-weight:700!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important;font-variation-settings:normal!important;font-style:normal!important}
 body.v13 :is(h1,h2,h3) :is(em,i,.v13-soft){font-style:normal!important;color:var(--hf-soft)!important}
 body.v13.v12-home :is(h2,h3)>span:not(.split-word):not(.v13-dot){color:var(--hf-soft)!important}
-body.v13 :is(h1,h2,h3) :is(em,i,span).v13-warm{color:var(--hf-warm)!important}
+body.v13 :is(h1,h2,h3) :is(em,i,span).v13-warm{color:var(--hf-ink)!important}
 body.v13 p,body.v13 li,body.v13 dd,body.v13 dt,body.v13 td,body.v13 blockquote{color:inherit}
 body.v13 a{color:inherit!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
-/* Inside the product the orange accent stays out of the chrome: hovers brighten to ink, primary buttons to soft ink.
-   Green and red are reserved for market direction (--hf-up / --hf-down). */
-body.v13:is(.app-body,.v3-app) a:hover{color:var(--hf-ink)!important}
+/* Hovers brighten to ink and draw their underline; green and red are reserved for market direction. */
+body.v13 a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13 code,body.v13 kbd,body.v13 pre{font-family:var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-surface)!important;border-radius:0!important}
 body.v13 strong,body.v13 b{color:var(--hf-ink)!important}
 body.v13 small{color:var(--hf-muted)!important}
@@ -133,14 +132,14 @@ body.v13 :is(.v13-caption,.v12-preview-note,.v12-pricing-note,.v12-photo-note,.v
   :where(#v12-demo-period,#v12-demo-cik),.v12-aside-fact small,.v12-aside-note,.v12-aside-bottom p,.v12-state,.v6-live__empty,.v3-empty,.cl-status,.cl-finish p,.v9-desk__disclosure,.v3-bottom-note p,.v3-price__note,.auth-legal,.auth-switch,.field__msg,.field__error,.form-alert__text,
   .v12-questions details>p,.v3-static__footer-inner,.v2-notfound footer,.v12-faq p:not(.v12-eyebrow),.research-small,.research-explain,.portfolio-note,.cx-description small,.cx-note,.v3-account__hint,.v4-data-strip__item strong,.v12-company-top p,.v9-desk__section-title>span,.v12-split-heading>div:last-child p,.cl-top p,.v3-intro p:last-child){
   font-family:var(--hf-mono)!important;font-size:11px!important;font-weight:400!important;line-height:1.8!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-muted)!important}
-body.v13 .field__error{color:var(--hf-warm)!important}
+body.v13 .field__error{color:var(--hf-alert)!important}
 
 /* ---------- Logo ---------- */
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.app-header .logo,.v2-notfound header .logo,.v13-logo){
   font-family:var(--hf-mono)!important;font-weight:800!important;font-size:24px!important;line-height:1!important;letter-spacing:-.04em!important;text-transform:lowercase!important;
   color:var(--hf-ink)!important;text-decoration:none!important;display:inline-flex!important;align-items:baseline!important;white-space:nowrap!important;font-variation-settings:normal!important}
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover{color:var(--hf-ink)!important}
-body.v13 :is(.v12-logo-dot,.v13-dot){color:var(--hf-warm)!important;display:inline-block!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13 :is(.v12-logo-dot,.v13-dot){color:inherit!important;display:inline-block!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover :is(.v12-logo-dot,.v13-dot){transform:translateY(-.08em)!important}
 body.v13 .auth-logo,body.v13 .v3-static__logo{font-size:26px!important}
 
@@ -222,13 +221,12 @@ body.v13 .btn--block,body.v13 .auth-btn{display:flex!important;width:100%!import
 body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-price__button--secondary),.v3-static__cta,.v3-account__button,.auth-btn,.cl-form button,.v3-searchbox button,.v3-intro>a,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button,.v9-desk__search button){
   background:var(--hf-ink)!important;color:var(--hf-bg)!important;border:1px solid var(--hf-ink)!important}
 body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-price__button--secondary),.v3-static__cta,.v3-account__button,.auth-btn,.cl-form button,.v3-searchbox button,.v3-intro>a,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button,.v9-desk__search button):hover{
-  background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
-body.v13:is(.app-body,.v3-app) :is(.btn--dark,.cx-btn--primary,.v3-account__button,.cl-form button,.v3-searchbox button,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button):hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
+  background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13 .btn--dark::after{display:none!important}
 /* secondary: hairline */
 body.v13 :is(.btn--light,.btn--ghost,.v9-btn--outline,.v9-btn--light,.v12-outline-button,.cx-btn:not(.cx-btn--primary),.v3-price__button--secondary,.cl-more){background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
 body.v13 :is(.btn--light,.btn--ghost,.v9-btn--outline,.v9-btn--light,.v12-outline-button,.cx-btn:not(.cx-btn--primary),.v3-price__button--secondary,.cl-more):hover{border-color:var(--hf-ink)!important;background:var(--hf-surface)!important;color:var(--hf-ink)!important}
-body.v13 .cx-btn[aria-pressed="true"],body.v13 .cx-btn--primary[aria-pressed="true"]{background:var(--hf-surface-2)!important;border-color:var(--hf-warm)!important;color:var(--hf-warm)!important}
+body.v13 .cx-btn[aria-pressed="true"],body.v13 .cx-btn--primary[aria-pressed="true"]{background:var(--hf-surface-2)!important;border-color:var(--hf-ink)!important;color:var(--hf-ink)!important}
 /* chips / filters / segmented */
 body.v13 :is(.v3-filters button,.v12-graph-controls button,.v12-company-tabs button,.cx-ranges button,.segmented button,.cx-filters button,.tabs [role=tab],.cx-tabs [role=tab]){background:transparent!important;color:var(--hf-muted)!important;border:1px solid transparent!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;font-weight:500!important}
 body.v13 :is(.v3-filters button,.v12-graph-controls button,.v12-company-tabs button,.cx-ranges button,.segmented button,.cx-filters button):hover{color:var(--hf-ink)!important;background:var(--hf-raise)!important}
@@ -286,11 +284,21 @@ body.v13 :is(.v4-ui-icon,.v4-heading-icon,.v12-feature-icon,.v3-quicklinks .v4-q
 body.v13 :is(.v12-feature-icon,.v3-quicklinks .v4-quick-icon){background:transparent!important;border:1px solid var(--hf-line)!important;border-radius:0!important}
 
 /* ---------- Motion (v13-motion.js) ----------
-   Atoms part around the pointer and ripple on a click with the dots' physics; the offset arrives in
-   --hf-dx/--hf-dy and rides on `translate`, which composes with any transform a rule already sets. */
-body.v13 [data-hf-atom]{translate:var(--hf-dx,0px) var(--hf-dy,0px)!important}
+   Atoms part around the pointer, trail a scroll and ripple on a click with the dots' physics; the offset
+   arrives in --hf-dx/--hf-dy and rides on `translate`, the pop and press in --hf-s on `scale`, both of which
+   compose with any transform a rule already sets. */
+body.v13 [data-hf-atom]{translate:var(--hf-dx,0px) var(--hf-dy,0px)!important;scale:var(--hf-s,1)!important}
 body.v13 [data-hf-atom="inline"]{display:inline-block!important}
-@media (prefers-reduced-motion:reduce){body.v13 [data-hf-atom]{translate:none!important}}
+@media (prefers-reduced-motion:reduce){body.v13 [data-hf-atom]{translate:none!important;scale:none!important}}
+
+/* Scroll reveal: a block still below the fold waits 28px low and transparent, then rises into place on the
+   dots' spring while it fades up, a beat (--hf-i × 70ms) after the block that arrived before it. The
+   transition is set only while it reveals, so the block's own hover transitions are untouched. An atom
+   keeps its pointer offset while it waits. */
+body.v13 .hf-pending.hf-pending{opacity:0!important;translate:var(--hf-dx,0px) calc(var(--hf-dy,0px) + var(--hf-rise,28px))!important;transition:none!important}
+body.v13 .hf-revealing.hf-revealing{transition:opacity .7s cubic-bezier(.2,.7,.1,1) calc(var(--hf-i,0) * 70ms),translate var(--hf-spring-dur) var(--hf-spring) calc(var(--hf-i,0) * 70ms)!important}
+@media (prefers-reduced-motion:reduce){body.v13 :is(.hf-pending,.hf-revealing){opacity:1!important;translate:none!important;transition:none!important}}
+@media print{body.v13 :is(.hf-pending,.hf-revealing){opacity:1!important;translate:none!important}}
 
 /* ---------- Charts ---------- */
 body.v13 .v12-graph .v12-plot-line{stroke:var(--hf-ink)!important}
@@ -300,7 +308,7 @@ body.v13 :is(.v12-graph .v12-axis,.area-chart .axis){fill:var(--hf-faint)!import
 body.v13 .area-chart .grid{stroke:var(--hf-line)!important}
 body.v13 .area-chart .grid--v{stroke:var(--hf-surface-2)!important}
 body.v13 .crosshair__line{stroke:var(--hf-soft)!important}
-body.v13 .crosshair__dot{fill:var(--hf-bg)!important;stroke:var(--hf-warm)!important}
+body.v13 .crosshair__dot{fill:var(--hf-bg)!important;stroke:var(--hf-ink)!important}
 body.v13 .chart-tip{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;border-radius:0!important}
 body.v13 .v12-chart-loading{background:transparent!important}
 body.v13 .v12-chart-loading span{background:var(--hf-line-2)!important;border-radius:0!important}
@@ -321,10 +329,8 @@ body.v13 :is(.v6-live__arrow,.v12-process-steps b,.v9-arrow,.v12-feature-link,.v
 body.v13 :is(.v12-secondary-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero-link,.v9-underlink,.v10-editorial__head>a,.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v9-desk__links a,.v12-split-heading a,.v12-logos-heading a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link){
   font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 :is(.v12-secondary-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero-link,.v9-underlink,.v10-editorial__head>a,.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v9-desk__links a,.v12-split-heading a,.v12-logos-heading a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{color:var(--hf-warm)!important;background-size:100% 1px!important}
-/* In the product these underline links brighten to ink on hover (text and underline); orange stays on the marketing pages. */
-body.v13:is(.app-body,.v3-app) :is(.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{color:var(--hf-ink)!important}
-body.v13 :is(.v12-process-steps a>span){color:var(--hf-warm)!important;font-family:var(--hf-mono)!important}
+body.v13 :is(.v12-secondary-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero-link,.v9-underlink,.v10-editorial__head>a,.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v9-desk__links a,.v12-split-heading a,.v12-logos-heading a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
+body.v13 :is(.v12-process-steps a>span){color:var(--hf-soft)!important;font-family:var(--hf-mono)!important}
 body.v13 .v12-company-tabs img{filter:none!important}
 body.v13 .v12-company-tabs button[data-v12-ticker=AAPL] img,body.v13 .v12-logo-links a:first-child img{filter:invert(1) brightness(.92) sepia(.12)!important}
 

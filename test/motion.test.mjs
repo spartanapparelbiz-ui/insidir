@@ -24,12 +24,19 @@ test("one set of physics: the engine exports it frozen and its spring step uses 
   const ctx = sandbox();
   vm.runInContext(engine, ctx);
   const H = ctx.window.InsidirHalftone;
-  assert.deepEqual(plain(H.PHYSICS), { push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900 });
+  assert.deepEqual(plain(H.PHYSICS), { push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900, drag: 0.05, scroll: 0.03 });
   assert.ok(Object.isFrozen(H.PHYSICS));
   // A dot one pixel from home with no pointer: v = (0 + (0 - 1)·0.05)·0.84 = −0.042.
   const [x, , vx] = plain(H.step(1, 0, 0, 0, 0, 0, -1e5, -1e5, 80));
   assert.ok(Math.abs(vx + 0.042) < 1e-12 && Math.abs(x - 0.958) < 1e-12);
   assert.doesNotMatch(engine.replace(/const PHYSICS = Object\.freeze\(\{[^}]*\}\);/, ""), /\b(2\.6|0\.84|3\.2)\b/, "no physics number is repeated outside PHYSICS");
+  // The pointer drags what it passes: a dot beside a pointer moving right is pushed away and carried right.
+  const [, , dvx] = plain(H.step(0, 10, 0, 0, 0, 10, 0, 0, 80, 20, 0));
+  const [, , svx] = plain(H.step(0, 10, 0, 0, 0, 10, 0, 0, 80, 0, 0));
+  assert.ok(dvx > svx + 0.5, "drag carries the dot along: " + dvx + " vs " + svx);
+  // The scroll weave runs from 0.1 to 1 across a field, so a scroll ripples it.
+  const ws = []; for (let x = 0; x < 600; x += 7) ws.push(H.weave(x, 40));
+  assert.ok(Math.min(...ws) >= 0.1 - 1e-9 && Math.max(...ws) <= 1 + 1e-9 && Math.max(...ws) - Math.min(...ws) > 0.8);
 });
 
 test("the site motion layer reuses the engine's physics instead of its own copy", () => {
@@ -37,7 +44,9 @@ test("the site motion layer reuses the engine's physics instead of its own copy"
   vm.runInContext(engine, ctx);
   vm.runInContext(motion, ctx);
   assert.equal(ctx.window.InsidirMotion.PHYSICS, ctx.window.InsidirHalftone.PHYSICS, "same object");
-  assert.ok(ctx.window.InsidirMotion.ATOM_SCALE > 0 && ctx.window.InsidirMotion.ATOM_SCALE * 2.6 / 0.05 <= 8, "an atom is pushed at most ~7px");
+  assert.ok(ctx.window.InsidirMotion.ATOM_SCALE > 0 && ctx.window.InsidirMotion.ATOM_SCALE * 2.6 / 0.05 <= 10, "an atom is pushed at most ~9px");
+  assert.equal(typeof ctx.window.InsidirMotion.revealAll, "function", "tools can show every pending block");
+  assert.match(motion, /scrollHeight/, "a block the page cannot scroll to is never held back");
   assert.match(motion, /prefers-reduced-motion: reduce/);
   assert.match(motion, /closest\(CONTROL\)/, "a click on a control does not start a ring");
 });
@@ -63,8 +72,11 @@ test("the CSS spring easing is the dots' spring, sampled frame by frame", () => 
   });
   const dur = /--hf-spring-dur:([\d.]+)s!important/.exec(theme);
   assert.ok(dur && Math.abs(Number(dur[1]) * 1000 - frames * 1000 / 60) < 20, "duration is the spring's settling time");
-  assert.match(theme, /body\.v13 \[data-hf-atom\]\{translate:var\(--hf-dx,0px\) var\(--hf-dy,0px\)!important\}/);
-  assert.match(theme, /@media \(prefers-reduced-motion:reduce\)\{body\.v13 \[data-hf-atom\]\{translate:none!important\}\}/);
+  assert.match(theme, /body\.v13 \[data-hf-atom\]\{translate:var\(--hf-dx,0px\) var\(--hf-dy,0px\)!important;scale:var\(--hf-s,1\)!important\}/);
+  assert.match(theme, /@media \(prefers-reduced-motion:reduce\)\{body\.v13 \[data-hf-atom\]\{translate:none!important;scale:none!important\}\}/);
+  // Pending reveals are never hidden under reduced motion or in print.
+  assert.match(theme, /@media \(prefers-reduced-motion:reduce\)\{body\.v13 :is\(\.hf-pending,\.hf-revealing\)\{opacity:1!important;translate:none!important/);
+  assert.match(theme, /@media print\{body\.v13 :is\(\.hf-pending,\.hf-revealing\)\{opacity:1!important/);
 });
 
 test("every page carries the motion: the engine, then the motion layer", async () => {
