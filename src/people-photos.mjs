@@ -72,6 +72,8 @@ async function politeImage(url, options) {
   lane.tail = run.catch(() => {});
   return run;
 }
+/* Landscape or small Commons pictures often show the person small (at a podium, on a stage). */
+const weakPicture = size => Boolean(size && (size.width / size.height > 1.15 || Math.min(size.width, size.height) < 200));
 /* Alt text or a file name can name a person by surname alone ("nominee_smith.jpg", "CarneyL");
  * those medium-confidence pairings are not used: surname plus given name, always. */
 const fullNameEvidence = m => !(["alt", "alt-adjacent"].includes(m.rule) && m.confidence !== "high");
@@ -125,9 +127,9 @@ async function runJob(ticker, company) {
         if (!person || state.photos[person.key] || !m.photo?.src) continue;
         try {
           const { saved, size } = await fromUrl(m.photo.large || m.photo.src);
-          // Prefer another source over a full-length or tiny Commons picture.
-          if (size && (size.width / size.height > 1.6 || Math.min(size.width, size.height) < 200)) { person.commonsFallback = { saved, m }; continue; }
-          await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high" });
+          // A landscape or tiny Commons picture (someone small at a podium) is shown for now, but a
+          // headshot from the company's page or proxy replaces it.
+          await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high", ...(weakPicture(size) ? { weak: true } : {}) });
         } catch (e) { if (transientImageError(e)) state.transient = true; /* other sources may still cover this person */ }
       }
       leaders = result.leaders || [];
@@ -141,12 +143,12 @@ async function runJob(ticker, company) {
     let photo = null;
     if (leader.photo?.src) {
       try {
-        const { saved } = await fromUrl(leader.photo.large || leader.photo.src);
-        photo = { src: saved.url, source: "wikimedia", sourceUrl: leader.photo.source, credit: leader.photo.credit || "Wikimedia Commons" };
+        const { saved, size } = await fromUrl(leader.photo.large || leader.photo.src);
+        photo = { src: saved.url, source: "wikimedia", sourceUrl: leader.photo.source, credit: leader.photo.credit || "Wikimedia Commons", weak: weakPicture(size) };
       } catch (e) { if (transientImageError(e)) state.transient = true; /* the page or proxy may still have one */ }
     }
     state.leaders.push({ key: "wd:" + (leader.qid || leader.name), name: leader.name, qid: leader.qid || null, roles: leader.roles || [], current: leader.current !== false,
-      wikidataUrl: leader.wikidataUrl || null, src: photo?.src || null, source: photo?.source || null, sourceUrl: photo?.sourceUrl || null, credit: photo?.credit || null,
+      wikidataUrl: leader.wikidataUrl || null, src: photo?.src || null, source: photo?.source || null, sourceUrl: photo?.sourceUrl || null, credit: photo?.credit || null, ...(photo?.weak ? { weak: true } : {}),
       insider: people.some(p => samePerson(p.name, leader.name, leader.aliases || [])) });
   }
   await publish(state);
@@ -158,23 +160,26 @@ async function runJob(ticker, company) {
   // Both sources see the whole roster: a caption or card is accepted only when it names exactly one
   // known person, so leaving out people who already have a photo would weaken that check.
   const roster = people.map(({ name, cik, role, key }) => ({ name, cik, role, key }));
-  const need = [...pending().map(p => p.key), ...state.leaders.filter(l => !l.src).map(l => l.key)];
+  const need = [...people.filter(p => !state.photos[p.key] || state.photos[p.key].weak).map(p => p.key), ...state.leaders.filter(l => !l.src || l.weak).map(l => l.key)];
   const failed = e => ({ status: "error", message: String(e?.message || e).slice(0, 120), matches: [] });
   const personFor = m => people.find(p => (m.key && p.key === m.key) || (m.ownerCik && p.cik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
   const leaderFor = m => m.key?.startsWith("wd:") ? state.leaders.find(l => l.key === m.key) : null;
-  const replaceable = current => !current || current.source === "sec-proxy";
+  // The company's own page beats a proxy picture and a weak Commons one; a proxy beats a weak one.
+  const replaceable = current => !current || current.source === "sec-proxy" || current.weak;
+  const proxyReplaceable = current => !current || current.weak;
+  const leaderPhoto = (leader, photo) => { Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit }); delete leader.weak; };
 
   const applySite = async site => {
     if (site.status === "error") state.transient = true;
     state.sources.companySite = { status: site.status, matched: site.matches?.length || 0, pages: (site.pages || []).slice(0, 5), ...(site.message ? { message: site.message } : {}) };
     for (const m of site.matches || []) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
-      if (person ? !replaceable(state.photos[person.key]) : !leader || (leader.src && leader.source !== "sec-proxy")) continue;
+      if (person ? !replaceable(state.photos[person.key]) : !leader || !replaceable(leader.src ? leader : null)) continue;
       try {
         const { saved } = await fromUrl(m.imageUrl, { referer: m.pageUrl, userAgent: PUBLIC_UA });
         const photo = { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : ""), personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high" };
         if (person) await assign(person, photo, { replace: true });
-        else Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit });
+        else leaderPhoto(leader, photo);
       } catch (e) { if (transientImageError(e)) state.transient = true; /* try the next source */ }
     }
     await publish(state);
@@ -186,11 +191,11 @@ async function runJob(ticker, company) {
     for (const m of proxy.matches || []) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
       if (!fullNameEvidence(m)) continue;
-      if (person ? state.photos[person.key] : !leader || leader.src) continue;
+      if (person ? !proxyReplaceable(state.photos[person.key]) : !leader || !proxyReplaceable(leader.src ? leader : null)) continue;
       const src = await proxyPhoto(m).catch(() => null);
       if (!src) continue;
-      if (person) await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit, personName: m.personName || m.caption, caption: m.caption || null, rule: m.rule, confidence: m.confidence || "high" });
-      else Object.assign(leader, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit });
+      if (person) await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit, personName: m.personName || m.caption, caption: m.caption || null, rule: m.rule, confidence: m.confidence || "high" }, { replace: true });
+      else leaderPhoto(leader, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit });
     }
     await publish(state);
   };
@@ -210,20 +215,12 @@ async function runJob(ticker, company) {
   if (proxyModule?.proxyHeadshots) {
     let found = 0;
     try {
-      const { errors } = await otherBoards(company, people.filter(p => p.cik && !state.photos[p.key]), proxyModule, async (person, photo) => { found++; await assign(person, photo); await publish(state); });
+      const { errors } = await otherBoards(company, people.filter(p => p.cik && (!state.photos[p.key] || state.photos[p.key].weak)), proxyModule, async (person, photo) => { found++; await assign(person, photo, { replace: true }); await publish(state); });
       if (errors) state.transient = true;
       state.sources.otherBoards = { status: found ? "ok" : errors ? "partial" : "none", matched: found, ...(errors ? { errors } : {}) };
     }
     catch (e) { state.transient = true; state.sources.otherBoards = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
   }
-
-  // A full-length or small Commons picture is still better than initials.
-  for (const person of pending()) {
-    if (!person.commonsFallback) continue;
-    const { saved, m } = person.commonsFallback;
-    await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high" });
-  }
-  for (const person of people) delete person.commonsFallback;
 
   state.complete = true;
   state.coverage = { people: people.length, withPhoto: people.filter(p => state.photos[p.key]).length };
