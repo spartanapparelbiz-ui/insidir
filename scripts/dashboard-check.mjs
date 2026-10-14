@@ -211,7 +211,7 @@ try {
     // Insider flow: exact totals from the four fixture rows.
     const flow = await page.evaluate(() => ({
       scope: document.getElementById("rd-flow-scope").textContent,
-      kpis: Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.trim()])),
+      kpis: Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/\u00a0/g, " ").trim()])),
       days: [...document.querySelectorAll("#rd-daily-chart .rd-day")].map(d => d.getAttribute("aria-label")),
       up: [...document.querySelectorAll("#rd-daily-chart .rd-day__bar--up")].map(b => getComputedStyle(b).backgroundColor),
       down: [...document.querySelectorAll("#rd-daily-chart .rd-day__bar--down")].map(b => getComputedStyle(b).backgroundColor),
@@ -223,8 +223,8 @@ try {
     check(flow.kpis.Purchases === "$42,000 | 1 purchase · 1,500 shares", "purchases total: value, count and shares", flow.kpis.Purchases);
     check(flow.kpis.Sales === "$327,000 | 2 sales · 12,600 shares", "sales total: value, count and shares", flow.kpis.Sales);
     check(flow.kpis["Net value"] === "\u2212$285,000 | Sales exceeded purchases", "net value is purchases minus sales, signed and explained", flow.kpis["Net value"]);
-    check(flow.kpis["Other codes"] === "1 | Codes A (1)", "transactions under other codes are counted, not valued", flow.kpis["Other codes"]);
-    check(flow.kpis["Filing lag"] === "2 days | Median, trade to SEC publication · range 2–9 days", "filing lag: median and range from trade date to SEC publication", flow.kpis["Filing lag"]);
+    check(flow.kpis["Other codes"] === "1 | A grant or award (1)", "transactions under other codes are counted, not valued, and named", flow.kpis["Other codes"]);
+    check(flow.kpis["Filing lag"] === "2 days | Median, trade to SEC filing · range 2–9 days", "filing lag: median and range from trade date to the SEC filing date", flow.kpis["Filing lag"]);
     check(flow.days.length === 3 && flow.days[0] === "Sep 1, 2026: purchases $0 (0 transactions), sales $2,000 (1 transaction), net \u2212$2,000" && flow.days[2] === "Sep 12, 2026: purchases $0 (0 transactions), sales $325,000 (1 transaction), net \u2212$325,000", "value by trade date: one column per day with an exact accessible label", flow.days);
     check(flow.up.length === 1 && flow.up.every(c => c === "rgb(47, 153, 106)") && flow.down.length === 2 && flow.down.every(c => c === "rgb(249, 65, 68)") && flow.zero, "purchases are green bars above the zero line, sales red bars below it", flow);
     check(flow.companies.length === 2 && /^AAPL/.test(flow.companies[0]) && /\u2212\$327,000/.test(flow.companies[0]) && /Sold \$327,000 in 2 sales/.test(flow.companies[0]) && /^NVDA/.test(flow.companies[1]) && /\+\$42,000/.test(flow.companies[1]) && /Bought \$42,000 in 1 purchase/.test(flow.companies[1]), "by company: largest gross value first, with exact net, sold and bought values", flow.companies);
@@ -329,6 +329,48 @@ try {
     if (SHOTS) await page.screenshot({ path: join(SHOTS, `dashboard-${width}.png`), fullPage: true });
     check(errors.length === 0, width + "px: no console or page errors", errors);
     await context.close();
+  }
+
+  /* ---------- 2b. Edge cases the figures must survive ---------- */
+  {
+    const big = { ...FULL, "/v1/transactions": { items: [
+      // An original filing and its 4/A restating the same line: counted once, the lag from the original.
+      { id: 21, accession: "000000000026000021", ticker: "ACME", issuer_cik: "0000000001", issuer_name: "ACME CORP", owner_name: "DOE JANE", owner_cik: "0000000009", transaction_date: "2026-09-10", transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", shares: 50000, price_per_share: 20, estimated_value: 1000000, published_at: "2026-09-12T20:00:00Z", is_amendment: false, source_url: source },
+      { id: 22, accession: "000000000026000022", ticker: "ACME", issuer_cik: "0000000001", issuer_name: "ACME CORP", owner_name: "DOE JANE", owner_cik: "0000000009", transaction_date: "2026-09-10", transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", shares: 50000, price_per_share: 20, estimated_value: 1000000, published_at: "2026-09-20T20:00:00Z", is_amendment: true, source_url: source },
+      // Filed at 9:30 p.m. Eastern: the SEC filing day is Sep 14, though it is Sep 15 in UTC. A four-decimal weighted price.
+      { id: 23, accession: "000000000026000023", ticker: "BIGC", issuer_cik: "0000000002", issuer_name: "BIG CO", owner_name: "ROE RICHARD", owner_cik: "0000000008", transaction_date: "2026-09-10", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: "60000000", price_per_share: "41.5321", estimated_value: "2491926000", published_at: "2026-09-15T01:30:00.000Z", is_amendment: false, source_url: source },
+      // A grant filed at $0.00, and two different issuers that both put the placeholder "NONE" in the ticker field.
+      { id: 24, accession: "000000000026000024", ticker: "NONE", issuer_cik: "0000000003", issuer_name: "PRIVATE ONE LLC", owner_name: "POE EDGAR", owner_cik: "0000000007", transaction_date: "2026-09-09", transaction_code: "A", acquired_disposed: "A", category: "other", shares: 5000, price_per_share: 0, estimated_value: 0, published_at: "2026-09-11T20:00:00Z", is_amendment: false, source_url: source },
+      { id: 25, accession: "000000000026000025", ticker: "NONE", issuer_cik: "0000000004", issuer_name: "PRIVATE TWO INC", owner_name: "LOE ANN", owner_cik: "0000000006", transaction_date: "2026-09-09", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 100, price_per_share: 10, estimated_value: 1000, published_at: "2026-09-11T20:00:00Z", is_amendment: false, source_url: source },
+      { id: 26, accession: "000000000026000026", ticker: "NONE", issuer_cik: "0000000005", issuer_name: "PRIVATE THREE CO", owner_name: "MOE MAX", owner_cik: "0000000005", transaction_date: "2026-09-09", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 200, price_per_share: 10, estimated_value: 2000, published_at: "2026-09-11T20:00:00Z", is_amendment: false, source_url: source }
+    ] } };
+    for (const width of [1440, 390]) {
+      const { context, page, errors } = await open(width, fixture(big));
+      await settle(page);
+      const e = await page.evaluate(() => {
+        const kpi = Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/ /g, " ").trim()]));
+        const tiles = [...document.querySelectorAll(".rd-kpi")].map(k => { const v = k.querySelector(".rd-kpi__value"), r = k.getBoundingClientRect(), vr = v.firstElementChild ? v.firstElementChild.getBoundingClientRect() : v.getBoundingClientRect(); const range = document.createRange(); range.selectNodeContents(v); const tr = range.getBoundingClientRect(); return { fits: tr.right <= r.right + 1 && tr.left >= r.left - 1 }; });
+        return {
+          kpi, tiles, scope: document.getElementById("rd-flow-scope").textContent,
+          rows: [...document.querySelectorAll("#v3-trades tr")].map(r => r.innerText.replace(/\s+/g, " ")),
+          companies: [...document.querySelectorAll("#rd-companies .rd-co__row")].map(r => r.innerText.replace(/\s+/g, " ")),
+          coStarts: [...document.querySelectorAll("#rd-companies .rd-co__track--buy")].map(t => Math.round(t.getBoundingClientRect().left)),
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+        };
+      });
+      check(e.kpi.Purchases.startsWith("$1,000,000 | 1 purchase"), width + "px: an amended 4/A replaces the line it restates instead of doubling it", e.kpi.Purchases);
+      check(/1 amended line replaces its original/.test(e.scope), width + "px: the scope says an amended line replaced its original", e.scope);
+      check(e.kpi.Sales.startsWith("$2,491,929,000 | 3 sales"), width + "px: sales total to the dollar", e.kpi.Sales);
+      check(e.tiles.every(t => t.fits) && e.overflow <= 1, width + "px: ten-digit totals fit their tiles", e);
+      const bigRow = e.rows.find(r => /BIGC/.test(r)) || "";
+      check(/\$41\.5321/.test(bigRow) && /Sep 14, 2026/.test(bigRow) && /\+4 days/.test(bigRow), width + "px: a four-decimal price prints as filed and an evening filing keeps its SEC (Eastern) day and lag", bigRow);
+      const grant = e.rows.find(r => /PRIVATE ONE/.test(r)) || "";
+      check(/\$0\.00/.test(grant) && /No ticker/.test(grant), width + "px: a $0.00 grant prints its price as filed; a placeholder ticker is not shown as a symbol", grant);
+      check(e.companies.length === 4 && e.companies.some(c => /^PRIVATE TWO INC/.test(c)) && e.companies.some(c => /^PRIVATE THREE CO/.test(c)), width + "px: by company groups by issuer, not by the placeholder ticker, and names an issuer without a ticker", e.companies);
+      check(new Set(e.coStarts).size === 1, width + "px: every company row shares one zero line", e.coStarts);
+      check(errors.length === 0, width + "px: no errors with edge-case data", errors);
+      await context.close();
+    }
   }
 
   /* ---------- 3. Empty account and empty import ---------- */

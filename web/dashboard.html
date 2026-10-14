@@ -4,10 +4,10 @@
 <title>Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
-<script defer src="assets/js/entity-media.js?v=real-assets-5"></script><script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js?v=15"></script><script defer src="assets/js/v4-dashboard.js?v=15"></script><script defer src="assets/js/v10-people.js?v=14"></script>
+<script defer src="assets/js/entity-media.js?v=real-assets-5"></script><script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js?v=16"></script><script defer src="assets/js/v4-dashboard.js?v=16"></script><script defer src="assets/js/v10-people.js?v=14"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=3">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=15">
-<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=2"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active="dashboard"></header>
@@ -39,7 +39,8 @@
 <div class="rd-grid">
   <section class="rd-module rd-module--flow" aria-labelledby="rd-flow-title">
     <header class="rd-module__head"><div><p class="rd-index">01</p><h2 id="rd-flow-title">Insider flow</h2><p id="rd-flow-scope">Reported Form 4 purchases and sales in the latest imported transactions.</p></div><a class="rd-link" href="filings.html">All filings ↗</a></header>
-    <div id="rd-kpis" class="rd-kpis" aria-live="polite"><p class="rd-empty">Loading reported transactions…</p></div>
+    <p id="rd-flow-status" class="sr-only" aria-live="polite"></p>
+    <div id="rd-kpis" class="rd-kpis"><p class="rd-empty">Loading reported transactions…</p></div>
     <div class="rd-flow">
       <figure class="rd-panel rd-panel--daily" aria-labelledby="rd-daily-title">
         <figcaption class="rd-panel__head">
@@ -51,7 +52,7 @@
       </figure>
       <figure class="rd-panel rd-panel--companies" aria-labelledby="rd-companies-title">
         <figcaption class="rd-panel__head"><div><h3 id="rd-companies-title">By company</h3><p>Sales to the left, purchases to the right, largest gross value first.</p></div></figcaption>
-        <div id="rd-companies" class="rd-co" aria-live="polite"><p class="rd-empty">Loading companies…</p></div>
+        <div id="rd-companies" class="rd-co"><p class="rd-empty">Loading companies…</p></div>
       </figure>
     </div>
     <div class="rd-panel rd-panel--largest">
@@ -62,19 +63,19 @@
 
   <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
     <header class="rd-module__head"><div><p class="rd-index">02</p><h2 id="rd-watch-title">Your watchlist</h2><p>Each saved ticker with its latest imported insider transaction.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist ↗</a></header>
-    <div id="v3-watchlist" class="rd-rows" aria-live="polite"><p class="rd-empty">Loading your saved tickers…</p></div>
+    <div id="v3-watchlist" class="rd-rows"><p class="rd-empty">Loading your saved tickers…</p></div>
   </section>
 
   <section class="rd-module rd-module--notes" aria-labelledby="rd-notes-title">
     <header class="rd-module__head"><div><p class="rd-index">03</p><h2 id="rd-notes-title">Research notes</h2><p>Your private notes, most recent first.</p></div><a class="rd-link" href="research.html">Write a note ↗</a></header>
-    <div id="v3-notes" class="rd-rows" aria-live="polite"><p class="rd-empty">Loading your research notes…</p></div>
+    <div id="v3-notes" class="rd-rows"><p class="rd-empty">Loading your research notes…</p></div>
   </section>
 
   <section class="rd-module rd-module--trades" aria-labelledby="rd-trades-title">
     <header class="rd-module__head"><div><p class="rd-index">04</p><h2 id="rd-trades-title">Insider transactions</h2><p>Every reported line, newest trade date first: shares, price per share, value, and how long the filing took.</p></div><a class="rd-link" href="research.html">Research a company ↗</a></header>
     <div class="rd-filters" role="group" aria-label="Transaction type"><button type="button" data-filter="all" aria-pressed="true">All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false"><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false"><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false">Other codes <span data-count="other"></span></button></div>
     <div class="rd-table-wrap"><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Reporting person</th><th scope="col">Company</th><th scope="col">Transaction</th><th scope="col" class="rd-num">Shares</th><th scope="col" class="rd-num">Price</th><th scope="col" class="rd-num">Value</th><th scope="col">Traded</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"><tr><td colspan="9" class="rd-empty">Loading reported transactions…</td></tr></tbody></table></div>
-    <p class="rd-module__foot" id="v3-trades-foot">Value is shares × the price per share reported on the filing. Codes follow the SEC's Form 4 instructions; hover or focus a code for its meaning.</p>
+    <p class="rd-module__foot" id="v3-trades-foot">Value is shares × the price per share reported on the filing. Codes follow the SEC's Form 4 instructions.</p>
   </section>
 
   <section class="rd-module rd-module--filings" aria-labelledby="rd-filings-title">
@@ -85,7 +86,7 @@
 
   <section class="rd-module rd-module--status" aria-labelledby="rd-status-title">
     <header class="rd-module__head"><div><p class="rd-index">06</p><h2 id="rd-status-title">Data source</h2><p>Where this desk's records come from, and when they were last imported.</p></div></header>
-    <dl class="rd-status" aria-live="polite">
+    <dl class="rd-status">
       <div><dt>Source</dt><dd>SEC EDGAR · Form 4</dd></div>
       <div><dt>Status</dt><dd id="v4-data-state">Checking…</dd></div>
       <div><dt>Parsed filings</dt><dd id="v4-filing-count">Checking…</dd></div>
@@ -97,7 +98,7 @@
 
   <section class="rd-module rd-module--people" aria-labelledby="rd-people-title">
     <header class="rd-module__head"><div><p class="rd-index">07</p><h2 id="rd-people-title">Reporting people</h2><p>The people behind the latest imported Form 4 transactions.</p></div><a class="rd-link" href="people.html">All people ↗</a></header>
-    <div id="v10-people-preview" class="rd-people" aria-live="polite"><p class="rd-empty">Loading reporting people…</p></div>
+    <div id="v10-people-preview" class="rd-people"><p class="rd-empty">Loading reporting people…</p></div>
   </section>
 </div>
 

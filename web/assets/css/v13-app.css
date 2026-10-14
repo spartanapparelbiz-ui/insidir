@@ -120,7 +120,7 @@ body.v13 .rd-type--sell{color:var(--hf-down)!important;border-color:var(--hf-dow
 body.v13 .rd-type--buy{color:var(--hf-up)!important;border-color:var(--hf-up)!important}
 
 /* Tables: insider transactions and latest filings. */
-body.v13 .rd-table-wrap{position:relative!important;overflow-x:auto!important;background:transparent!important;margin:0!important} /* positioned, so the visually hidden header labels scroll with the table */
+body.v13 .rd-table-wrap{position:relative!important;overflow-x:auto!important;background:transparent!important;margin:0!important;padding-right:4px!important} /* positioned, so the visually hidden header labels scroll with the table */
 body.v13 .rd-table{width:100%!important;border-collapse:collapse!important;background:transparent!important;font:400 12.5px/1.5 var(--hf-mono)!important;margin:0!important}
 body.v13 .rd-table--filings{min-width:440px!important}
 body.v13 .rd-table--trades{min-width:1040px!important}
