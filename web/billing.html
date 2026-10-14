@@ -4,8 +4,45 @@
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
 <script defer src="assets/js/v13-halftone.js?v=1"></script>
-</head><body class="app-body v2-app v3-app v6-app v13"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active=""></header><main class="app-main" id="main"><section style="max-width:790px;padding:30px 0"><p style="font:600 11px var(--sans);letter-spacing:.16em;color:#888e89">YOUR ACCOUNT / BILLING</p><h1 style="font:520 clamp(49px,5vw,75px)/1.1 var(--serif);letter-spacing:-.05em;margin:16px 0">Your subscription.</h1><p style="font:400 15px/1.75 var(--sans);color:#7b807b">Know exactly which plan you have. Billing controls only appear when a secure payment provider is configured.</p><section class="panel" style="padding:30px;margin-top:29px;border-radius:8px"><p style="font:600 11px var(--sans);color:#8d948f;letter-spacing:.12em">CURRENT PLAN</p><h2 style="font:530 32px var(--serif);margin:14px 0 8px">Insidir account</h2><p id="bill-status" role="status" aria-live="polite" style="font:400 14px/1.8 var(--sans);color:#677068">Checking your plan and billing availability…</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:28px"><button id="checkout" type="button" class="btn btn--dark" hidden>Subscribe to Pro — $39/month</button><button id="manage" type="button" class="btn btn--dark" hidden>Manage or cancel subscription</button><a href="dashboard.html" class="btn btn--light">Back to dashboard</a></div></section><p style="margin-top:25px;font:400 12px/1.75 var(--sans);color:#8c938d">Subscription status comes from verified billing events, not from returning to a success page. No charge can be made when checkout is disabled. Insidir research does not provide investment advice or execute trades.</p></section></main><footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+</head><body class="app-body v2-app v3-app v6-app v13"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active=""></header>
+<main class="app-main v3-billing" id="main">
+<header class="v3-billing__head desk-masthead">
+<div class="desk-topline"><p class="v3-eyebrow">YOUR ACCOUNT / BILLING</p><p class="desk-topline__note">Verified billing events · checkout only through a secure provider</p></div>
+<h1>Your subscription.</h1>
+<p class="v3-billing__lead desk-lead">Know exactly which plan you have. Billing controls only appear when a secure payment provider is configured.</p>
+</header>
+<section class="panel v3-billing__plan" aria-labelledby="bill-plan-title">
+<div class="v3-billing__copy">
+<p class="v3-eyebrow">CURRENT PLAN</p>
+<h2 id="bill-plan-title">Insidir account</h2>
+<p id="bill-status" role="status" aria-live="polite" class="v3-billing__status">Checking your plan and billing availability…</p>
+</div>
+<div class="v3-billing__actions">
+<button id="checkout" type="button" class="btn btn--dark" hidden>Subscribe to Pro — $39/month</button>
+<button id="manage" type="button" class="btn btn--dark" hidden>Manage or cancel subscription</button>
+<a href="dashboard.html" class="btn btn--light">Back to dashboard</a>
+</div>
+</section>
+<section class="v3-billing__plans" aria-label="Plans">
+<article class="v3-billing__tier">
+<p class="v3-eyebrow">01 / FREE · AVAILABLE</p>
+<h3>Research</h3>
+<p class="v3-billing__price">$0 <small>/ month</small></p>
+<ul><li>Public company reports</li><li>Selected SEC financial facts</li><li>Imported filings and insider activity</li><li>Private watchlist, notes and holdings</li></ul>
+</article>
+<article class="v3-billing__tier">
+<p class="v3-eyebrow">02 / PRO · PLANNED</p>
+<h3>More depth</h3>
+<p class="v3-billing__price">$39 <small>/ month proposed</small></p>
+<ul><li>More flexible historical research</li><li>More ways to organize findings</li><li>Final features disclosed before checkout</li><li>No active Pro subscription checkout</li></ul>
+<a class="v3-billing__link" href="pricing.html">Compare plans ↗</a>
+</article>
+</section>
+<p class="v3-billing__note">Subscription status comes from verified billing events, not from returning to a success page. No charge can be made when checkout is disabled. Insidir research does not provide investment advice or execute trades.</p>
+</main>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>

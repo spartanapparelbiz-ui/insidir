@@ -76,10 +76,10 @@ function fixture(url, method) {
   if (p === "/v1/company/news") return { announcements: [{ title: "Results of operations and financial condition", form: "8-K", filedAt: "2026-09-01", url: source, earnings: true }], headlines: [], headlinesAvailable: true };
   if (p === "/v1/me/watchlist") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", created_at: "2026-09-01T00:00:00Z" }, { ticker: "NVDA", created_at: "2026-08-01T00:00:00Z" }] };
   if (p === "/v1/me") return { user: { email: "reader@example.com", id: 1, created_at: "2026-01-01T00:00:00Z" } };
-  if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ id: 1, ticker: "AAPL", decision: "researching", note: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
+  if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", review_status: "researching", reviewStatus: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
   if (p === "/v1/me/people") return { items: insiderPeople.slice(0, 1) };
   if (p === "/v1/me/alerts") return { items: [] };
-  if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", shares: 12, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
+  if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", quantity: 12.5, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
   if (p === "/v1/me/brokerage/status") return { enabled: false, connected: false, provider: "snaptrade" };
   if (p === "/v1/me/brokerage/portfolio") return { accounts: [], holdings: [] };
   if (p === "/v1/billing/status") return { plan: "free", checkoutEnabled: false, portalEnabled: false, status: "none" };
@@ -187,7 +187,7 @@ const scan = ({ palette, tol }) => {
     leaks: [...leaks.values()].sort((a, b) => b.count - a.count),
     fonts: [...fonts.values()].sort((a, b) => b.count - a.count),
     contrast: [...contrastMap.values()].sort((a, b) => b.count - a.count),
-    overflow: document.documentElement.scrollWidth - innerWidth,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     bodyBackground: getComputedStyle(document.body).backgroundColor,
     bodyClass: document.body.className,
     halftone: hal ? { kind: hal.hasAttribute("data-halftone-hero") ? "hero" : "footer", width: fr ? Math.round(fr.width) : 0, height: fr ? Math.round(fr.height) : 0, mounted: !!hal.__halftone } : null,

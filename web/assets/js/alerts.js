@@ -19,15 +19,16 @@
   const stroke = 'fill="none" stroke-linecap="round" stroke-linejoin="round"';
   const doc = c => `<path d="M7.2 5.4h3.9l2.3 2.3v6.4a.6.6 0 0 1-.6.6H7.2a.6.6 0 0 1-.6-.6V6a.6.6 0 0 1 .6-.6Z" ${stroke} stroke="${c}" stroke-width="1.3"/>
     <path d="M10.9 5.6v2.3h2.3M8.4 10.6h3.2M8.4 12.5h2.1" ${stroke} stroke="${c}" stroke-width="1.2"/>`;
+  // Hairline ring in the badge's own colour (ink for purchases, warm for sales); no filled discs.
+  const ring = '<circle cx="10" cy="10" r="9.2" fill="none" stroke="currentColor" stroke-width="1.2"/>';
   const ICON = {
-    buy: svg(`<circle cx="10" cy="10" r="10" fill="#1c5a3a"/><path d="M7 13 13 7M8.4 7H13v4.6" ${stroke} stroke="#fff" stroke-width="1.7"/>`),
-    sell: svg(`<circle cx="10" cy="10" r="10" fill="#df3f45"/><path d="M7 7l6 6M13 8.4V13H8.4" ${stroke} stroke="#fff" stroke-width="1.7"/>`),
-    sec: svg(`<circle cx="10" cy="10" r="10" fill="#4874c2"/>${doc("#fff")}`),
-    secOutline: svg(`<circle cx="10" cy="10" r="9.1" fill="#fff" stroke="#4874c2" stroke-width="1.6"/>${doc("#4874c2")}`),
-    political: svg(`<circle cx="10" cy="10" r="10" fill="#e0373d"/><path d="M7.9.2A10 10 0 0 0 7.9 19.8Z" fill="#dbe2e9"/>
-      <path d="M9.4 14.7h7.2M10 13.4h6M10.7 13.1V10.3M13 13.1V10.3M15.3 13.1V10.3M10 9.9h6M10.6 9.7a2.4 2.4 0 0 1 4.8 0M13 7.3V5.8" ${stroke} stroke="#fff" stroke-width="1.2"/>`),
-    price: svg(`<circle cx="10" cy="10" r="10" fill="#1f5ff0"/><path d="M5.4 12.8 8.5 9.7l2.3 2.3 3.8-4.1M12 7.8h2.7v2.7" ${stroke} stroke="#fff" stroke-width="1.6"/>`),
-    priceDown: svg(`<circle cx="10" cy="10" r="10" fill="#1f5ff0"/><path d="M5.4 7.2 8.5 10.3l2.3-2.3 3.8 4.1M12 12.2h2.7V9.5" ${stroke} stroke="#fff" stroke-width="1.6"/>`)
+    buy: svg(`${ring}<path d="M7 13 13 7M8.4 7H13v4.6" ${stroke} stroke="currentColor" stroke-width="1.5"/>`),
+    sell: svg(`${ring}<path d="M7 7l6 6M13 8.4V13H8.4" ${stroke} stroke="currentColor" stroke-width="1.5"/>`),
+    sec: svg(`${ring}${doc("currentColor")}`),
+    secOutline: svg(`${ring}${doc("currentColor")}`),
+    political: svg(`${ring}<path d="M6.4 14.7h7.2M7 13.4h6M7.7 13.1V10.3M10 13.1V10.3M12.3 13.1V10.3M7 9.9h6M7.6 9.7a2.4 2.4 0 0 1 4.8 0M10 7.3V5.8" ${stroke} stroke="currentColor" stroke-width="1.2"/>`),
+    price: svg(`${ring}<path d="M5.4 12.8 8.5 9.7l2.3 2.3 3.8-4.1M12 7.8h2.7v2.7" ${stroke} stroke="currentColor" stroke-width="1.4"/>`),
+    priceDown: svg(`${ring}<path d="M5.4 7.2 8.5 10.3l2.3-2.3 3.8 4.1M12 12.2h2.7V9.5" ${stroke} stroke="currentColor" stroke-width="1.4"/>`)
   };
   const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
   const EXT = ICONS.external || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';

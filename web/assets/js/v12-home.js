@@ -18,16 +18,16 @@ function draw(){
  $("v12-demo-source").href=source||"https://www.sec.gov/edgar/search/";
  document.querySelectorAll("[data-v12-metric]").forEach(b=>{const active=b.dataset.v12Metric===metric;b.classList.toggle("is-active",active);b.setAttribute("aria-pressed",String(active))});
  if(!points.length){chart.innerHTML='<p class="v12-state">No comparable annual SEC records were returned for this measure. Nothing is simulated.</p>';chart.setAttribute("aria-label","Financial data unavailable");return}
- const W=770,H=200,left=60,right=20,top=13,bottom=28,vals=points.map(p=>Number(p.value)),lo=Math.min(0,...vals),hi=Math.max(0,...vals);
+ const W=Math.max(320,Math.min(770,chart.clientWidth||770)),H=200,left=60,right=20,top=13,bottom=28,vals=points.map(p=>Number(p.value)),lo=Math.min(0,...vals),hi=Math.max(0,...vals);
  let spread=hi-lo;if(!spread)spread=1;
  const lower=lo-spread*.09,upper=hi+spread*.11;
  const px=i=>left+(points.length===1?0.5:i/(points.length-1))*(W-left-right),py=v=>top+(upper-v)/(upper-lower)*(H-top-bottom);
  const dots=points.map((p,i)=>({x:px(i),y:py(Number(p.value)),p}));
  const y0=py(0),line=dots.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" "),area="M"+dots[0].x+" "+y0+" L"+dots.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L")+" L"+dots.at(-1).x+" "+y0+" Z";
  const grid=[0,.25,.5,.75,1].map(f=>{let val=lower+(upper-lower)*f,y=py(val);return '<line x1="'+left+'" x2="'+(W-right)+'" y1="'+y+'" y2="'+y+'" class="v12-grid-line"/><text x="'+(left-9)+'" y="'+(y+4)+'" text-anchor="end" class="v12-axis">'+esc(money(val))+'</text>'}).join("");
- const marks=dots.map(p=>'<circle class="v12-plot-dot" cx="'+p.x+'" cy="'+p.y+'" r="4"><title>'+esc(day(p.p.periodEnd)+": "+money(p.p.value))+'</title></circle>').join("");
+ const marks=dots.map(p=>'<circle class="v12-plot-dot" cx="'+p.x+'" cy="'+p.y+'" r="3.5"><title>'+esc(day(p.p.periodEnd)+": "+money(p.p.value))+'</title></circle>').join("");
  const years=dots.map(p=>'<text class="v12-axis" text-anchor="middle" x="'+p.x+'" y="'+(H-4)+'">'+esc(p.p.periodEnd.slice(0,4))+'</text>').join("");
- chart.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label+" from annual SEC 10-K reports")+'"><defs><linearGradient id="v12-chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#29dca8" stop-opacity=".29"/><stop offset="100%" stop-color="#29dca8" stop-opacity=".015"/></linearGradient></defs>'+grid+'<path d="'+area+'" fill="url(#v12-chart-fill)"/><path d="'+line+'" class="v12-plot-line"/>'+marks+years+'</svg>';
+ chart.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label+" from annual SEC 10-K reports")+'"><defs><linearGradient id="v12-chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e9762b" stop-opacity=".16"/><stop offset="100%" stop-color="#e9762b" stop-opacity="0"/></linearGradient></defs>'+grid+'<path d="'+area+'" fill="url(#v12-chart-fill)"/><path d="'+line+'" class="v12-plot-line"/>'+marks+years+'</svg>';
  chart.setAttribute("aria-label",label+" annual SEC financial data, from "+day(points[0].periodEnd)+" to "+day(last.periodEnd));
 }
 function facts(){
@@ -57,7 +57,7 @@ async function load(t){
   facts();draw();
  }catch(err){
   if(call!==seq)return;
-  set("v12-demo-cik","SEC company information temporarily unavailable");
+  set("v12-demo-cik","SEC company information temporarily unavailable");set("v12-demo-period","Full-year SEC figures unavailable right now");
   set("v12-demo-status","Company data unavailable now. You can still open the full report.");
   $("v12-demo-facts").innerHTML='<p class="v12-state">Official company figures could not be loaded. No estimates or sample values are shown.</p>';
   chart.innerHTML='<p class="v12-state">The SEC research service is temporarily unavailable. Try another company or open the full report.</p>';

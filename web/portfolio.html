@@ -20,18 +20,21 @@
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
 <script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
 <body class="portfolio-page v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="portfolio"></header>
   <main id="main" class="app-main portfolio-desk">
-    <section class="portfolio-hero">
-      <p class="research-eyebrow">INSIDIR / PRIVATE PORTFOLIO</p>
+    <section class="portfolio-hero desk-masthead">
+      <div class="desk-topline"><p class="research-eyebrow">INSIDIR / PRIVATE PORTFOLIO</p><p class="desk-topline__note">Self-reported holdings · read-only sync · no orders</p></div>
       <h1>Your holdings.<br>The bigger picture.</h1>
-      <p class="research-lead">Add your stocks in seconds. Explore public SEC records related to your holdings — no brokerage connection, payment, or trading permissions required.</p>
+      <p class="research-lead desk-lead">Add your stocks in seconds. Explore public SEC records related to your holdings — no brokerage connection, payment, or trading permissions required.</p>
       <p class="portfolio-warning">Manually entered quantities are not verified holdings. This page does not provide live prices, execute trades, or make investment recommendations.</p>
     </section>
+    <div class="portfolio-grid">
+    <div class="portfolio-main">
     <section class="portfolio-connection panel" aria-labelledby="manual-title">
       <p class="research-eyebrow">01 / FREE PORTFOLIO</p>
       <h2 id="manual-title">Add your holdings.</h2>
@@ -53,6 +56,21 @@
         </section>
       </div>
     </section>
+    <section id="portfolio-results" hidden>
+      <div class="portfolio-section-heading">
+        <div><p class="research-eyebrow">03 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
+        <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
+      </div>
+      <div id="portfolio-accounts" class="portfolio-accounts"></div>
+      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title">
+        <p class="research-eyebrow">04 / BROKERAGE SEC EVIDENCE</p>
+        <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
+        <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
+        <div id="portfolio-activity"></div>
+      </section>
+    </section>
+    </div>
+    <aside class="portfolio-rail">
     <section class="portfolio-connection panel" aria-labelledby="portfolio-connection-title">
       <div>
         <p class="research-eyebrow">02 / OPTIONAL AUTOMATIC SYNC</p>
@@ -68,25 +86,14 @@
         <p class="research-small">Only the <strong>read</strong> permission is requested. Your brokerage holdings are fetched when you open this page, not stored in Insidir's database. <a class="portfolio-small-link" href="https://dashboard.snaptrade.com" target="_blank" rel="noopener noreferrer">Manage connected brokerages in SnapTrade ↗</a></p>
       </div>
     </section>
-    <section id="portfolio-results" hidden>
-      <div class="portfolio-section-heading">
-        <div><p class="research-eyebrow">03 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
-        <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
-      </div>
-      <div id="portfolio-accounts" class="portfolio-accounts"></div>
-      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title">
-        <p class="research-eyebrow">04 / BROKERAGE SEC EVIDENCE</p>
-        <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
-        <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
-        <div id="portfolio-activity"></div>
-      </section>
-    </section>
     <section class="portfolio-next panel" aria-labelledby="portfolio-next-title">
       <p class="research-eyebrow">05 / RESEARCH</p>
       <h2 id="portfolio-next-title">Research first. Your decision.</h2>
       <p>Use the Research Desk to examine original SEC filings, financial disclosures, and reporting dates. Insidir's current brokerage connection cannot trade, suggest personalized orders, or enable automatic strategies.</p>
       <a class="btn btn--dark" href="research.html">Open Research Desk →</a>
     </section>
+    </aside>
+    </div>
   </main>
   <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
