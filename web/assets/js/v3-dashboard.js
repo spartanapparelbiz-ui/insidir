@@ -3,16 +3,43 @@
    /v1/me/research-decisions, plus /v1/transactions?ticker=X&limit=1 for a watched ticker whose
    latest transaction is older than the market-wide feed. No synthetic records, prices or market metrics: every row comes from
    one of those responses and links to an Insidir page or the original SEC document.
+   Figures are exact: shares and prices as filed, values to the dollar, dates to the day, and the filing lag
+   (SEC publication date minus trade date). Direction is shown with a word, a sign and a green/red marker.
    401/402 responses are handled by app.js (sign-in / subscribe); this file shows a clear message
-   for every other failure and never leaves a module spinning. */
+   for every other failure and never leaves a module spinning. The formatters are shared with
+   v4-dashboard.js (insider flow) through window.InsidirDesk. */
 (() => {"use strict";
 const $=id=>document.getElementById(id);
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const tick=x=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(x||"").trim().toUpperCase())?String(x).trim().toUpperCase():"";
+// "NONE" and "NA" are placeholders some filers put in the ticker field; they are not symbols.
+const tick=x=>{const s=String(x||"").trim().toUpperCase();return /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(s)&&s!=="NONE"&&s!=="NA"?s:"";};
 const accession=x=>{const s=String(x||"").replace(/-/g,"");return /^\d{18}$/.test(s)?s:"";};
 const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
-const date=x=>{const d=validDate(x);return d?new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d):"Not reported";};
-const money=x=>x===undefined||x===null||x===""||!Number.isFinite(Number(x))?"Not reported":new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(Number(x));
+const DAY=86400000;
+const fmtDate=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
+const fmtDay=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"UTC"});
+const date=x=>{const d=validDate(x);return d?fmtDate.format(d):"Not reported";};
+/* Filing dates are SEC (Eastern) calendar days: a Form 4 accepted at 9:30 p.m. ET is filed that day, though it is past
+   midnight UTC. Trade dates are date-only values and stay in UTC. */
+const fmtFiled=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"});
+const etDay=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"});
+const filedDate=x=>{const d=validDate(x);return d?fmtFiled.format(d):"Not reported";};
+const shortDate=x=>{const d=validDate(x);return d?fmtDay.format(d):"";};
+/* Numbers: exact, never rounded to "about". */
+const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
+const USD0=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const USD4=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4});
+const USDC=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1});
+const QTY=new Intl.NumberFormat("en-US",{maximumFractionDigits:4});
+const MINUS="−";
+const money=x=>{const n=num(x);return n===null?"Not reported":USD0.format(n);};
+const signedMoney=n=>(n>0?"+":n<0?MINUS:"")+USD0.format(Math.abs(n));
+const compactMoney=n=>USDC.format(n);
+// Prices as filed: weighted-average sale prices often carry four decimals ($41.5321), so up to four are kept.
+const price=x=>{const n=num(x);return n===null?"Not reported":USD4.format(n);};
+const qty=x=>{const n=num(x);return n===null?"Not reported":QTY.format(n);};
+const count=n=>QTY.format(n);
+const plural=(n,one,many)=>count(n)+" "+(n===1?one:(many||one+"s"));
 const source=v=>{try{const u=new URL(String(v));return u.protocol==="https:"&&["www.sec.gov","sec.gov"].includes(u.hostname)&&!u.username&&!u.password?u.toString():"";}catch{return ""}};
 const media=window.InsidirMedia;
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
@@ -23,9 +50,39 @@ const filingHref=a=>accession(a)?"filing.html?accession="+accession(a):"filings.
 const personHref=n=>String(n||"").trim()?"people.html?q="+encodeURIComponent(String(n).trim().slice(0,80))+"#v10-directory":"people.html";
 const logo=t=>media?media.logo(t,"sm"):"";
 const portrait=(n,t)=>media?media.portrait(n,t,"sm"):"";
-const CATEGORY={reported_purchase:["Purchase","rd-type--buy"],reported_sale:["Sale","rd-type--sell"]};
-const category=x=>(CATEGORY[x.category]||["Other",""]);
 const STATUS={researching:"Researching",watching:"Watching",passed:"Passed"};
+
+/* Form 4 transaction codes, as the SEC's Form 4 general instructions define them. */
+const CODES={
+ P:"Open market or private purchase",S:"Open market or private sale",V:"Transaction voluntarily reported earlier than required",
+ A:"Grant, award or other acquisition from the issuer",D:"Disposition to the issuer",F:"Payment of exercise price or tax liability by delivering or withholding securities",
+ I:"Discretionary transaction",M:"Exercise or conversion of an exempt derivative security",C:"Conversion of a derivative security",
+ E:"Expiration of a short derivative position",H:"Expiration or cancellation of a long derivative position with value received",
+ O:"Exercise of an out-of-the-money derivative security",X:"Exercise of an in-the-money or at-the-money derivative security",
+ G:"Bona fide gift",L:"Small acquisition under Rule 16a-6",W:"Acquisition or disposition by will or the laws of descent and distribution",
+ Z:"Deposit into or withdrawal from a voting trust",J:"Other acquisition or disposition (described in the filing)",K:"Equity swap or similar instrument",
+ U:"Disposition from a tender of shares in a change of control"};
+const code=x=>String(x?.transaction_code||"").replace(/[^A-Z]/gi,"").slice(0,1).toUpperCase();
+const codeMeaning=c=>CODES[c]||"";
+/* buy | sell | other, from the engine's category. */
+const kind=x=>x?.category==="reported_purchase"?"buy":x?.category==="reported_sale"?"sell":"other";
+const KIND={buy:["Purchase","rd-type--buy"],sell:["Sale","rd-type--sell"],other:["Other","rd-type--other"]};
+const tri=k=>k==="buy"?'<i class="rd-tri rd-tri--up" aria-hidden="true"></i>':k==="sell"?'<i class="rd-tri rd-tri--down" aria-hidden="true"></i>':"";
+/* Shares as filed with the direction sign: A (acquired) +, D (disposed) −; purchases +, sales − when the code letter is missing. */
+const sharesOf=x=>num(x?.shares);
+const signOf=x=>{const ad=String(x?.acquired_disposed||"").toUpperCase();return ad==="A"?1:ad==="D"?-1:kind(x)==="buy"?1:kind(x)==="sell"?-1:0;};
+const signedShares=x=>{const n=sharesOf(x);if(n===null)return "Not reported";const s=signOf(x);return (s>0?"+":s<0?MINUS:"")+QTY.format(Math.abs(n));};
+const priceOf=x=>num(x?.price_per_share??x?.price);
+/* Value as filed: the engine's shares × price; computed the same way when only the parts were stored. */
+const valueOf=x=>{const v=num(x?.estimated_value);if(v!==null)return v;const s=sharesOf(x),p=priceOf(x);return s!==null&&s>=0&&p!==null&&p>0?Math.round(s*p*100)/100:null;};
+/* Calendar days from the trade date to the SEC filing date (the Eastern calendar day of publication). */
+const lagOf=x=>{const t=validDate(x?.transaction_date),p=validDate(x?.published_at);if(!t||!p)return null;const d=Math.round((Date.parse(etDay.format(p))-Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()))/DAY);return d>=0?d:null;};
+const lagText=n=>n===null?"":n===0?"same day":"+"+n+(n===1?" day":" days");
+const ownership=x=>{const o=String(x?.direct_ownership||"").toUpperCase();return o==="D"?"Direct":o==="I"?"Indirect":"";};
+const badge=x=>{const k=kind(x),[label,cls]=KIND[k],c=code(x),m=codeMeaning(c);return '<span class="rd-type '+cls+'"'+(m?' title="'+E(c+" — "+m)+'"':'')+'>'+tri(k)+E(label)+(c?' · '+E(c):'')+'</span>';};
+const CODE_LIST=CODES;
+window.InsidirDesk={CODES:CODE_LIST,E,tick,date,filedDate,shortDate,validDate,num,money,signedMoney,compactMoney,price,qty,count,plural,kind,code,codeMeaning,tri,badge,
+ sharesOf,signOf,signedShares,priceOf,valueOf,lagOf,lagText,ownership,shown,logo,portrait,companyHref,filingHref,personHref,MINUS,DAY};
 
 /* ---------- network ---------- */
 function explain(status){
@@ -45,7 +102,8 @@ async function api(path){
  return j;
 }
 const items=j=>Array.isArray(j?.items)?j.items:[];
-const retry=key=>' <button type="button" class="rd-retry" data-retry="'+key+'">Try again</button>';
+// data-hf-atom: a standalone button that moves with the pointer like the other atoms (v13-motion.js), though it sits in a message.
+const retry=key=>' <button type="button" class="rd-retry" data-retry="'+key+'" data-hf-atom>Try again</button>';
 const failRow=(cols,key,e)=>'<tr><td colspan="'+cols+'" class="rd-empty rd-empty--error" role="alert">'+E(e.message)+(e.status===401||e.status===402?"":retry(key))+'</td></tr>';
 const failBlock=(key,e)=>'<p class="rd-empty rd-empty--error" role="alert">'+E(e.message)+(e.status===401||e.status===402?"":retry(key))+'</p>';
 const emit=(name,detail)=>document.dispatchEvent(new CustomEvent(name,{detail}));
@@ -56,36 +114,45 @@ const state={trades:null,tradesError:null,filings:null,watchlist:null,watchError
 // A reload retries per-ticker lookups that failed.
 const clearFailedLookups=()=>{for(const [t,v] of state.latest)if(v.error)state.latest.delete(t);};
 
-/* ---------- insider activity ---------- */
+/* ---------- insider transactions ---------- */
+const FILTER={all:()=>true,reported_purchase:x=>kind(x)==="buy",reported_sale:x=>kind(x)==="sell",other:x=>kind(x)==="other"};
+const FILTER_NAME={reported_purchase:"purchases",reported_sale:"sales",other:"transactions under other codes"};
+const TRADE_ROWS=12,TRADE_COLS=9;
 function renderTrades(){
  const host=$("v3-trades");if(!host)return;
- if(state.tradesError){host.innerHTML=failRow(6,"trades",state.tradesError);return;}
+ if(state.tradesError){host.innerHTML=failRow(TRADE_COLS,"trades",state.tradesError);return;}
  if(!state.trades)return;
- const counts={all:state.trades.length,reported_purchase:0,reported_sale:0};
- for(const x of state.trades)if(x.category in counts)counts[x.category]++;
+ const counts={};for(const k in FILTER)counts[k]=state.trades.filter(FILTER[k]).length;
  document.querySelectorAll("[data-count]").forEach(el=>{el.textContent=String(counts[el.dataset.count]??"");});
- const matching=state.trades.filter(x=>state.filter==="all"||x.category===state.filter),list=matching.slice(0,12);
+ const matching=state.trades.filter(FILTER[state.filter]||FILTER.all),list=matching.slice(0,TRADE_ROWS);
  if(!list.length){
-  host.innerHTML='<tr><td colspan="6" class="rd-empty">'+(state.trades.length?"No "+(state.filter==="reported_purchase"?"purchases":"sales")+" among the "+state.trades.length+" latest imported transactions.":"No imported Form 4 transactions yet. New filings appear here after the next SEC import.")+'</td></tr>';
+  host.innerHTML='<tr><td colspan="'+TRADE_COLS+'" class="rd-empty">'+(state.trades.length?"No "+FILTER_NAME[state.filter]+" among the "+state.trades.length+" latest imported transactions.":"No imported Form 4 transactions yet. New filings appear here after the next SEC import.")+'</td></tr>';
   return;
  }
  host.innerHTML=list.map(x=>{
-  const t=tick(x.ticker),[label,cls]=category(x),code=String(x.transaction_code||"").replace(/[^A-Z]/gi,"").slice(0,2).toUpperCase();
-  return '<tr>'+
+  const t=tick(x.ticker),k=kind(x),v=valueOf(x),p=priceOf(x),lag=lagOf(x),own=ownership(x);
+  const notes=[own,x.derivative?"derivative":"",x.is_amendment?"amended":""].filter(Boolean).join(" · ");
+  return '<tr class="rd-trade rd-trade--'+k+'">'+
    '<td data-label="Reporting person"><span class="rd-entity">'+portrait(x.owner_name,t)+'<a href="'+E(personHref(x.owner_name))+'">'+E(shown(x.owner_name))+'</a></span></td>'+
-   '<td data-label="Company">'+(t?'<span class="rd-entity">'+logo(t)+'<a href="'+E(companyHref(t))+'">'+E(t)+'</a></span>':'<span class="rd-muted">No ticker</span>')+'</td>'+
-   '<td data-label="Trade date">'+E(date(x.transaction_date))+'</td>'+
-   '<td data-label="Type"><span class="rd-type '+cls+'">'+E(label)+(code?' · '+E(code):'')+'</span></td>'+
-   '<td data-label="Reported value" class="rd-num">'+E(money(x.estimated_value))+'</td>'+
+   '<td data-label="Company">'+(t?'<span class="rd-entity">'+logo(t)+'<a href="'+E(companyHref(t))+'">'+E(t)+'</a></span>'+(x.issuer_name?'<span class="rd-sub">'+E(x.issuer_name)+'</span>':''):(x.issuer_name?E(x.issuer_name)+'<span class="rd-sub">No ticker</span>':'<span class="rd-muted">No ticker</span>'))+'</td>'+
+   '<td data-label="Transaction">'+badge(x)+(x.security_title?'<span class="rd-sub">'+E(String(x.security_title).slice(0,48))+'</span>':'')+'</td>'+
+   '<td data-label="Shares" class="rd-num"><span class="rd-qty rd-qty--'+k+'">'+E(signedShares(x))+'</span>'+(notes?'<span class="rd-sub">'+E(notes)+'</span>':'')+'</td>'+
+   '<td data-label="Price" class="rd-num">'+(p!==null?E(price(p)):'<span class="rd-muted">No price</span>')+'</td>'+
+   '<td data-label="Value" class="rd-num rd-value">'+(v!==null?E(money(v)):'<span class="rd-muted">Not reported</span>')+'</td>'+
+   '<td data-label="Traded" class="rd-nb">'+E(date(x.transaction_date))+'</td>'+
+   '<td data-label="Filed" class="rd-nb">'+(validDate(x.published_at)?E(filedDate(x.published_at))+(lag!==null?'<span class="rd-sub">'+E(lagText(lag))+'</span>':''):'<span class="rd-muted">Not reported</span>')+'</td>'+
    '<td class="rd-links"><a class="rd-arrow" href="'+E(filingHref(x.accession))+'" aria-label="Open the filing for this transaction">Filing ↗</a></td>'+
   '</tr>';
- }).join("")+(matching.length>list.length?'<tr class="rd-more-row"><td colspan="6" class="rd-more">Showing the latest '+list.length+' of '+matching.length+' imported transactions. <a href="filings.html">Browse every filing ↗</a></td></tr>':"");
+ }).join("")+(matching.length>list.length?'<tr class="rd-more-row"><td colspan="'+TRADE_COLS+'" class="rd-more">Showing the latest '+list.length+' of '+matching.length+' imported transactions. <a href="filings.html">Browse every filing ↗</a></td></tr>':"");
  media?.hydrate(host);
+ // The meaning of every code on screen, in text (not only in hover titles).
+ const foot=$("v3-trades-foot"),codes=[...new Set(list.map(code))].filter(c=>CODES[c]).sort();
+ if(foot)foot.textContent="Value is shares × the price per share reported on the filing."+(codes.length?" Form 4 codes shown: "+codes.map(c=>c+" — "+CODES[c].charAt(0).toLowerCase()+CODES[c].slice(1)).join("; ")+".":"");
 }
 async function loadTrades(){
  state.tradesError=null;clearFailedLookups();
  try{state.trades=items(await api("/v1/transactions?limit=100"));renderTrades();emit("insidir:transactions-loaded",state.trades);}
- catch(e){state.trades=null;state.tradesError=e;renderTrades();emit("insidir:transactions-error",e.message);}
+ catch(e){state.trades=null;state.tradesError=e;renderTrades();emit("insidir:transactions-error",e);}
  renderWatchlist();
 }
 
@@ -100,7 +167,7 @@ async function loadFilings(){
    return '<tr>'+
     '<td data-label="Company"><div class="rd-filing">'+logo(t)+'<div><a href="'+E(companyHref(t))+'">'+E(x.issuer_name||t||"Issuer not reported")+'</a><span class="rd-sub">'+E([t,who.length?shown(who[0])+(who.length>1?" +"+(who.length-1):""):""].filter(Boolean).join(" · "))+'</span></div></div></td>'+
     '<td data-label="Form">'+E(x.form_type||"4")+(x.is_amendment?' <span class="rd-muted">amended</span>':'')+'</td>'+
-    '<td data-label="Published">'+E(date(x.published_at))+'</td>'+
+    '<td data-label="Published" class="rd-nb">'+E(filedDate(x.published_at))+'</td>'+
     '<td class="rd-links"><a class="rd-arrow" href="'+E(filingHref(x.accession))+'">Details ↗</a>'+(url?'<a class="rd-arrow rd-arrow--ext" href="'+E(url)+'" target="_blank" rel="noopener noreferrer">SEC ↗</a>':'')+'</td>'+
    '</tr>';
   }).join(""):'<tr><td colspan="4" class="rd-empty">No imported SEC filings yet. They appear here after the next import. <a href="filings.html">Open the filing library</a></td></tr>';
@@ -144,6 +211,12 @@ function lookupMissing(){
    .finally(renderWatchlist);
  }
 }
+/* "12,500 sh × $26.00 = $325,000", with whatever parts the filing reported. */
+const terms=x=>{const s=sharesOf(x),p=priceOf(x),v=valueOf(x),bits=[];
+ // Purchases and sales carry their direction in the badge; other codes keep the sign as filed.
+ if(s!==null)bits.push('<span class="rd-nb">'+E(kind(x)==="other"?signedShares(x):QTY.format(Math.abs(s)))+' sh'+(p!==null?' × '+E(price(p)):'')+'</span>');
+ if(v!==null)bits.push('<span class="rd-nb">'+(s!==null&&p!==null?'= ':'')+E(money(v))+'</span>');
+ return bits.join(" ");};
 function renderWatchlist(){
  const host=$("v3-watchlist");if(!host)return;
  if(state.watchError){host.innerHTML=failBlock("watchlist",state.watchError);return;}
@@ -154,12 +227,14 @@ function renderWatchlist(){
   const x=latestRow(t),name=issuerFor(t),look=state.latest.get(t);
   let detail;
   // Dates and amounts never break inside; a line can only end after a "·" separator.
-  if(x){const [label,cls]=category(x);detail='<span class="rd-type '+cls+'">'+E(label)+'</span> '+E(shown(x.owner_name))+'&nbsp;· <span class="rd-nb">'+E(date(x.transaction_date))+'</span>'+(Number.isFinite(Number(x.estimated_value))&&x.estimated_value!==null&&x.estimated_value!==""?'&nbsp;· <span class="rd-nb">'+E(money(x.estimated_value))+'</span>':'');}
+  if(x){const lag=lagOf(x),deal=terms(x);
+   detail=badge(x)+' '+E(shown(x.owner_name))+(deal?'&nbsp;· '+deal:'')+
+    '<small>Traded <span class="rd-nb">'+E(date(x.transaction_date))+'</span>'+(validDate(x.published_at)?'&nbsp;· filed <span class="rd-nb">'+E(filedDate(x.published_at))+'</span>'+(lag!==null?' <span class="rd-nb">('+E(lagText(lag))+')</span>':''):'')+'</small>';}
   else if(!look||look.pending)detail='<span class="rd-muted">Checking the latest transaction…</span>';
   else if(look.error)detail='<span class="rd-muted">Latest transaction unavailable right now</span>';
   else detail='<span class="rd-muted">No imported insider transactions yet</span>';
   return '<a class="rd-row rd-row--watch" href="'+E(companyHref(t))+'">'+logo(t)+'<span class="rd-row__id"><strong>'+E(t)+'</strong>'+(name?'<small>'+E(name)+'</small>':'')+'</span><span class="rd-row__detail">'+detail+'</span><b aria-hidden="true">↗</b></a>';
- }).join("")+(arr.length>WATCH_ROWS?'<p class="rd-more"><a href="watchlist.html">'+(arr.length-WATCH_ROWS)+' more on your watchlist</a></p>':'');
+ }).join("")+(arr.length>WATCH_ROWS?'<p class="rd-more"><a href="watchlist.html" data-hf-atom>'+(arr.length-WATCH_ROWS)+' more on your watchlist</a></p>':'');
  media?.hydrate(host);
  lookupMissing();
 }
@@ -178,7 +253,7 @@ async function loadNotes(){
   host.innerHTML=arr.length?arr.slice(0,6).map(x=>{
    const note=String(x.notes||"").replace(/\s+/g," ").trim();
    return '<a class="rd-row rd-row--note" href="'+E(researchHref(x.ticker))+'"><span class="rd-row__id"><strong>'+E(tick(x.ticker))+'</strong><small>'+E(STATUS[x.review_status||x.reviewStatus]||"Note")+'</small></span><span class="rd-row__detail">'+(note?E(note.length>96?note.slice(0,95)+"…":note):'<span class="rd-muted">No written note</span>')+'<small>Updated '+E(date(x.updated_at||x.created_at))+'</small></span><b aria-hidden="true">↗</b></a>';
-  }).join("")+(arr.length>6?'<p class="rd-more"><a href="research.html">All '+arr.length+' notes on the research desk</a></p>':''):'<p class="rd-empty">No research notes yet. <a href="research.html">Open the research desk</a> to record what you are reviewing and why.</p>';
+  }).join("")+(arr.length>6?'<p class="rd-more"><a href="research.html" data-hf-atom>All '+arr.length+' notes on the research desk</a></p>':''):'<p class="rd-empty">No research notes yet. <a href="research.html">Open the research desk</a> to record what you are reviewing and why.</p>';
  }catch(e){host.innerHTML=failBlock("notes",e);}
 }
 

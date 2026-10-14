@@ -4,12 +4,26 @@
    the field states and the public navigation are complete here.
 
    Composition: the public navigation on top; below it two panels on the same paper — the form on the
-   left, and a surface sheet on the right with a faint dot grid (the halftone echoed, never the word).
-   Under 800px the sheet follows the form instead of disappearing. */
+   left, and a surface sheet on the right whose margins carry a live dot field (data-halftone-field,
+   mounted by v13-halftone.js): the landing wordmark's dots without the word, parting around the pointer
+   anywhere over the sheet, rippling on a click and springing home. Under 800px the sheet follows the
+   form instead of disappearing, with the dots as a strip along its top edge.
+
+   Motion: movement (arrow nudges, the menu toggle, underlines growing) settles on the dots' own spring,
+   var(--hf-spring) over var(--hf-spring-dur); colour changes keep their plain easing. Inputs, labels and
+   validation messages never move (v13-motion.js leaves them still); buttons part around the pointer
+   like the dots and hold still when aimed at. The sheet's blocks carry data-hf-reveal / data-hf-reveal-group,
+   so where the sheet sits below the form (phones) they rise in on the spring as they scroll into view; the
+   form itself is never held back.
+
+   Colour: ink on paper, nothing else. Numbers, dashes and markers step down through soft, muted and faint;
+   only an error (an invalid field, its message, the form alert) is red, through --hf-alert. */
 @layer insidir-v13{
 
 /* ---------- Page ---------- */
 html.v13-menu-open{overflow:hidden!important}
+/* --au-ease is the plain curve for things that change size in the form flow (the message rows): on a spring
+   they would make every field below them bob. */
 body.v13.v3-auth{--au-gutter:clamp(16px,4.2vw,60px)!important;--au-nav:72px!important;--au-ease:cubic-bezier(.2,.7,.1,1)!important;
   background:var(--hf-bg)!important;color:var(--hf-ink)!important;opacity:1!important;animation:none!important;overflow-x:clip!important}
 
@@ -27,11 +41,13 @@ body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin){position:relat
 /* Text links keep their size but get a 44px-tall invisible hit area for touch screens. */
 body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin)::after{content:""!important;position:absolute!important;inset:-15px -8px!important;background:transparent!important}
 body.v13.v3-auth .v9-nav :is(.v6-nav__links a,.v6-signin)[aria-current=page]{color:var(--hf-ink)!important;background-size:100% 1px!important}
+/* The hover underline grows on the dots' spring, as on the landing and public pages. */
+body.v13.v3-auth .v9-nav :is(.v6-nav__links a,.v6-signin){transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13.v3-auth .v9-nav .v6-nav__actions{flex:none!important;display:flex!important;align-items:center!important;gap:clamp(16px,1.8vw,26px)!important}
 body.v13.v3-auth .v9-nav .v6-nav__actions .v9-btn{display:inline-flex!important;align-items:center!important;height:44px!important;min-height:44px!important;padding:0 18px!important;gap:14px!important;white-space:nowrap!important;text-decoration:none!important}
 body.v13.v3-auth .v9-nav .v6-menu-btn{display:none!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:44px!important;height:44px!important;margin:0 -10px 0 0!important;padding:0!important;
   border:0!important;background:transparent!important;cursor:pointer!important;gap:6px!important;border-radius:0!important;color:var(--hf-ink)!important}
-body.v13.v3-auth .v9-nav .v6-menu-btn span{display:block!important;width:20px!important;height:1.5px!important;background:var(--hf-ink)!important;border-radius:0!important;transition:transform .3s var(--au-ease)!important}
+body.v13.v3-auth .v9-nav .v6-menu-btn span{display:block!important;width:20px!important;height:1.5px!important;background:var(--hf-ink)!important;border-radius:0!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-auth .v9-nav .v6-menu-btn[aria-expanded=true] span:first-child{transform:translateY(3.75px) rotate(45deg)!important}
 body.v13.v3-auth .v9-nav .v6-menu-btn[aria-expanded=true] span:last-child{transform:translateY(-3.75px) rotate(-45deg)!important}
 body.v13.v3-auth .v9-nav .v6-menu-btn:focus-visible{outline-offset:-4px!important}
@@ -42,17 +58,20 @@ body.v13.v3-auth .v9-nav .v6-mobile:not([hidden]){display:flex!important;flex-di
   min-height:calc(100svh - var(--au-nav) + 1px)!important;max-height:calc(100svh - var(--au-nav) + 1px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;
   padding:8px var(--au-gutter) 40px!important;background:var(--hf-bg)!important;border:0!important;border-top:1px solid var(--hf-line)!important}
 body.v13.v3-auth .v9-nav .v6-mobile a{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;flex:none!important;min-height:56px!important;padding:0!important;
-  border:0!important;border-bottom:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;transition:color .2s!important}
-body.v13.v3-auth .v9-nav .v6-mobile a[aria-current=page]:not(:last-child)::after{content:""!important;flex:none!important;width:6px!important;height:6px!important;background:var(--hf-warm)!important}
-body.v13.v3-auth .v9-nav .v6-mobile a:hover{color:var(--hf-warm)!important}
+  border:0!important;border-bottom:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;transition:color .2s,border-color .2s,background .2s!important}
+/* The current page carries a small ink square; a row under the pointer draws its rule in ink (the text is ink
+   already), the closing call to action lightens to soft and a press dims it to muted, as on the public pages. */
+body.v13.v3-auth .v9-nav .v6-mobile a[aria-current=page]:not(:last-child)::after{content:""!important;flex:none!important;width:6px!important;height:6px!important;background:var(--hf-ink)!important}
+@media (hover:hover){body.v13.v3-auth .v9-nav .v6-mobile a:not(:last-child):hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}}
 body.v13.v3-auth .v9-nav .v6-mobile a:last-child{margin-top:28px!important;min-height:52px!important;padding:0 18px!important;border:1px solid var(--hf-ink)!important;background:var(--hf-ink)!important;color:var(--hf-bg)!important}
-body.v13.v3-auth .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
+@media (hover:hover){body.v13.v3-auth .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}}
 body.v13.v3-auth .v9-nav .v6-mobile a:focus-visible{outline-offset:-3px!important}
-body.v13.v3-auth :is(.v9-nav .v9-btn--ink,.v9-nav .v6-mobile a:last-child):active{background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
-body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin,.v9-nav .v6-mobile a:not(:last-child)):active{color:var(--hf-warm)!important}
+body.v13.v3-auth :is(.v9-nav .v9-btn--ink,.v9-nav .v6-mobile a:last-child):active{background:var(--hf-muted)!important;border-color:var(--hf-muted)!important;color:var(--hf-bg)!important}
+body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin):active{color:var(--hf-soft)!important}
+body.v13.v3-auth .v9-nav .v6-mobile a:not(:last-child):active{color:var(--hf-soft)!important;border-bottom-color:var(--hf-ink)!important}
 @media (min-width:901px){body.v13.v3-auth .v9-nav .v6-mobile{display:none!important}}
 /* The ↗ drawn with two hairlines, exactly as on the landing page (the glyph renders soft at 10px). */
-body.v13.v3-auth .v13-arrow{position:relative!important;display:inline-block!important;width:10px!important;height:10px!important;font-size:0!important;line-height:0!important;color:inherit!important;vertical-align:-1px!important;flex:none!important;overflow:hidden!important;text-align:left!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;transition:transform .3s var(--au-ease)!important}
+body.v13.v3-auth .v13-arrow{position:relative!important;display:inline-block!important;width:10px!important;height:10px!important;font-size:0!important;line-height:0!important;color:inherit!important;vertical-align:-1px!important;flex:none!important;overflow:hidden!important;text-align:left!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-auth .v13-arrow::before{content:""!important;position:absolute!important;left:1.5px!important;bottom:1.5px!important;width:9px!important;height:1px!important;background:currentColor!important;transform-origin:0 50%!important;transform:rotate(-45deg)!important}
 body.v13.v3-auth .v13-arrow::after{content:""!important;position:absolute!important;right:1.5px!important;top:1.5px!important;width:4.5px!important;height:4.5px!important;border-top:1px solid currentColor!important;border-right:1px solid currentColor!important;background:transparent!important}
 body.v13.v3-auth :is(.v9-btn,.auth-action):hover .v13-arrow{transform:translate(2px,-2px)!important}
@@ -68,23 +87,29 @@ body.v13.v3-auth .auth-kicker{font:var(--hf-label)!important;letter-spacing:var(
 body.v13.v3-auth .auth-kicker span{color:var(--hf-faint)!important;margin:0 .5em!important}
 body.v13.v3-auth .auth-title{font:800 clamp(34px,3.9vw,56px)/1.05 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin:0!important;text-wrap:balance!important;font-variation-settings:normal!important}
 body.v13.v3-auth .auth-sub{font:400 13.5px/1.75 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;max-width:420px!important;margin:18px 0 0!important}
-body.v13.v3-auth .auth-context{margin:18px 0 0!important;padding:0 0 0 12px!important;border-left:1px solid var(--hf-warm)!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13.v3-auth .auth-context{margin:18px 0 0!important;padding:0 0 0 12px!important;border-left:1px solid var(--hf-ink)!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13.v3-auth .auth-context[hidden],body.v13.v3-auth .auth-session[hidden]{display:none!important}
 
 /* Already logged in: one quiet line and the way forward. */
 body.v13.v3-auth .auth-session{margin:26px 0 0!important;padding:14px 16px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important}
 body.v13.v3-auth .auth-session p{margin:0 0 8px!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-soft)!important;overflow-wrap:anywhere!important}
 body.v13.v3-auth .auth-session strong{font-weight:500!important;color:var(--hf-ink)!important}
-body.v13.v3-auth .auth-session__go{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
-  background-image:linear-gradient(currentColor,currentColor)!important;background-size:100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important}
-body.v13.v3-auth .auth-session__go::after{content:" →"!important}
-body.v13.v3-auth .auth-session__go:hover{color:var(--hf-warm)!important}
+body.v13.v3-auth .auth-session__go{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important}
+/* The two "go on" links (this one and the log in / get started switch under the form): a dim hairline at rest
+   that an ink underline draws over on hover or focus, and an arrow that steps forward on the dots' spring. The
+   link itself is an atom (data-hf-atom), so it also parts around the pointer and pops when it arrives. */
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a){background-image:linear-gradient(currentColor,currentColor),linear-gradient(var(--hf-line-2),var(--hf-line-2))!important;
+  background-size:0% 1px,100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%,0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a)::after{content:"\2192"!important;display:inline-block!important;margin-left:.6em!important;transition:translate var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a):is(:hover,:focus-visible){color:var(--hf-ink)!important;background-size:100% 1px,100% 1px!important}
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a):is(:hover,:focus-visible)::after{translate:3px 0!important}
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a):active{color:var(--hf-soft)!important}
 
 /* Step marker on get started. */
 body.v13.v3-auth .auth-steps{display:flex!important;gap:0!important;list-style:none!important;margin:0 0 26px!important;padding:0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13.v3-auth .auth-steps li{flex:1 1 0!important;margin:0 0 -1px!important;padding:0 0 10px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;border-bottom:1px solid transparent!important}
 body.v13.v3-auth .auth-steps li span{color:inherit!important;margin-right:6px!important}
-body.v13.v3-auth .auth-steps li[aria-current=step]{color:var(--hf-ink)!important;border-bottom-color:var(--hf-warm)!important}
+body.v13.v3-auth .auth-steps li[aria-current=step]{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
 
 /* ---------- Form ---------- */
 body.v13.v3-auth .auth-form{margin:34px 0 0!important}
@@ -96,28 +121,30 @@ body.v13.v3-auth .field__row{display:flex!important;align-items:baseline!importa
 body.v13.v3-auth .field__row .label{margin:0!important}
 body.v13.v3-auth .field__hint{font:400 10.5px/1.75 var(--hf-mono)!important;letter-spacing:.04em!important;text-transform:none!important;color:var(--hf-faint)!important;white-space:nowrap!important;transition:color .25s!important}
 body.v13.v3-auth .field__hint.is-met{color:var(--hf-ink)!important}
-body.v13.v3-auth .field__hint.is-met::before{content:"\2713\00a0"!important;color:var(--hf-warm)!important}
+body.v13.v3-auth .field__hint.is-met::before{content:"\2713\00a0"!important;color:var(--hf-ink)!important}
 body.v13.v3-auth .auth .input{display:block!important;width:100%!important;height:48px!important;padding:0 14px!important;font:400 14px/1 var(--hf-mono)!important;letter-spacing:.01em!important}
 body.v13.v3-auth .auth .input::placeholder{color:var(--hf-faint)!important;opacity:1!important}
 /* Field states. The shared base input rule (body.v13 :is(input:not(…)…), specificity 0,5,2) resets the
    border and shadow, so these carry .auth-field to reach 0,6,1: hover lifts the hairline, focus draws a
-   full ink frame, an invalid field keeps its warm frame through hover and focus. */
+   full ink frame, an invalid field keeps its alert-red frame (--hf-alert) through hover and focus. */
 body.v13.v3-auth .auth .auth-field>.input{transition:border-color .2s,box-shadow .2s!important}
 body.v13.v3-auth .auth .auth-field>.input:hover{border-color:var(--hf-line-2)!important}
 body.v13.v3-auth .auth .auth-field>.input:focus{outline:none!important;border-color:var(--hf-ink)!important;box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
-body.v13.v3-auth .auth .auth-field>.input[aria-invalid=true]{border-color:var(--hf-warm)!important}
-body.v13.v3-auth .auth .auth-field>.input[aria-invalid=true]:focus{border-color:var(--hf-warm)!important;box-shadow:inset 0 0 0 1px var(--hf-warm)!important}
+body.v13.v3-auth .auth .auth-field>.input[aria-invalid=true]{border-color:var(--hf-alert)!important}
+body.v13.v3-auth .auth .auth-field>.input[aria-invalid=true]:focus{border-color:var(--hf-alert)!important;box-shadow:none!important;outline:1px solid var(--hf-alert)!important;outline-offset:-2px!important}
 body.v13.v3-auth .auth .input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--hf-surface) inset!important;-webkit-text-fill-color:var(--hf-ink)!important;caret-color:var(--hf-ink)!important}
 
 /* Collapsible message rows: field errors and the form alert open without shifting what is above them. */
-body.v13.v3-auth :is(.field__msg,.form-alert){display:grid!important;grid-template-rows:0fr!important;opacity:0!important;transition:grid-template-rows .4s cubic-bezier(.2,.7,.1,1),opacity .3s!important}
+body.v13.v3-auth :is(.field__msg,.form-alert){display:grid!important;grid-template-rows:0fr!important;opacity:0!important;transition:grid-template-rows .4s var(--au-ease),opacity .3s!important}
 body.v13.v3-auth :is(.field__msg>*,.form-alert__inner){min-height:0!important;overflow:hidden!important}
 body.v13.v3-auth :is(.auth-field.is-invalid .field__msg,.form-alert.is-visible){grid-template-rows:1fr!important;opacity:1!important}
-body.v13.v3-auth .field__error{display:block!important;margin:0!important;padding:8px 0 0!important;color:var(--hf-warm)!important}
+/* .auth-field / .form-alert lift these two past the shared mono caption rule (body.v13 :is(.v13-caption,…), 0,3,3),
+   which otherwise prints the error in muted grey and the alert in muted: an error is red, the alert's text ink. */
+body.v13.v3-auth .auth-field .field__error{display:block!important;margin:0!important;padding:8px 0 0!important;color:var(--hf-alert)!important}
 body.v13.v3-auth .field__error:empty{padding:0!important}
 body.v13.v3-auth .form-alert__inner{border:0!important;background:transparent!important}
-body.v13.v3-auth .form-alert__text{margin:16px 0 0!important;padding:11px 14px!important;border:1px solid var(--hf-warm)!important;background:var(--hf-surface)!important;color:var(--hf-ink)!important;border-radius:0!important}
-body.v13.v3-auth .form-alert.is-shake .form-alert__text{animation:v13AuthNudge .45s cubic-bezier(.2,.7,.1,1)!important}
+body.v13.v3-auth .form-alert .form-alert__text{margin:16px 0 0!important;padding:11px 14px!important;border:1px solid var(--hf-alert)!important;background:var(--hf-surface)!important;color:var(--hf-ink)!important;border-radius:0!important}
+body.v13.v3-auth .form-alert.is-shake .form-alert__text{animation:v13AuthNudge .45s var(--au-ease)!important}
 
 /* Primary action with an inline spinner while pending. */
 body.v13.v3-auth .auth-submit{margin:26px 0 0!important}
@@ -130,26 +157,34 @@ body.v13.v3-auth .auth-next{margin:12px 0 0!important;font:400 11px/1.75 var(--h
 
 /* Secondary lines under the form. */
 body.v13.v3-auth .auth-switch{margin:30px 0 0!important;padding:18px 0 0!important;border-top:1px solid var(--hf-line)!important;text-align:left!important;color:var(--hf-muted)!important}
-body.v13.v3-auth .auth-switch a{margin-left:6px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
-  background-image:linear-gradient(currentColor,currentColor)!important;background-size:100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important}
-body.v13.v3-auth .auth-switch a::after{content:" →"!important}
-body.v13.v3-auth .auth-switch a:hover{color:var(--hf-warm)!important}
+body.v13.v3-auth .auth-switch a{margin-left:6px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important}
 body.v13.v3-auth .auth-legal{margin:12px 0 0!important;text-align:left!important;color:var(--hf-muted)!important}
-body.v13.v3-auth .auth-legal a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13.v3-auth .auth-legal a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+/* Links inside the sentence: ink on a dim underline that turns ink under the pointer; they stay in the line. */
+body.v13.v3-auth .auth-legal a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:text-decoration-color .2s,color .2s!important}
+body.v13.v3-auth .auth-legal a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
+body.v13.v3-auth .auth-legal a:active{color:var(--hf-soft)!important}
 
 /* Account deleted: two plain actions. */
 body.v13.v3-auth .auth-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important;margin:34px 0 0!important}
 body.v13.v3-auth .auth-action{flex:1 1 180px!important;margin:0!important;text-decoration:none!important}
 
 /* ---------- The sheet on the right ---------- */
-body.v13.v3-auth .auth-media{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;min-height:0!important;overflow:hidden!important;
+/* The story column's measure, shared by the story and by the field's mask below so the two can't drift apart. */
+body.v13.v3-auth .auth-media{--au-story-w:620px!important;--au-story-px:clamp(28px,5vw,80px)!important;--au-story-py:clamp(48px,7vh,96px)!important;
+  --au-clear:calc(max(0px,50% - var(--au-story-w) / 2) + var(--au-story-px))!important;
+  position:relative!important;isolation:isolate!important;display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;min-height:0!important;overflow:hidden!important;
   background:var(--hf-surface)!important;color:var(--hf-ink)!important;border:0!important;border-left:1px solid var(--hf-line)!important}
-body.v13.v3-auth .auth-media::before{content:""!important;position:absolute!important;inset:0!important;pointer-events:none!important;
-  background-image:radial-gradient(circle,var(--hf-line-2) 1px,transparent 1.3px)!important;background-size:14px 14px!important;background-position:7px 7px!important;
-  mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%)!important;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%)!important}
-body.v13.v3-auth .auth-media::after{content:none!important;display:none!important}
-body.v13.v3-auth .v6-auth-story{position:relative!important;z-index:1!important;width:100%!important;max-width:620px!important;margin:0 auto!important;padding:clamp(48px,7vh,96px) clamp(28px,5vw,80px)!important;background:transparent!important;border:0!important}
+body.v13.v3-auth .auth-media::before,body.v13.v3-auth .auth-media::after{content:none!important;display:none!important}
+/* The live dot field. v13-halftone.js listens on its parent, so the dots part wherever the pointer crosses the
+   sheet. It keeps the old vignette (ellipse 80% × 70%, clear for its middle 35%, full at the corners), intersected
+   with a frame that is fully transparent over the story column (its measure, padding and top and bottom
+   padding), so no word of the story ever sits on a dot. The canvas paints the sheet's own surface. */
+body.v13.v3-auth .auth-media>.auth-media__field{--hwf-bg:var(--hf-surface)!important;position:absolute!important;inset:0!important;z-index:0!important;display:block!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
+  -webkit-mask-composite:source-in,source-over!important;mask-composite:intersect,add!important}
+body.v13.v3-auth .auth-media>.auth-media__field>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+body.v13.v3-auth .v6-auth-story{position:relative!important;z-index:1!important;width:100%!important;max-width:var(--au-story-w)!important;margin:0 auto!important;padding:var(--au-story-py) var(--au-story-px)!important;background:transparent!important;border:0!important}
 body.v13.v3-auth .v6-auth-story__label{margin:0!important}
 body.v13.v3-auth .v6-auth-story__label span{color:var(--hf-faint)!important;margin:0 .5em!important}
 body.v13.v3-auth .v6-auth-story h2{font:800 clamp(28px,3vw,44px)/1.08 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin:22px 0 18px!important;text-wrap:balance!important}
@@ -160,7 +195,10 @@ body.v13.v3-auth .v6-auth-story>p.auth-story__note{margin:22px 0 0!important;pad
 /* Numbered index of the workspace / the three steps. */
 body.v13.v3-auth .auth-index{list-style:none!important;margin:30px 0 0!important;padding:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-auth .auth-index li{display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;gap:2px 10px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13.v3-auth .auth-index li>span{grid-row:span 2!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-warm)!important;padding-top:1px!important}
+/* The numbers are faint labels; the one beside the row under the pointer comes up to ink (and, as an atom, parts
+   around the pointer like a dot). */
+body.v13.v3-auth .auth-index li>span{grid-row:span 2!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;padding-top:1px!important;transition:color .25s!important}
+body.v13.v3-auth .auth-index li:hover>span{color:var(--hf-ink)!important}
 body.v13.v3-auth .auth-index li>strong{font:700 13.5px/1.5 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important}
 body.v13.v3-auth .auth-index li>em{font:400 12px/1.7 var(--hf-mono)!important;font-style:normal!important;color:var(--hf-muted)!important}
 
@@ -169,14 +207,13 @@ body.v13.v3-auth .v6-auth-story h2.auth-price{display:flex!important;align-items
 body.v13.v3-auth .auth-price small{font:400 12px/1 var(--hf-mono)!important;letter-spacing:.04em!important;color:var(--hf-muted)!important}
 body.v13.v3-auth .auth-included{list-style:none!important;margin:24px 0 0!important;padding:0!important}
 body.v13.v3-auth .auth-included li{position:relative!important;margin:0!important;padding:7px 0 7px 22px!important;font:400 12.5px/1.65 var(--hf-mono)!important;color:var(--hf-soft)!important}
-body.v13.v3-auth .auth-included li::before{content:"\2014"!important;position:absolute!important;left:0!important;top:7px!important;color:var(--hf-warm)!important;font:400 12.5px/1.65 var(--hf-mono)!important}
+body.v13.v3-auth .auth-included li::before{content:"\2014"!important;position:absolute!important;left:0!important;top:7px!important;color:var(--hf-faint)!important;font:400 12.5px/1.65 var(--hf-mono)!important}
 body.v13.v3-auth .auth-index--steps{margin-top:28px!important}
 
 /* What happened, on account deleted. */
 body.v13.v3-auth .auth-ledger{margin:8px 0 0!important;padding:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-auth .auth-ledger>div{display:grid!important;grid-template-columns:minmax(110px,.34fr) minmax(0,1fr)!important;gap:6px 18px!important;padding:14px 0!important;margin:0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13.v3-auth .auth-ledger dt{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;margin:0!important}
-body.v13.v3-auth .auth-ledger>div:first-child dt{color:var(--hf-warm)!important}
 body.v13.v3-auth .auth-ledger dd{font:400 12.5px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:0!important}
 
 @keyframes v13AuthSpin{to{transform:rotate(360deg)}}
@@ -201,7 +238,11 @@ body.v13.v3-auth .auth-ledger dd{font:400 12.5px/1.7 var(--hf-mono)!important;co
   body.v13.v3-auth .auth-panel__inner{padding:48px var(--au-gutter) 56px!important}
   body.v13.v3-auth .auth-card{width:100%!important;max-width:480px!important;margin:0!important}
   body.v13.v3-auth .auth-media{border-left:0!important;border-top:1px solid var(--hf-line)!important}
-  body.v13.v3-auth .v6-auth-story{max-width:536px!important;margin:0!important;padding:44px var(--au-gutter) 52px!important}
+  body.v13.v3-auth .v6-auth-story{max-width:536px!important;margin:0!important;padding:64px var(--au-gutter) 52px!important}
+  /* Stacked under the form, the story fills the sheet's width, so the dots become a strip along the sheet's top
+     edge (above the label, in the story's top padding), fading down to nothing like the footer's strip. */
+  body.v13.v3-auth .auth-media>.auth-media__field{inset:0 0 auto!important;height:52px!important;
+    -webkit-mask-image:linear-gradient(180deg,var(--hf-ink),transparent)!important;mask-image:linear-gradient(180deg,var(--hf-ink),transparent)!important;-webkit-mask-composite:source-over!important;mask-composite:add!important}
 }
 @media (max-width:760px){
   body.v13.v3-auth{--au-nav:64px!important}
@@ -209,7 +250,8 @@ body.v13.v3-auth .auth-ledger dd{font:400 12.5px/1.7 var(--hf-mono)!important;co
 }
 @media (max-width:480px){
   body.v13.v3-auth .auth-panel__inner{padding:36px var(--au-gutter) 48px!important}
-  body.v13.v3-auth .v6-auth-story{padding:40px var(--au-gutter) 48px!important}
+  body.v13.v3-auth .v6-auth-story{padding:60px var(--au-gutter) 48px!important}
+  body.v13.v3-auth .auth-media>.auth-media__field{height:48px!important}
   body.v13.v3-auth .auth-ledger>div{grid-template-columns:1fr!important}
 }
 @media (max-width:374px){
@@ -217,8 +259,10 @@ body.v13.v3-auth .auth-ledger dd{font:400 12.5px/1.7 var(--hf-mono)!important;co
   body.v13.v3-auth .v9-nav .v6-nav__actions .v9-btn{padding:0 12px!important;gap:10px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  body.v13.v3-auth :is(.field__msg,.form-alert,.v6-menu-btn span,.v6-mobile a,.v13-arrow,.auth-field .label,.field__hint,.auth .auth-field>.input){transition:none!important}
+  body.v13.v3-auth :is(.field__msg,.form-alert,.v6-menu-btn span,.v6-mobile a,.v13-arrow,.auth-field .label,.field__hint,.auth .auth-field>.input,.v9-nav .v6-nav__links a,.v9-nav .v6-signin){transition:none!important}
   body.v13.v3-auth :is(.v9-btn,.auth-action):hover .v13-arrow{transform:none!important}
+  body.v13.v3-auth :is(.auth-session__go,.auth-switch a,.auth-legal a,.auth-index li>span){transition:none!important}
+  body.v13.v3-auth :is(.auth-session__go,.auth-switch a)::after{transition:none!important;translate:none!important}
   body.v13.v3-auth .form-alert.is-shake .form-alert__text{animation:none!important}
   body.v13.v3-auth .auth-btn__spinner{animation:none!important;border-top-color:var(--hf-bg)!important}
 }

@@ -4,7 +4,15 @@
 
    One research desk in print: mastheads set in JetBrains Mono 800, sections parted by hairline rules instead of
    boxed cards, tracked mono labels and sentence-case mono captions, tables on hairlines, inputs on
-   surface tiles, purchases in ink and sales warm. Square corners, no shadows, no coloured pills. */
+   surface tiles. Market direction is the only colour: purchases and rises in green (--hf-up), sales and falls in
+   red (--hf-down), always beside a word, a sign or a ▲/▼ glyph. Hovers, tabs and icons stay in ink and soft ink;
+   the same red, as --hf-alert, marks error messages and the destructive actions (delete account, remove a holding).
+   No other colour. Square corners, no shadows, no coloured pills.
+
+   Scroll: the masthead is on screen at load; below it the sections, panels and cards rise in as they scroll into
+   view (data-hf-reveal / data-hf-reveal-group, v13-motion.js). Blocks that arrive hidden (research results, saved
+   holdings, connected accounts) are tagged by their scripts when they are first shown. The alerts page keeps its
+   entrance (motion.js data-reveal), retuned below to the same 28px rise on the dots' spring. */
 @layer insidir-v13{
 
 /* ---------- Shared desk primitives ---------- */
@@ -16,18 +24,20 @@ body.v13 #main .desk-topline p{margin:0!important}
 body.v13 #main .desk-topline__note{font:400 10.5px/1.75 var(--hf-mono)!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-faint)!important;text-align:right!important}
 body.v13 #main :is(.research-eyebrow,.alerts-eyebrow,.v3-eyebrow){display:block!important;margin:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13 #main .desk-masthead{max-width:none!important;margin:0!important;padding:0 0 clamp(36px,4.6vw,56px)!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important;box-shadow:none!important}
+/* The header band (v13-app.css) starts directly under the topline's rule: 2px + one 10.5px/1.75 line + 16px + the 1px rule. */
+body.v13 #main .desk-masthead{--pd-band-top:calc(19px + 10.5px * 1.75)!important}
 body.v13 #main .desk-masthead h1{font:var(--desk-h1)!important;letter-spacing:-.04em!important;margin:0 0 22px!important;max-width:14ch!important;color:var(--hf-ink)!important;text-wrap:balance!important;font-variation-settings:normal!important}
 body.v13 #main .desk-lead{font:400 clamp(14px,1.15vw,16px)/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:560px!important;margin:0!important;letter-spacing:0!important}
-/* Captions and status lines: sentence-case mono; errors warm. */
+/* Captions and status lines: sentence-case mono; errors in the alert red. */
 body.v13 #main :is(.research-feedback,.research-small,.research-explain,.portfolio-warning,.v3-account__hint,.live-status,.alerts-foot,.portfolio-muted,#portfolio-status){font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-muted)!important}
-body.v13 #main :is(.research-feedback,.v3-account__hint,#portfolio-status).is-error{color:var(--hf-warm)!important}
-/* Mono links that grow an ink rule from the left and warm on hover. */
+body.v13 #main :is(.research-feedback,.v3-account__hint,#portfolio-status).is-error{color:var(--hf-alert)!important}
+/* Mono links that grow an ink rule from the left on hover. */
 body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a){display:inline-flex!important;align-items:center!important;gap:8px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;border:0!important;padding:0!important;height:auto!important;background-color:transparent!important;border-radius:0!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a):hover{color:var(--hf-warm)!important;background-size:100% 1px!important;background-color:transparent!important}
+body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a):hover{color:var(--hf-ink)!important;background-size:100% 1px!important;background-color:transparent!important}
 /* A link inside a caption reads as part of the sentence. */
 body.v13 #main :is(.research-small,.research-feedback,.alerts-foot) :is(.research-text-link,.portfolio-small-link,a){display:inline!important;font:inherit!important;letter-spacing:inherit!important;text-transform:none!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;background-image:none!important}
-body.v13 #main :is(.research-small,.research-feedback,.alerts-foot) :is(.research-text-link,.portfolio-small-link,a):hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13 #main :is(.research-small,.research-feedback,.alerts-foot) :is(.research-text-link,.portfolio-small-link,a):hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13 #main .research-small strong{color:var(--hf-ink)!important;font-weight:500!important}
 
 /* Tables: mono heads, hairline rows, ink leaders, faint mono sub-lines. */
@@ -44,9 +54,19 @@ body.v13 #main .research-table .ins-media{--ins-size:32px!important}
 /* Brand marks in the data tables are toned like the photographs so they sit inside the three-colour print;
    the dark marks the app inverts for night paper (Apple, Amazon, IBM) keep that inversion. */
 body.v13 #main .alerts-panel .live-table td a{font:500 11px/1.6 var(--hf-mono)!important;letter-spacing:.06em!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
-body.v13 #main .alerts-panel .live-table td a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
-body.v13 #main .alerts-panel .live-table td.buy{color:var(--hf-ink)!important}
-body.v13 #main .alerts-panel .live-table td.sell{color:var(--hf-warm)!important}
+body.v13 #main .alerts-panel .live-table td a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
+/* Direction in the ledgers: "Reported purchase" in green, "Reported sale" in red; the words always print, a ▲/▼ glyph
+   leads them, and a signed share count takes the same colour. Never on a --hf-raise fill (contrast). */
+body.v13 #main .alerts-panel .live-table td.buy{color:var(--hf-up)!important;font-weight:500!important}
+body.v13 #main .alerts-panel .live-table td.sell{color:var(--hf-down)!important;font-weight:500!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) :is(.desk-dir,.desk-signed){font-weight:500!important;white-space:nowrap!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) :is(.desk-dir,.desk-signed).is-up{color:var(--hf-up)!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) :is(.desk-dir,.desk-signed).is-down{color:var(--hf-down)!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) .desk-dir:not(.is-up):not(.is-down){color:var(--hf-soft)!important;font-weight:400!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) .desk-glyph{display:inline-block!important;flex:none!important;width:.62em!important;height:.54em!important;margin:0 .42em .08em 0!important;padding:0!important;background:currentColor!important;vertical-align:middle!important;font-size:inherit!important;line-height:0!important;color:inherit!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) .desk-glyph.is-up{clip-path:polygon(50% 0,100% 100%,0 100%)!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) .desk-glyph.is-down{clip-path:polygon(0 0,100% 0,50% 100%)!important}
+body.v13 #main :is(.research-table,.portfolio-table,.live-table) td small .desk-signed{font-weight:500!important}
 body.v13 #main :is(.research-empty,.portfolio-empty){margin:0!important;padding:18px 0!important;border:0!important;border-top:1px solid var(--hf-line)!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
 
 /* Section headings: eyebrow, Inter 700 title, optional link on the right. */
@@ -65,7 +85,7 @@ body.v13 #main .research-search button{height:44px!important;min-height:44px!imp
 body.v13 #main .v4-research-trust{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;margin:clamp(26px,3vw,36px) 0 0!important;padding:0!important;border:0!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 #main .v4-research-trust>span{display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;padding:14px 16px 14px 0!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-soft)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 body.v13 #main .v4-research-trust>span+span{padding-left:16px!important;border-left:1px solid var(--hf-line)!important}
-body.v13 #main .v4-research-trust svg{width:16px!important;height:16px!important;color:var(--hf-warm)!important;flex:0 0 auto!important}
+body.v13 #main .v4-research-trust svg{width:16px!important;height:16px!important;color:var(--hf-soft)!important;flex:0 0 auto!important}
 body.v13 #main .research-head .research-feedback{margin:16px 0 0!important;max-width:720px!important}
 
 body.v13 #main .research-summary{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:24px!important;margin:0!important;padding:clamp(36px,4.6vw,56px) 0 clamp(22px,2.6vw,30px)!important;border:0!important}
@@ -85,7 +105,7 @@ body.v13 #main .research-panel-head{display:flex!important;align-items:flex-star
 body.v13 #main .research-panel-head>div{min-width:0!important}
 body.v13 #main .research-panel-head>a{padding-top:8px!important;white-space:nowrap!important;flex:0 0 auto!important}
 body.v13 #main .research-panel h2{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:nowrap!important}
-body.v13 #main .research-panel h2 .v4-ui-icon{width:32px!important;height:32px!important;padding:7px!important;margin:0!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;color:var(--hf-warm)!important;flex:0 0 auto!important}
+body.v13 #main .research-panel h2 .v4-ui-icon{width:32px!important;height:32px!important;padding:7px!important;margin:0!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;color:var(--hf-soft)!important;flex:0 0 auto!important}
 body.v13 #main .research-explain{margin:0 0 18px!important;max-width:680px!important}
 body.v13 #main .research-panel .research-feedback{margin:0 0 16px!important}
 body.v13 #main .intel-summary{font:400 15px/1.7 var(--hf-sans)!important;color:var(--hf-soft)!important;border:0!important;border-top:1px solid var(--hf-line)!important;padding:18px 0 0!important;margin:0 0 24px!important;max-width:720px!important}
@@ -156,7 +176,8 @@ body.v13 #main #manual-content .portfolio-section-heading{margin-top:clamp(28px,
 body.v13 #main #manual-content .portfolio-activity{margin:var(--desk-gap) 0 0!important;padding:22px 0 0!important}
 body.v13 #main .manual-holdings-table td:last-child{text-align:right!important}
 body.v13 #main .manual-remove{cursor:pointer!important;height:32px!important;padding:0 12px!important;background:transparent!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-soft)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;transition:color .25s,border-color .25s!important}
-body.v13 #main .manual-remove:hover{border-color:var(--hf-warm)!important;color:var(--hf-warm)!important;background:transparent!important}
+/* Removing a holding is destructive: the button warns in the alert red under the pointer or keyboard focus. */
+body.v13 #main .manual-remove:not(:disabled):is(:hover,:focus-visible){border-color:var(--hf-alert)!important;color:var(--hf-alert)!important;background:transparent!important}
 body.v13 #main .manual-remove:disabled{opacity:1!important;cursor:wait!important;border-color:var(--hf-line)!important;color:var(--hf-muted)!important}
 body.v13 #main .portfolio-accounts{display:grid!important;gap:var(--desk-gap)!important;margin:0 0 var(--desk-gap)!important}
 body.v13 #main .portfolio-account-head{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:16px!important;margin:0 0 18px!important}
@@ -172,16 +193,28 @@ body.v13 #main .portfolio-next>a{display:inline-flex!important;margin:6px 0 0!im
 body.v13 #main.alerts-main{--t:1px!important;padding-top:clamp(26px,3.6vw,52px)!important}
 body.v13 #main .alerts-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"topline topline" "title action" "sub sub"!important;column-gap:24px!important;align-items:start!important}
 body.v13 #main .alerts-topline{grid-area:topline!important}
+/* The alerts page's lead and panel enter once (motion.js [data-reveal]) exactly as the site's scroll reveal does
+   (v13-motion.js .hf-pending/.hf-revealing): 28px low and transparent, rising on the dots' spring while they fade up on
+   the same curve, each keeping its own delay so they arrive a beat apart. They carry no data-hf-reveal, so nothing
+   animates twice. Focus inside a reveal still skips it. The split heading keeps its ease (its words rise out of a mask
+   that would clip an overshoot), and so does the tab fill. The Manage alerts button is a motion atom (v13-motion.js)
+   rather than motion.js-magnetic, so only one thing moves it.
+   [data-observed] is motion.js's own mark, so without scripts nothing waits low. */
+body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]{transition:opacity .7s cubic-bezier(.2,.7,.1,1) var(--delay,0s),transform var(--hf-spring-dur) var(--hf-spring) var(--delay,0s)!important}
+@media (prefers-reduced-motion:no-preference){
+  body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal="up"][data-observed]:not(.is-in){transform:translate3d(0,28px,0)!important}
+}
+body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]:focus-within{transition:none!important}
 body.v13 #main .alerts-title{grid-area:title!important;line-height:1!important;margin:0!important}
 body.v13 #main .alerts-sub{grid-area:sub!important;margin:18px 0 0!important}
-body.v13 #main .alerts-manage{grid-area:action!important;align-self:start!important;margin:10px 0 0!important;height:44px!important;min-height:44px!important;padding:0 20px!important;font-size:10.5px!important;background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important;box-shadow:none!important;border-radius:0!important;transition:border-color .25s,background .25s,color .25s!important}
+body.v13 #main .alerts-manage{grid-area:action!important;align-self:start!important;margin:10px 0 0!important;height:44px!important;min-height:44px!important;padding:0 20px!important;font-size:10.5px!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important;box-shadow:none!important;border-radius:0!important;transition:border-color .25s,background .25s,color .25s!important}
 body.v13 #main .alerts-manage:hover{border-color:var(--hf-ink)!important;background:var(--hf-surface)!important;color:var(--hf-ink)!important;box-shadow:none!important}
 body.v13 #main .alerts-dateline{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;margin:0!important;padding:0!important}
 body.v13 #main .alerts-dateline>div{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important;padding:18px 20px 18px 0!important}
 body.v13 #main .alerts-dateline>div+div{padding-left:20px!important;border-left:1px solid var(--hf-line)!important}
 body.v13 #main .alerts-dateline span{font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 #main .alerts-dateline strong{font:400 12px/1.6 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important;overflow-wrap:anywhere!important}
-/* Filter tabs: tracked mono text on a hairline; the sliding thumb becomes a warm underline. */
+/* Filter tabs: tracked mono text on a hairline; the sliding thumb becomes an ink underline. */
 body.v13 #main .alert-filters-scroll{position:relative!important;margin:0!important;padding:0!important;overflow:visible!important;-webkit-mask-image:none!important;mask-image:none!important}
 body.v13 #main .alert-filters{display:flex!important;gap:0 clamp(18px,2.6vw,34px)!important;width:auto!important;min-width:0!important;padding:0!important;isolation:isolate!important;border:0!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 #main .alert-filter{flex:none!important;height:44px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;white-space:nowrap!important;box-shadow:none!important;transition:color .25s!important}
@@ -189,13 +222,13 @@ body.v13 #main .alert-filter:hover{color:var(--hf-ink)!important;background:tran
 body.v13 #main .alert-filter[aria-selected="true"]{color:var(--hf-ink)!important;font-weight:500!important;background:transparent!important}
 body.v13 #main .alert-filter:focus-visible{outline-offset:-4px!important;border-radius:0!important}
 body.v13 #main .alert-filters__fill{display:none!important}
-body.v13 #main .alert-filters__thumb{top:auto!important;bottom:-1px!important;height:1px!important;border:0!important;border-radius:0!important;background:var(--hf-warm)!important;box-shadow:none!important;opacity:1!important;scale:none!important}
+body.v13 #main .alert-filters__thumb{top:auto!important;bottom:-1px!important;height:1px!important;border:0!important;border-radius:0!important;background:var(--hf-ink)!important;box-shadow:none!important;opacity:1!important;scale:none!important;transition:transform var(--hf-spring-dur) var(--hf-spring),width var(--hf-spring-dur) var(--hf-spring),opacity .6s ease-out .1s!important}
 body.v13 #main .alerts-panel{margin:0!important;padding:0!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;color:var(--hf-ink)!important}
 body.v13 #main .alerts-dateline+.alert-filters-scroll:not([hidden]) .alert-filters:not([hidden]){border-top:1px solid var(--hf-line-2)!important}
 body.v13 #main .alerts-dateline+.alert-filters-scroll+.alerts-panel{border-top-color:var(--hf-line)!important}
 body.v13 #main .live-status{padding:24px 0!important;max-width:620px!important}
 body.v13 #main .alerts-foot{margin:clamp(28px,3.4vw,44px) 0 0!important;padding:16px 0 0!important;border-top:1px solid var(--hf-line)!important;max-width:none!important}
-/* Alert rows (assets/js/alerts.js): hairline rows, mono badges, ink for purchases, warm for sales. */
+/* Alert rows (assets/js/alerts.js): hairline rows, mono badges, green for purchases, red for sales; live dots in ink, no halo. */
 body.v13 #main .alerts-table{table-layout:auto!important;font:400 12.5px/1.5 var(--hf-sans)!important;border-collapse:collapse!important;border-spacing:0!important;background:transparent!important;color:var(--hf-ink)!important}
 body.v13 #main .alerts-table th{height:auto!important;padding:12px 12px 12px 0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important;white-space:nowrap!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 #main .alerts-table th.c-co-head{border-left:0!important;padding-left:0!important}
@@ -208,26 +241,27 @@ body.v13 #main .alerts-table .alert.is-last tr.alert-detail>td{border-bottom:0!i
 body.v13 #main .cell-time .cell-in{gap:14px!important}
 body.v13 #main .alert-time{font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
 body.v13 #main :is(.alert-dot,.alert-dot--red){color:var(--hf-line-2)!important;width:7px!important;height:7px!important;background:var(--hf-line-2)!important;box-shadow:none!important}
-body.v13 #main .alert-dot.dot--live{color:var(--hf-warm)!important;background:var(--hf-warm)!important;box-shadow:0 0 0 4px var(--hf-warm-soft)!important}
+body.v13 #main .alert-dot.dot--live{color:var(--hf-ink)!important;background:var(--hf-ink)!important;box-shadow:none!important}
 body.v13 #main .alert-type{gap:10px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-soft)!important}
 body.v13 #main .alert-icon{width:18px!important;height:18px!important;border-radius:0!important;transition:none!important;transform:none!important}
-body.v13 #main :is(.t-buy,.t-price){color:var(--hf-ink)!important}
-body.v13 #main :is(.t-sell,.t-political){color:var(--hf-warm)!important}
+body.v13 #main .t-buy{color:var(--hf-up)!important}
+body.v13 #main .t-sell{color:var(--hf-down)!important}
+body.v13 #main :is(.t-price,.t-political){color:var(--hf-soft)!important}
 body.v13 #main .t-sec{color:var(--hf-muted)!important;font-weight:500!important}
 body.v13 #main .alert-toggle{font:400 13px/1.5 var(--hf-sans)!important;color:var(--hf-ink)!important;padding:0!important;margin:0!important;border-radius:0!important;background:transparent!important;letter-spacing:0!important}
 body.v13 #main .alerts-table .ticker{font:500 11px/1.6 var(--hf-mono)!important;letter-spacing:.06em!important;color:var(--hf-ink)!important}
 body.v13 #main .alert-chev{color:var(--hf-muted)!important}
-body.v13 #main .alert.is-open .alert-chev{color:var(--hf-warm)!important}
+body.v13 #main .alert.is-open .alert-chev{color:var(--hf-ink)!important}
 body.v13 #main .alert-detail__card{margin:0 0 18px!important;padding:18px 20px!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;box-shadow:none!important}
 body.v13 #main .alert-facts dt{font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;margin:0!important}
 body.v13 #main .alert-facts dd{font:400 12px/1.7 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important;margin:0!important}
-body.v13 #main .alert-src svg{width:12px!important;height:12px!important;transition:transform .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 #main .alert-src svg{width:12px!important;height:12px!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 #main .alert-src:hover svg{transform:translate(2px,-2px)!important}
 body.v13 #main .alert-links .btn{font-size:10.5px!important;height:36px!important;min-height:36px!important;padding:0 14px!important}
 body.v13 #main .alert-detail__note{grid-column:1/-1!important;padding:12px 0 0!important;border-top:1px solid var(--hf-line)!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
 body.v13 #main .alerts-empty{display:grid!important;justify-items:start!important;text-align:left!important;gap:8px!important;padding:40px 0 44px!important;border:0!important}
 body.v13 #main .alerts-empty[hidden]{display:none!important}
-body.v13 #main .alerts-empty__icon{width:40px!important;height:40px!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;color:var(--hf-warm)!important;margin:0 0 8px!important}
+body.v13 #main .alerts-empty__icon{width:40px!important;height:40px!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;color:var(--hf-soft)!important;margin:0 0 8px!important}
 body.v13 #main .alerts-empty__icon::after{display:none!important}
 body.v13 #main .alerts-empty__icon svg{width:18px!important;height:18px!important}
 body.v13 #main .alerts-empty__title{font:700 clamp(20px,1.8vw,24px)/1.15 var(--hf-sans)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin:0!important}
@@ -236,6 +270,12 @@ body.v13 #main .alerts-empty .btn{margin:12px 0 0!important;height:36px!importan
 /* Manage-alerts drawer: a paper panel on a hairline, tracked labels, square switches. */
 body.v13 .drawer__backdrop{background:color-mix(in srgb,var(--hf-bg) 62%,transparent)!important;-webkit-backdrop-filter:blur(2px)!important;backdrop-filter:blur(2px)!important}
 body.v13 .drawer__panel{background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:0!important;border-left:1px solid var(--hf-line)!important;box-shadow:none!important;border-radius:0!important}
+/* The panel slides in on the dots' spring (v13-halftone.css --hf-spring). The spring overshoots by a quarter of the
+   travel, so the panel reaches 160px past the right edge (padding, never content) and no gap opens; it leaves on its
+   quick ease-in. The preferences follow it in on the same spring. */
+body.v13 .drawer__panel{right:-160px!important;width:calc(min(100vw,460px) + 160px)!important;padding-right:160px!important}
+body.v13 .drawer.is-open .drawer__panel{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13 .drawer.is-open :is(.pref,.drawer__foot){transition:opacity .6s ease-out calc(.16s + var(--i,0) * 55ms),transform var(--hf-spring-dur) var(--hf-spring) calc(.16s + var(--i,0) * 55ms)!important}
 body.v13 .drawer__head{padding:28px 28px 22px!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important}
 body.v13 .drawer__eyebrow{margin:0 0 10px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13 .drawer__title{font:700 28px/1.05 var(--hf-sans)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;font-variation-settings:normal!important;margin:0!important}
@@ -253,8 +293,8 @@ body.v13 .soon{height:20px!important;padding:0 7px!important;border:1px solid va
 body.v13 .drawer__foot{padding:18px 28px 28px!important;border:0!important;border-top:1px solid var(--hf-line)!important;background:var(--hf-bg)!important;background-image:none!important}
 body.v13 .drawer__note{font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;gap:10px!important}
 body.v13 .drawer__note svg{width:16px!important;height:16px!important;color:var(--hf-faint)!important;margin-top:2px!important}
-body.v13 .switch{width:44px!important;height:24px!important;border-radius:0!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line-2)!important;box-shadow:none!important;transition:background .3s,border-color .25s!important}
-body.v13 .switch__knob{top:3px!important;left:3px!important;width:16px!important;height:16px!important;border-radius:0!important;background:var(--hf-faint)!important;box-shadow:none!important;transition:transform .35s cubic-bezier(.2,.7,.1,1),background .3s!important}
+body.v13 .switch{width:44px!important;height:24px!important;overflow:hidden!important;border-radius:0!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line-2)!important;box-shadow:none!important;transition:background .3s,border-color .25s!important}
+body.v13 .switch__knob{top:3px!important;left:3px!important;width:16px!important;height:16px!important;border-radius:0!important;background:var(--hf-faint)!important;box-shadow:none!important;transition:transform var(--hf-spring-dur) var(--hf-spring),background .3s!important}
 body.v13 .switch[aria-checked="true"]{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
 body.v13 .switch[aria-checked="true"] .switch__knob{background:var(--hf-bg)!important;transform:translateX(20px)!important}
 body.v13 .switch:not(:disabled):hover{box-shadow:none!important;border-color:var(--hf-ink)!important}
@@ -273,7 +313,7 @@ body.v13 #main .v3-account__label{margin:4px 0 6px!important;font-family:var(--h
 body.v13 #main .v3-account__value{font:500 14px/1.5 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important;margin:0 0 8px!important;overflow-wrap:anywhere!important;max-width:100%!important}
 body.v13 #main .v3-account__hint{margin:0 0 22px!important;max-width:520px!important}
 body.v13 #main .v3-account__panel>p a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 #main .v3-account__panel>p a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13 #main .v3-account__panel>p a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13 #main .v3-account__hint:empty{display:none!important}
 /* Each panel's actions sit on one bottom-aligned row, so the panels side by side line up. */
 body.v13 #main .v3-account__actions{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:14px 24px!important;margin:auto 0 0!important;padding:4px 0 0!important;min-height:44px!important}
@@ -285,11 +325,14 @@ body.v13 #main .v3-account__links{display:flex!important;flex-wrap:wrap!importan
 body.v13 #main .v3-account__danger{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:40px!important;padding:clamp(28px,3.4vw,44px) 0!important;margin:0!important;max-width:none!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;border-bottom:1px solid var(--hf-line)!important;border-radius:0!important;box-shadow:none!important}
 body.v13 #main .v3-account__danger>div{max-width:720px!important;min-width:0!important}
 body.v13 #main .v3-account__danger p:not(.v3-eyebrow){margin:0!important}
-body.v13 #main #account-delete{flex:0 0 auto!important;cursor:pointer!important;height:44px!important;min-height:44px!important;padding:0 20px!important;margin:0!important;background:transparent!important;border:1px solid var(--hf-warm)!important;color:var(--hf-warm)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important;transition:background .25s,color .25s!important}
-body.v13 #main #account-delete:not(:disabled):hover{background:var(--hf-warm)!important;color:var(--hf-bg)!important}
+/* Deleting the account is the one destructive action here: the eyebrow and the button carry the alert red (5.5:1 on paper),
+   and the button fills red with paper text under the pointer. */
+body.v13 #main .v3-account__danger .v3-eyebrow{color:var(--hf-alert)!important}
+body.v13 #main #account-delete{flex:0 0 auto!important;cursor:pointer!important;height:44px!important;min-height:44px!important;padding:0 20px!important;margin:0!important;background:transparent!important;border:1px solid var(--hf-alert)!important;color:var(--hf-alert)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important;transition:background .25s,color .25s!important}
+body.v13 #main #account-delete:not(:disabled):is(:hover,:active){background:var(--hf-alert)!important;border-color:var(--hf-alert)!important;color:var(--hf-bg)!important}
 body.v13 #main #account-delete:disabled{opacity:1!important;cursor:not-allowed!important;border-color:var(--hf-line-2)!important;color:var(--hf-muted)!important}
 body.v13 #main #account-delete-feedback{margin:14px 0 0!important}
-body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;padding:11px 14px!important;border:1px solid var(--hf-warm)!important;border-left-width:2px!important;background:var(--hf-surface)!important;
+body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;padding:11px 14px!important;border:1px solid var(--hf-alert)!important;border-left-width:2px!important;background:var(--hf-surface)!important;
   font:400 12.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
 
 /* ---------- Responsive ---------- */
@@ -345,6 +388,9 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) tbody tr:last-child{border-bottom:0!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) tbody tr:hover td{background:transparent!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) td{display:block!important;min-width:0!important;padding:0!important;border:0!important;overflow-wrap:anywhere!important}
+  /* In the half-width record cells a long event label ("Other ownership transaction") wraps instead of running into
+     the next column; signed share counts keep their nowrap. */
+  body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) .desk-dir{white-space:normal!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:first-child{grid-column:1/-1!important}
   /* A fourth cell (the Published date with its source link, the research link of a holding) gets the whole record width. */
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:nth-child(4){grid-column:1/-1!important}
@@ -388,6 +434,7 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
 }
 @media (prefers-reduced-motion:reduce){
   body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alert-src svg,.manual-remove,.alert-filter),body.v13 .switch,body.v13 .switch__knob{transition:none!important}
+  body.v13 .drawer .drawer__panel,body.v13 .drawer.is-open .drawer__panel,body.v13 .drawer.is-open :is(.pref,.drawer__foot),body.v13 #main .alert-filters__thumb{transition:none!important}
 }
 
 }

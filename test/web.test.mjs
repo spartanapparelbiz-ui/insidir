@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { serveStatic } from "../src/web.mjs";
+import { readFile, readdir } from "node:fs/promises";
 
 async function withServer(fn) {
   const server = createServer((req, res) => {
@@ -171,7 +172,8 @@ test("real research data and original document icons remain available",async()=>
   assert.doesNotMatch(home,/v4-explorer\.js|v4-presentation\.css|is3-window/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
   assert.match(dash,/v4-dashboard\.js/);
-  assert.match(dash,/id="v4-activity-chart"/);
+  for(const id of ["rd-kpis","rd-daily-chart","rd-daily-table","rd-companies","rd-largest","v3-trades"])assert.match(dash,new RegExp('id="'+id+'"'),id);
+  assert.match(dash,/v13-dashboard\.css/);
   const derived=await(await fetch(base+"/assets/js/v4-dashboard.js")).text();
   assert.match(derived,/insidir:transactions-loaded/);
   assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
@@ -407,7 +409,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
       else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
-      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark");
+      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-scroll-scatter="\d+" data-wordmark="insidir"/, "landing hero prints the dotted wordmark, which comes apart as it scrolls away");
       else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }
     assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
@@ -415,16 +417,67 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(css.status, 200);
     const theme = await css.text();
     assert.match(theme, /@layer insidir-v13\{/);
-    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important/);
+    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var\(--hf-ink\)!important/);
     assert.match(theme, /font-family:"JetBrains Mono"/);
     for (const family of ["home", "app", "desk", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
     const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");
     assert.equal(mono.headers.get("content-type"), "font/woff2");
     assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);
     const favicon = await (await fetch(base + "/assets/icons/favicon.svg")).text();
-    assert.match(favicon, /#0c0c0b/); assert.match(favicon, /#e9762b/); assert.match(favicon, /#e9e4da/);
+    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#e9e4da/);
     const engine = await (await fetch(base + "/assets/js/v13-halftone.js")).text();
     assert.match(engine, /data-halftone-hero/);
     assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");
   });
+});
+
+test("nothing on the site glows orange: no halos, no orange gradients, no glowing dots, an ink-only wordmark",async()=>{
+  const web=new URL("../web/",import.meta.url),cssDir=new URL("assets/css/",web);
+  const warm=/var\(--hf-warm\)|#e9762b|rgba?\(\s*233\s*,\s*118\s*,\s*43/i;
+  const sheets=(await readdir(cssDir)).filter(f=>/^v13-.*\.css$/.test(f));
+  assert.ok(sheets.length>=9,"every V13 sheet is checked");
+  for(const f of sheets){
+    const css=await readFile(new URL(f,cssDir),"utf8");
+    assert.doesNotMatch(css,/--hf-warm-soft|--hwf-warm/,f+" keeps no warm halo token");
+    for(const decl of css.match(/(?:box-shadow|text-shadow|filter|background(?:-image)?|mask(?:-image)?|stop-color)\s*:[^;}]*/g)||[]){
+      if(/gradient\(|shadow|filter|stop-color/.test(decl))assert.doesNotMatch(decl,warm,f+" glows orange: "+decl);
+    }
+  }
+  for(const f of(await readdir(web)).filter(f=>f.endsWith(".html"))){
+    assert.doesNotMatch(await readFile(new URL(f,web),"utf8"),/class="(?:mk-live|v9-tiny-dot|cx-live-dot)"/,f+" has no glowing dot");
+  }
+  const company=await readFile(new URL("v13-company.css",cssDir),"utf8");
+  assert.match(company,/\.cx-chart svg>path\[fill\^="url\("\]\{fill:none!important\}/,"the price chart draws no gradient glow under its line");
+  assert.doesNotMatch(await readFile(new URL("assets/js/v13-halftone.js",web),"utf8"),/warm/i,"the wordmark's dots never warm to orange");
+});
+
+test("nothing on the site is orange: no stylesheet, page, script or icon uses the retired accent",async()=>{
+  const web=new URL("../web/",import.meta.url),cssDir=new URL("assets/css/",web),jsDir=new URL("assets/js/",web);
+  const theme=await readFile(new URL("v13-halftone.css",cssDir),"utf8");
+  assert.match(theme,/--hf-warm:var\(--hf-ink\)!important/,"the old accent token is an alias of ink");
+  assert.match(theme,/--hf-alert:var\(--hf-down\)!important/,"errors and destructive actions use the red");
+  for(const f of(await readdir(cssDir)).filter(f=>/^v13-.*\.css$/.test(f))){
+    const css=(await readFile(new URL(f,cssDir),"utf8")).replace(/\/\*[\s\S]*?\*\//g,"");
+    assert.doesNotMatch(css,/var\(--hf-warm\)|#e9762b|rgba?\(\s*233\s*,\s*118\s*,\s*43/i,f+" still uses the orange accent");
+  }
+  for(const f of(await readdir(web)).filter(f=>f.endsWith(".html")))assert.doesNotMatch(await readFile(new URL(f,web),"utf8"),/#e9762b|--hf-warm/i,f+" carries no orange");
+  for(const f of(await readdir(jsDir)).filter(f=>/^v1[03]-|^v[34]-dashboard|^v12-company/.test(f)))assert.doesNotMatch(await readFile(new URL(f,jsDir),"utf8"),/#e9762b|--hf-warm|--v10-orange/i,f+" paints no orange");
+  assert.doesNotMatch(await readFile(new URL("assets/icons/favicon.svg",web),"utf8"),/#e9762b/i,"the favicon's dot is ink");
+});
+
+test("charts use green for purchases and rises, red for sales and falls; the product chrome carries no orange",async()=>{
+  const css=new URL("../web/assets/css/",import.meta.url);
+  const theme=await readFile(new URL("v13-halftone.css",css),"utf8");
+  assert.match(theme,/--hf-up:#2f996a!important;--hf-down:#f94144!important;/,"direction tokens");
+  assert.match(theme,/--green:var\(--hf-up\)!important;--green-chart:var\(--hf-up\)!important/);
+  assert.match(theme,/--red:var\(--hf-down\)!important;--red-chart:var\(--hf-down\)!important/);
+  assert.match(theme,/body\.v13 :is\(\.buy,[^)]*\)\{color:var\(--hf-up\)/);
+  assert.match(theme,/body\.v13 :is\(\.sell,[^)]*\)\{color:var\(--hf-down\)/);
+  assert.match(theme,/\.app-nav a\[aria-current=page\]::after\{[^}]*background:var\(--hf-ink\)/,"the active tab is ink, not orange");
+  const dash=await readFile(new URL("v13-dashboard.css",css),"utf8");
+  for(const rule of [/\.rd-day__bar--up\{background:var\(--hf-up\)/,/\.rd-day__bar--down\{background:var\(--hf-down\)/,/\.rd-co__bar--up\{background:var\(--hf-up\)/,/\.rd-co__bar--down\{background:var\(--hf-down\)/])assert.match(dash,rule);
+  assert.doesNotMatch(dash,/hf-warm/,"no orange on the overview");
+  assert.doesNotMatch(await readFile(new URL("v13-app.css",css),"utf8"),/hf-warm/,"no orange in the app pages' stylesheet");
+  const js=await readFile(new URL("../web/assets/js/v3-dashboard.js",import.meta.url),"utf8");
+  for(const code of ["P","S","A","M","F","G"])assert.match(js,new RegExp("\\b"+code+':"'),"code "+code+" has its SEC meaning");
 });

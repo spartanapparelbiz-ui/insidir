@@ -9,6 +9,21 @@
   const safeDate=value=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?d.toLocaleString("en-US",{dateStyle:"medium",timeStyle:"short"}):"Not reported";};
   const secLink=url=>{try{const u=new URL(url);return u.protocol==="https:"&&(u.hostname==="www.sec.gov"||u.hostname==="sec.gov")?u.toString():null;}catch{return null;}};
   const safeTicker=value=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(value||""))?value:null;
+  /* Reported purchases print green with ▲, sales red with ▼; the words always carry the meaning. */
+  const event=category=>{
+    const dir=category==="reported_purchase"?"up":category==="reported_sale"?"down":"";
+    const words=dir==="up"?"Reported purchase":dir==="down"?"Reported sale":"Other ownership transaction";
+    return '<span class="desk-dir'+(dir?" is-"+dir:"")+'">'+(dir?'<span class="desk-glyph is-'+dir+'" aria-hidden="true"></span>':"")+escapeHtml(words)+'</span>';
+  };
+  /* Sections that start hidden: the scroll reveal (v13-motion.js) passes over anything hidden when it first meets it,
+     so their blocks carry data-desk-reveal in the page and are armed as the section is first shown. */
+  const armReveal=section=>{
+    for(const block of [section,...section.querySelectorAll("[data-desk-reveal]")]){
+      if(!block.hasAttribute("data-desk-reveal"))continue;
+      block.setAttribute(block.getAttribute("data-desk-reveal")==="group"?"data-hf-reveal-group":"data-hf-reveal","");
+      block.removeAttribute("data-desk-reveal");
+    }
+  };
   const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").classList.toggle("is-error",Boolean(error));};
   async function request(path,method="GET"){
     const r=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json"}});
@@ -43,12 +58,13 @@
       items.map(t=>{
         const link=secLink(t.source_url);
         return '<tr><td data-label="Ticker"><strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small></td>'+
-          '<td data-label="Reported event">'+escapeHtml(t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction")+
+          '<td data-label="Reported event">'+event(t.category)+
           '<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></td><td data-label="Published">'+escapeHtml(safeDate(t.published_at))+'</td>'+
           '<td data-label="Original source">'+(link?'<a class="portfolio-small-link" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(link)+'">SEC filing ↗</a>':'Not available')+'</td></tr>';
       }).join("")+'</tbody></table></div>':
       '<p class="portfolio-empty">No matching imported insider filings in the past 30 days. This does not mean no relevant SEC records exist; use the Research Desk for other disclosures.</p>';
     if(data.truncatedAccounts)setStatus("Only the first eight investment accounts are shown. Other accounts may be connected.");
+    armReveal(el("portfolio-results"));
     el("portfolio-results").hidden=false;
   }
   async function refresh() {
@@ -64,6 +80,7 @@
       el("portfolio-connect").hidden=!r.available||r.connected;
       el("portfolio-refresh").hidden=!r.connected||!r.available;
       el("portfolio-disconnect").hidden=!r.connected;
+      if(r.connected&&r.available)armReveal(el("portfolio-results"));
       el("portfolio-results").hidden=!r.connected||!r.available;
       if(!r.available){setStatus(r.connected?
         "Existing brokerage permission found, but portfolio access is disabled. You can disconnect below.":

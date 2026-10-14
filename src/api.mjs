@@ -59,6 +59,70 @@ function keepPrivate(res){
     return reason===undefined?writeHead.call(this,status):writeHead.call(this,status,reason);
   };
 }
+/* GET /v1/me/people/updates: the signed-in member's followed people, most recently active
+ * first, and the newest Form 4 lines any of them filed. Three fixed round trips at most,
+ * never one per person; each person's rows come off sec_transactions_owner_idx. A person
+ * whose filings are all unparsed (e.g. a failed re-ingest) still gets a name and ticker.
+ * The work is bounded by the follow set: POST /v1/me/people caps it at MAX_FOLLOWS, and both
+ * queries read at most the MAX_FOLLOWS newest follows (followed_people_created_idx) before
+ * any per-person join, so rows past the cap (a race, or older data) cannot inflate the cost. */
+const MAX_FOLLOWS=150;
+const FOLLOW_SET=`(SELECT owner_cik,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT ${MAX_FOLLOWS})`;
+const FOLLOW_RECENT="f.published_at>=now()-interval '30 days'";
+const FOLLOWED_PEOPLE_SQL=`SELECT fp.owner_cik,fp.created_at AS followed_at,
+  (SELECT count(*) FROM followed_people WHERE user_id=$1)::integer AS following,
+  l.id AS last_id,l.issuer_name,
+  COALESCE(l.owner_name,(SELECT owner_name FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1)) AS owner_name,
+  CASE WHEN l.id IS NULL THEN (SELECT ticker FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) ELSE l.ticker END AS ticker,
+  s.last_published_at,s.last_transaction_date,s.filings_30d,s.transactions_30d,s.purchases_30d_value,s.sales_30d_value
+  FROM ${FOLLOW_SET} fp
+  LEFT JOIN LATERAL (SELECT t.id,t.owner_name,t.ticker,f.issuer_name
+    FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+    WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed'
+    ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC LIMIT 1) l ON true
+  LEFT JOIN LATERAL (SELECT MAX(f.published_at) AS last_published_at,MAX(t.transaction_date) AS last_transaction_date,
+    (COUNT(DISTINCT t.accession) FILTER (WHERE ${FOLLOW_RECENT}))::integer AS filings_30d,
+    (COUNT(*) FILTER (WHERE ${FOLLOW_RECENT}))::integer AS transactions_30d,
+    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_purchase' AND ${FOLLOW_RECENT}),0) AS purchases_30d_value,
+    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_sale' AND ${FOLLOW_RECENT}),0) AS sales_30d_value
+    FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+    WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed') s ON true
+  ORDER BY s.last_published_at DESC NULLS LAST,fp.created_at DESC,fp.owner_cik
+  LIMIT ${MAX_FOLLOWS}`;
+// Same row shape as GET /v1/transactions items.
+const FOLLOWED_ITEMS_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
+  FROM ${FOLLOW_SET} fp
+  JOIN sec_transactions t ON t.owner_cik=fp.owner_cik
+  JOIN sec_filings f ON f.accession=t.accession
+  WHERE f.ingest_status='parsed'
+  ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC
+  LIMIT $2`;
+const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
+  FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+  WHERE t.id=ANY($1::text[])`;
+const toCount=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):0};
+const toAmount=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+async function followedPeopleUpdates(userId,limit,run=query){
+  const base={source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."};
+  const people=(await run(FOLLOWED_PEOPLE_SQL,[userId])).rows;
+  if(!people.length)return {people:[],items:[],following:0,...base};
+  const items=(await run(FOLLOWED_ITEMS_SQL,[userId,limit])).rows;
+  // A person's latest line is usually already in the feed (same ordering); fetch only the rest.
+  const byId=new Map(items.map(row=>[row.id,row]));
+  const missing=[...new Set(people.map(row=>row.last_id).filter(id=>id!=null&&!byId.has(id)))];
+  if(missing.length)for(const row of (await run(TRANSACTIONS_BY_ID_SQL,[missing])).rows)byId.set(row.id,row);
+  return {
+    people:people.map(row=>({owner_cik:row.owner_cik,owner_name:row.owner_name??null,followed_at:row.followed_at,
+      ticker:row.ticker??null,issuer_name:row.issuer_name??null,
+      last_published_at:row.last_published_at??null,last_transaction_date:row.last_transaction_date??null,
+      last:row.last_id==null?null:byId.get(row.last_id)??null,
+      filings_30d:toCount(row.filings_30d),transactions_30d:toCount(row.transactions_30d),
+      purchases_30d_value:toAmount(row.purchases_30d_value),sales_30d_value:toAmount(row.sales_30d_value)})),
+    items,
+    following:toCount(people[0].following),
+    ...base
+  };
+}
 const pageCsp="default-src 'self'; img-src 'self' data: https://upload.wikimedia.org https://thumb.wikimedia.org; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 // The paywall could not check the session (e.g. the database is unreachable): stay closed,
 // but answer a page navigation with a readable page rather than a JSON error.
@@ -240,12 +304,20 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/me/people" && m==="GET"){
     const user=await requireUser(req,ctx);
-    const results=await query(`SELECT fp.owner_cik,fp.created_at,
+    const results=await ctx.query(`SELECT fp.owner_cik,fp.created_at,
       (SELECT owner_name FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS owner_name,
       (SELECT ticker FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS ticker,
-      (SELECT MAX(transaction_date) FROM sec_transactions WHERE owner_cik=fp.owner_cik) AS last_transaction_date
-      FROM followed_people fp WHERE fp.user_id=$1 ORDER BY fp.created_at DESC LIMIT 150`,[user.id]);
+      (SELECT MAX(transaction_date) FROM sec_transactions WHERE owner_cik=fp.owner_cik) AS last_transaction_date,
+      (SELECT MAX(f.published_at) FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+        WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed') AS last_published_at
+      FROM followed_people fp WHERE fp.user_id=$1 ORDER BY fp.created_at DESC LIMIT ${MAX_FOLLOWS}`,[user.id]);
     return json(res,200,{items:results.rows,source:"SEC Form 4"});
+  }
+  // Must stay ahead of the DELETE /v1/me/people/:cik prefix route (GET only, exact path).
+  if(p==="/v1/me/people/updates" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    const limit=positive((u.searchParams.get("limit")||"").trim()||null,40,100);
+    return json(res,200,await followedPeopleUpdates(user.id,limit,ctx.query));
   }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -337,17 +409,27 @@ async function route(req,res,ctx){
       return json(res,200,{deleted:deleted.rowCount>0,ticker:t,executed:false});
     }
     if(p==="/v1/me/people" && m==="POST"){
-      const user=await requireUser(req,ctx),x=await body(req),cik=String(x.owner_cik??"").trim();
+      const user=await requireUser(req,ctx);
+      if(isLimited("follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
+      const x=await body(req),cik=String(x.owner_cik??"").trim();
       if(!/^\d{1,12}$/.test(cik))throw failure(400,"Valid reporting-person SEC CIK required");
-      const person=await query("SELECT 1 FROM sec_transactions WHERE owner_cik=$1 LIMIT 1",[cik]);
+      const person=await ctx.query("SELECT 1 FROM sec_transactions WHERE owner_cik=$1 LIMIT 1",[cik]);
       if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
-      await query("INSERT INTO followed_people(user_id,owner_cik) VALUES($1,$2) ON CONFLICT DO NOTHING",[user.id,cik]);
+      // Same cap pattern as manual holdings. Re-following someone (even at the cap, or racing a
+      // double click) returns the existing row untouched, so only a new follow past the cap is refused.
+      const saved=await ctx.query(`INSERT INTO followed_people(user_id,owner_cik)
+        SELECT $1,$2 WHERE
+        (SELECT count(*) FROM followed_people WHERE user_id=$1)<${MAX_FOLLOWS}
+        OR EXISTS(SELECT 1 FROM followed_people WHERE user_id=$1 AND owner_cik=$2)
+        ON CONFLICT(user_id,owner_cik) DO UPDATE SET created_at=followed_people.created_at
+        RETURNING owner_cik`,[user.id,cik]);
+      if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
       return json(res,200,{saved:true,owner_cik:cik});
     }
     if(p.startsWith("/v1/me/people/") && m==="DELETE"){
       const user=await requireUser(req,ctx),cik=decodeURIComponent(p.slice("/v1/me/people/".length));
       if(!/^\d{1,12}$/.test(cik))throw failure(400,"Invalid SEC reporting-person CIK");
-      await query("DELETE FROM followed_people WHERE user_id=$1 AND owner_cik=$2",[user.id,cik]);
+      await ctx.query("DELETE FROM followed_people WHERE user_id=$1 AND owner_cik=$2",[user.id,cik]);
       return json(res,200,{deleted:true,owner_cik:cik});
     }
     if(p==="/v1/me/watchlist" && m==="POST"){
@@ -364,9 +446,10 @@ async function route(req,res,ctx){
   throw failure(404,"Route not found");
 }
 /* options (for tests): currentUser(req) → account row or null, env (paywall/billing
- * settings, default process.env), stripe (a createStripeClient()-shaped client), quiet. */
+ * settings, default process.env), stripe (a createStripeClient()-shaped client),
+ * query(sql, params) (default the PostgreSQL pool; used by the followed-people routes), quiet. */
 export function createApiServer(options={}){
-  const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null};
+  const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
   return createServer((req,res)=>{route(req,res,ctx).catch(error=>{
     const status=Number(error?.status)||500;

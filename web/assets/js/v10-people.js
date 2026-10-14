@@ -41,7 +41,7 @@ function card(p,where){
   '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
   '<div class="v10-person-card__actions">'+(t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<a href="filings.html">Filings ↗</a>')+followButton(id,where==="preview")+'</div></article>';
 }
-const moreButton=()=>{const left=records.length-visible;return left>0?'<div class="v10-people-more"><button type="button" data-people-more>Show more people <span>· '+left+' more</span></button></div>':""};
+const moreButton=()=>{const left=records.length-visible;return left>0?'<div class="v10-people-more"><button type="button" data-people-more data-hf-atom>Show more people <span>· '+left+' more</span></button></div>':""};
 function countLabel(){
  if(loadError)return "Unavailable";
  const n=records.length,base=(n>=100?"The first 100":String(n))+" reporting "+(n===1?"person":"people");
@@ -78,7 +78,7 @@ function drawFollowing(items){
   const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik);
   return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md")||"")+
   '<div><strong>'+esc(shown(raw))+'</strong><small>'+esc(t||"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
-  (t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true">Unfollow</button>':"")+'</div>';
+  (t?'<a href="'+esc(companyHref(t))+'" data-hf-atom>'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true" data-hf-atom>Unfollow</button>':"")+'</div>';
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
  media?.hydrate(followingHost);
 }

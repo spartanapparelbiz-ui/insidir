@@ -19,7 +19,7 @@
   const stroke = 'fill="none" stroke-linecap="round" stroke-linejoin="round"';
   const doc = c => `<path d="M7.2 5.4h3.9l2.3 2.3v6.4a.6.6 0 0 1-.6.6H7.2a.6.6 0 0 1-.6-.6V6a.6.6 0 0 1 .6-.6Z" ${stroke} stroke="${c}" stroke-width="1.3"/>
     <path d="M10.9 5.6v2.3h2.3M8.4 10.6h3.2M8.4 12.5h2.1" ${stroke} stroke="${c}" stroke-width="1.2"/>`;
-  // Hairline ring in the badge's own colour (ink for purchases, warm for sales); no filled discs.
+  // Hairline ring in the badge's own colour (green for purchases, red for sales); no filled discs.
   const ring = '<circle cx="10" cy="10" r="9.2" fill="none" stroke="currentColor" stroke-width="1.2"/>';
   const ICON = {
     buy: svg(`${ring}<path d="M7 13 13 7M8.4 7H13v4.6" ${stroke} stroke="currentColor" stroke-width="1.5"/>`),

@@ -1,0 +1,246 @@
+/* Insidir V13 — the overview (dashboard.html): insider flow, totals and the transactions table.
+   On top of v13-halftone.css and v13-app.css. Every declaration lives in the insidir-v13 layer and is
+   !important (see the note at the top of v13-halftone.css); colours only through tokens.
+
+   Colour does one job here: market direction. Purchases and rises are --hf-up (green), sales and
+   falls are --hf-down (red), always beside a word, a sign or a ▲/▼ marker so colour never carries the
+   meaning alone. Everything else is ink on paper: there is no accent colour, the logo's full stop
+   included. Marks are thin and square (bars ≤ 24px wide), grid and axes are solid 1px hairlines,
+   nothing glows, and the values the reader needs are printed, not hidden in hovers.
+
+   Motion: module heads, the totals band, the chart and company panels, the ranked transactions, the
+   watchlist and note rows, the tables and the people cards rise in on the dots' spring as they scroll
+   into view (data-hf-reveal / data-hf-reveal-group in dashboard.html, run by v13-motion.js). Rows of
+   ruled lists answer the pointer at once with the surface tone, like table rows. */
+@layer insidir-v13{
+
+/* ---------- direction markers (CSS triangles: the self-hosted font has no ▲▼) ---------- */
+body.v13 .rd-tri{display:inline-block!important;flex:none!important;width:8px!important;height:7px!important;margin:0 7px 1px 0!important;vertical-align:middle!important;background:currentColor!important}
+body.v13 .rd-tri--up{clip-path:polygon(50% 0,100% 100%,0 100%)!important;background:var(--hf-up)!important}
+body.v13 .rd-tri--down{clip-path:polygon(0 0,100% 0,50% 100%)!important;background:var(--hf-down)!important}
+body.v13 .rd-type{display:inline-flex!important;align-items:center!important;white-space:nowrap!important}
+body.v13 .rd-type .rd-tri{margin-right:6px!important}
+body.v13 .rd-type--other{color:var(--hf-soft)!important;border-color:var(--hf-line-2)!important}
+body.v13 .rd-qty{font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
+body.v13 .rd-qty--buy{color:var(--hf-up)!important}
+body.v13 .rd-qty--sell{color:var(--hf-down)!important}
+body.v13 .rd-qty--other{color:var(--hf-soft)!important}
+body.v13 .rd-filters button .rd-tri{margin:0!important}
+body.v13 .rd-filters button[aria-pressed="true"] .rd-tri--up,body.v13 .rd-filters button[aria-pressed="true"] .rd-tri--down{background:var(--hf-bg)!important}
+
+/* ---------- 01 insider flow ---------- */
+body.v13 .rd-module--flow .rd-module__head{padding-bottom:22px!important}
+body.v13 .rd-kpis{display:grid!important;container-type:inline-size!important;--rd-col:20cqi;--rd-pad:36px;grid-template-columns:repeat(5,minmax(0,1fr))!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important}
+body.v13 .rd-kpis>.rd-empty{grid-column:1/-1!important;padding:18px 0!important}
+body.v13 .rd-kpi{min-width:0!important;margin:0!important;padding:18px 18px 20px!important;border-left:1px solid var(--hf-line)!important}
+body.v13 .rd-kpi:first-child{padding-left:0!important;border-left:0!important}
+body.v13 .rd-kpi__label{display:flex!important;align-items:center!important;margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13 .rd-kpi__value{margin:12px 0 0!important;font:700 clamp(22px,2.1vw,30px)/1.1 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important;white-space:nowrap!important;overflow-wrap:normal!important}
+body.v13 .rd-kpi__value{font-size:min(clamp(22px,2.1vw,30px),calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
+body.v13 .rd-kpi__value>span{display:inline!important}
+body.v13 .rd-kpi__value .rd-tri{width:11px!important;height:10px!important;margin-right:8px!important}
+body.v13 .rd-kpi__value--up{color:var(--hf-up)!important}
+body.v13 .rd-kpi__value--down{color:var(--hf-down)!important}
+body.v13 .rd-kpi__note{margin:10px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
+
+body.v13 .rd-flow{display:grid!important;grid-template-columns:minmax(0,7fr) minmax(0,5fr)!important;gap:clamp(32px,4vw,64px)!important;margin:clamp(28px,3vw,40px) 0 0!important}
+body.v13 .rd-panel{min-width:0!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
+body.v13 .rd-panel--largest{margin:clamp(36px,4vw,52px) 0 0!important}
+body.v13 .rd-panel__head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:10px 18px!important;margin:0 0 16px!important;padding:0!important}
+body.v13 .rd-panel__head>div{min-width:0!important}
+body.v13 .rd-panel h3{margin:0!important;font:700 16px/1.25 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13 .rd-panel__head p{margin:6px 0 0!important;font:400 11px/1.65 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;max-width:60ch!important;text-wrap:pretty!important}
+body.v13 .rd-toggle{flex:none!important;height:32px!important;min-height:32px!important;padding:0 12px!important;margin:0!important;background:transparent!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;color:var(--hf-ink)!important;cursor:pointer!important;font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;white-space:nowrap!important}
+body.v13 .rd-toggle:hover{border-color:var(--hf-ink)!important;background:var(--hf-surface)!important}
+body.v13 .rd-toggle:focus-visible{outline:1px solid var(--hf-ink)!important;outline-offset:2px!important}
+
+/* Legend: square keys mirror the bars; the scope sits at the right. */
+body.v13 .rd-legend{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px 18px!important;margin:0 0 12px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13 .rd-legend>span{display:inline-flex!important;align-items:center!important;gap:8px!important}
+body.v13 .rd-legend__scope{margin-left:auto!important;letter-spacing:.06em!important;text-transform:none!important;color:var(--hf-faint)!important}
+body.v13 .rd-swatch{display:inline-block!important;width:10px!important;height:10px!important}
+body.v13 .rd-swatch--up{background:var(--hf-up)!important}
+body.v13 .rd-swatch--down{background:var(--hf-down)!important}
+
+/* Value by trade date: a diverging column chart. Ticks and labels are mono, figures tabular. */
+body.v13 .rd-dchart{margin:0!important;padding:0!important}
+body.v13 .rd-dchart__frame{position:relative!important;display:grid!important;grid-template-columns:64px minmax(0,1fr)!important;margin:0!important}
+body.v13 .rd-dchart__axis{position:relative!important;height:100%!important}
+body.v13 .rd-dchart__axis span{position:absolute!important;right:12px!important;transform:translateY(-50%)!important;font:400 10px/1 var(--hf-mono)!important;letter-spacing:.02em!important;font-variant-numeric:tabular-nums!important;color:var(--hf-faint)!important;white-space:nowrap!important}
+body.v13 .rd-dchart__plot{position:relative!important;height:100%!important;min-width:0!important}
+body.v13 .rd-dchart__grid{position:absolute!important;left:0!important;right:0!important;height:1px!important;display:block!important;background:var(--hf-line)!important;pointer-events:none!important}
+body.v13 .rd-dchart__grid--zero{background:var(--hf-soft)!important}
+body.v13 .rd-dchart__grid{z-index:1!important}
+body.v13 :is(.rd-day__bar,.rd-day__val){z-index:2!important}
+body.v13 .rd-dchart__cols{position:absolute!important;inset:0!important;display:flex!important;margin:0!important;padding:0!important;list-style:none!important}
+body.v13 .rd-day{position:relative!important;flex:1 1 0!important;min-width:0!important;margin:0!important;padding:0!important;list-style:none!important;cursor:default!important;outline:none!important}
+body.v13 .rd-day:hover,body.v13 .rd-day.is-active{background:var(--hf-surface)!important}
+body.v13 .rd-day:focus-visible{box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
+body.v13 .rd-day__bar{position:absolute!important;left:50%!important;width:min(24px,56%)!important;transform:translateX(-50%)!important;display:block!important}
+body.v13 .rd-day__bar--up{background:var(--hf-up)!important}
+body.v13 .rd-day__bar--down{background:var(--hf-down)!important}
+body.v13 .rd-day__val{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;font:500 10.5px/14px var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important;white-space:nowrap!important;pointer-events:none!important;background:var(--hf-bg)!important;padding:0 4px!important}
+body.v13 .rd-day:hover .rd-day__val,body.v13 .rd-day.is-active .rd-day__val{background:var(--hf-surface)!important}
+/* Exact peak labels on the first and last day hug the inner edge instead of running past the chart. */
+body.v13 .rd-day:first-child .rd-day__val{left:0!important;transform:none!important}
+body.v13 .rd-day:last-child .rd-day__val{left:auto!important;right:0!important;transform:none!important}
+body.v13 .rd-dchart__x{display:flex!important;margin:8px 0 0 64px!important}
+body.v13 .rd-dchart__x span{flex:1 1 0!important;min-width:0!important;text-align:center!important;font:400 10px/1.4 var(--hf-mono)!important;letter-spacing:.04em!important;color:var(--hf-faint)!important;white-space:nowrap!important}
+body.v13 .rd-dchart--tight .rd-dchart__x span{display:flex!important;flex-direction:column!important;align-items:center!important;line-height:1.35!important}
+body.v13 .rd-dchart__x b{font-weight:500!important;text-transform:uppercase!important;letter-spacing:.12em!important;color:var(--hf-muted)!important}
+body.v13 .rd-dtable{margin:18px 0 0!important}
+body.v13 .rd-table--days{min-width:0!important}
+body.v13 .rd-table--days td,body.v13 .rd-table--days td:first-child{color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
+
+/* The readout for a hovered or focused day: values lead, labels follow, line keys not boxes. */
+body.v13 .rd-tip{position:fixed!important;z-index:60!important;min-width:196px!important;margin:0!important;padding:10px 12px!important;background:var(--hf-surface-2)!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;color:var(--hf-ink)!important;pointer-events:auto!important}
+body.v13 .rd-tip[hidden]{display:none!important}
+body.v13 .rd-tip p{margin:0!important}
+body.v13 .rd-tip__date{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;margin:0 0 6px!important}
+body.v13 .rd-tip__row{display:flex!important;align-items:center!important;gap:8px!important;font:400 11px/1.8 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-tip__row strong{font:700 12.5px/1.8 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important}
+body.v13 .rd-tip__key{display:inline-block!important;width:12px!important;height:2px!important}
+body.v13 .rd-tip__key--up{background:var(--hf-up)!important}
+body.v13 .rd-tip__key--down{background:var(--hf-down)!important}
+body.v13 .rd-tip__net{margin:6px 0 0!important;padding:6px 0 0!important;border-top:1px solid var(--hf-line)!important;font:500 11px/1.6 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-soft)!important}
+
+/* By company: sales grow left from the centre line, purchases right; the net and exact values are printed. */
+body.v13 .rd-co{display:grid!important;grid-template-columns:minmax(96px,1.15fr) minmax(0,1fr) minmax(0,1fr) minmax(92px,auto)!important;column-gap:0!important;margin:0!important}
+body.v13 .rd-co>*,body.v13 .rd-co__row{grid-column:1/-1!important}
+body.v13 .rd-co__head,body.v13 .rd-co__list,body.v13 .rd-co__row{display:grid!important;grid-template-columns:subgrid!important;align-items:center!important}
+body.v13 .rd-co__head{padding:0 0 8px!important;border-bottom:1px solid var(--hf-line)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13 .rd-co__head>span{display:flex!important;align-items:center!important}
+body.v13 .rd-co__side{padding:0 10px!important}
+body.v13 .rd-co__side--sell{justify-content:flex-end!important}
+body.v13 .rd-co__head .rd-num{justify-content:flex-end!important}
+body.v13 .rd-co__list{margin:0!important;padding:0!important;list-style:none!important}
+body.v13 .rd-co__row{row-gap:6px!important;margin:0!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important}
+body.v13 .rd-co__row:last-child{border-bottom:0!important}
+body.v13 .rd-co__id{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding-right:10px!important;color:var(--hf-ink)!important;text-decoration:none!important}
+body.v13 .rd-co__id>span{display:flex!important;flex-direction:column!important;min-width:0!important}
+body.v13 .rd-co__id strong{font:700 12.5px/1.3 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important}
+body.v13 .rd-co__id small{font:400 10px/1.4 var(--hf-mono)!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 .rd-co__id:hover strong{text-decoration:underline!important;text-underline-offset:4px!important}
+body.v13 .rd-co__id .ins-media{--ins-size:26px!important}
+body.v13 .rd-co__track{display:flex!important;height:10px!important;min-width:0!important}
+body.v13 .rd-co__track--sell{justify-content:flex-end!important;border-right:1px solid var(--hf-soft)!important}
+body.v13 .rd-co__track--buy{justify-content:flex-start!important}
+body.v13 .rd-co__bar{display:block!important;height:10px!important}
+body.v13 .rd-co__bar--down{background:var(--hf-down)!important}
+body.v13 .rd-co__bar--up{background:var(--hf-up)!important}
+body.v13 .rd-co__net{padding-left:12px!important;font:500 12px/1.4 var(--hf-mono)!important;text-align:right!important}
+/* A company row answers the pointer like a table row, so the eye can follow it to its net figure. */
+body.v13 .rd-co__row{transition:background-color .15s!important}
+body.v13 .rd-co__row:hover{background:var(--hf-surface)!important}
+body.v13 .rd-co__detail{grid-column:2/-1!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+
+/* Largest reported transactions: ranked, value first, the bar scaled to the largest. */
+body.v13 .rd-largest{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line)!important}
+body.v13 .rd-largest>.rd-empty{list-style:none!important}
+body.v13 .rd-big{display:grid!important;grid-template-columns:34px minmax(120px,170px) minmax(0,1fr) auto!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;align-items:center!important;gap:6px 16px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important}
+body.v13 .rd-big__rank{grid-area:rank!important;font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.08em!important;color:var(--hf-faint)!important}
+body.v13 .rd-big__value{grid-area:value!important;font:700 17px/1.2 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;white-space:nowrap!important}
+body.v13 .rd-big__bar{grid-area:bar!important;display:block!important;height:6px!important;background:transparent!important}
+body.v13 .rd-big__bar>span{display:block!important;height:100%!important}
+body.v13 .rd-big--buy .rd-big__bar>span{background:var(--hf-up)!important}
+body.v13 .rd-big--sell .rd-big__bar>span{background:var(--hf-down)!important}
+body.v13 .rd-big__what{grid-area:what!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px 10px!important;min-width:0!important;font:400 12px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13 .rd-big__what a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
+body.v13 .rd-big__what a:hover{text-decoration-color:currentColor!important}
+body.v13 .rd-big__terms{grid-area:terms!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
+body.v13 .rd-big{transition:background-color .15s!important}
+body.v13 .rd-big:hover{background:var(--hf-surface)!important}
+/* Wide screens: one line per transaction, the bar last before the link; the terms column is fixed so every bar
+   starts at the same x and shares one scale. Room is kept around the links for their focus ring. */
+@media (min-width:1360px){
+  body.v13 .rd-big{grid-template-columns:34px 150px minmax(0,1fr) 520px minmax(48px,.45fr) auto!important;grid-template-areas:"rank value what terms bar link"!important;gap:0 18px!important;padding:12px 0!important}
+  body.v13 .rd-big__what{flex-wrap:nowrap!important;overflow:hidden!important;padding:4px!important;margin:-4px!important}
+  body.v13 .rd-big__what a{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.v13 .rd-big__what a:not(:last-child){flex:none!important}
+}
+
+/* ---------- 04 insider transactions ---------- */
+body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight:500!important}
+body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:right!important}
+body.v13 .rd-table--trades td.rd-nb .rd-sub{white-space:nowrap!important}
+body.v13 .rd-table--trades .rd-entity+.rd-sub{max-width:180px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 .rd-row__detail .rd-type{margin-right:6px!important}
+@media (min-width:760px){body.v13 .rd-table--trades th:nth-child(7),body.v13 .rd-table--trades td[data-label=Traded]{padding-left:28px!important}}
+@media (min-width:760px) and (max-width:1119px){
+  body.v13 .rd-table-wrap:has(>.rd-table--trades){overflow:visible!important}
+  body.v13 .rd-table--trades{display:block!important;min-width:0!important;width:100%!important}
+  body.v13 .rd-table--trades thead{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+  body.v13 .rd-table--trades tbody{display:block!important}
+  body.v13 .rd-table--trades tbody tr{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:14px!important;padding:16px 0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important}
+  body.v13 .rd-table--trades tbody tr:last-child{border-bottom:0!important}
+  body.v13 .rd-table--trades tbody tr:hover td{background:transparent!important}
+  body.v13 .rd-table--trades td,body.v13 .rd-table--trades td:last-child{display:block!important;grid-column:span 2!important;padding:0!important;border:0!important;text-align:left!important;white-space:normal!important;min-width:0!important}
+  body.v13 .rd-table--trades td:nth-child(-n+3){grid-column:span 4!important}
+  body.v13 .rd-table--trades td[colspan]{grid-column:1/-1!important}
+  body.v13 .rd-table--trades td[data-label=Traded]{padding-left:0!important}
+  body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:left!important}
+  body.v13 .rd-table--trades td.rd-links{align-self:end!important;text-align:right!important}
+  body.v13 .rd-table--trades td[data-label]::before{content:attr(data-label)!important;display:block!important;margin:0 0 4px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:1179px){
+  body.v13 .rd-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;--rd-col:33.333cqi}
+  body.v13 .rd-kpi{grid-column:span 2!important}
+  body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 3!important;border-top:1px solid var(--hf-line)!important}
+  body.v13 .rd-kpi:nth-child(4){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-flow{grid-template-columns:minmax(0,1fr)!important}
+}
+@media (max-width:759px){
+  body.v13 .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;--rd-col:50cqi;--rd-pad:14px}
+  /* The day table on phones: the date on its own line, the three figures side by side. */
+  body.v13 .rd-table--days tbody tr{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px 10px!important;padding:12px 0!important}
+  body.v13 .rd-table--days td:first-child::before{content:none!important}
+  body.v13 .rd-table--days td,body.v13 .rd-table--days td:first-child,body.v13 .rd-table--days .rd-qty{white-space:normal!important;overflow-wrap:anywhere!important}
+  body.v13 .rd-kpi,body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 1!important;padding:16px 0 16px 14px!important;border-left:1px solid var(--hf-line)!important;border-top:1px solid var(--hf-line)!important}
+  body.v13 .rd-kpi:nth-child(odd){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-kpi:nth-child(-n+2){border-top:0!important}
+  body.v13 .rd-kpi:nth-child(5){grid-column:1/-1!important}
+  body.v13 .rd-panel__head{flex-direction:column!important}
+  body.v13 .rd-legend__scope{margin-left:0!important;flex-basis:100%!important}
+  body.v13 .rd-dchart__frame{grid-template-columns:52px minmax(0,1fr)!important}
+  body.v13 .rd-dchart__axis span{right:8px!important}
+  body.v13 .rd-dchart__x{margin-left:52px!important}
+  body.v13 .rd-dchart__x span{display:flex!important;flex-direction:column!important;align-items:center!important;line-height:1.35!important}
+  body.v13 .rd-co{grid-template-columns:minmax(78px,.9fr) minmax(0,1fr) minmax(0,1fr) minmax(84px,auto)!important}
+  body.v13 .rd-co__id .ins-media{display:none!important}
+  body.v13 .rd-co__id small{display:none!important}
+  body.v13 .rd-co__detail{grid-column:1/-1!important}
+  body.v13 .rd-big{grid-template-columns:28px minmax(0,1fr) auto!important;grid-template-areas:"rank value link" ". bar bar" ". what what" ". terms terms"!important}
+  body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:left!important}
+  /* Stacked records: who on one line, company and transaction side by side, the three figures in a row, then the dates. */
+  body.v13 .rd-table--trades tbody tr.rd-trade{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px 14px!important}
+  body.v13 .rd-table--trades tr.rd-trade td{grid-column:span 3!important}
+  body.v13 .rd-table--trades tr.rd-trade td:nth-child(1),body.v13 .rd-table--trades tr.rd-trade td.rd-links{grid-column:1/-1!important}
+  body.v13 .rd-table--trades tr.rd-trade td:nth-child(4),body.v13 .rd-table--trades tr.rd-trade td:nth-child(5),body.v13 .rd-table--trades tr.rd-trade td:nth-child(6){grid-column:span 2!important}
+  body.v13 .rd-table--trades tr.rd-trade td.rd-links{padding-top:0!important}
+}
+@media (max-width:389px){
+  body.v13 .rd-kpi__value{font-size:min(20px,calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
+  body.v13 .rd-co__net{font-size:11px!important;padding-left:8px!important}
+  body.v13 .rd-co{grid-template-columns:60px minmax(0,1fr) minmax(0,1fr) minmax(76px,auto)!important}
+}
+@media (max-width:600px){
+  /* Touch targets: standalone links in the flow are at least 32px tall on phones. */
+  body.v13 .rd-co__id{min-height:32px!important}
+  body.v13 .rd-big__what a{display:inline-flex!important;align-items:center!important;min-height:32px!important}
+}
+@media (pointer:coarse){
+  body.v13 .rd-toggle{height:40px!important;min-height:40px!important}
+}
+@media (forced-colors:active){
+  body.v13 :is(.rd-day__bar,.rd-co__bar,.rd-swatch,.rd-tri,.rd-tip__key),body.v13 .rd-big .rd-big__bar>span{background:CanvasText!important}
+  body.v13 .rd-dchart__grid{background:GrayText!important}
+  body.v13 .rd-dchart__grid--zero{background:CanvasText!important}
+  body.v13 .rd-day:focus-visible{outline:2px solid Highlight!important;outline-offset:-2px!important}
+  body.v13 .rd-filters button[aria-pressed="true"]{forced-color-adjust:none!important;background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}
+  body.v13 .rd-filters button[aria-pressed="true"] .rd-tri{background:HighlightText!important}
+}
+}
+/* end @layer insidir-v13 */

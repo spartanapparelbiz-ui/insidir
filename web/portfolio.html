@@ -5,29 +5,30 @@
   <title>Your portfolio — insidir.</title>
   <meta name="description" content="Connect brokerage holdings read-only and investigate relevant SEC disclosures. No trades are placed.">
   <meta name="theme-color" content="#0c0c0b">
-  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="stylesheet" href="assets/css/research.css">
   <link rel="stylesheet" href="assets/css/portfolio.css">
-  <script defer src="assets/js/app.js"></script>
-  <script defer src="assets/js/portfolio.js"></script>
-  <script defer src="assets/js/manual-holdings.js"></script>
+  <script defer src="assets/js/app.js?v=13"></script>
+  <script defer src="assets/js/portfolio.js?v=3"></script>
+  <script defer src="assets/js/manual-holdings.js?v=3"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
-<script defer src="assets/js/v13-halftone.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=17">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=7">
+<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head>
 <body class="portfolio-page v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="portfolio"></header>
   <main id="main" class="app-main portfolio-desk">
     <section class="portfolio-hero desk-masthead">
+      <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="140" aria-hidden="true"></div>
       <div class="desk-topline"><p class="research-eyebrow">INSIDIR / PRIVATE PORTFOLIO</p><p class="desk-topline__note">Self-reported holdings · read-only sync · no orders</p></div>
       <h1>Your holdings.<br>The bigger picture.</h1>
       <p class="research-lead desk-lead">Add your stocks in seconds. Explore public SEC records related to your holdings — no brokerage connection, payment, or trading permissions required.</p>
@@ -42,11 +43,11 @@
       <form id="manual-form" class="manual-holdings-form">
         <div><label for="manual-ticker">Ticker</label><input id="manual-ticker" name="ticker" type="text" autocomplete="off" spellcheck="false" maxlength="15" placeholder="e.g. AAPL" required></div>
         <div><label for="manual-quantity">Shares</label><input id="manual-quantity" name="quantity" type="number" min="0.00000001" max="1000000000" step="any" placeholder="e.g. 2.5" required></div>
-        <button class="btn btn--dark" type="submit" id="manual-save">Save holding</button>
+        <button class="btn btn--dark" type="submit" id="manual-save" data-hf-still>Save holding</button>
       </form>
       <p id="manual-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save your portfolio. You can add up to 100 tickers.</p>
-      <a href="signin.html" id="manual-signin" class="portfolio-small-link" hidden>Sign in to add holdings →</a>
-      <div id="manual-content" hidden>
+      <a href="signin.html" id="manual-signin" class="portfolio-small-link" data-hf-atom hidden>Sign in to add holdings →</a>
+      <div id="manual-content" data-desk-reveal="group" hidden>
         <div class="portfolio-section-heading"><div><p class="research-eyebrow">YOUR ENTRIES</p><h2>Your stocks.</h2></div><p class="research-small">Self-reported quantities, not current market values</p></div>
         <div id="manual-holdings" aria-live="polite"></div>
         <section class="portfolio-activity" aria-labelledby="manual-evidence-title">
@@ -57,12 +58,12 @@
       </div>
     </section>
     <section id="portfolio-results" hidden>
-      <div class="portfolio-section-heading">
+      <div class="portfolio-section-heading" data-desk-reveal>
         <div><p class="research-eyebrow">03 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
         <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
       </div>
-      <div id="portfolio-accounts" class="portfolio-accounts"></div>
-      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title">
+      <div id="portfolio-accounts" class="portfolio-accounts" data-desk-reveal="group"></div>
+      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title" data-desk-reveal>
         <p class="research-eyebrow">04 / BROKERAGE SEC EVIDENCE</p>
         <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
         <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
@@ -70,7 +71,7 @@
       </section>
     </section>
     </div>
-    <aside class="portfolio-rail">
+    <aside class="portfolio-rail" data-hf-reveal-group>
     <section class="portfolio-connection panel" aria-labelledby="portfolio-connection-title">
       <div>
         <p class="research-eyebrow">02 / OPTIONAL AUTOMATIC SYNC</p>

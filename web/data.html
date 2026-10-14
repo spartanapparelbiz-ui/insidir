@@ -8,16 +8,16 @@
 <meta property="og:title" content="Data & sources — Insidir">
 <meta property="og:description" content="Where Insidir's data comes from: SEC EDGAR submissions, XBRL company facts, Form 4 ownership reports, the SEC ticker list, delayed Yahoo Finance prices and Wikidata, Wikipedia and Wikimedia Commons profiles. Freshness, licensing and limitations.">
 <title>Data & sources — insidir.</title>
-<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v3-static.css">
 <link rel="stylesheet" href="assets/css/v6-static.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-static.css?v=2">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
+<link rel="stylesheet" href="assets/css/v13-static.css?v=4">
 <script defer src="assets/js/v6-site.js?v=2"></script>
-<script defer src="assets/js/v13-halftone.js?v=1"></script>
+<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head>
 <body class="v3-static v6-static v13">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -38,10 +38,11 @@
  </nav>
 </header>
 <main id="Content">
-<section class="mk-hero" aria-labelledby="mk-title">
+<section class="mk-hero v13-field-host" aria-labelledby="mk-title">
+ <div class="v13-field mk-hero__field" data-halftone-field data-field-coverage="0.1" data-pointer-host="document" aria-hidden="true"></div>
  <div class="mk-shell mk-hero__grid">
   <div>
-   <p class="mk-eyebrow"><span class="mk-live" aria-hidden="true"></span>Insidir / Data &amp; sources</p>
+   <p class="mk-eyebrow">Insidir / Data &amp; sources</p>
    <h1 id="mk-title">Where every number <span>comes from.</span></h1>
    <p class="mk-lede">Insidir reads public records from the SEC and a short list of named public sources. This page lists each one: what Insidir uses it for, how fresh it is, how it is licensed and what it cannot tell you.</p>
    <div class="mk-actions">
@@ -49,14 +50,14 @@
     <a class="v9-btn v12-outline-button" href="platform.html">See the platform <span class="v13-arrow" aria-hidden="true">↗</span></a>
    </div>
   </div>
-  <nav aria-label="On this page">
+  <nav aria-label="On this page" data-hf-reveal>
    <p class="mk-eyebrow mk-index-title">On this page</p>
    <ol class="mk-index">
-    <li><a href="#1-sources"><span>01</span>Sources<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#2-freshness"><span>02</span>Freshness<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#3-licensing"><span>03</span>Licensing &amp; credit<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#4-not-used"><span>04</span>Not used<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#5-limits"><span>05</span>Limitations<span aria-hidden="true">↓</span></a></li>
+    <li><a href="#1-sources"><span data-hf-atom>01</span>Sources<span aria-hidden="true">↓</span></a></li>
+    <li><a href="#2-freshness"><span data-hf-atom>02</span>Freshness<span aria-hidden="true">↓</span></a></li>
+    <li><a href="#3-licensing"><span data-hf-atom>03</span>Licensing &amp; credit<span aria-hidden="true">↓</span></a></li>
+    <li><a href="#4-not-used"><span data-hf-atom>04</span>Not used<span aria-hidden="true">↓</span></a></li>
+    <li><a href="#5-limits"><span data-hf-atom>05</span>Limitations<span aria-hidden="true">↓</span></a></li>
    </ol>
   </nav>
  </div>
@@ -64,12 +65,12 @@
 
 <section class="mk-section" id="1-sources" aria-labelledby="1-sources-h">
  <div class="mk-shell" data-folio="01 / 05">
-  <div class="mk-head">
+  <div class="mk-head" data-hf-reveal>
    <div><p class="mk-eyebrow">Sources</p><h2 id="1-sources-h">Eight sources, <span>each one named.</span></h2></div>
    <div class="mk-head__aside"><p>Four come from the SEC and carry the filings themselves. The other four add delayed prices, headlines and company profiles, and are credited wherever they appear.</p></div>
   </div>
 
-  <ol class="mk-sources">
+  <ol class="mk-sources" data-hf-reveal-group>
    <li class="mk-source" id="edgar">
     <div class="mk-source__name"><h3>SEC EDGAR submissions</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>Each company's filing history: annual and quarterly reports, current reports on Form 8-K, proxy statements and ownership filings, with the original documents.</p><p>Insidir requests it with a declared identity and keeps its requests below the SEC's fair-access limit of ten per second.</p></div>
@@ -116,31 +117,31 @@
 
 <section class="mk-section" id="2-freshness" aria-labelledby="2-freshness-h">
  <div class="mk-shell" data-folio="02 / 05">
-  <div class="mk-head">
+  <div class="mk-head" data-hf-reveal>
    <div><p class="mk-eyebrow">Freshness</p><h2 id="2-freshness-h">How old a number <span>can be.</span></h2></div>
    <div class="mk-head__aside"><p>Insidir keeps a copy of what it reads for a short time before asking the source again. The longest it waits, by kind of data:</p></div>
   </div>
 
-  <ol class="mk-cadence">
-   <li><b>1<small>min</small></b><ul><li>Prices, one-day range</li></ul></li>
-   <li><b>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
-   <li><b>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
-   <li><b>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li>8-K announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
-   <li><b>1<small>hour</small></b><ul><li>Prices, five-year range</li></ul></li>
-   <li><b>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
+  <ol class="mk-cadence" data-hf-reveal-group>
+   <li><b data-hf-atom>1<small>min</small></b><ul><li>Prices, one-day range</li></ul></li>
+   <li><b data-hf-atom>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
+   <li><b data-hf-atom>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
+   <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li>8-K announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
+   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li></ul></li>
+   <li><b data-hf-atom>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
   </ol>
-  <p class="mk-note">Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
+  <p class="mk-note" data-hf-reveal>Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
  </div>
 </section>
 
 <section class="mk-section" id="3-licensing" aria-labelledby="3-licensing-h">
  <div class="mk-shell" data-folio="03 / 05">
-  <div class="mk-head">
+  <div class="mk-head" data-hf-reveal>
    <div><p class="mk-eyebrow">Licensing &amp; credit</p><h2 id="3-licensing-h">Credited <span>where it appears.</span></h2></div>
    <div class="mk-head__aside"><p>Each source is used on its own terms, and each page that shows it says where it came from.</p></div>
   </div>
 
-  <div class="mk-table-wrap">
+  <div class="mk-table-wrap" data-hf-reveal>
    <table class="mk-table">
     <thead><tr><th scope="col">Source</th><th scope="col">Terms</th><th scope="col">How Insidir credits it</th></tr></thead>
     <tbody>
@@ -158,12 +159,12 @@
 
 <section class="mk-section" id="4-not-used" aria-labelledby="4-not-used-h">
  <div class="mk-shell" data-folio="04 / 05">
-  <div class="mk-head">
+  <div class="mk-head" data-hf-reveal>
    <div><p class="mk-eyebrow">Not used</p><h2 id="4-not-used-h">Sources Insidir <span>leaves alone.</span></h2></div>
    <div class="mk-head__aside"><p>Some data is popular with investing apps. Insidir does not ingest it until its legal and licensing questions are settled, and some of it never.</p></div>
   </div>
 
-  <ul class="mk-cells mk-cells--4">
+  <ul class="mk-cells mk-cells--4" data-hf-reveal>
    <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Congressional disclosures</h3><p>House and Senate financial disclosures are not scraped, ingested or shown pending legal review.</p></li>
    <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Social media</h3><p>No posts are collected from X, Truth Social or any other service without authorized access.</p></li>
    <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Crypto wallets</h3><p>No wallet is attributed to a public figure without strong, verifiable evidence.</p></li>
@@ -174,12 +175,12 @@
 
 <section class="mk-section" id="5-limits" aria-labelledby="5-limits-h">
  <div class="mk-shell" data-folio="05 / 05">
-  <div class="mk-head">
+  <div class="mk-head" data-hf-reveal>
    <div><p class="mk-eyebrow">Limitations</p><h2 id="5-limits-h">What the record <span>cannot tell you.</span></h2></div>
    <div class="mk-head__aside"><p>Public data has gaps. These are the ones that matter most when you read Insidir.</p></div>
   </div>
 
-  <ul class="mk-list mk-list--2">
+  <ul class="mk-list mk-list--2" data-hf-reveal>
    <li>The filing library starts from the filings Insidir has imported; it is not a complete historical archive.</li>
    <li>The SEC notes that its ticker list may be incomplete, so a company may not be found by ticker.</li>
    <li>Not every company reports every measure in XBRL, and values can be restated in later filings.</li>
@@ -193,8 +194,8 @@
 </section>
 
 <section class="mk-final v13-field-host" aria-labelledby="mk-final-heading">
- <div class="v13-field" data-halftone-field data-dot-gap="10" data-field-coverage="0.07" data-radius="120" aria-hidden="true"></div>
- <div class="mk-shell mk-final__inner">
+ <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="150" aria-hidden="true"></div>
+ <div class="mk-shell mk-final__inner" data-hf-reveal-group>
   <p class="mk-eyebrow">Insidir · $39 a month</p>
   <h2 id="mk-final-heading">The record, <span>with its sources.</span></h2>
   <p class="mk-final__copy">Every source on this page, organized into one research workspace for $39 a month.</p>

@@ -4,7 +4,15 @@
 
    These are signed-in pages, so they share the product's proportions — a 70px header on a hairline,
    a 1400px sheet — but carry no product navigation: logo, account and sign out only. One plan, set
-   as a quiet sheet beside the facts of what it includes. */
+   as a quiet sheet beside the facts of what it includes. Hovers and rules stay in ink and soft ink; the alert red
+   (--hf-alert) marks only what needs attention: the past-due badge, a slow checkout confirmation and error messages.
+   A checkout still being confirmed is not a problem, so its badge stays in soft ink with a pulsing dot.
+
+   Motion, as on log in and get started: the plan sheet's empty top-right corner carries a live dot field
+   (data-halftone-field, mounted by v13-halftone.js) — the landing wordmark's dots without the word, parting
+   around the pointer anywhere over the sheet, rippling on a click and springing home. Header links, buttons and
+   the index numbers part around the pointer like the dots (v13-motion.js) and hold still when aimed at; movement
+   transitions settle on the dots' spring (var(--hf-spring) over var(--hf-spring-dur)), colours keep plain easing. */
 @layer insidir-v13{
 
 body.v13.pw-page [hidden]{display:none!important}
@@ -36,12 +44,21 @@ body.v13 .pw-included{grid-area:included!important;min-width:0!important}
 
 body.v13 .pw-intro h1{font:800 clamp(32px,4.4vw,64px)/1.05 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin:0!important;max-width:18ch!important;text-wrap:balance!important}
 body.v13 .pw-lead{font:400 clamp(13px,1.05vw,14.5px)/1.75 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:58ch!important;margin:22px 0 0!important}
-body.v13 .pw-notice{margin:22px 0 0!important;padding:0 0 0 12px!important;border-left:1px solid var(--hf-warm)!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:58ch!important}
+body.v13 .pw-notice{margin:22px 0 0!important;padding:0 0 0 12px!important;border-left:1px solid var(--hf-soft)!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:58ch!important}
 
 /* ---------- The plan ---------- */
-body.v13 .pw-plan{position:sticky!important;top:100px!important;padding:26px 26px 24px!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;box-shadow:none!important}
+body.v13 .pw-plan{position:sticky!important;top:100px!important;isolation:isolate!important;padding:26px 26px 24px!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;box-shadow:none!important}
+/* The dot field in the sheet's top-right corner, where nothing is set at any width: the label and the price sit at
+   the left, and the radial fade reaches nothing before the "/ month" and the first rule. Its box is sized here,
+   before the script runs; v13-halftone.js listens on the sheet, so the dots part wherever the pointer crosses it.
+   The canvas paints the sheet's own surface. */
+body.v13 .pw-plan>.pw-plan__field{--hwf-bg:var(--hf-surface)!important;position:absolute!important;top:0!important;right:0!important;bottom:auto!important;left:auto!important;z-index:0!important;
+  display:block!important;width:52%!important;height:132px!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent 92%)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent 92%)!important}
+body.v13 .pw-plan>.pw-plan__field>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+body.v13 .pw-plan>:not(.pw-plan__field){position:relative!important;z-index:1!important}
 body.v13 .pw-plan__label{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;display:flex!important;align-items:center!important;gap:10px!important}
-body.v13 .pw-plan__label::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-warm)!important;flex:none!important}
+body.v13 .pw-plan__label::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-ink)!important;flex:none!important}
 body.v13 .pw-plan__price{display:flex!important;align-items:baseline!important;gap:12px!important;margin:18px 0 0!important}
 body.v13 .pw-plan__price strong{font:800 clamp(52px,5vw,72px)/1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .pw-plan__price span{font:400 12px/1 var(--hf-mono)!important;letter-spacing:.04em!important;color:var(--hf-muted)!important}
@@ -50,33 +67,36 @@ body.v13 .pw-plan__terms li{margin:0!important;padding:10px 0!important;border-b
 body.v13 .pw-plan__state{margin:22px 0 0!important}
 body.v13 .pw-status{margin:0 0 16px!important;font:400 12.5px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13 .pw-status a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 .pw-status a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13 .pw-status a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13 .pw-action{width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;cursor:pointer!important;text-decoration:none!important}
 body.v13 .pw-action:disabled{cursor:progress!important;background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13 .pw-fine{margin:14px 0 0!important;font:400 11px/1.75 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 .pw-link{display:inline-block!important;margin:16px 0 0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important}
 body.v13 .pw-link::after{content:" →"!important}
-body.v13 .pw-link:hover{color:var(--hf-warm)!important}
-body.v13 .pw-feedback{margin:16px 0 0!important;padding:10px 12px!important;border:1px solid var(--hf-warm)!important;background:var(--hf-bg)!important;font:400 11.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
+body.v13 .pw-link:hover{color:var(--hf-soft)!important}
+/* Something went wrong on the way to Stripe: an alert-red rule, the message itself in ink. */
+body.v13 .pw-feedback{margin:16px 0 0!important;padding:10px 12px!important;border:1px solid var(--hf-alert)!important;border-left-width:2px!important;background:var(--hf-bg)!important;font:400 11.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
 
 /* ---------- What's included ---------- */
 body.v13 .pw-included{margin:clamp(48px,6vw,84px) 0 0!important}
 body.v13 .pw-included h2{font:700 clamp(24px,2.4vw,34px)/1.1 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important;margin:0 0 22px!important}
 body.v13 .pw-list{list-style:none!important;margin:0!important;padding:0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0 clamp(24px,3vw,48px)!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13 .pw-list li{display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;gap:10px!important;margin:0!important;padding:18px 0 20px!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13 .pw-list li>span{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-warm)!important;padding-top:3px!important}
+body.v13 .pw-list li>span{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-soft)!important;padding-top:3px!important}
 body.v13 .pw-list h3{font:700 clamp(15px,1.25vw,18px)/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;margin:0 0 6px!important}
 body.v13 .pw-list p{font:400 12.5px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:0!important}
 body.v13 .pw-note{margin:26px 0 0!important;max-width:72ch!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
 body.v13 .pw-note a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 .pw-note a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13 .pw-note a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 
 /* ---------- Billing: checkout confirmation, plan sheet, help ---------- */
-body.v13 #main .bl-confirm{margin:var(--desk-gap) 0 0!important;padding:22px 24px 24px!important;border:1px solid var(--hf-line-2)!important;border-left:2px solid var(--hf-warm)!important;background:var(--hf-surface)!important}
+body.v13 #main .bl-confirm{margin:var(--desk-gap) 0 0!important;padding:22px 24px 24px!important;border:1px solid var(--hf-line-2)!important;border-left:2px solid var(--hf-soft)!important;background:var(--hf-surface)!important}
 body.v13 #main .bl-confirm[data-state=active]{border-left-color:var(--hf-ink)!important}
+/* Stripe has not confirmed after six checks: a warning, so the rule turns alert red. */
+body.v13 #main .bl-confirm[data-state=slow]{border-left-color:var(--hf-alert)!important}
 body.v13 #main .bl-confirm__label{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;display:flex!important;align-items:center!important;gap:10px!important}
-body.v13 #main .bl-confirm__label::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-warm)!important;flex:none!important}
+body.v13 #main .bl-confirm__label::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-ink)!important;flex:none!important}
 body.v13 #main .bl-confirm[data-state=waiting] .bl-confirm__label::before{animation:v13BlPulse 1.2s ease-in-out infinite!important}
 body.v13 #main .bl-confirm h2{font:700 clamp(22px,2.2vw,30px)/1.15 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important;margin:12px 0 8px!important}
 body.v13 #main .bl-confirm p:not(.bl-confirm__label){font:400 12.5px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important;margin:0!important;max-width:70ch!important}
@@ -89,9 +109,13 @@ body.v13 #main .bl-plan__head h2{font:700 clamp(28px,2.8vw,40px)/1.05 var(--hf-m
 body.v13 #main .bl-badge{display:inline-flex!important;align-items:center!important;gap:8px!important;margin:0!important;padding:5px 10px!important;border:1px solid var(--hf-line-2)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13 #main .bl-badge::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-line-2)!important}
 body.v13 #main .bl-badge[data-tone=on]{color:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
-body.v13 #main .bl-badge[data-tone=on]::before{background:var(--hf-warm)!important}
-body.v13 #main .bl-badge[data-tone=warn]{color:var(--hf-warm)!important;border-color:var(--hf-warm)!important}
-body.v13 #main .bl-badge[data-tone=warn]::before{background:var(--hf-warm)!important}
+body.v13 #main .bl-badge[data-tone=on]::before{background:var(--hf-ink)!important}
+/* A subscription that needs fixing (payment due, pending, paused) in the alert red; one being confirmed after checkout
+   in soft ink, its dot pulsing like the confirmation's. */
+body.v13 #main .bl-badge[data-tone=warn]{color:var(--hf-alert)!important;border-color:var(--hf-alert)!important}
+body.v13 #main .bl-badge[data-tone=warn]::before{background:var(--hf-alert)!important}
+body.v13 #main .bl-badge[data-tone=wait]{color:var(--hf-soft)!important;border-color:var(--hf-soft)!important}
+body.v13 #main .bl-badge[data-tone=wait]::before{background:var(--hf-soft)!important;animation:v13BlPulse 1.2s ease-in-out infinite!important}
 body.v13 #main .bl-plan__price{margin:18px 0 0!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 #main .bl-plan__price strong{font:800 28px/1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin-right:6px!important}
 body.v13 #main .bl-facts{margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-width:0!important}
@@ -104,7 +128,7 @@ body.v13 #main .bl-actions .btn{margin:0!important;text-decoration:none!importan
 body.v13 #main .bl-actions .btn:disabled{cursor:progress!important;opacity:.7!important}
 body.v13 #main .bl-message{grid-column:2!important;margin:0!important;font:400 12px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:64ch!important}
 body.v13 #main .bl-message:empty{display:none!important}
-body.v13 #main .bl-message.is-error{color:var(--hf-warm)!important}
+body.v13 #main .bl-message.is-error{color:var(--hf-alert)!important}
 body.v13 #main .bl-confirm[data-state=slow] .bl-confirm__label::before{animation:v13BlPulse 2.4s ease-in-out infinite!important}
 body.v13 #main .bl-message a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
 
@@ -113,7 +137,7 @@ body.v13 #main .bl-help>div{padding:22px 0 clamp(26px,3vw,40px)!important;min-wi
 body.v13 #main .bl-help h3{font:700 clamp(16px,1.3vw,19px)/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;margin:12px 0 8px!important}
 body.v13 #main .bl-help p:not(.v3-eyebrow){font:400 12.5px/1.75 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:0!important}
 body.v13 #main .bl-help a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 #main .bl-help a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13 #main .bl-help a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 
 @keyframes v13BlPulse{0%,100%{opacity:1}50%{opacity:.25}}
 
@@ -124,7 +148,7 @@ body.v13 #main .bl-help a:hover{color:var(--hf-warm)!important;text-decoration-c
 }
 @media (max-width:860px){
   body.v13 .pw-grid{grid-template-columns:1fr!important;grid-template-areas:"intro" "plan" "included"!important}
-  body.v13 .pw-plan{position:static!important;margin:32px 0 0!important;max-width:520px!important}
+  body.v13 .pw-plan{position:relative!important;top:auto!important;margin:32px 0 0!important;max-width:520px!important}
   body.v13 #main .bl-plan{grid-template-columns:1fr!important}
   body.v13 #main :is(.bl-actions,.bl-message){grid-column:1!important}
   body.v13 #main .bl-help{grid-template-columns:1fr!important}
@@ -135,12 +159,13 @@ body.v13 #main .bl-help a:hover{color:var(--hf-warm)!important;text-decoration-c
   body.v13 .pw-topline p:last-child{display:none!important}
   body.v13 .pw-main{padding:22px 16px 64px!important}
   body.v13 .pw-plan{padding:22px 18px!important}
+  body.v13 .pw-plan>.pw-plan__field{width:44%!important;height:112px!important}
   body.v13 #main .bl-facts>div{grid-template-columns:1fr!important}
   body.v13 #main .bl-actions .btn{flex:1 1 100%!important}
   body.v13 #main .bl-confirm{padding:18px 16px 20px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  body.v13 #main .bl-confirm:is([data-state=waiting],[data-state=slow]) .bl-confirm__label::before{animation:none!important}
+  body.v13 #main .bl-confirm:is([data-state=waiting],[data-state=slow]) .bl-confirm__label::before,body.v13 #main .bl-badge[data-tone=wait]::before{animation:none!important}
   body.v13 .pw-header__nav :is(a,button){transition:none!important}
 }
 }

@@ -8,7 +8,8 @@
 import { assertPublic } from "./media.mjs";
 import { getRecord, putRecord } from "./media-store.mjs";
 
-export const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
+// The operator's public contact address (the one printed in the site footer), never a personal address.
+export const PUBLIC_UA = "InsidirResearch/1.0 (+https://insidir.com; hello@aethric.llc)";
 const ROBOTS_TOKEN = "insidirresearch";
 const DAY = 86400000;
 export const BLOCK_TTL = 30 * DAY;

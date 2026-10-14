@@ -78,7 +78,7 @@
     const complimentary = !!(access.complimentary || (bill && bill.complimentary));
     if (complimentary && !["active", "trialing"].includes(status)) { label = "Complimentary"; tone = "on"; }
     else if (active) { label = "Active"; tone = "on"; }
-    else if (waiting) { label = "Confirming"; tone = "warn"; }
+    else if (waiting) { label = "Confirming"; tone = "wait"; } // in progress, not a problem: soft ink, pulsing
     else if (fix) { label = fix.badge; tone = "warn"; }
     else { label = "Not subscribed"; tone = "off"; }
     badge.textContent = label;

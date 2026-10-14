@@ -6,13 +6,13 @@
   <title>Research desk — insidir.</title>
   <meta name="description" content="Review source-backed SEC insider transactions and record your own investing research. No automated trading.">
   <meta name="theme-color" content="#0c0c0b">
-  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="stylesheet" href="assets/css/research.css">
   <script defer src="assets/js/entity-media.js?v=real-assets-2"></script>
-<script defer src="assets/js/app.js"></script>
-  <script defer src="assets/js/research.js"></script>
+<script defer src="assets/js/app.js?v=13"></script>
+  <script defer src="assets/js/research.js?v=4"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
 <link rel="stylesheet" href="assets/css/v4-interior.css">
@@ -21,45 +21,46 @@
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
-<script defer src="assets/js/v13-halftone.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=17">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=7">
+<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head>
 <body class="research-page v2-app v3-app v6-app v13">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="research"></header>
 <main id="main" class="app-main research-desk">
   <header class="research-head desk-masthead">
+    <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="140" aria-hidden="true"></div>
     <div class="desk-topline"><p class="research-eyebrow">INSIDIR / RESEARCH DESK</p><p class="desk-topline__note">SEC EDGAR · Form 4 · XBRL facts · original documents</p></div>
     <h1>Know the record.<br>Make your own call.</h1>
     <p class="research-lead desk-lead">Investigate public SEC records, connect filings with reported financial facts, and save a private review. Insidir does not place trades or make personalized buy/sell recommendations.</p>
     <form class="research-search" id="research-search" role="search">
       <label class="sr-only" for="research-ticker">Company ticker</label>
       <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
-      <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
+      <button class="btn btn--dark" type="submit" data-hf-still>Investigate <span aria-hidden="true">→</span></button>
     </form>
     <div class="v4-research-trust" aria-label="How the desk works"><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg> Original SEC sources</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Verify every finding</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#lock"></use></svg> Private saved notes</span></div><p class="research-feedback" id="research-feedback" role="status" aria-live="polite">No portfolio or brokerage connection needed. Enter a ticker to explore available SEC records.</p>
   </header>
 
   <div id="research-results" hidden>
-    <section class="research-summary" aria-labelledby="research-company">
+    <section class="research-summary" aria-labelledby="research-company" data-desk-reveal>
       <div>
         <p class="research-eyebrow">COMPANY / SOURCE-BACKED RESEARCH</p>
         <h2 id="research-company">Company</h2>
         <p class="research-small" id="research-coverage">Imported SEC Form 4 records only</p>
       </div>
-      <a class="research-text-link" id="research-company-link" href="company.html">View company records →</a>
+      <a class="research-text-link" id="research-company-link" href="company.html" data-hf-atom>View company records →</a>
     </section>
 
-    <div class="research-metrics" aria-label="Loaded record summary">
+    <div class="research-metrics" aria-label="Loaded record summary" data-desk-reveal>
       <div class="research-metric"><span>Transactions shown</span><strong id="research-count">—</strong><small>Up to 75 imported records</small></div>
       <div class="research-metric"><span>Reporting people shown</span><strong id="research-owners">—</strong><small>Distinct names in this selection</small></div>
       <div class="research-metric"><span>Latest filing published</span><strong id="research-latest">—</strong><small>Not the same as the trade date</small></div>
     </div>
 
     <div class="research-grid">
-      <div class="research-primary">
+      <div class="research-primary" data-desk-reveal="group">
         <section class="panel research-panel" aria-labelledby="research-intelligence-title">
           <div class="research-panel-head">
             <div><p class="research-eyebrow">01 / OFFICIAL INTELLIGENCE</p>
@@ -70,9 +71,9 @@
           <div id="intel-overview" hidden>
             <p class="intel-summary" id="intel-summary"></p>
             <h3 class="intel-heading">Records worth examining</h3>
-            <div id="intel-findings" class="intel-findings"></div>
+            <div id="intel-findings" class="intel-findings" data-desk-reveal="group"></div>
             <h3 class="intel-heading">Reported financial facts</h3>
-            <div id="intel-facts" class="intel-facts"></div>
+            <div id="intel-facts" class="intel-facts" data-desk-reveal="group"></div>
             <h3 class="intel-heading">Other company disclosures</h3>
             <div id="intel-filings"></div>
             <p class="research-small" id="intel-caveats"></p>
@@ -84,7 +85,7 @@
               <p class="research-eyebrow">02 / INVESTIGATE</p>
               <h2 id="research-transactions-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg> Reported insider activity</h2>
             </div>
-            <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a>
+            <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer" data-hf-atom>SEC EDGAR ↗</a>
           </div>
           <p class="research-explain">Transactions are reported after they occur. Purchases, sales, option exercises, grants and amendments have different meanings; a filing is not a trading signal.</p>
           <div id="research-transactions" aria-live="polite"></div>
@@ -101,7 +102,7 @@
         </section>
       </div>
 
-      <aside class="research-sidebar">
+      <aside class="research-sidebar" data-desk-reveal="group">
         <section class="panel research-panel" aria-labelledby="research-review-title">
           <p class="research-eyebrow">04 / YOUR DECISION</p>
           <h2 id="research-review-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#book-open"></use></svg> Private research journal</h2>
@@ -115,7 +116,7 @@
             </select>
             <label for="research-review-notes">What did you learn?</label>
             <textarea id="research-review-notes" name="notes" rows="7" maxlength="1500" placeholder="Sources checked, dates to verify, concerns, and what would change your mind."></textarea>
-            <button class="btn btn--dark research-save" id="research-save" type="submit">Save research note</button>
+            <button class="btn btn--dark research-save" id="research-save" type="submit" data-hf-still>Save research note</button>
           </form>
           <p id="research-review-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save notes privately to your account.</p>
         </section>

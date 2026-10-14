@@ -7,13 +7,13 @@
 <meta name="description" content="Subscribe to Insidir for $39 a month to open the SEC-sourced company research workspace. Secure checkout by Stripe; cancel any time from Billing.">
 <meta name="theme-color" content="#0c0c0b">
 <meta name="robots" content="noindex">
-<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-paywall.css?v=2">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
+<link rel="stylesheet" href="assets/css/v13-paywall.css?v=5">
 <script defer src="assets/js/subscribe.js?v=2"></script>
-<script defer src="assets/js/v13-halftone.js?v=1"></script>
+<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head>
 <body class="pw-page pw-page--subscribe v13" data-pw-state="loading">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -22,9 +22,9 @@
   <a class="v13-logo pw-logo" href="index.html" aria-label="Insidir home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
   <nav class="pw-header__nav" aria-label="Account">
    <span class="pw-header__who" data-pw-email hidden></span>
-   <a href="account.html" data-pw-signed-in hidden>Account</a>
-   <button type="button" data-pw-signout data-pw-signed-in hidden>Sign out</button>
-   <a href="signin.html" data-pw-signed-out data-pw-signin>Log in</a>
+   <a href="account.html" data-pw-signed-in data-hf-atom hidden>Account</a>
+   <button type="button" data-pw-signout data-pw-signed-in data-hf-atom hidden>Sign out</button>
+   <a href="signin.html" data-pw-signed-out data-pw-signin data-hf-atom>Log in</a>
   </nav>
  </div>
 </header>
@@ -40,6 +40,7 @@
   </section>
 
   <aside class="pw-plan" aria-labelledby="pw-plan-name">
+  <div class="pw-plan__field" data-halftone-field data-dot-gap="10" data-field-coverage="0.09" data-radius="130" aria-hidden="true"></div>
    <p class="pw-plan__label" id="pw-plan-name">Insidir Pro</p>
    <p class="pw-plan__price"><strong>$39</strong><span>/ month</span></p>
    <ul class="pw-plan__terms">
@@ -84,8 +85,8 @@
   </aside>
 
   <section class="pw-included" aria-labelledby="pw-included-title">
-   <h2 id="pw-included-title">What's included</h2>
-   <ol class="pw-list">
+   <h2 id="pw-included-title" data-hf-reveal>What's included</h2>
+   <ol class="pw-list" data-hf-reveal-group>
     <li><span>01</span><div><h3>Company reports</h3><p>Any SEC-listed ticker: a delayed price chart, key facts, XBRL financial statements, filings, Form&nbsp;4 insider activity, people and 8-K announcements.</p></div></li>
     <li><span>02</span><div><h3>Research desk</h3><p>SEC submissions and reported financial facts for a ticker, each linked to its source, beside your private research journal.</p></div></li>
     <li><span>03</span><div><h3>Filings and insider activity</h3><p>Imported Form&nbsp;4 filings and the transactions they report, with links to the original EDGAR documents.</p></div></li>
@@ -93,7 +94,7 @@
     <li><span>05</span><div><h3>Watchlist and alerts</h3><p>Save tickers and see recent insider activity on them, inside the app.</p></div></li>
     <li><span>06</span><div><h3>Portfolio</h3><p>Record your holdings by hand and see related SEC activity. No brokerage connection required.</p></div></li>
    </ol>
-   <p class="pw-note">Insidir is research software by Aethric LLC. It doesn't place trades or make recommendations, and nothing in it is investment advice. Subscriptions are covered by the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy Policy</a>.</p>
+   <p class="pw-note" data-hf-reveal>Insidir is research software by Aethric LLC. It doesn't place trades or make recommendations, and nothing in it is investment advice. Subscriptions are covered by the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy Policy</a>.</p>
   </section>
  </div>
 </main>

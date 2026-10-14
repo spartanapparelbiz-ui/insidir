@@ -10,7 +10,31 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const finite = v => typeof v === "number" && Number.isFinite(v);
 const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
-const CHART_WARM = "#e9762b"; // --hf-warm, the V13 palette's only accent
+/* Market direction is drawn in green (rises, purchases) and red (falls, sales) from the --hf-up / --hf-down
+ * tokens in CSS; markup only says which way, and always with a sign, a ▲/▼ glyph or a word beside the colour. */
+const trendOf = n => !finite(n) ? "" : n > 0 ? "up" : n < 0 ? "down" : "flat";
+/* ▲/▼ markers are drawn in CSS (the self-hosted font has no geometric shapes); the class gives the direction. */
+const glyphDir = d => d === "up" || d === "down" ? `<span class="cx-glyph is-${d}" aria-hidden="true"></span>` : "";
+const glyph = n => finite(n) && n !== 0 ? glyphDir(n > 0 ? "up" : "down") : "";
+/* Insider colour follows the trade, as on the overview: purchases green, sales red. A filing with both open-market
+   purchases and sales ("mixed") shows its signed net in ink, and grants, awards, exercises and gifts stay neutral
+   (signed, but not a market purchase or sale). */
+const insiderDir = a => a.kind === "purchase" ? "up" : a.kind === "sale" ? "down" : "";
+const MIXED_LABEL = "Open-market purchase and sale";
+const insiderLabel = a => a.kind === "mixed" ? MIXED_LABEL : a.codeLabel;
+/* One side of a filing's open-market trades: { shares, value } bought (P) or sold (S). A mixed filing is split by its
+   line items, and only when those lines add back to the filing's net shares and value; with more lines than the
+   server lists the split would be partial, so it returns { partial: true } instead of a guess (the tiles note it). */
+function tradeSide(a, code) {
+  const kind = code === "P" ? "purchase" : "sale";
+  if (a.kind === kind) return { shares: finite(a.netShares) ? Math.abs(a.netShares) : 0, value: finite(a.value) ? a.value : 0 };
+  if (a.kind !== "mixed") return null;
+  const lines = (a.transactions || []).filter(t => (t.code === "P" || t.code === "S") && !t.derivative && finite(t.shares));
+  const net = lines.reduce((n, t) => n + (t.acquiredDisposed === "D" ? -t.shares : t.shares), 0);
+  const gross = lines.reduce((n, t) => n + (finite(t.value) && t.price > 0 ? t.value : 0), 0);
+  if (!finite(a.netShares) || Math.abs(net - a.netShares) > 1e-6 || Math.abs(gross - (finite(a.value) ? a.value : 0)) > 0.01) return { partial: true };
+  return lines.filter(t => t.code === code).reduce((s, t) => ({ shares: s.shares + t.shares, value: s.value + (finite(t.value) && t.price > 0 ? t.value : 0) }), { shares: 0, value: 0 });
+}
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Brand casing the SEC and Wikidata names don't carry.
 const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
@@ -32,6 +56,8 @@ function money(n, currency = "USD", { precise = false } = {}) {
   return sign + s + a.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 const integer = n => finite(n) ? Math.round(n).toLocaleString("en-US") : "—";
+// Exact to the dollar (insider transaction values): "$325,000", not "$325K".
+const dollars = n => !finite(n) ? "—" : (n < 0 ? "−" : "") + "$" + Math.round(Math.abs(n)).toLocaleString("en-US");
 const signed = n => !finite(n) ? "—" : (n > 0 ? "+" : n < 0 ? "−" : "") + Math.round(Math.abs(n)).toLocaleString("en-US");
 const compactShares = n => {
   if (!finite(n)) return "—";
@@ -130,15 +156,18 @@ function personInfo(secName, short = false, ownerCik = null) {
   const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
+/* Outside tables an avatar is an identity tile that parts around the pointer like the logo (an atom, v13-motion.js);
+   table cells never move, so the small size used in the insider ledger stays put. */
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
+  const atom = size === "sm" ? "" : " data-hf-atom";
   const fallback = esc(initials(name).toUpperCase());
   const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
   if (src) {
     const credit = photo.credit ? `Photo: ${photo.credit}` : "";
-    return `<span class="${cls}" data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
-  return `<span class="${cls}" aria-hidden="true">${fallback}</span>`;
+  return `<span class="${cls}"${atom} aria-hidden="true">${fallback}</span>`;
 }
 
 /* ---------- network ---------- */
@@ -294,7 +323,7 @@ function renderFacts() {
     factRow("Enterprise value", priceDependent(f.ev, "—"), f.ev?.title),
     factRow("P/E ratio", f.pe ? (f.pe.label ? na(f.pe.label) : f.pe.value.toFixed(1)) : (waitingQuote || pending) ? skel : na(), f.pe?.title),
     factRow("Revenue (TTM)", rev ? money(rev.value, cur) : pending ? skel : na(), ttmTitle(rev)),
-    factRow("Net income (TTM)", ni ? money(ni.value, cur) : pending ? skel : na(), ttmTitle(ni)),
+    factRow("Net income (TTM)", ni ? (ni.value < 0 ? `<span class="is-down">${esc(money(ni.value, cur))}</span>` : money(ni.value, cur)) : pending ? skel : na(), ttmTitle(ni)),
     factRow("Employees", prof?.employees ? integer(prof.employees.value) : profilePending ? skel : na(), prof?.employees ? "Wikidata" + (prof.employees.asOf ? ", as of " + day(prof.employees.asOf) : "") : ""),
     factRow("Headquarters", hq ? esc(hq) : (pending || profilePending) ? skel : na(), intel?.profile?.headquarters ? "SEC EDGAR business address" : hq ? "Wikidata" : ""),
     factRow("Founded", prof?.founded ? String(prof.founded) : profilePending ? skel : na(), prof?.founded ? "Wikidata" : ""),
@@ -353,11 +382,11 @@ function drawChart() {
   for (let k = 0, n = Math.round((hi - lo) / tickStep); k <= n; k++) ticks.push(lo + k * tickStep);
   const x = i => padL + (i / (pts.length - 1)) * w;
   const y = v => padT + (1 - (v - lo) / (hi - lo)) * h;
-  // V13 Halftone: the chart always draws in the palette's one warm colour (--hf-warm); direction is
-  // carried by the signed change figures above it, not by a second hue.
-  const color = CHART_WARM;
+  // The line is green when the range closed at or above where it started (the previous close on 1D) and red
+  // when below. The svg carries data-trend; CSS paints it from --hf-up / --hf-down. No fill under the line.
+  const change = finite(data.rangeChange) ? data.rangeChange : closes.at(-1) - (base ?? closes[0]);
+  const trend = change < 0 ? "down" : "up";
   const line = pts.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
-  const area = line + `L${x(pts.length - 1).toFixed(1)} ${padT + h}L${x(0).toFixed(1)} ${padT + h}Z`;
   const tz = data.timezone || "America/New_York";
   const decimals = Number.isInteger(+tickStep.toFixed(6)) ? 0 : Number.isInteger(+(tickStep * 10).toFixed(6)) ? 1 : 2;
   const yLabels = ticks.map(v => `<line class="grid" x1="${padL}" x2="${padL + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${padL + w + 12}" y="${(y(v) + 4).toFixed(1)}">${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</text>`).join("");
@@ -370,15 +399,14 @@ function drawChart() {
     lastRight = left + width;
     return `<line class="tick" x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${padT + h}" y2="${padT + h + 5}"/><text class="axis axis--x" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${anchor}">${esc(text)}</text>`;
   }).join("");
-  const gid = "cx-fill-" + state.range;
   const first = pts[0][0], last = pts.at(-1)[0];
-  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }))}. Use arrow keys to inspect prices.">
-    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".42"/><stop offset=".7" stop-color="${color}" stop-opacity=".1"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+  // On 1D the move is measured from the previous close (the dashed baseline), not from the first 5-minute close.
+  const moved = finite(change) ? `, ${trend} ${money(Math.abs(change), data.currency, { precise: true })}${finite(data.rangeChangePercent) ? " (" + Math.abs(data.rangeChangePercent).toFixed(2) + "%)" : ""}${base != null ? " from the previous close of " + money(base, data.currency, { precise: true }) : ""}` : "";
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-trend="${trend}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }) + moved)}. Use arrow keys to inspect prices.">
     ${yLabels}${xLabels}
     ${base != null ? `<line class="baseline" x1="${padL}" x2="${padL + w}" y1="${y(base).toFixed(1)}" y2="${y(base).toFixed(1)}"><title>Previous close ${money(base, data.currency, { precise: true })}</title></line>` : ""}
-    <path d="${area}" fill="url(#${gid})"/>
-    <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g class="cx-hover" opacity="0"><line class="cross" y1="${padT}" y2="${padT + h}"/><circle class="dot" r="5" fill="${color}"/></g>
+    <path class="cx-line" d="${line}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g class="cx-hover" opacity="0"><line class="cross" y1="${padT}" y2="${padT + h}"/><circle class="dot" r="5" fill="currentColor"/></g>
   </svg>`;
   const svg = host.querySelector("svg"), hover = svg.querySelector(".cx-hover"), cross = hover.querySelector("line"), dot = hover.querySelector("circle");
   const tip = document.createElement("div");
@@ -410,6 +438,14 @@ function drawChart() {
     show(e.key === "Home" ? 0 : e.key === "End" ? pts.length - 1 : cur + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
   });
 }
+/* "▲ +2.00 (+0.90%)": the move in the quote's currency to the cent, then in percent. The glyph, the sign and the
+ * colour class all say which way the price moved. */
+function moveHTML(amount, percent) {
+  const lead = finite(amount) ? amount : percent, trend = trendOf(lead), sign = trend === "up" ? "+" : trend === "down" ? "−" : "";
+  const abs = finite(amount) ? sign + Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  const pct = finite(percent) ? sign + Math.abs(percent).toFixed(2) + "%" : "";
+  return { trend, html: glyph(lead) + esc(abs && pct ? `${abs} (${pct})` : abs || pct) };
+}
 function renderQuote() {
   const q = quote(), series = state.market[state.range];
   for (const b of document.querySelectorAll("[data-range]")) { const on = b.dataset.range === state.range; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
@@ -421,12 +457,13 @@ function renderQuote() {
   $("cx-price").textContent = money(q.price, q.currency, { precise: true });
   const change = $("cx-change");
   if (finite(q.change) && finite(q.changePercent)) {
-    change.textContent = `${q.change >= 0 ? "+" : "−"}${Math.abs(q.change).toFixed(2)} (${q.changePercent >= 0 ? "+" : "−"}${Math.abs(q.changePercent).toFixed(2)}%)`;
-    change.className = "cx-change " + (q.change >= 0 ? "is-up" : "is-down");
-  } else { change.textContent = ""; }
+    const move = moveHTML(q.change, q.changePercent);
+    change.innerHTML = move.html;
+    change.className = "cx-change is-" + move.trend;
+  } else { change.textContent = ""; change.className = "cx-change"; }
   const when = q.marketTime ? new Date(q.marketTime).toLocaleString("en-US", { timeZone: q.timezone || "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : "";
-  const rangePart = series && finite(series.rangeChangePercent) && state.range !== "1D"
-    ? ` · <span class="${series.rangeChangePercent >= 0 ? "is-up" : "is-down"}">${series.rangeChangePercent >= 0 ? "+" : "−"}${Math.abs(series.rangeChangePercent).toFixed(2)}%</span> past ${esc({ "1W": "week", "1M": "month", "3M": "3 months", "1Y": "year", "5Y": "5 years" }[state.range])}` : "";
+  const range = series && finite(series.rangeChangePercent) && state.range !== "1D" ? moveHTML(series.rangeChange, series.rangeChangePercent) : null;
+  const rangePart = range ? ` · <span class="cx-move is-${range.trend}">${range.html}</span> past ${esc({ "1W": "week", "1M": "month", "3M": "3 months", "1Y": "year", "5Y": "5 years" }[state.range])}` : "";
   $("cx-quote-meta").innerHTML = esc((q.marketState === "open" ? "Delayed" : "At close") + (when ? " · " + when : "")) + rangePart;
   const src = series?.source || q.source;
   $("cx-chart-source").innerHTML = `Delayed price data from <a href="${esc(safeUrl(src?.url, ["yahoo.com"]) || "https://finance.yahoo.com")}" target="_blank" rel="noopener noreferrer">${esc(src?.name || "Yahoo Finance")}</a>. Not a trading quote.`;
@@ -452,11 +489,22 @@ async function loadMarket(range, seq = state.seq) {
 }
 
 /* ---------- overview ---------- */
+/* Bars measured from a zero baseline: a loss hangs below it, a profit stands on it, and $0 is neutral (no bar).
+   zero is the baseline's height in % of the plot; barTone gives the bar's class. */
+const zeroScale = xs => {
+  const hi = Math.max(0, ...xs.map(p => p.value)), lo = Math.min(0, ...xs.map(p => p.value)), span = (hi - lo) || 1;
+  return { span, zero: -lo / span * 100, hasNeg: lo < 0 };
+};
+const barTone = v => v < 0 ? "neg" : v === 0 ? "zero" : "";
 function spark(points) {
   const xs = points.slice(-8);
   if (!xs.length) return '<span class="cx-spark" aria-hidden="true"></span>';
-  const max = Math.max(...xs.map(p => Math.abs(p.value)), 1);
-  return `<span class="cx-spark" aria-hidden="true">${xs.map(p => `<i class="${p.value < 0 ? "neg" : ""}" style="height:${Math.max(10, Math.abs(p.value) / max * 100).toFixed(0)}%"></i>`).join("")}</span>`;
+  const { span, zero, hasNeg } = zeroScale(xs);
+  return `<span class="cx-spark${hasNeg ? " has-neg" : ""}" aria-hidden="true" style="--zero:${zero.toFixed(1)}%">${xs.map(p => {
+    const h = p.value === 0 ? 0 : Math.max(8, Math.abs(p.value) / span * 100);
+    const bottom = p.value < 0 ? Math.max(0, zero - h) : zero;
+    return `<i class="${barTone(p.value)}" title="FY${esc(String(p.periodEnd || "").slice(0, 4))}: ${esc(money(p.value, currency()))}" style="height:${h.toFixed(1)}%;bottom:${bottom.toFixed(1)}%"></i>`;
+  }).join("")}</span>`;
 }
 function renderOverviewFinancials() {
   const host = $("cx-fin-rows");
@@ -476,16 +524,27 @@ function renderOverviewFilings() {
   const host = $("cx-filing-rows");
   if (!state.intel) { if (state.intelError) host.innerHTML = `<p class="cx-empty">${esc(state.intelError)}</p>`; return; }
   const rows = (state.intel.filings || []).slice(0, 5);
-  host.innerHTML = rows.length ? rows.map(f => `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(f.headline)}"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><b>${esc(f.form)}</b>${EXT}</a>`).join("")
+  host.innerHTML = rows.length ? rows.map(f => `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(f.headline)}"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><b data-hf-atom>${esc(f.form)}</b>${EXT}</a>`).join("")
     : '<p class="cx-empty">No recent annual, quarterly or current reports were found on EDGAR.</p>';
 }
 function activity() { return state.insiders?.activity || []; }
+/* "Bought 4,000 for $900,000 · sold 1,000 for $225,000": the two sides of a mixed filing, or "" when they can't be split. */
+function mixedSplit(a) {
+  if (a.kind !== "mixed") return "";
+  const buy = tradeSide(a, "P"), sell = tradeSide(a, "S");
+  if (!buy || !sell || buy.partial || sell.partial) return "";
+  const part = (verb, x) => verb + " " + integer(x.shares) + (x.value > 0 ? " for " + dollars(x.value) : "");
+  return part("Bought", buy) + " · " + part("sold", sell);
+}
 function amountCell(a) {
-  const cur = "USD";
+  const label = insiderLabel(a);
   if (finite(a.netShares) && a.netShares !== 0) {
-    return `<div class="cx-amount"><strong class="${a.netShares > 0 ? "is-up" : "is-down"}">${signed(a.netShares)}</strong><span>${finite(a.value) ? money(a.value, cur) : esc(a.codeLabel || "")}</span></div>`;
+    // A mixed filing's value is purchases plus sales, so it is not printed beside the net shares.
+    const sub = a.kind === "mixed" ? "Bought and sold" : finite(a.value) ? dollars(a.value) : label || "";
+    const title = a.kind === "mixed" ? [label, mixedSplit(a)].filter(Boolean).join(": ") : label;
+    return `<div class="cx-amount"${title ? ` title="${esc(title)}"` : ""}><strong class="is-${insiderDir(a) || "flat"}">${glyphDir(insiderDir(a))}${signed(a.netShares)}</strong><span>${esc(sub)}</span></div>`;
   }
-  return `<div class="cx-amount"><strong class="is-flat">${esc(a.codeLabel || "Reported")}</strong><span>${finite(a.value) ? money(a.value, cur) : "Form " + esc(a.form || "4")}</span></div>`;
+  return `<div class="cx-amount"><strong class="is-flat">${esc(label || "Reported")}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : "Form " + esc(a.form || "4")}</span></div>`;
 }
 function renderOverviewInsiders() {
   const host = $("cx-insider-rows");
@@ -504,6 +563,10 @@ function renderAbout() {
   const tagline = sentenceCase(String(prof?.motto || "").trim()) || sentenceCase(short);
   if (!tagline || !summary?.text) { about.hidden = true; overview.classList.add("no-about"); return; }
   about.hidden = false; overview.classList.remove("no-about");
+  // The about column rises with the cards beside it: it is armed while they still wait below the fold (or while the
+  // panel is closed, so opening it arms them together); once they are shown it simply takes its place among them.
+  if (overview.closest("[hidden]") || overview.querySelector(".hf-pending")) armReveal(overview);
+  else about.removeAttribute("data-cx-reveal");
   $("cx-about-title").textContent = tagline;
   const s = sentences(summary.text);
   let used = s.slice(0, 2).join(" ").length > 240 ? 1 : 2;
@@ -517,9 +580,9 @@ function renderAbout() {
 }
 
 /* ---------- financials tab ---------- */
-function tile(label, value, sub = "", source = "") {
+function tile(label, value, sub = "", source = "", tone = "") {
   const link = source ? `<a href="${esc(source)}" target="_blank" rel="noopener noreferrer">SEC source</a>` : "";
-  return `<div class="cx-tile"><span>${esc(label)}</span><strong>${value}</strong>${sub || link ? `<small>${esc(sub)}${sub && link ? " · " : ""}${link}</small>` : ""}</div>`;
+  return `<div class="cx-tile"><span>${esc(label)}</span><strong${tone ? ` class="is-${tone}"` : ""}>${value}</strong>${sub || link ? `<small>${esc(sub)}${sub && link ? " · " : ""}${link}</small>` : ""}</div>`;
 }
 function renderFinancials() {
   const intel = state.intel, cur = currency();
@@ -535,13 +598,15 @@ function renderFinancials() {
   const rev = ttm("revenue"), gp = ttm("grossProfit"), op = ttm("operatingIncome"), ni = ttm("netIncome"), eps = ttm("eps"), ocf = ttm("operatingCashFlow"), capex = ttm("capex");
   const tiles = [];
   if (rev) tiles.push(tile("Revenue", esc(money(rev.value, cur)), period(rev), secUrl(rev.sources?.at(-1))));
-  if (gp) tiles.push(tile("Gross profit", esc(money(gp.value, cur)), period(gp) + margin(gp, rev), secUrl(gp.sources?.at(-1))));
-  if (op) tiles.push(tile("Operating income", esc(money(op.value, cur)), period(op) + margin(op, rev), secUrl(op.sources?.at(-1))));
-  if (ni) tiles.push(tile("Net income", esc(money(ni.value, cur)), period(ni) + margin(ni, rev), secUrl(ni.sources?.at(-1))));
-  if (eps) tiles.push(tile("Diluted EPS", esc(money(eps.value, cur, { precise: true })), period(eps), secUrl(eps.sources?.at(-1))));
-  if (ocf) tiles.push(tile("Operating cash flow", esc(money(ocf.value, cur)), period(ocf), secUrl(ocf.sources?.at(-1))));
+  // A reported loss carries its "−" and prints red; positive results stay ink.
+  const loss = m => m.value < 0 ? "down" : "";
+  if (gp) tiles.push(tile("Gross profit", esc(money(gp.value, cur)), period(gp) + margin(gp, rev), secUrl(gp.sources?.at(-1)), loss(gp)));
+  if (op) tiles.push(tile("Operating income", esc(money(op.value, cur)), period(op) + margin(op, rev), secUrl(op.sources?.at(-1)), loss(op)));
+  if (ni) tiles.push(tile("Net income", esc(money(ni.value, cur)), period(ni) + margin(ni, rev), secUrl(ni.sources?.at(-1)), loss(ni)));
+  if (eps) tiles.push(tile("Diluted EPS", esc(money(eps.value, cur, { precise: true })), period(eps), secUrl(eps.sources?.at(-1)), loss(eps)));
+  if (ocf) tiles.push(tile("Operating cash flow", esc(money(ocf.value, cur)), period(ocf), secUrl(ocf.sources?.at(-1)), loss(ocf)));
   if (capex) tiles.push(tile("Capital expenditure", esc(money(capex.value, cur)), period(capex), secUrl(capex.sources?.at(-1))));
-  if (ocf && capex && ocf.periodEnd === capex.periodEnd) tiles.push(tile("Free cash flow", esc(money(ocf.value - capex.value, cur)), period(ocf) + " · operating cash flow − capex"));
+  if (ocf && capex && ocf.periodEnd === capex.periodEnd) tiles.push(tile("Free cash flow", esc(money(ocf.value - capex.value, cur)), period(ocf) + " · operating cash flow − capex", "", ocf.value - capex.value < 0 ? "down" : ""));
   $("cx-ttm-tiles").innerHTML = tiles.join("") || '<p class="cx-empty">No trailing financial measures are available in this company\'s SEC XBRL data.</p>';
   renderAnnualChart();
   const defs = [["Revenue", "revenue"], ["Gross profit", "grossProfit"], ["Operating income", "operatingIncome"], ["Net income", "netIncome"], ["Operating cash flow", "operatingCashFlow"], ["Capital expenditure", "capex"], ["Total assets", "assets"], ["Total liabilities", "liabilities"], ["Shareholders' equity", "equity"], ["Cash & equivalents", "cash"]];
@@ -575,8 +640,11 @@ function renderAnnualChart() {
   for (const b of document.querySelectorAll("#cx-annual-metrics [data-metric]")) { const on = b.dataset.metric === state.annualMetric; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
   const xs = annual(state.annualMetric).slice(-9), cur = currency();
   if (!xs.length) { $("cx-annual-chart").innerHTML = '<p class="cx-empty">This measure is not reported as comparable full-year data.</p>'; return; }
-  const max = Math.max(...xs.map(p => Math.abs(p.value)), 1);
-  $("cx-annual-chart").innerHTML = xs.map(p => `<div title="Fiscal year ended ${esc(day(p.periodEnd))}"><b>${esc(money(p.value, cur))}</b><i class="${p.value < 0 ? "neg" : ""}" style="height:${Math.max(2, Math.abs(p.value) / max * 82).toFixed(1)}%"></i><span>FY${esc(p.periodEnd.slice(2, 4))}</span></div>`).join("");
+  // Each column's plot (<em>) places the bar from the shared zero baseline; the signed label sits beyond the bar's end
+  // (above a profit, below a loss). --z and --h are fractions of the plot's inner height.
+  const { span, zero, hasNeg } = zeroScale(xs), hasPos = xs.some(p => p.value >= 0);
+  $("cx-annual-chart").className = "cx-bars" + (hasPos ? " has-pos" : "") + (hasNeg ? " has-neg" : "");
+  $("cx-annual-chart").innerHTML = xs.map(p => `<div title="Fiscal year ended ${esc(day(p.periodEnd))}"><em class="${p.value < 0 ? "is-neg" : ""}" style="--z:${(zero / 100).toFixed(4)};--h:${(Math.abs(p.value) / span).toFixed(4)}"><b>${esc(money(p.value, cur))}</b><i class="${barTone(p.value)}"></i></em><span>FY${esc(p.periodEnd.slice(2, 4))}</span></div>`).join("");
   $("cx-annual-chart").setAttribute("role", "img");
   $("cx-annual-chart").setAttribute("aria-label", `${state.intel?.financialHistory?.[state.annualMetric]?.label || "Annual"} by fiscal year: ` + xs.map(p => p.periodEnd.slice(0, 4) + " " + money(p.value, cur)).join(", "));
 }
@@ -597,7 +665,8 @@ function renderFilings() {
 }
 
 /* ---------- insiders tab ---------- */
-const insiderGroup = a => a.kind === "purchase" ? "buy" : a.kind === "sale" || a.kind === "mixed" ? "sell" : "other";
+// A mixed filing holds both open-market purchases and sales, so it is listed under Buys and under Sells.
+const insiderGroups = a => a.kind === "purchase" ? ["buy"] : a.kind === "sale" ? ["sell"] : a.kind === "mixed" ? ["buy", "sell"] : ["other"];
 function renderInsiders() {
   for (const b of document.querySelectorAll("#cx-insider-filters [data-filter]")) { const on = b.dataset.filter === state.insiderFilter; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
   const cik = state.intel?.company?.cik || state.insiders?.company?.cik;
@@ -608,26 +677,33 @@ function renderInsiders() {
     return;
   }
   const all = activity();
-  const buys = all.filter(a => a.kind === "purchase"), sells = all.filter(a => a.kind === "sale" || a.kind === "mixed");
-  const sum = (xs, f) => xs.reduce((s, a) => s + (finite(f(a)) ? f(a) : 0), 0);
+  // Each tile sums its own side's lines: a mixed filing adds its purchases to buys and its sales to sales.
+  const sides = code => all.map(a => tradeSide(a, code)).filter(Boolean);
+  const totals = xs => {
+    const whole = xs.filter(x => !x.partial), partial = xs.length - whole.length;
+    const shares = whole.reduce((n, x) => n + x.shares, 0), value = whole.reduce((n, x) => n + x.value, 0);
+    return { count: xs.length, text: xs.length ? `${integer(shares)} shares · ${dollars(value)}${partial ? ` · excl. ${partial} mixed filing${partial > 1 ? "s" : ""} not fully itemised` : ""}` : "None in these filings" };
+  };
+  const buys = totals(sides("P")), sells = totals(sides("S"));
   const oldest = all.map(a => a.filedAt).sort()[0];
   $("cx-insider-summary").innerHTML = [
-    tile("Open-market buys", esc(String(buys.length)), buys.length ? `${compactShares(sum(buys, a => a.netShares))} shares · ${money(sum(buys, a => a.value))}` : "None in these filings"),
-    tile("Open-market sales", esc(String(sells.length)), sells.length ? `${compactShares(Math.abs(sum(sells, a => a.netShares)))} shares · ${money(sum(sells, a => a.value))}` : "None in these filings"),
+    tile("Open-market buys", esc(String(buys.count)), buys.text, "", buys.count ? "up" : ""),
+    tile("Open-market sales", esc(String(sells.count)), sells.text, "", sells.count ? "down" : ""),
     tile("Insiders reporting", esc(String((state.insiders.people || []).length)), "Officers, directors and 10% owners"),
     tile("Filings reviewed", esc(String(all.length)), oldest ? "Filed since " + day(oldest) : "")
   ].join("");
-  const rows = all.filter(a => state.insiderFilter === "all" || insiderGroup(a) === state.insiderFilter);
+  const rows = all.filter(a => state.insiderFilter === "all" || insiderGroups(a).includes(state.insiderFilter));
   $("cx-insiders-table").innerHTML = rows.length ? rows.map(a => {
     const p = personInfo(a.owner.name, false, a.owner.cik);
     const extra = (a.transactions || []).length > 1 ? ` <small>${a.transactions.length} line items</small>` : "";
-    const price = (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
+    // No blended average for a mixed filing: its split line gives each side's shares and value instead.
+    const price = a.kind === "mixed" ? [] : (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
     return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
-      <td>${esc(a.codeLabel || "Reported transaction")}${extra}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
+      <td>${esc(insiderLabel(a) || "Reported transaction")}${extra}${mixedSplit(a) ? `<small>${esc(mixedSplit(a))}</small>` : ""}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
       <td>${esc(day(a.transactionDate))}</td><td>${esc(day(a.filedAt))}</td>
-      <td class="num ${finite(a.netShares) && a.netShares !== 0 ? (a.netShares > 0 ? "is-up" : "is-down") : ""}">${finite(a.netShares) ? signed(a.netShares) : "—"}</td>
-      <td class="num">${finite(a.value) ? esc(money(a.value)) : "—"}</td><td class="num">${finite(a.sharesAfter) ? esc(integer(a.sharesAfter)) : "—"}</td>
+      <td class="num ${finite(a.netShares) && a.netShares !== 0 && insiderDir(a) ? "is-" + insiderDir(a) : ""}">${finite(a.netShares) ? glyphDir(insiderDir(a)) + signed(a.netShares) : "—"}</td>
+      <td class="num">${finite(a.value) ? esc(dollars(a.value)) : "—"}</td><td class="num">${finite(a.sharesAfter) ? esc(integer(a.sharesAfter)) : "—"}</td>
       <td class="num">${secUrl(a.sourceUrl) ? `<a href="${esc(secUrl(a.sourceUrl))}" target="_blank" rel="noopener noreferrer">Form ${esc(a.form || "4")} ${EXT}</a>` : ""}</td></tr>`;
   }).join("") : `<tr><td colspan="8"><p class="cx-empty">${all.length ? "No transactions match this filter." : "No Form 4 insider filings were found for this company."}</p></td></tr>`;
 }
@@ -639,17 +715,18 @@ function renderPeople() {
     const p = personInfo(person.name, false, person.cik);
     return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
-      <a href="people.html?q=${encodeURIComponent(person.name)}">Search insider records →</a></div></article>`;
+      <a href="people.html?q=${encodeURIComponent(person.name)}" data-hf-atom>Search insider records →</a></div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
   const serverLeaders = state.photos?.leaders?.length ? state.photos.leaders.filter(l => !l.insider || l.roles.includes("Founder")) : null;
   const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
+  armReveal($("people"));
   $("cx-people-wiki").innerHTML = leaders.map(p => {
     const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
     const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
-    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`;
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div></article>`;
   }).join("");
 }
 
@@ -679,8 +756,22 @@ function renderNews() {
 }
 
 /* ---------- tabs ---------- */
-function activateTab(id, { focus = false, push = true } = {}) {
-  if (!TABS.includes(id)) id = "overview";
+/* Scroll reveal (v13-motion.js) holds back a data-hf-reveal block, or each child of a data-hf-reveal-group, only if it
+   can see the block the first time it meets it, and it meets a block hidden in a closed tab panel at load. So the
+   blocks inside the tab panels are marked data-cx-reveal / data-cx-reveal-group in company.html and armed here when
+   they become visible (their panel shown, or the about column and the leaders heading un-hidden): the hidden
+   attribute that changes with them makes the motion layer look again, and a panel opened later assembles as it
+   scrolls in, like the first one. */
+function armReveal(root) {
+  if (!root || root.closest("[hidden]")) return;
+  for (const el of root.querySelectorAll("[data-cx-reveal],[data-cx-reveal-group]")) {
+    if (el.closest("[hidden]")) continue;
+    const group = el.hasAttribute("data-cx-reveal-group");
+    el.removeAttribute(group ? "data-cx-reveal-group" : "data-cx-reveal");
+    el.setAttribute(group ? "data-hf-reveal-group" : "data-hf-reveal", "");
+  }
+}
+function showTab(id, focus = false) {
   for (const b of document.querySelectorAll("#cx-tabs [role=tab]")) {
     const on = b.dataset.tab === id;
     b.setAttribute("aria-selected", String(on));
@@ -688,6 +779,11 @@ function activateTab(id, { focus = false, push = true } = {}) {
     if (on && focus) b.focus();
   }
   for (const t of TABS) $(t).hidden = t !== id;
+  armReveal($(id));
+}
+function activateTab(id, { focus = false, push = true } = {}) {
+  if (!TABS.includes(id)) id = "overview";
+  showTab(id, focus);
   if (id === "news") loadNews();
   if (push && state.ticker) history.replaceState(null, "", "company.html?ticker=" + encodeURIComponent(state.ticker) + (id === "overview" ? "" : "#" + id));
 }
@@ -789,7 +885,7 @@ function showPicker() {
   $("cx-report").hidden = true; $("cx-picker").hidden = false;
   document.title = "Company research — insidir.";
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
-    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
+    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-hf-atom data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
     window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
@@ -798,6 +894,18 @@ function showPicker() {
   }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };
+
+/* The view is decided as soon as the document is parsed, before the motion layer (v13-motion.js, which runs after
+   this deferred script) first scans the page: it holds back only the scroll-reveal blocks it can see when it starts,
+   so the picker or the report, and the report tab named in the URL, must already be the visible ones. Data and
+   rendering still wait for DOMContentLoaded. */
+function initialView() {
+  const ticker = normalizeTicker(new URLSearchParams(location.search).get("ticker"));
+  $("cx-picker").hidden = Boolean(ticker);
+  $("cx-report").hidden = !ticker;
+  if (ticker) { const tab = location.hash.slice(1); showTab(TABS.includes(tab) ? tab : "overview"); }
+}
+if (document.readyState !== "loading") initialView();
 
 document.addEventListener("DOMContentLoaded", () => {
   for (const b of document.querySelectorAll("[data-range]")) b.addEventListener("click", () => loadMarket(b.dataset.range));

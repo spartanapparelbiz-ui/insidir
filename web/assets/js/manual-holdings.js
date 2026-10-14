@@ -9,6 +9,20 @@
   const date=value=>{if(!value)return "—";const d=new Date(value);return Number.isNaN(d.getTime())?"—":d.toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});};
   const sourceURL=value=>{try{const u=new URL(String(value));return u.protocol==="https:"&&
     (u.hostname==="www.sec.gov"||u.hostname==="sec.gov")?u.toString():null;}catch{return null;}};
+  /* Reported purchases print green with ▲, sales red with ▼; the words always carry the meaning. */
+  const event=(category,words)=>{
+    const dir=category==="reported_purchase"?"up":category==="reported_sale"?"down":"";
+    return '<span class="desk-dir'+(dir?" is-"+dir:"")+'">'+(dir?'<span class="desk-glyph is-'+dir+'" aria-hidden="true"></span>':"")+escapeHTML(words)+'</span>';
+  };
+  /* Sections that start hidden: the scroll reveal (v13-motion.js) passes over anything hidden when it first meets it,
+     so their blocks carry data-desk-reveal in the page and are armed as the section is first shown. */
+  const armReveal=section=>{
+    for(const block of [section,...section.querySelectorAll("[data-desk-reveal]")]){
+      if(!block.hasAttribute("data-desk-reveal"))continue;
+      block.setAttribute(block.getAttribute("data-desk-reveal")==="group"?"data-hf-reveal-group":"data-hf-reveal","");
+      block.removeAttribute("data-desk-reveal");
+    }
+  };
   const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.classList.toggle("is-error",Boolean(isError));};
   async function request(path,options={}){
     const res=await fetch(path,{credentials:"same-origin",headers:{
@@ -42,7 +56,7 @@
         const category=item.category==="reported_purchase"?"Reported purchase":item.category==="reported_sale"?"Reported sale":"Other Form 4 transaction";
         const link=sourceURL(item.source_url);
         return '<tr><td data-label="Ticker"><strong>'+escapeHTML(ticker)+'</strong><small>Ticker-only match</small></td>'+
-          '<td data-label="Published event">'+escapeHTML(category)+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></td>'+
+          '<td data-label="Published event">'+event(item.category,category)+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></td>'+
           '<td data-label="Filed">'+escapeHTML(date(item.published_at))+'</td><td data-label="Original source">'+
           (link?'<a class="portfolio-small-link" href="'+escapeHTML(link)+'" rel="noopener noreferrer" target="_blank">SEC filing ↗</a>':'Source unavailable')+
           '</td></tr>';
@@ -52,6 +66,7 @@
     try{
       const data=await request("/v1/me/manual-holdings");
       el("manual-signin").hidden=true;
+      armReveal(el("manual-content"));
       el("manual-content").hidden=false;
       renderHoldings(data.items||[]);
       renderEvidence(data.recentSecActivity||[]);

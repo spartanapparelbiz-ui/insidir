@@ -4,8 +4,18 @@
    The page below the halftone hero is set like one printed sheet: every section opens on a hairline
    rule with a mono folio at its right end; a tracked eyebrow and the headline sit on the left, the lead
    copy on the right; content is laid out in hairline grids, rows and rules rather than cards with
-   shadows. Warm is heat only: the live dot, step numbers, hover and the pointer in the dot fields.
+   shadows. Nothing is orange: ink, its blends and the paper carry everything. A hover answers with ink
+   (a faint number or icon turns ink, a hairline is drawn or turns ink) or a raised surface, never a colour.
    The page shows no product data: it describes the paid product and links to the public pages.
+
+   Motion: the page moves like the hero wordmark. Things that travel (the menu icon, arrow nudges, the
+   tool icons, the scroll reveal) settle on the dots' own spring (--hf-spring over --hf-spring-dur, from
+   v13-halftone.css) instead of a plain ease; colour and opacity keep their plain easing. The index
+   numbers (folios, tool and step numbers, rule numerals), tool icons, buttons, the menu button and
+   stand-alone links are "atoms" that part around the pointer, pop when it arrives and ripple on a click
+   (v13-motion.js); text never moves. Below the hero the page assembles as it scrolls (data-hf-reveal in
+   index.html, see "Scroll reveal" below). Two dot fields: the band under "How it works" and the closing
+   call, plus the footer strip the engine adds; all of them ripple as the page scrolls.
 
    Selectors are prefixed with all four body classes (body.v13.v12-home.v9-site.v6-site, specificity
    0,4,1) so every rule here sits above the shared file's :is() lists. Never set `display` on an element
@@ -38,7 +48,7 @@ body.v13.v12-home.v9-site.v6-site :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signi
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-nav__actions{flex:none!important;display:flex!important;align-items:center!important;gap:clamp(16px,1.8vw,26px)!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-nav__actions .v9-btn{height:44px!important;min-height:44px!important;padding:0 18px!important;gap:14px!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn{width:44px!important;height:44px!important;margin:0 -10px 0 0!important;padding:0!important;border:0!important;background:transparent!important;cursor:pointer!important;gap:6px!important;border-radius:0!important}
-body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn span{width:20px!important;height:1.5px!important;transition:transform .3s var(--lp-ease)!important}
+body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn span{width:20px!important;height:1.5px!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn[aria-expanded="true"] span:first-child{transform:translateY(3.75px) rotate(45deg)!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn[aria-expanded="true"] span:last-child{transform:translateY(-3.75px) rotate(-45deg)!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn:focus-visible{outline-offset:-4px!important}
@@ -47,10 +57,11 @@ body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile:not([hidden]){display:flex!
   min-height:calc(100svh - var(--lp-nav) + 1px)!important;max-height:calc(100svh - var(--lp-nav) + 1px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;
   padding:8px var(--lp-gutter) 40px!important;background:var(--hf-bg)!important;border:0!important;border-top:1px solid var(--hf-line)!important}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a{display:flex!important;align-items:center!important;justify-content:space-between!important;flex:none!important;min-height:56px!important;padding:0!important;
-  border:0!important;border-bottom:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;transition:color .2s!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:hover{color:var(--hf-warm)!important}}
+  border:0!important;border-bottom:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;transition:color .2s,border-color .2s,background .2s!important}
+/* The rows are ink already: the one under the pointer (or the finger) draws its hairline in ink. */
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:not(:last-child):hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:last-child{margin-top:28px!important;min-height:52px!important;padding:0 18px!important;border:1px solid var(--hf-ink)!important;background:var(--hf-ink)!important;color:var(--hf-bg)!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}}
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}}
 body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:focus-visible{outline-offset:-3px!important}
 
 /* ---------- Hero: the halftone wordmark, cropped by the bottom of the first screen ---------- */
@@ -107,14 +118,18 @@ body.v13.v12-home.v9-site.v6-site .v13-hero .v13-hero__meta{font:var(--hf-label)
 }
 
 /* ---------- Buttons and links ---------- */
-body.v13.v12-home.v9-site.v6-site .v9-btn .v13-arrow{transition:transform .3s var(--lp-ease)!important}
+body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link) .v13-arrow{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link):hover .v13-arrow{transform:translate(2px,-2px)!important}}
 body.v13.v12-home.v9-site.v6-site .v12-outline-button{background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .v12-outline-button:hover{background:var(--hf-surface)!important;border-color:var(--hf-ink)!important;color:var(--hf-ink)!important}}
 body.v13.v12-home.v9-site.v6-site .v12-secondary-link{display:inline-flex!important;align-items:center!important;gap:12px!important}
-body.v13.v12-home.v9-site.v6-site :is(.v9-btn--ink,.v6-mobile a:last-child):active{background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
+/* Pressed states, the only feedback a touch screen gets: the primary softens like its hover, hairline
+   controls raise, links draw their underline or turn ink, menu rows and questions ink their hairline. */
+body.v13.v12-home.v9-site.v6-site :is(.v9-btn--ink,.v6-mobile a:last-child):active{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13.v12-home.v9-site.v6-site :is(.v12-outline-button,.lp-tool,.v6-menu-btn):active{background:var(--hf-raise)!important}
-body.v13.v12-home.v9-site.v6-site :is(.v12-secondary-link,.v6-nav__links a,.v6-signin,.v6-mobile a:not(:last-child),.lp-questions summary):active{color:var(--hf-warm)!important}
+body.v13.v12-home.v9-site.v6-site :is(.v12-secondary-link,.v6-nav__links a,.v6-signin):active{color:var(--hf-ink)!important;background-size:100% 1px!important}
+body.v13.v12-home.v9-site.v6-site .v9-nav .v6-mobile a:not(:last-child):active{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
+body.v13.v12-home.v9-site.v6-site .lp-questions summary:active{color:var(--hf-ink)!important;text-decoration-color:var(--hf-ink)!important}
 
 /* ---------- Sections: hairline rule, folio, head ---------- */
 body.v13.v12-home.v9-site.v6-site .lp-section{position:relative!important;padding:clamp(64px,8vw,120px) 0 0!important;margin:0!important;background:transparent!important;border:0!important}
@@ -124,8 +139,8 @@ body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width::after{content:""!import
 body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools{padding-top:0!important}
 body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width{padding-top:clamp(56px,5vw,76px)!important}
 body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width::after{display:none!important}
-body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width[data-v13-folio]::before{content:attr(data-v13-folio)!important;position:absolute!important;top:clamp(14px,1.4vw,20px)!important;right:0!important;
-  font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;line-height:1!important}
+body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width>.lp-folio{position:absolute!important;top:clamp(14px,1.4vw,20px)!important;right:0!important;margin:0!important;padding:0!important;
+  font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;line-height:1!important;white-space:nowrap!important}
 body.v13.v12-home.v9-site.v6-site .v13-head{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr)!important;gap:22px clamp(32px,6vw,96px)!important;align-items:end!important;margin:0 0 clamp(36px,4.4vw,60px)!important;padding:0!important;border:0!important;max-width:none!important;text-align:left!important}
 body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) .v12-eyebrow{display:block!important;margin:0!important;color:var(--hf-muted)!important}
 body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) h2{font:700 clamp(28px,2.9vw,40px)/1.1 var(--hf-sans)!important;letter-spacing:-.035em!important;margin:16px 0 0!important;max-width:22ch!important;color:var(--hf-ink)!important}
@@ -136,14 +151,19 @@ body.v13.v12-home.v9-site.v6-site .lp-note{font:400 12.5px/1.75 var(--hf-mono)!i
 
 /* ---------- 01 The platform: six tools in a hairline grid ---------- */
 body.v13.v12-home.v9-site.v6-site .lp-tools__grid{list-style:none!important;margin:0!important;padding:0!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:1px!important;background:var(--hf-line)!important;border:1px solid var(--hf-line)!important}
-body.v13.v12-home.v9-site.v6-site .lp-tools__grid>li{display:flex!important;margin:0!important;padding:0!important;background:var(--hf-bg)!important;list-style:none!important}
-body.v13.v12-home.v9-site.v6-site .lp-tool{display:flex!important;flex-direction:column!important;width:100%!important;padding:clamp(24px,2.5vw,36px)!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;text-decoration:none!important;transition:background .25s!important}
+/* Each cell clips its tool, so a tool rising in on the reveal (28px low, overshooting a little) emerges
+   inside its own frame and never paints over the hairline next to it. */
+body.v13.v12-home.v9-site.v6-site .lp-tools__grid>li{display:flex!important;margin:0!important;padding:0!important;background:var(--hf-bg)!important;list-style:none!important;overflow:clip!important}
+body.v13.v12-home.v9-site.v6-site .lp-tool{display:flex!important;flex-direction:column!important;width:100%!important;padding:clamp(24px,2.5vw,36px)!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;text-decoration:none!important}
+/* A tool is a reveal block (index.html): its hover fade is set only outside the reveal, so it never
+   replaces the reveal's own transition (v13-halftone.css, lower in the cascade than this file). */
+body.v13.v12-home.v9-site.v6-site .lp-tool:not(.hf-pending,.hf-revealing){transition:background .2s!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover{background:var(--hf-surface)!important;color:var(--hf-ink)!important}}
 body.v13.v12-home.v9-site.v6-site .lp-tool:focus-visible{outline-offset:-4px!important}
 body.v13.v12-home.v9-site.v6-site .lp-tool__top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin:0 0 clamp(28px,3vw,48px)!important}
 body.v13.v12-home.v9-site.v6-site .lp-tool__num{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .25s!important}
-body.v13.v12-home.v9-site.v6-site .lp-tool__icon{width:22px!important;height:22px!important;flex:none!important;fill:none!important;stroke:currentColor!important;stroke-width:1.25!important;stroke-linecap:square!important;stroke-linejoin:miter!important;color:var(--hf-soft)!important;transition:color .25s,transform .35s var(--lp-ease)!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover :is(.lp-tool__num,.lp-tool__icon){color:var(--hf-warm)!important}}
+body.v13.v12-home.v9-site.v6-site .lp-tool__icon{width:22px!important;height:22px!important;flex:none!important;fill:none!important;stroke:currentColor!important;stroke-width:1.25!important;stroke-linecap:square!important;stroke-linejoin:miter!important;color:var(--hf-soft)!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover :is(.lp-tool__num,.lp-tool__icon){color:var(--hf-ink)!important}}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover .lp-tool__icon{transform:translateY(-2px)!important}}
 body.v13.v12-home.v9-site.v6-site .lp-tool h3{font:700 clamp(18px,1.55vw,22px)/1.2 var(--hf-sans)!important;letter-spacing:-.03em!important;margin:0 0 12px!important;color:var(--hf-ink)!important}
 body.v13.v12-home.v9-site.v6-site .lp-tool p{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;margin:0!important;max-width:42ch!important}
@@ -163,12 +183,33 @@ body.v13.v12-home.v9-site.v6-site .lp-source__label{display:none!important}
 /* ---------- 03 How it works: three steps on one rule ---------- */
 body.v13.v12-home.v9-site.v6-site .lp-steps{list-style:none!important;margin:0!important;padding:0!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important}
 body.v13.v12-home.v9-site.v6-site .lp-step{position:relative!important;margin:0!important;padding:30px clamp(24px,3.4vw,56px) 0 0!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;list-style:none!important}
-body.v13.v12-home.v9-site.v6-site .lp-step::before{content:""!important;position:absolute!important;top:-4px!important;left:0!important;width:7px!important;height:7px!important;background:var(--hf-ink)!important;transition:background .25s!important}
-body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{content:""!important;position:absolute!important;top:-4px!important;right:0!important;width:7px!important;height:7px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important;box-sizing:border-box!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-step:hover::before{background:var(--hf-warm)!important}}
-body.v13.v12-home.v9-site.v6-site .lp-step__num{display:block!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-warm)!important}
+/* Each step opens on an ink square on the shared rule; the last also closes the rule with a hollow one. */
+body.v13.v12-home.v9-site.v6-site .lp-step::before{content:""!important;position:absolute!important;top:-4px!important;left:0!important;width:7px!important;height:7px!important;background:var(--hf-ink)!important;transition:scale var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{content:""!important;position:absolute!important;top:-4px!important;right:0!important;width:7px!important;height:7px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important;box-sizing:border-box!important;transition:border-color .2s!important}
+/* The step under the pointer inks its stretch of the rule, its number turns from faint to ink and its square
+   pops on the dots' spring. A step is a reveal block: its colour fade is set only outside the reveal. */
+body.v13.v12-home.v9-site.v6-site .lp-step:not(.hf-pending,.hf-revealing){transition:border-color .2s!important}
+@media (hover:hover){
+  body.v13.v12-home.v9-site.v6-site .lp-step:hover{border-color:var(--hf-ink)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step:hover::before{scale:1.43!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step:last-child:hover::after{border-color:var(--hf-ink)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step:hover .lp-step__num{color:var(--hf-ink)!important}
+}
+body.v13.v12-home.v9-site.v6-site .lp-step__num{display:block!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .2s!important}
 body.v13.v12-home.v9-site.v6-site .lp-step h3{font:700 clamp(18px,1.55vw,22px)/1.2 var(--hf-sans)!important;letter-spacing:-.03em!important;margin:16px 0 10px!important;color:var(--hf-ink)!important}
 body.v13.v12-home.v9-site.v6-site .lp-step p{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;margin:0!important;max-width:38ch!important}
+/* Under the steps, a full-width band of the wordmark's dots (a data-halftone-field drawn by v13-halftone.js):
+   they part around the pointer anywhere in this section and ripple on a click, then settle home. The band
+   is its own empty strip between the steps and the next section's rule, so no copy ever sits on dots; its
+   height is set here, before the script runs, and it fades in and out at its top and bottom edges. */
+body.v13.v12-home.v9-site.v6-site .lp-band{position:relative!important;display:block!important;width:100%!important;height:clamp(112px,11vw,168px)!important;margin:clamp(48px,5.2vw,80px) 0 0!important;padding:0!important;
+  overflow:hidden!important;pointer-events:none!important;background:var(--hf-bg)!important;border:0!important;
+  -webkit-mask-image:linear-gradient(180deg,transparent,var(--hf-ink) 36%,var(--hf-ink) 64%,transparent)!important;mask-image:linear-gradient(180deg,transparent,var(--hf-ink) 36%,var(--hf-ink) 64%,transparent)!important}
+body.v13.v12-home.v9-site.v6-site .lp-band canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+/* The band stands in for most of the gap above section 04. */
+body.v13.v12-home.v9-site.v6-site .lp-section.lp-why{padding-top:clamp(16px,2vw,32px)!important}
+/* Without scripting the band has no dots to draw: drop it and give the section its usual top padding back. */
+@media (scripting:none){body.v13.v12-home.v9-site.v6-site .lp-band{display:none!important}body.v13.v12-home.v9-site.v6-site .lp-section.lp-why{padding-top:clamp(64px,8vw,120px)!important}}
 
 /* ---------- 04 Why Insidir: four rules ---------- */
 body.v13.v12-home.v9-site.v6-site .lp-rules{list-style:none!important;margin:0!important;padding:0!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:40px clamp(20px,2.4vw,36px)!important}
@@ -178,7 +219,9 @@ body.v13.v12-home.v9-site.v6-site .lp-rule h3{font:700 clamp(18px,1.45vw,21px)/1
 body.v13.v12-home.v9-site.v6-site .lp-rule p{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;margin:0!important;max-width:40ch!important}
 
 /* ---------- 05 Pricing: one plan ---------- */
-body.v13.v12-home.v9-site.v6-site .lp-plan__card{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important;border-radius:0!important;box-shadow:none!important}
+/* The card's box stays put while its two halves rise in (reveal); it clips them, so the divider never
+   pokes past its edge on the way. */
+body.v13.v12-home.v9-site.v6-site .lp-plan__card{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important;border-radius:0!important;box-shadow:none!important;overflow:clip!important}
 body.v13.v12-home.v9-site.v6-site :is(.lp-plan__price,.lp-plan__list){padding:clamp(26px,3.4vw,52px)!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__price{display:flex!important;flex-direction:column!important;align-items:flex-start!important;border-right:1px solid var(--hf-line-2)!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__card .v12-eyebrow{display:block!important;margin:0!important;color:var(--hf-muted)!important}
@@ -196,16 +239,21 @@ body.v13.v12-home.v9-site.v6-site .lp-faq__layout>.v13-head__lead{position:stick
 body.v13.v12-home.v9-site.v6-site .lp-questions{border-top:1px solid var(--hf-line-2)!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details{margin:0!important;padding:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary{display:block!important;list-style:none!important;position:relative!important;cursor:pointer!important;margin:0!important;padding:20px 52px 20px 0!important;min-height:44px!important;
-  font:600 14px/1.45 var(--hf-sans)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;transition:color .2s!important}
+  font:600 14px/1.45 var(--hf-sans)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;
+  text-decoration:underline 1px transparent!important;text-underline-offset:5px!important;transition:color .2s,text-decoration-color .2s!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary::-webkit-details-marker{display:none!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary::marker{content:""!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary::after{content:"+"!important;position:absolute!important;right:4px!important;top:50%!important;transform:translateY(-50%)!important;width:24px!important;text-align:center!important;font:400 18px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;transition:color .2s!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details[open]>summary::after{content:"\2212"!important;color:var(--hf-ink)!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-questions summary:hover,body.v13.v12-home.v9-site.v6-site .lp-questions summary:hover::after{color:var(--hf-warm)!important}}
+/* The question is ink already: the one under the pointer underlines itself and its plus turns ink. */
+@media (hover:hover){
+  body.v13.v12-home.v9-site.v6-site .lp-questions summary:hover{color:var(--hf-ink)!important;text-decoration-color:var(--hf-ink)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-questions summary:hover::after{color:var(--hf-ink)!important}
+}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary:focus-visible{outline-offset:-3px!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p{margin:0!important;padding:0 52px 24px 0!important;font:400 13px/1.8 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:64ch!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:color .2s!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-questions details>p a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}}
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-questions details>p a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}}
 /* Inline links in the answers keep their line but get a 44px-tall hit area for touch. */
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p a{position:relative!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p a::after{content:""!important;position:absolute!important;inset:-14px -3px!important;background:transparent!important}
@@ -215,7 +263,7 @@ body.v13.v12-home.v9-site.v6-site .lp-final{margin:clamp(64px,8vw,120px) 0 0!imp
 body.v13.v12-home.v9-site.v6-site .lp-final__inner{display:flex!important;flex-direction:column!important;align-items:center!important}
 body.v13.v12-home.v9-site.v6-site .lp-final .v12-eyebrow{margin:0!important;color:var(--hf-muted)!important}
 body.v13.v12-home.v9-site.v6-site .lp-final h2{font:700 clamp(30px,3.05vw,44px)/1.1 var(--hf-sans)!important;letter-spacing:-.035em!important;margin:20px auto!important;max-width:21ch!important;color:var(--hf-ink)!important}
-/* The dot field only shows toward the edges, so the copy always sits on plain paper; pushed dots warm. */
+/* The dot field only shows toward the edges, so the copy always sits on plain paper; the dots stay ink. */
 body.v13.v12-home.v9-site.v6-site .lp-final .v13-field::after{display:none!important}
 body.v13.v12-home.v9-site.v6-site .lp-final .v13-field{-webkit-mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%)!important;mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%)!important}
 body.v13.v12-home.v9-site.v6-site .lp-final__copy{font:400 14px/1.75 var(--hf-sans)!important;color:var(--hf-soft)!important;margin:0 auto 32px!important;max-width:46ch!important}
@@ -231,18 +279,23 @@ body.v13.v12-home.v9-site.v6-site .v13-arrow{position:relative!important;display
 body.v13.v12-home.v9-site.v6-site .v13-arrow::before{content:""!important;position:absolute!important;left:1.5px!important;bottom:1.5px!important;width:9px!important;height:1px!important;background:currentColor!important;transform-origin:0 50%!important;transform:rotate(-45deg)!important}
 body.v13.v12-home.v9-site.v6-site .v13-arrow::after{content:""!important;position:absolute!important;right:1.5px!important;top:1.5px!important;width:4.5px!important;height:4.5px!important;border-top:1px solid currentColor!important;border-right:1px solid currentColor!important;background:transparent!important}
 
-/* ---------- Scroll reveal (v9-motion.js) ---------- */
-/* Content never fades: without JavaScript, or under reduced motion, nothing is pending and everything is
-   in place. With motion, a section that has not been reached yet waits 20px low with its rule undrawn;
-   when it scrolls in, the rule draws across and the content settles, its items a beat apart. */
-body.v13.v12-home.v9-site.v6-site [data-v9-reveal]{opacity:1!important;transform:none!important;transition:translate .8s var(--lp-ease)!important}
-body.v13.v12-home.v9-site.v6-site [data-v9-reveal].lp-pending{translate:0 20px!important}
-body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width::after{transition:transform 1.1s var(--lp-ease)!important}
-body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width.lp-pending::after{transform:scaleX(0)!important}
-/* The tool grid draws its hairlines with a 1px gap over a line-coloured background, so its cells do not
-   move on their own (a moved cell would bare the background); rows and steps do. */
-body.v13.v12-home.v9-site.v6-site :is(.lp-step,.lp-rule,.lp-source){transition:translate .7s var(--lp-ease) calc(var(--lp-i,0) * 70ms)!important}
-body.v13.v12-home.v9-site.v6-site .lp-pending :is(.lp-step,.lp-rule,.lp-source){translate:0 14px!important}
+/* ---------- Scroll reveal (v13-motion.js) ---------- */
+/* Below the hero the page assembles as it scrolls, on the site's own reveal: index.html marks each section
+   head (lead, then aside), the notes, every tool, the source rows, the steps, the rules, the plan's two
+   halves, the questions and the closing call. Each waits 28px low and transparent until it reaches the
+   viewport, then rises on the dots' spring while it fades up, a beat after whatever arrived with it
+   (v13-halftone.css). Frames stay put and their contents arrive inside them: the tool grid's hairlines
+   (a 1px gap over a line-coloured background, which a moving cell would bare), the source table's and
+   the questions' top rules, the plan card's box. Content on screen at load is never hidden; under reduced
+   motion, without JavaScript or in print nothing waits.
+   Each section's own hairline rule draws across, and its folio fades in, while its head arrives. The draw
+   keeps the plain ease: a scale that overshot would push the hairline past its column. */
+@media screen and (prefers-reduced-motion:no-preference){
+  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width::after{transition:transform 1.1s var(--lp-ease)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width>.lp-folio{transition:opacity .7s var(--lp-ease)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width:has(.v13-head__lead.hf-pending)::after{transform:scaleX(0)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width:has(.v13-head__lead.hf-pending)>.lp-folio{opacity:0!important}
+}
 
 /* ---------- Large screens ---------- */
 @media (min-width:1600px){
@@ -256,9 +309,9 @@ body.v13.v12-home.v9-site.v6-site .lp-pending :is(.lp-step,.lp-rule,.lp-source){
   body.v13.v12-home.v9-site.v6-site .v13-head{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
   body.v13.v12-home.v9-site.v6-site .v13-head__aside>p{max-width:62ch!important}
   body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width{padding-top:36px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width[data-v13-folio]::before{top:36px!important;line-height:1.75!important}
+  body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width>.lp-folio{top:36px!important;line-height:1.75!important}
   body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width{padding-top:56px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width[data-v13-folio]::before{top:56px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width>.lp-folio{top:56px!important}
   body.v13.v12-home.v9-site.v6-site .v9-nav .v6-nav__links{gap:20px!important}
   body.v13.v12-home.v9-site.v6-site .v9-nav .v6-nav__inner{gap:20px!important}
   body.v13.v12-home.v9-site.v6-site .v9-nav .v6-nav__actions{gap:16px!important}
@@ -303,6 +356,7 @@ body.v13.v12-home.v9-site.v6-site .lp-pending :is(.lp-step,.lp-rule,.lp-source){
   body.v13.v12-home.v9-site.v6-site .lp-step::before{top:2px!important;left:-4px!important}
   body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{top:auto!important;right:auto!important;bottom:-4px!important;left:-4px!important}
   body.v13.v12-home.v9-site.v6-site .lp-step h3{margin-top:12px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-band{height:80px!important;margin-top:36px!important}
   body.v13.v12-home.v9-site.v6-site .lp-plan__terms{margin-bottom:26px!important}
   body.v13.v12-home.v9-site.v6-site .lp-questions summary{padding:18px 44px 18px 0!important}
   body.v13.v12-home.v9-site.v6-site .lp-questions details>p{padding-right:0!important}
@@ -373,10 +427,14 @@ body.v13.v12-home.v9-site.v6-site .lp-pending :is(.lp-step,.lp-rule,.lp-source){
 
 /* ---------- Reduced motion: everything in place, nothing moves ---------- */
 @media (prefers-reduced-motion:reduce){
-  body.v13.v12-home.v9-site.v6-site :is([data-v9-reveal],.lp-step,.lp-rule,.lp-source,.lp-tool,.lp-tool__icon,.lp-tool__num,.v13-arrow,.v6-menu-btn span,.lp-questions summary,.lp-step::before,.v12-outline-button){transition:none!important}
-  body.v13.v12-home.v9-site.v6-site :is([data-v9-reveal],[data-v9-reveal] *){translate:none!important}
+  body.v13.v12-home.v9-site.v6-site :is(.lp-step,.lp-tool,.lp-tool__icon,.lp-tool__num,.lp-step__num,.lp-folio,.v13-arrow,.v6-menu-btn span,.v6-mobile a,.lp-questions summary,.v12-outline-button){transition:none!important}
+  body.v13.v12-home.v9-site.v6-site :is(.lp-step,.lp-tool):not(.hf-pending,.hf-revealing){transition:none!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step::before,body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{transition:none!important}
+  /* The menu icon and the arrows are set by more specific rules above; still them here at the same weight. */
+  body.v13.v12-home.v9-site.v6-site .v9-nav .v6-menu-btn span,body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link) .v13-arrow{transition:none!important}
   body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width::after{transform:none!important;transition:none!important}
   body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link):hover .v13-arrow,body.v13.v12-home.v9-site.v6-site .lp-tool:hover .lp-tool__icon{transform:none!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step:hover::before{scale:none!important}
 }
 }
 /* end @layer insidir-v13 */
