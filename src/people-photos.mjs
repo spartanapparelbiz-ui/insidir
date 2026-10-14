@@ -272,7 +272,9 @@ async function runJob(ticker, company) {
   return state;
 }
 
-const OTHER_PEOPLE = 10, OTHER_ISSUERS_PER_PERSON = 2, OTHER_ISSUERS = 5;
+// The owner page orders boards by last trade, not by current membership (Pfizer came third for a
+// current Pfizer director), so several are tried; results are cached per proxy and per person.
+const OTHER_PEOPLE = 10, OTHER_ISSUERS_PER_PERSON = 4, OTHER_ISSUERS = 8;
 const STRONG_RULES = new Set(["alt", "after", "run", "before-profile"]);
 async function otherBoards(company, persons, proxyModule, assign) {
   const index = await tickerIndex();
