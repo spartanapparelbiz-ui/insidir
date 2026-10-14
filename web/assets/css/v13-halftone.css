@@ -320,21 +320,22 @@ body.v13 .hwf-root canvas{position:absolute!important;inset:0!important;width:10
 body.v13 .hwf-top{position:relative!important;z-index:1!important;display:grid!important;grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,1fr))!important;gap:24px!important;
   padding:clamp(22px,3.4vw,40px) clamp(20px,3.4vw,44px) 0!important;margin:0!important;width:auto!important;max-width:none!important;border:0!important;background:transparent!important;
   font-family:var(--hf-mono)!important;font-size:10.5px!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1.75!important;color:var(--hf-ink)!important}
-body.v13 .hwf-brand strong{display:block!important;font:inherit!important;font-weight:500!important;color:var(--hf-ink)!important;letter-spacing:inherit!important;text-transform:inherit!important}
-body.v13 .hwf-brand span{display:block!important;opacity:.55!important;color:var(--hf-ink)!important;font:inherit!important;letter-spacing:inherit!important}
+body.v13 .hwf-brand strong{display:block!important;font:inherit!important;font-weight:500!important;color:var(--hf-ink)!important;opacity:.8!important;letter-spacing:inherit!important;text-transform:inherit!important}
+body.v13 .hwf-brand span{display:block!important;opacity:.8!important;color:var(--hf-ink)!important;font:inherit!important;font-weight:500!important;letter-spacing:inherit!important}
 body.v13 .hwf-col{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
-body.v13 .hwf-col h3{margin:0!important;font:inherit!important;font-weight:500!important;letter-spacing:inherit!important;text-transform:inherit!important;opacity:.52!important;color:var(--hf-ink)!important}
+body.v13 .hwf-col h3{margin:0!important;font:inherit!important;font-weight:500!important;letter-spacing:inherit!important;text-transform:inherit!important;opacity:.8!important;color:var(--hf-ink)!important}
 body.v13 .hwf-col ul{list-style:none!important;margin:0!important;padding:0!important}
 body.v13 .hwf-col li{margin:0!important;padding:0!important;color:inherit!important;font:inherit!important;letter-spacing:inherit!important}
-body.v13 .hwf-col a,body.v13 .hwf-up,body.v13 .hwf-note{color:var(--hf-ink)!important;text-decoration:none!important;opacity:.78!important;background:none!important;border:0!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;
+body.v13 .hwf-col a,body.v13 .hwf-up,body.v13 .hwf-note{color:var(--hf-ink)!important;text-decoration:none!important;opacity:.8!important;background:none!important;border:0!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;
   font:inherit!important;font-weight:500!important;letter-spacing:inherit!important;text-transform:inherit!important;cursor:pointer!important;display:inline!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:opacity .25s ease,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 .hwf-note{cursor:default!important;opacity:.55!important;margin-right:auto!important}
+body.v13 .hwf-note{cursor:default!important;opacity:.8!important;margin-right:auto!important}
 body.v13 .hwf-col a:hover,body.v13 .hwf-up:hover{opacity:1!important;background-size:100% 1px!important;color:var(--hf-ink)!important}
 body.v13 .hwf-col a:focus-visible,body.v13 .hwf-up:focus-visible{outline:1px solid currentColor!important;outline-offset:3px!important;opacity:1!important}
 body.v13 .hwf-rule{position:relative!important;z-index:1!important;display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:16px!important;
   margin:clamp(18px,2.6vw,30px) clamp(20px,3.4vw,44px) 0!important;padding:12px 0 0!important;border:0!important;border-top:1px solid var(--hf-line-soft)!important;background:transparent!important;
   font-family:var(--hf-mono)!important;font-size:10.5px!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important}
+body.v13 .hwf-top *,body.v13 .hwf-rule *{font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important}
 body.v13 .hwf-sr{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
 body.v13 .hwf-root[hidden]{display:none!important}
 @media (max-width:720px){
