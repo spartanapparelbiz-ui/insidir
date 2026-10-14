@@ -37,7 +37,6 @@ export function secNameReadings(raw) {
   const t = nameTokens(raw);
   if (t.length < 2) return [];
   const out = [];
-  const given = (i, list) => list.slice(i).find(x => x.length > 1);
   const add = (surname, rest) => {
     const g = rest.find(x => x.length > 1);
     if (!g || !surname) return;
@@ -46,18 +45,28 @@ export function secNameReadings(raw) {
   add(t[0], t.slice(1));                                   // LAST FIRST MIDDLE
   if (t.length >= 3) add(t[0] + t[1], t.slice(2));         // TWO-WORD LAST, FIRST
   add(t.at(-1), t.slice(0, -1));                           // FIRST MIDDLE LAST
-  void given;
   return out;
 }
 /* Readings of a natural-order name ("Jensen Huang", "Suzanne Nora Johnson"). */
 export function naturalNameReadings(raw) {
   const t = nameTokens(raw);
   if (t.length < 2) return [];
-  const out = [{ surname: t.at(-1), given: t.find(x => x.length > 1) || t[0], middles: t.slice(1, -1) }];
-  if (t.length >= 3) out.push({ surname: t.at(-2) + t.at(-1), given: t[0], middles: t.slice(1, -2) });
+  // The given name is the first full word; a leading initial ("W. Patrick Mattson") is a middle.
+  const reading = (surname, rest) => {
+    const i = Math.max(0, rest.findIndex(x => x.length > 1));
+    return { surname, given: rest[i], middles: rest.filter((_, j) => j !== i) };
+  };
+  const out = [reading(t.at(-1), t.slice(0, -1))];
+  if (t.length >= 3) out.push(reading(t.at(-2) + t.at(-1), t.slice(0, -2)));
   return out;
 }
 
+/* A given name plus its nickname-table equivalents, upper case (for substring search in alt text
+ * and file names, where a word-level comparison is impossible). */
+export function givenVariants(given) {
+  const g = String(given || "").toUpperCase();
+  return [g, ...(NICK.get(g) || [])];
+}
 function givenMatches(a, b) {
   if (a === b) return true;
   if (NICK.get(a)?.has(b)) return true;

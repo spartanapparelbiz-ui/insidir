@@ -110,16 +110,17 @@ const commonsThumb = src => {
   return m ? `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/120px-${m[3]}` : src;
 };
 const photoKey = (cik, name) => cik ? "cik:" + String(cik).replace(/^0+/, "") : "name:" + String(name || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
-/* Photo precedence: the server's verified photo map (Commons, company site, SEC proxy), then
- * Wikidata people matched on the page, then the small curated set; otherwise initials. */
+/* Photos come only from the server's verified map (Commons, company site, SEC proxy), which uses
+ * the strict name matcher plus a proven tie to this company, or from the small curated set;
+ * everyone else keeps initials. The name on Commons or the company's page reads better than the
+ * SEC filing order, so it is shown when the source gives one. */
 function personInfo(secName, short = false, ownerCik = null) {
-  const wiki = (state.profile?.people || []).find(p => matchesPerson(secName, p));
   const verified = state.photos?.photos?.[photoKey(ownerCik, secName)];
   const curated = window.InsidirMedia?.photo?.(secName, state.ticker);
   const photo = verified?.src ? { src: verified.src, source: verified.sourceUrl, credit: verified.credit }
-    : wiki?.photo?.src ? { src: wiki.photo.src, source: wiki.photo.source, credit: "Wikimedia Commons" }
     : curated ? { src: commonsThumb(curated.src), source: curated.source, credit: curated.credit + " · " + curated.license } : null;
-  return { name: wiki?.name || displayName(secName, { short }), photo, wikidataUrl: wiki?.wikidataUrl || null };
+  const natural = verified && verified.source !== "sec-proxy" && /[a-z]/.test(verified.personName || "") && verified.personName.length <= 60 ? verified.personName : null;
+  return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
@@ -711,7 +712,10 @@ async function loadPhotos(seq, attempt = 0) {
     if (seq !== state.seq) return;
     state.photos = data;
     renderOverviewInsiders(); renderInsiders(); renderPeople();
-    if (!data.complete && attempt < 7) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, [2500, 4000, 6000, 8000, 12000, 15000, 20000][attempt]);
+    // Company sites are crawled politely (one request a second), so a first visit can take a few
+    // minutes; photos appear as each source finishes.
+    const delays = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
+    if (!data.complete && attempt < delays.length) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, delays[attempt]);
   } catch { /* initials stay */ }
 }
 function resetView() {

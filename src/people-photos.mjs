@@ -8,12 +8,14 @@
  * (by CIK) appears. Work runs in the background and the page receives results as they land. */
 import { fetchImage, imageSize } from "./media.mjs";
 import { preparePhoto } from "./image-analysis.mjs";
-import { putMedia, getRecord, putRecord } from "./media-store.mjs";
+import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
 import { isEntityName, samePerson } from "./person-match.mjs";
 import { resolveCompany } from "./intelligence.mjs";
 import { getCompanyInsiders } from "./insiders.mjs";
 
 const DAY = 86400000;
+const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
+const siteHost = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const COMPANY_TTL = 7 * DAY, PERSON_TTL = 90 * DAY;
 const jobs = new Map();
 // The browser computes the same key: owner CIK when the filing has one, else the normalized name.
@@ -24,11 +26,19 @@ async function store(bytes, type) {
   const prepared = await preparePhoto(bytes, type, 256);
   return putMedia(prepared);
 }
-/* Commons portraits that are full-length or tiny are passed over for a better source. */
-async function fromUrl(url) {
-  const image = await fetchImage(url, { maxBytes: 4_000_000, userAgent: "InsidirResearch/1.0 (spartanapparelbiz@gmail.com)" });
-  if (image.type === "svg" || image.type === "ico") throw new Error("Not a photo");
+/* Commons portraits that are full-length or tiny are passed over for a better source. Company
+ * sites get the page as Referer (many refuse hotlinked images without it). */
+async function fromUrl(url, { referer, userAgent = "InsidirResearch/1.0 (spartanapparelbiz@gmail.com)" } = {}) {
+  const image = await fetchImage(url, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent, headers: referer ? { Referer: referer } : {} });
+  if (!["png", "jpeg", "webp", "gif"].includes(image.type)) throw new Error("Not a photo");
   return { saved: await store(image.bytes, image.type), size: imageSize(image.bytes, image.type) };
+}
+/* A proxy match carries an already prepared photo; it is used only while its bytes are still
+ * stored, otherwise the original portrait is prepared again. */
+async function proxyPhoto(m) {
+  if (m.sha && m.photoUrl && await getMedia(m.sha)) return m.photoUrl;
+  if (m.bytes) return (await store(m.bytes, m.type)).url;
+  return null;
 }
 
 function publish(state) {
@@ -41,8 +51,8 @@ async function runJob(ticker, company) {
   const insiders = (await getCompanyInsiders(ticker).catch(() => null))?.people || [];
   const people = insiders.filter(p => p?.name && !isEntityName(p.name)).map(p => ({ ...p, key: keyFor(p) }));
   const pending = () => people.filter(p => !state.photos[p.key]);
-  const assign = async (person, photo) => {
-    if (state.photos[person.key]) return;
+  const assign = async (person, photo, { replace = false } = {}) => {
+    if (state.photos[person.key] && !replace) return;
     state.photos[person.key] = photo;
     if (person.cik) await putRecord("person-photo", String(person.cik).replace(/^0+/, ""), photo, PERSON_TTL);
   };
@@ -77,32 +87,71 @@ async function runJob(ticker, company) {
   }
   await publish(state);
 
-  // 2 and 3 run together; the company's own page wins over the proxy when both match.
-  const extraPeople = leaders.filter(l => l?.name).map(l => ({ name: l.name, key: "wd:" + (l.qid || l.name) }));
+  // Leadership without Form 4 filings (founders, chair, directors) for the People tab, with their
+  // Commons portrait when they have one; the company's page and the proxy fill the gaps below.
+  for (const leader of leaders) {
+    let photo = null;
+    if (leader.photo?.src) {
+      try {
+        const { saved } = await fromUrl(leader.photo.large || leader.photo.src);
+        photo = { src: saved.url, source: "wikimedia", sourceUrl: leader.photo.source, credit: leader.photo.credit || "Wikimedia Commons" };
+      } catch { /* the page or proxy may still have one */ }
+    }
+    state.leaders.push({ key: "wd:" + (leader.qid || leader.name), name: leader.name, qid: leader.qid || null, roles: leader.roles || [], current: leader.current !== false,
+      wikidataUrl: leader.wikidataUrl || null, src: photo?.src || null, source: photo?.source || null, sourceUrl: photo?.sourceUrl || null, credit: photo?.credit || null,
+      insider: people.some(p => samePerson(p.name, leader.name, leader.aliases || [])) });
+  }
+  await publish(state);
+
+  // 2 and 3 run together and each is applied as soon as it finishes; the company's own page
+  // replaces a proxy picture when both match the same person (larger, current portraits).
+  const extraPeople = leaders.filter(l => l?.name).map(l => ({ name: l.name, key: "wd:" + (l.qid || l.name), aliases: l.aliases || [] }));
   const [sitesModule, proxyModule] = await Promise.all([optional("./leader-pages.mjs"), optional("./proxy-headshots.mjs")]);
-  const remaining = pending().map(({ name, cik, role, key }) => ({ name, cik, role, key }));
-  const [site, proxy] = await Promise.all([
-    sitesModule?.leadershipPhotos && remaining.length ? sitesModule.leadershipPhotos({ cik: company.cik, name: company.name, ticker, insiders: remaining, extraPeople }).catch(e => ({ status: "error", message: e?.message, matches: [] })) : null,
-    proxyModule?.proxyHeadshots && remaining.length ? proxyModule.proxyHeadshots({ cik: company.cik, insiders: remaining, extraPeople }).catch(e => ({ status: "error", message: e?.message, matches: [] })) : null
-  ]);
-  if (site) state.sources.companySite = { status: site.status, matched: site.matches?.length || 0, pages: (site.pages || []).slice(0, 5) };
-  if (proxy) state.sources.secProxy = { status: proxy.status, matched: proxy.matches?.length || 0, accession: proxy.accession || null };
+  // Both sources see the whole roster: a caption or card is accepted only when it names exactly one
+  // known person, so leaving out people who already have a photo would weaken that check.
+  const roster = people.map(({ name, cik, role, key }) => ({ name, cik, role, key }));
+  const need = [...pending().map(p => p.key), ...state.leaders.filter(l => !l.src).map(l => l.key)];
+  const failed = e => ({ status: "error", message: String(e?.message || e).slice(0, 120), matches: [] });
   const personFor = m => people.find(p => (m.key && p.key === m.key) || (m.ownerCik && p.cik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
-  for (const m of site?.matches || []) {
-    const person = personFor(m);
-    if (!person || state.photos[person.key]) continue;
-    try {
-      const { saved } = await fromUrl(m.imageUrl);
-      await assign(person, { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website", personName: m.personName || m.cardName, rule: m.rule, confidence: m.confidence || "high" });
-    } catch { /* try the next source */ }
-  }
-  for (const m of proxy?.matches || []) {
-    const person = personFor(m);
-    if (!person || state.photos[person.key]) continue;
-    const src = m.photoUrl || (m.bytes ? (await store(m.bytes, m.type)).url : null);
-    if (!src) continue;
-    await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit: "SEC proxy statement (DEF 14A" + (proxy.filedAt ? ", filed " + proxy.filedAt : "") + ")", personName: m.personName || m.caption, rule: m.rule, confidence: m.confidence || "high" });
-  }
+  const leaderFor = m => m.key?.startsWith("wd:") ? state.leaders.find(l => l.key === m.key) : null;
+  const replaceable = current => !current || current.source === "sec-proxy";
+
+  const applySite = async site => {
+    state.sources.companySite = { status: site.status, matched: site.matches?.length || 0, pages: (site.pages || []).slice(0, 5), ...(site.message ? { message: site.message } : {}) };
+    for (const m of site.matches || []) {
+      const person = personFor(m), leader = person ? null : leaderFor(m);
+      if (person ? !replaceable(state.photos[person.key]) : !leader || (leader.src && leader.source !== "sec-proxy")) continue;
+      try {
+        const { saved } = await fromUrl(m.imageUrl, { referer: m.pageUrl, userAgent: PUBLIC_UA });
+        const photo = { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : ""), personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high" };
+        if (person) await assign(person, photo, { replace: true });
+        else Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit });
+      } catch { /* try the next source */ }
+    }
+    await publish(state);
+  };
+  const applyProxy = async proxy => {
+    state.sources.secProxy = { status: proxy.status, matched: proxy.matches?.length || 0, accession: proxy.accession || null, ...(proxy.message ? { message: proxy.message } : {}) };
+    const credit = "SEC proxy statement (DEF 14A" + (proxy.filedAt ? ", filed " + proxy.filedAt : "") + ")";
+    for (const m of proxy.matches || []) {
+      const person = personFor(m), leader = person ? null : leaderFor(m);
+      if (person ? state.photos[person.key] : !leader || leader.src) continue;
+      const src = await proxyPhoto(m).catch(() => null);
+      if (!src) continue;
+      if (person) await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit, personName: m.personName || m.caption, rule: m.rule, confidence: m.confidence || "high" });
+      else Object.assign(leader, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit });
+    }
+    await publish(state);
+  };
+  // Applied one after the other so the two never write the same person at once.
+  let applying = Promise.resolve();
+  const queueApply = (fn, result) => { applying = applying.then(() => fn(result)).catch(e => console.warn("Photo source apply failed:", e?.message)); return applying; };
+  if (need.length) await Promise.all([
+    sitesModule?.leadershipPhotos ? sitesModule.leadershipPhotos({ cik: company.cik, name: company.name, ticker, insiders: roster, extraPeople, need }).catch(failed).then(r => queueApply(applySite, r)) : null,
+    proxyModule?.proxyHeadshots ? proxyModule.proxyHeadshots({ cik: company.cik, insiders: roster, extraPeople }).catch(failed).then(r => queueApply(applyProxy, r)) : null
+  ]);
+  await applying;
+
   // A full-length or small Commons picture is still better than initials.
   for (const person of pending()) {
     if (!person.commonsFallback) continue;
@@ -110,20 +159,6 @@ async function runJob(ticker, company) {
     await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high" });
   }
   for (const person of people) delete person.commonsFallback;
-
-  // Leadership without Form 4 filings (e.g. founders, chair) shown in the People tab.
-  const proxyByKey = new Map((proxy?.matches || []).filter(m => m.key?.startsWith("wd:")).map(m => [m.key, m]));
-  for (const leader of leaders) {
-    const key = "wd:" + (leader.qid || leader.name);
-    let src = null, source = null, sourceUrl = null, credit = null;
-    if (leader.photo?.src) {
-      try { const { saved } = await fromUrl(leader.photo.large || leader.photo.src); src = saved.url; source = "wikimedia"; sourceUrl = leader.photo.source; credit = leader.photo.credit || "Wikimedia Commons"; } catch { /* fall through */ }
-    }
-    const fromProxy = proxyByKey.get(key);
-    if (!src && fromProxy) { src = fromProxy.photoUrl || null; source = "sec-proxy"; sourceUrl = proxy.documentUrl; credit = "SEC proxy statement (DEF 14A)"; }
-    state.leaders.push({ name: leader.name, qid: leader.qid || null, roles: leader.roles || [], current: leader.current !== false, wikidataUrl: leader.wikidataUrl || null, src, source, sourceUrl, credit,
-      insider: people.some(p => samePerson(p.name, leader.name, leader.aliases || [])) });
-  }
 
   state.complete = true;
   state.coverage = { people: people.length, withPhoto: people.filter(p => state.photos[p.key]).length };

@@ -19,7 +19,9 @@ const BG_LUM = luminance(...PAGE_BG);
 
 /* librsvg must never resolve external entities or fetch anything. */
 export function sanitizeSvg(bytes) {
-  return Buffer.from(bytes.toString("utf8").replace(/<!DOCTYPE[\s\S]*?(\[[\s\S]*?\])?\s*>/gi, "").replace(/<!ENTITY[\s\S]*?>/gi, ""), "utf8");
+  // The text is re-encoded as UTF-8, so a declaration naming another encoding (utf-16) must go too.
+  return Buffer.from(Buffer.from(bytes).toString("utf8").replace(/^\uFEFF/, "").replace(/<\?xml[\s\S]*?\?>/gi, "")
+    .replace(/<!DOCTYPE[\s\S]*?(\[[\s\S]*?\])?\s*>/gi, "").replace(/<!ENTITY[\s\S]*?>/gi, ""), "utf8");
 }
 function input(bytes, type) {
   if (type === "svg") return sharp(sanitizeSvg(bytes), { density: 300, limitInputPixels: MAX_PIXELS });

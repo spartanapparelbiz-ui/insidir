@@ -136,7 +136,8 @@ export async function secFetch(url, { json = false } = {}) {
         continue;
       }
       if (!response.ok) throw new Error("SEC responded " + response.status);
-      const maxLength = json && url.startsWith("https://data.sec.gov/api/xbrl/companyfacts/") ? 12_000_000 : json ? 3_000_000 : 5_000_000;
+      // Company facts and the submissions of very active filers (JPM, GS) run past 3MB.
+      const maxLength = json && /^https:\/\/data\.sec\.gov\/(api\/xbrl\/companyfacts|submissions)\//.test(url) ? 12_000_000 : json ? 3_000_000 : 5_000_000;
       const size = Number(response.headers.get("content-length") || 0);
       if (size > maxLength) throw new Error("SEC response too large");
       const body = await response.text();
