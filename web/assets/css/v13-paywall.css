@@ -4,8 +4,9 @@
 
    These are signed-in pages, so they share the product's proportions — a 70px header on a hairline,
    a 1400px sheet — but carry no product navigation: logo, account and sign out only. One plan, set
-   as a quiet sheet beside the facts of what it includes. Hovers and rules stay in ink and soft ink; orange is kept
-   for warnings only: the past-due badge, a slow checkout confirmation and error messages.
+   as a quiet sheet beside the facts of what it includes. Hovers and rules stay in ink and soft ink; the alert red
+   (--hf-alert) marks only what needs attention: the past-due badge, a slow checkout confirmation and error messages.
+   A checkout still being confirmed is not a problem, so its badge stays in soft ink with a pulsing dot.
 
    Motion, as on log in and get started: the plan sheet's empty top-right corner carries a live dot field
    (data-halftone-field, mounted by v13-halftone.js) — the landing wordmark's dots without the word, parting
@@ -74,7 +75,8 @@ body.v13 .pw-link{display:inline-block!important;margin:16px 0 0!important;font:
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important}
 body.v13 .pw-link::after{content:" →"!important}
 body.v13 .pw-link:hover{color:var(--hf-soft)!important}
-body.v13 .pw-feedback{margin:16px 0 0!important;padding:10px 12px!important;border:1px solid var(--hf-warm)!important;background:var(--hf-bg)!important;font:400 11.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
+/* Something went wrong on the way to Stripe: an alert-red rule, the message itself in ink. */
+body.v13 .pw-feedback{margin:16px 0 0!important;padding:10px 12px!important;border:1px solid var(--hf-alert)!important;border-left-width:2px!important;background:var(--hf-bg)!important;font:400 11.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
 
 /* ---------- What's included ---------- */
 body.v13 .pw-included{margin:clamp(48px,6vw,84px) 0 0!important}
@@ -91,8 +93,8 @@ body.v13 .pw-note a:hover{color:var(--hf-ink)!important;text-decoration-color:cu
 /* ---------- Billing: checkout confirmation, plan sheet, help ---------- */
 body.v13 #main .bl-confirm{margin:var(--desk-gap) 0 0!important;padding:22px 24px 24px!important;border:1px solid var(--hf-line-2)!important;border-left:2px solid var(--hf-soft)!important;background:var(--hf-surface)!important}
 body.v13 #main .bl-confirm[data-state=active]{border-left-color:var(--hf-ink)!important}
-/* Stripe has not confirmed after six checks: a warning, so the rule warms. */
-body.v13 #main .bl-confirm[data-state=slow]{border-left-color:var(--hf-warm)!important}
+/* Stripe has not confirmed after six checks: a warning, so the rule turns alert red. */
+body.v13 #main .bl-confirm[data-state=slow]{border-left-color:var(--hf-alert)!important}
 body.v13 #main .bl-confirm__label{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;display:flex!important;align-items:center!important;gap:10px!important}
 body.v13 #main .bl-confirm__label::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-ink)!important;flex:none!important}
 body.v13 #main .bl-confirm[data-state=waiting] .bl-confirm__label::before{animation:v13BlPulse 1.2s ease-in-out infinite!important}
@@ -108,8 +110,12 @@ body.v13 #main .bl-badge{display:inline-flex!important;align-items:center!import
 body.v13 #main .bl-badge::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-line-2)!important}
 body.v13 #main .bl-badge[data-tone=on]{color:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
 body.v13 #main .bl-badge[data-tone=on]::before{background:var(--hf-ink)!important}
-body.v13 #main .bl-badge[data-tone=warn]{color:var(--hf-warm)!important;border-color:var(--hf-warm)!important}
-body.v13 #main .bl-badge[data-tone=warn]::before{background:var(--hf-warm)!important}
+/* A subscription that needs fixing (payment due, pending, paused) in the alert red; one being confirmed after checkout
+   in soft ink, its dot pulsing like the confirmation's. */
+body.v13 #main .bl-badge[data-tone=warn]{color:var(--hf-alert)!important;border-color:var(--hf-alert)!important}
+body.v13 #main .bl-badge[data-tone=warn]::before{background:var(--hf-alert)!important}
+body.v13 #main .bl-badge[data-tone=wait]{color:var(--hf-soft)!important;border-color:var(--hf-soft)!important}
+body.v13 #main .bl-badge[data-tone=wait]::before{background:var(--hf-soft)!important;animation:v13BlPulse 1.2s ease-in-out infinite!important}
 body.v13 #main .bl-plan__price{margin:18px 0 0!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 #main .bl-plan__price strong{font:800 28px/1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;margin-right:6px!important}
 body.v13 #main .bl-facts{margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-width:0!important}
@@ -122,7 +128,7 @@ body.v13 #main .bl-actions .btn{margin:0!important;text-decoration:none!importan
 body.v13 #main .bl-actions .btn:disabled{cursor:progress!important;opacity:.7!important}
 body.v13 #main .bl-message{grid-column:2!important;margin:0!important;font:400 12px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:64ch!important}
 body.v13 #main .bl-message:empty{display:none!important}
-body.v13 #main .bl-message.is-error{color:var(--hf-warm)!important}
+body.v13 #main .bl-message.is-error{color:var(--hf-alert)!important}
 body.v13 #main .bl-confirm[data-state=slow] .bl-confirm__label::before{animation:v13BlPulse 2.4s ease-in-out infinite!important}
 body.v13 #main .bl-message a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
 
@@ -159,7 +165,7 @@ body.v13 #main .bl-help a:hover{color:var(--hf-ink)!important;text-decoration-co
   body.v13 #main .bl-confirm{padding:18px 16px 20px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  body.v13 #main .bl-confirm:is([data-state=waiting],[data-state=slow]) .bl-confirm__label::before{animation:none!important}
+  body.v13 #main .bl-confirm:is([data-state=waiting],[data-state=slow]) .bl-confirm__label::before,body.v13 #main .bl-badge[data-tone=wait]::before{animation:none!important}
   body.v13 .pw-header__nav :is(a,button){transition:none!important}
 }
 }

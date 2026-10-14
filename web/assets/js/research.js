@@ -61,6 +61,16 @@
     return uri ? '<a class="research-text-link" href="' + esc(uri) +
       '" target="_blank" rel="noopener noreferrer">' + esc(label) + ' ↗</a>' : "Source unavailable";
   };
+  /* The results arrive in a section that starts hidden, and the scroll reveal (v13-motion.js) passes over anything
+     hidden when it first meets it. So their blocks carry data-desk-reveal in the page and are armed as the section
+     is first shown: they then rise in as they scroll into view, a beat apart, like the rest of the site. */
+  const armReveal = section => {
+    for (const block of [section, ...section.querySelectorAll("[data-desk-reveal]")]) {
+      if (!block.hasAttribute("data-desk-reveal")) continue;
+      block.setAttribute(block.getAttribute("data-desk-reveal") === "group" ? "data-hf-reveal-group" : "data-hf-reveal", "");
+      block.removeAttribute("data-desk-reveal");
+    }
+  };
   const setFeedback = (id, message, error = false) => {
     const el = byId(id);
     if (!el) return;
@@ -254,6 +264,7 @@
       byId("research-coverage").textContent = "Imported SEC Form 4 records and available public SEC company disclosures. Coverage is not exhaustive.";
       renderTransactions(transactions);
       renderFilings(filings);
+      armReveal(byId("research-results"));
       byId("research-results").hidden = false;
       setFeedback("research-feedback", "Displaying imported records for " + ticker + ". No live prices, politician trades or simulated signals.");
       loadReview(ticker);

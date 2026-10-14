@@ -91,7 +91,8 @@
   }
 
   /* ---------- monogram avatars ---------- */
-  const TONES = ["#6f5b44", "#4d5a66", "#5d6b57", "#7a5148", "#56506e", "#6a6250", "#45606a", "#7d6a3f"];
+  /* Neutral blends of paper and ink only (the V13 theme also paints every monogram on --hf-raise): no warm tints. */
+  const TONES = ["#2f2f2c", "#363633", "#3c3b38", "#41403d", "#474643", "#4d4c48", "#53524e", "#595854"];
   function monogram(name, cls = "") {
     const parts = String(name).trim().split(/\s+/);
     const initials = ((parts[0] || "")[0] || "") + ((parts.length > 1 ? parts[parts.length - 1] : "")[0] || "");

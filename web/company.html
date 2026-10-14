@@ -32,8 +32,8 @@
   <input id="cx-picker-input" type="search" placeholder="Ticker or company name, e.g. NVDA or Coca-Cola" autocomplete="off" spellcheck="false" required>
   <button type="submit">Open report</button>
  </form>
- <div class="cx-picker__head"><p class="cx-kicker">Popular tickers</p><p class="cx-picker__note">Marks are shown for identification only.</p></div>
- <div class="cx-picker__grid" id="cx-picker-grid"></div>
+ <div class="cx-picker__head" data-hf-reveal><p class="cx-kicker">Popular tickers</p><p class="cx-picker__note">Marks are shown for identification only.</p></div>
+ <div class="cx-picker__grid" id="cx-picker-grid" data-hf-reveal-group></div>
 </section>
 
 <div class="cx-report" id="cx-report">
@@ -71,7 +71,7 @@
    <p class="cx-source" id="cx-chart-source">Delayed price data. Not a trading quote.</p>
   </section>
 
-  <aside class="cx-card cx-facts" aria-labelledby="cx-facts-title">
+  <aside class="cx-card cx-facts" aria-labelledby="cx-facts-title" data-hf-reveal>
    <h2 id="cx-facts-title">Key facts</h2>
    <dl id="cx-facts">
     <div><dt>Market cap</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
@@ -91,33 +91,33 @@
  <div class="cx-status" id="cx-status" role="status" aria-live="polite"></div>
 
  <nav class="cx-tabs" role="tablist" aria-label="Company report sections" id="cx-tabs">
-  <button type="button" role="tab" id="tab-overview" aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button>
-  <button type="button" role="tab" id="tab-financials" aria-controls="financials" aria-selected="false" data-tab="financials" tabindex="-1">Financials</button>
-  <button type="button" role="tab" id="tab-filings" aria-controls="filings" aria-selected="false" data-tab="filings" tabindex="-1">SEC filings</button>
-  <button type="button" role="tab" id="tab-insiders" aria-controls="insiders" aria-selected="false" data-tab="insiders" tabindex="-1">Insider activity</button>
-  <button type="button" role="tab" id="tab-people" aria-controls="people" aria-selected="false" data-tab="people" tabindex="-1">People</button>
-  <button type="button" role="tab" id="tab-news" aria-controls="news" aria-selected="false" data-tab="news" tabindex="-1">News</button>
+  <button type="button" role="tab" id="tab-overview" data-hf-atom aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button>
+  <button type="button" role="tab" id="tab-financials" data-hf-atom aria-controls="financials" aria-selected="false" data-tab="financials" tabindex="-1">Financials</button>
+  <button type="button" role="tab" id="tab-filings" data-hf-atom aria-controls="filings" aria-selected="false" data-tab="filings" tabindex="-1">SEC filings</button>
+  <button type="button" role="tab" id="tab-insiders" data-hf-atom aria-controls="insiders" aria-selected="false" data-tab="insiders" tabindex="-1">Insider activity</button>
+  <button type="button" role="tab" id="tab-people" data-hf-atom aria-controls="people" aria-selected="false" data-tab="people" tabindex="-1">People</button>
+  <button type="button" role="tab" id="tab-news" data-hf-atom aria-controls="news" aria-selected="false" data-tab="news" tabindex="-1">News</button>
  </nav>
 
  <section class="cx-panel" role="tabpanel" id="overview" aria-labelledby="tab-overview">
-  <p class="cx-kicker cx-panel__kicker">01 / Overview · the record at a glance</p>
+  <p class="cx-kicker cx-panel__kicker" data-cx-reveal>01 / Overview · the record at a glance</p>
   <div class="cx-overview" id="cx-overview">
-   <article class="cx-about" id="cx-about" hidden>
+   <article class="cx-about" id="cx-about" data-cx-reveal hidden>
     <h2 id="cx-about-title"></h2>
     <p id="cx-about-text"></p>
     <div class="cx-about__more" id="cx-about-more" hidden></div>
     <button type="button" class="cx-link" id="cx-about-toggle" data-hf-atom aria-expanded="false" aria-controls="cx-about-more">Read full company description <span aria-hidden="true">→</span></button>
    </article>
-   <article class="cx-card cx-mini" aria-labelledby="cx-fin-title">
+   <article class="cx-card cx-mini" data-cx-reveal aria-labelledby="cx-fin-title">
     <header><div><h2 id="cx-fin-title">Financials</h2><p id="cx-fin-period">Trailing twelve months</p></div><button type="button" class="cx-arrow" data-hf-atom data-go="financials" aria-label="Open financials">→</button></header>
     <div id="cx-fin-rows" class="cx-fin-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
    </article>
-   <article class="cx-card cx-mini" aria-labelledby="cx-filings-title">
+   <article class="cx-card cx-mini" data-cx-reveal aria-labelledby="cx-filings-title">
     <header><div><h2 id="cx-filings-title">SEC filings</h2></div><button type="button" class="cx-arrow" data-hf-atom data-go="filings" aria-label="Open SEC filings">→</button></header>
     <div id="cx-filing-rows" class="cx-filing-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
     <button type="button" class="cx-link" data-hf-atom data-go="filings">View all filings <span aria-hidden="true">→</span></button>
    </article>
-   <article class="cx-card cx-mini" aria-labelledby="cx-insider-title">
+   <article class="cx-card cx-mini" data-cx-reveal aria-labelledby="cx-insider-title">
     <header><div><h2 id="cx-insider-title">Recent insider activity</h2></div><button type="button" class="cx-arrow" data-hf-atom data-go="insiders" aria-label="Open insider activity">→</button></header>
     <div id="cx-insider-rows" class="cx-insider-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
     <button type="button" class="cx-link" data-hf-atom data-go="insiders">View all insider activity <span aria-hidden="true">→</span></button>
@@ -126,11 +126,11 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="financials" aria-labelledby="tab-financials" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html" data-hf-atom>Open in Research Desk <span aria-hidden="true">→</span></a></div>
-  <div class="cx-tiles" id="cx-ttm-tiles"></div>
-  <article class="cx-card cx-block">
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html" data-hf-atom>Open in Research Desk <span aria-hidden="true">→</span></a></div>
+  <div class="cx-tiles" id="cx-ttm-tiles" data-cx-reveal-group></div>
+  <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3>Annual history</h3>
-    <div class="cx-chips" role="group" aria-label="Annual metric" id="cx-annual-metrics">
+    <div class="cx-chips" data-hf-still role="group" aria-label="Annual metric" id="cx-annual-metrics">
      <button type="button" data-metric="revenue" class="is-active" aria-pressed="true">Revenue</button><button type="button" data-metric="netIncome" aria-pressed="false">Net income</button><button type="button" data-metric="operatingIncome" aria-pressed="false">Operating income</button><button type="button" data-metric="operatingCashFlow" aria-pressed="false">Operating cash flow</button>
     </div>
    </header>
@@ -140,17 +140,17 @@
    <header class="cx-block__head"><h3>Annual statements</h3><span class="cx-badge" id="cx-currency-badge">USD</span></header>
    <div class="cx-table-wrap" id="cx-statements"></div>
   </article>
-  <article class="cx-card cx-block">
+  <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3>Balance sheet snapshot</h3><span class="cx-badge" id="cx-balance-date">—</span></header>
    <div class="cx-tiles cx-tiles--compact" id="cx-balance"></div>
   </article>
  </section>
 
  <section class="cx-panel" role="tabpanel" id="filings" aria-labelledby="tab-filings" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
-  <article class="cx-card cx-block">
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
+  <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3><span id="cx-filing-count">—</span> filings</h3>
-    <div class="cx-chips" role="group" aria-label="Filter filings" id="cx-filing-filters">
+    <div class="cx-chips" data-hf-still role="group" aria-label="Filter filings" id="cx-filing-filters">
      <button type="button" data-filter="all" class="is-active" aria-pressed="true">All</button><button type="button" data-filter="annual" aria-pressed="false">Annual</button><button type="button" data-filter="quarterly" aria-pressed="false">Quarterly</button><button type="button" data-filter="current" aria-pressed="false">Current reports</button><button type="button" data-filter="other" aria-pressed="false">Other</button>
     </div>
    </header>
@@ -159,11 +159,11 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="insiders" aria-labelledby="tab-insiders" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
-  <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary"></div>
-  <article class="cx-card cx-block">
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary" data-cx-reveal-group></div>
+  <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3>Reported transactions</h3>
-    <div class="cx-chips" role="group" aria-label="Filter insider transactions" id="cx-insider-filters">
+    <div class="cx-chips" data-hf-still role="group" aria-label="Filter insider transactions" id="cx-insider-filters">
      <button type="button" data-filter="all" class="is-active" aria-pressed="true">All</button><button type="button" data-filter="buy" aria-pressed="false">Buys</button><button type="button" data-filter="sell" aria-pressed="false">Sells</button><button type="button" data-filter="other" aria-pressed="false">Awards &amp; other</button>
     </div>
    </header>
@@ -172,22 +172,22 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="people" aria-labelledby="tab-people" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html" data-hf-atom>People directory <span aria-hidden="true">→</span></a></div>
-  <h3 class="cx-subhead">Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
-  <div class="cx-people" id="cx-people-sec"></div>
-  <h3 class="cx-subhead" id="cx-leaders-head" hidden>Leadership &amp; founders <small>from Wikidata</small></h3>
-  <div class="cx-people" id="cx-people-wiki"></div>
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html" data-hf-atom>People directory <span aria-hidden="true">→</span></a></div>
+  <h3 class="cx-subhead" data-cx-reveal>Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
+  <div class="cx-people" id="cx-people-sec" data-cx-reveal-group></div>
+  <h3 class="cx-subhead" id="cx-leaders-head" data-cx-reveal hidden>Leadership &amp; founders <small>from Wikidata</small></h3>
+  <div class="cx-people" id="cx-people-wiki" data-cx-reveal-group></div>
  </section>
 
  <section class="cx-panel" role="tabpanel" id="news" aria-labelledby="tab-news" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">06 / 8-K current reports · publishers</p><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
-  <div class="cx-news">
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">06 / 8-K current reports · publishers</p><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
+  <div class="cx-news" data-cx-reveal-group>
    <article class="cx-card cx-block"><header class="cx-block__head"><h3>Company announcements</h3><span class="cx-badge">SEC 8-K</span></header><div id="cx-announcements" class="cx-list"></div></article>
    <article class="cx-card cx-block"><header class="cx-block__head"><h3>Headlines</h3><span class="cx-badge" id="cx-headline-source">Publishers</span></header><div id="cx-headlines" class="cx-list"></div></article>
   </div>
  </section>
 
- <footer class="cx-sources" id="cx-sources">
+ <footer class="cx-sources" id="cx-sources" data-hf-reveal>
   <p><strong>Sources.</strong> Prices: Yahoo Finance, delayed. Financials, filings and insider activity: SEC EDGAR and XBRL. Company profile: Wikidata (CC0) and Wikipedia (CC BY-SA 4.0). Market cap, enterprise value and P/E are calculated from these sources. Research only, not investment advice.</p>
  </footer>
 </div>

@@ -160,11 +160,6 @@ body.v13 .rd-big:hover{background:var(--hf-surface)!important}
   body.v13 .rd-big__what a:not(:last-child){flex:none!important}
 }
 
-/* ---------- messages ----------
-   "Try again" sits inside a sentence (display:inline in v13-app.css); as a motion atom it needs a box that
-   translate applies to. Phones keep their inline-flex 32px target (v13-app.css). */
-body.v13 .rd-retry[data-hf-atom="inline"]{display:inline-block!important}
-
 /* ---------- 04 insider transactions ---------- */
 body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight:500!important}
 body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:right!important}

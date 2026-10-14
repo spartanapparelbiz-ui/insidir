@@ -47,7 +47,7 @@ body.v13 .ins-media--person>svg.ins-media__monogram{color:var(--hf-ink)!importan
 body.v13 :is(.ins-company-cell,.ins-person-cell){display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important}
 body.v13 .ins-company-cell__ticker{font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
 
-/* Mono links that grow an ink rule from the left and warm on hover. */
+/* Mono links that grow an ink rule from the left on hover, in ink only. */
 body.v13 :is(.rd-link,.v10-people-topline a,.v10-people-hero__copy>a,.v10-follows__head>a,.v10-follow-row>a,.v10-person-card__actions>a,.cl-result__head>a,.cl-source-link,.cl-top .cl-eyebrow a,.v13-link){
   display:inline-flex!important;align-items:center!important;gap:10px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;border:0!important;padding:0!important;white-space:nowrap!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
@@ -135,7 +135,7 @@ body.v13 .rd-row__detail small{display:block!important;margin:3px 0 0!important;
 body.v13 .rd-row>b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .rd-row:hover>b{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
 
-/* Transaction type tag: sales are the warm "heat", purchases ink, everything else quiet. */
+/* Transaction type tag: sales in red, purchases in green (market direction), everything else quiet. */
 body.v13 .rd-type{display:inline-block!important;padding:3px 7px!important;margin:0 4px 0 0!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;background:transparent!important;font:500 10.5px/1.3 var(--hf-mono)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;white-space:nowrap!important;vertical-align:1px!important}
 body.v13 .rd-type--sell{color:var(--hf-down)!important;border-color:var(--hf-down)!important}
 body.v13 .rd-type--buy{color:var(--hf-up)!important;border-color:var(--hf-up)!important}

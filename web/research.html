@@ -44,7 +44,7 @@
   </header>
 
   <div id="research-results" hidden>
-    <section class="research-summary" aria-labelledby="research-company">
+    <section class="research-summary" aria-labelledby="research-company" data-desk-reveal>
       <div>
         <p class="research-eyebrow">COMPANY / SOURCE-BACKED RESEARCH</p>
         <h2 id="research-company">Company</h2>
@@ -53,14 +53,14 @@
       <a class="research-text-link" id="research-company-link" href="company.html" data-hf-atom>View company records →</a>
     </section>
 
-    <div class="research-metrics" aria-label="Loaded record summary">
+    <div class="research-metrics" aria-label="Loaded record summary" data-desk-reveal>
       <div class="research-metric"><span>Transactions shown</span><strong id="research-count">—</strong><small>Up to 75 imported records</small></div>
       <div class="research-metric"><span>Reporting people shown</span><strong id="research-owners">—</strong><small>Distinct names in this selection</small></div>
       <div class="research-metric"><span>Latest filing published</span><strong id="research-latest">—</strong><small>Not the same as the trade date</small></div>
     </div>
 
     <div class="research-grid">
-      <div class="research-primary">
+      <div class="research-primary" data-desk-reveal="group">
         <section class="panel research-panel" aria-labelledby="research-intelligence-title">
           <div class="research-panel-head">
             <div><p class="research-eyebrow">01 / OFFICIAL INTELLIGENCE</p>
@@ -71,9 +71,9 @@
           <div id="intel-overview" hidden>
             <p class="intel-summary" id="intel-summary"></p>
             <h3 class="intel-heading">Records worth examining</h3>
-            <div id="intel-findings" class="intel-findings"></div>
+            <div id="intel-findings" class="intel-findings" data-desk-reveal="group"></div>
             <h3 class="intel-heading">Reported financial facts</h3>
-            <div id="intel-facts" class="intel-facts"></div>
+            <div id="intel-facts" class="intel-facts" data-desk-reveal="group"></div>
             <h3 class="intel-heading">Other company disclosures</h3>
             <div id="intel-filings"></div>
             <p class="research-small" id="intel-caveats"></p>
@@ -102,7 +102,7 @@
         </section>
       </div>
 
-      <aside class="research-sidebar">
+      <aside class="research-sidebar" data-desk-reveal="group">
         <section class="panel research-panel" aria-labelledby="research-review-title">
           <p class="research-eyebrow">04 / YOUR DECISION</p>
           <h2 id="research-review-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#book-open"></use></svg> Private research journal</h2>

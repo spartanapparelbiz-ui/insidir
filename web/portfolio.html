@@ -47,7 +47,7 @@
       </form>
       <p id="manual-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save your portfolio. You can add up to 100 tickers.</p>
       <a href="signin.html" id="manual-signin" class="portfolio-small-link" data-hf-atom hidden>Sign in to add holdings →</a>
-      <div id="manual-content" hidden>
+      <div id="manual-content" data-desk-reveal="group" hidden>
         <div class="portfolio-section-heading"><div><p class="research-eyebrow">YOUR ENTRIES</p><h2>Your stocks.</h2></div><p class="research-small">Self-reported quantities, not current market values</p></div>
         <div id="manual-holdings" aria-live="polite"></div>
         <section class="portfolio-activity" aria-labelledby="manual-evidence-title">
@@ -58,12 +58,12 @@
       </div>
     </section>
     <section id="portfolio-results" hidden>
-      <div class="portfolio-section-heading">
+      <div class="portfolio-section-heading" data-desk-reveal>
         <div><p class="research-eyebrow">03 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
         <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
       </div>
-      <div id="portfolio-accounts" class="portfolio-accounts"></div>
-      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title">
+      <div id="portfolio-accounts" class="portfolio-accounts" data-desk-reveal="group"></div>
+      <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title" data-desk-reveal>
         <p class="research-eyebrow">04 / BROKERAGE SEC EVIDENCE</p>
         <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
         <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
@@ -71,7 +71,7 @@
       </section>
     </section>
     </div>
-    <aside class="portfolio-rail">
+    <aside class="portfolio-rail" data-hf-reveal-group>
     <section class="portfolio-connection panel" aria-labelledby="portfolio-connection-title">
       <div>
         <p class="research-eyebrow">02 / OPTIONAL AUTOMATIC SYNC</p>

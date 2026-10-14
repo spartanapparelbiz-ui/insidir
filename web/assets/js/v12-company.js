@@ -156,15 +156,18 @@ function personInfo(secName, short = false, ownerCik = null) {
   const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
+/* Outside tables an avatar is an identity tile that parts around the pointer like the logo (an atom, v13-motion.js);
+   table cells never move, so the small size used in the insider ledger stays put. */
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
+  const atom = size === "sm" ? "" : " data-hf-atom";
   const fallback = esc(initials(name).toUpperCase());
   const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
   if (src) {
     const credit = photo.credit ? `Photo: ${photo.credit}` : "";
-    return `<span class="${cls}" data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
-  return `<span class="${cls}" aria-hidden="true">${fallback}</span>`;
+  return `<span class="${cls}"${atom} aria-hidden="true">${fallback}</span>`;
 }
 
 /* ---------- network ---------- */
@@ -521,7 +524,7 @@ function renderOverviewFilings() {
   const host = $("cx-filing-rows");
   if (!state.intel) { if (state.intelError) host.innerHTML = `<p class="cx-empty">${esc(state.intelError)}</p>`; return; }
   const rows = (state.intel.filings || []).slice(0, 5);
-  host.innerHTML = rows.length ? rows.map(f => `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(f.headline)}"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><b>${esc(f.form)}</b>${EXT}</a>`).join("")
+  host.innerHTML = rows.length ? rows.map(f => `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(f.headline)}"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><b data-hf-atom>${esc(f.form)}</b>${EXT}</a>`).join("")
     : '<p class="cx-empty">No recent annual, quarterly or current reports were found on EDGAR.</p>';
 }
 function activity() { return state.insiders?.activity || []; }
@@ -560,6 +563,7 @@ function renderAbout() {
   const tagline = sentenceCase(String(prof?.motto || "").trim()) || sentenceCase(short);
   if (!tagline || !summary?.text) { about.hidden = true; overview.classList.add("no-about"); return; }
   about.hidden = false; overview.classList.remove("no-about");
+  armReveal(about.parentElement);
   $("cx-about-title").textContent = tagline;
   const s = sentences(summary.text);
   let used = s.slice(0, 2).join(" ").length > 240 ? 1 : 2;
@@ -708,17 +712,18 @@ function renderPeople() {
     const p = personInfo(person.name, false, person.cik);
     return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
-      <a href="people.html?q=${encodeURIComponent(person.name)}">Search insider records →</a></div></article>`;
+      <a href="people.html?q=${encodeURIComponent(person.name)}" data-hf-atom>Search insider records →</a></div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
   const serverLeaders = state.photos?.leaders?.length ? state.photos.leaders.filter(l => !l.insider || l.roles.includes("Founder")) : null;
   const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
+  armReveal($("people"));
   $("cx-people-wiki").innerHTML = leaders.map(p => {
     const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
     const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
-    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`;
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div></article>`;
   }).join("");
 }
 
@@ -748,8 +753,22 @@ function renderNews() {
 }
 
 /* ---------- tabs ---------- */
-function activateTab(id, { focus = false, push = true } = {}) {
-  if (!TABS.includes(id)) id = "overview";
+/* Scroll reveal (v13-motion.js) holds back a data-hf-reveal block, or each child of a data-hf-reveal-group, only if it
+   can see the block the first time it meets it, and it meets a block hidden in a closed tab panel at load. So the
+   blocks inside the tab panels are marked data-cx-reveal / data-cx-reveal-group in company.html and armed here when
+   they become visible (their panel shown, or the about column and the leaders heading un-hidden): the hidden
+   attribute that changes with them makes the motion layer look again, and a panel opened later assembles as it
+   scrolls in, like the first one. */
+function armReveal(root) {
+  if (!root || root.closest("[hidden]")) return;
+  for (const el of root.querySelectorAll("[data-cx-reveal],[data-cx-reveal-group]")) {
+    if (el.closest("[hidden]")) continue;
+    const group = el.hasAttribute("data-cx-reveal-group");
+    el.removeAttribute(group ? "data-cx-reveal-group" : "data-cx-reveal");
+    el.setAttribute(group ? "data-hf-reveal-group" : "data-hf-reveal", "");
+  }
+}
+function showTab(id, focus = false) {
   for (const b of document.querySelectorAll("#cx-tabs [role=tab]")) {
     const on = b.dataset.tab === id;
     b.setAttribute("aria-selected", String(on));
@@ -757,6 +776,11 @@ function activateTab(id, { focus = false, push = true } = {}) {
     if (on && focus) b.focus();
   }
   for (const t of TABS) $(t).hidden = t !== id;
+  armReveal($(id));
+}
+function activateTab(id, { focus = false, push = true } = {}) {
+  if (!TABS.includes(id)) id = "overview";
+  showTab(id, focus);
   if (id === "news") loadNews();
   if (push && state.ticker) history.replaceState(null, "", "company.html?ticker=" + encodeURIComponent(state.ticker) + (id === "overview" ? "" : "#" + id));
 }
@@ -858,7 +882,7 @@ function showPicker() {
   $("cx-report").hidden = true; $("cx-picker").hidden = false;
   document.title = "Company research — insidir.";
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
-    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
+    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-hf-atom data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
     window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
@@ -867,6 +891,18 @@ function showPicker() {
   }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };
+
+/* The view is decided as soon as the document is parsed, before the motion layer (v13-motion.js, which runs after
+   this deferred script) first scans the page: it holds back only the scroll-reveal blocks it can see when it starts,
+   so the picker or the report, and the report tab named in the URL, must already be the visible ones. Data and
+   rendering still wait for DOMContentLoaded. */
+function initialView() {
+  const ticker = normalizeTicker(new URLSearchParams(location.search).get("ticker"));
+  $("cx-picker").hidden = Boolean(ticker);
+  $("cx-report").hidden = !ticker;
+  if (ticker) { const tab = location.hash.slice(1); showTab(TABS.includes(tab) ? tab : "overview"); }
+}
+if (document.readyState !== "loading") initialView();
 
 document.addEventListener("DOMContentLoaded", () => {
   for (const b of document.querySelectorAll("[data-range]")) b.addEventListener("click", () => loadMarket(b.dataset.range));

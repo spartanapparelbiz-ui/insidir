@@ -6,7 +6,13 @@
    boxed cards, tracked mono labels and sentence-case mono captions, tables on hairlines, inputs on
    surface tiles. Market direction is the only colour: purchases and rises in green (--hf-up), sales and falls in
    red (--hf-down), always beside a word, a sign or a ▲/▼ glyph. Hovers, tabs and icons stay in ink and soft ink;
-   orange is kept for error messages and the delete-account button. Square corners, no shadows, no coloured pills. */
+   the same red, as --hf-alert, marks error messages and the destructive actions (delete account, remove a holding).
+   No other colour. Square corners, no shadows, no coloured pills.
+
+   Scroll: the masthead is on screen at load; below it the sections, panels and cards rise in as they scroll into
+   view (data-hf-reveal / data-hf-reveal-group, v13-motion.js). Blocks that arrive hidden (research results, saved
+   holdings, connected accounts) are tagged by their scripts when they are first shown. The alerts page keeps its
+   entrance (motion.js data-reveal), retuned below to the same 28px rise on the dots' spring. */
 @layer insidir-v13{
 
 /* ---------- Shared desk primitives ---------- */
@@ -22,9 +28,9 @@ body.v13 #main .desk-masthead{max-width:none!important;margin:0!important;paddin
 body.v13 #main .desk-masthead{--pd-band-top:calc(19px + 10.5px * 1.75)!important}
 body.v13 #main .desk-masthead h1{font:var(--desk-h1)!important;letter-spacing:-.04em!important;margin:0 0 22px!important;max-width:14ch!important;color:var(--hf-ink)!important;text-wrap:balance!important;font-variation-settings:normal!important}
 body.v13 #main .desk-lead{font:400 clamp(14px,1.15vw,16px)/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:560px!important;margin:0!important;letter-spacing:0!important}
-/* Captions and status lines: sentence-case mono; errors warm. */
+/* Captions and status lines: sentence-case mono; errors in the alert red. */
 body.v13 #main :is(.research-feedback,.research-small,.research-explain,.portfolio-warning,.v3-account__hint,.live-status,.alerts-foot,.portfolio-muted,#portfolio-status){font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-muted)!important}
-body.v13 #main :is(.research-feedback,.v3-account__hint,#portfolio-status).is-error{color:var(--hf-warm)!important}
+body.v13 #main :is(.research-feedback,.v3-account__hint,#portfolio-status).is-error{color:var(--hf-alert)!important}
 /* Mono links that grow an ink rule from the left on hover. */
 body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a){display:inline-flex!important;align-items:center!important;gap:8px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;border:0!important;padding:0!important;height:auto!important;background-color:transparent!important;border-radius:0!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
@@ -170,7 +176,8 @@ body.v13 #main #manual-content .portfolio-section-heading{margin-top:clamp(28px,
 body.v13 #main #manual-content .portfolio-activity{margin:var(--desk-gap) 0 0!important;padding:22px 0 0!important}
 body.v13 #main .manual-holdings-table td:last-child{text-align:right!important}
 body.v13 #main .manual-remove{cursor:pointer!important;height:32px!important;padding:0 12px!important;background:transparent!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-soft)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;transition:color .25s,border-color .25s!important}
-body.v13 #main .manual-remove:hover{border-color:var(--hf-ink)!important;color:var(--hf-ink)!important;background:transparent!important}
+/* Removing a holding is destructive: the button warns in the alert red under the pointer or keyboard focus. */
+body.v13 #main .manual-remove:not(:disabled):is(:hover,:focus-visible){border-color:var(--hf-alert)!important;color:var(--hf-alert)!important;background:transparent!important}
 body.v13 #main .manual-remove:disabled{opacity:1!important;cursor:wait!important;border-color:var(--hf-line)!important;color:var(--hf-muted)!important}
 body.v13 #main .portfolio-accounts{display:grid!important;gap:var(--desk-gap)!important;margin:0 0 var(--desk-gap)!important}
 body.v13 #main .portfolio-account-head{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:16px!important;margin:0 0 18px!important}
@@ -186,10 +193,17 @@ body.v13 #main .portfolio-next>a{display:inline-flex!important;margin:6px 0 0!im
 body.v13 #main.alerts-main{--t:1px!important;padding-top:clamp(26px,3.6vw,52px)!important}
 body.v13 #main .alerts-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"topline topline" "title action" "sub sub"!important;column-gap:24px!important;align-items:start!important}
 body.v13 #main .alerts-topline{grid-area:topline!important}
-/* The alerts page's lead and panel rise in (motion.js [data-reveal]) on the dots' spring, keeping each element's delay;
-   focus inside a reveal still skips it. The split heading keeps its ease (its words rise out of a mask that would clip an
-   overshoot), and so do the magnetic button and the tab fill, which follow the pointer rather than enter once. */
-body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]{transition:opacity var(--rd,1.1s) cubic-bezier(.16,1,.3,1) var(--delay,0s),transform var(--hf-spring-dur) var(--hf-spring) var(--delay,0s)!important}
+/* The alerts page's lead and panel enter once (motion.js [data-reveal]) exactly as the site's scroll reveal does
+   (v13-motion.js .hf-pending/.hf-revealing): 28px low and transparent, rising on the dots' spring while they fade up on
+   the same curve, each keeping its own delay so they arrive a beat apart. They carry no data-hf-reveal, so nothing
+   animates twice. Focus inside a reveal still skips it. The split heading keeps its ease (its words rise out of a mask
+   that would clip an overshoot), and so does the tab fill. The Manage alerts button is a motion atom (v13-motion.js)
+   rather than motion.js-magnetic, so only one thing moves it.
+   [data-observed] is motion.js's own mark, so without scripts nothing waits low. */
+body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]{transition:opacity .7s cubic-bezier(.2,.7,.1,1) var(--delay,0s),transform var(--hf-spring-dur) var(--hf-spring) var(--delay,0s)!important}
+@media (prefers-reduced-motion:no-preference){
+  body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal="up"][data-observed]:not(.is-in){transform:translate3d(0,28px,0)!important}
+}
 body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]:focus-within{transition:none!important}
 body.v13 #main .alerts-title{grid-area:title!important;line-height:1!important;margin:0!important}
 body.v13 #main .alerts-sub{grid-area:sub!important;margin:18px 0 0!important}
@@ -311,11 +325,14 @@ body.v13 #main .v3-account__links{display:flex!important;flex-wrap:wrap!importan
 body.v13 #main .v3-account__danger{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:40px!important;padding:clamp(28px,3.4vw,44px) 0!important;margin:0!important;max-width:none!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;border-bottom:1px solid var(--hf-line)!important;border-radius:0!important;box-shadow:none!important}
 body.v13 #main .v3-account__danger>div{max-width:720px!important;min-width:0!important}
 body.v13 #main .v3-account__danger p:not(.v3-eyebrow){margin:0!important}
-body.v13 #main #account-delete{flex:0 0 auto!important;cursor:pointer!important;height:44px!important;min-height:44px!important;padding:0 20px!important;margin:0!important;background:transparent!important;border:1px solid var(--hf-warm)!important;color:var(--hf-warm)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important;transition:background .25s,color .25s!important}
-body.v13 #main #account-delete:not(:disabled):hover{background:var(--hf-warm)!important;color:var(--hf-bg)!important}
+/* Deleting the account is the one destructive action here: the eyebrow and the button carry the alert red (5.5:1 on paper),
+   and the button fills red with paper text under the pointer. */
+body.v13 #main .v3-account__danger .v3-eyebrow{color:var(--hf-alert)!important}
+body.v13 #main #account-delete{flex:0 0 auto!important;cursor:pointer!important;height:44px!important;min-height:44px!important;padding:0 20px!important;margin:0!important;background:transparent!important;border:1px solid var(--hf-alert)!important;color:var(--hf-alert)!important;border-radius:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important;transition:background .25s,color .25s!important}
+body.v13 #main #account-delete:not(:disabled):is(:hover,:active){background:var(--hf-alert)!important;border-color:var(--hf-alert)!important;color:var(--hf-bg)!important}
 body.v13 #main #account-delete:disabled{opacity:1!important;cursor:not-allowed!important;border-color:var(--hf-line-2)!important;color:var(--hf-muted)!important}
 body.v13 #main #account-delete-feedback{margin:14px 0 0!important}
-body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;padding:11px 14px!important;border:1px solid var(--hf-warm)!important;border-left-width:2px!important;background:var(--hf-surface)!important;
+body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;padding:11px 14px!important;border:1px solid var(--hf-alert)!important;border-left-width:2px!important;background:var(--hf-surface)!important;
   font:400 12.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important}
 
 /* ---------- Responsive ---------- */

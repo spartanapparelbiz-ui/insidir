@@ -6,8 +6,15 @@
    tabs over ruled ledgers. Numbers are JetBrains Mono 700 tabular, labels are tracked JetBrains Mono. Market
    direction is the only colour: the price line, rises, purchases and gains print in green (--hf-up), falls,
    sales and losses in red (--hf-down), always beside a sign, a ▲/▼ glyph or a word. The chrome (tabs, hovers,
-   pressed buttons, pills) stays in ink and soft ink; orange is left to the logo's full stop and error states.
-   Surface fills are kept for identity tiles (logo, avatars, marks), inputs, badges and the chart tooltip only. */
+   pressed buttons, pills, markers) stays in ink and soft ink with no accent colour; a failed load or a warning
+   prints in --hf-alert. Surface fills are kept for identity tiles (logo, avatars, marks), inputs, badges, the chart
+   tooltip and the hover of rows that link somewhere.
+
+   Motion: report sections and cards rise in as they scroll into view (data-hf-reveal / data-hf-reveal-group in
+   company.html, v13-motion.js), never the quote card (it holds the chart tooltip), the tab bar or the annual
+   statements (their first column is sticky); the tabs, arrows, links, form badges, logo marks and avatars outside
+   tables are atoms that part around the pointer; the range buttons and the metric/filter chips are ruled
+   segmented controls and stay still. */
 @layer insidir-v13{
 
 /* ---------- Shell ---------- */
@@ -163,7 +170,7 @@ body.v13 .cx-facts__note{margin:16px 0 0!important;padding-top:14px!important;bo
 /* Status line */
 body.v13 .cx-status{min-height:0!important;margin:14px 0 0!important}
 body.v13 .cx-status:empty{display:none!important}
-body.v13.cx-page .cx-report .cx-status.is-error{color:var(--hf-warm)!important}
+body.v13.cx-page .cx-report .cx-status.is-error{color:var(--hf-alert)!important}
 
 /* ---------- Tabs ---------- */
 body.v13 .cx-tabs{display:flex!important;gap:clamp(18px,3vw,44px)!important;margin:clamp(28px,3.4vw,44px) 0 0!important;border-bottom:1px solid var(--hf-line)!important;overflow-x:auto!important;scrollbar-width:none!important;background:transparent!important}
@@ -213,13 +220,15 @@ body.v13 .cx-spark.has-neg::before{content:""!important;position:absolute!import
 body.v13 .cx-spark i{position:relative!important;display:block!important;width:6px!important;border-radius:0!important;background:var(--hf-up)!important;min-height:2px!important}
 body.v13 .cx-spark i.neg{background:var(--hf-down)!important}
 body.v13 .cx-spark i.zero{background:var(--hf-line-2)!important}
-body.v13 :is(.cx-filing-rows>a,.cx-filing-rows>div){display:grid!important;grid-template-columns:minmax(0,1fr) auto 18px!important;align-items:center!important;gap:12px!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;text-decoration:none!important;color:var(--hf-ink)!important;transition:color .2s!important}
+body.v13 :is(.cx-filing-rows>a,.cx-filing-rows>div){display:grid!important;grid-template-columns:minmax(0,1fr) auto 18px!important;align-items:center!important;gap:12px!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;text-decoration:none!important;color:var(--hf-ink)!important;transition:color .2s,background-color .2s!important}
+body.v13 .cx-filing-rows>a:hover{background:var(--hf-surface)!important}
+body.v13 .cx-filing-rows>a:hover time{color:var(--hf-ink)!important}
 body.v13 .cx-filing-rows>a:last-child{border-bottom:0!important}
-body.v13 .cx-filing-rows time{font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;white-space:nowrap!important}
+body.v13 .cx-filing-rows time{font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;white-space:nowrap!important;transition:color .2s!important}
 body.v13 .cx-filing-rows b{font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important;padding:3px 7px!important}
 body.v13 .cx-filing-rows a:hover b{color:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
-body.v13 .cx-filing-rows .cx-ext{color:var(--hf-faint)!important;justify-self:end!important}
-body.v13 .cx-filing-rows a:hover .cx-ext{color:var(--hf-ink)!important}
+body.v13 .cx-filing-rows .cx-ext{color:var(--hf-faint)!important;justify-self:end!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13 .cx-filing-rows a:hover .cx-ext{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
 body.v13 .cx-insider-rows>div{display:grid!important;grid-template-columns:36px minmax(0,1fr) auto auto!important;align-items:center!important;gap:12px!important;padding:10px 0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .cx-insider-rows>div:last-child{border-bottom:0!important}
 body.v13 .cx-person-name{min-width:0!important}
@@ -312,8 +321,8 @@ body.v13 .cx-table td.is-down{color:var(--hf-down)!important}
 body.v13 .cx-table td:is(.is-up,.is-down) a{color:inherit!important}
 body.v13 .cx-table a{color:var(--hf-ink)!important;white-space:nowrap!important;display:inline-flex!important;align-items:center!important;gap:5px!important;text-decoration:none!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.12em!important;text-transform:uppercase!important;transition:color .2s!important}
 body.v13 .cx-table a:hover{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:currentColor!important;text-underline-offset:3px!important}
-body.v13 .cx-table a .cx-ext{color:var(--hf-faint)!important}
-body.v13 .cx-table a:hover .cx-ext{color:var(--hf-ink)!important}
+body.v13 .cx-table a .cx-ext{color:var(--hf-faint)!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13 .cx-table a:hover .cx-ext{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
 body.v13 .cx-statements a{font-family:var(--hf-sans)!important;font-size:13px!important;font-weight:600!important;letter-spacing:-.01em!important;text-transform:none!important;color:var(--hf-ink)!important}
 body.v13 .cx-statements a:hover{color:var(--hf-ink)!important}
 body.v13 .cx-statements th:first-child,body.v13 .cx-statements td:first-child{position:sticky!important;left:0!important;background:var(--hf-bg)!important}
@@ -343,6 +352,9 @@ body.v13 .cx-person__body{min-width:0!important}
 /* News: two ruled columns. */
 body.v13 .cx-news{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)!important;gap:0 clamp(28px,3.4vw,52px)!important}
 body.v13 :is(.cx-list>a,.cx-list>div){display:block!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;text-decoration:none!important;color:var(--hf-ink)!important}
+body.v13 .cx-list>a{transition:background-color .2s!important}
+body.v13 .cx-list>a:hover{background:var(--hf-surface)!important}
+body.v13 .cx-list>a:hover span:not(.cx-pill){color:var(--hf-soft)!important}
 body.v13 .cx-list>a:last-child{border-bottom:0!important}
 body.v13 .cx-list strong{display:block!important;font:600 15px/1.4 var(--hf-sans)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important;transition:color .2s!important}
 body.v13 .cx-list a:hover strong{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:currentColor!important;text-underline-offset:3px!important}
@@ -475,7 +487,8 @@ body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!import
 }
 @media (prefers-reduced-motion:reduce){
   body.v13 :is(.cx-skel,.cx-chart__loading){animation:none!important}
-  body.v13 :is(.cx-crumbs a,.cx-link,.cx-facts dd a,.cx-person a,.cx-btn,.cx-arrow,.cx-tabs button,.cx-chips button,.cx-ranges button,.cx-picker__grid a,.cx-list strong){transition:none!important}
+  body.v13 :is(.cx-crumbs a,.cx-link,.cx-facts dd a,.cx-person a,.cx-btn,.cx-arrow,.cx-tabs button,.cx-chips button,.cx-ranges button,.cx-picker__grid a,.cx-list strong,.cx-list>a,.cx-filing-rows>a,.cx-filing-rows time,.cx-ext){transition:none!important}
+  body.v13 :is(.cx-filing-rows a:hover .cx-ext,.cx-table a:hover .cx-ext){transform:none!important}
 }
 
 }

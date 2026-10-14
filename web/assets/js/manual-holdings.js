@@ -14,6 +14,15 @@
     const dir=category==="reported_purchase"?"up":category==="reported_sale"?"down":"";
     return '<span class="desk-dir'+(dir?" is-"+dir:"")+'">'+(dir?'<span class="desk-glyph is-'+dir+'" aria-hidden="true"></span>':"")+escapeHTML(words)+'</span>';
   };
+  /* Sections that start hidden: the scroll reveal (v13-motion.js) passes over anything hidden when it first meets it,
+     so their blocks carry data-desk-reveal in the page and are armed as the section is first shown. */
+  const armReveal=section=>{
+    for(const block of [section,...section.querySelectorAll("[data-desk-reveal]")]){
+      if(!block.hasAttribute("data-desk-reveal"))continue;
+      block.setAttribute(block.getAttribute("data-desk-reveal")==="group"?"data-hf-reveal-group":"data-hf-reveal","");
+      block.removeAttribute("data-desk-reveal");
+    }
+  };
   const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.classList.toggle("is-error",Boolean(isError));};
   async function request(path,options={}){
     const res=await fetch(path,{credentials:"same-origin",headers:{
@@ -57,6 +66,7 @@
     try{
       const data=await request("/v1/me/manual-holdings");
       el("manual-signin").hidden=true;
+      armReveal(el("manual-content"));
       el("manual-content").hidden=false;
       renderHoldings(data.items||[]);
       renderEvidence(data.recentSecActivity||[]);
