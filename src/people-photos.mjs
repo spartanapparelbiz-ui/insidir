@@ -10,11 +10,20 @@ import { fetchImage, imageSize } from "./media.mjs";
 import { preparePhoto } from "./image-analysis.mjs";
 import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
 import { isEntityName, samePerson } from "./person-match.mjs";
-import { resolveCompany } from "./intelligence.mjs";
-import { getCompanyInsiders } from "./insiders.mjs";
+import { resolveCompany, tickerIndex } from "./intelligence.mjs";
+import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
 
 const DAY = 86400000;
 const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
+/* A caption or card name ("Suzanne Nora Johnson, Director") as a display name, only when it is the
+ * same person as the SEC filer name. */
+const captionName = (secName, caption) => {
+  let name = String(caption || "").split(/,|\s[–—-]\s|\bAge\b|\n/)[0].replace(/\s+/g, " ").trim();
+  if (name.length < 4 || name.length > 48) return null;
+  // Proxies often print captions in capitals.
+  if (!/[a-z]/.test(name)) name = name.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\bMc(\p{L})/gu, (m, c) => "Mc" + c.toUpperCase());
+  return samePerson(secName, name) ? name : null;
+};
 const siteHost = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const COMPANY_TTL = 7 * DAY, PERSON_TTL = 90 * DAY;
 const jobs = new Map();
@@ -47,13 +56,14 @@ function publish(state) {
 }
 
 async function runJob(ticker, company) {
-  const state = { cik: company.cik, ticker, complete: false, photos: {}, leaders: [], sources: {}, startedAt: new Date().toISOString() };
+  const state = { cik: company.cik, ticker, complete: false, photos: {}, names: {}, leaders: [], sources: {}, startedAt: new Date().toISOString() };
   const insiders = (await getCompanyInsiders(ticker).catch(() => null))?.people || [];
   const people = insiders.filter(p => p?.name && !isEntityName(p.name)).map(p => ({ ...p, key: keyFor(p) }));
   const pending = () => people.filter(p => !state.photos[p.key]);
   const assign = async (person, photo, { replace = false } = {}) => {
     if (state.photos[person.key] && !replace) return;
     state.photos[person.key] = photo;
+    if (!state.names[person.key]) { const n = captionName(person.name, photo.caption || photo.personName); if (n) state.names[person.key] = n; }
     if (person.cik) await putRecord("person-photo", String(person.cik).replace(/^0+/, ""), photo, PERSON_TTL);
   };
 
@@ -74,6 +84,8 @@ async function runJob(ticker, company) {
       state.sources.wikidata = { status: "ok", matched: result.matches?.length || 0 };
       for (const m of result.matches || []) {
         const person = people.find(p => p.key === keyFor({ cik: m.ownerCik, name: m.ownerName || m.personName }) || (m.ownerCik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
+        // The Wikidata name reads better than the filing ("NORA JOHNSON SUZANNE M"), photo or not.
+        if (person && m.personName && !/^Q\d+$/.test(m.personName)) state.names[person.key] = m.personName;
         if (!person || state.photos[person.key] || !m.photo?.src) continue;
         try {
           const { saved, size } = await fromUrl(m.photo.large || m.photo.src);
@@ -138,7 +150,7 @@ async function runJob(ticker, company) {
       if (person ? state.photos[person.key] : !leader || leader.src) continue;
       const src = await proxyPhoto(m).catch(() => null);
       if (!src) continue;
-      if (person) await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit, personName: m.personName || m.caption, rule: m.rule, confidence: m.confidence || "high" });
+      if (person) await assign(person, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit, personName: m.personName || m.caption, caption: m.caption || null, rule: m.rule, confidence: m.confidence || "high" });
       else Object.assign(leader, { src, source: "sec-proxy", sourceUrl: proxy.documentUrl, credit });
     }
     await publish(state);
@@ -152,6 +164,19 @@ async function runJob(ticker, company) {
   ]);
   await applying;
 
+  // 4. Other boards: most directors also sit on other companies' boards, and those proxies often
+  // print a captioned headshot. The SEC owner CIK ties the person to those filings; the portrait
+  // must still be captioned with their name there (high-confidence rules only), with that
+  // company's own insiders in the dictionary so a neighbour's caption is never borrowed.
+  if (proxyModule?.proxyHeadshots) {
+    let found = 0;
+    try {
+      await otherBoards(company, people.filter(p => p.cik && !state.photos[p.key]), proxyModule, async (person, photo) => { found++; await assign(person, photo); await publish(state); });
+      state.sources.otherBoards = { status: found ? "ok" : "none", matched: found };
+    }
+    catch (e) { state.sources.otherBoards = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
+  }
+
   // A full-length or small Commons picture is still better than initials.
   for (const person of pending()) {
     if (!person.commonsFallback) continue;
@@ -164,6 +189,46 @@ async function runJob(ticker, company) {
   state.coverage = { people: people.length, withPhoto: people.filter(p => state.photos[p.key]).length };
   await publish(state);
   return state;
+}
+
+const OTHER_PEOPLE = 10, OTHER_ISSUERS_PER_PERSON = 2, OTHER_ISSUERS = 5;
+const STRONG_RULES = new Set(["alt", "after", "run"]);
+async function otherBoards(company, persons, proxyModule, assign) {
+  const index = await tickerIndex();
+  const tickerOf = new Map();
+  for (const r of Object.values(index || {})) {
+    const id = String(r?.cik_str || "");
+    if (/^\d{1,10}$/.test(id) && r.ticker && !tickerOf.has(id.padStart(10, "0"))) tickerOf.set(id.padStart(10, "0"), String(r.ticker).toUpperCase());
+  }
+  const issuers = new Map(); // issuer CIK -> {ticker, name, persons}
+  for (const person of persons.slice(0, OTHER_PEOPLE)) {
+    const list = (await ownerIssuers(person.cik).catch(() => [])).filter(x => x.cik !== company.cik && tickerOf.has(x.cik)).slice(0, OTHER_ISSUERS_PER_PERSON);
+    for (const x of list) {
+      if (!issuers.has(x.cik) && issuers.size >= OTHER_ISSUERS) continue;
+      const entry = issuers.get(x.cik) || { ticker: tickerOf.get(x.cik), name: x.name, persons: [] };
+      entry.persons.push(person);
+      issuers.set(x.cik, entry);
+    }
+  }
+  for (const [cik, issuer] of issuers) {
+    const waiting = issuer.persons.filter(p => !p.otherBoardPhoto);
+    if (!waiting.length) continue;
+    const roster = ((await getCompanyInsiders(issuer.ticker).catch(() => null))?.people || []).filter(p => p?.name && !isEntityName(p.name))
+      .map(p => ({ name: p.name, cik: p.cik, role: p.role, key: keyFor(p) }));
+    for (const p of waiting) if (!roster.some(r => r.key === p.key)) roster.push({ name: p.name, cik: p.cik, role: p.role, key: p.key });
+    const result = await proxyModule.proxyHeadshots({ cik, insiders: roster }).catch(() => null);
+    for (const m of result?.matches || []) {
+      const person = waiting.find(p => m.ownerCik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, ""));
+      if (!person || person.otherBoardPhoto || m.confidence !== "high" || !STRONG_RULES.has(m.rule)) continue;
+      const src = await proxyPhoto(m).catch(() => null);
+      if (!src) continue;
+      person.otherBoardPhoto = true;
+      await assign(person, { src, source: "sec-proxy", sourceUrl: result.documentUrl,
+        credit: "SEC proxy statement of " + issuer.name + " (DEF 14A" + (result.filedAt ? ", filed " + result.filedAt : "") + ")",
+        personName: m.personName || m.caption, caption: m.caption || null, rule: "other-board:" + m.rule, confidence: "high" });
+    }
+  }
+  for (const p of persons) delete p.otherBoardPhoto;
 }
 
 /* Returns what is known now; starts or continues the background job. wait (ms) lets a caller

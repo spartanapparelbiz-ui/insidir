@@ -115,11 +115,13 @@ const photoKey = (cik, name) => cik ? "cik:" + String(cik).replace(/^0+/, "") : 
  * everyone else keeps initials. The name on Commons or the company's page reads better than the
  * SEC filing order, so it is shown when the source gives one. */
 function personInfo(secName, short = false, ownerCik = null) {
-  const verified = state.photos?.photos?.[photoKey(ownerCik, secName)];
+  const key = photoKey(ownerCik, secName);
+  const verified = state.photos?.photos?.[key];
   const curated = window.InsidirMedia?.photo?.(secName, state.ticker);
   const photo = verified?.src ? { src: verified.src, source: verified.sourceUrl, credit: verified.credit }
     : curated ? { src: commonsThumb(curated.src), source: curated.source, credit: curated.credit + " · " + curated.license } : null;
-  const natural = verified && verified.source !== "sec-proxy" && /[a-z]/.test(verified.personName || "") && verified.personName.length <= 60 ? verified.personName : null;
+  const readable = n => typeof n === "string" && /[a-z]/.test(n) && n.length <= 60 ? n : null;
+  const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
 function avatar(name, photo, size = "") {
@@ -249,7 +251,7 @@ function renderLogo() {
   host.dataset.src = src;
   const seq = state.seq;
   const prepare = window.InsidirBrand?.prepare;
-  (prepare ? prepare(src) : Promise.resolve(null)).then(mark => {
+  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(mark => {
     if (seq !== state.seq || host.dataset.src !== src) return;
     brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
     if (!mark) { host.hidden = true; host.replaceChildren(); return; }
@@ -783,7 +785,7 @@ function showPicker() {
     return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
-    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo)).then(mark => {
+    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
       if (mark) slot.innerHTML = `<img src="${mark.url}" alt="">`; else slot.remove();
     });
   }

@@ -114,7 +114,7 @@ export function allowedSecUrl(input) {
     }
     return u.hostname === "www.sec.gov" &&
       ((/^\/Archives\/edgar\/data\/\d+\/\d{18}\//.test(u.pathname) ||
-        u.pathname === "/cgi-bin/browse-edgar") ||
+        u.pathname === "/cgi-bin/browse-edgar" || u.pathname === "/cgi-bin/own-disp") ||
         (!u.search && !u.hash && u.pathname === "/files/company_tickers.json"));
   } catch { return false; }
 }

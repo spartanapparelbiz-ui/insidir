@@ -145,7 +145,7 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     let state;
     try { state = await companyPhotos(t, { wait }); } catch (e) { upstream("People photos", e); }
     if (!state) throw notListed();
-    return send(res, 200, { ticker: t, complete: Boolean(state.complete), photos: state.photos || {}, leaders: state.leaders || [], sources: state.sources || {},
+    return send(res, 200, { ticker: t, complete: Boolean(state.complete), photos: state.photos || {}, names: state.names || {}, leaders: state.leaders || [], sources: state.sources || {},
       coverage: state.coverage || null, updatedAt: state.updatedAt || null,
       note: "Photos come from Wikimedia Commons, the company's own website or its SEC proxy statement and are matched to SEC reporting owners by name and company. People without a verified photo show initials." }, state.complete ? 3600 : 0), true;
   }

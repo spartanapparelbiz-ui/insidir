@@ -129,10 +129,20 @@ async function process(src, background) {
   return { url: out.toDataURL("image/png"), ratio: box.w / box.h, boxed, lifted };
 }
 
+/* A logo the server already prepared (/v1/company/logo: tile removed, dark ink lifted, trimmed)
+ * is shown exactly as delivered; recoloring it again could erase a detail the server chose to
+ * keep, such as a white plus inside a dark badge. Only its shape is measured. */
+async function measure(src) {
+  const img = await load(src);
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (!w || !h) throw new Error("Logo has no size");
+  return { url: img.currentSrc || img.src, ratio: w / h, boxed: false, lifted: 0 };
+}
+
 /* Resolves to {url, ratio} for display, or null when no usable logo exists. */
-function prepare(src, { background = "rgb(10,14,19)" } = {}) {
-  const key = src + "|" + background;
-  if (!cache.has(key)) cache.set(key, process(src, background).catch(() => null));
+function prepare(src, { background = "rgb(10,14,19)", prepared = false } = {}) {
+  const key = src + "|" + background + "|" + prepared;
+  if (!cache.has(key)) cache.set(key, (prepared ? measure(src) : process(src, background)).catch(() => null));
   return cache.get(key);
 }
 window.InsidirBrand = Object.freeze({ prepare });
