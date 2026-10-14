@@ -34,6 +34,11 @@
 
 /* ---------- Tokens ---------- */
 :root{
+  /* The dots' spring as an easing curve: v = (v + (1 − x)·0.05)·0.84 per 60 fps frame, sampled from the
+     simulation (settles in 950ms, overshoots 25% then 6%). Movement transitions use it so the whole site
+     moves like the wordmark; colours keep plain easing. */
+  --hf-spring:linear(0, .0741, .2029, .37, .5519, .7305, .8912, 1.0276, 1.1288, 1.1992, 1.237, 1.247, 1.2354, 1.206, 1.1669, 1.1224, 1.0777, 1.0365, 1.0015, .9736, .9547, .943, .9391, .9407, .9469, .9562, .9669, .978, .9885, .9976, 1.0049, 1.0102, 1.0135, 1.015, 1.0148, 1.0136, 1.0115, 1.0089, 1.0061, 1.0035, 1)!important;
+  --hf-spring-dur:.95s!important;
   --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important;
   /* Market direction, for data only: purchases and rises in green, sales and falls in red. Validated as a pair on
      paper, surface and surface-2 (OKLab ΔE 9.6 under deuteranopia, 31.9 normal; ≥4.86:1 contrast), always shown with
@@ -280,6 +285,13 @@ body.v13 :is(.ins-media,.ins-media--missing,.ins-media--company,.cv-symbol){back
 body.v13 :is(.v4-ui-icon,.v4-heading-icon,.v12-feature-icon,.v3-quicklinks .v4-quick-icon,.v3-searchbox__icon){color:var(--hf-soft)!important}
 body.v13 :is(.v12-feature-icon,.v3-quicklinks .v4-quick-icon){background:transparent!important;border:1px solid var(--hf-line)!important;border-radius:0!important}
 
+/* ---------- Motion (v13-motion.js) ----------
+   Atoms part around the pointer and ripple on a click with the dots' physics; the offset arrives in
+   --hf-dx/--hf-dy and rides on `translate`, which composes with any transform a rule already sets. */
+body.v13 [data-hf-atom]{translate:var(--hf-dx,0px) var(--hf-dy,0px)!important}
+body.v13 [data-hf-atom="inline"]{display:inline-block!important}
+@media (prefers-reduced-motion:reduce){body.v13 [data-hf-atom]{translate:none!important}}
+
 /* ---------- Charts ---------- */
 body.v13 .v12-graph .v12-plot-line{stroke:var(--hf-ink)!important}
 body.v13 .v12-graph .v12-plot-dot{fill:var(--hf-ink)!important;stroke:var(--hf-bg)!important}
@@ -337,6 +349,12 @@ body.v13 .v13-hero .v13-hero__meta{position:absolute!important;right:0!important
 
 /* ---------- Site footer: the reference footer's tracked link block, without the word ---------- */
 body.v13 .v13-footer--plain{position:relative!important;display:block!important;width:100%!important;margin:0!important;padding:0 0 clamp(28px,4vw,52px)!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:0!important;border-top:1px solid var(--hf-line)!important;height:auto!important;max-width:none!important}
+
+/* The footer's dot strip (added by v13-halftone.js): the wordmark's dots, without the word, parting around the
+   pointer and rippling on a click, fading down toward the links. */
+body.v13 .v13-footer--plain>.hwf-field{position:relative!important;display:block!important;height:clamp(56px,6vw,84px)!important;margin:0!important;padding:0!important;overflow:hidden!important;
+  -webkit-mask-image:linear-gradient(var(--hf-ink),transparent)!important;mask-image:linear-gradient(var(--hf-ink),transparent)!important}
+body.v13 .v13-footer--plain>.hwf-field canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
 
 /* ---------- Halftone wordmark footer (kept for pages that opt in) ---------- */
 body.v13 .hwf-root{position:relative!important;width:100%!important;overflow:hidden!important;isolation:isolate!important;margin:0!important;padding:0!important;

@@ -29,3 +29,5 @@ jobs:
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/dashboard-check.mjs
       - name: Verify the V13 halftone identity on every page (palette, contrast, fonts, sharp images, overflow)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/v13-palette-audit.mjs
+      - name: Verify every page moves like the wordmark (dot fields, parting atoms, click ring, reduced motion)
+        run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/motion-check.mjs

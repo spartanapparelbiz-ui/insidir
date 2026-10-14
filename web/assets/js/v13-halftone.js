@@ -15,6 +15,11 @@
   "use strict";
 
   const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
+  /* The motion of the whole site. Every dot, and every element v13-motion.js moves, uses these numbers:
+     a pointer within the radius pushes with up to `push` per frame, a spring of `spring` pulls home and
+     `damping` keeps what is left each frame (60 fps); a click sends a ring out at `ringSpeed` px/ms,
+     `ringBand` px wide, with `ringForce`, for `ringLife` ms. */
+  const PHYSICS = Object.freeze({ push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900 });
   const SANS_STACK = '"Inter", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif';
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -39,12 +44,12 @@
     const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy;
     if (r > 0 && d2 < r * r) {
       const d = Math.sqrt(d2) + 0.001;
-      const f = (1 - d / r) * 2.6;
+      const f = (1 - d / r) * PHYSICS.push;
       vx += (dx / d) * f;
       vy += (dy / d) * f;
     }
-    vx = (vx + (hx - x) * 0.05) * 0.84;
-    vy = (vy + (hy - y) * 0.05) * 0.84;
+    vx = (vx + (hx - x) * PHYSICS.spring) * PHYSICS.damping;
+    vy = (vy + (hy - y) * PHYSICS.spring) * PHYSICS.damping;
     return [x + vx, y + vy, vx, vy];
   }
 
@@ -173,7 +178,7 @@
       ctx.fillRect(0, 0, w, h);
       const r = o.interactive && !still ? Math.max(0, o.radius) : 0;
       const ringAge = ring.t < 0 ? 1e9 : now - ring.t;
-      const ringR = ringAge * 0.9;
+      const ringR = ringAge * PHYSICS.ringSpeed;
       let moving = false;
       ctx.fillStyle = o.colors.ink;
       for (let i = 0; i < count; i++) {
@@ -181,12 +186,12 @@
         let x = dots[j], y = dots[j + 1], vx = dots[j + 2], vy = dots[j + 3];
         const hx = dots[j + 4], hy = dots[j + 5];
         if (!still) {
-          if (ringAge < 900) {
+          if (ringAge < PHYSICS.ringLife) {
             const dx = hx - ring.x, dy = hy - ring.y;
             const d = Math.sqrt(dx * dx + dy * dy) + 0.001;
-            const band = 1 - Math.min(1, Math.abs(d - ringR) / 26);
+            const band = 1 - Math.min(1, Math.abs(d - ringR) / PHYSICS.ringBand);
             if (band > 0) {
-              const f = band * 3.2 * (1 - ringAge / 900);
+              const f = band * PHYSICS.ringForce * (1 - ringAge / PHYSICS.ringLife);
               vx += (dx / d) * f; vy += (dy / d) * f;
             }
           }
@@ -209,7 +214,7 @@
         ctx.globalCompositeOperation = "source-over";
       }
       // Sleep once everything is home and nothing is pushing.
-      awake = moving || ringAge < 900 || px > -1e4;
+      awake = moving || ringAge < PHYSICS.ringLife || px > -1e4;
     };
 
     const loop = now => {
@@ -228,6 +233,7 @@
       if (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea")) return;
       const p = toLocal(e);
       ring = { x: p[0], y: p[1], t: performance.now() };
+      e.__hfRingFrom = root; // v13-motion.js sends the same ring through the rest of the page
       wake();
     };
 
@@ -251,6 +257,13 @@
     const api = {
       root, canvas, options: o,
       relayout() { layout(); wake(); },
+      /* A ring started elsewhere on the page (viewport coordinates) runs through this field too. */
+      ring(clientX, clientY) {
+        if (!o.interactive || still) return;
+        const b = canvas.getBoundingClientRect();
+        ring = { x: clientX - b.left, y: clientY - b.top, t: performance.now() };
+        wake();
+      },
       destroy() {
         alive = false;
         cancelAnimationFrame(raf);
@@ -268,6 +281,16 @@
   /* ---------- auto-mount ---------- */
 
   function auto() {
+    // Every page ends on a strip of the same dots: the plain footer gets a field across its top.
+    document.querySelectorAll("footer.v13-footer--plain").forEach(f => {
+      if (f.querySelector(":scope > .hwf-field")) return;
+      const strip = document.createElement("div");
+      strip.className = "hwf-field";
+      strip.setAttribute("data-halftone-field", "");
+      strip.setAttribute("aria-hidden", "true");
+      strip.dataset.fieldCoverage = "0.1";
+      f.prepend(strip);
+    });
     document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]").forEach(el => mount(el));
     document.querySelectorAll(".hwf-up").forEach(btn => {
       if (btn.__bound) return;
@@ -278,5 +301,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
   else auto();
 
-  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, fitSize, PRESET });
+  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, fitSize, PRESET, PHYSICS });
 })();
