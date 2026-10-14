@@ -18,7 +18,7 @@ const POPULAR = [["NVDA", "NVIDIA"], ["AAPL", "Apple"], ["MSFT", "Microsoft"], [
   ["XOM", "Exxon Mobil"], ["KO", "Coca-Cola"], ["NFLX", "Netflix"], ["COST", "Costco"]];
 
 const state = { seq: 0, ticker: "", range: "1Y", intel: null, intelError: null, profile: null, profileDone: false, insiders: null, insidersError: null,
-  news: null, newsLoading: false, market: {}, marketError: null, watch: null, annualMetric: "revenue", filingFilter: "all", insiderFilter: "all", hover: null };
+  news: null, newsLoading: false, market: {}, marketError: null, watch: null, photos: null, annualMetric: "revenue", filingFilter: "all", insiderFilter: "all", hover: null };
 
 /* ---------- formatting ---------- */
 const symbolFor = currency => currency && currency !== "USD" ? currency + " " : "$";
@@ -109,17 +109,25 @@ const commonsThumb = src => {
   const m = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png))$/i.exec(String(src || ""));
   return m ? `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/120px-${m[3]}` : src;
 };
-function personInfo(secName, short = false) {
+const photoKey = (cik, name) => cik ? "cik:" + String(cik).replace(/^0+/, "") : "name:" + String(name || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+/* Photo precedence: the server's verified photo map (Commons, company site, SEC proxy), then
+ * Wikidata people matched on the page, then the small curated set; otherwise initials. */
+function personInfo(secName, short = false, ownerCik = null) {
   const wiki = (state.profile?.people || []).find(p => matchesPerson(secName, p));
+  const verified = state.photos?.photos?.[photoKey(ownerCik, secName)];
   const curated = window.InsidirMedia?.photo?.(secName, state.ticker);
-  const photo = wiki?.photo?.src ? { src: wiki.photo.src, source: wiki.photo.source } : curated ? { src: commonsThumb(curated.src), source: curated.source } : null;
+  const photo = verified?.src ? { src: verified.src, source: verified.sourceUrl, credit: verified.credit }
+    : wiki?.photo?.src ? { src: wiki.photo.src, source: wiki.photo.source, credit: "Wikimedia Commons" }
+    : curated ? { src: commonsThumb(curated.src), source: curated.source, credit: curated.credit + " · " + curated.license } : null;
   return { name: wiki?.name || displayName(secName, { short }), photo, wikidataUrl: wiki?.wikidataUrl || null };
 }
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
   const fallback = esc(initials(name).toUpperCase());
-  if (photo?.src && safeUrl(photo.src, ["wikimedia.org"])) {
-    return `<span class="${cls}" data-initials="${fallback}"><img src="${esc(photo.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+  const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
+  if (src) {
+    const credit = photo.credit ? `Photo: ${photo.credit}` : "";
+    return `<span class="${cls}" data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
   return `<span class="${cls}" aria-hidden="true">${fallback}</span>`;
 }
@@ -474,7 +482,7 @@ function renderOverviewInsiders() {
   if (!state.insiders) { if (state.insidersError) host.innerHTML = `<p class="cx-empty">${esc(state.insidersError)}</p>`; return; }
   const rows = activity().slice(0, 4);
   host.innerHTML = rows.length ? rows.map(a => {
-    const p = personInfo(a.owner.name, true);
+    const p = personInfo(a.owner.name, true, a.owner.cik);
     return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
   }).join("") : '<p class="cx-empty">No Form 4 insider filings were found for this company.</p>';
 }
@@ -601,7 +609,7 @@ function renderInsiders() {
   ].join("");
   const rows = all.filter(a => state.insiderFilter === "all" || insiderGroup(a) === state.insiderFilter);
   $("cx-insiders-table").innerHTML = rows.length ? rows.map(a => {
-    const p = personInfo(a.owner.name);
+    const p = personInfo(a.owner.name, false, a.owner.cik);
     const extra = (a.transactions || []).length > 1 ? ` <small>${a.transactions.length} line items</small>` : "";
     const price = (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
@@ -618,16 +626,21 @@ function renderInsiders() {
 function renderPeople() {
   const secPeople = state.insiders?.people || [];
   $("cx-people-sec").innerHTML = state.insiders ? (secPeople.length ? secPeople.slice(0, 24).map(person => {
-    const p = personInfo(person.name);
+    const p = personInfo(person.name, false, person.cik);
     return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
       <a href="people.html?q=${encodeURIComponent(person.name)}">Search insider records →</a></div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
-  const leaders = (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
+  const serverLeaders = state.photos?.leaders?.length ? state.photos.leaders.filter(l => !l.insider || l.roles.includes("Founder")) : null;
+  const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
-  $("cx-people-wiki").innerHTML = leaders.map(p => `<article class="cx-person">${avatar(p.name, p.photo ? { src: p.photo.src } : null, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(p.roles.join(" · "))}</p>${safeUrl(p.wikidataUrl, ["wikidata.org"]) ? `<a href="${esc(safeUrl(p.wikidataUrl, ["wikidata.org"]))}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`).join("");
+  $("cx-people-wiki").innerHTML = leaders.map(p => {
+    const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
+    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`;
+  }).join("");
 }
 
 /* ---------- news tab ---------- */
@@ -691,9 +704,19 @@ async function addToWatchlist() {
 const signIn = () => { location.href = "signin.html?next=" + encodeURIComponent(location.pathname + location.search); };
 
 /* ---------- load ---------- */
+/* Verified photos arrive from a background job; check back a few times while it works. */
+async function loadPhotos(seq, attempt = 0) {
+  try {
+    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 ? "&wait=2500" : ""));
+    if (seq !== state.seq) return;
+    state.photos = data;
+    renderOverviewInsiders(); renderInsiders(); renderPeople();
+    if (!data.complete && attempt < 7) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, [2500, 4000, 6000, 8000, 12000, 15000, 20000][attempt]);
+  } catch { /* initials stay */ }
+}
 function resetView() {
   state.intel = null; state.intelError = null; state.profile = null; state.profileDone = false; state.insiders = null; state.insidersError = null;
-  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null;
+  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null;
   state.annualMetric = "revenue"; state.filingFilter = "all"; state.insiderFilter = "all";
   statusNotes.clear(); setStatus("");
   $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").hidden = false; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
@@ -745,6 +768,7 @@ async function load(ticker) {
       } catch { state.insidersError = e.status === 404 ? "This ticker is not in the SEC's official company list." : "SEC ownership filings are temporarily unavailable."; }
     }).finally(() => { if (seq !== state.seq) return; renderOverviewInsiders(); renderInsiders(); renderPeople(); });
   renderLogo();
+  loadPhotos(seq);
   loadWatch(seq);
   setTimeout(() => { if (seq === state.seq) loadNews(seq); }, 2500);
 }
