@@ -9,7 +9,7 @@
 import { fetchImage, imageSize } from "./media.mjs";
 import { preparePhoto } from "./image-analysis.mjs";
 import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
-import { isEntityName, samePerson } from "./person-match.mjs";
+import { isEntityName, samePerson, nameTokens } from "./person-match.mjs";
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
 
@@ -17,11 +17,18 @@ const DAY = 86400000;
 const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
 /* A caption or card name ("Suzanne Nora Johnson, Director") as a display name, only when it is the
  * same person as the SEC filer name. */
+const titleWord = w => w.toLowerCase().replace(/(^|['’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/^Mc(\p{L})/u, (m, c) => "Mc" + c.toUpperCase());
+const wordKey = w => w.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
 const captionName = (secName, caption) => {
   let name = String(caption || "").split(/,|\s[–—-]\s|\bAge\b|\n/)[0].replace(/\s+/g, " ").trim();
   if (name.length < 4 || name.length > 48) return null;
-  // Proxies often print captions in capitals.
-  if (!/[a-z]/.test(name)) name = name.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\bMc(\p{L})/gu, (m, c) => "Mc" + c.toUpperCase());
+  // Proxies print captions in capitals, and proxy captions arrive folded to lower case without
+  // apostrophes or accents: each word takes the filer's own spelling when the letters agree
+  // (O'BRIEN, not "Obrien").
+  if (!/[a-z]/.test(name) || !/[A-Z]/.test(name)) {
+    const filed = new Map(String(secName || "").split(/\s+/).filter(Boolean).map(w => [wordKey(w), w]));
+    name = name.split(" ").map(w => titleWord(filed.get(wordKey(w)) || w)).join(" ");
+  }
   return samePerson(secName, name) ? name : null;
 };
 const siteHost = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
@@ -39,7 +46,7 @@ async function store(bytes, type) {
  * sites get the page as Referer (many refuse hotlinked images without it). */
 async function fromUrl(url, { referer, userAgent = "InsidirResearch/1.0 (spartanapparelbiz@gmail.com)" } = {}) {
   const image = await politeImage(url, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent, headers: referer ? { Referer: referer } : {} });
-  if (!["png", "jpeg", "webp", "gif"].includes(image.type)) throw new Error("Not a photo");
+  if (!["png", "jpeg", "webp", "gif", "avif"].includes(image.type)) throw new Error("Not a photo");
   return { saved: await store(image.bytes, image.type), size: imageSize(image.bytes, image.type) };
 }
 /* Wikimedia throttles bursts of thumbnail requests (HTTP 429), and every company's job fetches
@@ -74,6 +81,16 @@ async function politeImage(url, options) {
 }
 /* Landscape or small Commons pictures often show the person small (at a podium, on a stage). */
 const weakPicture = size => Boolean(size && (size.width / size.height > 1.15 || Math.min(size.width, size.height) < 200));
+/* Such a picture is used at all only when its Commons file is named after the person and does not
+ * read like a group shot: Wikidata's image for one director was "2009 Secretary of State's Award
+ * for Corporate Excellence.jpg", six people in a row. */
+const GROUP_FILE = /\b(and|with|meets?|meeting|visits?|group|panel|delegation|team|award|ceremony|family|members)\b|&/i;
+function usableWeak(photo, name) {
+  const file = String(photo?.file || decodeURIComponent(String(photo?.source || "").split("File:").pop() || "")).replace(/_/g, " ");
+  const surname = nameTokens(name).at(-1);
+  const folded = file.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]+/g, " ");
+  return Boolean(surname && surname.length >= 2 && (" " + folded + " ").includes(" " + surname + " ") && !GROUP_FILE.test(file.replace(/\.[a-z]+$/i, "")));
+}
 /* Alt text or a file name can name a person by surname alone ("nominee_smith.jpg", "CarneyL");
  * those medium-confidence pairings are not used: surname plus given name, always. */
 const fullNameEvidence = m => !(["alt", "alt-adjacent"].includes(m.rule) && m.confidence !== "high");
@@ -127,6 +144,7 @@ async function runJob(ticker, company) {
         if (!person || state.photos[person.key] || !m.photo?.src) continue;
         try {
           const { saved, size } = await fromUrl(m.photo.large || m.photo.src);
+          if (weakPicture(size) && !usableWeak(m.photo, m.personName)) continue;
           // A landscape or tiny Commons picture (someone small at a podium) is shown for now, but a
           // headshot from the company's page or proxy replaces it.
           await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high", ...(weakPicture(size) ? { weak: true } : {}) });
@@ -144,6 +162,7 @@ async function runJob(ticker, company) {
     if (leader.photo?.src) {
       try {
         const { saved, size } = await fromUrl(leader.photo.large || leader.photo.src);
+        if (weakPicture(size) && !usableWeak(leader.photo, leader.name)) throw Object.assign(new Error("group or distant picture"), { skip: true });
         photo = { src: saved.url, source: "wikimedia", sourceUrl: leader.photo.source, credit: leader.photo.credit || "Wikimedia Commons", weak: weakPicture(size) };
       } catch (e) { if (transientImageError(e)) state.transient = true; /* the page or proxy may still have one */ }
     }
@@ -186,7 +205,16 @@ async function runJob(ticker, company) {
   };
   const applyProxy = async proxy => {
     if (proxy.status === "error") state.transient = true;
-    state.sources.secProxy = { status: proxy.status, matched: proxy.matches?.length || 0, accession: proxy.accession || null, ...(proxy.message ? { message: proxy.message } : {}) };
+    // Wikidata often keeps former directors without an end date. When this year's proxy was read
+    // and never names a board-only leader, that person is no longer on the board.
+    if (Array.isArray(proxy.mentioned) && (proxy.status === "ok" || proxy.status === "none")) {
+      const named = new Set(proxy.mentioned), considered = new Set(proxy.considered || []);
+      const boardOnly = l => l.roles.length && l.roles.every(r => /^(Board member|Director \/ manager|Chairperson)$/.test(r));
+      const before = state.leaders.length;
+      state.leaders = state.leaders.filter(l => !boardOnly(l) || !considered.has(l.key) || named.has(l.key));
+      if (state.leaders.length < before) state.sources.secProxy = { ...state.sources.secProxy, formerDirectorsHidden: before - state.leaders.length };
+    }
+    state.sources.secProxy = { ...(state.sources.secProxy || {}), status: proxy.status, matched: proxy.matches?.length || 0, accession: proxy.accession || null, ...(proxy.message ? { message: proxy.message } : {}) };
     const credit = "SEC proxy statement (DEF 14A" + (proxy.filedAt ? ", filed " + proxy.filedAt : "") + ")";
     for (const m of proxy.matches || []) {
       const person = personFor(m), leader = person ? null : leaderFor(m);

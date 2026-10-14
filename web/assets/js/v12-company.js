@@ -71,8 +71,13 @@ function displayName(raw, { short = false } = {}) {
   const parts = name.replace(/,/g, " ").split(" ").filter(Boolean);
   if (parts.length < 2) return /[a-z]/.test(name) ? name : titleCase(name);
   const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";
-  const [last, ...rest] = parts;
-  const fix = t => /^[A-Za-z]\.?$/.test(t) ? t.charAt(0).toUpperCase() + "." : /[a-z]/.test(t) && /[A-Z]/.test(t) ? t : titleCase(t);
+  // A surname particle ("ten Bosch", "VAN DYKE", "de la Rosa") stays with the surname.
+  let n = 1;
+  while (n < parts.length - 1 && /^(van|von|de|der|den|ten|ter|da|di|del|della|la|le|du|dos|das|st\.?)$/i.test(parts[n - 1])) n++;
+  const last = parts.slice(0, n).join(" "), rest = parts.slice(n);
+  // Particles keep the filer's case: "ten Bosch" stays lower case, "VAN DYKE" becomes "Van Dyke".
+  const fix = t => t.split(" ").map(w => /^[a-z]+$/.test(w) ? w : fix1(w)).join(" ");
+  const fix1 = t => /^[A-Za-z]\.?$/.test(t) ? t.charAt(0).toUpperCase() + "." : /[a-z]/.test(t) && /[A-Z]/.test(t) ? t : titleCase(t);
   const given = short && rest.length > 1 ? rest.filter((t, i) => i === 0 || !/^[A-Za-z]\.?$/.test(t)) : rest;
   return [...given.map(fix), fix(last), suffix ? (/^(II|III|IV|V)$/i.test(suffix) ? suffix.toUpperCase() : titleCase(suffix.replace(/\.$/, "")) + ".") : ""].filter(Boolean).join(" ");
 }

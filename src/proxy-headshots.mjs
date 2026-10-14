@@ -469,11 +469,14 @@ export async function proxyHeadshots({ cik, insiders = [], extraPeople = [], sub
     known.forEach((p, i) => { p.id = i; });
 
     const record = { v: 1, accession, filedAt, documentUrl, evaluated: known.map(fingerprint), people: known.map(({ insider, ...p }) => p), files: { ...(cached?.files || {}) }, matches: [] };
-    if (!files.size) { await save(record, useCache); return finish(record, people, "none"); }
-
     // Through the binary path: large proxies (KO, CBRE) exceed the 5MB text limit of secFetch.
     const html = decodeHtml(await fetchBytes(documentUrl, { maxBytes: MAX_HTML_BYTES }));
-    const { placements } = pairPortraits(tokenize(html), known, files);
+    const tokens = tokenize(html);
+    // Who the proxy names at all (full name): a Wikidata "board member" it never mentions has left.
+    const named = new Set(findNames(tokens.filter(t => t.t === "text").map(t => t.s).join("\n"), known).flatMap(h => [...h.people]));
+    record.mentioned = known.filter(p => named.has(p.id)).map(fingerprint);
+    if (!files.size) { await save(record, useCache); return finish(record, people, "none"); }
+    const { placements } = pairPortraits(tokens, known, files);
 
     // Download only paired files, then drop placements on files that fail the header checks and
     // every run-order pairing of a run that contained a failing file (it may have shifted names).
@@ -549,5 +552,7 @@ function finish(record, people, status, original = new Map()) {
     if (!p) continue;
     for (const key of p.keys) matches.push({ ...toMatch(p, key, m, record.accession), bytes: original.get(m.file.toLowerCase()) || null });
   }
-  return { status: matches.length ? "ok" : status === "ok" ? "none" : status, accession: record.accession, filedAt: record.filedAt, documentUrl: record.documentUrl, matches };
+  const mentioned = Array.isArray(record.mentioned) ? people.filter(p => record.mentioned.includes(fingerprint(p))).flatMap(p => p.keys) : undefined;
+  return { status: matches.length ? "ok" : status === "ok" ? "none" : status, accession: record.accession, filedAt: record.filedAt, documentUrl: record.documentUrl, matches, mentioned,
+    considered: mentioned ? people.flatMap(p => p.keys) : undefined };
 }

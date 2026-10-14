@@ -435,7 +435,7 @@ export async function checkImage(url, pageUrl, deps = {}) {
     const get = deps.fetchImage || ((u, o) => fetcher.paced(u, () => fetchImage(u, o)));
     image = await get(target, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent: PUBLIC_UA, headers: { Referer: pageUrl } });
   } catch (e) { return { ok: false, reason: String(e?.message || e).slice(0, 60) }; }
-  if (!["png", "jpeg", "webp", "gif"].includes(image.type)) return { ok: false, reason: "not raster" };
+  if (!["png", "jpeg", "webp", "gif", "avif"].includes(image.type)) return { ok: false, reason: "not raster" };
   const size = imageSize(image.bytes, image.type);
   if (!size || !size.width || !size.height) return { ok: false, reason: "unknown size" };
   const short = Math.min(size.width, size.height), aspect = size.width / size.height;

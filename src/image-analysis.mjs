@@ -223,14 +223,24 @@ export async function prepareLogo(bytes, type) {
 
 /* ---------- portraits ---------- */
 /* A square, face-weighted crop. A small inset removes rings or discs baked into proxy headshots. */
+/* Square avatar crop. A thin margin is dropped on the sides and bottom (frames and borders in
+ * proxy headshots) but never at the top, where the head is. Portrait pictures are cut to a square
+ * from near the top, so the forehead and hair stay in; landscape pictures keep their full height
+ * and slide sideways to the most salient part. */
 export async function preparePhoto(bytes, type, size = 256) {
-  const meta = await input(bytes, type).metadata();
-  if (!meta.width || !meta.height) throw new Error("Unreadable image");
-  const inset = .06;
-  const left = Math.round(meta.width * inset), top = Math.round(meta.height * inset);
-  const width = Math.max(1, meta.width - left * 2), height = Math.max(1, meta.height - top * 2);
-  const out = await input(bytes, type).extract({ left, top, width, height })
-    .resize({ width: size, height: size, fit: "cover", position: sharp.strategy.attention })
-    .flatten({ background: { r: 24, g: 30, b: 38 } }).webp({ quality: 82 }).toBuffer();
+  const { data, info } = await input(bytes, type).rotate().png().toBuffer({ resolveWithObject: true });
+  if (!info.width || !info.height) throw new Error("Unreadable image");
+  const side = .03;
+  const left = Math.round(info.width * side), width = Math.max(1, info.width - left * 2);
+  let top = 0, height = Math.max(1, info.height - Math.round(info.height * side));
+  let image = sharp(data);
+  if (height > width) {
+    top = Math.min(height - width, Math.round(height * .03));
+    height = width;
+    image = image.extract({ left, top, width, height }).resize({ width: size, height: size });
+  } else {
+    image = image.extract({ left, top, width, height }).resize({ width: size, height: size, fit: "cover", position: sharp.strategy.attention });
+  }
+  const out = await image.flatten({ background: { r: 24, g: 30, b: 38 } }).webp({ quality: 82 }).toBuffer();
   return { bytes: out, type: "webp", width: size, height: size };
 }

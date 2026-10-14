@@ -8,7 +8,7 @@ import { isIP } from "node:net";
 
 const IMAGE_TYPES = new Map([
   ["image/png", "png"], ["image/jpeg", "jpeg"], ["image/jpg", "jpeg"], ["image/webp", "webp"], ["image/gif", "gif"],
-  ["image/svg+xml", "svg"], ["image/x-icon", "ico"], ["image/vnd.microsoft.icon", "ico"]
+  ["image/svg+xml", "svg"], ["image/x-icon", "ico"], ["image/vnd.microsoft.icon", "ico"], ["image/avif", "avif"]
 ]);
 
 function ipv4Private(ip) {
@@ -44,6 +44,8 @@ export function sniffImage(buf) {
   if (buf.toString("latin1", 0, 4) === "GIF8") return "gif";
   if (buf.toString("latin1", 0, 4) === "RIFF" && buf.toString("latin1", 8, 12) === "WEBP") return "webp";
   if (buf[0] === 0 && buf[1] === 0 && buf[2] === 1 && buf[3] === 0) return "ico";
+  // ISO-BMFF "ftyp" box with an AVIF brand (site builders such as Webflow serve headshots this way).
+  if (buf.toString("latin1", 4, 8) === "ftyp" && /avi[fs]/.test(buf.toString("latin1", 8, Math.min(buf.length, 40)))) return "avif";
   const head = buf.toString("utf8", 0, Math.min(buf.length, 2048)).replace(/^﻿/, "").trimStart().toLowerCase();
   if ((head.startsWith("<svg") || head.startsWith("<?xml") || head.startsWith("<!--")) && head.includes("<svg")) return "svg";
   return null;
@@ -101,6 +103,11 @@ export function imageSize(bytes, type) {
       if (chunk === "VP8X") return { width: 1 + bytes.readUIntLE(24, 3), height: 1 + bytes.readUIntLE(27, 3) };
       if (chunk === "VP8 ") return { width: bytes.readUInt16LE(26) & 0x3fff, height: bytes.readUInt16LE(28) & 0x3fff };
       if (chunk === "VP8L") { const b = bytes.readUInt32LE(21); return { width: (b & 0x3fff) + 1, height: ((b >> 14) & 0x3fff) + 1 }; }
+    }
+    if (type === "avif") {
+      // Image spatial extents ("ispe") property: version/flags, then width and height.
+      const i = bytes.indexOf("ispe", 0, "latin1");
+      if (i > 0 && i + 16 <= bytes.length) return { width: bytes.readUInt32BE(i + 8), height: bytes.readUInt32BE(i + 12) };
     }
     if (type === "jpeg") {
       let i = 2;

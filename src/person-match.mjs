@@ -37,14 +37,17 @@ export function secNameReadings(raw) {
   const t = nameTokens(raw);
   if (t.length < 2) return [];
   const out = [];
-  const add = (surname, rest) => {
+  // middleAsGiven: in the filed LAST FIRST MIDDLE order a person may go by the middle name
+  // (WALKER JOHN KENT is Kent Walker). Never for the reversed reading: there "Lam Yat Tung" would
+  // let a caption "Yat Tung" match without the surname.
+  const add = (surname, rest, middleAsGiven) => {
     const g = rest.find(x => x.length > 1);
     if (!g || !surname) return;
-    out.push({ surname, given: g, middles: rest.filter(x => x !== g) });
+    out.push({ surname, given: g, middles: rest.filter(x => x !== g), middleAsGiven });
   };
-  add(t[0], t.slice(1));                                   // LAST FIRST MIDDLE
-  if (t.length >= 3) add(t[0] + t[1], t.slice(2));         // TWO-WORD LAST, FIRST
-  add(t.at(-1), t.slice(0, -1));                           // FIRST MIDDLE LAST
+  add(t[0], t.slice(1), true);                             // LAST FIRST MIDDLE
+  if (t.length >= 3) add(t[0] + t[1], t.slice(2), true);   // TWO-WORD LAST, FIRST
+  add(t.at(-1), t.slice(0, -1), false);                    // FIRST MIDDLE LAST
   return out;
 }
 /* Readings of a natural-order name ("Jensen Huang", "Suzanne Nora Johnson"). */
@@ -89,7 +92,7 @@ export function samePerson(secName, candidateName, aliases = []) {
     for (const c of naturalNameReadings(name)) {
       for (const s of sec) {
         if (s.surname !== c.surname) continue;
-        if (!givenMatches(s.given, c.given) && !s.middles.some(m => m.length > 1 && givenMatches(m, c.given))) continue;
+        if (!givenMatches(s.given, c.given) && !(s.middleAsGiven && s.middles.some(m => m.length > 1 && givenMatches(m, c.given)))) continue;
         if (middlesConflict(s.middles.filter(m => !givenMatches(m, c.given)), c.middles)) continue;
         return true;
       }
