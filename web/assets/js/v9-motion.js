@@ -1,4 +1,4 @@
-/* Insidir landing page: the hero wordmark's fit, and a quiet scroll reveal. This script loads no data.
+/* Insidir landing page: the hero wordmark's fit. This script loads no data.
 
    Fit: the halftone engine (v13-halftone.js) fits the word to the hero's width and sinks its baseline
    below the hero's bottom edge by a share of its cap height, the crop. Here the crop is chosen so the
@@ -8,11 +8,9 @@
    created before the engine's (this file runs first), so on a resize it sets the crop just before the
    engine lays the dots out again, and only lays out itself when the copy alone changed size.
 
-   Reveal: sections that start below the first screen wait 20px low with their hairline rule undrawn and
-   settle as they scroll in (see v13-home.css). Nothing is ever hidden: without JavaScript, without
-   IntersectionObserver, or under prefers-reduced-motion nothing is marked pending and the page is simply
-   in place. Anything already scrolled past (a jump to the footer, a restored scroll position) is
-   released at once. */
+   The scroll reveal that used to live here is now the site's own (v13-motion.js): the landing marks its
+   blocks with data-hf-reveal / data-hf-reveal-group and v13-home.css only adds the section rules that
+   draw across as each head arrives. */
 (() => {
   "use strict";
   const hero = document.querySelector("[data-halftone-hero]");
@@ -56,47 +54,3 @@
   window.addEventListener("load", () => fit(true), { once: true });
 })();
 
-(() => {
-  "use strict";
-  const motion = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
-  if (!("IntersectionObserver" in window) || !motion || motion.matches) return;
-
-  const nodes = [...document.querySelectorAll("[data-v9-reveal]")];
-  if (!nodes.length) return;
-
-  // Stagger the items inside each section a beat apart.
-  for (const node of nodes) {
-    node.querySelectorAll(".lp-step,.lp-rule,.lp-source").forEach((item, i) => item.style.setProperty("--lp-i", String(Math.min(i, 6))));
-  }
-
-  const pending = new Set();
-  const release = node => { if (pending.delete(node)) node.classList.remove("lp-pending"); };
-  const releaseAll = () => { for (const node of [...pending]) release(node); };
-  const observer = new IntersectionObserver(entries => {
-    for (const entry of entries) if (entry.isIntersecting) { release(entry.target); observer.unobserve(entry.target); }
-  }, { rootMargin: "0px 0px -6% 0px", threshold: 0 });
-
-  for (const node of nodes) {
-    if (node.getBoundingClientRect().top > window.innerHeight * 0.94) {
-      node.classList.add("lp-pending");
-      pending.add(node);
-      observer.observe(node);
-    }
-  }
-
-  // A jump past a section never intersects it, so release everything at or above the viewport's bottom.
-  let queued = false;
-  const sweep = () => {
-    queued = false;
-    const limit = window.innerHeight * 0.94;
-    for (const node of [...pending]) if (node.getBoundingClientRect().top < limit) { release(node); observer.unobserve(node); }
-    if (!pending.size) window.removeEventListener("scroll", onScroll);
-  };
-  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  // Turning on reduced motion mid-visit, or printing, puts everything in place.
-  const settle = () => { releaseAll(); observer.disconnect(); window.removeEventListener("scroll", onScroll); };
-  if (motion.addEventListener) motion.addEventListener("change", e => { if (e.matches) settle(); });
-  window.addEventListener("beforeprint", settle);
-})();
