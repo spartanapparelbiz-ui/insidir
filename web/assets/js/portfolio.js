@@ -9,6 +9,12 @@
   const safeDate=value=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?d.toLocaleString("en-US",{dateStyle:"medium",timeStyle:"short"}):"Not reported";};
   const secLink=url=>{try{const u=new URL(url);return u.protocol==="https:"&&(u.hostname==="www.sec.gov"||u.hostname==="sec.gov")?u.toString():null;}catch{return null;}};
   const safeTicker=value=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(value||""))?value:null;
+  /* Reported purchases print green with ▲, sales red with ▼; the words always carry the meaning. */
+  const event=category=>{
+    const dir=category==="reported_purchase"?"up":category==="reported_sale"?"down":"";
+    const words=dir==="up"?"Reported purchase":dir==="down"?"Reported sale":"Other ownership transaction";
+    return '<span class="desk-dir'+(dir?" is-"+dir:"")+'">'+(dir?'<span class="desk-glyph is-'+dir+'" aria-hidden="true"></span>':"")+escapeHtml(words)+'</span>';
+  };
   const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").classList.toggle("is-error",Boolean(error));};
   async function request(path,method="GET"){
     const r=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json"}});
@@ -43,7 +49,7 @@
       items.map(t=>{
         const link=secLink(t.source_url);
         return '<tr><td data-label="Ticker"><strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small></td>'+
-          '<td data-label="Reported event">'+escapeHtml(t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction")+
+          '<td data-label="Reported event">'+event(t.category)+
           '<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></td><td data-label="Published">'+escapeHtml(safeDate(t.published_at))+'</td>'+
           '<td data-label="Original source">'+(link?'<a class="portfolio-small-link" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(link)+'">SEC filing ↗</a>':'Not available')+'</td></tr>';
       }).join("")+'</tbody></table></div>':

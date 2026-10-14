@@ -22,6 +22,28 @@
       amount.toLocaleString("en-US", {style:"currency",currency:"USD",maximumFractionDigits:0}) :
       "Not reported";
   };
+  /* Market direction prints in words first; the class adds green (purchase) or red (sale) and a ▲/▼ glyph. */
+  const direction = category => category === "reported_purchase" ? "up" : category === "reported_sale" ? "down" : "";
+  const directionLabel = (category, words) => {
+    const dir = direction(category);
+    return '<span class="desk-dir' + (dir ? " is-" + dir : "") + '">' +
+      (dir ? '<span class="desk-glyph is-' + dir + '" aria-hidden="true"></span>' : "") + esc(words) + "</span>";
+  };
+  /* Shares as filed, signed by the Form 4 acquired (A) / disposed (D) flag, or by the purchase/sale category. */
+  const signedShares = item => {
+    const shares = Number(item.shares);
+    if (item.shares == null || item.shares === "" || !Number.isFinite(shares) || shares <= 0) return "";
+    const ad = String(item.acquired_disposed || "").toUpperCase();
+    const dir = ad === "D" ? "down" : ad === "A" ? "up" : direction(item.category);
+    const text = (dir === "up" ? "+" : dir === "down" ? "−" : "") + shares.toLocaleString("en-US", {maximumFractionDigits:4}) + " sh";
+    return '<span class="desk-signed' + (dir ? " is-" + dir : "") + '">' + esc(text) + "</span>";
+  };
+  const displayPrice = value => {
+    if (value == null || value === "") return "";
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount > 0 ?
+      amount.toLocaleString("en-US", {style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4}) : "";
+  };
   const safeSource = value => {
     try {
       const url = new URL(String(value));
@@ -68,6 +90,9 @@
     const rows = transactions.map(item => {
       const category = item.category === "reported_purchase" ? "Reported purchase" :
         item.category === "reported_sale" ? "Reported sale" : "Other transaction";
+      const shares = signedShares(item), price = displayPrice(item.price_per_share ?? item.price);
+      const hasValue = item.estimated_value != null && item.estimated_value !== "";
+      const quantity = shares ? shares + (price ? " at " + esc(price) : "") + (hasValue ? " · estimated value" : "") : "Estimated filing value";
       const qualifiers = [
         item.derivative ? "Derivative" : "Non-derivative",
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
@@ -75,9 +100,9 @@
       ].filter(Boolean).join(" · ");
       return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm")||"") +
         "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
-        "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + esc(category) +
+        "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + directionLabel(item.category, category) +
         "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td data-label='Reported value'>" +
-        esc(displayCash(item.estimated_value)) + "<small>Estimated filing value</small></td><td data-label='Published'>" +
+        esc(displayCash(item.estimated_value)) + "<small>" + quantity + "</small></td><td data-label='Published'>" +
         esc(displayDate(item.published_at)) + "<small>" + sourceLink(item.source_url, "Original SEC filing") +
         "</small></td></tr>";
     }).join("");

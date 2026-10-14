@@ -10,7 +10,15 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const finite = v => typeof v === "number" && Number.isFinite(v);
 const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
-const CHART_WARM = "#e9762b"; // --hf-warm, the V13 palette's only accent
+/* Market direction is drawn in green (rises, purchases) and red (falls, sales) from the --hf-up / --hf-down
+ * tokens in CSS; markup only says which way, and always with a sign, a ▲/▼ glyph or a word beside the colour. */
+const trendOf = n => !finite(n) ? "" : n > 0 ? "up" : n < 0 ? "down" : "flat";
+/* ▲/▼ markers are drawn in CSS (the self-hosted font has no geometric shapes); the class gives the direction. */
+const glyphDir = d => d === "up" || d === "down" ? `<span class="cx-glyph is-${d}" aria-hidden="true"></span>` : "";
+const glyph = n => finite(n) && n !== 0 ? glyphDir(n > 0 ? "up" : "down") : "";
+/* Insider colour follows the trade, as on the overview: purchases green, sales red, a mixed filing by its net
+   shares; grants, awards, exercises and gifts stay neutral (signed, but not a market purchase or sale). */
+const insiderDir = a => a.kind === "purchase" ? "up" : a.kind === "sale" ? "down" : a.kind === "mixed" ? trendOf(a.netShares) : "";
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Brand casing the SEC and Wikidata names don't carry.
 const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
@@ -32,6 +40,8 @@ function money(n, currency = "USD", { precise = false } = {}) {
   return sign + s + a.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 const integer = n => finite(n) ? Math.round(n).toLocaleString("en-US") : "—";
+// Exact to the dollar (insider transaction values): "$325,000", not "$325K".
+const dollars = n => !finite(n) ? "—" : (n < 0 ? "−" : "") + "$" + Math.round(Math.abs(n)).toLocaleString("en-US");
 const signed = n => !finite(n) ? "—" : (n > 0 ? "+" : n < 0 ? "−" : "") + Math.round(Math.abs(n)).toLocaleString("en-US");
 const compactShares = n => {
   if (!finite(n)) return "—";
@@ -294,7 +304,7 @@ function renderFacts() {
     factRow("Enterprise value", priceDependent(f.ev, "—"), f.ev?.title),
     factRow("P/E ratio", f.pe ? (f.pe.label ? na(f.pe.label) : f.pe.value.toFixed(1)) : (waitingQuote || pending) ? skel : na(), f.pe?.title),
     factRow("Revenue (TTM)", rev ? money(rev.value, cur) : pending ? skel : na(), ttmTitle(rev)),
-    factRow("Net income (TTM)", ni ? money(ni.value, cur) : pending ? skel : na(), ttmTitle(ni)),
+    factRow("Net income (TTM)", ni ? (ni.value < 0 ? `<span class="is-down">${esc(money(ni.value, cur))}</span>` : money(ni.value, cur)) : pending ? skel : na(), ttmTitle(ni)),
     factRow("Employees", prof?.employees ? integer(prof.employees.value) : profilePending ? skel : na(), prof?.employees ? "Wikidata" + (prof.employees.asOf ? ", as of " + day(prof.employees.asOf) : "") : ""),
     factRow("Headquarters", hq ? esc(hq) : (pending || profilePending) ? skel : na(), intel?.profile?.headquarters ? "SEC EDGAR business address" : hq ? "Wikidata" : ""),
     factRow("Founded", prof?.founded ? String(prof.founded) : profilePending ? skel : na(), prof?.founded ? "Wikidata" : ""),
@@ -353,11 +363,11 @@ function drawChart() {
   for (let k = 0, n = Math.round((hi - lo) / tickStep); k <= n; k++) ticks.push(lo + k * tickStep);
   const x = i => padL + (i / (pts.length - 1)) * w;
   const y = v => padT + (1 - (v - lo) / (hi - lo)) * h;
-  // V13 Halftone: the chart always draws in the palette's one warm colour (--hf-warm); direction is
-  // carried by the signed change figures above it, not by a second hue.
-  const color = CHART_WARM;
+  // The line is green when the range closed at or above where it started (the previous close on 1D) and red
+  // when below. The svg carries data-trend; CSS paints it from --hf-up / --hf-down. No fill under the line.
+  const change = finite(data.rangeChange) ? data.rangeChange : closes.at(-1) - (base ?? closes[0]);
+  const trend = change < 0 ? "down" : "up";
   const line = pts.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
-  const area = line + `L${x(pts.length - 1).toFixed(1)} ${padT + h}L${x(0).toFixed(1)} ${padT + h}Z`;
   const tz = data.timezone || "America/New_York";
   const decimals = Number.isInteger(+tickStep.toFixed(6)) ? 0 : Number.isInteger(+(tickStep * 10).toFixed(6)) ? 1 : 2;
   const yLabels = ticks.map(v => `<line class="grid" x1="${padL}" x2="${padL + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${padL + w + 12}" y="${(y(v) + 4).toFixed(1)}">${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</text>`).join("");
@@ -370,15 +380,13 @@ function drawChart() {
     lastRight = left + width;
     return `<line class="tick" x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${padT + h}" y2="${padT + h + 5}"/><text class="axis axis--x" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${anchor}">${esc(text)}</text>`;
   }).join("");
-  const gid = "cx-fill-" + state.range;
   const first = pts[0][0], last = pts.at(-1)[0];
-  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }))}. Use arrow keys to inspect prices.">
-    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".42"/><stop offset=".7" stop-color="${color}" stop-opacity=".1"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+  const moved = finite(change) ? `, ${trend} ${money(Math.abs(change), data.currency, { precise: true })}${finite(data.rangeChangePercent) ? " (" + Math.abs(data.rangeChangePercent).toFixed(2) + "%)" : ""}` : "";
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-trend="${trend}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }) + moved)}. Use arrow keys to inspect prices.">
     ${yLabels}${xLabels}
     ${base != null ? `<line class="baseline" x1="${padL}" x2="${padL + w}" y1="${y(base).toFixed(1)}" y2="${y(base).toFixed(1)}"><title>Previous close ${money(base, data.currency, { precise: true })}</title></line>` : ""}
-    <path d="${area}" fill="url(#${gid})"/>
-    <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g class="cx-hover" opacity="0"><line class="cross" y1="${padT}" y2="${padT + h}"/><circle class="dot" r="5" fill="${color}"/></g>
+    <path class="cx-line" d="${line}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g class="cx-hover" opacity="0"><line class="cross" y1="${padT}" y2="${padT + h}"/><circle class="dot" r="5" fill="currentColor"/></g>
   </svg>`;
   const svg = host.querySelector("svg"), hover = svg.querySelector(".cx-hover"), cross = hover.querySelector("line"), dot = hover.querySelector("circle");
   const tip = document.createElement("div");
@@ -410,6 +418,14 @@ function drawChart() {
     show(e.key === "Home" ? 0 : e.key === "End" ? pts.length - 1 : cur + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
   });
 }
+/* "▲ +2.00 (+0.90%)": the move in the quote's currency to the cent, then in percent. The glyph, the sign and the
+ * colour class all say which way the price moved. */
+function moveHTML(amount, percent) {
+  const lead = finite(amount) ? amount : percent, trend = trendOf(lead), sign = trend === "up" ? "+" : trend === "down" ? "−" : "";
+  const abs = finite(amount) ? sign + Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  const pct = finite(percent) ? sign + Math.abs(percent).toFixed(2) + "%" : "";
+  return { trend, html: glyph(lead) + esc(abs && pct ? `${abs} (${pct})` : abs || pct) };
+}
 function renderQuote() {
   const q = quote(), series = state.market[state.range];
   for (const b of document.querySelectorAll("[data-range]")) { const on = b.dataset.range === state.range; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
@@ -421,12 +437,13 @@ function renderQuote() {
   $("cx-price").textContent = money(q.price, q.currency, { precise: true });
   const change = $("cx-change");
   if (finite(q.change) && finite(q.changePercent)) {
-    change.textContent = `${q.change >= 0 ? "+" : "−"}${Math.abs(q.change).toFixed(2)} (${q.changePercent >= 0 ? "+" : "−"}${Math.abs(q.changePercent).toFixed(2)}%)`;
-    change.className = "cx-change " + (q.change >= 0 ? "is-up" : "is-down");
-  } else { change.textContent = ""; }
+    const move = moveHTML(q.change, q.changePercent);
+    change.innerHTML = move.html;
+    change.className = "cx-change is-" + move.trend;
+  } else { change.textContent = ""; change.className = "cx-change"; }
   const when = q.marketTime ? new Date(q.marketTime).toLocaleString("en-US", { timeZone: q.timezone || "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : "";
-  const rangePart = series && finite(series.rangeChangePercent) && state.range !== "1D"
-    ? ` · <span class="${series.rangeChangePercent >= 0 ? "is-up" : "is-down"}">${series.rangeChangePercent >= 0 ? "+" : "−"}${Math.abs(series.rangeChangePercent).toFixed(2)}%</span> past ${esc({ "1W": "week", "1M": "month", "3M": "3 months", "1Y": "year", "5Y": "5 years" }[state.range])}` : "";
+  const range = series && finite(series.rangeChangePercent) && state.range !== "1D" ? moveHTML(series.rangeChange, series.rangeChangePercent) : null;
+  const rangePart = range ? ` · <span class="cx-move is-${range.trend}">${range.html}</span> past ${esc({ "1W": "week", "1M": "month", "3M": "3 months", "1Y": "year", "5Y": "5 years" }[state.range])}` : "";
   $("cx-quote-meta").innerHTML = esc((q.marketState === "open" ? "Delayed" : "At close") + (when ? " · " + when : "")) + rangePart;
   const src = series?.source || q.source;
   $("cx-chart-source").innerHTML = `Delayed price data from <a href="${esc(safeUrl(src?.url, ["yahoo.com"]) || "https://finance.yahoo.com")}" target="_blank" rel="noopener noreferrer">${esc(src?.name || "Yahoo Finance")}</a>. Not a trading quote.`;
@@ -456,7 +473,7 @@ function spark(points) {
   const xs = points.slice(-8);
   if (!xs.length) return '<span class="cx-spark" aria-hidden="true"></span>';
   const max = Math.max(...xs.map(p => Math.abs(p.value)), 1);
-  return `<span class="cx-spark" aria-hidden="true">${xs.map(p => `<i class="${p.value < 0 ? "neg" : ""}" style="height:${Math.max(10, Math.abs(p.value) / max * 100).toFixed(0)}%"></i>`).join("")}</span>`;
+  return `<span class="cx-spark" aria-hidden="true">${xs.map(p => `<i class="${p.value < 0 ? "neg" : ""}" title="FY${esc(String(p.periodEnd || "").slice(0, 4))}: ${esc(money(p.value, currency()))}" style="height:${Math.max(10, Math.abs(p.value) / max * 100).toFixed(0)}%"></i>`).join("")}</span>`;
 }
 function renderOverviewFinancials() {
   const host = $("cx-fin-rows");
@@ -481,11 +498,10 @@ function renderOverviewFilings() {
 }
 function activity() { return state.insiders?.activity || []; }
 function amountCell(a) {
-  const cur = "USD";
   if (finite(a.netShares) && a.netShares !== 0) {
-    return `<div class="cx-amount"><strong class="${a.netShares > 0 ? "is-up" : "is-down"}">${signed(a.netShares)}</strong><span>${finite(a.value) ? money(a.value, cur) : esc(a.codeLabel || "")}</span></div>`;
+    return `<div class="cx-amount"${a.codeLabel ? ` title="${esc(a.codeLabel)}"` : ""}><strong class="is-${insiderDir(a) || "flat"}">${glyphDir(insiderDir(a))}${signed(a.netShares)}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : esc(a.codeLabel || "")}</span></div>`;
   }
-  return `<div class="cx-amount"><strong class="is-flat">${esc(a.codeLabel || "Reported")}</strong><span>${finite(a.value) ? money(a.value, cur) : "Form " + esc(a.form || "4")}</span></div>`;
+  return `<div class="cx-amount"><strong class="is-flat">${esc(a.codeLabel || "Reported")}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : "Form " + esc(a.form || "4")}</span></div>`;
 }
 function renderOverviewInsiders() {
   const host = $("cx-insider-rows");
@@ -517,9 +533,9 @@ function renderAbout() {
 }
 
 /* ---------- financials tab ---------- */
-function tile(label, value, sub = "", source = "") {
+function tile(label, value, sub = "", source = "", tone = "") {
   const link = source ? `<a href="${esc(source)}" target="_blank" rel="noopener noreferrer">SEC source</a>` : "";
-  return `<div class="cx-tile"><span>${esc(label)}</span><strong>${value}</strong>${sub || link ? `<small>${esc(sub)}${sub && link ? " · " : ""}${link}</small>` : ""}</div>`;
+  return `<div class="cx-tile"><span>${esc(label)}</span><strong${tone ? ` class="is-${tone}"` : ""}>${value}</strong>${sub || link ? `<small>${esc(sub)}${sub && link ? " · " : ""}${link}</small>` : ""}</div>`;
 }
 function renderFinancials() {
   const intel = state.intel, cur = currency();
@@ -535,13 +551,15 @@ function renderFinancials() {
   const rev = ttm("revenue"), gp = ttm("grossProfit"), op = ttm("operatingIncome"), ni = ttm("netIncome"), eps = ttm("eps"), ocf = ttm("operatingCashFlow"), capex = ttm("capex");
   const tiles = [];
   if (rev) tiles.push(tile("Revenue", esc(money(rev.value, cur)), period(rev), secUrl(rev.sources?.at(-1))));
-  if (gp) tiles.push(tile("Gross profit", esc(money(gp.value, cur)), period(gp) + margin(gp, rev), secUrl(gp.sources?.at(-1))));
-  if (op) tiles.push(tile("Operating income", esc(money(op.value, cur)), period(op) + margin(op, rev), secUrl(op.sources?.at(-1))));
-  if (ni) tiles.push(tile("Net income", esc(money(ni.value, cur)), period(ni) + margin(ni, rev), secUrl(ni.sources?.at(-1))));
-  if (eps) tiles.push(tile("Diluted EPS", esc(money(eps.value, cur, { precise: true })), period(eps), secUrl(eps.sources?.at(-1))));
-  if (ocf) tiles.push(tile("Operating cash flow", esc(money(ocf.value, cur)), period(ocf), secUrl(ocf.sources?.at(-1))));
+  // A reported loss carries its "−" and prints red; positive results stay ink.
+  const loss = m => m.value < 0 ? "down" : "";
+  if (gp) tiles.push(tile("Gross profit", esc(money(gp.value, cur)), period(gp) + margin(gp, rev), secUrl(gp.sources?.at(-1)), loss(gp)));
+  if (op) tiles.push(tile("Operating income", esc(money(op.value, cur)), period(op) + margin(op, rev), secUrl(op.sources?.at(-1)), loss(op)));
+  if (ni) tiles.push(tile("Net income", esc(money(ni.value, cur)), period(ni) + margin(ni, rev), secUrl(ni.sources?.at(-1)), loss(ni)));
+  if (eps) tiles.push(tile("Diluted EPS", esc(money(eps.value, cur, { precise: true })), period(eps), secUrl(eps.sources?.at(-1)), loss(eps)));
+  if (ocf) tiles.push(tile("Operating cash flow", esc(money(ocf.value, cur)), period(ocf), secUrl(ocf.sources?.at(-1)), loss(ocf)));
   if (capex) tiles.push(tile("Capital expenditure", esc(money(capex.value, cur)), period(capex), secUrl(capex.sources?.at(-1))));
-  if (ocf && capex && ocf.periodEnd === capex.periodEnd) tiles.push(tile("Free cash flow", esc(money(ocf.value - capex.value, cur)), period(ocf) + " · operating cash flow − capex"));
+  if (ocf && capex && ocf.periodEnd === capex.periodEnd) tiles.push(tile("Free cash flow", esc(money(ocf.value - capex.value, cur)), period(ocf) + " · operating cash flow − capex", "", ocf.value - capex.value < 0 ? "down" : ""));
   $("cx-ttm-tiles").innerHTML = tiles.join("") || '<p class="cx-empty">No trailing financial measures are available in this company\'s SEC XBRL data.</p>';
   renderAnnualChart();
   const defs = [["Revenue", "revenue"], ["Gross profit", "grossProfit"], ["Operating income", "operatingIncome"], ["Net income", "netIncome"], ["Operating cash flow", "operatingCashFlow"], ["Capital expenditure", "capex"], ["Total assets", "assets"], ["Total liabilities", "liabilities"], ["Shareholders' equity", "equity"], ["Cash & equivalents", "cash"]];
@@ -612,8 +630,8 @@ function renderInsiders() {
   const sum = (xs, f) => xs.reduce((s, a) => s + (finite(f(a)) ? f(a) : 0), 0);
   const oldest = all.map(a => a.filedAt).sort()[0];
   $("cx-insider-summary").innerHTML = [
-    tile("Open-market buys", esc(String(buys.length)), buys.length ? `${compactShares(sum(buys, a => a.netShares))} shares · ${money(sum(buys, a => a.value))}` : "None in these filings"),
-    tile("Open-market sales", esc(String(sells.length)), sells.length ? `${compactShares(Math.abs(sum(sells, a => a.netShares)))} shares · ${money(sum(sells, a => a.value))}` : "None in these filings"),
+    tile("Open-market buys", esc(String(buys.length)), buys.length ? `${integer(sum(buys, a => a.netShares))} shares · ${dollars(sum(buys, a => a.value))}` : "None in these filings", "", buys.length ? "up" : ""),
+    tile("Open-market sales", esc(String(sells.length)), sells.length ? `${integer(Math.abs(sum(sells, a => a.netShares)))} shares · ${dollars(sum(sells, a => a.value))}` : "None in these filings", "", sells.length ? "down" : ""),
     tile("Insiders reporting", esc(String((state.insiders.people || []).length)), "Officers, directors and 10% owners"),
     tile("Filings reviewed", esc(String(all.length)), oldest ? "Filed since " + day(oldest) : "")
   ].join("");
@@ -626,8 +644,8 @@ function renderInsiders() {
     return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
       <td>${esc(a.codeLabel || "Reported transaction")}${extra}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
       <td>${esc(day(a.transactionDate))}</td><td>${esc(day(a.filedAt))}</td>
-      <td class="num ${finite(a.netShares) && a.netShares !== 0 ? (a.netShares > 0 ? "is-up" : "is-down") : ""}">${finite(a.netShares) ? signed(a.netShares) : "—"}</td>
-      <td class="num">${finite(a.value) ? esc(money(a.value)) : "—"}</td><td class="num">${finite(a.sharesAfter) ? esc(integer(a.sharesAfter)) : "—"}</td>
+      <td class="num ${finite(a.netShares) && a.netShares !== 0 && insiderDir(a) ? "is-" + insiderDir(a) : ""}">${finite(a.netShares) ? glyphDir(insiderDir(a)) + signed(a.netShares) : "—"}</td>
+      <td class="num">${finite(a.value) ? esc(dollars(a.value)) : "—"}</td><td class="num">${finite(a.sharesAfter) ? esc(integer(a.sharesAfter)) : "—"}</td>
       <td class="num">${secUrl(a.sourceUrl) ? `<a href="${esc(secUrl(a.sourceUrl))}" target="_blank" rel="noopener noreferrer">Form ${esc(a.form || "4")} ${EXT}</a>` : ""}</td></tr>`;
   }).join("") : `<tr><td colspan="8"><p class="cx-empty">${all.length ? "No transactions match this filter." : "No Form 4 insider filings were found for this company."}</p></td></tr>`;
 }
