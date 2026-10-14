@@ -6,7 +6,8 @@ import { commonsFileUrl, parseProfile, parsePeople, namesMatch, profileQuery } f
 import { ownershipUrls, recentOwnershipFilings, summarizeOwnershipFiling, ownerRole, summarizePeople } from "../src/insiders.mjs";
 import { parseHeadlines, parseSearchNews, focusHeadlines, relevanceTerms, mergeHeadlines, announcementsFromFilings } from "../src/news.mjs";
 import { rankCompanies } from "../src/search.mjs";
-import { handleCompanyRoute, parseTicker, clientAddress } from "../src/company-routes.mjs";
+import { handleCompanyRoute, parseTicker, clientAddress, isCompanyRoute } from "../src/company-routes.mjs";
+import { secReady } from "../src/config.mjs";
 import { allowedExternalUrl } from "../src/external.mjs";
 
 const CIK = "0001045810", ACC = "0001045810-26-000075";
@@ -235,6 +236,14 @@ test("company routes validate input before any upstream request", async () => {
   assert.equal((await call("/v1/company/profile?ticker=bad!ticker")).status, 400);
   const empty = await call("/v1/search?q=");
   assert.deepEqual(empty.body, { items: [] });
+  // The media batch validates its lists before it needs the SEC ticker file.
+  assert.equal(isCompanyRoute("/v1/media"), true);
+  assert.equal(isCompanyRoute("/v1/media/" + "a".repeat(64) + ".webp"), true);
+  assert.equal(isCompanyRoute("/v1/media/x"), false);
+  for (const path of ["/v1/media", "/v1/media?tickers=bad!", "/v1/media?people=AAPL", "/v1/media?ciks=0",
+    "/v1/media?tickers=" + Array.from({ length: 61 }, (_, i) => "T" + i).join(","), "/v1/media?people=" + Array.from({ length: 101 }, (_, i) => (i + 1) + ":AAPL").join(",")])
+    assert.equal((await call(path)).status, 400, path);
+  if (!secReady()) assert.deepEqual(await call("/v1/media?tickers=AAPL"), { status: 503, error: "SEC_USER_AGENT not configured for official SEC research" });
   assert.equal(parseTicker("brk.b"), "BRK-B");
   assert.equal(clientAddress({ headers: { "x-forwarded-for": "6.6.6.6, 203.0.113.9" }, socket: { remoteAddress: "10.0.0.1" } }), "203.0.113.9");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "10.0.0.1" } }), "10.0.0.1");

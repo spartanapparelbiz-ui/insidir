@@ -61,6 +61,7 @@ export function isApiPath(pathname) {
 
 /* Removing your own data never needs a subscription: a member whose subscription has
  * lapsed can still revoke a brokerage read grant and delete saved items one by one. */
+const MEDIA_FILE = /^\/v1\/media\/[a-f0-9]{64}\.(png|webp|jpeg|svg)$/;
 const OWN_DATA_DELETES = [/^\/v1\/me\/brokerage$/, /^\/v1\/me\/research-decisions$/,
   /^\/v1\/me\/(watchlist|people|manual-holdings)\/[^/]+$/];
 
@@ -77,6 +78,10 @@ export function classifyApi(pathname, method = "GET") {
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/")) return "open";
   // Server-to-server ingestion has its own bearer secret; it is not product data.
   if (p === "/v1/internal/ingest") return "open";
+  // A prepared logo or headshot by content address: an unguessable, immutable public image (the
+  // batch that names it, /v1/media, stays product). Open, so no session lookup per <img> and it
+  // can be cached publicly.
+  if (MEDIA_FILE.test(p) && (m === "GET" || m === "HEAD")) return "open";
   if (m === "DELETE" && OWN_DATA_DELETES.some(rule => rule.test(p))) return "account";
   return "product";
 }

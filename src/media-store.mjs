@@ -48,6 +48,24 @@ export async function getMedia(sha) {
   return item;
 }
 
+/* Whether the bytes for a content address are stored, without loading them (getMedia selects
+ * the whole image). Stored images are never deleted from the database, so a positive answer is
+ * remembered; a miss is asked again next time. */
+const present = new Set();
+export async function hasMedia(sha) {
+  if (!/^[a-f0-9]{64}$/.test(String(sha || ""))) return false;
+  if (media.has(sha) || present.has(sha)) return true;
+  const row = (await db("SELECT 1 FROM entity_media WHERE sha256=$1", [sha]))?.rows?.[0];
+  if (!row) return false;
+  if (present.size >= 50000) present.delete(present.values().next().value);
+  present.add(sha);
+  return true;
+}
+/* "/v1/media/<sha>.<ext>" -> sha, or null. */
+export function mediaSha(src) {
+  return /^\/v1\/media\/([a-f0-9]{64})\.(?:png|webp|jpeg|svg)$/.exec(String(src || ""))?.[1] || null;
+}
+
 export async function getRecord(kind, key) {
   const id = kind + ":" + key, hit = records.get(id);
   if (hit && hit.expiresAt > Date.now()) return hit.value;

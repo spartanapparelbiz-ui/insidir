@@ -72,6 +72,14 @@ test("API: open endpoints, product endpoints for every method, unknown routes fa
     for (const method of ["DELETE", "delete"]) assert.equal(classifyApi(path, method), "account", method + " " + path);
     for (const method of ["GET", "HEAD", "POST"]) assert.equal(classifyApi(path, method), "product", method + " " + path);
   }
+  // Prepared images by content address are open (no session lookup per <img>); the batch that names them is product.
+  const sha = "0123456789abcdef".repeat(4);
+  for (const ext of ["png", "webp", "jpeg", "svg"]) for (const method of ["GET", "HEAD", "head"])
+    assert.equal(classifyApi("/v1/media/" + sha + "." + ext, method), "open", method + " " + ext);
+  for (const method of ["POST", "DELETE"]) assert.equal(classifyApi("/v1/media/" + sha + ".png", method), "product", method);
+  for (const path of ["/v1/media", "/v1/media/", "/v1/media/x", "/v1/media/" + sha, "/v1/media/" + sha + ".gif", "/v1/media/" + sha.toUpperCase() + ".png",
+    "/v1/media/" + sha.slice(1) + ".png", "/v1/media/" + sha + ".png/x", "/v1/media/" + sha + "0.png", "/v1/media/%30" + sha.slice(1) + ".png"])
+    for (const method of ["GET", "HEAD"]) assert.equal(classifyApi(path, method), "product", method + " " + path);
   assert.equal(isApiPath("/v1"), true);
   assert.equal(isApiPath("/v1x"), false);
   assert.equal(isApiPath("/V1/filings"), false);
@@ -738,7 +746,7 @@ test("router: product pages redirect with no-store before any page is served", a
     for (const sid of ["paid", "owner"]) {
       r = await send(base, "/dashboard.html", as(sid));
       assert.equal(r.status, 200, sid);
-      assert.match(r.text, /id="v3-filings"/);
+      assert.match(r.text, /id="v3-trades"/);
     }
     // Account pages: sign-in required, subscription not.
     r = await send(base, "/billing.html");
@@ -882,7 +890,7 @@ test("router: when the session cannot be checked, pages get a readable 503 and s
       assert.match(r.text, /<title>Temporarily unavailable/);
       assert.match(r.text, /href="\/company\.html\?ticker=AAPL">Try again/);
       assert.match(r.text, /class="v13-footer v13-footer--plain"/);
-      assert.doesNotMatch(r.text, /id="v3-filings"|data-greeting/, "none of the product page is served");
+      assert.doesNotMatch(r.text, /id="v3-trades"|id="v3-filings"|data-greeting/, "none of the product page is served");
       r = await send(base, "/account", { method: "HEAD", ...as("none") });
       assert.deepEqual([r.status, r.text], [503, ""]);
       r = await send(base, "/v1/filings", as("paid"));
@@ -900,4 +908,28 @@ test("router: when the session cannot be checked, pages get a readable 503 and s
   assert.match(page, /href="\/company\.html\?ticker=A%27B&amp;x=%3Cy%3E">Try again/);
   assert.match(unavailablePage(new URL("/x%2f..%2fdashboard.html", "http://localhost")), /href="\/dashboard\.html">Try again/);
   assert.match(unavailablePage(new URL("/nope", "http://localhost")), /href="\/">Try again/);
+});
+
+test("router: prepared images are served signed out with no session lookup; the media batch stays behind the paywall", async () => {
+  const { putMedia } = await import("../src/media-store.mjs");
+  const bytes = Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000", "hex");
+  const saved = await putMedia({ bytes, type: "png", width: 1, height: 1 });
+  await withApi(ON, async (base, loads) => {
+    loads.length = 0;
+    let r = await send(base, saved.url);
+    assert.equal(r.status, 200);
+    assert.equal(r.headers["content-type"], "image/png");
+    assert.equal(r.headers["cache-control"], "public, max-age=31536000, immutable");
+    assert.equal(r.headers.vary, undefined, "not varied by Cookie: any cache may keep it");
+    r = await send(base, saved.url, { method: "HEAD", ...as("lapsed") });
+    assert.equal(r.status, 200);
+    assert.equal((await send(base, "/v1/media/" + "f".repeat(64) + ".webp")).status, 404, "unknown content address");
+    assert.equal(loads.length, 0, "no session lookup for an image");
+    // The batch that names images is product data like the rest of the API.
+    assert.equal((await send(base, "/v1/media?tickers=AAPL")).status, 401);
+    assert.equal((await send(base, "/v1/media?tickers=AAPL", as("lapsed"))).status, 402);
+    r = await send(base, "/v1/media?tickers=bad!", as("paid"));
+    assert.equal(r.status, 400, "a member reaches the handler, which validates before any upstream request");
+    assert.equal(r.headers["cache-control"], "no-store");
+  });
 });

@@ -9,6 +9,7 @@ import { getHeadlines, announcementsFromFilings, focusHeadlines, relevanceTerms 
 import { searchCompanies } from "./search.mjs";
 import { getMedia } from "./media-store.mjs";
 import { sendImage } from "./media.mjs";
+import { parseMediaQuery, mediaBatch, mediaPending } from "./media-batch.mjs";
 
 const failure = (status, message) => Object.assign(new Error(message), { status });
 const hits = new Map();
@@ -51,13 +52,16 @@ const upstream = (label, error) => {
 };
 const notListed = () => failure(404, "Ticker not found in the SEC's official company mapping. This does not establish that a company does not exist.");
 
-const ROUTES = new Set(["/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news", "/v1/company/logo", "/v1/company/photos"]);
+const ROUTES = new Set(["/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news", "/v1/company/logo", "/v1/company/photos", "/v1/media"]);
 const MEDIA_PATH = /^\/v1\/media\/([a-f0-9]{64})\.(png|webp|jpeg|svg)$/;
 export function isCompanyRoute(pathname) { return ROUTES.has(pathname) || MEDIA_PATH.test(pathname); }
 const optional = async path => { try { return await import(path); } catch { return null; } };
 
-/* Returns false when the path is not a company route; otherwise responds or throws {status}. */
-export async function handleCompanyRoute(req, res, url, { loadTransactions = async () => [] } = {}) {
+/* Returns false when the path is not a company route; otherwise responds or throws {status}.
+ * loadOwners(pairs [{cik, ticker}]) -> [{owner_cik, ticker, owner_name}] confirms reporting owners
+ * from the engine's SEC import for GET /v1/media (the website preview has no database: []).
+ * mediaDeps replaces the media batch's resolvers in tests. */
+export async function handleCompanyRoute(req, res, url, { loadTransactions = async () => [], loadOwners = async () => [], mediaDeps = null } = {}) {
   const p = url.pathname;
   if (!isCompanyRoute(p)) return false;
   if (req.method !== "GET" && req.method !== "HEAD") throw failure(405, "Method not allowed");
@@ -70,6 +74,23 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     if (!item) throw failure(404, "Media not found");
     const type = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpeg", "image/svg+xml": "svg" }[item.mime];
     return sendImage(res, { bytes: item.bytes, type }, 31536000, { "Cache-Control": "public, max-age=31536000, immutable" }), true;
+  }
+
+  // Logos and headshots for a whole page in one request; see src/media-batch.mjs.
+  if (p === "/v1/media") {
+    if (limited("media:" + ip, 120)) throw failure(429, "Too many media requests. Try again shortly.");
+    const query = parseMediaQuery(url);
+    requireSec();
+    let body;
+    try { body = await mediaBatch(query, { ...(mediaDeps || {}), loadOwners: mediaDeps?.loadOwners || loadOwners }); } catch (e) { upstream("Company media", e); }
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      // Pending keys are asked for again shortly, so only a settled answer may be reused.
+      "Cache-Control": mediaPending(body) ? "no-store" : "private, max-age=300",
+      "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+    });
+    return res.end(JSON.stringify(body)), true;
   }
 
   if (p === "/v1/search") {
@@ -145,7 +166,7 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     let state;
     try { state = await companyPhotos(t, { wait }); } catch (e) { upstream("People photos", e); }
     if (!state) throw notListed();
-    return send(res, 200, { ticker: t, complete: Boolean(state.complete), photos: state.photos || {}, names: state.names || {}, leaders: state.leaders || [], sources: state.sources || {},
+    return send(res, 200, { ticker: t, complete: Boolean(state.complete), ...(state.queued ? { queued: true } : {}), photos: state.photos || {}, names: state.names || {}, leaders: state.leaders || [], sources: state.sources || {},
       coverage: state.coverage || null, updatedAt: state.updatedAt || null,
       note: "Photos come from Wikimedia Commons, the company's own website or its SEC proxy statement and are matched to SEC reporting owners by name and company. People without a verified photo show initials." }, state.complete ? 3600 : 0), true;
   }

@@ -225,7 +225,7 @@ export async function readPortfolio(userId) {
   const tickers=[...researchTickers].slice(0,70);
   let recent=[];
   if(tickers.length){
-    const q=await query(`SELECT DISTINCT ON (t.ticker) t.ticker,t.owner_name,t.category,
+    const q=await query(`SELECT DISTINCT ON (t.ticker) t.ticker,t.owner_cik,t.owner_name,t.category,
       t.transaction_date,t.source_url,f.published_at
       FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
       WHERE t.ticker=ANY($1::text[]) AND f.ingest_status='parsed'

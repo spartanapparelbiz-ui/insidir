@@ -11,6 +11,7 @@ import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavail
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute } from "./company-routes.mjs";
+import { loadOwnersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -169,7 +170,9 @@ async function route(req,res,ctx){
       t.transaction_code,t.derivative,t.estimated_value,t.source_url,f.published_at
       FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
       WHERE t.ticker=$1 AND f.ingest_status='parsed'
-      ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST LIMIT 30`,[t]).catch(()=>({rows:[]}))).rows});
+      ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST LIMIT 30`,[t]).catch(()=>({rows:[]}))).rows,
+      // GET /v1/media confirms reporting owners (and their filed names) from the SEC import.
+      loadOwners:pairs=>loadOwnersFrom(ctx.query,pairs)});
     if(handled!==false)return;
   }
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe}); if(result!==false) return result; }
@@ -291,7 +294,7 @@ async function route(req,res,ctx){
     const tickers=holdings.rows.map(row=>row.ticker);
     let secItems=[];
     if(tickers.length){
-      const records=await query(`SELECT DISTINCT ON(t.ticker) t.ticker,t.owner_name,t.category,t.transaction_date,
+      const records=await query(`SELECT DISTINCT ON(t.ticker) t.ticker,t.owner_cik,t.owner_name,t.category,t.transaction_date,
         t.source_url,f.published_at
         FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
         WHERE t.ticker=ANY($1::text[]) AND f.ingest_status='parsed'
@@ -334,7 +337,7 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req,ctx);
-    const results=await query(`SELECT t.id,t.ticker,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
+    const results=await query(`SELECT t.id,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
       FROM sec_transactions t JOIN watchlist w ON w.ticker=t.ticker
       JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
