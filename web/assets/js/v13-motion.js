@@ -239,7 +239,7 @@
      is pending under reduced motion, without IntersectionObserver, or when printing; a jump past a block
      (a link to the footer, a restored scroll position) shows it at once. */
   const REVEAL = "[data-hf-reveal],[data-hf-reveal-group]>*,footer .hwf-top>*";
-  const REVEAL_MS = 1150;    // the spring's settling time plus the longest stagger
+  const REVEAL_MS = 1000;    // the spring's settling time (950ms), after the block's own stagger
   const seen = new WeakSet(), waiting = new Set();
   let revealIO = null, settledAll = false;
   function release(el, i) {
@@ -250,10 +250,14 @@
     el.classList.remove("hf-pending");
     setTimeout(() => { el.classList.remove("hf-revealing"); el.style.removeProperty("--hf-i"); measure(); }, REVEAL_MS + Math.min(i || 0, 6) * 70);
   }
+  // Shown in place at once: the block's own transitions are held off for two frames (an inline !important
+  // outranks every stylesheet), so nothing slides or fades in from the waiting state.
   function releaseNow(el) {
     if (!waiting.delete(el)) return;
     if (revealIO) revealIO.unobserve(el);
+    el.style.setProperty("transition", "none", "important");
     el.classList.remove("hf-pending", "hf-revealing");
+    requestAnimationFrame(() => requestAnimationFrame(() => el.style.removeProperty("transition")));
   }
   function revealAll() { settledAll = true; for (const el of [...waiting]) releaseNow(el); measure(); }
   function scanReveal() {
@@ -267,10 +271,13 @@
     const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     for (const el of document.querySelectorAll(REVEAL)) {
       if (seen.has(el)) continue;
-      seen.add(el);
-      if (el.closest("[hidden]") || el.matches(".hf-no-reveal,[data-hf-still]")) continue;
+      if (el.matches(".hf-no-reveal,[data-hf-still]")) { seen.add(el); continue; }
+      // Inside something hidden, or not laid out yet (a closed tab, an empty panel): looked at again on a
+      // later scan, once it is shown.
+      if (el.closest("[hidden]")) continue;
       const r = el.getBoundingClientRect();
-      if (r.height === 0 && r.width === 0) continue; // not rendered yet: picked up on a later scan only if new
+      if (r.height === 0 && r.width === 0) continue;
+      seen.add(el);
       if (r.top < limit) continue;                  // on screen (or above it): never hidden
       if (r.top + window.scrollY - maxY > window.innerHeight * 0.88) continue; // the page cannot scroll it into view
       el.classList.add("hf-pending");
@@ -279,12 +286,18 @@
     }
   }
   // A jump past pending blocks never intersects them: show everything at or above the viewport's bottom.
+  // Blocks jumped right past (now above the viewport) are simply shown; those in view rise a beat apart.
   function sweepReveal() {
     if (!waiting.size) return;
     const limit = window.innerHeight * 0.93;
     const bottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
-    let i = 0;
-    for (const el of [...waiting]) if (bottom || el.getBoundingClientRect().top < limit) release(el, i++);
+    const due = [];
+    for (const el of [...waiting]) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= 0) releaseNow(el);
+      else if (bottom || r.top < limit) due.push([el, r]);
+    }
+    due.sort((a, b) => a[1].top - b[1].top || a[1].left - b[1].left).forEach(([el], i) => release(el, i));
   }
 
   /* ---------- lifecycle ---------- */
@@ -304,6 +317,8 @@
       wake(); // the scroll trail
     }, { passive: true });
     window.addEventListener("beforeprint", revealAll);
+    // Focus that lands inside a waiting block (a script focusing a card it just added) shows it at once.
+    document.addEventListener("focusin", e => { const b = e.target && e.target.closest && e.target.closest(".hf-pending"); if (b) release(b, 0); });
     // A reveal or slide that moved a container has moved its atoms' homes too.
     let tq = 0;
     const settled = e => {

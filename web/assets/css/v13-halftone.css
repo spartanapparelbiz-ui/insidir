@@ -132,7 +132,8 @@ body.v13 :is(.v13-caption,.v12-preview-note,.v12-pricing-note,.v12-photo-note,.v
   :where(#v12-demo-period,#v12-demo-cik),.v12-aside-fact small,.v12-aside-note,.v12-aside-bottom p,.v12-state,.v6-live__empty,.v3-empty,.cl-status,.cl-finish p,.v9-desk__disclosure,.v3-bottom-note p,.v3-price__note,.auth-legal,.auth-switch,.field__msg,.field__error,.form-alert__text,
   .v12-questions details>p,.v3-static__footer-inner,.v2-notfound footer,.v12-faq p:not(.v12-eyebrow),.research-small,.research-explain,.portfolio-note,.cx-description small,.cx-note,.v3-account__hint,.v4-data-strip__item strong,.v12-company-top p,.v9-desk__section-title>span,.v12-split-heading>div:last-child p,.cl-top p,.v3-intro p:last-child){
   font-family:var(--hf-mono)!important;font-size:11px!important;font-weight:400!important;line-height:1.8!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-muted)!important}
-body.v13 .field__error{color:var(--hf-alert)!important}
+/* Errors are red: doubled classes outrank the caption rule above, whose :is() list reaches (0,3,3). */
+body.v13 .field__error.field__error.field__error{color:var(--hf-alert)!important}
 
 /* ---------- Logo ---------- */
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.app-header .logo,.v2-notfound header .logo,.v13-logo){

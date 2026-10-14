@@ -96,7 +96,7 @@ const WATCH_WRITES = () => {
     .observe(document, { subtree: true, attributes: true, attributeFilter: ["style"], attributeOldValue: true });
 };
 /* What v13-motion.js should hold back: the same rule it applies (a block marked for reveal that is rendered and
-   below 92% of the viewport the first time it is scanned, and that the page can scroll into view), applied right
+   below 92% of the viewport the first time it is scanned while shown, and that the page can scroll into view), applied right
    after each of its scans: once it has started (InsidirMotion is assigned after start() ran or was scheduled), and
    after each of its 120ms refreshes, which follow the same mutations. Blocks seen on screen first and pushed down
    later by content loading above them are rightly never hidden, so they are not expected to wait. */
@@ -107,10 +107,12 @@ const REVEAL_ORACLE = () => {
     const limit = innerHeight * 0.92, maxY = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     for (const el of document.querySelectorAll(SEL)) {
       if (seen.has(el)) continue;
-      seen.add(el);
-      if (el.closest("[hidden]") || el.matches(".hf-no-reveal,[data-hf-still]")) continue;
+      if (el.matches(".hf-no-reveal,[data-hf-still]")) { seen.add(el); continue; }
+      // Hidden or not laid out yet: considered again on a later scan, once shown (as the core does).
+      if (el.closest("[hidden]")) continue;
       const r = el.getBoundingClientRect();
       if (r.height === 0 && r.width === 0) continue;
+      seen.add(el);
       if (r.top < limit) continue;
       if (r.top + scrollY - maxY > innerHeight * 0.88) continue;
       expect.add(el);

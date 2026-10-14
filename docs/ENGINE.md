@@ -166,6 +166,8 @@ Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.
 - POST /v1/auth/register, POST /v1/auth/login (both return `{user, access}`), POST /v1/auth/logout
 - GET /v1/me → `{user:{id,email}, access}`; DELETE /v1/me cancels the Stripe subscription first, then deletes the account
 - GET /v1/me/watchlist, POST /v1/me/watchlist with JSON {"ticker":"AAPL"}, DELETE /v1/me/watchlist/AAPL
+- GET /v1/me/people (followed reporting people), POST /v1/me/people with JSON {"owner_cik":"1214156"} (404 if the CIK is not in imported records, 409 beyond 150 follows, 429 when follow attempts are too frequent), DELETE /v1/me/people/1214156
+- GET /v1/me/people/updates?limit=40 (1-100): `people` — each followed person (most recently active first) with `owner_name`, `ticker`, `issuer_name`, `last_published_at`, `last_transaction_date`, `last` (their newest transaction line), `filings_30d`, `transactions_30d`, `purchases_30d_value`, `sales_30d_value`; `items` — the newest transaction lines by anyone followed, newest publication first; `following` — the count
 - GET /v1/me/research-decisions?ticker=AAPL; POST /v1/me/research-decisions with JSON {"ticker":"AAPL","reviewStatus":"watching","notes":"Read the original filing"}; DELETE /v1/me/research-decisions?ticker=AAPL
 - GET /v1/me/alerts – computed on demand; email/push delivery is **not** implemented
 

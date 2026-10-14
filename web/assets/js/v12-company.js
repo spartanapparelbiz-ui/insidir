@@ -563,7 +563,10 @@ function renderAbout() {
   const tagline = sentenceCase(String(prof?.motto || "").trim()) || sentenceCase(short);
   if (!tagline || !summary?.text) { about.hidden = true; overview.classList.add("no-about"); return; }
   about.hidden = false; overview.classList.remove("no-about");
-  armReveal(about.parentElement);
+  // The about column rises with the cards beside it: it is armed while they still wait below the fold (or while the
+  // panel is closed, so opening it arms them together); once they are shown it simply takes its place among them.
+  if (overview.closest("[hidden]") || overview.querySelector(".hf-pending")) armReveal(overview);
+  else about.removeAttribute("data-cx-reveal");
   $("cx-about-title").textContent = tagline;
   const s = sentences(summary.text);
   let used = s.slice(0, 2).join(" ").length > 240 ? 1 : 2;
