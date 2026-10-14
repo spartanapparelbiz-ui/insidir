@@ -60,7 +60,9 @@ function kpis(f){
 /* ---------- bought and sold, by trade date ---------- */
 const STEPS=[1,2,2.5,5,10];
 function niceStep(max,parts){const raw=max/parts,mag=Math.pow(10,Math.floor(Math.log10(raw)));const n=raw/mag;return STEPS.find(s=>s>=n-1e-9)*mag;}
-let last=null,lastLimit=0,lastTight=null;
+let last=null,lastLimit=0,lastTight=null,chartW=0;
+/* The chart's width comes from a ResizeObserver, so drawing never forces a layout of everything rendered before it. */
+const chartWidth=host=>chartW||host.clientWidth||960;
 const limitFor=w=>w>=700?14:w>=560?12:w>=480?8:6;
 const tightFor=(w,n)=>(w-64)/n<58;
 const PLOT=w=>w<560?200:w<1180-120?300:340; // the plot's height: fixed per width, so the frame never resizes with the data
@@ -74,7 +76,7 @@ function daily(f){
   if(seg)seg.hidden=true;if(table)table.innerHTML="";setView("chart",false);
   return;
  }
- const w=host.clientWidth||960,limit=lastLimit=limitFor(w),shown=all.slice(-limit);
+ const w=chartWidth(host),limit=lastLimit=limitFor(w),shown=all.slice(-limit);
  const top=Math.max(0,...shown.map(x=>x.buy)),bot=Math.max(0,...shown.map(x=>x.sell)),mx=Math.max(top,bot);
  // The nice step (1, 2, 2.5 or 5 × 10ⁿ) that wastes the least height over both sides, at most eight intervals;
  // a side that is tiny next to the other keeps a sliver, not a whole step.
@@ -235,7 +237,9 @@ D.watch(["trades"],r=>{
  D.later(3,()=>biggest(f));
 });
 let resizeTimer=0;
-addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{const host=$("rd-daily-chart");if(!last||!host||!host._days)return;const w=host.clientWidth||960,n=Math.min(limitFor(w),last.days.size);if(limitFor(w)!==lastLimit||tightFor(w,n)!==lastTight)daily(last);},150);},{passive:true});
+const resized=()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{const host=$("rd-daily-chart");if(!last||!host||!host._days)return;const w=chartWidth(host),n=Math.min(limitFor(w),last.days.size);if(limitFor(w)!==lastLimit||tightFor(w,n)!==lastTight)daily(last);},150);};
+if(window.ResizeObserver){const frame=$("rd-daily-frame");if(frame)new ResizeObserver(es=>{const w=Math.round(es[es.length-1].contentRect.width);if(w&&w!==chartW){const first=!chartW;chartW=w;if(!first)resized();}}).observe(frame);}
+else addEventListener("resize",resized,{passive:true});
 document.addEventListener("DOMContentLoaded",()=>{
  const host=$("rd-daily-chart"),tip=$("rd-tip");
  headerBottom=78;

@@ -35,28 +35,32 @@ const cikOf=x=>/^\d{1,12}$/.test(String(x??"").trim())?String(x).trim():"";
 const accession=x=>{const s=String(x||"").replace(/-/g,"");return /^\d{18}$/.test(s)?s:"";};
 const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
 const DAY=86400000;
-const fmtDate=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
-const fmtDay=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"UTC"});
+/* Intl formatters are built on first use: each one costs about a millisecond to construct, and most are only needed
+   once the data has arrived. */
+const lazy=make=>{let f=null;return {format:d=>(f||(f=make())).format(d)};};
+const fmtDate=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}));
+const fmtDay=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"UTC"}));
 const date=x=>{const d=validDate(x);return d?fmtDate.format(d):"Not reported";};
 /* Filing dates are SEC (Eastern) calendar days: a Form 4 accepted at 9:30 p.m. ET is filed that day, though it is past
    midnight UTC. Trade dates are date-only values and stay in UTC. */
-const fmtFiled=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"});
-const fmtFiledDay=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"America/New_York"});
-const yearET=new Intl.DateTimeFormat("en-US",{year:"numeric",timeZone:"America/New_York"});
-const etDay=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"});
+const fmtFiled=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"}));
+const fmtFiledDay=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"America/New_York"}));
+const yearET=lazy(()=>new Intl.DateTimeFormat("en-US",{year:"numeric",timeZone:"America/New_York"}));
+const etDay=lazy(()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}));
+const fmtStamp=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"UTC"}));
 const filedDate=x=>{const d=validDate(x);return d?fmtFiled.format(d):"Not reported";};
 const shortDate=x=>{const d=validDate(x);return d?fmtDay.format(d):"";};
 // Short forms drop the year when it is this year: "Oct 12", but "Dec 30, 2025".
 const THIS_YEAR=new Date().getFullYear();
 const tradedShort=x=>{const d=validDate(x);return !d?"":d.getUTCFullYear()===THIS_YEAR?fmtDay.format(d):fmtDate.format(d);};
 const filedShort=x=>{const d=validDate(x);return !d?"":Number(yearET.format(d))===THIS_YEAR?fmtFiledDay.format(d):fmtFiled.format(d);};
-const stamp=x=>{const d=validDate(x);return d?new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"UTC"}).format(d)+" UTC":"Not reported";};
+const stamp=x=>{const d=validDate(x);return d?fmtStamp.format(d)+" UTC":"Not reported";};
 /* Numbers: exact, never rounded to "about". */
 const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
-const USD0=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
-const USD4=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4});
-const USDC=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1});
-const QTY=new Intl.NumberFormat("en-US",{maximumFractionDigits:4});
+const USD0=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}));
+const USD4=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4}));
+const USDC=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1}));
+const QTY=lazy(()=>new Intl.NumberFormat("en-US",{maximumFractionDigits:4}));
 const MINUS="−";
 const money=x=>{const n=num(x);return n===null?"Not reported":USD0.format(n);};
 const signedMoney=n=>(n>0?"+":n<0?MINUS:"")+USD0.format(Math.abs(n));
@@ -206,7 +210,7 @@ addEventListener("pagehide",leaving);
 const importedAt=x=>{const c=Date.parse(x?.created_at);return Number.isFinite(c)?c:Date.parse(x?.published_at);};
 const isNew=x=>{if(lastSeen===null)return false;const t=importedAt(x);return Number.isFinite(t)&&t>lastSeen;};
 const NEW='<span class="rd-new">New<span class="sr-only"> since your last visit</span></span>';
-const fmtVisit=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"}),fmtVisitTime=new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit"});
+const fmtVisit=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"})),fmtVisitTime=lazy(()=>new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit"}));
 const lastVisitText=()=>lastSeen===null?"":fmtVisit.format(new Date(lastSeen))+" at "+fmtVisitTime.format(new Date(lastSeen));
 
 /* ---------- network ---------- */
@@ -289,12 +293,9 @@ function remember(){
  }),700);
 }
 /* Content replacing a skeleton fades in place over 200 ms; rows that arrive on screen rise a beat apart
-   (blocks below the fold are left to the scroll reveal in v13-motion.js). Never under reduced motion. */
-function arrive(host){
- if(!host||reduce.matches)return;
- host.classList.remove("rd-arrive");void host.offsetWidth;host.classList.add("rd-arrive");
- clearTimeout(host._arrive);host._arrive=setTimeout(()=>host.classList.remove("rd-arrive"),1300);
-}
+   (blocks below the fold are left to the scroll reveal in v13-motion.js). The class stays on the host: every child a
+   render inserts starts the animation by being new, so nothing has to be reset or re-measured. Never under reduced motion. */
+function arrive(host){if(host&&!reduce.matches)host.classList.add("rd-arrive");}
 
 /* ---------- derive(): purchases, sales and the rest, from the 100-row window ----------
    One result feeds the Today sentence and 03 Across the market, so their figures always match. An amended
@@ -483,10 +484,11 @@ function renderTradesFoot(list,matching){
  foot.innerHTML=E(shown)+(list.length?'<a href="filings.html">Browse every filing ↗</a>':'')+
   (codes.length?'<span class="rd-legend-codes">Codes: '+E(codes.map(c=>c+" "+LEGEND[c]).join(", "))+'.</span>':'');
 }
+/* While filtering, the table keeps at least the height it had (that of "All" first), so nothing below it moves.
+   Measured at the click, when the layout is already clean, never right after a render. */
 function lockTable(){
- // The table keeps the height of "All" while filtering, so nothing below it moves.
- const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap||table.filter!=="all")return;
- wrap.style.minHeight="";table.lock=wrap.offsetHeight;wrap.style.minHeight=table.lock+"px";
+ const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;
+ table.lock=Math.max(table.lock,wrap.offsetHeight);wrap.style.setProperty("min-height",table.lock+"px","important");
 }
 function renderTrades(){
  const host=$("v3-trades");if(!host)return;
@@ -494,6 +496,7 @@ function renderTrades(){
  const wrap=document.querySelector(".rd-table-wrap--trades");if(wrap&&table.filter==="all")wrap.style.removeProperty("min-height");
  remember();
  if(table.error){host.innerHTML=failRow(TRADE_COLS,"trades",table.error,"The latest trades could not be loaded");renderTradesFoot([],[]);return;}
+ table.lock=0;
  if(!table.rows)return;
  const c={};for(const k in FILTER)c[k]=table.rows.filter(FILTER[k]).length;
  document.querySelectorAll("[data-count]").forEach(el=>{el.textContent=count(c[el.dataset.count]??0);});
@@ -501,18 +504,17 @@ function renderTrades(){
  host.innerHTML=html;
  renderTradesFoot(list,matching);
  hydrate(host);arrive(host);
- requestAnimationFrame(lockTable);
 }
 let filterTimer=0;
 function setFilter(f){
  if(!(f in FILTER)||!table.rows)return;
  table.filter=f;
  document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.filter===f)));
+ lockTable();
  const host=$("v3-trades"),matching=table.rows.filter(FILTER[f]),name=FILTER_NAME[f];
  const live=$("v3-trades-status");if(live)live.textContent=f==="all"?"Showing all "+count(matching.length)+" trades":"Showing "+count(matching.length)+" "+(matching.length===1?name[0]:name[1]);
- const swap=()=>{const r=tradeRows();host.innerHTML=r.html;renderTradesFoot(r.list,r.matching);hydrate(host);host.classList.remove("is-leaving");
-  if(!reduce.matches){host.classList.remove("is-entering");void host.offsetWidth;host.classList.add("is-entering");clearTimeout(host._enter);host._enter=setTimeout(()=>host.classList.remove("is-entering"),1300);}
-  if(f==="all")requestAnimationFrame(lockTable);};
+ // The incoming rows are new elements, so the entering animation (a class kept on the body) starts on them by itself.
+ const swap=()=>{const r=tradeRows();host.innerHTML=r.html;renderTradesFoot(r.list,r.matching);hydrate(host);host.classList.remove("is-leaving");if(!reduce.matches)host.classList.add("is-entering");};
  clearTimeout(filterTimer);
  // Outgoing rows fade over 120 ms; incoming rows fade in and rise 8 px, 30 ms apart (v13-dashboard.css).
  if(reduce.matches)swap();else{host.classList.add("is-leaving");filterTimer=setTimeout(swap,120);}
@@ -521,8 +523,9 @@ watch(["trades"],r=>{
  table.rows=r.trades.ok?r.trades.value:null;table.error=r.trades.ok?null:r.trades.error;
  later(4,renderTrades);
 });
+// A new width means new row heights: the lock is measured again at the next filter click.
 let lockTimer=0;
-addEventListener("resize",()=>{clearTimeout(lockTimer);lockTimer=setTimeout(()=>{const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;if(table.filter==="all")lockTable();else{wrap.style.minHeight="";}},200);},{passive:true});
+addEventListener("resize",()=>{clearTimeout(lockTimer);lockTimer=setTimeout(()=>{const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;table.lock=0;wrap.style.removeProperty("min-height");},200);},{passive:true});
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
