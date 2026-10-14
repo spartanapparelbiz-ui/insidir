@@ -313,10 +313,6 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
   body.v13 #main .portfolio-rail{display:grid!important;grid-template-columns:1fr 1fr!important;gap:var(--desk-gap) clamp(24px,3vw,40px)!important}
   body.v13 #main .portfolio-rail .portfolio-actions>*{width:auto!important}
 }
-@media (min-width:701px){
-  body.v13 #main .alerts-panel .live-table td.buy::before{content:""!important;display:inline-block!important;flex:none!important;width:.62em!important;height:.54em!important;margin:0 .42em .08em 0!important;padding:0!important;background:currentColor!important;vertical-align:middle!important;font-size:inherit!important;line-height:0!important;;clip-path:polygon(50% 0,100% 100%,0 100%)!important}
-  body.v13 #main .alerts-panel .live-table td.sell::before{content:""!important;display:inline-block!important;flex:none!important;width:.62em!important;height:.54em!important;margin:0 .42em .08em 0!important;padding:0!important;background:currentColor!important;vertical-align:middle!important;font-size:inherit!important;line-height:0!important;;clip-path:polygon(0 0,100% 0,50% 100%)!important}
-}
 @media (max-width:760px){
   body.v13 #main .alerts-table .alert-row{display:grid!important;padding:14px 0!important;gap:8px 14px!important}
   body.v13 #main .alerts-table .alert-row td,body.v13 #main .alerts-table .alert-row td:first-child,body.v13 #main .alerts-table .alert-row td:last-child{padding:0!important;border:0!important}
@@ -362,6 +358,9 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) tbody tr:last-child{border-bottom:0!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) tbody tr:hover td{background:transparent!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) td{display:block!important;min-width:0!important;padding:0!important;border:0!important;overflow-wrap:anywhere!important}
+  /* In the half-width record cells a long event label ("Other ownership transaction") wraps instead of running into
+     the next column; signed share counts keep their nowrap. */
+  body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) .desk-dir{white-space:normal!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:first-child{grid-column:1/-1!important}
   /* A fourth cell (the Published date with its source link, the research link of a holding) gets the whole record width. */
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:nth-child(4){grid-column:1/-1!important}

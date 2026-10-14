@@ -94,8 +94,10 @@ body.v13 .cx-quote__meta .is-down{color:var(--hf-down)!important;font-weight:500
 body.v13 .cx-quote__meta .is-flat{color:var(--hf-soft)!important;font-weight:500!important}
 /* The ▲/▼ marker leads a signed figure and takes its colour; drawn in CSS so it stays crisp in the mono face. */
 body.v13 .cx-glyph,body.v13 .cx-amount .cx-glyph{display:inline-block!important;flex:none!important;width:.62em!important;height:.54em!important;margin:0 .42em .08em 0!important;padding:0!important;background:currentColor!important;vertical-align:middle!important;font-size:inherit!important;line-height:0!important;color:inherit!important}
-body.v13 .cx-glyph.is-up{clip-path:polygon(50% 0,100% 100%,0 100%)!important}
-body.v13 .cx-glyph.is-down{clip-path:polygon(0 0,100% 0,50% 100%)!important}
+/* The fill is restated here because the shared signal rules (v13-halftone.css, `:is(...,.is-up)`) outrank `.cx-glyph`
+   and clear backgrounds; these (0,3,1) rules load later and win, so the quote, range and Insider-tab markers paint. */
+body.v13 .cx-glyph.is-up{clip-path:polygon(50% 0,100% 100%,0 100%)!important;background:currentColor!important}
+body.v13 .cx-glyph.is-down{clip-path:polygon(0 0,100% 0,50% 100%)!important;background:currentColor!important}
 body.v13 .cx-ranges{display:flex!important;gap:2px!important;padding:0!important;border:1px solid var(--hf-line)!important}
 body.v13 .cx-ranges button{min-width:40px!important;height:32px!important;padding:0 10px!important;border-radius:0!important;border:0!important;background:transparent!important;color:var(--hf-muted)!important;font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;transition:background .2s,color .2s!important}
 body.v13 .cx-ranges button:hover{color:var(--hf-ink)!important;background:var(--hf-surface)!important}
@@ -184,10 +186,14 @@ body.v13 .cx-fin-rows>div:last-child{border-bottom:0!important}
 body.v13 .cx-fin-rows span{font:400 13.5px/1.4 var(--hf-sans)!important;color:var(--hf-soft)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 body.v13 .cx-fin-rows strong{font:700 14px/1.3 var(--hf-sans)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important;text-align:right!important}
 body.v13 .cx-spark{display:flex!important;align-items:flex-end!important;gap:2px!important;height:26px!important;justify-content:flex-end!important}
-/* Eight fiscal years at a glance: positive years green, losses red (each bar's title gives the signed value; the
-   Financials tab prints them all). */
-body.v13 .cx-spark i{display:block!important;width:6px!important;border-radius:0!important;background:var(--hf-up)!important;min-height:2px!important}
+/* Eight fiscal years at a glance, from a zero baseline: profits stand on it in green, losses hang below it in red,
+   a $0 year is a neutral stub (each bar's title gives the signed value; the Financials tab prints them all).
+   v12-company.js sets each bar's height and bottom offset (both % of the strip) and --zero on the strip. */
+body.v13 .cx-spark{position:relative!important;justify-self:end!important}
+body.v13 .cx-spark.has-neg::before{content:""!important;position:absolute!important;left:0!important;right:0!important;bottom:var(--zero)!important;height:0!important;border-top:1px solid var(--hf-line-2)!important;pointer-events:none!important}
+body.v13 .cx-spark i{position:relative!important;display:block!important;width:6px!important;border-radius:0!important;background:var(--hf-up)!important;min-height:2px!important}
 body.v13 .cx-spark i.neg{background:var(--hf-down)!important}
+body.v13 .cx-spark i.zero{background:var(--hf-line-2)!important}
 body.v13 :is(.cx-filing-rows>a,.cx-filing-rows>div){display:grid!important;grid-template-columns:minmax(0,1fr) auto 18px!important;align-items:center!important;gap:12px!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;text-decoration:none!important;color:var(--hf-ink)!important;transition:color .2s!important}
 body.v13 .cx-filing-rows>a:last-child{border-bottom:0!important}
 body.v13 .cx-filing-rows time{font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;white-space:nowrap!important}
@@ -247,12 +253,27 @@ body.v13 .cx-chips button:first-child{border-left:0!important}
 body.v13 .cx-chips button:hover{color:var(--hf-ink)!important;background:var(--hf-surface)!important;border-color:var(--hf-line)!important}
 body.v13 .cx-chips button.is-active{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important;font-weight:600!important}
 
-/* Annual bars: positive years green, losses red; every bar carries its signed value above it. */
-body.v13 .cx-bars{display:flex!important;align-items:flex-end!important;gap:clamp(8px,1.6vw,22px)!important;height:250px!important;padding:10px 4px 0!important;border-bottom:1px solid var(--hf-line)!important}
+/* Annual bars from a zero baseline: profits stand on it in green, losses hang below it in red, a $0 year shows only
+   the baseline. Every bar carries its signed value beyond its end (above a profit, below a loss).
+   Each column's plot <em> gets --z (the baseline's height) and --h (the bar's length) as fractions of its inner
+   height; --pt / --pb reserve room for the labels above and below. */
+body.v13 .cx-bars{--gap:clamp(8px,1.6vw,22px)!important;--pt:0px!important;--pb:0px!important;display:flex!important;align-items:flex-end!important;gap:var(--gap)!important;height:250px!important;padding:10px 4px 0!important;border-bottom:1px solid var(--hf-line)!important}
+body.v13 .cx-bars.has-pos{--pt:22px!important}
+body.v13 .cx-bars.has-neg{--pb:22px!important}
 body.v13 .cx-bars>div{flex:1 1 0!important;min-width:0!important;height:100%!important;display:flex!important;flex-direction:column!important;justify-content:flex-end!important;align-items:center!important;gap:8px!important}
-body.v13 .cx-bars b{font:700 12px/1 var(--hf-sans)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important}
-body.v13 .cx-bars i{display:block!important;width:min(100%,56px)!important;border-radius:0!important;background:var(--hf-up)!important;min-height:2px!important}
+body.v13 .cx-bars em{position:relative!important;display:block!important;flex:1 1 auto!important;align-self:stretch!important;min-height:0!important;margin:0!important;padding:0!important;font-style:normal!important}
+body.v13 .cx-bars em::before{content:""!important;position:absolute!important;left:calc(var(--gap) / -2)!important;right:calc(var(--gap) / -2)!important;height:0!important;border-top:1px solid var(--hf-line-2)!important;
+  bottom:calc(var(--pb) + (100% - var(--pt) - var(--pb)) * var(--z))!important;pointer-events:none!important}
+body.v13 .cx-bars>div:first-child em::before{left:0!important}
+body.v13 .cx-bars>div:last-child em::before{right:0!important}
+body.v13 .cx-bars b{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;bottom:calc(var(--pb) + (100% - var(--pt) - var(--pb)) * (var(--z) + var(--h)) + 8px)!important;
+  font:700 12px/1 var(--hf-sans)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important}
+body.v13 .cx-bars em.is-neg>b{bottom:auto!important;top:calc(var(--pt) + (100% - var(--pt) - var(--pb)) * (1 - var(--z) + var(--h)) + 8px)!important}
+body.v13 .cx-bars i{position:absolute!important;left:0!important;right:0!important;margin:0 auto!important;display:block!important;width:min(100%,56px)!important;border-radius:0!important;background:var(--hf-up)!important;
+  height:max(2px,calc((100% - var(--pt) - var(--pb)) * var(--h)))!important;min-height:0!important;bottom:calc(var(--pb) + (100% - var(--pt) - var(--pb)) * var(--z))!important}
+body.v13 .cx-bars em.is-neg>i{bottom:auto!important;top:calc(var(--pt) + (100% - var(--pt) - var(--pb)) * (1 - var(--z)))!important}
 body.v13 .cx-bars i.neg{background:var(--hf-down)!important}
+body.v13 .cx-bars i.zero{display:none!important}
 body.v13 .cx-bars span{font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;padding-bottom:6px!important}
 
 /* Tables */
@@ -404,7 +425,7 @@ body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!import
   body.v13 .cx-picker__grid a{padding:14px 12px!important;gap:10px!important}
   body.v13 .cx-picker__grid .cx-mark,body.v13 .cx-picker__grid .cx-avatar--sm{width:38px!important;height:38px!important}
   body.v13 .cx-picker__head{flex-direction:column!important;gap:4px!important}
-  body.v13 .cx-bars{height:200px!important;gap:6px!important}
+  body.v13 .cx-bars{height:200px!important;--gap:6px!important;gap:6px!important}
   body.v13 .cx-bars b{font-size:10px!important}
   body.v13 .cx-bars span{font-size:9.5px!important;letter-spacing:.1em!important}
   body.v13 .cx-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}

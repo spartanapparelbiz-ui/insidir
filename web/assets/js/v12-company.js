@@ -16,9 +16,25 @@ const trendOf = n => !finite(n) ? "" : n > 0 ? "up" : n < 0 ? "down" : "flat";
 /* ▲/▼ markers are drawn in CSS (the self-hosted font has no geometric shapes); the class gives the direction. */
 const glyphDir = d => d === "up" || d === "down" ? `<span class="cx-glyph is-${d}" aria-hidden="true"></span>` : "";
 const glyph = n => finite(n) && n !== 0 ? glyphDir(n > 0 ? "up" : "down") : "";
-/* Insider colour follows the trade, as on the overview: purchases green, sales red, a mixed filing by its net
-   shares; grants, awards, exercises and gifts stay neutral (signed, but not a market purchase or sale). */
-const insiderDir = a => a.kind === "purchase" ? "up" : a.kind === "sale" ? "down" : a.kind === "mixed" ? trendOf(a.netShares) : "";
+/* Insider colour follows the trade, as on the overview: purchases green, sales red. A filing with both open-market
+   purchases and sales ("mixed") shows its signed net in ink, and grants, awards, exercises and gifts stay neutral
+   (signed, but not a market purchase or sale). */
+const insiderDir = a => a.kind === "purchase" ? "up" : a.kind === "sale" ? "down" : "";
+const MIXED_LABEL = "Open-market purchase and sale";
+const insiderLabel = a => a.kind === "mixed" ? MIXED_LABEL : a.codeLabel;
+/* One side of a filing's open-market trades: { shares, value } bought (P) or sold (S). A mixed filing is split by its
+   line items, and only when those lines add back to the filing's net shares and value; with more lines than the
+   server lists the split would be partial, so it returns { partial: true } instead of a guess (the tiles note it). */
+function tradeSide(a, code) {
+  const kind = code === "P" ? "purchase" : "sale";
+  if (a.kind === kind) return { shares: finite(a.netShares) ? Math.abs(a.netShares) : 0, value: finite(a.value) ? a.value : 0 };
+  if (a.kind !== "mixed") return null;
+  const lines = (a.transactions || []).filter(t => (t.code === "P" || t.code === "S") && !t.derivative && finite(t.shares));
+  const net = lines.reduce((n, t) => n + (t.acquiredDisposed === "D" ? -t.shares : t.shares), 0);
+  const gross = lines.reduce((n, t) => n + (finite(t.value) && t.price > 0 ? t.value : 0), 0);
+  if (!finite(a.netShares) || Math.abs(net - a.netShares) > 1e-6 || Math.abs(gross - (finite(a.value) ? a.value : 0)) > 0.01) return { partial: true };
+  return lines.filter(t => t.code === code).reduce((s, t) => ({ shares: s.shares + t.shares, value: s.value + (finite(t.value) && t.price > 0 ? t.value : 0) }), { shares: 0, value: 0 });
+}
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Brand casing the SEC and Wikidata names don't carry.
 const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
@@ -381,7 +397,8 @@ function drawChart() {
     return `<line class="tick" x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${padT + h}" y2="${padT + h + 5}"/><text class="axis axis--x" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${anchor}">${esc(text)}</text>`;
   }).join("");
   const first = pts[0][0], last = pts.at(-1)[0];
-  const moved = finite(change) ? `, ${trend} ${money(Math.abs(change), data.currency, { precise: true })}${finite(data.rangeChangePercent) ? " (" + Math.abs(data.rangeChangePercent).toFixed(2) + "%)" : ""}` : "";
+  // On 1D the move is measured from the previous close (the dashed baseline), not from the first 5-minute close.
+  const moved = finite(change) ? `, ${trend} ${money(Math.abs(change), data.currency, { precise: true })}${finite(data.rangeChangePercent) ? " (" + Math.abs(data.rangeChangePercent).toFixed(2) + "%)" : ""}${base != null ? " from the previous close of " + money(base, data.currency, { precise: true }) : ""}` : "";
   host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-trend="${trend}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }) + moved)}. Use arrow keys to inspect prices.">
     ${yLabels}${xLabels}
     ${base != null ? `<line class="baseline" x1="${padL}" x2="${padL + w}" y1="${y(base).toFixed(1)}" y2="${y(base).toFixed(1)}"><title>Previous close ${money(base, data.currency, { precise: true })}</title></line>` : ""}
@@ -469,11 +486,22 @@ async function loadMarket(range, seq = state.seq) {
 }
 
 /* ---------- overview ---------- */
+/* Bars measured from a zero baseline: a loss hangs below it, a profit stands on it, and $0 is neutral (no bar).
+   zero is the baseline's height in % of the plot; barTone gives the bar's class. */
+const zeroScale = xs => {
+  const hi = Math.max(0, ...xs.map(p => p.value)), lo = Math.min(0, ...xs.map(p => p.value)), span = (hi - lo) || 1;
+  return { span, zero: -lo / span * 100, hasNeg: lo < 0 };
+};
+const barTone = v => v < 0 ? "neg" : v === 0 ? "zero" : "";
 function spark(points) {
   const xs = points.slice(-8);
   if (!xs.length) return '<span class="cx-spark" aria-hidden="true"></span>';
-  const max = Math.max(...xs.map(p => Math.abs(p.value)), 1);
-  return `<span class="cx-spark" aria-hidden="true">${xs.map(p => `<i class="${p.value < 0 ? "neg" : ""}" title="FY${esc(String(p.periodEnd || "").slice(0, 4))}: ${esc(money(p.value, currency()))}" style="height:${Math.max(10, Math.abs(p.value) / max * 100).toFixed(0)}%"></i>`).join("")}</span>`;
+  const { span, zero, hasNeg } = zeroScale(xs);
+  return `<span class="cx-spark${hasNeg ? " has-neg" : ""}" aria-hidden="true" style="--zero:${zero.toFixed(1)}%">${xs.map(p => {
+    const h = p.value === 0 ? 0 : Math.max(8, Math.abs(p.value) / span * 100);
+    const bottom = p.value < 0 ? Math.max(0, zero - h) : zero;
+    return `<i class="${barTone(p.value)}" title="FY${esc(String(p.periodEnd || "").slice(0, 4))}: ${esc(money(p.value, currency()))}" style="height:${h.toFixed(1)}%;bottom:${bottom.toFixed(1)}%"></i>`;
+  }).join("")}</span>`;
 }
 function renderOverviewFinancials() {
   const host = $("cx-fin-rows");
@@ -497,11 +525,23 @@ function renderOverviewFilings() {
     : '<p class="cx-empty">No recent annual, quarterly or current reports were found on EDGAR.</p>';
 }
 function activity() { return state.insiders?.activity || []; }
+/* "Bought 4,000 for $900,000 · sold 1,000 for $225,000": the two sides of a mixed filing, or "" when they can't be split. */
+function mixedSplit(a) {
+  if (a.kind !== "mixed") return "";
+  const buy = tradeSide(a, "P"), sell = tradeSide(a, "S");
+  if (!buy || !sell || buy.partial || sell.partial) return "";
+  const part = (verb, x) => verb + " " + integer(x.shares) + (x.value > 0 ? " for " + dollars(x.value) : "");
+  return part("Bought", buy) + " · " + part("sold", sell);
+}
 function amountCell(a) {
+  const label = insiderLabel(a);
   if (finite(a.netShares) && a.netShares !== 0) {
-    return `<div class="cx-amount"${a.codeLabel ? ` title="${esc(a.codeLabel)}"` : ""}><strong class="is-${insiderDir(a) || "flat"}">${glyphDir(insiderDir(a))}${signed(a.netShares)}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : esc(a.codeLabel || "")}</span></div>`;
+    // A mixed filing's value is purchases plus sales, so it is not printed beside the net shares.
+    const sub = a.kind === "mixed" ? "Bought and sold" : finite(a.value) ? dollars(a.value) : label || "";
+    const title = a.kind === "mixed" ? [label, mixedSplit(a)].filter(Boolean).join(": ") : label;
+    return `<div class="cx-amount"${title ? ` title="${esc(title)}"` : ""}><strong class="is-${insiderDir(a) || "flat"}">${glyphDir(insiderDir(a))}${signed(a.netShares)}</strong><span>${esc(sub)}</span></div>`;
   }
-  return `<div class="cx-amount"><strong class="is-flat">${esc(a.codeLabel || "Reported")}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : "Form " + esc(a.form || "4")}</span></div>`;
+  return `<div class="cx-amount"><strong class="is-flat">${esc(label || "Reported")}</strong><span>${finite(a.value) ? esc(dollars(a.value)) : "Form " + esc(a.form || "4")}</span></div>`;
 }
 function renderOverviewInsiders() {
   const host = $("cx-insider-rows");
@@ -593,8 +633,11 @@ function renderAnnualChart() {
   for (const b of document.querySelectorAll("#cx-annual-metrics [data-metric]")) { const on = b.dataset.metric === state.annualMetric; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
   const xs = annual(state.annualMetric).slice(-9), cur = currency();
   if (!xs.length) { $("cx-annual-chart").innerHTML = '<p class="cx-empty">This measure is not reported as comparable full-year data.</p>'; return; }
-  const max = Math.max(...xs.map(p => Math.abs(p.value)), 1);
-  $("cx-annual-chart").innerHTML = xs.map(p => `<div title="Fiscal year ended ${esc(day(p.periodEnd))}"><b>${esc(money(p.value, cur))}</b><i class="${p.value < 0 ? "neg" : ""}" style="height:${Math.max(2, Math.abs(p.value) / max * 82).toFixed(1)}%"></i><span>FY${esc(p.periodEnd.slice(2, 4))}</span></div>`).join("");
+  // Each column's plot (<em>) places the bar from the shared zero baseline; the signed label sits beyond the bar's end
+  // (above a profit, below a loss). --z and --h are fractions of the plot's inner height.
+  const { span, zero, hasNeg } = zeroScale(xs), hasPos = xs.some(p => p.value >= 0);
+  $("cx-annual-chart").className = "cx-bars" + (hasPos ? " has-pos" : "") + (hasNeg ? " has-neg" : "");
+  $("cx-annual-chart").innerHTML = xs.map(p => `<div title="Fiscal year ended ${esc(day(p.periodEnd))}"><em class="${p.value < 0 ? "is-neg" : ""}" style="--z:${(zero / 100).toFixed(4)};--h:${(Math.abs(p.value) / span).toFixed(4)}"><b>${esc(money(p.value, cur))}</b><i class="${barTone(p.value)}"></i></em><span>FY${esc(p.periodEnd.slice(2, 4))}</span></div>`).join("");
   $("cx-annual-chart").setAttribute("role", "img");
   $("cx-annual-chart").setAttribute("aria-label", `${state.intel?.financialHistory?.[state.annualMetric]?.label || "Annual"} by fiscal year: ` + xs.map(p => p.periodEnd.slice(0, 4) + " " + money(p.value, cur)).join(", "));
 }
@@ -615,7 +658,8 @@ function renderFilings() {
 }
 
 /* ---------- insiders tab ---------- */
-const insiderGroup = a => a.kind === "purchase" ? "buy" : a.kind === "sale" || a.kind === "mixed" ? "sell" : "other";
+// A mixed filing holds both open-market purchases and sales, so it is listed under Buys and under Sells.
+const insiderGroups = a => a.kind === "purchase" ? ["buy"] : a.kind === "sale" ? ["sell"] : a.kind === "mixed" ? ["buy", "sell"] : ["other"];
 function renderInsiders() {
   for (const b of document.querySelectorAll("#cx-insider-filters [data-filter]")) { const on = b.dataset.filter === state.insiderFilter; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on)); }
   const cik = state.intel?.company?.cik || state.insiders?.company?.cik;
@@ -626,23 +670,30 @@ function renderInsiders() {
     return;
   }
   const all = activity();
-  const buys = all.filter(a => a.kind === "purchase"), sells = all.filter(a => a.kind === "sale" || a.kind === "mixed");
-  const sum = (xs, f) => xs.reduce((s, a) => s + (finite(f(a)) ? f(a) : 0), 0);
+  // Each tile sums its own side's lines: a mixed filing adds its purchases to buys and its sales to sales.
+  const sides = code => all.map(a => tradeSide(a, code)).filter(Boolean);
+  const totals = xs => {
+    const whole = xs.filter(x => !x.partial), partial = xs.length - whole.length;
+    const shares = whole.reduce((n, x) => n + x.shares, 0), value = whole.reduce((n, x) => n + x.value, 0);
+    return { count: xs.length, text: xs.length ? `${integer(shares)} shares · ${dollars(value)}${partial ? ` · excl. ${partial} mixed filing${partial > 1 ? "s" : ""} not fully itemised` : ""}` : "None in these filings" };
+  };
+  const buys = totals(sides("P")), sells = totals(sides("S"));
   const oldest = all.map(a => a.filedAt).sort()[0];
   $("cx-insider-summary").innerHTML = [
-    tile("Open-market buys", esc(String(buys.length)), buys.length ? `${integer(sum(buys, a => a.netShares))} shares · ${dollars(sum(buys, a => a.value))}` : "None in these filings", "", buys.length ? "up" : ""),
-    tile("Open-market sales", esc(String(sells.length)), sells.length ? `${integer(Math.abs(sum(sells, a => a.netShares)))} shares · ${dollars(sum(sells, a => a.value))}` : "None in these filings", "", sells.length ? "down" : ""),
+    tile("Open-market buys", esc(String(buys.count)), buys.text, "", buys.count ? "up" : ""),
+    tile("Open-market sales", esc(String(sells.count)), sells.text, "", sells.count ? "down" : ""),
     tile("Insiders reporting", esc(String((state.insiders.people || []).length)), "Officers, directors and 10% owners"),
     tile("Filings reviewed", esc(String(all.length)), oldest ? "Filed since " + day(oldest) : "")
   ].join("");
-  const rows = all.filter(a => state.insiderFilter === "all" || insiderGroup(a) === state.insiderFilter);
+  const rows = all.filter(a => state.insiderFilter === "all" || insiderGroups(a).includes(state.insiderFilter));
   $("cx-insiders-table").innerHTML = rows.length ? rows.map(a => {
     const p = personInfo(a.owner.name, false, a.owner.cik);
     const extra = (a.transactions || []).length > 1 ? ` <small>${a.transactions.length} line items</small>` : "";
-    const price = (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
+    // No blended average for a mixed filing: its split line gives each side's shares and value instead.
+    const price = a.kind === "mixed" ? [] : (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
     return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
-      <td>${esc(a.codeLabel || "Reported transaction")}${extra}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
+      <td>${esc(insiderLabel(a) || "Reported transaction")}${extra}${mixedSplit(a) ? `<small>${esc(mixedSplit(a))}</small>` : ""}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
       <td>${esc(day(a.transactionDate))}</td><td>${esc(day(a.filedAt))}</td>
       <td class="num ${finite(a.netShares) && a.netShares !== 0 && insiderDir(a) ? "is-" + insiderDir(a) : ""}">${finite(a.netShares) ? glyphDir(insiderDir(a)) + signed(a.netShares) : "—"}</td>
       <td class="num">${finite(a.value) ? esc(dollars(a.value)) : "—"}</td><td class="num">${finite(a.sharesAfter) ? esc(integer(a.sharesAfter)) : "—"}</td>

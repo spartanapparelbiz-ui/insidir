@@ -29,14 +29,16 @@
     return '<span class="desk-dir' + (dir ? " is-" + dir : "") + '">' +
       (dir ? '<span class="desk-glyph is-' + dir + '" aria-hidden="true"></span>' : "") + esc(words) + "</span>";
   };
-  /* Shares as filed, signed by the Form 4 acquired (A) / disposed (D) flag, or by the purchase/sale category. */
+  /* Shares as filed: signed by the Form 4 acquired (A) / disposed (D) flag, coloured only for reported purchases
+     and sales. Grants, awards, exercises, tax withholding and gifts keep their sign but stay neutral. */
   const signedShares = item => {
     const shares = Number(item.shares);
     if (item.shares == null || item.shares === "" || !Number.isFinite(shares) || shares <= 0) return "";
     const ad = String(item.acquired_disposed || "").toUpperCase();
-    const dir = ad === "D" ? "down" : ad === "A" ? "up" : direction(item.category);
-    const text = (dir === "up" ? "+" : dir === "down" ? "−" : "") + shares.toLocaleString("en-US", {maximumFractionDigits:4}) + " sh";
-    return '<span class="desk-signed' + (dir ? " is-" + dir : "") + '">' + esc(text) + "</span>";
+    const tone = direction(item.category);
+    const sign = ad === "D" ? "−" : ad === "A" ? "+" : tone === "up" ? "+" : tone === "down" ? "−" : "";
+    const text = sign + shares.toLocaleString("en-US", {maximumFractionDigits:4}) + " sh";
+    return '<span class="desk-signed' + (tone ? " is-" + tone : "") + '">' + esc(text) + "</span>";
   };
   const displayPrice = value => {
     if (value == null || value === "") return "";

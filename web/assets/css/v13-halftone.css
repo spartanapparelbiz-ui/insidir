@@ -89,6 +89,8 @@ body.v13 .auth,body.v13 .auth-panel,body.v13 .auth-panel__inner,body.v13 .auth-c
 body.v13::after{content:""!important;position:fixed!important;inset:0!important;z-index:2147483000!important;pointer-events:none!important;
   opacity:.045!important;mix-blend-mode:overlay!important;background-image:var(--hf-grain)!important}
 body.v13 ::selection{background:var(--hf-warm)!important;color:var(--hf-bg)!important}
+/* Inside the product a selection is ink on paper: no orange block over figures, and green/red read again when released. */
+body.v13:is(.app-body,.v3-app,.pw-page) ::selection{background:var(--hf-ink)!important;color:var(--hf-bg)!important}
 body.v13 :focus-visible{outline:1px solid var(--hf-ink)!important;outline-offset:3px!important;border-radius:0!important;box-shadow:none!important}
 body.v13 .skip-link{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;border-radius:0!important}
 body.v13 .toast{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 11px/1.6 var(--hf-mono)!important;border-radius:0!important;box-shadow:none!important}
@@ -233,7 +235,7 @@ body.v13 .tabs{box-shadow:inset 0 -1px 0 var(--hf-line)!important}
 
 /* ---------- Inputs ---------- */
 body.v13 :is(input,textarea,select,.input,.research-search,.cl-form input,.cv-search input,.v3-searchbox,.v12-company-tabs){color:var(--hf-ink)!important}
-body.v13 :is(input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),textarea,select,.input){background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;color:var(--hf-ink)!important;border-radius:0!important;box-shadow:none!important;font-family:var(--hf-sans)!important;font-size:13px!important;caret-color:var(--hf-warm)!important;accent-color:var(--hf-warm)!important}
+body.v13 :is(input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),textarea,select,.input){background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;color:var(--hf-ink)!important;border-radius:0!important;box-shadow:none!important;font-family:var(--hf-sans)!important;font-size:13px!important;caret-color:var(--hf-ink)!important;accent-color:var(--hf-ink)!important}
 body.v13 :is(input,textarea)::placeholder{color:var(--hf-faint)!important;font-family:var(--hf-mono)!important;font-size:11px!important;letter-spacing:.02em!important}
 body.v13 :is(input,textarea,select,.input):focus{outline:none!important;border-color:var(--hf-ink)!important;box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
 body.v13 :is(input,textarea,select,.input):hover{border-color:var(--hf-line-2)!important}
@@ -308,6 +310,8 @@ body.v13 :is(.v12-secondary-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero
   font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13 :is(.v12-secondary-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero-link,.v9-underlink,.v10-editorial__head>a,.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v9-desk__links a,.v12-split-heading a,.v12-logos-heading a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{color:var(--hf-warm)!important;background-size:100% 1px!important}
+/* In the product these underline links brighten to ink on hover (text and underline); orange stays on the marketing pages. */
+body.v13:is(.app-body,.v3-app) :is(.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{color:var(--hf-ink)!important}
 body.v13 :is(.v12-process-steps a>span){color:var(--hf-warm)!important;font-family:var(--hf-mono)!important}
 body.v13 .v12-company-tabs img{filter:none!important}
 body.v13 .v12-company-tabs button[data-v12-ticker=AAPL] img,body.v13 .v12-logo-links a:first-child img{filter:invert(1) brightness(.92) sepia(.12)!important}
