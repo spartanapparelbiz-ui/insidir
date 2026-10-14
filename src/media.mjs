@@ -63,7 +63,7 @@ export async function fetchImage(url, { maxBytes = 1_500_000, timeoutMs = 8000, 
     const timer = setTimeout(() => abort.abort(), timeoutMs);
     try {
       const response = await fetch(current, { redirect: "manual", signal: abort.signal,
-        headers: { "User-Agent": userAgent, Accept: "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8", ...headers } });
+        headers: { "User-Agent": userAgent, Accept: "image/webp,image/png,image/jpeg,image/svg+xml;q=0.9,image/*;q=0.5", ...headers } });
       if (response.status >= 300 && response.status < 400 && response.headers.get("location")) {
         current = new URL(response.headers.get("location"), current).href;
         continue;

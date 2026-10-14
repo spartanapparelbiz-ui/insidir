@@ -20,7 +20,7 @@
 import { createHash } from "node:crypto";
 import { fetchImage, imageSize } from "./media.mjs";
 import { getRecord, putRecord } from "./media-store.mjs";
-import { samePerson, isEntityName, secNameReadings, nameTokens } from "./person-match.mjs";
+import { samePerson, isEntityName, nameTokens } from "./person-match.mjs";
 import { companyDomain, fetchHomepage } from "./company-domain.mjs";
 import {
   publicFetcher, PUBLIC_UA, registrableDomain, parseHtml, elements, ancestors, classList, textStrings, pageMeta, jsonLd, ldTypes, ldUrl, absoluteUrl
@@ -81,7 +81,6 @@ function nameAliases(name, secName) {
 export function matchesPerson(secName, cardName) {
   return samePerson(secName, cardName, nameAliases(cardName, secName));
 }
-const surnameOf = n => { const t = nameTokens(n); return t.length >= 2 ? t.at(-1) : null; };
 
 /* SEC role "Chief Operating Officer · Director" corroborated by a card title. */
 export function roleCorroborated(role, cardTitle) {
@@ -250,20 +249,9 @@ export function matchCards(people, cards) {
       out.push({ person: p, cards: clean, rule: "full", confidence: "high" });
       continue;
     }
-    if (hits.length || p.extra || !p.role) continue;
-    // Surname only: unique surname on the whole site and among the insiders, and the title agrees.
-    const surnames = new Set(secNameReadings(p.name).slice(0, 2).map(r => r.surname).filter(s => s.length >= 3));
-    if (!surnames.size) continue;
-    const distinctNames = new Map();
-    for (const c of pool) for (const n of c.names) { const s = surnameOf(n); if (s && surnames.has(s)) distinctNames.set(nameTokens(n).join(" "), c); }
-    const allNames = new Set(cards.flatMap(c => c.names.map(n => nameTokens(n).join(" "))).filter(n => surnames.has(n.split(" ").at(-1))));
-    const otherInsider = persons.some(o => o !== p && secNameReadings(o.name).some(r => surnames.has(r.surname)));
-    if (distinctNames.size !== 1 || allNames.size !== 1 || otherInsider) continue;
-    const sameNameCards = pool.filter(c => c.names.some(n => surnames.has(surnameOf(n) || "")));
-    const titled = sameNameCards.filter(c => roleCorroborated(p.role, c.title));
-    if (!titled.length) continue;
-    titled.sort((a, b) => HOW_RANK[a.how] - HOW_RANK[b.how]);
-    out.push({ person: p, cards: titled, rule: "surname-only", confidence: "medium" });
+    // No surname-only matches: a director-level employee with the same surname ("Swaroop Kolluri"
+    // for director KOLLURI KRISHNA KITTU) passed a role check, and a wrong face is worse than
+    // initials. Surname plus given name, always.
   }
   return out;
 }

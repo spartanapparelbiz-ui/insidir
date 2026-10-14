@@ -72,6 +72,9 @@ async function politeImage(url, options) {
   lane.tail = run.catch(() => {});
   return run;
 }
+/* Alt text or a file name can name a person by surname alone ("nominee_smith.jpg", "CarneyL");
+ * those medium-confidence pairings are not used: surname plus given name, always. */
+const fullNameEvidence = m => !(["alt", "alt-adjacent"].includes(m.rule) && m.confidence !== "high");
 /* A proxy match carries an already prepared photo; it is used only while its bytes are still
  * stored, otherwise the original portrait is prepared again. */
 async function proxyPhoto(m) {
@@ -182,6 +185,7 @@ async function runJob(ticker, company) {
     const credit = "SEC proxy statement (DEF 14A" + (proxy.filedAt ? ", filed " + proxy.filedAt : "") + ")";
     for (const m of proxy.matches || []) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
+      if (!fullNameEvidence(m)) continue;
       if (person ? state.photos[person.key] : !leader || leader.src) continue;
       const src = await proxyPhoto(m).catch(() => null);
       if (!src) continue;
@@ -206,10 +210,11 @@ async function runJob(ticker, company) {
   if (proxyModule?.proxyHeadshots) {
     let found = 0;
     try {
-      await otherBoards(company, people.filter(p => p.cik && !state.photos[p.key]), proxyModule, async (person, photo) => { found++; await assign(person, photo); await publish(state); });
-      state.sources.otherBoards = { status: found ? "ok" : "none", matched: found };
+      const { errors } = await otherBoards(company, people.filter(p => p.cik && !state.photos[p.key]), proxyModule, async (person, photo) => { found++; await assign(person, photo); await publish(state); });
+      if (errors) state.transient = true;
+      state.sources.otherBoards = { status: found ? "ok" : errors ? "partial" : "none", matched: found, ...(errors ? { errors } : {}) };
     }
-    catch (e) { state.sources.otherBoards = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
+    catch (e) { state.transient = true; state.sources.otherBoards = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
   }
 
   // A full-length or small Commons picture is still better than initials.
@@ -236,8 +241,9 @@ async function otherBoards(company, persons, proxyModule, assign) {
     if (/^\d{1,10}$/.test(id) && r.ticker && !tickerOf.has(id.padStart(10, "0"))) tickerOf.set(id.padStart(10, "0"), String(r.ticker).toUpperCase());
   }
   const issuers = new Map(); // issuer CIK -> {ticker, name, persons}
+  let errors = 0;
   for (const person of persons.slice(0, OTHER_PEOPLE)) {
-    const list = (await ownerIssuers(person.cik).catch(() => [])).filter(x => x.cik !== company.cik && tickerOf.has(x.cik)).slice(0, OTHER_ISSUERS_PER_PERSON);
+    const list = (await ownerIssuers(person.cik).catch(() => { errors++; return []; })).filter(x => x.cik !== company.cik && tickerOf.has(x.cik)).slice(0, OTHER_ISSUERS_PER_PERSON);
     for (const x of list) {
       if (!issuers.has(x.cik) && issuers.size >= OTHER_ISSUERS) continue;
       const entry = issuers.get(x.cik) || { ticker: tickerOf.get(x.cik), name: x.name, persons: [] };
@@ -252,6 +258,7 @@ async function otherBoards(company, persons, proxyModule, assign) {
       .map(p => ({ name: p.name, cik: p.cik, role: p.role, key: keyFor(p) }));
     for (const p of waiting) if (!roster.some(r => r.key === p.key)) roster.push({ name: p.name, cik: p.cik, role: p.role, key: p.key });
     const result = await proxyModule.proxyHeadshots({ cik, insiders: roster }).catch(() => null);
+    if (!result || result.status === "error") errors++;
     for (const m of result?.matches || []) {
       const person = waiting.find(p => m.ownerCik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, ""));
       if (!person || person.otherBoardPhoto || m.confidence !== "high" || !STRONG_RULES.has(m.rule)) continue;
@@ -264,6 +271,7 @@ async function otherBoards(company, persons, proxyModule, assign) {
     }
   }
   for (const p of persons) delete p.otherBoardPhoto;
+  return { errors };
 }
 
 /* Returns what is known now; starts or continues the background job. wait (ms) lets a caller

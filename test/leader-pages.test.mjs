@@ -81,7 +81,7 @@ test("cards: CSS-class backgrounds, lazy img and largest srcset, JSON-LD; never 
   assert.equal(by("Rita Lee").how, "jsonld");
 });
 
-test("matching: full names, unique-surname rule with corroborating title, placeholders and ambiguity", () => {
+test("matching: full names only, placeholders and ambiguity", () => {
   const cards = extractCards(GRID, "https://www.example.com/leadership");
   const people = [
     { name: "COOK TIMOTHY D", cik: "1", role: "Director" },
@@ -95,16 +95,13 @@ test("matching: full names, unique-surname rule with corroborating title, placeh
   assert.equal(m["COOK TIMOTHY D"].rule, "full");
   assert.equal(m["Doe Jane Q"].cards[0].name, "Jane Q. Doe");
   assert.equal(m["Doe Jane R"], undefined, "middle initial R conflicts with Q");
-  assert.equal(m["Lam Yat Tung"].rule, "surname-only");
-  assert.equal(m["Lam Yat Tung"].confidence, "medium");
+  assert.equal(m["Lam Yat Tung"], undefined, "a surname alone never attaches a photo, even with a matching title");
   assert.equal(m["Ample Samuel"], undefined, "one image shown for two names is a placeholder");
   assert.equal(m["LEE RITA"].cards[0].how, "jsonld");
 
-  // Surname-only is refused when the title does not agree, when the surname repeats, or for another insider with that surname.
-  assert.equal(matchCards([{ name: "Lam Yat Tung", role: "Chief Financial Officer" }], cards).length, 0);
-  const twoLams = cards.concat([{ name: "Kim Lam", names: ["Kim Lam"], title: "COO", images: ["https://www.example.com/img/kim.jpg"], how: "card", pageUrl: "x" }]);
-  assert.equal(matchCards([{ name: "Lam Yat Tung", role: "Chief Operating Officer" }], twoLams).length, 0);
-  assert.equal(matchCards([{ name: "Lam Yat Tung", role: "Chief Operating Officer" }, { name: "Lam Peter", role: "Director" }], cards).length, 0);
+  // The BillionToOne case: a director-level employee who shares a director's surname.
+  const kolluri = [{ name: "Swaroop Kolluri", names: ["Swaroop Kolluri"], title: "Director, Software Engineering", images: ["https://x/s.jpg"], how: "card", pageUrl: "x" }];
+  assert.equal(matchCards([{ name: "KOLLURI KRISHNA KITTU", role: "Director" }], kolluri).length, 0);
   // A card that fits two insiders decides for neither.
   const twins = matchCards([{ name: "SMITH JOHN A", role: "Director" }, { name: "SMITH JOHN", role: "Director" }],
     [{ name: "John Smith", names: ["John Smith"], title: "Director", images: ["https://x/j.jpg"], how: "card", pageUrl: "x" }]);
