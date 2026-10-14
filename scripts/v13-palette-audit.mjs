@@ -139,7 +139,7 @@ const scan = ({ palette, tol }) => {
   };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
-  const allowedFonts = /^("?(Inter|Inter Tight|JetBrains Mono)"?)/i;
+  const allowedFonts = /^"?JetBrains Mono"?/i;
   for (const el of document.querySelectorAll("body *")) {
     if (SKIP.has(el.tagName)) continue;
     if (el.closest("canvas,[hidden],template")) continue;

@@ -7,7 +7,7 @@ body.v13.v2-notfound header>a:last-child{color:var(--hf-muted)!important;text-de
 body.v13.v2-notfound header>a:last-child:hover{color:var(--hf-ink)!important}
 body.v13.v2-notfound main{flex:1!important;display:grid!important;grid-template-columns:1fr 1fr!important;min-height:520px!important}
 body.v13.v2-notfound .nf-copy{padding:clamp(50px,8vw,145px) clamp(24px,5vw,80px)!important;align-self:center!important}
-body.v13.v2-notfound .nf-copy h1{font:800 clamp(44px,6vw,96px)/1!important;font-family:var(--hf-sans)!important;letter-spacing:-.06em!important;margin:20px 0 24px!important}
+body.v13.v2-notfound .nf-copy h1{font:800 clamp(32px,3.9vw,56px)/1.08 var(--hf-mono)!important;letter-spacing:-.035em!important;margin:20px 0 24px!important}
 body.v13.v2-notfound .nf-copy>span{display:block!important;font:400 14px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:40ch!important}
 body.v13.v2-notfound .nf-copy>div{display:flex!important;flex-wrap:wrap!important;gap:12px!important;margin-top:30px!important}
 body.v13.v2-notfound .nf-photo{position:relative!important;background:url("/assets/img/records-right.jpg") center / cover no-repeat!important;filter:grayscale(1) sepia(.12) contrast(1.05) brightness(.7)!important;border-left:1px solid var(--hf-line)!important}
@@ -15,6 +15,6 @@ body.v13.v2-notfound .nf-photo{position:relative!important;background:url("/asse
   body.v13.v2-notfound main{grid-template-columns:1fr!important}
   body.v13.v2-notfound .nf-photo{height:220px!important;order:-1!important;border-left:0!important;border-bottom:1px solid var(--hf-line)!important}
   body.v13.v2-notfound .nf-copy{padding-block:48px!important}
-  body.v13.v2-notfound .nf-copy h1{font-size:48px!important}
+  body.v13.v2-notfound .nf-copy h1{font-size:36px!important}
 }
 }
