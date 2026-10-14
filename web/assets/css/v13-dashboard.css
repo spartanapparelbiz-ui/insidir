@@ -4,9 +4,14 @@
 
    Colour does one job here: market direction. Purchases and rises are --hf-up (green), sales and
    falls are --hf-down (red), always beside a word, a sign or a ▲/▼ marker so colour never carries the
-   meaning alone. Everything else is ink on paper; the orange accent is not used on this page apart
-   from the logo's full stop. Marks are thin and square (bars ≤ 24px wide), grid and axes are solid
-   1px hairlines, nothing glows, and the values the reader needs are printed, not hidden in hovers. */
+   meaning alone. Everything else is ink on paper: there is no accent colour, the logo's full stop
+   included. Marks are thin and square (bars ≤ 24px wide), grid and axes are solid 1px hairlines,
+   nothing glows, and the values the reader needs are printed, not hidden in hovers.
+
+   Motion: module heads, the totals band, the chart and company panels, the ranked transactions, the
+   watchlist and note rows, the tables and the people cards rise in on the dots' spring as they scroll
+   into view (data-hf-reveal / data-hf-reveal-group in dashboard.html, run by v13-motion.js). Rows of
+   ruled lists answer the pointer at once with the surface tone, like table rows. */
 @layer insidir-v13{
 
 /* ---------- direction markers (CSS triangles: the self-hosted font has no ▲▼) ---------- */
@@ -124,6 +129,9 @@ body.v13 .rd-co__bar{display:block!important;height:10px!important}
 body.v13 .rd-co__bar--down{background:var(--hf-down)!important}
 body.v13 .rd-co__bar--up{background:var(--hf-up)!important}
 body.v13 .rd-co__net{padding-left:12px!important;font:500 12px/1.4 var(--hf-mono)!important;text-align:right!important}
+/* A company row answers the pointer like a table row, so the eye can follow it to its net figure. */
+body.v13 .rd-co__row{transition:background-color .15s!important}
+body.v13 .rd-co__row:hover{background:var(--hf-surface)!important}
 body.v13 .rd-co__detail{grid-column:2/-1!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
 
 /* Largest reported transactions: ranked, value first, the bar scaled to the largest. */
@@ -141,6 +149,8 @@ body.v13 .rd-big__what a{color:var(--hf-ink)!important;text-decoration:underline
 body.v13 .rd-big__what a:hover{text-decoration-color:currentColor!important}
 body.v13 .rd-big__terms{grid-area:terms!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
+body.v13 .rd-big{transition:background-color .15s!important}
+body.v13 .rd-big:hover{background:var(--hf-surface)!important}
 /* Wide screens: one line per transaction, the bar last before the link; the terms column is fixed so every bar
    starts at the same x and shares one scale. Room is kept around the links for their focus ring. */
 @media (min-width:1360px){
@@ -149,6 +159,11 @@ body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
   body.v13 .rd-big__what a{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   body.v13 .rd-big__what a:not(:last-child){flex:none!important}
 }
+
+/* ---------- messages ----------
+   "Try again" sits inside a sentence (display:inline in v13-app.css); as a motion atom it needs a box that
+   translate applies to. Phones keep their inline-flex 32px target (v13-app.css). */
+body.v13 .rd-retry[data-hf-atom="inline"]{display:inline-block!important}
 
 /* ---------- 04 insider transactions ---------- */
 body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight:500!important}

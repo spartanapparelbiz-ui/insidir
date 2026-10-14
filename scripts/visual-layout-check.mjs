@@ -13,7 +13,19 @@ try{
  for(const item of [{width:375,height:812},{width:390,height:844},{width:1440,height:900}]){
   const context=await browser.newContext({viewport:item,deviceScaleFactor:1,isMobile:item.width<600,hasTouch:item.width<600});
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
-  await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
+  await context.addInitScript(() => {
+    // Every scroll-reveal block in place at once; a block let go from .hf-pending may start a transition of its own
+    // from the hidden state (28px low, transparent), so that is finished too and measurements see the final layout.
+    const go = () => {
+      const M = window.InsidirMotion;
+      if (!M) return;
+      const held = new Set(document.querySelectorAll(".hf-pending,.hf-revealing"));
+      M.revealAll();
+      if (held.size) for (const a of document.getAnimations()) if (a instanceof CSSTransition && a.effect && held.has(a.effect.target)) { try { a.finish(); } catch {} }
+    };
+    addEventListener("DOMContentLoaded", () => setTimeout(go, 0));
+    addEventListener("load", go);
+  });
   const page=await context.newPage();
   try{
    const issues=[];page.on("pageerror",e=>issues.push(String(e)));

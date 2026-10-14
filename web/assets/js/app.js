@@ -195,7 +195,7 @@
     const active = host.dataset.active || "";
     host.classList.add("app-header");
     host.innerHTML = `<div class="app-header__inner">
-      <button class="icon-btn app-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
+      <button class="icon-btn app-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
       <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
@@ -211,7 +211,7 @@
         <kbd class="app-search__key" aria-hidden="true">${/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K"}</kbd>
         <div class="app-search__results" id="app-search-results" role="listbox" aria-label="Search suggestions" hidden></div>
       </form>
-      <a class="icon-btn" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
+      <a class="icon-btn app-header__bell" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
       <div class="user-menu">
         <button class="user-menu__btn" type="button" aria-expanded="false" aria-controls="user-menu-panel" aria-label="Account menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 19.5c.5-4 3-6 6.5-6s6 2 6.5 6"/></svg></button>
         <div class="user-menu__panel" id="user-menu-panel">

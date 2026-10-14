@@ -61,8 +61,19 @@ const base = "http://127.0.0.1:" + server.address().port;
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 
 /* ---------- init scripts ---------- */
-// The pointer checks measure atoms in place, so every scroll-reveal block is shown at once.
-const REVEAL_ALL = () => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0));
+// The pointer checks measure atoms in place, so every scroll-reveal block is shown at once (and any transition of
+// its own that a block let go from .hf-pending starts from the hidden state is finished).
+const REVEAL_ALL = () => {
+  const go = () => {
+    const M = window.InsidirMotion;
+    if (!M) return;
+    const held = new Set(document.querySelectorAll(".hf-pending,.hf-revealing"));
+    M.revealAll();
+    if (held.size) for (const a of document.getAnimations()) if (a instanceof CSSTransition && a.effect && held.has(a.effect.target)) { try { a.finish(); } catch {} }
+  };
+  addEventListener("DOMContentLoaded", () => setTimeout(go, 0));
+  addEventListener("load", go);
+};
 // Every --hf-dx / --hf-dy / --hf-s the motion layer writes, from each style mutation's old value and the value
 // after it: any that is not a finite number, and (while `track` is on) the largest offset written.
 const WATCH_WRITES = () => {
@@ -407,9 +418,12 @@ try {
         window.__rang = new Set();
         for (const r of roots) { const orig = r.__halftone.ring; r.__halftone.ring = (...a) => { window.__rang.add(r); return orig.apply(r.__halftone, a); }; }
         window.addEventListener("pointerdown", e => { for (const r of e.__hfRingFrom || []) window.__rang.add(r); });
-        for (let y = 140; y < innerHeight - 20; y += 23) for (let x = 30; x < innerWidth - 30; x += 37) {
-          const e = document.elementFromPoint(x, y);
-          if (e && !e.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],canvas,[data-halftone-field],[data-halftone-hero]")) return { x, y, roots: roots.length };
+        // Empty page first; a screen that is all dot field (the landing hero) is clicked on the field itself.
+        for (const skip of [",canvas,[data-halftone-field],[data-halftone-hero]", ""]) {
+          for (let y = 140; y < innerHeight - 20; y += 23) for (let x = 30; x < innerWidth - 30; x += 37) {
+            const e = document.elementFromPoint(x, y);
+            if (e && !e.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],[data-hf-atom]" + skip)) return { x, y, roots: roots.length };
+          }
         }
         return { roots: roots.length };
       });

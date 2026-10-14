@@ -102,7 +102,8 @@ async function api(path){
  return j;
 }
 const items=j=>Array.isArray(j?.items)?j.items:[];
-const retry=key=>' <button type="button" class="rd-retry" data-retry="'+key+'">Try again</button>';
+// data-hf-atom: a standalone button that moves with the pointer like the other atoms (v13-motion.js), though it sits in a message.
+const retry=key=>' <button type="button" class="rd-retry" data-retry="'+key+'" data-hf-atom>Try again</button>';
 const failRow=(cols,key,e)=>'<tr><td colspan="'+cols+'" class="rd-empty rd-empty--error" role="alert">'+E(e.message)+(e.status===401||e.status===402?"":retry(key))+'</td></tr>';
 const failBlock=(key,e)=>'<p class="rd-empty rd-empty--error" role="alert">'+E(e.message)+(e.status===401||e.status===402?"":retry(key))+'</p>';
 const emit=(name,detail)=>document.dispatchEvent(new CustomEvent(name,{detail}));
@@ -233,7 +234,7 @@ function renderWatchlist(){
   else if(look.error)detail='<span class="rd-muted">Latest transaction unavailable right now</span>';
   else detail='<span class="rd-muted">No imported insider transactions yet</span>';
   return '<a class="rd-row rd-row--watch" href="'+E(companyHref(t))+'">'+logo(t)+'<span class="rd-row__id"><strong>'+E(t)+'</strong>'+(name?'<small>'+E(name)+'</small>':'')+'</span><span class="rd-row__detail">'+detail+'</span><b aria-hidden="true">↗</b></a>';
- }).join("")+(arr.length>WATCH_ROWS?'<p class="rd-more"><a href="watchlist.html">'+(arr.length-WATCH_ROWS)+' more on your watchlist</a></p>':'');
+ }).join("")+(arr.length>WATCH_ROWS?'<p class="rd-more"><a href="watchlist.html" data-hf-atom>'+(arr.length-WATCH_ROWS)+' more on your watchlist</a></p>':'');
  media?.hydrate(host);
  lookupMissing();
 }
@@ -252,7 +253,7 @@ async function loadNotes(){
   host.innerHTML=arr.length?arr.slice(0,6).map(x=>{
    const note=String(x.notes||"").replace(/\s+/g," ").trim();
    return '<a class="rd-row rd-row--note" href="'+E(researchHref(x.ticker))+'"><span class="rd-row__id"><strong>'+E(tick(x.ticker))+'</strong><small>'+E(STATUS[x.review_status||x.reviewStatus]||"Note")+'</small></span><span class="rd-row__detail">'+(note?E(note.length>96?note.slice(0,95)+"…":note):'<span class="rd-muted">No written note</span>')+'<small>Updated '+E(date(x.updated_at||x.created_at))+'</small></span><b aria-hidden="true">↗</b></a>';
-  }).join("")+(arr.length>6?'<p class="rd-more"><a href="research.html">All '+arr.length+' notes on the research desk</a></p>':''):'<p class="rd-empty">No research notes yet. <a href="research.html">Open the research desk</a> to record what you are reviewing and why.</p>';
+  }).join("")+(arr.length>6?'<p class="rd-more"><a href="research.html" data-hf-atom>All '+arr.length+' notes on the research desk</a></p>':''):'<p class="rd-empty">No research notes yet. <a href="research.html">Open the research desk</a> to record what you are reviewing and why.</p>';
  }catch(e){host.innerHTML=failBlock("notes",e);}
 }
 

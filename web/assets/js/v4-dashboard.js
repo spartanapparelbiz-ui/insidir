@@ -106,6 +106,8 @@ function kpis(f){
 const STEPS=[1,2,2.5,5,10];
 function niceStep(max,parts){const raw=max/parts,mag=Math.pow(10,Math.floor(Math.log10(raw)));const n=raw/mag;return STEPS.find(s=>s>=n-1e-9)*mag;}
 let last=null,lastLimit=0,lastTight=null;
+/* Page position from the layout alone: the offsetParent chain ignores translate and transforms. */
+const layoutTop=el=>{let y=0;for(let n=el;n;n=n.offsetParent)y+=n.offsetTop+(n===el?0:n.clientTop);return y;};
 const limitFor=w=>w>=700?14:w>=560?12:w>=480?8:6;
 const tightFor=(w,n)=>(w-64)/n<58;
 function daily(f){
@@ -123,8 +125,10 @@ function daily(f){
  const fit=(v,st)=>v>st*.15?Math.ceil(v/st-1e-9)*st:0,extent=st=>fit(top,st)+fit(bot,st);
  const step=[2,3,4,5].map(p=>niceStep(mx,p)).filter((st,i,a)=>a.indexOf(st)===i&&extent(st)/st<=8).reduce((a,b)=>extent(b)<extent(a)?b:a);
  const sideMax=v=>fit(v,step),topMax=sideMax(top),botMax=sideMax(bot);
- // Desktop: as tall as the By company panel beside it, never shorter than 280px.
- const co=$("rd-companies"),beside=co&&matchMedia("(min-width:1180px)").matches?co.getBoundingClientRect().bottom-host.getBoundingClientRect().top-56:0;
+ // Desktop: as tall as the By company panel beside it, never shorter than 280px. Measured on the layout
+ // (offsetTop), not on screen: the two panels rise in a beat apart as the page scrolls (data-hf-reveal-group),
+ // so mid-reveal their on-screen boxes are offset from each other by a few pixels.
+ const co=$("rd-companies"),beside=co&&matchMedia("(min-width:1180px)").matches?layoutTop(co)+co.offsetHeight-layoutTop(host)-56:0;
  const H=w<560?200:Math.max(280,Math.min(520,Math.floor(beside))),pad=26,inner=H-pad*2;
  const span=(topMax||step*.15)+(botMax||step*.15),px=inner/span,zero=pad+(topMax||step*.15)*px;
  const ticks=[];for(let v=topMax;v>-botMax-1e-9;v-=step)ticks.push(Math.abs(v)<1e-9?0:v);if(!ticks.includes(0))ticks.push(0);
@@ -241,7 +245,7 @@ function fail(e){
  const status=e&&e.status,canRetry=status!==401&&status!==402;
  const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  // The transactions table announces the failure (role=alert); this panel only says it, once.
- const k=$("rd-kpis");if(k)k.innerHTML='<p class="rd-empty rd-empty--error">Insider flow is unavailable: '+E(msg)+(canRetry?' <button type="button" class="rd-retry" data-retry="trades" aria-label="Try loading insider flow again">Try again</button>':'')+'</p>';
+ const k=$("rd-kpis");if(k)k.innerHTML='<p class="rd-empty rd-empty--error">Insider flow is unavailable: '+E(msg)+(canRetry?' <button type="button" class="rd-retry" data-retry="trades" data-hf-atom aria-label="Try loading insider flow again">Try again</button>':'')+'</p>';
  const c=$("rd-daily-chart");if(c)c.innerHTML='<p class="rd-empty rd-empty--error">The chart is unavailable until the transactions load.</p>';
  const t=$("rd-daily-toggle");if(t)t.hidden=true;
  const tb=$("rd-daily-table");if(tb){tb.hidden=true;tb.innerHTML="";}
@@ -293,7 +297,7 @@ document.addEventListener("insidir:status-error",e=>{
  // Keep the right-aligned value short: the HTTP status when there is one, else the message.
  const msg=String(e.detail||"").replace(/\s*Taking you.*$/,""),code=/HTTP \d{3}/.exec(msg),why=code?code[0]:msg.slice(0,80);
  const state=$("v4-data-state");
- if(state)state.innerHTML="Unavailable"+(why?" · "+String(why).replace(/[&<>"']/g,""):"")+' <button type="button" class="rd-retry" data-retry="status">Try again</button>';
+ if(state)state.innerHTML="Unavailable"+(why?" · "+String(why).replace(/[&<>"']/g,""):"")+' <button type="button" class="rd-retry" data-retry="status" data-hf-atom>Try again</button>';
  set("v4-filing-count","Unavailable");set("v4-last-import","Unavailable");
 });
 })();

@@ -9,8 +9,8 @@
        purchases above the zero line, red sales below, a readout on hover and focus, a table of
        every day), sales and purchases by company and the largest reported transactions;
      - the transactions table prints signed shares, price per share, value, trade and filing dates
-       with the lag, and the SEC meaning of each code; purchases are green, sales red, and the
-       orange accent appears nowhere on the page except the logo's full stop;
+       with the lag, and the SEC meaning of each code; purchases are green, sales red, and nothing
+       on the page is orange (the accent is retired, the logo's full stop included);
      - the company search submits to company.html?ticker=;
      - the insider-activity filters change the rows;
      - watchlist rows link to company.html?ticker= and show that ticker's latest transaction, looked
@@ -28,6 +28,8 @@
      - no raster image is upscaled (native pixels ≥ 2× the rendered size, cover-adjusted);
      - no horizontal overflow at 360, 390, 768, 1024 and 1440px, standalone touch targets ≥ 24px on
        phones, research-note text in one aligned column, and no console errors.
+   Every scroll-reveal block is shown at load (InsidirMotion.revealAll) and measurements wait for the
+   motion layer's atoms to be home, so nothing is measured mid-animation.
 
    Usage: node scripts/dashboard-check.mjs [--shots dir] [--widths 360,390,768,1024,1440]
    Exits non-zero on any failure and prints every check it ran. */
@@ -96,7 +98,19 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion });
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
-  await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
+  await context.addInitScript(() => {
+    // Every scroll-reveal block in place at once; a block let go from .hf-pending may start a transition of its own
+    // from the hidden state (28px low, transparent), so that is finished too and measurements see the final layout.
+    const go = () => {
+      const M = window.InsidirMotion;
+      if (!M) return;
+      const held = new Set(document.querySelectorAll(".hf-pending,.hf-revealing"));
+      M.revealAll();
+      if (held.size) for (const a of document.getAnimations()) if (a instanceof CSSTransition && a.effect && held.has(a.effect.target)) { try { a.finish(); } catch {} }
+    };
+    addEventListener("DOMContentLoaded", () => setTimeout(go, 0));
+    addEventListener("load", go);
+  });
   const api = [];
   await context.route("**/v1/**", async route => {
     const url = new URL(route.request().url());
@@ -137,6 +151,8 @@ const settle = async page => {
   await page.waitForFunction(() => !/Loading/.test(document.querySelector("#v3-trades")?.textContent || "Loading") && !/Loading/.test(document.querySelector("#v3-filings")?.textContent || "Loading") && !/Loading|Checking/.test(document.querySelector("#v3-watchlist")?.textContent || "Loading") && !/Loading/.test(document.querySelector("#v10-people-preview")?.textContent || "Loading") && !/Checking/.test(document.querySelector("#v4-filing-count")?.textContent || "Checking"), null, { timeout: 15000 });
   await page.evaluate(() => document.fonts && document.fonts.ready);
   await page.waitForTimeout(300);
+  // Measurements see every atom at home: none still trailing a scroll or pushed by the pointer (v13-motion.js).
+  await page.waitForFunction(() => ![...document.querySelectorAll("[data-hf-atom]")].some(e => e.style.getPropertyValue("--hf-dx") || e.style.getPropertyValue("--hf-dy") || e.style.getPropertyValue("--hf-s")), null, { timeout: 3000 }).catch(() => {});
 };
 const text = (page, sel) => page.locator(sel).first().innerText().catch(() => "");
 
@@ -245,16 +261,23 @@ try {
     await page.click("#rd-daily-toggle");
     const dt = await page.evaluate(() => ({ expanded: document.getElementById("rd-daily-toggle").getAttribute("aria-expanded"), hidden: document.getElementById("rd-daily-table").hidden, rows: [...document.querySelectorAll("#rd-daily-table tbody tr")].map(r => r.innerText.replace(/\s+/g, " ")) }));
     check(dt.expanded === "true" && !dt.hidden && dt.rows.length === 3 && /Sep 12, 2026 \$0 \(0\) \$325,000 \(1\) \u2212\$325,000/.test(dt.rows[0]), "Show the numbers opens a table of every trade day", dt);
-    // Colour: green and red carry direction; the orange accent is used only by the logo's full stop.
+    // Colour: green and red carry direction; nothing is orange (the accent is retired, the logo's full stop included).
     const orange = await page.evaluate(() => {
-      const warm = c => /^rgba?\(233, 118, 43/.test(c);
-      return [...document.querySelectorAll("body *")].filter(e => !e.closest(".v13-dot")).filter(e => {
-        const cs = getComputedStyle(e);
-        const border = ["Top", "Right", "Bottom", "Left"].some(side => parseFloat(cs["border" + side + "Width"]) > 0 && cs["border" + side + "Style"] !== "none" && warm(cs["border" + side + "Color"]));
-        return border || [cs.backgroundColor, cs.fill, cs.stroke].some(warm) || (warm(cs.color) && [...e.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim()));
-      }).slice(0, 8).map(e => e.tagName.toLowerCase() + "." + [...e.classList].join("."));
+      // Any warm orange, not only the old #e9762b: the pixel rule of the palette audit, applied to computed colours.
+      const warm = c => { const m = /rgba?\(([^)]+)\)/.exec(c || ""); if (!m) return false; const [r, g, b, a = 1] = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number); return a > 0.05 && r > 110 && r - g > 35 && g - b > 15 && r - b > 70; };
+      const found = [];
+      for (const e of document.querySelectorAll("body *")) {
+        const text = [...e.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim());
+        for (const pe of [null, "::before", "::after"]) {
+          const cs = getComputedStyle(e, pe);
+          if (pe && (cs.content === "none" || cs.content === "normal")) continue;
+          const border = ["Top", "Right", "Bottom", "Left"].some(side => parseFloat(cs["border" + side + "Width"]) > 0 && cs["border" + side + "Style"] !== "none" && warm(cs["border" + side + "Color"]));
+          if (border || [cs.backgroundColor, cs.fill, cs.stroke, cs.boxShadow, cs.outlineStyle !== "none" ? cs.outlineColor : ""].some(warm) || (warm(cs.color) && (pe ? cs.content !== '""' : text))) found.push(e.tagName.toLowerCase() + "." + [...e.classList].join(".") + (pe || ""));
+        }
+      }
+      return found.slice(0, 8);
     });
-    check(orange.length === 0, "no orange on the dashboard except the logo's full stop", orange);
+    check(orange.length === 0, "nothing on the dashboard is orange (the logo's full stop included)", orange);
     const badges = await page.evaluate(() => ({ sale: getComputedStyle(document.querySelector("#v3-trades .rd-type--sell")).color, buy: getComputedStyle(document.querySelector("#v3-trades .rd-type--buy")).color }));
     check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)", "sale badges are red and purchase badges green", badges);
     const status = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll(".rd-status > div")].map(d => [d.querySelector("dt").textContent, d.querySelector("dd").textContent])));

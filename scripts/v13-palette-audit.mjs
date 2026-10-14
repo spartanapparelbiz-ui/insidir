@@ -518,14 +518,26 @@ await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 const base = "http://127.0.0.1:" + server.address().port;
 const shots = opt("shots", "");
 if (shots) await mkdir(shots, { recursive: true });
-const report = { tolerance: TOL, pages: [] };
+const report = { tolerance: TOL, warmTolerance: WARM_TOL, pages: [] };
 let browser;
 try {
   browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600 });
     // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
-    await context.addInitScript(() => addEventListener("DOMContentLoaded", () => setTimeout(() => window.InsidirMotion && window.InsidirMotion.revealAll(), 0)));
+    await context.addInitScript(() => {
+      // Every scroll-reveal block in place at once; a block let go from .hf-pending may start a transition of its own
+      // from the hidden state (28px low, transparent), so that is finished too and measurements see the final layout.
+      const go = () => {
+        const M = window.InsidirMotion;
+        if (!M) return;
+        const held = new Set(document.querySelectorAll(".hf-pending,.hf-revealing"));
+        M.revealAll();
+        if (held.size) for (const a of document.getAnimations()) if (a instanceof CSSTransition && a.effect && held.has(a.effect.target)) { try { a.finish(); } catch {} }
+      };
+      addEventListener("DOMContentLoaded", () => setTimeout(go, 0));
+      addEventListener("load", go);
+    });
     // Self-test hooks: prove the audit fails when something orange is added (see the header).
     if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);

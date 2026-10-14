@@ -26,7 +26,7 @@
   <div class="v6-nav__actions">
    <a class="v6-signin" href="signin.html">Log in</a>
    <a class="v9-btn v9-btn--ink v9-btn--small" href="signup.html" aria-current="page">Get started <span class="v13-arrow" aria-hidden="true">↗</span></a>
-   <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
+   <button id="v6-menu-button" class="v6-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
  <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>
@@ -38,8 +38,8 @@
   <div class="auth-panel__inner">
    <div class="auth-card">
     <ol class="auth-steps" aria-label="Getting started">
-     <li aria-current="step"><span>01</span> Account</li>
-     <li><span>02</span> Subscription</li>
+     <li aria-current="step"><span data-hf-atom>01</span> Account</li>
+     <li><span data-hf-atom>02</span> Subscription</li>
     </ol>
     <h1 id="auth-title" class="auth-title">Create your account.</h1>
     <p class="auth-sub">Insidir is a paid research workspace: one plan, $39 a month. Create your login here, then subscribe on the next step through Stripe's secure checkout. Cancel any time from Billing.</p>
@@ -82,7 +82,7 @@
      </div>
     </form>
 
-    <p class="auth-switch">Already have an account? <a class="auth-link" href="signin.html" data-auth-switch>Log in</a></p>
+    <p class="auth-switch">Already have an account? <a class="auth-link" href="signin.html" data-auth-switch data-hf-atom>Log in</a></p>
     <p class="auth-legal">By creating an account you agree to the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy Policy</a>.</p>
    </div>
   </div>
@@ -91,21 +91,21 @@
  <aside class="auth-media" aria-labelledby="auth-plan-title">
   <div class="auth-media__field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="150" aria-hidden="true"></div>
   <div class="v6-auth-story auth-plan-story">
-   <p class="v6-auth-story__label">Insidir <span aria-hidden="true">/</span> One plan</p>
-   <h2 id="auth-plan-title" class="auth-price">$39<small>/ month</small></h2>
-   <p>The whole workspace, billed monthly in US dollars. No tiers, no add-ons.</p>
-   <ul class="auth-included" aria-label="Included">
+   <p class="v6-auth-story__label" data-hf-reveal>Insidir <span aria-hidden="true">/</span> One plan</p>
+   <h2 id="auth-plan-title" class="auth-price" data-hf-reveal>$39<small>/ month</small></h2>
+   <p data-hf-reveal>The whole workspace, billed monthly in US dollars. No tiers, no add-ons.</p>
+   <ul class="auth-included" aria-label="Included" data-hf-reveal-group>
     <li>Company reports for SEC-listed tickers</li>
     <li>SEC filings and Form&nbsp;4 insider activity, linked to the original documents</li>
     <li>Research desk with a private research journal</li>
     <li>Watchlist, alerts, followed people and manual holdings</li>
    </ul>
-   <ol class="auth-index auth-index--steps" aria-label="How it works">
+   <ol class="auth-index auth-index--steps" aria-label="How it works" data-hf-reveal-group>
     <li><span>01</span><strong>Create your login</strong><em>Email and password, on this page.</em></li>
     <li><span>02</span><strong>Subscribe</strong><em>Secure checkout by Stripe. Insidir never sees your card number.</em></li>
     <li><span>03</span><strong>Start researching</strong><em>Your dashboard opens as soon as the subscription is active.</em></li>
    </ol>
-   <p class="auth-story__note">Research software by Aethric LLC. Not a broker and not investment advice.</p>
+   <p class="auth-story__note" data-hf-reveal>Research software by Aethric LLC. Not a broker and not investment advice.</p>
   </div>
  </aside>
 </main>
