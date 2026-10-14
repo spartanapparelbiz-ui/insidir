@@ -149,7 +149,7 @@
       <button class="icon-btn app-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
-      <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir.</a>
+      <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
       <nav class="app-nav" aria-label="Product">
         ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>

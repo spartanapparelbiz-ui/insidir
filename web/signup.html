@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Create your account — insidir.</title>
   <meta name="description" content="Create an Insidir account to explore public-record research, source-linked insider filings and activity on stocks you follow.">
-  <meta name="theme-color" content="#f9f8f4">
+  <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   
   <script>document.documentElement.classList.add('js')</script>
@@ -21,15 +21,18 @@
   <link rel="stylesheet" href="assets/css/v6-auth.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-auth.css?v=1">
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="auth-body auth-body--signup v2-auth v3-auth v6-auth">
+<body class="auth-body auth-body--signup v2-auth v3-auth v6-auth v13">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <main id="main" class="auth auth--signup">
     <section class="auth-panel" aria-labelledby="auth-title">
       <div class="auth-panel__inner">
         <div class="auth-brand" data-reveal="down" data-delay="60">
-          <a class="logo auth-logo" href="index.html" aria-label="insidir. home">insidir.</a>
+          <a class="logo auth-logo" href="index.html" aria-label="insidir. home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
         </div>
 
         <div class="auth-card" data-stagger="65" data-delay="140">
@@ -75,7 +78,7 @@
     </section>
 
     <aside class="auth-media" aria-label="Insidir product information">
-      <div class="v6-auth-story"><div class="v6-auth-story__label">INSIDIR / YOUR RESEARCH WORKSPACE</div><h2>Know more.<br>Decide with<br><em>context.</em></h2><p>Explore insider disclosures, understand company filings and keep your own research organized in a focused workspace.</p><div class="v6-auth-story__rule"><span>YOUR RESEARCH. YOUR DECISIONS.</span><span>insidir.</span></div></div>
+      <div class="v6-auth-story"><div class="v6-auth-story__label">INSIDIR / YOUR RESEARCH WORKSPACE</div><h2>Know more.<br>Decide with<br><em>context.</em></h2><p>Explore insider disclosures, understand company filings and keep your own research organized in a focused workspace.</p><div class="v6-auth-story__rule"><span>YOUR RESEARCH. YOUR DECISIONS.</span><span>insidir<span class="v13-dot" aria-hidden="true">.</span></span></div></div>
       <div class="auth-media__frame grain">
         <div class="auth-media__layer" data-auth-parallax>
           <div class="auth-media__scroll" data-parallax="0.1">
@@ -88,5 +91,14 @@
       </div>
     </aside>
   </main>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
 </body>
 </html>

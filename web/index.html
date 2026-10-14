@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080e14">
+<meta name="theme-color" content="#0c0c0b">
 <meta name="application-name" content="insidir.">
 <meta property="og:site_name" content="insidir.">
 <meta name="description" content="Insidir is the clear way to research public companies, SEC financials, filings and insider activity. Explore official source-backed financial intelligence in one workspace.">
@@ -17,8 +17,11 @@
 <script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/v9-motion.js?v=1"></script>
 <script defer src="assets/js/v12-home.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-home.css?v=1">
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="v6-site v9-site v12-home">
+<body class="v6-site v9-site v12-home v13">
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="v6-nav v9-nav">
  <div class="v9-width v6-nav__inner">
@@ -37,8 +40,9 @@
  </nav>
 </header>
 <main id="main">
-<section class="v9-hero v12-hero" aria-labelledby="v6-hero-heading">
- <div class="v9-width v6-hero__inner">
+<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir" data-crop="0.22" aria-labelledby="v6-hero-heading">
+ <canvas aria-hidden="true"></canvas>
+ <div class="v9-width v6-hero__inner v13-hero__inner">
   <p class="v12-eyebrow v9-hero__eyebrow"><span class="v9-tiny-dot" aria-hidden="true"></span> SEC-BACKED COMPANY RESEARCH</p>
   <h1 id="v6-hero-heading">Know what moves<br><em>a company.</em></h1>
   <p class="v9-hero__description">Financials, insider activity, and SEC filings. Everything you need to understand a public company, all in one place.</p>
@@ -47,7 +51,9 @@
    <a class="v12-secondary-link" href="#product">Explore the platform <span aria-hidden="true">↓</span></a>
   </div>
   <p class="v9-hero__caption">Real public filings. Original sources. No brokerage connection required.</p>
+  <p class="v13-hero__meta v13-caption">Official SEC records · delayed prices · no simulated data</p>
  </div>
+ <span class="hwf-sr">insidir</span>
 </section>
 <section class="v12-product-section" id="product" aria-labelledby="v12-demo-heading">
  <div class="v9-width">
@@ -117,5 +123,13 @@
 </div></div></div></section>
 <section class="v12-final-cta"><div class="v9-width"><p class="v12-eyebrow">THE NEXT QUESTION STARTS HERE</p><h2>Know more.<br><span>Decide for yourself.</span></h2><p>One workspace for the financial facts and public filings that matter.</p><a href="signup.html" class="v9-btn v9-btn--ink">Get started for free ↗</a></div></section>
 </main>
-<footer class="v9-footer v12-footer"><div class="v9-width"><div class="v9-footer__top"><div><a class="v6-logo" href="index.html">insidir<span class="v12-logo-dot">.</span></a><p>Financial research without the noise.</p></div><nav aria-label="Product"><strong>Platform</strong><a href="explore.html">Companies</a><a href="people.html">People</a><a href="filings.html">SEC Filings</a><a href="pricing.html">Pricing</a></nav><nav aria-label="Company"><strong>Company</strong><a href="company-info.html">About</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="mailto:hello@aethric.llc">Contact</a></nav></div><div class="v9-footer__bottom"><span>© 2026 Aethric LLC</span><span>For independent research only. Data may be delayed. Not investment advice.</span></div></div></footer>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
 </body></html>

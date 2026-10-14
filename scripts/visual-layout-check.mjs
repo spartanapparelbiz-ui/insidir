@@ -1,8 +1,9 @@
-/* Insidir V9 browser gate: confirm clean landing, mobile navigation, real images and live workspace. */
+/* Insidir browser gate: confirm the V13 halftone identity, clean landing, mobile navigation, real images and live workspace. */
 import assert from "node:assert/strict";
 import {createServer} from "node:http";
 import {serveStatic} from "../src/web.mjs";
 import {chromium} from "playwright-core";
+const document_has_halftone=html=>/data-halftone-(hero|footer)/.test(html);
 const server=createServer((req,res)=>{serveStatic(req,res).then(found=>{if(!found){res.writeHead(404);res.end("not found");}}).catch(e=>{res.writeHead(500);res.end(String(e));});});
 await new Promise(ok=>server.listen(0,"127.0.0.1",ok));
 const base="http://127.0.0.1:"+server.address().port;
@@ -15,16 +16,24 @@ try{
   try{
    const issues=[];page.on("pageerror",e=>issues.push(String(e)));
    await page.goto(base+"/",{waitUntil:"domcontentloaded",timeout:20000});
+   await page.waitForFunction(()=>!!document.querySelector("[data-halftone-hero]")?.__halftone,null,{timeout:10000});
    const landing=await page.evaluate(()=>{
      const rect=s=>{const e=document.querySelector(s);if(!e)throw Error("Missing "+s);const r=e.getBoundingClientRect();return {x:r.left,mid:r.left+r.width/2,width:r.width,y:r.top};};
      const hero=rect(".v6-hero__inner"),h1=rect("#v6-hero-heading"),list=rect(".v6-live__list"),head=rect(".v6-nav"),body=document.body;
+     const halftone=document.querySelector("[data-halftone-hero]"),canvas=halftone&&halftone.querySelector("canvas");
      return {hero,h1,list,head,overflow:document.documentElement.scrollWidth-innerWidth,font:getComputedStyle(document.querySelector("h1")).fontFamily,
+       label:getComputedStyle(document.querySelector(".v9-hero__eyebrow")).fontFamily,
+       halftone:{mounted:!!(halftone&&halftone.__halftone),width:canvas?canvas.getBoundingClientRect().width:0,height:canvas?canvas.getBoundingClientRect().height:0,inHero:!!(halftone&&halftone.closest("main"))},
+       plainFooter:!!document.querySelector("footer.v13-footer--plain .hwf-top"),
        hasFakeDashboard:!!document.querySelector(".is3-window,.mock-dashboard,.preview-dashboard")};
    });
    assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.h1.mid-item.width/2)<7,item.width+"px headline off-center "+JSON.stringify(landing));
-   assert.ok(landing.font.includes("Inter"),"Finance landing headline typography should use Inter");
+   assert.ok(Math.abs(landing.h1.x-landing.hero.x)<3&&landing.h1.width<=item.width,item.width+"px headline not on the hero grid "+JSON.stringify(landing));
+   assert.ok(landing.font.includes("Inter"),"Landing headline typography should use Inter");
+   assert.ok(landing.label.includes("JetBrains Mono"),"Tracked labels should be set in the self-hosted JetBrains Mono: "+landing.label);
+   assert.ok(landing.halftone.mounted&&landing.halftone.width>=item.width-2&&landing.halftone.height>300&&landing.halftone.inHero,"Halftone wordmark hero must draw in the landing page's first screen "+JSON.stringify(landing.halftone));
+   assert.ok(landing.plainFooter,"Landing page must end with the plain tracked footer");
    assert.ok(!landing.hasFakeDashboard,"No fake trading dashboard");
    const terminal=page.locator(".v9-hero__visual.v12-terminal");
    assert.equal(await terminal.count(),1,"SEC research preview missing");
@@ -36,7 +45,7 @@ try{
     chartVisible:!!document.querySelector("#v12-demo-chart"),
     controls:document.querySelectorAll("[data-v12-ticker]").length
    }));
-   assert.equal(darkTheme.background,"rgb(8, 14, 20)","Homepage must match dark company interface");
+   assert.equal(darkTheme.background,"rgb(12, 12, 11)","Homepage must sit on the V13 night paper");
    assert.ok(darkTheme.chartVisible&&darkTheme.controls===4,"Live SEC interactive example unavailable");
    await page.locator('[data-v12-ticker="AAPL"]').click();
    assert.equal(await page.locator('[data-v12-ticker="AAPL"]').getAttribute("aria-pressed"),"true");
@@ -164,7 +173,8 @@ try{
      assert.ok(found.length>=3 && found.slice(0,3).every(v=>v>=200),key+" should be readable light text, found "+JSON.stringify(companyTheme));
    }
    assert.ok(!companyTheme.tabs.includes("255, 255, 255"),"Company tabs must never have a white background");
-   assert.match(companyTheme.body,/rgb\(10,\s*14,\s*19\)/,"Company report should use the dark finance UI");
+   assert.match(companyTheme.body,/rgb\(12,\s*12,\s*11\)/,"Company report should sit on the V13 night paper");
+   assert.ok(!document_has_halftone(await page.content()),"The dotted wordmark belongs to the landing hero only");
    assert.ok(companyTheme.overflow<=4,item.width+"px company report horizontal overflow "+JSON.stringify(companyTheme));
    assert.ok(companyTheme.chartWidth>200,"Price chart too narrow "+JSON.stringify(companyTheme));
    assert.deepEqual(issues,[],"Company report browser errors: "+issues.join("; "));
@@ -173,11 +183,16 @@ try{
    for(const route of ["/signin.html","/signup.html"]){
     await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:20000});
     assert.ok(await page.locator("[data-auth-form]").isVisible(),route+" auth form unavailable");
-    const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,serif:getComputedStyle(document.querySelector(".auth-title")).fontFamily}));
+    const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,heading:getComputedStyle(document.querySelector(".auth-title")).fontFamily,
+      headingColor:getComputedStyle(document.querySelector(".auth-title .split-word>span")||document.querySelector(".auth-title")).color,
+      label:getComputedStyle(document.querySelector(".auth-field .label")).fontFamily,footer:!!document.querySelector("footer.v13-footer--plain .hwf-top"),logoDot:!!document.querySelector(".auth-logo .v13-dot")}));
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
-    assert.match(auth.serif,/Source Serif/);
+    assert.match(auth.heading,/Inter/,route+" auth heading should be set in Inter");
+    assert.equal(auth.headingColor,"rgb(233, 228, 218)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
+    assert.match(auth.label,/JetBrains Mono/,route+" field labels should be tracked mono");
+    assert.ok(auth.footer&&auth.logoDot,route+" needs the plain footer and the dotted wordmark logo");
    }
-   console.log("V9 browser verified:",item.width+"px","centered landing","horizontal top navigation","live SEC panels","working auth","no overflow");
+   console.log("V13 browser verified:",item.width+"px","halftone hero","horizontal top navigation","live SEC panels","working auth","no overflow");
    assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));
   }finally{await context.close()}
  }

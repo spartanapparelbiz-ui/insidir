@@ -1,0 +1,83 @@
+/* Insidir V13 — pricing, company and legal pages. Layout detail on top of v13-halftone.css. Every declaration
+   in this file lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css). */
+@layer insidir-v13{
+body.v13.v3-static{font:400 14px/1.75 var(--hf-sans)!important}
+body.v13.v3-static .v3-static__shell{max-width:1240px!important;width:min(100% - 64px,1240px)!important}
+body.v13.v3-static .v3-static__nav-inner{min-height:72px!important}
+body.v13.v3-static .v3-static__cta{padding:0 18px!important;height:38px!important;min-height:38px!important;display:inline-flex!important;align-items:center!important}
+
+/* Page header: mono eyebrow, heavy title, muted lead, hairline below. */
+body.v13.v3-static .v3-static__header{padding:clamp(56px,8vw,104px) 0 clamp(32px,4vw,48px)!important;border-bottom:1px solid var(--hf-line)!important}
+body.v13.v3-static h1{font:800 clamp(44px,6vw,92px)/.98 var(--hf-sans)!important;letter-spacing:-.06em!important;margin:22px 0 22px!important;color:var(--hf-ink)!important;max-width:16ch!important;text-wrap:balance!important}
+body.v13.v3-static .v3-static__header>p:last-child{font:400 15px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:640px!important}
+
+/* Pricing: two hairline columns, numbers in heavy Inter, mono labels. */
+body.v13.v3-static .v3-price__grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0!important;padding:clamp(40px,5vw,64px) 0 clamp(40px,5vw,72px)!important;max-width:none!important;border-top:0!important}
+body.v13.v3-static .v3-price__card{display:flex!important;flex-direction:column!important;padding:36px clamp(24px,3vw,44px) 40px!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;border-radius:0!important;box-shadow:none!important}
+body.v13.v3-static .v3-price__card--pro{border-left:1px solid var(--hf-line)!important;background:var(--hf-surface)!important}
+body.v13.v3-static .v3-price__label{display:flex!important;justify-content:space-between!important;gap:14px!important}
+body.v13.v3-static .v3-price__card h2{font:700 clamp(24px,2.2vw,30px)/1.15 var(--hf-sans)!important;letter-spacing:-.045em!important;margin:30px 0 8px!important;color:var(--hf-ink)!important}
+body.v13.v3-static .v3-price__amount{font:800 clamp(52px,5vw,72px)/1.05 var(--hf-sans)!important;letter-spacing:-.06em!important;color:var(--hf-ink)!important;margin:12px 0!important;display:flex!important;align-items:baseline!important;gap:12px!important;flex-wrap:wrap!important}
+body.v13.v3-static .v3-price__amount small{font:400 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static .v3-price__description{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:40ch!important}
+body.v13.v3-static .v3-price__card ul{padding:18px 0 22px!important;margin:22px 0 0!important;border-top:1px solid var(--hf-line)!important;min-height:0!important;list-style:none!important}
+body.v13.v3-static .v3-price__card li{position:relative!important;padding:9px 0 9px 22px!important;font:400 13px/1.6 var(--hf-sans)!important;color:var(--hf-soft)!important;border:0!important}
+body.v13.v3-static .v3-price__card li::before{content:"—"!important;position:absolute!important;left:0!important;top:9px!important;color:var(--hf-warm)!important;font-family:var(--hf-mono)!important;font-size:11px!important}
+body.v13.v3-static .v3-price__button{margin-top:auto!important;width:100%!important}
+body.v13.v3-static .v3-price__note{margin:0 0 clamp(48px,6vw,80px)!important;max-width:760px!important}
+body.v13.v3-static .v3-price__facts{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:clamp(18px,2.5vw,32px)!important;margin-bottom:clamp(56px,7vw,96px)!important}
+body.v13.v3-static .v3-price__facts>div{padding:22px 0 0!important;border-top:1px solid var(--hf-line-2)!important}
+body.v13.v3-static .v3-price__facts h3{font:700 20px/1.2 var(--hf-sans)!important;letter-spacing:-.035em!important;margin-bottom:10px!important}
+body.v13.v3-static .v3-price__facts p{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important}
+
+/* Company page: four hairline-topped columns. */
+body.v13.v3-static .v3-company__grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0!important;padding:clamp(40px,5vw,64px) 0 clamp(56px,7vw,96px)!important}
+body.v13.v3-static .v3-company__box{padding:28px clamp(20px,3vw,40px) 36px!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;border-radius:0!important}
+body.v13.v3-static .v3-company__box:nth-child(2n){border-left:1px solid var(--hf-line)!important}
+body.v13.v3-static .v3-company__box:nth-child(n+3){border-top:1px solid var(--hf-line)!important}
+body.v13.v3-static .v3-company__box h2{font:700 clamp(24px,2.4vw,32px)/1.12 var(--hf-sans)!important;letter-spacing:-.045em!important;margin:16px 0 12px!important}
+body.v13.v3-static .v3-company__box p{font:400 13px/1.8 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:44ch!important}
+body.v13.v3-static .v3-company__box a{display:inline-block!important;margin-top:18px!important;font:500 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
+  background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13.v3-static .v3-company__box a:hover{color:var(--hf-warm)!important;background-size:100% 1px!important}
+
+/* Legal: sticky mono contents, numbered sections, readable soft copy. */
+body.v13.v3-static .v3-static__layout{display:grid!important;grid-template-columns:220px minmax(0,1fr)!important;gap:clamp(40px,6vw,88px)!important;padding:clamp(40px,5vw,56px) 0 clamp(64px,8vw,110px)!important}
+body.v13.v3-static .v3-static__toc{position:sticky!important;top:104px!important;align-self:start!important;display:flex!important;flex-direction:column!important;gap:0!important;border-top:1px solid var(--hf-line-2)!important;padding-top:14px!important;
+  font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13.v3-static .v3-static__toc strong{margin-bottom:10px!important;color:var(--hf-faint)!important}
+body.v13.v3-static .v3-static__toc a{padding:7px 0!important;border-bottom:1px solid var(--hf-line)!important;color:var(--hf-muted)!important;text-decoration:none!important}
+body.v13.v3-static .v3-static__toc a:hover{color:var(--hf-ink)!important}
+body.v13.v3-static .v3-static__content section{border-bottom:1px solid var(--hf-line)!important;padding:0 0 32px!important;margin-bottom:36px!important;scroll-margin-top:110px!important}
+body.v13.v3-static .v3-static__content section:last-child{border:0!important}
+body.v13.v3-static .v3-static__content h2{font:700 clamp(22px,2.2vw,28px)/1.2 var(--hf-sans)!important;letter-spacing:-.04em!important;margin:0 0 16px!important;color:var(--hf-ink)!important}
+body.v13.v3-static .v3-static__content p,body.v13.v3-static .v3-static__content li{font:400 14px/1.85 var(--hf-sans)!important;color:var(--hf-soft)!important;margin-bottom:13px!important;max-width:72ch!important}
+body.v13.v3-static .v3-static__content ul{padding-left:18px!important;margin-top:12px!important;list-style:none!important}
+body.v13.v3-static .v3-static__content li{position:relative!important}
+body.v13.v3-static .v3-static__content li::before{content:"—"!important;position:absolute!important;left:-18px!important;color:var(--hf-faint)!important;font-family:var(--hf-mono)!important;font-size:11px!important}
+body.v13.v3-static .v3-static__content strong{color:var(--hf-ink)!important;font-weight:600!important}
+body.v13.v3-static .v3-static__content a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+body.v13.v3-static .v3-static__content a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13.v3-static .v3-static__content code{font:400 12px var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-surface)!important;padding:1px 5px!important}
+body.v13.v3-static .v3-callout{border:0!important;border-left:2px solid var(--hf-warm)!important;padding:14px 18px!important;background:var(--hf-surface)!important;border-radius:0!important}
+body.v13.v3-static .v3-callout p{color:var(--hf-ink)!important}
+@media (max-width:800px){
+  body.v13.v3-static .v3-static__shell{width:calc(100% - 40px)!important}
+  body.v13.v3-static .v3-static__layout{grid-template-columns:1fr!important;gap:28px!important}
+  body.v13.v3-static .v3-static__toc{position:static!important;flex-direction:row!important;flex-wrap:wrap!important;gap:0 18px!important;border-top:0!important;border-bottom:1px solid var(--hf-line)!important;padding:0 0 14px!important}
+  body.v13.v3-static .v3-static__toc strong{flex:1 1 100%!important}
+  body.v13.v3-static .v3-static__toc a{border:0!important;padding:5px 0!important}
+  body.v13.v3-static .v3-price__grid,body.v13.v3-static .v3-company__grid{grid-template-columns:1fr!important}
+  body.v13.v3-static .v3-price__card--pro,body.v13.v3-static .v3-company__box:nth-child(2n){border-left:0!important}
+  body.v13.v3-static .v3-price__facts{grid-template-columns:1fr!important}
+}
+@media (max-width:560px){
+  body.v13.v3-static .v3-static__shell{width:calc(100% - 32px)!important}
+  body.v13.v3-static .v3-static__nav-inner{gap:14px!important;min-height:64px!important}
+  body.v13.v3-static .v3-static__nav-inner nav{gap:14px!important}
+  body.v13.v3-static .v3-static__nav-inner nav a:not(:last-child){display:none!important}
+  body.v13.v3-static h1{font-size:clamp(38px,11vw,48px)!important}
+  body.v13.v3-static .v3-price__card{padding:28px 0 32px!important}
+  body.v13.v3-static .v3-company__box{padding:24px 0 30px!important}
+}
+}

@@ -1,3 +1,10 @@
+## Insidir V13 "Halftone" identity (October 2026)
+
+- One visual system on every page — landing, sign-in and sign-up, the product dashboard and desk pages, company reports, pricing, legal and the not-found page: night paper `#0c0c0b`, warm off-white ink `#e9e4da` and a single warm orange `#e9762b` used only as heat (live dots, the chart line, hover states, losses and sales). Every other colour is a blend of those three.
+- Type: self-hosted JetBrains Mono (SIL OFL) for tracked uppercase micro-labels, navigation, buttons, table heads and captions; Inter 700–800 with tight tracking for headings, numbers and the `insidir` wordmark with its warm dot. Square corners, hairline rules, no shadows, print grain over everything, photographs in grayscale.
+- The landing page opens on a halftone wordmark: `insidir` set enormous and cropped by the bottom of the first screen, printed as a field of dots sized by letter coverage. Dots part around the pointer on springs and warm as they are pushed; a click sends a ring through the word. It appears only there; every page ends with the same plain tracked footer.
+- Implementation: `web/assets/css/v13-halftone.css` (shared theme in the `insidir-v13` cascade layer, so it re-skins the older stylesheets without editing them), one `v13-<family>.css` per page family, `web/assets/js/v13-halftone.js` (the halftone engine, plain JavaScript, no dependencies) and a new favicon. `node scripts/v13-palette-audit.mjs` renders every page in headless Chromium and fails on any colour outside the palette, low text contrast, serif text, overflow, browser errors, a missing footer or a dotted wordmark anywhere but the landing hero; CI runs it after the layout check.
+
 ## Insidir V12 company report (October 2026)
 
 - `company.html?ticker=NVDA` is one market-terminal design for **every company in the SEC's official ticker list**: logo, name, exchange and description; a delayed price chart with 1D/1W/1M/3M/1Y/5Y ranges; key facts (market cap, enterprise value, P/E, TTM revenue and net income, employees, headquarters, founding year, website); and Overview, Financials, SEC filings, Insider activity, People and News tabs.
@@ -25,7 +32,7 @@
 - Research desk (`research.html?ticker=AAPL`) connects imported SEC transactions and original filing links to a private, user-authored research journal. Saving a research review never submits an order.
 - **Free manual holdings:** signed-in users add tickers and share quantities directly in `portfolio.html`, then see source-linked imported Form 4 activity and links to Research Desk. No Plaid, SnapTrade, live price feed, paid API, or brokerage credentials required. Entries are explicitly user-reported and editable/removable.
 - Portfolio screen (`portfolio.html`) supports optional read-only SnapTrade Personal OAuth connections. User tokens are encrypted server-side and holdings are fetched on demand; equity holdings can open the SEC Research Desk and see recent, clearly labeled ticker-only filing matches. Requires a registered SnapTrade OAuth application and production approval.
-- Static HTML, CSS and JS with no build step and no third-party requests. Fonts and imagery are self-hosted
+- Static HTML, CSS and JS with no build step and no third-party requests. Fonts (Inter, JetBrains Mono, Source Serif 4) and imagery are self-hosted
 - `npm run web` serves the site without a database at http://localhost:5173. `npm start` serves it from the engine alongside the API
 
 [Website guide](docs/WEBSITE.md)
