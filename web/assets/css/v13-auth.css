@@ -1,0 +1,58 @@
+/* Insidir V13 — sign-in and sign-up. Layout detail on top of v13-halftone.css. Every declaration in this file
+   lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css). */
+@layer insidir-v13{
+/* Two panels on the same paper: the form on the left, the story on a surface panel to the right. */
+body.v13.v3-auth .auth{background:var(--hf-bg)!important;grid-template-columns:minmax(0,1fr) minmax(0,.92fr)!important;min-height:100svh!important}
+body.v13.v3-auth .auth-panel,body.v13.v3-auth .auth-panel__inner,body.v13.v3-auth .auth-card{background:transparent!important;box-shadow:none!important}
+body.v13.v3-auth .auth-panel__inner{padding:30px clamp(24px,4.3vw,75px) 48px!important;max-width:760px!important}
+body.v13.v3-auth .auth-brand{margin:0!important;align-self:flex-start!important}
+body.v13.v3-auth .auth-card{width:min(100%,440px)!important;max-width:440px!important;margin:auto!important;padding:56px 0!important}
+body.v13.v3-auth .auth-title{font:800 clamp(40px,4vw,60px)/1.02 var(--hf-sans)!important;letter-spacing:-.055em!important;color:var(--hf-ink)!important;font-variation-settings:normal!important}
+body.v13.v3-auth .auth-sub{font:400 14px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:380px!important;margin-top:16px!important}
+body.v13.v3-auth .auth-form{margin-top:34px!important}
+body.v13.v3-auth .auth-field+.auth-field{margin-top:22px!important}
+body.v13.v3-auth .auth-field .label{display:block!important;margin-bottom:8px!important;color:var(--hf-muted)!important}
+body.v13.v3-auth .field__row{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:12px!important;margin-bottom:8px!important}
+body.v13.v3-auth .field__row .label{margin-bottom:0!important}
+body.v13.v3-auth .field__hint{color:var(--hf-faint)!important;font-family:var(--hf-mono)!important;font-size:10px!important;letter-spacing:.06em!important;text-transform:none!important}
+body.v13.v3-auth .auth .input{height:50px!important;padding:0 14px!important;font-size:14px!important}
+body.v13.v3-auth .auth-field .auth-forgot{color:var(--hf-muted)!important;font-family:var(--hf-mono)!important;font-size:10px!important;letter-spacing:.06em!important}
+body.v13.v3-auth .auth-submit{margin-top:26px!important}
+body.v13.v3-auth .auth-btn{height:50px!important}
+body.v13.v3-auth .auth-btn__label{letter-spacing:var(--hf-track)!important}
+body.v13.v3-auth .form-alert__inner{border:0!important;background:transparent!important}
+body.v13.v3-auth .form-alert__text{border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important;color:var(--hf-ink)!important;border-radius:0!important;padding:10px 12px!important;font:400 11px/1.7 var(--hf-mono)!important;letter-spacing:.02em!important}
+body.v13.v3-auth .form-alert--error .form-alert__text,body.v13.v3-auth .form-alert.is-error .form-alert__text{border-color:var(--hf-warm)!important;color:var(--hf-warm)!important}
+body.v13.v3-auth .auth-switch{margin-top:28px!important;text-align:center!important;color:var(--hf-muted)!important}
+body.v13.v3-auth .auth-switch strong,body.v13.v3-auth .auth-switch a{color:var(--hf-ink)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;font-size:10.5px!important;font-weight:500!important}
+body.v13.v3-auth .auth-switch a:hover{color:var(--hf-warm)!important}
+body.v13.v3-auth .auth-legal{margin-top:16px!important;text-align:center!important;color:var(--hf-muted)!important}
+body.v13.v3-auth .auth-legal a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+body.v13.v3-auth .auth-legal a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+body.v13.v3-auth .auth-plan .pill{border:1px solid var(--hf-line-2)!important;color:var(--hf-ink)!important;background:transparent!important}
+body.v13.v3-auth .auth-plan .dot{background:var(--hf-warm)!important}
+
+/* Story panel: a surface sheet with a faint dot grid — the halftone echoed, never the word. */
+body.v13.v3-auth .auth-media{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;min-height:100svh!important;
+  background:var(--hf-surface)!important;color:var(--hf-ink)!important;border-left:1px solid var(--hf-line)!important;overflow:hidden!important}
+body.v13.v3-auth .auth-media::before{content:""!important;position:absolute!important;inset:0!important;opacity:1!important;
+  background-image:radial-gradient(circle,var(--hf-line-2) 1px,transparent 1.3px)!important;background-size:14px 14px!important;background-position:7px 7px!important;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 30%,#000 100%)!important;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 30%,#000 100%)!important}
+body.v13.v3-auth .auth-media::after{display:none!important;content:none!important}
+body.v13.v3-auth .auth-media__frame,body.v13.v3-auth .auth-edge,body.v13.v3-auth .auth-caption{display:none!important}
+body.v13.v3-auth .v6-auth-story{position:relative!important;z-index:2!important;max-width:680px!important;padding:70px clamp(30px,6vw,100px)!important;background:transparent!important;border:0!important}
+body.v13.v3-auth .v6-auth-story h2{font:800 clamp(44px,5vw,78px)/1.02 var(--hf-sans)!important;letter-spacing:-.055em!important;color:var(--hf-ink)!important;margin:26px 0!important}
+body.v13.v3-auth .v6-auth-story h2 em{font-style:normal!important;color:var(--hf-soft)!important}
+body.v13.v3-auth .v6-auth-story p{font:400 14px/1.8 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:440px!important}
+body.v13.v3-auth .v6-auth-story__rule{margin-top:64px!important;padding-top:18px!important;border-top:1px solid var(--hf-line)!important;display:flex!important;justify-content:space-between!important;gap:20px!important;color:var(--hf-faint)!important}
+@media (max-width:800px){
+  body.v13.v3-auth .auth{grid-template-columns:1fr!important}
+  body.v13.v3-auth .auth-media{display:none!important}
+  body.v13.v3-auth .auth-card{padding:48px 0!important;max-width:480px!important}
+}
+@media (max-width:480px){
+  body.v13.v3-auth .auth-panel__inner{padding:22px 20px 36px!important}
+  body.v13.v3-auth .auth-card{width:100%!important;padding:40px 0!important}
+  body.v13.v3-auth .auth-title{font-size:40px!important}
+}
+}

@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alerts — insidir.</title>
   <meta name="description" content="Follow source-linked SEC activity related to companies you watch. Additional alert sources and delivery methods are planned.">
-  <meta name="theme-color" content="#f7f4ec">
+  <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/SourceSerif4-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
@@ -22,17 +21,28 @@
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app">
+<body class="app-body v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="alerts"></header>
 
   <main id="main" class="app-main alerts-main">
-    <div class="alerts-head">
+    <div class="alerts-head desk-masthead">
+      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note">Watchlist matches · imported SEC Form 4 filings · in-app only</p></div>
       <h1 class="page-title alerts-title" data-split>Alerts</h1>
-      <p class="page-sub alerts-sub" data-reveal="up" data-delay="140">See new research activity related to the companies you follow.</p>
+      <p class="page-sub alerts-sub desk-lead" data-reveal="up" data-delay="140">See new research activity related to the companies you follow.</p>
       <button class="btn btn--dark alerts-manage" type="button" id="manage-alerts" aria-haspopup="dialog" aria-controls="alerts-drawer"
         data-reveal="fade" data-delay="260" data-magnetic="0.14">Manage alerts</button>
+    </div>
+
+    <div class="alerts-dateline" aria-label="Where alerts come from">
+      <div><span>Source</span><strong>Imported SEC Form 4 filings</strong></div>
+      <div><span>Matching</span><strong>Tickers saved to your watchlist</strong></div>
+      <div><span>Delivery</span><strong>In the app · email and push planned</strong></div>
     </div>
 
     <div class="alert-filters-scroll">
@@ -66,17 +76,26 @@
         <button class="btn btn--light btn--sm" type="button" data-show-all>Show all alerts</button>
       </div>
     </section>
+    <p class="alerts-foot">Alerts are matched against imported public records and may be delayed or incomplete. Verify the original filing before acting. <a href="watchlist.html">Edit your watchlist →</a></p>
     <p class="sr-only" id="alerts-status" aria-live="polite"></p>
   </main>
 
-  <footer class="app-footer"><div class="container-wide"><span>© <span data-year>2026</span> insidir. Not investment advice.</span>
-    <span class="sample-note">Sample data shown for illustration</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+  <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
 
   <div class="drawer" id="alerts-drawer" aria-hidden="true">
     <div class="drawer__backdrop" data-drawer-close></div>
     <div class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-desc" tabindex="-1">
       <div class="drawer__head">
         <div>
+          <p class="drawer__eyebrow">Preferences</p>
           <h2 class="drawer__title" id="drawer-title">Manage alerts</h2>
           <p class="drawer__desc" id="drawer-desc">Choose which events create an alert.</p>
         </div>

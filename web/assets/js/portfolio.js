@@ -9,7 +9,7 @@
   const safeDate=value=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?d.toLocaleString("en-US",{dateStyle:"medium",timeStyle:"short"}):"Not reported";};
   const secLink=url=>{try{const u=new URL(url);return u.protocol==="https:"&&(u.hostname==="www.sec.gov"||u.hostname==="sec.gov")?u.toString():null;}catch{return null;}};
   const safeTicker=value=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(value||""))?value:null;
-  const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").style.color=error?"var(--red)":"var(--muted)";};
+  const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").classList.toggle("is-error",Boolean(error));};
   async function request(path,method="GET"){
     const r=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json"}});
     let result;try{result=await r.json();}catch{throw Error("Insidir engine unavailable");}
@@ -24,9 +24,9 @@
       const rows=positions.map(p=>{
         const ticker=safeTicker(p.researchTicker);
         const research=ticker?'<a class="portfolio-small-link" href="research.html?ticker='+encodeURIComponent(ticker)+'">SEC research →</a>':
-          '<span style="color:var(--muted)">No exact U.S. stock match</span>';
-        return '<tr><td><strong>'+escapeHtml(p.symbol)+'</strong><small>'+escapeHtml(p.description||p.kind)+'</small></td>'+
-          '<td>'+escapeHtml(num(p.quantity))+'</td><td>'+escapeHtml(money(p.price,p.currency))+'</td><td>'+research+'</td></tr>';
+          '<span class="portfolio-muted">No exact U.S. stock match</span>';
+        return '<tr><td data-label="Position"><strong>'+escapeHtml(p.symbol)+'</strong><small>'+escapeHtml(p.description||p.kind)+'</small></td>'+
+          '<td data-label="Units">'+escapeHtml(num(p.quantity))+'</td><td data-label="Last reported price">'+escapeHtml(money(p.price,p.currency))+'</td><td data-label="Public research">'+research+'</td></tr>';
       }).join("");
       return '<article class="portfolio-account"><div class="portfolio-account-head"><div>'+
         '<p class="research-eyebrow">INVESTMENT ACCOUNT · READ ONLY</p><h3>'+escapeHtml(a.name)+'</h3>'+
@@ -42,10 +42,10 @@
       '<thead><tr><th>Ticker</th><th>Reported event</th><th>Published</th><th>Original source</th></tr></thead><tbody>'+
       items.map(t=>{
         const link=secLink(t.source_url);
-        return '<tr><td><strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small></td>'+
-          '<td>'+escapeHtml(t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction")+
-          '<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></td><td>'+escapeHtml(safeDate(t.published_at))+'</td>'+
-          '<td>'+(link?'<a class="portfolio-small-link" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(link)+'">SEC filing ↗</a>':'Not available')+'</td></tr>';
+        return '<tr><td data-label="Ticker"><strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small></td>'+
+          '<td data-label="Reported event">'+escapeHtml(t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction")+
+          '<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></td><td data-label="Published">'+escapeHtml(safeDate(t.published_at))+'</td>'+
+          '<td data-label="Original source">'+(link?'<a class="portfolio-small-link" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(link)+'">SEC filing ↗</a>':'Not available')+'</td></tr>';
       }).join("")+'</tbody></table></div>':
       '<p class="portfolio-empty">No matching imported insider filings in the past 30 days. This does not mean no relevant SEC records exist; use the Research Desk for other disclosures.</p>';
     if(data.truncatedAccounts)setStatus("Only the first eight investment accounts are shown. Other accounts may be connected.");

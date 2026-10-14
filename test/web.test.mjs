@@ -401,3 +401,41 @@ test("V12 dark landing ships real SEC-powered research controls and no invented 
   assert.equal((await fetch(base+"/assets/css/v12-home.css")).status,200);
  });
 });
+
+test("V13 halftone identity: shared theme on every page, dotted wordmark only in the landing hero", async () => {
+  await withServer(async base => {
+    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html"];
+    let wordmarks = 0;
+    for (const page of pages) {
+      const res = await fetch(base + "/" + page);
+      assert.equal(res.status, 200, page);
+      const html = await res.text();
+      assert.match(html, /assets\/css\/v13-halftone\.css/, page + " links the V13 theme");
+      assert.match(html, /assets\/js\/v13-halftone\.js/, page + " loads the halftone engine");
+      assert.match(html, /<body[^>]*class="[^"]*\bv13\b/, page + " body carries the v13 class");
+      assert.match(html, /<meta name="theme-color" content="#0c0c0b">/, page + " theme colour is the night paper");
+      assert.match(html, /<footer class="v13-footer v13-footer--plain"[\s\S]*hello@aethric\.llc[\s\S]*Back to top/, page + " ends with the plain tracked footer");
+      if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
+      else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
+      wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
+      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark");
+      else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
+    }
+    assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
+    const css = await fetch(base + "/assets/css/v13-halftone.css");
+    assert.equal(css.status, 200);
+    const theme = await css.text();
+    assert.match(theme, /@layer insidir-v13\{/);
+    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important/);
+    assert.match(theme, /font-family:"JetBrains Mono"/);
+    for (const family of ["home", "app", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
+    const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");
+    assert.equal(mono.headers.get("content-type"), "font/woff2");
+    assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);
+    const favicon = await (await fetch(base + "/assets/icons/favicon.svg")).text();
+    assert.match(favicon, /#0c0c0b/); assert.match(favicon, /#e9762b/); assert.match(favicon, /#e9e4da/);
+    const engine = await (await fetch(base + "/assets/js/v13-halftone.js")).text();
+    assert.match(engine, /data-halftone-hero/);
+    assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");
+  });
+});

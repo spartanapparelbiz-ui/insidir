@@ -1,24 +1,27 @@
 <!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8f8f6">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
 <meta name="description" content="Insidir research dashboard—actual SEC company disclosures, insider activity, and your private research.">
 <title>Research overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v4-dashboard.css">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-2"><link rel="stylesheet" href="assets/css/v5-media.css?v=1"><link rel="stylesheet" href="assets/css/v6-app.css?v=1"><link rel="stylesheet" href="assets/css/v9-dashboard.css?v=1"><link rel="stylesheet" href="assets/css/v10-editorial.css?v=1"><link rel="stylesheet" href="assets/css/v10-people.css?v=1">
 <script defer src="assets/js/entity-media.js?v=real-assets-2"></script><script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js"></script><script defer src="assets/js/v10-people.js?v=1"></script><script defer src="assets/js/v4-dashboard.js"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=1">
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app v9-app"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active="dashboard"></header>
+<body class="app-body v2-app v3-app v6-app v9-app v13"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main v9-desk" id="main">
-<div class="v9-desk__topline"><span>YOUR WORKSPACE</span><span id="v3-current-date">Company research / SEC disclosures</span></div>
+<div class="v9-desk__topline"><span>Research desk</span><span id="v3-current-date">Company research / SEC disclosures</span></div>
 <section class="v9-desk__hero" aria-labelledby="v9-desk-heading">
-  <div class="v9-desk__hero-content"><p class="v9-desk__eyebrow">YOUR INSIDIR</p><h1 id="v9-desk-heading" data-greeting>Good morning.</h1><p>Everything you need to investigate a company. Nothing to distract you from it.</p><a href="research.html" class="v9-desk__hero-link">Enter research desk <span>↗</span></a></div>
+  <div class="v9-desk__hero-content"><p class="v9-desk__eyebrow">Your Insidir</p><h1 id="v9-desk-heading" data-greeting>Good morning.</h1><p>Everything you need to investigate a company. Nothing to distract you from it.</p><a href="research.html" class="v9-desk__hero-link">Enter research desk <span>↗</span></a></div>
   <img src="assets/img/dash-skyline.jpg" alt="Manhattan financial district skyline" fetchpriority="high">
 </section>
+<div class="v4-data-strip v9-desk__status" aria-label="Data source status"><div class="v4-data-strip__item"><span><small>DATA SOURCE</small><strong id="v4-data-state">Checking imported SEC filings…</strong></span></div><div class="v4-data-strip__item"><span><small>LATEST REPORT</small><strong id="v4-latest-filing-date">Checking availability…</strong></span></div><a class="v4-data-strip__next" href="research.html">Investigate a company ↗</a></div>
 <section class="v10-desk-focus" aria-label="Research perspectives"><a href="company.html?ticker=AAPL"><span class="v10-desk-focus__photo"><img src="assets/img/lens-company.jpg" alt="Financial district building" loading="lazy"></span><span class="v10-desk-focus__label">01 / COMPANIES</span><strong>Understand the business.</strong><span class="v10-desk-focus__arrow">↗</span></a><a href="people.html"><span class="v10-desk-focus__photo"><img src="assets/img/moves-people.jpg" alt="City street with people" loading="lazy"></span><span class="v10-desk-focus__label">02 / PEOPLE</span><strong>Know who's behind the filing.</strong><span class="v10-desk-focus__arrow">↗</span></a><a href="filings.html"><span class="v10-desk-focus__photo"><img src="assets/img/records-right.jpg" alt="New York financial architecture" loading="lazy"></span><span class="v10-desk-focus__label">03 / THE EVIDENCE</span><strong>Follow the original record.</strong><span class="v10-desk-focus__arrow">↗</span></a></section>
 <section class="v3-searchbox v9-desk__search" aria-label="Company search"><form action="research.html" id="v3-search" role="search"><label class="sr-only" for="v3-ticker">Company ticker</label><span class="v3-searchbox__icon" aria-hidden="true"><svg class="v4-ui-icon"><use href="assets/icons/interface.svg#search"></use></svg></span><input type="search" name="ticker" id="v3-ticker" placeholder="Search a ticker or company symbol… e.g. AAPL" autocomplete="off" maxlength="15" spellcheck="false" required><button type="submit">Research ↗</button></form></section>
 <nav class="v9-desk__links" aria-label="Research destinations"><a href="explore.html"><span>Explore companies</span><b>↗</b></a><a href="filings.html"><span>SEC filing library</span><b>↗</b></a><a href="watchlist.html"><span>Your watchlist</span><b>↗</b></a></nav>
 <section class="v10-desk-people" aria-labelledby="v10-desk-people-title"><div class="v10-desk-people__heading"><div><span class="v10-kicker">REAL SEC REPORTING PEOPLE</span><h2 id="v10-desk-people-title">Names behind the numbers.</h2><p>People from imported SEC Form 4 records. Follow one to keep their disclosures close.</p></div><a href="people.html">Explore everyone ↗</a></div><div id="v10-people-preview" class="v10-people-preview" aria-live="polite"><p class="v3-empty">Loading reporting people from recent SEC filings…</p></div></section>
-<div class="v4-data-strip v9-desk__status" aria-label="Data source status"><div class="v4-data-strip__item"><span><small>DATA SOURCE</small><strong id="v4-data-state">Checking imported SEC filings…</strong></span></div><div class="v4-data-strip__item"><span><small>LATEST REPORT</small><strong id="v4-latest-filing-date">Checking availability…</strong></span></div><a class="v4-data-strip__next" href="research.html">Investigate a company ↗</a></div>
-<div class="v9-desk__section-title"><div><p>MARKET INTELLIGENCE</p><h2>Latest research.</h2></div><span>Actual imported records, not market quotes</span></div>
+<div class="v9-desk__section-title"><div><p>From the record</p><h2>Latest research.</h2></div><span>Imported SEC records, never market quotes</span></div>
 <section class="v3-board v9-desk__board" aria-label="Research activity">
  <div class="v3-board__main">
   <article class="v3-module" id="filing-updates"><div class="v3-module__head"><div><h2>Recent filings</h2><p>Recently imported SEC company disclosures.</p></div><a href="filings.html">Browse filings ↗</a></div>
@@ -38,5 +41,13 @@
 </section>
 <p class="v9-desk__disclosure">Insidir organizes selected public-company information. Records may be delayed, partial or amended. Research is not a recommendation or trading service. <a href="company-info.html">About Insidir ↗</a></p>
 </main>
-<footer class="app-footer"><div class="container-wide"><span>© 2026 Aethric LLC · Insidir.</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
 </body></html>

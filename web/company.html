@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0a0e13">
+<meta name="theme-color" content="#0c0c0b">
 <meta name="description" content="Insidir company research: delayed stock price chart, key facts, SEC financials, filings, insider activity, people and news for every SEC-listed company.">
 <title>Company research — insidir.</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
@@ -11,21 +11,26 @@
 <script defer src="assets/js/entity-media.js?v=real-assets-4"></script>
 <script defer src="assets/js/app.js?v=12"></script>
 <script defer src="assets/js/v12-company.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-company.css?v=1">
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="app-body cx-page">
+<body class="app-body cx-page v13">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="companies"></header>
 <main class="cx-main" id="main">
 
 <section class="cx-picker" id="cx-picker" hidden aria-labelledby="cx-picker-title">
  <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a></nav>
- <h1 id="cx-picker-title">Research any public company.</h1>
- <p>Live price history, key facts, SEC financials, filings, insider activity and news for every company in the SEC's official ticker list.</p>
+ <p class="cx-kicker"><span class="cx-live-dot" aria-hidden="true"></span> Company reports · every SEC-listed ticker</p>
+ <h1 id="cx-picker-title">Research any<br>public company.</h1>
+ <p>Delayed price history, key facts, SEC financials, filings, insider activity and news for every company in the SEC's official ticker list. Every figure links to the record it came from.</p>
  <form class="cx-picker__form" id="cx-picker-form" role="search">
   <label class="sr-only" for="cx-picker-input">Ticker or company name</label>
   <input id="cx-picker-input" type="search" placeholder="Ticker or company name, e.g. NVDA or Coca-Cola" autocomplete="off" spellcheck="false" required>
   <button type="submit">Open report</button>
  </form>
+ <div class="cx-picker__head"><p class="cx-kicker">Popular tickers</p><p class="cx-picker__note">Marks are shown for identification only.</p></div>
  <div class="cx-picker__grid" id="cx-picker-grid"></div>
 </section>
 
@@ -76,6 +81,7 @@
     <div><dt>Founded</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
     <div><dt>Website</dt><dd><span class="cx-skel cx-skel--value"></span></dd></div>
    </dl>
+   <p class="cx-facts__note">Market cap, enterprise value and P/E are calculated; hover a value for its inputs.</p>
   </aside>
  </section>
 
@@ -91,6 +97,7 @@
  </nav>
 
  <section class="cx-panel" role="tabpanel" id="overview" aria-labelledby="tab-overview">
+  <p class="cx-kicker cx-panel__kicker">01 / Overview · the record at a glance</p>
   <div class="cx-overview" id="cx-overview">
    <article class="cx-about" id="cx-about" hidden>
     <h2 id="cx-about-title"></h2>
@@ -116,7 +123,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="financials" aria-labelledby="tab-financials" hidden>
-  <div class="cx-section-head"><div><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html">Open in Research Desk <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html">Open in Research Desk <span aria-hidden="true">→</span></a></div>
   <div class="cx-tiles" id="cx-ttm-tiles"></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3>Annual history</h3>
@@ -137,7 +144,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="filings" aria-labelledby="tab-filings" hidden>
-  <div class="cx-section-head"><div><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3><span id="cx-filing-count">—</span> filings</h3>
     <div class="cx-chips" role="group" aria-label="Filter filings" id="cx-filing-filters">
@@ -149,7 +156,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="insiders" aria-labelledby="tab-insiders" hidden>
-  <div class="cx-section-head"><div><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
   <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary"></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3>Reported transactions</h3>
@@ -162,7 +169,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="people" aria-labelledby="tab-people" hidden>
-  <div class="cx-section-head"><div><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html">People directory <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html">People directory <span aria-hidden="true">→</span></a></div>
   <h3 class="cx-subhead">Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
   <div class="cx-people" id="cx-people-sec"></div>
   <h3 class="cx-subhead" id="cx-leaders-head" hidden>Leadership &amp; founders <small>from Wikidata</small></h3>
@@ -170,7 +177,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="news" aria-labelledby="tab-news" hidden>
-  <div class="cx-section-head"><div><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">06 / 8-K current reports · publishers</p><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
   <div class="cx-news">
    <article class="cx-card cx-block"><header class="cx-block__head"><h3>Company announcements</h3><span class="cx-badge">SEC 8-K</span></header><div id="cx-announcements" class="cx-list"></div></article>
    <article class="cx-card cx-block"><header class="cx-block__head"><h3>Headlines</h3><span class="cx-badge" id="cx-headline-source">Publishers</span></header><div id="cx-headlines" class="cx-list"></div></article>
@@ -182,5 +189,13 @@
  </footer>
 </div>
 </main>
-<footer class="app-footer cx-footer"><div class="container-wide"><span>© 2026 Aethric LLC · insidir.</span><nav><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></nav></div></footer>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
 </body></html>

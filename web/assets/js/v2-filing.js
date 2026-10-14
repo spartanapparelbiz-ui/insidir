@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
     status.textContent="Imported SEC record retrieved. Verify reported details against the original filing.";
     meta.innerHTML="<span><strong>Form</strong> "+E(f.form_type||"4")+"</span><span><strong>Published</strong> "+E(d(f.published_at))+"</span><span><strong>Report period</strong> "+E(d(f.period_of_report))+"</span>"+(f.is_amendment?"<span>Amendment</span>":"");
     let url=source(f.source_url);
-    src.innerHTML=url?'<a href="'+E(url)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;font-weight:600">Read original SEC filing ↗</a>':"Original source URL unavailable";
+    src.innerHTML=url?'<a href="'+E(url)+'" target="_blank" rel="noopener noreferrer" class="cl-source-link">Read original SEC filing ↗</a>':"Original source URL unavailable";
     rows.innerHTML=items.length?items.map(t=>{
       const type=t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction";
       return "<tr><td>"+E(t.owner_name||"Reporting person")+"</td><td>"+E(type)+"<span class='cl-muted'>Code: "+E(t.transaction_code||"not provided")+"</span></td><td>"+E(d(t.transaction_date))+"</td><td>"+E(money(t.estimated_value))+"</td></tr>";

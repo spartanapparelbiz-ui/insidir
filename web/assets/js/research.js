@@ -73,11 +73,11 @@
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
         item.is_amendment ? "Amended filing" : ""
       ].filter(Boolean).join(" · ");
-      return "<tr><td><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm")||"") +
+      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm")||"") +
         "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
-        "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td>" + esc(category) +
-        "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td>" +
-        esc(displayCash(item.estimated_value)) + "<small>Estimated filing value</small></td><td>" +
+        "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + esc(category) +
+        "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td data-label='Reported value'>" +
+        esc(displayCash(item.estimated_value)) + "<small>Estimated filing value</small></td><td data-label='Published'>" +
         esc(displayDate(item.published_at)) + "<small>" + sourceLink(item.source_url, "Original SEC filing") +
         "</small></td></tr>";
     }).join("");
@@ -97,12 +97,12 @@
       const details = accessionLink(item.accession);
       const local = details ? '<a class="research-text-link" href="' + esc(details) + '">Review parsed details →</a>' : "";
       const original = sourceLink(item.source_url, "SEC source");
-      return "<tr><td><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm")||"") +
+      return "<tr><td data-label='Filing'><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm")||"") +
         "<div><strong>" + esc(item.form_type || "Form 4") +
         (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(item.issuer_name || "Company") +
-        "</small></div></div></td><td>" + esc(displayDate(item.published_at)) +
+        "</small></div></div></td><td data-label='Published'>" + esc(displayDate(item.published_at)) +
         "<small>Report period: " + esc(displayDate(item.period_of_report)) +
-        "</small></td><td>" + local + "<small>" + original + "</small></td></tr>";
+        "</small></td><td data-label='Evidence'>" + local + "<small>" + original + "</small></td></tr>";
     }).join("");
     host.innerHTML = '<div class="research-table-scroll"><table class="research-table">' +
       '<caption class="sr-only">Original SEC filings</caption><thead><tr>' +
@@ -140,8 +140,8 @@
     if(!filings.length){host.innerHTML='<p class="research-empty">No selected SEC company filings found.</p>';return;}
     host.innerHTML='<div class="research-table-scroll"><table class="research-table"><thead><tr>'+
       '<th>Type</th><th>Filed</th><th>Original document</th></tr></thead><tbody>'+
-      filings.map(f=>'<tr><td><strong>'+esc(f.form)+'</strong><small>'+esc(f.headline)+'</small></td>'+
-        '<td>'+esc(displayDate(f.filedAt))+'</td><td>'+sourceLink(f.sourceUrl,"Read filing")+'</td></tr>').join("")+
+      filings.map(f=>'<tr><td data-label="Type"><strong>'+esc(f.form)+'</strong><small>'+esc(f.headline)+'</small></td>'+
+        '<td data-label="Filed">'+esc(displayDate(f.filedAt))+'</td><td data-label="Original document">'+sourceLink(f.sourceUrl,"Read filing")+'</td></tr>').join("")+
       '</tbody></table></div>';
   }
   async function loadIntelligence(ticker) {
