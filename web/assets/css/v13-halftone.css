@@ -140,7 +140,7 @@ body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.app-header .logo,.v2-no
   font-family:var(--hf-mono)!important;font-weight:800!important;font-size:24px!important;line-height:1!important;letter-spacing:-.04em!important;text-transform:lowercase!important;
   color:var(--hf-ink)!important;text-decoration:none!important;display:inline-flex!important;align-items:baseline!important;white-space:nowrap!important;font-variation-settings:normal!important}
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover{color:var(--hf-ink)!important}
-body.v13 :is(.v12-logo-dot,.v13-dot){color:var(--hf-warm)!important;display:inline-block!important;transition:transform .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 :is(.v12-logo-dot,.v13-dot){color:var(--hf-warm)!important;display:inline-block!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover :is(.v12-logo-dot,.v13-dot){transform:translateY(-.08em)!important}
 body.v13 .auth-logo,body.v13 .v3-static__logo{font-size:26px!important}
 
@@ -348,11 +348,12 @@ body.v13 .v13-hero .v13-hero__meta{position:absolute!important;right:0!important
 }
 
 /* ---------- Site footer: the reference footer's tracked link block, without the word ---------- */
-body.v13 .v13-footer--plain{position:relative!important;display:block!important;width:100%!important;margin:0!important;padding:0 0 clamp(28px,4vw,52px)!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:0!important;border-top:1px solid var(--hf-line)!important;height:auto!important;max-width:none!important}
+body.v13 .v13-footer--plain{position:relative!important;display:block!important;width:100%!important;margin:0!important;padding:clamp(56px,6vw,84px) 0 clamp(28px,4vw,52px)!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:0!important;border-top:1px solid var(--hf-line)!important;height:auto!important;max-width:none!important}
 
 /* The footer's dot strip (added by v13-halftone.js): the wordmark's dots, without the word, parting around the
-   pointer and rippling on a click, fading down toward the links. */
-body.v13 .v13-footer--plain>.hwf-field{position:relative!important;display:block!important;height:clamp(56px,6vw,84px)!important;margin:0!important;padding:0!important;overflow:hidden!important;
+   pointer and rippling on a click, fading down toward the links. The footer reserves its height up front, so the
+   strip arriving after the script runs never shifts the links. */
+body.v13 .v13-footer--plain>.hwf-field{position:absolute!important;top:0!important;left:0!important;right:0!important;display:block!important;height:clamp(56px,6vw,84px)!important;margin:0!important;padding:0!important;overflow:hidden!important;
   -webkit-mask-image:linear-gradient(var(--hf-ink),transparent)!important;mask-image:linear-gradient(var(--hf-ink),transparent)!important}
 body.v13 .v13-footer--plain>.hwf-field canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
 

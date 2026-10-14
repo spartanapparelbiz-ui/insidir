@@ -14,6 +14,25 @@ body.v13{--hf-photo:grayscale(1) sepia(.12) contrast(1.05)!important}
 body.v13 .app-main{max-width:1400px!important;width:100%!important;margin:0 auto!important;padding:clamp(26px,3.6vw,52px) clamp(18px,3.4vw,52px) clamp(64px,8vw,112px)!important;background:transparent!important;color:var(--hf-ink)!important}
 body.v13 .v4-ui-icon{display:inline-block!important;width:18px!important;height:18px!important;fill:none!important;flex:0 0 auto!important;vertical-align:middle!important}
 
+/* ---------- Header band: the wordmark's dots, without the word, in every product page's header ----------
+   One live dot field (div.pd-band[data-halftone-field], mounted by v13-halftone.js) sits in the empty top-right corner of
+   each page header: the overview's intro, the desk mastheads (research, portfolio, alerts, account, billing), the
+   collection tops (companies, filings, a filing, watchlist), the people hero, and the company picker and report
+   (v13-company.css). The same box on every page: anchored to the header's top-right corner directly under its top
+   rule, 30% of the header wide and clamp(88px,7.4vw,108px) tall, fading radially to nothing at its left and bottom edges
+   (the marketing hero's mask), so headings, ledes, inputs and figures always sit on plain paper. The field listens to
+   the header, so the pointer anywhere in it parts the dots, and a click on empty space ripples them with the rest of the
+   page. The box is sized here, before the script runs; the header's own content stays above it in source order.
+   Phones (≤759px) have no free corner beside the headline and leave it out. */
+body.v13{--pd-band-w:30%!important;--pd-band-h:clamp(88px,7.4vw,108px)!important}
+body.v13 :is(.rd-intro,.desk-masthead,.cl-top,.v10-people-hero){position:relative!important}
+body.v13 :is(.rd-intro,.desk-masthead,.cl-top,.v10-people-hero)>:not(.pd-band){position:relative!important}
+body.v13 .pd-band{position:absolute!important;top:var(--pd-band-top,0px)!important;right:0!important;bottom:auto!important;left:auto!important;z-index:auto!important;display:block!important;
+  width:var(--pd-band-w)!important;height:var(--pd-band-h)!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important}
+body.v13 .pd-band>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+@media (max-width:759px){body.v13 .pd-band{display:none!important}}
+
 /* Identity tiles: marks and portraits sit on a surface tile with a hairline; portraits print in grayscale;
    when there is no verified portrait the tile carries monogram initials (drawn by entity-media.js). */
 body.v13 .ins-media{background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;border-radius:0!important;color:var(--hf-faint)!important;isolation:isolate!important}
@@ -33,6 +52,8 @@ body.v13 :is(.rd-link,.v10-people-topline a,.v10-people-hero__copy>a,.v10-follow
   display:inline-flex!important;align-items:center!important;gap:10px!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;border:0!important;padding:0!important;white-space:nowrap!important;
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13 :is(.rd-link,.v10-people-topline a,.v10-people-hero__copy>a,.v10-follows__head>a,.v10-follow-row>a,.v10-person-card__actions>a,.cl-result__head>a,.cl-source-link,.cl-top .cl-eyebrow a,.v13-link):hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
+/* The underline links the core styles on these pages (v13-halftone.css) draw their rule on the dots' spring too. */
+body.v13:is(.app-body,.v3-app) :is(.cl-finish a,.v3-module__head>a,.v3-company__box a,.v3-account__text,.v3-account__links a){transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 /* Plain text links inside captions and empty states. */
 body.v13 :is(.v3-empty a,.rd-empty a,.rd-more a,.cl-empty a,.v10-people-empty a,.rd-disclosure a,.v10-known__source a,.v10-people-disclaimer a){color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;font-weight:400!important}
 body.v13 :is(.v3-empty a,.rd-empty a,.rd-more a,.cl-empty a,.v10-people-empty a,.rd-disclosure a,.v10-known__source a,.v10-people-disclaimer a):hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
@@ -70,7 +91,7 @@ body.v13 .rd-shortcuts{display:grid!important;grid-template-columns:repeat(6,min
 body.v13 .rd-shortcuts a{display:flex!important;flex-direction:column!important;gap:6px!important;min-width:0!important;padding:18px 18px 18px 0!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;border:0!important}
 body.v13 .rd-shortcuts a+a{padding-left:18px!important;border-left:1px solid var(--hf-line)!important}
 body.v13 .rd-shortcuts__name{display:flex!important;justify-content:space-between!important;gap:8px!important;font:700 13.5px/1.3 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;transition:color .25s!important}
-body.v13 .rd-shortcuts__name b{font:500 13px/1.3 var(--hf-mono)!important;color:var(--hf-muted)!important;transition:color .25s,transform .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 .rd-shortcuts__name b{font:500 13px/1.3 var(--hf-mono)!important;color:var(--hf-muted)!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .rd-shortcuts__note{font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
 body.v13 .rd-shortcuts a:hover .rd-shortcuts__name,body.v13 .rd-shortcuts a:hover b{color:var(--hf-ink)!important}
 body.v13 .rd-shortcuts a:hover .rd-shortcuts__name{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
@@ -111,7 +132,7 @@ body.v13 .rd-row__id small{font:400 10.5px/1.5 var(--hf-mono)!important;letter-s
 body.v13 .rd-row__detail{min-width:0!important;font:400 11.5px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-soft)!important;overflow-wrap:anywhere!important}
 body.v13 .rd-nb{white-space:nowrap!important}
 body.v13 .rd-row__detail small{display:block!important;margin:3px 0 0!important;font:400 10.5px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
-body.v13 .rd-row>b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .25s,transform .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 .rd-row>b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .rd-row:hover>b{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
 
 /* Transaction type tag: sales are the warm "heat", purchases ink, everything else quiet. */
@@ -192,6 +213,8 @@ body.v13 .v10-people-topline{display:flex!important;justify-content:space-betwee
 body.v13 .v10-people-topline span{color:inherit!important}
 body.v13 .v10-people-hero{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:end!important;gap:clamp(32px,5vw,88px)!important;padding:clamp(36px,5vw,64px) 0 clamp(40px,5vw,64px)!important;border:0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .v10-people-hero__copy{min-width:0!important}
+/* Two columns: the header band (above) takes the hero's top-right corner, so the Form 4 card starts below it. */
+@media (min-width:960px){body.v13 .v10-people-hero{padding-top:calc(var(--pd-band-h) + 16px)!important}}
 body.v13 .v10-people-hero h1{font:800 clamp(34px,4.6vw,66px)/1.05 var(--hf-mono)!important;letter-spacing:-.04em!important;margin:14px 0 18px!important;color:var(--hf-ink)!important;text-wrap:balance!important}
 body.v13 .v10-people-hero__copy>p:not(.v10-kicker){font:400 13.5px/1.75 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:520px!important;margin:0!important}
 body.v13 .v10-jump{display:inline-flex!important;margin:24px 0 0!important;padding:0 0 2px!important;height:auto!important;min-height:0!important;background:none!important;border:0!important;border-radius:0!important;cursor:pointer!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;box-shadow:none!important;
@@ -226,7 +249,7 @@ body.v13 .v10-known__photo>svg.ins-media__monogram{grid-area:1/1!important}
 body.v13 .v10-known__name{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important}
 body.v13 .v10-known__name strong{font:700 15px/1.25 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;transition:color .25s!important}
 body.v13 .v10-known__name small{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
-body.v13 .v10-known__grid b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .25s,transform .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 .v10-known__grid b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .v10-known__grid>a:hover strong,body.v13 .v10-known__grid>a:hover b{color:var(--hf-ink)!important}
 body.v13 .v10-known__grid>a:hover b{transform:translate(2px,-2px)!important}
 body.v13 .v10-known__source{margin:14px 0 0!important;max-width:880px!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
@@ -273,6 +296,9 @@ body.v13 .cl-main{padding-top:clamp(30px,4vw,52px)!important}
 body.v13 .cl-top{max-width:none!important;padding:0 0 clamp(24px,3vw,36px)!important;margin:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .cl-top .cl-eyebrow{margin:0!important}
 body.v13 .cl-top h1{display:flex!important;align-items:center!important;gap:clamp(12px,1.4vw,18px)!important;flex-wrap:wrap!important;max-width:1040px!important;font:800 clamp(34px,4.6vw,66px)/1.05 var(--hf-sans)!important;letter-spacing:-.04em!important;margin:16px 0 18px!important;color:var(--hf-ink)!important}
+/* Beside the header band (30% at the right) a heading wraps instead of running under the dots: a filing's title is its issuer's
+   name, up to 150 characters. */
+@media (min-width:760px){body.v13 .cl-top h1{max-width:min(1040px,70%)!important}}
 body.v13 .cl-top h1 .v4-ui-icon{width:clamp(30px,3vw,42px)!important;height:clamp(30px,3vw,42px)!important;padding:clamp(7px,.7vw,10px)!important;border:1px solid var(--hf-line)!important;border-radius:0!important;background:var(--hf-surface)!important;color:var(--hf-soft)!important;flex:0 0 auto!important}
 body.v13.cl-page .app-main .cl-top>p:last-child{max-width:640px!important;font:400 13.5px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;margin:0!important;letter-spacing:0!important;text-transform:none!important}
 body.v13.app-body.cl-page .app-main .cl-search-panel{background:transparent!important;border:0!important;padding:0!important;margin:clamp(24px,3vw,36px) 0 clamp(32px,4vw,52px)!important;border-radius:0!important;box-shadow:none!important}

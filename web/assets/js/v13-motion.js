@@ -32,11 +32,13 @@
     // brand and navigation
     ".v6-logo", ".v13-logo", ".app-header .logo", ".v6-nav__links a", ".v6-signin", ".app-nav a", ".user-menu__btn", ".app-header__bell",
     // buttons and chips
-    ".v9-btn", ".btn", ".auth-btn", ".cx-btn", ".rd-toggle", ".rd-filters button", ".cx-ranges button", ".v10-follow-btn", ".hwf-up",
+    ".v9-btn", ".btn", ".auth-btn", ".cx-btn", ".rd-toggle", ".rd-filters button", ".v10-follow-btn", ".v3-account__button", ".cl-more", ".hwf-up",
     // links that stand alone, arrows and markers
     ".rd-link", ".v13-link", ".mk-link", ".pw-link", ".auth-switch a", ".rd-shortcuts__name b", ".rd-row > b", ".mk-index a span:last-child",
+    ".v12-secondary-link", ".cl-result__head > a", ".cl-finish a", ".research-text-link", ".portfolio-small-link", ".v3-account__links a",
+    ".cx-link", ".cx-arrow", ".cx-crumbs a", ".v10-jump", ".v10-known__grid b", ".v10-people-topline a", ".v10-follows__head > a", ".v10-person-card__actions > a", ".alert-src",
     // index numbers and step markers
-    ".rd-index", ".mk-num", ".lp-step__num", ".lp-tool__num", ".lp-tool__icon", ".auth-index li > span", ".pw-list li > span",
+    ".rd-index", ".mk-num", ".lp-step__num", ".lp-tool__num", ".lp-tool__icon", ".lp-rule__num", ".lp-folio", ".auth-index li > span", ".pw-list li > span",
     // identity tiles outside tables
     ".ins-media", ".cx-logo",
     // footer
@@ -55,13 +57,16 @@
   let rings = [];            // { x, y, t } in page coordinates
   let raf = 0, awake = false;
 
-  /* An atom inside a fixed or sticky bar keeps its viewport position while the page scrolls. */
+  /* "fixed": inside a position:fixed bar, so its home is a viewport position. "sticky": inside a sticky box,
+     which scrolls with the page until it sticks, so its home is re-measured as the page scrolls. */
   function pinned(el) {
+    let sticky = false;
     for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
       const pos = getComputedStyle(n).position;
-      if (pos === "fixed" || pos === "sticky") return true;
+      if (pos === "fixed") return "fixed";
+      if (pos === "sticky") sticky = true;
     }
-    return false;
+    return sticky ? "sticky" : "";
   }
   function stillInside(el) {
     const s = el.parentElement && el.parentElement.closest(STILL);
@@ -88,11 +93,12 @@
 
   /* Home positions: the element's box with its own offset taken out, in page coordinates
      (viewport coordinates for atoms in fixed or sticky bars). */
-  function measure() {
+  function measure(only) {
     const sx = window.scrollX, sy = window.scrollY;
     for (const a of atoms) {
+      if (only && !only(a)) continue;
       const r = a.el.getBoundingClientRect();
-      a.fixed = pinned(a.el);
+      if (a.pin === undefined || !only) { a.pin = pinned(a.el); a.fixed = a.pin === "fixed"; }
       const ox = a.fixed ? 0 : sx, oy = a.fixed ? 0 : sy;
       a.l = r.left - a.x + ox; a.t = r.top - a.y + oy; a.r = r.right - a.x + ox; a.b = r.bottom - a.y + oy;
       a.cx = (a.l + a.r) / 2; a.cy = (a.t + a.b) / 2;
@@ -108,13 +114,15 @@
     else { a.el.style.setProperty("--hf-dx", x.toFixed(2) + "px"); a.el.style.setProperty("--hf-dy", y.toFixed(2) + "px"); }
   }
 
-  let last = 0;
+  let last = 0, acc = 0;
   function frame(now) {
     raf = 0;
     if (reducedQ.matches) { for (const a of atoms) { a.x = a.y = a.vx = a.vy = 0; write(a); } awake = false; return; }
-    // Advance in whole 60 fps steps so the feel is the same at any refresh rate.
-    const steps = last ? Math.max(1, Math.min(4, Math.round((now - last) / FRAME))) : 1;
+    // A fixed 60 fps clock: the same number of physics steps per second at 60, 120 or 144 Hz.
+    acc = last ? Math.min(acc + (now - last), 4 * FRAME) : FRAME;
     last = now;
+    const steps = Math.floor(acc / FRAME);
+    acc -= steps * FRAME;
     const sx = window.scrollX, sy = window.scrollY, vw = window.innerWidth, vh = window.innerHeight;
     const push = inside && fineQ.matches;
     rings = rings.filter(g => now - g.t < P.ringLife);
@@ -126,8 +134,9 @@
       const onScreen = a.b - oy > -RADIUS && a.t - oy < vh + RADIUS && a.r - ox > -RADIUS && a.l - ox < vw + RADIUS;
       if (!onScreen && a.x === 0 && a.y === 0 && a.vx === 0 && a.vy === 0) continue;
       const qx = a.fixed ? pcx : px, qy = a.fixed ? pcy : py;
+      let fx = 0, fy = 0;
       for (let s = 0; s < steps; s++) {
-        let fx = 0, fy = 0;
+        fx = 0; fy = 0;
         if (push) {
           // Distance from the pointer to the atom's box: zero inside it, so the atom you aim at holds still.
           const ex = Math.max(a.l - qx, 0, qx - a.r), ey = Math.max(a.t - qy, 0, qy - a.b), d = Math.hypot(ex, ey);
@@ -147,13 +156,15 @@
         a.vy = (a.vy + fy - a.y * P.spring) * P.damping;
         a.x += a.vx; a.y += a.vy;
       }
-      if (Math.abs(a.vx) + Math.abs(a.vy) < 0.01 && Math.abs(a.x) + Math.abs(a.y) < 0.05) { a.x = a.y = a.vx = a.vy = 0; }
-      else moving = true;
+      // At rest: home, or held in balance by a resting pointer (a push that equals the spring's pull).
+      const slow = Math.abs(a.vx) + Math.abs(a.vy) < 0.01;
+      if (slow && Math.abs(a.x) + Math.abs(a.y) < 0.05) { a.x = a.y = a.vx = a.vy = 0; }
+      else if (!(slow && (fx || fy) && Math.abs(fx - a.x * P.spring) + Math.abs(fy - a.y * P.spring) < 0.003)) moving = true;
       write(a);
     }
     awake = moving || rings.length > 0;
     if (awake) raf = requestAnimationFrame(frame);
-    else last = 0;
+    else { last = 0; acc = 0; }
   }
   function wake() { if (!raf && !reducedQ.matches) { awake = true; raf = requestAnimationFrame(frame); } }
 
@@ -171,7 +182,7 @@
     if (rings.length > 4) rings.shift();
     // The same ring runs through every dot field on the page; the field that was clicked already started it.
     for (const root of document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")) {
-      if (root.__halftone && root !== e.__hfRingFrom && typeof root.__halftone.ring === "function") root.__halftone.ring(e.clientX, e.clientY);
+      if (root.__halftone && !(e.__hfRingFrom && e.__hfRingFrom.has(root)) && typeof root.__halftone.ring === "function") root.__halftone.ring(e.clientX, e.clientY);
     }
     wake();
   }
@@ -185,6 +196,17 @@
     document.addEventListener("pointerout", onLeave, { passive: true });
     document.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("resize", () => { measure(); wake(); }, { passive: true });
+    // Sticky boxes move with the page until they stick: follow them, once per frame at most.
+    let sq = 0;
+    window.addEventListener("scroll", () => { if (!sq) sq = requestAnimationFrame(() => { sq = 0; measure(a => a.pin === "sticky"); }); }, { passive: true });
+    // A reveal or slide that moved a container has moved its atoms' homes too.
+    let tq = 0;
+    const settled = e => {
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-hf-atom")) return; // an atom's own hover nudge
+      if (/^(translate|transform|inset|top|left|margin)/.test(e.propertyName || "transform")) { clearTimeout(tq); tq = setTimeout(() => measure(), 60); }
+    };
+    document.addEventListener("transitionend", settled, { passive: true });
+    document.addEventListener("animationend", settled, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(() => { measure(); }).observe(document.body);
     // Rows rendered after load (dashboard modules, menus) join or leave the set.
     if (window.MutationObserver) new MutationObserver(muts => { if (muts.some(m => m.type === "childList" || m.attributeName === "hidden")) refresh(); })

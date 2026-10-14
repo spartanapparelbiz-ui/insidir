@@ -21,23 +21,24 @@
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=5">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=15">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=5">
-<script defer src="assets/js/v13-halftone.js?v=3"></script><script defer src="assets/js/v13-motion.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=6">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=16">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=6">
+<script defer src="assets/js/v13-halftone.js?v=4"></script><script defer src="assets/js/v13-motion.js?v=2"></script>
 </head>
 <body class="research-page v2-app v3-app v6-app v13">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="research"></header>
 <main id="main" class="app-main research-desk">
   <header class="research-head desk-masthead">
+    <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="110" aria-hidden="true"></div>
     <div class="desk-topline"><p class="research-eyebrow">INSIDIR / RESEARCH DESK</p><p class="desk-topline__note">SEC EDGAR · Form 4 · XBRL facts · original documents</p></div>
     <h1>Know the record.<br>Make your own call.</h1>
     <p class="research-lead desk-lead">Investigate public SEC records, connect filings with reported financial facts, and save a private review. Insidir does not place trades or make personalized buy/sell recommendations.</p>
     <form class="research-search" id="research-search" role="search">
       <label class="sr-only" for="research-ticker">Company ticker</label>
       <input id="research-ticker" name="ticker" type="text" placeholder="Enter a stock ticker, e.g. AAPL" autocomplete="off" spellcheck="false" maxlength="15" required>
-      <button class="btn btn--dark" type="submit">Investigate <span aria-hidden="true">→</span></button>
+      <button class="btn btn--dark" type="submit" data-hf-still>Investigate <span aria-hidden="true">→</span></button>
     </form>
     <div class="v4-research-trust" aria-label="How the desk works"><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#file-check"></use></svg> Original SEC sources</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#shield-check"></use></svg> Verify every finding</span><span><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#lock"></use></svg> Private saved notes</span></div><p class="research-feedback" id="research-feedback" role="status" aria-live="polite">No portfolio or brokerage connection needed. Enter a ticker to explore available SEC records.</p>
   </header>
@@ -49,7 +50,7 @@
         <h2 id="research-company">Company</h2>
         <p class="research-small" id="research-coverage">Imported SEC Form 4 records only</p>
       </div>
-      <a class="research-text-link" id="research-company-link" href="company.html">View company records →</a>
+      <a class="research-text-link" id="research-company-link" href="company.html" data-hf-atom>View company records →</a>
     </section>
 
     <div class="research-metrics" aria-label="Loaded record summary">
@@ -84,7 +85,7 @@
               <p class="research-eyebrow">02 / INVESTIGATE</p>
               <h2 id="research-transactions-title"><svg class="v4-ui-icon" aria-hidden="true"><use href="assets/icons/interface.svg#activity"></use></svg> Reported insider activity</h2>
             </div>
-            <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR ↗</a>
+            <a class="research-text-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer" data-hf-atom>SEC EDGAR ↗</a>
           </div>
           <p class="research-explain">Transactions are reported after they occur. Purchases, sales, option exercises, grants and amendments have different meanings; a filing is not a trading signal.</p>
           <div id="research-transactions" aria-live="polite"></div>
@@ -115,7 +116,7 @@
             </select>
             <label for="research-review-notes">What did you learn?</label>
             <textarea id="research-review-notes" name="notes" rows="7" maxlength="1500" placeholder="Sources checked, dates to verify, concerns, and what would change your mind."></textarea>
-            <button class="btn btn--dark research-save" id="research-save" type="submit">Save research note</button>
+            <button class="btn btn--dark research-save" id="research-save" type="submit" data-hf-still>Save research note</button>
           </form>
           <p id="research-review-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save notes privately to your account.</p>
         </section>

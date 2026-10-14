@@ -9,11 +9,11 @@
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=5">
-<link rel="stylesheet" href="assets/css/v13-auth.css?v=3">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=6">
+<link rel="stylesheet" href="assets/css/v13-auth.css?v=4">
 <script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/auth.js?v=3"></script>
-<script defer src="assets/js/v13-halftone.js?v=3"></script><script defer src="assets/js/v13-motion.js?v=1"></script>
+<script defer src="assets/js/v13-halftone.js?v=4"></script><script defer src="assets/js/v13-motion.js?v=2"></script>
 </head>
 <body class="auth-body auth-body--signup v3-auth v13">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -46,7 +46,7 @@
     <p class="auth-context" data-auth-context hidden></p>
     <div class="auth-session" data-auth-session hidden>
      <p>You're already logged in as <strong data-auth-session-email></strong>.</p>
-     <a class="auth-session__go" href="subscribe.html" data-auth-session-go>Continue to subscription</a>
+     <a class="auth-session__go" data-hf-atom href="subscribe.html" data-auth-session-go>Continue to subscription</a>
     </div>
 
     <form class="auth-form" data-auth-form="register" action="signup.html" method="post" novalidate>
@@ -89,6 +89,7 @@
  </section>
 
  <aside class="auth-media" aria-labelledby="auth-plan-title">
+  <div class="auth-media__field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="120" aria-hidden="true"></div>
   <div class="v6-auth-story auth-plan-story">
    <p class="v6-auth-story__label">Insidir <span aria-hidden="true">/</span> One plan</p>
    <h2 id="auth-plan-title" class="auth-price">$39<small>/ month</small></h2>

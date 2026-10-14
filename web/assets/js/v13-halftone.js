@@ -82,7 +82,9 @@
       fontFamily: d.fontFamily || v("--hwf-font") || SANS_STACK,
       letterSpacing: d.letterSpacing || "-0.045em",
       // The field sits behind content that receives the pointer, so listen on its parent.
-      pointerHost: field ? root.parentElement : root
+      // data-pointer-host="document": the field feels the pointer anywhere on the page (dots still only move
+      // within the radius), for fields that sit right under a navigation bar.
+      pointerHost: d.pointerHost === "document" ? document : field ? root.parentElement : root
     }, overrides || {});
   }
 
@@ -172,7 +174,14 @@
       awake = true;
     };
 
+    // A fixed 60 fps physics clock, the same as v13-motion.js: identical feel at 60, 120 or 144 Hz.
+    const FRAME = 1000 / 60;
+    let last = 0, acc = 0;
     const draw = now => {
+      acc = last ? Math.min(acc + (now - last), 4 * FRAME) : FRAME;
+      last = now;
+      const steps = Math.floor(acc / FRAME);
+      acc -= steps * FRAME;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.fillStyle = o.colors.background;
       ctx.fillRect(0, 0, w, h);
@@ -186,19 +195,24 @@
         let x = dots[j], y = dots[j + 1], vx = dots[j + 2], vy = dots[j + 3];
         const hx = dots[j + 4], hy = dots[j + 5];
         if (!still) {
-          if (ringAge < PHYSICS.ringLife) {
-            const dx = hx - ring.x, dy = hy - ring.y;
-            const d = Math.sqrt(dx * dx + dy * dy) + 0.001;
-            const band = 1 - Math.min(1, Math.abs(d - ringR) / PHYSICS.ringBand);
-            if (band > 0) {
-              const f = band * PHYSICS.ringForce * (1 - ringAge / PHYSICS.ringLife);
-              vx += (dx / d) * f; vy += (dy / d) * f;
+          for (let k = 0; k < steps; k++) {
+            if (ringAge < PHYSICS.ringLife) {
+              const dx = hx - ring.x, dy = hy - ring.y;
+              const d = Math.sqrt(dx * dx + dy * dy) + 0.001;
+              const band = 1 - Math.min(1, Math.abs(d - ringR) / PHYSICS.ringBand);
+              if (band > 0) {
+                const f = band * PHYSICS.ringForce * (1 - ringAge / PHYSICS.ringLife);
+                vx += (dx / d) * f; vy += (dy / d) * f;
+              }
             }
+            const s = step(x, y, vx, vy, hx, hy, px, py, r);
+            x = s[0]; y = s[1]; vx = s[2]; vy = s[3];
           }
-          const s = step(x, y, vx, vy, hx, hy, px, py, r);
-          x = s[0]; y = s[1]; vx = s[2]; vy = s[3];
-          if (Math.abs(vx) + Math.abs(vy) > 0.02 || Math.abs(x - hx) + Math.abs(y - hy) > 0.05) moving = true;
-          else { x = hx; y = hy; vx = 0; vy = 0; }
+          const slow = Math.abs(vx) + Math.abs(vy) <= 0.02, home = Math.abs(x - hx) + Math.abs(y - hy) <= 0.05;
+          if (!slow) moving = true;
+          else if (home) { x = hx; y = hy; vx = 0; vy = 0; }
+          // Off home and slow: still travelling back unless it sits inside a resting pointer's reach, held in balance.
+          else if (ringAge < PHYSICS.ringLife || (x - px) * (x - px) + (y - py) * (y - py) >= r * r) moving = true;
           dots[j] = x; dots[j + 1] = y; dots[j + 2] = vx; dots[j + 3] = vy;
         }
         ctx.beginPath();
@@ -213,8 +227,9 @@
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = "source-over";
       }
-      // Sleep once everything is home and nothing is pushing.
-      awake = moving || ringAge < PHYSICS.ringLife || px > -1e4;
+      // Sleep once everything is home, or held still by a resting pointer; the next pointer move wakes it.
+      awake = moving || ringAge < PHYSICS.ringLife;
+      if (!awake) { last = 0; acc = 0; }
     };
 
     const loop = now => {
@@ -230,10 +245,10 @@
     const onLeave = () => { px = -1e5; py = -1e5; wake(); };
     const onDown = e => {
       if (!o.interactive || still) return;
-      if (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea")) return;
+      if (e.button > 0 || (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],[contenteditable]"))) return;
       const p = toLocal(e);
       ring = { x: p[0], y: p[1], t: performance.now() };
-      e.__hfRingFrom = root; // v13-motion.js sends the same ring through the rest of the page
+      (e.__hfRingFrom = e.__hfRingFrom || new Set()).add(root); // v13-motion.js sends the same ring through the rest of the page
       wake();
     };
 
@@ -243,11 +258,20 @@
 
     const host = o.pointerHost || root;
     host.addEventListener("pointermove", onMove);
-    host.addEventListener("pointerleave", onLeave);
+    const onOut = e => { if (!e.relatedTarget) onLeave(); };
+    if (host === document) document.addEventListener("pointerout", onOut);
+    else host.addEventListener("pointerleave", onLeave);
     host.addEventListener("pointerdown", onDown);
     const ro = new ResizeObserver(() => { layout(); wake(); });
     ro.observe(root);
-    const io = new IntersectionObserver(entries => { visible = entries[0] ? entries[0].isIntersecting : true; if (visible) wake(); });
+    // Scrolled out of view: put every dot home, so the field is at rest when it comes back.
+    const io = new IntersectionObserver(entries => {
+      visible = entries[0] ? entries[0].isIntersecting : true;
+      if (visible) { wake(); return; }
+      for (let i = 0; i < count; i++) { const j = i * 7; dots[j] = dots[j + 4]; dots[j + 1] = dots[j + 5]; dots[j + 2] = dots[j + 3] = 0; }
+      px = py = -1e5; ring.t = -1; last = 0; acc = 0;
+      draw(performance.now());
+    });
     io.observe(root);
     // The wordmark is set in the page's web font once it has landed.
     if (document.fonts && document.fonts.load) {
@@ -270,6 +294,7 @@
         ro.disconnect(); io.disconnect();
         host.removeEventListener("pointermove", onMove);
         host.removeEventListener("pointerleave", onLeave);
+        document.removeEventListener("pointerout", onOut);
         host.removeEventListener("pointerdown", onDown);
         delete root.__halftone;
       }

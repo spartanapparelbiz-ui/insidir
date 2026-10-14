@@ -10,10 +10,10 @@
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=5">
-<link rel="stylesheet" href="assets/css/v13-paywall.css?v=3">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=6">
+<link rel="stylesheet" href="assets/css/v13-paywall.css?v=4">
 <script defer src="assets/js/subscribe.js?v=2"></script>
-<script defer src="assets/js/v13-halftone.js?v=3"></script><script defer src="assets/js/v13-motion.js?v=1"></script>
+<script defer src="assets/js/v13-halftone.js?v=4"></script><script defer src="assets/js/v13-motion.js?v=2"></script>
 </head>
 <body class="pw-page pw-page--subscribe v13" data-pw-state="loading">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -22,9 +22,9 @@
   <a class="v13-logo pw-logo" href="index.html" aria-label="Insidir home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
   <nav class="pw-header__nav" aria-label="Account">
    <span class="pw-header__who" data-pw-email hidden></span>
-   <a href="account.html" data-pw-signed-in hidden>Account</a>
-   <button type="button" data-pw-signout data-pw-signed-in hidden>Sign out</button>
-   <a href="signin.html" data-pw-signed-out data-pw-signin>Log in</a>
+   <a href="account.html" data-pw-signed-in data-hf-atom hidden>Account</a>
+   <button type="button" data-pw-signout data-pw-signed-in data-hf-atom hidden>Sign out</button>
+   <a href="signin.html" data-pw-signed-out data-pw-signin data-hf-atom>Log in</a>
   </nav>
  </div>
 </header>
@@ -40,6 +40,7 @@
   </section>
 
   <aside class="pw-plan" aria-labelledby="pw-plan-name">
+  <div class="pw-plan__field" data-halftone-field data-dot-gap="10" data-field-coverage="0.09" data-radius="100" aria-hidden="true"></div>
    <p class="pw-plan__label" id="pw-plan-name">Insidir Pro</p>
    <p class="pw-plan__price"><strong>$39</strong><span>/ month</span></p>
    <ul class="pw-plan__terms">

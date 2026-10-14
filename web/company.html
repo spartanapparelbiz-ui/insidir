@@ -12,9 +12,9 @@
 <script defer src="assets/js/app.js?v=12"></script>
 <script defer src="assets/js/brand-mark.js?v=2"></script>
 <script defer src="assets/js/v12-company.js?v=6"></script>
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=5">
-<link rel="stylesheet" href="assets/css/v13-company.css?v=3">
-<script defer src="assets/js/v13-halftone.js?v=3"></script><script defer src="assets/js/v13-motion.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=6">
+<link rel="stylesheet" href="assets/css/v13-company.css?v=4">
+<script defer src="assets/js/v13-halftone.js?v=4"></script><script defer src="assets/js/v13-motion.js?v=2"></script>
 </head>
 <body class="app-body cx-page v13">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -22,7 +22,8 @@
 <main class="cx-main" id="main">
 
 <section class="cx-picker" id="cx-picker" hidden aria-labelledby="cx-picker-title">
- <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a></nav>
+ <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="110" aria-hidden="true"></div>
+ <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html" data-hf-atom><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a></nav>
  <p class="cx-kicker">Company reports · every SEC-listed ticker</p>
  <h1 id="cx-picker-title">Research any<br>public company.</h1>
  <p>Delayed price history, key facts, SEC financials, filings, insider activity and news for every company in the SEC's official ticker list. Every figure links to the record it came from.</p>
@@ -38,7 +39,8 @@
 <div class="cx-report" id="cx-report">
  <section class="cx-top" aria-label="Company summary">
   <div class="cx-identity">
-   <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a><span aria-hidden="true">›</span><span aria-current="page" id="cx-crumb-ticker">—</span></nav>
+   <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="110" aria-hidden="true"></div>
+   <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html" data-hf-atom><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a><span aria-hidden="true">›</span><span aria-current="page" id="cx-crumb-ticker">—</span></nav>
    <div class="cx-brand">
     <span class="cx-logo is-loading" id="cx-logo" role="img" aria-label="Company logo"></span>
     <div class="cx-brand__text">
@@ -61,7 +63,7 @@
      <div class="cx-quote__price"><strong id="cx-price"><span class="cx-skel cx-skel--price"></span></strong><span class="cx-change" id="cx-change"></span></div>
      <p class="cx-quote__meta" id="cx-quote-meta">Loading market data…</p>
     </div>
-    <div class="cx-ranges" role="group" aria-label="Chart range">
+    <div class="cx-ranges" role="group" aria-label="Chart range" data-hf-still>
      <button type="button" data-range="1D">1D</button><button type="button" data-range="1W">1W</button><button type="button" data-range="1M">1M</button><button type="button" data-range="3M">3M</button><button type="button" data-range="1Y" class="is-active" aria-pressed="true">1Y</button><button type="button" data-range="5Y">5Y</button>
     </div>
    </div>
@@ -104,27 +106,27 @@
     <h2 id="cx-about-title"></h2>
     <p id="cx-about-text"></p>
     <div class="cx-about__more" id="cx-about-more" hidden></div>
-    <button type="button" class="cx-link" id="cx-about-toggle" aria-expanded="false" aria-controls="cx-about-more">Read full company description <span aria-hidden="true">→</span></button>
+    <button type="button" class="cx-link" id="cx-about-toggle" data-hf-atom aria-expanded="false" aria-controls="cx-about-more">Read full company description <span aria-hidden="true">→</span></button>
    </article>
    <article class="cx-card cx-mini" aria-labelledby="cx-fin-title">
-    <header><div><h2 id="cx-fin-title">Financials</h2><p id="cx-fin-period">Trailing twelve months</p></div><button type="button" class="cx-arrow" data-go="financials" aria-label="Open financials">→</button></header>
+    <header><div><h2 id="cx-fin-title">Financials</h2><p id="cx-fin-period">Trailing twelve months</p></div><button type="button" class="cx-arrow" data-hf-atom data-go="financials" aria-label="Open financials">→</button></header>
     <div id="cx-fin-rows" class="cx-fin-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
    </article>
    <article class="cx-card cx-mini" aria-labelledby="cx-filings-title">
-    <header><div><h2 id="cx-filings-title">SEC filings</h2></div><button type="button" class="cx-arrow" data-go="filings" aria-label="Open SEC filings">→</button></header>
+    <header><div><h2 id="cx-filings-title">SEC filings</h2></div><button type="button" class="cx-arrow" data-hf-atom data-go="filings" aria-label="Open SEC filings">→</button></header>
     <div id="cx-filing-rows" class="cx-filing-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
-    <button type="button" class="cx-link" data-go="filings">View all filings <span aria-hidden="true">→</span></button>
+    <button type="button" class="cx-link" data-hf-atom data-go="filings">View all filings <span aria-hidden="true">→</span></button>
    </article>
    <article class="cx-card cx-mini" aria-labelledby="cx-insider-title">
-    <header><div><h2 id="cx-insider-title">Recent insider activity</h2></div><button type="button" class="cx-arrow" data-go="insiders" aria-label="Open insider activity">→</button></header>
+    <header><div><h2 id="cx-insider-title">Recent insider activity</h2></div><button type="button" class="cx-arrow" data-hf-atom data-go="insiders" aria-label="Open insider activity">→</button></header>
     <div id="cx-insider-rows" class="cx-insider-rows"><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span><span class="cx-skel cx-skel--row"></span></div>
-    <button type="button" class="cx-link" data-go="insiders">View all insider activity <span aria-hidden="true">→</span></button>
+    <button type="button" class="cx-link" data-hf-atom data-go="insiders">View all insider activity <span aria-hidden="true">→</span></button>
    </article>
   </div>
  </section>
 
  <section class="cx-panel" role="tabpanel" id="financials" aria-labelledby="tab-financials" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html">Open in Research Desk <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html" data-hf-atom>Open in Research Desk <span aria-hidden="true">→</span></a></div>
   <div class="cx-tiles" id="cx-ttm-tiles"></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3>Annual history</h3>
@@ -145,7 +147,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="filings" aria-labelledby="tab-filings" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3><span id="cx-filing-count">—</span> filings</h3>
     <div class="cx-chips" role="group" aria-label="Filter filings" id="cx-filing-filters">
@@ -157,7 +159,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="insiders" aria-labelledby="tab-insiders" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
   <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary"></div>
   <article class="cx-card cx-block">
    <header class="cx-block__head"><h3>Reported transactions</h3>
@@ -170,7 +172,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="people" aria-labelledby="tab-people" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html">People directory <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html" data-hf-atom>People directory <span aria-hidden="true">→</span></a></div>
   <h3 class="cx-subhead">Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
   <div class="cx-people" id="cx-people-sec"></div>
   <h3 class="cx-subhead" id="cx-leaders-head" hidden>Leadership &amp; founders <small>from Wikidata</small></h3>

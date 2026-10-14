@@ -12,6 +12,12 @@
    above the shared file's :is() lists. Never set `display` on an element that can carry the `hidden`
    attribute without a :not([hidden]) guard.
 
+   Motion: the pages move like the landing wordmark (v13-halftone.js, v13-motion.js). Each hero carries a live dot
+   field in its top padding, the platform's report schematic plots its price area as one, and the closing call sits
+   over another; small free-standing marks (index arrows, step and rule numbers, the legal contents' numbers) are
+   atoms that part around the pointer. Movement transitions settle on the dots' spring (var(--hf-spring) over
+   var(--hf-spring-dur)); colour transitions keep their plain easing.
+
    Breakpoints: 1100 (four-up rows become two-up), 1024 (split layouts stack their aside), 900 (navigation
    collapses to the menu button; heads and splits go to one column), 760 (single column everywhere),
    560 (phone buttons go full width), 374 (smallest phones). */
@@ -19,7 +25,7 @@
 
 /* ---------- Page ---------- */
 html.v13-menu-open{overflow:hidden!important}
-body.v13.v3-static.v6-static{--mk-gutter:clamp(16px,4.2vw,60px)!important;--mk-nav:72px!important;--mk-ease:cubic-bezier(.2,.7,.1,1)!important;
+body.v13.v3-static.v6-static{--mk-gutter:clamp(16px,4.2vw,60px)!important;--mk-nav:72px!important;--mk-hero-top:clamp(56px,7.5vw,112px)!important;
   font:400 13.5px/1.75 var(--hf-sans)!important;color:var(--hf-ink)!important;background:var(--hf-bg)!important;overflow-x:clip!important;min-height:100vh!important}
 body.v13.v3-static.v6-static main{display:block!important;overflow-x:clip!important;background:transparent!important}
 body.v13.v3-static.v6-static .mk-shell{width:min(1320px,calc(100% - 2 * var(--mk-gutter)))!important;max-width:none!important;margin-inline:auto!important;padding-inline:0!important;box-sizing:border-box!important}
@@ -40,7 +46,7 @@ body.v13.v3-static.v6-static .v9-nav .v6-nav__actions{flex:none!important;displa
 body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{height:44px!important;min-height:44px!important;padding:0 18px!important;gap:14px!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn{display:none!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:44px!important;height:44px!important;margin:0 -10px 0 0!important;padding:0!important;
   border:0!important;background:transparent!important;cursor:pointer!important;gap:6px!important;border-radius:0!important}
-body.v13.v3-static.v6-static .v9-nav .v6-menu-btn span{display:block!important;width:20px!important;height:1.5px!important;background:var(--hf-ink)!important;transition:transform .3s var(--mk-ease)!important}
+body.v13.v3-static.v6-static .v9-nav .v6-menu-btn span{display:block!important;width:20px!important;height:1.5px!important;background:var(--hf-ink)!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn[aria-expanded="true"] span:first-child{transform:translateY(3.75px) rotate(45deg)!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn[aria-expanded="true"] span:last-child{transform:translateY(-3.75px) rotate(-45deg)!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn:focus-visible{outline-offset:-4px!important}
@@ -64,10 +70,10 @@ body.v13.v3-static.v6-static :is(.v9-btn--ink,.v6-mobile a:last-child):active{ba
 body.v13.v3-static.v6-static .v12-outline-button:active{background:var(--hf-raise)!important}
 body.v13.v3-static.v6-static :is(.mk-link,.v6-nav__links a,.v6-signin,.v6-mobile a:not(:last-child)):active{color:var(--hf-warm)!important}
 body.v13.v3-static.v6-static .mk-link{display:inline-flex!important;align-items:center!important;gap:12px!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
-  background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s var(--mk-ease)!important}
+  background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13.v3-static.v6-static .mk-link:hover{color:var(--hf-warm)!important;background-size:100% 1px!important}
 body.v13.v3-static.v6-static .mk-link::after{content:""!important;position:absolute!important;inset:-14px -8px!important;background:transparent!important}
-body.v13.v3-static.v6-static :is(.v9-btn,.mk-link) .v13-arrow{transition:transform .3s var(--mk-ease)!important}
+body.v13.v3-static.v6-static :is(.v9-btn,.mk-link) .v13-arrow{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static :is(.v9-btn,.mk-link):hover .v13-arrow{transform:translate(2px,-2px)!important}
 /* Drawn from the text colour (shaft and open head, 1px like the mono's stroke) so it matches the type at every
    size; the glyph stays in the markup as the no-CSS fallback. */
@@ -86,7 +92,15 @@ body.v13.v3-static.v6-static :is(.mk-note,.mk-caption,.mk-prose,.mk-faq details>
 body.v13.v3-static.v6-static .mk-tag{display:inline-flex!important;align-items:center!important;min-height:22px!important;padding:0 8px!important;border:1px solid var(--hf-line-2)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;white-space:nowrap!important}
 
 /* ---------- Page hero ---------- */
-body.v13.v3-static.v6-static .mk-hero{position:relative!important;padding:clamp(56px,7.5vw,112px) 0 clamp(48px,5vw,72px)!important;margin:0!important;border:0!important;background:transparent!important}
+body.v13.v3-static.v6-static .mk-hero{position:relative!important;padding:var(--mk-hero-top) 0 clamp(48px,5vw,72px)!important;margin:0!important;border:0!important;background:transparent!important}
+/* The hero's dot field (data-halftone-field, mounted by v13-halftone.js): the wordmark's dots without the word, parting
+   around the pointer wherever it is on the page and rippling on a click. It fills only the hero's top padding, where nothing is
+   ever set at any width, anchored under the navigation at the top-right corner and fading out radially to nothing at its
+   left and bottom edges, so the eyebrow, heading, lede and the aside always sit on plain paper. The same box and mask on
+   every marketing and legal page, so the family reads as one. */
+body.v13.v3-static.v6-static .mk-hero>.mk-hero__field{inset:0 0 auto auto!important;width:60%!important;height:var(--mk-hero-top)!important;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important}
+body.v13.v3-static.v6-static .mk-hero>.mk-hero__field::after{display:none!important}
 body.v13.v3-static.v6-static .mk-hero__grid{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(0,.85fr)!important;gap:40px clamp(40px,6vw,112px)!important;align-items:end!important}
 body.v13.v3-static.v6-static .mk-hero h1{font:800 clamp(34px,calc(2.8vw + 24px),72px)/1.05 var(--hf-mono)!important;letter-spacing:-.035em!important;margin:24px 0 0!important;max-width:20ch!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-hero h1 span{color:var(--hf-soft)!important}
@@ -101,7 +115,7 @@ body.v13.v3-static.v6-static .mk-index li{margin:0!important;padding:0!important
 body.v13.v3-static.v6-static .mk-index a{display:grid!important;grid-template-columns:40px minmax(0,1fr) 16px!important;align-items:center!important;gap:12px!important;min-height:46px!important;padding:8px 0!important;border-bottom:1px solid var(--hf-line)!important;
   font:400 12.5px/1.45 var(--hf-mono)!important;color:var(--hf-soft)!important;text-decoration:none!important;transition:color .2s!important}
 body.v13.v3-static.v6-static .mk-index a span:first-child{font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .2s!important}
-body.v13.v3-static.v6-static .mk-index a span:last-child{font:400 12px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;text-align:right!important;transition:color .2s,transform .3s var(--mk-ease)!important}
+body.v13.v3-static.v6-static .mk-index a span:last-child{font:400 12px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;text-align:right!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static .mk-index a:hover{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-index a:hover span:first-child,body.v13.v3-static.v6-static .mk-index a:hover span:last-child{color:var(--hf-warm)!important}
 body.v13.v3-static.v6-static .mk-index a:hover span:last-child{transform:translateY(2px)!important}
@@ -189,9 +203,12 @@ body.v13.v3-static.v6-static .mk-ana__lines i:first-child{width:min(260px,62%)!i
 body.v13.v3-static.v6-static .mk-ana__lines i:last-child{width:min(420px,88%)!important}
 body.v13.v3-static.v6-static .mk-ana__actions{display:flex!important;flex:none!important;gap:6px!important;margin:0 0 0 auto!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__actions li{display:inline-flex!important;align-items:center!important;height:28px!important;padding:0 10px!important;border:1px solid var(--hf-line-2)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;list-style:none!important}
-/* The plot area is a halftone dot grid: a place for the delayed price series, drawn with no line of its own. */
-body.v13.v3-static.v6-static .mk-ana__plot{flex:1 1 auto!important;min-height:120px!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important;
-  background-image:radial-gradient(circle,var(--hf-line-2) 1px,transparent 1.6px)!important;background-size:12px 12px!important;background-position:6px 6px!important}
+/* The plot area is a live dot field (data-halftone-field, 12px pitch): a place for the delayed price series, drawn with no
+   line of its own. Its dots part around the pointer anywhere in the chart box and ripple on a click, printed at half ink so
+   the schematic stays quiet. The box is sized here (flex, min-height) before the script draws into it. */
+body.v13.v3-static.v6-static .mk-ana__plot{position:relative!important;display:block!important;overflow:hidden!important;flex:1 1 auto!important;min-height:120px!important;
+  border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important;background:var(--hf-bg)!important}
+body.v13.v3-static.v6-static .mk-ana__plot>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important;opacity:.5!important}
 body.v13.v3-static.v6-static .mk-ana__ranges{display:flex!important;flex-wrap:wrap!important;gap:4px!important;margin:0!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__ranges li{min-width:32px!important;height:24px!important;display:inline-grid!important;place-items:center!important;padding:0 6px!important;border:1px solid var(--hf-line)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.1em!important;color:var(--hf-muted)!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__ranges li.is-on{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}

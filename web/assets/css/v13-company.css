@@ -16,6 +16,25 @@ body.v13 .cx-main{width:min(100% - 64px,1600px)!important;margin:0 auto!importan
 body.v13.cx-page .app-header .icon-btn svg{width:20px!important;height:20px!important}
 body.v13 :is(.cx-report,.cx-picker,.cx-panel,.cx-about,.cx-subhead,.cx-about__more,.cx-chart__tip,.cx-exchange,.cx-dot)[hidden],body.v13 .cx-about p[hidden]{display:none!important}
 
+/* ---------- Header band: the wordmark's dots, without the word (the product pages' band, see v13-app.css) ----------
+   A live dot field (div.pd-band[data-halftone-field], mounted by v13-halftone.js) in the header's empty top-right
+   corner, fading radially to nothing at its left and bottom edges, so no text, input or figure ever sits on dots.
+   The picker: the same box as every product page, 30% of the hero wide and clamp(88px,7.4vw,108px) tall. The report:
+   the identity column's top-right corner, between the sheet's top rule and the price card's hairline, over the
+   breadcrumb row only, so it never enters the quote/chart card; once the identity spans the sheet (≤1180px) it is the
+   standard band above the action buttons. Phones leave it out. */
+body.v13{--pd-band-w:30%!important;--pd-band-h:clamp(88px,7.4vw,108px)!important}
+body.v13 :is(.cx-picker,.cx-identity){position:relative!important}
+body.v13 :is(.cx-picker,.cx-identity)>:not(.pd-band){position:relative!important}
+body.v13 .pd-band{position:absolute!important;top:0!important;right:0!important;bottom:auto!important;left:auto!important;z-index:auto!important;display:block!important;
+  width:var(--pd-band-w)!important;height:var(--pd-band-h)!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important}
+body.v13 .pd-band>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+body.v13 .cx-identity{--pd-band-w:36%!important;--pd-band-h:calc(clamp(24px,2.6vw,36px) + clamp(22px,2.6vw,34px) + 18px)!important}
+@media (max-width:1180px){body.v13 .cx-identity{--pd-band-w:30%!important;--pd-band-h:clamp(88px,7.4vw,108px)!important}}
+@media (max-width:860px){body.v13 .cx-identity>.pd-band{display:none!important}}
+@media (max-width:759px){body.v13 .pd-band{display:none!important}}
+
 /* Tracked mono kickers, captions, dots. */
 body.v13 .cx-kicker{display:flex!important;align-items:center!important;gap:10px!important;margin:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 :is(.cx-facts__note,.cx-picker__note,.cx-source,.cx-quote__meta,.cx-status,.cx-empty,.cx-sources,.cx-sources p,.cx-tile small,.cx-description small,.cx-about__more small,.cx-mini header p,.cx-section-head p,.cx-person p,.cx-subhead small,.cx-table small,.cx-chart__empty,.cx-chart__tip span){

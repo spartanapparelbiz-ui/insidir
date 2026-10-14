@@ -107,8 +107,10 @@ try {
       // A click on empty space sends one ring through every dot field.
       const rung = await page.evaluate(() => {
         const roots = [...document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")].filter(r => r.__halftone);
-        window.__rings = 0;
-        for (const r of roots) { const orig = r.__halftone.ring; r.__halftone.ring = (...a) => { window.__rings++; return orig.apply(r.__halftone, a); }; }
+        // A field that heard the click itself starts its own ring (and marks the event); the rest are rung by v13-motion.js.
+        window.__rang = new Set();
+        for (const r of roots) { const orig = r.__halftone.ring; r.__halftone.ring = (...a) => { window.__rang.add(r); return orig.apply(r.__halftone, a); }; }
+        window.addEventListener("pointerdown", e => { for (const r of e.__hfRingFrom || []) window.__rang.add(r); });
         for (let y = 140; y < innerHeight - 20; y += 23) for (let x = 30; x < innerWidth - 30; x += 37) {
           const e = document.elementFromPoint(x, y);
           if (e && !e.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],canvas,[data-halftone-field],[data-halftone-hero]")) return { x, y, roots: roots.length };
@@ -118,7 +120,7 @@ try {
       if (rung.x !== undefined) {
         await page.mouse.click(rung.x, rung.y);
         await page.waitForTimeout(60);
-        const n = await page.evaluate(() => window.__rings);
+        const n = await page.evaluate(() => window.__rang.size);
         check(n === rung.roots, key + ": a click on empty space ripples through all " + rung.roots + " dot field(s)", { rings: n, fields: rung.roots });
       }
       check(errors.length === 0, key + ": no script errors", errors);
