@@ -35,6 +35,10 @@
 /* ---------- Tokens ---------- */
 :root{
   --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important;
+  /* Market direction, for data only: purchases and rises in green, sales and falls in red. Validated as a pair on
+     paper, surface and surface-2 (OKLab ΔE 9.6 under deuteranopia, 31.9 normal; ≥4.86:1 contrast), always shown with
+     a ▲/▼ glyph or a label so colour never carries the meaning alone. Not for the surface or the chrome. */
+  --hf-up:#2f996a!important;--hf-down:#f94144!important;
   --hf-surface:#151513!important;      /* ink 4% over paper */
   --hf-surface-2:#1b1a18!important;    /* 7% */
   --hf-raise:#222220!important;        /* 10% */
@@ -58,8 +62,8 @@ body.v13{
   --dark:var(--hf-bg)!important;--dark-2:var(--hf-surface)!important;--dark-3:var(--hf-surface-2)!important;
   --ink:var(--hf-ink)!important;--ink-2:var(--hf-soft)!important;--muted:var(--hf-muted)!important;--muted-2:var(--hf-muted)!important;--on-dark:var(--hf-ink)!important;--on-dark-muted:var(--hf-muted)!important;
   --line:var(--hf-line)!important;--line-2:var(--hf-line-2)!important;--line-dark:var(--hf-line-soft)!important;
-  --green:var(--hf-ink)!important;--green-chart:var(--hf-warm)!important;--green-bg:var(--hf-surface-2)!important;
-  --red:var(--hf-warm)!important;--red-chart:var(--hf-warm)!important;--red-bg:var(--hf-surface-2)!important;
+  --green:var(--hf-up)!important;--green-chart:var(--hf-up)!important;--green-bg:var(--hf-surface-2)!important;
+  --red:var(--hf-down)!important;--red-chart:var(--hf-down)!important;--red-bg:var(--hf-surface-2)!important;
   --blue:var(--hf-ink)!important;--badge:var(--hf-raise)!important;
   --serif:var(--hf-sans)!important;--sans:var(--hf-sans)!important;
   --radius:2px!important;--radius-lg:3px!important;
@@ -68,10 +72,10 @@ body.v13{
   --v7-ink:var(--hf-ink)!important;--v7-paper:var(--hf-bg)!important;--v7-edge:var(--hf-line)!important;
   --v9-ink:var(--hf-ink)!important;--v9-paper:var(--hf-bg)!important;--v9-line:var(--hf-line)!important;--v9-gray:var(--hf-muted)!important;--v9-blue:var(--hf-warm)!important;--v9-soft:var(--hf-bg)!important;--v9-muted:var(--hf-muted)!important;
   --v10-paper:var(--hf-bg)!important;--v10-ink:var(--hf-ink)!important;--v10-muted:var(--hf-muted)!important;--v10-line:var(--hf-line)!important;--v10-orange:var(--hf-warm)!important;
-  --v12-bg:var(--hf-bg)!important;--v12-panel:var(--hf-surface)!important;--v12-border:var(--hf-line)!important;--v12-ink:var(--hf-ink)!important;--v12-muted:var(--hf-muted)!important;--v12-green:var(--hf-warm)!important;--v12-blue:var(--hf-ink)!important;
+  --v12-bg:var(--hf-bg)!important;--v12-panel:var(--hf-surface)!important;--v12-border:var(--hf-line)!important;--v12-ink:var(--hf-ink)!important;--v12-muted:var(--hf-muted)!important;--v12-green:var(--hf-up)!important;--v12-blue:var(--hf-ink)!important;
   --cx-bg:var(--hf-bg)!important;--cx-surface:var(--hf-surface)!important;--cx-surface-2:var(--hf-surface-2)!important;--cx-raise:var(--hf-raise)!important;--cx-line:var(--hf-line)!important;--cx-line-2:var(--hf-line-2)!important;
   --cx-text:var(--hf-ink)!important;--cx-text-2:var(--hf-soft)!important;--cx-muted:var(--hf-muted)!important;--cx-faint:var(--hf-faint)!important;
-  --cx-green:var(--hf-ink)!important;--cx-green-line:var(--hf-warm)!important;--cx-red:var(--hf-warm)!important;--cx-link:var(--hf-ink)!important;--cx-radius:3px!important;
+  --cx-green:var(--hf-up)!important;--cx-green-line:var(--hf-up)!important;--cx-red:var(--hf-down)!important;--cx-link:var(--hf-ink)!important;--cx-radius:3px!important;
   --sbg:var(--hf-bg)!important;--sp:var(--hf-surface)!important;--sb:var(--hf-line)!important;--st:var(--hf-ink)!important;--sm:var(--hf-muted)!important;
   --auth-bg:var(--hf-bg)!important;
   --hwf-bg:var(--hf-bg)!important;--hwf-ink:var(--hf-ink)!important;--hwf-mono:var(--hf-mono)!important;--hwf-font:var(--hf-mono)!important;
@@ -103,6 +107,9 @@ body.v13 :is(h1,h2,h3) :is(em,i,span).v13-warm{color:var(--hf-warm)!important}
 body.v13 p,body.v13 li,body.v13 dd,body.v13 dt,body.v13 td,body.v13 blockquote{color:inherit}
 body.v13 a{color:inherit!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
 body.v13 a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
+/* Inside the product the orange accent stays out of the chrome: hovers brighten to ink, primary buttons to soft ink.
+   Green and red are reserved for market direction (--hf-up / --hf-down). */
+body.v13.app-body a:hover{color:var(--hf-ink)!important}
 body.v13 code,body.v13 kbd,body.v13 pre{font-family:var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-surface)!important;border-radius:0!important}
 body.v13 strong,body.v13 b{color:var(--hf-ink)!important}
 body.v13 small{color:var(--hf-muted)!important}
@@ -162,7 +169,7 @@ body.v13 .app-nav a{color:var(--hf-muted)!important;font-weight:500!important;ba
 body.v13 .app-nav a:hover{color:var(--hf-ink)!important;background:transparent!important}
 body.v13 .app-nav a[aria-current=page]{color:var(--hf-ink)!important;font-weight:500!important;background:transparent!important}
 body.v13 .app-nav a[aria-current=page]::before{display:none!important}
-body.v13 .app-nav a[aria-current=page]::after{content:""!important;position:absolute!important;left:0!important;right:0!important;bottom:0!important;height:1px!important;background:var(--hf-warm)!important;border-radius:0!important;inset:auto 0 0!important}
+body.v13 .app-nav a[aria-current=page]::after{content:""!important;position:absolute!important;left:0!important;right:0!important;bottom:0!important;height:1px!important;background:var(--hf-ink)!important;border-radius:0!important;inset:auto 0 0!important}
 body.v13 .app-nav .v2-nav-icon{display:none!important}
 body.v13 .app-nav__indicator{display:none!important}
 body.v13 .app-search input{background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;color:var(--hf-ink)!important;border-radius:0!important;font:400 11px/1 var(--hf-mono)!important;letter-spacing:.02em!important;box-shadow:none!important;height:38px!important}
@@ -177,7 +184,7 @@ body.v13 .app-search__results{background:var(--hf-surface)!important;border:1px 
 body.v13 .app-search__option{border-radius:0!important;color:var(--hf-ink)!important}
 body.v13 .app-search__option[aria-selected="true"],body.v13 .app-search__option:hover{background:var(--hf-raise)!important;color:var(--hf-ink)!important}
 body.v13 .app-search__badge{background:var(--hf-raise)!important;color:var(--hf-ink)!important;border-radius:0!important;font-size:9px!important}
-body.v13 .app-search__badge--person{background:var(--hf-raise)!important;color:var(--hf-warm)!important}
+body.v13 .app-search__badge--person{background:var(--hf-raise)!important;color:var(--hf-soft)!important}
 body.v13 .app-search__label{color:var(--hf-ink)!important}
 body.v13 :is(.app-search__meta,.app-search__empty){color:var(--hf-muted)!important;font-family:var(--hf-mono)!important;font-size:10.5px!important}
 body.v13 .app-header .icon-btn{color:var(--hf-muted)!important;border-radius:0!important;background:transparent!important}
@@ -195,7 +202,7 @@ body.v13 .user-menu__panel :is(a,button):hover{background:var(--hf-raise)!import
 body.v13 .app-mobile-nav{background:var(--hf-bg)!important;color:var(--hf-ink)!important;border-bottom:1px solid var(--hf-line)!important;box-shadow:none!important}
 body.v13 .app-mobile-nav a{color:var(--hf-soft)!important;border-color:var(--hf-line)!important;border-radius:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;padding:15px 4px!important;background:transparent!important}
 body.v13 .app-mobile-nav a[aria-current=page]{color:var(--hf-ink)!important;background:transparent!important}
-body.v13 .app-mobile-nav a[aria-current=page]::after{background:var(--hf-warm)!important}
+body.v13 .app-mobile-nav a[aria-current=page]::after{background:var(--hf-ink)!important}
 body.v13 .app-mobile-nav a .v2-nav-icon{color:var(--hf-faint)!important}
 
 /* ---------- Buttons ---------- */
@@ -209,6 +216,7 @@ body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-
   background:var(--hf-ink)!important;color:var(--hf-bg)!important;border:1px solid var(--hf-ink)!important}
 body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-price__button--secondary),.v3-static__cta,.v3-account__button,.auth-btn,.cl-form button,.v3-searchbox button,.v3-intro>a,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button,.v9-desk__search button):hover{
   background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
+body.v13.app-body :is(.btn--dark,.cx-btn--primary,.v3-account__button,.cl-form button,.v3-searchbox button,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button):hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13 .btn--dark::after{display:none!important}
 /* secondary: hairline */
 body.v13 :is(.btn--light,.btn--ghost,.v9-btn--outline,.v9-btn--light,.v12-outline-button,.cx-btn:not(.cx-btn--primary),.v3-price__button--secondary,.cl-more){background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
@@ -220,7 +228,7 @@ body.v13 :is(.v3-filters button,.v12-graph-controls button,.v12-company-tabs but
 body.v13 :is(.v3-filters button[aria-pressed=true],.v12-graph-controls button.is-active,.v12-company-tabs button.is-active,.cx-ranges button.is-active,.segmented button.is-active,.cx-filters button.is-active,.cx-filters button[aria-pressed=true]){background:var(--hf-ink)!important;color:var(--hf-bg)!important;border-color:var(--hf-ink)!important}
 body.v13 .segmented .seg-thumb{display:none!important}
 body.v13 :is(.tabs [aria-selected="true"],.tabs a[aria-current="page"],.cx-tabs [aria-selected="true"]){color:var(--hf-ink)!important;font-weight:500!important}
-body.v13 :is(.tabs__indicator,.cx-tabs__indicator){background:var(--hf-warm)!important;height:1px!important}
+body.v13 :is(.tabs__indicator,.cx-tabs__indicator){background:var(--hf-ink)!important;height:1px!important}
 body.v13 .tabs{box-shadow:inset 0 -1px 0 var(--hf-line)!important}
 
 /* ---------- Inputs ---------- */
@@ -258,21 +266,21 @@ body.v13 .v3-table__sub{color:var(--hf-faint)!important;font-family:var(--hf-mon
 body.v13 :is(.v3-empty,.cl-empty){color:var(--hf-muted)!important;background:transparent!important}
 
 /* Signals: gains and purchases in ink, losses and sales warm. Sign glyphs carry the meaning too. */
-body.v13 :is(.buy,.chg.up,.pos,.v3-category--buy,.cx-up,.is-up){color:var(--hf-ink)!important;background:transparent!important}
-body.v13 :is(.sell,.chg.down,.neg,.v3-category--sell,.cx-down,.is-down){color:var(--hf-warm)!important;background:transparent!important}
+body.v13 :is(.buy,.chg.up,.pos,.v3-category--buy,.cx-up,.is-up){color:var(--hf-up)!important;background:transparent!important}
+body.v13 :is(.sell,.chg.down,.neg,.v3-category--sell,.cx-down,.is-down){color:var(--hf-down)!important;background:transparent!important}
 body.v13 :is(.v3-category,.v6-live__form,.pill,.status,.tag){background:transparent!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-soft)!important;border-radius:0!important;padding:4px 7px!important}
-body.v13 .v3-category--buy{border-color:var(--hf-line-2)!important}
-body.v13 .v3-category--sell{border-color:var(--hf-warm)!important}
+body.v13 .v3-category--buy{border-color:var(--hf-up)!important}
+body.v13 .v3-category--sell{border-color:var(--hf-down)!important}
 body.v13 :is(.v12-online-dot,.v9-tiny-dot,.dot,.app-nav .badge-dot),body.v13 .sample-note::before{background:var(--hf-ink)!important;box-shadow:none!important}
 body.v13 .ticker{color:var(--hf-ink)!important;font-family:var(--hf-mono)!important;letter-spacing:.06em!important}
 body.v13 :is(.ticker-logo--text,.monogram,.cx-logo.is-monogram){background:var(--hf-raise)!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line)!important;font-family:var(--hf-mono)!important;box-shadow:none!important;background-image:none!important}
 body.v13 :is(.ins-media,.ins-media--missing,.ins-media--company,.cv-symbol){background:var(--hf-surface-2)!important;border:1px solid var(--hf-line)!important;color:var(--hf-muted)!important;border-radius:0!important}
-body.v13 :is(.v4-ui-icon,.v4-heading-icon,.v12-feature-icon,.v3-quicklinks .v4-quick-icon,.v3-searchbox__icon){color:var(--hf-warm)!important}
+body.v13 :is(.v4-ui-icon,.v4-heading-icon,.v12-feature-icon,.v3-quicklinks .v4-quick-icon,.v3-searchbox__icon){color:var(--hf-soft)!important}
 body.v13 :is(.v12-feature-icon,.v3-quicklinks .v4-quick-icon){background:transparent!important;border:1px solid var(--hf-line)!important;border-radius:0!important}
 
 /* ---------- Charts ---------- */
-body.v13 .v12-graph .v12-plot-line{stroke:var(--hf-warm)!important}
-body.v13 .v12-graph .v12-plot-dot{fill:var(--hf-warm)!important;stroke:var(--hf-bg)!important}
+body.v13 .v12-graph .v12-plot-line{stroke:var(--hf-ink)!important}
+body.v13 .v12-graph .v12-plot-dot{fill:var(--hf-ink)!important;stroke:var(--hf-bg)!important}
 body.v13 .v12-graph .v12-grid-line{stroke:var(--hf-line)!important}
 body.v13 :is(.v12-graph .v12-axis,.area-chart .axis){fill:var(--hf-faint)!important;font:400 10px var(--hf-mono)!important}
 body.v13 .area-chart .grid{stroke:var(--hf-line)!important}
@@ -285,7 +293,7 @@ body.v13 .v12-chart-loading span{background:var(--hf-line-2)!important;border-ra
 body.v13 .v12-mini-bars i{background:var(--hf-soft)!important;border-radius:0!important}
 body.v13 .v12-mini-bars{border-color:var(--hf-line)!important}
 body.v13 .v4-trend__track{background:var(--hf-surface)!important;border-color:var(--hf-line)!important}
-body.v13 .v4-trend__track span{background:var(--hf-warm)!important}
+body.v13 .v4-trend__track span{background:var(--hf-soft)!important}
 
 /* ---------- Generic rules & dividers that older layers drew in light grey ---------- */
 body.v13 :is(.v12-logos,.v12-feed,.v9-feed,.v9-feed__head,.v9-feed__foot,.v12-process-steps,.v12-process-steps a,.v12-questions,.v12-questions details,.v12-final-cta,.v12-footer,.v9-footer__top,.v9-footer__bottom,.v3-static__header,.v3-static__content section,.v3-static__toc,.v3-price__facts>div,

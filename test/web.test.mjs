@@ -172,7 +172,8 @@ test("real research data and original document icons remain available",async()=>
   assert.doesNotMatch(home,/v4-explorer\.js|v4-presentation\.css|is3-window/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
   assert.match(dash,/v4-dashboard\.js/);
-  assert.match(dash,/id="v4-activity-chart"/);
+  for(const id of ["rd-kpis","rd-daily-chart","rd-daily-table","rd-companies","rd-largest","v3-trades"])assert.match(dash,new RegExp('id="'+id+'"'),id);
+  assert.match(dash,/v13-dashboard\.css/);
   const derived=await(await fetch(base+"/assets/js/v4-dashboard.js")).text();
   assert.match(derived,/insidir:transactions-loaded/);
   assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
@@ -448,4 +449,21 @@ test("nothing on the site glows orange: no halos, no orange gradients, no glowin
   const company=await readFile(new URL("v13-company.css",cssDir),"utf8");
   assert.match(company,/\.cx-chart svg>path\[fill\^="url\("\]\{fill:none!important\}/,"the price chart draws no gradient glow under its line");
   assert.doesNotMatch(await readFile(new URL("assets/js/v13-halftone.js",web),"utf8"),/warm/i,"the wordmark's dots never warm to orange");
+});
+
+test("charts use green for purchases and rises, red for sales and falls; the product chrome carries no orange",async()=>{
+  const css=new URL("../web/assets/css/",import.meta.url);
+  const theme=await readFile(new URL("v13-halftone.css",css),"utf8");
+  assert.match(theme,/--hf-up:#2f996a!important;--hf-down:#f94144!important;/,"direction tokens");
+  assert.match(theme,/--green:var\(--hf-up\)!important;--green-chart:var\(--hf-up\)!important/);
+  assert.match(theme,/--red:var\(--hf-down\)!important;--red-chart:var\(--hf-down\)!important/);
+  assert.match(theme,/body\.v13 :is\(\.buy,[^)]*\)\{color:var\(--hf-up\)/);
+  assert.match(theme,/body\.v13 :is\(\.sell,[^)]*\)\{color:var\(--hf-down\)/);
+  assert.match(theme,/\.app-nav a\[aria-current=page\]::after\{[^}]*background:var\(--hf-ink\)/,"the active tab is ink, not orange");
+  const dash=await readFile(new URL("v13-dashboard.css",css),"utf8");
+  for(const rule of [/\.rd-day__bar--up\{background:var\(--hf-up\)/,/\.rd-day__bar--down\{background:var\(--hf-down\)/,/\.rd-co__bar--up\{background:var\(--hf-up\)/,/\.rd-co__bar--down\{background:var\(--hf-down\)/])assert.match(dash,rule);
+  assert.doesNotMatch(dash,/hf-warm/,"no orange on the overview");
+  assert.doesNotMatch(await readFile(new URL("v13-app.css",css),"utf8"),/hf-warm/,"no orange in the app pages' stylesheet");
+  const js=await readFile(new URL("../web/assets/js/v3-dashboard.js",import.meta.url),"utf8");
+  for(const code of ["P","S","A","M","F","G"])assert.match(js,new RegExp("\\b"+code+':"'),"code "+code+" has its SEC meaning");
 });

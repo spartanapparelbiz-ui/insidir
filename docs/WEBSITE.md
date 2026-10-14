@@ -23,7 +23,8 @@ Every page shares one print-grain dark identity, taken from the reference footer
 | --- | --- | --- |
 | `--hf-bg` | `#0c0c0b` | night paper, every background |
 | `--hf-ink` | `#e9e4da` | text, rules, dots at rest, primary buttons |
-| `--hf-warm` | `#e9762b` | a flat accent only: the chart line, hover, losses and sales, the wordmark's full stop. Never a glow: no halo, shadow, gradient or orange-tinted dot |
+| `--hf-warm` | `#e9762b` | a flat accent only: public-page hovers, warnings and validation errors, the wordmark's full stop. Not used in the product chrome, and never a glow: no halo, shadow, gradient or orange-tinted dot |
+| `--hf-up` / `--hf-down` | `#2f996a` / `#f94144` | market direction only: purchases, rises and gains in green; sales, falls and losses in red. Always beside a word, a sign or a ▲/▼ marker; never on `--hf-raise` text (4.45:1) |
 | `--hf-surface` / `--hf-surface-2` / `--hf-raise` | ink 4 % / 7 % / 10 % over paper | panels, tiles, inputs |
 | `--hf-line` / `--hf-line-2` | ink 16 % / 24 % | hairline rules and borders |
 | `--hf-faint` / `--hf-muted` / `--hf-soft` | ink 54 % / 55 % / 75 % | labels (4.7:1), secondary copy (5.2:1), soft copy |
@@ -48,7 +49,7 @@ The landing page's first screen is the halftone wordmark hero (`section.v13-hero
 | Billing / Account | `billing.html`, `account.html`, `account-deleted.html` | Subscription status and the Stripe portal; account deletion, which cancels the subscription first, then a confirmation page |
 | Pricing | `pricing.html` | Free and Pro plans, comparison table, FAQ |
 | Sign in / Sign up | `signin.html`, `signup.html` | Wired to the engine's auth API, with client-side validation |
-| Dashboard | `dashboard.html` | Market cards, insider activity filter, watchlist, filings, political trades |
+| Dashboard | `dashboard.html` | Insider flow (totals, net value, other codes, filing lag; value by trade date with a table view; by company; largest transactions), watchlist, notes, insider transactions with exact shares, prices, values and dates, latest filings, data source, reporting people |
 | Company | `company.html?ticker=AAPL` | V12 dark market terminal for any SEC-listed ticker: delayed price chart (1D–5Y), key facts, and Overview, Financials, SEC filings, Insider activity, People and News tabs (`v12-company.css`, `v12-company.js`). Without a ticker it shows a company picker |
 | Alerts | `alerts.html` | Type filters, expandable rows, "Manage alerts" drawer |
 | Filing viewer | `filing.html` | Form 10-K outline with scrollspy, plus a document pane |

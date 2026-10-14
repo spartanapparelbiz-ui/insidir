@@ -2,14 +2,21 @@
 
    Opens the dashboard in headless Chromium against mocked /v1 responses and verifies that it
    makes sense to a paying reader:
-     - every section renders the fixture's real rows (watchlist, notes, filings, insider activity,
-       disclosure activity, data source, reporting people) with portraits or monogram initials;
+     - every section renders the fixture's real rows (insider flow, watchlist, notes, insider
+       transactions, filings, data source, reporting people) with portraits or monogram initials;
+     - insider flow is exact and computed from the loaded rows: purchase and sale totals with counts
+       and shares, the net value, other codes, the median filing lag, value by trade date (green
+       purchases above the zero line, red sales below, a readout on hover and focus, a table of
+       every day), sales and purchases by company and the largest reported transactions;
+     - the transactions table prints signed shares, price per share, value, trade and filing dates
+       with the lag, and the SEC meaning of each code; purchases are green, sales red, and the
+       orange accent appears nowhere on the page except the logo's full stop;
      - the company search submits to company.html?ticker=;
      - the insider-activity filters change the rows;
      - watchlist rows link to company.html?ticker= and show that ticker's latest transaction, looked
        up per ticker (/v1/transactions?ticker=X&limit=1) when it is older than the market-wide feed;
-     - the disclosure chart says it covers the latest loaded transactions, and the data-source panel
-       reads every ingest status the engine writes (success, partial, running, error);
+     - the flow says which transactions it covers, and the data-source panel reads every ingest
+       status the engine writes (success, partial, running, error);
      - following a person link (dashboard → people.html?q=…, or a Familiar faces tile) leaves the
        search result inside the viewport with focus on the directory's status line;
      - portraits fall back to monogram initials when Wikimedia is unreachable; initials are right for
@@ -141,14 +148,14 @@ try {
       date: document.querySelector("#v3-current-date")?.textContent || "",
       search: !!document.querySelector("#v3-search #v3-ticker") && getComputedStyle(document.querySelector("#v3-ticker")).visibility !== "hidden",
       shortcuts: [...document.querySelectorAll(".rd-shortcuts a")].map(a => a.getAttribute("href")),
-      order: [...document.querySelectorAll("#v3-watchlist,#v3-notes,#v3-filings,#v3-trades,#v4-activity-chart,#v4-data-state,#v10-people-preview")].map(e => e.id),
+      order: [...document.querySelectorAll("#rd-kpis,#rd-daily-chart,#rd-companies,#rd-largest,#v3-watchlist,#v3-notes,#v3-trades,#v3-filings,#v4-data-state,#v10-people-preview")].map(e => e.id),
       decorativePhotos: document.querySelectorAll('.app-main img[src*="assets/img/"]').length
     }));
     check(/^Good (morning|afternoon|evening)\.$/.test(H.greeting), "greeting is set from the reader's local time", H.greeting);
     check(/\d{4}/.test(H.date), "topline shows today's date", H.date);
     check(H.search, "company search is on the page");
     check(JSON.stringify(H.shortcuts) === JSON.stringify(["explore.html", "filings.html", "people.html", "watchlist.html", "alerts.html", "research.html"]), "shortcut row links Companies, SEC filings, People, Watchlist, Alerts, Research desk", H.shortcuts);
-    check(JSON.stringify(H.order) === JSON.stringify(["v3-watchlist", "v3-notes", "v3-filings", "v3-trades", "v4-activity-chart", "v4-data-state", "v10-people-preview"]), "sections appear in reading order: watchlist, notes, filings, activity, chart, status, people", H.order);
+    check(JSON.stringify(H.order) === JSON.stringify(["rd-kpis", "rd-daily-chart", "rd-companies", "rd-largest", "v3-watchlist", "v3-notes", "v3-trades", "v3-filings", "v4-data-state", "v10-people-preview"]), "sections appear in reading order: flow (totals, by date, by company, largest), watchlist, notes, transactions, filings, status, people", H.order);
     check(H.decorativePhotos === 0, "no decorative photographs on the dashboard", H.decorativePhotos);
     for (const route of ["/v1/transactions?limit=100", "/v1/filings?limit=12", "/v1/me/watchlist", "/v1/me/research-decisions", "/v1/status", "/v1/insiders"]) check(api.some(a => a.endsWith(" " + route) || a.includes(" " + route)), "dashboard requests " + route, api);
 
@@ -156,6 +163,7 @@ try {
     const watch = await page.$$eval("#v3-watchlist .rd-row", rows => rows.map(r => ({ href: r.getAttribute("href"), text: r.innerText.replace(/\s+/g, " ") })));
     check(watch.length === 4, "watchlist shows every saved ticker (4)", watch);
     check(watch[0]?.href === "company.html?ticker=AAPL" && /Sale/i.test(watch[0]?.text) && /Timothy D\. Cook/.test(watch[0]?.text) && /Sep 12, 2026/.test(watch[0]?.text) && /\$325,000/.test(watch[0]?.text), "AAPL watchlist row links its report and shows its latest transaction (Cook sale, Sep 12, 2026, $325,000)", watch[0]);
+    check(/12,500 sh × \$26\.00/.test(watch[0]?.text) && /filed Sep 14, 2026 \(\+2 days\)/.test(watch[0]?.text), "watchlist row prints shares × price and the filing date with its lag", watch[0]?.text);
     check(watch[1]?.href === "company.html?ticker=NVDA" && /Purchase/i.test(watch[1]?.text) && /Huang/.test(watch[1]?.text), "NVDA watchlist row shows its latest transaction (Huang purchase)", watch[1]);
     check(watch[2]?.href === "company.html?ticker=TSLA" && /Sale/i.test(watch[2]?.text) && /Elon Musk/.test(watch[2]?.text) && /Jun 2, 2026/.test(watch[2]?.text) && /\$250,000/.test(watch[2]?.text), "a watched ticker outside the market-wide feed shows its own latest transaction (Musk sale, Jun 2, 2026)", watch[2]);
     check(watch[3]?.href === "company.html?ticker=IBM" && /No imported insider transactions yet/.test(watch[3]?.text), "a watched ticker with no records at all says so plainly", watch[3]);
@@ -178,12 +186,15 @@ try {
     // Insider activity and its filters.
     const rows = async () => page.$$eval("#v3-trades tr", r => r.map(x => x.innerText.replace(/\s+/g, " ")));
     let t = await rows();
-    check(t.length === 4, "insider activity shows all 4 fixture transactions", t);
+    check(t.length === 4, "insider transactions show all 4 fixture transactions", t);
     check(/Timothy D\. Cook/.test(t[0]) && /AAPL/.test(t[0]) && /Sep 12, 2026/.test(t[0]) && /Sale · S/i.test(t[0]) && /\$325,000/.test(t[0]), "transaction row: person, ticker, trade date, type + code, value", t[0]);
-    check(/Not reported/.test(t[2]), "a transaction without a price says 'Not reported' instead of inventing a value", t[2]);
+    check(/\u221212,500/.test(t[0]) && /\$26\.00/.test(t[0]) && /Sep 14, 2026/.test(t[0]) && /\+2 days/.test(t[0]), "transaction row prints signed shares (−12,500), the price per share ($26.00), the filing date and the lag (+2 days)", t[0]);
+    check(/No price/.test(t[2]) && /Not reported/.test(t[2]) && / 900 /.test(t[2]), "a transaction without a price says so instead of inventing a value (and a share count with no reported direction carries no sign)", t[2]);
+    const codeTitle = await page.getAttribute("#v3-trades tr:first-child .rd-type", "title");
+    check(codeTitle === "S — Open market or private sale", "the code carries its SEC meaning", codeTitle);
     const tradeLinks = await page.$$eval("#v3-trades tr:first-child a", a => a.map(x => x.getAttribute("href")));
     check(tradeLinks.includes("people.html?q=COOK%20TIMOTHY%20D#v10-directory") && tradeLinks.includes("company.html?ticker=AAPL") && tradeLinks.includes("filing.html?accession=000032019326000001"), "transaction row links the person, the company and the filing", tradeLinks);
-    check((await text(page, '[data-filter="all"]')).includes("4") && (await text(page, '[data-filter="reported_purchase"]')).includes("1") && (await text(page, '[data-filter="reported_sale"]')).includes("2"), "filter buttons show real counts (4 / 1 / 2)");
+    check((await text(page, '[data-filter="all"]')).includes("4") && (await text(page, '[data-filter="reported_purchase"]')).includes("1") && (await text(page, '[data-filter="reported_sale"]')).includes("2") && (await text(page, '[data-filter="other"]')).includes("1"), "filter buttons show real counts (4 / 1 / 2 / 1)");
     await page.click('[data-filter="reported_purchase"]');
     t = await rows();
     check(t.length === 1 && /NVDA/.test(t[0]) && /Purchase/i.test(t[0]), "Purchases filter shows only purchases", t);
@@ -191,15 +202,59 @@ try {
     await page.click('[data-filter="reported_sale"]');
     t = await rows();
     check(t.length === 2 && t.every(r => /Sale/i.test(r)), "Sales filter shows only sales", t);
+    await page.click('[data-filter="other"]');
+    t = await rows();
+    check(t.length === 1 && /MSFT/.test(t[0]) && /Other · A/i.test(t[0]), "Other codes filter shows the grant (code A)", t);
     await page.click('[data-filter="all"]');
     check((await rows()).length === 4, "All restores every row");
 
-    // Disclosure activity and data source.
-    const chart = await page.evaluate(() => ({ bars: [...document.querySelectorAll("#v4-activity-chart .rd-bar__n")].map(e => e.textContent), label: document.querySelector("#v4-activity-chart").getAttribute("aria-label"), total: document.querySelector(".rd-chart__total")?.textContent }));
-    check(JSON.stringify(chart.bars) === JSON.stringify(["2", "1", "1"]), "activity chart draws the real per-day counts (Sep 10: 2, Sep 12: 1, Sep 14: 1)", chart);
-    check(/Sep 10: 2 \(0 purchases, 1 sales, 1 other\)/.test(chart.label || ""), "activity chart has a descriptive accessible label", chart.label);
-    check(/^4 transactions · 3 publication days · from the latest 4 loaded$/.test(chart.total || ""), "activity chart states its total and that it covers only the latest loaded transactions", chart.total);
-    check(/most recent imported transactions/.test(await text(page, "#v4-trend-title + p")) && /not daily totals/.test(await text(page, "#v4-trend-title + p")), "activity caption says it is a sample of the newest records, not daily totals");
+    // Insider flow: exact totals from the four fixture rows.
+    const flow = await page.evaluate(() => ({
+      scope: document.getElementById("rd-flow-scope").textContent,
+      kpis: Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.trim()])),
+      days: [...document.querySelectorAll("#rd-daily-chart .rd-day")].map(d => d.getAttribute("aria-label")),
+      up: [...document.querySelectorAll("#rd-daily-chart .rd-day__bar--up")].map(b => getComputedStyle(b).backgroundColor),
+      down: [...document.querySelectorAll("#rd-daily-chart .rd-day__bar--down")].map(b => getComputedStyle(b).backgroundColor),
+      zero: !!document.querySelector("#rd-daily-chart .rd-dchart__grid--zero"),
+      companies: [...document.querySelectorAll("#rd-companies .rd-co__row")].map(r => r.innerText.replace(/\s+/g, " ")),
+      largest: [...document.querySelectorAll("#rd-largest .rd-big")].map(r => r.innerText.replace(/\s+/g, " "))
+    }));
+    check(flow.scope === "All 4 imported transactions · traded Sep 1 – Sep 12, 2026 · 3 companies · 4 reporting people.", "the flow names exactly which transactions it covers", flow.scope);
+    check(flow.kpis.Purchases === "$42,000 | 1 purchase · 1,500 shares", "purchases total: value, count and shares", flow.kpis.Purchases);
+    check(flow.kpis.Sales === "$327,000 | 2 sales · 12,600 shares", "sales total: value, count and shares", flow.kpis.Sales);
+    check(flow.kpis["Net value"] === "\u2212$285,000 | Sales exceeded purchases", "net value is purchases minus sales, signed and explained", flow.kpis["Net value"]);
+    check(flow.kpis["Other codes"] === "1 | Codes A (1)", "transactions under other codes are counted, not valued", flow.kpis["Other codes"]);
+    check(flow.kpis["Filing lag"] === "2 days | Median, trade to SEC publication · range 2–9 days", "filing lag: median and range from trade date to SEC publication", flow.kpis["Filing lag"]);
+    check(flow.days.length === 3 && flow.days[0] === "Sep 1, 2026: purchases $0 (0 transactions), sales $2,000 (1 transaction), net \u2212$2,000" && flow.days[2] === "Sep 12, 2026: purchases $0 (0 transactions), sales $325,000 (1 transaction), net \u2212$325,000", "value by trade date: one column per day with an exact accessible label", flow.days);
+    check(flow.up.length === 1 && flow.up.every(c => c === "rgb(47, 153, 106)") && flow.down.length === 2 && flow.down.every(c => c === "rgb(249, 65, 68)") && flow.zero, "purchases are green bars above the zero line, sales red bars below it", flow);
+    check(flow.companies.length === 2 && /^AAPL/.test(flow.companies[0]) && /\u2212\$327,000/.test(flow.companies[0]) && /Sold \$327,000 in 2 sales/.test(flow.companies[0]) && /^NVDA/.test(flow.companies[1]) && /\+\$42,000/.test(flow.companies[1]) && /Bought \$42,000 in 1 purchase/.test(flow.companies[1]), "by company: largest gross value first, with exact net, sold and bought values", flow.companies);
+    check(flow.largest.length === 3 && /^01 \$325,000/.test(flow.largest[0]) && /12,500 sh × \$26\.00/.test(flow.largest[0]) && /filed Sep 14, 2026 \(\+2 days\)/.test(flow.largest[0]) && /^02 \$42,000/.test(flow.largest[1]) && /^03 \$2,000/.test(flow.largest[2]) && /\+9 days/.test(flow.largest[2]), "largest transactions ranked by value with shares × price, dates and lag", flow.largest);
+    // Scroll first: scrolling closes the readout, as it should once the pointer leaves the column.
+    await page.locator("#rd-daily-chart").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    await page.hover("#rd-daily-chart .rd-day:last-child");
+    await page.waitForTimeout(150);
+    const tip = await page.evaluate(() => { const t = document.getElementById("rd-tip"); return { hidden: t.hidden, text: t.innerText.replace(/\s+/g, " ") }; });
+    check(!tip.hidden && /Sep 12, 2026/i.test(tip.text) && /\$325,000 Sales · 1/.test(tip.text) && /Net \u2212\$325,000/.test(tip.text), "hovering a day shows its exact values", tip);
+    await page.mouse.move(0, 0);
+    await page.focus("#rd-daily-chart .rd-day:first-child");
+    check(await page.evaluate(() => !document.getElementById("rd-tip").hidden && /Sep 1, 2026/i.test(document.getElementById("rd-tip").innerText)), "keyboard focus on a day shows the same readout");
+    await page.keyboard.press("Escape");
+    await page.click("#rd-daily-toggle");
+    const dt = await page.evaluate(() => ({ expanded: document.getElementById("rd-daily-toggle").getAttribute("aria-expanded"), hidden: document.getElementById("rd-daily-table").hidden, rows: [...document.querySelectorAll("#rd-daily-table tbody tr")].map(r => r.innerText.replace(/\s+/g, " ")) }));
+    check(dt.expanded === "true" && !dt.hidden && dt.rows.length === 3 && /Sep 12, 2026 \$0 \(0\) \$325,000 \(1\) \u2212\$325,000/.test(dt.rows[0]), "Show the numbers opens a table of every trade day", dt);
+    // Colour: green and red carry direction; the orange accent is used only by the logo's full stop.
+    const orange = await page.evaluate(() => {
+      const warm = c => /^rgba?\(233, 118, 43/.test(c);
+      return [...document.querySelectorAll("body *")].filter(e => !e.closest(".v13-dot")).filter(e => {
+        const cs = getComputedStyle(e);
+        const border = ["Top", "Right", "Bottom", "Left"].some(side => parseFloat(cs["border" + side + "Width"]) > 0 && cs["border" + side + "Style"] !== "none" && warm(cs["border" + side + "Color"]));
+        return border || [cs.backgroundColor, cs.fill, cs.stroke].some(warm) || (warm(cs.color) && [...e.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim()));
+      }).slice(0, 8).map(e => e.tagName.toLowerCase() + "." + [...e.classList].join("."));
+    });
+    check(orange.length === 0, "no orange on the dashboard except the logo's full stop", orange);
+    const badges = await page.evaluate(() => ({ sale: getComputedStyle(document.querySelector("#v3-trades .rd-type--sell")).color, buy: getComputedStyle(document.querySelector("#v3-trades .rd-type--buy")).color }));
+    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)", "sale badges are red and purchase badges green", badges);
     const status = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll(".rd-status > div")].map(d => [d.querySelector("dt").textContent, d.querySelector("dd").textContent])));
     check(status.Status === "Online" && status["Parsed filings"] === "1,234 parsed" && status["Last import"] === "Oct 14, 2026, 09:12 UTC" && status["Latest publication"] === "Sep 14, 2026", "data source panel shows status, parsed count, last import (a 'success' run reads as plain time) and latest publication", status);
     // Every status src/ingest.mjs writes: running → success | partial | error.
@@ -283,7 +338,7 @@ try {
     const e = await page.evaluate(() => ({
       watch: document.querySelector("#v3-watchlist").innerText, notes: document.querySelector("#v3-notes").innerText,
       filings: document.querySelector("#v3-filings").innerText, trades: document.querySelector("#v3-trades").innerText,
-      chart: document.querySelector("#v4-activity-chart").innerText, people: document.querySelector("#v10-people-preview").innerText,
+      chart: document.querySelector("#rd-daily-chart").innerText, kpis: document.querySelector("#rd-kpis").innerText, companies: document.querySelector("#rd-companies").innerText, largest: document.querySelector("#rd-largest").innerText, people: document.querySelector("#v10-people-preview").innerText,
       count: document.querySelector("#v4-filing-count").innerText, last: document.querySelector("#v4-last-import").innerText, latest: document.querySelector("#v4-latest-filing-date").innerText,
       watchLink: document.querySelector('#v3-watchlist a[href="watchlist.html"]') !== null
     }));
@@ -292,6 +347,8 @@ try {
     check(/No imported SEC filings yet/.test(e.filings), "empty filings state", e.filings);
     check(/No imported Form 4 transactions yet/.test(e.trades), "empty transactions state", e.trades);
     check(/No dated transactions to chart yet/.test(e.chart), "empty chart state", e.chart);
+    check(/No imported Form 4 transactions yet/.test(e.kpis) && /No companies yet/.test(e.companies) && /No imported transactions yet/.test(e.largest), "empty flow states", e);
+    check(await page.locator("#rd-daily-toggle").isHidden(), "no table toggle without data");
     check(/No reporting people/.test(e.people), "empty people state", e.people);
     check(e.count === "0 parsed" && /No import recorded yet/.test(e.last) && /No filings imported yet/.test(e.latest), "empty data source panel", e);
     await page.click('[data-filter="reported_sale"]');
@@ -311,7 +368,7 @@ try {
     };
     const { context, page, errors } = await open(1024, respond);
     await page.waitForFunction(() => /unavailable/.test(document.querySelector("#v3-trades")?.textContent || "") && /unavailable/i.test(document.querySelector("#v4-data-state")?.textContent || "") && /unavailable/.test(document.querySelector("#v10-people-preview")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-    const s = await page.evaluate(() => Object.fromEntries(["v3-watchlist", "v3-notes", "v3-filings", "v3-trades", "v4-activity-chart", "v10-people-preview", "v4-data-state"].map(id => [id, document.getElementById(id).innerText.replace(/\s+/g, " ")])));
+    const s = await page.evaluate(() => Object.fromEntries(["rd-kpis", "rd-daily-chart", "rd-companies", "rd-largest", "v3-watchlist", "v3-notes", "v3-filings", "v3-trades", "v10-people-preview", "v4-data-state"].map(id => [id, document.getElementById(id).innerText.replace(/\s+/g, " ")])));
     for (const [id, msg] of Object.entries(s)) check(/unavailable/i.test(msg) && !/Loading|Checking/.test(msg), "503: #" + id + " shows a clear unavailable message", msg);
     check(await page.locator("button[data-retry]").count() >= 4, "503: modules offer Try again");
     check(await page.locator("#v10-people-preview button[data-people-retry]").count() === 1, "503: reporting people offer their own Try again");
@@ -319,8 +376,8 @@ try {
     if (SHOTS) await page.screenshot({ path: join(SHOTS, "dashboard-error-1024.png"), fullPage: true });
     healthy = true;
     await page.click('#v3-trades button[data-retry="trades"]');
-    await page.waitForFunction(() => document.querySelectorAll("#v3-trades tr").length === 4 && document.querySelectorAll("#v4-activity-chart .rd-bar").length === 3, null, { timeout: 10000 }).catch(() => {});
-    check(await page.locator("#v3-trades tr").count() === 4 && await page.locator("#v4-activity-chart .rd-bar").count() === 3, "Try again reloads insider activity and its chart");
+    await page.waitForFunction(() => document.querySelectorAll("#v3-trades tr").length === 4 && document.querySelectorAll("#rd-daily-chart .rd-day").length === 3, null, { timeout: 10000 }).catch(() => {});
+    check(await page.locator("#v3-trades tr").count() === 4 && await page.locator("#rd-daily-chart .rd-day").count() === 3 && await page.locator("#rd-kpis .rd-kpi").count() === 5, "Try again reloads the transactions, the totals and the chart");
     await page.click('#v3-filings button[data-retry="filings"]');
     await page.waitForFunction(() => document.querySelectorAll("#v3-filings tr").length === 3 && /parsed/.test(document.querySelector("#v4-filing-count").textContent), null, { timeout: 10000 }).catch(() => {});
     check(await page.locator("#v3-filings tr").count() === 3, "Try again reloads latest filings and the data source panel");

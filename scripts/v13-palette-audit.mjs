@@ -1,6 +1,8 @@
 /* Insidir V13 palette audit: open every page in headless Chromium and report any computed
    colour that is not a blend of the three identity colours (#0c0c0b paper, #e9e4da ink,
-   #e9762b warm), any serif or unexpected font family on visible text, horizontal overflow,
+   #e9762b warm) or one of the two direction colours over the paper (#2f996a up, #f94144 down),
+   any orange glow (a shadow, filter, gradient or gradient-filled chart carrying the accent, or an
+   orange pixel on the landing wordmark while the pointer pushes its dots), any serif or unexpected font family on visible text, horizontal overflow,
    uncaught browser errors, text whose WCAG contrast against its background falls below
    4.5:1 (3:1 for large text), raster images that are not retina-sharp (native pixels must be
    at least twice the rendered size), a landing hero whose halftone wordmark did not draw, a
@@ -19,7 +21,7 @@ import { chromium } from "playwright-core";
 const args = process.argv.slice(2);
 const flag = name => args.includes("--" + name);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] ? args[i + 1] : fallback; };
-const PALETTE = { bg: [12, 12, 11], ink: [233, 228, 218], warm: [233, 118, 43] };
+const PALETTE = { bg: [12, 12, 11], ink: [233, 228, 218], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
 const TOL = Number(opt("tolerance", 5));
 const widths = opt("widths", "1440,390").split(",").map(Number);
 const ALL_PAGES = [
@@ -105,8 +107,15 @@ const scan = ({ palette, tol }) => {
   // palette when the residual is small and both coefficients sit in [0, 1].
   const uu = u[0] * u[0] + u[1] * u[1] + u[2] * u[2], vv = v[0] * v[0] + v[1] * v[1] + v[2] * v[2], uv = u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
   const det = uu * vv - uv * uv;
+  // Market direction: green for purchases and rises, red for sales and falls, at any strength over the paper.
+  const onDirection = c => [palette.up, palette.down].some(d => {
+    const dv = [d[0] - bg[0], d[1] - bg[1], d[2] - bg[2]], w = [c.r - bg[0], c.g - bg[1], c.b - bg[2]];
+    const t = (w[0] * dv[0] + w[1] * dv[1] + w[2] * dv[2]) / (dv[0] * dv[0] + dv[1] * dv[1] + dv[2] * dv[2]);
+    return t >= -0.03 && t <= 1.03 && Math.hypot(w[0] - t * dv[0], w[1] - t * dv[1], w[2] - t * dv[2]) <= tol;
+  });
   const inPalette = c => {
     if (!c || c.a <= 0.3) return true;
+    if (onDirection(c)) return true;
     const w = [c.r - bg[0], c.g - bg[1], c.b - bg[2]];
     const wu = w[0] * u[0] + w[1] * u[1] + w[2] * u[2], wv = w[0] * v[0] + w[1] * v[1] + w[2] * v[2];
     const t = (wu * vv - wv * uv) / det, k = (wv * uu - wu * uv) / det;
