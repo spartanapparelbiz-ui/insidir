@@ -26,7 +26,7 @@ export function privateAddress(ip) {
   if (mapped) return ipv4Private(mapped[1]);
   return v6 === "::" || v6 === "::1" || /^f[cd]/.test(v6) || /^fe[89ab]/.test(v6) || /^ff/.test(v6) || v6.startsWith("64:ff9b:") || v6.startsWith("2001:db8");
 }
-async function assertPublic(url) {
+export async function assertPublic(url) {
   const u = new URL(url);
   if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) throw new Error("Only public https image URLs are allowed");
   if (isIP(u.hostname)) { if (privateAddress(u.hostname)) throw new Error("Private address"); return u; }

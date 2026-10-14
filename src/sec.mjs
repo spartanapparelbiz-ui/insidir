@@ -146,6 +146,32 @@ export async function secFetch(url, { json = false } = {}) {
   }
   throw new Error("SEC request attempts exhausted");
 }
+/* Binary download from SEC Archives (e.g. headshot images inside a proxy statement), through
+ * the same User-Agent, allowlist and throttle as every other SEC request. */
+export async function secFetchBytes(url, { maxBytes = 3_000_000 } = {}) {
+  if (!secReady()) throw new Error("SEC_USER_AGENT must identify the operator and a monitored email");
+  if (!allowedSecUrl(url) || !/^https:\/\/www\.sec\.gov\/Archives\//.test(url)) throw new Error("Disallowed SEC URL");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await throttle();
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), config.timeoutMs);
+    try {
+      const response = await fetch(url, { headers: { "User-Agent": config.userAgent, "Accept": "image/*,*/*;q=0.5" }, signal: abort.signal, redirect: "error" });
+      if ((response.status === 429 || response.status >= 500) && attempt < 2) {
+        const retrySeconds = Number(response.headers.get("retry-after"));
+        await new Promise(r => setTimeout(r, Number.isFinite(retrySeconds) && retrySeconds > 0 ? Math.min(30000, retrySeconds * 1000) : (attempt + 1) * 1500));
+        continue;
+      }
+      if (!response.ok) throw new Error("SEC responded " + response.status);
+      const size = Number(response.headers.get("content-length") || 0);
+      if (size > maxBytes) throw new Error("SEC file too large");
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (bytes.length > maxBytes) throw new Error("SEC file too large");
+      return bytes;
+    } finally { clearTimeout(timeout); }
+  }
+  throw new Error("SEC request attempts exhausted");
+}
 export async function recentForm4Filings() {
   const xml = await secFetch("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100");
   return parseAtom(xml);
