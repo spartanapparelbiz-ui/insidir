@@ -64,6 +64,8 @@ test("API: open endpoints, product endpoints for every method, unknown routes fa
     "/v1/me/brokerage/", "/v1/me/people/"];
   for (const path of product) for (const method of ["GET", "HEAD", "POST", "DELETE", "get"]) assert.equal(classifyApi(path, method), "product", method + " " + path);
   assert.equal(classifyApi("/v1/me", "POST"), "product");
+  // The followed-people feed is product data (its path only matches the own-data delete rule for DELETE, which the handler rejects).
+  for (const method of ["GET", "HEAD", "POST"]) assert.equal(classifyApi("/v1/me/people/updates", method), "product", method);
   // Deleting your own data needs a sign-in but no subscription; reading or adding it needs access.
   const ownDeletes = ["/v1/me/brokerage", "/v1/me/research-decisions", "/v1/me/watchlist/AAPL", "/v1/me/people/1234", "/v1/me/manual-holdings/BRK-B"];
   for (const path of ownDeletes) {
@@ -769,7 +771,7 @@ test("router: product API answers 401 signed out and 402 without a subscription"
     assert.deepEqual(JSON.parse(r.text), { error: "An active Insidir subscription is required", subscribe: "/subscribe.html" });
     for (const path of ["/v1/transactions", "/v1/companies", "/v1/clusters", "/v1/insiders", "/v1/status", "/v1/search?q=nv", "/v1/market/chart?ticker=AAPL",
       "/v1/company/profile?ticker=AAPL", "/v1/company/news?ticker=AAPL", "/v1/me/watchlist", "/v1/me/research-decisions", "/v1/me/manual-holdings",
-      "/v1/me/people", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/filings/000123456726000042"]) {
+      "/v1/me/people", "/v1/me/people/updates", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/filings/000123456726000042"]) {
       assert.equal((await send(base, path)).status, 401, path);
       assert.equal((await send(base, path, as("lapsed"))).status, 402, path);
     }
