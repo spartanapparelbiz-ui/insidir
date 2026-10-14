@@ -17,6 +17,7 @@ const DAY = 86400000;
 const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
 /* A caption or card name ("Suzanne Nora Johnson, Director") as a display name, only when it is the
  * same person as the SEC filer name. */
+const NAME_RANK = { wikimedia: 3, "company-site": 2, "sec-proxy": 1 };
 const titleWord = w => w.toLowerCase().replace(/(^|['’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/^Mc(\p{L})/u, (m, c) => "Mc" + c.toUpperCase());
 const wordKey = w => w.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
 const captionName = (secName, caption) => {
@@ -114,10 +115,18 @@ async function runJob(ticker, company) {
   const insiders = (await getCompanyInsiders(ticker).catch(() => null))?.people || [];
   const people = insiders.filter(p => p?.name && !isEntityName(p.name)).map(p => ({ ...p, key: keyFor(p) }));
   const pending = () => people.filter(p => !state.photos[p.key]);
+  // Display names: Wikidata labels and company-site cards keep their own casing ("LaVerne"); proxy
+  // captions arrive folded and are only title-cased, so they rank last.
+  const nameRank = {};
+  const setName = (person, name, rank) => {
+    if (!name || (nameRank[person.key] || 0) >= rank) return;
+    state.names[person.key] = name;
+    nameRank[person.key] = rank;
+  };
   const assign = async (person, photo, { replace = false } = {}) => {
     if (state.photos[person.key] && !replace) return;
     state.photos[person.key] = photo;
-    if (!state.names[person.key]) { const n = captionName(person.name, photo.caption || photo.personName); if (n) state.names[person.key] = n; }
+    setName(person, captionName(person.name, photo.caption || photo.personName), NAME_RANK[photo.source] || 1);
     if (person.cik) await putRecord("person-photo", String(person.cik).replace(/^0+/, ""), photo, PERSON_TTL);
   };
 
@@ -140,7 +149,7 @@ async function runJob(ticker, company) {
       for (const m of result.matches || []) {
         const person = people.find(p => p.key === keyFor({ cik: m.ownerCik, name: m.ownerName || m.personName }) || (m.ownerCik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
         // The Wikidata name reads better than the filing ("NORA JOHNSON SUZANNE M"), photo or not.
-        if (person && m.personName && !/^Q\d+$/.test(m.personName)) state.names[person.key] = m.personName;
+        if (person && m.personName && !/^Q\d+$/.test(m.personName)) setName(person, m.personName, 3);
         if (!person || state.photos[person.key] || !m.photo?.src) continue;
         try {
           const { saved, size } = await fromUrl(m.photo.large || m.photo.src);
