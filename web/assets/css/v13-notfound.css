@@ -1,20 +1,34 @@
-/* Insidir V13 — not-found page. Layout detail on top of v13-halftone.css. Every declaration in this file
-   lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css). */
+/* Insidir V13 — not-found page. Layout on top of v13-halftone.css and the shared marketing chrome in
+   v13-static.css (navigation, buttons, index list, footer). Every declaration in this file lives in the
+   insidir-v13 layer and is !important (see the note at the top of v13-halftone.css).
+
+   The page is the marketing page's measure: the message and its actions on the left, and on the right a
+   framed plate where "404" is printed as halftone dots by v13-halftone.js (data-halftone-field in word mode;
+   the dots part around the pointer like the rest of the site). The canvas is drawn at the screen's pixel
+   density, so it stays sharp on high-density displays; there is no photograph. */
 @layer insidir-v13{
-body.v13.v2-notfound{background:var(--hf-bg)!important;color:var(--hf-ink)!important;display:flex!important;flex-direction:column!important;min-height:100dvh!important}
-body.v13.v2-notfound header{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:72px!important;padding:0 clamp(24px,5vw,80px)!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13.v2-notfound header>a:last-child{color:var(--hf-muted)!important;text-decoration:none!important}
-body.v13.v2-notfound header>a:last-child:hover{color:var(--hf-ink)!important}
-body.v13.v2-notfound main{flex:1!important;display:grid!important;grid-template-columns:1fr 1fr!important;min-height:520px!important}
-body.v13.v2-notfound .nf-copy{padding:clamp(50px,8vw,145px) clamp(24px,5vw,80px)!important;align-self:center!important}
-body.v13.v2-notfound .nf-copy h1{font:800 clamp(44px,6vw,96px)/1!important;font-family:var(--hf-sans)!important;letter-spacing:-.06em!important;margin:20px 0 24px!important}
-body.v13.v2-notfound .nf-copy>span{display:block!important;font:400 14px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:40ch!important}
-body.v13.v2-notfound .nf-copy>div{display:flex!important;flex-wrap:wrap!important;gap:12px!important;margin-top:30px!important}
-body.v13.v2-notfound .nf-photo{position:relative!important;background:url("/assets/img/records-right.jpg") center / cover no-repeat!important;filter:grayscale(1) sepia(.12) contrast(1.05) brightness(.7)!important;border-left:1px solid var(--hf-line)!important}
-@media (max-width:750px){
-  body.v13.v2-notfound main{grid-template-columns:1fr!important}
-  body.v13.v2-notfound .nf-photo{height:220px!important;order:-1!important;border-left:0!important;border-bottom:1px solid var(--hf-line)!important}
-  body.v13.v2-notfound .nf-copy{padding-block:48px!important}
-  body.v13.v2-notfound .nf-copy h1{font-size:48px!important}
+body.v13.v2-notfound.v3-static{display:flex!important;flex-direction:column!important;min-height:100dvh!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important}
+body.v13.v2-notfound.v3-static main{flex:1 0 auto!important;display:flex!important;align-items:center!important}
+body.v13.v2-notfound.v3-static .nf{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:40px clamp(40px,6vw,104px)!important;align-items:center!important;padding:clamp(48px,7vw,104px) 0 clamp(64px,8vw,120px)!important}
+body.v13.v2-notfound.v3-static .nf-copy{min-width:0!important}
+body.v13.v2-notfound.v3-static .nf-copy h1{margin:24px 0 0!important;font:800 clamp(34px,calc(2.8vw + 24px),64px)/1.05 var(--hf-mono)!important;letter-spacing:-.035em!important;max-width:16ch!important;color:var(--hf-ink)!important;text-wrap:balance!important}
+body.v13.v2-notfound.v3-static .nf-copy h1 span{color:var(--hf-soft)!important}
+body.v13.v2-notfound.v3-static .nf-copy .mk-lede{max-width:48ch!important}
+body.v13.v2-notfound.v3-static .nf-pages{margin:44px 0 0!important;max-width:440px!important}
+body.v13.v2-notfound.v3-static .nf-pages .mk-index a span:last-child{transform:none!important}
+body.v13.v2-notfound.v3-static .nf-pages .mk-index a:hover span:last-child{transform:translateX(3px)!important}
+
+/* The plate: a hairline frame, a label row, and the dotted numeral sitting on the bottom edge. */
+body.v13.v2-notfound.v3-static .nf-print{position:relative!important;display:flex!important;flex-direction:column!important;min-width:0!important;margin:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important}
+body.v13.v2-notfound.v3-static .nf-print__label{display:flex!important;justify-content:space-between!important;gap:16px!important;margin:0!important;padding:14px 18px!important;border-bottom:1px solid var(--hf-line)!important;
+  font:500 10.5px/1.5 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v2-notfound.v3-static .nf-print__field{position:relative!important;display:block!important;width:100%!important;aspect-ratio:16 / 9!important;overflow:hidden!important;touch-action:pan-y!important;background:var(--hf-bg)!important}
+body.v13.v2-notfound.v3-static .nf-print__field canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
+
+@media (max-width:900px){
+  body.v13.v2-notfound.v3-static main{align-items:flex-start!important}
+  body.v13.v2-notfound.v3-static .nf{grid-template-columns:minmax(0,1fr)!important;padding-top:32px!important}
+  body.v13.v2-notfound.v3-static .nf-print{order:-1!important;max-width:560px!important}
+  body.v13.v2-notfound.v3-static .nf-print__field{aspect-ratio:2 / 1!important}
 }
 }

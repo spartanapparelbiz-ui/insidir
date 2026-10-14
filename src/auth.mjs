@@ -32,10 +32,22 @@ export function sessionCookie(token){
 export function clearCookie(){
   return "insidir_sid=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0"+(config.cookieSecure?"; Secure":"");
 }
-export async function currentUser(req) {
+// The signed-in account with its subscription fields, so the paywall and the route
+// handler share ONE query per request (the lookup is memoised per request object).
+// Never send this row to the browser as-is; expose {id,email} and accessSummary().
+const lookups=new WeakMap();
+export function currentUser(req) {
+  if(lookups.has(req))return lookups.get(req);
+  const pending=lookupUser(req);
+  lookups.set(req,pending);
+  pending.catch(()=>lookups.delete(req));
+  return pending;
+}
+async function lookupUser(req) {
   const token=getCookie(req);
   if(!token || !/^[a-f0-9]{64}$/.test(token))return null;
-  const result=await query("SELECT u.id,u.email FROM sessions s JOIN users u ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at>now()",[digest(token)]);
+  const result=await query(`SELECT u.id,u.email,u.subscription_status,u.current_period_end
+    FROM sessions s JOIN users u ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at>now()`,[digest(token)]);
   return result.rows[0]||null;
 }
 export async function revokeSession(req) {
@@ -48,19 +60,20 @@ export async function register(email,password) {
   if(!/^[^@\s]{1,100}@[^@\s]{1,150}\.[^@\s]{2,20}$/.test(e))throw Object.assign(new Error("Invalid email"),{status:400});
   const hash=await hashPassword(password);
   try{
-    const result=await query("INSERT INTO users(email,password_hash) VALUES($1,$2) RETURNING id,email",[e,hash]);
-    const user=result.rows[0],token=await newSession(user.id);
-    return {user,token};
+    const result=await query("INSERT INTO users(email,password_hash) VALUES($1,$2) RETURNING id,email,subscription_status,current_period_end",[e,hash]);
+    const account=result.rows[0],user={id:account.id,email:account.email},token=await newSession(user.id);
+    return {user,token,account};
   }catch(err){if(err.code==="23505")throw Object.assign(new Error("An account with this email already exists"),{status:409});throw err}
 }
 export async function login(email,password) {
   const e=typeof email==="string"?email.trim().toLowerCase():"";
   const bad=Object.assign(new Error("Invalid email or password"),{status:401});
   if(!e || !password)throw bad;
-  const res=await query("SELECT id,email,password_hash FROM users WHERE email=$1",[e]);
+  const res=await query("SELECT id,email,password_hash,subscription_status,current_period_end FROM users WHERE email=$1",[e]);
   if(!res.rows[0] || !await verifyPassword(password,res.rows[0].password_hash))throw bad;
-  const user={id:res.rows[0].id,email:res.rows[0].email};
-  return {user,token:await newSession(user.id)};
+  const {password_hash,...account}=res.rows[0];
+  const user={id:account.id,email:account.email};
+  return {user,token:await newSession(user.id),account};
 }
 export function checkOrigin(req) {
   const origin=req.headers.origin;

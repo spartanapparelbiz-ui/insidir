@@ -22,28 +22,19 @@ const raw = (base, path) => new Promise((resolve, reject) => {
   });
 });
 
-test("newspaper design uses existing repository imagery and live SEC research",async()=>{
+test("repository photography stays available while pages only show sharp images",async()=>{
  await withServer(async base=>{
    const home=await(await fetch(base+"/")).text();
    const dash=await(await fetch(base+"/dashboard.html")).text();
-   assert.match(home,/v9-hero__visual/);
-   assert.match(home,/v9-feature-list/);
-   assert.match(home,/v12-terminal/);
-   assert.match(home,/id="v6-live-records"/);
-   assert.doesNotMatch(home,/class="is3-window"|mock-dashboard/);
-   assert.match(dash,/v9-desk__hero/);
-   assert.match(dash,/v9-desk__links/);
-   assert.match(dash,/assets\/css\/v9-dashboard\.css\?v=1/);
+   assert.match(home,/data-halftone-hero/);
    assert.match(dash,/id="v3-filings"/);
    assert.match(dash,/id="v3-trades"/);
+   // Decorative, upscaled photography was blurry: the dashboard and explore pages show none.
+   for(const page of ["/dashboard.html","/explore.html"])assert.doesNotMatch(await(await fetch(base+page)).text(),/assets\/img\/[a-z-]+\.jpg/,page+" must not show decorative raster photos");
    for(const name of ["hero.jpg","lens-company.jpg","lens-sec.jpg","lens-insider.jpg","records-left.jpg","informed-left.jpg","informed-right.jpg","dash-skyline.jpg","moves-wallst.jpg"]){
      const r=await fetch(base+"/assets/img/"+name);
      assert.equal(r.status,200,name+" must be present");
      assert.match(r.headers.get("content-type"),/image\/jpeg/,name);
-   }
-   for(const file of ["v8-editorial.css","v8-motion.js"]){
-     const r=await fetch(base+"/assets/"+(file.endsWith(".css")?"css/":"js/")+file);
-     assert.equal(r.status,200,file);
    }
  });
 });
@@ -82,16 +73,32 @@ test("extensionless page paths resolve and unknown pages fall back to 404.html",
   });
 });
 
-test("new users land in research before choosing an optional portfolio", async () => {
+test("hard paywall: sign-up leads to subscription, sign-in checks access, product requests handle 401 and 402", async () => {
   await withServer(async base => {
     const auth=await (await fetch(base+"/assets/js/auth.js")).text();
-    assert.match(auth, /const RESEARCH_DESK = "research.html"/);
-    assert.match(auth, /location.assign\(RESEARCH_DESK\)/);
+    assert.match(auth, /subscribe\.html/, "new accounts continue to the subscription step");
+    assert.match(auth, /\/v1\/me/, "sign-in checks the account's access before choosing a destination");
+    assert.doesNotMatch(auth, /const RESEARCH_DESK = "research\.html"/);
     const signup=await (await fetch(base+"/signup.html")).text();
-    assert.match(signup,/No credit card or brokerage connection required/);
-    const desk=await (await fetch(base+"/research.html")).text();
-    assert.match(desk,/No portfolio or brokerage connection needed/);
-    assert.match(desk,/href="portfolio.html"/);
+    assert.doesNotMatch(signup,/No credit card/i, "a paid product must not promise no card");
+    assert.match(signup,/\$39/);
+    const app=await (await fetch(base+"/assets/js/app.js")).text();
+    assert.match(app,/402/);
+    assert.match(app,/subscribe\.html/);
+    assert.match(app,/signin\.html\?next=/);
+    const subscribe=await fetch(base+"/subscribe.html");
+    assert.equal(subscribe.status,200);
+    const sub=await subscribe.text();
+    assert.match(sub,/\$39/);
+    assert.match(sub,/\/v1\/billing\/checkout|billing\.js|subscribe\.js/);
+    const pricing=await (await fetch(base+"/pricing.html")).text();
+    assert.match(pricing,/\$39/);
+    assert.doesNotMatch(pricing,/\$0\b|free plan|PLANNED|Create a free account/i, "no free tier and no 'planned' Pro");
+    const home=await (await fetch(base+"/")).text();
+    assert.doesNotMatch(home,/\$0\b|for free|free account|Start free/i, "the landing page must not offer free access");
+    const deleted=await fetch(base+"/account-deleted.html");
+    assert.equal(deleted.status,200);
+    assert.match(await (await fetch(base+"/assets/js/v3-account.js")).text(),/account-deleted\.html/);
   });
 });
 
@@ -101,57 +108,58 @@ test("production dashboard uses readable evidence components without fake market
     assert.equal(res.status,200);
     const html=await res.text();
     assert.match(html,/data-greeting/);
-    assert.match(html,/assets\/css\/v3-app.css/);
-    assert.match(html,/assets\/js\/v3-dashboard.js/);
-    assert.match(html,/id="v3-trades"/);
-    assert.match(html,/id="v3-filings"/);
+    assert.match(html,/assets\/js\/v3-dashboard\.js/);
+    for(const id of ["v3-trades","v3-filings","v3-watchlist","v3-notes","v3-ticker"])assert.match(html,new RegExp('id="'+id+'"'),id);
     assert.doesNotMatch(html,/Jan 8, 2024|Markets open|S&P 500|sample data/i);
-    const script=await fetch(base+"/assets/js/v3-dashboard.js");
-    assert.equal(script.status,200);
-    const js=await script.text();
-    assert.match(js,/\/v1\/transactions\?limit=60/);
-    assert.match(js,/\/v1\/filings\?limit=15/);
+    const js=await(await fetch(base+"/assets/js/v3-dashboard.js")).text();
+    assert.match(js,/\/v1\/transactions\?limit=/);
+    assert.match(js,/\/v1\/filings\?limit=/);
+    assert.match(js,/\/v1\/me\/watchlist/);
+    assert.doesNotMatch(js,/Math\.random|mockPrice|fakeReturn/);
   });
 });
+
 test("sign-in and public landing use the same working identity",async()=>{
  await withServer(async base=>{
   for(const path of ["/signup.html","/signin.html"]){
     const html=await(await fetch(base+path)).text();
     assert.match(html,/data-auth-form/);
-    assert.match(html,/v6-auth\.css/);
-    assert.match(html,/v6-auth-story/);
+    assert.match(html,/v13-halftone\.css/);
     assert.doesNotMatch(html,/Continue with Google|data-auth-toast=/);
   }
   const homepage=await(await fetch(base+"/index.html")).text();
-  assert.match(homepage,/v9-landing\.css/);
-  assert.match(homepage,/assets\/js\/v6-site\.js/);
-  const site=await(await fetch(base+"/assets/js/v6-site.js")).text();
-  assert.match(site,/v6-menu-button/);
-  assert.match(site,/\/v1\/filings\?limit=6/);
+  assert.match(homepage,/v13-home\.css/);
+  assert.match(homepage,/id="v6-menu-button"/);
  });
 });
 
-test("new public site and top-navigation app offer live product routes",async()=>{
+test("every navigation button has its own page and nothing sends visitors back to the landing page",async()=>{
  await withServer(async base=>{
-  const paths=["/index.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/pricing.html","/billing.html","/terms.html","/privacy.html","/account.html","/company-info.html"];
+  const paths=["/index.html","/platform.html","/why-insidir.html","/data.html","/pricing.html","/company-info.html","/subscribe.html","/account-deleted.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/terms.html","/privacy.html","/account.html"];
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
-  assert.match(home,/Know what moves/);
-  assert.match(home,/id="v6-live-records"/);
-  assert.doesNotMatch(home,/is3-window|fake dashboard|01 \/ DISCOVER|02 \/ VERIFY/);
-  const dash=await(await fetch(base+"/dashboard.html")).text();
-  assert.match(dash,/v6-app\.css/);
-  assert.match(dash,/id="v3-trades"/);
-  assert.match(dash,/id="v3-filings"/);
-  const nav=await(await fetch(base+"/assets/js/app.js")).text();
-  assert.match(nav,/app-nav/);
-  assert.match(nav,/app-mobile-nav/);
+  const nav=home.match(/<nav class="v6-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
+  for(const page of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  assert.doesNotMatch(nav,/href="#/,"landing navigation buttons open pages, not anchors on the landing page");
+  const fs=await import("node:fs/promises");
+  for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
+    const html=await fs.readFile(new URL("../web/"+file,import.meta.url),"utf8");
+    assert.doesNotMatch(html,/href="(\/|index\.html)#[a-z]/,file+" must not link to an anchor on the landing page");
+    if(file==="index.html")assert.doesNotMatch(html.replace(/href="#main"/g,""),/<a [^>]*href="#[a-z]/,"landing buttons open pages, not anchors on the landing page");
+    for(const m of html.matchAll(/href="([a-z0-9-]+\.html)(?:[?#][^"]*)?"/g)){
+      const r=await fetch(base+"/"+m[1]);assert.equal(r.status,200,file+" links to a missing page "+m[1]);
+    }
+  }
+  const nav2=await(await fetch(base+"/assets/js/app.js")).text();
+  assert.match(nav2,/app-nav/);
+  assert.match(nav2,/app-mobile-nav/);
   const collections=await(await fetch(base+"/assets/js/v2-collections.js")).text();
   assert.match(collections,/\/v1\/companies/);
   assert.match(collections,/\/v1\/filings/);
   assert.match(collections,/\/v1\/me\/watchlist/);
  });
 });
+
 test("real research data and original document icons remain available",async()=>{
  await withServer(async base=>{
   const icons=await fetch(base+"/assets/icons/interface.svg");
@@ -160,21 +168,17 @@ test("real research data and original document icons remain available",async()=>
   const sprite=await icons.text();
   for(const id of ["file-text","file-check","activity","search","bookmark","chart-columns"])assert.match(sprite,new RegExp('id="'+id+'"'));
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/v9-landing\.css/);
   assert.doesNotMatch(home,/v4-explorer\.js|v4-presentation\.css|is3-window/);
-  const script=await(await fetch(base+"/assets/js/v6-site.js")).text();
-  assert.match(script,/\/v1\/filings\?limit=6/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
   assert.match(dash,/v4-dashboard\.js/);
-  assert.match(dash,/id="v4-inspector-body"/);
   assert.match(dash,/id="v4-activity-chart"/);
   const derived=await(await fetch(base+"/assets/js/v4-dashboard.js")).text();
-  assert.match(derived,/insidir:filings-loaded/);
   assert.match(derived,/insidir:transactions-loaded/);
   assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
-  for(const p of ["/research.html","/filings.html"])assert.match(await(await fetch(base+p)).text(),/v6-app\.css/);
+  for(const p of ["/research.html","/filings.html"])assert.match(await(await fetch(base+p)).text(),/v13-halftone\.css/);
  });
 });
+
 test("real logos and carefully matched free-license portraits are available without synthetic faces",async()=>{
   await withServer(async base=>{
     assert.match(await(await fetch(base+"/company.html")).text(),/assets\/js\/entity-media\.js/,"Company report keeps curated portraits");
@@ -216,8 +220,6 @@ test("real logos and carefully matched free-license portraits are available with
 test("V6 product identity uses full-width top navigation and removes legacy green sidebar",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/index.html")).text();
-  assert.match(home,/v9-landing\.css/);
-  assert.match(home,/id="v6-live-records"/);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/is3-window|v5-hero-live|v4-explorer\.js/);
   const dash=await(await fetch(base+"/dashboard.html")).text();
@@ -227,28 +229,27 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
   assert.match(appCSS,/position:sticky!important/);
   assert.match(appCSS,/flex-direction:row!important/);
   assert.match(appCSS,/\.app-mobile-nav\.is-open/);
-  assert.doesNotMatch(appCSS,/fixed\s+sidebar/);
   for(const p of ["/research.html","/explore.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/account.html"]){
    const html=await(await fetch(base+p)).text();
    assert.match(html,/v6-app\.css/,p);
-   assert.match(html,/v6-app/,p);
   }
-  for(const p of ["/terms.html","/privacy.html","/pricing.html","/company-info.html"])assert.match(await(await fetch(base+p)).text(),/v6-static\.css/);
+  for(const p of ["/terms.html","/privacy.html","/pricing.html","/company-info.html","/platform.html","/why-insidir.html","/data.html"])assert.match(await(await fetch(base+p)).text(),/v13-static\.css/,p);
  });
 });
-test("V7 long editorial site and shared application styling are served",async()=>{await withServer(async base=>{
+
+test("the landing page shows no product dashboard, no live data feed and no links into paid pages",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
- assert.match(home,/assets\/css\/v9-landing.css\?v=1/);
  assert.match(home,/Know what moves/);
- assert.match(home,/v9-feature/);
-  assert.match(home,/v9-workflow__rows/);
-  assert.match(home,/assets\/css\/v9-landing.css\?v=1/);
-  assert.match(home,/assets\/js\/v9-motion.js\?v=1/);
- assert.match(home,/v9-intro__grid/);
- assert.doesNotMatch(home,/v6-orbit|v6-graphic__core/);
- const pages=["dashboard.html","research.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html"];
- for(const page of pages){const r=await fetch(base+"/"+page);assert.equal(r.status,200,page);const html=await r.text();assert.match(html,/v9-dashboard.css\?v=1|v9-interior.css\?v=1/,page);}
- for(const asset of ["v9-landing.css","v9-dashboard.css","v9-interior.css"]){assert.equal((await fetch(base+"/assets/css/"+asset)).status,200);}
+ assert.match(home,/data-halftone-hero/);
+ for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
+ const main=home.split(/<footer/)[0];
+ for(const gated of ["dashboard.html","research.html","explore.html","company.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","people.html"])assert.ok(!main.includes('href="'+gated),"landing content must not link into the paid product: "+gated);
+ for(const src of [...home.matchAll(/<script[^>]*src="([^"?]+)/g)].map(m=>m[1])){
+   const js=await(await fetch(base+"/"+src)).text();
+   assert.doesNotMatch(js,/fetch\(\s*["'`]\/v1\/(filings|transactions|intelligence|market|company|search|insiders)/,src+" must not pull product data onto the public landing page");
+ }
+ const pages=["dashboard.html","research.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html","platform.html","why-insidir.html","data.html","subscribe.html"];
+ for(const page of pages){const r=await fetch(base+"/"+page);assert.equal(r.status,200,page);assert.match(await r.text(),/v13-halftone\.css/,page);}
 });});
 
 test("research desk is served without replacing the site's brand", async () => {
@@ -293,21 +294,21 @@ test("V6 marketing, legal and account pages are real and source-aware",async()=>
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
   assert.match(home,/Know what moves/);
-  assert.match(home,/id="v6-live-records"/);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
   const pricing=await(await fetch(base+"/pricing.html")).text();
   assert.match(pricing,/\$39/);
-  assert.match(pricing,/PLANNED/);
   for(const p of ["/terms.html","/privacy.html"])assert.match(await(await fetch(base+p)).text(),/Aethric LLC/);
+  const terms=await(await fetch(base+"/terms.html")).text();
+  assert.doesNotMatch(terms,/Pro plan is proposed|free research features/i,"terms must describe the paid subscription that now gates access");
   const account=await(await fetch(base+"/account.html")).text();
   assert.match(account,/id="account-delete"/);
   const app=await(await fetch(base+"/assets/js/app.js")).text();
   assert.match(app,/account.html/);
-  for(const x of ["v6-marketing.css","v6-app.css","v6-auth.css","v6-static.css"])assert.equal((await fetch(base+"/assets/css/"+x)).status,200,x);
-  assert.equal((await fetch(base+"/assets/js/v6-site.js")).status,200);
+  for(const x of ["v6-app.css","v6-auth.css","v6-static.css"])assert.equal((await fetch(base+"/assets/css/"+x)).status,200,x);
  });
 });
+
 test("path traversal outside the web root is refused", async () => {
   await withServer(async base => {
     for (const p of ["/../package.json", "/%2e%2e/package.json", "/..%2fpackage.json", "/assets/../../src/config.mjs", "/%00index.html"]) {
@@ -339,23 +340,17 @@ test("text assets are compressed when the client accepts it", async () => {
   });
 });
 
-test("V10 editorial photography, SEC people directory and verified identity assets are available", async()=>{
+test("V10 SEC people directory and verified identity assets are available", async()=>{
  await withServer(async base=>{
- const home=await(await fetch(base+"/index.html")).text();
  const dash=await(await fetch(base+"/dashboard.html")).text();
  const people=await(await fetch(base+"/people.html")).text();
- assert.match(home,/v10-editorial.css/);
- assert.match(home,/v12-portrait-strip/);
- assert.match(home,/assets\/icons\/nvidia.svg/);
- assert.match(dash,/v10-people-preview/);
- assert.match(dash,/v10-people.js/);
+ assert.match(dash,/v10-people\.js/);
  assert.match(people,/v10-people-results/);
  assert.match(people,/v10-followed-results/);
  const peopleJS=await(await fetch(base+"/assets/js/v10-people.js")).text();
  assert.match(peopleJS,/\/v1\/me\/people/);
  assert.match(peopleJS,/\/v1\/insiders/);
- const css=await fetch(base+"/assets/css/v10-editorial.css");
- assert.equal(css.status,200);
+ assert.equal((await fetch(base+"/assets/css/v10-editorial.css")).status,200);
  });
 });
 
@@ -384,27 +379,21 @@ test("Company report ships the market-terminal design for every ticker without e
  });
 });
 
-test("V12 dark landing ships real SEC-powered research controls and no invented market prices",async()=>{
+test("landing page is fully responsive markup: viewport meta, no fixed-width layout and reduced-motion support",async()=>{
  await withServer(async base=>{
-  const response=await fetch(base+"/");
-  const html=await response.text();
-  assert.match(html,/v12-home\.css\?v=1/);
-  assert.match(html,/v12-home\.js\?v=1/);
-  for(const id of ["v12-demo-chart","v12-demo-facts","v12-demo-open","v12-demo-source","v6-live-records","v6-menu-button"])assert.match(html,new RegExp('id="'+id+'"'),id);
-  for(const ticker of ["AAPL","NVDA","MSFT","GOOGL"])assert.match(html,new RegExp('data-v12-ticker="'+ticker+'"'));
+  const html=await(await fetch(base+"/")).text();
+  assert.match(html,/<meta name="viewport" content="width=device-width,\s*initial-scale=1">/);
+  assert.match(html,/v13-home\.css/);
+  const css=await(await fetch(base+"/assets/css/v13-home.css")).text();
+  assert.match(css,/@media \(max-width:/);
+  assert.match(css,/prefers-reduced-motion/);
   assert.doesNotMatch(html,/fake customer reviews|fake dashboard|[+]1\.73%|market cap \$3\.33T/i);
-  const js=await(await fetch(base+"/assets/js/v12-home.js")).text();
-  assert.match(js,/\/v1\/intelligence\?ticker=/);
-  assert.match(js,/financialHistory/);
-  assert.match(js,/SEC service temporarily unavailable/);
-  assert.doesNotMatch(js,/Math\.random|fakeQuote|fakeReturns/);
-  assert.equal((await fetch(base+"/assets/css/v12-home.css")).status,200);
  });
 });
 
 test("V13 halftone identity: shared theme on every page, dotted wordmark only in the landing hero", async () => {
   await withServer(async base => {
-    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html"];
+    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html"];
     let wordmarks = 0;
     for (const page of pages) {
       const res = await fetch(base + "/" + page);
@@ -428,7 +417,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.match(theme, /@layer insidir-v13\{/);
     assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:#e9762b!important/);
     assert.match(theme, /font-family:"JetBrains Mono"/);
-    for (const family of ["home", "app", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
+    for (const family of ["home", "app", "desk", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
     const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");
     assert.equal(mono.headers.get("content-type"), "font/woff2");
     assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);

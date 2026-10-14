@@ -2,8 +2,9 @@
    colour that is not a blend of the three identity colours (#0c0c0b paper, #e9e4da ink,
    #e9762b warm), any serif or unexpected font family on visible text, horizontal overflow,
    uncaught browser errors, text whose WCAG contrast against its background falls below
-   4.5:1 (3:1 for large text), a landing hero whose halftone wordmark did not draw, a dotted
-   wordmark on any other page, and a missing plain footer.
+   4.5:1 (3:1 for large text), raster images that are not retina-sharp (native pixels must be
+   at least twice the rendered size), a landing hero whose halftone wordmark did not draw, a
+   dotted wordmark on any other page, and a missing plain footer.
 
    Usage: node scripts/v13-palette-audit.mjs [--pages index,dashboard,...] [--widths 1440,390]
             [--json out.json] [--shots dir] [--no-fail] [--no-menus] [--tolerance 5]
@@ -26,7 +27,8 @@ const ALL_PAGES = [
   ["research", "/research.html?ticker=AAPL"], ["explore", "/explore.html"], ["filings", "/filings.html"], ["filing", "/filing.html?accession=0000320193-26-000001"],
   ["watchlist", "/watchlist.html"], ["portfolio", "/portfolio.html"], ["alerts", "/alerts.html"], ["people", "/people.html"],
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
-  ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"]
+  ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
+  ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -75,14 +77,14 @@ function fixture(url, method) {
     people: [{ name: "COOK TIMOTHY D", cik: "12345", role: "Chief Executive Officer · Director", filings: 1, lastFiled: "2026-09-14", sharesAfter: 3000000 }] };
   if (p === "/v1/company/news") return { announcements: [{ title: "Results of operations and financial condition", form: "8-K", filedAt: "2026-09-01", url: source, earnings: true }], headlines: [], headlinesAvailable: true };
   if (p === "/v1/me/watchlist") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", created_at: "2026-09-01T00:00:00Z" }, { ticker: "NVDA", created_at: "2026-08-01T00:00:00Z" }] };
-  if (p === "/v1/me") return { user: { email: "reader@example.com", id: 1, created_at: "2026-01-01T00:00:00Z" } };
+  if (p === "/v1/me") return { user: { email: "reader@example.com", id: 1, created_at: "2026-01-01T00:00:00Z" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00Z" } };
   if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", review_status: "researching", reviewStatus: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
   if (p === "/v1/me/people") return { items: insiderPeople.slice(0, 1) };
   if (p === "/v1/me/alerts") return { items: [] };
   if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", quantity: 12.5, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
   if (p === "/v1/me/brokerage/status") return { enabled: false, connected: false, provider: "snaptrade" };
   if (p === "/v1/me/brokerage/portfolio") return { accounts: [], holdings: [] };
-  if (p === "/v1/billing/status") return { plan: "free", checkoutEnabled: false, portalEnabled: false, status: "none" };
+  if (p === "/v1/billing/status") return { billingEnabled: true, plan: "pro", subscriptionStatus: "active", currentPeriodEnd: "2026-11-14T00:00:00Z" };
   if (p === "/v1/status") return { ok: true, filings: filingItems.length, transactions: transactionItems.length, latest_published_at: filingItems[0].published_at };
   if (p.startsWith("/v1/filings/")) return { ...filingItems[0], transactions: transactionItems.filter(t => t.ticker === "AAPL") };
   if (p === "/v1/filings") return { items: filingItems, total: filingItems.length };
@@ -139,7 +141,7 @@ const scan = ({ palette, tol }) => {
   };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
-  const allowedFonts = /^("?(Inter|Inter Tight|JetBrains Mono)"?)/i;
+  const allowedFonts = /^"?JetBrains Mono"?/i;
   for (const el of document.querySelectorAll("body *")) {
     if (SKIP.has(el.tagName)) continue;
     if (el.closest("canvas,[hidden],template")) continue;
@@ -180,6 +182,19 @@ const scan = ({ palette, tol }) => {
     const c = parse(cs.backgroundColor); if (!inPalette(c)) add("background-color" + pe, cs.backgroundColor, el);
     const t = parse(cs.color); if (cs.content !== '""' && cs.content !== "normal" && !inPalette(t)) add("color" + pe, cs.color, el);
   }
+  // Raster images must be retina-sharp: native pixels ≥ 2× the rendered CSS size (cover-adjusted).
+  const blurry = [];
+  for (const img of document.images) {
+    const r = img.getBoundingClientRect(), cs = getComputedStyle(img);
+    if (r.width < 2 || cs.display === "none" || cs.visibility === "hidden" || /\.svg(\?|$)/i.test(img.currentSrc) || !img.naturalWidth) continue;
+    if (/^data:image\/svg/.test(img.currentSrc)) continue;
+    const scale = cs.objectFit === "cover" ? Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight) : Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
+    if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop().slice(0, 60), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: img.naturalWidth + "x" + img.naturalHeight, upscaleAt2x: +(scale * 2).toFixed(2), element: path(img) });
+  }
+  for (const el of document.querySelectorAll("body *")) {
+    const bgi = getComputedStyle(el).backgroundImage;
+    if (bgi && /url\(.*\.(jpe?g|png|webp)/i.test(bgi)) { const r = el.getBoundingClientRect(); if (r.width > 2) blurry.push({ src: bgi.slice(0, 80), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: "css background photo (use an <img> with a sharp source)", upscaleAt2x: null, element: path(el) }); }
+  }
   const hal = document.querySelector("[data-halftone-hero],[data-halftone-footer]");
   const halCanvas = hal ? hal.querySelector("canvas") : null;
   const fr = halCanvas ? halCanvas.getBoundingClientRect() : null;
@@ -187,6 +202,7 @@ const scan = ({ palette, tol }) => {
     leaks: [...leaks.values()].sort((a, b) => b.count - a.count),
     fonts: [...fonts.values()].sort((a, b) => b.count - a.count),
     contrast: [...contrastMap.values()].sort((a, b) => b.count - a.count),
+    blurry,
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     bodyBackground: getComputedStyle(document.body).backgroundColor,
     bodyClass: document.body.className,
@@ -253,20 +269,22 @@ try {
 let total = 0;
 for (const p of report.pages) {
   const menuLeaks = p.menuState ? p.menuState.leaks.length : 0;
-  const n = (p.leaks ? p.leaks.length : 0) + menuLeaks, lc = p.contrast ? p.contrast.length : 0;
+  const n = (p.leaks ? p.leaks.length : 0) + menuLeaks, lc = p.contrast ? p.contrast.length : 0, bl = p.blurry ? p.blurry.length : 0;
+  total += bl;
   // The dotted wordmark belongs to the landing page's first screen only; every page needs the plain footer.
   const halftoneNote = p.failure ? "" : p.page === "index"
     ? (p.halftone && p.halftone.kind === "hero" && p.halftone.mounted && p.halftone.width > 0 ? "" : ", HALFTONE HERO MISSING")
     : (p.halftone ? ", UNEXPECTED HALFTONE WORDMARK (landing hero only)" : "");
   const footerNote = p.failure || p.plainFooter ? "" : ", PLAIN FOOTER MISSING";
   total += n + lc + (p.fonts ? p.fonts.length : 0) + p.errors.length + (p.failure ? 1 : 0) + (p.overflow > 4 ? 1 : 0) + (halftoneNote ? 1 : 0) + (footerNote ? 1 : 0) + (p.hasV13 === false ? 1 : 0);
-  const status = p.failure ? "FAILED " + p.failure : `${n} off-palette value${n === 1 ? "" : "s"}, ${lc} low-contrast, ${p.fonts ? p.fonts.length : 0} font issue(s), overflow ${p.overflow}px, ${p.errors.length} error(s)` + (p.hasV13 ? "" : ", v13 assets missing") + halftoneNote + footerNote;
+  const status = p.failure ? "FAILED " + p.failure : `${n} off-palette value${n === 1 ? "" : "s"}, ${lc} low-contrast, ${bl} blurry image(s), ${p.fonts ? p.fonts.length : 0} font issue(s), overflow ${p.overflow}px, ${p.errors.length} error(s)` + (p.hasV13 ? "" : ", v13 assets missing") + halftoneNote + footerNote;
   console.log(`[${p.width}px] ${p.page.padEnd(14)} ${status}`);
   for (const l of (p.leaks || []).slice(0, 12)) console.log(`    ${l.prop.padEnd(24)} ${l.value.padEnd(26)} ×${l.count}  e.g. ${l.examples[0]}`);
   if (p.leaks && p.leaks.length > 12) console.log(`    … ${p.leaks.length - 12} more (see --json)`);
   for (const l of (p.menuState ? p.menuState.leaks : []).slice(0, 6)) console.log(`    [menu open] ${l.prop.padEnd(12)} ${l.value.padEnd(26)} ×${l.count}  e.g. ${l.examples[0]}`);
   for (const c of (p.contrast || []).slice(0, 10)) console.log(`    contrast ${c.ratio}:1 (needs ${c.needed}) ${c.color} on ${c.background} ×${c.count}  "${c.sample}"  e.g. ${c.examples[0]}`);
   if (p.contrast && p.contrast.length > 10) console.log(`    … ${p.contrast.length - 10} more low-contrast (see --json)`);
+  for (const b of p.blurry || []) console.log(`    BLURRY ${b.src} rendered ${b.rendered} natural ${b.natural} upscale@2x ${b.upscaleAt2x}  e.g. ${b.element}`);
   for (const f of p.fonts || []) console.log(`    font ${f.fontFamily.slice(0, 60)} ×${f.count}  e.g. ${f.examples[0]}`);
   for (const e of p.errors) console.log(`    error ${e.slice(0, 160)}`);
 }

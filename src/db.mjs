@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises";
 import { config } from "./config.mjs";
 const { Pool } = pg;
 export const pool = config.databaseUrl ? new Pool({ connectionString: config.databaseUrl, max: 6, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 }) : null;
+// An idle client that loses its connection (database restart, failover) emits "error" on the pool;
+// without a listener Node treats it as uncaught and the whole engine exits. Log it and let the pool reconnect.
+pool?.on("error", err => console.error("Postgres idle client error", err?.code || "", err?.message || err));
 export function requireDb() {
   if (!pool) throw Object.assign(new Error("DATABASE_URL not configured"),{status:503});
   return pool;

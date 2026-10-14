@@ -25,5 +25,7 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright-core@1.58.0
           CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/visual-layout-check.mjs
-      - name: Verify the V13 halftone identity on every page (palette, contrast, fonts, overflow)
+      - name: Verify the dashboard in Chrome (data, filters, empty and error states, 401/402, links, overflow)
+        run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/dashboard-check.mjs
+      - name: Verify the V13 halftone identity on every page (palette, contrast, fonts, sharp images, overflow)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/v13-palette-audit.mjs

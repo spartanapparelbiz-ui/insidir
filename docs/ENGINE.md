@@ -6,9 +6,10 @@ This document covers the backend engine. The website in `web/` is described in [
 - SEC current-filings Atom feed ingestion with declared User-Agent, rate control, bounded fetches, retry/backoff, and safe SEC URL allowlisting.
 - EDGAR accession directory and Form 4 ownership XML parsing. **P/A non-derivative purchases** and **S/D sales** are distinguished from awards, exercises, derivative trades and other events.
 - PostgreSQL persistence, accession deduplication, transactional writes, ingestion audit records, and a Postgres advisory lock to prevent overlapping workers.
-- Public API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
+- Subscriber API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
 - Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
-- Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, account deletion. **Signup is disabled by default.**
+- **Hard paywall** (`src/paywall.mjs`): no free tier and no free trial. Every product page and every product API needs a signed-in account with an active Insidir Pro subscription ($39/month through Stripe) or a complimentary owner/team email. See [Hard paywall and billing](#hard-paywall-and-billing).
+- Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
 - Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
 - Optional 15-minute automatic poller or secured on-demand/cron ingestion.
@@ -19,7 +20,8 @@ This document covers the backend engine. The website in `web/` is described in [
 3. Set ALLOWED_ORIGINS to the HTTPS origins of the Insidir website. Keep COOKIE_SECURE=1 in production.
 4. Run npm install, npm run migrate, npm test.
 5. Run npm start. AUTO_INGEST=1 enables 15-minute ingestion inside a single always-on service; alternatively use an external scheduled task with INGEST_SECRET and POST /v1/internal/ingest.
-6. Leave ALLOW_SIGNUP=0 until the website's account, cancellation, privacy, and deletion flows are finished.
+6. Configure the paywall and Stripe billing (next section). The paywall is on by default: until billing is configured, nobody except the accounts in `INSIDIR_COMPLIMENTARY_EMAILS` can use the product.
+7. Set ALLOW_SIGNUP=1 once billing works end to end; people create an account first and subscribe on `/subscribe.html`.
 
 Run npm run ingest for a manual ingestion. This fetches up to 35 current filings by default; it is not a complete history backfill. Already parsed accessions are skipped.
 
@@ -32,10 +34,77 @@ The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, r
 
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
 
-## Free manual portfolio (no brokerage or vendor account)
+## Hard paywall and billing
+Insidir is a paid product with **no free tier and no free trial**. `src/paywall.mjs` holds the rules as pure functions (`classifyPage`, `classifyApi`, `hasAccess`, `accessSummary`, `safeNext`, `gate`); `src/api.mjs` runs `gate()` on every request, before it serves a page, a company report endpoint, billing or any other API. `test/paywall.test.mjs` covers the rules end to end without a database.
+
+**Access** means the account's `users.subscription_status` is `active` or `trialing`, **or** its email is listed in `INSIDIR_COMPLIMENTARY_EMAILS` (comma-separated, case and spaces ignored; for the owner and team). `past_due`, `unpaid`, `incomplete`, `paused`, `canceled` and no subscription do not have access. **With the paywall on and billing not configured, nobody but complimentary accounts can use the product, and nobody can subscribe.**
+
+| Requests | Signed out | Signed in, no access | Access |
+| --- | --- | --- | --- |
+| Product pages: `dashboard`, `research`, `explore`, `company`, `filings`, `filing`, `people`, `watchlist`, `portfolio`, `alerts` (GET/HEAD, with or without `.html`, any query) | 302 → `/signin.html?next=<path+query>` | 302 → `/subscribe.html?next=<path+query>` | served |
+| Account pages: `subscribe`, `billing`, `account` | 302 → `/signin.html?next=…` | served | served |
+| Public pages (`index`, `platform`, `why-insidir`, `data`, `pricing`, `company-info`, `terms`, `privacy`, `signin`, `signup`, `404`, `account-deleted`) and every asset | served | served | served |
+| Product API: `/v1/filings*`, `/v1/transactions`, `/v1/companies`, `/v1/clusters`, `/v1/insiders`, `/v1/status`, `/v1/search`, `/v1/intelligence`, `/v1/market/chart`, `/v1/company/*`, `/v1/me/watchlist*`, `/v1/me/research-decisions*`, `/v1/me/manual-holdings*`, `/v1/me/people*`, `/v1/me/alerts`, `/v1/me/brokerage/*` (except the deletes in the next row) | 401 `{error, signin:"/signin.html"}` | 402 `{error:"An active Insidir subscription is required", subscribe:"/subscribe.html"}` | handled |
+| Deleting your own data: `DELETE /v1/me/brokerage` (revokes the read grant), `DELETE /v1/me/watchlist/{ticker}`, `DELETE /v1/me/people/{cik}`, `DELETE /v1/me/manual-holdings/{ticker}`, `DELETE /v1/me/research-decisions?ticker=` | 401 `{error, signin:"/signin.html"}` | handled | handled |
+| Open API: `/v1`, `/v1/sources`, `/healthz`, `/v1/auth/*`, `GET`/`DELETE /v1/me`, `/v1/billing/*`, `/v1/internal/ingest` (its own bearer secret) | handled | handled | handled |
+
+- Removing your own data never needs a subscription: a member whose subscription has lapsed can still revoke a brokerage grant and delete saved items one by one (reading or adding them still needs access). This is the one deliberate exception to "`/v1/me/*` is product data".
+- Redirects carry `Cache-Control: no-store`. Everything served past the gate to a signed-in visitor (product data, product and account pages) is rewritten to `Cache-Control: private, …` (or stays `no-store`) with `Vary: Cookie`, so a CDN or shared cache placed in front of the engine can never replay one member's response to a visitor the gate would stop. Public pages and assets keep their normal caching; `npm run web` is not gated and keeps `public`.
+- If the session cannot be checked (for example the database is unreachable) gated requests stay closed: product and account page navigations get a readable 503 HTML page ("Back in a moment", a *Try again* link to the same page, `no-store`, `Retry-After: 30`) and gated API calls get 503 JSON. Public pages and assets still work because they never touch the session. Page paths are matched the way the static server resolves them (percent-decoding, dot segments, trailing slashes, any letter case), so an encoded path cannot reach a product page. Any `/v1` route that is not listed as open is treated as product data (fail closed).
+- The brokerage OAuth callback (`/v1/me/brokerage/callback`) is a browser navigation, so it redirects like a page (`next=/portfolio.html`) instead of answering 401/402.
+- `next=` values are only ever same-origin relative paths to known product or account pages, optionally with a query (`/company.html?ticker=AAPL`); absolute and protocol-relative URLs, backslashes, fragments, dot segments, encoded paths and unknown pages are rejected (`safeNext`). Pages must validate `next` the same way before navigating.
+- One database query per request: `currentUser()` returns the subscription fields with the session and is memoised for the request, so the gate and the handler share it. Public pages and assets never touch the session.
+- `INSIDIR_PAYWALL=0` turns gating off (local development only; the engine logs a warning at startup). Any other value, including unset, keeps it on. `npm run web` (no database) stays ungated for design previews.
+
+`GET /v1/me` (never gated) returns:
+
+```json
+{"user":{"id":"…","email":"…"},
+ "access":{"active":true,"plan":"pro","status":"active","billingEnabled":true,"complimentary":false,"currentPeriodEnd":"2026-11-14T00:00:00.000Z"}}
+```
+
+`active` is whether the account can use the product right now (always true when `INSIDIR_PAYWALL=0`); `plan` is `pro` only for a Stripe subscription in good standing (`none` otherwise, including complimentary accounts); `status` is the raw Stripe status or null. `POST /v1/auth/login` and `POST /v1/auth/register` return the same `access` object next to `user`, so the sign-in page can choose between the product and `/subscribe.html` without another request.
+
+### Billing endpoints (signed in; no subscription needed)
+- `GET /v1/billing/status` → `{billingEnabled, plan:"pro"|"none", active, complimentary, subscriptionStatus, currentPeriodEnd, hasCustomer}`. `?refresh=1` re-reads the customer's subscriptions from Stripe first (rate-limited); call it on `/billing.html?checkout=success` in case the webhook has not arrived yet.
+- `POST /v1/billing/checkout` → `{url}` of a Stripe Checkout page for the configured Price. Success returns to `/billing.html?checkout=success`, cancel to `/subscribe.html?checkout=cancel`. No trial is configured. Requests must come from `INSIDIR_PUBLIC_URL`'s origin. To prevent double billing:
+  - For an account that already has a Stripe customer, the engine **re-reads the customer's subscriptions from Stripe first** (and stores the result), so a checkout that completed before its webhook arrived counts. It refuses with 409 while any subscription for the configured Price can still bill: `active`/`trialing` (manage it instead), `past_due`/`unpaid` (update the payment method in the portal), `incomplete` (first payment still being confirmed) or `paused`. If Stripe cannot be read, it answers 503 and starts nothing. A customer that no longer exists in this Stripe account (e.g. test data after switching to live keys) is replaced by a new one.
+  - Any earlier **open** Checkout page of the customer is expired before a new one is created, so only the newest can be paid.
+  - One billing change per account at a time: a second checkout (or an account deletion) while one is being prepared answers 409.
+- `POST /v1/billing/portal` → `{url}` of the Stripe customer portal (cancel, update card, invoices); returns to `/billing.html`.
+- `POST /v1/billing/webhook` — Stripe events, verified with the signing secret (5-minute tolerance, rolled secrets accepted) and processed once per event ID. For each event the engine **re-reads the customer's subscriptions from Stripe** and stores the one in the best standing, so late or out-of-order events cannot lock out a paying member or keep a cancelled one in. Only subscriptions to the exact `INSIDIR_STRIPE_PRICE_ID` grant access; others are stored as `inactive`. A failed update forgets the event so Stripe's retry is processed.
+
+### Account deletion
+`DELETE /v1/me` makes sure nothing in Stripe can bill the account again **before** anything is deleted. It does not rely on the subscription ID saved by the webhook, which can be missing or stale (webhook not yet delivered or misconfigured, or more than one subscription on the customer):
+1. If the account has a Stripe customer, every **open Checkout page** of that customer is expired (`POST /v1/checkout/sessions/{id}/expire`), so a payment completed later cannot start a subscription for a deleted account.
+2. The engine asks Stripe for **all of the customer's subscriptions** (`GET /v1/subscriptions?customer=…&status=all`, every page) and cancels every one that can still bill (any status except `canceled` and `incomplete_expired`: active, trialing, past_due, unpaid, incomplete, paused), **whatever its Price**, with `DELETE /v1/subscriptions/{id}`.
+3. Fallback: the saved subscription ID is cancelled too if Stripe did not list it for the customer.
+
+If Stripe cannot confirm any step (unreachable, not configured, an error, a list it cannot read in full), the account is **not** deleted and the endpoint returns 503 with a message the page shows; every cancellation Stripe did accept stays cancelled, and trying again finishes the job. A customer that does not exist in the configured Stripe account cannot bill from it, so that case does not block deletion. Then the engine revokes an active brokerage grant, deletes the user (sessions, watchlist, notes, holdings and follows cascade) and clears the cookie: `{deleted:true, subscriptionCanceled:boolean}`. Cancellation is immediate and Stripe issues no automatic partial refund. The Stripe customer record and its invoices stay in Stripe for accounting.
+
+Safety net: if an Insidir checkout (its metadata names the Insidir account) still completes after that account was deleted, the `checkout.session.completed` webhook cancels the new subscription and logs a warning so the operator can refund the first invoice. Checkouts that Insidir did not create on the same Stripe account are never touched.
+
+### Environment
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `INSIDIR_PAYWALL` | on | `0` turns the paywall off (local development only). Anything else keeps it on. |
+| `INSIDIR_COMPLIMENTARY_EMAILS` | empty | Comma-separated owner/team emails with access and no subscription. There is no email verification: register these accounts before listing them. |
+| `INSIDIR_BILLING_ENABLED` | `0` | `1` enables checkout and the portal, together with the three Stripe values below. |
+| `INSIDIR_STRIPE_SECRET_KEY` | empty | Stripe secret key. Also needed on account deletion: any account that ever started a checkout cannot be deleted while Stripe is unreachable or this key is missing, because nothing is deleted until Stripe confirms no subscription can bill. Keep it set while any customer exists. |
+| `INSIDIR_STRIPE_PRICE_ID` | empty | The $39/month recurring Price. Only this exact Price grants access; if it is ever replaced, existing subscribers on the old Price lose access, so migrate them in Stripe first. |
+| `INSIDIR_STRIPE_WEBHOOK_SECRET` | empty | Signing secret of the `https://YOUR_DOMAIN/v1/billing/webhook` endpoint. |
+| `INSIDIR_PUBLIC_URL` | empty | Public HTTPS origin of the site, used for Checkout return URLs and the billing origin check. |
+
+### Stripe setup
+1. In Stripe create the product "Insidir Pro" with one recurring Price of $39.00 USD per month and no trial; copy its `price_…` ID.
+2. Add a webhook endpoint `https://YOUR_DOMAIN/v1/billing/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused` and `customer.subscription.resumed`; copy its signing secret.
+3. Configure the customer portal (cancellation, payment method updates, invoice history).
+4. Set the variables above, `INSIDIR_BILLING_ENABLED=1`, then `ALLOW_SIGNUP=1`. Test a full signup → checkout → dashboard → cancel → deletion cycle in Stripe test mode before switching to live keys.
+
+## Manual portfolio (no brokerage or vendor account)
 Manually entered stock tickers and share counts work with existing user accounts and PostgreSQL. No paid market-data API or brokerage permissions are needed. The portfolio page shows these entries **above** the optional SnapTrade section. Each ticker links to its SEC Research Desk, and the page displays the most recent imported ownership transaction in the past 30 days when available. This is a ticker-only matching aid, not proof of security identity or a recommendation.
 
-Run `npm run migrate` (server startup migrates automatically) to create `manual_holdings` from `sql/005_manual_holdings.sql`. API: `GET /v1/me/manual-holdings`; `POST /v1/me/manual-holdings` JSON `{"ticker":"AAPL","quantity":"2.5"}` to create/update; `DELETE /v1/me/manual-holdings/AAPL` to remove. All endpoints require a signed-in session; writes require the existing same-origin CSRF check. Holdings are private and automatically deleted with the user account. A user can store up to 100 entries with 8 decimal places of share precision. No prices or portfolio values are estimated. **Leave BROKERAGE_CONNECT_ENABLED=0** until a paid vendor connection is desired and configured.
+Run `npm run migrate` (server startup migrates automatically) to create `manual_holdings` from `sql/005_manual_holdings.sql`. API: `GET /v1/me/manual-holdings`; `POST /v1/me/manual-holdings` JSON `{"ticker":"AAPL","quantity":"2.5"}` to create/update; `DELETE /v1/me/manual-holdings/AAPL` to remove. All endpoints require a signed-in session with an active subscription (except `DELETE`, which only needs a sign-in so a lapsed member can still remove entries); writes require the existing same-origin CSRF check. Holdings are private and automatically deleted with the user account. A user can store up to 100 entries with 8 decimal places of share precision. No prices or portfolio values are estimated. **Leave BROKERAGE_CONNECT_ENABLED=0** until a paid vendor connection is desired and configured.
 
 ## Read-only brokerage connections (optional)
 This feature is OFF by default (`BROKERAGE_CONNECT_ENABLED=0`). It relies on SnapTrade **OAuth Apps** and a user's pre-existing **SnapTrade Personal** connections, not Commercial user-secret registration or direct Fidelity credentials. Create a Test app in the SnapTrade Dashboard, register the exact callback URI `https://YOUR_DOMAIN/v1/me/brokerage/callback`, and obtain a client ID and client secret. Test OAuth apps are limited to five users; production usage requires approval. Set `SNAPTRADE_OAUTH_CLIENT_ID`, `SNAPTRADE_OAUTH_CLIENT_SECRET`, `SNAPTRADE_OAUTH_REDIRECT_URI`, and an independently generated 32-byte hexadecimal `BROKERAGE_ENCRYPTION_KEY`; then set `BROKERAGE_CONNECT_ENABLED=1`.
@@ -51,6 +120,7 @@ OAuth is strictly read-only: the authorization URL requests only `read`; the dat
 API endpoints (authenticated): GET `/v1/me/brokerage/status`; POST `/v1/me/brokerage/connect`; GET `/v1/me/brokerage/callback`; GET `/v1/me/brokerage/portfolio`; DELETE `/v1/me/brokerage`. Mutations require a trusted same-origin request. No provider credentials or OAuth tokens are returned to the browser.
 
 ## API (JSON)
+Every endpoint below except `/v1`, `/healthz` and `/v1/sources` is product data: it answers 401 when signed out and 402 without an active subscription (see [Hard paywall and billing](#hard-paywall-and-billing)).
 - GET /v1 – service information
 - GET /healthz – database and SEC configuration check
 - GET /v1/status – latest ingestion and filing count
@@ -92,9 +162,9 @@ Commons answers first; when the company's page or proxy also has the person, tha
 Prepared images live in `entity_media` (sha256, bytes) and decisions in `media_records` (`sql/007_entity_media.sql`), with a bounded in-memory cache in front, so restarts and extra instances do not refetch third-party sources. Without `DATABASE_URL` everything works from memory. Third-party image fetches are https-only, public-address-only (re-checked on each redirect), size-limited and byte-sniffed; SVGs with scripts or external references are rejected. Image responses carry a sandbox CSP.
 
 ## Account API
-Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.
-- POST /v1/auth/register, POST /v1/auth/login, POST /v1/auth/logout
-- GET /v1/me, DELETE /v1/me
+Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1. `/v1/auth/*`, `GET /v1/me`, `DELETE /v1/me` and `/v1/billing/*` work without a subscription; the `/v1/me/*` endpoints below need one (402 otherwise), except their `DELETE`s and `DELETE /v1/me/brokerage`, which any signed-in account may call to remove its own data.
+- POST /v1/auth/register, POST /v1/auth/login (both return `{user, access}`), POST /v1/auth/logout
+- GET /v1/me → `{user:{id,email}, access}`; DELETE /v1/me cancels the Stripe subscription first, then deletes the account
 - GET /v1/me/watchlist, POST /v1/me/watchlist with JSON {"ticker":"AAPL"}, DELETE /v1/me/watchlist/AAPL
 - GET /v1/me/research-decisions?ticker=AAPL; POST /v1/me/research-decisions with JSON {"ticker":"AAPL","reviewStatus":"watching","notes":"Read the original filing"}; DELETE /v1/me/research-decisions?ticker=AAPL
 - GET /v1/me/alerts – computed on demand; email/push delivery is **not** implemented
@@ -117,4 +187,8 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - The original issuer search and Form 4 database cover imported data only; the intelligence ticker lookup covers the current official SEC mapping, which the SEC says may be incomplete.
 - SEC company facts and company submissions may be temporarily unavailable, outdated, or lack a particular ticker or metric; the interface states the limitation rather than inventing results.
 - Grouping may double count amended filings. It is not an investment forecast.
+- The paywall trusts Stripe's subscription status as stored by the webhook (or `?refresh=1`, or a checkout attempt). If webhooks are not delivered and nobody refreshes, a cancellation reaches Insidir late; Stripe retries failed webhooks for three days. Account deletion and checkout do not depend on the stored status: they re-read Stripe.
+- The one-billing-change-per-account lock is per process; Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
+- Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
+- There is no email verification, so a complimentary address must be registered by its owner before it is listed.
 - No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
