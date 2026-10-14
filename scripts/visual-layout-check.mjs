@@ -35,23 +35,16 @@ try{
    assert.ok(landing.halftone.mounted&&landing.halftone.width>=item.width-2&&landing.halftone.height>300&&landing.halftone.inHero,"Halftone wordmark hero must draw in the landing page's first screen "+JSON.stringify(landing.halftone));
    assert.ok(landing.plainFooter,"Landing page must end with the plain tracked footer");
    assert.ok(!landing.hasFakeDashboard,"No fake trading dashboard");
-   const terminal=page.locator(".v9-hero__visual.v12-terminal");
-   assert.equal(await terminal.count(),1,"SEC research preview missing");
-   const preview=await terminal.evaluate(el=>{const r=el.getBoundingClientRect();return {center:r.x+r.width/2,width:r.width}});
-   assert.ok(Math.abs(preview.center-item.width/2)<=7,item.width+"px preview off center "+JSON.stringify(preview));
-   const darkTheme=await page.evaluate(()=>({
+   const landingRules=await page.evaluate(()=>({
     background:getComputedStyle(document.body).backgroundColor,
-    headline:getComputedStyle(document.querySelector("#v6-hero-heading")).color,
-    chartVisible:!!document.querySelector("#v12-demo-chart"),
-    controls:document.querySelectorAll("[data-v12-ticker]").length
+    dashboardPreview:!!document.querySelector(".v12-terminal,#v12-demo-chart,[data-v12-ticker],#v6-live-records"),
+    navTargets:[...document.querySelectorAll(".v6-nav__links a")].map(a=>a.getAttribute("href")),
+    images:[...document.images].filter(i=>i.getBoundingClientRect().width>2&&!/\.svg/.test(i.currentSrc)).map(i=>{const r=i.getBoundingClientRect();const fit=getComputedStyle(i).objectFit==="cover"?Math.max(r.width/(i.naturalWidth||1),r.height/(i.naturalHeight||1)):Math.min(r.width/(i.naturalWidth||1),r.height/(i.naturalHeight||1));return {src:i.currentSrc,scale:fit,natural:i.naturalWidth}}).filter(x=>x.natural>0&&/\/assets\//.test(x.src))
    }));
-   assert.equal(darkTheme.background,"rgb(12, 12, 11)","Homepage must sit on the V13 night paper");
-   assert.ok(darkTheme.chartVisible&&darkTheme.controls===4,"Live SEC interactive example unavailable");
-   await page.locator('[data-v12-ticker="AAPL"]').click();
-   assert.equal(await page.locator('[data-v12-ticker="AAPL"]').getAttribute("aria-pressed"),"true");
-   assert.match(await page.locator("#v12-demo-open").getAttribute("href"),/ticker=AAPL/);
-   await page.locator('[data-v12-metric="netIncome"]').click();
-   assert.equal(await page.locator('[data-v12-metric="netIncome"]').getAttribute("aria-pressed"),"true");
+   assert.equal(landingRules.background,"rgb(12, 12, 11)","Homepage must sit on the V13 night paper");
+   assert.ok(!landingRules.dashboardPreview,"The landing page must not show a product dashboard preview or live data feed");
+   for(const target of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.ok(landingRules.navTargets.includes(target),"Landing navigation must open "+target+": "+JSON.stringify(landingRules.navTargets));
+   for(const img of landingRules.images)assert.ok(img.scale<=0.5+1e-6,"Landing image is upscaled on high-density screens (needs native ≥ 2× rendered): "+JSON.stringify(img));
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");
      assert.ok(await toggle.isVisible(),item.width+"px mobile menu must be visible");
@@ -74,11 +67,8 @@ try{
    assert.ok(["sticky","fixed"].includes(app.headerPosition),"Header must remain at top");
    assert.ok(Math.abs(app.mainX+app.mainW/2-item.width/2)<5,"App main content not centered");
    assert.ok(app.hasData,"SEC research modules missing");
-   const dashImage=page.locator(".v9-desk__hero > img");
-   assert.equal(await dashImage.count(),1,"Dashboard image missing");
-   const imageWidth=await dashImage.evaluate(async img=>{await img.decode();return img.naturalWidth;});
-   assert.ok(imageWidth>100,"Dashboard photo failed to load: "+imageWidth);
-   assert.equal(await page.locator(".v9-desk__links a").count(),3,"Working dashboard shortcuts missing");
+   assert.equal(await page.locator('.app-main img[src*="assets/img/"]').count(),0,"Dashboard must not show decorative raster photos");
+   assert.ok(await page.locator("#v3-ticker").isVisible(),"Dashboard company search missing");
    if(item.width>=1140)assert.notEqual(app.navDisplay,"none","Horizontal desktop navigation missing");
    else {
     const toggle=page.locator(".app-menu-btn");
