@@ -122,22 +122,25 @@
     }
   }
 
+  // Offsets are written in quarter pixels and scale in 0.002 steps: a spring's last tiny movements cost no restyle.
+  const q = (v, step) => Math.round(v / step) * step;
   function write(a, force) {
-    const x = Math.abs(a.x) < 0.05 ? 0 : a.x, y = Math.abs(a.y) < 0.05 ? 0 : a.y, s = Math.abs(a.s) < 0.0005 ? 0 : a.s;
+    const x = Math.abs(a.x) < 0.125 ? 0 : q(a.x, 0.25), y = Math.abs(a.y) < 0.125 ? 0 : q(a.y, 0.25), s = Math.abs(a.s) < 0.001 ? 0 : q(a.s, 0.002);
     if (force || x !== a.wx || y !== a.wy) {
       a.wx = x; a.wy = y;
       if (x === 0 && y === 0) { a.el.style.removeProperty("--hf-dx"); a.el.style.removeProperty("--hf-dy"); }
-      else { a.el.style.setProperty("--hf-dx", x.toFixed(2) + "px"); a.el.style.setProperty("--hf-dy", y.toFixed(2) + "px"); }
+      else { a.el.style.setProperty("--hf-dx", x + "px"); a.el.style.setProperty("--hf-dy", y + "px"); }
     }
     if (force || s !== a.ws) {
       a.ws = s;
-      if (s === 0) a.el.style.removeProperty("--hf-s"); else a.el.style.setProperty("--hf-s", (1 + s).toFixed(4));
+      if (s === 0) a.el.style.removeProperty("--hf-s"); else a.el.style.setProperty("--hf-s", String(+(1 + s).toFixed(3)));
     }
   }
 
-  let last = 0, acc = 0;
+  let last = 0, acc = 0, scrolled = false;
   function frame(now) {
     raf = 0;
+    if (scrolled) { scrolled = false; measure(a => a.pin === "sticky"); sweepReveal(); }
     if (reducedQ.matches) { for (const a of atoms) { a.x = a.y = a.vx = a.vy = a.s = a.vs = 0; write(a); } awake = false; return; }
     // A fixed 60 fps clock: the same number of physics steps per second at 60, 120 or 144 Hz.
     acc = last ? Math.min(acc + (now - last), 4 * FRAME) : FRAME;
@@ -145,7 +148,7 @@
     const steps = Math.floor(acc / FRAME);
     acc -= steps * FRAME;
     const sx = window.scrollX, sy = window.scrollY, vw = window.innerWidth, vh = window.innerHeight;
-    const push = inside && fineQ.matches;
+    const push = inside && fineQ.matches, trail = fineQ.matches;
     rings = rings.filter(g => now - g.t < P.ringLife);
     // The pointer's movement and the page's scroll since the last frame.
     const mx = steps ? mdx / steps : 0, my = steps ? mdy / steps : 0;
@@ -159,12 +162,17 @@
     for (const a of atoms) {
       if (!a.visible) continue;
       const ox = a.fixed ? 0 : sx, oy = a.fixed ? 0 : sy;
-      // Off screen and at rest: skip.
-      const onScreen = a.b - oy > -RADIUS && a.t - oy < vh + RADIUS && a.r - ox > -RADIUS && a.l - ox < vw + RADIUS;
-      if (!onScreen && a.x === 0 && a.y === 0 && a.vx === 0 && a.vy === 0) continue;
+      // Only atoms on screen are simulated: one that leaves the screen while moving is put home at once
+      // (one write), so a long page costs what its visible part costs.
+      const onScreen = a.b - oy > -24 && a.t - oy < vh + 24 && a.r - ox > -24 && a.l - ox < vw + 24;
+      if (!onScreen) {
+        if (a.x || a.y || a.vx || a.vy || a.s || a.vs) { a.x = a.y = a.vx = a.vy = a.s = a.vs = 0; a.over = false; write(a); }
+        continue;
+      }
       const qx = a.fixed ? pcx : px, qy = a.fixed ? pcy : py;
       // Scroll: an atom that scrolls with the page trails it (one in a fixed or stuck bar does not move).
-      if (a.pin !== "fixed" && !(a.pin === "sticky" && a.stuck)) { a.vy += kick * a.lag; a.vx += kickX * a.lag; }
+      // Touch screens skip this: on a phone's CPU restyling every atom each frame costs more than it shows.
+      if (trail && a.pin !== "fixed" && !(a.pin === "sticky" && a.stuck)) { a.vy += kick * a.lag; a.vx += kickX * a.lag; }
       // The pointer arriving on an atom makes it pop; leaving lets it go.
       const over = push && qx >= a.l && qx <= a.r && qy >= a.t && qy <= a.b;
       if (over && !a.over) a.vs += POP;
@@ -311,11 +319,8 @@
     document.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("resize", () => { measure(); wake(); }, { passive: true });
     // Sticky boxes move with the page until they stick: follow them, once per frame at most.
-    let sq = 0;
-    window.addEventListener("scroll", () => {
-      if (!sq) sq = requestAnimationFrame(() => { sq = 0; measure(a => a.pin === "sticky"); sweepReveal(); });
-      wake(); // the scroll trail
-    }, { passive: true });
+    // A scroll only flags work: the next frame reads positions (sticky homes, reveals) before it writes any.
+    window.addEventListener("scroll", () => { scrolled = true; wake(); }, { passive: true });
     window.addEventListener("beforeprint", revealAll);
     // Focus that lands inside a waiting block (a script focusing a card it just added) shows it at once.
     document.addEventListener("focusin", e => { const b = e.target && e.target.closest && e.target.closest(".hf-pending"); if (b) release(b, 0); });
@@ -329,7 +334,11 @@
     document.addEventListener("animationend", settled, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(() => { measure(); }).observe(document.body);
     // Rows rendered after load (dashboard modules, menus) join or leave the set.
-    if (window.MutationObserver) new MutationObserver(muts => { if (muts.some(m => m.type === "childList" || m.attributeName === "hidden")) refresh(); })
+    // Tooltips and one-line status messages rewrite themselves constantly and hold no atoms or reveal blocks:
+    // their changes do not trigger a rescan. (Live regions that hold rows, like followed people, still do.)
+    const QUIET = "[role=tooltip],.sr-only,p[aria-live],p[role=status]";
+    const quiet = m => { const n = m.target.nodeType === 1 ? m.target : m.target.parentElement; return !!(n && n.closest && n.closest(QUIET)); };
+    if (window.MutationObserver) new MutationObserver(muts => { if (muts.some(m => (m.type === "childList" || m.attributeName === "hidden") && !quiet(m))) refresh(); })
       .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); });
     reducedQ.addEventListener && reducedQ.addEventListener("change", () => {

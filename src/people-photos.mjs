@@ -14,9 +14,10 @@ import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
 import { isEntityName, samePerson, nameTokens, givenVariants } from "./person-match.mjs";
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
+import { PUBLIC_UA } from "./public-fetch.mjs";
 
 const DAY = 86400000;
-const PUBLIC_UA = "InsidirResearch/1.0 (+spartanapparelbiz@gmail.com)";
+
 /* A caption or card name ("Suzanne Nora Johnson, Director") as a display name, only when it is the
  * same person as the SEC filer name. */
 const NAME_RANK = { wikimedia: 3, "company-site": 2, "sec-proxy": 1 };
@@ -53,7 +54,7 @@ async function store(bytes, type) {
 }
 /* Commons portraits that are full-length or tiny are passed over for a better source. Company
  * sites get the page as Referer (many refuse hotlinked images without it). */
-async function fromUrl(url, { referer, userAgent = "InsidirResearch/1.0 (spartanapparelbiz@gmail.com)" } = {}) {
+async function fromUrl(url, { referer, userAgent = PUBLIC_UA } = {}) {
   const image = await politeImage(url, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent, headers: referer ? { Referer: referer } : {} });
   if (!["png", "jpeg", "webp", "gif", "avif"].includes(image.type)) throw new Error("Not a photo");
   return { saved: await store(image.bytes, image.type), size: imageSize(image.bytes, image.type) };
