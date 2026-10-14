@@ -310,12 +310,33 @@ test("an unreachable source is unknown: no negative result is cached", async () 
 
 test("a boxed tile is the last resort and comes out deboxed", async () => {
   const u = urlsFor("TILE");
-  const w = world({ images: { [u.fmp]: { bytes: await tilePng(), type: "png" } } });
+  // A second service showing the same mark confirms it.
+  const w = world({ images: { [u.fmp]: { bytes: await tilePng(), type: "png" }, [u.nvstly]: { bytes: await tilePng(), type: "png" } } });
   const r = await resolveLogo({ ticker: "TILE", cik: "103", name: "Tile Co" }, { fetchers: w.fetchers, store: w.store, now: NOW });
   assert.equal(r.status, "ok");
   assert.equal(r.variants.square.source, "fmp");
   assert.match(r.variants.square.method, /^debox/);
-  assert.equal(r.review, true);
+});
+
+test("a logo only one ticker-keyed tile service supplies is not shown", async () => {
+  // Audit: FMP showed Altex Inc. (Canada) for ALTX and EODHD a product brand for FMHS.
+  const u = urlsFor("LONE");
+  const w = world({ images: { [u.fmp]: { bytes: await tilePng(), type: "png" } } });
+  const r = await resolveLogo({ ticker: "LONE", cik: "113", name: "Lone Co" }, { fetchers: w.fetchers, store: w.store, now: NOW });
+  assert.equal(r.status, "none");
+  assert.ok(r.support.some(n => /not confirmed/.test(String(n))));
+});
+
+test("checked-in overrides replace the sources, can crop, and can force no logo", async () => {
+  const u = urlsFor("FIXD");
+  const own = "https://fixed.example/logo.svg";
+  const w = world({ images: { [u.s1Light]: svgImage(CIRCLE_WHITE), [own]: svgImage(CIRCLE_WHITE) } });
+  const overrides = { "0000000114": { url: own, crop: { bottom: 0.1 }, reason: "test" }, "0000000115": { none: true } };
+  const r = await resolveLogo({ ticker: "FIXD", cik: "114" }, { fetchers: w.fetchers, store: w.store, now: NOW, overrides });
+  assert.equal(r.status, "ok");
+  assert.equal(r.variants.square.source, "override");
+  const none = await resolveLogo({ ticker: "FIXD", cik: "115" }, { fetchers: w.fetchers, store: w.store, now: NOW, overrides });
+  assert.equal(none.status, "none");
 });
 
 test("website candidates fill in when ticker sources have nothing; a missing website module is harmless", async () => {
@@ -362,7 +383,7 @@ test("an app-icon tile inside transparent padding is keyed out for the fallback 
   assert.equal((await measureMark(icon, "png")).boxed, false);
   assert.equal((await measureMark(icon, "png", { innerTile: true })).boxed, true);
   const u = urlsFor("APPI");
-  const w = world({ images: { [u.eodhd[0]]: { bytes: icon, type: "png" } } });
+  const w = world({ images: { [u.eodhd[0]]: { bytes: icon, type: "png" }, [u.nvstly]: { bytes: icon, type: "png" } } });
   const res = await resolveLogo({ ticker: "APPI", cik: "107", name: "App Co" }, { fetchers: w.fetchers, store: w.store, now: NOW });
   assert.equal(res.variants.square.source, "eodhd");
   assert.match(res.variants.square.method, /^debox/);

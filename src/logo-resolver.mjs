@@ -42,6 +42,31 @@ export const KNOWN_BAD = Object.freeze({
   wikidata: new Set(["PRU", "KR", "ALK", "OPTU"])
 });
 
+/* Corrections found by visually auditing a 120-company sample against each company's own site and
+ * filings: the usual sources show another company (ALTX, HTCR), a product brand (FMHS), an old
+ * identity (CGC, NWFL, ELAB, JPM) or a damaged file (BCAB, DIN). Each replacement is the
+ * company's own published file. Operator overrides in the store take precedence; if a file here
+ * stops loading, the normal sources are used again. crop trims fractions of the image first. */
+export const LOGO_OVERRIDES = Object.freeze({
+  "0000775057": { none: true, reason: "ALTX: the stock-logo services show Altex Inc. (Canada), a different company" },
+  "0001892322": { url: "https://heartcore-enterprises.com/img/footer-logo.svg", reason: "HTCR: services show HeartCore Co., Ltd.'s mark" },
+  "0001811999": { url: "https://farmhouse.tv/FH%20Horizontal.svg", reason: "FMHS: services show the WeedClub product mark" },
+  "0001737927": { url: "https://canopygrowth.com/wp-content/uploads/2026/07/Canopy-Growth-Footer-logo.png", crop: { bottom: 0.16 }, reason: "CGC: Wikipedia has the retired gold-tree logo" },
+  "0001013272": { url: "https://www.sec.gov/Archives/edgar/data/1013272/000101327226000012/nwfl-20260722xex99_1g001.jpg", reason: "NWFL: services show the retired slab wordmark" },
+  "0001840563": { url: "https://pmgcholdings.com/images/logo/nav-logo.png", reason: "ELAB: services show the retired PMGC mark" },
+  "0001826892": { url: "https://www.bioatla.com/wp-content/uploads/2016/01/logo-footer.svg", reason: "BCAB: the service file is squashed" },
+  "0000049754": { url: "https://en.wikipedia.org/wiki/Special:FilePath/Dine_Brands_Logo.png", reason: "DIN: the service file's black frame and BRANDS line vanish on a dark page" },
+  "0000019617": { url: "https://www.jpmorganchase.com/content/dam/jpmorganchase/images/logos/jpmc-logo-white.svg", reason: "JPM: services show the J.P. Morgan segment wordmark, not JPMorganChase" }
+});
+async function cropped(candidate, crop) {
+  if (candidate.status !== "found" || !crop) return candidate;
+  const input = sharp(candidate.bytes, candidate.type === "svg" ? { density: 300 } : {});
+  const { data, info } = await input.png().toBuffer({ resolveWithObject: true });
+  const left = Math.round(info.width * (crop.left || 0)), top = Math.round(info.height * (crop.top || 0));
+  const width = Math.max(1, info.width - left - Math.round(info.width * (crop.right || 0))), height = Math.max(1, info.height - top - Math.round(info.height * (crop.bottom || 0)));
+  return { ...candidate, bytes: await sharp(data).extract({ left, top, width, height }).png().toBuffer(), type: "png" };
+}
+
 /* ---------- small helpers ---------- */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export function normalizeTicker(ticker) {
@@ -756,19 +781,19 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
     if (cached) return cached;
   }
   const checkedAt = new Date(now).toISOString();
-  const override = await store.getRecord("logo-override", cik10).catch(() => null);
+  const override = (await store.getRecord("logo-override", cik10).catch(() => null)) || (options.overrides || LOGO_OVERRIDES)[cik10] || null;
   if (override?.none) {
-    const result = { status: "none", ticker: T, cik: cik10, variants: {}, risk: null, support: ["operator override: no logo"], sources: {}, review: false, incomplete: false, checkedAt };
+    const result = { status: "none", ticker: T, cik: cik10, variants: {}, risk: null, support: ["override: no logo" + (override.reason ? " (" + override.reason + ")" : "")], sources: {}, review: false, incomplete: false, checkedAt };
     await store.putRecord("logo", cik10, result, NEGATIVE_TTL);
     return result;
   }
   if (typeof override?.url === "string") {
     // An operator-chosen file (media_overrides) replaces every source.
-    const c = await measured(Object.assign(await getImage(f, override.url), { key: "override", label: "override", source: "override" }));
+    const c = await measured(Object.assign(await cropped(await getImage(f, override.url), override.crop).catch(() => ({ status: "missing" })), { key: "override", label: "override", source: "override" }));
     const prepared = usable(c) ? await prepareCandidate(c, store).catch(() => null) : null;
     if (prepared) {
       const slot = slotFor(prepared.aspect) === "wide" ? "wide" : "square";
-      const result = { status: "ok", ticker: T, cik: cik10, variants: { [slot]: prepared }, risk: null, support: ["operator override"], sources: { override: "found" }, review: false, incomplete: false, checkedAt };
+      const result = { status: "ok", ticker: T, cik: cik10, variants: { [slot]: prepared }, risk: null, support: ["override" + (override.reason ? ": " + override.reason : "")], sources: { override: "found" }, review: false, incomplete: false, checkedAt };
       await store.putRecord("logo", cik10, result, LOGO_TTL);
       return result;
     }
@@ -858,6 +883,13 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
     website.items.some(c => c.status === "unknown");
   const winner = used[0];
   const confirmedWinner = winner ? found.some(c => c !== winner && agree(c, winner)) : false;
+  // FMP, EODHD and nvstly key their images by ticker alone. In the audited sample half of the logos
+  // that only they supplied belonged to another company or a product brand (Altex Inc. for ALTX,
+  // WeedClub for FMHS), so without a second source showing the same mark no logo is shown.
+  if (winner && TILE_SERVICES.has(winner.key) && !confirmedWinner) {
+    for (const k of Object.keys(variants)) delete variants[k];
+    selection.notes.push(winner.label + " logo not confirmed by another source; not shown");
+  }
   const review = selection.review || Boolean(winner && !confirmedWinner && (risk.flag || ["fmp", "eodhd", "nvstly", "website"].includes(winner.label) || String(winnerMethod).startsWith("debox")));
   const result = {
     status: Object.keys(variants).length ? "ok" : "none",
