@@ -82,6 +82,14 @@ async function politeImage(url, options) {
   lane.tail = run.catch(() => {});
   return run;
 }
+/* "former CEO of Yum! Brands" for Yum, but not "former CEO of Johnson & Johnson" for an Apple director. */
+const plain = t => " " + String(t || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+function formerHere(description, companyName) {
+  const d = plain(description);
+  if (!/ former /.test(d)) return false;
+  const key = plain(companyName).replace(/ (inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|lp|holdings?|group|the|de|del|nv|sa|ag) /g, " ").replace(/\s+/g, " ").trim();
+  return key.length >= 3 && d.slice(d.indexOf(" former ")).includes(" " + key + " ");
+}
 /* Landscape or small Commons pictures often show the person small (at a podium, on a stage). */
 const weakPicture = size => Boolean(size && (size.width / size.height > 1.15 || Math.min(size.width, size.height) < 200));
 /* Such a picture is used at all only when its Commons file is named after the person and does not
@@ -171,7 +179,7 @@ async function runJob(ticker, company) {
   for (const leader of leaders) {
     // Wikidata keeps some roles open after people leave; its own description often says so
     // ("former CEO of Yum! Brands"). Founders stay listed as founders.
-    if (/\bformer\b/i.test(leader.description || "") && !(leader.roles || []).includes("Founder")) continue;
+    if (formerHere(leader.description, company.name) && !(leader.roles || []).includes("Founder")) continue;
     let photo = null;
     if (leader.photo?.src) {
       try {
