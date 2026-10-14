@@ -2,19 +2,19 @@
    A wordmark set enormous and cropped by the bottom edge, printed as a field of
    halftone dots: each dot is sized by how much of the letter covers its cell, so
    the type keeps its edges at any size. Move across it and the dots part around
-   the pointer on springs, warming toward the accent as they are pushed off their
-   place; click and a shock ring runs through the word. The same engine draws a
+   the pointer on springs and settle back, always in ink (nothing on the site
+   glows); click and a shock ring runs through the word. The same engine draws a
    plain dot field (data-halftone-field) behind the landing hero.
 
    Plain JavaScript port of the Halftone Wordmark Footer React component so it
    runs under the site's no-build, same-origin Content-Security-Policy. The word is
    printed once, in the landing page's first screen (data-halftone-hero). Colours
-   come from the --hwf-bg / --hwf-ink / --hwf-warm custom properties on the root
+   come from the --hwf-bg / --hwf-ink custom properties on the root
    element (set by v13-halftone.css), so the theme owns them. */
 (() => {
   "use strict";
 
-  const PRESET = { background: "#0c0c0b", ink: "#e9e4da", warm: "#e9762b" };
+  const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
   const SANS_STACK = '"Inter", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif';
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -48,12 +48,6 @@
     return [x + vx, y + vy, vx, vy];
   }
 
-  /** How warm a dot is drawn: 0 at home, 1 once it is `span` px or more away. */
-  function warmth(x, y, hx, hy, span) {
-    const d = Math.hypot(x - hx, y - hy);
-    return span > 0 ? Math.min(1, d / span) : 0;
-  }
-
   /** Font size that sets `measured` (width at 100px) to fill `width` exactly. */
   function fitSize(measured, width) {
     return measured > 0 ? (width / measured) * 100 : 0;
@@ -71,8 +65,7 @@
       wordmark: d.wordmark || "insidir",
       colors: {
         background: v("--hwf-bg") || PRESET.background,
-        ink: v("--hwf-ink") || PRESET.ink,
-        warm: v("--hwf-warm") || PRESET.warm
+        ink: v("--hwf-ink") || PRESET.ink
       },
       dotGap: num("dotGap", field ? 11 : 6),
       radius: num("radius", field ? 110 : 80),
@@ -102,8 +95,6 @@
     let w = 0, h = 0, dpr = 1, px = -1e5, py = -1e5, raf = 0, visible = true, awake = true, alive = true;
     let ring = { x: 0, y: 0, t: -1 };
     let dots = new Float32Array(0), count = 0, grainTile = null;
-    const ink = hex(o.colors.ink) || hex(PRESET.ink);
-    const warm = hex(o.colors.warm) || hex(PRESET.warm);
 
     const layout = () => {
       const rect = root.getBoundingClientRect();
@@ -184,6 +175,7 @@
       const ringAge = ring.t < 0 ? 1e9 : now - ring.t;
       const ringR = ringAge * 0.9;
       let moving = false;
+      ctx.fillStyle = o.colors.ink;
       for (let i = 0; i < count; i++) {
         const j = i * 7;
         let x = dots[j], y = dots[j + 1], vx = dots[j + 2], vy = dots[j + 3];
@@ -204,10 +196,6 @@
           else { x = hx; y = hy; vx = 0; vy = 0; }
           dots[j] = x; dots[j + 1] = y; dots[j + 2] = vx; dots[j + 3] = vy;
         }
-        const k = warmth(x, y, hx, hy, 28);
-        ctx.fillStyle = k > 0.02
-          ? "rgb(" + Math.round(ink[0] + (warm[0] - ink[0]) * k) + "," + Math.round(ink[1] + (warm[1] - ink[1]) * k) + "," + Math.round(ink[2] + (warm[2] - ink[2]) * k) + ")"
-          : o.colors.ink;
         ctx.beginPath();
         ctx.arc(x, y, dots[j + 6], 0, 6.2832);
         ctx.fill();
@@ -290,5 +278,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
   else auto();
 
-  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, warmth, fitSize, PRESET });
+  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, fitSize, PRESET });
 })();

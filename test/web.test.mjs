@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { serveStatic } from "../src/web.mjs";
+import { readFile, readdir } from "node:fs/promises";
 
 async function withServer(fn) {
   const server = createServer((req, res) => {
@@ -427,4 +428,24 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.match(engine, /data-halftone-hero/);
     assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");
   });
+});
+
+test("nothing on the site glows orange: no halos, no orange gradients, no glowing dots, an ink-only wordmark",async()=>{
+  const web=new URL("../web/",import.meta.url),cssDir=new URL("assets/css/",web);
+  const warm=/var\(--hf-warm\)|#e9762b|rgba?\(\s*233\s*,\s*118\s*,\s*43/i;
+  const sheets=(await readdir(cssDir)).filter(f=>/^v13-.*\.css$/.test(f));
+  assert.ok(sheets.length>=9,"every V13 sheet is checked");
+  for(const f of sheets){
+    const css=await readFile(new URL(f,cssDir),"utf8");
+    assert.doesNotMatch(css,/--hf-warm-soft|--hwf-warm/,f+" keeps no warm halo token");
+    for(const decl of css.match(/(?:box-shadow|text-shadow|filter|background(?:-image)?|mask(?:-image)?|stop-color)\s*:[^;}]*/g)||[]){
+      if(/gradient\(|shadow|filter|stop-color/.test(decl))assert.doesNotMatch(decl,warm,f+" glows orange: "+decl);
+    }
+  }
+  for(const f of(await readdir(web)).filter(f=>f.endsWith(".html"))){
+    assert.doesNotMatch(await readFile(new URL(f,web),"utf8"),/class="(?:mk-live|v9-tiny-dot|cx-live-dot)"/,f+" has no glowing dot");
+  }
+  const company=await readFile(new URL("v13-company.css",cssDir),"utf8");
+  assert.match(company,/\.cx-chart svg>path\[fill\^="url\("\]\{fill:none!important\}/,"the price chart draws no gradient glow under its line");
+  assert.doesNotMatch(await readFile(new URL("assets/js/v13-halftone.js",web),"utf8"),/warm/i,"the wordmark's dots never warm to orange");
 });

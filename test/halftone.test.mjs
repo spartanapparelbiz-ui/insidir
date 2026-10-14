@@ -19,13 +19,13 @@ const plain = v => JSON.parse(JSON.stringify(v));
 
 test("engine exposes the halftone helpers and the night palette shared with the stylesheet", async () => {
   const h = load();
-  assert.deepEqual(plain(h.PRESET), { background: "#0c0c0b", ink: "#e9e4da", warm: "#e9762b" });
+  assert.deepEqual(plain(h.PRESET), { background: "#0c0c0b", ink: "#e9e4da" });
   const css = await readFile(new URL("../web/assets/css/v13-halftone.css", import.meta.url), "utf8");
   assert.match(css, /--hf-bg:#0c0c0b!important/);
   assert.match(css, /--hf-ink:#e9e4da!important/);
   assert.match(css, /--hf-warm:#e9762b!important/);
   assert.match(css, /@layer insidir-v13/);
-  for (const fn of ["mount", "auto", "hex", "radius", "step", "warmth", "fitSize"]) assert.equal(typeof h[fn], "function", fn);
+  for (const fn of ["mount", "auto", "hex", "radius", "step", "fitSize"]) assert.equal(typeof h[fn], "function", fn);
 });
 
 test("hex parses short and long colours and rejects anything else", () => {
@@ -66,12 +66,12 @@ test("a pointer inside the radius pushes the dot away from itself, outside it do
   assert.deepEqual(plain(off), [10, 0, 0, 0], "a zero radius (reduced motion / non-interactive) never pushes");
 });
 
-test("warmth rises from 0 at home to 1 at the span", () => {
+test("dots are always drawn in ink: pushing them never tints them orange", async () => {
   const h = load();
-  assert.equal(h.warmth(0, 0, 0, 0, 28), 0);
-  assert.equal(h.warmth(14, 0, 0, 0, 28), 0.5);
-  assert.equal(h.warmth(0, 60, 0, 0, 28), 1);
-  assert.equal(h.warmth(10, 10, 0, 0, 0), 0);
+  assert.equal(h.warmth, undefined, "no warmth helper");
+  const src = await readFile(new URL("../web/assets/js/v13-halftone.js", import.meta.url), "utf8");
+  assert.doesNotMatch(src, /warm|e9762b|233,\s*118,\s*43/i, "the engine knows no accent colour");
+  assert.match(src, /ctx\.fillStyle = o\.colors\.ink;\n\s*for \(let i = 0; i < count; i\+\+\)/, "one ink fill for every dot");
 });
 
 test("fitSize scales a 100px measurement to fill the width", () => {

@@ -139,6 +139,22 @@ const scan = ({ palette, tol }) => {
     const e = contrastMap.get(key) || { color: cs.color, background: back, ratio: Math.round(ratioValue * 100) / 100, needed: need, count: 0, examples: [], sample: "" };
     e.count++; if (e.examples.length < 3) e.examples.push(path(el)); if (!e.sample) e.sample = text.slice(0, 40); contrastMap.set(key, e);
   };
+  // Nothing glows: no shadow, filter, gradient or gradient-filled SVG may carry the warm accent.
+  const warmOf = c => {
+    if (!c || c.a <= 0.02) return 0;
+    const w = [c.r - bg[0], c.g - bg[1], c.b - bg[2]];
+    const wu = w[0] * u[0] + w[1] * u[1] + w[2] * u[2], wv = w[0] * v[0] + w[1] * v[1] + w[2] * v[2];
+    return (wv * uu - wu * uv) / det;
+  };
+  const glows = new Map();
+  const addGlow = (prop, value, el) => { const key = prop + " = " + value; const e = glows.get(key) || { prop, value: value.slice(0, 90), count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); glows.set(key, e); };
+  const glowCheck = (cs, el, suffix) => {
+    for (const prop of ["boxShadow", "textShadow", "filter", "backgroundImage"]) {
+      const val = cs[prop];
+      if (!val || val === "none" || (prop === "backgroundImage" && !/gradient\(/.test(val))) continue;
+      if ((val.match(/rgba?\([^)]+\)/g) || []).some(m => warmOf(parse(m)) > 0.1)) addGlow(prop.replace(/[A-Z]/g, ch => "-" + ch.toLowerCase()) + suffix, val, el);
+    }
+  };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
   const allowedFonts = /^"?JetBrains Mono"?/i;
@@ -173,6 +189,11 @@ const scan = ({ palette, tol }) => {
       for (const m of cs.backgroundImage.match(/rgba?\([^)]+\)/g) || []) { const gc = parse(m); if (!inPalette(gc)) { add("background-image", m, el); break; } }
     }
     if (cs.boxShadow && cs.boxShadow !== "none") { for (const m of cs.boxShadow.match(/rgba?\([^)]+\)/g) || []) { const sc = parse(m); if (sc && sc.a > 0.3 && !inPalette(sc)) { add("box-shadow", m, el); break; } } }
+    glowCheck(cs, el, "");
+    if (el instanceof SVGElement && /^url\(/.test(cs.fill || "")) {
+      const id = (/url\("?#([^")]+)"?\)/.exec(cs.fill) || [])[1], grad = id && document.getElementById(id);
+      if (grad && [...grad.querySelectorAll("stop")].some(st => { const sc = getComputedStyle(st); return Number(sc.stopOpacity) > 0.02 && warmOf(parse(sc.stopColor)) > 0.1; })) addGlow("svg-gradient-fill", "#" + id, el);
+    }
     if (el instanceof SVGElement && /^(path|circle|rect|line|polyline|polygon|ellipse|text|use|g)$/i.test(el.tagName)) {
       for (const prop of ["fill", "stroke"]) { const val = cs[prop]; if (!val || val === "none" || /^url\(/.test(val)) continue; const pc = parse(val); if (pc && !inPalette(pc)) add("svg-" + prop, val, el); }
     }
@@ -181,6 +202,7 @@ const scan = ({ palette, tol }) => {
     if (SKIP.has(el.tagName)) continue; const cs = getComputedStyle(el, pe); if (cs.content === "none" || cs.display === "none") continue;
     const c = parse(cs.backgroundColor); if (!inPalette(c)) add("background-color" + pe, cs.backgroundColor, el);
     const t = parse(cs.color); if (cs.content !== '""' && cs.content !== "normal" && !inPalette(t)) add("color" + pe, cs.color, el);
+    glowCheck(cs, el, pe);
   }
   // Raster images must be retina-sharp: native pixels ≥ 2× the rendered CSS size (cover-adjusted).
   const blurry = [];
@@ -200,6 +222,7 @@ const scan = ({ palette, tol }) => {
   const fr = halCanvas ? halCanvas.getBoundingClientRect() : null;
   return {
     leaks: [...leaks.values()].sort((a, b) => b.count - a.count),
+    glows: [...glows.values()].sort((a, b) => b.count - a.count),
     fonts: [...fonts.values()].sort((a, b) => b.count - a.count),
     contrast: [...contrastMap.values()].sort((a, b) => b.count - a.count),
     blurry,
@@ -212,6 +235,24 @@ const scan = ({ palette, tol }) => {
     title: document.title
   };
 };
+
+/* The dotted wordmark must stay ink while the pointer pushes its dots and after a click
+   sends a ring through it: count orange pixels on the hero canvas at the worst moment. */
+async function wordmarkGlow(page) {
+  const box = await page.evaluate(() => { const c = document.querySelector("[data-halftone-hero] canvas"); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, bottom: Math.min(r.bottom, innerHeight) }; });
+  if (!box || box.w < 10) return 0;
+  const count = () => page.evaluate(() => { const c = document.querySelector("[data-halftone-hero] canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let k = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] - d[i + 2] > 60 && d[i + 1] < d[i] - 30) k++; return k; });
+  const y = box.bottom - Math.min(60, (box.bottom - box.y) / 3);
+  let worst = 0;
+  for (let i = 0; i <= 24; i++) await page.mouse.move(box.x + 20 + i * (box.w - 40) / 24, y, { steps: 2 });
+  worst = Math.max(worst, await count());
+  await page.mouse.click(box.x + box.w / 2, y);
+  await page.waitForTimeout(120);
+  worst = Math.max(worst, await count());
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(200);
+  return worst;
+}
 
 /* ---------- run ---------- */
 const server = createServer((req, res) => { serveStatic(req, res).then(found => { if (!found) { res.writeHead(404); res.end("not found"); } }).catch(e => { res.writeHead(500); res.end(String(e)); }); });
@@ -245,6 +286,7 @@ try {
         await page.evaluate(async () => { window.scrollTo(0, document.body.scrollHeight); await new Promise(r => setTimeout(r, 250)); window.scrollTo(0, 0); });
         await page.waitForTimeout(250);
         Object.assign(entry, await page.evaluate(scan, { palette: PALETTE, tol: TOL }));
+        if (key === "index") entry.canvasGlow = await wordmarkGlow(page);
         if (shots) await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
         if (!flag("no-menus")) {
           const toggles = ["#v6-menu-button", ".app-menu-btn", ".user-menu__btn", ".site-nav__menu"];
@@ -253,7 +295,7 @@ try {
           if (opened.length) {
             await page.waitForTimeout(350);
             const withMenus = await page.evaluate(scan, { palette: PALETTE, tol: TOL });
-            entry.menuState = { opened, leaks: withMenus.leaks.filter(l => !entry.leaks.some(x => x.prop === l.prop && x.value === l.value)), overflow: withMenus.overflow };
+            entry.menuState = { opened, leaks: withMenus.leaks.filter(l => !entry.leaks.some(x => x.prop === l.prop && x.value === l.value)), glows: withMenus.glows.filter(g => !entry.glows.some(x => x.prop === g.prop && x.value === g.value)), overflow: withMenus.overflow };
             if (shots) await page.screenshot({ path: join(shots, `${key}-${width}-menus.png`), fullPage: false });
           }
         }
@@ -276,9 +318,14 @@ for (const p of report.pages) {
     ? (p.halftone && p.halftone.kind === "hero" && p.halftone.mounted && p.halftone.width > 0 ? "" : ", HALFTONE HERO MISSING")
     : (p.halftone ? ", UNEXPECTED HALFTONE WORDMARK (landing hero only)" : "");
   const footerNote = p.failure || p.plainFooter ? "" : ", PLAIN FOOTER MISSING";
+  const glowCount = (p.glows ? p.glows.length : 0) + (p.menuState && p.menuState.glows ? p.menuState.glows.length : 0) + (p.canvasGlow > 0 ? 1 : 0);
+  total += glowCount;
   total += n + lc + (p.fonts ? p.fonts.length : 0) + p.errors.length + (p.failure ? 1 : 0) + (p.overflow > 4 ? 1 : 0) + (halftoneNote ? 1 : 0) + (footerNote ? 1 : 0) + (p.hasV13 === false ? 1 : 0);
   const status = p.failure ? "FAILED " + p.failure : `${n} off-palette value${n === 1 ? "" : "s"}, ${lc} low-contrast, ${bl} blurry image(s), ${p.fonts ? p.fonts.length : 0} font issue(s), overflow ${p.overflow}px, ${p.errors.length} error(s)` + (p.hasV13 ? "" : ", v13 assets missing") + halftoneNote + footerNote;
   console.log(`[${p.width}px] ${p.page.padEnd(14)} ${status}`);
+  if (glowCount) console.log(`    ${glowCount} ORANGE GLOW(S): nothing on the site may glow`);
+  for (const g of [...(p.glows || []), ...(p.menuState && p.menuState.glows || [])]) console.log(`    glow ${g.prop.padEnd(22)} ${g.value.slice(0, 70)} ×${g.count}  e.g. ${g.examples[0]}`);
+  if (p.canvasGlow > 0) console.log(`    glow halftone wordmark: ${p.canvasGlow} orange pixels while the pointer pushes the dots`);
   for (const l of (p.leaks || []).slice(0, 12)) console.log(`    ${l.prop.padEnd(24)} ${l.value.padEnd(26)} ×${l.count}  e.g. ${l.examples[0]}`);
   if (p.leaks && p.leaks.length > 12) console.log(`    … ${p.leaks.length - 12} more (see --json)`);
   for (const l of (p.menuState ? p.menuState.leaks : []).slice(0, 6)) console.log(`    [menu open] ${l.prop.padEnd(12)} ${l.value.padEnd(26)} ×${l.count}  e.g. ${l.examples[0]}`);

@@ -16,7 +16,6 @@ body.v13 :is(.cx-report,.cx-picker,.cx-panel,.cx-about,.cx-subhead,.cx-about__mo
 
 /* Tracked mono kickers, captions, dots. */
 body.v13 .cx-kicker{display:flex!important;align-items:center!important;gap:10px!important;margin:0!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13 .cx-live-dot{display:inline-block!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-warm)!important;box-shadow:0 0 0 4px var(--hf-warm-soft)!important;flex:none!important}
 body.v13 :is(.cx-facts__note,.cx-picker__note,.cx-source,.cx-quote__meta,.cx-status,.cx-empty,.cx-sources,.cx-sources p,.cx-tile small,.cx-description small,.cx-about__more small,.cx-mini header p,.cx-section-head p,.cx-person p,.cx-subhead small,.cx-table small,.cx-chart__empty,.cx-chart__tip span){
   font-family:var(--hf-mono)!important;font-size:11px!important;font-weight:400!important;line-height:1.8!important;letter-spacing:.02em!important;text-transform:none!important;color:var(--hf-muted)!important}
 body.v13 :is(.cx-facts__note,.cx-picker__note,.cx-source,.cx-quote__meta,.cx-status,.cx-empty,.cx-sources,.cx-section-head p) a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
@@ -79,7 +78,7 @@ body.v13.cx-page #cx-report .cx-btn--primary[aria-pressed="true"]:hover{backgrou
 /* Quote and the delayed price chart */
 body.v13 .cx-quote__head{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:18px!important;flex-wrap:wrap!important}
 body.v13 .cx-quote__symbol{margin:0!important;display:flex!important;align-items:center!important;gap:10px!important}
-body.v13 .cx-quote__symbol::before{content:""!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-warm)!important;box-shadow:0 0 0 4px var(--hf-warm-soft)!important;flex:none!important}
+body.v13 .cx-quote__symbol::before{content:none!important;display:none!important}
 body.v13 .cx-quote__price{display:flex!important;align-items:baseline!important;flex-wrap:wrap!important;gap:6px 14px!important;margin-top:12px!important}
 body.v13 .cx-quote__price strong{font:800 clamp(38px,3.6vw,54px)/1 var(--hf-sans)!important;letter-spacing:-.055em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .cx-change{font:600 clamp(14px,1.2vw,17px)/1 var(--hf-sans)!important;letter-spacing:-.02em!important;font-variant-numeric:tabular-nums!important;color:var(--hf-soft)!important}
@@ -102,8 +101,8 @@ body.v13 .cx-chart .tick{stroke:var(--hf-line-2)!important}
 body.v13 .cx-chart .cross{stroke:var(--hf-soft)!important;stroke-width:1!important;stroke-dasharray:2 3!important}
 body.v13 .cx-chart .dot{stroke:var(--hf-bg)!important;stroke-width:3!important;fill:var(--hf-warm)!important}
 body.v13 .cx-chart svg>path[stroke]{stroke:var(--hf-warm)!important;stroke-width:1.6!important}
-body.v13 .cx-chart stop{stop-color:var(--hf-warm)!important}
-body.v13 .cx-chart stop:first-child{stop-opacity:.26!important}
+/* The price line is drawn flat: the gradient fill under it is switched off. */
+body.v13 .cx-chart svg>path[fill^="url("]{fill:none!important}
 body.v13 .cx-chart__tip{position:absolute!important;top:0!important;pointer-events:none!important;transform:translateX(-50%)!important;background:var(--hf-ink)!important;border:0!important;border-radius:0!important;padding:6px 10px!important;font:600 12px/1.3 var(--hf-sans)!important;letter-spacing:-.02em!important;white-space:nowrap!important;color:var(--hf-bg)!important;box-shadow:none!important;font-variant-numeric:tabular-nums!important}
 body.v13 .cx-chart__tip span{display:block!important;color:var(--hf-bg)!important;opacity:.72!important;font-size:10px!important;line-height:1.6!important}
 body.v13 .cx-chart__loading{position:absolute!important;inset:8px 52px 30px 0!important;border-radius:0!important;background:linear-gradient(90deg,var(--hf-surface) 0%,var(--hf-surface-2) 45%,var(--hf-surface) 90%)!important;background-size:220% 100%!important;animation:cx-shimmer 1.6s ease-in-out infinite!important}
