@@ -12,17 +12,14 @@ const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
 const CHART_WARM = "#e9762b"; // --hf-warm, the V13 palette's only accent
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-const LOCAL_MARKS = Object.freeze({
-  AAPL: { src: "assets/icons/apple.svg", invert: true }, MSFT: { src: "assets/icons/microsoft.svg" },
-  NVDA: { src: "assets/icons/nvidia.svg", name: "NVIDIA" }, GOOGL: { src: "assets/icons/google.svg" }, GOOG: { src: "assets/icons/google.svg" },
-  TSLA: { src: "assets/icons/tesla.svg" }, META: { src: "assets/icons/meta.svg" }, ABNB: { src: "assets/icons/airbnb.svg" }
-});
+// Brand casing the SEC and Wikidata names don't carry.
+const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
 const POPULAR = [["NVDA", "NVIDIA"], ["AAPL", "Apple"], ["MSFT", "Microsoft"], ["GOOGL", "Alphabet"], ["AMZN", "Amazon"], ["META", "Meta Platforms"],
   ["TSLA", "Tesla"], ["AVGO", "Broadcom"], ["JPM", "JPMorgan Chase"], ["LLY", "Eli Lilly"], ["V", "Visa"], ["WMT", "Walmart"],
   ["XOM", "Exxon Mobil"], ["KO", "Coca-Cola"], ["NFLX", "Netflix"], ["COST", "Costco"]];
 
 const state = { seq: 0, ticker: "", range: "1Y", intel: null, intelError: null, profile: null, profileDone: false, insiders: null, insidersError: null,
-  news: null, newsLoading: false, market: {}, marketError: null, watch: null, annualMetric: "revenue", filingFilter: "all", insiderFilter: "all", hover: null };
+  news: null, newsLoading: false, market: {}, marketError: null, watch: null, photos: null, annualMetric: "revenue", filingFilter: "all", insiderFilter: "all", hover: null };
 
 /* ---------- formatting ---------- */
 const symbolFor = currency => currency && currency !== "USD" ? currency + " " : "$";
@@ -75,8 +72,13 @@ function displayName(raw, { short = false } = {}) {
   const parts = name.replace(/,/g, " ").split(" ").filter(Boolean);
   if (parts.length < 2) return /[a-z]/.test(name) ? name : titleCase(name);
   const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";
-  const [last, ...rest] = parts;
-  const fix = t => /^[A-Za-z]\.?$/.test(t) ? t.charAt(0).toUpperCase() + "." : /[a-z]/.test(t) && /[A-Z]/.test(t) ? t : titleCase(t);
+  // A surname particle ("ten Bosch", "VAN DYKE", "de la Rosa") stays with the surname.
+  let n = 1;
+  while (n < parts.length - 1 && /^(van|von|de|der|den|ten|ter|da|di|del|della|la|le|du|dos|das|st\.?)$/i.test(parts[n - 1])) n++;
+  const last = parts.slice(0, n).join(" "), rest = parts.slice(n);
+  // Particles keep the filer's case: "ten Bosch" stays lower case, "VAN DYKE" becomes "Van Dyke".
+  const fix = t => t.split(" ").map(w => /^[a-z]+$/.test(w) ? w : fix1(w)).join(" ");
+  const fix1 = t => /^[A-Za-z]\.?$/.test(t) ? t.charAt(0).toUpperCase() + "." : /[a-z]/.test(t) && /[A-Z]/.test(t) ? t : titleCase(t);
   const given = short && rest.length > 1 ? rest.filter((t, i) => i === 0 || !/^[A-Za-z]\.?$/.test(t)) : rest;
   return [...given.map(fix), fix(last), suffix ? (/^(II|III|IV|V)$/i.test(suffix) ? suffix.toUpperCase() : titleCase(suffix.replace(/\.$/, "")) + ".") : ""].filter(Boolean).join(" ");
 }
@@ -113,17 +115,28 @@ const commonsThumb = src => {
   const m = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png))$/i.exec(String(src || ""));
   return m ? `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/120px-${m[3]}` : src;
 };
-function personInfo(secName, short = false) {
-  const wiki = (state.profile?.people || []).find(p => matchesPerson(secName, p));
+const photoKey = (cik, name) => cik ? "cik:" + String(cik).replace(/^0+/, "") : "name:" + String(name || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+/* Photos come only from the server's verified map (Commons, company site, SEC proxy), which uses
+ * the strict name matcher plus a proven tie to this company, or from the small curated set;
+ * everyone else keeps initials. The name on Commons or the company's page reads better than the
+ * SEC filing order, so it is shown when the source gives one. */
+function personInfo(secName, short = false, ownerCik = null) {
+  const key = photoKey(ownerCik, secName);
+  const verified = state.photos?.photos?.[key];
   const curated = window.InsidirMedia?.photo?.(secName, state.ticker);
-  const photo = wiki?.photo?.src ? { src: wiki.photo.src, source: wiki.photo.source } : curated ? { src: commonsThumb(curated.src), source: curated.source } : null;
-  return { name: wiki?.name || displayName(secName, { short }), photo, wikidataUrl: wiki?.wikidataUrl || null };
+  const photo = verified?.src ? { src: verified.src, source: verified.sourceUrl, credit: verified.credit }
+    : curated ? { src: commonsThumb(curated.src), source: curated.source, credit: curated.credit + " · " + curated.license } : null;
+  const readable = n => typeof n === "string" && /[a-z]/.test(n) && n.length <= 60 ? n : null;
+  const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
+  return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
   const fallback = esc(initials(name).toUpperCase());
-  if (photo?.src && safeUrl(photo.src, ["wikimedia.org"])) {
-    return `<span class="${cls}" data-initials="${fallback}"><img src="${esc(photo.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+  const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
+  if (src) {
+    const credit = photo.credit ? `Photo: ${photo.credit}` : "";
+    return `<span class="${cls}" data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
   return `<span class="${cls}" aria-hidden="true">${fallback}</span>`;
 }
@@ -203,7 +216,7 @@ function stripLegal(name) {
 }
 /* Display name: brand casing for curated marks, the SEC's mixed-case name, then Wikidata's label. */
 function companyName() {
-  const local = LOCAL_MARKS[state.ticker]?.name;
+  const local = BRAND_NAMES[state.ticker];
   if (local) return local;
   const sec = state.intel?.company?.name, label = state.profile?.label;
   if (sec && /[a-z]/.test(sec)) return stripLegal(sec);
@@ -233,60 +246,28 @@ function renderIdentity() {
   if (state.intel || state.profile) document.title = `${name} (${state.ticker})${finite(quote()?.price) ? " " + money(quote().price, quote().currency, { precise: true }) : ""} — insidir.`;
   renderAbout();
 }
+/* Logos come from /v1/company/logo (server-resolved, same origin) and are prepared by
+ * brand-mark.js for this dark page: baked-in boxes removed, dark marks lifted. No tile, no
+ * stand-in letter: without a real logo the slot is hidden. */
 function renderLogo() {
-  const host = $("cx-logo");
-  const name = companyName();
-  const local = LOCAL_MARKS[state.ticker];
-  const remote = state.profile?.logo?.url && safeUrl(state.profile.logo.url, ["wikimedia.org"]);
-  const monogram = () => { host.className = "cx-logo is-monogram"; host.innerHTML = esc((name || state.ticker).replace(/^The /i, "").charAt(0).toUpperCase()); };
-  host.setAttribute("aria-label", name + " logo");
-  if (!local && !remote) { if (state.profileDone) monogram(); return; }
-  const src = local ? local.src : remote;
+  const host = $("cx-logo"), brand = host.closest(".cx-brand");
+  const src = "/v1/company/logo?ticker=" + encodeURIComponent(state.ticker);
+  host.setAttribute("aria-label", companyName() + " logo");
   if (host.dataset.src === src) return;
   host.dataset.src = src;
-  const img = new Image();
-  if (!local) img.crossOrigin = "anonymous";
-  img.alt = "";
-  img.decoding = "async";
-  img.referrerPolicy = "no-referrer";
-  img.onload = () => {
-    if (host.dataset.src !== src) return;
-    const cls = ["cx-logo"];
-    const ratio = img.naturalWidth / Math.max(1, img.naturalHeight);
-    if (ratio > 1.6) cls.push("is-wide");
-    if (local?.invert) cls.push("is-inverted");
-    else if (!local) {
-      const tone = logoTone(img);
-      if (tone === "dark-neutral") cls.push("is-inverted");
-      else if (tone === "dark-color") cls.push("is-tile");
-    }
-    host.className = cls.join(" ");
+  const seq = state.seq;
+  const prepare = window.InsidirBrand?.prepare;
+  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(mark => {
+    if (seq !== state.seq || host.dataset.src !== src) return;
+    brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
+    if (!mark) { host.hidden = true; host.replaceChildren(); return; }
+    const img = new Image();
+    img.alt = "";
+    img.src = mark.url;
+    host.className = "cx-logo";
+    host.hidden = false;
     host.replaceChildren(img);
-  };
-  img.onerror = () => { if (host.dataset.src === src) monogram(); };
-  img.src = src;
-}
-/* Logos drawn for light backgrounds would vanish on this dark page: detect dark marks. */
-function logoTone(img) {
-  try {
-    const c = document.createElement("canvas"), size = 48;
-    c.width = size; c.height = Math.max(8, Math.round(size / Math.max(.25, img.naturalWidth / Math.max(1, img.naturalHeight))));
-    const g = c.getContext("2d", { willReadFrequently: true });
-    g.drawImage(img, 0, 0, c.width, c.height);
-    const data = g.getImageData(0, 0, c.width, c.height).data;
-    let lum = 0, sat = 0, n = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 128) continue;
-      const r = data[i] / 255, gr = data[i + 1] / 255, b = data[i + 2] / 255;
-      lum += .2126 * r + .7152 * gr + .0722 * b;
-      sat += Math.max(r, gr, b) - Math.min(r, gr, b);
-      n++;
-    }
-    if (!n) return "light";
-    lum /= n; sat /= n;
-    if (lum >= .42) return n > c.width * c.height * .9 && lum > .9 ? "dark-color" : "light";
-    return sat < .18 ? "dark-neutral" : "dark-color";
-  } catch { return "dark-color"; } // Unreadable pixels: a light tile keeps any mark visible.
+  });
 }
 
 /* ---------- key facts ---------- */
@@ -511,7 +492,7 @@ function renderOverviewInsiders() {
   if (!state.insiders) { if (state.insidersError) host.innerHTML = `<p class="cx-empty">${esc(state.insidersError)}</p>`; return; }
   const rows = activity().slice(0, 4);
   host.innerHTML = rows.length ? rows.map(a => {
-    const p = personInfo(a.owner.name, true);
+    const p = personInfo(a.owner.name, true, a.owner.cik);
     return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
   }).join("") : '<p class="cx-empty">No Form 4 insider filings were found for this company.</p>';
 }
@@ -638,7 +619,7 @@ function renderInsiders() {
   ].join("");
   const rows = all.filter(a => state.insiderFilter === "all" || insiderGroup(a) === state.insiderFilter);
   $("cx-insiders-table").innerHTML = rows.length ? rows.map(a => {
-    const p = personInfo(a.owner.name);
+    const p = personInfo(a.owner.name, false, a.owner.cik);
     const extra = (a.transactions || []).length > 1 ? ` <small>${a.transactions.length} line items</small>` : "";
     const price = (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
@@ -655,16 +636,21 @@ function renderInsiders() {
 function renderPeople() {
   const secPeople = state.insiders?.people || [];
   $("cx-people-sec").innerHTML = state.insiders ? (secPeople.length ? secPeople.slice(0, 24).map(person => {
-    const p = personInfo(person.name);
+    const p = personInfo(person.name, false, person.cik);
     return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
       <a href="people.html?q=${encodeURIComponent(person.name)}">Search insider records →</a></div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
-  const leaders = (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
+  const serverLeaders = state.photos?.leaders?.length ? state.photos.leaders.filter(l => !l.insider || l.roles.includes("Founder")) : null;
+  const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
-  $("cx-people-wiki").innerHTML = leaders.map(p => `<article class="cx-person">${avatar(p.name, p.photo ? { src: p.photo.src } : null, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(p.roles.join(" · "))}</p>${safeUrl(p.wikidataUrl, ["wikidata.org"]) ? `<a href="${esc(safeUrl(p.wikidataUrl, ["wikidata.org"]))}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`).join("");
+  $("cx-people-wiki").innerHTML = leaders.map(p => {
+    const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
+    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Wikidata profile ↗</a>` : ""}</div></article>`;
+  }).join("");
 }
 
 /* ---------- news tab ---------- */
@@ -728,12 +714,26 @@ async function addToWatchlist() {
 const signIn = () => { location.href = "signin.html?next=" + encodeURIComponent(location.pathname + location.search); };
 
 /* ---------- load ---------- */
+/* Verified photos arrive from a background job; check back a few times while it works. */
+async function loadPhotos(seq, attempt = 0) {
+  try {
+    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 ? "&wait=2500" : ""));
+    if (seq !== state.seq) return;
+    state.photos = data;
+    renderOverviewInsiders(); renderInsiders(); renderPeople();
+    // Company sites are crawled politely (one request a second), so a first visit can take a few
+    // minutes; photos appear as each source finishes.
+    const delays = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
+    if (!data.complete && attempt < delays.length) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, delays[attempt]);
+  } catch { /* initials stay */ }
+}
 function resetView() {
   state.intel = null; state.intelError = null; state.profile = null; state.profileDone = false; state.insiders = null; state.insidersError = null;
-  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null;
+  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null;
   state.annualMetric = "revenue"; state.filingFilter = "all"; state.insiderFilter = "all";
   statusNotes.clear(); setStatus("");
-  $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
+  $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").hidden = false; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
+  $("cx-logo").closest(".cx-brand").classList.remove("is-wide-logo");
   $("cx-name").innerHTML = '<span class="cx-skel cx-skel--title"></span>';
   $("cx-description").innerHTML = '<span class="cx-skel"></span><span class="cx-skel"></span><span class="cx-skel cx-skel--short"></span>';
   $("cx-price").innerHTML = '<span class="cx-skel cx-skel--price"></span>'; $("cx-change").textContent = ""; $("cx-quote-meta").textContent = "Loading market data…";
@@ -768,9 +768,9 @@ async function load(ticker) {
   loadMarket(state.range, seq);
   getJSON("/v1/intelligence?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.intel = d; note("intel", (d.warnings || []).join(" ")); })
     .catch(e => { if (seq !== state.seq) return; state.intelError = e.status === 404 ? "This ticker is not in the SEC's official company list." : "SEC data is temporarily unavailable: " + e.message; note("intel", state.intelError); })
-    .finally(() => { if (seq !== state.seq) return; renderAll(); renderLogo(); });
+    .finally(() => { if (seq !== state.seq) return; renderAll(); });
   getJSON("/v1/company/profile?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.profile = d?.matched ? d : null; })
-    .catch(() => {}).finally(() => { if (seq !== state.seq) return; state.profileDone = true; renderAll(); renderLogo(); });
+    .catch(() => {}).finally(() => { if (seq !== state.seq) return; state.profileDone = true; renderAll(); });
   getJSON("/v1/company/insiders?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.insiders = d; })
     .catch(async e => {
       if (seq !== state.seq) return;
@@ -781,6 +781,7 @@ async function load(ticker) {
       } catch { state.insidersError = e.status === 404 ? "This ticker is not in the SEC's official company list." : "SEC ownership filings are temporarily unavailable."; }
     }).finally(() => { if (seq !== state.seq) return; renderOverviewInsiders(); renderInsiders(); renderPeople(); });
   renderLogo();
+  loadPhotos(seq);
   loadWatch(seq);
   setTimeout(() => { if (seq === state.seq) loadNews(seq); }, 2500);
 }
@@ -788,10 +789,13 @@ function showPicker() {
   $("cx-report").hidden = true; $("cx-picker").hidden = false;
   document.title = "Company research — insidir.";
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
-    const mark = LOCAL_MARKS[t];
-    const icon = mark ? `<span class="cx-mark-tile" aria-hidden="true"><img class="cx-mark${mark.invert ? " is-inverted" : ""}" src="${esc(mark.src)}" alt=""></span>` : avatar(n, null, "sm");
-    return `<a href="company.html?ticker=${encodeURIComponent(t)}">${icon}<div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
+    return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
+  for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
+    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
+      if (mark) slot.innerHTML = `<img src="${mark.url}" alt="">`; else slot.remove();
+    });
+  }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };
 

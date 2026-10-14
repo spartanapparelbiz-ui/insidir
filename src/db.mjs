@@ -29,6 +29,8 @@ export async function migrate() {
     await client.query(manualSchema);
     const followsSchema=await readFile(new URL("../sql/006_followed_people.sql",import.meta.url),"utf8");
     await client.query(followsSchema);
+    const mediaSchema=await readFile(new URL("../sql/007_entity_media.sql",import.meta.url),"utf8");
+    await client.query(mediaSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}
