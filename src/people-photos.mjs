@@ -11,7 +11,7 @@
 import { fetchImage, imageSize } from "./media.mjs";
 import { preparePhoto } from "./image-analysis.mjs";
 import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
-import { isEntityName, samePerson, nameTokens } from "./person-match.mjs";
+import { isEntityName, samePerson, nameTokens, givenVariants } from "./person-match.mjs";
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
 
@@ -32,7 +32,13 @@ const captionName = (secName, caption) => {
     const filed = new Map(String(secName || "").split(/\s+/).filter(Boolean).map(w => [wordKey(w), w]));
     name = name.split(" ").map(w => titleWord(filed.get(wordKey(w)) || w)).join(" ");
   }
-  return samePerson(secName, name) ? name : null;
+  if (!samePerson(secName, name)) return null;
+  // A caption cut short ("Suzanne Nora" for NORA JOHNSON SUZANNE M) still matches, but must not
+  // become the shown name: the first two filed words (surname, given name) must both appear,
+  // directly or as a nickname or prefix.
+  const shown = nameTokens(name);
+  const covered = t => shown.some(c => c === t || givenVariants(t).includes(c) || (t.length >= 3 && c.length >= 3 && (c.startsWith(t) || t.startsWith(c))));
+  return nameTokens(secName).slice(0, 2).filter(t => t.length > 1).every(covered) ? name : null;
 };
 const siteHost = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const COMPANY_TTL = 7 * DAY, PERSON_TTL = 90 * DAY;

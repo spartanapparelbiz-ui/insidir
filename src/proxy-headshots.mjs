@@ -129,8 +129,11 @@ export function findNames(text, people) {
           const first = words[words.length - k];
           const between = pre.slice(first.index);
           if (/[\n|;:]/.test(between)) break;           // the given name must sit on the same line
-          const caption = between.replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim() + " " + m[0];
+          let caption = between.replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim() + " " + m[0];
           if (!matchesCaption(p, caption)) continue;
+          // A two-word surname continues past the matched word ("suzanne nora" + "johnson").
+          const next = /^\s+([a-z]+)/.exec(low.slice(m.index + m[0].length, m.index + m[0].length + 30))?.[1];
+          if (next && nameTokens(p.secName).includes(next.toUpperCase()) && !caption.split(" ").includes(next)) caption += " " + next;
           const pos = m.index - (pre.length - first.index);
           const hit = byPos.get(m.index) || { pos, end: m.index + m[0].length, caption, people: new Set() };
           hit.people.add(p.id);
