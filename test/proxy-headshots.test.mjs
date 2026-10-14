@@ -231,4 +231,11 @@ test("director profile layout: name and role words, then the portrait, then the 
   assert.equal(people[by["x31.jpg"].personId].personName, "Jolla Alice L.");
   assert.equal(by["x32.jpg"].personId, null, "an unknown director's profile is not paired with a known name");
   assert.notEqual(by["x40.jpg"].rule, "before-profile", "a name in running text is not a profile caption");
+  // An executive title between the name and the portrait is fine; another name there is not.
+  const exec = `<p>Susan Li - Chief Financial Officer</p><img src="li.jpg" height="90" width="80"><p>Age 40</p>
+    <p>Susan Li and Pat Unknown</p><img src="pair.jpg" height="90" width="80"><p>Age 52</p>`;
+  const ppl = buildPeople([{ name: "LI SUSAN J", cik: "3" }]);
+  const r = Object.fromEntries(pairPortraits(tokenize(exec), ppl, new Set(["li.jpg", "pair.jpg"])).placements.map(p => [p.file, p]));
+  assert.equal(r["li.jpg"].rule, "before-profile");
+  assert.equal(r["pair.jpg"].personId, null);
 });

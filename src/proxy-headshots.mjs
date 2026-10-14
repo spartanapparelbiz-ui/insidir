@@ -313,7 +313,11 @@ export function pairPortraits(tokens, people, files) {
         // A portrait followed by "Age 60 / Director since" belongs to the name printed before it;
         // a name further on is someone else (or this person's bio mentioning a colleague).
         const profile = PROFILE_AFTER.test(c.after.slice(0, 80).replace(/\s+/g, " "));
-        if (profile) { if (lb && profileBefore(c, lb)) { personId = single(lb); rule = "before-profile"; caption = lb.caption; confidence = "high"; } else rule = "profile-unknown"; }
+        if (profile) {
+          if (lb && profileBefore(c, lb)) { personId = single(lb); rule = "before-profile"; caption = lb.caption; confidence = "high"; }
+          else if (allowBefore && !c.blocked && lb) { personId = single(lb); rule = "before"; caption = lb.caption; confidence = "medium"; }
+          else rule = "profile-unknown";
+        }
         else if (h && h.pos <= AFTER_WINDOW) { personId = single(h); rule = "after"; caption = h.caption; confidence = "high"; }
         else if (allowBefore && !c.blocked && c.beforeHits.length && !personLikeLine(c.after.slice(0, 120))) {
           const hb = c.beforeHits.at(-1);
@@ -332,17 +336,23 @@ export function pairPortraits(tokens, people, files) {
   return { placements, runs };
 }
 
-/* Director profile layout: "Alice L. Jolla INDEPENDENT [portrait] Age 60 Director since 2023".
- * The full name ends at most a few role words before the portrait and the text after it opens
- * with the age or tenure line, so the portrait belongs to that name whatever the rest of the
- * document does. */
-const PROFILE_GAP = /^[\s,|•·–—-]*(?:(?:lead\s+)?independent(?:\s+director)?|non-?executive|chair(?:man|woman|person)?(?:\s+of\s+the\s+board)?|vice\s+chair|director(?:\s+nominee)?|nominee|president|ceo|founder|co-founder|[\s,|•·–—-]+)*$/i;
+/* Profile layout: "Alice L. Jolla INDEPENDENT [portrait] Age 60 Director since 2023", or "Susan Li -
+ * Chief Financial Officer [portrait] Age 40". The full name is followed only by role and title
+ * words (so another person's name can never be skipped over) and the text after the portrait
+ * opens with the age or tenure line, so the portrait belongs to that name whatever the rest of
+ * the document does. */
+const TITLE_WORDS = new Set(("independent lead non executive nonexecutive chair chairman chairwoman chairperson vice director directors nominee " +
+  "president ceo cfo coo cto cio clo cao cmo cpo evp svp vp chief officer financial operating technology technical legal accounting marketing " +
+  "people human resources information product products commercial strategy strategic business global group corporate general counsel " +
+  "secretary treasurer controller founder cofounder co senior managing partner of the board and & emeritus former interim acting principal " +
+  "administrative communications affairs public policy government risk compliance digital data security transformation operations sales " +
+  "growth revenue investment investor relations audit development research science scientific medical innovation engineering").split(" "));
 const PROFILE_AFTER = /^[\s|•·]*(?:age[:\s]+\d{2}\b|director\s+since\b|\d{2}\s*years?\s+old\b)/i;
 function profileBefore(c, hit) {
-  if (hit.dist > 60) return false;
+  if (hit.dist > 90) return false;
   // Hit positions index the folded text.
-  const gap = c.beforeFolded.slice(hit.end).replace(/\s+/g, " ");
-  return PROFILE_GAP.test(gap) && PROFILE_AFTER.test(c.after.slice(0, 80).replace(/\s+/g, " "));
+  const words = c.beforeFolded.slice(hit.end).replace(/[^a-z&]+/g, " ").trim().split(" ").filter(Boolean);
+  return words.length <= 10 && words.every(w => TITLE_WORDS.has(w));
 }
 
 /* Per-file majority vote and per-person ranked candidate files. */
