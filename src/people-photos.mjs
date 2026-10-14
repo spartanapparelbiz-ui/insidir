@@ -1,8 +1,10 @@
-/* Real photos for the people on a company report, from the strongest sources first:
+/* Real photos for the people on a company report. Sources:
  *  1. Wikidata/Commons people linked to the company (free licence, statement-level tie)
  *  2. the company's own leadership and board pages (verified domain, one image per card)
  *  3. headshots printed in the company's SEC proxy statement (DEF 14A)
- * Every match goes through the strict person matcher and must be tied to this company; a name
+ *  4. the same person's captioned headshot in another company's proxy (same SEC owner CIK)
+ * Commons answers first; an official headshot (company page, then proxy) replaces a Commons
+ * picture when both exist. Every match goes through the strict person matcher and must be tied to this company; a name
  * alone never attaches a photo. People without a verified photo keep their initials: no
  * generated or guessed faces. A verified photo is reused wherever the same SEC reporting owner
  * (by CIK) appears. Work runs in the background and the page receives results as they land. */
@@ -195,9 +197,11 @@ async function runJob(ticker, company) {
   const failed = e => ({ status: "error", message: String(e?.message || e).slice(0, 120), matches: [] });
   const personFor = m => people.find(p => (m.key && p.key === m.key) || (m.ownerCik && p.cik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
   const leaderFor = m => m.key?.startsWith("wd:") ? state.leaders.find(l => l.key === m.key) : null;
-  // The company's own page beats a proxy picture and a weak Commons one; a proxy beats a weak one.
-  const replaceable = current => !current || current.source === "sec-proxy" || current.weak;
-  const proxyReplaceable = current => !current || current.weak;
+  // Official headshots read best side by side: the company's own page beats a proxy picture and
+  // any Commons one (often an event photo), and a proxy headshot beats a Commons picture. Commons
+  // stays for everyone the company does not picture itself.
+  const replaceable = current => !current || current.source === "sec-proxy" || current.source === "wikimedia";
+  const proxyReplaceable = current => !current || current.source === "wikimedia";
   const leaderPhoto = (leader, photo) => { Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit }); delete leader.weak; };
 
   const applySite = async site => {
