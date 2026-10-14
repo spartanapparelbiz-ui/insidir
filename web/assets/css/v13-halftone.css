@@ -109,7 +109,7 @@ body.v13 a{color:inherit!important;text-decoration-color:var(--hf-line-2)!import
 body.v13 a:hover{color:var(--hf-warm)!important;text-decoration-color:currentColor!important}
 /* Inside the product the orange accent stays out of the chrome: hovers brighten to ink, primary buttons to soft ink.
    Green and red are reserved for market direction (--hf-up / --hf-down). */
-body.v13.app-body a:hover{color:var(--hf-ink)!important}
+body.v13:is(.app-body,.v3-app) a:hover{color:var(--hf-ink)!important}
 body.v13 code,body.v13 kbd,body.v13 pre{font-family:var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-surface)!important;border-radius:0!important}
 body.v13 strong,body.v13 b{color:var(--hf-ink)!important}
 body.v13 small{color:var(--hf-muted)!important}
@@ -216,7 +216,7 @@ body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-
   background:var(--hf-ink)!important;color:var(--hf-bg)!important;border:1px solid var(--hf-ink)!important}
 body.v13 :is(.btn--dark,.v9-btn--ink,.cx-btn--primary,.v3-price__button:not(.v3-price__button--secondary),.v3-static__cta,.v3-account__button,.auth-btn,.cl-form button,.v3-searchbox button,.v3-intro>a,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button,.v9-desk__search button):hover{
   background:var(--hf-warm)!important;border-color:var(--hf-warm)!important;color:var(--hf-bg)!important}
-body.v13.app-body :is(.btn--dark,.cx-btn--primary,.v3-account__button,.cl-form button,.v3-searchbox button,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button):hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
+body.v13:is(.app-body,.v3-app) :is(.btn--dark,.cx-btn--primary,.v3-account__button,.cl-form button,.v3-searchbox button,.v4-inspector__cta,.cx-picker__form button,.research-search button,:where(#manual-form) button):hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13 .btn--dark::after{display:none!important}
 /* secondary: hairline */
 body.v13 :is(.btn--light,.btn--ghost,.v9-btn--outline,.v9-btn--light,.v12-outline-button,.cx-btn:not(.cx-btn--primary),.v3-price__button--secondary,.cl-more){background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
