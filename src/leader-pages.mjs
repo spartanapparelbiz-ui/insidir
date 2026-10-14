@@ -40,8 +40,9 @@ export const IR_HOSTS = ["investors", "ir", "investor"];
 export const IR_PATHS = ["/governance/management", "/governance/board-of-directors", "/corporate-governance/management"];
 const GENERIC_PATH = /^\/(about|about-us|company|team)\/?$/i;
 // "management" alone is a product word (talent management); only management team/page counts.
-const KEYWORDS = /leadership|leaders\b|management[- ]team|\/management\/?$|^management$|board|executive|officers|directors|governance|bios\b|our[- ]people|our[- ]team|meet[- ]the[- ]team|who[- ]we[- ]are/i;
-const STRONG = /leadership|leaders\b|board-of-directors|board|directors|executive-(?:team|bios|leadership|officers)|executives|management-team|\/management\/?$|officers|bios\b|our-team/i;
+// Word-bounded: retail sites link "Keyboards", "Skateboards" or "Cheerleaders" categories.
+const KEYWORDS = /leadership|\bleaders\b|management[- ]team|\/management\/?$|^management$|\bboard\b|\bboard[- ]of[- ]directors|\bexecutives?\b|\bofficers\b|\bdirectors\b|\bgovernance\b|\bbios\b|our[- ]people|our[- ]team|meet[- ]the[- ]team|who[- ]we[- ]are/i;
+const STRONG = /leadership|\bleaders\b|board-of-directors|\bboard\b|\bdirectors\b|executive-(?:team|bios|leadership|officers)|\bexecutives\b|management-team|\/management\/?$|\bofficers\b|\bbios\b|our-team/i;
 const SKIP_LINK = /\.(pdf|jpe?g|png|gif|svg|zip|docx?|xlsx?|mp4)$|committee|charter|guideline|policy|policies|news|press|event|career|job|login|signin|contact|privacy|terms|cookie|sitemap|search|subscribe|webcast|presentation|sec-filings|stock|dividend|quarterly|annual-report|esg|sustainab/i;
 
 /* ---------------- names ---------------- */

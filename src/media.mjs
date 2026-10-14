@@ -68,7 +68,7 @@ export async function fetchImage(url, { maxBytes = 1_500_000, timeoutMs = 8000, 
         current = new URL(response.headers.get("location"), current).href;
         continue;
       }
-      if (!response.ok) throw Object.assign(new Error("Image responded " + response.status), { upstreamStatus: response.status });
+      if (!response.ok) throw Object.assign(new Error("Image responded " + response.status), { upstreamStatus: response.status, retryAfter: response.headers.get("retry-after") });
       const declared = Number(response.headers.get("content-length") || 0);
       if (declared > maxBytes) throw new Error("Image too large");
       const reader = response.body.getReader(), chunks = [];

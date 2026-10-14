@@ -38,9 +38,39 @@ async function store(bytes, type) {
 /* Commons portraits that are full-length or tiny are passed over for a better source. Company
  * sites get the page as Referer (many refuse hotlinked images without it). */
 async function fromUrl(url, { referer, userAgent = "InsidirResearch/1.0 (spartanapparelbiz@gmail.com)" } = {}) {
-  const image = await fetchImage(url, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent, headers: referer ? { Referer: referer } : {} });
+  const image = await politeImage(url, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent, headers: referer ? { Referer: referer } : {} });
   if (!["png", "jpeg", "webp", "gif"].includes(image.type)) throw new Error("Not a photo");
   return { saved: await store(image.bytes, image.type), size: imageSize(image.bytes, image.type) };
+}
+/* Wikimedia throttles bursts of thumbnail requests (HTTP 429), and every company's job fetches
+ * from it: one request at a time per host with a short gap, and a 429/503 waits out
+ * Retry-After (bounded) before retrying. A failure that may be temporary is marked so the
+ * company's result expires soon and is tried again. */
+const imageLanes = new Map();
+const IMAGE_GAP = { "upload.wikimedia.org": 400 };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+export const transientImageError = e => [429, 500, 502, 503, 504].includes(e?.upstreamStatus) || /abort|timeout|fetch failed|ECONNRESET|ETIMEDOUT/i.test(String(e?.name) + " " + String(e?.message));
+async function politeImage(url, options) {
+  let host = "";
+  try { host = new URL(url).hostname; } catch { /* fetchImage rejects it */ }
+  const gap = IMAGE_GAP[host];
+  if (!gap) return fetchImage(url, options);
+  const lane = imageLanes.get(host) || { tail: Promise.resolve(), next: 0 };
+  imageLanes.set(host, lane);
+  const run = lane.tail.then(async () => {
+    for (let attempt = 0; ; attempt++) {
+      const wait = lane.next - Date.now();
+      if (wait > 0) await sleep(wait);
+      try { return await fetchImage(url, options); }
+      catch (e) {
+        if (attempt >= 2 || ![429, 503].includes(e?.upstreamStatus)) throw e;
+        const seconds = Math.min(30, Math.max(2, Number(e.retryAfter) || 5 * (attempt + 1)));
+        lane.next = Date.now() + seconds * 1000;
+      } finally { lane.next = Math.max(lane.next, Date.now() + gap); }
+    }
+  });
+  lane.tail = run.catch(() => {});
+  return run;
 }
 /* A proxy match carries an already prepared photo; it is used only while its bytes are still
  * stored, otherwise the original portrait is prepared again. */
@@ -52,7 +82,9 @@ async function proxyPhoto(m) {
 
 function publish(state) {
   state.updatedAt = new Date().toISOString();
-  return putRecord("company-photos", state.cik, state, state.complete ? COMPANY_TTL : 10 * 60 * 1000);
+  // A run where a source or image failed temporarily is redone after half an hour.
+  const ttl = !state.complete ? 10 * 60 * 1000 : state.transient ? 30 * 60 * 1000 : COMPANY_TTL;
+  return putRecord("company-photos", state.cik, state, ttl);
 }
 
 async function runJob(ticker, company) {
@@ -81,7 +113,8 @@ async function runJob(ticker, company) {
   if (wikidata?.wikidataPhotos) {
     try {
       const result = await wikidata.wikidataPhotos({ cik: company.cik, companyName: company.name, insiders: people });
-      state.sources.wikidata = { status: "ok", matched: result.matches?.length || 0 };
+      state.sources.wikidata = { status: result.complete === false ? "partial" : "ok", matched: result.matches?.length || 0 };
+      if (result.complete === false) state.transient = true;
       for (const m of result.matches || []) {
         const person = people.find(p => p.key === keyFor({ cik: m.ownerCik, name: m.ownerName || m.personName }) || (m.ownerCik && String(p.cik).replace(/^0+/, "") === String(m.ownerCik).replace(/^0+/, "")));
         // The Wikidata name reads better than the filing ("NORA JOHNSON SUZANNE M"), photo or not.
@@ -92,10 +125,10 @@ async function runJob(ticker, company) {
           // Prefer another source over a full-length or tiny Commons picture.
           if (size && (size.width / size.height > 1.6 || Math.min(size.width, size.height) < 200)) { person.commonsFallback = { saved, m }; continue; }
           await assign(person, { src: saved.url, source: "wikimedia", sourceUrl: m.photo.source || m.photo.src, credit: m.photo.credit || "Wikimedia Commons", personName: m.personName, rule: m.rule || "wikidata", confidence: "high" });
-        } catch { /* image unreachable now; other sources may still cover this person */ }
+        } catch (e) { if (transientImageError(e)) state.transient = true; /* other sources may still cover this person */ }
       }
       leaders = result.leaders || [];
-    } catch (e) { state.sources.wikidata = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
+    } catch (e) { state.transient = true; state.sources.wikidata = { status: "error", message: String(e?.message || e).slice(0, 120) }; }
   }
   await publish(state);
 
@@ -107,7 +140,7 @@ async function runJob(ticker, company) {
       try {
         const { saved } = await fromUrl(leader.photo.large || leader.photo.src);
         photo = { src: saved.url, source: "wikimedia", sourceUrl: leader.photo.source, credit: leader.photo.credit || "Wikimedia Commons" };
-      } catch { /* the page or proxy may still have one */ }
+      } catch (e) { if (transientImageError(e)) state.transient = true; /* the page or proxy may still have one */ }
     }
     state.leaders.push({ key: "wd:" + (leader.qid || leader.name), name: leader.name, qid: leader.qid || null, roles: leader.roles || [], current: leader.current !== false,
       wikidataUrl: leader.wikidataUrl || null, src: photo?.src || null, source: photo?.source || null, sourceUrl: photo?.sourceUrl || null, credit: photo?.credit || null,
@@ -129,6 +162,7 @@ async function runJob(ticker, company) {
   const replaceable = current => !current || current.source === "sec-proxy";
 
   const applySite = async site => {
+    if (site.status === "error") state.transient = true;
     state.sources.companySite = { status: site.status, matched: site.matches?.length || 0, pages: (site.pages || []).slice(0, 5), ...(site.message ? { message: site.message } : {}) };
     for (const m of site.matches || []) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
@@ -138,11 +172,12 @@ async function runJob(ticker, company) {
         const photo = { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : ""), personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high" };
         if (person) await assign(person, photo, { replace: true });
         else Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit });
-      } catch { /* try the next source */ }
+      } catch (e) { if (transientImageError(e)) state.transient = true; /* try the next source */ }
     }
     await publish(state);
   };
   const applyProxy = async proxy => {
+    if (proxy.status === "error") state.transient = true;
     state.sources.secProxy = { status: proxy.status, matched: proxy.matches?.length || 0, accession: proxy.accession || null, ...(proxy.message ? { message: proxy.message } : {}) };
     const credit = "SEC proxy statement (DEF 14A" + (proxy.filedAt ? ", filed " + proxy.filedAt : "") + ")";
     for (const m of proxy.matches || []) {
