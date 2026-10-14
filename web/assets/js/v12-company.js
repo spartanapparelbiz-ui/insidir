@@ -10,6 +10,7 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const finite = v => typeof v === "number" && Number.isFinite(v);
 const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
+const CHART_WARM = "#e9762b"; // --hf-warm, the V13 palette's only accent
 const EXT = '<svg class="cx-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Brand casing the SEC and Wikidata names don't carry.
 const BRAND_NAMES = Object.freeze({ NVDA: "NVIDIA" });
@@ -352,8 +353,9 @@ function drawChart() {
   for (let k = 0, n = Math.round((hi - lo) / tickStep); k <= n; k++) ticks.push(lo + k * tickStep);
   const x = i => padL + (i / (pts.length - 1)) * w;
   const y = v => padT + (1 - (v - lo) / (hi - lo)) * h;
-  const up = (data.rangeChange ?? (closes.at(-1) - closes[0])) >= 0;
-  const color = up ? "#22c56a" : "#ff5f5f";
+  // V13 Halftone: the chart always draws in the palette's one warm colour (--hf-warm); direction is
+  // carried by the signed change figures above it, not by a second hue.
+  const color = CHART_WARM;
   const line = pts.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
   const area = line + `L${x(pts.length - 1).toFixed(1)} ${padT + h}L${x(0).toFixed(1)} ${padT + h}Z`;
   const tz = data.timezone || "America/New_York";
@@ -552,7 +554,7 @@ function renderFinancials() {
     for (const [label, id] of defs) {
       const xs = annual(id);
       if (!xs.length) continue;
-      out += `<tr><td>${esc(label)}</td>${periods.map(end => { const r = xs.find(p => p.periodEnd === end); return `<td class="num">${r ? `<a href="${esc(secUrl(r.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc((r.form || "Annual report") + " filed " + day(r.filedAt))}">${esc(money(r.value, cur))}</a>` : "—"}</td>`; }).join("")}</tr>`;
+      out += `<tr><td>${esc(label)}</td>${periods.map(end => { const r = xs.find(p => p.periodEnd === end); return `<td class="num${r && Number(r.value) < 0 ? " is-down" : ""}">${r ? `<a href="${esc(secUrl(r.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc((r.form || "Annual report") + " filed " + day(r.filedAt))}">${esc(money(r.value, cur))}</a>` : "—"}</td>`; }).join("")}</tr>`;
     }
     $("cx-statements").innerHTML = out + "</tbody></table>";
   }

@@ -11,11 +11,32 @@ npm start            # full engine: API under /v1 and the website on every other
 
 Without the engine, the product screens show their built-in sample data, and the sign-in and sign-up forms drop into a preview of the dashboard. With the engine running, those forms call `POST /v1/auth/login` and `POST /v1/auth/register`, and the company page's "Add to watchlist" calls `POST /v1/me/watchlist`.
 
+## Design system: V13 "Halftone"
+
+Every page shares one print-grain dark identity, taken from the reference footer the client supplied:
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--hf-bg` | `#0c0c0b` | night paper, every background |
+| `--hf-ink` | `#e9e4da` | text, rules, dots at rest, primary buttons |
+| `--hf-warm` | `#e9762b` | heat only: live dots, chart line, hover, losses and sales, the wordmark's dot |
+| `--hf-surface` / `--hf-surface-2` / `--hf-raise` | ink 4 % / 7 % / 10 % over paper | panels, tiles, inputs |
+| `--hf-line` / `--hf-line-2` | ink 16 % / 24 % | hairline rules and borders |
+| `--hf-faint` / `--hf-muted` / `--hf-soft` | ink 54 % / 55 % / 75 % | labels (4.7:1), secondary copy (5.2:1), soft copy |
+
+Type is JetBrains Mono (`--hf-mono`) for tracked uppercase micro-labels (10.5px, letter-spacing .18em), navigation, buttons, table heads, badges and sentence-case captions, and Inter (`--hf-sans`) at 700–800 with -.05em tracking for headings, numbers and the `insidir` wordmark, whose full stop is set in warm. Corners are square, rules are 1px hairlines, nothing casts a shadow, photographs are grayscale with a hint of sepia, and a fine grain sits over the whole page.
+
+`assets/css/v13-halftone.css` holds the tokens and the shared primitives (navigation, product header, buttons, inputs, tables, panels, signals, charts, the footer). It lives in the `insidir-v13` cascade layer and every declaration is `!important`: important declarations in a layer beat the unlayered `!important` rules of the older v2–v12 stylesheets regardless of specificity, so the identity is applied without editing them. The per-family files (`v13-home.css`, `v13-app.css`, `v13-desk.css`, `v13-auth.css`, `v13-static.css`, `v13-company.css`, `v13-notfound.css`) follow the same rule. Keep it when adding styles: new rules go inside the family file's `@layer insidir-v13{}` block, prefixed with `body.v13`, every declaration `!important`, colours only through the tokens.
+
+The landing page's first screen is the halftone wordmark hero (`section.v13-hero[data-halftone-hero]`): `assets/js/v13-halftone.js` sets `insidir` at a size that fills the width, cropped by the bottom edge, and prints it as dots sized by how much of the letter covers each 6px cell. Dots part around the pointer on springs and warm toward the accent as they are pushed; a click sends a ring through the word; everything sleeps once the dots are home and pauses off-screen; `prefers-reduced-motion` prints it still. The engine reads its colours from `--hwf-bg`, `--hwf-ink` and `--hwf-warm`, and the word, crop, dot gap and push radius from `data-` attributes. It is deliberately used nowhere else — every page ends with the plain tracked footer (`footer.v13-footer--plain`).
+
+`node scripts/v13-palette-audit.mjs` is the acceptance gate (CI runs it after the layout check): it renders every page at 1440px and 390px in headless Chromium with the `/v1` routes mocked, and fails on any computed colour that is not a blend of the three identity colours, text below 4.5:1 contrast (3:1 for large text), serif or system fonts on visible text, horizontal overflow, browser errors, a missing plain footer, a landing hero whose wordmark did not draw, or a dotted wordmark on any other page. `--pages`, `--widths`, `--shots dir` and `--json file` narrow it and keep screenshots for review.
+
 ## Pages
 
 | Page | File | Notes |
 | --- | --- | --- |
-| Landing | `index.html` | Scroll-scrubbed scenes. The hero photo splits into doors that open onto the skyline. A ticker strip and word-by-word reading lead into a card deal and aperture-lens reveals. Research cards stand up, and an outlined records marquee runs behind its section. The bronze bull charges in, then the closing call to action opens like a portal (styles and scripts in `fx-top`, `fx-mid` and `fx-end`) |
+| Landing | `index.html` | Opens on the halftone wordmark hero, then the live SEC research preview, company logo wall, feature cards, imported-disclosure feed, research flow, plans, FAQ and closing call to action (`v12-home.css`, `v13-home.css`, `v12-home.js`) |
 | Pricing | `pricing.html` | Free and Pro plans, comparison table, FAQ |
 | Sign in / Sign up | `signin.html`, `signup.html` | Wired to the engine's auth API, with client-side validation |
 | Dashboard | `dashboard.html` | Market cards, insider activity filter, watchlist, filings, political trades |
@@ -32,11 +53,14 @@ web/
   assets/css/base.css     design tokens, type, buttons, forms, navigation, motion primitives
   assets/css/app.css      product UI: panels, tables, tabs, segmented controls, charts
   assets/css/<page>.css   page layout
+  assets/css/v13-halftone.css   the V13 identity: tokens and shared primitives (loaded last on every page)
+  assets/css/v13-<family>.css   per-family V13 layout detail (home, app, desk, auth, static, company, notfound)
+  assets/js/v13-halftone.js     halftone wordmark engine (landing hero) and the footer's back-to-top
   assets/js/motion.js     scroll animation engine (declarative data attributes)
   assets/js/site.js       mobile menu, accordions, toasts
   assets/js/app.js        product header, charts, sparklines, monogram avatars, API helper
   assets/js/<page>.js     page behaviour and sample data
-  assets/fonts/           Source Serif 4 and Inter (variable, latin + latin-ext, SIL OFL)
+  assets/fonts/           Inter, JetBrains Mono and Source Serif 4 (variable, latin + latin-ext, SIL OFL)
   assets/img/             photography
   assets/icons/           favicon and company marks
 ```

@@ -9,7 +9,7 @@
   const date=value=>{if(!value)return "—";const d=new Date(value);return Number.isNaN(d.getTime())?"—":d.toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});};
   const sourceURL=value=>{try{const u=new URL(String(value));return u.protocol==="https:"&&
     (u.hostname==="www.sec.gov"||u.hostname==="sec.gov")?u.toString():null;}catch{return null;}};
-  const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.style.color=isError?"var(--red)":"var(--muted)";};
+  const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.classList.toggle("is-error",Boolean(isError));};
   async function request(path,options={}){
     const res=await fetch(path,{credentials:"same-origin",headers:{
       Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{})},...options});
@@ -23,10 +23,10 @@
     const rows=items.map(item=>{
       const ticker=String(item.ticker||"").toUpperCase();
       if(!validTicker(ticker))return "";
-      return '<tr><td><strong>'+escapeHTML(ticker)+'</strong><small>Entered manually</small></td>'+
-        '<td>'+escapeHTML(qty(item.quantity))+'</td><td>'+escapeHTML(date(item.updated_at))+'</td>'+
-        '<td><a class="portfolio-small-link" href="research.html?ticker='+encodeURIComponent(ticker)+'">View SEC research →</a></td>'+
-        '<td><button class="manual-remove" type="button" data-remove-ticker="'+escapeHTML(ticker)+'" aria-label="Remove '+escapeHTML(ticker)+'">Remove</button></td></tr>';
+      return '<tr><td data-label="Ticker"><strong>'+escapeHTML(ticker)+'</strong><small>Entered manually</small></td>'+
+        '<td data-label="Shares entered">'+escapeHTML(qty(item.quantity))+'</td><td data-label="Last edited">'+escapeHTML(date(item.updated_at))+'</td>'+
+        '<td data-label="Research"><a class="portfolio-small-link" href="research.html?ticker='+encodeURIComponent(ticker)+'">View SEC research →</a></td>'+
+        '<td class="manual-holdings-table__remove"><button class="manual-remove" type="button" data-remove-ticker="'+escapeHTML(ticker)+'" aria-label="Remove '+escapeHTML(ticker)+'">Remove</button></td></tr>';
     }).join("");
     host.innerHTML='<div class="portfolio-table-scroll"><table class="portfolio-table manual-holdings-table">'+
       '<caption class="sr-only">Stocks you entered manually</caption><thead><tr><th>Ticker</th><th>Shares entered</th><th>Last edited</th><th>Research</th><th></th></tr></thead>'+
@@ -41,9 +41,9 @@
         const ticker=String(item.ticker||"");
         const category=item.category==="reported_purchase"?"Reported purchase":item.category==="reported_sale"?"Reported sale":"Other Form 4 transaction";
         const link=sourceURL(item.source_url);
-        return '<tr><td><strong>'+escapeHTML(ticker)+'</strong><small>Ticker-only match</small></td>'+
-          '<td>'+escapeHTML(category)+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></td>'+
-          '<td>'+escapeHTML(date(item.published_at))+'</td><td>'+
+        return '<tr><td data-label="Ticker"><strong>'+escapeHTML(ticker)+'</strong><small>Ticker-only match</small></td>'+
+          '<td data-label="Published event">'+escapeHTML(category)+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></td>'+
+          '<td data-label="Filed">'+escapeHTML(date(item.published_at))+'</td><td data-label="Original source">'+
           (link?'<a class="portfolio-small-link" href="'+escapeHTML(link)+'" rel="noopener noreferrer" target="_blank">SEC filing ↗</a>':'Source unavailable')+
           '</td></tr>';
       }).join("")+'</tbody></table></div>';

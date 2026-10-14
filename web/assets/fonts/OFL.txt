@@ -1,5 +1,6 @@
 Source Serif 4: Copyright 2014-2023 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
 Inter: Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter).
+JetBrains Mono: Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono).
 
 The font files in this directory are subsets distributed by Google Fonts and are
 licensed under the SIL Open Font License, Version 1.1, reproduced below.
