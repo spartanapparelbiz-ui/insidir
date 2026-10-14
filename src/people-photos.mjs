@@ -158,6 +158,9 @@ async function runJob(ticker, company) {
   // Leadership without Form 4 filings (founders, chair, directors) for the People tab, with their
   // Commons portrait when they have one; the company's page and the proxy fill the gaps below.
   for (const leader of leaders) {
+    // Wikidata keeps some roles open after people leave; its own description often says so
+    // ("former CEO of Yum! Brands"). Founders stay listed as founders.
+    if (/\bformer\b/i.test(leader.description || "") && !(leader.roles || []).includes("Founder")) continue;
     let photo = null;
     if (leader.photo?.src) {
       try {
