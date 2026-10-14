@@ -13,7 +13,8 @@
        outline, decoration, fill, stroke, shadow, accent colours and ::before/::after/::marker are
        read, also for its descendants; the same again for menu items once the menus are open;
      - orange pixels on screen: viewport screenshots at the top, middle and bottom of the page (and
-       with the menus open) are searched for clusters of orange pixels, ignoring real photographs
+       with the menus open, text glyphs made transparent for the capture because their colour is read
+       exactly above) are searched for clusters of orange pixels, ignoring real photographs
        and company logos (<img>, <picture>, <video>), and each cluster names the element under it;
      - any serif or unexpected font family on visible text, horizontal overflow, uncaught browser
        errors, text whose WCAG contrast against its background falls below 4.5:1 (3:1 for large
@@ -433,11 +434,30 @@ function decodePNG(buf) {
   }
   return { width, height, ch, data: out };
 }
+/* Screenshots for the pixel pass show no text: every glyph (HTML and SVG text) is made transparent for the
+   moment of the capture. Text colour is checked exactly from computed styles (palette scan, forced states);
+   glyph edges can carry subpixel (LCD) colour fringes on some machines (GitHub's runners), which would read
+   as orange. Everything else (dot fields, canvases, fills, borders, icons, images) is captured as painted.
+   The rule sits in the insidir-v13 layer with id-level specificity (:is() takes its heaviest argument), so it
+   outranks the site's own !important rules. */
+async function textlessShot(page) {
+  await page.evaluate(() => new Promise(done => {
+    document.documentElement.setAttribute("data-hf-pixel-pass", "");
+    const s = document.createElement("style"); s.id = "hf-pixel-pass-style";
+    s.textContent = "@layer insidir-v13{:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::before,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::after,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::marker{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important;transition:none!important}" +
+      ":is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) svg :is(text,tspan){fill:transparent!important;stroke:transparent!important}}";
+    document.head.appendChild(s);
+    requestAnimationFrame(() => requestAnimationFrame(done));
+  }));
+  try { return await page.screenshot({ type: "png" }); }
+  finally { await page.evaluate(() => { document.documentElement.removeAttribute("data-hf-pixel-pass"); document.getElementById("hf-pixel-pass-style")?.remove(); }); }
+}
 /* Orange pixels (r > 110, r − g > 35, g − b > 15, r − b > 70: the retired accent and anything near it,
    never the green/red direction colours or ink), grouped into 16px cells joined where they touch. */
 function orangeClusters({ width, height, ch, data }, minPx = 3) {
   const C = 16, cw = Math.ceil(width / C), cells = new Map();
   if (ch < 3) return [];
+  // Single pixels count, so a 1px orange hairline is caught; text is kept out of the capture (textlessShot).
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = (y * width + x) * ch, r = data[i], g = data[i + 1], b = data[i + 2];
     if (!(r > 110 && r - g > 35 && g - b > 15 && r - b > 70)) continue;
@@ -499,7 +519,7 @@ async function orangePixels(page, where = ["top", "middle", "bottom"]) {
       await page.evaluate(y => window.scrollTo({ top: y, behavior: "instant" }), ys[at]);
       await page.waitForTimeout(350);
     }
-    const clusters = orangeClusters(decodePNG(await page.screenshot({ type: "png" })));
+    const clusters = orangeClusters(decodePNG(await textlessShot(page)));
     if (!clusters.length) continue;
     const names = await page.evaluate(nameClusters, clusters.map(c => c.pts));
     clusters.forEach((c, i) => {
@@ -521,7 +541,7 @@ if (shots) await mkdir(shots, { recursive: true });
 const report = { tolerance: TOL, warmTolerance: WARM_TOL, pages: [] };
 let browser;
 try {
-  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-lcd-text", "--font-render-hinting=none"] });
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600 });
     // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).

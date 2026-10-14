@@ -92,7 +92,7 @@ const server = createServer((req, res) => { serveStatic(req, res).then(found => 
 await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 const base = "http://127.0.0.1:" + server.address().port;
 if (SHOTS) await mkdir(SHOTS, { recursive: true });
-const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-lcd-text", "--font-render-hinting=none"] });
 
 /* routes: a function (path, method) → {status, body} */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false } = {}) {

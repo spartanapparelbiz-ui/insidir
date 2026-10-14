@@ -14,7 +14,8 @@
        settles back and holds still, and once the pointer leaves every atom returns exactly home;
      - a click on empty space sends one ring through every dot field on the page;
      - while the pointer rests on an atom and just after the click, a screenshot has no orange pixels
-       (clusters of r > 110, r − g > 35, g − b > 15, r − b > 70, real photographs in <img> ignored);
+       (clusters of r > 110, r − g > 35, g − b > 15, r − b > 70, captured with text glyphs transparent so
+       subpixel text fringes can't count; real photographs in <img> ignored);
      - scroll reveal, in a fresh visit WITHOUT revealAll: every block marked data-hf-reveal, each child of
        a data-hf-reveal-group, and each footer column that is below the fold when v13-motion.js first
        sees it waits hidden (.hf-pending, opacity 0); scrolling down a viewport at a time, every block
@@ -58,7 +59,7 @@ const mock = url => url.pathname === "/v1/me" ? me : url.pathname === "/v1/billi
 const server = createServer((req, res) => { serveStatic(req, res).then(f => { if (!f) { res.writeHead(404); res.end("not found"); } }).catch(e => { res.writeHead(500); res.end(String(e)); }); });
 await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 const base = "http://127.0.0.1:" + server.address().port;
-const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-lcd-text", "--font-render-hinting=none"] });
 
 /* ---------- init scripts ---------- */
 // The pointer checks measure atoms in place, so every scroll-reveal block is shown at once (and any transition of
@@ -165,6 +166,24 @@ async function untilHome(page, ms) {
 }
 
 /* ---------- orange pixels (same rule as scripts/v13-palette-audit.mjs) ---------- */
+/* Screenshots for the pixel pass show no text: every glyph (HTML and SVG text) is made transparent for the
+   moment of the capture. Text colour is checked exactly from computed styles (palette scan, forced states);
+   glyph edges can carry subpixel (LCD) colour fringes on some machines (GitHub's runners), which would read
+   as orange. Everything else (dot fields, canvases, fills, borders, icons, images) is captured as painted.
+   The rule sits in the insidir-v13 layer with id-level specificity (:is() takes its heaviest argument), so it
+   outranks the site's own !important rules. */
+async function textlessShot(page) {
+  await page.evaluate(() => new Promise(done => {
+    document.documentElement.setAttribute("data-hf-pixel-pass", "");
+    const s = document.createElement("style"); s.id = "hf-pixel-pass-style";
+    s.textContent = "@layer insidir-v13{:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::before,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::after,:is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) *::marker{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important;transition:none!important}" +
+      ":is(#hf-px#hf-px#hf-px,[data-hf-pixel-pass]) svg :is(text,tspan){fill:transparent!important;stroke:transparent!important}}";
+    document.head.appendChild(s);
+    requestAnimationFrame(() => requestAnimationFrame(done));
+  }));
+  try { return await page.screenshot({ type: "png" }); }
+  finally { await page.evaluate(() => { document.documentElement.removeAttribute("data-hf-pixel-pass"); document.getElementById("hf-pixel-pass-style")?.remove(); }); }
+}
 function decodePNG(buf) {
   let pos = 8, width = 0, height = 0, depth = 0, type = 0, interlace = 0;
   const idat = [];
@@ -193,6 +212,7 @@ function decodePNG(buf) {
 function orangeClusters({ width, height, ch, data }, minPx = 3) {
   const C = 16, cw = Math.ceil(width / C), cells = new Map();
   if (ch < 3) return [];
+  // Single pixels count, so a 1px orange hairline is caught; text is kept out of the capture (textlessShot).
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = (y * width + x) * ch, r = data[i], g = data[i + 1], b = data[i + 2];
     if (!(r > 110 && r - g > 35 && g - b > 15 && r - b > 70)) continue;
@@ -220,7 +240,7 @@ function orangeClusters({ width, height, ch, data }, minPx = 3) {
 }
 // Orange clusters on a viewport screenshot, each named by the element under it; photographs (<img>) are ignored.
 async function orangeShot(page) {
-  const clusters = orangeClusters(decodePNG(await page.screenshot({ type: "png" })));
+  const clusters = orangeClusters(decodePNG(await textlessShot(page)));
   if (!clusters.length) return [];
   const names = await page.evaluate(list => {
     const MEDIA = "img,picture,video";
