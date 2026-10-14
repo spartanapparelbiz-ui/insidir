@@ -257,7 +257,7 @@ async function runJob(ticker, company) {
 }
 
 const OTHER_PEOPLE = 10, OTHER_ISSUERS_PER_PERSON = 2, OTHER_ISSUERS = 5;
-const STRONG_RULES = new Set(["alt", "after", "run"]);
+const STRONG_RULES = new Set(["alt", "after", "run", "before-profile"]);
 async function otherBoards(company, persons, proxyModule, assign) {
   const index = await tickerIndex();
   const tickerOf = new Map();

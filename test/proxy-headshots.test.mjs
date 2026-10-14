@@ -217,3 +217,18 @@ test("when the submissions file cannot be read, the EDGAR browse feed finds the 
   assert.equal(res.accession, "0000019617-26-000096");
   assert.ok(seen.includes("https://www.sec.gov/Archives/edgar/data/19617/000001961726000096/index.json"));
 });
+
+test("director profile layout: name and role words, then the portrait, then the age line", () => {
+  const html = `<p>Letter from our chair</p><img src="x1.jpg" height="80" width="80"><p>Blake D. Moret, Chairman</p>
+    <p>BOARD OF DIRECTORS</p><p>Alice L. Jolla INDEPENDENT</p><img src="x31.jpg" height="85" width="70"><p>Age 60 Director since 2023 COMMITTEES: Audit</p>
+    <p>Pat Unknown INDEPENDENT</p><img src="x32.jpg" height="85" width="70"><p>Age 55 Director since 2021</p>
+    <p>Alice L. Jolla served at Microsoft.</p><img src="x40.jpg" height="85" width="70"><p>Our compensation philosophy</p>`;
+  const people = buildPeople([{ name: "Jolla Alice L.", cik: "1" }, { name: "Moret Blake D.", cik: "2" }]);
+  const files = new Set(["x1.jpg", "x31.jpg", "x32.jpg", "x40.jpg"]);
+  const { placements } = pairPortraits(tokenize(html), people, files);
+  const by = Object.fromEntries(placements.map(p => [p.file, p]));
+  assert.equal(by["x31.jpg"].rule, "before-profile");
+  assert.equal(people[by["x31.jpg"].personId].personName, "Jolla Alice L.");
+  assert.equal(by["x32.jpg"].personId, null, "an unknown director's profile is not paired with a known name");
+  assert.notEqual(by["x40.jpg"].rule, "before-profile", "a name in running text is not a profile caption");
+});

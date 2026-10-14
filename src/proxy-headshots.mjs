@@ -282,7 +282,7 @@ export function pairPortraits(tokens, people, files) {
     }
     const b = before.slice(-BEFORE_WINDOW);
     const beforeHits = findNames(b, people).map(h => ({ ...h, dist: b.length - h.end }));
-    return { run, after, distinct, blocked, beforeHits, nearAlt };
+    return { run, after, distinct, blocked, beforeHits, nearAlt, beforeFolded: fold(b) };
   });
 
   // Layout vote for rule (d): how many single portraits have their only nearby name before them.
@@ -309,7 +309,12 @@ export function pairPortraits(tokens, people, files) {
         personId = single(h); rule = "run"; caption = h.caption; confidence = "high";
       } else if (c.run.length === 1) {
         const h = c.distinct[0];
-        if (h && h.pos <= AFTER_WINDOW) { personId = single(h); rule = "after"; caption = h.caption; confidence = "high"; }
+        const lb = c.beforeHits.at(-1);
+        // A portrait followed by "Age 60 / Director since" belongs to the name printed before it;
+        // a name further on is someone else (or this person's bio mentioning a colleague).
+        const profile = PROFILE_AFTER.test(c.after.slice(0, 80).replace(/\s+/g, " "));
+        if (profile) { if (lb && profileBefore(c, lb)) { personId = single(lb); rule = "before-profile"; caption = lb.caption; confidence = "high"; } else rule = "profile-unknown"; }
+        else if (h && h.pos <= AFTER_WINDOW) { personId = single(h); rule = "after"; caption = h.caption; confidence = "high"; }
         else if (allowBefore && !c.blocked && c.beforeHits.length && !personLikeLine(c.after.slice(0, 120))) {
           const hb = c.beforeHits.at(-1);
           personId = single(hb); rule = "before"; caption = hb.caption; confidence = "medium";
@@ -327,8 +332,21 @@ export function pairPortraits(tokens, people, files) {
   return { placements, runs };
 }
 
+/* Director profile layout: "Alice L. Jolla INDEPENDENT [portrait] Age 60 Director since 2023".
+ * The full name ends at most a few role words before the portrait and the text after it opens
+ * with the age or tenure line, so the portrait belongs to that name whatever the rest of the
+ * document does. */
+const PROFILE_GAP = /^[\s,|•·–—-]*(?:(?:lead\s+)?independent(?:\s+director)?|non-?executive|chair(?:man|woman|person)?(?:\s+of\s+the\s+board)?|vice\s+chair|director(?:\s+nominee)?|nominee|president|ceo|founder|co-founder|[\s,|•·–—-]+)*$/i;
+const PROFILE_AFTER = /^[\s|•·]*(?:age[:\s]+\d{2}\b|director\s+since\b|\d{2}\s*years?\s+old\b)/i;
+function profileBefore(c, hit) {
+  if (hit.dist > 60) return false;
+  // Hit positions index the folded text.
+  const gap = c.beforeFolded.slice(hit.end).replace(/\s+/g, " ");
+  return PROFILE_GAP.test(gap) && PROFILE_AFTER.test(c.after.slice(0, 80).replace(/\s+/g, " "));
+}
+
 /* Per-file majority vote and per-person ranked candidate files. */
-const RULE_RANK = { alt: 0, after: 1, run: 2, "alt-adjacent": 3, before: 4 };
+const RULE_RANK = { alt: 0, after: 1, "before-profile": 1, run: 2, "alt-adjacent": 3, before: 4 };
 export function selectFiles(placements, sizes = new Map()) {
   const fileVotes = new Map(), bestRule = new Map();
   for (const p of placements) {
