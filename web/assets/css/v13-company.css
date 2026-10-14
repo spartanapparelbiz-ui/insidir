@@ -50,13 +50,15 @@ body.v13.cx-page .cx-report .cx-facts{border-left:1px solid var(--hf-line)!impor
 
 /* Identity */
 body.v13 .cx-brand{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:20px!important;min-width:0!important}
-body.v13 .cx-logo{flex:0 0 auto!important;width:84px!important;height:84px!important;display:grid!important;place-items:center!important;border-radius:0!important;position:relative!important;overflow:hidden!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;padding:14px!important;box-sizing:border-box!important;isolation:isolate!important}
+/* The company's real mark sits straight on the paper: no tile, frame or padding around it (the
+   server has already removed any box baked into the file and lifted ink that would vanish). */
+body.v13 .cx-logo{flex:0 0 auto!important;width:84px!important;height:84px!important;display:grid!important;place-items:center!important;border-radius:0!important;position:relative!important;background:transparent!important;border:0!important;padding:0!important;box-sizing:border-box!important;isolation:isolate!important}
+body.v13 .cx-logo[hidden]{display:none!important}
 body.v13 .cx-logo img{max-width:100%!important;max-height:100%!important;object-fit:contain!important;display:block!important;filter:var(--hf-photo)!important}
-body.v13 .cx-logo.is-loading{background:var(--hf-surface)!important}
-body.v13 .cx-logo.is-tile{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
-body.v13 .cx-logo.is-wide{width:124px!important;height:72px!important;padding:12px 14px!important}
-body.v13 .cx-logo.is-inverted img{filter:invert(1) brightness(.92) sepia(.12)!important}
-body.v13 .cx-logo.is-monogram{background:var(--hf-raise)!important;border:1px solid var(--hf-line)!important;color:var(--hf-ink)!important;font:600 34px/1 var(--hf-mono)!important;background-image:none!important}
+/* Wordmarks (wider than 1.8:1) go above the name at a readable height. */
+body.v13 .cx-brand.is-wide-logo{flex-direction:column!important;align-items:flex-start!important;gap:18px!important}
+body.v13 .cx-brand.is-wide-logo .cx-logo{width:auto!important;height:60px!important;max-width:min(100%,300px)!important;place-items:center start!important}
+body.v13 .cx-brand.is-wide-logo .cx-logo img{height:100%!important;width:auto!important}
 /* A min-content basis keeps the name beside the logo until its longest word cannot fit; then the whole text block drops under the tile at full column width. */
 body.v13 .cx-brand__text{flex:1 1 0!important;min-width:min-content!important}
 body.v13 .cx-brand h1{margin:0!important;font:800 clamp(36px,3.4vw,54px)/.98 var(--hf-sans)!important;letter-spacing:-.055em!important;color:var(--hf-ink)!important;overflow-wrap:break-word!important;hyphens:auto!important}
@@ -309,9 +311,8 @@ body.v13 .cx-picker__grid a{display:flex!important;align-items:center!important;
 body.v13 .cx-picker__grid a:hover{background:var(--hf-surface)!important;border-color:var(--hf-line)!important}
 body.v13 .cx-picker__grid b{display:block!important;font-family:var(--hf-mono)!important;font-size:11px!important;font-weight:500!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;line-height:1.5!important}
 body.v13 .cx-picker__grid div span{display:block!important;margin-top:2px!important;font:400 13px/1.4 var(--hf-sans)!important;color:var(--hf-muted)!important}
-body.v13 .cx-mark-tile{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;box-sizing:border-box!important;padding:9px!important;flex:none!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;isolation:isolate!important}
-body.v13 .cx-picker__grid img.cx-mark{width:100%!important;height:100%!important;object-fit:contain!important;display:block!important;background:transparent!important;border:0!important;padding:0!important;filter:var(--hf-photo)!important}
-body.v13 .cx-picker__grid img.cx-mark.is-inverted{filter:invert(1) brightness(.92) sepia(.12)!important}
+body.v13 .cx-picker__grid .cx-mark{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;flex:none!important;background:transparent!important;border:0!important;padding:0!important}
+body.v13 .cx-picker__grid .cx-mark img{max-width:100%!important;max-height:100%!important;object-fit:contain!important;display:block!important;filter:var(--hf-photo)!important}
 body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!important;font-size:11px!important;background:var(--hf-surface)!important}
 
 /* ---------- Responsive ---------- */
@@ -359,9 +360,8 @@ body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!import
   body.v13.cx-page .cx-report .cx-overview>:last-child,body.v13.cx-page .cx-report .cx-overview.no-about>:last-child{margin-bottom:0!important}
   body.v13 .cx-mini>.cx-link{margin-top:16px!important;padding-top:0!important}
   body.v13 .cx-brand{gap:14px!important}
-  body.v13 .cx-logo{width:64px!important;height:64px!important;padding:11px!important}
-  body.v13 .cx-logo.is-wide{width:104px!important;height:60px!important;padding:10px 12px!important}
-  body.v13 .cx-logo.is-monogram{font-size:26px!important}
+  body.v13 .cx-logo{width:64px!important;height:64px!important}
+  body.v13 .cx-brand.is-wide-logo .cx-logo{height:48px!important}
   body.v13 .cx-brand h1{font-size:clamp(32px,9vw,40px)!important}
   body.v13 .cx-description{font-size:14.5px!important;margin-top:20px!important;max-width:none!important}
   body.v13 .cx-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
@@ -383,7 +383,7 @@ body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!import
   body.v13 .cx-picker__form button{width:100%!important}
   body.v13 .cx-picker__grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   body.v13 .cx-picker__grid a{padding:14px 12px!important;gap:10px!important}
-  body.v13 .cx-mark-tile,body.v13 .cx-picker__grid .cx-avatar--sm{width:38px!important;height:38px!important;padding:7px!important}
+  body.v13 .cx-picker__grid .cx-mark,body.v13 .cx-picker__grid .cx-avatar--sm{width:38px!important;height:38px!important}
   body.v13 .cx-picker__head{flex-direction:column!important;gap:4px!important}
   body.v13 .cx-bars{height:200px!important;gap:6px!important}
   body.v13 .cx-bars b{font-size:10px!important}
@@ -411,7 +411,7 @@ body.v13 .cx-picker__grid .cx-avatar--sm{width:44px!important;height:44px!import
 @media (max-width:420px){
   body.v13 .cx-picker__grid{grid-template-columns:1fr 1fr!important}
   body.v13 .cx-picker__grid div span{font-size:12px!important}
-  body.v13 .cx-mark-tile,body.v13 .cx-picker__grid .cx-avatar--sm{width:34px!important;height:34px!important;padding:6px!important}
+  body.v13 .cx-picker__grid .cx-mark,body.v13 .cx-picker__grid .cx-avatar--sm{width:34px!important;height:34px!important}
   body.v13 .cx-picker__grid a{padding:12px 10px!important;gap:9px!important}
 }
 @media (prefers-reduced-motion:reduce){

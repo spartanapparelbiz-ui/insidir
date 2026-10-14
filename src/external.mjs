@@ -33,7 +33,7 @@ export async function externalFetch(url, { json = true, accept, maxBytes = 3_000
       method, body, signal: abort.signal, redirect: "error",
       headers: { "User-Agent": contactAgent(), "Accept": accept || (json ? "application/json" : "*/*"), ...headers }
     });
-    if (!response.ok) throw Object.assign(new Error("Upstream responded " + response.status), { upstreamStatus: response.status });
+    if (!response.ok) throw Object.assign(new Error("Upstream responded " + response.status), { upstreamStatus: response.status, retryAfter: response.headers.get("retry-after") });
     const size = Number(response.headers.get("content-length") || 0);
     if (size > maxBytes) throw new Error("Upstream response too large");
     const text = await response.text();

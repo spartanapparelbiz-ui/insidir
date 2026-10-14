@@ -134,3 +134,24 @@ export async function getCompanyInsiders(ticker, { limit = 16, fetcher = secFetc
   };
   return fetcher === secFetch ? summaries("insiders:" + company.cik + ":" + limit, SUMMARY_TTL, work) : work();
 }
+
+/* Issuers where one reporting owner files ownership reports, from EDGAR's owner page:
+ * [{cik, name, lastDate, relation}] newest first. Directors often sit on several boards, and
+ * the owner CIK is what ties those filings to one person. */
+export function parseOwnerIssuers(html) {
+  const out = [];
+  const re = /action=getissuer&(?:amp;)?CIK=(\d{1,10})">([^<]*)<\/a>\s*<\/td>\s*<td>[\s\S]*?<\/td>\s*<td>([\d-]*)<\/td>\s*<td>([^<]*)<\/td>/g;
+  let m;
+  while ((m = re.exec(String(html || "")))) {
+    const cik = m[1].padStart(10, "0");
+    if (out.some(x => x.cik === cik)) continue;
+    out.push({ cik, name: m[2].replace(/&amp;/g, "&").trim().slice(0, 120), lastDate: /^\d{4}-\d{2}-\d{2}$/.test(m[3]) ? m[3] : null, relation: m[4].trim().slice(0, 80) });
+  }
+  return out.sort((a, b) => String(b.lastDate || "").localeCompare(String(a.lastDate || "")));
+}
+export async function ownerIssuers(ownerCik, { fetcher = secFetch } = {}) {
+  const id = String(Number(ownerCik));
+  if (!/^\d{1,10}$/.test(id) || id === "0") return [];
+  const work = async () => parseOwnerIssuers(await fetcher("https://www.sec.gov/cgi-bin/own-disp?action=getowner&CIK=" + id.padStart(10, "0") + "&type=&dateb=&owner=include"));
+  return fetcher === secFetch ? summaries("owner-issuers:" + id, SUMMARY_TTL, work) : work();
+}

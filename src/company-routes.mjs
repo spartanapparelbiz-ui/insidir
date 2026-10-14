@@ -7,6 +7,8 @@ import { getCompanyProfile } from "./company-profile.mjs";
 import { getCompanyInsiders } from "./insiders.mjs";
 import { getHeadlines, announcementsFromFilings, focusHeadlines, relevanceTerms } from "./news.mjs";
 import { searchCompanies } from "./search.mjs";
+import { getMedia } from "./media-store.mjs";
+import { sendImage } from "./media.mjs";
 
 const failure = (status, message) => Object.assign(new Error(message), { status });
 const hits = new Map();
@@ -49,15 +51,26 @@ const upstream = (label, error) => {
 };
 const notListed = () => failure(404, "Ticker not found in the SEC's official company mapping. This does not establish that a company does not exist.");
 
-const ROUTES = new Set(["/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news"]);
-export function isCompanyRoute(pathname) { return ROUTES.has(pathname); }
+const ROUTES = new Set(["/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news", "/v1/company/logo", "/v1/company/photos"]);
+const MEDIA_PATH = /^\/v1\/media\/([a-f0-9]{64})\.(png|webp|jpeg|svg)$/;
+export function isCompanyRoute(pathname) { return ROUTES.has(pathname) || MEDIA_PATH.test(pathname); }
+const optional = async path => { try { return await import(path); } catch { return null; } };
 
 /* Returns false when the path is not a company route; otherwise responds or throws {status}. */
 export async function handleCompanyRoute(req, res, url, { loadTransactions = async () => [] } = {}) {
   const p = url.pathname;
-  if (!ROUTES.has(p)) return false;
+  if (!isCompanyRoute(p)) return false;
   if (req.method !== "GET" && req.method !== "HEAD") throw failure(405, "Method not allowed");
   const ip = clientAddress(req);
+
+  // Prepared logos and photos: content-addressed, immutable, served from this origin.
+  const media = MEDIA_PATH.exec(p);
+  if (media) {
+    const item = await getMedia(media[1]);
+    if (!item) throw failure(404, "Media not found");
+    const type = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpeg", "image/svg+xml": "svg" }[item.mime];
+    return sendImage(res, { bytes: item.bytes, type }, 31536000, { "Cache-Control": "public, max-age=31536000, immutable" }), true;
+  }
 
   if (p === "/v1/search") {
     const q = String(url.searchParams.get("q") || "").trim().slice(0, 60);
@@ -108,6 +121,33 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     try { insiders = await getCompanyInsiders(t); } catch (e) { upstream("SEC ownership filings", e); }
     if (!insiders) throw notListed();
     return send(res, 200, { ...insiders, disclaimer: "Reported Form 4 transactions. Grants, exercises, tax withholding and gifts are not open-market trades." }, 300), true;
+  }
+
+  if (p === "/v1/company/logo") {
+    if (limited("logo:" + ip, 240)) throw failure(429, "Too many logo requests. Try again shortly.");
+    requireSec();
+    const resolver = await optional("./logo-resolver.mjs");
+    if (!resolver?.logoForTicker) throw failure(503, "Logo service is not available");
+    let logo;
+    try { logo = await resolver.logoForTicker(t); } catch (e) { upstream("Company logo", e); }
+    const want = url.searchParams.get("variant") === "wide" ? ["wide", "square"] : ["square", "wide"];
+    const chosen = logo?.status === "ok" ? want.map(v => logo.variants?.[v]).find(Boolean) : null;
+    if (!chosen?.url) throw failure(404, "No published logo found for this company");
+    res.writeHead(302, { Location: chosen.url, "Cache-Control": "public, max-age=3600", "X-Logo-Source": String(chosen.source || "").slice(0, 60), "X-Content-Type-Options": "nosniff" });
+    return res.end(), true;
+  }
+
+  if (p === "/v1/company/photos") {
+    if (limited("photos:" + ip, 60)) throw failure(429, "Too many photo requests. Try again shortly.");
+    requireSec();
+    const { companyPhotos } = await import("./people-photos.mjs");
+    const wait = Math.max(0, Math.min(8000, Number(url.searchParams.get("wait")) || 0));
+    let state;
+    try { state = await companyPhotos(t, { wait }); } catch (e) { upstream("People photos", e); }
+    if (!state) throw notListed();
+    return send(res, 200, { ticker: t, complete: Boolean(state.complete), photos: state.photos || {}, names: state.names || {}, leaders: state.leaders || [], sources: state.sources || {},
+      coverage: state.coverage || null, updatedAt: state.updatedAt || null,
+      note: "Photos come from Wikimedia Commons, the company's own website or its SEC proxy statement and are matched to SEC reporting owners by name and company. People without a verified photo show initials." }, state.complete ? 3600 : 0), true;
   }
 
   if (p === "/v1/company/news") {
