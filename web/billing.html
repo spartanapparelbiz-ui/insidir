@@ -1,46 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="theme-color" content="#0c0c0b"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account & billing — insidir.</title><meta name="description" content="Review your Insidir plan and manage available account subscription options."><link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><script defer src="assets/js/app.js"></script><script defer src="assets/js/billing.js"></script>  <link rel="stylesheet" href="assets/css/v3-app.css">
-  <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="theme-color" content="#0c0c0b"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billing — insidir.</title><meta name="description" content="Your Insidir subscription: status, renewal date, payment method and invoices through Stripe's billing portal."><meta name="robots" content="noindex"><link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css">
+<link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=3">
+<link rel="stylesheet" href="assets/css/v13-paywall.css?v=2">
+<script defer src="assets/js/app.js?v=3"></script>
+<script defer src="assets/js/billing.js?v=3"></script>
 <script defer src="assets/js/v13-halftone.js?v=1"></script>
-</head><body class="app-body v2-app v3-app v6-app v13"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active=""></header>
+</head><body class="app-body v2-app v3-app v6-app v13 pw-billing"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active=""></header>
 <main class="app-main v3-billing" id="main">
-<header class="v3-billing__head desk-masthead">
-<div class="desk-topline"><p class="v3-eyebrow">YOUR ACCOUNT / BILLING</p><p class="desk-topline__note">Verified billing events · checkout only through a secure provider</p></div>
-<h1>Your subscription.</h1>
-<p class="v3-billing__lead desk-lead">Know exactly which plan you have. Billing controls only appear when a secure payment provider is configured.</p>
+<header class="v3-billing__head desk-masthead" id="Content">
+<div class="desk-topline"><p class="v3-eyebrow">Your account / Billing</p><p class="desk-topline__note">Payments processed by Stripe · status from verified Stripe events</p></div>
+<h1>Billing.</h1>
+<p class="v3-billing__lead desk-lead">Your Insidir subscription, its renewal date and your payment method. Card details stay with Stripe; Insidir never sees them.</p>
 </header>
-<section class="panel v3-billing__plan" aria-labelledby="bill-plan-title">
-<div class="v3-billing__copy">
-<p class="v3-eyebrow">CURRENT PLAN</p>
-<h2 id="bill-plan-title">Insidir account</h2>
-<p id="bill-status" role="status" aria-live="polite" class="v3-billing__status">Checking your plan and billing availability…</p>
+
+<section class="bl-confirm" data-bl-confirm data-state="waiting" role="status" aria-live="polite" hidden>
+<p class="bl-confirm__label">Checkout complete</p>
+<h2 data-bl-confirm-title>Confirming your subscription…</h2>
+<p data-bl-confirm-text>Stripe is confirming the subscription with Insidir. This usually takes a few seconds.</p>
+<div class="bl-confirm__actions"><a class="btn btn--dark" href="dashboard.html" data-bl-open hidden>Open dashboard</a><button type="button" class="btn btn--light" data-bl-recheck hidden>Check again</button></div>
+</section>
+
+<section class="bl-plan" aria-labelledby="bl-plan-title">
+<div class="bl-plan__head">
+<p class="v3-eyebrow">Your plan</p>
+<h2 id="bl-plan-title">Insidir Pro</h2>
+<p class="bl-badge" data-bl-badge>Checking</p>
+<p class="bl-plan__price"><strong>$39</strong>per month, billed monthly in US dollars</p>
 </div>
-<div class="v3-billing__actions">
-<button id="checkout" type="button" class="btn btn--dark" hidden>Subscribe to Pro — $39/month</button>
-<button id="manage" type="button" class="btn btn--dark" hidden>Manage or cancel subscription</button>
-<a href="dashboard.html" class="btn btn--light">Back to dashboard</a>
+<dl class="bl-facts">
+<div><dt>Status</dt><dd data-bl-status>Checking your subscription…</dd></div>
+<div><dt data-bl-period-label>Current period ends</dt><dd data-bl-period>—</dd></div>
+<div><dt>Payment method</dt><dd data-bl-method>—</dd></div>
+<div><dt>Account</dt><dd data-bl-email>—</dd></div>
+</dl>
+<p id="bill-status" class="bl-message" role="status" aria-live="polite"></p>
+<div class="bl-actions">
+<button type="button" id="manage" class="btn btn--dark" data-busy-label="Opening billing portal…" hidden>Manage billing</button>
+<a class="btn btn--dark" href="subscribe.html" data-bl-subscribe hidden>Subscribe · $39/month</a>
+<a class="btn btn--light" href="dashboard.html" data-bl-dashboard hidden>Open dashboard</a>
 </div>
 </section>
-<section class="v3-billing__plans" aria-label="Plans">
-<article class="v3-billing__tier">
-<p class="v3-eyebrow">01 / FREE · AVAILABLE</p>
-<h3>Research</h3>
-<p class="v3-billing__price">$0 <small>/ month</small></p>
-<ul><li>Public company reports</li><li>Selected SEC financial facts</li><li>Imported filings and insider activity</li><li>Private watchlist, notes and holdings</li></ul>
-</article>
-<article class="v3-billing__tier">
-<p class="v3-eyebrow">02 / PRO · PLANNED</p>
-<h3>More depth</h3>
-<p class="v3-billing__price">$39 <small>/ month proposed</small></p>
-<ul><li>More flexible historical research</li><li>More ways to organize findings</li><li>Final features disclosed before checkout</li><li>No active Pro subscription checkout</li></ul>
-<a class="v3-billing__link" href="pricing.html">Compare plans ↗</a>
-</article>
+
+<section class="bl-help" aria-label="Billing help">
+<div><p class="v3-eyebrow">01 / Change or cancel</p><h3>In Stripe's billing portal</h3><p>Manage billing opens Stripe's secure portal, where you can update your card, download invoices or cancel your subscription.</p></div>
+<div><p class="v3-eyebrow">02 / Deleting your account</p><h3>Cancels billing first</h3><p>Deleting your account from <a href="account.html">Account</a> cancels the subscription with Stripe before anything is removed, so no further payments are taken.</p></div>
+<div><p class="v3-eyebrow">03 / Questions</p><h3>Talk to a person</h3><p>A charge you don't recognise or a billing question? Email <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>. Subscriptions are covered by the <a href="terms.html">Terms</a>.</p></div>
 </section>
-<p class="v3-billing__note">Subscription status comes from verified billing events, not from returning to a success page. No charge can be made when checkout is disabled. Insidir research does not provide investment advice or execute trades.</p>
 </main>
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">

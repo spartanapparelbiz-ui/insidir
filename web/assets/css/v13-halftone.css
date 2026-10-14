@@ -350,6 +350,7 @@ body.v13 .hwf-rule{position:relative!important;z-index:1!important;display:flex!
   margin:clamp(18px,2.6vw,30px) clamp(20px,3.4vw,44px) 0!important;padding:12px 0 0!important;border:0!important;border-top:1px solid var(--hf-line-soft)!important;background:transparent!important;
   font-family:var(--hf-mono)!important;font-size:10.5px!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important}
 body.v13 .hwf-top *,body.v13 .hwf-rule *{font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important}
+@media (pointer:coarse){body.v13 :is(.hwf-col a,.hwf-up){display:inline-flex!important;align-items:center!important;min-height:44px!important}body.v13 .hwf-col li{line-height:1!important}}
 body.v13 .hwf-sr{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
 body.v13 .hwf-root[hidden]{display:none!important}
 @media (max-width:720px){

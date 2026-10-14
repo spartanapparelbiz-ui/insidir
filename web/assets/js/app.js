@@ -1,9 +1,57 @@
 /* Signed-in product shell: header injection, nav indicator, search,
    user menu, and small rendering helpers shared by the app pages
-   (sparklines, area charts, monogram avatars, brand logos, API calls). */
+   (sparklines, area charts, monogram avatars, brand logos, API calls).
+
+   Paywall: every product page needs a session and an active subscription. The
+   server redirects page requests; this file covers what happens while a page is
+   open. Any same-origin /v1 response of 401 (session ended) sends the browser to
+   signin.html?next=<this page>, and a 402 (no active subscription) to
+   subscribe.html?next=<this page>, whether the request came from Insidir.api() or
+   from a page script's own fetch(). Account pages (billing, account) stay put on
+   402: they exist to fix the subscription. */
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const NS = "http://www.w3.org/2000/svg";
+
+  /* ---------- paywall: 401 → sign in, 402 → subscribe ---------- */
+  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "watchlist", "portfolio", "alerts"];
+  const ACCOUNT_PAGES = ["billing", "account"];
+  const OPEN_API = /^\/v1(\/?$|\/auth\/|\/billing\/|\/sources$)/;
+  const pageKey = () => (/^\/([a-z]+)(?:\.html)?$/.exec(location.pathname) || [])[1] || "";
+  /* next= is only ever a same-origin relative path to a known page (validated again on arrival). */
+  const here = () => encodeURIComponent(pageKey() + ".html" + location.search);
+  /* "This browser has signed in before" (never a credential: the session cookie is HttpOnly).
+     auth.js asks /v1/me on the log in page only when it is set. */
+  const HINT = "insidir:signed-in";
+  const hint = on => { try { if (on) localStorage.setItem(HINT, "1"); else localStorage.removeItem(HINT); } catch (_) { /* storage unavailable */ } };
+  let leaving = false;
+  function gate(status) {
+    const key = pageKey();
+    if (leaving) return;
+    if (status === 401) hint(false);
+    if (status === 401 && (GATED_PAGES.includes(key) || ACCOUNT_PAGES.includes(key))) {
+      leaving = true;
+      location.assign("signin.html?next=" + here());
+    } else if (status === 402 && GATED_PAGES.includes(key)) {
+      leaving = true;
+      location.assign("subscribe.html?next=" + here());
+    }
+  }
+  function gatedRequest(input) {
+    try {
+      const url = new URL(typeof input === "string" ? input : (input && input.url) || String(input), location.href);
+      return url.origin === location.origin && url.pathname.startsWith("/v1/") && !OPEN_API.test(url.pathname);
+    } catch (_) { return false; }
+  }
+  if (typeof window.fetch === "function" && !window.fetch.__insidirGate) {
+    const nativeFetch = window.fetch.bind(window);
+    const gatedFetch = (input, init) => nativeFetch(input, init).then(res => {
+      if ((res.status === 401 || res.status === 402) && gatedRequest(input)) gate(res.status);
+      return res;
+    });
+    gatedFetch.__insidirGate = true;
+    window.fetch = gatedFetch;
+  }
 
   const NAV = [
     ["dashboard","Overview","dashboard.html"],
@@ -130,11 +178,12 @@
   async function api(path, { method = "GET", body } = {}) {
     const res = await fetch(path, {
       method, credentials: "same-origin",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" },
       body: body ? JSON.stringify(body) : undefined
     });
     let data = null;
     try { data = await res.json(); } catch (_) { /* non-JSON */ }
+    // 401 and 402 have already sent the browser to signin.html / subscribe.html (see gate above).
     if (!res.ok) throw Object.assign(new Error((data && data.error) || `Request failed (${res.status})`), { status: res.status });
     return data;
   }
@@ -183,6 +232,7 @@
 
     api("/v1/me").then(data => {
       if (!data.user || !data.user.email) return;
+      hint(true);
       const email = String(data.user.email);
       host.querySelector("[data-account-email]").textContent = email;
       const initial = email.trim().charAt(0).toUpperCase();
@@ -244,6 +294,13 @@
         q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q)) : Promise.resolve({ items: [] })
       ]);
       if (seq !== searchSeq || input.value.trim() !== q) return;
+      if (companies.status === "rejected" && companies.reason && companies.reason.status === 402) {
+        suggestions = [];
+        list.innerHTML = '<p class="app-search__empty">Search needs an active subscription. <a href="subscribe.html">Subscribe</a></p>';
+        list.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        return;
+      }
       suggestions = [
         ...(companies.status === "fulfilled" ? companies.value.items || [] : []).slice(0, 7).map(c => ({ kind: "company", ticker: c.ticker, label: c.name, meta: "Company", href: "company.html?ticker=" + encodeURIComponent(c.ticker) })),
         ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", label: p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
@@ -302,6 +359,7 @@
     });
     host.querySelector("[data-signout]").addEventListener("click", async () => {
       try { await api("/v1/auth/logout", { method: "POST" }); } catch (_) { /* engine not attached */ }
+      hint(false);
       location.href = "signin.html";
     });
   }

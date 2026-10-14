@@ -144,7 +144,8 @@ test("every navigation button has its own page and nothing sends visitors back t
   const fs=await import("node:fs/promises");
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
     const html=await fs.readFile(new URL("../web/"+file,import.meta.url),"utf8");
-    assert.doesNotMatch(html,/href="(\/|index\.html)?#[a-z]/,file+" must not link to an anchor on the landing page");
+    assert.doesNotMatch(html,/href="(\/|index\.html)#[a-z]/,file+" must not link to an anchor on the landing page");
+    if(file==="index.html")assert.doesNotMatch(html.replace(/href="#main"/g,""),/<a [^>]*href="#[a-z]/,"landing buttons open pages, not anchors on the landing page");
     for(const m of html.matchAll(/href="([a-z0-9-]+\.html)(?:[?#][^"]*)?"/g)){
       const r=await fetch(base+"/"+m[1]);assert.equal(r.status,200,file+" links to a missing page "+m[1]);
     }

@@ -9,7 +9,7 @@ await new Promise(ok=>server.listen(0,"127.0.0.1",ok));
 const base="http://127.0.0.1:"+server.address().port;
 let browser;
 try{
- browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||"/usr/bin/google-chrome",args:["--no-sandbox","--disable-dev-shm-usage"]});
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||"/opt/pw-browsers/chromium",args:["--no-sandbox","--disable-dev-shm-usage"]});
  for(const item of [{width:375,height:812},{width:390,height:844},{width:1440,height:900}]){
   const context=await browser.newContext({viewport:item,deviceScaleFactor:1,isMobile:item.width<600,hasTouch:item.width<600});
   const page=await context.newPage();
@@ -19,9 +19,9 @@ try{
    await page.waitForFunction(()=>!!document.querySelector("[data-halftone-hero]")?.__halftone,null,{timeout:10000});
    const landing=await page.evaluate(()=>{
      const rect=s=>{const e=document.querySelector(s);if(!e)throw Error("Missing "+s);const r=e.getBoundingClientRect();return {x:r.left,mid:r.left+r.width/2,width:r.width,y:r.top};};
-     const hero=rect(".v6-hero__inner"),h1=rect("#v6-hero-heading"),list=rect(".v6-live__list"),head=rect(".v6-nav"),body=document.body;
+     const hero=rect(".v6-hero__inner"),h1=rect("#v6-hero-heading"),head=rect(".v6-nav"),body=document.body;
      const halftone=document.querySelector("[data-halftone-hero]"),canvas=halftone&&halftone.querySelector("canvas");
-     return {hero,h1,list,head,overflow:document.documentElement.scrollWidth-innerWidth,font:getComputedStyle(document.querySelector("h1")).fontFamily,
+     return {hero,h1,head,overflow:document.documentElement.scrollWidth-innerWidth,font:getComputedStyle(document.querySelector("h1")).fontFamily,
        label:getComputedStyle(document.querySelector(".v9-hero__eyebrow")).fontFamily,
        halftone:{mounted:!!(halftone&&halftone.__halftone),width:canvas?canvas.getBoundingClientRect().width:0,height:canvas?canvas.getBoundingClientRect().height:0,inHero:!!(halftone&&halftone.closest("main"))},
        plainFooter:!!document.querySelector("footer.v13-footer--plain .hwf-top"),

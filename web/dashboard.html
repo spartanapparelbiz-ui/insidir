@@ -1,45 +1,88 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
-<meta name="description" content="Insidir research dashboard—actual SEC company disclosures, insider activity, and your private research.">
-<title>Research overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-<link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v4-dashboard.css">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-2"><link rel="stylesheet" href="assets/css/v5-media.css?v=1"><link rel="stylesheet" href="assets/css/v6-app.css?v=1"><link rel="stylesheet" href="assets/css/v9-dashboard.css?v=1"><link rel="stylesheet" href="assets/css/v10-editorial.css?v=1"><link rel="stylesheet" href="assets/css/v10-people.css?v=1">
-<script defer src="assets/js/entity-media.js?v=real-assets-2"></script><script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js"></script><script defer src="assets/js/v10-people.js?v=1"></script><script defer src="assets/js/v4-dashboard.js"></script>
+<meta name="description" content="Your Insidir overview: your watchlist, research notes, the latest imported SEC Form 4 filings and insider transactions, each linked to its original record.">
+<title>Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+<link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
+<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
+<script defer src="assets/js/entity-media.js?v=real-assets-5"></script><script defer src="assets/js/app.js"></script><script defer src="assets/js/v3-dashboard.js?v=14"></script><script defer src="assets/js/v4-dashboard.js?v=14"></script><script defer src="assets/js/v10-people.js?v=14"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=14">
 <script defer src="assets/js/v13-halftone.js?v=1"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app v9-app v13"><a class="skip-link" href="#main">Skip to content</a><header data-app-header data-active="dashboard"></header>
-<main class="app-main v3-main v9-desk" id="main">
-<div class="v9-desk__topline"><span>Research desk</span><span id="v3-current-date">Company research / SEC disclosures</span></div>
-<section class="v9-desk__hero" aria-labelledby="v9-desk-heading">
-  <div class="v9-desk__hero-content"><p class="v9-desk__eyebrow">Your Insidir</p><h1 id="v9-desk-heading" data-greeting>Good morning.</h1><p>Everything you need to investigate a company. Nothing to distract you from it.</p><a href="research.html" class="v9-desk__hero-link">Enter research desk <span>↗</span></a></div>
-  <img src="assets/img/dash-skyline.jpg" alt="Manhattan financial district skyline" fetchpriority="high">
+<body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active="dashboard"></header>
+<main class="app-main v3-main rd" id="Content">
+<div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date">SEC records · original sources</span></div>
+
+<section class="rd-intro" aria-labelledby="rd-heading">
+  <p class="rd-eyebrow">Today</p>
+  <h1 id="rd-heading" data-greeting>Welcome back.</h1>
+  <p class="rd-lede">Start with a company, a filing or a person. Every SEC row on this desk links to its original record; your watchlist and notes are private to you.</p>
+  <section class="v3-searchbox rd-search" aria-label="Open a company report">
+    <form action="company.html" method="get" id="v3-search" role="search">
+      <label class="rd-search__label" for="v3-ticker">Open a company report</label>
+      <div class="rd-search__field"><span class="v3-searchbox__icon" aria-hidden="true"><svg class="v4-ui-icon"><use href="assets/icons/interface.svg#search"></use></svg></span><input type="search" name="ticker" id="v3-ticker" placeholder="e.g. AAPL" autocomplete="off" maxlength="15" spellcheck="false" autocapitalize="characters" required aria-describedby="v3-ticker-hint"><button type="submit"><span>Open<span class="rd-xs-hide"> report</span></span> ↗</button></div>
+      <p class="rd-search__hint" id="v3-ticker-hint">Opens the company report: SEC filings, reported financials, insider activity and delayed prices.</p>
+    </form>
+  </section>
 </section>
-<div class="v4-data-strip v9-desk__status" aria-label="Data source status"><div class="v4-data-strip__item"><span><small>DATA SOURCE</small><strong id="v4-data-state">Checking imported SEC filings…</strong></span></div><div class="v4-data-strip__item"><span><small>LATEST REPORT</small><strong id="v4-latest-filing-date">Checking availability…</strong></span></div><a class="v4-data-strip__next" href="research.html">Investigate a company ↗</a></div>
-<section class="v10-desk-focus" aria-label="Research perspectives"><a href="company.html?ticker=AAPL"><span class="v10-desk-focus__photo"><img src="assets/img/lens-company.jpg" alt="Financial district building" loading="lazy"></span><span class="v10-desk-focus__label">01 / COMPANIES</span><strong>Understand the business.</strong><span class="v10-desk-focus__arrow">↗</span></a><a href="people.html"><span class="v10-desk-focus__photo"><img src="assets/img/moves-people.jpg" alt="City street with people" loading="lazy"></span><span class="v10-desk-focus__label">02 / PEOPLE</span><strong>Know who's behind the filing.</strong><span class="v10-desk-focus__arrow">↗</span></a><a href="filings.html"><span class="v10-desk-focus__photo"><img src="assets/img/records-right.jpg" alt="New York financial architecture" loading="lazy"></span><span class="v10-desk-focus__label">03 / THE EVIDENCE</span><strong>Follow the original record.</strong><span class="v10-desk-focus__arrow">↗</span></a></section>
-<section class="v3-searchbox v9-desk__search" aria-label="Company search"><form action="research.html" id="v3-search" role="search"><label class="sr-only" for="v3-ticker">Company ticker</label><span class="v3-searchbox__icon" aria-hidden="true"><svg class="v4-ui-icon"><use href="assets/icons/interface.svg#search"></use></svg></span><input type="search" name="ticker" id="v3-ticker" placeholder="Search a ticker or company symbol… e.g. AAPL" autocomplete="off" maxlength="15" spellcheck="false" required><button type="submit">Research ↗</button></form></section>
-<nav class="v9-desk__links" aria-label="Research destinations"><a href="explore.html"><span>Explore companies</span><b>↗</b></a><a href="filings.html"><span>SEC filing library</span><b>↗</b></a><a href="watchlist.html"><span>Your watchlist</span><b>↗</b></a></nav>
-<section class="v10-desk-people" aria-labelledby="v10-desk-people-title"><div class="v10-desk-people__heading"><div><span class="v10-kicker">REAL SEC REPORTING PEOPLE</span><h2 id="v10-desk-people-title">Names behind the numbers.</h2><p>People from imported SEC Form 4 records. Follow one to keep their disclosures close.</p></div><a href="people.html">Explore everyone ↗</a></div><div id="v10-people-preview" class="v10-people-preview" aria-live="polite"><p class="v3-empty">Loading reporting people from recent SEC filings…</p></div></section>
-<div class="v9-desk__section-title"><div><p>From the record</p><h2>Latest research.</h2></div><span>Imported SEC records, never market quotes</span></div>
-<section class="v3-board v9-desk__board" aria-label="Research activity">
- <div class="v3-board__main">
-  <article class="v3-module" id="filing-updates"><div class="v3-module__head"><div><h2>Recent filings</h2><p>Recently imported SEC company disclosures.</p></div><a href="filings.html">Browse filings ↗</a></div>
-   <div class="v3-table-scroll"><table class="v3-table"><thead><tr><th>Company</th><th>Form</th><th>Published (UTC)</th><th>Source</th></tr></thead><tbody id="v3-filings"><tr><td colspan="4" class="v3-empty">Loading SEC filings…</td></tr></tbody></table></div><div class="v3-module__foot" id="v3-coverage">Showing available imported filings.</div>
-  </article>
-  <article class="v3-module" id="insider-activity"><div class="v3-module__head"><div><h2>Insider activity</h2><p>Reported ownership transactions, with original sources.</p></div><a href="research.html">Research ↗</a></div>
-   <div class="v3-filters" role="group" aria-label="Transaction category"><button type="button" data-filter="all" aria-pressed="true">All activity</button><button type="button" data-filter="reported_purchase" aria-pressed="false">Purchases</button><button type="button" data-filter="reported_sale" aria-pressed="false">Sales</button></div>
-   <div class="v3-table-scroll"><table class="v3-table"><thead><tr><th>Reporting person</th><th>Company</th><th>Trade date</th><th>Category</th><th>Reported value</th></tr></thead><tbody id="v3-trades"><tr><td colspan="5" class="v3-empty">Loading reported transactions…</td></tr></tbody></table></div><div class="v3-module__foot">Trade and publication dates can differ. Verify context at the source.</div>
-  </article>
- </div>
- <aside class="v3-board__rail">
-  <section class="v3-module v4-inspector" aria-labelledby="v4-inspector-title"><div class="v3-module__head"><div><h2 id="v4-inspector-title">Filing spotlight</h2><p>A closer look at a real disclosure.</p></div></div><div id="v4-inspector-body" class="v4-inspector__body" aria-live="polite"><p class="v3-empty">Loading a recent filing…</p></div></section>
-  <section class="v3-module v4-trend" aria-labelledby="v4-trend-title"><div class="v3-module__head"><div><h2 id="v4-trend-title">Disclosure activity</h2><p>Imported transaction counts by publication date.</p></div></div><div id="v4-activity-chart" class="v4-trend__chart" role="img" aria-label="Imported transaction count by date"><p class="v3-empty">Loading disclosure counts…</p></div><div class="v3-module__foot">Retrieved import window only. Not a stock price chart.</div></section>
-  <section class="v3-module v3-watch" aria-labelledby="v3-watch-title"><div class="v3-module__head"><div><h2 id="v3-watch-title">Your watchlist</h2></div><a href="watchlist.html">Manage ↗</a></div><div id="v3-watchlist" class="v3-rows"><p class="v3-empty">Checking your saved tickers…</p></div></section>
-  <section class="v3-module" aria-labelledby="v3-notes-title"><div class="v3-module__head"><div><h2 id="v3-notes-title">Research notes</h2></div><a href="research.html">Write a note ↗</a></div><div id="v3-notes" class="v3-rows"><p class="v3-empty">Checking your saved research…</p></div></section>
- </aside>
-</section>
-<p class="v9-desk__disclosure">Insidir organizes selected public-company information. Records may be delayed, partial or amended. Research is not a recommendation or trading service. <a href="company-info.html">About Insidir ↗</a></p>
+
+<nav class="rd-shortcuts" aria-label="Research pages">
+  <a href="explore.html"><span class="rd-shortcuts__name">Companies <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Issuers in the SEC import</span></a>
+  <a href="filings.html"><span class="rd-shortcuts__name">SEC filings <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Form 4 ownership library</span></a>
+  <a href="people.html"><span class="rd-shortcuts__name">People <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Reporting persons to follow</span></a>
+  <a href="watchlist.html"><span class="rd-shortcuts__name">Watchlist <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Tickers you save</span></a>
+  <a href="alerts.html"><span class="rd-shortcuts__name">Alerts <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">New filings on watched tickers</span></a>
+  <a href="research.html"><span class="rd-shortcuts__name">Research desk <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Company research and notes</span></a>
+</nav>
+
+<div class="rd-grid">
+  <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
+    <header class="rd-module__head"><div><p class="rd-index">01</p><h2 id="rd-watch-title">Your watchlist</h2><p>Each saved ticker with its latest imported insider transaction.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist ↗</a></header>
+    <div id="v3-watchlist" class="rd-rows" aria-live="polite"><p class="rd-empty">Loading your saved tickers…</p></div>
+  </section>
+
+  <section class="rd-module rd-module--notes" aria-labelledby="rd-notes-title">
+    <header class="rd-module__head"><div><p class="rd-index">02</p><h2 id="rd-notes-title">Research notes</h2><p>Your private notes, most recent first.</p></div><a class="rd-link" href="research.html">Write a note ↗</a></header>
+    <div id="v3-notes" class="rd-rows" aria-live="polite"><p class="rd-empty">Loading your research notes…</p></div>
+  </section>
+
+  <section class="rd-module rd-module--filings" aria-labelledby="rd-filings-title">
+    <header class="rd-module__head"><div><p class="rd-index">03</p><h2 id="rd-filings-title">Latest filings</h2><p>Form 4 ownership filings, newest publication first.</p></div><a class="rd-link" href="filings.html">All filings ↗</a></header>
+    <div class="rd-table-wrap"><table class="rd-table rd-table--filings"><thead><tr><th scope="col">Company</th><th scope="col">Form</th><th scope="col">Published</th><th scope="col"><span class="sr-only">Record</span></th></tr></thead><tbody id="v3-filings"><tr><td colspan="4" class="rd-empty">Loading SEC filings…</td></tr></tbody></table></div>
+    <p class="rd-module__foot" id="v3-coverage">Publication date is when the SEC posted the filing, not when the trade happened.</p>
+  </section>
+
+  <section class="rd-module rd-module--trades" aria-labelledby="rd-trades-title">
+    <header class="rd-module__head"><div><p class="rd-index">04</p><h2 id="rd-trades-title">Insider activity</h2><p>Reported transactions from those filings, by trade date.</p></div><a class="rd-link" href="research.html">Research a company ↗</a></header>
+    <div class="rd-filters" role="group" aria-label="Transaction type"><button type="button" data-filter="all" aria-pressed="true">All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false">Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false">Sales <span data-count="reported_sale"></span></button></div>
+    <div class="rd-table-wrap"><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Reporting person</th><th scope="col">Company</th><th scope="col">Trade date</th><th scope="col">Type</th><th scope="col" class="rd-num">Reported value</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"><tr><td colspan="6" class="rd-empty">Loading reported transactions…</td></tr></tbody></table></div>
+    <p class="rd-module__foot" id="v3-trades-foot">Values are shares × reported price where the filing gives a price. Check context in the original filing.</p>
+  </section>
+
+  <section class="rd-module rd-module--activity" aria-labelledby="v4-trend-title">
+    <header class="rd-module__head"><div><p class="rd-index">05</p><h2 id="v4-trend-title">Disclosure activity</h2><p>SEC publication days of the 100 most recent imported transactions. A sample of the newest records, not daily totals. Counts, not prices.</p></div></header>
+    <div id="v4-activity-chart" class="rd-chart" role="img" aria-label="Publication days of the most recent imported transactions"><p class="rd-empty">Loading disclosure counts…</p></div>
+  </section>
+
+  <section class="rd-module rd-module--status" aria-labelledby="rd-status-title">
+    <header class="rd-module__head"><div><p class="rd-index">06</p><h2 id="rd-status-title">Data source</h2><p>Where this desk's records come from, and when they were last imported.</p></div></header>
+    <dl class="rd-status" aria-live="polite">
+      <div><dt>Source</dt><dd>SEC EDGAR · Form 4</dd></div>
+      <div><dt>Status</dt><dd id="v4-data-state">Checking…</dd></div>
+      <div><dt>Parsed filings</dt><dd id="v4-filing-count">Checking…</dd></div>
+      <div><dt>Last import</dt><dd id="v4-last-import">Checking…</dd></div>
+      <div><dt>Latest publication</dt><dd id="v4-latest-filing-date">Checking…</dd></div>
+    </dl>
+    <a class="rd-link" href="data.html">How the data works ↗</a>
+  </section>
+
+  <section class="rd-module rd-module--people" aria-labelledby="rd-people-title">
+    <header class="rd-module__head"><div><p class="rd-index">07</p><h2 id="rd-people-title">Reporting people</h2><p>The people behind the latest imported Form 4 transactions.</p></div><a class="rd-link" href="people.html">All people ↗</a></header>
+    <div id="v10-people-preview" class="rd-people" aria-live="polite"><p class="rd-empty">Loading reporting people…</p></div>
+  </section>
+</div>
+
+<p class="rd-disclosure">Insidir organizes public SEC records for independent research. Records can be delayed, partial or amended; always confirm details in the original filing. Insidir is not a broker and nothing here is investment advice. <a href="company-info.html">About Insidir ↗</a></p>
 </main>
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">

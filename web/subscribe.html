@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subscribe — insidir.</title>
+<meta name="description" content="Subscribe to Insidir for $39 a month to open the SEC-sourced company research workspace. Secure checkout by Stripe; cancel any time from Billing.">
+<meta name="theme-color" content="#0c0c0b">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-paywall.css?v=2">
+<script defer src="assets/js/subscribe.js?v=2"></script>
+<script defer src="assets/js/v13-halftone.js?v=1"></script>
+</head>
+<body class="pw-page pw-page--subscribe v13" data-pw-state="loading">
+<a class="skip-link" href="#Content">Skip to content</a>
+<header class="pw-header">
+ <div class="pw-header__inner">
+  <a class="v13-logo pw-logo" href="index.html" aria-label="Insidir home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
+  <nav class="pw-header__nav" aria-label="Account">
+   <span class="pw-header__who" data-pw-email hidden></span>
+   <a href="account.html" data-pw-signed-in hidden>Account</a>
+   <button type="button" data-pw-signout data-pw-signed-in hidden>Sign out</button>
+   <a href="signin.html" data-pw-signed-out data-pw-signin>Log in</a>
+  </nav>
+ </div>
+</header>
+
+<main id="Content" class="pw-main">
+ <div class="pw-topline"><p>Account <span aria-hidden="true">/</span> Subscription</p><p>Secure checkout by Stripe</p></div>
+ <div class="pw-grid">
+  <section class="pw-intro" aria-labelledby="pw-title">
+   <h1 id="pw-title">Subscribe to open your workspace.</h1>
+   <p class="pw-lead">Insidir is a paid research workspace. One plan covers everything below: $39 a month, billed through Stripe, and you can cancel any time from Billing.</p>
+   <p class="pw-notice" data-pw-notice="cancel" hidden>Checkout was cancelled and nothing was charged. You can subscribe whenever you're ready.</p>
+   <p class="pw-notice" data-pw-notice="next" hidden></p>
+  </section>
+
+  <aside class="pw-plan" aria-labelledby="pw-plan-name">
+   <p class="pw-plan__label" id="pw-plan-name">Insidir Pro</p>
+   <p class="pw-plan__price"><strong>$39</strong><span>/ month</span></p>
+   <ul class="pw-plan__terms">
+    <li>Billed monthly in US dollars</li>
+    <li>Cancel any time from Billing</li>
+    <li>Card details handled by Stripe</li>
+   </ul>
+   <div class="pw-plan__state" role="status" aria-live="polite">
+    <div data-pw-when="loading"><p class="pw-status">Checking your account…</p></div>
+    <div data-pw-when="ready" hidden>
+     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-subscribe" data-busy-label="Opening secure checkout…">Subscribe · $39/month</button>
+     <p class="pw-fine">You'll continue to Stripe's secure checkout. When payment completes you'll come back to Billing, and the dashboard opens as soon as the subscription is active.</p>
+    </div>
+    <div data-pw-when="lapsed" hidden>
+     <p class="pw-status" data-pw-lapsed></p>
+     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-resubscribe" data-busy-label="Opening secure checkout…">Subscribe again · $39/month</button>
+    </div>
+    <div data-pw-when="fix" hidden>
+     <p class="pw-status" data-pw-fix>Your subscription needs attention in Stripe's billing portal. There's no need to subscribe again.</p>
+     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-portal" data-busy-label="Opening billing portal…">Open billing portal</button>
+     <a class="pw-link" href="billing.html">See billing details</a>
+    </div>
+    <div data-pw-when="disabled" hidden>
+     <p class="pw-status">To request access in the meantime, email <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>.</p>
+    </div>
+    <div data-pw-when="active" hidden>
+     <p class="pw-status" data-pw-active>Your subscription is active.</p>
+     <a class="btn btn--dark btn--block pw-action" href="dashboard.html" data-pw-continue>Open dashboard</a>
+     <a class="pw-link" href="billing.html">Manage billing</a>
+    </div>
+    <div data-pw-when="signedout" hidden>
+     <p class="pw-status">New to Insidir? Create your account first; it takes a minute.</p>
+     <a class="btn btn--dark btn--block pw-action" href="signin.html" data-pw-signin>Log in</a>
+     <a class="pw-link" href="signup.html">Get started</a>
+    </div>
+    <div data-pw-when="error" hidden>
+     <p class="pw-status">Your connection or our service may be down for a moment.</p>
+     <button type="button" class="btn btn--light btn--block pw-action" id="pw-retry">Try again</button>
+    </div>
+    <p class="pw-feedback" id="pw-feedback" hidden></p>
+   </div>
+  </aside>
+
+  <section class="pw-included" aria-labelledby="pw-included-title">
+   <h2 id="pw-included-title">What's included</h2>
+   <ol class="pw-list">
+    <li><span>01</span><div><h3>Company reports</h3><p>Any SEC-listed ticker: a delayed price chart, key facts, XBRL financial statements, filings, Form&nbsp;4 insider activity, people and 8-K announcements.</p></div></li>
+    <li><span>02</span><div><h3>Research desk</h3><p>SEC submissions and reported financial facts for a ticker, each linked to its source, beside your private research journal.</p></div></li>
+    <li><span>03</span><div><h3>Filings and insider activity</h3><p>Imported Form&nbsp;4 filings and the transactions they report, with links to the original EDGAR documents.</p></div></li>
+    <li><span>04</span><div><h3>People</h3><p>A directory of reporting insiders. Follow the people you want to keep track of.</p></div></li>
+    <li><span>05</span><div><h3>Watchlist and alerts</h3><p>Save tickers and see recent insider activity on them, inside the app.</p></div></li>
+    <li><span>06</span><div><h3>Portfolio</h3><p>Record your holdings by hand and see related SEC activity. No brokerage connection required.</p></div></li>
+   </ol>
+   <p class="pw-note">Insidir is research software by Aethric LLC. It doesn't place trades or make recommendations, and nothing in it is investment advice. Subscriptions are covered by the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy Policy</a>.</p>
+  </section>
+ </div>
+</main>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
+</body>
+</html>
