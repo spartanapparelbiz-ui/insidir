@@ -14,6 +14,10 @@ const detail=t=>clean(t)?"company.html?ticker="+encodeURIComponent(clean(t)):"re
 /* Every company gets its real logo (entity-media.js, one /v1/media batch per page): by ticker, or by the
    issuer's SEC CIK when no ticker was reported; initials only when no logo exists anywhere. */
 const companyLogo=(t,x={})=>window.InsidirMedia?.company({ticker:t,cik:x.issuer_cik,name:x.issuer_name,size:"sm"})||"";
+/* Issuer names as people write them ("NVIDIA Corp", not "NVIDIA CORP"), as on the overview (entity-media.js); a bare
+   form number reads as a form ("Form 4"). */
+const companyName=n=>window.InsidirMedia?.companyName?window.InsidirMedia.companyName(n):String(n||"");
+const formLabel=f=>{const t=String(f||"4").trim();return /^form\b/i.test(t)?t:"Form "+t;};
 const tbody=$("collection-rows"),more=$("collection-more");
 let all=[],offset=0,busy=false,moreAvailable=false;
 const status=s=>{$("collection-status").textContent=s};
@@ -25,8 +29,8 @@ async function request(path,options={}){
 function render(){
  const html=all.map(x=>{
   const t=clean(x.ticker);
-  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(x.issuer_name||"Reported issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(d(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
-  if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(x.issuer_name||"Reporting issuer"))+'<span class="cl-muted">'+E(x.issuer_name||"")+'</span></div></div></td><td>'+E(x.form_type||"Form 4")+(x.is_amendment?" · amended":"")+'</td><td>'+E(d(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
+  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(companyName(x.issuer_name)||"Reported issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(d(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
+  if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(companyName(x.issuer_name)||"Reporting issuer"))+'<span class="cl-muted">'+E(companyName(x.issuer_name))+'</span></div></div></td><td>'+E(formLabel(x.form_type))+(x.is_amendment&&!/\/A$/i.test(String(x.form_type||""))?" · amended":"")+'</td><td>'+E(d(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
   return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(d(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
  }).join("");
  const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.": "No companies match this search in the imported dataset.";

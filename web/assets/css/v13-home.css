@@ -29,14 +29,22 @@
 
    Breakpoints: 1100 (12-column heads and the hero's facts column change), 1024 (two-up grids, stacked code
    key), 900 (navigation collapses to the menu; the hero stacks without its fact sheet; one-column plan and
-   questions), 760 (phone: single column, 16px gaps), 640 (tools become list rows), 560 (secondary buttons become
-   text links), 374 (smallest phones). */
+   questions; the closing call drops its dots), 760 (phone: single column, 16px gaps, 48px between sections, 13px
+   descriptions run the full measure under a number set on the title's baseline, compact ledger, step and rule rows,
+   one-line code key rows), 640 (tools become list rows), 560
+   (secondary buttons become text links; the hero's meta line steps aside), 374 (smallest phones: two-line code key
+   rows, stacked plan steps).
+
+   Hero lift: on a first screen taller than the copy plus the word's band (laptops in spread mode, large monitors),
+   v9-motion.js sets --lp-hero-lift on the hero and the inner block's top padding takes it, so the copy sits centred
+   between the bar and the word instead of floating over an empty band. */
 @layer insidir-v13{
 
 /* ---------- Page ---------- */
 body.v13.v12-home.v9-site.v6-site{--lp-nav:70px!important;--lp-gutter:var(--hf-gutter)!important;--lp-gap:24px!important;--lp-sec:clamp(72px,8.4vw,128px)!important;
   font:400 14px/1.65 var(--hf-mono)!important;overflow-x:clip!important}
-@media (max-width:760px){body.v13.v12-home.v9-site.v6-site{--lp-gap:16px!important}}
+/* Phones: a tighter section rhythm (48px between sections) so the long single column reads as one sheet. */
+@media (max-width:760px){body.v13.v12-home.v9-site.v6-site{--lp-gap:16px!important;--lp-sec:48px!important}}
 html.v13-menu-open{overflow:hidden!important}
 /* No blue system flash on tap; touches get the palette's own pressed states below. */
 body.v13.v12-home.v9-site.v6-site,body.v13.v12-home.v9-site.v6-site *{-webkit-tap-highlight-color:transparent!important}
@@ -85,7 +93,7 @@ body.v13.v12-home.v9-site.v6-site .v13-hero{height:auto!important;max-height:non
 /* Stacked (≥ 900px): a running head (eyebrow left, meta right, one baseline), the headline across the full measure,
    then the lede, actions and terms in columns 1–6 and the fact sheet in columns 9–12, both starting on one line. */
 body.v13.v12-home.v9-site.v6-site .v13-hero__inner{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:var(--lp-gap)!important;align-items:start!important;
-  padding:clamp(32px,6vh,56px) 0 clamp(32px,5vh,48px)!important}
+  padding:calc(clamp(32px,6vh,56px) + var(--lp-hero-lift,0px)) 0 clamp(32px,5vh,48px)!important}
 body.v13.v12-home.v9-site.v6-site .v13-hero .v9-hero__eyebrow{display:block!important;grid-column:1/7!important;grid-row:1!important;width:auto!important;margin:0!important;
   font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13.v12-home.v9-site.v6-site .v13-hero .v13-hero__meta{position:static!important;display:block!important;grid-column:7/13!important;grid-row:1!important;justify-self:end!important;max-width:none!important;
@@ -131,7 +139,7 @@ body.v13.v12-home.v9-site.v6-site .lp-facts dd{margin:0!important;font:400 13px/
   body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms{grid-column:1!important;grid-row:6!important}
 }
 @media (max-width:760px){
-  body.v13.v12-home.v9-site.v6-site .v13-hero__inner{padding:40px 0 36px!important}
+  body.v13.v12-home.v9-site.v6-site .v13-hero__inner{padding:calc(40px + var(--lp-hero-lift,0px)) 0 36px!important}
   /* 40px, or less where "Know what moves" (8.05em of ink) would not fit the measure. */
   body.v13.v12-home.v9-site.v6-site .v13-hero h1{margin-top:24px!important;font-size:min(40px,calc((100vw - 2 * var(--hf-gutter)) / 8.2))!important;line-height:1!important}
   body.v13.v12-home.v9-site.v6-site .v13-hero .v9-hero__description{margin-top:20px!important;font-size:15px!important}
@@ -142,19 +150,24 @@ body.v13.v12-home.v9-site.v6-site .lp-facts dd{margin:0!important;font:400 13px/
 @media (max-width:560px){
   body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions){display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;justify-items:stretch!important}
   body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v9-btn--ink{width:100%!important;justify-content:space-between!important}
-  body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button{justify-self:start!important;width:auto!important;height:44px!important;min-height:44px!important;padding:0!important;gap:10px!important;
-    border-color:transparent!important;background:transparent!important;color:var(--hf-ink)!important;justify-content:flex-start!important;font:500 14px/1 var(--hf-mono)!important;text-underline-offset:5px!important}
-  body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button:hover{border-color:transparent!important;text-decoration:underline 1px var(--hf-line-strong)!important}
+  /* The secondary as a text link: a block whose 44px line box centres the words; the arrow is an atomic inline
+     box, so the underline (hover, focus) runs under the words only and never leaves a stub under the arrow. */
+  body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button{display:block!important;justify-self:start!important;width:auto!important;height:44px!important;min-height:44px!important;padding:0!important;
+    border-color:transparent!important;background:transparent!important;color:var(--hf-ink)!important;font:500 14px/44px var(--hf-mono)!important;text-decoration:none!important;text-underline-offset:5px!important}
+  body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button>.v13-arrow{margin-left:10px!important}
+  body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button:is(:hover,:focus-visible){border-color:transparent!important;text-decoration:underline 1px var(--hf-line-strong)!important}
   body.v13.v12-home.v9-site.v6-site :is(.v13-hero .v9-hero__actions,.lp-final__actions) .v12-outline-button:active{background:transparent!important;color:var(--hf-soft)!important}
   body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms>.lp-keep{flex-basis:100%!important}
+  /* One caps line above the headline: the meta line repeats the terms below, so the eyebrow stands alone. */
+  body.v13.v12-home.v9-site.v6-site .v13-hero .v13-hero__meta{display:none!important}
 }
 /* The meta line keeps to one line on the smallest phones (it would otherwise wrap onto its dot). */
 @media (max-width:374px){body.v13.v12-home.v9-site.v6-site .v13-hero .v13-hero__meta{letter-spacing:.06em!important}}
 @media (max-width:339px){body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms>.lp-keep{white-space:normal!important}}
 
 /* Spread: on landscape screens too short to stack the copy over the band, the headline and the actions take
-   columns 1–8, the lede and the terms columns 9–12 (8–12 under 1100px), so the copy is about half as tall and the
-   fact sheet steps aside. Each query covers a band of widths with the least height at which the stacked hero
+   columns 1–8, the lede with the terms right under it columns 9–12 (8–12 under 1100px), so the copy is about half as
+   tall and the fact sheet steps aside. Each query covers a band of widths with the least height at which the stacked hero
    (copy, plus the band at the deepest crop) still fits the first screen anywhere in that band, so the stacked hero
    only gives way where it would not fit. The needs are not monotonic (the fact sheet wraps below ~1430px wide),
    hence bounded bands; from 1600px the container stops growing and so does the need. Measured with the landing's
@@ -173,7 +186,9 @@ body.v13.v12-home.v9-site.v6-site .lp-facts dd{margin:0!important;font:400 13px/
   body.v13.v12-home.v9-site.v6-site .v13-hero h1{grid-column:1/9!important;grid-row:2/4!important;font-size:min(var(--hf-fs-display),11.6vh)!important}
   body.v13.v12-home.v9-site.v6-site .v13-hero .v9-hero__description{grid-column:9/13!important;grid-row:2!important;margin:clamp(24px,4vh,40px) 0 0!important;padding-top:6px!important;font-size:15px!important;max-width:none!important}
   body.v13.v12-home.v9-site.v6-site .v13-hero .v9-hero__actions{grid-column:1/9!important;grid-row:4!important}
-  body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms{grid-column:9/13!important;grid-row:3/5!important;align-self:end!important;margin-top:16px!important}
+  /* The terms follow the lede directly, so the right column reads as one block under the running head. They span the
+     actions' row too, so where the lede runs long they reach down beside the buttons instead of pushing them down. */
+  body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms{grid-column:9/13!important;grid-row:3/5!important;align-self:start!important;margin-top:20px!important}
   body.v13.v12-home.v9-site.v6-site .lp-facts{display:none!important}
 }
 @media (orientation:landscape) and (min-width:600px) and (max-width:1099.98px) and (max-height:749px){
@@ -200,18 +215,23 @@ body.v13.v12-home.v9-site.v6-site .v12-outline-button{background:transparent!imp
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .v12-outline-button:hover{background:transparent!important;border-color:var(--hf-line-strong)!important;color:var(--hf-ink)!important}}
 body.v13.v12-home.v9-site.v6-site .v12-outline-button:active{background:var(--hf-raise)!important}
 body.v13.v12-home.v9-site.v6-site .v9-btn--ink:active{background:var(--hf-ink-press)!important;border-color:var(--hf-ink-press)!important;color:var(--hf-bg)!important}
-/* The section action link: ink on a dim underline that turns ink under the pointer; its → goes faint to ink. */
-body.v13.v12-home.v9-site.v6-site .v12-secondary-link{display:inline-flex!important;align-items:center!important;gap:10px!important;min-height:24px!important;font:500 13px/1.4 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;
+/* The section action link: ink on a dim underline that turns ink under the pointer; its → goes faint to ink. The
+   link is an inline box and the arrow an atomic inline-block spaced by its own margin, so the underline runs under
+   the words and stops before the arrow (an inline-flex link would draw a detached stub under the arrow). */
+body.v13.v12-home.v9-site.v6-site .v12-secondary-link{display:inline!important;font:500 13px/24px var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;
   color:var(--hf-ink)!important;background-image:none!important;text-decoration:underline 1px var(--hf-line-2)!important;text-underline-offset:5px!important;transition:text-decoration-color .12s linear,color .12s linear!important}
+body.v13.v12-home.v9-site.v6-site :is(.v12-secondary-link,.lp-source__link)>.v13-arrow{display:inline-block!important;margin-left:10px!important;text-decoration:none!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .v12-secondary-link:hover{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-ink)!important;text-underline-offset:5px!important}}
 body.v13.v12-home.v9-site.v6-site .v12-secondary-link:active{text-decoration-color:var(--hf-ink)!important}
 
 /* ---------- Sections: rule, running head, head ---------- */
 body.v13.v12-home.v9-site.v6-site .lp-section{position:relative!important;padding:var(--lp-sec) 0 0!important;margin:0!important;background:transparent!important;border:0!important}
-/* Section 01 sits closer: the hero's full-width bottom hairline already closes the first screen. */
-body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools{padding-top:clamp(40px,4vw,56px)!important}
 body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width{position:relative!important;padding-top:20px!important}
 body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width::after{content:""!important;position:absolute!important;top:0!important;left:0!important;right:0!important;height:1px!important;background:var(--hf-line-2)!important}
+/* Section 01 opens on the hero's own full-width bottom hairline (where the wordmark is cropped): no second rule of
+   its own, and its running head sits the usual 20px under that hairline. */
+body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools{padding-top:0!important}
+body.v13.v12-home.v9-site.v6-site .lp-section.lp-tools>.v9-width::after{display:none!important}
 /* The folio sits on the eyebrow's baseline, 20px under the rule, at the right end. */
 body.v13.v12-home.v9-site.v6-site .lp-section>.v9-width>.lp-folio{position:absolute!important;top:20px!important;right:0!important;margin:0!important;padding:0!important;white-space:nowrap!important;
   font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important}
@@ -223,7 +243,7 @@ body.v13.v12-home.v9-site.v6-site .v13-head__lead{grid-column:1/9!important;grid
 body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) .v12-eyebrow{display:block!important;grid-row:1!important;align-self:start!important;margin:0 0 clamp(40px,4.2vw,64px)!important;padding-right:96px!important;
   font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) h2{grid-row:2!important;margin:0!important;max-width:none!important;
-  font:700 var(--hf-fs-h2-lg)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;word-spacing:-.12em!important;color:var(--hf-ink)!important}
+  font:700 var(--hf-fs-h2-lg)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;word-spacing:-.12em!important;color:var(--hf-ink)!important;text-wrap:balance!important}
 body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout,.lp-final) h2 span{color:var(--hf-soft)!important}
 /* One sentence per line in the two-sentence headlines. */
 body.v13.v12-home.v9-site.v6-site :is(.lp-tools,.lp-data,.lp-flow,.lp-plan) .v13-head h2 span{display:block!important}
@@ -238,7 +258,16 @@ body.v13.v12-home.v9-site.v6-site .lp-note{margin:20px 0 0!important;max-width:7
   body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) .v12-eyebrow{margin-bottom:24px!important}
 }
 @media (max-width:760px){
-  body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) h2{line-height:1.06!important}
+  /* 32px, a touch less where the longest second clause ("Everything included.", 20 characters) would otherwise wrap
+     onto a third line, and never under 28px, where "One subscription." still fits the 280px measure of a 320px phone. */
+  body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) h2{font-size:clamp(28px,calc((100vw - 2 * var(--hf-gutter)) / 11.2),32px)!important;line-height:1.06!important}
+  body.v13.v12-home.v9-site.v6-site .v13-head{margin-bottom:28px!important}
+  /* The folio ("0N / 06", 56px) needs 72px of the line, not 96: "Where the data comes from" then keeps to one line
+     on a 320px phone. */
+  body.v13.v12-home.v9-site.v6-site :is(.v13-head,.lp-faq__layout) .v12-eyebrow{margin-bottom:16px!important;padding-right:72px!important}
+  body.v13.v12-home.v9-site.v6-site .v13-head__aside{gap:12px!important;margin-top:12px!important}
+  body.v13.v12-home.v9-site.v6-site .v13-head__aside>p{font-size:14px!important;line-height:1.6!important}
+  body.v13.v12-home.v9-site.v6-site .lp-note{margin-top:16px!important;font-size:12.5px!important}
 }
 
 /* ---------- 01 The platform: an index grid of six tools ---------- */
@@ -265,16 +294,18 @@ body.v13.v12-home.v9-site.v6-site .lp-tool__src{display:block!important;margin-t
   body.v13.v12-home.v9-site.v6-site .lp-tool{min-height:248px!important;padding:24px 28px!important}
   body.v13.v12-home.v9-site.v6-site .lp-tool__top{margin-bottom:40px!important}
 }
-/* Phones: hairline list rows, the number in its own column. */
+/* Phones: compact hairline list rows. The number sits on the title's baseline and the description runs the full
+   measure at 13px below them, the way the filing chain's steps are set further down. The source line steps aside:
+   the sources ledger right below names every source in full, with its link. */
 @media (max-width:640px){
   body.v13.v12-home.v9-site.v6-site .lp-tools__grid{grid-template-columns:minmax(0,1fr)!important;gap:0!important;background:transparent!important;border:0!important;border-top:1px solid var(--hf-line-2)!important}
   body.v13.v12-home.v9-site.v6-site .lp-tools__grid>li{border-bottom:1px solid var(--hf-line)!important}
-  body.v13.v12-home.v9-site.v6-site .lp-tool{display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;column-gap:12px!important;align-content:start!important;padding:20px 0 22px!important;min-height:0!important}
-  body.v13.v12-home.v9-site.v6-site .lp-tool__top{grid-column:1!important;grid-row:1/4!important;display:block!important;margin:0!important;padding-top:4px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-tool{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;column-gap:12px!important;align-content:start!important;align-items:baseline!important;padding:16px 0 18px!important;min-height:0!important}
+  body.v13.v12-home.v9-site.v6-site .lp-tool__top{grid-column:1!important;grid-row:1!important;display:block!important;margin:0!important;padding:0!important}
   body.v13.v12-home.v9-site.v6-site .lp-tool__top::after{display:none!important}
-  body.v13.v12-home.v9-site.v6-site :is(.lp-tool h3,.lp-tool p,.lp-tool__src){grid-column:2!important}
-  body.v13.v12-home.v9-site.v6-site .lp-tool h3{margin:0 0 6px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-tool__src{padding-top:10px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-tool h3{grid-column:2!important;grid-row:1!important;margin:0!important;font-size:16px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-tool p{grid-column:1/-1!important;grid-row:2!important;margin-top:6px!important;font:400 13px/1.55 var(--hf-mono)!important;max-width:none!important}
+  body.v13.v12-home.v9-site.v6-site .lp-tool__src{display:none!important}
 }
 
 /* ---------- 02 Where the data comes from: a 4/4/4 ledger on axes A, B and C ---------- */
@@ -288,15 +319,24 @@ body.v13.v12-home.v9-site.v6-site .lp-sources__head span{font:var(--hf-label)!im
 body.v13.v12-home.v9-site.v6-site .lp-source{padding:24px 0 26px!important;align-items:baseline!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13.v12-home.v9-site.v6-site .lp-source h3{margin:0!important;font:600 16px/1.35 var(--hf-mono)!important;letter-spacing:-.015em!important;color:var(--hf-ink)!important;text-wrap:balance!important}
 body.v13.v12-home.v9-site.v6-site .lp-source__tag{display:block!important;margin:4px 0 0!important;font:400 12.5px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important}
-body.v13.v12-home.v9-site.v6-site .lp-source__link{display:inline-flex!important;align-items:center!important;gap:8px!important;margin-top:12px!important;font:500 13px/1.4 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important;
+/* The source link is an inline box with the arrow as an atomic inline-block, so its hover underline stops at the words. */
+body.v13.v12-home.v9-site.v6-site .lp-source__link{display:inline-block!important;margin-top:12px!important;font:500 13px/1.4 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important;
   text-decoration:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
-body.v13.v12-home.v9-site.v6-site .lp-source__link .v13-arrow{color:var(--hf-faint)!important;transition:color .12s linear!important}
+body.v13.v12-home.v9-site.v6-site .lp-source__link .v13-arrow{margin-left:8px!important;color:var(--hf-faint)!important;transition:color .12s linear!important}
 @media (hover:hover){
   body.v13.v12-home.v9-site.v6-site .lp-source__link:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
   body.v13.v12-home.v9-site.v6-site .lp-source__link:hover .v13-arrow{color:var(--hf-ink)!important}
 }
 body.v13.v12-home.v9-site.v6-site .lp-source>p{margin:0!important;font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:48ch!important}
-body.v13.v12-home.v9-site.v6-site .lp-source>p.lp-source__use{font:400 13px/1.65 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
+/* "Used in": the label, then the items in their own box (.lp-source__items), one span per item with a dim dot in a
+   20px gutter in front of it. The items' line box starts one gutter to the left with that gutter clipped, so an item
+   that opens a line hides its dot: no line starts or ends on a dot, however the items wrap, and a wrapped line starts
+   under the first item, never under the label (the hero's terms use the same build). */
+body.v13.v12-home.v9-site.v6-site .lp-source>p.lp-source__use{display:block!important;margin:0!important;max-width:none!important;
+  font:400 13px/1.65 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
+body.v13.v12-home.v9-site.v6-site .lp-source__items{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;min-width:0!important;margin:0 0 0 -20px!important;clip-path:inset(0 0 0 20px)!important}
+body.v13.v12-home.v9-site.v6-site .lp-source__items>span{white-space:nowrap!important}
+body.v13.v12-home.v9-site.v6-site .lp-source__items>span::before{content:"\00B7"!important;display:inline-block!important;width:20px!important;text-align:center!important;color:var(--hf-line-strong)!important}
 body.v13.v12-home.v9-site.v6-site .lp-source__label{display:none!important}
 @media (max-width:1024px){
   body.v13.v12-home.v9-site.v6-site .lp-sources{border-top:1px solid var(--hf-line-2)!important}
@@ -307,15 +347,18 @@ body.v13.v12-home.v9-site.v6-site .lp-source__label{display:none!important}
   body.v13.v12-home.v9-site.v6-site .lp-sources .lp-source>p{grid-column:5/13!important;max-width:60ch!important}
   body.v13.v12-home.v9-site.v6-site .lp-source__label{display:block!important;margin:0 0 4px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 }
-/* Phones: block rows; the name with its tag on one line, the link under them, then what it provides and where. */
+/* Phones: compact block rows. The name on its own line; the tag and the source link on the next (the link at the
+   right end); then what it provides at 13px, and "Used in" as a label column in front of its items, so a wrapped
+   line of items starts under the first item, not under the label. */
 @media (max-width:760px){
-  body.v13.v12-home.v9-site.v6-site .lp-source{display:block!important;padding:22px 0 24px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source__name{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;justify-content:space-between!important;gap:4px 16px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source__name h3{flex:1 1 auto!important;min-width:0!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source__tag{margin:0!important;text-align:right!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source__link{flex-basis:100%!important;margin-top:4px!important;justify-content:flex-start!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source>p{margin-top:14px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-source>p.lp-source__use{margin-top:12px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source{display:block!important;padding:16px 0 18px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source__name{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;justify-content:space-between!important;gap:4px 12px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source__name h3{flex:1 1 100%!important;min-width:0!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source__tag{margin:0!important;text-align:left!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source__link{flex:none!important;margin:0 0 0 auto!important}
+  body.v13.v12-home.v9-site.v6-site .lp-sources .lp-source>p{margin-top:8px!important;font-size:13px!important;line-height:1.55!important;max-width:none!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source>p.lp-source__use{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;column-gap:14px!important;align-items:baseline!important;margin-top:8px!important;font-size:12.5px!important;line-height:1.6!important}
+  body.v13.v12-home.v9-site.v6-site .lp-source__label{margin:0!important}
 }
 
 /* ---------- 03 How it works: the filing chain, then the Form 4 code key ---------- */
@@ -365,24 +408,36 @@ body.v13.v12-home.v9-site.v6-site .lp-dir--down .lp-tri{clip-path:polygon(0 0,10
   body.v13.v12-home.v9-site.v6-site .lp-codes__intro p{max-width:62ch!important}
 }
 @media (max-width:760px){
-  /* The chain runs down one vertical rule. */
+  /* The chain runs down one vertical rule; each step's numeral sits on its title's baseline. */
   body.v13.v12-home.v9-site.v6-site .lp-steps{grid-template-columns:minmax(0,1fr)!important;row-gap:0!important}
-  body.v13.v12-home.v9-site.v6-site .lp-step{border-top:0!important;border-left:1px solid var(--hf-line-2)!important;padding:0 0 32px 24px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;column-gap:14px!important;align-items:baseline!important;
+    border-top:0!important;border-left:1px solid var(--hf-line-2)!important;padding:0 0 22px 24px!important}
   body.v13.v12-home.v9-site.v6-site .lp-step:last-child{padding-bottom:4px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-step::before{top:2px!important;left:-4px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step::before{top:13px!important;left:-4px!important}
   body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{top:auto!important;right:auto!important;bottom:-4px!important;left:-4px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-step__num{font-size:32px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-step h3{margin-top:14px!important;font-size:17px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-codes{margin-top:56px!important;padding-top:28px!important}
-  /* The key as two-line rows: the code, then the label over what the code means. */
+  body.v13.v12-home.v9-site.v6-site .lp-step__num{grid-column:1!important;grid-row:1!important;font-size:32px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step h3{grid-column:2!important;grid-row:1!important;margin:0!important;font-size:17px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step p{grid-column:1/-1!important;margin-top:6px!important;font-size:13px!important;line-height:1.55!important;max-width:none!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes{margin-top:40px!important;padding-top:24px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__intro h3{font-size:19px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__intro p{margin-top:10px!important;font-size:13px!important;line-height:1.55!important}
+  /* The key as one row per code: the code, what it means, and its label at the row's end (the column heads are
+     left to the caption on a phone). */
   body.v13.v12-home.v9-site.v6-site .lp-codes__table{font-size:13px!important}
   body.v13.v12-home.v9-site.v6-site .lp-codes__table thead{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   body.v13.v12-home.v9-site.v6-site :is(.lp-codes__table,.lp-codes__table tbody){display:block!important;width:100%!important}
   body.v13.v12-home.v9-site.v6-site .lp-codes__table tbody{border-top:1px solid var(--hf-line-2)!important}
-  body.v13.v12-home.v9-site.v6-site .lp-codes__table tr{display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;row-gap:6px!important;align-items:center!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table tr{display:grid!important;grid-template-columns:44px minmax(0,1fr) auto!important;column-gap:12px!important;row-gap:4px!important;align-items:center!important;padding:10px 0!important;border-bottom:1px solid var(--hf-line)!important}
   body.v13.v12-home.v9-site.v6-site .lp-codes__table td{display:block!important;padding:0!important;border:0!important;width:auto!important}
-  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:first-child{grid-column:1!important;grid-row:1/3!important;width:auto!important}
-  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:nth-child(3){grid-column:2!important;grid-row:1!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:first-child{grid-column:1!important;grid-row:1!important;width:auto!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:nth-child(2){grid-column:2!important;grid-row:1!important;font-size:13px!important;color:var(--hf-soft)!important;min-width:0!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:nth-child(3){grid-column:3!important;grid-row:1!important;justify-self:end!important}
+}
+/* The narrowest phones: two-line rows, the label over what the code means. */
+@media (max-width:374px){
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table tr{grid-template-columns:44px minmax(0,1fr)!important;column-gap:0!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:first-child{grid-row:1/3!important}
+  body.v13.v12-home.v9-site.v6-site .lp-codes__table td:nth-child(3){grid-column:2!important;grid-row:1!important;justify-self:start!important}
   body.v13.v12-home.v9-site.v6-site .lp-codes__table td:nth-child(2){grid-column:2!important;grid-row:2!important;font-size:12.5px!important;color:var(--hf-faint)!important}
 }
 
@@ -399,10 +454,10 @@ body.v13.v12-home.v9-site.v6-site .lp-rule p{grid-column:9/13!important;margin:0
   body.v13.v12-home.v9-site.v6-site .lp-rule p{grid-column:7/13!important}
 }
 @media (max-width:760px){
-  body.v13.v12-home.v9-site.v6-site .lp-rule{grid-template-columns:32px minmax(0,1fr)!important;row-gap:8px!important;padding:22px 0 24px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-rule__num{grid-column:1!important;grid-row:1/3!important;padding-top:4px!important;align-self:start!important}
-  body.v13.v12-home.v9-site.v6-site .lp-rule h3{grid-column:2!important;font-size:20px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-rule p{grid-column:2!important}
+  body.v13.v12-home.v9-site.v6-site .lp-rule{grid-template-columns:auto minmax(0,1fr)!important;column-gap:12px!important;row-gap:6px!important;align-items:baseline!important;padding:16px 0 18px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-rule__num{grid-column:1!important;grid-row:1!important}
+  body.v13.v12-home.v9-site.v6-site .lp-rule h3{grid-column:2!important;grid-row:1!important;font-size:19px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-rule p{grid-column:1/-1!important;grid-row:2!important;font-size:13px!important;line-height:1.55!important;max-width:none!important}
 }
 
 /* ---------- 05 Pricing: one plan card ---------- */
@@ -421,7 +476,7 @@ body.v13.v12-home.v9-site.v6-site .lp-plan__price .v9-btn{width:100%!important;j
 body.v13.v12-home.v9-site.v6-site .lp-plan__fine{margin:14px 0 0!important;font:400 12.5px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__list ul{list-style:none!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:40px!important;margin:16px 0 0!important;padding:0!important;border-top:0!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__list li{display:flex!important;gap:14px!important;align-items:baseline!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;
-  font:400 14px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important;list-style:none!important}
+  font:400 14px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important;list-style:none!important;text-wrap:pretty!important}
 /* A small ink square as the bullet, lifted onto the x-height by a fixed offset (not motion). */
 body.v13.v12-home.v9-site.v6-site .lp-plan__list li::before{content:""!important;flex:none!important;position:relative!important;top:-3px!important;width:5px!important;height:5px!important;background:var(--hf-ink)!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__flow{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
@@ -441,10 +496,31 @@ body.v13.v12-home.v9-site.v6-site .lp-plan__flow span{font:var(--hf-label)!impor
   body.v13.v12-home.v9-site.v6-site .lp-plan__list{grid-column:1!important;padding:24px 20px 16px!important}
   body.v13.v12-home.v9-site.v6-site .lp-plan__list ul{grid-template-columns:minmax(0,1fr)!important}
   body.v13.v12-home.v9-site.v6-site .lp-plan__list li:last-child{border-bottom:0!important}
-  body.v13.v12-home.v9-site.v6-site .lp-plan__flow{grid-template-columns:minmax(0,1fr)!important}
+  /* The three steps stay one compact row across the card. */
   body.v13.v12-home.v9-site.v6-site .lp-plan__flow li{padding:16px 20px!important}
-  body.v13.v12-home.v9-site.v6-site .lp-plan__flow li+li{border-left:0!important;border-top:1px solid var(--hf-line)!important}
   body.v13.v12-home.v9-site.v6-site .lp-plan__amount{font-size:64px!important}
+}
+@media (max-width:760px){
+  body.v13.v12-home.v9-site.v6-site .lp-plan__price{padding:24px 20px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__amount{margin-top:20px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__terms{margin:16px 0 24px!important;font-size:13px!important;line-height:1.55!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__fine{margin-top:12px!important;font-size:12px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__list{padding:20px 20px 6px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__list ul{margin-top:8px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__list li{gap:12px!important;padding:9px 0!important;font-size:13px!important;line-height:1.45!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__list li::before{top:-2px!important}
+}
+/* Small phones: each step's number over its words, in three narrow columns. */
+@media (max-width:560px){
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow li{display:block!important;padding:14px 12px 16px!important;font-size:12.5px!important;line-height:1.45!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow span{display:block!important;margin-bottom:4px!important}
+}
+/* The narrowest phones: the three steps stack. */
+@media (max-width:374px){
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow{grid-template-columns:minmax(0,1fr)!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow li{display:flex!important;padding:12px 20px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow span{display:inline!important;margin:0!important}
+  body.v13.v12-home.v9-site.v6-site .lp-plan__flow li+li{border-left:0!important;border-top:1px solid var(--hf-line)!important}
 }
 
 /* ---------- 06 Questions ---------- */
@@ -457,7 +533,7 @@ body.v13.v12-home.v9-site.v6-site .lp-faq__more a{color:var(--hf-ink)!important;
 body.v13.v12-home.v9-site.v6-site .lp-questions{grid-column:5/13!important;grid-row:1!important;margin-top:calc(16px + clamp(40px,4.2vw,64px))!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details{margin:0!important;padding:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary{display:block!important;list-style:none!important;position:relative!important;cursor:pointer!important;margin:0!important;padding:22px 56px 22px 0!important;min-height:44px!important;
-  font:500 15px/1.45 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;
+  font:500 15px/1.45 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;text-wrap:balance!important;
   text-decoration:underline 1px transparent!important;text-underline-offset:5px!important;transition:text-decoration-color .12s linear!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary::-webkit-details-marker{display:none!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions summary::marker{content:""!important}
@@ -470,6 +546,8 @@ body.v13.v12-home.v9-site.v6-site .lp-questions details[open]>summary::after{con
   body.v13.v12-home.v9-site.v6-site .lp-questions summary:hover::after{color:var(--hf-ink)!important}
 }
 body.v13.v12-home.v9-site.v6-site .lp-questions summary:active{text-decoration-color:var(--hf-ink)!important}
+/* The ring sits 2px outside the question (nothing here clips it), clear of its first letter. */
+body.v13.v12-home.v9-site.v6-site .lp-questions summary:focus-visible{outline-offset:2px!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p{margin:0!important;padding:0 56px 26px 0!important;font:400 14px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:62ch!important}
 body.v13.v12-home.v9-site.v6-site .lp-questions details>p a{position:relative!important;color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;transition:text-decoration-color .12s linear!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-questions details>p a:hover{text-decoration-color:currentColor!important}}
@@ -481,7 +559,9 @@ body.v13.v12-home.v9-site.v6-site .lp-faq__more a{position:relative!important}
 @media (max-width:900px){
   body.v13.v12-home.v9-site.v6-site .lp-faq__layout{grid-template-columns:minmax(0,1fr)!important}
   body.v13.v12-home.v9-site.v6-site .lp-faq__layout>*{grid-column:1/-1!important;grid-row:auto!important}
-  body.v13.v12-home.v9-site.v6-site .lp-faq__layout>.v13-head__lead{position:static!important}
+  /* The lead's own placement (1/5) is more specific than the line above: without this it would keep four columns
+     and leave the questions only the first, short of the container's right edge. */
+  body.v13.v12-home.v9-site.v6-site .lp-faq__layout>.v13-head__lead{grid-column:1/-1!important;position:static!important}
   body.v13.v12-home.v9-site.v6-site .lp-faq__layout .v12-eyebrow{margin-bottom:24px!important}
   body.v13.v12-home.v9-site.v6-site .lp-faq__more{max-width:none!important}
   body.v13.v12-home.v9-site.v6-site .lp-questions{margin-top:28px!important}
@@ -489,10 +569,16 @@ body.v13.v12-home.v9-site.v6-site .lp-faq__more a{position:relative!important}
   body.v13.v12-home.v9-site.v6-site .lp-questions summary::after{top:18px!important;right:0!important}
   body.v13.v12-home.v9-site.v6-site .lp-questions details>p{padding-right:0!important}
 }
+@media (max-width:760px){
+  body.v13.v12-home.v9-site.v6-site .lp-questions summary{padding:14px 40px 14px 0!important;font-size:14.5px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-questions summary::after{top:14px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-questions details>p{padding-bottom:20px!important;font-size:13px!important;line-height:1.6!important}
+}
 
 /* ---------- Closing call, over a still dot field ---------- */
-/* The dots show only toward the edges, so the copy sits on plain paper. Toward the bottom they fade out and the last
-   72px are plain paper, so a band of it separates them from the footer's strip (no moiré where two dot grids meet).
+/* The dots show only toward the edges, so the copy sits on plain paper. They fade in over the first 120px under the
+   section's rule (a vignette around the call, not a band sitting on the rule) and fade out toward the bottom, the last
+   72px plain paper, so a band of it separates them from the footer's strip (no moiré where two dot grids meet).
    The mask colours are alpha only; nothing in them paints. */
 body.v13.v12-home.v9-site.v6-site .lp-final{margin:var(--lp-sec) 0 0!important;padding:clamp(112px,12vw,176px) 0!important;border-top:1px solid var(--hf-line)!important;background:var(--hf-bg)!important;text-align:center!important;overflow:hidden!important}
 body.v13.v12-home.v9-site.v6-site .lp-final__inner{display:flex!important;flex-direction:column!important;align-items:center!important}
@@ -503,15 +589,17 @@ body.v13.v12-home.v9-site.v6-site .lp-final__actions{display:flex!important;flex
 body.v13.v12-home.v9-site.v6-site .lp-final__actions .v12-outline-button{background:var(--hf-bg)!important}
 body.v13.v12-home.v9-site.v6-site .lp-final .v13-field::after{display:none!important}
 body.v13.v12-home.v9-site.v6-site .lp-final .v13-field{
-  -webkit-mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;-webkit-mask-composite:source-in!important;
-  mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;mask-composite:intersect!important}
+  -webkit-mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,transparent,var(--hf-ink) 120px,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;-webkit-mask-composite:source-in!important;
+  mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,transparent,var(--hf-ink) 120px,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;mask-composite:intersect!important}
 @media (max-width:900px){
-  /* Narrow screens: a band of dots along the top edge only, the copy and the fade below it on plain paper. */
-  body.v13.v12-home.v9-site.v6-site .lp-final .v13-field{-webkit-mask-image:linear-gradient(180deg,var(--hf-ink),transparent 88px)!important;mask-image:linear-gradient(180deg,var(--hf-ink),transparent 88px)!important;-webkit-mask-composite:source-over!important;mask-composite:add!important}
+  /* Narrow screens: the copy spans the width, so the dots would only fit as a band under the section's top rule,
+     which reads as a second footer strip mid-page. The call sits on plain paper; the footer's strip is the dots. */
+  body.v13.v12-home.v9-site.v6-site .lp-final .v13-field{display:none!important}
 }
 @media (max-width:760px){
-  body.v13.v12-home.v9-site.v6-site .lp-final{padding:96px 0!important}
-  body.v13.v12-home.v9-site.v6-site .lp-final h2{font-size:36px!important}
+  body.v13.v12-home.v9-site.v6-site .lp-final{padding:64px 0 72px!important}
+  /* Up to 36px, but never so large that "Decide for yourself." (20 characters) breaks and leaves "yourself." alone. */
+  body.v13.v12-home.v9-site.v6-site .lp-final h2{font-size:clamp(28px,calc((100vw - 2 * var(--hf-gutter)) / 11.2),36px)!important}
   body.v13.v12-home.v9-site.v6-site .lp-final__copy{font-size:15px!important}
   body.v13.v12-home.v9-site.v6-site .lp-final__inner{align-items:stretch!important}
   body.v13.v12-home.v9-site.v6-site .lp-final__actions{justify-content:center!important}

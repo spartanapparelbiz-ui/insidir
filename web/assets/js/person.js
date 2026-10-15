@@ -47,9 +47,8 @@ const F=window.InsidirForm4;
 const {MONTHS,MINUS,SCALE,digits,decimal,cash,cents,fromCents,scaled,fromScaled,validDate,eastern,utcDay,dayText,isoOf,date,filedDate,tradeIso,filedIso,num,
  money,moneyCents,signedCents,price,count,plural,CODES,NOUN,code,nounKey,kind,rawPrice,sharesText,valueCents,lagOf,lagWords,ownership,isPlainShares,security,describe,valueText}=F;
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person").replace(/\b\w+/g,w=>w.charAt(0)+w.slice(1).toLowerCase());
-const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
-const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").trim();if(!s||/[a-z]/.test(s))return s;
- return s.split(" ").map(w=>AS_WRITTEN[w]||(/^[A-Z]{1,2}$/.test(w)?w:w.charAt(0)+w.slice(1).toLowerCase().replace(/([-'’.&])([a-z])/g,(m,a,b)=>a+b.toUpperCase()))).join(" ");};
+/* Issuer names as people write them ("Exxon Mobil Corp"), by the helper every page shares (entity-media.js). */
+const companyName=raw=>media?.companyName?media.companyName(raw):String(raw||"").trim();
 const tri=k=>k==="buy"?'<i class="pf-tri pf-tri--up" aria-hidden="true"></i>':k==="sell"?'<i class="pf-tri pf-tri--down" aria-hidden="true"></i>':"";
 
 /* ---------- joint filings ----------

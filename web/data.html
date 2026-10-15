@@ -14,10 +14,10 @@
 <link rel="stylesheet" href="assets/css/v6-static.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=9">
-<link rel="stylesheet" href="assets/css/v13-static.css?v=7">
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
+<link rel="stylesheet" href="assets/css/v13-static.css?v=9">
 <script defer src="assets/js/v6-site.js?v=2"></script>
-<script defer src="assets/js/v13-halftone.js?v=6"></script><script defer src="assets/js/v13-motion.js?v=4"></script>
+<script defer src="assets/js/v13-halftone.js?v=7"></script><script defer src="assets/js/v13-motion.js?v=4"></script>
 </head>
 <body class="v3-static v6-static v13">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -72,42 +72,42 @@
 
   <ol class="mk-sources" data-hf-reveal-group>
    <li class="mk-source" id="edgar">
-    <div class="mk-source__name"><h3>SEC EDGAR submissions</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Each company's filing history: annual and quarterly reports, current reports on Form 8-K, proxy statements and ownership filings, with the original documents.</p><p>Insidir requests it with a declared identity and keeps its requests below the SEC's fair-access limit of ten per second.</p></div>
+    <div class="mk-source__name"><h3>SEC EDGAR submissions</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__body"><p>Each company's filing history: annual and quarterly reports, current reports on Form <span class="hf-nw">8-K</span>, proxy statements and ownership filings, with the original documents.</p><p>Insidir requests it with a declared identity and keeps its requests below the SEC's fair-access limit of ten per second.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company reports (SEC filings, News), the research desk</dd></div><div><dt>Freshness</dt><dd>Read when you open a report; kept for up to 15 minutes</dd></div></dl>
    </li>
    <li class="mk-source" id="xbrl">
-    <div class="mk-source__name"><h3>SEC XBRL company facts</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/sec-api-documentation" rel="noopener">EDGAR APIs <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Financial statement values exactly as the company tagged them, with the period, the form and the filing date. Insidir reads US GAAP and, for 20-F and 40-F filers, IFRS.</p><p>Trailing-twelve-month figures, market cap, enterprise value and P/E are calculated from these values and show their inputs.</p></div>
+    <div class="mk-source__name"><h3>SEC XBRL company facts</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/sec-api-documentation" rel="noopener">EDGAR APIs<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__body"><p>Financial statement values exactly as the company tagged them, with the period, the form and the filing date. Insidir reads US GAAP and, for <span class="hf-nw">20-F</span> and <span class="hf-nw">40-F</span> filers, IFRS.</p><p>Trailing-twelve-month figures, market cap, enterprise value and P/E are calculated from these values and show their inputs.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Financials, key facts, the research desk</dd></div><div><dt>Freshness</dt><dd>Read when you open a report; kept for up to 15 minutes</dd></div></dl>
    </li>
    <li class="mk-source" id="form4">
-    <div class="mk-source__name"><h3>Form 4 ownership reports</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>Form 4 ownership reports</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>What officers, directors and 10% owners report buying, selling, receiving and exercising, parsed from the filed ownership XML.</p><p>Insidir uses them two ways: an imported library of recent filings from the SEC's current-filings feed, and each company's own recent filings, read from EDGAR when you open its report.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>SEC filings, insider activity, people, alerts, portfolio</dd></div><div><dt>Freshness</dt><dd>Library: checked every 15 minutes when automatic import is enabled. Reports: summaries kept 15 minutes, filed documents 24 hours</dd></div></dl>
    </li>
    <li class="mk-source" id="tickers">
-    <div class="mk-source__name"><h3>SEC company ticker list</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/files/company_tickers.json" rel="noopener">The list <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>SEC company ticker list</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/files/company_tickers.json" rel="noopener">The list<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>The SEC's own mapping from ticker to company identifier (CIK). Insidir resolves every search and report through it, never through a fuzzy name match.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Search, company reports</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
    </li>
    <li class="mk-source" id="yahoo">
-    <div class="mk-source__name"><h3>Yahoo Finance</h3><p>Delayed prices · third party</p><a class="mk-link" href="https://finance.yahoo.com/" rel="noopener">Yahoo Finance <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>Yahoo Finance</h3><p>Delayed prices · third party</p><a class="mk-link" href="https://finance.yahoo.com/" rel="noopener">Yahoo Finance<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>Delayed price history for six ranges and the latest session quote, plus headlines from the ticker's public news feed. Headlines link to the publisher; Insidir copies no article text.</p><p>Prices are delayed, are not an official record of trades and are not meant for trading.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Price chart, market cap, enterprise value, P/E, news headlines</dd></div><div><dt>Freshness</dt><dd>Prices kept 1 to 60 minutes depending on the range; headlines 15 minutes</dd></div></dl>
    </li>
    <li class="mk-source" id="wikidata">
-    <div class="mk-source__name"><h3>Wikidata</h3><p>CC0 · public domain</p><a class="mk-link" href="https://www.wikidata.org/" rel="noopener">Wikidata <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>Wikidata</h3><p>CC0 · public domain</p><a class="mk-link" href="https://www.wikidata.org/" rel="noopener">Wikidata<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>Founding year, latest employee count, official website, logo, leadership and founders. A profile is matched to the company only by its SEC identifier (Wikidata property P5531).</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company profiles, people in company reports</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
    </li>
    <li class="mk-source" id="wikipedia">
-    <div class="mk-source__name"><h3>Wikipedia</h3><p>CC BY-SA 4.0</p><a class="mk-link" href="https://en.wikipedia.org/" rel="noopener">Wikipedia <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>Wikipedia</h3><p>CC BY-SA 4.0</p><a class="mk-link" href="https://en.wikipedia.org/" rel="noopener">Wikipedia<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>The short description at the top of a company report, taken from the summary of the company's article and credited with a link to it and to the license.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company descriptions</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
    </li>
    <li class="mk-source" id="commons">
-    <div class="mk-source__name"><h3>Wikimedia Commons</h3><p>License per file</p><a class="mk-link" href="https://commons.wikimedia.org/" rel="noopener">Commons <span class="v13-arrow" aria-hidden="true">↗</span></a></div>
+    <div class="mk-source__name"><h3>Wikimedia Commons</h3><p>License per file</p><a class="mk-link" href="https://commons.wikimedia.org/" rel="noopener">Commons<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
     <div class="mk-source__body"><p>Company logos and published photographs of executives, loaded from Wikimedia's servers. Each file is used under its own license, and no portrait is generated or guessed.</p></div>
     <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company logos, people in company reports</dd></div><div><dt>Freshness</dt><dd>Loaded from Wikimedia when shown</dd></div></dl>
    </li>
@@ -126,7 +126,7 @@
    <li><b data-hf-atom>1<small>min</small></b><ul><li>Prices, one-day range</li></ul></li>
    <li><b data-hf-atom>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
    <li><b data-hf-atom>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
-   <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li>8-K announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
+   <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li><span class="hf-nw">8-K</span> announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
    <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li></ul></li>
    <li><b data-hf-atom>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
   </ol>
@@ -213,7 +213,7 @@
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
-<div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>
+<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>
 </body>
 </html>

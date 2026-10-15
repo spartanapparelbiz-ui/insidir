@@ -117,7 +117,7 @@ function todayFresh(r){
  }else parts.push("Import status unavailable");
  const first=r.filing.ok?r.filing.value:null,fallback=r.status.ok?r.status.value?.latest_published_at:null,pub=first?.published_at||fallback;
  parts.push(pub?"newest filing published "+D.filedDate(pub):r.filing.ok?"no filings imported yet":"newest filing unavailable");
- line("rd-today-fresh",E(parts.join(" · ")+"."));
+ line("rd-today-fresh",'<span class="rd-seq">'+D.seq(parts.map((t,i)=>E(t+(i===parts.length-1?".":""))))+'</span>');
 }
 D.watch(["updates","watchlist","trades"],r=>D.now(()=>{void todayYou(r);}));
 D.watch(["trades"],r=>D.now(()=>todayMarket(r)));
@@ -143,19 +143,22 @@ function feedRow(x,i){
   D.whoTile(x,"md",opts)+
   '<div class="rd-feed__body">'+
    '<p class="rd-feed__l1">'+D.personName(x,opts)+' '+D.badge(x)+' <span class="rd-feed__deal">'+E(d.short)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+'</span>'+(fresh?" "+D.NEW:"")+'</p>'+
-   '<p class="rd-feed__l2"><span class="rd-ent rd-ent--inline">'+D.coTile(x,"sm")+'<span data-ent="company">'+E(co)+'</span></span>'+when.map(w=>' · <span class="rd-nb">'+E(w)+'</span>').join("")+
+   // Line 2 is a run of facts (.rd-seq): each fact after the first carries its " · " and wraps with it, so a wrapped line
+   // never starts or ends on a separator (v13-dashboard.css). The text reads the same as plain " · " joins.
+   '<p class="rd-feed__l2 rd-seq"><span class="rd-bit rd-bit--first"><span class="rd-ent rd-ent--inline">'+D.coTile(x,"sm")+'<span data-ent="company">'+E(co)+'</span></span></span>'+when.map(w=>'<span class="rd-bit"><span class="rd-sep"> · </span><span class="rd-nb">'+E(w)+'</span></span>').join("")+
     // Qualifiers in short form on the second line; the full wording is in the title and the row's label.
-    D.qualifiers(x).map(q=>' · <span class="rd-nb" title="'+E(q[1])+'">'+E(q[0])+'</span>').join("")+
-    ' · <a class="rd-arrow rd-feed__filing" href="'+E(D.filingHref(x.accession))+'" data-hf-atom aria-label="'+E("Open the filing: "+D.ownerLabel(x,opts)+", "+(t||co)+", "+D.date(x.transaction_date))+'">Filing ↗</a></p>'+
+    D.qualifiers(x).map(q=>'<span class="rd-bit"><span class="rd-sep"> · </span><span class="rd-nb" title="'+E(q[1])+'">'+E(q[0])+'</span></span>').join("")+
+    '<span class="rd-bit"><span class="rd-sep"> · </span><a class="rd-arrow rd-feed__filing" href="'+E(D.filingHref(x.accession))+'" data-hf-atom aria-label="'+E("Open the filing: "+D.ownerLabel(x,opts)+", "+(t||co)+", "+D.date(x.transaction_date))+'">Filing ↗</a></span></p>'+
   '</div>'+
  '</li>';
 }
+// The last 30 days as the parts of a " · " run (D.seq), so a wrapped line never ends on the separator.
 const thirty=p=>{
  const n=Number(p.transactions_30d)||0,b=Number(p.purchases_30d_value)||0,s=Number(p.sales_30d_value)||0;
- if(!n)return "No trades in 30 days"+(p.last_published_at?" · last filed "+D.filedDate(p.last_published_at):"");
+ if(!n)return ["No trades in 30 days",p.last_published_at?"last filed "+D.filedDate(p.last_published_at):""];
  // Grants, exercises and gifts carry no value: say so rather than "bought $0 · sold $0".
- if(!b&&!s)return "30 days: "+D.plural(n,"trade")+", none a priced purchase or sale";
- return "30 days: bought "+D.money(b)+" · sold "+D.money(s)+" in "+D.plural(n,"trade");
+ if(!b&&!s)return ["30 days: "+D.plural(n,"trade")+", none a priced purchase or sale"];
+ return ["30 days: bought "+D.money(b),"sold "+D.money(s)+" in "+D.plural(n,"trade")];
 };
 /* The company a followed person last filed for, by SEC CIK (the list row carries a ticker and a name only): from their
    newest loaded line, for the logo standing in for a missing headshot and for an issuer with no ticker. */
@@ -171,7 +174,7 @@ function listItem(p,i){
   '<div class="rd-fl__body">'+
    '<p class="rd-fl__name"><a data-ent="person" href="'+E(D.personHref(p.owner_name,cik))+'">'+E(name)+'</a></p>'+
    '<p class="rd-fl__meta">'+(t?'<span class="rd-ent rd-ent--inline">'+D.companyTile(t,p.issuer_name,ic,"sm")+'<span data-ent="company">'+E(t)+'</span></span>':'SEC Form 4')+(fresh?' · <span class="rd-fl__new">'+E(D.count(fresh))+' new</span>':'')+'</p>'+
-   '<p class="rd-fl__sum">'+E(thirty(p))+'</p>'+
+   '<p class="rd-fl__sum rd-seq">'+D.seq(thirty(p).filter(Boolean).map(t=>E(t)))+'</p>'+
    followBtn(cik,name,on)+
   '</div>'+
  '</li>';
@@ -364,7 +367,7 @@ function renderSuggest(r,known){
  if(head)head.textContent=st.following?"More people to follow · most active in the latest imports":"Most active in the latest imports";
  host.innerHTML=st.suggestions.length?st.suggestions.map(suggestCard).join(""):
   '<li class="rd-sg__msg"><p class="rd-empty">'+(r.trades.ok?"Nobody new to suggest from the latest imports. Find people by name on the people page.":"Suggestions are unavailable until the latest trades load.")+'</p></li>';
- if(foot)foot.innerHTML='Following is private to your account. <a href="people.html">Find anyone by name ↗</a>';
+ if(foot)foot.innerHTML='Following is private to your account. <a href="people.html">Find anyone by name →</a>';
  D.hydrate(host);D.arrive(host);
 }
 D.watch(["updates","trades"],async r=>{

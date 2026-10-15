@@ -149,7 +149,10 @@ body.v13 :is(.rd-seg,.rd-filters,.tabs,.cx-tabs,.segmented,.cx-ranges,.cx-chips,
 body.v13 :is(.lp-tool,.lp-questions summary,.rd-row--watch:has(.rd-row__link:focus-visible)):focus-visible{outline-offset:-2px!important}
 /* An inset ring on a selected (ink) chip, segment or tab would vanish: it turns paper-coloured, 4px in. */
 body.v13 :is(.rd-seg,.rd-filters,.segmented,.cx-ranges,.cx-chips,.v3-filters,.v12-graph-controls,.cx-filters) :is([aria-pressed=true],.is-active):focus-visible{outline-color:var(--hf-bg)!important;outline-offset:-4px!important}
-body.v13 .skip-link{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 13px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;border-radius:0!important}
+/* The skip link simply appears on focus (base.css slid it down from above): on the gutter's edge, clear of the bar's top. */
+body.v13 .skip-link{background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 13px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;border-radius:0!important;
+  left:var(--hf-gutter)!important;top:-80px!important;transition:none!important}
+body.v13 .skip-link:focus{top:12px!important}
 body.v13 ::-webkit-scrollbar{width:10px!important;height:10px!important}
 body.v13 ::-webkit-scrollbar-thumb{background:var(--hf-line-2)!important;border:2px solid var(--hf-bg)!important}
 body.v13 ::-webkit-scrollbar-track{background:var(--hf-bg)!important}
@@ -408,6 +411,10 @@ body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v12-demo-open,.v9-
   text-decoration:none!important;text-underline-offset:4px!important;background-image:none!important;transition:color .12s linear!important}
 body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v12-demo-open,.v9-desk__hero-link,.v9-underlink,.v10-editorial__head>a,.v12-chart-bottom a,.cl-finish a,.v3-module__head>a,.v9-desk__links a,.v12-split-heading a,.v12-logos-heading a,.v3-company__box a,.v3-account__text,.v3-account__links a,.portfolio-small-link):hover{
   color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
+/* A link with its own arrow glyph is an inline box and the arrow an atomic inline-block with its own margin, so the
+   hover underline runs under the words and stops before the arrow (an inline-flex link draws a detached stub under it). */
+body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v3-module__head>a,.cl-finish a,.v9-desk__links a,.v3-account__links a):has(>.v13-arrow){display:inline-block!important;line-height:24px!important}
+body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v3-module__head>a,.cl-finish a,.v9-desk__links a,.v3-account__links a)>.v13-arrow{display:inline-block!important;margin-left:8px!important;text-decoration:none!important}
 body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v3-module__head>a,.cl-finish a,.v9-desk__links a,.v3-account__links a) .v13-arrow{color:var(--hf-faint)!important;transition:color .12s linear!important}
 body.v13 :is(.v12-secondary-link,.v13-link,.v12-feature-link,.v3-module__head>a,.cl-finish a,.v9-desk__links a,.v3-account__links a):hover .v13-arrow{color:var(--hf-ink)!important}
 /* The same recipe for the product's own action links and the "Filing ↗" source links, as defaults (family files
@@ -617,7 +624,7 @@ body.v13 .v13-footer--plain :is(.hwf-top,.hwf-rule) *{letter-spacing:0!important
 /* Full ink, except a footer column still waiting for the public pages' reveal (.hf-pending keeps it transparent). */
 body.v13 .v13-footer--plain :is(.hwf-top,.hwf-rule) *:not(.hf-pending){opacity:1!important}
 body.v13 .v13-footer--plain .hwf-brand strong{display:block!important;font:800 18px/1 var(--hf-mono)!important;letter-spacing:-.04em!important;text-transform:lowercase!important;color:var(--hf-ink)!important}
-body.v13 .hwf-brand span{display:block!important;margin-top:12px!important;font:400 12.5px/1.6 var(--hf-mono)!important;color:var(--hf-faint)!important;max-width:36ch!important}
+body.v13 .hwf-brand span{display:block!important;margin-top:12px!important;font:400 12.5px/1.6 var(--hf-mono)!important;color:var(--hf-faint)!important;max-width:46ch!important;text-wrap:balance!important}
 body.v13 .hwf-col{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;min-width:0!important}
 body.v13 .hwf-col h3{margin:0 0 16px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 .v13-footer--plain .hwf-col h3{letter-spacing:var(--hf-track)!important;text-transform:uppercase!important}
@@ -629,6 +636,11 @@ body.v13 .hwf-col a{display:inline!important;padding:0!important;margin:0!import
 body.v13 .hwf-rule{position:relative!important;z-index:1!important;display:flex!important;flex-wrap:wrap!important;justify-content:space-between!important;align-items:center!important;gap:12px 24px!important;background:transparent!important;font-family:var(--hf-mono)!important;color:var(--hf-ink)!important}
 body.v13 .v13-footer--plain .hwf-rule{margin-top:56px!important;padding:20px 0 28px!important;border:0!important;border-top:1px solid var(--hf-line)!important}
 body.v13 .hwf-note{margin:0 auto 0 0!important;font:400 12.5px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important;cursor:default!important}
+/* The notice's three phrases each carry a dim dot in a 20px gutter in front; the line box starts one gutter to the
+   left with that gutter clipped, so a phrase that opens a line hides its dot and no line starts or ends on one. */
+body.v13 .hwf-note:has(>span){display:flex!important;flex-wrap:wrap!important;margin-left:-20px!important;clip-path:inset(0 0 0 20px)!important}
+body.v13 .hwf-note>span{white-space:nowrap!important}
+body.v13 .hwf-note>span::before{content:"\00B7"!important;display:inline-block!important;width:20px!important;text-align:center!important;color:var(--hf-line-strong)!important}
 /* "Back to top ↑" is a ghost action: soft, ink on hover. */
 body.v13 .hwf-up{display:inline-flex!important;align-items:center!important;gap:6px!important;min-height:24px!important;padding:0!important;margin:0!important;border:0!important;background:none!important;cursor:pointer!important;
   font:500 12.5px/1 var(--hf-mono)!important;color:var(--hf-soft)!important;text-decoration:none!important;transition:color .12s linear!important}
@@ -671,6 +683,8 @@ body.v13 .v13-field-host>:not(.v13-field){position:relative!important;z-index:1!
 
 
 /* ---------- Shared guards and affordances ---------- */
+/* A form code (8-K, 10-Q, 4/A) never breaks at its hyphen or slash. (The font has no U+2011 non-breaking hyphen.) */
+body.v13 .hf-nw{white-space:nowrap!important}
 /* The HTML hidden attribute always wins, even over the button display rules above (their :is() lists reach 0,3,1). */
 body.v13 [hidden][hidden][hidden]{display:none!important}
 /* Brand marks print monochrome, like the photographs; dark marks are inverted first. */

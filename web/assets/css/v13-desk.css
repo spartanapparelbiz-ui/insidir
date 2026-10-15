@@ -24,6 +24,8 @@ body.v13 #main :is([hidden],.btn[hidden],.v3-account__button[hidden],.portfolio-
 body.v13 #main .desk-topline{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:16px!important;margin:0 0 14px!important;padding:0!important;border:0!important}
 body.v13 #main .desk-topline p{margin:0!important}
 body.v13 #main .desk-topline__note{font:400 12px/16px var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-faint)!important;text-align:right!important}
+/* The note is a run of facts (.rd-seq, v13-app.css): wrapped on a phone, no line starts or ends on "·". */
+body.v13 #main .desk-topline__note.rd-seq{justify-content:flex-end!important;margin-left:-3ch!important}
 body.v13 #main :is(.research-eyebrow,.alerts-eyebrow,.v3-eyebrow){display:block!important;margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 /* The page head is the dashboard's: one label row (the label, a note at the right), the 40px title, a 15px soft lede.
    No rule under it and no canvas dot band (the footer strip carries the dots), so every product page opens the same way. */
@@ -37,6 +39,7 @@ body.v13 #main :is(.research-feedback,.v3-account__hint,#portfolio-status).is-er
 /* Action links: sentence case in soft, ink and underlined on hover (nothing grows). */
 body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a){display:inline-flex!important;align-items:center!important;gap:8px!important;min-height:24px!important;font:500 13px/1.4 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;text-decoration:none!important;border:0!important;padding:0!important;height:auto!important;background-color:transparent!important;border-radius:0!important;
   background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
+body.v13 #main .research-table .research-text-link{white-space:nowrap!important}
 body.v13 #main :is(.research-text-link,.portfolio-small-link,.alert-src,.alerts-foot a):hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important;background-color:transparent!important}
 /* A link inside a caption reads as part of the sentence. */
 body.v13 #main :is(.research-small,.research-feedback,.alerts-foot) :is(.research-text-link,.portfolio-small-link,a){display:inline!important;font:inherit!important;letter-spacing:inherit!important;text-transform:none!important;color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;background-image:none!important}
@@ -54,6 +57,9 @@ body.v13 #main :is(.research-table,.portfolio-table,.live-table) td small{displa
 body.v13 #main :is(.research-table,.portfolio-table,.live-table) tbody tr:last-child td{border-bottom:0!important}
 body.v13 #main :is(.research-table,.portfolio-table,.live-table) tbody tr:hover td{background:transparent!important}
 body.v13 #main .research-table .ins-media{--ins-size:32px!important}
+/* A reporting person's name is an entity link: ink, no underline at rest; underlined on hover and focus. */
+body.v13 #main .research-table a.ins-person-link{color:var(--hf-ink)!important;font-weight:500!important;text-decoration:none!important;background-image:none!important;transition:color .12s linear!important}
+body.v13 #main .research-table a.ins-person-link:is(:hover,:focus-visible){text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 /* Brand marks in the data tables are toned like the photographs so they sit inside the three-colour print;
    the dark marks the app inverts for night paper (Apple, Amazon, IBM) keep that inversion. */
 body.v13 #main .alerts-panel .live-table td a{font:500 11px/1.6 var(--hf-mono)!important;letter-spacing:.06em!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
@@ -367,6 +373,7 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
   body.v13 #main{--desk-gap:40px!important}
   body.v13 #main .desk-topline{flex-direction:column!important;align-items:flex-start!important;gap:4px!important;margin-bottom:12px!important}
   body.v13 #main .desk-topline__note{text-align:left!important}
+  body.v13 #main .desk-topline__note.rd-seq{justify-content:flex-start!important}
   body.v13 #main .desk-masthead{padding-bottom:32px!important}
   body.v13 #main .desk-masthead h1{margin-bottom:12px!important;max-width:none!important}
   /* Research */
@@ -409,6 +416,22 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:first-child{grid-column:1/-1!important}
   /* A fourth cell (the Published date with its source link, the research link of a holding) gets the whole record width. */
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td:nth-child(4){grid-column:1/-1!important}
+  /* Original filings: the published date, then the evidence links across the record, each link on one line. */
+  body.v13 #main #research-filings .research-table td:is(:nth-child(2),:nth-child(3)){grid-column:1/-1!important}
+  /* Original filings, as an index: no column labels (a date and two links say what they are). Line 1: the logo, the form
+     and the company, the published date at the right (a report period, when one was filed, muted under it); line 2,
+     under the form: the parsed details and the SEC source. */
+  body.v13 #main #research-filings .research-table tbody tr{grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"filing date" "links links"!important;gap:4px 16px!important;padding:14px 0!important;border-bottom-color:var(--hf-line-faint)!important}
+  body.v13 #main #research-filings .research-table td::before{content:none!important;display:none!important}
+  body.v13 #main #research-filings .research-table td:nth-child(1){grid-area:filing!important}
+  body.v13 #main #research-filings .research-table .ins-company-cell>div{display:block!important;min-width:0!important}
+  body.v13 #main #research-filings .research-table .ins-company-cell>div>:is(strong,small){display:inline!important;margin:0!important;font:500 12.5px/1.5 var(--hf-mono)!important}
+  body.v13 #main #research-filings .research-table .ins-company-cell>div>small{font-weight:400!important;color:var(--hf-muted)!important}
+  body.v13 #main #research-filings .research-table .ins-company-cell>div>small::before{content:"\00a0·\00a0"!important;color:var(--hf-faint)!important}
+  body.v13 #main #research-filings .research-table td:nth-child(2){grid-area:date!important;align-self:start!important;padding-top:6px!important;text-align:right!important;white-space:nowrap!important;font-size:12px!important;line-height:1.5!important;color:var(--hf-muted)!important;overflow-wrap:normal!important}
+  body.v13 #main #research-filings .research-table td:nth-child(2) small{margin:0!important}
+  body.v13 #main #research-filings .research-table td:nth-child(3){grid-area:links!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 20px!important;padding-left:44px!important}   /* under the form: the 32px logo and its 12px gap */
+  body.v13 #main #research-filings .research-table td:nth-child(3) small{display:block!important;margin:0!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table,.alerts-panel .live-table) td::before{display:block!important;margin:0 0 3px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
   body.v13 #main :is(.research-table-scroll .research-table,.portfolio-table-scroll .portfolio-table) td[data-label]:not(:first-child)::before{content:attr(data-label)!important}
   /* live-research.js writes no data-label and its column order is fixed (Filed, Ticker, Reporting person,

@@ -753,7 +753,7 @@ try {
         const scale = cs.objectFit === "cover" ? Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight) : Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
         if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop(), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: img.naturalWidth + "x" + img.naturalHeight });
       }
-      const wide = [...document.querySelectorAll("main *")].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1 && !e.closest(".rd-table-wrap,.rd-flist,.rd-dtable")).slice(0, 5).map(e => e.tagName.toLowerCase() + "." + [...e.classList].join("."));
+      const wide = [...document.querySelectorAll("main *")].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1 && !e.closest(".rd-table-wrap,.rd-flist,.rd-sglist,.rd-dtable")).slice(0, 5).map(e => e.tagName.toLowerCase() + "." + [...e.classList].join("."));
       // Standalone links and buttons (not inline in a sentence) must be at least 24px tall (WCAG 2.5.8). A stretched
       // link (an ::after laid over its row with inset: 0) is as big as the row it covers.
       const target = e => {

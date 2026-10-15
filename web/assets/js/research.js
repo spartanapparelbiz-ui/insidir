@@ -98,13 +98,19 @@
       splitNames(item.owner_name).map(name => ({cik: null, name}));
     return listed.length ? listed.slice(0, 12) : [{cik: null, name: ""}];
   };
+  /* Names as people write them ("Katherine L. Adams"), the filer-order form ("ADAMS KATHERINE L") kept in the title; issuer
+     names likewise ("NVIDIA Corp"), by the helpers every page shares (entity-media.js). */
+  const personName = raw => media?.displayName ? media.displayName(raw) : String(raw || "");
+  const companyName = raw => media?.companyName ? media.companyName(raw) : String(raw || "");
+  const formLabel = f => { const t = String(f || "4").trim(); return /^form\b/i.test(t) ? t : "Form " + t; };
   const ownerNames = owners => owners.map(o => {
-    const name = esc(o.name || "Reporting person unavailable"), href = personHref(o.cik, o.name);
-    return href ? '<a class="ins-person-link" href="' + esc(href) + '">' + name + "</a>" : name;
+    const raw = String(o.name || "").trim(), shown = raw ? personName(raw) : "Reporting person unavailable", href = personHref(o.cik, o.name);
+    const title = raw && raw !== shown ? ' title="' + esc(raw) + '"' : "";
+    return href ? '<a class="ins-person-link" href="' + esc(href) + '"' + title + '>' + esc(shown) + "</a>" : "<span" + title + ">" + esc(shown) + "</span>";
   }).join(", ");
   const setCompanyHeading = (name, ticker, cik) => {
     const host = byId("research-company");
-    const label = esc(name) + " (" + esc(ticker) + ")";
+    const label = esc(companyName(name)) + " (" + esc(ticker) + ")";
     host.innerHTML = media ? media.company({ticker, cik, name, size: "md"}) + "<span>" + label + "</span>" : label;
     media?.hydrate(host);
   };
@@ -173,11 +179,12 @@
       const local = details ? '<a class="research-text-link" href="' + esc(details) + '">Review parsed details →</a>' : "";
       const original = sourceLink(item.source_url, "SEC source");
       return "<tr><td data-label='Filing'><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm",{cik:item.issuer_cik,name:item.issuer_name})||"") +
-        "<div><strong>" + esc(item.form_type || "Form 4") +
-        (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(item.issuer_name || "Company") +
+        "<div><strong>" + esc(formLabel(item.form_type)) +
+        (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(companyName(item.issuer_name) || "Company") +
         "</small></div></div></td><td data-label='Published'>" + esc(displayDate(item.published_at)) +
-        "<small>Report period: " + esc(displayDate(item.period_of_report)) +
-        "</small></td><td data-label='Evidence'>" + local + "<small>" + original + "</small></td></tr>";
+        // The report period only when the filing states one (not a "Not reported" on every row).
+        (displayDate(item.period_of_report) !== "Not reported" ? "<small>Report period: <span class='rd-nb'>" + esc(displayDate(item.period_of_report)) + "</span></small>" : "") +
+        "</td><td data-label='Evidence'>" + local + "<small>" + original + "</small></td></tr>";
     }).join("");
     host.innerHTML = '<div class="research-table-scroll"><table class="research-table">' +
       '<caption class="sr-only">Original SEC filings</caption><thead><tr>' +

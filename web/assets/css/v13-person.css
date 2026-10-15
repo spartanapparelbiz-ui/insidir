@@ -18,7 +18,9 @@ body.v13.pf-page{--pf-box:150px!important;--pf-photo:124px!important}
 /* ---------- File header strip ---------- */
 body.v13 .pf-topline{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:8px 16px!important;flex-wrap:wrap!important;margin:0!important;padding:2px 0 16px!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;
   font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13 .pf-topline a{color:var(--hf-soft)!important;text-decoration:none!important;background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
+/* The breadcrumb (left) is sentence case, as on a filing's page, its link soft; the file number (right) stays a label. */
+body.v13 .pf-topline>span:first-child{font:400 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-faint)!important}
+body.v13 .pf-topline a{font:400 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;text-decoration:none!important;background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
 body.v13 .pf-topline a:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important}
 body.v13 .pf-topline b{font-weight:600!important;color:var(--hf-ink)!important;letter-spacing:.12em!important;font-variant-numeric:tabular-nums!important}
 
@@ -104,7 +106,7 @@ body.v13 .pf-btn--follow.is-following:hover{background:transparent!important;bor
 body.v13 .pf-btn:disabled{cursor:default!important;opacity:.55!important}
 /* While a follow request runs the button keeps focus (it is aria-disabled, not disabled) and shows it is busy. */
 body.v13 .pf-btn.is-busy{cursor:progress!important;opacity:.72!important}
-body.v13 .pf-honest{margin:18px 0 0!important;font:400 11px/1.75 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
+body.v13 .pf-honest{margin:18px 0 0!important;max-width:76ch!important;font:400 11px/1.75 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
 
 /* Loading: placeholders hold the space the file takes, so nothing below them jumps when it arrives. */
 body.v13 .pf .pf-skel.pf-skel{display:inline-block!important;min-width:14ch!important;color:transparent!important;background:var(--hf-surface-2)!important;user-select:none!important}
@@ -130,7 +132,7 @@ body.v13 .pf-link{display:inline-flex!important;align-items:center!important;gap
 body.v13 .pf-link:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 
 /* 01 Record: all imported records against the last 30 days, exact. */
-body.v13 .pf-table{width:100%!important;max-width:1080px!important;border-collapse:collapse!important;table-layout:fixed!important;margin:0!important;background:transparent!important}
+body.v13 .pf-table{width:100%!important;max-width:none!important;border-collapse:collapse!important;table-layout:fixed!important;margin:0!important;background:transparent!important}
 body.v13 .pf-table :is(th,td){background:transparent!important;border:0!important;text-align:left!important;vertical-align:top!important;color:var(--hf-ink)!important}
 body.v13 .pf-table thead th{padding:0 18px 10px 0!important;border-bottom:1px solid var(--hf-line-2)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-soft)!important}
 body.v13 .pf-table thead td{width:24%!important;border-bottom:1px solid var(--hf-line-2)!important}
@@ -142,7 +144,7 @@ body.v13 .pf-table td>b{display:block!important;font:700 clamp(17px,1.5vw,22px)/
 body.v13 .pf-table td>b.pf-up{color:var(--hf-up)!important}
 body.v13 .pf-table td>b.pf-down{color:var(--hf-down)!important}
 body.v13 .pf-table td>b.pf-none{font-weight:500!important;color:var(--hf-faint)!important}
-body.v13 .pf-record__note{max-width:1080px!important;margin:12px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
+body.v13 .pf-record__note{max-width:76ch!important;margin:12px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
 
 /* 02 Known affiliations */
 body.v13 .pf-affs{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr))!important;gap:0 clamp(28px,3vw,48px)!important}
@@ -200,6 +202,14 @@ body.v13 .pf-filing .pf-co .ins-media{--ins-size:28px!important}
 body.v13 :is(.pf-filing__date,.pf-filing__lines){color:var(--hf-soft)!important}
 body.v13 .pf-filing__acc{color:var(--hf-faint)!important;letter-spacing:.04em!important;font-variant-numeric:tabular-nums!important}
 body.v13 .pf-filing__links{display:flex!important;gap:16px!important;justify-content:flex-end!important}
+/* From 1100px one set of columns for every record (each row a subgrid of the list), shared out by weight, so the date,
+   the line count and the accession sit at even steps after the company instead of past one 460px gap; the links keep
+   the right edge the activity log's links use. */
+@media (min-width:1100px){
+  body.v13 .pf-filings{display:grid!important;grid-template-columns:90px minmax(0,1.4fr) minmax(0,1fr) minmax(0,.5fr) minmax(0,1.3fr) max-content!important;column-gap:18px!important}
+  body.v13 .pf-filings>*{grid-column:1/-1!important}
+  body.v13 .pf-filing{grid-template-columns:subgrid!important}
+}
 
 /* ---------- States: not found, bad address, error, leaving to sign in ---------- */
 body.v13 .pf-state{margin:clamp(28px,4vw,48px) 0 0!important;padding:18px 0 0!important;max-width:760px!important;border-top:1px solid var(--hf-line-2)!important}
@@ -271,10 +281,12 @@ body.v13 .pf-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!
   body.v13 .pf-also li>.pf-link{grid-column:2!important;justify-self:start!important}
   /* Activity log: a compact three-line record (what · when · company and filing). */
   body.v13 .pf-log__row{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"what" "when" "where"!important;gap:4px!important;padding:13px 0!important}
-  body.v13 .pf-log__when{display:flex!important;flex-wrap:wrap!important;column-gap:8px!important;font-size:11px!important}
-  body.v13 .pf-log__when time{font-size:11px!important;display:inline!important}
-  body.v13 .pf-log__when span{display:inline!important}
-  body.v13 .pf-log__when span::before{content:"· "!important;color:var(--hf-faint)!important}
+  /* The trade and filing dates wrap as units; a separator that would open the second line falls in a strip left of the
+     box that is clipped away (the same run as .rd-seq in v13-app.css), so no line starts on "·". */
+  body.v13 .pf-log__when{display:flex!important;flex-wrap:wrap!important;column-gap:0!important;font-size:11px!important;margin-left:-3ch!important;clip-path:inset(-12px -12px -12px 2ch)!important}
+  body.v13 .pf-log__when time{font-size:11px!important;display:inline!important;margin-left:3ch!important}
+  body.v13 .pf-log__when span{display:inline!important;margin-left:1ch!important;padding-left:2ch!important;text-indent:-2ch!important}   /* a wrapped date hangs back on the visible edge */
+  body.v13 .pf-log__when span::before{content:"· "!important;white-space:pre!important;color:var(--hf-faint)!important}
   body.v13 .pf-log__where{flex-direction:row!important;align-items:center!important;justify-content:space-between!important}
   body.v13 .pf-log__what{font-size:12px!important}
   body.v13 .pf-filing{grid-template-columns:minmax(0,1fr) auto!important;gap:4px 12px!important;padding:12px 0!important}

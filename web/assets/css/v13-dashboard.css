@@ -150,39 +150,44 @@ body.v13 #rd-today-market{--line-min:calc(3 * 1.7em);font:400 12.5px/1.7 var(--h
 body.v13 #rd-today-market strong{font-weight:600!important;color:var(--hf-ink)!important}
 body.v13 #rd-today-fresh{--line-min:calc(2 * 1.6em + 10px);text-wrap:pretty!important;margin:12px -20px 0!important;padding:10px 20px 0!important;border-top:1px solid var(--hf-line-faint)!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
 /* The fresh line's dot is soft, never green: green means purchases. */
-body.v13 #rd-today-fresh:not(.is-skeleton)::before{content:""!important;display:inline-block!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-soft)!important;margin-right:8px!important;vertical-align:1px!important}
+body.v13 #rd-today-fresh .rd-bit--first::before{content:""!important;display:inline-block!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-soft)!important;margin-right:8px!important;vertical-align:1px!important}
 body.v13 .rd-today__line.is-skeleton::before{content:""!important;position:absolute!important;left:0!important;top:.5em!important;width:min(560px,82%)!important;height:.62em!important;background:var(--hf-surface-2)!important;box-shadow:0 1.6em 0 var(--hf-surface-2)!important}
 body.v13 #rd-today-market.is-skeleton::before{width:92%!important;box-shadow:0 1.7em 0 var(--hf-surface-2),0 3.4em 0 var(--hf-surface-2)!important}
 body.v13 #rd-today-fresh.is-skeleton::before{left:20px!important;top:calc(10px + .5em)!important;width:min(360px,60%)!important;box-shadow:none!important}
+/* One grid for the whole page (≥1180): the shared 12 columns with 24px gaps. Every right-hand panel starts on column 9
+   (x = 956 at 1440: the brief, Following, the notes) or, in 04, on column 8 (x = 844: by company), so the gutter never
+   jogs from one module to the next. The greeting and lead take columns 1–8, the brief columns 9–12. */
 @media (min-width:1180px){
-  /* 13 : 11 rather than 7 : 5, so the import line fits on one line at 1440 and the panel ends level with the lead. */
-  body.v13 .rd-today{display:grid!important;grid-template-columns:minmax(0,13fr) minmax(0,11fr)!important;column-gap:48px!important;
-    grid-template-areas:"eyebrow brief" "title brief" "you brief" ". brief"!important;grid-template-rows:auto auto auto 1fr!important}
-  body.v13 .rd-today .rd-eyebrow{grid-area:eyebrow!important}
-  body.v13 .rd-today h1{grid-area:title!important}
-  body.v13 #rd-today-you{grid-area:you!important}
-  body.v13 .rd-today__brief{grid-area:brief!important;align-self:start!important;margin:0!important;max-width:none!important}
+  body.v13 .rd-today{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:var(--rd-gap,24px)!important;grid-template-rows:auto auto auto 1fr!important}
+  body.v13 .rd-today .rd-eyebrow{grid-column:1/9!important;grid-row:1!important}
+  body.v13 .rd-today h1{grid-column:1/9!important;grid-row:2!important}
+  body.v13 #rd-today-you{grid-column:1/9!important;grid-row:3!important}
+  body.v13 .rd-today__brief{grid-column:9/13!important;grid-row:1/5!important;align-self:start!important;margin:0!important;max-width:none!important}
+  /* A third of the page wide, the import sentence takes four lines (five near 1180) and the import time two. */
+  body.v13 #rd-today-market{--line-min:calc(4 * 1.7em)}
+  body.v13 #rd-today-market.is-skeleton::before{box-shadow:0 1.7em 0 var(--hf-surface-2),0 3.4em 0 var(--hf-surface-2),0 5.1em 0 var(--hf-surface-2)!important}
 }
-@media (min-width:1380px){body.v13 #rd-today-fresh{--line-min:calc(1.6em + 10px)}}
+@media (min-width:1180px) and (max-width:1359px){body.v13 #rd-today-market{--line-min:calc(5 * 1.7em)}body.v13 .rd-dframe{--plot-h:436px}}
 
 /* ---------- 01 People you follow ---------- */
 /* One grid: the feed beside the followed people, suggestions below both. Following nobody, the message and the
    suggestions come first and the feed (empty until a follow) below them, so a follow never moves what is above. */
-body.v13 .rd-follow{display:grid!important;grid-template-columns:minmax(0,8fr) minmax(0,4fr)!important;grid-template-areas:"feed side" "suggest suggest"!important;gap:24px!important;align-items:start!important;margin:0!important}
-/* The Following panel runs as tall as the feed beside it (or the message and suggestions, following nobody), so the two
-   panels end on one line. */
-@media (min-width:1180px){body.v13 .rd-follow>.rd-follow__side{align-self:stretch!important}}
-body.v13 .rd-follow.is-empty{grid-template-areas:"empty side" "suggest side" "feed side"!important;grid-template-rows:auto auto 1fr!important}
+/* On the page's 12 columns: the feed on columns 1–8, Following on 9–12 (the notes' and the brief's axis); each panel is
+   as tall as its content. Following nobody, the message runs across the top, and the suggestions and the Following panel
+   start level under it. */
+body.v13 .rd-follow{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;
+  grid-template-areas:"feed feed feed feed feed feed feed feed side side side side" "suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest"!important;gap:24px!important;align-items:start!important;margin:0!important}
+body.v13 .rd-follow.is-empty{grid-template-areas:"empty empty empty empty empty empty empty empty empty empty empty empty" "suggest suggest suggest suggest suggest suggest suggest suggest side side side side" "feed feed feed feed feed feed feed feed side side side side"!important;grid-template-rows:none!important}
 body.v13 .rd-follow__feed{grid-area:feed!important;min-width:0!important}
 body.v13 .rd-follow__side{grid-area:side!important;min-width:0!important}
 body.v13 .rd-follow__empty{grid-area:empty!important;display:none!important;margin:0!important;padding:0!important;font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:62ch!important;text-wrap:pretty!important}
 body.v13 .rd-follow.is-empty .rd-follow__empty{display:block!important}
 body.v13 .rd-follow.is-empty .rd-follow__feed:has(>ol:empty){display:none!important}
-@media (min-width:1180px){body.v13 .rd-follow.is-empty:has(.rd-follow__feed>ol:empty){grid-template-areas:"empty side" "suggest side"!important;grid-template-rows:auto 1fr!important}}
+@media (min-width:1180px){body.v13 .rd-follow.is-empty:has(.rd-follow__feed>ol:empty){grid-template-areas:"empty empty empty empty empty empty empty empty empty empty empty empty" "suggest suggest suggest suggest suggest suggest suggest suggest side side side side"!important}}
 /* A browser with no saved counts does not know yet whether the reader follows anyone: it keeps room for feed rows and
    draws no suggestions until the answer arrives, so whichever it is, nothing already drawn has to move. */
 body.v13 .rd-follow.is-unknown .rd-suggest{display:none!important}
-body.v13 .rd-follow.is-error{grid-template-areas:"feed feed" "suggest suggest"!important}
+body.v13 .rd-follow.is-error{grid-template-areas:"feed feed feed feed feed feed feed feed feed feed feed feed" "suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest suggest"!important}
 body.v13 .rd-follow.is-error .rd-follow__side{display:none!important}
 /* The error message and its Try again take only the room they need. */
 body.v13 .rd-follow.is-error :is(.rd-feed,.rd-more--feed){min-height:0!important}
@@ -234,7 +239,7 @@ body.v13 .rd-fl:last-child{box-shadow:none!important}
 @media (min-width:1180px){body.v13 .rd-flist:has(>.rd-fl__msg){min-height:0!important}body.v13 .rd-fl__msg .rd-empty{padding:16px 0 12px!important}}
 body.v13 .rd-fl__body,body.v13 .rd-sg__body{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:10px!important;min-width:0!important}
 body.v13 :is(.rd-fl__body,.rd-sg__body)>p{grid-column:1/-1!important;margin:0!important;min-width:0!important}
-body.v13 :is(.rd-fl__name,.rd-sg__name){grid-column:1!important;grid-row:1!important;font:600 13px/24px var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 :is(.rd-fl__body,.rd-sg__body)>:is(.rd-fl__name,.rd-sg__name){grid-column:1!important;grid-row:1!important;font:600 13px/24px var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 body.v13 :is(.rd-fl__name,.rd-sg__name) a{color:var(--hf-ink)!important}
 /* The button sits at the top right of the first line without making the line taller (28px in a 24px line). */
 body.v13 :is(.rd-fl__body,.rd-sg__body)>.v10-follow-btn{grid-column:2!important;grid-row:1!important;align-self:center!important;margin:-2px 0!important}
@@ -262,6 +267,7 @@ body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n+3){border-top:1px sol
 body.v13 .rd-sg__msg{grid-column:1/-1!important;padding:0 20px!important}
 body.v13 #v10-follow-suggest-foot{margin:0!important;padding:12px 20px!important;border-top:1px solid var(--hf-line-faint)!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
 body.v13 #v10-follow-suggest-foot:empty{display:none!important}
+body.v13 #v10-follow-suggest-foot a{white-space:nowrap!important}
 /* Follow / Save: the shared xs button (28px, 12px sentence case); "Following ✓" and "Saved ✓" are the quiet pressed
    state. A Follow button is as wide as its longest label, so swapping the label never moves its edge. */
 body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn{box-sizing:border-box!important;min-width:calc(11ch + 24px)!important}   /* the ✓ is a little wider than 1ch */
@@ -298,11 +304,16 @@ body.v13 .rd-row__link{font:600 13px/1.25 var(--hf-mono)!important;letter-spacin
 body.v13 .rd-row__link::after{content:""!important;position:absolute!important;inset:0!important;z-index:0!important}
 body.v13 .rd-row__link:focus-visible{outline:0!important}
 body.v13 .rd-row--watch:has(.rd-row__link:focus-visible){outline:2px solid var(--hf-ink)!important;outline-offset:-2px!important}
+/* The row's arrow keeps 8px from the row's edge, so the inset focus ring never runs through it. */
+body.v13 .rd-row--watch>b{margin-right:8px!important}
 body.v13 .rd-row--watch :is(.rd-save-btn,.ins-media,.ins-media a){position:relative!important;z-index:1!important}
 body.v13 .rd-row__id{gap:2px!important}
 body.v13 .rd-row__id small{font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
 body.v13 .rd-row__detail{font:400 12px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
 body.v13 .rd-row__detail .rd-nb{font-variant-numeric:tabular-nums!important}
+/* The deal, then the dates on a line of their own: the " · " between them stays in the text at zero size. */
+body.v13 .rd-row__detail .rd-sep--break{font-size:0!important}
+body.v13 .rd-row__detail .rd-row__when{display:block!important;color:var(--hf-muted)!important}
 body.v13 .rd-row__detail small{margin:4px 0 0!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 .rd-row__detail .rd-type{margin:0 2px!important}
 body.v13 .rd-row__detail .rd-new{margin-left:4px!important}
@@ -337,7 +348,7 @@ body.v13 .rd-grid:has(#v3-watchlist-foot:empty) .rd-module--notes{padding-bottom
 /* ---------- 04 Across the market ---------- */
 /* Totals: one panel, five equal cells divided by faint rules. The value's size fits its cell (--rd-len characters in
    a cell --rd-col wide with --rd-pad of padding), so ten-digit totals never overflow. */
-body.v13 .rd-kpis{display:grid!important;container-type:inline-size!important;--rd-col:20cqi;--rd-pad:48px;grid-template-columns:repeat(5,minmax(0,1fr))!important;margin:0!important;padding:0!important;min-height:154px!important}
+body.v13 .rd-kpis{display:grid!important;container-type:inline-size!important;--rd-col:20cqi;--rd-pad:48px;grid-template-columns:repeat(5,minmax(0,1fr))!important;margin:0!important;padding:0!important;min-height:160px!important}
 body.v13 .rd-kpis>.rd-empty{grid-column:1/-1!important;padding:18px 24px!important}
 body.v13 .rd-kpi{min-width:0!important;margin:0!important;padding:20px 24px 22px!important;border-left:1px solid var(--hf-line-faint)!important}
 body.v13 .rd-kpi:first-child{border-left:0!important;padding-left:24px!important}
@@ -350,10 +361,23 @@ body.v13 .rd-kpi__value .rd-tri{width:10px!important;height:9px!important;margin
 body.v13 .rd-kpi__value--up{color:var(--hf-up)!important}
 body.v13 .rd-kpi__value--down{color:var(--hf-down)!important}
 body.v13 .rd-kpi__note{margin:8px 0 0!important;max-width:30ch!important;font:400 11px/1.55 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
+/* A run of facts starts 3ch left of its text (the clipped separator strip), so its box is 3ch wider for the same measure.
+   From 1180 the measure is 32ch: "Median from trade to SEC filing" (31 characters) holds one line. */
+body.v13 .rd-kpi__note.rd-seq{max-width:33ch!important}
+@media (min-width:1180px){body.v13 .rd-kpi__note{max-width:32ch!important}body.v13 .rd-kpi__note.rd-seq{max-width:35ch!important}}
+/* Five to a row under 1300px, "Not a purchase or sale" fits its cell at the phones' tighter tracking. */
+@media (min-width:1180px) and (max-width:1299px){body.v13 .rd-kpi__label{letter-spacing:.08em!important}}
 
-/* The chart and by company side by side (7 : 5), both panels as tall as the taller. */
-body.v13 .rd-flow{display:grid!important;grid-template-columns:minmax(0,7fr) minmax(0,5fr)!important;gap:24px!important;margin:24px 0 0!important;align-items:stretch!important}
+/* The chart and by company side by side on the page's 12 columns: the chart on 1–7, by company on 8–12 (x = 844 at 1440),
+   both panels as tall as the taller; the chart's plot is tall enough to fill its panel (--plot-h). */
+body.v13 .rd-flow{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:24px!important;margin:24px 0 0!important;align-items:stretch!important}
+body.v13 .rd-flow>.rd-panel--daily{grid-column:1/8!important}
+body.v13 .rd-flow>.rd-panel--companies{grid-column:8/13!important}
 body.v13 .rd-panel{min-width:0!important;margin:0!important}
+/* The chart's frame takes any height its panel has left (a few pixels when by company's names wrap), so the axis labels
+   never leave an empty band under them. */
+body.v13 .rd-panel--daily{display:flex!important;flex-direction:column!important}
+body.v13 .rd-panel--daily>.rd-dframe{flex:1 0 auto!important}
 body.v13 :is(.rd-panel--daily,.rd-panel--companies){padding:20px 24px 16px!important}
 body.v13 .rd-panel--largest{margin:24px 0 0!important;padding:0 24px!important}
 body.v13 .rd-panel__head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:10px 18px!important;margin:0 0 16px!important;padding:0!important}
@@ -363,12 +387,12 @@ body.v13 .rd-panel__head p{margin:4px 0 0!important;max-width:56ch!important;fon
 body.v13 .rd-panel--largest>.rd-panel__head{margin:0 -24px!important;padding:16px 24px!important;border-bottom:1px solid var(--hf-line)!important}
 
 /* Chart | Table: the shared segmented control; both views share one fixed-height frame and crossfade in place. The
-   plot's height (300px; 260px on tablets; 200px on phones) is drawn by v4-dashboard.js (PLOT); the frame adds the
-   28px legend and the 8 + 40px day axis. */
+   plot's height (414px from 1360, 436px at 1180–1359, so the chart fills its panel beside by company; 260px on tablets;
+   180px on phones) is drawn by v4-dashboard.js (PLOT); the frame adds the 28px legend and the 8 + 40px day axis. */
 body.v13 .rd-seg{flex:none!important;margin:0!important}
 body.v13 .rd-seg[hidden]{display:none!important}
 body.v13 .rd-seg button{cursor:pointer!important}
-body.v13 .rd-dframe{--plot-h:300px;position:relative!important;display:grid!important;height:calc(var(--plot-h) + 76px)!important;margin:0!important}
+body.v13 .rd-dframe{--plot-h:414px;position:relative!important;display:grid!important;height:calc(var(--plot-h) + 76px)!important;margin:0!important}
 body.v13 .rd-dview{grid-area:1/1!important;min-width:0!important;min-height:0!important;transition:opacity .2s cubic-bezier(.2,.7,.1,1),visibility 0s linear .2s!important;opacity:0!important;visibility:hidden!important}
 body.v13 .rd-dview.is-active{opacity:1!important;visibility:visible!important;transition:opacity .2s cubic-bezier(.2,.7,.1,1) .06s,visibility 0s!important}
 body.v13 .rd-dtable{overflow:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;scrollbar-color:var(--hf-line-2) transparent!important}
@@ -491,15 +515,17 @@ body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
    dead gap; the first and last cells keep 24px from the panel's edges. */
 body.v13 .rd-table-wrap--trades{padding:0!important}
 @media (min-width:1120px){body.v13 .rd-table--trades{table-layout:fixed!important;min-width:1040px!important}}
-body.v13 .rd-table--trades th:nth-child(1){width:17%!important}
-body.v13 .rd-table--trades th:nth-child(2){width:15%!important}
-body.v13 .rd-table--trades th:nth-child(3){width:17%!important}
-body.v13 .rd-table--trades th:nth-child(4){width:7%!important}
-body.v13 .rd-table--trades th:nth-child(5){width:8%!important}
-body.v13 .rd-table--trades th:nth-child(6){width:10%!important}
-body.v13 .rd-table--trades th:nth-child(7){width:10%!important}
-body.v13 .rd-table--trades th:nth-child(8){width:9%!important}
-body.v13 .rd-table--trades th:nth-child(9){width:7%!important}
+/* Fixed-format columns take the width their longest content needs (a ten-digit value, "Oct 12, 2026", "Filing ↗", with
+   their padding), at every width from 1120; person, company and what happened share the rest equally (234px each at
+   1440, so "Palantir Technologies Inc." and "James D. Farley Jr." are whole). Dates never run into each other on a
+   narrower screen. */
+body.v13 .rd-table--trades th:nth-child(-n+3){width:auto!important}
+body.v13 .rd-table--trades th:nth-child(4){width:88px!important}
+body.v13 .rd-table--trades th:nth-child(5){width:84px!important}
+body.v13 .rd-table--trades th:nth-child(6){width:120px!important}
+body.v13 .rd-table--trades th:nth-child(7){width:130px!important}
+body.v13 .rd-table--trades th:nth-child(8){width:108px!important}
+body.v13 .rd-table--trades th:nth-child(9){width:84px!important}
 body.v13 .rd-table--trades :is(th,td):first-child{padding-left:24px!important}
 body.v13 .rd-table--trades :is(th,td):last-child{padding-right:24px!important}
 body.v13 .rd-table--trades tbody tr{height:60px!important}
@@ -552,20 +578,35 @@ body.v13 .rd-module__foot a:hover{text-decoration-color:currentColor!important}
   body.v13 .rd-table--trades tbody{display:block!important}
   body.v13 .rd-table--trades tbody tr{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:12px 14px!important;height:auto!important;min-height:118px!important;padding:16px 0!important;border:0!important;border-bottom:1px solid var(--hf-line-faint)!important;background:transparent!important;box-sizing:border-box!important}
   body.v13 .rd-table--trades tbody tr:last-child{border-bottom:0!important}
+  /* Line 1: who, the company, what happened, and the filing at the right; line 2: the figures, labelled (shares, price,
+     value), then the dates, each read with its word ("Traded Oct 12, 2026") on the figures' line. A person, a company and a
+     badge need no label, so a card carries three caps labels, not nine. */
   body.v13 .rd-table--trades td,body.v13 .rd-table--trades td:last-child,body.v13 .rd-table--trades td:first-child{display:block!important;grid-column:span 2!important;padding:0!important;border:0!important;text-align:left!important;white-space:normal!important;min-width:0!important;overflow:visible!important}
-  body.v13 .rd-table--trades td:nth-child(-n+3){grid-column:span 4!important}
+  body.v13 .rd-table--trades td.rd-td-who{grid-column:span 4!important}
+  body.v13 .rd-table--trades td:is(.rd-td-co,.rd-td-what,.rd-td-traded,.rd-td-filed){grid-column:span 3!important}
   body.v13 .rd-table--trades td[colspan]{grid-column:1/-1!important}
   body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:left!important}
-  body.v13 .rd-table--trades td.rd-links{align-self:end!important;text-align:right!important}
+  body.v13 .rd-table--trades td.rd-links{grid-column:11/13!important;grid-row:1!important;align-self:start!important;text-align:right!important}
   body.v13 .rd-table--trades td[data-label]::before{content:attr(data-label)!important;display:block!important;margin:0 0 4px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+  body.v13 .rd-table--trades td:is(.rd-td-who,.rd-td-co,.rd-td-what)::before{content:none!important}
+  body.v13 .rd-table--trades td:is(.rd-td-traded,.rd-td-filed){padding-top:20px!important}
+  body.v13 .rd-table--trades td:is(.rd-td-traded,.rd-td-filed)::before{display:inline!important;margin:0!important;font:inherit!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important}
+  body.v13 .rd-table--trades td.rd-td-traded::before{content:"Traded "!important}
+  body.v13 .rd-table--trades td.rd-td-filed::before{content:"Filed "!important}
   body.v13 .rd-table--trades tbody td.rd-td-q{display:none!important}
 }
 
 /* ---------- 06 About this data: one line in a hairline box ---------- */
 body.v13 .rd-about-line{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px 24px!important;margin:0!important;padding:14px 20px!important;border:1px solid var(--hf-line)!important;background:none!important}
-body.v13 .rd-about{display:inline!important;list-style:none!important;margin:0!important;padding:0!important;font:400 12px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;flex:1 1 520px!important;min-width:0!important}
-body.v13 .rd-about>li{display:inline!important;margin:0!important;padding:0!important;border:0!important;list-style:none!important}
-body.v13 .rd-about>li+li::before{content:" · "!important;color:var(--hf-faint)!important}
+/* The facts wrap as units; a separator that would open a line falls in a clipped 2ch strip (the .rd-seq run, v13-app.css),
+   so no line starts or ends on "·". */
+body.v13 .rd-about{display:flex!important;flex-wrap:wrap!important;list-style:none!important;margin:0 0 0 -3ch!important;padding:0!important;clip-path:inset(-12px -12px -12px 2ch)!important;font:400 12px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;flex:1 1 520px!important;min-width:0!important}
+body.v13 .rd-about>li{display:block!important;margin:0 0 0 1ch!important;padding:0!important;border:0!important;list-style:none!important}
+body.v13 .rd-about>li:first-child{margin-left:3ch!important}
+/* A fact that wraps inside itself hangs its later lines 2ch in, on the visible edge (the .rd-seq run's indent). */
+body.v13 .rd-about>li+li{padding-left:2ch!important;text-indent:-2ch!important}
+body.v13 .rd-about>li *{text-indent:0!important}
+body.v13 .rd-about>li+li::before{content:" · "!important;color:var(--hf-faint)!important}   /* its leading space collapses at the fact's start */
 body.v13 .rd-about__k{color:var(--hf-muted)!important}
 body.v13 .rd-about>li:last-child::after{content:"."!important;color:var(--hf-soft)!important}
 body.v13 .rd-disclosure{margin:56px 0 0!important}
@@ -589,6 +630,7 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-kpi{grid-column:span 2!important}
   body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 3!important;border-top:1px solid var(--hf-line-faint)!important}
   body.v13 .rd-kpi:nth-child(4){border-left:0!important}
+  body.v13 .rd-kpi:nth-child(n+4) .rd-kpi__note{max-width:none!important}   /* the two wide cells' notes take their width */
   /* A saved company: the ticker and name beside its logo, the latest trade under them across the row. */
   body.v13 .rd-row--watch,body.v13 .rd-row--suggest{grid-template-columns:32px minmax(0,1fr) auto!important;grid-template-areas:"m id a" "m detail detail"!important;row-gap:6px!important;column-gap:16px!important;align-items:start!important}
   body.v13 .rd-row--watch>:is(.ins-media,.rd-skel--tile){grid-area:m!important;align-self:start!important}
@@ -598,23 +640,41 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-row--watch>b{margin-top:4px!important}
   /* The chart over by company. */
   body.v13 .rd-flow{grid-template-columns:minmax(0,1fr)!important}
+  body.v13 .rd-flow>:is(.rd-panel--daily,.rd-panel--companies){grid-column:1/-1!important}
   body.v13 .rd-dframe{--plot-h:260px}
 }
 @media (min-width:760px) and (max-width:1179px){
-  /* The followed people two to a row inside their panel, each cell the desktop row (name and button, meta, 30 days). */
-  body.v13 .rd-flist{--fl-h:84px;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:0!important;align-content:start!important;min-height:calc(var(--slot-rows,1) * 1.5 * var(--fl-h))!important}
-  body.v13 .rd-fl,body.v13 .rd-fl:last-child{padding:12px 16px!important;border-left:1px solid var(--hf-line-faint)!important;box-shadow:none!important}
-  body.v13 .rd-flist>.rd-fl:nth-child(2n+1){padding-left:0!important;border-left:0!important}
-  body.v13 .rd-flist>.rd-fl:nth-child(2n){padding-right:0!important}
-  body.v13 .rd-flist>.rd-fl:nth-child(n+3){box-shadow:inset 0 1px 0 var(--hf-line-faint)!important}
+  /* The followed people three to a row inside their panel (two under 960px), each cell the desktop row (name and
+     button, meta, 30 days). Columns are divided by faint rules and rows by space alone, so any count reads as a clean
+     grid. */
+  body.v13 .rd-flist{--fl-h:102px;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;column-gap:0!important;align-content:start!important;min-height:calc(var(--slot-rows,1) * var(--fl-h))!important}
+  body.v13 .rd-flist>.rd-fl,body.v13 .rd-flist>.rd-fl:last-child{padding:12px 16px!important;border-left:1px solid var(--hf-line-faint)!important;box-shadow:none!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(3n+1){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(3n){padding-right:0!important}
   body.v13 .rd-fl__msg{grid-column:1/-1!important}
+  /* Following nobody: the message and the suggestions come first, then the Following panel at its message's height (no
+     room kept for rows that are not there), then the feed. A follow made from the suggestions fills the panel below the
+     button that was pressed, so nothing above it moves (as at 1180 and up). */
+  body.v13 .rd-follow.is-empty{grid-template-areas:"empty" "suggest" "side" "feed"!important}
+  body.v13 .rd-follow.is-empty .rd-flist:has(>.rd-fl__msg){min-height:0!important}
+  body.v13 .rd-follow.is-empty .rd-fl__msg .rd-empty{padding:16px 0 12px!important}
   /* One column: the brief panel's sentences take two lines and one. */
   body.v13 #rd-today-market{--line-min:calc(2 * 1.7em)}
   body.v13 #rd-today-market.is-skeleton::before{box-shadow:0 1.7em 0 var(--hf-surface-2)!important}
   body.v13 #rd-today-fresh{--line-min:calc(1.6em + 10px)}
 }
+/* Three to a row, a cell is too narrow for a whole name and the button on one line: the name, the meta and the 30 days
+   take the cell's width, and the button closes the cell. */
+@media (min-width:960px) and (max-width:1179px){
+  body.v13 .rd-fl__body>.rd-fl__name{grid-column:1/-1!important}
+  body.v13 .rd-fl__body>.v10-follow-btn{grid-column:1!important;grid-row:auto!important;justify-self:start!important;margin:10px 0 0!important}
+  body.v13 .rd-flist{--fl-h:142px}
+}
 @media (min-width:760px) and (max-width:959px){
-  body.v13 .rd-flist{--fl-h:102px}
+  body.v13 .rd-flist{--fl-h:102px;grid-template-columns:repeat(2,minmax(0,1fr))!important;min-height:calc(var(--slot-rows,1) * 1.5 * var(--fl-h))!important;min-height:calc(round(up,var(--slots,3) / 2,1) * var(--fl-h))!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(n){padding:12px 16px!important;border-left:1px solid var(--hf-line-faint)!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(2n+1){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(2n){padding-right:0!important}
   body.v13 .rd-fl__sum{white-space:normal!important}
 }
 
@@ -622,8 +682,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
    Panels run to the screen's edges (no side borders) and pad to the gutter; heads, figures and rows stay on the 20px edge. */
 @media (max-width:759px){
   body.v13.rd-page{--rd-module-gap:40px}
-  body.v13 :is(.rd-follow__feed,.rd-suggest,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){margin-inline:calc(-1 * var(--hf-gutter))!important;border-left:0!important;border-right:0!important}
-  body.v13 :is(.rd-follow__feed,.rd-suggest){--rd-px:var(--hf-gutter)}
+  body.v13 :is(.rd-follow__feed,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){margin-inline:calc(-1 * var(--hf-gutter))!important;border-left:0!important;border-right:0!important}
+  body.v13 .rd-follow__feed{--rd-px:var(--hf-gutter)}
   body.v13 .rd-follow__feed{padding:0 var(--hf-gutter) 4px!important}
   body.v13 #v3-watchlist,body.v13 #v3-notes,body.v13 .rd-panel--largest{padding:0 var(--hf-gutter)!important}
   body.v13 :is(.rd-panel--daily,.rd-panel--companies){padding:16px var(--hf-gutter)!important}
@@ -666,33 +726,56 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-more--list{padding:10px 0 0!important;min-height:0!important}
   /* Rows take the height their two wrapped lines need; the list keeps about that much room per row (--feed-row). Below the
      first screen, nothing above them moves when they arrive, and a follow keeps the list's height (v13-overview.js). */
-  body.v13 .rd-feed{--feed-row:124px}
+  body.v13 .rd-feed{--feed-row:112px}
   body.v13 .rd-feed__row{grid-template-columns:36px minmax(0,1fr)!important;align-items:start!important;column-gap:12px!important;min-height:0!important;padding:14px 0!important}
   body.v13 .rd-feed__row>.ins-media,body.v13 .rd-feed__row>.rd-skel--tile{--ins-size:36px!important}
   body.v13 .rd-feed__l1{gap:0 8px!important}
+  /* New sits under the face, in the tile's column, so it never takes a line of its own. */
+  body.v13 .rd-feed__l1>.rd-new{position:absolute!important;left:0!important;top:58px!important;margin:0!important}
   body.v13 .rd-feed__l2{line-height:19px!important}
-  body.v13 .rd-feed__l2 .rd-feed__filing{line-height:19px!important}
-  body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:minmax(0,1fr)!important;padding:0 var(--hf-gutter)!important}
-  body.v13 .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n){min-height:96px!important;padding:14px 0!important;border:0!important;border-bottom:1px solid var(--hf-line-faint)!important}
-  body.v13 .rd-sglist>.rd-sg:last-child{border-bottom:0!important}
-  body.v13 .rd-sg__msg{padding:0!important}
-  body.v13 #v10-follow-suggest-foot{padding:12px var(--hf-gutter)!important}
+  /* "Filing ↗" keeps the line's 19px leading; its 25px hit area comes from padding the margin takes back. */
+  body.v13 .rd-feed__l2 .rd-feed__filing{display:inline-block!important;min-height:0!important;line-height:19px!important;padding:3px 0!important;margin:-3px 0!important;vertical-align:top!important}
+  /* Suggestions: the followed people's strip again (a label, then cards that scroll sideways to the screen's edges), so
+     the six take one card's height instead of six rows. */
+  body.v13 .rd-suggest{padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+  body.v13 .rd-suggest>.rd-label{min-height:0!important;margin:0 0 10px!important;padding:0!important;border:0!important}
+  body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{display:flex!important;gap:10px!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scroll-snap-type:x mandatory!important;scroll-padding-inline:var(--hf-gutter)!important;scrollbar-width:none!important;
+    margin:0 calc(-1 * var(--hf-gutter))!important;padding:0 var(--hf-gutter)!important;height:154px!important;align-items:stretch!important}
+  body.v13 .rd-sglist::-webkit-scrollbar{display:none!important}
+  body.v13 .rd-sglist>:is(.rd-sg,.rd-sg__msg):nth-child(n),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n){flex:0 0 min(260px,74vw)!important;scroll-snap-align:start!important;box-sizing:border-box!important;min-height:0!important;height:auto!important;padding:14px!important;
+    background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important;grid-template-columns:32px minmax(0,1fr)!important}
+  body.v13 .rd-sg>:is(.ins-media,.rd-skel--tile){--ins-size:32px!important}
+  body.v13 .rd-sg__body{grid-template-columns:minmax(0,1fr)!important}
+  body.v13 .rd-sg__body>:is(.rd-sg__name,.rd-sg__co,.rd-sg__sum){grid-column:1!important;grid-row:auto!important}
+  body.v13 .rd-sg__body>.v10-follow-btn{grid-column:1!important;grid-row:auto!important;justify-self:start!important;margin:10px 0 0!important}
+  body.v13 .rd-sg__sum{white-space:normal!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;min-height:36px!important}
+  body.v13 .rd-sglist>.rd-sg__msg{display:flex!important;align-items:center!important;flex-basis:calc(100vw - 2 * var(--hf-gutter))!important}
+  body.v13 .rd-sg__msg .rd-empty{padding:0!important}
+  body.v13 #v10-follow-suggest-foot{padding:12px 0 0!important;border-top:0!important}
   /* 02 and 03 */
-  body.v13 .rd-row--watch,body.v13 .rd-row--suggest{min-height:112px!important;column-gap:12px!important}
+  body.v13 .rd-row--watch,body.v13 .rd-row--suggest{min-height:110px!important;column-gap:12px!important}
+  /* The ticker and the company's name share one line (the name shortens with an ellipsis). */
+  body.v13 .rd-row--watch>.rd-row__id{flex-direction:row!important;align-items:baseline!important;gap:8px!important}
+  body.v13 .rd-row--watch>.rd-row__id>small{min-width:0!important}
+  /* New sits under the logo, in the tile's column, so it never takes a line of its own. */
+  body.v13 .rd-row--watch .rd-row__detail .rd-new{position:absolute!important;left:0!important;top:54px!important;margin:0!important}
   body.v13 #v3-watchlist .rd-rows__msg.is-skeleton .rd-empty{min-height:calc(2 * 1.75em)!important;box-sizing:content-box!important}
   body.v13 .rd-module--notes{padding-bottom:0!important}
   /* 04: totals two to a row, the fifth across; the value capped at 22px. */
-  body.v13 .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;--rd-col:50cqi;--rd-pad:40px;min-height:430px!important}
+  /* Bought and sold, then the net beside the days to report, then the lines that are neither across the panel (its note
+     is the longest): placed by the grid (dense), the DOM order stays. */
+  body.v13 .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-flow:row dense!important;--rd-col:50cqi;--rd-pad:40px;min-height:404px!important}
   body.v13 .rd-kpi,body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 1!important;padding:16px 20px!important;border-left:1px solid var(--hf-line-faint)!important;border-top:1px solid var(--hf-line-faint)!important}
   body.v13 .rd-kpi:nth-child(odd){padding-left:var(--hf-gutter)!important;border-left:0!important}
   body.v13 .rd-kpi:nth-child(-n+2){border-top:0!important}
-  body.v13 .rd-kpi:nth-child(5){grid-column:1/-1!important}
+  body.v13 .rd-kpi:nth-child(4){grid-column:1/-1!important;padding-left:var(--hf-gutter)!important;border-left:0!important}
+  body.v13 .rd-kpi:nth-child(5){padding-left:20px!important;border-left:1px solid var(--hf-line-faint)!important}
   body.v13 .rd-kpi__value{font-size:min(22px,calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
   body.v13 .rd-kpi__note{max-width:none!important}
   body.v13 .rd-flow{gap:16px!important;margin-top:16px!important}
   body.v13 .rd-panel--largest{margin-top:16px!important}
   body.v13 .rd-panel__head{flex-direction:column!important}
-  body.v13 .rd-dframe{--plot-h:200px;height:calc(var(--plot-h) + 98px)!important}
+  body.v13 .rd-dframe{--plot-h:180px;height:calc(var(--plot-h) + 98px)!important}
   body.v13 .rd-legend{height:auto!important;min-height:28px!important;row-gap:2px!important}
   body.v13 .rd-legend__scope{margin-left:0!important;flex-basis:100%!important}
   body.v13 .rd-dchart__frame{grid-template-columns:52px minmax(0,1fr)!important}
@@ -708,23 +791,37 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-co__id{gap:6px!important}
   body.v13 .rd-co__id small{display:none!important}
   body.v13 .rd-co__detail{grid-column:1/-1!important}
-  body.v13 .rd-big{grid-template-columns:24px auto minmax(0,1fr) auto!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;gap:6px 12px!important;min-height:112px!important;padding:14px 0!important}
+  body.v13 .rd-co__row{min-height:52px!important;padding:6px 0!important;row-gap:0!important}
+  /* One value column for every row (the rows are subgrids of the list), as wide as the longest value: every bar starts at
+     the same x on a track of the same width, so lengths compare at a glance. */
+  body.v13 .rd-largest{display:grid!important;grid-template-columns:24px max-content minmax(0,1fr) auto!important;column-gap:12px!important}
+  body.v13 .rd-largest>*{grid-column:1/-1!important}
+  body.v13 .rd-big{grid-template-columns:subgrid!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;gap:3px 12px!important;min-height:112px!important;padding:12px 0!important}
+  body.v13 .rd-big.is-skeleton .rd-big__value{min-width:11ch!important}
+  body.v13 .rd-big>.rd-arrow{min-height:24px!important}
+  /* The badge, the ticker and the person on one line where they fit (a joint filing's "and 9 others" wraps whole, never
+     cut). */
+  body.v13 .rd-big__what{gap:4px 12px!important}
   /* Trades as three-line records inside the full-bleed panel: who and where; what happened with the figures; the dates
      and the filing. The cells flow in one wrapping line, broken twice by the row's own ::before and ::after. */
   body.v13 .rd-table-wrap--trades{padding:0 var(--hf-gutter)!important}
   body.v13 .rd-table--trades tbody tr{border-bottom:1px solid var(--hf-line-faint)!important}
   body.v13 .rd-table--trades tbody tr:last-child{border-bottom:0!important}
-  body.v13 .rd-table--trades tbody tr.rd-trade{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:4px!important;height:auto!important;min-height:108px!important;padding:14px 0!important;box-sizing:border-box!important}
+  /* A figure that wraps to the start of a line takes its "×", "=" or "·" with it into a strip left of the record that is
+     clipped away (19.2px: 6px, the glyph, 6px), so no line starts on a separator; each line's first cell sits on the
+     record's edge. The first cell of a line holds a tile or a badge, never a bare link, so no focus ring is cut. */
+  body.v13 .rd-table--trades tbody tr.rd-trade{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:0!important;height:auto!important;min-height:94px!important;padding:12px 0!important;box-sizing:border-box!important;margin-left:-19.2px!important;clip-path:inset(-12px -12px -12px 19.2px)!important}
+  body.v13 .rd-table--trades tr.rd-trade>:is(.rd-td-who,.rd-td-what,.rd-td-traded,.rd-td-q){margin-left:19.2px!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-ent .ins-media,body.v13 .rd-table--trades tr.rd-trade .rd-ent>.rd-skel--tile{--ins-size:20px!important}
   body.v13 .rd-table--trades tr.rd-trade::before,body.v13 .rd-table--trades tr.rd-trade::after{content:""!important;display:block!important;flex:0 0 100%!important;height:0!important}
-  body.v13 .rd-table--trades tr.rd-trade::before{order:3!important}
-  body.v13 .rd-table--trades tr.rd-trade::after{order:8!important}
+  body.v13 .rd-table--trades tr.rd-trade::before{order:3!important;height:3px!important}   /* the breaks are the record's only line spacing */
+  body.v13 .rd-table--trades tr.rd-trade::after{order:8!important;height:2px!important}
   body.v13 .rd-table--trades tr.rd-trade td,body.v13 .rd-table--trades tr.rd-trade td:first-child,body.v13 .rd-table--trades tr.rd-trade td:last-child{display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;padding:0!important;font-size:12px!important;line-height:22px!important;white-space:nowrap!important;overflow:visible!important}
   body.v13 .rd-table--trades tr.rd-trade td::before{content:none!important}
   body.v13 .rd-table--trades tr.rd-trade td .rd-sub{display:none!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-who{order:1!important;flex:0 1 auto!important;min-width:0!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-co{order:2!important;min-width:0!important}
-  body.v13 .rd-table--trades tr.rd-trade .rd-td-co::before{content:"·"!important;display:inline!important;margin:0 8px!important;color:var(--hf-faint)!important;font:inherit!important;letter-spacing:0!important;text-transform:none!important}
+  body.v13 .rd-table--trades tr.rd-trade .rd-td-co::before{content:"·"!important;display:inline!important;margin:0 6px!important;color:var(--hf-faint)!important;font:inherit!important;letter-spacing:0!important;text-transform:none!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-what{order:4!important;margin-right:10px!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-what .rd-type{margin:0!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-shares{order:5!important}
@@ -742,8 +839,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-price:has(.rd-muted)::before{content:"·"!important}
   /* The security and the qualifiers (held indirectly, amended) as the record's last line, as the desktop shows them
      under the badge. */
-  body.v13 .rd-table--trades tr.rd-trade td.rd-td-q{display:block!important;order:11!important;flex:0 0 100%!important;white-space:normal!important;font-size:11px!important;line-height:18px!important;color:var(--hf-muted)!important}
-  body.v13 .rd-table--trades tr.rd-trade :is(.rd-td-traded,.rd-td-filed){color:var(--hf-muted)!important;font-size:11px!important}
+  body.v13 .rd-table--trades tr.rd-trade td.rd-td-q{display:block!important;order:11!important;flex:0 0 calc(100% - 19.2px)!important;white-space:normal!important;font-size:11px!important;line-height:18px!important;color:var(--hf-muted)!important}
+  body.v13 .rd-table--trades tr.rd-trade :is(.rd-td-traded,.rd-td-filed){color:var(--hf-muted)!important;font-size:11px!important;line-height:18px!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-traded{order:9!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-traded::before{content:"Traded"!important;display:inline!important;margin:0 6px 0 0!important;font:inherit!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-filed{order:10!important}
@@ -752,13 +849,15 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-filed .rd-sub::before{content:"("!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-filed .rd-sub::after{content:")"!important}
   body.v13 .rd-table--trades tr.rd-trade td.rd-links{order:2!important;margin-left:auto!important;padding-left:12px!important}
+  /* "Filing ↗" on the record's first line: a 24px target, so the line stays as tall as the names beside it. */
+  body.v13 .rd-table--trades tr.rd-trade td.rd-links .rd-arrow{min-height:24px!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-long{display:none!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-short{display:inline!important}
   body.v13 .rd-table--trades tr.rd-trade.is-skeleton td{flex:0 0 auto!important;width:auto!important}
   body.v13 #v3-trades-foot{min-height:calc(4 * 1.7em + 12px)!important}
   /* 06 */
   body.v13 .rd-about-line{display:block!important;padding:14px var(--hf-gutter)!important}
-  body.v13 .rd-about{display:block!important;min-height:calc(4 * 1.7em)!important}
+  body.v13 .rd-about{min-height:calc(4 * 1.7em)!important}
   body.v13 .rd-about-line>.rd-link{margin-top:8px!important}
   body.v13 .rd-disclosure{margin-top:48px!important}
 }
@@ -773,7 +872,7 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
 }
 @media (max-width:600px){
   /* Touch targets: standalone links and controls in the flow are at least 32px tall on phones. */
-  body.v13 .rd-co__id{min-height:32px!important}
+  body.v13 .rd-co__id{min-height:24px!important}
   body.v13 :is(.rd-big__what,.rd-table--trades) .rd-ent>a[data-ent],body.v13 :is(.rd-big__what,.rd-table--trades) .rd-who>a{display:flex!important;align-items:center!important;min-height:24px!important}
   body.v13 .rd-row__detail .rd-ent>a[data-ent],body.v13 .rd-row__detail .rd-who>a{display:inline-flex!important;align-items:center!important;min-height:24px!important}
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button{height:32px!important;min-height:32px!important}
@@ -785,7 +884,7 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-more--feed{min-height:calc(12px + 44px + 12px)!important}
 }
 @media (max-width:759px) and (pointer:coarse){
-  body.v13 .rd-flist{height:166px!important}
+  body.v13 .rd-flist,body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{height:166px!important}
 }
 @media (prefers-reduced-motion:reduce){
   body.v13 :is(.rd-rise,.rd-today__line,#v3-trades.is-entering>tr){animation:none!important}

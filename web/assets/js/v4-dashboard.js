@@ -28,24 +28,25 @@ function scope(f){
  D.ready(el);
  const n=f.rows.length;
  if(!n){el.textContent="Purchases and sales reported on SEC Form 4, from the latest imported trades.";return;}
- el.textContent=(n>=100?"The latest "+D.count(n):"All "+D.count(n))+" trades imported from SEC Form 4 filings: "+
-  [D.rangeText(f),D.plural(f.companies.size,"company","companies"),D.plural(f.people.size,"person","people"),
-   f.replaced?D.plural(f.replaced,"line restated by a later 4/A, counted once","lines restated by a later 4/A, counted once"):""].filter(Boolean).join(" · ")+".";
+ // The facts after the colon are a run (.rd-seq) on a line of their own, so no line starts or ends on a separator.
+ el.innerHTML=E((n>=100?"The latest "+D.count(n):"All "+D.count(n))+" trades imported from SEC Form 4 filings: ")+'<span class="rd-seq">'+
+  D.seq([D.rangeText(f),D.plural(f.companies.size,"company","companies"),D.plural(f.people.size,"person","people"),
+   f.replaced?D.plural(f.replaced,"line restated by a later 4/A, counted once","lines restated by a later 4/A, counted once"):""].filter(Boolean).map((t,i,a)=>E(t+(i===a.length-1?".":""))))+'</span>';
 }
 
 /* ---------- five totals ---------- */
-const tile=(cls,label,value,note,title,i)=>'<div class="rd-kpi '+cls+'" style="--i:'+i+'"'+(title?' title="'+E(title)+'"':'')+'><p class="rd-kpi__label">'+label+'</p><p class="rd-kpi__value">'+value+'</p><p class="rd-kpi__note">'+note+'</p></div>';
+const tile=(cls,label,value,note,title,i)=>'<div class="rd-kpi '+cls+'" style="--i:'+i+'"'+(title?' title="'+E(title)+'"':'')+'><p class="rd-kpi__label">'+label+'</p><p class="rd-kpi__value">'+value+'</p><p class="rd-kpi__note'+(note.includes('class="rd-bit')?" rd-seq":"")+'">'+note+'</p></div>';
 function kpis(f){
  const host=$("rd-kpis");if(!host)return;
  D.ready(host);
  if(!f.rows.length){host.innerHTML='<p class="rd-empty">No trades have been imported yet. The first SEC import fills this page.</p>';return;}
- const side=(list,shares,unpriced,unshared,word)=>E(D.plural(list.length,word))+(list.length?'&nbsp;· '+nb(D.qty(shares)+" shares"):"")+(unpriced?'&nbsp;· '+nb(D.count(unpriced)+" without a price"):"")+(unshared?'&nbsp;· '+nb(D.count(unshared)+" without a share count"):"");
+ const side=(list,shares,unpriced,unshared,word)=>D.seq([E(D.plural(list.length,word)),list.length?nb(D.qty(shares)+" shares"):"",unpriced?nb(D.count(unpriced)+" without a price"):"",unshared?nb(D.count(unshared)+" without a share count"):""]);
  const netCls=f.net>0?"rd-kpi__value--up":f.net<0?"rd-kpi__value--down":"";
  const netWord=!f.buyValue&&!f.sellValue?"No priced purchases or sales":f.net>0?"More bought than sold":f.net<0?"More sold than bought":"Bought equals sold";
  const others=[...f.otherCodes].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:a[0]>b[0]?1:0));
  const otherNote=others.length?cap(others.map(([k,n])=>D.noun(k,n)+" ("+n+")").join(", "))+". No dollar value counted.":"None in these trades.";
  const lo=f.lags[0],hi=f.lags[f.lags.length-1],med=median(f.lags);
- const lagNote=med===null?"No dated filings":lo===hi?(f.lags.length===1?"From trade to SEC filing, 1 dated trade":"From trade to SEC filing, the same for all "+f.lags.length):"Median from trade to SEC filing&nbsp;· range "+nb(lo+"–"+days(hi));
+ const lagNote=med===null?"No dated filings":lo===hi?(f.lags.length===1?"From trade to SEC filing, 1 dated trade":"From trade to SEC filing, the same for all "+f.lags.length):D.seq(["Median from trade to SEC filing","range "+nb(lo+"–"+days(hi))]);
  host.innerHTML=
   tile("rd-kpi--buy",D.tri("buy")+"Bought",E(D.money(f.buyValue)),side(f.buys,f.buyShares,f.buyUnpriced,f.buyUnshared,"purchase"),"Code P on non-derivative securities: value = shares × price per share as filed",0)+
   tile("rd-kpi--sell",D.tri("sell")+"Sold",E(D.money(f.sellValue)),side(f.sells,f.sellShares,f.sellUnpriced,f.sellUnshared,"sale"),"Code S on non-derivative securities: value = shares × price per share as filed",1)+
@@ -60,12 +61,12 @@ function kpis(f){
 /* ---------- bought and sold, by trade date ---------- */
 const STEPS=[1,2,2.5,5,10];
 function niceStep(max,parts){const raw=max/parts,mag=Math.pow(10,Math.floor(Math.log10(raw)));const n=raw/mag;return STEPS.find(s=>s>=n-1e-9)*mag;}
-let last=null,lastLimit=0,lastTight=null,chartW=0;
+let last=null,lastLimit=0,lastTight=null,lastPlot=0,chartW=0;
 /* The chart's width comes from a ResizeObserver, so drawing never forces a layout of everything rendered before it. */
 const chartWidth=host=>chartW||host.clientWidth||960;
 const limitFor=w=>w>=700?14:w>=560?12:w>=480?8:6;
 const tightFor=(w,n)=>(w-56)/n<58;
-const PLOT=w=>w<760?200:w<1180?260:300; // the plot's height: fixed per width (v13-dashboard.css .rd-dframe --plot-h), so the frame never resizes with the data
+const PLOT=w=>w<760?180:w<1180?260:w<1360?436:414; // the plot's height: fixed per width (v13-dashboard.css .rd-dframe --plot-h), so the frame never resizes with the data; from 1180 tall enough that the chart fills its panel beside by company
 const dayLabel=x=>D.date(x.key+"T00:00:00Z")+": bought "+D.money(x.buy)+" ("+D.plural(x.nb,"trade")+"), sold "+D.money(x.sell)+" ("+D.plural(x.ns,"trade")+"), net "+D.signedMoney(x.buy-x.sell);
 function daily(f){
  const host=$("rd-daily-chart"),table=$("rd-daily-table"),seg=$("rd-daily-switch"),frame=$("rd-daily-frame");if(!host)return;
@@ -83,7 +84,7 @@ function daily(f){
  const fit=(v,st)=>v>st*.15?Math.ceil(v/st-1e-9)*st:0,extent=st=>fit(top,st)+fit(bot,st);
  const step=[2,3,4,5].map(p=>niceStep(mx,p)).filter((st,i,a)=>a.indexOf(st)===i&&extent(st)/st<=8).reduce((a,b)=>extent(b)<extent(a)?b:a);
  const topMax=fit(top,step),botMax=fit(bot,step);
- const H=PLOT(innerWidth),pad=26,inner=H-pad*2;
+ const H=lastPlot=PLOT(innerWidth),pad=26,inner=H-pad*2;
  const span=(topMax||step*.15)+(botMax||step*.15),px=inner/span,zero=pad+(topMax||step*.15)*px;
  const ticks=[];for(let v=topMax;v>-botMax-1e-9;v-=step)ticks.push(Math.abs(v)<1e-9?0:v);if(!ticks.includes(0))ticks.push(0);
  if(botMax)ticks.push(-botMax);
@@ -210,7 +211,7 @@ function biggest(f){
    '<span class="rd-big__what">'+D.badge(x)+
     '<span class="rd-ent">'+D.coTile(x,"sm")+(t?'<span data-ent="company">'+E(t)+'</span>':'<span data-ent="company">'+E(D.companyName(x.issuer_name)||"Issuer not reported")+'</span>')+'</span>'+
     '<span class="rd-ent">'+D.whoTile(x,"sm")+D.personName(x)+'</span></span>'+
-   '<span class="rd-big__terms">'+nb((s!==null?s+" shares":"")+(D.priceOf(x)!==null?" × "+D.price(p):""))+' · '+nb(traded)+(D.validDate(x.published_at)?' · '+nb("filed "+D.filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+D.lagWords(lag)+")":"")):'')+(x.is_amendment?' · '+nb("amended filing (4/A)"):'')+'</span>'+
+   '<span class="rd-big__terms rd-seq">'+D.seq([nb((s!==null?s+" shares":"")+(D.priceOf(x)!==null?" × "+D.price(p):"")),nb(traded),D.validDate(x.published_at)?nb("filed "+D.filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+D.lagWords(lag)+")":"")):"",x.is_amendment?nb("amended filing (4/A)"):""])+'</span>'+
    '<a class="rd-arrow" href="'+E(D.filingHref(x.accession))+'" aria-label="'+E("Open the filing: "+D.sentence(x))+'">Filing ↗</a>'+
   '</li>';
  }).join("");
@@ -240,7 +241,7 @@ D.watch(["trades"],r=>{
  D.later(3,()=>biggest(f));
 });
 let resizeTimer=0;
-const resized=()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{const host=$("rd-daily-chart");if(!last||!host||!host._days)return;const w=chartWidth(host),n=Math.min(limitFor(w),last.days.size);if(limitFor(w)!==lastLimit||tightFor(w,n)!==lastTight)daily(last);},150);};
+const resized=()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{const host=$("rd-daily-chart");if(!last||!host||!host._days)return;const w=chartWidth(host),n=Math.min(limitFor(w),last.days.size);if(limitFor(w)!==lastLimit||tightFor(w,n)!==lastTight||PLOT(innerWidth)!==lastPlot)daily(last);},150);};
 if(window.ResizeObserver){const frame=$("rd-daily-frame");if(frame)new ResizeObserver(es=>{const w=Math.round(es[es.length-1].contentRect.width);if(w&&w!==chartW){const first=!chartW;chartW=w;if(!first)resized();}}).observe(frame);}
 else addEventListener("resize",resized,{passive:true});
 document.addEventListener("DOMContentLoaded",()=>{

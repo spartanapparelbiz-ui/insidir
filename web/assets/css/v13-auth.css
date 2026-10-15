@@ -125,6 +125,8 @@ body.v13.v3-auth .auth .input::placeholder{color:var(--hf-faint)!important;opaci
 /* Field states. The shared base input rule (body.v13 :is(input:not(…)…), specificity 0,5,2) resets the
    border and shadow, so these carry .auth-field to reach 0,6,1: hover lifts the hairline, focus draws a
    full ink frame, an invalid field keeps its alert-red frame (--hf-alert) through hover and focus. */
+/* input.input reaches the shared field rule's specificity (0,5,2), so the inset paper wins over its --hf-surface. */
+body.v13.v3-auth .auth .auth-field>input.input{background:var(--hf-bg)!important}
 body.v13.v3-auth .auth .auth-field>.input{transition:border-color .12s linear!important}
 body.v13.v3-auth .auth .auth-field>.input:hover{border-color:var(--hf-line-hover)!important}
 body.v13.v3-auth .auth .auth-field>.input:focus{outline:none!important;border-color:var(--hf-ink)!important;box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
@@ -176,11 +178,14 @@ body.v13.v3-auth .auth-media::before,body.v13.v3-auth .auth-media::after{content
 /* The live dot field. v13-halftone.js listens on its parent, so the dots part wherever the pointer crosses the
    sheet. It keeps the old vignette (ellipse 80% × 70%, clear for its middle 35%, full at the corners), intersected
    with a frame that is fully transparent over the story column (its measure, padding and top and bottom
-   padding), so no word of the story ever sits on a dot. The canvas paints the sheet's own surface. */
+   padding), so no word of the story ever sits on a dot. Toward the sheet's bottom edge the whole field fades out, the
+   last 96px plain surface, so its dots never meet the footer's strip right under the sheet (two dot grids of different
+   pitch side by side read as a moiré seam; the closing calls on the public pages keep the same band of plain paper).
+   The canvas paints the sheet's own surface; mask colours are alpha only. */
 body.v13.v3-auth .auth-media>.auth-media__field{--hwf-bg:var(--hf-surface)!important;position:absolute!important;inset:0!important;z-index:0!important;display:block!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
-  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
-  mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
-  -webkit-mask-composite:source-in,source-over!important;mask-composite:intersect,add!important}
+  -webkit-mask-image:linear-gradient(180deg,var(--hf-ink) calc(100% - 224px),transparent calc(100% - 96px)),radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
+  mask-image:linear-gradient(180deg,var(--hf-ink) calc(100% - 224px),transparent calc(100% - 96px)),radial-gradient(ellipse 80% 70% at 50% 50%,transparent 35%,var(--hf-ink) 100%),linear-gradient(90deg,var(--hf-ink),transparent calc(var(--au-clear) - 14px),transparent calc(100% - var(--au-clear) + 14px),var(--hf-ink)),linear-gradient(180deg,var(--hf-ink),transparent calc(var(--au-story-py) - 10px),transparent calc(100% - var(--au-story-py) + 10px),var(--hf-ink))!important;
+  -webkit-mask-composite:source-in,source-in,source-over!important;mask-composite:intersect,intersect,add!important}
 body.v13.v3-auth .auth-media>.auth-media__field>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
 body.v13.v3-auth .v6-auth-story{position:relative!important;z-index:1!important;width:100%!important;max-width:var(--au-story-w)!important;margin:0 auto!important;padding:var(--au-story-py) var(--au-story-px)!important;background:transparent!important;border:0!important}
 body.v13.v3-auth .v6-auth-story__label{margin:0!important}
@@ -234,11 +239,10 @@ body.v13.v3-auth .auth-ledger dd{font:400 13px/1.6 var(--hf-mono)!important;colo
   body.v13.v3-auth .auth-panel__inner{padding:48px var(--au-gutter) 56px!important}
   body.v13.v3-auth .auth-card{width:100%!important;max-width:520px!important;margin:0!important;padding:32px!important}
   body.v13.v3-auth .auth-media{border-left:0!important;border-top:1px solid var(--hf-line)!important}
-  body.v13.v3-auth .v6-auth-story{max-width:536px!important;margin:0!important;padding:64px var(--au-gutter) 52px!important}
-  /* Stacked under the form, the story fills the sheet's width, so the dots become a strip along the sheet's top
-     edge (above the label, in the story's top padding), fading down to nothing like the footer's strip. */
-  body.v13.v3-auth .auth-media>.auth-media__field{inset:0 0 auto!important;height:52px!important;
-    -webkit-mask-image:linear-gradient(180deg,var(--hf-ink),transparent)!important;mask-image:linear-gradient(180deg,var(--hf-ink),transparent)!important;-webkit-mask-composite:source-over!important;mask-composite:add!important}
+  body.v13.v3-auth .v6-auth-story{max-width:536px!important;margin:0!important;padding:48px var(--au-gutter) 52px!important}
+  /* Stacked under the form, the story fills the sheet's width, so its dots could only be a full-width strip, a second
+     footer strip in mid-page: the sheet is plain surface here and the footer's strip is the dots. */
+  body.v13.v3-auth .auth-media>.auth-media__field{display:none!important}
 }
 @media (max-width:760px){
   body.v13.v3-auth .v9-nav .v6-logo{font-size:22px!important}
@@ -246,13 +250,14 @@ body.v13.v3-auth .auth-ledger dd{font:400 13px/1.6 var(--hf-mono)!important;colo
 @media (max-width:560px){
   body.v13.v3-auth .v9-nav .v6-nav__actions .v9-btn{height:36px!important;min-height:36px!important;padding:0 12px!important}
 }
+/* Phones: the card runs edge to edge and the sheet follows it directly, one surface with a hairline between the form
+   and the story (no band of darker paper between them). */
 @media (max-width:560px){
-  body.v13.v3-auth .auth-panel__inner{padding:0 0 40px!important}
-  body.v13.v3-auth .auth-card{max-width:none!important;padding:36px var(--au-gutter) 32px!important;border-left:0!important;border-right:0!important;border-top:0!important}
+  body.v13.v3-auth .auth-panel__inner{padding:0!important}
+  body.v13.v3-auth .auth-card{max-width:none!important;padding:36px var(--au-gutter) 32px!important;border:0!important}
 }
 @media (max-width:480px){
-  body.v13.v3-auth .v6-auth-story{padding:60px var(--au-gutter) 48px!important}
-  body.v13.v3-auth .auth-media>.auth-media__field{height:48px!important}
+  body.v13.v3-auth .v6-auth-story{padding:40px var(--au-gutter) 48px!important}
   body.v13.v3-auth .auth-ledger>div{grid-template-columns:1fr!important}
 }
 @media (max-width:374px){

@@ -60,6 +60,8 @@ body.v13 :is(.rd-link,.v10-people-hero__copy>a,.v10-follows__head>a,.v10-follow-
   background-image:none!important;transition:color .12s linear!important}
 body.v13 :is(.rd-link,.v10-people-hero__copy>a,.v10-follows__head>a,.v10-follow-row>a,.v10-person-card__actions>a,.cl-result__head>a,.cl-source-link,.v13-link):hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 body.v13 :is(.v10-people-topline a,.cl-top .cl-eyebrow a){color:inherit!important;font:inherit!important;letter-spacing:inherit!important;text-transform:inherit!important;text-decoration:none!important;background-image:none!important;transition:color .12s linear!important}
+/* "← Overview" beside the people page's label row is an action link: sentence case, never the label's caps. */
+body.v13 div.v10-people-topline a[href]{font:500 12px/1.4 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important}
 body.v13 :is(.v10-people-topline a,.cl-top .cl-eyebrow a):hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 body.v13:is(.app-body,.v3-app) :is(.cl-finish a,.v3-module__head>a,.v3-company__box a,.v3-account__text,.v3-account__links a){transition:color .12s linear!important}
 /* Plain text links inside captions and empty states. */
@@ -110,6 +112,20 @@ body.v13 .rd-row__id strong{font:700 13.5px/1.25 var(--hf-mono)!important;letter
 body.v13 .rd-row__id small{font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;text-transform:none!important}
 body.v13 .rd-row__detail{min-width:0!important;font:400 11.5px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-soft)!important;overflow-wrap:anywhere!important}
 body.v13 .rd-nb{white-space:nowrap!important}
+/* A run of facts joined by " · " (.rd-seq: .rd-bit children, each after the first opening with its .rd-sep). The facts
+   wrap as whole units, and the separator of a fact that opens a line falls in a 2ch strip to the left of the box that
+   is clipped away, so no line starts or ends on "·" (and a focus ring at a line's start still shows). The text reads
+   exactly as the plain " · " join it replaces. */
+body.v13 :is(p,div,li,span,small).rd-seq{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;clip-path:inset(-12px -12px -12px 2ch)!important}
+body.v13 :is(p,div,li,span,small).rd-seq.rd-seq{margin-left:-3ch!important}   /* doubled class: outranks a row's own margin shorthand */
+body.v13 .rd-seq>.rd-bit{display:block!important;min-width:0!important;margin-left:1ch!important}
+body.v13 .rd-seq>.rd-bit--first{margin-left:3ch!important}
+/* A fact too long for its line wraps inside itself: its later lines hang 2ch in, back on the visible edge (they would
+   start inside the clipped strip and lose their first characters). The first line, separator included, stays where it
+   was, and a fact that does not open a line does not move (the padding and the indent cancel). Nothing inside a fact
+   inherits the indent (an inline-block link would shift its own text). */
+body.v13 .rd-seq>.rd-bit:not(.rd-bit--first){padding-left:2ch!important;text-indent:-2ch!important}
+body.v13 .rd-seq>.rd-bit *{text-indent:0!important}
 body.v13 .rd-row__detail small{display:block!important;margin:3px 0 0!important;font:400 10.5px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 .rd-row>b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important;justify-self:end!important;transition:color .12s linear!important}
 body.v13 .rd-row:hover>b{color:var(--hf-ink)!important}
@@ -197,10 +213,11 @@ body.v13 .v10-anatomy dd span{display:block!important;margin:4px 0 0!important;f
    Each tile falls back to monogram initials if the photograph cannot load. */
 /* Sections open on the product module head: the label (faint), a 22px title, a 12px description. */
 body.v13 .v10-known,body.v13 .v10-follows{padding:48px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13 .v10-known__top{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:16px 40px!important;margin:0 0 16px!important}
+/* The aside starts level with the eyebrow (never above it) and keeps to three lines at the product measure. */
+body.v13 .v10-known__top{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:16px 40px!important;margin:0 0 16px!important}
 body.v13 :is(.v10-known,.v10-follows,.v10-directory) :is(.v10-known__top,.v10-follows__head,.v10-directory__head) .v10-kicker{color:var(--hf-faint)!important}
 body.v13 :is(.v10-known h2,.v10-follows h2,.v10-directory h2){font:700 var(--hf-fs-h2)/1.2 var(--hf-mono)!important;letter-spacing:-.02em!important;margin:6px 0 0!important;color:var(--hf-ink)!important}
-body.v13 .v10-known__top>p{font:400 12px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:60ch!important;margin:0!important}
+body.v13 .v10-known__top>p{font:400 12px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:76ch!important;margin:0!important;text-wrap:pretty!important}
 body.v13 .v10-known__grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;border:0!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .v10-known__grid>a{position:relative!important;display:grid!important;grid-template-columns:64px minmax(0,1fr) 14px!important;align-items:center!important;gap:16px!important;min-width:0!important;padding:16px 18px 16px 0!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;border:0!important}
 body.v13 .v10-known__grid>a+a{padding-left:18px!important;border-left:1px solid var(--hf-line)!important}
@@ -209,7 +226,7 @@ body.v13 .v10-known__photo img{grid-area:1/1!important;display:block!important;w
 body.v13 .v10-known__photo>svg.ins-media__monogram{grid-area:1/1!important}
 body.v13 .v10-known__name{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important}
 body.v13 .v10-known__name strong{font:600 15px/1.25 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;transition:color .12s linear!important}
-body.v13 .v10-known__name small{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13 .v10-known__name small{font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important}
 body.v13 .v10-known__grid b{font:400 13px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;justify-self:end!important;transition:color .12s linear!important}
 body.v13 .v10-known__grid>a:hover strong,body.v13 .v10-known__grid>a:hover b{color:var(--hf-ink)!important}
 body.v13 .v10-known__grid>a:hover b{color:var(--hf-ink)!important}
@@ -220,6 +237,24 @@ body.v13 :is(.v10-follows__head,.v10-directory__head){display:flex!important;jus
 body.v13 .v10-directory__head p:not(.v10-kicker){font:400 12px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:6px 0 0!important}
 body.v13 .v10-directory__head>span{font:400 12px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important;white-space:nowrap!important;padding-bottom:2px!important;font-variant-numeric:tabular-nums!important}
 body.v13 .v10-follows__head>a{padding-bottom:4px!important}
+/* A head's right-hand slot (a link or a count) sits on the h2's line whether or not a description follows the h2: the
+   head is a grid, its text block flattened into column 1 (label, h2, description), the slot in column 2 on the h2's row. */
+@media (min-width:760px){
+  body.v13 :is(.v10-follows__head,.v10-directory__head){display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:0 24px!important;align-items:end!important}
+  body.v13 :is(.v10-follows__head,.v10-directory__head)>div{display:contents!important}
+  body.v13 :is(.v10-follows__head,.v10-directory__head)>div>*{grid-column:1!important}
+  body.v13 :is(.v10-follows__head,.v10-directory__head)>div>h2{grid-row:2!important}
+  body.v13 :is(.v10-follows__head,.v10-directory__head)>div>h2~*{grid-row:3!important}
+  body.v13 :is(.v10-follows__head,.v10-directory__head)>:not(div){grid-column:2!important;grid-row:2!important;align-self:end!important}
+}
+@media (min-width:701px){
+  body.v13 .cl-result>.cl-result__head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:0 16px!important;align-items:end!important}
+  body.v13 .cl-result>.cl-result__head>div{display:contents!important}
+  body.v13 .cl-result>.cl-result__head>div>*{grid-column:1!important}
+  body.v13 .cl-result>.cl-result__head>div>h2{grid-row:2!important}
+  body.v13 .cl-result>.cl-result__head>div>h2~*{grid-row:3!important}
+  body.v13 .cl-result>.cl-result__head>:not(div){grid-column:2!important;grid-row:2!important;align-self:end!important}
+}
 body.v13 .v10-follow-row{display:grid!important;grid-template-columns:48px minmax(0,1fr) auto auto!important;gap:16px!important;align-items:center!important;margin:0!important;border:0!important;border-top:1px solid var(--hf-line-faint)!important;padding:14px 0!important;background:transparent!important}
 body.v13 .v10-follow-row:first-child{border-top-color:var(--hf-line)!important}
 body.v13 .v10-follow-row:last-child{border-bottom:1px solid var(--hf-line)!important}
@@ -228,6 +263,7 @@ body.v13 .v10-follow-row strong{display:block!important;font:600 15px/1.3 var(--
 body.v13 .v10-follow-row strong a{color:inherit!important;text-decoration:none!important}
 body.v13 .v10-follow-row strong a:is(:hover,:focus-visible){color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 body.v13 .v10-follow-row small{display:block!important;margin:5px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
+body.v13 .v10-follow-row small.rd-seq{display:flex!important}   /* the meta is a run of facts (.rd-seq): no line ends on "·" */
 body.v13 .v10-follow-row button{cursor:pointer!important;height:34px!important;min-height:0!important;padding:0 14px!important;background:transparent!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-ink)!important;border-radius:0!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;box-shadow:none!important;transition:color .12s linear,border-color .12s linear,background-color .12s linear!important}
 body.v13 .v10-follow-row button:hover{border-color:var(--hf-line-strong)!important;color:var(--hf-ink)!important;background:transparent!important}
 body.v13 .v10-follow-row button:disabled{opacity:.55!important;cursor:wait!important}
@@ -269,13 +305,18 @@ body.v13 .cl-top .cl-eyebrow{margin:0!important}
 body.v13 .cl-top .cl-eyebrow:has(>a){font:400 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-faint)!important}
 body.v13 .cl-top .cl-eyebrow:has(>a)>a{color:var(--hf-soft)!important;text-decoration:none!important;transition:color .12s linear!important}
 body.v13 .cl-top .cl-eyebrow:has(>a)>a:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
-body.v13 .cl-top h1{display:block!important;max-width:24ch!important;font:700 var(--hf-fs-h1)/1.1 var(--hf-mono)!important;letter-spacing:-.04em!important;margin:14px 0 12px!important;color:var(--hf-ink)!important;text-wrap:balance!important}
+body.v13 .cl-top h1{display:flex!important;align-items:center!important;gap:16px!important;flex-wrap:wrap!important;max-width:24ch!important;font:700 var(--hf-fs-h1)/1.1 var(--hf-mono)!important;letter-spacing:-.04em!important;margin:14px 0 12px!important;color:var(--hf-ink)!important;text-wrap:balance!important}
 /* Beside the header band (30% at the right) a heading wraps instead of running under the dots: a filing's title is its issuer's
    name, up to 150 characters. */
 @media (min-width:760px){body.v13 .cl-top h1{max-width:min(1040px,70%)!important}}
 body.v13 .cl-top h1 .v4-ui-icon{display:none!important}
 body.v13.cl-page .app-main .cl-top>p:last-child{max-width:62ch!important;font:400 15px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important;margin:0!important;letter-spacing:0!important;text-transform:none!important}
 body.v13.app-body.cl-page .app-main .cl-search-panel{background:transparent!important;border:0!important;padding:0!important;margin:28px 0 48px!important;border-radius:0!important;box-shadow:none!important}
+/* filing.html: the record's facts (status, form, dates, the source link) are a bounded set, so they sit on a panel;
+   the transactions below stay unboxed between rules. */
+body.v13.app-body.cl-page .app-main .cl-search-panel:has(#filing-meta){margin:32px 0 48px!important;padding:20px 24px 24px!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important}
+body.v13 .cl-search-panel:has(#filing-meta) .cl-status{margin:0!important}
+@media (max-width:759px){body.v13.app-body.cl-page .app-main .cl-search-panel:has(#filing-meta){margin-inline:calc(-1 * var(--hf-gutter))!important;padding:20px var(--hf-gutter) 24px!important;border-left:0!important;border-right:0!important}}
 /* A compound search box (§2.11): the wrapper is the field, the button a primary inside it with a 3-4px inset. */
 body.v13 .cl-form{display:flex!important;align-items:center!important;gap:0!important;max-width:640px!important;height:48px!important;background:var(--hf-surface)!important;border:1px solid var(--hf-line-strong)!important;border-radius:0!important;box-shadow:none!important;padding:0!important;transition:border-color .12s linear!important}
 body.v13 .cl-form:focus-within{border-color:var(--hf-ink)!important;box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
@@ -412,9 +453,50 @@ body.v13 .cl-source{margin:16px 0 0!important;font:400 12px/1.6 var(--hf-mono)!i
   body.v13[data-collection="companies"] .cl-table td:nth-child(n+2)::before{display:block!important;margin:0 0 4px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
   body.v13[data-collection="companies"] .cl-table td:nth-child(4){grid-column:1/-1!important}
 }
+/* Filings and the watchlist on phones: each record a short stacked row instead of a sideways scroll, so the record's
+   action (its original SEC document, or Remove) is always on screen. Line 1: the company with its logo, the action at
+   the right; line 2, under the name: the form and when it was published (filings), or when it was saved and its
+   research link (watchlist). The table markup stays; the column heads are read by screen readers only. */
+@media (max-width:759px){
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-scroll{overflow:visible!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table{display:block!important;min-width:0!important;width:100%!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table thead{display:block!important;position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tbody{display:block!important;border-top:1px solid var(--hf-line)!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tbody tr{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;column-gap:0!important;row-gap:2px!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line-faint)!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tbody tr:last-child{border-bottom:0!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table td{display:block!important;min-width:0!important;padding:0!important;border:0!important;white-space:nowrap!important;font-size:12px!important;line-height:1.5!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table td[colspan]{grid-column:1/-1!important;white-space:normal!important}
+  /* The company cell spans both lines (its logo beside them); the action sits at the right of line 1. */
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(1){grid-column:1/3!important;grid-row:1/3!important;align-self:start!important;overflow:hidden!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(1) .ins-company-cell{align-items:flex-start!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(1) .ins-media{margin-top:7px!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(1) .ins-company-cell>div{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(1) .cl-muted{display:inline!important;margin:0 0 0 8px!important;font-size:12px!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(4){grid-column:3!important;grid-row:1!important;align-self:start!important;justify-self:end!important;padding-left:16px!important}
+  /* Line 2 starts under the name: the 36px logo and its 12px gap. */
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(2){grid-column:1!important;grid-row:2!important;padding-left:48px!important;color:var(--hf-muted)!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(3){grid-column:2/-1!important;grid-row:2!important;color:var(--hf-muted)!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(3)::before{content:"·"!important;margin:0 8px!important;color:var(--hf-faint)!important}
+  body.v13[data-collection="filings"] .cl-table tr>td:nth-child(3)::before{content:"· published "!important;white-space:pre!important;margin:0 0 0 8px!important;color:var(--hf-muted)!important}
+  body.v13[data-collection="watchlist"] .cl-table tr>td:nth-child(2)::before{content:"Saved "!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table td a{display:inline-block!important;padding:6px 0!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(n+2) a{padding:3px 0!important;margin:-3px 0!important}
+  body.v13:is([data-collection="filings"],[data-collection="watchlist"]) .cl-table tr>td:nth-child(4) a{padding:6px 0!important;margin:0!important;font:500 12px/1.5 var(--hf-mono)!important}
+}
 @media (prefers-reduced-motion:reduce){
   body.v13 :is(.rd-row>b,.v10-known__grid b,.rd-link,.rd-arrow){transition:none!important}
 }
+
+/* Header search (§2.11), on every product page: wide enough for its whole hint, "Search companies, people, filings"
+   (33 characters, 258px at 13px). 384px from 1360px; from 1140 to 1359px it takes the free width between the nav and the
+   icons (200–384px), and app.js shows the one-word hint whenever the field is narrower than the full one. The browser's
+   clear button is left out: it reserves room the hint needs, and Escape closes the results. */
+body.v13 .app-search,body.v13 .app-search:focus-within{flex:0 0 384px!important;width:384px!important}
+body.v13 .app-search input::-webkit-search-cancel-button{display:none!important;-webkit-appearance:none!important}
+@media (max-width:1359px){body.v13 .app-search,body.v13 .app-search:focus-within{flex:1 1 auto!important;width:auto!important;min-width:200px!important;max-width:384px!important}
+  body.v13 .app-nav{margin-right:12px!important}}   /* at least 24px between the nav and a field that has grown to meet it */
+@media (max-width:1139px){body.v13 .app-search,body.v13 .app-search:focus-within{min-width:0!important;max-width:420px!important}}
+@media (max-width:759px){body.v13 .app-search,body.v13 .app-search:focus-within{max-width:none!important}}
 
 /* ---------- identity tiles in shared chrome ----------
    The header search: each company and person in the results carries its tile (a logo, a headshot, or the issuer's logo
