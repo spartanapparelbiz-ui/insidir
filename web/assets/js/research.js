@@ -180,7 +180,7 @@
       const original = sourceLink(item.source_url, "SEC source");
       return "<tr><td data-label='Filing'><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm",{cik:item.issuer_cik,name:item.issuer_name})||"") +
         "<div><strong>" + esc(formLabel(item.form_type)) +
-        (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(companyName(item.issuer_name) || "Company") +
+        (item.is_amendment && !/\/A$/i.test(String(item.form_type || "")) ? " · amended" : "") + "</strong><small>" + esc(companyName(item.issuer_name) || "Company") +
         "</small></div></div></td><td data-label='Published'>" + esc(displayDate(item.published_at)) +
         // The report period only when the filing states one (not a "Not reported" on every row).
         (displayDate(item.period_of_report) !== "Not reported" ? "<small>Report period: <span class='rd-nb'>" + esc(displayDate(item.period_of_report)) + "</span></small>" : "") +
