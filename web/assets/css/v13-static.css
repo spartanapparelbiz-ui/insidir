@@ -2,9 +2,10 @@
    shared header and closing call on the not-found page). Layout on top of v13-halftone.css. Every declaration
    in this file lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css).
 
-   The pages are set like the landing page below its hero: the same 1320px measure and gutter, the same
-   navigation, and sections that open on a hairline rule with a mono folio at the right end, a tracked eyebrow
-   and headline on the left and the lead copy on the right. Content is laid out as hairline grids, rules,
+   The pages are set like the landing page below its hero: the same container and 12-column grid, the same
+   navigation, and sections that open on the running head (a --hf-line-2 rule, then the eyebrow at the left and the
+   folio at the right on one line 20px under it), a headline in columns 1-8 and the aside in 9-12. The arrow is the
+   font's glyph: → for another Insidir page, ↗ for a source document. Content is laid out as hairline grids, rules,
    ledgers and typographic diagrams; nothing on these pages shows product data. There is no accent colour:
    every mark, marker, rule and hover is ink (faint or soft at rest, ink when pointed at), and the only other
    colours are the market's own, green for a purchase and red for a sale in the code legend.
@@ -18,8 +19,8 @@
    still print texture (v13-halftone.js) and do not answer the pointer or a click. Nothing moves under the pointer,
    on a press or on a scroll: index numbers and arrows, step, rule and cadence numbers, the schematic's keys, chips
    and tabs, the transaction-code letters, tags and the legal contents' numbers all stay exactly where they are.
-   Rows and cards that link somewhere answer a pointer with colour only: an ink hairline, an underline or a surface
-   fill; their arrows do not move. Colour transitions keep their plain easing.
+   Rows and cards that link somewhere answer a pointer with colour only (the text, an underline, the arrow from faint to
+   ink); nothing fills, and nothing that is not a link answers at all. Colour transitions are 120ms linear.
 
    Scroll: below the hero each page assembles once as it is read. Section heads, diagrams, grids and the closing
    call carry data-hf-reveal (one block) or data-hf-reveal-group (each child in turn) in the markup, and

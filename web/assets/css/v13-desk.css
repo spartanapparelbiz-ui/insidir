@@ -2,9 +2,9 @@
    top of v13-halftone.css and the app shell in v13-app.css. Every declaration in this file lives in the
    insidir-v13 layer and is !important (see the note at the top of v13-halftone.css).
 
-   One research desk in print: mastheads set in JetBrains Mono 700, sections parted by hairline rules instead of
-   boxed cards, tracked mono labels and sentence-case mono captions, tables on hairlines, inputs on
-   surface tiles. Market direction is the only colour: purchases and rises in green (--hf-up), sales and falls in
+   One research desk in print: the product page head (label row, 40px title, soft lede), then bounded blocks on
+   square --hf-surface panels 24px apart, each opening on the product module head (index label, 22px title, 12px
+   description); tables on faint row dividers, inputs at the paper inset level inside the panels. Market direction is the only colour: purchases and rises in green (--hf-up), sales and falls in
    red (--hf-down), always beside a word, a sign or a ▲/▼ glyph. Hovers, tabs and icons stay in ink and soft ink;
    the same red, as --hf-alert, marks error messages and the destructive actions (delete account, remove a holding).
    No other colour. Square corners, no shadows, no coloured pills.
