@@ -19,7 +19,7 @@ const FIX={past_due:["Payment past due · access paused","Update payment"],unpai
 function plan(access){
  if(!access)return "Subscription status unavailable";
  if(access.complimentary&&access.active)return "Complimentary access";
- if(access.active){const end=dateText(access.currentPeriodEnd);return "Active"+(end?" · current period ends "+end:"");}
+ if(access.active){const end=dateText(access.currentPeriodEnd);if(access.cancelAtPeriodEnd)return "Active · cancels "+(end||"at period end");return "Active"+(end?" · current period ends "+end:"");}
  if(FIX[access.status])return FIX[access.status][0];
  if(access.billingEnabled===false)return "Not subscribed · checkout isn't open yet";
  return access.status==="canceled"?"Cancelled · not subscribed":"Not subscribed";
