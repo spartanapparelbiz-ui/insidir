@@ -53,12 +53,9 @@ const signedMoney=n=>{const c=cents(n);return c===null?"Not reported":signedCent
 const compactMoney=n=>{const a=Math.abs(n);for(const [u,l] of [[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"]]){if(a>=u*0.99995){const v=decimal(a/u,0,1);if(v!=="1,000"||l==="T")return (n<0?"-":"")+"$"+v+l;}}return cash(n,0,1);};
 const media=window.InsidirMedia;
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
-/* Issuer names arrive as filed ("EXXON MOBIL CORP"); shown as people write them ("Exxon Mobil Corp"). */
-const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
-/* EDGAR's conformed names end in a state or series tag ("OCCIDENTAL PETROLEUM CORP /DE/", "… /NEW/", "… /MD"): a
-   filing detail, not part of the name people know, so it is left off. */
-const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").replace(/(?:\s*\/[A-Za-z]{2,4}\/?)+\s*$/,"").trim();if(!s||/[a-z]/.test(s))return s;
- return s.split(" ").map(w=>AS_WRITTEN[w]||(/^[A-Z]{1,2}$/.test(w)?w:w.charAt(0)+w.slice(1).toLowerCase().replace(/([-'’.&])([a-z])/g,(m,a,b)=>a+b.toUpperCase()))).join(" ");};
+/* Issuer names arrive as filed ("EXXON MOBIL CORP"); shown as people write them ("Exxon Mobil Corp"), by the helper every
+   page shares (entity-media.js). */
+const companyName=raw=>media?.companyName?media.companyName(raw):String(raw||"").trim();
 const companyHref=t=>tick(t)?"company.html?ticker="+encodeURIComponent(tick(t)):"explore.html";
 const researchHref=t=>tick(t)?"research.html?ticker="+encodeURIComponent(tick(t)):"research.html";
 const filingHref=a=>accession(a)?"filing.html?accession="+accession(a):"filings.html";
@@ -159,7 +156,9 @@ const store={get(k){try{return localStorage.getItem(k);}catch{return null;}},set
 const COUNTS_KEY="insidir:overview:counts",SEEN_KEY="insidir:overview:last-seen";
 const counts=(()=>{try{const c=JSON.parse(store.get(COUNTS_KEY)||"{}");return c&&typeof c==="object"?c:{};}catch{return {};}})();
 let countsTimer=0;
-const saveCount=(k,v)=>{counts[k]=v;clearTimeout(countsTimer);countsTimer=setTimeout(()=>store.set(COUNTS_KEY,JSON.stringify(counts)),400);};
+// Written at most 400ms after the first change, with every change made meanwhile: a burst of saves (the module heights
+// remeasured after a render) can never keep pushing the write back past the moment a reader leaves.
+const saveCount=(k,v)=>{counts[k]=v;if(!countsTimer)countsTimer=setTimeout(()=>{countsTimer=0;store.set(COUNTS_KEY,JSON.stringify(counts));},400);};
 
 /* ---------- new since the last visit ---------- */
 const lastSeen=(()=>{const t=Date.parse(store.get(SEEN_KEY)||"");return Number.isFinite(t)?t:null;})();
@@ -321,13 +320,18 @@ function derive(rows){
 /* "traded Sep 29 – Oct 12, 2026" */
 const rangeText=f=>!f.first||!f.last?"":date(f.first)===date(f.last)?"traded "+date(f.first):"traded "+(f.first.getUTCFullYear()===f.last.getUTCFullYear()?shortDate(f.first):date(f.first))+" – "+date(f.last);
 
+/* A run of facts joined by " · " (HTML parts in, HTML out): each part after the first carries its separator, so the facts
+   wrap as units and a separator never opens or closes a line (.rd-seq in v13-app.css; the container gets that class).
+   The text reads exactly as parts.join(" · "). */
+const seq=parts=>parts.filter(Boolean).map((p,i)=>i?'<span class="rd-bit"><span class="rd-sep"> · </span>'+p+'</span>':'<span class="rd-bit rd-bit--first">'+p+'</span>').join("");
+
 /* ---------- shared surface for v4-dashboard.js and v13-overview.js ---------- */
 const desk=window.InsidirDesk={CODES,LEGEND,NOUN,E,tick,cikOf,date,filedDate,shortDate,tradedShort,filedShort,stamp,validDate,num,money,moneyCents,signedMoney,compactMoney,price,qty,count,plural,
  sharesText,valueCents,rawPrice:F.rawPrice,
  kind,code,codeMeaning,noun,nounKey,tri,badge,describe,qualifiers,valueText,sentence,sharesOf,signOf,signedShares,priceOf,valueOf,lagOf,lagText,lagWords,ownership,security,
  shown,ownerLabel,owners,bareCik,companyName,companyHref,researchHref,filingHref,personHref,personTile,companyTile,personName,whoTile,coTile,hydrate,MINUS,DAY,
  api,items,retry,failBlock,failRow,failText,canRetry,load,reload,watch,settled,later,now,arrive,ready,derive,rangeText,
- counts,saveCount,store,lastSeen,lastVisitText,isNew,NEW,importedAt,reduce,media};
+ counts,saveCount,store,lastSeen,lastVisitText,isNew,NEW,importedAt,reduce,media,seq};
 
 /* ================= 02 Your watchlist ================= */
 const WATCH_ROWS=8,SAVE_SUGGEST=4;
@@ -337,20 +341,24 @@ const lookups=new Map(); // ticker → {rows} | {error}
 const rowsFor=(t,trades)=>[...(trades||[]).filter(x=>tick(x.ticker)===t),...(lookups.get(t)?.rows||[]).filter(x=>tick(x.ticker)===t)];
 const latestTrade=rows=>rows.filter(x=>kind(x)!=="other").reduce((b,x)=>!b||newer(x,b)?x:b,null);
 /* "Katherine L. Adams bought 800 shares at $226.40 = $181,120 · traded Oct 12, filed Oct 14 (2 days later)"; the name opens
-   the person's file. */
-function tradeLine(x,{ticker=false}={}){
+   the person's file. The deal and the dates are two lines: the " · " between them stays in the text (zero-sized where
+   the dates' line begins), so no line ends on it. `tail` (the New mark) closes the dates' line. */
+function tradeLine(x,{ticker=false,tail=""}={}){
  const d=describe(x,{ticker}),v=valueText(x),lag=lagOf(x);
+ // The price and the value it comes to are one unit ("$226.40 = $181,120"), so a line never begins with "=".
+ const at=v&&/^=/.test(v)?/^(.*) at (\$\d[\d,]*(?:\.\d+)?)$/.exec(d.text):null;
+ const deal=at?E(at[1])+' at <span class="rd-nb">'+E(at[2])+' '+E(v)+'</span>':E(d.text)+(v?' <span class="rd-nb">'+E(v)+'</span>':'');
  // Dates and amounts never break inside; a line can only end between them.
  const when=[validDate(x.transaction_date)?"traded "+tradedShort(x.transaction_date):"",
   validDate(x.published_at)?"filed "+filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+lagWords(lag)+")":""):""].filter(Boolean);
- return '<span class="rd-ent rd-ent--inline">'+whoTile(x,"sm")+personName(x)+'</span> '+E(d.text)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+
-  (when.length?' · '+when.map(w=>'<span class="rd-nb">'+E(w)+'</span>').join(", "):'');
+ return '<span class="rd-row__deal"><span class="rd-ent rd-ent--inline">'+whoTile(x,"sm")+personName(x)+'</span> '+deal+'</span>'+
+  (when.length?'<span class="rd-sep rd-sep--break"> · </span><span class="rd-row__when">'+when.map(w=>'<span class="rd-nb">'+E(w)+'</span>').join(", ")+tail+'</span>':tail);
 }
 function watchDetail(t,trades){
  const rows=rowsFor(t,trades),best=latestTrade(rows),look=lookups.get(t);
  if(best){
   const since=rows.filter(x=>kind(x)==="other"&&newer(x,best)).reduce((b,x)=>!b||newer(x,b)?x:b,null);
-  return {row:best,isNew:isNew(best),html:tradeLine(best)+(isNew(best)?" "+NEW:"")+
+  return {row:best,isNew:isNew(best),html:tradeLine(best,{tail:isNew(best)?" "+NEW:""})+
    (since?'<small>Also filed since: '+E(noun(since))+' by <span class="rd-ent rd-ent--inline">'+whoTile(since,"sm")+personName(since)+'</span> ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
  }
  if(look?.error)return {html:'<span class="rd-muted">Latest purchase or sale unavailable right now</span>'};
