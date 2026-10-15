@@ -4,7 +4,7 @@ import { createServer, request } from "node:http";
 import { readFile } from "node:fs/promises";
 import {
   handlePersonRoute, personProfile, isPersonRoute, parsePersonCik, parseLimit, rolesOf, exactSum, buildTotals, createSecBudget, createSecCache,
-  SQL, COMPANIES_SQL, NAMES_SQL, TRANSACTIONS_SQL, FILINGS_SQL, OWNERS_TABLE_SQL, SAME_LINE, RECENT_FILED, RECENT_DISCLOSED, DISCLAIMER, NOT_FOUND, NOT_FOUND_SINGLE,
+  SQL, COMPANIES_SQL, NAMES_SQL, TRANSACTIONS_SQL, FILINGS_SQL, OWNERS_TABLE_SQL, JOINT_OWNERS_SQL, withJointOwners, hasFilingOwners, SAME_LINE, RECENT_FILED, RECENT_DISCLOSED, DISCLAIMER, NOT_FOUND, NOT_FOUND_SINGLE,
   MAX_ROLE_ISSUERS, PROFILES_PER_MINUTE, SEC_PER_PROFILE, SEC_ALLOWANCE, SEC_ROUTE_PER_MINUTE, SEC_QUEUE_LIMIT_MS, HEAVY_LINES
 } from "../src/person-profile.mjs";
 import { ownerRole } from "../src/insiders.mjs";
@@ -354,7 +354,7 @@ test("roles come from the person's latest Form 4 at each issuer, with the same w
   assert.deepEqual(rolesOf(null), []);
 });
 
-test("roles are bounded: 8 issuers at most, one cached document each, failures and slow documents give []", async () => {
+test("roles are bounded: 8 issuers at most (null past them: not looked up), one cached document each, failures and slow documents give []", async () => {
   const issuers = Array.from({ length: 12 }, (_, i) => issuerRow(String(10000 + i).padStart(10, "0")));
   const byUrl = Object.fromEntries(issuers.map(row => [row.latest_xml_url, ownershipXml({ issuer: row.issuer_cik, owners: [{ cik: "0009876543", name: "DOE JANE", director: 1 }] })]));
   const fetcher = stubFetcher(byUrl);
@@ -362,7 +362,7 @@ test("roles are bounded: 8 issuers at most, one cached document each, failures a
   const query = fakeQuery(fullAnswers(issuers));
   // With an allowance larger than 8, still only the 8 most recent issuers are read.
   let r = await call("/v1/people/9876543", { query, fetcher, documents, secBudget: generous() });
-  assert.deepEqual(r.json.companies.map(c => c.roles.join()), [...Array(MAX_ROLE_ISSUERS).fill("Director"), "", "", "", ""]);
+  assert.deepEqual(r.json.companies.map(c => c.roles && c.roles.join()), [...Array(MAX_ROLE_ISSUERS).fill("Director"), null, null, null, null]);
   assert.equal(fetcher.calls.length, MAX_ROLE_ISSUERS);
   assert.equal(new Set(fetcher.calls).size, MAX_ROLE_ISSUERS);
   // A second view of the same person reuses every parsed document, even with no allowance left.
@@ -496,22 +496,57 @@ test("joint filings: with sec_filing_owners the joint statements run, roles are 
   const answers = {
     [OWNERS_TABLE_SQL]: { rows: [{ present: true }] },
     [SQL.joint.companies]: { rows: [jointRow, fileOnly] }, [SQL.joint.names]: { rows: [nameRow("SMITH BOB", "0003333333")] },
-    [SQL.joint.transactions]: { rows: [txRow("000222222226000001:N:0", { owner_cik: null, owner_name: "FUND LP, SMITH BOB" })] }, [SQL.joint.filings]: { rows: [] }
+    [SQL.joint.transactions]: { rows: [txRow("000222222226000001:N:0", { owner_cik: null, owner_name: "FUND LP, SMITH BOB" }), txRow("000333333326000001:N:0", { owner_cik: "0003333333", owner_name: "SMITH BOB" }),
+      txRow("000222222226000001:N:1", { owner_cik: null, owner_name: "FUND LP, SMITH BOB" })] }, [SQL.joint.filings]: { rows: [] },
+    [JOINT_OWNERS_SQL]: { rows: [{ accession: "000222222226000001", owner_cik: "0005555555", owner_name: "FUND LP" }, { accession: "000222222226000001", owner_cik: "0003333333", owner_name: "SMITH BOB" }] }
   };
   const query = fakeQuery(answers);
   const fetcher = stubFetcher({ [XML("0000033333")]: ownershipXml({ issuer: "0000033333", owners: [{ cik: "3333333", name: "SMITH BOB", tenPercent: 1 }] }) });
   const r = await call("/v1/people/3333333", { query, fetcher });
   assert.equal(r.status, 200);
-  assert.deepEqual(query.statements.map(s => s.sql), [OWNERS_TABLE_SQL, SQL.joint.companies, SQL.joint.names, SQL.joint.transactions, SQL.joint.filings]);
+  assert.deepEqual(query.statements.map(s => s.sql), [OWNERS_TABLE_SQL, SQL.joint.companies, SQL.joint.names, SQL.joint.transactions, JOINT_OWNERS_SQL, SQL.joint.filings],
+    "one owners read for every joint line shown, never one per line");
+  assert.deepEqual(query.statements[4].params, [["000222222226000001"]], "only the joint lines' accessions, once each");
   assert.deepEqual(r.json.person, { cik: "0003333333", name: "SMITH BOB", filed_names: ["SMITH BOB"] });
   assert.deepEqual(r.json.companies.map(c => [c.ticker, c.roles]), [["JNTC", ["Chief Executive Officer", "Director"]], ["SOLO", ["10% owner"]]]);
   assert.deepEqual(fetcher.calls, [XML("0000033333")], "stored roles need no SEC request; the issuer without a row falls back to its XML");
   assert.equal(r.json.transactions[0].owner_cik, null, "a joint line is listed as filed");
+  // Every reporting owner of a joint line, as filed and in filing order (this person included), so person.js links each co-filer.
+  const owners = [{ cik: "0005555555", name: "FUND LP" }, { cik: "0003333333", name: "SMITH BOB" }];
+  assert.deepEqual([r.json.transactions[0].owners, r.json.transactions[2].owners], [owners, owners]);
+  assert.equal("owners" in r.json.transactions[1], false, "a line filed alone has its own owner_cik and no owners list");
   const missing = await call("/v1/people/7654321", { query: fakeQuery({ [OWNERS_TABLE_SQL]: { rows: [{ present: true }] } }) });
   assert.deepEqual(missing, { status: 404, error: NOT_FOUND });
-  // A failing catalogue check means "absent", never a failed profile.
-  const r2 = await call("/v1/people/9876543", { query: fakeQuery(fullAnswers([issuerRow("0000099999")], { [OWNERS_TABLE_SQL]: new Error("permission denied") })) });
+  // A failing catalogue check means "absent" for that request, never a failed profile ...
+  const flaky = fakeQuery(fullAnswers([issuerRow("0000099999")], { [OWNERS_TABLE_SQL]: new Error("connection terminated") }));
+  const r2 = await call("/v1/people/9876543", { query: flaky });
   assert.equal(r2.status, 200);
+  assert.deepEqual(flaky.statements.map(s => s.sql), STATEMENTS, "single-owner statements; no owners read without the table");
+  // ... and is not remembered: the next request asks again, and an answer then is kept.
+  let up = false;
+  const recovering = fakeQuery(fullAnswers([issuerRow("0000099999")], { [OWNERS_TABLE_SQL]: () => { if (!up) throw new Error("connection terminated"); return { rows: [{ present: true }] }; } }));
+  assert.equal(await hasFilingOwners(recovering), false);
+  up = true;
+  assert.equal(await hasFilingOwners(recovering), true, "asked again after a failure");
+  up = false;
+  assert.equal(await hasFilingOwners(recovering), true, "a successful answer is kept");
+  assert.equal(recovering.statements.filter(s => s.sql === OWNERS_TABLE_SQL).length, 2);
+});
+
+test("withJointOwners: one read for every joint line, owners in filing order, nothing without the table or joint lines", async () => {
+  const rows = () => [{ accession: "a1", owner_cik: null }, { accession: "a1", owner_cik: null }, { accession: "a2", owner_cik: "0000000001" }, { accession: "a3", owner_cik: null }, null, { owner_cik: null }];
+  const query = fakeQuery({ [JOINT_OWNERS_SQL]: { rows: [{ accession: "a1", owner_cik: "0000000009", owner_name: "B FUND" }, { accession: "a1", owner_cik: "0000000008", owner_name: "A PERSON" }] } });
+  const out = await withJointOwners(rows(), query, true);
+  assert.deepEqual(query.statements, [{ sql: JOINT_OWNERS_SQL, params: [["a1", "a3"]] }]);
+  assert.deepEqual(out[0].owners, [{ cik: "0000000009", name: "B FUND" }, { cik: "0000000008", name: "A PERSON" }]);
+  assert.notEqual(out[0].owners, out[1].owners, "each line gets its own copy");
+  assert.equal("owners" in out[2], false);
+  assert.equal("owners" in out[3], false, "a joint line whose owners are not on record is left as filed");
+  assert.match(flat(JOINT_OWNERS_SQL), /ORDER BY o\.accession,array_position\(f\.owner_names,o\.owner_name\) NULLS LAST,o\.owner_cik$/);
+  const none = fakeQuery();
+  await withJointOwners(rows(), none, false);
+  await withJointOwners([{ accession: "a2", owner_cik: "1" }], none, true);
+  assert.equal(none.statements.length, 0, "no table, or no joint line: no query");
 });
 
 test("a heavy filer's SQL is kept for a short time; an ordinary profile is read fresh each time", async () => {

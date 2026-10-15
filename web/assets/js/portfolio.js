@@ -28,7 +28,23 @@
      reporting person (found by SEC owner CIK, or the company's logo standing in for it). */
   const media=window.InsidirMedia;
   const coTile=t=>media&&safeTicker(t)?media.logo(t,"sm"):"";
-  const whoLine=t=>media?'<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(t.owner_name||"",safeTicker(t.ticker)||"","xs",{cik:t.owner_cik})+'<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></div>':'<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small>';
+  /* The reporting person's name opens their own file (person.html?cik=, the owner CIK without leading zeros) when the
+     row carries the CIK. A joint filing (owner_cik null) names each owner the engine lists in owners:[{cik,name}], each
+     linked; with no list its joined owner_name is split on the commas (a ", Inc." or ", Jr." stays on the name before
+     it). A name with no CIK opens the people directory's search for it (people.html?q=<name>#v10-directory). The tile
+     pictures the first owner with a CIK. */
+  const fileHref=cik=>{const c=String(cik??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"";};
+  const personHref=(cik,name)=>{const n=String(name??"").replace(/\s+/g," ").trim().slice(0,80);return fileHref(cik)||(n?"people.html?q="+encodeURIComponent(n)+"#v10-directory":"");};
+  const SUFFIX=/^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+  const splitNames=s=>String(s??"").split(/\s*,\s*/).filter(Boolean).reduce((out,p)=>{if(out.length&&SUFFIX.test(p))out[out.length-1]+=", "+p;else out.push(p);return out;},[]);
+  const ownersOf=t=>{const listed=t.owner_cik?[{cik:t.owner_cik,name:t.owner_name}]:Array.isArray(t.owners)&&t.owners.length?t.owners.filter(o=>o&&(o.cik||o.name)):splitNames(t.owner_name).map(name=>({cik:null,name}));return listed.length?listed.slice(0,12):[{cik:null,name:""}];};
+  const nameLink=o=>{const n=escapeHtml(o.name||"Reporting person"),h=personHref(o.cik,o.name);return h?'<a class="ins-person-link" href="'+escapeHtml(h)+'">'+n+'</a>':n;};
+  const personName=t=>ownersOf(t).map(nameLink).join(", ");
+  const whoLine=t=>{
+    if(!media)return '<small>'+personName(t)+'</small>';
+    const list=ownersOf(t),lead=list.find(o=>fileHref(o.cik))||list[0];
+    return '<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(lead.name||"",safeTicker(t.ticker)||"","xs",{cik:lead.cik,issuerCik:t.issuer_cik})+'<small>'+personName(t)+'</small></div>';
+  };
   const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").classList.toggle("is-error",Boolean(error));};
   async function request(path,method="GET"){
     const r=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json"}});

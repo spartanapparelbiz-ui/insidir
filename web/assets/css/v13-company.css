@@ -359,6 +359,15 @@ body.v13 .cx-person a{display:inline-block!important;margin-top:14px!important;f
   background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13 .cx-person a:hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
 body.v13 .cx-person__body{min-width:0!important}
+/* A leader who also files Form 4 has two actions (their personnel file, their Wikidata page): one row that wraps. */
+body.v13 .cx-person__links{display:flex!important;flex-wrap:wrap!important;column-gap:18px!important}
+/* A reporting person's name opens their own file (person.html?cik=): the name keeps its own type in every place
+   (the table's uppercase link style and the card's action link style are undone), with a quiet rule under it. */
+body.v13 a.cx-person-link{display:inline!important;margin:0!important;padding:0!important;font:inherit!important;letter-spacing:inherit!important;text-transform:none!important;line-height:inherit!important;white-space:inherit!important;
+  color:var(--hf-ink)!important;background:none!important;text-decoration:underline!important;text-decoration-thickness:1px!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:text-decoration-color .2s!important}
+body.v13 a.cx-person-link:hover,body.v13 a.cx-person-link:focus-visible{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
+body.v13 .cx-person h4 a.cx-person-link{text-underline-offset:4px!important}
+@media (pointer:coarse){body.v13 .cx-person h4 a.cx-person-link{display:inline-block!important;padding:4px 0!important}}
 
 /* News: two ruled columns. */
 body.v13 .cx-news{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)!important;gap:0 clamp(28px,3.4vw,52px)!important}

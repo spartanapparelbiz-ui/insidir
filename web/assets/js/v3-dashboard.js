@@ -1,10 +1,11 @@
 /* Insidir overview (dashboard.html): the shared core of the signed-in home page.
 
    What this file owns:
-     - the formatters every module uses (exact figures: shares and prices as filed, values to the dollar,
-       trade dates in UTC, SEC filing dates on the Eastern calendar day), shared through window.InsidirDesk;
-     - describe(x): one plain-English sentence for every Form 4 transaction code, used by the followed
-       feed, the watchlist, the biggest trades, the table badge and screen-reader labels;
+     - window.InsidirDesk, the surface v4-dashboard.js and v13-overview.js read: form4-words.js's exact figures
+       (shares and prices as filed, dollar values to the cent, trade dates in UTC, SEC filing dates on the Eastern
+       calendar day) and its describe(x), one plain-English sentence for every Form 4 transaction code, shared with
+       the personnel file (person.js); plus the page's tiles, badges, screen-reader sentences and person links
+       (person.html?cik=<owner CIK> whenever the CIK is known, else the people directory's search);
      - the data hub: every request starts once, as soon as this script runs, and each module renders once
        when the responses it needs have settled (or again after its own "Try again");
      - the render scheduler: the first screen (Today, 01 People you follow) renders as soon as its data is
@@ -30,212 +31,126 @@
 const $=id=>document.getElementById(id);
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const reduce=matchMedia("(prefers-reduced-motion: reduce)");
-// "NONE" and "NA" are placeholders some filers put in the ticker field; they are not symbols.
-const tick=x=>{const s=String(x||"").trim().toUpperCase();return /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(s)&&s!=="NONE"&&s!=="NA"?s:"";};
-const cikOf=x=>/^\d{1,12}$/.test(String(x??"").trim())?String(x).trim():"";
+/* The Form 4 wording and the exact figures are form4-words.js's (window.InsidirForm4, loaded first), shared with the
+   personnel file (person.js), so a trade reads the same sentence with the same figures on both pages. */
+const F=window.InsidirForm4;
+if(!F){console.error("form4-words.js must load before v3-dashboard.js");return;}
+const {MONTHS,MINUS,tick,validDate,num,count,plural,money,moneyCents,signedCents,price,qty,decimal,cash,cents,scaled,fromScaled,
+ date,filedDate,utcDay,eastern,dayText,CODES,NOUN,code,codeMeaning,nounKey,noun,kind,ownership,security,lagOf,lagWords,sharesText,valueCents,qualifiers,valueText}=F;
+const cikOf=x=>/^\d{1,12}$/.test(String(x??"").trim())&&/[1-9]/.test(String(x))?String(x).trim():"";
 const accession=x=>{const s=String(x||"").replace(/-/g,"");return /^\d{18}$/.test(s)?s:"";};
-const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
 const DAY=86400000;
-/* ---------- exact formatting, without Intl ----------
-   Nothing else on the page uses Intl, and its first use loads ICU's locale data (about 20 ms of main thread on a desktop,
-   four times that on a phone), so figures and dates are written out here, exactly as en-US Intl would:
-   numbers from their shortest round-trip digits, rounded half away from zero, grouped by thousands. */
-const MONTHS="Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
 const pad2=n=>(n<10?"0":"")+n;
-const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,",");
-function roundDigits(a,max){
- let s=String(a);if(/e/i.test(s))s=a.toFixed(Math.min(20,max+6));
- let [i,f=""]=s.split(".");
- if(f.length<=max)return [i,f];
- const keep=f.slice(0,max);
- if(f.charCodeAt(max)-48<5)return [i,keep];
- const d=(i+keep).split("").map(Number);let k=d.length-1;
- while(k>=0){if(d[k]<9){d[k]++;break;}d[k]=0;k--;}
- if(k<0)d.unshift(1);
- const all=d.join(""),cut=all.length-keep.length;
- return [all.slice(0,cut)||"0",all.slice(cut)];
-}
-function decimal(n,min,max){
- const [i,f]=roundDigits(Math.abs(n),max);let g=f.replace(/0+$/,"");while(g.length<min)g+="0";
- const out=group(i.replace(/^0+(?=\d)/,""))+(g?"."+g:"");
- return (n<0&&/[1-9]/.test(out)?"-":"")+out;
-}
-const cash=(n,min,max)=>{const s=decimal(n,min,max);return s.charAt(0)==="-"?"-$"+s.slice(1):"$"+s;};
-const QTY={format:n=>decimal(n,0,4)};
-const USD0={format:n=>cash(n,0,0)};
-const USD4={format:n=>cash(n,2,4)};
-// Compact axis labels ("$25M", "$2.5K"), one decimal at most.
-const USDC={format:n=>{const a=Math.abs(n);for(const [u,l] of [[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"]]){if(a>=u*0.99995){const v=decimal(a/u,0,1);if(v!=="1,000"||l==="T")return (n<0?"-":"")+"$"+v+l;}}return cash(n,0,1);}};
-/* US Eastern calendar day of an instant (SEC filing dates): EDT from the second Sunday of March 2:00 to the first Sunday of
-   November 2:00 since 2007; from the first Sunday of April to the last Sunday of October before. */
-function eastern(d){
- const y=d.getUTCFullYear(),sun=(m,n)=>{const w=new Date(Date.UTC(y,m,1)).getUTCDay();return 1+(7-w)%7+7*(n-1);},lastSun=m=>{const l=new Date(Date.UTC(y,m+1,0));return l.getUTCDate()-l.getUTCDay();};
- const [a,b]=y>=2007?[Date.UTC(y,2,sun(2,2),7),Date.UTC(y,10,sun(10,1),6)]:[Date.UTC(y,3,sun(3,1),7),Date.UTC(y,9,lastSun(9),6)];
- const t=d.getTime(),e=new Date(t+(t>=a&&t<b?-4:-5)*3600000);
- return {y:e.getUTCFullYear(),m:e.getUTCMonth(),d:e.getUTCDate()};
-}
-const utcDay=d=>({y:d.getUTCFullYear(),m:d.getUTCMonth(),d:d.getUTCDate()});
-const dayText=(p,year)=>MONTHS[p.m]+" "+p.d+(year?", "+p.y:"");
-const fmtDate={format:d=>dayText(utcDay(d),true)};
-const fmtDay={format:d=>dayText(utcDay(d),false)};
-const date=x=>{const d=validDate(x);return d?fmtDate.format(d):"Not reported";};
-/* Filing dates are SEC (Eastern) calendar days: a Form 4 accepted at 9:30 p.m. ET is filed that day, though it is past
-   midnight UTC. Trade dates are date-only values and stay in UTC. */
-const fmtFiled={format:d=>dayText(eastern(d),true)};
-const etDay={format:d=>{const p=eastern(d);return p.y+"-"+pad2(p.m+1)+"-"+pad2(p.d);}};
-const filedDate=x=>{const d=validDate(x);return d?fmtFiled.format(d):"Not reported";};
-const shortDate=x=>{const d=validDate(x);return d?fmtDay.format(d):"";};
-// Short forms drop the year when it is this year: "Oct 12", but "Dec 30, 2025".
+/* Short dates for tight lines drop the year when it is this year: "Oct 12", but "Dec 30, 2025". */
 const THIS_YEAR=new Date().getFullYear();
+const shortDate=x=>{const d=validDate(x);return d?dayText(utcDay(d),false):"";};
 const tradedShort=x=>{const d=validDate(x);if(!d)return "";const p=utcDay(d);return dayText(p,p.y!==THIS_YEAR);};
 const filedShort=x=>{const d=validDate(x);if(!d)return "";const p=eastern(d);return dayText(p,p.y!==THIS_YEAR);};
-const stamp=x=>{const d=validDate(x);return d?dayText(utcDay(d),true)+", "+pad2(d.getUTCHours())+":"+pad2(d.getUTCMinutes())+" UTC":"Not reported";};
-/* Numbers: exact, never rounded to "about". */
-const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
-const MINUS="−";
-const money=x=>{const n=num(x);return n===null?"Not reported":USD0.format(n);};
-const signedMoney=n=>(n>0?"+":n<0?MINUS:"")+USD0.format(Math.abs(n));
-const compactMoney=n=>USDC.format(n);
-// Prices as filed: weighted-average sale prices often carry four decimals ($41.5321), so up to four are kept.
-const price=x=>{const n=num(x);return n===null?"Not reported":USD4.format(n);};
-const qty=x=>{const n=num(x);return n===null?"Not reported":QTY.format(n);};
-const count=n=>QTY.format(n);
-const plural=(n,one,many)=>count(n)+" "+(n===1?one:(many||one+"s"));
+const stamp=x=>{const d=validDate(x);return d?dayText(utcDay(d))+", "+pad2(d.getUTCHours())+":"+pad2(d.getUTCMinutes())+" UTC":"Not reported";};
+/* Sums and differences arrive as numbers worked out from whole cents (derive()), so their own digits are exact. */
+const signedMoney=n=>{const c=cents(n);return c===null?"Not reported":signedCents(c);};
+// Compact axis labels ("$25M", "$2.5K"), one decimal at most: the chart's scale, never a figure.
+const compactMoney=n=>{const a=Math.abs(n);for(const [u,l] of [[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"]]){if(a>=u*0.99995){const v=decimal(a/u,0,1);if(v!=="1,000"||l==="T")return (n<0?"-":"")+"$"+v+l;}}return cash(n,0,1);};
 const media=window.InsidirMedia;
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
 /* Issuer names arrive as filed ("EXXON MOBIL CORP"); shown as people write them ("Exxon Mobil Corp"). */
 const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
-const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").trim();if(!s||/[a-z]/.test(s))return s;
+/* EDGAR's conformed names end in a state or series tag ("OCCIDENTAL PETROLEUM CORP /DE/", "… /NEW/", "… /MD"): a
+   filing detail, not part of the name people know, so it is left off. */
+const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").replace(/(?:\s*\/[A-Za-z]{2,4}\/?)+\s*$/,"").trim();if(!s||/[a-z]/.test(s))return s;
  return s.split(" ").map(w=>AS_WRITTEN[w]||(/^[A-Z]{1,2}$/.test(w)?w:w.charAt(0)+w.slice(1).toLowerCase().replace(/([-'’.&])([a-z])/g,(m,a,b)=>a+b.toUpperCase()))).join(" ");};
 const companyHref=t=>tick(t)?"company.html?ticker="+encodeURIComponent(tick(t)):"explore.html";
 const researchHref=t=>tick(t)?"research.html?ticker="+encodeURIComponent(tick(t)):"research.html";
 const filingHref=a=>accession(a)?"filing.html?accession="+accession(a):"filings.html";
-// #v10-directory: the people page opens on the search result, not on its hero.
-const personHref=n=>String(n||"").trim()?"people.html?q="+encodeURIComponent(String(n).trim().slice(0,80))+"#v10-directory":"people.html";
+/* A person's own file (person.html?cik=, the SEC owner CIK without leading zeros) whenever the CIK is known; else the
+   people directory's search for the name, opened on the result (#v10-directory), not on its hero. */
+const personHref=(n,cik)=>{const c=cikOf(cik);if(c)return "person.html?cik="+c.replace(/^0+/,"");const s=String(n||"").trim();return s?"people.html?q="+encodeURIComponent(s.slice(0,80))+"#v10-directory":"people.html";};
 
 /* ---------- identity tiles ----------
    Every person and company named on the page gets a tile from entity-media.js: a headshot or the issuer's
    logo standing in for it, a company logo, and initials only when neither exists. The size class is the
    helper's; the page sets the pixel size per place (--ins-size in v13-dashboard.css: feed 48, followed list 40,
-   inline 20, table 28). The 4th argument identifies the person by SEC CIK (helper v2; older helpers ignore it). */
-const personTile=(name,ticker,cik,size)=>media?media.portrait(String(name||""),tick(ticker),size||"sm",{cik:cikOf(cik)}):"";
+   inline 20, table 28). People are identified by SEC owner CIK, with the issuer's CIK for its logo standing in
+   (and its photo lookup) when the row has no ticker. */
+const personTile=(name,ticker,cik,size,issuerCik)=>media?media.portrait(String(name||""),tick(ticker),size||"sm",{cik:cikOf(cik),issuerCik:cikOf(issuerCik)}):"";
 const companyTile=(ticker,name,cik,size)=>media?media.logo(tick(ticker),size||"sm",{cik:cikOf(cik),name:companyName(name)}):"";
 const hydrate=root=>{try{media?.hydrate?.(root);}catch{/* a tile that cannot resolve keeps its initials */}};
-// A name with its tile in front of it; data-ent marks it for the "every name has a tile" check.
-const personName=(x,{link=true}={})=>{const n=E(shown(x.owner_name));return link?'<a data-ent="person" href="'+E(personHref(x.owner_name))+'">'+n+'</a>':'<span data-ent="person">'+n+'</span>';};
-const whoTile=(x,size)=>personTile(x.owner_name,x.ticker,x.owner_cik,size);
+/* ---------- joint filings ----------
+   A Form 4 with several reporting owners is stored once with owner_cik null and every owner's name joined by ", " in
+   owner_name; the engine adds owners:[{cik,name}] in filing order (sec_filing_owners). owners(x) is that whole list
+   (never cut short), merged with any name in owner_name the list lacks (an owner with no CIK, or a line imported before
+   the owners were recorded); a name is split on its commas, with a ", Inc." or ", Jr." kept on the name before it. */
+const SUFFIX_PART=/^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+function splitNames(raw){const out=[];for(const p of String(raw||"").split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean)){if(out.length&&SUFFIX_PART.test(p))out[out.length-1]+=", "+p;else out.push(p);}return out;}
+const nameKey=s=>String(s||"").replace(/[^\p{L}\p{N}]+/gu," ").trim().toUpperCase();
+const bareCik=c=>cikOf(c).replace(/^0+/,"");
+function owners(x){
+ if(!x||cikOf(x.owner_cik))return [];
+ const list=(Array.isArray(x.owners)?x.owners:[]).filter(o=>o&&(cikOf(o.cik)||String(o.name||"").trim())).map(o=>({cik:cikOf(o.cik),name:String(o.name||"").trim()}));
+ // Each listed owner's own name is taken out of the joined string first (a name may hold a comma itself); what is left
+ // are the owners the list lacks.
+ let left=String(x.owner_name||"");
+ for(const o of list){if(!o.name)continue;let i=left.indexOf(o.name);if(i<0)i=left.toUpperCase().indexOf(o.name.toUpperCase());if(i>=0)left=left.slice(0,i)+","+left.slice(i+o.name.length);}
+ const seen=new Set(list.map(o=>nameKey(o.name)).filter(Boolean));
+ for(const n of splitNames(left))if(nameKey(n)&&!seen.has(nameKey(n))){seen.add(nameKey(n));list.push({cik:"",name:n});}
+ return list.length>1||(list.length===1&&list[0].cik)?list:[];
+}
+/* The owner a joint line is shown under: one the reader follows (opts.follows(cik), in the followed feed), else the
+   first person (not a fund, trust or company), else the first listed. */
+const ORG=/\b(?:INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|CO|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS?|HOLDCO|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|ADVISERS|INVESTMENTS|N\.?V|S\.?A|PLC|AG|SE|LIMITED|VENTURES|ESTATE|GP)\b|&/i;
+function leadOf(m,follows){
+ if(typeof follows==="function"){const f=m.find(o=>o.cik&&follows(o.cik));if(f)return f;}
+ return m.find(o=>!ORG.test(o.name))||m[0];
+}
+const plainOthers=n=>n===1?"1 other reporting owner":count(n)+" other reporting owners";
+/* "Timothy D. Cook", or for a joint filing "Timothy D. Cook and Katherine L. Adams" (up to three owners named), else
+   "Stephen A. Schwarzman and 9 other reporting owners": the subject of a sentence, for screen readers and link labels. */
+function ownerLabel(x,{follows}={}){
+ const m=owners(x);if(!m.length)return shown(x.owner_name);
+ const lead=leadOf(m,follows),rest=m.filter(o=>o!==lead);
+ if(!rest.length)return shown(lead.name);
+ if(m.length<=3){const n=[lead,...rest].map(o=>shown(o.name||"CIK "+o.cik));return n.slice(0,-1).join(", ")+" and "+n.at(-1);}
+ return shown(lead.name||"CIK "+lead.cik)+" and "+plainOthers(rest.length);
+}
+/* A name with its tile in front of it; data-ent marks it for the "every name has a tile" check. A joint filing is one
+   compact label: its lead owner, linked to their own file, then "and N others", which opens the filing (every owner is
+   listed and linked there) and names them all in its title. Never the joined owner_name as one person. */
+const personName=(x,{link=true,follows}={})=>{
+ const m=owners(x);
+ if(!m.length){const n=E(shown(x.owner_name));return link?'<a data-ent="person" href="'+E(personHref(x.owner_name,x.owner_cik))+'">'+n+'</a>':'<span data-ent="person">'+n+'</span>';}
+ const lead=leadOf(m,follows),rest=m.filter(o=>o!==lead),n=E(shown(lead.name||"CIK "+lead.cik));
+ if(!rest.length)return link?'<a data-ent="person" href="'+E(personHref(lead.name,lead.cik))+'">'+n+'</a>':'<span data-ent="person">'+n+'</span>';
+ // In the label the lead name may shorten with an ellipsis; its title keeps it whole.
+ const who=link?'<a data-ent="person" href="'+E(personHref(lead.name,lead.cik))+'" title="'+n+'">'+n+'</a>':'<span data-ent="person" title="'+n+'">'+n+'</span>';
+ const all=rest.map(o=>shown(o.name||"CIK "+o.cik)),title="Filed jointly with "+(all.length>12?all.slice(0,12).join(", ")+" and "+count(all.length-12)+" more":all.join(", "));
+ const more="and "+(rest.length===1?"1 other":count(rest.length)+" others"),acc=accession(x.accession);
+ return '<span class="rd-who">'+who+' '+(link&&acc?'<a class="rd-who__more" href="'+E(filingHref(acc))+'" title="'+E(title)+'" aria-label="'+E(more+": all "+count(m.length)+" reporting owners on this filing")+'">'+E(more)+'</a>':'<span class="rd-who__more" title="'+E(title)+'">'+E(more)+'</span>')+'</span>';
+};
+// A joint filing's tile pictures its lead owner, identified by their own CIK and the issuer's for the logo standing in.
+const whoTile=(x,size,{follows}={})=>{const m=owners(x);if(!m.length)return personTile(x.owner_name,x.ticker,x.owner_cik,size,x.issuer_cik);const o=leadOf(m,follows);return personTile(o.name,x.ticker,o.cik,size,x.issuer_cik);};
 const coTile=(x,size)=>companyTile(x.ticker,x.issuer_name,x.issuer_cik,size);
 
-/* ---------- Form 4 codes ---------- */
-/* The SEC's own wording (Form 4 general instructions), shown in the badge's title. */
-const CODES={
- P:"Open market or private purchase",S:"Open market or private sale",V:"Transaction voluntarily reported earlier than required",
- A:"Grant, award or other acquisition from the issuer",D:"Disposition to the issuer",F:"Payment of exercise price or tax liability by delivering or withholding securities",
- I:"Discretionary transaction",M:"Exercise or conversion of an exempt derivative security",C:"Conversion of a derivative security",
- E:"Expiration of a short derivative position",H:"Expiration or cancellation of a long derivative position with value received",
- O:"Exercise of an out-of-the-money derivative security",X:"Exercise of an in-the-money or at-the-money derivative security",
- G:"Bona fide gift",L:"Small acquisition under Rule 16a-6",W:"Acquisition or disposition by will or the laws of descent and distribution",
- Z:"Deposit into or withdrawal from a voting trust",J:"Other acquisition or disposition (described in the filing)",K:"Equity swap or similar instrument",
- U:"Disposition from a tender of shares in a change of control"};
-/* Plain words for the code legend under the table (only codes on screen are listed). */
+/* ---------- Form 4 codes ----------
+   Plain words for the code legend under the table (only codes on screen are listed). The SEC's own meaning of each
+   code (CODES) and the nouns (NOUN) are form4-words.js's. */
 const LEGEND={P:"bought on the market",S:"sold on the market",A:"grant or award",M:"option exercise",X:"option exercise",O:"option exercise",
  C:"conversion",F:"shares withheld for tax or the exercise price",G:"gift",D:"returned to the company",E:"position expired",H:"position expired",
  I:"discretionary trade",J:"other, described in the filing",K:"equity swap",L:"small acquisition",W:"will or inheritance",Z:"voting trust",U:"tendered in a change of control",V:"reported early, voluntarily"};
-/* Nouns for "Also filed since: option exercise by …" and the "Not a purchase or sale" tile. [one, many] */
-const NOUN={A:["grant","grants"],M:["option exercise","option exercises"],X:["option exercise","option exercises"],O:["option exercise","option exercises"],
- C:["conversion","conversions"],F:["tax withholding","tax withholdings"],G:["gift","gifts"],D:["return to the company","returns to the company"],
- E:["expiration","expirations"],H:["expiration","expirations"],I:["discretionary trade","discretionary trades"],J:["other transaction","other transactions"],
- K:["equity swap","equity swaps"],L:["small acquisition","small acquisitions"],W:["will or inheritance","wills or inheritances"],Z:["voting trust change","voting trust changes"],
- U:["tender in a change of control","tenders in a change of control"],V:["early voluntary report","early voluntary reports"],
- "P derivative":["derivative purchase","derivative purchases"],"S derivative":["derivative sale","derivative sales"]};
-const code=x=>String(x?.transaction_code||"").replace(/[^A-Z]/gi,"").slice(0,1).toUpperCase();
-const codeMeaning=c=>CODES[c]||"";
-const nounKey=x=>{const c=code(x);return (c==="P"||c==="S")&&x?.derivative?c+" derivative":c;};
-const noun=(x,n=1)=>{const k=typeof x==="string"?x:nounKey(x),w=NOUN[k];return w?w[n===1?0:1]:"Form 4 code "+String(k).slice(0,1);};
-/* buy | sell | other, from the engine's category (non-derivative P acquired / S disposed). */
-const kind=x=>x?.category==="reported_purchase"?"buy":x?.category==="reported_sale"?"sell":"other";
 const tri=k=>k==="buy"?'<i class="rd-tri rd-tri--up" aria-hidden="true"></i>':k==="sell"?'<i class="rd-tri rd-tri--down" aria-hidden="true"></i>':"";
+/* Numbers for arithmetic only (ranking, chart scales, sums of a few values): every figure shown is written from its digits. */
 const sharesOf=x=>num(x?.shares);
-const signOf=x=>{const ad=String(x?.acquired_disposed||"").toUpperCase();return ad==="A"?1:ad==="D"?-1:kind(x)==="buy"?1:kind(x)==="sell"?-1:0;};
-const signedShares=x=>{const n=sharesOf(x);if(n===null)return "Not reported";const s=signOf(x);return (s>0?"+":s<0?MINUS:"")+QTY.format(Math.abs(n));};
 const priceOf=x=>num(x?.price_per_share??x?.price);
-/* Value as filed: the engine's shares × price; computed the same way when only the parts were stored. */
-const valueOf=x=>{const v=num(x?.estimated_value);if(v!==null)return v;const s=sharesOf(x),p=priceOf(x);return s!==null&&s>=0&&p!==null&&p>0?Math.round(s*p*100)/100:null;};
-/* Calendar days from the trade date to the SEC filing date (the Eastern calendar day of publication). */
-const lagOf=x=>{const t=validDate(x?.transaction_date),p=validDate(x?.published_at);if(!t||!p)return null;const d=Math.round((Date.parse(etDay.format(p))-Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()))/DAY);return d>=0?d:null;};
-const lagWords=n=>n===null?"":n===0?"same day":n===1?"1 day later":count(n)+" days later";
+const valueOf=x=>{const c=valueCents(x);return c===null?null:Number(c)/100;};
+const signOf=x=>{const ad=String(x?.acquired_disposed||"").toUpperCase();return ad==="A"?1:ad==="D"?-1:kind(x)==="buy"?1:kind(x)==="sell"?-1:0;};
+const signedShares=x=>{const s=sharesText(x);if(s===null)return "Not reported";const g=signOf(x);return (g>0?"+":g<0?MINUS:"")+s;};
 const lagText=lagWords;
-const ownership=x=>{const o=String(x?.direct_ownership||"").toUpperCase();return o==="D"?"Direct":o==="I"?"Indirect":"";};
-// "Common Stock", "Class A Ordinary Shares" read as "shares"; anything else (units, options, notes) keeps its title.
-const isPlainShares=t=>!t||/^(class [a-z0-9]+ )?(common|ordinary)( stock| shares)?( ?,? ?(class [a-z0-9]+|par value.*))?$|^(common )?shares$/i.test(String(t).trim());
-const security=x=>{const t=String(x?.security_title||"").replace(/\s+/g," ").trim().slice(0,60);return isPlainShares(t)?"":t;};
-
-/* ---------- describe(x): every Form 4 code in words ----------
-   Returns {word, cls, c, text, short, value, valued, suffix}: `word` and `cls` make the badge ("Sold", red ▼),
-   `text` is the sentence after the person's name, always led by a verb ("sold 12,500 AAPL shares at $26.00"),
-   `short` the same deal without the verb, for a line where the badge already says it ("12,500 AAPL shares at
-   $26.00"), `value` is the dollar value counted for purchases and sales (null when nothing is counted),
-   `suffix` the qualifiers (voluntary, amended, held indirectly). opts.ticker:false leaves the symbol out of the
-   sentence; opts.as:"name" uses the company's name instead ("150,000 Tesla, Inc. shares").
-   An option exercise or conversion files two lines: the units given up (Table II, derivative) and the common
-   shares received (Table I, not derivative). Each is described as what it is, so the pair never reads as the
-   same event twice. */
-const an=w=>(/^[aeiou]/i.test(w)?"an ":"a ")+w;
-function describe(x,opts={}){
- const c=code(x),k=kind(x),s=sharesOf(x),p=priceOf(x),v=valueOf(x),T=tick(x?.ticker),ad=String(x?.acquired_disposed||"").toUpperCase();
- const sh=s===null?"an unreported number of":QTY.format(Math.abs(s));
- const company=opts.as==="name"&&x?.issuer_name?companyName(x.issuer_name):T;
- const tk=opts.ticker===false||!company?"":company+" ";
- const sec=security(x),units=sec||(tk+"shares").trim(),dunits=sec||(tk+"derivative securities").trim();
- // A Table II line, or (when the engine sent no flag) a title that is not plain shares.
- const deriv=x?.derivative===true||((x?.derivative===undefined||x?.derivative===null)&&!!sec);
- const verb=ad==="A"?"acquired":ad==="D"?"disposed of":"reported";
- let word,cls="other",text,short,valued=false;
- const at=p!==null?" at "+price(p):" (no price reported)";
- if(k==="buy"){word="Bought";cls="buy";short=sh+" "+tk+"shares"+at;text="bought "+short;valued=true;}
- else if(k==="sell"){word="Sold";cls="sell";short=sh+" "+tk+"shares"+at;text="sold "+short;valued=true;}
- else switch(c){
-  case "P":word="Bought";short=sh+" "+dunits;text="bought "+short;break;
-  case "S":word="Sold";short=sh+" "+dunits;text="sold "+short;break;
-  case "A":word="Grant";short=sh+" "+tk+(sec||"shares");text="received "+short+" as a grant or award";break;
-  case "M":case "X":case "O":word="Option exercise";
-   if(deriv){short=sh+" "+dunits;text="exercised or converted "+short;}
-   else if(ad==="D"){short=sh+" "+units+" given up";text="disposed of "+sh+" "+units+" in an exercise or conversion";}
-   else{short=sh+" "+units+" received";text="acquired "+sh+" "+units+" by exercising or converting options or units";}
-   break;
-  case "C":word="Conversion";
-   if(deriv){short=sh+" "+(sec||"derivative securities")+" into "+(T?T+" ":"")+"shares";text="converted "+short;}
-   else if(ad==="D"){short=sh+" "+units+" given up";text="disposed of "+sh+" "+units+" in a conversion";}
-   else{short=sh+" "+units+" received";text="acquired "+sh+" "+units+" by converting a derivative security";}
-   break;
-  case "F":word="Tax withholding";short=sh+" "+tk+"shares withheld for tax or the exercise price";text="had "+sh+" "+tk+"shares withheld to pay tax or the exercise price";break;
-  case "G":word="Gift";short=sh+" "+tk+"shares "+(ad==="A"?"received":"given");text=(ad==="A"?"received ":"gave ")+sh+" "+tk+"shares as a gift";break;
-  case "D":word="Returned";short=sh+" shares returned to "+(T||"the company");text="returned "+sh+" shares to "+(T||"the company");break;
-  case "E":word="Expired";short=sh+" "+dunits+" expired";text="let "+an((sec||"derivative")+" position")+" of "+sh+" expire";break;
-  case "H":word="Expired";short=sh+" "+dunits+" expired or cancelled";text="had "+an((sec||"derivative")+" position")+" of "+sh+" expire or be cancelled, with value received";break;
-  case "I":word="Discretionary";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" in a discretionary trade";break;
-  case "J":word="Other";short=sh+" "+units+" "+verb+" (see the filing)";text=verb+" "+sh+" "+units+" in another kind of transaction, described in the filing";break;
-  case "K":word="Equity swap";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" through an equity swap";break;
-  case "L":word="Small acquisition";short=sh+" "+units+" acquired";text="made a small acquisition of "+sh+" "+units;break;
-  case "W":word="Will or inheritance";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" by will or inheritance";break;
-  case "Z":word="Voting trust";short=sh+" "+units+(ad==="D"?" withdrawn from":" deposited into")+" a voting trust";text=(ad==="D"?"withdrew ":"deposited ")+sh+" "+units+(ad==="D"?" from":" into")+" a voting trust";break;
-  case "U":word="Tender";short=sh+" "+units+" tendered";text="tendered "+sh+" "+units+" in a change of control";break;
-  case "V":word="Voluntary";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units;break;
-  default:word=c?"Code "+c:"Other";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units;
- }
- const suffix=[c==="V"?"(reported early, voluntarily)":"",x?.is_amendment?"· amended filing (4/A)":"",ownership(x)==="Indirect"?"· held indirectly (by a trust or family member, for example)":""].filter(Boolean).join(" ");
- return {word,cls,c,text,short,suffix,valued,value:valued&&v!==null&&v>0?v:null,priced:p!==null};
-}
-/* The qualifiers in short form for tight lines, each with its full wording as a sentence: [short, full]. */
-const qualifiers=x=>[code(x)==="V"?["reported early","Reported early, voluntarily"]:null,x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
- ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null].filter(Boolean);
+/* describe(x, opts): the shared sentence, with issuer names written as people write them. */
+const describe=(x,opts={})=>F.describe(x,{companyName,...opts});
 const badge=x=>{const d=describe(x),m=codeMeaning(d.c);return '<span class="rd-type rd-type--'+d.cls+'"'+(m?' title="'+E(d.c+" — "+m)+'"':'')+'>'+tri(d.cls)+E(d.word)+(d.c?' · '+E(d.c):'')+'</span>';};
-/* "= $37,350,000", or the reason there is no value: "= $0" only for a price filed as $0.00 on a known share count. */
-const valueText=x=>{const d=describe(x);if(!d.valued)return "";if(d.value!==null)return "= "+money(d.value);return priceOf(x)===0&&sharesOf(x)!==null?"= $0":"value not reported";};
 /* The full sentence for screen readers: "Elon Musk bought 150,000 Tesla, Inc. shares at $249.00, worth $37,350,000. Traded Oct 11, 2026, filed Oct 12, 2026." */
-const sentence=(x,extra="")=>{const d=describe(x,{as:"name"});
+const sentence=(x,extra="",opts={})=>{const d=describe(x,{as:"name"});
  const when=[validDate(x.transaction_date)?"traded "+date(x.transaction_date):"",validDate(x.published_at)?"filed "+filedDate(x.published_at):""].filter(Boolean).join(", ");
- return shown(x.owner_name)+" "+d.text+(d.value!==null?", worth "+money(d.value):"")+"."+(when?" "+when.charAt(0).toUpperCase()+when.slice(1)+".":"")+qualifiers(x).map(q=>" "+q[1]+".").join("")+(extra?" "+extra:"");};
+ return ownerLabel(x,opts)+" "+d.text+(d.value!==null?", worth "+moneyCents(d.value):"")+"."+(when?" "+when.charAt(0).toUpperCase()+when.slice(1)+".":"")+qualifiers(x).map(q=>" "+q[1]+".").join("")+(extra?" "+extra:"");};
 /* A name as the end of a sentence: "Following James D. Farley Jr." takes no second full stop. */
 const endName=n=>String(n||"").replace(/\.+\s*$/,"");
 
@@ -360,37 +275,45 @@ function remember(){
 function arrive(host){if(host&&!reduce.matches&&host.animate)host.animate([{opacity:0},{opacity:1}],{duration:200,easing:"cubic-bezier(.2,.7,.1,1)"});}
 
 /* ---------- derive(): purchases, sales and the rest, from the 100-row window ----------
-   One result feeds the Today sentence and 03 Across the market, so their figures always match. An amended
-   Form 4/A line replaces the earlier copy of the same line instead of being counted twice. */
+   One result feeds the Today sentence and 03 Across the market, so their figures always match. A line that a Form 4/A
+   published after its own filing repeats (an original, or an earlier 4/A) is counted once, from the latest copy: the
+   same rule as GET /v1/people/<cik> (form4-words.js restated()), so a sale restated twice is still one sale. Dollar
+   values are added in whole cents and shares in units of 1e-8 (BigInt), then given to the modules as numbers (for the
+   chart's scale) and as exact digits (buyShares, sellShares). */
 let derived=null,derivedFrom=null;
 function derive(rows){
  if(rows===derivedFrom&&derived)return derived;
- const out={rows,buys:[],sells:[],others:[],buyValue:0,sellValue:0,buyShares:0,sellShares:0,buyUnpriced:0,sellUnpriced:0,buyUnshared:0,sellUnshared:0,
-  lags:[],companies:new Set(),people:new Set(),first:null,last:null,days:new Map(),undated:0,byCompany:new Map(),priced:[],otherCodes:new Map(),replaced:0};
- const same=x=>[x.owner_cik||x.owner_name,x.issuer_cik||x.ticker,x.transaction_date,code(x),String(x.acquired_disposed||""),!!x.derivative,sharesOf(x)].join("|");
- const amendedAt=new Map();
- for(const x of rows)if(x.is_amendment){const p=validDate(x.published_at),k=same(x);if(p&&(!amendedAt.has(k)||p>amendedAt.get(k)))amendedAt.set(k,p);}
- const kept=rows.filter(x=>x.is_amendment||!(amendedAt.get(same(x))>(validDate(x.published_at)||0)));
- out.replaced=rows.length-kept.length;
+ const out={rows,buys:[],sells:[],others:[],buyValue:0,sellValue:0,buyShares:"0",sellShares:"0",buyUnpriced:0,sellUnpriced:0,buyUnshared:0,sellUnshared:0,
+  lags:[],companies:new Set(),people:new Set(),first:null,last:null,days:new Map(),undated:0,byCompany:new Map(),priced:[],otherCodes:new Map(),replaced:0,superseded:new Set()};
+ out.superseded=F.restated(rows);
+ const kept=rows.filter(x=>!out.superseded.has(x));
+ out.replaced=out.superseded.size;
+ let buyC=0n,sellC=0n,buyS=0n,sellS=0n;
+ const toNum=c=>Number(c)/100;
  // Days to report are the original filing's: an amendment is filed later by design.
  for(const x of rows)if(!x.is_amendment){const l=lagOf(x);if(l!==null)out.lags.push(l);}
  for(const x of kept){
-  const k=kind(x),v=valueOf(x),s=sharesOf(x),t=tick(x.ticker),ck=String(x.issuer_cik||"").trim()||t||String(x.issuer_name||"").trim(),when=validDate(x.transaction_date);
+  const k=kind(x),c=valueCents(x),s=scaled(x.shares),t=tick(x.ticker),ck=String(x.issuer_cik||"").trim().replace(/^0+(?=\d)/,"")||t||String(x.issuer_name||"").trim(),when=validDate(x.transaction_date);
   if(ck)out.companies.add(ck);
-  const who=String(x.owner_cik||x.owner_name||"").trim();if(who)out.people.add(who);
+  // People: each reporting owner once, by CIK; a joint line counts every owner it lists, not its joined names as one.
+  const joint=owners(x);
+  if(joint.length){for(const o of joint){const k=bareCik(o.cik)||nameKey(o.name);if(k)out.people.add(k);}}
+  else{const who=String(bareCik(x.owner_cik)||x.owner_name||"").trim();if(who)out.people.add(who);}
   if(when){if(!out.first||when<out.first)out.first=when;if(!out.last||when>out.last)out.last=when;}
   if(k==="other"){out.others.push(x);const n=nounKey(x)||"?";out.otherCodes.set(n,(out.otherCodes.get(n)||0)+1);continue;}
   // No value counted: either no price was reported, or a price came with no share count (each said in its own words).
-  const priced=v!==null&&v>0,noPrice=!priced&&priceOf(x)===null,noShares=!priced&&!noPrice&&s===null;
-  if(k==="buy"){out.buys.push(x);if(s!==null)out.buyShares+=Math.abs(s);if(priced)out.buyValue+=v;else if(noPrice)out.buyUnpriced++;else if(noShares)out.buyUnshared++;}
-  else{out.sells.push(x);if(s!==null)out.sellShares+=Math.abs(s);if(priced)out.sellValue+=v;else if(noPrice)out.sellUnpriced++;else if(noShares)out.sellUnshared++;}
+  const priced=c!==null&&c>0n,noPrice=!priced&&priceOf(x)===null,noShares=!priced&&!noPrice&&s===null;
+  const abs=s===null?0n:s<0n?-s:s;
+  if(k==="buy"){out.buys.push(x);buyS+=abs;if(priced)buyC+=c;else if(noPrice)out.buyUnpriced++;else if(noShares)out.buyUnshared++;}
+  else{out.sells.push(x);sellS+=abs;if(priced)sellC+=c;else if(noPrice)out.sellUnpriced++;else if(noShares)out.sellUnshared++;}
   if(!priced)continue;
   out.priced.push(x);
-  if(when){const key=when.toISOString().slice(0,10),e=out.days.get(key)||{key,buy:0,sell:0,nb:0,ns:0};if(k==="buy"){e.buy+=v;e.nb++;}else{e.sell+=v;e.ns++;}out.days.set(key,e);}
+  if(when){const key=when.toISOString().slice(0,10),e=out.days.get(key)||{key,buy:0,sell:0,nb:0,ns:0,bc:0n,sc:0n};if(k==="buy"){e.bc+=c;e.nb++;}else{e.sc+=c;e.ns++;}e.buy=toNum(e.bc);e.sell=toNum(e.sc);out.days.set(key,e);}
   else out.undated++;
-  if(ck){const e=out.byCompany.get(ck)||{t,cik:String(x.issuer_cik||""),name:"",buy:0,sell:0,nb:0,ns:0};if(!e.t&&t)e.t=t;if(!e.name&&x.issuer_name)e.name=String(x.issuer_name);if(k==="buy"){e.buy+=v;e.nb++;}else{e.sell+=v;e.ns++;}out.byCompany.set(ck,e);}
+  if(ck){const e=out.byCompany.get(ck)||{t,cik:String(x.issuer_cik||""),name:"",buy:0,sell:0,nb:0,ns:0,bc:0n,sc:0n};if(!e.t&&t)e.t=t;if(!e.name&&x.issuer_name)e.name=String(x.issuer_name);if(k==="buy"){e.bc+=c;e.nb++;}else{e.sc+=c;e.ns++;}e.buy=toNum(e.bc);e.sell=toNum(e.sc);out.byCompany.set(ck,e);}
  }
- out.net=out.buyValue-out.sellValue;
+ out.buyValue=toNum(buyC);out.sellValue=toNum(sellC);out.net=toNum(buyC-sellC);
+ out.buyShares=fromScaled(buyS);out.sellShares=fromScaled(sellS);
  out.lags.sort((a,b)=>a-b);
  derived=out;derivedFrom=rows;
  return out;
@@ -399,9 +322,10 @@ function derive(rows){
 const rangeText=f=>!f.first||!f.last?"":date(f.first)===date(f.last)?"traded "+date(f.first):"traded "+(f.first.getUTCFullYear()===f.last.getUTCFullYear()?shortDate(f.first):date(f.first))+" – "+date(f.last);
 
 /* ---------- shared surface for v4-dashboard.js and v13-overview.js ---------- */
-const desk=window.InsidirDesk={CODES,LEGEND,NOUN,E,tick,cikOf,date,filedDate,shortDate,tradedShort,filedShort,stamp,validDate,num,money,signedMoney,compactMoney,price,qty,count,plural,
+const desk=window.InsidirDesk={CODES,LEGEND,NOUN,E,tick,cikOf,date,filedDate,shortDate,tradedShort,filedShort,stamp,validDate,num,money,moneyCents,signedMoney,compactMoney,price,qty,count,plural,
+ sharesText,valueCents,rawPrice:F.rawPrice,
  kind,code,codeMeaning,noun,nounKey,tri,badge,describe,qualifiers,valueText,sentence,sharesOf,signOf,signedShares,priceOf,valueOf,lagOf,lagText,lagWords,ownership,security,
- shown,companyName,companyHref,researchHref,filingHref,personHref,personTile,companyTile,personName,whoTile,coTile,hydrate,MINUS,DAY,
+ shown,ownerLabel,owners,bareCik,companyName,companyHref,researchHref,filingHref,personHref,personTile,companyTile,personName,whoTile,coTile,hydrate,MINUS,DAY,
  api,items,retry,failBlock,failRow,failText,canRetry,load,reload,watch,settled,later,now,arrive,ready,derive,rangeText,
  counts,saveCount,store,lastSeen,lastVisitText,isNew,NEW,importedAt,reduce,media};
 
@@ -412,13 +336,14 @@ const newer=(a,b)=>{const da=tradeDate(a),db=tradeDate(b);if(!db)return !!da;if(
 const lookups=new Map(); // ticker → {rows} | {error}
 const rowsFor=(t,trades)=>[...(trades||[]).filter(x=>tick(x.ticker)===t),...(lookups.get(t)?.rows||[]).filter(x=>tick(x.ticker)===t)];
 const latestTrade=rows=>rows.filter(x=>kind(x)!=="other").reduce((b,x)=>!b||newer(x,b)?x:b,null);
-/* "Katherine L. Adams bought 800 shares at $226.40 = $181,120 · traded Oct 12, filed Oct 14 (2 days later)" */
+/* "Katherine L. Adams bought 800 shares at $226.40 = $181,120 · traded Oct 12, filed Oct 14 (2 days later)"; the name opens
+   the person's file. */
 function tradeLine(x,{ticker=false}={}){
  const d=describe(x,{ticker}),v=valueText(x),lag=lagOf(x);
  // Dates and amounts never break inside; a line can only end between them.
  const when=[validDate(x.transaction_date)?"traded "+tradedShort(x.transaction_date):"",
   validDate(x.published_at)?"filed "+filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+lagWords(lag)+")":""):""].filter(Boolean);
- return '<span class="rd-ent rd-ent--inline">'+whoTile(x,"sm")+personName(x,{link:false})+'</span> '+E(d.text)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+
+ return '<span class="rd-ent rd-ent--inline">'+whoTile(x,"sm")+personName(x)+'</span> '+E(d.text)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+
   (when.length?' · '+when.map(w=>'<span class="rd-nb">'+E(w)+'</span>').join(", "):'');
 }
 function watchDetail(t,trades){
@@ -426,7 +351,7 @@ function watchDetail(t,trades){
  if(best){
   const since=rows.filter(x=>kind(x)==="other"&&newer(x,best)).reduce((b,x)=>!b||newer(x,b)?x:b,null);
   return {row:best,isNew:isNew(best),html:tradeLine(best)+(isNew(best)?" "+NEW:"")+
-   (since?'<small>Also filed since: '+E(noun(since))+' by <span class="rd-ent rd-ent--inline">'+whoTile(since,"sm")+'<span data-ent="person">'+E(shown(since.owner_name))+'</span></span> ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
+   (since?'<small>Also filed since: '+E(noun(since))+' by <span class="rd-ent rd-ent--inline">'+whoTile(since,"sm")+personName(since)+'</span> ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
  }
  if(look?.error)return {html:'<span class="rd-muted">Latest purchase or sale unavailable right now</span>'};
  const others=rows.filter(x=>kind(x)==="other");
@@ -557,8 +482,10 @@ const EMPTY_NAME={reported_purchase:"purchases",reported_sale:"sales",other:"gra
 const TRADE_ROWS=12,TRADE_COLS=9;
 const table={rows:null,error:null,filter:"all",lock:0,cols:false};
 function tradeRow(x,i){
- const t=tick(x.ticker),k=kind(x),v=valueOf(x),p=priceOf(x),lag=lagOf(x),d=describe(x);
- const notes=[security(x),ownership(x)==="Indirect"?"held indirectly":"",x.is_amendment?"amended (4/A)":""].filter(Boolean).join(" · ");
+ const t=tick(x.ticker),k=kind(x),v=valueCents(x),p=F.rawPrice(x),lag=lagOf(x),d=describe(x);
+ // A line a later 4/A repeats stays listed, and says it is not counted in 03's totals (derive()).
+ const restated=table.rows?derive(table.rows).superseded.has(x):false;
+ const notes=[security(x),ownership(x)==="Indirect"?"held indirectly":"",x.is_amendment?"amended (4/A)":"",restated?"restated by a later 4/A, not counted":""].filter(Boolean).join(" · ");
  return '<tr class="rd-trade rd-trade--'+k+'" style="--i:'+Math.min(i,8)+'" aria-label="'+E(sentence(x))+'">'+
   '<td data-label="Person" class="rd-td-who"><span class="rd-ent">'+whoTile(x,"sm")+personName(x)+'</span></td>'+
   '<td data-label="Company" class="rd-td-co">'+(t?'<span class="rd-ent">'+coTile(x,"sm")+'<a data-ent="company" href="'+E(companyHref(t))+'">'+E(t)+'</a></span>'+(x.issuer_name?'<span class="rd-sub">'+E(companyName(x.issuer_name))+'</span>':''):
@@ -566,15 +493,15 @@ function tradeRow(x,i){
   '<td data-label="What happened" class="rd-td-what">'+badge(x)+(notes?'<span class="rd-sub">'+E(notes)+'</span>':'')+'</td>'+
   '<td data-label="Shares" class="rd-num rd-td-shares"><span class="rd-qty rd-qty--'+k+'">'+E(signedShares(x))+'</span></td>'+
   // Phones read a missing price or value in words on the record's second line ("no price reported").
-  '<td data-label="Price" class="rd-num rd-td-price">'+(p!==null?E(price(p)):'<span class="rd-muted"><span class="rd-long">No price</span><span class="rd-short">no price reported</span></span>')+'</td>'+
-  '<td data-label="Value" class="rd-num rd-value rd-td-value">'+(d.valued&&v!==null?E(money(v)):d.valued?'<span class="rd-muted"><span class="rd-long">Not reported</span><span class="rd-short">value not reported</span></span>':'<span class="rd-muted rd-muted--uncounted">Not counted</span>')+'</td>'+
+  '<td data-label="Price" class="rd-num rd-td-price">'+(F.digits(p)!==null?E(price(p)):'<span class="rd-muted"><span class="rd-long">No price</span><span class="rd-short">no price reported</span></span>')+'</td>'+
+  '<td data-label="Value" class="rd-num rd-value rd-td-value">'+(d.valued&&d.tiny?"Under $0.01":d.valued&&v!==null?E(moneyCents(v)):d.valued?'<span class="rd-muted"><span class="rd-long">Not reported</span><span class="rd-short">value not reported</span></span>':'<span class="rd-muted rd-muted--uncounted">Not counted</span>')+'</td>'+
   // Phones show the short dates ("Oct 12"); the other is display:none there, so each width reads one date.
   '<td data-label="Traded" class="rd-nb rd-td-traded">'+(validDate(x.transaction_date)?'<span class="rd-long">'+E(date(x.transaction_date))+'</span><span class="rd-short">'+E(tradedShort(x.transaction_date))+'</span>':'<span class="rd-muted">Not reported</span>')+'</td>'+
   '<td data-label="Filed" class="rd-nb rd-td-filed">'+(validDate(x.published_at)?'<span class="rd-long">'+E(filedDate(x.published_at))+'</span><span class="rd-short">'+E(filedShort(x.published_at))+'</span>'+(lag!==null&&!x.is_amendment?'<span class="rd-sub">'+E(lagWords(lag))+'</span>':''):'<span class="rd-muted">Not reported</span>')+'</td>'+
   // The security and the qualifiers as the phone record's last line (on wider screens they sit under the badge). Placed
   // before the link cell, which stays the row's last cell for the table's own rules.
   (notes?'<td class="rd-td-q" aria-hidden="true">'+E(notes)+'</td>':'')+
-  '<td class="rd-links"><a class="rd-arrow" href="'+E(filingHref(x.accession))+'" aria-label="'+E("Open the filing: "+shown(x.owner_name)+", "+(t||companyName(x.issuer_name))+", "+date(x.transaction_date))+'">Filing ↗</a></td>'+
+  '<td class="rd-links"><a class="rd-arrow" href="'+E(filingHref(x.accession))+'" aria-label="'+E("Open the filing: "+ownerLabel(x)+", "+(t||companyName(x.issuer_name))+", "+date(x.transaction_date))+'">Filing ↗</a></td>'+
  '</tr>';
 }
 function tradeRows(){

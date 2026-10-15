@@ -143,6 +143,7 @@ body.v13 .pf-table td>b{display:block!important;font:700 clamp(17px,1.5vw,22px)/
 body.v13 .pf-table td>b.pf-up{color:var(--hf-up)!important}
 body.v13 .pf-table td>b.pf-down{color:var(--hf-down)!important}
 body.v13 .pf-table td>b.pf-none{font-weight:500!important;color:var(--hf-faint)!important}
+body.v13 .pf-record__note{max-width:1080px!important;margin:12px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
 
 /* 02 Known affiliations */
 body.v13 .pf-affs{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr))!important;gap:0 clamp(28px,3vw,48px)!important}
@@ -180,6 +181,10 @@ body.v13 .pf-log__value{font-weight:700!important;white-space:nowrap!important;c
 body.v13 .pf-log__value.pf-up{color:var(--hf-up)!important}
 body.v13 .pf-log__value.pf-down{color:var(--hf-down)!important}
 body.v13 .pf-log__notes{display:block!important;margin:2px 0 0!important;font:400 10.5px/1.6 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
+/* A line a later Form 4/A repeats: listed, marked, its value struck through (counted once, from the latest copy). */
+body.v13 .pf-log__row.is-restated .pf-log__value{text-decoration:line-through!important;text-decoration-thickness:1px!important;color:var(--hf-muted)!important}
+body.v13 .pf-log__row.is-restated .pf-log__text{color:var(--hf-soft)!important}
+body.v13 .pf-log__notes .pf-link--inline{color:var(--hf-soft)!important}
 body.v13 .pf-badge{display:inline-flex!important;align-items:center!important;margin:0 6px 0 0!important;padding:1px 7px!important;border:1px solid var(--hf-line-2)!important;background:transparent!important;white-space:nowrap!important;vertical-align:1px!important;
   font:500 9.5px/1.7 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important}
 body.v13 .pf-badge .pf-tri{margin-right:6px!important}

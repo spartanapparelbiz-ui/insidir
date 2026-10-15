@@ -4,10 +4,24 @@
  * resolution starts in bounded background queues (logos here, 4 at a time and at most 20 new per
  * request; photos in the people-photos job queue, 2 companies at a time).
  *
+ * people= takes three forms (owner CIKs and issuer CIKs with or without leading zeros):
+ *   <owner CIK>:<TICKER>        the reporting owner at the issuer they file for (the usual form)
+ *   <owner CIK>:cik:<issuer CIK> the same for an issuer known by CIK (no ticker filed): its logo is
+ *                                answered as logos["cik:<issuer CIK>"] and the photo is looked for at
+ *                                that issuer (a job only when it is SEC-listed: jobs need a ticker)
+ *   <owner CIK>                  no issuer known: answered from the person-photo record alone, no job.
+ *                                Without a usable record nothing was looked for, so photos[<owner CIK>]
+ *                                is left out of the answer (not null: null means "none exists"); a
+ *                                takedown is answered null. The same person asked with an issuer is
+ *                                still answered (and looked for) as usual.
+ *
  *   logos[TICKER] / logos["cik:<CIK>"]  {src,w,h,source,name,alt?:{src,w,h}} | null (resolved, none exists)
- *   photos[<owner CIK>]                 {src,w,h,source,credit,sourceUrl,name?} | null
+ *   photos[<owner CIK>]                 {src,w,h,source,credit,sourceUrl,name?} | null (none, or taken down);
+ *                                       absent when only the owner-alone form was asked and nothing is on record
  *   owners[<owner CIK>]                 {entity:true, ticker|null}: a fund or company files there, not a person
- *   pending {logos:[key], photos:["<owner CIK>:<TICKER>"]}, retryAfter (s), invalid [raw entries]
+ *   pending {logos:[key], photos:[pair, in the form it was asked]}, queued [pairs whose company job is
+ *   still waiting for its turn], retryAfter (s: the slowest pending kind), retryAfterLogos and
+ *   retryAfterPhotos (s: each kind on its own, 0 when none is pending), invalid [raw entries]
  *
  * Names never come from the request. person-photo records are global by owner CIK, so a name a
  * client typed for someone else's CIK could attach the wrong face to that CIK for every member.
@@ -38,8 +52,19 @@ export const cleanCik = value => {
 };
 const pad10 = key => String(key).padStart(10, "0");
 
-/* ?tickers=AAPL,BRK.B&people=1214156:AAPL&ciks=1234567&wait=1200 -> {tickers, people, ciks, wait, invalid}.
- * Throws {status:400} when a list is over its limit or nothing valid is left. */
+/* ?tickers=AAPL,BRK.B&people=1214156:AAPL,1214156:cik:320193,1214156&ciks=1234567&wait=1200
+ *   -> {tickers, people: [{cik, ticker|null, issuerCik|null, pair}], ciks, wait, invalid}.
+ * pair is the entry in one spelling (no leading zeros, upper-case ticker) and is how pending and queued
+ * list it. Throws {status:400} when a list is over its limit or nothing valid is left. */
+const PERSON_ENTRY = /^(\d{1,10})(?::(?:cik:(\d{1,10})|([^:]+)))?$/i;
+export function parsePersonEntry(value) {
+  const m = PERSON_ENTRY.exec(String(value ?? "").trim());
+  const cik = m && cleanCik(m[1]);
+  if (!cik) return null;
+  if (m[2] !== undefined) { const issuerCik = cleanCik(m[2]); return issuerCik ? { cik, ticker: null, issuerCik, pair: cik + ":cik:" + issuerCik } : null; }
+  if (m[3] !== undefined) { const ticker = cleanTicker(m[3]); return ticker ? { cik, ticker, issuerCik: null, pair: cik + ":" + ticker } : null; }
+  return { cik, ticker: null, issuerCik: null, pair: cik };
+}
 export function parseMediaQuery(url) {
   const sp = url.searchParams;
   const list = name => sp.getAll(name).join(",").split(",").map(s => s.trim()).filter(Boolean);
@@ -53,17 +78,15 @@ export function parseMediaQuery(url) {
     if (!t) bad(value); else if (!tickers.includes(t)) tickers.push(t);
   }
   for (const value of raw.people) {
-    const m = /^([^:]+):(.+)$/.exec(value);
-    const cik = m && cleanCik(m[1]), ticker = m && cleanTicker(m[2]);
-    if (!cik || !ticker) { bad(value); continue; }
-    const pair = cik + ":" + ticker;
-    if (!pairs.has(pair)) { pairs.add(pair); people.push({ cik, ticker, pair }); }
+    const entry = parsePersonEntry(value);
+    if (!entry) { bad(value); continue; }
+    if (!pairs.has(entry.pair)) { pairs.add(entry.pair); people.push(entry); }
   }
   for (const value of raw.ciks) {
     const cik = cleanCik(value);
     if (!cik) bad(value); else if (!ciks.includes(cik)) ciks.push(cik);
   }
-  if (!tickers.length && !people.length && !ciks.length) throw failure(400, "Nothing valid to look up: pass tickers, people (ownerCik:TICKER) or ciks");
+  if (!tickers.length && !people.length && !ciks.length) throw failure(400, "Nothing valid to look up: pass tickers, people (ownerCik:TICKER, ownerCik:cik:issuerCik or ownerCik) or ciks");
   const wait = Number(sp.get("wait"));
   return { tickers, people, ciks, wait: Number.isFinite(wait) ? Math.max(0, Math.min(MEDIA_LIMITS.wait, Math.round(wait))) : 0, invalid };
 }
@@ -234,13 +257,21 @@ const shapePhoto = (photo, name) => {
   const shown = name || readableName(photo);
   return { src: photo.src, w: PHOTO_SIZE, h: PHOTO_SIZE, source: photo.source || null, credit: photo.credit || null, sourceUrl: photo.sourceUrl || null, ...(shown ? { name: shown } : {}) };
 };
+/* The issuer a people= entry names: {ticker|null, cik (10 digits), name|null} or null (owner alone, or
+ * a ticker the SEC ticker file does not list). An issuer CIK that is listed resolves to its listing. */
+function issuerOf(pair, maps) {
+  if (pair.ticker) return maps.byTicker.get(pair.ticker) || null;
+  if (!pair.issuerCik) return null;
+  const listed = maps.byCik.get(pair.issuerCik);
+  return (listed && maps.byTicker.get(listed)) || { ticker: null, cik: pad10(pair.issuerCik), name: null };
+}
 /* What the stored records already say about one owner/issuer pair. */
 async function firstLook(pair, maps, d) {
   const k = "cik:" + pair.cik;
   // A listed company filing as an owner (Berkshire Hathaway at OXY): its own logo, never a face.
   const ownTicker = maps.byCik.get(pair.cik);
   if (ownTicker) return { entity: true, ownTicker };
-  const issuer = maps.byTicker.get(pair.ticker) || null;
+  const issuer = issuerOf(pair, maps);
   const [known, company] = await Promise.all([
     d.getRecord("person-photo", pair.cik).catch(() => null),
     issuer ? d.getRecord("company-photos", issuer.cik).catch(() => null) : null
@@ -257,23 +288,33 @@ async function firstLook(pair, maps, d) {
     if (!(await d.hasMedia(mediaSha(photo.src)))) continue;
     return { photo: shapePhoto(photo, name) };
   }
-  if (!issuer) return { none: true };
+  // No issuer (the owner alone): the person-photo record was the whole answer. Without a usable one
+  // nothing was looked for (unlooked: left out of the answer), unless the person is taken down.
+  if (!issuer) {
+    takedown ??= Boolean((await d.getRecord("person-photo-override", pair.cik).catch(() => null))?.none);
+    return takedown ? { none: true } : { none: true, unlooked: true };
+  }
   if (company?.entities?.includes(k)) return { entity: true, ownTicker: null };
+  // A photo job reads the issuer's SEC listing; one without a ticker has none to run.
+  if (!issuer.ticker) return { none: true };
   const complete = Boolean(company?.complete);
   const inRoster = complete && Array.isArray(company.roster) && company.roster.includes(k);
   const lost = Boolean(known?.src || atCompany?.src); // chosen once, but the bytes are gone
   if (inRoster && !lost) return { none: true };
   return { issuer, complete, inRoster, lost };
 }
-/* rows [{owner_cik, ticker, owner_name}] -> Map("<cik>:<TICKER>" -> name) */
+/* rows [{owner_cik, ticker, issuer_cik, owner_name}] -> Map("<cik>:<TICKER>" and "<cik>:cik:<issuer CIK>" -> name) */
 function ownerNames(rows) {
   const out = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
-    const cik = cleanCik(row?.owner_cik), ticker = cleanTicker(row?.ticker), name = String(row?.owner_name ?? "").replace(/\s+/g, " ").trim();
-    if (cik && ticker && name && !out.has(cik + ":" + ticker)) out.set(cik + ":" + ticker, name.slice(0, 120));
+    const cik = cleanCik(row?.owner_cik), ticker = cleanTicker(row?.ticker), issuer = cleanCik(row?.issuer_cik), name = String(row?.owner_name ?? "").replace(/\s+/g, " ").trim();
+    if (!cik || !name) continue;
+    for (const key of [ticker && cik + ":" + ticker, issuer && cik + ":cik:" + issuer]) if (key && !out.has(key)) out.set(key, name.slice(0, 120));
   }
   return out;
 }
+// The import's name for one asked pair: by the issuer's ticker or by its CIK, whichever the import has.
+const nameFor = (names, p, issuer) => (p.ticker && names.get(p.cik + ":" + p.ticker)) || (issuer?.cik && names.get(p.cik + ":cik:" + cleanCik(issuer.cik))) || null;
 
 /* The answer for one batch. options: priority ("user" | "warm"), requester (who asked: queues
  * share their slots between requesters), maxStarts (new logo resolutions), maxPhotoStarts (new
@@ -300,16 +341,18 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
     subjects.set(ticker, rec ? { key: ticker, ticker, cik: rec.cik, name: rec.name } : { key: ticker, missing: true });
   };
   for (const t of q.tickers) addTicker(t);
-  for (const p of q.people) addTicker(p.ticker);
-  // An issuer CIK is looked up only when it is listed or the SEC import has filings for it, so a
-  // made-up number starts no resolution (and no SEC request).
-  const unlisted = q.ciks.filter(cik => !maps.byCik.has(cik));
+  for (const p of q.people) if (p.ticker) addTicker(p.ticker);
+  // Issuers asked for by CIK: ciks= and the issuer of every <owner>:cik:<issuer> entry. One is looked
+  // up only when it is listed or the SEC import has filings for it, so a made-up number starts no
+  // resolution (and no SEC request).
+  const issuerCiks = [...new Set([...q.ciks, ...q.people.map(p => p.issuerCik).filter(Boolean)])];
+  const unlisted = issuerCiks.filter(cik => !maps.byCik.has(cik));
   let issuers = new Set(), issuersFailed = false;
   if (unlisted.length && typeof d.loadIssuers === "function") {
     try { issuers = new Set((await d.loadIssuers(unlisted)).map(r => cleanCik(r?.issuer_cik ?? r)).filter(Boolean)); }
     catch (e) { issuersFailed = true; console.warn("Issuer lookup for media failed:", e?.message); }
   }
-  for (const cik of q.ciks) {
+  for (const cik of issuerCiks) {
     const ticker = maps.byCik.get(cik) || null, rec = ticker ? maps.byTicker.get(ticker) : null;
     if (!ticker && !issuers.has(cik)) { subjects.set("cik:" + cik, { key: "cik:" + cik, missing: true, retry: issuersFailed }); continue; }
     subjects.set("cik:" + cik, { key: "cik:" + cik, ticker, cik: rec?.cik || pad10(cik), name: rec?.name || null, listed: ticker });
@@ -318,10 +361,10 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
   // People, 1: what the records already answer.
   const answers = await Promise.all(q.people.map(p => firstLook(p, maps, d)));
   // 2: one database round trip confirms the owners still to look for, with their filed names.
-  const unsure = q.people.filter((p, i) => answers[i].issuer && !answers[i].inRoster);
+  const unsure = q.people.map((p, i) => [p, answers[i]]).filter(([, a]) => a.issuer && !a.inRoster);
   let names = new Map(), ownersFailed = false;
   if (unsure.length && verified) {
-    try { names = ownerNames(await d.loadOwners(unsure.map(({ cik, ticker }) => ({ cik, ticker })))); }
+    try { names = ownerNames(await d.loadOwners(unsure.map(([p, a]) => ({ cik: p.cik, ticker: a.issuer.ticker, issuerCik: cleanCik(a.issuer.cik) })))); }
     catch (e) { ownersFailed = true; console.warn("Owner lookup for media failed:", e?.message); }
   }
   // 3: group the confirmed ones by company and ask the photo queue.
@@ -329,7 +372,7 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
   q.people.forEach((p, i) => {
     const a = answers[i];
     if (!a.issuer) return;
-    const name = names.get(p.cik + ":" + p.ticker);
+    const name = nameFor(names, p, a.issuer);
     if (name && isEntityName(name)) { answers[i] = { entity: true, ownTicker: null }; return; }
     if (!a.inRoster && !name) {
       if (ownersFailed) { answers[i] = { pending: true, waitingOn: "owners" }; return; }
@@ -340,7 +383,7 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
       if (verified) { watching.push(i); return; }
       // Website preview (no database): the company's own roster job may start.
     }
-    const g = groups.get(a.issuer.cik) || { ticker: p.ticker, cik: a.issuer.cik, rerun: a.complete, extras: [], keys: [], members: [] };
+    const g = groups.get(a.issuer.cik) || { ticker: a.issuer.ticker, cik: a.issuer.cik, rerun: a.complete, extras: [], keys: [], members: [] };
     if (name) g.extras.push({ cik: p.cik, name });
     if (a.inRoster && a.lost) g.keys.push("cik:" + p.cik);
     g.members.push(i);
@@ -370,10 +413,12 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
     if (job === "queued" || job === "running") { answers[i] = { pending: true, queued: job === "queued" }; if (job === "queued") queued = true; }
     else answers[i] = { none: true };
   }
-  // 4: one answer per owner CIK: a photo from any pair wins, then pending, then null.
+  // 4: one answer per owner CIK: a photo from any pair wins, then pending, then null. An owner asked
+  // only in the owner-alone form with nothing on record (every pair unlooked) is left out.
   const byOwner = new Map();
   q.people.forEach((p, i) => {
-    const a = answers[i], o = byOwner.get(p.cik) || { photo: null, entity: null, pending: [] };
+    const a = answers[i], o = byOwner.get(p.cik) || { photo: null, entity: null, pending: [], looked: false };
+    if (!a.unlooked) o.looked = true;
     if (a.photo && !o.photo) o.photo = a.photo;
     if (a.entity) { o.entity = { entity: true, ticker: a.ownTicker || o.entity?.ticker || null }; if (a.ownTicker) addTicker(a.ownTicker); }
     if (a.pending) { o.pending.push(p.pair); if (a.queued) queuedPairs.add(p.pair); }
@@ -383,7 +428,7 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
     if (o.entity) { owners[cik] = o.entity; photos[cik] = null; }
     else if (o.photo) photos[cik] = o.photo;
     else if (o.pending.length) pending.photos.push(...o.pending);
-    else photos[cik] = null;
+    else if (o.looked) photos[cik] = null;
   }
 
   // Logos (after the people, which can add an owner's own ticker).
@@ -405,33 +450,45 @@ export async function mediaBatch(q, deps = {}, { priority = "user", requester = 
   }
   pending.logos.sort();
   pending.photos.sort();
-  const retryAfter = pending.photos.length ? (queued ? 15 : 8) : pending.logos.length ? 3 : 0;
+  // Each kind has its own hint, so a client paces logos (a second or two) apart from headshots (a
+  // photo job that waits its turn takes minutes); retryAfter stays the slowest of the two.
+  const retryAfterPhotos = pending.photos.length ? (queued ? 15 : 8) : 0, retryAfterLogos = pending.logos.length ? 3 : 0;
+  const retryAfter = retryAfterPhotos || retryAfterLogos;
   // queued: pending pairs whose company job is still waiting for its turn (not running yet), so a
   // client need not count those polls against its patience.
-  return { logos, photos, owners, pending, queued: pending.photos.filter(pair => queuedPairs.has(pair)), retryAfter, invalid: q.invalid || [] };
+  return { logos, photos, owners, pending, queued: pending.photos.filter(pair => queuedPairs.has(pair)), retryAfter, retryAfterLogos, retryAfterPhotos, invalid: q.invalid || [] };
 }
 export const mediaPending = body => Boolean(body?.pending?.logos?.length || body?.pending?.photos?.length);
 
-/* loadOwners for GET /v1/media: which of these owner CIKs filed for which of these issuers, with
- * the name on their latest filing. Fixtures store "0001214156", filings may say "BRK.B": both
- * spellings of each are asked for, and only exact requested pairs are used. */
-export const OWNERS_SQL = `SELECT DISTINCT ON (owner_cik, ticker) owner_cik, ticker, owner_name FROM sec_transactions
-  WHERE owner_cik = ANY($1::text[]) AND ticker = ANY($2::text[])
-  ORDER BY owner_cik, ticker, transaction_date DESC NULLS LAST`;
+/* loadOwners for GET /v1/media: which of these owner CIKs filed for which of these issuers (by the
+ * ticker filed or by issuer CIK), with the name on their latest filing there. Fixtures store
+ * "0001214156", filings may say "BRK.B": both spellings of each are asked for, and only exact
+ * requested pairs are used (mediaBatch matches rows to pairs). pairs: [{cik, ticker|null, issuerCik|null}].
+ * With joint: true (sec_filing_owners exists, sql/008), owners of joint filings (whose lines carry no
+ * owner CIK) are confirmed from that table, with the name each owner filed under. */
+export const OWNERS_SQL = `SELECT DISTINCT ON (owner_cik, ticker, issuer_cik) owner_cik, ticker, issuer_cik, owner_name FROM sec_transactions
+  WHERE owner_cik = ANY($1::text[]) AND (ticker = ANY($2::text[]) OR issuer_cik = ANY($3::text[]))
+  ORDER BY owner_cik, ticker, issuer_cik, transaction_date DESC NULLS LAST`;
+export const JOINT_OWNERS_SQL = `SELECT DISTINCT ON (o.owner_cik, f.ticker, f.issuer_cik) o.owner_cik, f.ticker, f.issuer_cik, o.owner_name
+  FROM sec_filing_owners o JOIN sec_filings f ON f.accession = o.accession
+  WHERE o.owner_cik = ANY($1::text[]) AND f.ingest_status = 'parsed' AND (f.ticker = ANY($2::text[]) OR f.issuer_cik = ANY($3::text[]))
+  ORDER BY o.owner_cik, f.ticker, f.issuer_cik, f.published_at DESC NULLS LAST`;
 export function ownersParams(pairs) {
-  const ciks = new Set(), tickers = new Set();
+  const ciks = new Set(), tickers = new Set(), issuers = new Set();
   for (const pair of pairs || []) {
-    const cik = cleanCik(pair?.cik), ticker = cleanTicker(pair?.ticker);
-    if (!cik || !ticker) continue;
+    const cik = cleanCik(pair?.cik), ticker = cleanTicker(pair?.ticker), issuer = cleanCik(pair?.issuerCik);
+    if (!cik || (!ticker && !issuer)) continue;
     ciks.add(cik); ciks.add(pad10(cik));
-    tickers.add(ticker); tickers.add(ticker.replace(/-/g, "."));
+    if (ticker) { tickers.add(ticker); tickers.add(ticker.replace(/-/g, ".")); }
+    if (issuer) { issuers.add(issuer); issuers.add(pad10(issuer)); }
   }
-  return [[...ciks], [...tickers]];
+  return [[...ciks], [...tickers], [...issuers]];
 }
-export async function loadOwnersFrom(run, pairs) {
-  const [ciks, tickers] = ownersParams(pairs);
-  if (!ciks.length || !tickers.length) return [];
-  return (await run(OWNERS_SQL, [ciks, tickers])).rows || [];
+export async function loadOwnersFrom(run, pairs, { joint = false } = {}) {
+  const params = ownersParams(pairs);
+  if (!params[0].length) return [];
+  const rows = (await run(OWNERS_SQL, params)).rows || [];
+  return joint ? rows.concat((await run(JOINT_OWNERS_SQL, params)).rows || []) : rows;
 }
 
 /* loadIssuers for GET /v1/media: which of these issuer CIKs the SEC import has filings for. */

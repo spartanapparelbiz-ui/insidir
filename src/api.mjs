@@ -11,6 +11,7 @@ import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavail
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute } from "./company-routes.mjs";
+import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
@@ -60,58 +61,159 @@ function keepPrivate(res){
     return reason===undefined?writeHead.call(this,status):writeHead.call(this,status,reason);
   };
 }
-/* GET /v1/me/people/updates: the signed-in member's followed people, most recently active
- * first, and the newest Form 4 lines any of them filed. Three fixed round trips at most,
- * never one per person; each person's rows come off sec_transactions_owner_idx. A person
- * whose filings are all unparsed (e.g. a failed re-ingest) still gets a name and ticker.
- * The work is bounded by the follow set: POST /v1/me/people caps it at MAX_FOLLOWS, and both
- * queries read at most the MAX_FOLLOWS newest follows (followed_people_created_idx) before
- * any per-person join, so rows past the cap (a race, or older data) cannot inflate the cost. */
+/* Followed people (GET/POST /v1/me/people, DELETE /v1/me/people/<cik>, GET /v1/me/people/updates).
+ *
+ * One canonical owner CIK: POST stores the 10-digit form the SEC files under, whatever form the client
+ * sends ("1214156" and "0001214156" are one person). Rows written before that may hold another form, so
+ * every read, the duplicate check and DELETE compare without leading zeros (LTRIM(owner_cik,'0')), and
+ * the follow set below holds each person once. A person's lines are read in both forms off
+ * sec_transactions_owner_idx: owner_cik IN (bare, 10-digit) is the same comparison for CIKs of up to
+ * 10 digits and keeps the index. Answers give owner_cik in the 10-digit form.
+ *
+ * Joint filings: a Form 4 with several reporting owners stores its lines once with owner_cik NULL.
+ * When sec_filing_owners exists (sql/008; hasFilingOwners, the check person-profile.mjs uses), those
+ * lines count for every owner it lists: a person who only files jointly can be followed, has a name
+ * and ticker on the list, and their joint lines are in the feed. Every joint line in an answer carries
+ * owners: [{cik, name}] (as filed, in filing order) so a page can link each owner.
+ *
+ * GET /v1/me/people/updates: the member's followed people, most recently active first, and the newest
+ * Form 4 lines any of them filed. Three fixed round trips at most (plus the owners of joint lines),
+ * never one per person. The work is bounded by the follow set: POST caps it at MAX_FOLLOWS, and the
+ * queries read at most the MAX_FOLLOWS newest follows (followed_people_created_idx) before any
+ * per-person join. A person whose filings are all unparsed (e.g. a failed re-ingest) still gets a name
+ * and ticker. The 30-day totals count each line once across later Form 4/A restatements by the profile's
+ * own rule (SAME_LINE / SUPERSEDED from person-profile.mjs): a line repeated by a later 4/A counts once,
+ * on the date it was first filed, so a restated old trade does not enter the window. */
 const MAX_FOLLOWS=150;
-const FOLLOW_SET=`(SELECT owner_cik,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT ${MAX_FOLLOWS})`;
-const FOLLOW_RECENT="f.published_at>=now()-interval '30 days'";
-const FOLLOWED_PEOPLE_SQL=`SELECT fp.owner_cik,fp.created_at AS followed_at,
-  (SELECT count(*) FROM followed_people WHERE user_id=$1)::integer AS following,
-  l.id AS last_id,l.issuer_name,
-  COALESCE(l.owner_name,(SELECT owner_name FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1)) AS owner_name,
-  CASE WHEN l.id IS NULL THEN (SELECT ticker FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) ELSE l.ticker END AS ticker,
+const RECENT_DAYS="now()-interval '30 days'";
+// "0001214156" | "1214156" -> "0001214156"; null when it is not an SEC CIK.
+export function canonicalOwnerCik(value){
+  const s=String(value??"").trim();
+  if(!/^\d{1,12}$/.test(s))return null;
+  const bare=s.replace(/^0+/,"");
+  return bare&&bare.length<=10?bare.padStart(10,"0"):null;
+}
+// The member's follow set, each person once (bare and 10-digit forms), newest MAX_FOLLOWS rows first.
+const FOLLOW_SET=`fp AS MATERIALIZED (SELECT n.bare,LPAD(n.bare,10,'0') AS owner_cik,MIN(n.created_at) AS created_at
+  FROM (SELECT LTRIM(owner_cik,'0') AS bare,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT ${MAX_FOLLOWS}) n
+  WHERE n.bare<>'' GROUP BY n.bare)`;
+const FOLLOW_COUNT="(SELECT count(DISTINCT LTRIM(owner_cik,'0')) FROM followed_people WHERE user_id=$1)::integer";
+const SAME_PERSON="IN (fp.bare,fp.owner_cik)";
+/* One followed person's lines (for the follow row fp): their own, plus with sec_filing_owners the joint
+ * filings that list them, whose owner_name is then the person's own name as filed there. */
+function personLines(joint,columns){
+  const own=columns.map(c=>"t."+c).join(","),shared=columns.map(c=>c==="owner_name"?"o.owner_name":"t."+c).join(",");
+  return `(SELECT ${own} FROM sec_transactions t WHERE t.owner_cik ${SAME_PERSON}`+(joint?`
+    UNION ALL SELECT ${shared} FROM sec_filing_owners o JOIN sec_transactions t ON t.accession=o.accession AND t.owner_cik IS NULL WHERE o.owner_cik ${SAME_PERSON})`:")");
+}
+const LINE_COLUMNS=["id","accession","owner_name","ticker","issuer_cik","transaction_date","transaction_code","acquired_disposed","derivative","shares","category","estimated_value"];
+/* One followed person in a single pass over their parsed lines (one sec_filings probe per line): the
+ * latest line (the feed's ordering) and the 30-day measures, counting restated lines once by the
+ * profile's rule (person-profile.mjs SAME_LINE / SUPERSEDED): each line's key is computed once; a line
+ * is superseded when a later 4/A repeats it, and a 4/A copy is dated by the first filing of that line.
+ * Only keys that a 4/A carries are grouped. filings_30d counts filings published in the window. */
+const personSummary=joint=>`WITH lines AS MATERIALIZED (SELECT t.*,f.published_at,f.is_amendment,f.issuer_name,${SAME_LINE} AS same
+    FROM ${personLines(joint,LINE_COLUMNS)} t JOIN sec_filings f ON f.accession=t.accession WHERE f.ingest_status='parsed'),
+  amended AS (SELECT t.same,MAX(t.published_at) AS amended_at FROM lines t WHERE t.is_amendment GROUP BY t.same),
+  copies AS (SELECT a.same,a.amended_at,MIN(t.published_at) AS first_published_at FROM amended a JOIN lines t ON t.same=a.same GROUP BY a.same,a.amended_at),
+  c AS (SELECT t.accession,t.transaction_date,t.category,t.estimated_value,t.published_at,${SUPERSEDED("k.amended_at","t.published_at")} AS superseded,
+    CASE WHEN t.is_amendment THEN k.first_published_at ELSE t.published_at END AS disclosed_at
+    FROM lines t LEFT JOIN copies k ON k.same=t.same),
+  latest AS (SELECT t.id,t.owner_name,t.ticker,t.issuer_name FROM lines t ORDER BY t.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC LIMIT 1)
+  SELECT l.id AS last_id,l.owner_name,l.ticker,l.issuer_name,m.* FROM (SELECT MAX(c.published_at) AS last_published_at,MAX(c.transaction_date) AS last_transaction_date,
+    (COUNT(DISTINCT c.accession) FILTER (WHERE c.published_at>=${RECENT_DAYS}))::integer AS filings_30d,
+    (COUNT(*) FILTER (WHERE NOT c.superseded AND ${RECENT_DISCLOSED}))::integer AS transactions_30d,
+    COALESCE(SUM(c.estimated_value) FILTER (WHERE c.category='reported_purchase' AND NOT c.superseded AND ${RECENT_DISCLOSED}),0) AS purchases_30d_value,
+    COALESCE(SUM(c.estimated_value) FILTER (WHERE c.category='reported_sale' AND NOT c.superseded AND ${RECENT_DISCLOSED}),0) AS sales_30d_value
+    FROM c) m LEFT JOIN latest l ON true`;
+function followSql(joint){
+  const people=`WITH ${FOLLOW_SET}
+SELECT fp.owner_cik,fp.created_at AS followed_at,${FOLLOW_COUNT} AS following,
+  s.last_id,s.issuer_name,COALESCE(s.owner_name,n.owner_name) AS owner_name,COALESCE(s.ticker,n.ticker) AS ticker,
   s.last_published_at,s.last_transaction_date,s.filings_30d,s.transactions_30d,s.purchases_30d_value,s.sales_30d_value
-  FROM ${FOLLOW_SET} fp
-  LEFT JOIN LATERAL (SELECT t.id,t.owner_name,t.ticker,f.issuer_name
-    FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-    WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed'
-    ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC LIMIT 1) l ON true
-  LEFT JOIN LATERAL (SELECT MAX(f.published_at) AS last_published_at,MAX(t.transaction_date) AS last_transaction_date,
-    (COUNT(DISTINCT t.accession) FILTER (WHERE ${FOLLOW_RECENT}))::integer AS filings_30d,
-    (COUNT(*) FILTER (WHERE ${FOLLOW_RECENT}))::integer AS transactions_30d,
-    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_purchase' AND ${FOLLOW_RECENT}),0) AS purchases_30d_value,
-    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_sale' AND ${FOLLOW_RECENT}),0) AS sales_30d_value
-    FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-    WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed') s ON true
+  FROM fp
+  LEFT JOIN LATERAL (${personSummary(joint)}) s ON true
+  LEFT JOIN LATERAL (SELECT x.owner_name,x.ticker FROM ${personLines(joint,["owner_name","ticker","transaction_date"])} x
+    WHERE s.last_id IS NULL ORDER BY x.transaction_date DESC NULLS LAST LIMIT 1) n ON true
   ORDER BY s.last_published_at DESC NULLS LAST,fp.created_at DESC,fp.owner_cik
   LIMIT ${MAX_FOLLOWS}`;
-// Same row shape as GET /v1/transactions items.
-const FOLLOWED_ITEMS_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
-  FROM ${FOLLOW_SET} fp
-  JOIN sec_transactions t ON t.owner_cik=fp.owner_cik
-  JOIN sec_filings f ON f.accession=t.accession
+  /* Same row shape as GET /v1/transactions items. Own lines belong to one person each; joint lines are
+   * read once per filing (a semi-join on the follow set), so a joint line listing two followed people
+   * appears once. */
+  const lines=joint?`SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik ${SAME_PERSON}
+    UNION ALL SELECT t.* FROM sec_transactions t WHERE t.owner_cik IS NULL AND t.accession IN (SELECT o.accession FROM fp JOIN sec_filing_owners o ON o.owner_cik ${SAME_PERSON})`
+    :`SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik ${SAME_PERSON}`;
+  const items=`WITH ${FOLLOW_SET}
+SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
+  FROM (${lines}) t JOIN sec_filings f ON f.accession=t.accession
   WHERE f.ingest_status='parsed'
   ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC
   LIMIT $2`;
+  // GET /v1/me/people: the follow list, newest follow first; name and ticker from the latest trade.
+  const list=`WITH ${FOLLOW_SET}
+SELECT fp.owner_cik,fp.created_at,s.owner_name,s.ticker,s.last_transaction_date,s.last_published_at
+  FROM fp
+  LEFT JOIN LATERAL (WITH lines AS MATERIALIZED (SELECT x.owner_name,x.ticker,x.transaction_date,f.published_at,f.ingest_status
+      FROM ${personLines(joint,["accession","owner_name","ticker","transaction_date"])} x JOIN sec_filings f ON f.accession=x.accession)
+    SELECT n.owner_name,n.ticker,m.last_transaction_date,m.last_published_at
+    FROM (SELECT MAX(l.transaction_date) AS last_transaction_date,MAX(l.published_at) FILTER (WHERE l.ingest_status='parsed') AS last_published_at FROM lines l) m
+    LEFT JOIN (SELECT l.owner_name,l.ticker FROM lines l ORDER BY l.transaction_date DESC NULLS LAST LIMIT 1) n ON true) s ON true
+  ORDER BY fp.created_at DESC,fp.owner_cik
+  LIMIT ${MAX_FOLLOWS}`;
+  // POST /v1/me/people: is this CIK (either form) a reporting person in the import?
+  const known=joint?`SELECT 1 FROM sec_transactions WHERE owner_cik=ANY($1::text[])
+  UNION ALL SELECT 1 FROM sec_filing_owners WHERE owner_cik=ANY($1::text[]) LIMIT 1`:"SELECT 1 FROM sec_transactions WHERE owner_cik=ANY($1::text[]) LIMIT 1";
+  return Object.freeze({people,items,list,known});
+}
+export const FOLLOW_SQL=Object.freeze({single:followSql(false),joint:followSql(true)});
+/* POST /v1/me/people: a person already followed in any stored form is answered with that row and nothing
+ * is inserted; otherwise the canonical form is inserted while the member is under the cap. Re-following
+ * (even at the cap, or racing a double click: ON CONFLICT returns the row) never fails. */
+export const FOLLOW_INSERT_SQL=`WITH existing AS (SELECT owner_cik FROM followed_people WHERE user_id=$1 AND LTRIM(owner_cik,'0')=LTRIM($2,'0') ORDER BY created_at LIMIT 1),
+  inserted AS (INSERT INTO followed_people(user_id,owner_cik)
+    SELECT $1,$2 WHERE NOT EXISTS(SELECT 1 FROM existing) AND (SELECT count(*) FROM followed_people WHERE user_id=$1)<${MAX_FOLLOWS}
+    ON CONFLICT(user_id,owner_cik) DO UPDATE SET created_at=followed_people.created_at RETURNING owner_cik)
+SELECT owner_cik FROM existing UNION ALL SELECT owner_cik FROM inserted`;
+export const FOLLOW_DELETE_SQL="DELETE FROM followed_people WHERE user_id=$1 AND LTRIM(owner_cik,'0')=LTRIM($2,'0')";
 const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
   FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
   WHERE t.id=ANY($1::text[])`;
+/* The owners of joint lines: JOINT_OWNERS_SQL / withJointOwners live in person-profile.mjs (one helper
+ * for the profile and every route here); JOINT_OWNERS_SQL is re-exported for the tests. */
+export { JOINT_OWNERS_SQL };
+/* GET /v1/insiders: reporting people, newest line first, each person once (padded and unpadded owner
+ * CIKs merged; owner_cik answered in the 10-digit form). With sec_filing_owners, owners of joint
+ * filings are listed too, under the name they filed with there, so a person who only files jointly
+ * can be found from the people directory and the header search. ticker and issuer_cik are from the
+ * person's newest line; filings counts distinct filings. q matches the name filed (as before). */
+const INSIDER_PICK="(ARRAY_AGG(l.%s ORDER BY l.transaction_date DESC NULLS LAST,l.accession DESC))[1]";
+const pick=c=>INSIDER_PICK.replace("%s",c)+" AS "+c;
+function insidersSql(joint){
+  const own=`SELECT LTRIM(t.owner_cik,'0') AS bare,t.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_transactions t
+    WHERE t.owner_cik IS NOT NULL AND ($1::text='' OR t.owner_name ILIKE '%'||$1||'%')`;
+  const shared=`SELECT LTRIM(o.owner_cik,'0'),o.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_filing_owners o
+    JOIN sec_transactions t ON t.accession=o.accession AND t.owner_cik IS NULL
+    WHERE ($1::text='' OR o.owner_name ILIKE '%'||$1||'%')`;
+  return `SELECT LPAD(l.bare,10,'0') AS owner_cik,${pick("owner_name")},${pick("ticker")},
+  LPAD(LTRIM(${INSIDER_PICK.replace("%s","issuer_cik")},'0'),10,'0') AS issuer_cik,
+  COUNT(DISTINCT l.accession)::integer AS filings,MAX(l.transaction_date) AS last_transaction_date
+  FROM (${own}${joint?"\n  UNION ALL "+shared:""}) l
+  WHERE l.bare<>'' GROUP BY l.bare ORDER BY last_transaction_date DESC NULLS LAST,l.bare LIMIT 100`;
+}
+export const INSIDERS_SQL=Object.freeze({single:insidersSql(false),joint:insidersSql(true)});
 const toCount=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):0};
 const toAmount=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
 async function followedPeopleUpdates(userId,limit,run=query){
   const base={source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."};
-  const people=(await run(FOLLOWED_PEOPLE_SQL,[userId])).rows;
+  const joint=await hasFilingOwners(run),sql=joint?FOLLOW_SQL.joint:FOLLOW_SQL.single;
+  const people=(await run(sql.people,[userId])).rows;
   if(!people.length)return {people:[],items:[],following:0,...base};
-  const items=(await run(FOLLOWED_ITEMS_SQL,[userId,limit])).rows;
+  const items=(await run(sql.items,[userId,limit])).rows;
   // A person's latest line is usually already in the feed (same ordering); fetch only the rest.
   const byId=new Map(items.map(row=>[row.id,row]));
   const missing=[...new Set(people.map(row=>row.last_id).filter(id=>id!=null&&!byId.has(id)))];
   if(missing.length)for(const row of (await run(TRANSACTIONS_BY_ID_SQL,[missing])).rows)byId.set(row.id,row);
+  await withJointOwners([...byId.values()],run,joint);
   return {
     people:people.map(row=>({owner_cik:row.owner_cik,owner_name:row.owner_name??null,followed_at:row.followed_at,
       ticker:row.ticker??null,issuer_name:row.issuer_name??null,
@@ -171,12 +273,15 @@ async function route(req,res,ctx){
       FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
       WHERE t.ticker=$1 AND f.ingest_status='parsed'
       ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST LIMIT 30`,[t]).catch(()=>({rows:[]}))).rows,
-      // GET /v1/media confirms reporting owners (and their filed names) and issuers from the SEC
-      // import; new upstream work is budgeted per member (else per address).
-      loadOwners:pairs=>loadOwnersFrom(ctx.query,pairs),loadIssuers:ciks=>loadIssuersFrom(ctx.query,ciks),
+      // GET /v1/media confirms reporting owners (and their filed names; joint filers through
+      // sec_filing_owners) and issuers from the SEC import; new upstream work is budgeted per member
+      // (else per address).
+      loadOwners:async pairs=>loadOwnersFrom(ctx.query,pairs,{joint:await hasFilingOwners(ctx.query)}),loadIssuers:ciks=>loadIssuersFrom(ctx.query,ciks),
       requester:decision.user?.id!=null?"user:"+decision.user.id:null});
     if(handled!==false)return;
   }
+  // GET /v1/people/<cik>: one reporting person's profile (src/person-profile.mjs); product data.
+  if(await handlePersonRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe}); if(result!==false) return result; }
   if(p==="/v1/me/brokerage/callback" && m==="GET"){
     // Top-level OAuth redirect uses the existing signed-in session; state is single-use and bound to this user.
@@ -241,6 +346,7 @@ async function route(req,res,ctx){
     const f=await query("SELECT * FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession]);
     if(!f.rows.length)throw failure(404,"Filing not found");
     const transactions=await query("SELECT * FROM sec_transactions WHERE accession=$1 ORDER BY id",[accession]);
+    await withJointOwners(transactions.rows,query,await hasFilingOwners(query));
     return json(res,200,{filing:f.rows[0],transactions:transactions.rows,note:"A Form 4 may include sales, grants, option exercises, and amendments; inspect transaction codes."});
   }
   if(p==="/v1/transactions" && m==="GET"){
@@ -252,6 +358,7 @@ async function route(req,res,ctx){
       JOIN sec_filings f ON f.accession=t.accession
       WHERE ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
+    await withJointOwners(rows.rows,query,await hasFilingOwners(query));
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
   }
   if(p==="/v1/companies" && m==="GET"){
@@ -277,13 +384,8 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/insiders" && m==="GET"){
     const q=(u.searchParams.get("q")||"").trim().slice(0,80);
-    const rows=await query(`SELECT owner_cik,
-      (ARRAY_AGG(owner_name ORDER BY transaction_date DESC NULLS LAST))[1] AS owner_name,
-      (ARRAY_AGG(ticker ORDER BY transaction_date DESC NULLS LAST))[1] AS ticker,
-      COUNT(DISTINCT accession)::integer AS filings,
-      MAX(transaction_date) AS last_transaction_date FROM sec_transactions
-      WHERE owner_cik IS NOT NULL AND ($1::text='' OR owner_name ILIKE '%'||$1||'%')
-      GROUP BY owner_cik ORDER BY last_transaction_date DESC NULLS LAST LIMIT 100`,[q]);
+    const sql=(await hasFilingOwners(ctx.query))?INSIDERS_SQL.joint:INSIDERS_SQL.single;
+    const rows=await ctx.query(sql,[q]);
     return json(res,200,{items:rows.rows,source:"SEC Form 4"});
   }
   if(p==="/v1/me" && m==="GET"){
@@ -292,30 +394,26 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/me/manual-holdings" && m==="GET"){
     const user=await requireUser(req,ctx);
-    const holdings=await query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
+    const holdings=await ctx.query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
     const tickers=holdings.rows.map(row=>row.ticker);
     let secItems=[];
     if(tickers.length){
-      const records=await query(`SELECT DISTINCT ON(t.ticker) t.ticker,t.owner_cik,t.owner_name,t.category,t.transaction_date,
+      const records=await ctx.query(`SELECT DISTINCT ON(t.ticker) t.ticker,t.accession,t.issuer_cik,t.owner_cik,t.owner_name,t.category,t.transaction_date,
         t.source_url,f.published_at
         FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
         WHERE t.ticker=ANY($1::text[]) AND f.ingest_status='parsed'
           AND f.published_at>=now()-interval '30 days'
         ORDER BY t.ticker,f.published_at DESC,t.transaction_date DESC NULLS LAST`,[tickers]);
-      secItems=records.rows;
+      // A joint line names every reporting owner (owners: [{cik, name}]), so each one links to their file.
+      secItems=await withJointOwners(records.rows,ctx.query,await hasFilingOwners(ctx.query));
     }
     return json(res,200,{items:holdings.rows,recentSecActivity:secItems,source:"user-entered",
       disclaimer:"Self-reported quantities, not broker-verified positions or live prices. SEC ticker matching does not constitute investment advice."});
   }
   if(p==="/v1/me/people" && m==="GET"){
     const user=await requireUser(req,ctx);
-    const results=await ctx.query(`SELECT fp.owner_cik,fp.created_at,
-      (SELECT owner_name FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS owner_name,
-      (SELECT ticker FROM sec_transactions WHERE owner_cik=fp.owner_cik ORDER BY transaction_date DESC NULLS LAST LIMIT 1) AS ticker,
-      (SELECT MAX(transaction_date) FROM sec_transactions WHERE owner_cik=fp.owner_cik) AS last_transaction_date,
-      (SELECT MAX(f.published_at) FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-        WHERE t.owner_cik=fp.owner_cik AND f.ingest_status='parsed') AS last_published_at
-      FROM followed_people fp WHERE fp.user_id=$1 ORDER BY fp.created_at DESC LIMIT ${MAX_FOLLOWS}`,[user.id]);
+    const sql=(await hasFilingOwners(ctx.query))?FOLLOW_SQL.joint:FOLLOW_SQL.single;
+    const results=await ctx.query(sql.list,[user.id]);
     return json(res,200,{items:results.rows,source:"SEC Form 4"});
   }
   // Must stay ahead of the DELETE /v1/me/people/:cik prefix route (GET only, exact path).
@@ -339,10 +437,11 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req,ctx);
-    const results=await query(`SELECT t.id,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
+    const results=await ctx.query(`SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
       FROM sec_transactions t JOIN watchlist w ON w.ticker=t.ticker
       JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
+    await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
     return json(res,200,{items:results.rows,delivery:"in_app_on_demand",note:"No email or push notifications are active."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
@@ -416,25 +515,20 @@ async function route(req,res,ctx){
     if(p==="/v1/me/people" && m==="POST"){
       const user=await requireUser(req,ctx);
       if(isLimited("follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
-      const x=await body(req),cik=String(x.owner_cik??"").trim();
-      if(!/^\d{1,12}$/.test(cik))throw failure(400,"Valid reporting-person SEC CIK required");
-      const person=await ctx.query("SELECT 1 FROM sec_transactions WHERE owner_cik=$1 LIMIT 1",[cik]);
+      const x=await body(req),cik=canonicalOwnerCik(x?.owner_cik);
+      if(!cik)throw failure(400,"Valid reporting-person SEC CIK required");
+      const sql=(await hasFilingOwners(ctx.query))?FOLLOW_SQL.joint:FOLLOW_SQL.single;
+      const person=await ctx.query(sql.known,[[cik.replace(/^0+/,""),cik]]);
       if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
-      // Same cap pattern as manual holdings. Re-following someone (even at the cap, or racing a
-      // double click) returns the existing row untouched, so only a new follow past the cap is refused.
-      const saved=await ctx.query(`INSERT INTO followed_people(user_id,owner_cik)
-        SELECT $1,$2 WHERE
-        (SELECT count(*) FROM followed_people WHERE user_id=$1)<${MAX_FOLLOWS}
-        OR EXISTS(SELECT 1 FROM followed_people WHERE user_id=$1 AND owner_cik=$2)
-        ON CONFLICT(user_id,owner_cik) DO UPDATE SET created_at=followed_people.created_at
-        RETURNING owner_cik`,[user.id,cik]);
+      const saved=await ctx.query(FOLLOW_INSERT_SQL,[user.id,cik]);
       if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
-      return json(res,200,{saved:true,owner_cik:cik});
+      return json(res,200,{saved:true,owner_cik:saved.rows[0]?.owner_cik??cik});
     }
     if(p.startsWith("/v1/me/people/") && m==="DELETE"){
       const user=await requireUser(req,ctx),cik=decodeURIComponent(p.slice("/v1/me/people/".length));
       if(!/^\d{1,12}$/.test(cik))throw failure(400,"Invalid SEC reporting-person CIK");
-      await ctx.query("DELETE FROM followed_people WHERE user_id=$1 AND owner_cik=$2",[user.id,cik]);
+      // Every stored form of this person goes ("1214156" and "0001214156" are one follow).
+      await ctx.query(FOLLOW_DELETE_SQL,[user.id,cik]);
       return json(res,200,{deleted:true,owner_cik:cik});
     }
     if(p==="/v1/me/watchlist" && m==="POST"){

@@ -24,6 +24,11 @@
  *   time (on the logo schedule, never held back by the photo queue's retryAfter) and stands in once known;
  *   until then the tile shows a still field of halftone dots.
  *
+ * When to ask again: a pending logo follows its own quick hint (retryAfterLogos, else 2/4/8 s ...) and a pending
+ * headshot the engine's photo hint, both on one schedule of ten asks (about six minutes). A headshot whose company
+ * job has not started yet (listed in the answer's `queued`) waits its turn without using that schedule up: it is
+ * asked every 15-60 s while it stays queued, and no key is asked for longer than about 15 minutes in all.
+ *
  * Tiles never change size: the box comes from --ins-size and every state only swaps the tile's classes
  * and its one <img>'s src (no nodes are added or removed, so the motion layer never rescans for it).
  * A picture that arrives later lands on the site's spring (entity-media.css); answers are cached in
@@ -119,7 +124,7 @@ function monogram(text){
 }
 const companySymbol='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2m3 0h2M9 11h2m3 0h2M9 15h2m3 0h2"/></svg>';
 /* A company's name as people write it: SEC titles arrive in capitals ("FORD MOTOR CO"). */
-const companyLabel=s=>{const n=String(s||"").replace(/\s+/g," ").trim().slice(0,120);return n&&!/[a-z]/.test(n)&&n.length>4?titleCase(n):n;};
+const companyLabel=s=>{const n=String(s||"").replace(/\s*\/[A-Z]{2,3}\/?\s*$/,"").replace(/\s+\/(?:NEW|DE|MD|NV)\/?(?=\s|$)/gi,"").replace(/\s+/g," ").trim().slice(0,120);return n&&!/[a-z]/.test(n)&&n.length>4?titleCase(n):n;};
 
 /* ---------- identities ---------- */
 // Engine media are content-addressed on this origin; nothing else from an answer is ever loaded.
@@ -177,8 +182,12 @@ const broken=new Set(),retried=new Set();   // image URLs that failed to load (t
 // p:<owner CIK>:cik:<issuer CIK> (an issuer with no ticker) or p:<owner CIK> (no issuer known). The part after
 // "p:" is what goes in people=; an engine that does not know a form lists it as invalid and the tile steps down.
 const queue=new Set(),inflight=new Set(),tries=new Map(),due=new Map(),gaveUp=new Set();
+const since=new Map(),queuedAsks=new Map();   // key -> when it was first answered pending / asks while its job was queued
 const LIMITS={t:60,c:60,p:100};
 const SCHEDULE=[2,4,8,15,30,60,60,60,60,60];   // seconds: about six minutes in all
+const QUEUED=[15,15,30,30,60];                  // seconds between asks while a headshot's company job waits its turn
+const CEILING=15*60e3;                          // no key is asked again for longer than this after its first pending answer
+const drop=rk=>{tries.delete(rk);since.delete(rk);queuedAsks.delete(rk);};
 const OUTAGE=[30,120];                          // a 5xx or a dropped connection: asked again after 30 s, then 2 min, then not this visit
 let offlineUntil=0,outages=0,lostOnline=false,flushTimer=0,firstQueued=0,retryTimer=0,wanted=new Set();
 const isOffline=()=>offlineUntil>Date.now();
@@ -234,7 +243,7 @@ async function send(c){
  else if(res&&res.status===400){
   // The engine could read nothing in this request (a key form it does not know): nothing to show for these keys
   // on this visit; every other request goes on as before.
-  for(const k of keys){tries.delete(k);gaveUp.add(k);}
+  for(const k of keys){drop(k);gaveUp.add(k);}
  }
  else{
   // Not available to this page (a preview without the engine, signed out, unpaid): curated pictures and
@@ -264,6 +273,9 @@ function apply(body,sent){
  for(const k of Array.isArray(p.logos)?p.logos:[]){const s=String(k);const rk=s.startsWith("cik:")?(apiCik(s.slice(4))?"c:"+apiCik(s.slice(4)):""):(apiTicker(s)?"t:"+apiTicker(s):"");if(rk)pending.add(rk);}
  const pendingPhotos=Array.isArray(p.photos)?p.photos:[];
  for(const k of pendingPhotos){const rk=pairKey(k);if(rk)pending.add(rk);}
+ // Headshots whose company job has not started yet: asked again without using up the schedule.
+ const queued=new Set();
+ for(const k of Array.isArray(body.queued)?body.queued:[]){const rk=pairKey(k);if(rk&&pending.has(rk))queued.add(rk);}
  /* When to ask again. retryAfter is the engine's hint for the slowest pending kind (a photo job that waits
     its turn says 15 s), so it paces headshots only. Logos resolve in a second or two: they follow their own
     hint (retryAfterLogos) or the 2/4/8 s schedule, so a logo, and the person tile it stands in for, is never
@@ -271,20 +283,29 @@ function apply(body,sent){
  const secs=(v,fallback)=>{const n=Number(v);return v!=null&&Number.isFinite(n)?Math.max(0,Math.min(120,n)):fallback;};
  const photoAfter=secs(body.retryAfterPhotos,secs(body.retryAfter,0));
  const logoAfter=secs(body.retryAfterLogos,pendingPhotos.length?0:secs(body.retryAfter,0));
- for(const rk of pending){if(get(cacheKey(rk))===undefined)later(rk,rk[0]==="p"?photoAfter:logoAfter,true);}
+ for(const rk of pending){if(get(cacheKey(rk))===undefined)later(rk,rk[0]==="p"?photoAfter:logoAfter,true,queued.has(rk));}
  // Asked for, answered neither way (a form this engine does not know, listed as invalid): nothing to show for it on
  // this visit. Kept in memory only, so the same person asked for another way (with a ticker) is still answered.
  for(const rk of sent){
   if(pending.has(rk))continue;
-  tries.delete(rk);
+  drop(rk);
   if(get(cacheKey(rk))===undefined)gaveUp.add(rk);
  }
 }
-function later(rk,afterS,counts){
+/* Asks for rk again later. counts: the ask uses up one step of SCHEDULE (a 429 does not); inQueue: the engine says
+   the company job behind this headshot has not started, so it waits its turn on QUEUED instead, off the schedule.
+   Either way nothing is asked again once CEILING has passed since the key was first answered pending. */
+function later(rk,afterS,counts,inQueue=false){
+ const now=Date.now(),first=since.get(rk)??now;
+ if(!since.has(rk))since.set(rk,first);
  const n=tries.get(rk)||0;
- if(counts&&n>=SCHEDULE.length){tries.delete(rk);gaveUp.add(rk);return;}
- if(counts)tries.set(rk,n+1);else if(!tries.has(rk))tries.set(rk,0);
- due.set(rk,Date.now()+1000*Math.max(SCHEDULE[Math.min(n,SCHEDULE.length-1)],afterS));
+ if(now-first>=CEILING||(counts&&!inQueue&&n>=SCHEDULE.length)){drop(rk);gaveUp.add(rk);return;}
+ if(!tries.has(rk))tries.set(rk,0);
+ let wait;
+ if(inQueue){const q=queuedAsks.get(rk)||0;queuedAsks.set(rk,q+1);wait=Math.max(QUEUED[Math.min(q,QUEUED.length-1)],afterS);}
+ else{if(counts)tries.set(rk,n+1);wait=Math.max(SCHEDULE[Math.min(n,SCHEDULE.length-1)],afterS);}
+ // The last ask lands at the ceiling, not past it.
+ due.set(rk,Math.min(now+1000*wait,Math.max(now+1000,first+CEILING)));
  armRetry();
 }
 function armRetry(){
@@ -301,7 +322,7 @@ function retryDue(){
   if(t>now+250)continue;
   due.delete(rk);
   // Only what a tile on the page still waits for is asked again.
-  if(wanted.has(rk))need(rk);else tries.delete(rk);
+  if(wanted.has(rk))need(rk);else drop(rk);
  }
  armRetry();
 }
@@ -519,15 +540,20 @@ function pass(){
 }
 function wakeSoft(){for(const el of soft){soft.delete(el);if(el.isConnected){waiting.add(el);}}update();}
 
-/* ---------- lazy: tiles ask when they come within 600px of the viewport ---------- */
+/* ---------- lazy: tiles ask when they come within 600px of the viewport ----------
+   Near is a matter of where the tile is laid out: a tile clipped for a moment (a line still being typed in with a
+   clip-path, a strip's overflow) but within the margin asks with the rest of the first screen, not in a batch of
+   its own once the clip lets go. A tile with no box (a closed tab panel) waits until it has one. */
+const MARGIN=600;
+const nearBox=r=>(r.width>0||r.height>0)&&r.bottom>-MARGIN&&r.top<innerHeight+MARGIN&&r.right>-MARGIN&&r.left<innerWidth+MARGIN;
 const io="IntersectionObserver" in window?new IntersectionObserver(entries=>{
  for(const e of entries){
-  if(!e.isIntersecting)continue;
+  if(!e.isIntersecting&&!nearBox(e.boundingClientRect))continue;
   io.unobserve(e.target);
   st(e.target).near=true;
   settle(e.target);
  }
-},{rootMargin:"600px",scrollMargin:"600px"}):null;
+},{rootMargin:MARGIN+"px",scrollMargin:MARGIN+"px"}):null;
 const bound=new WeakSet();
 function bind(el){
  if(bound.has(el))return;
@@ -680,7 +706,7 @@ function ready(root=document,{timeout=20000}={}){
 // refresh(): forget every answer and ask again; tiles keep what they show until the new answer lands.
 function refresh(){
  cache.clear();try{sessionStorage.removeItem(STORE);}catch{}
- tries.clear();due.clear();gaveUp.clear();broken.clear();retried.clear();preloads.clear();offlineUntil=0;
+ tries.clear();since.clear();queuedAsks.clear();due.clear();gaveUp.clear();broken.clear();retried.clear();preloads.clear();offlineUntil=0;
  for(const el of document.querySelectorAll("[data-media]")){if(bound.has(el)){const s=st(el);s.sig=null;waiting.add(el);}}
  update();
 }

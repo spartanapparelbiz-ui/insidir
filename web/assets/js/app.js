@@ -14,7 +14,7 @@
   const NS = "http://www.w3.org/2000/svg";
 
   /* ---------- paywall: 401 → sign in, 402 → subscribe ---------- */
-  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "watchlist", "portfolio", "alerts"];
+  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"];
   const ACCOUNT_PAGES = ["billing", "account"];
   const OPEN_API = /^\/v1(\/?$|\/auth\/|\/billing\/|\/sources$)/;
   const pageKey = () => (/^\/([a-z]+)(?:\.html)?$/.exec(location.pathname) || [])[1] || "";
@@ -288,7 +288,7 @@
     const tileFor = s => {
       const media = window.InsidirMedia;
       if (!media) return "";
-      try { return s.kind === "person" ? media.portrait(s.name, s.ticker || "", "sm", { cik: s.cik }) : media.logo(s.ticker, "sm", { name: s.label }); } catch { return ""; }
+      try { return s.kind === "person" ? media.portrait(s.name, s.ticker || "", "sm", { cik: s.cik, issuerCik: s.issuerCik }) : media.logo(s.ticker, "sm", { name: s.label }); } catch { return ""; }
     };
     const renderList = q => {
       if (!suggestions.length) {
@@ -322,7 +322,13 @@
       }
       suggestions = [
         ...(companies.status === "fulfilled" ? companies.value.items || [] : []).slice(0, 7).map(c => ({ kind: "company", ticker: c.ticker, label: c.name, meta: "Company", href: "company.html?ticker=" + encodeURIComponent(c.ticker) })),
-        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", name: p.owner_name, cik: /^\d{1,12}$/.test(String(p.owner_cik || "")) ? String(p.owner_cik) : "", ticker: p.ticker || "", label: window.InsidirMedia?.displayName ? window.InsidirMedia.displayName(p.owner_name) : p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
+        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => {
+          const cik = /^\d{1,12}$/.test(String(p.owner_cik || "")) && /[1-9]/.test(String(p.owner_cik)) ? String(p.owner_cik) : "";
+          const issuerCik = /^\d{1,12}$/.test(String(p.issuer_cik || "")) ? String(p.issuer_cik) : "";
+          // A person opens their own file (person.html?cik=, the owner CIK without leading zeros); with no CIK, the directory search.
+          return { kind: "person", name: p.owner_name, cik, issuerCik, ticker: p.ticker || "", label: window.InsidirMedia?.displayName ? window.InsidirMedia.displayName(p.owner_name) : p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider",
+            href: cik ? "person.html?cik=" + cik.replace(/^0+/, "") : "people.html?q=" + encodeURIComponent(String(p.owner_name || "").slice(0, 80)) + "#v10-directory" };
+        })
       ];
       renderList(q);
     };

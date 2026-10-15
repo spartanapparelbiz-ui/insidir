@@ -1,9 +1,10 @@
 /* Real SEC reporting people (from /v1/insiders) and the reader's followed people (/v1/me/people), on people.html
    (directory + following). The overview's own "People you follow" module is v13-overview.js.
-   Every person gets a tile from entity-media.js identified by their SEC CIK: a headshot, the issuer's logo standing in
-   for one, or initials only when neither exists.
+   Every person gets a tile from entity-media.js identified by their SEC CIK (with their company's CIK for the logo
+   standing in): a headshot, the issuer's logo standing in for one, or initials only when neither exists. Every
+   name opens that person's own file, person.html?cik=<owner CIK without leading zeros>.
 
-   Arriving with ?q= (a person link from the dashboard, or a Familiar faces tile) runs that search
+   Arriving with ?q= (a person link from a page that knows only a name, such as a joint filing) runs that search
    and brings the directory into view, with focus on its status line, so the result is on screen
    instead of three screens below the hero. The directory shows 24 people at a time. */
 (()=>{"use strict";
@@ -14,7 +15,9 @@ const ticker=x=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(x||"").toUpperCase())?S
 const day=x=>{let d=new Date(x);return x&&!Number.isNaN(d.getTime())?new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d):"Not reported"};
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
 const companyHref=t=>t?"company.html?ticker="+encodeURIComponent(t):"filings.html";
-const personHref=n=>"people.html?q="+encodeURIComponent(String(n||"").trim().slice(0,80))+"#v10-directory";
+/* A person's file whenever the SEC CIK is known; else the directory's search for the name. */
+const personHref=(n,id)=>{const c=String(id??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"people.html?q="+encodeURIComponent(String(n||"").trim().slice(0,80))+"#v10-directory";};
+const nameLink=(raw,id)=>'<a class="v10-person-link" href="'+esc(personHref(raw,id))+'">'+esc(shown(raw))+'</a>';
 const host=$("v10-people-results"),followingHost=$("v10-followed-results"),status=$("v10-people-status");
 const PAGE=24;
 let records=[],following=new Set(),followState="loading",loadError=null,visible=PAGE,current="",seq=0;
@@ -33,15 +36,15 @@ function followButton(id,compact){
  return '<button type="button" class="v10-follow-btn'+(saved?" is-following":"")+'" data-person-follow="'+esc(id)+'" aria-pressed="'+saved+'"'+(ready?"":" disabled")+'>'+(saved?"Following ✓":compact?"Follow +":"Follow person +")+'</button>';
 }
 /* The company a person files for, named with its own logo tile (aria-hidden; the ticker says it). */
-const companyWithLogo=(t,issuer)=>t?'<span class="ins-inline">'+(media?.logo(t,"xs",{name:issuer?String(issuer).slice(0,60):""})||"")+'<span>'+esc(t)+'</span></span>':"";
+const companyWithLogo=(t,issuer,issuerCik)=>t?'<span class="ins-inline">'+(media?.logo(t,"xs",{cik:cik(issuerCik),name:issuer?String(issuer).slice(0,60):""})||"")+'<span>'+esc(t)+'</span></span>':"";
 function card(p){
- const raw=p.owner_name||"Reporting person",name=shown(raw),t=ticker(p.ticker),id=cik(p.owner_cik);
- const title=esc(name),issuer=p.issuer_name?String(p.issuer_name).slice(0,60):"";
+ const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik),ic=cik(p.issuer_cik);
+ const issuer=p.issuer_name?String(p.issuer_name).slice(0,60):"";
  const facts=['<div><dt>Latest transaction</dt><dd>'+esc(day(p.last_transaction_date))+'</dd></div>'];
  if(Number.isFinite(Number(p.filings))&&Number(p.filings)>0)facts.push('<div><dt>Filings imported</dt><dd>'+esc(Number(p.filings))+'</dd></div>');
- const where=t?companyWithLogo(t,issuer)+(issuer?" · "+esc(issuer):""):esc(issuer||"SEC reporting person");
+ const where=t?companyWithLogo(t,issuer,ic)+(issuer?" · "+esc(issuer):""):esc(issuer||"SEC reporting person");
  return '<article class="v10-person-card">'+
-  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong>'+title+'</strong><small>'+where+'</small></div></div>'+
+  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md",{cik:id,issuerCik:ic})||"")+'<div class="v10-person-card__identity"><strong>'+nameLink(raw,id)+'</strong><small>'+where+'</small></div></div>'+
   '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
   '<div class="v10-person-card__actions">'+(t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<a href="filings.html">Filings ↗</a>')+followButton(id,false)+'</div></article>';
 }
@@ -74,9 +77,9 @@ function showMore(){
 function drawFollowing(items){
  if(!followingHost)return;
  followingHost.innerHTML=items.length?items.map(p=>{
-  const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik);
-  return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md",{cik:id})||"")+
-  '<div><strong>'+esc(shown(raw))+'</strong><small>'+(t?companyWithLogo(t,p.issuer_name):"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
+  const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik),ic=cik(p.issuer_cik);
+  return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md",{cik:id,issuerCik:ic})||"")+
+  '<div><strong>'+nameLink(raw,id)+'</strong><small>'+(t?companyWithLogo(t,p.issuer_name,ic):"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
   (t?'<a href="'+esc(companyHref(t))+'" data-hf-atom>'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true" data-hf-atom>Unfollow</button>':"")+'</div>';
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
  media?.hydrate(followingHost);
@@ -118,17 +121,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   return load(query);
  };
  form?.addEventListener("submit",e=>{e.preventDefault();void search(String(input.value||"").trim().slice(0,80));});
- // Familiar faces: search in place instead of reloading the page at the top.
- document.querySelector(".v10-known__grid")?.addEventListener("click",e=>{
-  const a=e.target.closest?.("a[href]");
-  if(!a||!host||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
-  const u=new URL(a.href,location.href);
-  if(u.origin!==location.origin||u.pathname!==location.pathname)return;
-  const query=(u.searchParams.get("q")||"").trim().slice(0,80);if(!query)return;
-  e.preventDefault();
-  if(input)input.value=query;
-  void search(query,{show:true});
- });
  document.querySelector("[data-focus-search]")?.addEventListener("click",()=>{if(!input)return;input.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});input.focus({preventScroll:true});});
  document.addEventListener("click",async e=>{
   if(e.target.closest?.("button[data-people-more]")){showMore();return;}

@@ -4,6 +4,7 @@
 import {randomBytes,createCipheriv,createDecipheriv,createHash} from "node:crypto";
 import {config} from "./config.mjs";
 import {query,requireDb} from "./db.mjs";
+import {withJointOwners,hasFilingOwners} from "./person-profile.mjs";
 
 const apiHost="api.snaptrade.com", authHost="dashboard.snaptrade.com";
 const fault=(status,message)=>Object.assign(new Error(message),{status});
@@ -225,13 +226,14 @@ export async function readPortfolio(userId) {
   const tickers=[...researchTickers].slice(0,70);
   let recent=[];
   if(tickers.length){
-    const q=await query(`SELECT DISTINCT ON (t.ticker) t.ticker,t.owner_cik,t.owner_name,t.category,
+    const q=await query(`SELECT DISTINCT ON (t.ticker) t.ticker,t.accession,t.issuer_cik,t.owner_cik,t.owner_name,t.category,
       t.transaction_date,t.source_url,f.published_at
       FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
       WHERE t.ticker=ANY($1::text[]) AND f.ingest_status='parsed'
         AND f.published_at>=now()-interval '30 days'
       ORDER BY t.ticker,f.published_at DESC,t.transaction_date DESC NULLS LAST`,[tickers]);
-    recent=q.rows.map(x=>({...x,note:"Ticker-only match; verify the security and the filing before drawing conclusions."}));
+    // A joint line (several reporting owners, owner_cik NULL) names each owner, so each links to their own file.
+    recent=(await withJointOwners(q.rows,query,await hasFilingOwners(query))).map(x=>({...x,note:"Ticker-only match; verify the security and the filing before drawing conclusions."}));
   }
   return {accounts,recentSecActivity:recent,readOnly:true,
     truncatedAccounts:investments.length>8,

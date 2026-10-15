@@ -6,6 +6,17 @@ const money=x=>x==null||!Number.isFinite(Number(x))?"Not reported":new Intl.Numb
 /* Identity tiles (entity-media.js): the issuer's logo in the heading, each reporting person's headshot (or
    the issuer's logo standing in for it, found by issuer CIK when the filing has no ticker) in the rows. Names stay visible beside them, so tiles are aria-hidden. */
 const media=window.InsidirMedia;
+/* Each reporting person's name opens their own file (person.html?cik=, the owner CIK without leading zeros) when the
+   line carries the CIK; a joint filing (several reporting owners on one line, owner_cik null) names each owner the
+   engine lists in owners:[{cik,name}], each linked; with no list (a line imported before the owners were recorded) its
+   joined owner_name is split on the commas (a ", Inc." or ", Jr." stays on the name before it). A name with no CIK
+   opens the people directory's search for it (people.html?q=<name>#v10-directory). */
+const fileHref=cik=>{const c=String(cik??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"";};
+const personHref=(cik,name)=>{const n=String(name??"").replace(/\s+/g," ").trim().slice(0,80);return fileHref(cik)||(n?"people.html?q="+encodeURIComponent(n)+"#v10-directory":"");};
+const SUFFIX=/^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+const splitNames=s=>String(s??"").split(/\s*,\s*/).filter(Boolean).reduce((out,p)=>{if(out.length&&SUFFIX.test(p))out[out.length-1]+=", "+p;else out.push(p);return out;},[]);
+const ownersOf=t=>{const listed=t.owner_cik?[{cik:t.owner_cik,name:t.owner_name}]:Array.isArray(t.owners)&&t.owners.length?t.owners.filter(o=>o&&(o.cik||o.name)):splitNames(t.owner_name).map(name=>({cik:null,name}));return listed.length?listed:[{cik:null,name:""}];};
+const nameLink=o=>{const n=E(o.name||"Reporting person"),h=personHref(o.cik,o.name);return h?'<a class="ins-person-link" href="'+E(h)+'">'+n+"</a>":n;};
 const source=x=>{try{let u=new URL(String(x));return u.protocol==="https:"&&(u.hostname==="sec.gov"||u.hostname==="www.sec.gov")&&!u.username&&!u.password?u.toString():"";}catch{return ""}};
 document.addEventListener("DOMContentLoaded",async()=>{
   const a=new URLSearchParams(location.search).get("accession");
@@ -25,8 +36,8 @@ document.addEventListener("DOMContentLoaded",async()=>{
     src.innerHTML=url?'<a href="'+E(url)+'" target="_blank" rel="noopener noreferrer" class="cl-source-link" data-hf-atom>Read original SEC filing ↗</a>':"Original source URL unavailable";
     rows.innerHTML=items.length?items.map(t=>{
       const type=t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction";
-      const who=E(t.owner_name||"Reporting person");
-      return "<tr><td>"+(media?"<div class='ins-person-cell'>"+media.portrait(t.owner_name||"",t.ticker||f.ticker,"sm",{cik:t.owner_cik,issuerCik:t.issuer_cik||f.issuer_cik})+"<span class='ins-person-cell__name'>"+who+"</span></div>":who)+"</td><td>"+E(type)+"<span class='cl-muted'>Code: "+E(t.transaction_code||"not provided")+"</span></td><td>"+E(d(t.transaction_date))+"</td><td>"+E(money(t.estimated_value))+"</td></tr>";
+      const owners=ownersOf(t),lead=owners.find(o=>fileHref(o.cik))||owners[0],who=owners.map(nameLink).join(", ");
+      return "<tr><td>"+(media?"<div class='ins-person-cell'>"+media.portrait(lead.name||"",t.ticker||f.ticker,"sm",{cik:lead.cik,issuerCik:t.issuer_cik||f.issuer_cik})+"<span class='ins-person-cell__name'>"+who+"</span></div>":who)+"</td><td>"+E(type)+"<span class='cl-muted'>Code: "+E(t.transaction_code||"not provided")+"</span></td><td>"+E(d(t.transaction_date))+"</td><td>"+E(money(t.estimated_value))+"</td></tr>";
     }).join(""):'<tr><td colspan="4" class="cl-empty">No parsed transactions are available for this filing. Open the original SEC document.</td></tr>';
     media?.hydrate(heading);media?.hydrate(rows);
   }catch(e){status.textContent=e.message;rows.innerHTML='<tr><td colspan="4" class="cl-empty">Filing details unavailable. <a href="filings.html">Browse other filings →</a></td></tr>';}

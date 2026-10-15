@@ -58,6 +58,14 @@ body.v13 .rd-table--trades .rd-ent .ins-media{--ins-size:28px!important}
 body.v13 .rd-row--watch>.ins-media{--ins-size:32px!important}
 body.v13 .rd-co__id .ins-media{--ins-size:24px!important}
 body.v13 .rd-ent>[data-ent],body.v13 .rd-ent>a[data-ent]{min-width:0!important}
+/* A joint filing's name (v3-dashboard.js personName): its lead owner, then "and N others" (the filing, every owner
+   listed there and in the title), as one label on one line. The lead name shortens with an ellipsis before the count
+   ever does, so the label never wraps word by word or runs into a ticker or a tile beside it. */
+body.v13 .rd-who{display:inline-flex!important;align-items:baseline!important;gap:0 .6ch!important;min-width:0!important;max-width:100%!important;white-space:nowrap!important;vertical-align:baseline!important}
+body.v13 .rd-who>[data-ent]{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.v13 .rd-who>.rd-who__more{flex:none!important;font-weight:400!important;color:var(--hf-muted)!important;white-space:nowrap!important}
+body.v13 a.rd-who__more{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
+body.v13 a.rd-who__more:hover,body.v13 a.rd-who__more:focus-visible{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 /* A tile's image lands on the spring when it loads (entity-media.js); here the tile only keeps its box. */
 body.v13 .ins-media{flex-shrink:0!important}
 
@@ -131,8 +139,8 @@ body.v13 .rd-feed__row{position:relative!important;display:grid!important;grid-t
 body.v13 .rd-feed__row:not(.is-skeleton):hover{background:var(--hf-surface)!important}
 body.v13 .rd-feed__body{min-width:0!important}
 body.v13 .rd-feed__l1{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:2px 10px!important;margin:0!important;font:400 12.5px/24px var(--hf-mono)!important;color:var(--hf-soft)!important}
-body.v13 .rd-feed__l1>a[data-ent]{font-weight:700!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important;white-space:nowrap!important}
-body.v13 .rd-feed__l1>a[data-ent]:hover{text-decoration-color:currentColor!important}
+body.v13 .rd-feed__l1>a[data-ent],body.v13 .rd-feed__l1>.rd-who>a[data-ent]{font-weight:700!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important;white-space:nowrap!important}
+body.v13 .rd-feed__l1>a[data-ent]:hover,body.v13 .rd-feed__l1>.rd-who>a[data-ent]:hover{text-decoration-color:currentColor!important}
 body.v13 .rd-feed__deal{color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .rd-feed__suffix{color:var(--hf-muted)!important;font-size:11px!important}
 body.v13 .rd-feed__l2{margin:2px 0 0!important;font:400 11px/20px var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
@@ -215,6 +223,9 @@ body.v13 .rd-row__link:focus-visible{outline:0!important}
 body.v13 .rd-row--watch:has(.rd-row__link:focus-visible){outline:1px solid var(--hf-ink)!important;outline-offset:-1px!important}
 body.v13 .rd-row--watch :is(.rd-save-btn,.ins-media,.ins-media a){position:relative!important;z-index:1!important}
 body.v13 .rd-row--watch .rd-row__detail{line-height:1.75!important}
+/* A name in the watchlist line opens that person's file: above the row's stretched company link. */
+body.v13 .rd-row--watch .rd-row__detail a[data-ent]{position:relative!important;z-index:1!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+body.v13 .rd-row--watch .rd-row__detail a[data-ent]:hover{text-decoration-color:currentColor!important}
 body.v13 .rd-row--suggest>.rd-save-btn{justify-self:end!important}
 body.v13 .rd-row-wrap{list-style:none!important;margin:0!important;padding:0!important}
 body.v13 .rd-row--note{grid-template-columns:112px minmax(0,1fr) 14px!important;box-sizing:border-box!important;min-height:76px!important}
@@ -312,7 +323,7 @@ body.v13 .rd-tip__key--down{background:var(--hf-down)!important}
 body.v13 .rd-tip__net{margin:6px 0 0!important;padding:6px 0 0!important;border-top:1px solid var(--hf-line)!important;font:500 11px/1.6 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-soft)!important}
 
 /* By company: sold grows left from the centre line, bought right; the net and exact values are printed. */
-body.v13 .rd-co{display:grid!important;grid-template-columns:minmax(96px,1.15fr) minmax(0,1fr) minmax(0,1fr) minmax(92px,auto)!important;column-gap:0!important;margin:0!important}
+body.v13 .rd-co{display:grid!important;grid-template-columns:minmax(120px,1.6fr) minmax(0,1fr) minmax(0,1fr) minmax(92px,auto)!important;column-gap:0!important;margin:0!important}
 body.v13 .rd-co>*,body.v13 .rd-co__row{grid-column:1/-1!important}
 body.v13 .rd-co__head,body.v13 .rd-co__list,body.v13 .rd-co__row{display:grid!important;grid-template-columns:subgrid!important;align-items:center!important}
 body.v13 .rd-co__head{min-height:28px!important;padding:0 0 8px!important;border-bottom:1px solid var(--hf-line)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;box-sizing:border-box!important}
@@ -327,7 +338,8 @@ body.v13 .rd-co__row:not(.is-skeleton):hover{background:var(--hf-surface)!import
 body.v13 .rd-co__id{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding-right:10px!important;color:var(--hf-ink)!important;text-decoration:none!important}
 body.v13 .rd-co__id>span{display:flex!important;flex-direction:column!important;min-width:0!important}
 body.v13 .rd-co__id strong{font:700 12.5px/1.3 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important}
-body.v13 .rd-co__id small{font:400 10px/1.4 var(--hf-mono)!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+/* The company's name in full on up to two lines ("Occidental Petroleum Corp"), cut only past that. */
+body.v13 .rd-co__id small{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;font:400 10px/1.4 var(--hf-mono)!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:normal!important;overflow-wrap:break-word!important}
 body.v13 .rd-co__id:hover strong{text-decoration:underline!important;text-underline-offset:4px!important}
 body.v13 .rd-co__track{display:flex!important;height:10px!important;min-width:0!important}
 body.v13 .rd-co__track--sell{justify-content:flex-end!important;border-right:1px solid var(--hf-soft)!important}
@@ -356,10 +368,14 @@ body.v13 .rd-big__what a:hover{text-decoration-color:currentColor!important}
 body.v13 .rd-big__terms{grid-area:terms!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
 body.v13 .rd-big:not(.is-skeleton):hover{background:var(--hf-surface)!important}
-/* Wide screens: one line per trade, the bar last before the link; the terms column is fixed so every bar
-   starts at the same x and shares one scale. Room is kept around the links for their focus ring. */
+/* Wide screens: one line per trade, the bar last before the link. No column is sized by its content (the what and
+   terms columns share the space 1.1 : 1, the bar takes up to 72px), so every row has the same columns, every bar
+   starts at the same x and shares one scale. The what column has the room a full name needs; the terms wrap to a
+   second line when they must, inside a row height that already allows two. The badge and the ticker never shrink;
+   only a long name shortens, with an ellipsis. Room is kept around the links for their focus ring. */
 @media (min-width:1360px){
-  body.v13 .rd-big{grid-template-columns:34px 150px minmax(0,1fr) 500px minmax(48px,.4fr) auto!important;grid-template-areas:"rank value what terms bar link"!important;gap:0 18px!important;min-height:56px!important;padding:12px 0!important}
+  body.v13 .rd-big{grid-template-columns:34px 150px minmax(0,1.1fr) minmax(0,1fr) minmax(48px,72px) auto!important;grid-template-areas:"rank value what terms bar link"!important;gap:0 16px!important;min-height:60px!important;padding:12px 0!important}
+  body.v13 .rd-big__what>:not(:last-child){flex:none!important}
   body.v13 .rd-big__what{flex-wrap:nowrap!important;overflow:hidden!important;padding:4px!important;margin:-4px!important}
   body.v13 .rd-big__what>.rd-ent:last-child{min-width:0!important;overflow:hidden!important}
   body.v13 .rd-big__what>.rd-ent:last-child a{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
@@ -370,10 +386,17 @@ body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight
 body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:right!important}
 body.v13 .rd-table--trades td.rd-nb .rd-sub{white-space:nowrap!important}
 body.v13 .rd-table--trades .rd-td-co .rd-sub{max-width:180px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-body.v13 .rd-table--trades .rd-ent>a,body.v13 .rd-table--trades .rd-ent>span[data-ent]{color:var(--hf-ink)!important;font-weight:500!important;overflow-wrap:anywhere!important}
-body.v13 .rd-table--trades .rd-ent>a{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
-body.v13 .rd-table--trades .rd-ent>a:hover{text-decoration-color:currentColor!important}
+body.v13 .rd-table--trades .rd-ent>a,body.v13 .rd-table--trades .rd-ent>span[data-ent],body.v13 .rd-table--trades .rd-who>[data-ent]{color:var(--hf-ink)!important;font-weight:500!important;overflow-wrap:anywhere!important}
+body.v13 .rd-table--trades .rd-ent>a,body.v13 .rd-table--trades .rd-who>a[data-ent]{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
+body.v13 .rd-table--trades .rd-ent>a:hover,body.v13 .rd-table--trades .rd-who>a[data-ent]:hover{text-decoration-color:currentColor!important}
 body.v13 .rd-table--trades tbody tr{height:66px!important}
+/* In the wide table a joint filing's label takes two short lines: the lead owner (wrapping like every other name in the
+   column), then "and N others" under it, so the Person column never widens for it. */
+@media (min-width:1120px){
+  body.v13 .rd-table--trades .rd-who{flex-direction:column!important;align-items:flex-start!important;gap:1px 0!important;white-space:normal!important}
+  body.v13 .rd-table--trades .rd-who>[data-ent]{max-width:100%!important;white-space:normal!important;overflow:visible!important}
+  body.v13 .rd-table--trades .rd-who>.rd-who__more{font-size:10.5px!important;line-height:1.5!important}
+}
 body.v13 .rd-table--trades .rd-td-what .rd-sub{max-width:220px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 body.v13 .rd-table--trades tr.is-skeleton td{color:transparent!important}
 body.v13 .rd-table--trades .rd-short{display:none!important}
@@ -558,7 +581,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
 @media (max-width:600px){
   /* Touch targets: standalone links and controls in the flow are at least 32px tall on phones. */
   body.v13 .rd-co__id{min-height:32px!important}
-  body.v13 :is(.rd-big__what,.rd-table--trades) .rd-ent>a[data-ent]{display:flex!important;align-items:center!important;min-height:24px!important}
+  body.v13 :is(.rd-big__what,.rd-table--trades) .rd-ent>a[data-ent],body.v13 :is(.rd-big__what,.rd-table--trades) .rd-who>a{display:flex!important;align-items:center!important;min-height:24px!important}
+  body.v13 .rd-row__detail .rd-ent>a[data-ent],body.v13 .rd-row__detail .rd-who>a{display:inline-flex!important;align-items:center!important;min-height:24px!important}
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button{height:32px!important;min-height:32px!important}
   body.v13 .rd-undo{min-height:32px!important;margin:-8px 0 -8px 6px!important}
 }

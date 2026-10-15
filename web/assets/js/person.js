@@ -11,11 +11,16 @@
    Requests: GET /v1/people/<cik> (the file), GET /v1/me/people (is this person followed), POST /v1/me/people
    and DELETE /v1/me/people/<cik> (Follow / Unfollow, live, with Undo), and GET /v1/media through
    entity-media.js (the photo or the company logo standing in, and company logos). 401 sends the browser to
-   sign in and 402 to subscribe, with next= set to this file (honoured once auth.js and subscribe.js list
-   "person"); 404 says no imported records exist for the CIK; anything else says what failed with a Try again.
+   sign in and 402 to subscribe, with next= set to this file (auth.js and subscribe.js bring the reader back
+   to it); 404 gives the API's reason (no imported lines, or only joint filings not yet attributed to each
+   person); anything else says what failed with a Try again.
 
-   The wording of Form 4 codes (describe()) is copied from v3-dashboard.js so the file reads exactly like the
-   overview; both should move to one shared module (with the exact formatters below). */
+   Amendments and joint filings, as the API reports them: a line a later Form 4/A repeats (x.superseded) is
+   listed in the activity log and marked "restated by a later 4/A, not counted", and the Record counts it once;
+   a line with no owner CIK comes from a joint filing and says who it was filed with.
+
+   Figures and the Form 4 wording come from form4-words.js (window.InsidirForm4), the module the overview
+   (v3-dashboard.js) uses, so the file and the dashboard read the same sentences and figures. */
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -33,171 +38,38 @@ const dashed=a=>a?a.slice(0,10)+"-"+a.slice(10,12)+"-"+a.slice(12):"";
 // Links out go to the SEC only (https, sec.gov).
 const secUrl=v=>{try{const u=new URL(String(v||""));return u.protocol==="https:"&&!u.username&&(u.hostname==="sec.gov"||u.hostname.endsWith(".sec.gov"))?u.href:"";}catch{return "";}};
 
-/* ---------- exact formatting ----------
-   Figures are written from their digits as filed: a pg NUMERIC string (transaction lines) is used as it is,
-   a JSON number (the API's exact sums) by its shortest round-trip digits, never through arithmetic. Shares
-   and prices keep every significant digit up to the column's 8 decimals (NUMERIC(30,8)); only trailing
-   zeros go. Dollar values are cents as stored (NUMERIC(30,2)). Grouped by thousands; trade dates in UTC,
-   SEC filing dates on the Eastern calendar day. The Form 4 wording below is copied from v3-dashboard.js. */
-const MONTHS="Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
-const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,",");
-const SCALE=8;
-// "1.23e-7" -> "0.000000123", digit for digit.
-function expand(s){
- const m=/^([-+]?)(\d+)(?:\.(\d*))?e([-+]?\d+)$/i.exec(s);if(!m)return s;
- const d=m[2]+(m[3]||""),p=m[2].length+Number(m[4]);
- return m[1]+(p<=0?"0."+"0".repeat(-p)+d:p>=d.length?d+"0".repeat(p-d.length):d.slice(0,p)+"."+d.slice(p));
-}
-// The decimal digits of a figure, as a string ("-1000.12345678"), or null when there is no figure.
-function digits(x){
- if(typeof x==="number")return Number.isFinite(x)?expand(String(x)):null;
- if(typeof x!=="string")return null;
- const s=x.trim();
- if(/^[-+]?\d+(\.\d*)?$/.test(s))return s;
- const n=Number(s);return s&&Number.isFinite(n)?expand(String(n)):null;
-}
-// Past `max` decimals (only a figure finer than its column could get there) round half away from zero.
-function roundDigits(i,f,max){
- if(f.length<=max)return [i,f];
- const keep=f.slice(0,max);
- if(f.charCodeAt(max)-48<5)return [i,keep];
- const d=(i+keep).split("").map(Number);let k=d.length-1;
- while(k>=0){if(d[k]<9){d[k]++;break;}d[k]=0;k--;}
- if(k<0)d.unshift(1);
- const all=d.join(""),cut=all.length-keep.length;
- return [all.slice(0,cut)||"0",all.slice(cut)];
-}
-function decimal(x,min,max){
- const s=digits(x);if(s===null)return "";
- const neg=s.charAt(0)==="-",[i0,f0=""]=s.replace(/^[-+]/,"").split(".");
- const [i,f]=roundDigits(i0||"0",f0,max);let g=f.replace(/0+$/,"");while(g.length<min)g+="0";
- const out=group(i.replace(/^0+(?=\d)/,""))+(g?"."+g:"");
- return (neg&&/[1-9]/.test(out)?"-":"")+out;
-}
-const MINUS="−";
-const cash=(x,min,max)=>{const s=decimal(x,min,max);return s.charAt(0)==="-"?MINUS+"$"+s.slice(1):"$"+s;};
-// Whole cents as a BigInt ("41532.10" -> 4153210n), so sums and differences of dollar values stay exact.
-function cents(x){
- const s=digits(x);if(s===null)return null;
- const neg=s.charAt(0)==="-",[i,f=""]=s.replace(/^[-+]/,"").split(".");
- const [ri,rf]=roundDigits(i||"0",f,2);
- const v=BigInt(ri)*100n+BigInt((rf+"00").slice(0,2));return neg?-v:v;
-}
-const fromCents=v=>{const a=v<0n?-v:v;return (v<0n?"-":"")+(a/100n)+"."+String(a%100n).padStart(2,"0");};
-const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
-function eastern(d){
- const y=d.getUTCFullYear(),sun=(m,n)=>{const w=new Date(Date.UTC(y,m,1)).getUTCDay();return 1+(7-w)%7+7*(n-1);},lastSun=m=>{const l=new Date(Date.UTC(y,m+1,0));return l.getUTCDate()-l.getUTCDay();};
- const [a,b]=y>=2007?[Date.UTC(y,2,sun(2,2),7),Date.UTC(y,10,sun(10,1),6)]:[Date.UTC(y,3,sun(3,1),7),Date.UTC(y,9,lastSun(9),6)];
- const t=d.getTime(),e=new Date(t+(t>=a&&t<b?-4:-5)*3600000);
- return {y:e.getUTCFullYear(),m:e.getUTCMonth(),d:e.getUTCDate()};
-}
-const utcDay=d=>({y:d.getUTCFullYear(),m:d.getUTCMonth(),d:d.getUTCDate()});
-const dayText=p=>MONTHS[p.m]+" "+p.d+", "+p.y;
-const isoOf=p=>p.y+"-"+String(p.m+1).padStart(2,"0")+"-"+String(p.d).padStart(2,"0");
-const date=x=>{const d=validDate(x);return d?dayText(utcDay(d)):"Not reported";};
-const filedDate=x=>{const d=validDate(x);return d?dayText(eastern(d)):"Not reported";};
-const tradeIso=x=>{const d=validDate(x);return d?isoOf(utcDay(d)):"";};
-const filedIso=x=>{const d=validDate(x);return d?isoOf(eastern(d)):"";};
-const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
-// Dollar values to the cent when there are cents ($1,132,000 or $41,532.10): nothing is rounded away.
-const money=x=>{const c=cents(x);if(c===null)return "Not reported";return cash(fromCents(c),c%100n!==0n?2:0,2);};
-const signedMoney=c=>c>0n?"+"+money(fromCents(c)):c<0n?money(fromCents(c)):"$0";
-// Prices as filed: every decimal the filing gives ($41.5321, $0.000123), at least the cents.
-const price=x=>digits(x)===null?"Not reported":cash(x,2,SCALE);
-// Share counts as filed (fractional shares keep every decimal: 1,000.12345678).
-const count=n=>decimal(n,0,SCALE);
-const plural=(n,one,many)=>count(n)+" "+(Number(n)===1?one:(many||one+"s"));
+/* ---------- exact figures and Form 4 wording ----------
+   form4-words.js (window.InsidirForm4, loaded first) writes every figure from its digits as filed and every
+   transaction in the same sentence as the overview (v3-dashboard.js), so the file and the dashboard read alike:
+   shares and prices keep every significant digit up to 8 decimals, dollar values are cents as stored, trade dates
+   are UTC days and filing dates the SEC's Eastern calendar day. */
+const F=window.InsidirForm4;
+const {MONTHS,MINUS,SCALE,digits,decimal,cash,cents,fromCents,scaled,fromScaled,validDate,eastern,utcDay,dayText,isoOf,date,filedDate,tradeIso,filedIso,num,
+ money,moneyCents,signedCents,price,count,plural,CODES,NOUN,code,nounKey,kind,rawPrice,sharesText,valueCents,lagOf,lagWords,ownership,isPlainShares,security,describe,valueText}=F;
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person").replace(/\b\w+/g,w=>w.charAt(0)+w.slice(1).toLowerCase());
 const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
 const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").trim();if(!s||/[a-z]/.test(s))return s;
  return s.split(" ").map(w=>AS_WRITTEN[w]||(/^[A-Z]{1,2}$/.test(w)?w:w.charAt(0)+w.slice(1).toLowerCase().replace(/([-'’.&])([a-z])/g,(m,a,b)=>a+b.toUpperCase()))).join(" ");};
-
-/* ---------- Form 4 codes in words (copied from v3-dashboard.js) ---------- */
-const CODES={
- P:"Open market or private purchase",S:"Open market or private sale",V:"Transaction voluntarily reported earlier than required",
- A:"Grant, award or other acquisition from the issuer",D:"Disposition to the issuer",F:"Payment of exercise price or tax liability by delivering or withholding securities",
- I:"Discretionary transaction",M:"Exercise or conversion of an exempt derivative security",C:"Conversion of a derivative security",
- E:"Expiration of a short derivative position",H:"Expiration or cancellation of a long derivative position with value received",
- O:"Exercise of an out-of-the-money derivative security",X:"Exercise of an in-the-money or at-the-money derivative security",
- G:"Bona fide gift",L:"Small acquisition under Rule 16a-6",W:"Acquisition or disposition by will or the laws of descent and distribution",
- Z:"Deposit into or withdrawal from a voting trust",J:"Other acquisition or disposition (described in the filing)",K:"Equity swap or similar instrument",
- U:"Disposition from a tender of shares in a change of control"};
-const NOUN={A:["grant","grants"],M:["option exercise","option exercises"],X:["option exercise","option exercises"],O:["option exercise","option exercises"],
- C:["conversion","conversions"],F:["tax withholding","tax withholdings"],G:["gift","gifts"],D:["return to the company","returns to the company"],
- E:["expiration","expirations"],H:["expiration","expirations"],I:["discretionary trade","discretionary trades"],J:["other transaction","other transactions"],
- K:["equity swap","equity swaps"],L:["small acquisition","small acquisitions"],W:["will or inheritance","wills or inheritances"],Z:["voting trust change","voting trust changes"],
- U:["tender in a change of control","tenders in a change of control"],V:["early voluntary report","early voluntary reports"],
- "P derivative":["derivative purchase","derivative purchases"],"S derivative":["derivative sale","derivative sales"]};
-const code=x=>String(x?.transaction_code||"").replace(/[^A-Z]/gi,"").slice(0,1).toUpperCase();
-const nounKey=x=>{const c=code(x);return (c==="P"||c==="S")&&x?.derivative?c+" derivative":c;};
-const kind=x=>x?.category==="reported_purchase"?"buy":x?.category==="reported_sale"?"sell":"other";
 const tri=k=>k==="buy"?'<i class="pf-tri pf-tri--up" aria-hidden="true"></i>':k==="sell"?'<i class="pf-tri pf-tri--down" aria-hidden="true"></i>':"";
-const rawPrice=x=>x?.price_per_share??x?.price;
-// A figure in units of 1e-8 (the NUMERIC(30,8) scale), as a BigInt.
-function scaled(x){
- const s=digits(x);if(s===null)return null;
- const neg=s.charAt(0)==="-",[i,f=""]=s.replace(/^[-+]/,"").split(".");
- const [ri,rf]=roundDigits(i||"0",f,SCALE);
- const v=BigInt(ri)*10n**BigInt(SCALE)+BigInt((rf+"0".repeat(SCALE)).slice(0,SCALE));return neg?-v:v;
+
+/* ---------- joint filings ----------
+   A Form 4 with several reporting owners is imported with no single owner CIK (owner_cik null) and every owner's
+   name joined by commas, so the line is this person's and someone else's: "joint filing with Jane Doe". The names
+   come from the line (x.owners [{cik,name}] when the engine sends them, each linked to their own file), less this
+   person's own names as filed. */
+const isJoint=x=>x&&(x.owner_cik===null||x.owner_cik===undefined||x.owner_cik==="");
+const myNames=()=>new Set([file?.person?.name,...(Array.isArray(file?.person?.filed_names)?file.person.filed_names:[])].map(n=>String(n||"").replace(/\s+/g," ").trim().toUpperCase()).filter(Boolean));
+function jointWith(x){
+ if(Array.isArray(x.owners)&&x.owners.length)return x.owners.filter(o=>o&&!sameCik(o.cik,personCik)).map(o=>({name:String(o.name||"").trim(),cik:cikOf(o.cik)})).filter(o=>o.name||o.cik);
+ const mine=myNames(),all=String(x.owner_name||"").split(/\s*,\s*/).map(n=>n.replace(/\s+/g," ").trim()).filter(Boolean);
+ const others=all.filter(n=>!mine.has(n.toUpperCase()));
+ return (others.length<all.length?others:all).map(name=>({name,cik:""}));
 }
-const fromScaled=v=>{const a=v<0n?-v:v,u=10n**BigInt(SCALE);return (v<0n?"-":"")+(a/u)+"."+String(a%u).padStart(SCALE,"0");};
-// Shares as filed, without the sign (the verb carries the direction).
-const sharesText=x=>{const s=digits(x?.shares);return s===null?null:count(s.replace(/^[-+]/,""));};
-/* The line's value in cents: the stored estimated_value (shares x price, to the cent, as imported); only when
-   it is missing, shares x price worked out exactly here and rounded half away from zero to the cent. */
-function valueCents(x){
- const v=cents(x?.estimated_value);if(v!==null)return v;
- const s=scaled(x?.shares),p=scaled(rawPrice(x));
- if(s===null||p===null||s<0n||p<=0n)return null;
- const q=s*p,unit=10n**BigInt(2*SCALE-2);return (q+unit/2n)/unit;
-}
-/* Calendar days from the trade date to the SEC filing date (the Eastern calendar day of publication). */
-const lagOf=x=>{const t=validDate(x?.transaction_date),p=validDate(x?.published_at);if(!t||!p)return null;const d=Math.round((Date.parse(filedIso(x.published_at))-Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()))/DAY);return d>=0?d:null;};
-const lagWords=n=>n===null?"":n===0?"same day":n===1?"1 day later":count(n)+" days later";
-const ownership=x=>{const o=String(x?.direct_ownership||"").toUpperCase();return o==="D"?"Direct":o==="I"?"Indirect":"";};
-const isPlainShares=t=>!t||/^(class [a-z0-9]+ )?(common|ordinary)( stock| shares)?( ?,? ?(class [a-z0-9]+|par value.*))?$|^(common )?shares$/i.test(String(t).trim());
-const security=x=>{const t=String(x?.security_title||"").replace(/\s+/g," ").trim().slice(0,60);return isPlainShares(t)?"":t;};
-/* describe(x): {word, cls, c, text, value, valued, priced}; the same sentence as the overview's. */
-function describe(x){
- const c=code(x),k=kind(x),p=digits(rawPrice(x)),v=valueCents(x),T=tick(x?.ticker),ad=String(x?.acquired_disposed||"").toUpperCase();
- const sh=sharesText(x)??"an unreported number of";
- const tk=T?T+" ":"";
- const sec=security(x),units=sec||(tk+"shares").trim();
- const verb=ad==="A"?"acquired":ad==="D"?"disposed of":"reported";
- let word,cls="other",text,valued=false;
- const at=p!==null?" at "+price(p):" (no price reported)";
- if(k==="buy"){word="Bought";cls="buy";text="bought "+sh+" "+tk+"shares"+at;valued=true;}
- else if(k==="sell"){word="Sold";cls="sell";text="sold "+sh+" "+tk+"shares"+at;valued=true;}
- else switch(c){
-  case "P":word="Bought";text="bought "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "S":word="Sold";text="sold "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "A":word="Grant";text="received "+sh+" "+tk+(sec||"shares")+" as a grant or award";break;
-  // The derivative side of an exercise is the option or unit; the plain-shares side is the stock it became.
-  case "M":case "X":case "O":word="Option exercise";text=!x?.derivative&&!sec?(ad==="D"?"disposed of ":"acquired ")+sh+" "+tk+"shares by exercising or converting derivative securities":"exercised or converted "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "C":word="Conversion";text="converted "+sh+" "+(sec||"derivative securities")+" into "+(T?T+" ":"")+"shares";break;
-  case "F":word="Tax withholding";text="had "+sh+" "+tk+"shares withheld to pay tax or the exercise price";break;
-  case "G":word="Gift";text=(ad==="A"?"received ":"gave ")+sh+" "+tk+"shares as a gift";break;
-  case "D":word="Returned";text="returned "+sh+" shares to "+(T||"the company");break;
-  case "E":case "H":word="Expired";text=(sec||"Derivative")+" position of "+sh+" expired";break;
-  case "I":word="Discretionary";text=verb+" "+sh+" "+units+" in a discretionary trade";break;
-  case "J":word="Other";text="other transaction, described in the filing: "+verb+" "+sh+" "+units;break;
-  case "K":word="Equity swap";text="equity swap: "+verb+" "+sh+" "+units;break;
-  case "L":word="Small acquisition";text="small acquisition: "+verb+" "+sh+" "+units;break;
-  case "W":word="Will or inheritance";text=verb+" "+sh+" "+units+" by will or inheritance";break;
-  case "Z":word="Voting trust";text=(ad==="D"?"withdrew ":"deposited ")+sh+" "+units+(ad==="D"?" from":" into")+" a voting trust";break;
-  case "U":word="Tender";text="tendered "+sh+" "+units+" in a change of control";break;
-  case "V":word="Voluntary";text=verb+" "+sh+" "+units;break;
-  default:word=c?"Code "+c:"Other";text=verb+" "+sh+" "+units;
- }
- // A stored value of $0.00 on a priced line with shares is a value under half a cent, not nothing.
- const tiny=valued&&v===0n&&scaled(x?.shares)>0n&&scaled(rawPrice(x))>0n;
- return {word,cls,c,text,valued,value:valued&&v!==null&&v>0n?v:null,priced:p!==null,tiny};
-}
-const qualifiers=x=>[code(x)==="V"?["reported early","Reported early, voluntarily"]:null,x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
- x?.superseded===true?["repeated in a later 4/A","A later Form 4/A repeats this line; the record above counts it once"]:null,
- ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null].filter(Boolean);
-const badge=x=>{const d=describe(x),m=CODES[d.c]||"";return '<span class="pf-badge pf-badge--'+d.cls+'"'+(m?' title="'+E(d.c+" — "+m)+'"':'')+'>'+tri(d.cls)+E(d.word)+(d.c?' · '+E(d.c):'')+'</span>';};
-const valueText=x=>{const d=describe(x);return d.valued?(d.value!==null?"= "+money(fromCents(d.value)):d.tiny?"= under $0.01":d.priced?"= $0":"value not reported"):"";};
+const jointText=x=>{const w=jointWith(x).map(o=>shown(o.name)||"CIK "+pad10(o.cik));return w.length?"joint filing with "+w.slice(0,3).join(", ")+(w.length>3?" and "+count(w.length-3)+" more":""):"joint filing (several reporting owners)";};
+const jointLinks=x=>{const w=jointWith(x);return w.slice(0,3).map(o=>o.cik?'<a class="pf-link pf-link--inline" data-hf-atom href="person.html?cik='+o.cik.replace(/^0+/,"")+'">'+E(shown(o.name)||"CIK "+pad10(o.cik))+'</a>':E(shown(o.name))).join(", ")+(w.length>3?" and "+E(count(w.length-3))+" more":"");};
+// The qualifiers in short form, each with its full wording: [short, full] (form4-words.js), plus the joint filing.
+const qualifiers=x=>[...F.qualifiers(x),isJoint(x)?[jointText(x),"A joint Form 4: several reporting owners filed this line together",jointLinks(x)]:null].filter(Boolean);
+const badge=x=>{const d=describe(x,{companyName}),m=CODES[d.c]||"";return '<span class="pf-badge pf-badge--'+d.cls+'"'+(m?' title="'+E(d.c+" — "+m)+'"':'')+'>'+tri(d.cls)+E(d.word)+(d.c?' · '+E(d.c):'')+'</span>';};
 
 /* ---------- tiles ---------- */
 const coTile=(t,name,cik,size)=>media?media.logo(tick(t),size||"sm",{cik:cikOf(cik),name:companyName(name)}):"";
@@ -237,10 +109,15 @@ function showState(kind,message){
  const people='<a href="people.html">Search the people directory ↗</a>';
  let h="",p="",extra="";
  if(kind==="badcik"){h="No file number";p=rawCik?"“"+E(rawCik.slice(0,40))+"” is not an SEC CIK. A personnel file is opened by a reporting person’s SEC CIK: up to 10 digits, as in person.html?cik=1214156.":"This address names no reporting person. A personnel file is opened by a reporting person’s SEC CIK, as in person.html?cik=1214156.";extra=people;}
- else if(kind==="missing"){h="No file for CIK "+cik;p="No imported SEC records for CIK "+E(cik)+". Insidir builds a file only from Form 4 filings it has imported; this CIK has none yet.";
+ else if(kind==="missing"){
+  // The API says why (src/person-profile.mjs): no lines at all, or none filed by this CIK alone while joint filings
+  // (several reporting owners on one Form 4) are not yet attributed to each person. Either way, honestly.
+  const why=String(message||"").trim().replace(/\.?$/,".");
+  h="No file for CIK "+cik;
+  p=E(/joint/i.test(why)?why:"No imported SEC records for CIK "+cik+".")+" Insidir builds a file only from the Form 4 filings it has imported"+(/joint/i.test(why)?".":"; a person who has only filed jointly with other reporting owners may have none here yet.")+" SEC EDGAR lists every filing under this CIK.";
   extra=people+'<a href="'+E("https://www.sec.gov/cgi-bin/own-disp?action=getowner&CIK="+cik)+'" target="_blank" rel="noopener noreferrer">Look up CIK '+E(cik)+' on SEC EDGAR ↗</a>';}
- else if(kind==="signin"){h="Sign in to open this file";p="Your session has ended. Taking you to sign in.";}
- else if(kind==="subscribe"){h="This file needs an active subscription";p="Taking you to the subscription step.";}
+ else if(kind==="signin"){h="Sign in to open this file";p="Your session has ended. Taking you to sign in; you come back to this file afterwards.";}
+ else if(kind==="subscribe"){h="This file needs an active subscription";p="Taking you to the subscription step; you come back to this file afterwards.";}
  else{h="This file could not be loaded";p="The personnel file for CIK "+E(cik)+" could not be loaded: "+E(message||"unknown error")+".";extra='<button type="button" class="pf-btn" data-hf-atom data-pf-retry>Try again</button>'+people;}
  box.innerHTML='<p class="pf-state__label">'+(kind==="error"?"Error":kind==="missing"||kind==="badcik"?"File not found":"Access")+'</p><h1>'+E(h)+'</h1><p>'+p+'</p>'+(extra?'<div class="pf-state__links">'+extra+'</div>':"");
  box.hidden=false;
@@ -275,7 +152,7 @@ function netCell(t){
  const b=cents(t?.purchases?.value),s=cents(t?.sales?.value),nb=num(t?.purchases?.count)||0,ns=num(t?.sales?.count)||0;
  if(!nb&&!ns)return '<td><b class="pf-none">None</b><span>no purchases or sales</span></td>';
  const n=(b??0n)-(s??0n);
- return '<td><b>'+E(signedMoney(n))+'</b><span>'+(n>0n?"more bought than sold":n<0n?"more sold than bought":"bought and sold the same")+((nb&&b===null)||(ns&&s===null)?" · some values not reported":"")+'</span></td>';
+ return '<td><b>'+E(signedCents(n))+'</b><span>'+(n>0n?"more bought than sold":n<0n?"more sold than bought":"bought and sold the same")+((nb&&b===null)||(ns&&s===null)?" · some values not reported":"")+'</span></td>';
 }
 function median(list){
  const lags=list.filter(x=>!x.is_amendment).map(lagOf).filter(n=>n!==null).sort((a,b)=>a-b);
@@ -294,7 +171,7 @@ function totalsOf(all){
  const part=cat=>{const r=list.filter(x=>x.category===cat);const vals=r.map(valueCents);
   return {count:r.length,shares:fromScaled(r.reduce((a,x)=>a+(scaled(x.shares)??0n),0n)),value:vals.some(v=>v!==null)?fromCents(vals.reduce((a,v)=>a+(v??0n),0n)):null};};
  const dates=list.map(x=>tradeIso(x.transaction_date)).filter(Boolean).sort(),pub=all.map(x=>validDate(x.published_at)?x.published_at:"").filter(Boolean).sort();
- return {transactions:list.length,filings:new Set(all.map(x=>x.accession)).size,purchases:part("reported_purchase"),sales:part("reported_sale"),other:{count:list.filter(x=>kind(x)==="other").length},
+ return {transactions:list.length,superseded:all.length-list.length,filings:new Set(all.map(x=>x.accession)).size,purchases:part("reported_purchase"),sales:part("reported_sale"),other:{count:list.filter(x=>kind(x)==="other").length},
   first_transaction_date:dates[0]||null,last_transaction_date:dates.at(-1)||null,last_published_at:pub.at(-1)||null};
 }
 function renderRecord(d){
@@ -309,7 +186,13 @@ function renderRecord(d){
   '<tr><th scope="row">Other<small>not a purchase or sale</small></th>'+otherCell(all,rows)+otherCell(d30,recent)+'</tr>'+
   '<tr><th scope="row">Net<small>bought minus sold</small></th>'+netCell(all)+netCell(d30)+'</tr>'+
   '<tr><th scope="row">Filing delay<small>trade to filing</small></th>'+lagCell(rows)+lagCell(recent)+'</tr>'+
-  '</tbody></table>';
+  '</tbody></table>'+restatedNote(all,d30);
+}
+/* Lines a later Form 4/A repeats: listed in the activity log, marked, and counted once (from the latest filing). */
+function restatedNote(all,d30){
+ const n=num(all.superseded)||0,m=num(d30.superseded)||0;
+ if(!n)return "";
+ return '<p class="pf-record__note">'+E(plural(n,"line")+" repeated by a later Form 4/A "+(n===1?"is":"are")+" listed in the activity log but counted once, from the latest filing"+(m?" ("+count(m)+" of them filed in the last 30 days)":"")+".")+'</p>';
 }
 
 /* ---------- 02 Known affiliations ---------- */
@@ -363,12 +246,12 @@ function renderAffiliations(d,companies){
 
 /* ---------- 03 Activity log ---------- */
 function logRow(x,i){
- const d=describe(x),v=valueText(x),lag=lagOf(x),t=tick(x.ticker),acc=accession(x.accession),q=qualifiers(x);
+ const d=describe(x,{companyName}),v=valueText(x),lag=lagOf(x),t=tick(x.ticker),acc=accession(x.accession),q=qualifiers(x),restated=x.superseded===true;
  const co=t||companyName(x.issuer_name)||"Issuer not reported";
  const filed=validDate(x.published_at)?"Filed "+filedDate(x.published_at)+(lag!==null&&!x.is_amendment?" ("+lagWords(lag)+")":""):"Filing date not reported";
- return '<li class="pf-log__row" tabindex="-1" data-i="'+i+'">'+
+ return '<li class="pf-log__row'+(restated?" is-restated":"")+'" tabindex="-1" data-i="'+i+'">'+
   '<p class="pf-log__what">'+badge(x)+' <span class="pf-log__text">'+E(d.text)+'</span>'+(v?' <b class="pf-log__value'+(d.cls==="buy"?" pf-up":d.cls==="sell"?" pf-down":"")+'">'+E(v)+'</b>':"")+
-   (q.length?'<span class="pf-log__notes">'+q.map(n=>'<span title="'+E(n[1])+'">'+E(n[0])+'</span>').join(" · ")+'</span>':"")+'</p>'+
+   (q.length?'<span class="pf-log__notes">'+q.map(n=>'<span title="'+E(n[1])+'">'+(n[2]?"joint filing with "+n[2]:E(n[0]))+'</span>').join(" · ")+'</span>':"")+'</p>'+
   '<p class="pf-log__when"><time datetime="'+E(tradeIso(x.transaction_date))+'">'+E(validDate(x.transaction_date)?"Traded "+date(x.transaction_date):"Trade date not reported")+'</time><span>'+E(filed)+'</span></p>'+
   '<p class="pf-log__where"><span class="pf-co">'+coTile(t,x.issuer_name,x.issuer_cik,"xs")+'<span data-ent="company">'+E(co)+'</span></span>'+
    (acc?'<a class="pf-link" data-hf-atom href="filing.html?accession='+acc+'">Form '+E(x.is_amendment?"4/A":"4")+' ↗</a>':secUrl(x.source_url)?'<a class="pf-link" data-hf-atom href="'+E(secUrl(x.source_url))+'" target="_blank" rel="noopener noreferrer">SEC filing ↗</a>':"")+'</p></li>';
@@ -429,7 +312,7 @@ function renderSubject(d,companies){
  $("pf-asfiled").innerHTML='As filed: <span>'+E(filed[0])+'</span>'+(filed.length>1?' · also as '+filed.slice(1,4).map(n=>'<span>'+E(n)+'</span>').join(", "):"");
  const frame=document.querySelector(".pf-photo__frame");
  // The headshot; else the lead company's logo stands in, by ticker or (with no ticker) by its SEC CIK.
- if(frame&&media)frame.innerHTML=media.person({name:raw,cik:personCik,ticker:leadT,issuerCik:leadT?undefined:leadCik||undefined,size:"lg",label:true});
+ if(frame&&media)frame.innerHTML=media.person({name:raw,cik:personCik,ticker:leadT,issuerCik:leadCik||undefined,size:"lg",label:true});
  const all=d.totals?.all||totalsOf(rows);
  const more=companies.length-SUBJECT_COMPANIES;
  const roles=companies.length?'<span class="pf-roles">'+companies.slice(0,SUBJECT_COMPANIES).map(c=>'<span class="pf-role">'+coTile(c.ticker,c.issuer_name,c.issuer_cik,"xs")+'<b class="pf-role__co" data-ent="company">'+E(tick(c.ticker)||coLabel(c))+'</b><span class="pf-role__text">'+rolesHtml(c)+'</span></span>').join("")+
@@ -508,7 +391,10 @@ function setFollow(on){
 /* The CIK as the follow list holds it: the forms already followed (the routes match the exact string, and a
    person may be on the list as "1214156" or "0001214156"), else the CIK as the records store it. */
 let followedAs=[];
-const followCik=()=>cikOf(file?.person?.cik)||personCik;
+/* The CIK as the import stores it (person.cik, usually 10 digits): POST /v1/me/people and the followed feed match it
+   exactly, so following from this file and from the overview stores the same form. Without it, the form the lines
+   carry, else the SEC's 10-digit form. */
+const followCik=()=>cikOf(file?.person?.cik)||cikOf(rows.find(x=>sameCik(x.owner_cik,personCik))?.owner_cik)||pad10(personCik);
 async function follow({undo=false}={}){
  if(followBusy)return;
  followBusy=true;const was=following;following=true;setFollow(true);
@@ -552,7 +438,7 @@ async function load(){
  try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);render(file);}
  catch(e){
   if(e.status===401||e.status===402)return;
-  if(e.status===404)showState("missing");
+  if(e.status===404)showState("missing",e.message);
   else if(e.status===400)showState("badcik");
   else showState("error",e.message);
  }

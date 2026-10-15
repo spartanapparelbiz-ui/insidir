@@ -1,7 +1,7 @@
 /* Insidir hard paywall.
  *
  * The product (dashboard, research desk, companies, company reports, filings, people,
- * watchlist, portfolio, alerts and every API that feeds them) is only usable with an
+ * person files, watchlist, portfolio, alerts and every API that feeds them) is only usable with an
  * active paid subscription. There is no free tier and no free trial.
  *
  * Everything here is a pure function of its inputs (the request path, the user row and
@@ -12,7 +12,8 @@ import { posix } from "node:path";
 import { paywallEnabled, complimentaryEmails, billingSettings } from "./config.mjs";
 
 // Paid product pages: signed in AND an active subscription.
-export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "watchlist", "portfolio", "alerts"]);
+// person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
+export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.

@@ -4,6 +4,7 @@
 import { secFetch, parseOwnership } from "./sec.mjs";
 import { createCache } from "./cache.mjs";
 import { resolveCompany } from "./intelligence.mjs";
+import { isEntityName } from "./person-match.mjs";
 
 const documents = createCache(1500); // Filed ownership documents never change.
 const summaries = createCache(200);
@@ -44,20 +45,39 @@ export function recentOwnershipFilings(submissions, cik, limit = 16) {
   return out;
 }
 
+/* A reporting owner's relationship to the issuer as filed (reportingOwnerRelationship), one entry per
+ * box ticked: the officer title as written (or "Officer"), "Director", "10% owner"; the "other" text
+ * only when nothing else is ticked. The one wording source for company pages and person profiles. */
+export function ownerRoles(owner) {
+  if (!owner) return [];
+  const clean = v => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+  const roles = [];
+  if (owner.isOfficer) roles.push(clean(owner.officerTitle) || "Officer");
+  if (owner.isDirector) roles.push("Director");
+  if (owner.isTenPercentOwner) roles.push("10% owner");
+  if (!roles.length && clean(owner.otherText)) roles.push(clean(owner.otherText));
+  return roles;
+}
 export function ownerRole(owner) {
-  if (!owner) return null;
-  const parts = [];
-  if (owner.isOfficer && owner.officerTitle) parts.push(owner.officerTitle);
-  else if (owner.isOfficer) parts.push("Officer");
-  if (owner.isDirector) parts.push("Director");
-  if (owner.isTenPercentOwner) parts.push("10% owner");
-  if (!parts.length && owner.otherText) parts.push(owner.otherText);
-  return parts.length ? parts.join(" · ").replace(/\s+/g, " ").slice(0, 120) : null;
+  const roles = ownerRoles(owner);
+  return roles.length ? roles.join(" · ").slice(0, 120) : null;
 }
 
-/* One row per ownership filing: net non-derivative shares and reported value. */
+/* One reporting owner as a company page shows it: name and CIK as filed, the role wording of
+ * ownerRole(), the boxes ticked, and entity (a fund, trust or company name rather than a person's). */
+export function ownerSummary(owner) {
+  const name = String(owner?.name || "").replace(/\s+/g, " ").trim() || "Reporting person";
+  const cik = /^\d{1,10}$/.test(String(owner?.cik ?? "").trim()) && /[1-9]/.test(String(owner.cik)) ? String(owner.cik).trim() : null;
+  return { name, cik, role: ownerRole(owner), isDirector: Boolean(owner?.isDirector), isOfficer: Boolean(owner?.isOfficer),
+    isTenPercentOwner: Boolean(owner?.isTenPercentOwner), entity: isEntityName(name) };
+}
+
+/* One row per ownership filing: net non-derivative shares and reported value.
+ * owner is the first reporting owner (as before); owners lists every reporting owner of the filing,
+ * in filing order, with their CIK and role (a joint Form 4 has several: each of them reported these
+ * lines). additionalOwners (the names after the first, at most 4) is kept for older clients. */
 export function summarizeOwnershipFiling(parsed, filing) {
-  const owner = parsed.owners.length === 1 ? parsed.owners[0] : parsed.owners[0] || null;
+  const owner = parsed.owners[0] || null;
   const rows = parsed.transactions.map(t => ({
     date: t.transactionDate, code: t.code, label: TRANSACTION_CODES[t.code] || "Reported transaction",
     acquiredDisposed: t.acquiredDisposed, derivative: t.derivative, security: t.securityTitle,
@@ -81,6 +101,8 @@ export function summarizeOwnershipFiling(parsed, filing) {
     transactionDate: dates.at(-1) || null,
     owner: { name: owner?.name || "Reporting person", cik: owner?.cik || null, role: ownerRole(owner),
       isDirector: Boolean(owner?.isDirector), isOfficer: Boolean(owner?.isOfficer), isTenPercentOwner: Boolean(owner?.isTenPercentOwner) },
+    owners: parsed.owners.map(ownerSummary),
+    joint: parsed.owners.length > 1,
     additionalOwners: parsed.owners.slice(1).map(o => o.name).slice(0, 4),
     kind, code: primary?.code || null, codeLabel: primary?.label || null,
     netShares: counted.length ? netShares : null, value: value > 0 ? Math.round(value * 100) / 100 : null,
@@ -90,20 +112,33 @@ export function summarizeOwnershipFiling(parsed, filing) {
   };
 }
 
+/* Every reporting owner of the activity, once each (by CIK without leading zeros, else by name):
+ * people first, then funds and companies (entity: a joint filing can list dozens of a sponsor's
+ * vehicles, which must not push the issuer's officers and directors off a page), each group newest
+ * filing first, then by filings. A joint filing counts for each of its owners (each reported its
+ * lines), the way person profiles attribute it; jointFilings says how many of them were joint. */
 export function summarizePeople(activity) {
   const people = new Map();
   for (const item of activity) {
-    const key = item.owner.cik || item.owner.name.toUpperCase();
-    const person = people.get(key) || { name: item.owner.name, cik: item.owner.cik, role: item.owner.role,
-      isDirector: item.owner.isDirector, isOfficer: item.owner.isOfficer, filings: 0, netShares: 0, value: 0,
-      lastFiled: item.filedAt, lastTransaction: item.transactionDate, sharesAfter: item.sharesAfter };
-    person.filings += 1;
-    person.netShares += item.netShares || 0;
-    person.value += item.value || 0;
-    if (!person.role && item.owner.role) person.role = item.owner.role;
-    people.set(key, person);
+    const owners = Array.isArray(item.owners) && item.owners.length ? item.owners : [{ ...item.owner, entity: isEntityName(item.owner?.name) }];
+    const seen = new Set();
+    for (const o of owners) {
+      const key = o.cik ? "cik:" + String(o.cik).replace(/^0+/, "") : "name:" + String(o.name || "").toUpperCase();
+      if (seen.has(key)) continue; // a CIK listed twice in one filing counts once
+      seen.add(key);
+      const person = people.get(key) || { name: o.name, cik: o.cik || null, role: o.role || null,
+        isDirector: Boolean(o.isDirector), isOfficer: Boolean(o.isOfficer), isTenPercentOwner: Boolean(o.isTenPercentOwner), entity: Boolean(o.entity),
+        filings: 0, jointFilings: 0, netShares: 0, value: 0,
+        lastFiled: item.filedAt, lastTransaction: item.transactionDate, sharesAfter: item.sharesAfter };
+      person.filings += 1;
+      if (item.joint || owners.length > 1) person.jointFilings += 1;
+      person.netShares += item.netShares || 0;
+      person.value += item.value || 0;
+      if (!person.role && o.role) person.role = o.role;
+      people.set(key, person);
+    }
   }
-  return [...people.values()].sort((a, b) => b.lastFiled.localeCompare(a.lastFiled) || b.filings - a.filings);
+  return [...people.values()].sort((a, b) => Number(a.entity) - Number(b.entity) || b.lastFiled.localeCompare(a.lastFiled) || b.filings - a.filings);
 }
 
 export async function getCompanyInsiders(ticker, { limit = 16, fetcher = secFetch } = {}) {

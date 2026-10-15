@@ -27,7 +27,23 @@
      (found by SEC owner CIK, or the company's logo standing in for it). */
   const media=window.InsidirMedia;
   const withLogo=(ticker,html)=>media&&validTicker(ticker)?'<div class="ins-company-cell">'+media.logo(ticker,"sm")+'<div>'+html+'</div></div>':html;
-  const owner=item=>media?'<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(item.owner_name||"",String(item.ticker||"").toUpperCase(),"xs",{cik:item.owner_cik})+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></div>':'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small>';
+  /* The reporting person's name opens their own file (person.html?cik=, the owner CIK without leading zeros) when the
+     row carries the CIK. A joint filing (owner_cik null) names each owner the engine lists in owners:[{cik,name}], each
+     linked; with no list its joined owner_name is split on the commas (a ", Inc." or ", Jr." stays on the name before
+     it). A name with no CIK opens the people directory's search for it (people.html?q=<name>#v10-directory). The tile
+     pictures the first owner with a CIK. */
+  const fileHref=cik=>{const c=String(cik??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"";};
+  const personHref=(cik,name)=>{const n=String(name??"").replace(/\s+/g," ").trim().slice(0,80);return fileHref(cik)||(n?"people.html?q="+encodeURIComponent(n)+"#v10-directory":"");};
+  const SUFFIX=/^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+  const splitNames=s=>String(s??"").split(/\s*,\s*/).filter(Boolean).reduce((out,p)=>{if(out.length&&SUFFIX.test(p))out[out.length-1]+=", "+p;else out.push(p);return out;},[]);
+  const ownersOf=item=>{const listed=item.owner_cik?[{cik:item.owner_cik,name:item.owner_name}]:Array.isArray(item.owners)&&item.owners.length?item.owners.filter(o=>o&&(o.cik||o.name)):splitNames(item.owner_name).map(name=>({cik:null,name}));return listed.length?listed.slice(0,12):[{cik:null,name:""}];};
+  const nameLink=o=>{const n=escapeHTML(o.name||"Reporting person"),h=personHref(o.cik,o.name);return h?'<a class="ins-person-link" href="'+escapeHTML(h)+'">'+n+'</a>':n;};
+  const personName=item=>ownersOf(item).map(nameLink).join(", ");
+  const owner=item=>{
+    if(!media)return '<small>'+personName(item)+'</small>';
+    const list=ownersOf(item),lead=list.find(o=>fileHref(o.cik))||list[0];
+    return '<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(lead.name||"",String(item.ticker||"").toUpperCase(),"xs",{cik:lead.cik,issuerCik:item.issuer_cik})+'<small>'+personName(item)+'</small></div>';
+  };
   const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.classList.toggle("is-error",Boolean(isError));};
   async function request(path,options={}){
     const res=await fetch(path,{credentials:"same-origin",headers:{

@@ -103,6 +103,10 @@ async function throttle() {
   nextRequest = Math.max(nextRequest, Date.now()) + 125;
   if (wait) await new Promise(r => setTimeout(r, wait));
 }
+/* How long a request asked for now would wait for its turn in the shared SEC throttle (ms; 0 when
+ * the queue is empty). Read-only: callers with optional SEC work (person profiles) skip it while
+ * the queue is long, so the ingest and the pages someone is reading are not slowed down. */
+export const secBacklogMs = () => Math.max(0, nextRequest - Date.now());
 export function allowedSecUrl(input) {
   try {
     const u = new URL(input);

@@ -19,6 +19,7 @@ jobs:
         run: |
           npm run check
           for f in scripts/*.mjs; do node --check "$f"; done
+          for f in web/assets/js/*.js; do node --check "$f"; done
       - name: Unit tests
         run: npm test
       - name: Verify authentic published brand marks and portraits
@@ -29,9 +30,9 @@ jobs:
           CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/visual-layout-check.mjs
       - name: Verify the dashboard in Chrome (data, filters, empty and error states, 401/402, links, overflow, nothing orange)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/dashboard-check.mjs
-      - name: Verify the V13 halftone identity on every page (strict palette, no orange in any hover/focus/active state or on screen, contrast, fonts, sharp images, overflow)
+      - name: Verify the V13 halftone identity on every page, personnel files included (strict palette, no orange in any hover/focus/active state or on screen, contrast, fonts, sharp images, overflow)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/v13-palette-audit.mjs
-      - name: Verify every page moves like the wordmark (dot fields, scroll trail, hero scatter, parting atoms, click ring, scroll reveal, reduced motion, no orange pixels)
+      - name: Verify every page moves like the wordmark (dot fields, scroll trail, still atoms on product pages, hero scatter, parting atoms, click ring, scroll reveal, reduced motion, no orange pixels)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/motion-check.mjs
       - name: Verify every person and company has a real logo or headshot tile in Chrome
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/media-check.mjs

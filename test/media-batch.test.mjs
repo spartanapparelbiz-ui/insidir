@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 globalThis.fetch = async url => { throw new Error("Network used in a unit test: " + url); };
 // The route needs a configured SEC contact before it answers (config reads it once, at import).
 process.env.SEC_USER_AGENT ||= "Insidir Research hello@aethric.llc";
-const { parseMediaQuery, mediaBatch, createMediaState, indexMaps, ownersParams, loadOwnersFrom, OWNERS_SQL, loadIssuersFrom, ISSUERS_SQL, createLimiter } = await import("../src/media-batch.mjs");
+const { parseMediaQuery, parsePersonEntry, mediaBatch, createMediaState, indexMaps, ownersParams, loadOwnersFrom, OWNERS_SQL, JOINT_OWNERS_SQL, loadIssuersFrom, ISSUERS_SQL, createLimiter } = await import("../src/media-batch.mjs");
 const { handleCompanyRoute, START_ALLOWANCE } = await import("../src/company-routes.mjs");
 const { createPhotoQueue, mergeRoster, cleanExtras, withoutTakedowns, blockPersonPhoto } = await import("../src/people-photos.mjs");
 const store = await import("../src/media-store.mjs");
@@ -59,7 +59,7 @@ const WIDE = { url: png("b"), sha: sha("b"), width: 548, height: 163, source: "w
 test("media query: limits, validation, de-duplication and BRK.B as BRK-B", () => {
   const parsed = q("tickers=aapl,BRK.B,bad!,AAPL&people=1214156:AAPL,0001214156:aapl,x:AAPL,12:,0:AAPL&ciks=0000320193,abc&wait=99999");
   assert.deepEqual(parsed.tickers, ["AAPL", "BRK-B"]);
-  assert.deepEqual(parsed.people, [{ cik: "1214156", ticker: "AAPL", pair: "1214156:AAPL" }], "padded and unpadded CIKs are one person");
+  assert.deepEqual(parsed.people, [{ cik: "1214156", ticker: "AAPL", issuerCik: null, pair: "1214156:AAPL" }], "padded and unpadded CIKs are one person");
   assert.deepEqual(parsed.ciks, ["320193"]);
   assert.equal(parsed.wait, 1500, "wait is capped at 1.5 s");
   assert.deepEqual(parsed.invalid, ["bad!", "x:AAPL", "12:", "0:AAPL", "abc"]);
@@ -215,7 +215,7 @@ test("finished company: on the roster -> null; off it -> the job gets the name f
   assert.equal(body.photos["111"], null, "the job looked and found no photo");
   assert.equal(body.photos["333"], null, "an owner the import does not confirm is never looked for");
   assert.deepEqual(body.pending.photos, ["222:AAPL"]);
-  assert.deepEqual(w.calls.owners, [[{ cik: "222", ticker: "AAPL" }, { cik: "333", ticker: "AAPL" }]], "one lookup, owners off the roster only");
+  assert.deepEqual(w.calls.owners, [[{ cik: "222", ticker: "AAPL", issuerCik: "320193" }, { cik: "333", ticker: "AAPL", issuerCik: "320193" }]], "one lookup, owners off the roster only");
   assert.equal(w.calls.photos.length, 1);
   assert.deepEqual(w.calls.photos[0], { ticker: "AAPL", cik: AAPL, extra: [{ cik: "222", name: "ADAMS KATHERINE L" }], keys: [], priority: "user", requester: "anonymous", rerun: true, create: true });
   // Nothing the client could send carries a name: the query has none, and the job saw only the database's.
@@ -325,17 +325,109 @@ test("GET /v1/media: settled answers are cached privately, pending ones not at a
 });
 
 test("owner lookups ask for both CIK and ticker spellings, and only exact pairs count", async () => {
-  assert.deepEqual(ownersParams([{ cik: "1214156", ticker: "BRK-B" }, { cik: "0000000001", ticker: "AAPL" }, { cik: "x", ticker: "AAPL" }]),
-    [["1214156", "0001214156", "1", "0000000001"], ["BRK-B", "BRK.B", "AAPL"]]);
+  assert.deepEqual(ownersParams([{ cik: "1214156", ticker: "BRK-B" }, { cik: "0000000001", ticker: "AAPL", issuerCik: "0000320193" }, { cik: "x", ticker: "AAPL" }, { cik: "7", ticker: null, issuerCik: "1234567" }, { cik: "8" }]),
+    [["1214156", "0001214156", "1", "0000000001", "7", "0000000007"], ["BRK-B", "BRK.B", "AAPL"], ["320193", "0000320193", "1234567", "0001234567"]]);
   const seen = [];
   const rows = await loadOwnersFrom(async (sql, params) => { seen.push([sql, params]); return { rows: [{ owner_cik: "0001214156", ticker: "BRK.B", owner_name: "COOK TIMOTHY D" }] }; }, [{ cik: "1214156", ticker: "BRK-B" }]);
   assert.equal(seen[0][0], OWNERS_SQL);
+  assert.deepEqual(seen[0][1], [["1214156", "0001214156"], ["BRK-B", "BRK.B"], []]);
+  assert.match(OWNERS_SQL.replace(/\s+/g, " "), /WHERE owner_cik = ANY\(\$1::text\[\]\) AND \(ticker = ANY\(\$2::text\[\]\) OR issuer_cik = ANY\(\$3::text\[\]\)\)/);
   assert.equal(rows.length, 1);
   assert.deepEqual(await loadOwnersFrom(async () => { throw new Error("must not query"); }, []), []);
+  assert.deepEqual(await loadOwnersFrom(async () => { throw new Error("must not query"); }, [{ cik: "1" }]), [], "an owner with no issuer is never looked up");
+  // Joint filers (sec_filing_owners): their filings are read too, with each owner's own filed name.
+  const both = [];
+  const joint = await loadOwnersFrom(async (sql, params) => { both.push(sql); return { rows: [{ owner_cik: sql === OWNERS_SQL ? "1" : "2", ticker: "AAPL", issuer_cik: "0000320193", owner_name: "X" }] }; }, [{ cik: "2", ticker: "AAPL" }], { joint: true });
+  assert.deepEqual(both, [OWNERS_SQL, JOINT_OWNERS_SQL]);
+  assert.deepEqual(joint.map(r => r.owner_cik), ["1", "2"]);
+  assert.match(JOINT_OWNERS_SQL.replace(/\s+/g, " "), /FROM sec_filing_owners o JOIN sec_filings f ON f\.accession = o\.accession WHERE o\.owner_cik = ANY\(\$1::text\[\]\) AND f\.ingest_status = 'parsed'/);
   // A row for a pair nobody asked about (same owner, another issuer) is ignored.
   const w = world({ records: { ["company-photos:" + AAPL]: { complete: true, roster: [] } }, owners: [{ owner_cik: "222", ticker: "MSFT", owner_name: "SOMEONE ELSE" }, { owner_cik: "0000000222", ticker: "AAPL", owner_name: "ADAMS KATHERINE L" }] });
   await mediaBatch(q("people=222:AAPL"), w.deps);
   assert.deepEqual(w.calls.photos[0].extra, [{ cik: "222", name: "ADAMS KATHERINE L" }]);
+});
+
+test("people= forms: <owner>, <owner>:cik:<issuer> and <owner>:<TICKER>, each kept in one spelling", () => {
+  assert.deepEqual(parsePersonEntry("0001214156"), { cik: "1214156", ticker: null, issuerCik: null, pair: "1214156" });
+  assert.deepEqual(parsePersonEntry(" 0001214156:CIK:0000320193 "), { cik: "1214156", ticker: null, issuerCik: "320193", pair: "1214156:cik:320193" });
+  assert.deepEqual(parsePersonEntry("1214156:brk.b"), { cik: "1214156", ticker: "BRK-B", issuerCik: null, pair: "1214156:BRK-B" });
+  for (const bad of ["x", "0", "12345678901", "1214156:cik:", "1214156:cik:0", "1214156:cik:x", "1214156:", ":AAPL", "1214156:AA:PL", "1214156:cik:1:2"]) assert.equal(parsePersonEntry(bad), null, bad);
+  const parsed = q("people=1214156,0001214156,1214156:cik:320193,1214156:CIK:0000320193,1214156:AAPL,1214156:cik:0");
+  assert.deepEqual(parsed.people.map(p => p.pair), ["1214156", "1214156:cik:320193", "1214156:AAPL"]);
+  assert.deepEqual(parsed.invalid, ["1214156:cik:0"]);
+});
+
+test("an owner alone is answered from the person-photo record: a photo, an entity, null for a takedown, else left out; never a job", async () => {
+  const photo = { src: webp("d"), source: "wikimedia", sourceUrl: "https://commons.wikimedia.org/wiki/File:x.jpg", credit: "Someone · CC BY 4.0", personName: "Tim Cook" };
+  const w = world({ records: { "person-photo:1214156": photo, ["logo:0001067983"]: okLogo("0001067983", { square: SQUARE }) }, stored: ["a", "d"] });
+  const body = await mediaBatch(q("people=0001214156,999,1067983"), w.deps);
+  assert.deepEqual(body.photos["1214156"], { src: webp("d"), w: 256, h: 256, source: "wikimedia", credit: photo.credit, sourceUrl: photo.sourceUrl, name: "Tim Cook" });
+  // No record: nothing was looked for, so no answer (null would read as "no photo exists" and be cached
+  // for an hour under P:<cik>, hiding the headshot the same person's tile with a ticker can still get).
+  assert.equal("999" in body.photos, false, "no record: left out, not null");
+  assert.equal(Object.keys(body.photos).length, 2, "1214156 and the entity's null");
+  assert.deepEqual(body.owners, { 1067983: { entity: true, ticker: "BRK-B" } }, "a listed company filing as an owner keeps its own logo");
+  assert.equal(body.logos["BRK-B"].src, png("a"));
+  assert.deepEqual(body.pending, { logos: [], photos: [] });
+  assert.deepEqual([body.retryAfter, body.retryAfterLogos, body.retryAfterPhotos], [0, 0, 0]);
+  assert.equal(w.calls.owners.length + w.calls.photos.length + w.calls.jobs.length, 0, "no owner lookup, no job, no job status");
+  // A takedown applies here too, and is a real "none" (null), with or without a record.
+  w.rec.set("person-photo-override:1214156", { none: true });
+  assert.equal((await mediaBatch(q("people=1214156"), w.deps)).photos["1214156"], null);
+  w.rec.set("person-photo-override:999", { none: true });
+  assert.equal((await mediaBatch(q("people=999"), w.deps)).photos["999"], null);
+  // A record whose bytes are gone is not a confirmed none either: left out.
+  const lost = world({ records: { "person-photo:777": { ...photo, src: webp("e") } }, stored: [] });
+  assert.equal("777" in (await mediaBatch(q("people=777"), lost.deps)).photos, false);
+  assert.equal(w.calls.jobs.length + lost.calls.jobs.length, 0, "still no job");
+});
+
+test("the owner-alone form never hides the answer for the same person asked with an issuer", async () => {
+  // 999 asked alone and at a company whose finished roster had them and found nothing: that pair is a real null.
+  const w = world({ records: { "company-photos:0000320193": { complete: true, roster: ["cik:999"], photos: {}, names: {} } }, stored: [] });
+  const body = await mediaBatch(q("people=999,999:AAPL"), w.deps);
+  assert.equal(body.photos["999"], null, "answered by the issuer pair");
+  assert.deepEqual(body.pending.photos, []);
+});
+
+test("<owner>:cik:<issuer>: the issuer's logo by CIK stands in, a listed issuer gets a photo job, pending in the same form", async () => {
+  // AAPL asked for by CIK; the import confirms the owner there by issuer CIK (its lines carry no ticker).
+  const w = world({ records: { ["logo:" + AAPL]: okLogo(AAPL, { square: SQUARE }) }, stored: ["a"],
+    owners: [{ owner_cik: "0001214156", ticker: null, issuer_cik: "0000320193", owner_name: "COOK TIMOTHY D" }] });
+  const body = await mediaBatch(q("people=1214156:cik:0000320193"), w.deps);
+  assert.equal(body.logos["cik:320193"].src, png("a"));
+  assert.equal(body.logos["cik:320193"].ticker, "AAPL", "a listed issuer's logo carries its ticker");
+  assert.equal("AAPL" in body.logos, false, "answered under the key that was asked for");
+  assert.deepEqual(w.calls.owners, [[{ cik: "1214156", ticker: "AAPL", issuerCik: "320193" }]]);
+  assert.deepEqual(w.calls.photos.map(c => [c.ticker, c.cik, c.extra]), [["AAPL", AAPL, [{ cik: "1214156", name: "COOK TIMOTHY D" }]]]);
+  assert.deepEqual(body.pending.photos, ["1214156:cik:320193"]);
+  assert.deepEqual(body.queued, ["1214156:cik:320193"]);
+  assert.deepEqual([body.retryAfter, body.retryAfterLogos, body.retryAfterPhotos], [15, 0, 15]);
+
+  // An unlisted issuer the import has filings for: its logo resolves by CIK; no photo job can run (jobs
+  // read the SEC listing), so the person is null unless the person-photo record has them.
+  const u = world({ issuers: ["0001234567"], records: { "person-photo:42": { src: webp("e"), source: "sec-proxy", credit: "SEC proxy statement", sourceUrl: "https://www.sec.gov/x" } }, stored: ["e"] });
+  const unlisted = await mediaBatch(q("people=7:cik:1234567,42:cik:1234567,8:cik:4100000000"), u.deps);
+  assert.deepEqual(unlisted.pending.logos, ["cik:1234567"]);
+  assert.deepEqual(u.calls.resolve, [[{ cik: "0001234567" }, {}]]);
+  assert.deepEqual(u.calls.issuers, [["1234567", "4100000000"]], "one issuer lookup for ciks= and people= together");
+  assert.equal(unlisted.logos["cik:4100000000"], null, "an issuer no filing names starts nothing");
+  assert.equal(unlisted.photos["7"], null);
+  assert.equal(unlisted.photos["42"].src, webp("e"));
+  assert.equal(unlisted.photos["8"], null);
+  assert.equal(u.calls.photos.length + u.calls.owners.length, 0);
+  assert.deepEqual(unlisted.pending.photos, []);
+  assert.deepEqual([unlisted.retryAfter, unlisted.retryAfterLogos, unlisted.retryAfterPhotos], [3, 3, 0], "logos are paced on their own");
+});
+
+test("one owner asked several ways in one batch gets one answer: a photo wins, then pending, then null", async () => {
+  const w = world({ owners: [{ owner_cik: "1214156", ticker: "AAPL", issuer_cik: "0000320193", owner_name: "COOK TIMOTHY D" }] });
+  const body = await mediaBatch(q("people=1214156,1214156:AAPL,1214156:cik:320193"), w.deps);
+  assert.equal("1214156" in body.photos, false, "not null while a pair is pending");
+  assert.deepEqual(body.pending.photos, ["1214156:AAPL", "1214156:cik:320193"]);
+  assert.equal(w.calls.photos.length, 1, "one job for the company, however it was named");
+  assert.deepEqual(body.pending.logos.sort(), ["AAPL", "cik:320193"]);
+  assert.deepEqual([body.retryAfterLogos, body.retryAfterPhotos, body.retryAfter], [3, 15, 15]);
 });
 
 test("the logo limiter shares its slots between requesters and caps each one's waiting jobs", async () => {

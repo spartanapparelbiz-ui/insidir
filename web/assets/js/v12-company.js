@@ -156,6 +156,23 @@ function personInfo(secName, short = false, ownerCik = null) {
   const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
+/* A reporting person's own file (person.html?cik=, the SEC owner CIK without leading zeros) whenever the row has
+   their CIK; null without one (the name then opens the people directory's search instead). */
+const personFile = cik => { const c = String(cik ?? "").trim(); return /^\d{1,10}$/.test(c) && /[1-9]/.test(c) ? "person.html?cik=" + c.replace(/^0+/, "") : null; };
+const personSearch = name => "people.html?q=" + encodeURIComponent(String(name || "").replace(/\s+/g, " ").trim().slice(0, 80)) + "#v10-directory";
+/* The name as shown, linked to the person's file when the CIK is known, else to the directory's search for the name
+   as filed (the directory matches filed names, "COOK TIMOTHY D", so the search uses that form, not the display one). */
+const personLink = (shown, cik, filed) => {
+  const href = personFile(cik) || (String(filed || shown || "").trim() ? personSearch(filed || shown) : null);
+  return href ? `<a class="cx-person-link" href="${esc(href)}">${esc(shown)}</a>` : esc(shown);
+};
+/* A leader's name in the form the SEC files names ("Arthur D. Levinson" -> "Levinson Arthur D"), so the directory
+   search can find a Form 4 filer listed under the name as filed. Generational suffixes stay off the search. */
+const filedForm = name => {
+  const words = String(name || "").replace(/[.,]/g, " ").split(/\s+/).filter(Boolean);
+  while (words.length > 2 && /^(?:jr|sr|ii|iii|iv)$/i.test(words.at(-1))) words.pop();
+  return words.length > 1 ? [words.at(-1), ...words.slice(0, -1)].join(" ") : words.join(" ");
+};
 /* Outside tables an avatar is an identity tile that parts around the pointer like the logo (an atom, v13-motion.js);
    table cells never move, so the small size used in the insider ledger stays put.
    A person with no published photo gets the company's own logo standing in, as on every other page (the
@@ -582,7 +599,7 @@ function renderOverviewInsiders() {
   const rows = activity().slice(0, 4);
   host.innerHTML = rows.length ? rows.map(a => {
     const p = personInfo(a.owner.name, true, a.owner.cik);
-    return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
+    return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${personLink(p.name, a.owner.cik, a.owner.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
   }).join("") : '<p class="cx-empty">No Form 4 insider filings were found for this company.</p>';
 }
 function renderAbout() {
@@ -729,7 +746,7 @@ function renderInsiders() {
     // No blended average for a mixed filing: its split line gives each side's shares and value instead.
     const price = a.kind === "mixed" ? [] : (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
-    return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
+    return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${personLink(p.name, a.owner.cik, a.owner.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
       <td>${esc(insiderLabel(a) || "Reported transaction")}${extra}${mixedSplit(a) ? `<small>${esc(mixedSplit(a))}</small>` : ""}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
       <td>${esc(day(a.transactionDate))}</td><td>${esc(day(a.filedAt))}</td>
       <td class="num ${finite(a.netShares) && a.netShares !== 0 && insiderDir(a) ? "is-" + insiderDir(a) : ""}">${finite(a.netShares) ? glyphDir(insiderDir(a)) + signed(a.netShares) : "—"}</td>
@@ -742,10 +759,11 @@ function renderInsiders() {
 function renderPeople() {
   const secPeople = state.insiders?.people || [];
   $("cx-people-sec").innerHTML = state.insiders ? (secPeople.length ? secPeople.slice(0, 24).map(person => {
-    const p = personInfo(person.name, false, person.cik);
-    return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
+    const p = personInfo(person.name, false, person.cik), file = personFile(person.cik);
+    // With the owner CIK the name and the link open the person's own file; without one, the directory search.
+    return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${personLink(p.name, person.cik, person.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
-      <a href="people.html?q=${encodeURIComponent(person.name)}" data-hf-atom>Search insider records →</a></div></article>`;
+      ${file ? `<a class="cx-person__file" href="${esc(file)}" data-hf-atom>Open personnel file →</a>` : `<a href="${esc(personSearch(person.name))}" data-hf-atom>Search insider records →</a>`}</div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
@@ -753,10 +771,15 @@ function renderPeople() {
   const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
   armReveal($("people"));
+  /* A leader who also files Form 4 here (a founder-CEO) opens their own file: the photo job names their owner CIK
+     (insiderKey "cik:<CIK>"); without the job's list, the reporting owner the profile's person matches. Anyone else
+     opens the directory's search for the name in the form the SEC files it. */
+  const leaderCik = p => /^cik:\d{1,10}$/.test(p.insiderKey || "") ? p.insiderKey.slice(4)
+    : !serverLeaders ? secPeople.find(s => personFile(s.cik) && matchesPerson(s.name, p))?.cik || null : null;
   $("cx-people-wiki").innerHTML = leaders.map(p => {
     const photo = p.src ? { src: p.src, credit: p.credit, source: p.sourceUrl } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons", source: p.photo.source || p.photo.sourceUrl } : null;
-    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
-    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div></article>`;
+    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]), file = personFile(leaderCik(p));
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${personLink(p.name, leaderCik(p), filedForm(p.name))}</h4><p>${esc((p.roles || []).join(" · "))}</p>${file || link ? `<div class="cx-person__links">${file ? `<a class="cx-person__file" href="${esc(file)}" data-hf-atom>Open personnel file →</a>` : ""}${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div>` : ""}</div></article>`;
   }).join("");
   window.InsidirMedia?.credits?.();
 }
@@ -841,17 +864,24 @@ async function addToWatchlist() {
 const signIn = () => { location.href = "signin.html?next=" + encodeURIComponent(location.pathname + location.search); };
 
 /* ---------- load ---------- */
-/* Verified photos arrive from a background job; check back a few times while it works. */
-async function loadPhotos(seq, attempt = 0) {
+/* Verified photos arrive from a background job; check back a few times while it works. Company sites are crawled
+ * politely (one request a second), so a first visit can take a few minutes; photos appear as each source finishes.
+ * While the job still waits its turn behind other companies ({queued:true}) the schedule does not advance: the
+ * page asks again every 15-30 s instead, and stops asking about 15 minutes after the first answer either way. */
+const PHOTO_DELAYS = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
+const PHOTO_QUEUED = [15000, 15000, 20000, 30000], PHOTO_CEILING = 15 * 60e3;
+async function loadPhotos(seq, attempt = 0, queued = 0, since = 0) {
   try {
-    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 ? "&wait=2500" : ""));
+    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 && !queued ? "&wait=2500" : ""));
     if (seq !== state.seq) return;
     state.photos = data;
     renderOverviewInsiders(); renderInsiders(); renderPeople();
-    // Company sites are crawled politely (one request a second), so a first visit can take a few
-    // minutes; photos appear as each source finishes.
-    const delays = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
-    if (!data.complete && attempt < delays.length) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, delays[attempt]);
+    if (data.complete) return;
+    const first = since || Date.now(), left = first + PHOTO_CEILING - Date.now();
+    if (left <= 0) return;
+    const again = (delay, next) => setTimeout(() => { if (seq === state.seq) loadPhotos(seq, ...next, first); }, Math.min(delay, Math.max(1000, left)));
+    if (data.queued) again(PHOTO_QUEUED[Math.min(queued, PHOTO_QUEUED.length - 1)], [attempt, queued + 1]);
+    else if (attempt < PHOTO_DELAYS.length) again(PHOTO_DELAYS[attempt], [attempt + 1, queued]);
   } catch { /* initials stay */ }
 }
 function resetView() {
@@ -872,7 +902,8 @@ function renderAll() {
 function fallbackInsiders(rows) {
   const activity = rows.map(r => ({
     accession: r.accession, form: "4", filedAt: String(r.published_at || "").slice(0, 10), transactionDate: r.transaction_date ? String(r.transaction_date).slice(0, 10) : null,
-    owner: { name: r.owner_name, cik: r.owner_cik, role: null }, kind: r.category === "reported_purchase" ? "purchase" : r.category === "reported_sale" ? "sale" : "other",
+    // A joint line (owner_cik null) is listed under its first reporting owner, as /v1/company/insiders lists it.
+    owner: r.owner_cik || !r.owners?.length ? { name: r.owner_name, cik: r.owner_cik, role: null } : { name: r.owners[0].name || r.owner_name, cik: r.owners[0].cik || null, role: null }, kind: r.category === "reported_purchase" ? "purchase" : r.category === "reported_sale" ? "sale" : "other",
     code: r.transaction_code, codeLabel: r.category === "reported_purchase" ? "Open-market purchase" : r.category === "reported_sale" ? "Open-market sale" : "Reported transaction",
     netShares: finite(Number(r.shares)) ? (r.acquired_disposed === "D" ? -Number(r.shares) : Number(r.shares)) : null,
     value: finite(Number(r.estimated_value)) ? Number(r.estimated_value) : null, sharesAfter: null, transactions: [], sourceUrl: r.source_url

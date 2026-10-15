@@ -135,7 +135,7 @@ test("the /v1/me access object", () => {
 
 test("safeNext keeps known same-origin pages and their queries, rejects everything else", () => {
   for (const ok of ["/dashboard", "/dashboard.html", "/company.html?ticker=AAPL", "/research?ticker=BRK-B", "/filing.html?accession=000123456726000042",
-    "/people.html?q=jane%20doe", "/subscribe.html", "/billing.html", "/account", "/explore.html?q=a&b=c"])
+    "/people.html?q=jane%20doe", "/person.html?cik=1214156", "/person?cik=0001214156", "/subscribe.html", "/billing.html", "/account", "/explore.html?q=a&b=c"])
     assert.equal(safeNext(ok), ok, ok);
   assert.equal(safeNext("/dashboard.html?"), "/dashboard.html");
   for (const bad of ["https://evil.example/dashboard.html", "http://evil.example", "//evil.example", "//evil.example/dashboard.html", "\\\\evil.example",
@@ -174,6 +174,11 @@ test("gate: signed-out visitors are sent to sign-in with a safe next=, API calls
   assert.deepEqual([d.action, d.status, d.location], ["redirect", 302, "/signin.html?next=%2Fdashboard.html"]);
   d = await decide("/company.html?ticker=AAPL", null);
   assert.equal(d.location, "/signin.html?next=" + encodeURIComponent("/company.html?ticker=AAPL"));
+  // The personnel file: a product page, and its CIK survives the trip through sign-in.
+  d = await decide("/person.html?cik=1214156", null);
+  assert.deepEqual([d.action, d.location, d.calls], ["redirect", "/signin.html?next=%2Fperson.html%3Fcik%3D1214156", 1]);
+  d = await decide("/v1/people/1214156", null);
+  assert.deepEqual([d.action, d.status, d.body], ["deny", 401, { error: "Sign in required", signin: "/signin.html" }]);
   d = await decide("/research?ticker=NVDA", null, ON, "HEAD");
   assert.equal(d.location, "/signin.html?next=" + encodeURIComponent("/research?ticker=NVDA"));
   for (const page of ["/subscribe.html", "/billing", "/account.html"]) {
@@ -197,6 +202,8 @@ test("gate: signed in without a subscription reaches account pages only; product
     assert.deepEqual([d.action, d.location], ["redirect", "/subscribe.html?next=%2Fdashboard.html"]);
     d = await decide("/filing.html?accession=000123456726000042", user);
     assert.equal(d.location, "/subscribe.html?next=" + encodeURIComponent("/filing.html?accession=000123456726000042"));
+    assert.equal((await decide("/person.html?cik=1214156", user)).location, "/subscribe.html?next=%2Fperson.html%3Fcik%3D1214156");
+    assert.equal((await decide("/v1/people/1214156", user)).status, 402);
     for (const page of ["/subscribe.html", "/billing.html?checkout=success", "/account"]) assert.equal((await decide(page, user)).action, "allow", page);
     d = await decide("/v1/intelligence?ticker=AAPL", user);
     assert.deepEqual([d.action, d.status, d.body], ["deny", 402, { error: "An active Insidir subscription is required", subscribe: "/subscribe.html" }]);
@@ -213,7 +220,7 @@ test("gate: signed in without a subscription reaches account pages only; product
 
 test("gate: active, trialing and complimentary accounts use the whole product", async () => {
   for (const [user, env] of [[USERS.paid, ON], [USERS.trial, ON], [USERS.owner, COMP], [{ ...USERS.lapsed, email: "team@aethric.llc" }, COMP]]) {
-    for (const path of ["/dashboard.html", "/research?ticker=AAPL", "/company.html?ticker=MSFT", "/people", "/portfolio.html", "/subscribe.html", "/account.html"]) {
+    for (const path of ["/dashboard.html", "/research?ticker=AAPL", "/company.html?ticker=MSFT", "/people", "/person.html?cik=1214156", "/portfolio.html", "/subscribe.html", "/account.html"]) {
       const d = await decide(path, user, env);
       assert.equal(d.action, "allow", user.email + " " + path);
       assert.equal(d.user, user);
@@ -806,6 +813,37 @@ test("router: product API answers 401 signed out and 402 without a subscription"
     loads.length = 0;
     assert.equal((await send(base, "/v1/me")).status, 401);
     assert.equal(loads.length, 1, "GET /v1/me loads the session once (the gate does not)");
+  });
+});
+
+test("router: the personnel file (person.html and GET /v1/people/<cik>) is behind the paywall end to end", async () => {
+  assert.equal(classifyPage("/person.html"), "product");
+  assert.equal(classifyPage("/Person"), "product");
+  for (const method of ["GET", "HEAD", "POST", "DELETE"]) assert.equal(classifyApi("/v1/people/1214156", method), "product", method);
+  await withApi(ON, async (base, loads) => {
+    let r = await send(base, "/person.html?cik=1214156");
+    assert.deepEqual([r.status, r.headers.location, r.headers["cache-control"]], [302, "/signin.html?next=%2Fperson.html%3Fcik%3D1214156", "no-store"]);
+    r = await send(base, "/person.html?cik=1214156", as("lapsed"));
+    assert.equal(r.headers.location, "/subscribe.html?next=%2Fperson.html%3Fcik%3D1214156");
+    r = await send(base, "/person.html?cik=1214156", as("paid"));
+    assert.equal(r.status, 200);
+    assert.match(r.text, /<title>Personnel file/);
+    assert.match(r.headers["cache-control"], /^private\b/);
+    assert.match(r.headers.vary, /\bCookie\b/);
+    assert.equal((await send(base, "/v1/people/1214156")).status, 401);
+    assert.equal((await send(base, "/v1/people/1214156", as("lapsed"))).status, 402);
+    // Past the paywall the route is served by src/person-profile.mjs (no database in this test: 503),
+    // with one session lookup per request: the handler reuses the gate's.
+    loads.length = 0;
+    r = await send(base, "/v1/people/1214156", as("paid"));
+    assert.equal(r.status, 503);
+    assert.equal(loads.length, 1);
+    assert.deepEqual([(await send(base, "/v1/people/abc", as("paid"))).status, (await send(base, "/v1/people/1214156", { method: "DELETE", ...as("paid") })).status], [400, 405]);
+  });
+  // With the paywall off (local development) the profile still needs a sign-in.
+  await withApi(OFF, async base => {
+    const r = await send(base, "/v1/people/1214156");
+    assert.deepEqual([r.status, JSON.parse(r.text)], [401, { error: "Sign in required" }]);
   });
 });
 

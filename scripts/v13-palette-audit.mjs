@@ -30,7 +30,9 @@
             [--inject-css "<css>"] [--inject-js "<js>"]
    --inject-css adds rules to the insidir-v13 layer of every page and --inject-js runs a script at
    document start; both exist only to prove that the audit fails when something orange is added.
-   The /v1 API is mocked with small fixtures so every page renders its data states. */
+   The /v1 API is mocked with small fixtures so every page renders its data states: the personnel file
+   (person) from a /v1/people/1214156 mock in the shape src/person-profile.mjs answers, and a CIK with no
+   file (person-404) from its 404. */
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -55,7 +57,8 @@ const ALL_PAGES = [
   ["watchlist", "/watchlist.html"], ["portfolio", "/portfolio.html"], ["alerts", "/alerts.html"], ["people", "/people.html"],
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
-  ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"]
+  ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -76,11 +79,76 @@ const transactionItems = [
   { id: 12, accession: "0001045810-26-000002", ticker: "NVDA", issuer_name: "NVIDIA CORP", owner_name: "HUANG JEN HSUN", owner_cik: "0001049502", transaction_date: "2026-09-10", transaction_code: "P", category: "reported_purchase", shares: 1500, price: 28, estimated_value: 42000, published_at: "2026-09-12T20:00:00Z", source_url: source, filed_at: "2026-09-12" },
   { id: 13, accession: "0000789019-26-000003", ticker: "MSFT", issuer_name: "MICROSOFT CORP", owner_name: "NADELLA SATYA", owner_cik: "0001513142", transaction_date: "2026-09-08", transaction_code: "A", category: "reported_other", shares: 900, price: null, estimated_value: null, published_at: "2026-09-10T20:00:00Z", source_url: source, filed_at: "2026-09-10" }
 ];
+/* GET /v1/people/<cik>: Tim Cook's personnel file in the shape src/person-profile.mjs answers (personProfile()), with
+   dates relative to the run so the 30-day record is never empty: Apple sales and an RSU conversion, Nike director grants
+   and a purchase, a line a later Form 4/A repeats (superseded: listed, counted once), a joint filing (owner_cik null)
+   at an issuer with no ticker and roles not looked up (null). Any other CIK answers 404 as the engine does. */
+const PERSON = { cik: "0001214156", name: "COOK TIMOTHY D" };
+const PERSON_NOT_FOUND = "Reporting person not found in imported SEC records";
+function personFile() {
+  const DAY = 86400000, now = Date.now();
+  const tradeDay = ago => new Date(now - ago * DAY).toISOString().slice(0, 10) + "T00:00:00.000Z";
+  const filedAt = ago => new Date(now - ago * DAY).toISOString().slice(0, 10) + "T22:30:00.000Z";
+  const doc = (issuer, acc) => "https://www.sec.gov/Archives/edgar/data/" + Number(issuer) + "/" + acc.replace(/-/g, "") + "/xslF345X05/wk-form4.xml";
+  const AAPL = ["AAPL", "0000320193", "Apple Inc."], NKE = ["NKE", "0000320187", "NIKE, Inc."], PRIV = [null, "0001999999", "PRIVATE HOLDINGS TRUST CO"];
+  const ROLES = { "0000320193": ["Chief Executive Officer", "Director"], "0000320187": ["Director"], "0001999999": null };
+  // [accession, issuer, filed days ago, 4/A, lines: [code, A/D, shares, price, traded days ago, derivative, security, ownership], joint owners]
+  const FILED = [
+    ["0000320193-26-000063", AAPL, 4, false, [["S", "D", "18000", "227.4", 6], ["S", "D", "4116.5", "229.8812", 6]]],
+    ["0000320187-26-000070", NKE, 12, false, [["P", "A", "10000", "72.415", 14]]],
+    ["0000320193-26-000059", AAPL, 38, true, [["F", "D", "100348", "223.19", 42]]],
+    ["0000320193-26-000058", AAPL, 40, false, [["M", "D", "196410", null, 42, true, "Restricted Stock Unit"], ["M", "A", "196410", null, 42], ["F", "D", "100348", "223.19", 42]]],
+    ["0000320187-26-000044", NKE, 90, false, [["A", "A", "3107", null, 92], ["A", "A", "412", null, 92]]],
+    ["0001999999-26-000012", PRIV, 150, false, [["G", "D", "10000", null, 152, false, "Common Stock", "I"]], "COOK TIMOTHY D, WILLIAMS JEFFREY E"]
+  ];
+  const tx = [], filings = [];
+  for (const [accession, [ticker, issuer_cik, issuer_name], ago, amend, lines, joint] of FILED) {
+    const published_at = filedAt(ago), source_url = doc(issuer_cik, accession);
+    for (const [code, ad, shares, price, traded, derivative = false, security_title = "Common Stock", own = "D"] of lines) {
+      const category = !derivative && code === "P" && ad === "A" ? "reported_purchase" : !derivative && code === "S" && ad === "D" ? "reported_sale" : "other";
+      tx.push({ id: String(tx.length + 1), accession, ticker, issuer_cik, issuer_name, owner_cik: joint ? null : PERSON.cik, owner_name: joint || PERSON.name,
+        transaction_date: tradeDay(traded), transaction_code: code, acquired_disposed: ad, category, derivative, shares, price_per_share: price,
+        estimated_value: price === null ? null : (Number(shares) * Number(price)).toFixed(2), direct_ownership: own, security_title, source_url,
+        created_at: published_at, published_at, is_amendment: amend, superseded: false });
+    }
+    filings.push({ accession, form_type: amend ? "4/A" : "4", ticker, issuer_cik, issuer_name, published_at, source_url, lines: lines.length });
+  }
+  // As the API marks it: a line a later 4/A repeats (issuer, trade date, code, A/D, derivative, shares) is superseded.
+  const same = x => [x.issuer_cik, x.transaction_date, x.transaction_code, x.acquired_disposed, x.derivative, x.shares].join("|");
+  for (const x of tx) x.superseded = tx.some(y => y !== x && y.is_amendment && same(y) === same(x) && y.published_at > x.published_at);
+  const sum = list => Math.round(list.reduce((a, v) => a + Number(v || 0), 0) * 100) / 100;
+  const totals = rows => {
+    const kept = rows.filter(x => !x.superseded), days = kept.map(x => x.transaction_date).sort();
+    const part = cat => { const r = kept.filter(x => x.category === cat); return { count: r.length, shares: sum(r.map(x => x.shares)), value: sum(r.map(x => x.estimated_value)) }; };
+    return { transactions: kept.length, superseded: rows.length - kept.length, filings: new Set(rows.map(x => x.accession)).size, purchases: part("reported_purchase"), sales: part("reported_sale"),
+      other: { count: kept.filter(x => x.category === "other").length }, first_transaction_date: days[0] || null, last_transaction_date: days.at(-1) || null,
+      last_published_at: rows.map(x => x.published_at).sort().at(-1) || null };
+  };
+  const companies = [...new Set(tx.map(x => x.issuer_cik))].map(issuer => {
+    const all = tx.filter(x => x.issuer_cik === issuer), t = totals(all);
+    return { ticker: all[0].ticker, issuer_cik: issuer, issuer_name: all[0].issuer_name, roles: ROLES[issuer], first_transaction_date: t.first_transaction_date, last_transaction_date: t.last_transaction_date,
+      last_published_at: t.last_published_at, transactions: t.transactions, purchases_value: t.purchases.value, sales_value: t.sales.value };
+  }).sort((a, b) => b.last_published_at.localeCompare(a.last_published_at));
+  const order = (a, b) => b.transaction_date.localeCompare(a.transaction_date) || b.published_at.localeCompare(a.published_at) || Number(b.id) - Number(a.id);
+  return { person: { cik: PERSON.cik, name: PERSON.name, filed_names: [PERSON.name] }, companies,
+    totals: { all: totals(tx), d30: totals(tx.filter(x => Date.parse(x.published_at) >= now - 30 * DAY)) },
+    transactions: [...tx].sort(order), filings: filings.sort((a, b) => b.published_at.localeCompare(a.published_at)),
+    other_issuers: [{ cik: "0001888888", name: "EXAMPLE BIOSCIENCES CORP", ticker: null, relation: "director", last_transaction_date: "2015-03-02" }],
+    edgar_url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001214156&type=4&dateb=&owner=include&count=40",
+    source: "SEC Form 4", disclaimer: "Public SEC records. Not a recommendation or a prediction." };
+}
 const insiderPeople = transactionItems.map(t => ({ owner_name: t.owner_name, owner_cik: t.owner_cik, ticker: t.ticker, issuer_name: t.issuer_name, filings: 3, transactions: 3, last_transaction_date: t.transaction_date, created_at: t.published_at }));
-function fixture(url, method) {
+// fixture(url, method, from): the JSON body for a mocked /v1 request made by the page at path `from`, an
+// answer(status, body) for a status other than 200, or null (answered 404 "not mocked").
+const STATUS = Symbol("status");
+const answer = (status, body) => ({ [STATUS]: status, body });
+function fixture(url, method, from = "") {
   const ticker = url.searchParams.get("ticker") || "AAPL";
   const company = ticker === "MSFT" ? "MICROSOFT CORP" : ticker === "NVDA" ? "NVIDIA CORP" : "Apple Inc.";
   const p = url.pathname;
+  if (/^\/v1\/people\/[^/]+$/.test(p)) return decodeURIComponent(p.slice(11)).replace(/^0+/, "") === "1214156" ? personFile() : answer(404, { error: PERSON_NOT_FOUND });
+  // The personnel file starts unfollowed (Follow +); the overview follows Tim Cook.
+  if (p === "/v1/me/people" && from === "/person.html") return { items: [] };
   if (p === "/v1/intelligence") {
     const history = {};
     for (const [id, label, fn] of [["revenue", "Revenue", i => (i + 1) * 1e9], ["netIncome", "Net income", i => (i - 1) * 2e8], ["operatingIncome", "Operating income", i => (i + 1) * 4e8], ["operatingCashFlow", "Operating cash flow", i => (i + 1) * 3e8]]) history[id] = { label, unit: "USD", points: records(fn) };
@@ -562,12 +630,19 @@ try {
     if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
     await context.route("**/v1/**", async route => {
-      const url = new URL(route.request().url());
-      const body = fixture(url, route.request().method());
-      if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+      const request = route.request(), url = new URL(request.url());
+      let from = ""; try { from = new URL(request.frame().url()).pathname; } catch {}
+      const body = fixture(url, request.method(), from);
+      if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
+      else if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       else await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not mocked"}' });
     });
-    await context.route(/upload\.wikimedia\.org|thumb\.wikimedia\.org/, route => route.fulfill({ status: 200, contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#777"/></svg>' }));
+    // Commons pictures are stood in for by a grey disc as large as the file asked for (a "250px-" thumbnail is 250px
+    // wide), so the sharpness check judges the page's choice of thumbnail, not the stand-in.
+    await context.route(/upload\.wikimedia\.org|thumb\.wikimedia\.org/, route => {
+      const px = Number((/\/(\d{2,4})px-[^/]*$/.exec(new URL(route.request().url()).pathname) || [])[1]) || 512;
+      return route.fulfill({ status: 200, contentType: "image/svg+xml", body: `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#777"/></svg>` });
+    });
     for (const [key, path] of pages) {
       const page = await context.newPage();
       const errors = [];

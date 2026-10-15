@@ -74,6 +74,34 @@
   /* Identity tiles (entity-media.js): each reporting person's headshot, found by their SEC owner CIK (or the
      company's logo standing in for it), and the company's logo by ticker or issuer CIK. */
   const media = window.InsidirMedia;
+  /* A reporting person's name opens their own file (person.html?cik=, the owner CIK without leading zeros) when the
+     line carries the CIK. A joint filing (owner_cik null) lists its owners in owners:[{cik,name}], each linked; with no
+     list (a line imported before the owners were recorded) its joined owner_name is split on the commas (a ", Inc." or
+     ", Jr." stays on the name before it). A name with no CIK opens the people directory's search for it
+     (people.html?q=<name>#v10-directory). */
+  const fileHref = cik => {
+    const c = String(cik ?? "").trim();
+    return /^\d{1,10}$/.test(c) && /[1-9]/.test(c) ? "person.html?cik=" + c.replace(/^0+/, "") : "";
+  };
+  const personHref = (cik, name) => {
+    const n = String(name ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    return fileHref(cik) || (n ? "people.html?q=" + encodeURIComponent(n) + "#v10-directory" : "");
+  };
+  const SUFFIX = /^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+  const splitNames = s => String(s ?? "").split(/\s*,\s*/).filter(Boolean).reduce((out, p) => {
+    if (out.length && SUFFIX.test(p)) out[out.length - 1] += ", " + p; else out.push(p);
+    return out;
+  }, []);
+  const ownersOf = item => {
+    const listed = item.owner_cik ? [{cik: item.owner_cik, name: item.owner_name}] :
+      Array.isArray(item.owners) && item.owners.length ? item.owners.filter(o => o && (o.cik || o.name)) :
+      splitNames(item.owner_name).map(name => ({cik: null, name}));
+    return listed.length ? listed.slice(0, 12) : [{cik: null, name: ""}];
+  };
+  const ownerNames = owners => owners.map(o => {
+    const name = esc(o.name || "Reporting person unavailable"), href = personHref(o.cik, o.name);
+    return href ? '<a class="ins-person-link" href="' + esc(href) + '">' + name + "</a>" : name;
+  }).join(", ");
   const setCompanyHeading = (name, ticker, cik) => {
     const host = byId("research-company");
     const label = esc(name) + " (" + esc(ticker) + ")";
@@ -119,8 +147,9 @@
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
         item.is_amendment ? "Amended filing" : ""
       ].filter(Boolean).join(" · ");
-      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm",{cik:item.owner_cik,issuerCik:item.issuer_cik})||"") +
-        "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
+      const owners = ownersOf(item), lead = owners.find(o => fileHref(o.cik)) || owners[0];
+      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(lead.name || "",item.ticker||selectedTicker,"sm",{cik:lead.cik,issuerCik:item.issuer_cik})||"") +
+        "<div><strong>" + ownerNames(owners) +
         "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + directionLabel(item.category, category) +
         "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td data-label='Reported value'>" +
         esc(displayCash(item.estimated_value)) + "<small>" + quantity + "</small></td><td data-label='Published'>" +

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { serveStatic } from "../src/web.mjs";
 import { readFile, readdir } from "node:fs/promises";
+import { runInNewContext } from "node:vm";
 
 async function withServer(fn) {
   const server = createServer((req, res) => {
@@ -245,12 +246,12 @@ test("the landing page shows no product dashboard, no live data feed and no link
  assert.match(home,/data-halftone-hero/);
  for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
  const main=home.split(/<footer/)[0];
- for(const gated of ["dashboard.html","research.html","explore.html","company.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","people.html"])assert.ok(!main.includes('href="'+gated),"landing content must not link into the paid product: "+gated);
+ for(const gated of ["dashboard.html","research.html","explore.html","company.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","people.html","person.html"])assert.ok(!main.includes('href="'+gated),"landing content must not link into the paid product: "+gated);
  for(const src of [...home.matchAll(/<script[^>]*src="([^"?]+)/g)].map(m=>m[1])){
    const js=await(await fetch(base+"/"+src)).text();
    assert.doesNotMatch(js,/fetch\(\s*["'`]\/v1\/(filings|transactions|intelligence|market|company|search|insiders)/,src+" must not pull product data onto the public landing page");
  }
- const pages=["dashboard.html","research.html","explore.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html","platform.html","why-insidir.html","data.html","subscribe.html"];
+ const pages=["dashboard.html","research.html","explore.html","filings.html","filing.html","people.html","person.html","watchlist.html","portfolio.html","alerts.html","billing.html","account.html","signin.html","signup.html","pricing.html","terms.html","privacy.html","company-info.html","platform.html","why-insidir.html","data.html","subscribe.html"];
  for(const page of pages){const r=await fetch(base+"/"+page);assert.equal(r.status,200,page);assert.match(await r.text(),/v13-halftone\.css/,page);}
 });});
 
@@ -395,7 +396,7 @@ test("landing page is fully responsive markup: viewport meta, no fixed-width lay
 
 test("V13 halftone identity: shared theme on every page, dotted wordmark only in the landing hero", async () => {
   await withServer(async base => {
-    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html"];
+    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html", "person.html"];
     let wordmarks = 0;
     for (const page of pages) {
       const res = await fetch(base + "/" + page);
@@ -478,20 +479,40 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
   for(const rule of [/\.rd-day__bar--up\{background:var\(--hf-up\)/,/\.rd-day__bar--down\{background:var\(--hf-down\)/,/\.rd-co__bar--up\{background:var\(--hf-up\)/,/\.rd-co__bar--down\{background:var\(--hf-down\)/])assert.match(dash,rule);
   assert.doesNotMatch(dash,/hf-warm/,"no orange on the overview");
   assert.doesNotMatch(await readFile(new URL("v13-app.css",css),"utf8"),/hf-warm/,"no orange in the app pages' stylesheet");
-  const js=await readFile(new URL("../web/assets/js/v3-dashboard.js",import.meta.url),"utf8");
-  for(const code of ["P","S","A","M","F","G"])assert.match(js,new RegExp("\\b"+code+':"'),"code "+code+" has its SEC meaning");
+  // The SEC's meaning of every Form 4 code lives in form4-words.js (window.InsidirForm4.CODES), shared by the
+  // overview and the personnel file: load the real script and read the object it exports.
+  const jsDir=new URL("../web/assets/js/",import.meta.url);
+  const sandbox={window:{}};
+  runInNewContext(await readFile(new URL("form4-words.js",jsDir),"utf8"),sandbox,{filename:"form4-words.js"});
+  const F=sandbox.window.InsidirForm4;
+  assert.ok(F&&F.CODES&&Object.isFrozen(F.CODES),"form4-words.js exports a frozen CODES table");
+  for(const c of "PSVADFIMCEHOXGLWZJKU")assert.ok(typeof F.CODES[c]==="string"&&F.CODES[c].length>3,"code "+c+" has its SEC meaning in form4-words.js");
+  const sec={P:/^Open market or private purchase/,S:/^Open market or private sale/,A:/^Grant, award or other acquisition/,D:/^Disposition to the issuer/,
+    F:/^Payment of exercise price or tax liability by delivering or withholding securities/,M:/^Exercise or conversion of .*derivative security/,
+    X:/^Exercise of an in-the-money or at-the-money derivative security/,G:/^Bona fide gift$/,J:/^Other acquisition or disposition/};
+  for(const [c,re] of Object.entries(sec))assert.match(F.CODES[c],re,"code "+c+" reads in the SEC's own words");
+  assert.equal(F.codeMeaning("P"),F.CODES.P,"codeMeaning reads CODES");
+  assert.equal(F.codeMeaning("Q"),"","an unknown code has no invented meaning");
+  // The overview takes CODES from form4-words.js (no second copy) and keeps its own plain-words legend under the table.
+  const js=await readFile(new URL("v3-dashboard.js",jsDir),"utf8");
+  assert.match(js,/const F=window\.InsidirForm4;/,"v3-dashboard.js reads window.InsidirForm4");
+  assert.match(js,/\bCODES,NOUN,code,codeMeaning\b[^}]*\}=F;/,"v3-dashboard.js takes CODES from form4-words.js");
+  assert.doesNotMatch(js,/const CODES\s*=/,"v3-dashboard.js keeps no copy of the SEC meanings");
+  const legend=(js.match(/const LEGEND=\{[^}]*\}/)||[""])[0];
+  for(const [c,w] of Object.entries({P:"bought on the market",S:"sold on the market",A:"grant or award",M:"option exercise",F:"shares withheld for tax or the exercise price",G:"gift"}))
+    assert.ok(legend.includes(c+':"'+w+'"'),"the legend under the table says "+c+" in plain words");
 });
 
 test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
   const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
   // Every page that names a person or a company loads the identity helper and its stylesheet.
-  for(const page of ["dashboard","people","explore","filings","watchlist","filing","research","alerts","portfolio","company"]){
+  for(const page of ["dashboard","people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company"]){
     const html=await readFile(new URL(page+".html",web),"utf8");
     assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
     assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
   }
   // Pages that show headshots carry the credits footnote the helper fills.
-  for(const page of ["people","filing","research","alerts","portfolio","company"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  for(const page of ["people","person","filing","research","alerts","portfolio","company"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
   assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");
@@ -506,7 +527,7 @@ test("every person and company on the product pages gets a real logo or headshot
   for(const fn of ["logo","portrait","person","company","hydrate","credits","ready","refresh","logoFor","photoFor","photo","displayName","initials","knownBrand"])
     assert.match(helper,new RegExp("InsidirMedia=Object\\.freeze\\(\\{[^}]*\\b"+fn+"\\b"),"InsidirMedia."+fn);
   // Call sites identify people by SEC owner CIK and companies without a ticker by issuer CIK.
-  const sites={"research.js":/cik:item\.owner_cik/,"v2-filing.js":/cik:t\.owner_cik/,"live-research.js":/cik:x\.owner_cik/,"portfolio.js":/cik:t\.owner_cik/,
+  const sites={"research.js":/cik:\s?item\.owner_cik/,"v2-filing.js":/cik:t\.owner_cik/,"live-research.js":/cik:x\.owner_cik/,"portfolio.js":/cik:t\.owner_cik/,
     "manual-holdings.js":/cik:item\.owner_cik/,"v2-collections.js":/cik:x\.issuer_cik/,"v12-company.js":/InsidirMedia[\s\S]*logoFor/};
   for(const [file,rule] of Object.entries(sites))assert.match(await readFile(new URL(file,js),"utf8"),rule,file);
   // The company picker and header ask the batch, not one logo request per tile.
@@ -542,7 +563,15 @@ test("identity tiles fill their box on every page, logos are not held back by th
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   // retryAfter paces headshots only; logos keep their own hint or the 2/4/8 s schedule.
   assert.match(helper,/retryAfterLogos/);
-  assert.match(helper,/later\(rk,rk\[0\]==="p"\?photoAfter:logoAfter,true\)/);
+  assert.match(helper,/later\(rk,rk\[0\]==="p"\?photoAfter:logoAfter,true(?:,queued\.has\(rk\))?\)/);
+  // A headshot whose company job has not started yet (the answer's queued:["<ownerCik>:<TICKER>"]) waits its turn
+  // without using up the ~6 minute schedule, and nothing is asked again past about 15 minutes.
+  assert.match(helper,/Array\.isArray\(body\.queued\)/);
+  assert.match(helper,/const CEILING=15\*60e3/);
+  assert.match(helper,/if\(inQueue\)\{[^}]*queuedAsks/,"a queued ask does not count against the schedule");
+  // The company report's people: a job still waiting its turn does not advance the photo schedule (15-30 s apart).
+  const report=await readFile(new URL("v12-company.js",js),"utf8");
+  assert.match(report,/if \(data\.queued\) again\([^;\n]*\[attempt, queued \+ 1\]\)/);
   // People at an issuer with no ticker are asked by issuer CIK, and its logo stands in by CIK.
   assert.match(helper,/":cik:"\+IC/);
   assert.match(helper,/issuerCik:o\.issuerCik/);
@@ -563,4 +592,65 @@ test("identity tiles fill their box on every page, logos are not held back by th
   assert.match(check,/every picture fills its tile/);
   assert.match(check,/credits at the bottom/);
   assert.match(check,/"filing-private"/);
+});
+
+test("the personnel file is a gated product page built only from GET /v1/people/<cik>",async()=>{
+  await withServer(async base=>{
+    const res=await fetch(base+"/person.html?cik=1214156");
+    assert.equal(res.status,200);
+    const html=await res.text();
+    assert.match(html,/<body[^>]*class="[^"]*\bpf-page\b/);
+    assert.match(html,/data-app-header data-active="insiders"/,"the product header, on the People tab");
+    for(const id of ["pf-name","pf-photo","pf-fields","pf-follow","pf-state","pf-record","pf-affiliations","pf-log","pf-filings","pf-edgar-link"])assert.match(html,new RegExp('id="'+id+'"'),id);
+    // The Form 4 wording is shared with the overview: form4-words.js loads before both pages' scripts.
+    const order=s=>html.indexOf('src="assets/js/'+s);
+    for(const s of ["entity-media.js","form4-words.js","person.js","v13-motion.js"])assert.ok(order(s)>0,"person.html loads "+s);
+    assert.ok(order("form4-words.js")<order("person.js"),"form4-words.js loads before person.js");
+    assert.match(html,/assets\/css\/v13-person\.css/);
+    assert.match(html,/data-media-credits/);
+    assert.doesNotMatch(html,/<tr[^>]*data-hf-reveal|<input[^>]*data-hf-reveal/,"no reveal on table rows or inputs");
+    const js=await(await fetch(base+"/assets/js/person.js")).text();
+    for(const route of ["/v1/people/","/v1/me/people"])assert.ok(js.includes(route),"person.js asks "+route);
+    assert.match(js,/window\.InsidirForm4/,"figures and wording come from form4-words.js");
+    assert.match(js,/media\.portrait|InsidirMedia/,"the file photo is a real headshot or the company logo, through entity-media.js");
+    assert.doesNotMatch(js,/Math\.random|ui-avatars|pravatar|dicebear|robohash|gravatar/,"nothing generated");
+    const css=await readFile(new URL("../web/assets/css/v13-person.css",import.meta.url),"utf8");
+    assert.match(css,/@layer insidir-v13\{/,"V13 rules live in the insidir-v13 layer");
+    assert.doesNotMatch(css,/#e9762b|--hf-warm|orange/i,"no orange on the file");
+    // Gated like the rest of the product: the client gate and the sign-in / subscribe return paths know the page.
+    const app=await(await fetch(base+"/assets/js/app.js")).text();
+    assert.match(app,/GATED_PAGES = \[[^\]]*"person"/,"app.js gates person.html on 401/402");
+    assert.match(await(await fetch(base+"/assets/js/auth.js")).text(),/person: "the personnel file"/,"sign-in returns the reader to the file");
+    assert.match(await(await fetch(base+"/assets/js/subscribe.js")).text(),/PAGES = \[[^\]]*"person"/,"subscribing returns the reader to the file");
+  });
+});
+
+test("every person name links to their own file (person.html?cik=<owner CIK without leading zeros>) when the CIK is known",async()=>{
+  const js=new URL("../web/assets/js/",import.meta.url);
+  // A literal "person.html?cik=" joined to a CIK with its leading zeros removed (the people search stays the fallback).
+  const link=/["'`]person\.html\?cik=["'`]\s*\+\s*[\w$.]+\.replace\(\/\^0\+\/,\s*["'`]{2}\)/;
+  for(const file of ["v10-people.js","v3-dashboard.js","v12-company.js","app.js","v2-filing.js","research.js"]){
+    const code=await readFile(new URL(file,js),"utf8");
+    assert.ok(code.includes("person.html?cik="),file+" links people to person.html?cik=");
+    assert.match(code,link,file+" builds the link from the owner CIK without leading zeros");
+  }
+  // The overview's people (followed list, suggestions) and every trade row go through InsidirDesk.personHref(name, cik).
+  const overview=await readFile(new URL("v13-overview.js",js),"utf8");
+  assert.ok((overview.match(/D\.personHref\([^,()]+,\s*[\w$.]+\)/g)||[]).length>=2,"v13-overview.js passes the owner CIK to personHref");
+  assert.doesNotMatch(overview,/D\.personHref\([^,()]+\)/,"no person link without the CIK");
+  const desk=await readFile(new URL("v3-dashboard.js",js),"utf8");
+  assert.match(desk,/personHref\(x\.owner_name,\s*x\.owner_cik\)/,"trade rows link the reporting owner by CIK");
+  const people=await readFile(new URL("v10-people.js",js),"utf8");
+  assert.doesNotMatch(people,/personHref\([^,()]+\)/,"every directory link passes the CIK");
+});
+
+test("person tiles carry the owner CIK and the issuer CIK, so the company's logo can stand in for a missing headshot",async()=>{
+  const js=new URL("../web/assets/js/",import.meta.url),read=f=>readFile(new URL(f,js),"utf8");
+  const desk=await read("v3-dashboard.js");
+  assert.match(desk,/const personTile=\(name,ticker,cik,size,issuerCik\)=>.*media\.portrait\(.*\{cik:cikOf\(cik\),issuerCik:cikOf\(issuerCik\)\}\)/,"InsidirDesk.personTile passes both CIKs");
+  assert.match(desk,/const whoTile=.*personTile\([^()]*,x\.issuer_cik\)/,"trade rows pass the issuer CIK");
+  const overview=await read("v13-overview.js");
+  assert.ok((overview.match(/D\.personTile\([^)]*,"md",[\w$.]+\)/g)||[]).length>=2,"followed people and suggestions pass the issuer CIK");
+  const people=await read("v10-people.js");
+  assert.ok((people.match(/media\?\.portrait\([^)]*\{cik:id,issuerCik:ic\}\)/g)||[]).length>=2,"directory cards and the followed list pass both CIKs");
 });

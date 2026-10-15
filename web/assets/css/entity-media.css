@@ -78,6 +78,12 @@ body.v13 #main :is(.live-table,.portfolio-table) .ins-person-cell--sub{display:f
 body.v13 #main :is(.live-table,.portfolio-table) .ins-person-cell--sub small{margin:0!important}
 body.v13 #main :is(.live-table,.portfolio-table) :is(.ins-company-cell,.ins-person-cell){display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
 
+/* ---------- A person's name beside their tile opens their own file (person.html?cik=) ---------- */
+body.v13 a.ins-person-link{color:var(--hf-ink)!important;font:inherit!important;letter-spacing:inherit!important;text-transform:none!important;background:none!important;
+  text-decoration:underline!important;text-decoration-thickness:1px!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:text-decoration-color .2s!important}
+body.v13 a.ins-person-link:is(:hover,:focus-visible){color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
+@media (prefers-reduced-motion:reduce){body.v13 a.ins-person-link{transition:none!important}}
+
 /* ---------- Photo credits footnote ([data-media-credits], filled by entity-media.js) ---------- */
 body.v13 .ins-media-credits{display:block!important;max-width:820px!important;margin:clamp(28px,4vw,48px) 0 0!important;font:400 10.5px/1.7 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-faint)!important}
 body.v13 .ins-media-credits:empty{display:none!important}

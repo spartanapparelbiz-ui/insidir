@@ -14,23 +14,25 @@
  *   404 when the CIK has no transactions in parsed filings. 429 past 60 profiles a minute per member.
  *
  * Response 200 (application/json)
- * { person: { cik,                  owner CIK exactly as stored by the import (newest line) - the value
- *                                   POST /v1/me/people and the followed feed match on
+ * { person: { cik,                  owner CIK exactly as stored by the import (newest line), usually the
+ *                                   10-digit form; POST /v1/me/people accepts any form of it and stores
+ *                                   the 10-digit one, and the follow routes compare without leading zeros
  *             name,                 the name as filed on the newest line
  *             filed_names: [..] },  every distinct name filed under this CIK, newest first (max 20)
  *   companies: [ {                  one per issuer, most recently published first (max 100)
  *       ticker,                     newest non-null ticker filed for that issuer (or null)
  *       issuer_cik,                 10-digit issuer CIK
  *       issuer_name,                newest non-null issuer name (or null)
- *       roles: ["Chief Executive Officer", "Director", "10% owner"],
+ *       roles: ["Chief Executive Officer", "Director", "10% owner"] | [] | null,
  *                                   reportingOwnerRelationship from the person's latest Form 4 at that
  *                                   issuer: the officer title as filed (or "Officer"), "Director",
- *                                   "10% owner", else the "other" text. Same wording as
- *                                   insiders.mjs ownerRole(). Read from sec_filing_owners when that
- *                                   table exists, else from the filing's XML: the 8 most recent issuers
- *                                   only, one cached document each, within the SEC allowance below;
- *                                   [] beyond that, when no XML is on file, on any failure, or past
- *                                   the time budget.
+ *                                   "10% owner", else the "other" text (insiders.mjs ownerRoles(), the
+ *                                   one wording source). Read from sec_filing_owners when that table
+ *                                   has the person's row, else from the filing's XML for the 8 most
+ *                                   recent issuers only, one cached document each, within the SEC
+ *                                   allowance below. null = not looked up (past those 8 issuers);
+ *                                   [] when no XML is on file, on any failure, past the allowance or
+ *                                   past the time budget.
  *       first_transaction_date, last_transaction_date, last_published_at,
  *       transactions,               lines counted (see "Amendments")
  *       purchases_value, sales_value } ],  sums of reported values (reported_purchase / reported_sale)
@@ -47,7 +49,9 @@
  *   transactions: [ rows like GET /v1/transactions items (t.* plus issuer_name, published_at,
  *                   is_amendment; NUMERIC columns as pg strings) plus superseded (boolean), newest
  *                   trade date first, LIMIT limit. Superseded lines are listed, never hidden. A line
- *                   with owner_cik null comes from a joint filing (several reporting owners). ],
+ *                   with owner_cik null comes from a joint filing (several reporting owners); with
+ *                   sec_filing_owners it carries owners: [{cik, name}], every reporting owner of that
+ *                   filing as filed and in filing order (this person included), like /v1/transactions. ],
  *   filings: [ { accession, form_type, ticker, issuer_cik (10-digit), issuer_name, published_at, source_url,
  *                lines } ]          lines = this person's lines in that filing; newest first, max 100
  *   other_issuers: [ { cik, name, ticker, relation, last_transaction_date } ]
@@ -66,13 +70,18 @@
  * key the dashboard's derive() uses. Only the latest copy is counted, so a restated sale is one
  * sale. A 4/A that changes any of those fields is a different line, and both copies count.
  *
- * Joint filings: the importer stores a Form 4 with several reporting owners with owner_cik NULL.
- * When the sec_filing_owners table exists (one row per reporting owner per filing; checked once
- * and remembered), those lines are attributed to every owner listed and roles are read from it;
- * without it a person who only files jointly has no imported lines here and gets a 404 saying so.
+ * Joint filings: the importer stores a Form 4 with several reporting owners with owner_cik NULL (so
+ * market totals count each line once). sql/008_filing_owners.sql adds sec_filing_owners (one row per
+ * reporting owner per filing, written by persistFiling; older imports by
+ * scripts/backfill-filing-owners.mjs). When that table exists (hasFilingOwners: checked once per
+ * query function and remembered), those lines are attributed to every owner listed and roles are
+ * read from it; without it a person who only files jointly has no imported lines here and gets a
+ * 404 saying so. The follow routes in src/api.mjs use the same table and the same check, and the
+ * same withJointOwners() below names the owners of every joint line they answer with.
  *
- * Cost: four parameterised SQL statements per request whatever the number of lines (plus a
- * catalogue check for sec_filing_owners every few minutes), each scoped by
+ * Cost: four parameterised SQL statements per request whatever the number of lines (plus, when the
+ * lines shown include joint ones, one JOINT_OWNERS_SQL read by accession for their owners, and a
+ * catalogue check for sec_filing_owners every few minutes), each of the four scoped by
  * owner_cik = ANY([unpadded, 10-digit]). Each statement reads the person's lines once off
  * sec_transactions_owner_idx into a materialised CTE and probes sec_filings once per distinct
  * accession (sec_filings_pkey), never once per line, so the work follows the person's own filings
@@ -91,7 +100,7 @@
 import * as secModule from "./sec.mjs";
 import { secFetch, parseOwnership } from "./sec.mjs";
 import { secReady } from "./config.mjs";
-import { ownerIssuers as edgarOwnerIssuers } from "./insiders.mjs";
+import { ownerIssuers as edgarOwnerIssuers, ownerRoles } from "./insiders.mjs";
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
 
 export const DEFAULT_LIMIT = 100, MAX_LIMIT = 500;
@@ -123,17 +132,9 @@ export function parseLimit(value) {
   return Number.isInteger(n) ? Math.max(1, Math.min(MAX_LIMIT, n)) : DEFAULT_LIMIT;
 }
 
-/* ownerRole() from insiders.mjs as a list: one entry per relationship the filer ticked. */
-export function rolesOf(owner) {
-  if (!owner) return [];
-  const clean = v => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
-  const roles = [];
-  if (owner.isOfficer) roles.push(clean(owner.officerTitle) || "Officer");
-  if (owner.isDirector) roles.push("Director");
-  if (owner.isTenPercentOwner) roles.push("10% owner");
-  if (!roles.length && clean(owner.otherText)) roles.push(clean(owner.otherText));
-  return roles;
-}
+/* ownerRole() from insiders.mjs as a list: one entry per relationship the filer ticked (the same
+ * function, so the wording has one source). */
+export const rolesOf = ownerRoles;
 
 /* ---------- exact arithmetic: pg NUMERIC strings are added in fixed point, converted once ---------- */
 const SCALE = 8, UNIT = 10n ** BigInt(SCALE);
@@ -184,8 +185,9 @@ export const SAME_LINE = "LTRIM(t.issuer_cik,'0')||'|'||COALESCE(t.transaction_d
 const KEY_COLUMNS = ["issuer_cik", "transaction_date", "transaction_code", "acquired_disposed", "derivative", "shares"];
 const AMENDED_CTE = `amended AS (SELECT ${SAME_LINE} AS same,MAX(f.published_at) AS amended_at
   FROM lines t JOIN files f ON f.accession=t.accession WHERE f.is_amendment GROUP BY 1)`;
-// A line is superseded when a 4/A published after its own filing repeats it.
-const SUPERSEDED = (amendedAt, publishedAt) => `(${amendedAt} IS NOT NULL AND (${publishedAt} IS NULL OR ${amendedAt}>${publishedAt}))`;
+// A line is superseded when a 4/A published after its own filing repeats it. Exported with SAME_LINE
+// so the followed feed (src/api.mjs) counts restated lines by the same rule.
+export const SUPERSEDED = (amendedAt, publishedAt) => `(${amendedAt} IS NOT NULL AND (${publishedAt} IS NULL OR ${amendedAt}>${publishedAt}))`;
 export const RECENT_FILED = "x.published_at>=now()-interval '30 days'";     // filings published in the window
 export const RECENT_DISCLOSED = "c.disclosed_at>=now()-interval '30 days'"; // lines first filed in the window
 const RECENT_SUPERSEDED = "c.published_at>=now()-interval '30 days'";       // superseded lines, by their own filing
@@ -283,15 +285,40 @@ export const { companies: COMPANIES_SQL, names: NAMES_SQL, transactions: TRANSAC
 export const OWNERS_TABLE_SQL = "SELECT to_regclass('sec_filing_owners') IS NOT NULL AS present";
 
 /* Whether sec_filing_owners exists, asked once per query function and remembered (an hour when
- * present, five minutes when absent, so a migration is picked up without a restart). */
+ * present, five minutes when absent, so a migration is picked up without a restart). Only an answer
+ * is remembered: a check that fails (the database briefly unreachable) counts as absent for that one
+ * request and is asked again on the next, so a blip never switches joint attribution off for minutes.
+ * Also used by src/api.mjs (follow routes, joint owners, /v1/insiders, /v1/media). */
 const ownerTables = new WeakMap();
-async function jointOwners(query) {
+export async function hasFilingOwners(query) {
   const known = ownerTables.get(query);
   if (known && known.until > Date.now()) return known.present;
-  let present = false;
-  try { present = (await query(OWNERS_TABLE_SQL, [])).rows?.[0]?.present === true; } catch { present = false; }
+  let present;
+  try { present = (await query(OWNERS_TABLE_SQL, [])).rows?.[0]?.present === true; } catch { return false; }
   ownerTables.set(query, { present, until: Date.now() + (present ? 60 : 5) * 60_000 });
   return present;
+}
+
+/* The reporting owners of joint filings, in the order the filing lists them (sec_filings.owner_names). */
+export const JOINT_OWNERS_SQL = `SELECT o.accession,o.owner_cik,o.owner_name FROM sec_filing_owners o JOIN sec_filings f ON f.accession=o.accession
+  WHERE o.accession=ANY($1::text[])
+  ORDER BY o.accession,array_position(f.owner_names,o.owner_name) NULLS LAST,o.owner_cik`;
+/* Adds owners: [{cik, name}] to every joint line (owner_cik NULL, with its accession) in rows, in one
+ * query for all of them; rows without a joint line, or joint false (no sec_filing_owners), cost
+ * nothing. Mutates and returns rows. The one helper for every answer that lists Form 4 lines: the
+ * profile below, and /v1/transactions, /v1/filings/<acc>, the followed feed, /v1/me/alerts and
+ * /v1/me/manual-holdings in src/api.mjs (and any other module that lists lines). */
+export async function withJointOwners(rows, run, joint) {
+  if (!joint || !Array.isArray(rows)) return rows;
+  const accessions = [...new Set(rows.filter(r => r && r.owner_cik == null && typeof r.accession === "string" && r.accession).map(r => r.accession))];
+  if (!accessions.length) return rows;
+  const owners = new Map();
+  for (const o of (await run(JOINT_OWNERS_SQL, [accessions])).rows || []) {
+    if (!owners.has(o.accession)) owners.set(o.accession, []);
+    owners.get(o.accession).push({ cik: o.owner_cik, name: o.owner_name });
+  }
+  for (const r of rows) if (r && r.owner_cik == null && owners.has(r.accession)) r.owners = owners.get(r.accession).map(o => ({ ...o }));
+  return rows;
 }
 
 /* ---------- totals: added up from the per-issuer rows ---------- */
@@ -395,15 +422,16 @@ function admit(cache, key, kind, { starts, usage }) {
 }
 
 /* Roles at each company: stored roles first; otherwise the person's latest ownership XML at the
- * first MAX_ROLE_ISSUERS companies, within the grant. */
+ * first MAX_ROLE_ISSUERS companies, within the grant (null past those: not looked up). */
 async function rolesFor(companies, bare, { fetcher, documents: docs, budgetMs, starts, usage }) {
   const stop = deadline(budgetMs);
   try {
     return await Promise.all(companies.map((company, i) => {
       if (company.role_on_file === true) return rolesOf({ isDirector: company.role_director, isOfficer: company.role_officer,
         officerTitle: company.role_officer_title, isTenPercentOwner: company.role_ten_percent_owner, otherText: company.role_other_text });
+      if (i >= MAX_ROLE_ISSUERS) return null;
       const url = company.latest_xml_url;
-      if (i >= MAX_ROLE_ISSUERS || typeof url !== "string" || !XML_URL.test(url)) return [];
+      if (typeof url !== "string" || !XML_URL.test(url)) return [];
       const key = "owner-roles:" + url;
       if (!admit(docs, key, "documents", { starts, usage })) return [];
       const load = async () => parseOwnership(await fetcher(url), { accession: String(company.latest_accession || ""), sourceUrl: url, publishedAt: null })
@@ -471,7 +499,7 @@ function heavyStore(query) {
   if (!store) heavyRecords.set(query, store = new Map());
   return store;
 }
-async function loadRecords(query, sql, ciks, limit, onCompanies) {
+async function loadRecords(query, sql, ciks, limit, onCompanies, joint) {
   const companyRows = (await query(sql.companies, [ciks])).rows || [];
   if (!companyRows.length) return null;
   const shown = companyRows.slice(0, MAX_COMPANIES);
@@ -479,6 +507,8 @@ async function loadRecords(query, sql, ciks, limit, onCompanies) {
   onCompanies(shown, imported); // SEC work starts now and runs while the remaining SQL runs.
   const names = (await query(sql.names, [ciks])).rows || [];
   const transactions = (await query(sql.transactions, [ciks, limit])).rows || [];
+  // Joint lines name every reporting owner, so each co-filer links to their own file.
+  await withJointOwners(transactions, query, joint);
   const filings = ((await query(sql.filings, [ciks])).rows || []).map(row => ({
     accession: row.accession, form_type: row.form_type ?? null, ticker: row.ticker ?? null, issuer_cik: row.issuer_cik ?? null, issuer_name: row.issuer_name ?? null,
     published_at: row.published_at ?? null, source_url: row.source_url ?? null, lines: count(row.lines)
@@ -502,7 +532,7 @@ async function loadRecords(query, sql, ciks, limit, onCompanies) {
 export async function personProfile(cikValue, deps = {}) {
   const { query, limit = DEFAULT_LIMIT, fetcher = secFetch } = deps;
   const { bare, ciks } = parsePersonCik(cikValue);
-  const joint = typeof deps.jointOwners === "boolean" ? deps.jointOwners : await jointOwners(query);
+  const joint = typeof deps.jointOwners === "boolean" ? deps.jointOwners : await hasFilingOwners(query);
   const sql = joint ? SQL.joint : SQL.single;
 
   const usingSec = fetcher === secFetch;
@@ -528,7 +558,7 @@ export async function personProfile(cikValue, deps = {}) {
   let records = store.get(key)?.records;
   if (records) startLookups(records.shown, records.imported);
   else {
-    records = await loadRecords(query, sql, ciks, limit, startLookups);
+    records = await loadRecords(query, sql, ciks, limit, startLookups, joint);
     if (!records) return null;
     if (records.lines >= HEAVY_LINES) {
       store.set(key, { records, until: now + HEAVY_TTL_MS });
@@ -544,7 +574,7 @@ export async function personProfile(cikValue, deps = {}) {
   return {
     person: { cik: String(first.owner_cik ?? bare), name: filedNames[0] || null, filed_names: filedNames },
     companies: shown.map((row, i) => ({
-      ticker: row.ticker ?? null, issuer_cik: row.issuer_cik, issuer_name: row.issuer_name ?? null, roles: roleLists[i] || [],
+      ticker: row.ticker ?? null, issuer_cik: row.issuer_cik, issuer_name: row.issuer_name ?? null, roles: roleLists[i] === null ? null : roleLists[i] || [],
       first_transaction_date: row.first_transaction_date ?? null, last_transaction_date: row.last_transaction_date ?? null,
       last_published_at: row.last_published_at ?? null, transactions: count(row.transactions),
       purchases_value: exactSum([row.purchases_value]), sales_value: exactSum([row.sales_value])
@@ -588,7 +618,7 @@ export async function handlePersonRoute(req, res, url, deps = {}) {
   parsePersonCik(segment);
   const who = user?.id != null ? "user:" + user.id : deps.requester || "ip:" + (req.socket?.remoteAddress || "unknown");
   if (limited("person:" + who, PROFILES_PER_MINUTE)) throw failure(429, "Too many profile requests. Try again shortly.");
-  const joint = typeof deps.jointOwners === "boolean" ? deps.jointOwners : await jointOwners(deps.query);
+  const joint = typeof deps.jointOwners === "boolean" ? deps.jointOwners : await hasFilingOwners(deps.query);
   const reservation = (deps.secBudget || secBudget).reserve(who), usage = { documents: 0, ownerPages: 0 };
   let body;
   try {

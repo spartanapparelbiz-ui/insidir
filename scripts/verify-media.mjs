@@ -32,12 +32,16 @@ const identity = await read("assets/js/entity-media.js");
 const people = await read("people.html");
 const app = await read("assets/css/v13-app.css");
 const legacy = await read("assets/css/entity-media.css");
+const personFile = await read("assets/css/v13-person.css");
 
 // Largest square identity tile on any page (portraits are drawn into these with object-fit: cover).
 const tileSizes = [...(app + legacy).matchAll(/--ins-size:(\d+(?:\.\d+)?)px/g)].map(m => Number(m[1]));
 const knownTile = Number((/\.v10-known__photo\{[^}]*?width:(\d+)px/.exec(app) || [])[1]);
 assert.ok(tileSizes.length && knownTile > 0, "could not read the rendered portrait sizes from the stylesheets");
-const MAX_TILE = Math.max(...tileSizes, knownTile);
+// The personnel file draws its photo at --pf-photo (person.html), larger than any list tile.
+const fileSizes = [...personFile.matchAll(/--pf-photo:(\d+(?:\.\d+)?)px/g)].map(m => Number(m[1]));
+assert.ok(fileSizes.length, "could not read the personnel-file photo size from v13-person.css");
+const MAX_TILE = Math.max(...tileSizes, knownTile, ...fileSizes);
 
 const portraits = [];
 for (const m of identity.matchAll(/"([a-z-]+)":\{name:"([^"]+)",src:"([^"]+)",\s*thumb:"([^"]+)"/g)) {

@@ -35,8 +35,18 @@
      - motion: atoms written per frame during a scroll never exceed the atoms on screen (plus a few settling);
      - links: every internal link returns 200, none goes to the landing page, external links only to the SEC or
        Wikimedia Commons; 503 everywhere then recovery through each "Try again"; 401 → sign in, 402 → subscribe;
-     - the people page (v10-people.js): person links land on the search result, Familiar faces, paging, and
-       tiles that fall back to a stand-in logo or visible initials when image sources are unreachable.
+     - person links: every person named on the overview (feed, followed list, suggestions, watchlist, biggest trades,
+       the trades table) and in the header search opens their own file, person.html?cik=<owner CIK without leading
+       zeros>, and the file opens (GET /v1/people/<cik>, mocked from the same lines); a name without a CIK still lands
+       on the people directory's search result;
+     - joint filings (owner_cik null, owners [{cik, name}] in filing order, as the API sends them): a followed person who
+       is the tenth of ten owners is the one the feed row names, links, pictures and counts (their 'N new', Today's
+       count of people, dimming after an unfollow); everywhere else a joint line is one label, a person and then
+       'and N others' (the filing), with nothing cut off beside it; a line with no owners list never shows its joined
+       names as one person;
+     - the people page (v10-people.js): directory cards and followed rows link each name to its file, Familiar faces
+       open verified files (SEC CIKs checked on EDGAR), paging, and tiles that fall back to a stand-in logo or visible
+       initials when image sources are unreachable.
    Every scroll-reveal block is shown at load (InsidirMotion.revealAll) except where reveal timing is the point,
    and measurements wait for the motion layer's atoms to be home. The clock is fixed at 2026-10-14 21:00 UTC and
    the browser runs in UTC, so dates and "since your last visit" read the same on every machine.
@@ -85,14 +95,38 @@ const SERVER_NOW = Date.parse("2026-10-14T00:00:00Z");
 function updatesFor(ciks, lines = ALL_LINES) {
   const since = SERVER_NOW - 30 * 86400000;
   const byPub = (a, b) => b.published_at.localeCompare(a.published_at) || b.transaction_date.localeCompare(a.transaction_date);
-  const items = lines.filter(x => ciks.includes(x.owner_cik)).sort(byPub);
+  // As the server's followSql: a person's own lines, plus joint lines (owner_cik null) whose owners list them.
+  const theirs = (x, list) => list.includes(x.owner_cik) || (x.owner_cik == null && Array.isArray(x.owners) && x.owners.some(o => list.includes(o.cik)));
+  const items = lines.filter(x => theirs(x, ciks)).sort(byPub);
   const people = ciks.map(cik => {
-    const rows = items.filter(x => x.owner_cik === cik), recent = rows.filter(x => Date.parse(x.published_at) >= since), last = rows[0] || null;
+    const rows = items.filter(x => theirs(x, [cik])), recent = rows.filter(x => Date.parse(x.published_at) >= since), last = rows[0] || null;
     return { owner_cik: cik, owner_name: PERSON[cik][0], followed_at: "2026-09-01T00:00:00Z", ticker: PERSON[cik][1], issuer_name: PERSON[cik][2], last, last_published_at: last?.published_at ?? null, last_transaction_date: last?.transaction_date ?? null,
       filings_30d: new Set(recent.map(x => x.accession)).size, transactions_30d: recent.length,
       purchases_30d_value: recent.filter(x => x.category === "reported_purchase").reduce((s, x) => s + x.estimated_value, 0), sales_30d_value: recent.filter(x => x.category === "reported_sale").reduce((s, x) => s + x.estimated_value, 0) };
   }).sort((a, b) => String(b.last_published_at).localeCompare(String(a.last_published_at)));
   return { people, items: items.slice(0, 40), following: ciks.length, source: "SEC Form 4", disclaimer: "Reported purchases and sales are not recommendations or predictive signals." };
+}
+/* GET /v1/people/<cik> for one owner, the way src/person-profile.mjs answers it (no 4/As in these lines). */
+function personFile(cik, lines = ALL_LINES) {
+  const rows = lines.filter(x => Number(x.owner_cik) === Number(cik)).sort((a, b) => b.transaction_date.localeCompare(a.transaction_date) || b.published_at.localeCompare(a.published_at));
+  if (!rows.length) return null;
+  const since = SERVER_NOW - 30 * 86400000;
+  const totals = list => {
+    const part = cat => { const r = list.filter(x => x.category === cat); return { count: r.length, shares: r.reduce((n, x) => n + Number(x.shares), 0), value: r.reduce((n, x) => n + Number(x.estimated_value || 0), 0) }; };
+    const dates = list.map(x => x.transaction_date).sort(), pub = list.map(x => x.published_at).sort();
+    return { transactions: list.length, superseded: 0, filings: new Set(list.map(x => x.accession)).size, purchases: part("reported_purchase"), sales: part("reported_sale"), other: { count: list.filter(x => x.category === "other").length },
+      first_transaction_date: dates[0] || null, last_transaction_date: dates.at(-1) || null, last_published_at: pub.at(-1) || null };
+  };
+  const issuers = [...new Set(rows.map(x => x.issuer_cik))];
+  return {
+    person: { cik: rows[0].owner_cik, name: rows[0].owner_name, filed_names: [rows[0].owner_name] },
+    companies: issuers.map(ic => { const r = rows.filter(x => x.issuer_cik === ic); return { ticker: r[0].ticker, issuer_cik: ic, issuer_name: r[0].issuer_name, roles: ic === "0000320193" ? ["Chief Executive Officer", "Director"] : [], first_transaction_date: r.at(-1).transaction_date, last_transaction_date: r[0].transaction_date, last_published_at: r.map(x => x.published_at).sort().at(-1), transactions: r.length, purchases_value: r.filter(x => x.category === "reported_purchase").reduce((n, x) => n + x.estimated_value, 0), sales_value: r.filter(x => x.category === "reported_sale").reduce((n, x) => n + x.estimated_value, 0) }; }),
+    totals: { all: totals(rows), d30: totals(rows.filter(x => Date.parse(x.published_at) >= since)) },
+    transactions: rows.map(x => ({ ...x, shares: String(x.shares), price_per_share: x.price_per_share === null ? null : String(x.price_per_share), estimated_value: x.estimated_value === null ? null : String(x.estimated_value), superseded: false })),
+    filings: [...new Set(rows.map(x => x.accession))].map(a => { const r = rows.filter(x => x.accession === a); return { accession: a, form_type: "4", ticker: r[0].ticker, issuer_cik: r[0].issuer_cik, issuer_name: r[0].issuer_name, published_at: r[0].published_at, source_url: source, lines: r.length }; }),
+    other_issuers: [], edgar_url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + String(cik).padStart(10, "0") + "&type=4&dateb=&owner=include&count=40",
+    source: "SEC Form 4", disclaimer: "Public SEC records. Not a recommendation or a prediction."
+  };
 }
 const filings = [{ accession: "000032019326000001", ticker: "AAPL", issuer_name: "Apple Inc.", form_type: "4", published_at: "2026-09-14T20:00:00Z", source_url: source, is_amendment: false, owner_names: ["COOK TIMOTHY D"] }];
 const insiders = [COOK, HUANG, NADELLA, OTHER].map(cik => ({ owner_name: PERSON[cik][0], owner_cik: cik, ticker: PERSON[cik][1], filings: 1, last_transaction_date: "2026-09-12" }));
@@ -196,6 +230,7 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     if (method === "POST" && path === "/v1/me/watchlist") { const t = JSON.parse(body || "{}").ticker; state.posts.push("save " + t); state.saved.push(t); return { status: 200, body: { saved: true, ticker: t } }; }
     if (method !== "GET") return { status: 200, body: { saved: true } };
     if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
+    if (path.startsWith("/v1/people/")) { const f = personFile(decodeURIComponent(path.split("/").pop()), [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]); return f ? { status: 200, body: f } : { status: 404, body: { error: "Reporting person not found in imported SEC records" } }; }
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
     if (path === "/v1/transactions" && q?.has("ticker")) {
       const all = [...(data["/v1/transactions"]?.items || []), ...(data.older || [])].filter(x => x.ticker === q.get("ticker") && (!q.get("category") || x.category === q.get("category")));
@@ -242,7 +277,7 @@ const tileAudit = page => page.evaluate(() => {
     const tile = g && [...g.querySelectorAll(".ins-media")].find(t => t.classList.contains("ins-media--" + kind) || t.dataset.media === kind);
     if (!tile) missing.push(kind + ": " + e.textContent.trim());
   }
-  const people = [...document.querySelectorAll('main a[href^="people.html?q="]')].filter(a => !a.matches("[data-ent]")).map(a => a.textContent.trim());
+  const people = [...document.querySelectorAll('main a[href^="people.html?q="], main a[href^="person.html?cik="]')].filter(a => !a.matches("[data-ent]")).map(a => a.textContent.trim());
   const companies = [...document.querySelectorAll('main a[href^="company.html?ticker="]')].filter(a => !a.matches("[data-ent]") && !a.querySelector("[data-ent]")).map(a => a.textContent.trim());
   return { names: names.length, missing, unmarkedPeople: people, unmarkedCompanies: companies };
 });
@@ -321,6 +356,19 @@ try {
         Mcommon: d({ ...base, transaction_code: "M", category: "other", acquired_disposed: "A", derivative: false, shares: 3300 }),
         McommonD: d({ ...base, transaction_code: "M", category: "other", acquired_disposed: "D", derivative: false, shares: 3300 }),
         Ccommon: d({ ...base, transaction_code: "C", category: "other", acquired_disposed: "A", derivative: false, shares: 10 }),
+        // Exact figures as filed (form4-words.js, shared with the personnel file): every decimal of shares and price up to 8, values to the cent.
+        exact: d({ ...base, transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: "1200.12345678", price_per_share: "2622.54298031", estimated_value: "3147051.58" }),
+        exactDash: [D.price("41.53210000"), D.money("1132000.00"), D.money(3147051.58), D.qty("0.00000001"), D.signedMoney(-285000), D.signedMoney(0.1 + 0.2)].join(" | "),
+        same: window.InsidirForm4 && window.InsidirForm4.describe === undefined ? "missing" : typeof window.InsidirForm4?.describe,
+        // A joint filing (several reporting owners, no single owner CIK): each owner is named and linked to their own file.
+        joint: (() => { const x = { ...base, owner_cik: null, owner_name: "COOK TIMOTHY D, OTHER PUBLIC FILER", owners: [{ cik: "0001214156", name: "COOK TIMOTHY D" }, { cik: "0000067890", name: "OTHER PUBLIC FILER" }], transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: 10, price_per_share: 5, estimated_value: 50, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" };
+          const box = document.createElement("div"); box.innerHTML = D.personName(x); return [...box.querySelectorAll("a[data-ent=person]")].map(a => a.getAttribute("href") + " " + a.textContent).join(" | ") + " [" + (box.querySelector(".rd-who__more")?.textContent || "") + "] || " + D.sentence(x); })(),
+        // Imported before the owners were recorded: owner_name only. And a line whose owners list holds one CIK.
+        jointNoList: (() => { const x = { ...base, owner_cik: null, owner_name: "COOK TIMOTHY D, ADAMS KATHERINE L", transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: 10, price_per_share: 5, estimated_value: 50, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" };
+          const box = document.createElement("div"); box.innerHTML = D.personName(x); return [...box.querySelectorAll("a[data-ent=person]")].map(a => a.getAttribute("href") + " " + a.textContent).join(" | ") + " [" + (box.querySelector(".rd-who__more")?.textContent || "") + "] || " + D.sentence(x); })(),
+        jointOneCik: (() => { const x = { ...base, owner_cik: null, owner_name: "COOK TIMOTHY D, ADAMS KATHERINE L", owners: [{ cik: "0001214156", name: "COOK TIMOTHY D" }], transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: 10, price_per_share: 5, estimated_value: 50, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" };
+          const box = document.createElement("div"); box.innerHTML = D.personName(x); return [...box.querySelectorAll("a[data-ent=person]")].map(a => a.getAttribute("href") + " " + a.textContent).join(" | ") + " [" + (box.querySelector(".rd-who__more")?.textContent || "") + "] || " + D.sentence(x); })(),
+        coNames: ["OCCIDENTAL PETROLEUM CORP /DE/", "FOO BANCORP INC /NEW/", "Already Written Co /de/x", "JPMORGAN CHASE & CO /MD"].map(n => D.companyName(n)).join(" | "),
         unshared: d({ ...base, transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: null, price_per_share: 5, estimated_value: null }),
         zero: d({ ...base, transaction_code: "P", category: "reported_purchase", acquired_disposed: "A", shares: 10, price_per_share: 0, estimated_value: 0 }),
         // Sentences for screen readers: the name, then a verb; qualifiers as their own capitalised sentences.
@@ -342,7 +390,8 @@ try {
     check(words.Gd === "Gift | gave 5,000 TSLA shares as a gift" && words.Ga === "Gift | received 5,000 TSLA shares as a gift", "describe G: gave or received N shares as a gift", [words.Gd, words.Ga]);
     check(words.C === "Conversion | converted 10 Series A Preferred into TSLA shares" && words.D === "Returned | returned 40 shares to TSLA" && words.Pderiv === "Bought | bought 10 Call Option", "describe C, D and a derivative P", [words.C, words.D, words.Pderiv]);
     check(/· amended filing \(4\/A\)$/.test(words.amended), "describe marks an amended filing (4/A)", words.amended);
-    check(words.Mcommon === "Option exercise | acquired 3,300 TSLA shares by exercising or converting options or units" && words.McommonD === "Option exercise | disposed of 3,300 TSLA shares in an exercise or conversion" && words.Ccommon === "Conversion | acquired 10 TSLA shares by converting a derivative security", "describe M/C on the common-stock line: the shares received or given up, never 'derivative securities'", [words.Mcommon, words.McommonD, words.Ccommon]);
+    check(words.Mcommon === "Option exercise | acquired 3,300 TSLA shares by exercising or converting derivative securities" && words.McommonD === "Option exercise | disposed of 3,300 TSLA shares by exercising or converting derivative securities" && words.Ccommon === "Conversion | acquired 10 TSLA shares by converting a derivative security", "describe M/C on the common-stock line: the shares received or given up, not 'N derivative securities' (the wording the personnel file uses)", [words.Mcommon, words.McommonD, words.Ccommon]);
+    check(words.exact === "Sold | sold 1,200.12345678 TSLA shares at $2,622.54298031 | = $3,147,051.58" && words.exactDash === "$41.5321 | $1,132,000 | $3,147,051.58 | 0.00000001 | −$285,000 | +$0.30" && words.same === "function", "figures are written from their digits as filed (shares and prices to 8 decimals, values to the cent), by the shared form4-words.js", [words.exact, words.exactDash, words.same]);
     check(words.unshared === "Sold | sold an unreported number of TSLA shares at $5.00 | value not reported" && words.zero === "Bought | bought 10 TSLA shares at $0.00 | = $0", "a priced sale with no share count reads 'value not reported'; '= $0' only for a $0.00 price on a known share count", [words.unshared, words.zero]);
     check(words.sJ === "Timothy D. Cook acquired 7 Tesla, Inc. shares in another kind of transaction, described in the filing. Traded Sep 1, 2026, filed Sep 3, 2026." &&
       words.sE === "Timothy D. Cook let a Put Option position of 1,000 expire. Traded Sep 1, 2026, filed Sep 3, 2026." &&
@@ -351,6 +400,11 @@ try {
       words.sH === "Timothy D. Cook had a derivative position of 5 expire or be cancelled, with value received. Traded Sep 1, 2026, filed Sep 3, 2026.", "J, K, L, E and H read as sentences led by a verb", [words.sJ, words.sE, words.sK, words.sL, words.sH]);
     check(words.sIndirect === "Timothy D. Cook sold 1 Tesla, Inc. shares at $2.00, worth $2. Traded Sep 1, 2026, filed Sep 3, 2026. An amended filing (Form 4/A) restating an earlier one. Held indirectly (by a trust or family member, for example).", "qualifiers are their own capitalised sentences for screen readers", words.sIndirect);
     check(words.endName === "James D. Farley Jr|Timothy D. Cook", "a name that ends in a full stop takes no second one in a notice", words.endName);
+    check(words.joint === "person.html?cik=1214156 Timothy D. Cook [and 1 other] || Timothy D. Cook and Public Filer Other sold 10 Tesla, Inc. shares at $5.00, worth $50. Traded Sep 1, 2026, filed Sep 3, 2026.", "a joint filing is one label: its first person linked to their own file, then 'and 1 other'; the sentence names both owners", words.joint);
+    check(words.jointNoList === "people.html?q=COOK%20TIMOTHY%20D#v10-directory Timothy D. Cook [and 1 other] || Timothy D. Cook and Katherine L. Adams sold 10 Tesla, Inc. shares at $5.00, worth $50. Traded Sep 1, 2026, filed Sep 3, 2026." &&
+      words.jointOneCik === "person.html?cik=1214156 Timothy D. Cook [and 1 other] || Timothy D. Cook and Katherine L. Adams sold 10 Tesla, Inc. shares at $5.00, worth $50. Traded Sep 1, 2026, filed Sep 3, 2026.",
+      "a joint line with no owners list (or one owner's CIK only) names each owner on their own, never the joined owner_name as one person; a CIK is linked whenever the line lists it", [words.jointNoList, words.jointOneCik]);
+    check(words.coNames === "Occidental Petroleum Corp | Foo Bancorp Inc. | Already Written Co /de/x | JPMorgan Chase & Co", "issuer names drop EDGAR's state and series tags (/DE/, /NEW/, /MD)", words.coNames);
 
     // 02: watchlist and notes.
     const watch = await page.$$eval("#v3-watchlist .rd-row--watch", rows => rows.map(r => ({ href: r.querySelector("a.rd-row__link")?.getAttribute("href"), text: r.innerText.replace(/\s+/g, " ").trim(), isNew: !!r.querySelector(".rd-new") })));
@@ -419,7 +473,20 @@ try {
     check(/Grant · A/i.test(t[3]) && / 900 /.test(t[3]), "a grant reads Grant · A; a share count with no reported direction carries no sign", t[3]);
     check(await page.getAttribute("#v3-trades tr:first-child .rd-type", "title") === "S — Open market or private sale", "each code keeps its SEC meaning in the badge title");
     const tradeLinks = await page.$$eval("#v3-trades tr:first-child a", a => a.map(x => x.getAttribute("href")));
-    check(tradeLinks.includes("people.html?q=COOK%20TIMOTHY%20D#v10-directory") && tradeLinks.includes("company.html?ticker=AAPL") && tradeLinks.includes("filing.html?accession=000032019326000001"), "a trade row links the person, the company and the filing", tradeLinks);
+    check(tradeLinks.includes("person.html?cik=1214156") && tradeLinks.includes("company.html?ticker=AAPL") && tradeLinks.includes("filing.html?accession=000032019326000001"), "a trade row links the person's file (by SEC CIK), the company and the filing", tradeLinks);
+    // Every person named on the overview opens their own file: feed, followed list, suggestions, watchlist, biggest trades, trades table.
+    const named = await page.evaluate(() => {
+      const where = { feed: "#v10-follow-feed", list: "#v10-follow-list", suggest: "#v10-follow-suggest-list", watch: "#v3-watchlist", big: "#rd-largest", trades: "#v3-trades" };
+      const out = {};
+      for (const [k, sel] of Object.entries(where)) out[k] = [...document.querySelectorAll(sel + " [data-ent=person]")].map(e => e.tagName === "A" ? e.getAttribute("href") : "(not a link) " + e.textContent.trim());
+      return out;
+    });
+    const allNamed = Object.values(named).flat();
+    check(Object.values(named).every(l => l.length > 0) && allNamed.every(h => /^person\.html\?cik=[1-9]\d{0,9}$/.test(h)), "every person named on the overview links to person.html?cik=<owner CIK without leading zeros> (" + allNamed.length + " names in 6 modules)", named);
+    check(named.feed[0] === "person.html?cik=1214156" && named.watch.includes("person.html?cik=1214156") && named.watch.includes("person.html?cik=1580197") && named.big.includes("person.html?cik=1049502"), "the CIK in each link is the line's own owner (Cook, the 'Also filed since' person, the biggest trades)", named);
+    // Headshots are asked for with the company's CIK too (entity-media.js uses it when a row has no ticker).
+    const issuerCiks = await page.$$eval("#v3-trades [data-media=person], #v10-follow-feed [data-media=person], #v10-follow-list [data-media=person], #rd-largest [data-media=person]", t => t.map(e => e.dataset.issuerCik || ""));
+    check(issuerCiks.length >= 10 && issuerCiks.every(c => /^\d+$/.test(c)), "every headshot tile in the feed, the followed list, the biggest trades and the table names the person's company by SEC CIK (issuerCik)", issuerCiks);
     const linkEdges = await page.$$eval("#v3-trades .rd-links a", a => [...new Set(a.map(x => Math.round(x.getBoundingClientRect().right)))]);
     check(linkEdges.length === 1, "every Filing ↗ link in the table ends at the same right edge (rows with and without a security note alike)", linkEdges);
     const foot = flat(await text(page, "#v3-trades-foot"));
@@ -607,6 +674,68 @@ try {
     await context.close();
   }
 
+  /* ---------- 1f. Joint filings: the followed person is the tenth of ten reporting owners ----------
+     The server sends a joint line once, with owner_cik null and owners [{cik, name}] in filing order (here nine
+     fixture entities, then Elon Musk, whom the reader follows), and an older joint line with no owners list at all. */
+  {
+    const ENT = Array.from({ length: 9 }, (_, i) => ({ cik: String(1900101 + i).padStart(10, "0"), name: i % 3 === 2 ? "FIXTURE FAMILY TRUST " + (i + 1) : "FIXTURE HOLDINGS " + (i + 1) + " LLC" }));
+    const TJ = T({ id: 950, accession: "000149473026000950", ticker: "TSLA", issuer_name: "Tesla, Inc.", issuer_cik: "0001318605", owner_cik: null, owner_name: [...ENT.map(o => o.name), "MUSK ELON"].join(", "), owners: [...ENT, { cik: MUSK, name: "MUSK ELON" }], transaction_date: "2026-10-12", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 50000, price_per_share: 250.1, estimated_value: 12505000, published_at: "2026-10-14T20:00:00Z", created_at: "2026-10-14T20:05:00Z" });
+    const AJ = T({ id: 951, accession: "000032019326000951", ticker: "AAPL", issuer_name: "Apple Inc.", issuer_cik: "0000320193", owner_cik: null, owner_name: "COOK TIMOTHY D, ADAMS KATHERINE L", transaction_date: "2026-09-13", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 100, price_per_share: 230, estimated_value: 23000, published_at: "2026-09-15T21:00:00Z", created_at: "2026-09-15T21:05:00Z" });
+    const JOINT = { ...FULL, "/v1/transactions": { items: [TJ, AJ, ...trades] } };
+    for (const width of [1440, 390]) {
+      const fx = fixture(JOINT);
+      const { context, page, errors } = await open(width, fx);
+      await settle(page);
+      const j = await page.evaluate(({ musk }) => {
+        const flatT = e => (e?.innerText || "").replace(/\s+/g, " ").trim();
+        const row = document.querySelector('#v10-follow-feed .rd-feed__row[data-key="950"]'), tile = row?.querySelector(":scope>.ins-media");
+        const more = row?.querySelector(".rd-who__more");
+        const fresh = [...document.querySelectorAll("#v10-follow-feed .rd-feed__row")].filter(r => r.querySelector(".rd-new"));
+        const trade = [...document.querySelectorAll("#v3-trades tr")].find(r => r.querySelector('a[href="filing.html?accession=000149473026000950"]'));
+        const old = [...document.querySelectorAll("#v3-trades tr")].find(r => r.querySelector('a[href="filing.html?accession=000032019326000951"]'));
+        const big = [...document.querySelectorAll("#rd-largest .rd-big")].find(r => r.querySelector('a[href="filing.html?accession=000149473026000950"]'));
+        const clipped = big ? [...big.querySelectorAll(".rd-big__what [data-ent], .rd-big__what a")].filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.trim()) : ["(no row)"];
+        const l1 = [...document.querySelectorAll("#v10-follow-feed .rd-feed__row")].map(r => Math.round(r.getBoundingClientRect().height));
+        return {
+          name: [...(row?.querySelectorAll("a[data-ent=person]") || [])].map(a => a.getAttribute("href") + " " + a.textContent.trim()),
+          more: more ? [more.textContent.trim(), more.getAttribute("href"), more.getAttribute("title")] : null,
+          owner: row?.dataset.owner, tile: tile ? [tile.dataset.cik, tile.dataset.issuerCik] : null, aria: row?.getAttribute("aria-label") || "",
+          entry: flatT(document.querySelector(`#v10-follow-list .rd-fl[data-owner="${musk}"] .rd-fl__meta`)),
+          today: document.getElementById("rd-today-you")?.textContent.replace(/\s+/g, " ").trim() || "",
+          freshPeople: new Set(fresh.flatMap(r => r.dataset.owner.split(" ").filter(Boolean))).size, freshRows: fresh.length,
+          trade: trade ? [flatT(trade.querySelector(".rd-td-who")), [...trade.querySelectorAll(".rd-td-who a[data-ent=person]")].map(a => a.getAttribute("href"))] : null,
+          old: old ? [flatT(old.querySelector(".rd-td-who")), [...old.querySelectorAll(".rd-td-who a")].map(a => a.getAttribute("href"))] : null,
+          big: big ? flatT(big.querySelector(".rd-big__what")) : null, clipped, heights: l1
+        };
+      }, { musk: MUSK });
+      check(JSON.stringify(j.name) === JSON.stringify(["person.html?cik=1494730 Elon Musk"]) && j.more?.[0] === "and 9 others" && j.more?.[1] === "filing.html?accession=000149473026000950" && /^Filed jointly with Fixture Holdings 1 LLC, .*Fixture Family Trust 9$/.test(j.more?.[2] || ""),
+        width + "px: a joint line in the followed feed is shown under the followed person (the 10th of 10 owners), linked to their file, then 'and 9 others' opening the filing, with every other owner in its title", j);
+      check(j.owner === MUSK && j.tile?.[0] === "1494730" && j.tile?.[1] === "1318605" && /^Elon Musk and 9 other reporting owners sold 50,000 Tesla, Inc\. shares at \$250\.10, worth \$12,505,000\./.test(j.aria),
+        width + "px: the row is the followed person's (data-owner), pictured by their own CIK with the issuer's for the logo, and read aloud with them as its subject", { owner: j.owner, tile: j.tile, aria: j.aria });
+      const m = /from (\d+) of the 3 people you follow/.exec(j.today);
+      check(/(^|· )1 new$/.test(j.entry) && m && Number(m[1]) === j.freshPeople && j.freshPeople <= 3 && new RegExp("^Since your last visit on Sep 1 at 12:00 AM: " + j.freshRows + " new trades").test(j.today),
+        width + "px: the joint line counts toward the followed person's 'N new' and Today's count of people (never 'of the' more than they follow)", { entry: j.entry, today: j.today, freshPeople: j.freshPeople, freshRows: j.freshRows });
+      check(j.trade?.[0] === "Elon Musk and 9 others" && JSON.stringify(j.trade?.[1]) === JSON.stringify(["person.html?cik=1494730"]) && j.big === "SOLD · S TSLA Elon Musk and 9 others" && j.clipped.length === 0,
+        width + "px: in All recent trades and Biggest trades the joint line is one label (a person, then 'and 9 others'), with nothing cut off beside it", { trade: j.trade, big: j.big, clipped: j.clipped });
+      check(j.old?.[0] === "Timothy D. Cook and 1 other" && j.old?.[1]?.[0] === "people.html?q=COOK%20TIMOTHY%20D#v10-directory" && !j.old[1].some(h => /ADAMS/i.test(h) && /COOK/i.test(h)),
+        width + "px: a joint line with no owners list names one owner with their own directory search, never the joined names as one person", j.old);
+      if (width === 1440) check(new Set(j.heights).size === 1, "1440px: every feed row, joint ones included, keeps the same two-line height", j.heights);
+      if (width === 1440) {
+        // Unfollowing the person dims their joint row too; Undo brings it back.
+        const ub = page.locator(`#v10-follow-list button[data-follow="${MUSK}"]`);
+        await ub.scrollIntoViewIfNeeded(); await rest(page, "#rd-follow");
+        await ub.click(); await page.waitForTimeout(400);
+        const dimmed = await page.evaluate(() => document.querySelector('#v10-follow-feed .rd-feed__row[data-key="950"]')?.classList.contains("is-dropped"));
+        await page.locator("#rd-toast button[data-undo]").click(); await page.waitForTimeout(500);
+        const back = await page.evaluate(() => document.querySelector('#v10-follow-feed .rd-feed__row[data-key="950"]')?.classList.contains("is-dropped"));
+        check(dimmed === true && back === false && fx.state.posts.join() === "unfollow " + MUSK + ",follow " + MUSK, "1440px: unfollowing the person dims their joint row with their own; Undo restores it", { dimmed, back, posts: fx.state.posts });
+      }
+      check(errors.length === 0, width + "px: no errors with joint filings on the overview", errors);
+      if (SHOTS) await page.screenshot({ path: join(SHOTS, "joint-" + width + ".png"), fullPage: true });
+      await context.close();
+    }
+  }
+
   /* ---------- 2. Every width: overflow, tiles, sharp images, touch targets, no errors ---------- */
   for (const width of WIDTHS) {
     const { context, page, errors } = await open(width, fixture(FULL));
@@ -664,6 +793,8 @@ try {
       // An original filing and its 4/A restating the same line: counted once, the lag from the original.
       T({ id: 21, accession: "000000000026000021", ticker: "ACME", issuer_cik: "0000000001", issuer_name: "ACME CORP", owner_name: "DOE JANE", owner_cik: "0000000009", transaction_date: "2026-09-10", transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", shares: 50000, price_per_share: 20, estimated_value: 1000000, published_at: "2026-09-12T20:00:00Z" }),
       T({ id: 22, accession: "000000000026000022", ticker: "ACME", issuer_cik: "0000000001", issuer_name: "ACME CORP", owner_name: "DOE JANE", owner_cik: "0000000009", transaction_date: "2026-09-10", transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", shares: 50000, price_per_share: 20, estimated_value: 1000000, published_at: "2026-09-20T20:00:00Z", is_amendment: true }),
+      // A second 4/A restating the same line again (issuer CIK written without its zeros): still one purchase, counted from the latest copy.
+      T({ id: 28, accession: "000000000026000028", ticker: "ACME", issuer_cik: "1", issuer_name: "ACME CORP", owner_name: "DOE JANE", owner_cik: "9", transaction_date: "2026-09-10", transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", shares: "50000.00000000", price_per_share: "20.00000000", estimated_value: "1000000.00", published_at: "2026-09-25T20:00:00Z", is_amendment: true }),
       // Filed at 9:30 p.m. Eastern: the SEC filing day is Sep 14, though it is Sep 15 in UTC. A four-decimal weighted price.
       T({ id: 23, accession: "000000000026000023", ticker: "BIGC", issuer_cik: "0000000002", issuer_name: "BIG CO", owner_name: "ROE RICHARD", owner_cik: "0000000008", transaction_date: "2026-09-10", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: "60000000", price_per_share: "41.5321", estimated_value: "2491926000", published_at: "2026-09-15T01:30:00.000Z" }),
       // A grant filed at $0.00, and two different issuers that both put the placeholder "NONE" in the ticker field.
@@ -683,12 +814,16 @@ try {
           kpi, tiles, scope: document.getElementById("rd-flow-scope").textContent,
           rows: [...document.querySelectorAll("#v3-trades tr")].map(r => r.innerText.replace(/\s+/g, " ")),
           companies: [...document.querySelectorAll("#rd-companies .rd-co__row")].map(r => r.innerText.replace(/\s+/g, " ")),
+          // The name as labelled (a tile in front of it may show initials once a logo is confirmed absent).
+          coNames: [...document.querySelectorAll("#rd-companies .rd-co__row [data-ent=company]")].map(e => e.textContent.trim()),
           coStarts: [...document.querySelectorAll("#rd-companies .rd-co__track--buy")].map(t => Math.round(t.getBoundingClientRect().left)),
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
         };
       });
       check(e.kpi.Bought.startsWith("$1,000,000 | 1 purchase"), width + "px: an amended 4/A replaces the line it restates instead of doubling it", e.kpi.Bought);
-      check(/1 amended line replaces its original/.test(e.scope), width + "px: the scope says an amended line replaced its original", e.scope);
+      check(/2 lines restated by a later 4\/A, counted once/.test(e.scope), width + "px: the scope says how many lines a later 4/A restates (the original and the first 4/A), each counted once", e.scope);
+      const restatedRows = e.rows.filter(r => /restated by a later 4\/A, not counted/.test(r));
+      check(restatedRows.length === 2 && e.rows.filter(r => /Jane Doe/.test(r)).length === 3, width + "px: the table lists all three copies and marks the two restated ones 'not counted'", restatedRows);
       check(e.kpi.Sold.startsWith("$2,491,929,000 | 4 sales") && /1 without a price/.test(e.kpi.Sold), width + "px: sold total to the dollar; a sale with no price is counted and named", e.kpi.Sold);
       const woods = e.rows.find(r => /Darren W\. Woods/.test(r)) || "";
       if (width < 760) check(/−800 no price reported/.test(woods) && /held indirectly/.test(woods) && !/Not reported|No price\b/.test(woods), width + "px: a phone record says when no price was reported and keeps 'held indirectly'", woods);
@@ -698,7 +833,7 @@ try {
       check(/\$41\.5321/.test(bigRow) && /Sep 14/.test(bigRow) && /4 days later/.test(bigRow), width + "px: a four-decimal price prints as filed and an evening filing keeps its SEC (Eastern) day and lag", bigRow);
       const grant = e.rows.find(r => /Private One/i.test(r)) || "";
       check(/\$0\.00/.test(grant) && (/No ticker/i.test(grant) || width < 760), width + "px: a $0.00 grant prints its price as filed; a placeholder ticker is not shown as a symbol", grant);
-      check(e.companies.length === 4 && e.companies.some(c => /^Private Two Inc/.test(c)) && e.companies.some(c => /^Private Three Co/.test(c)), width + "px: by company groups by issuer, not by the placeholder ticker, and names an issuer without a ticker", e.companies);
+      check(e.companies.length === 4 && e.coNames.includes("Private Two Inc.") && e.coNames.includes("Private Three Co") && e.companies.filter(c => /No ticker/.test(c)).length === (width < 760 ? 0 : 2), width + "px: by company groups by issuer, not by the placeholder ticker, and names an issuer without a ticker", [e.coNames, e.companies]);
       check(new Set(e.coStarts).size === 1, width + "px: every company row shares one zero line", e.coStarts);
       check(errors.length === 0, width + "px: no errors with edge-case data", errors);
       await context.close();
@@ -911,46 +1046,96 @@ try {
     await context.close();
   }
 
-  /* ---------- 7. Person links land on the search result, not the top of the people page ---------- */
+  /* ---------- 7. A person's name opens their file (person.html?cik=), and the file opens ---------- */
+  const fileOpen = async page => {
+    await page.waitForFunction(() => { const st = document.getElementById("pf-state"); return !!st && (document.querySelector("main.pf")?.classList.contains("is-ready") || !st.hidden); }, null, { timeout: 15000 });
+    await page.waitForTimeout(200);
+    return page.evaluate(() => ({
+      url: location.pathname + location.search, ready: document.querySelector("main.pf")?.classList.contains("is-ready"), state: document.getElementById("pf-state")?.hidden === false ? document.getElementById("pf-state").innerText.replace(/\s+/g, " ") : "",
+      name: document.getElementById("pf-name")?.textContent.trim(), fileno: document.getElementById("pf-fileno")?.textContent.trim(),
+      log: document.querySelectorAll("#pf-log .pf-log__row").length, follow: document.getElementById("pf-follow")?.textContent.trim(), followPressed: document.getElementById("pf-follow")?.getAttribute("aria-pressed"),
+      photo: !!document.querySelector(".pf-photo [data-media=person]"), first: document.querySelector("#pf-log .pf-log__text")?.textContent.trim()
+    }));
+  };
+  for (const [width, reducedMotion] of [[1440, "no-preference"], [390, "reduce"]]) {
+    const { context, page, errors } = await open(width, fixture(FULL), { reducedMotion });
+    await settle(page);
+    await Promise.all([page.waitForURL(/\/person\.html\?cik=/, { timeout: 10000 }), page.click("#v10-follow-feed .rd-feed__row:first-child a[data-ent=person]")]);
+    const at = await fileOpen(page);
+    check(at.url === "/person.html?cik=1214156" && at.ready && at.name === "Timothy D. Cook" && at.fileno === "0001214156", width + "px: a person in the feed opens their personnel file by SEC CIK, and the file loads", at);
+    check(at.log === 3 && at.first === "sold 12,500 AAPL shares at $26.00" && at.photo, width + "px: the file lists the person's lines in the dashboard's words, with the file photo tile", at);
+    check(at.follow === "Following ✓" && at.followPressed === "true", width + "px: the file knows the reader already follows this person (the same CIK the overview follows)", at);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, `person-from-dashboard-${width}.png`) });
+    check(errors.length === 0, width + "px: no errors following a person link to the file", errors);
+    await context.close();
+  }
+  // Every other place a name appears opens the same file: the followed list, a suggestion, the watchlist, the biggest trades, the table.
+  {
+    const { context, page, errors } = await open(1440, fixture(FULL));
+    await settle(page);
+    const targets = [["#v10-follow-list .rd-fl a[data-ent=person]", "/person.html?cik=1214156"], ["#v10-follow-suggest-list .rd-sg:first-child a[data-ent=person]", "/person.html?cik=67890"],
+      ["#v3-watchlist .rd-row--watch:first-child a[data-ent=person]", "/person.html?cik=1214156"], ["#rd-largest .rd-big:first-child a[data-ent=person]", "/person.html?cik=1214156"], ["#v3-trades tr:nth-child(3) a[data-ent=person]", "/person.html?cik=1049502"]];
+    for (const [sel, want] of targets) {
+      await page.goto(base + "/dashboard.html", { waitUntil: "domcontentloaded" });
+      await settle(page);
+      const link = page.locator(sel).first();
+      await link.scrollIntoViewIfNeeded();
+      await Promise.all([page.waitForURL(/\/person\.html\?cik=/, { timeout: 10000 }), link.click()]);
+      const at = await fileOpen(page);
+      check(at.url === want && at.ready && at.log > 0, "clicking " + sel.split(" ")[0] + "'s name opens " + want.slice(1) + " and the file loads", at);
+    }
+    check(errors.length === 0, "no errors opening files from every module", errors);
+    await context.close();
+  }
+  // A file the import has no lines for says so, with the reason the API gives and the SEC link.
+  {
+    const { context, page, errors } = await open(390, fixture(FULL), { path: "/person.html?cik=999" });
+    const at = await fileOpen(page);
+    check(!at.ready && /No file for CIK 0000000999/.test(at.state) && /Insidir builds a file only from the Form 4 filings it has imported/.test(at.state) && /jointly/.test(at.state), "a CIK with no imported lines gets an honest 404 that mentions joint filings", at.state);
+    check(errors.filter(e => !/HTTP 404 \/v1\/people\/999|Failed to load resource/.test(e)).length === 0, "no errors besides the 404 itself", errors);
+    await context.close();
+  }
+
+  /* ---------- 7b. A name without a CIK lands on the directory's search result, not the top of the people page ---------- */
   const landed = async page => {
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length === 1, null, { timeout: 10000 });
     await page.waitForTimeout(150);
     await page.waitForFunction(() => new Promise(r => { const y = scrollY; setTimeout(() => r(Math.abs(scrollY - y) < 1), 400); }), null, { timeout: 10000 });
     return page.evaluate(() => {
       const c = document.querySelector("#v10-people-results .v10-person-card"), r = c.getBoundingClientRect();
-      return { top: Math.round(r.top), vh: innerHeight, scrollY: Math.round(scrollY), focus: document.activeElement?.id || document.activeElement?.tagName, name: c.querySelector("strong")?.innerText, cards: document.querySelectorAll("#v10-people-results .v10-person-card").length, input: document.getElementById("v10-person-query").value, url: location.pathname + location.search + location.hash, stay: window.__stay === 1 };
+      return { top: Math.round(r.top), vh: innerHeight, scrollY: Math.round(scrollY), focus: document.activeElement?.id || document.activeElement?.tagName, name: c.querySelector("strong")?.innerText, href: c.querySelector("strong a")?.getAttribute("href"), cards: document.querySelectorAll("#v10-people-results .v10-person-card").length, input: document.getElementById("v10-person-query").value, url: location.pathname + location.search + location.hash };
     });
   };
   for (const [width, reducedMotion] of [[1440, "no-preference"], [390, "reduce"]]) {
-    const { context, page, errors } = await open(width, fixture(FULL), { reducedMotion });
-    await settle(page);
-    await Promise.all([page.waitForURL(/\/people\.html\?q=/, { timeout: 10000 }), page.click("#v10-follow-feed .rd-feed__row:first-child a[data-ent=person]")]);
+    const { context, page, errors } = await open(width, fixture(FULL), { reducedMotion, path: "/people.html?q=COOK%20TIMOTHY%20D#v10-directory" });
     const at = await landed(page);
-    check(at.url === "/people.html?q=COOK%20TIMOTHY%20D#v10-directory" && at.cards === 1 && at.name === "Timothy D. Cook", width + "px: a person in the feed opens people.html with that person's search result", at);
+    check(at.url === "/people.html?q=COOK%20TIMOTHY%20D#v10-directory" && at.cards === 1 && at.name === "Timothy D. Cook" && at.input === "COOK TIMOTHY D", width + "px: a people search link (a name with no CIK) shows that person's search result", at);
     check(at.top >= 70 && at.top < at.vh - 80 && at.scrollY > 0, width + "px: the result is inside the viewport below the sticky header (" + reducedMotion + " motion)", at);
     check(at.focus === "v10-people-status", width + "px: focus moves to the directory's status line", at.focus);
-    if (SHOTS) await page.screenshot({ path: join(SHOTS, `people-from-dashboard-${width}.png`) });
-    check(errors.length === 0, width + "px: no errors following a person link", errors);
+    check(at.href === "person.html?cik=1214156", width + "px: the directory card's name opens the person's file", at.href);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, `people-search-${width}.png`) });
+    check(errors.length === 0, width + "px: no errors on a people search link", errors);
     await context.close();
   }
 
-  /* ---------- 8. Familiar faces search in place (people.html) ---------- */
+  /* ---------- 8. People page: names and Familiar faces open personnel files ---------- */
+  const FACES = ["/person.html?cik=1214156", "/person.html?cik=1513142", "/person.html?cik=1197649", "/person.html?cik=1494730"]; // Cook, Nadella, Huang, Musk: CIKs checked on SEC EDGAR
   for (const width of [1440, 390]) {
     const { context, page, errors } = await open(width, fixture(FULL), { path: "/people.html" });
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length === 4, null, { timeout: 10000 });
-    await page.evaluate(() => { window.__stay = 1; });
     // The company each person files for is named with its own logo tile, in the directory and in the followed list.
     await page.waitForFunction(() => document.querySelectorAll("#v10-followed-results .v10-follow-row").length === 3, null, { timeout: 10000 }).catch(() => {});
     const coTiles = await page.evaluate(() => ({ cards: [...document.querySelectorAll("#v10-people-results .v10-person-card")].map(c => !!c.querySelector(".v10-person-card__identity small .ins-inline [data-media=company]")), rows: [...document.querySelectorAll("#v10-followed-results .v10-follow-row")].map(r => !!r.querySelector("small .ins-inline [data-media=company]")) }));
     check(coTiles.cards.length === 4 && coTiles.cards.every(Boolean) && coTiles.rows.length === 3 && coTiles.rows.every(Boolean), width + "px: people.html names each person's company with its logo tile (directory cards and followed rows)", coTiles);
+    const names = await page.evaluate(() => ({ cards: [...document.querySelectorAll("#v10-people-results .v10-person-card strong a")].map(a => a.getAttribute("href")), rows: [...document.querySelectorAll("#v10-followed-results .v10-follow-row strong a")].map(a => a.getAttribute("href")) }));
+    check(names.cards.length === 4 && names.rows.length === 3 && [...names.cards, ...names.rows].every(h => /^person\.html\?cik=[1-9]\d{0,9}$/.test(h)) && names.rows.includes("person.html?cik=1494730"), width + "px: every directory card and followed row links the name to the person's file by SEC CIK", names);
     const faces = await page.$$eval(".v10-known__grid a", a => a.map(x => ({ href: x.getAttribute("href"), tile: !!x.querySelector(".ins-media, img") })));
-    check(faces.length === 4 && faces.every(f => /^people\.html\?q=[^#]+#v10-directory$/.test(f.href) && f.tile), width + "px: Familiar faces link to the directory search, each with a portrait", faces);
-    await page.click(".v10-known__grid a >> nth=0");
-    const at = await landed(page);
-    check(at.stay, width + "px: a Familiar faces tile searches without reloading the page", at);
-    check(at.url === "/people.html?q=Cook%20Timothy#v10-directory" && at.input === "Cook Timothy" && at.cards === 1 && at.name === "Timothy D. Cook", width + "px: the tile fills the search box and shows the matching record", at);
-    check(at.top >= 70 && at.top < at.vh - 80, width + "px: the Familiar faces result is inside the viewport", at);
-    check(errors.length === 0, width + "px: no errors on the people page", errors);
+    check(faces.length === 4 && faces.every((f, i) => "/" + f.href === FACES[i] && f.tile), width + "px: Familiar faces open each person's file (CIKs verified on SEC EDGAR), each with a portrait", faces);
+    await Promise.all([page.waitForURL(/\/person\.html\?cik=1214156$/, { timeout: 10000 }), page.click(".v10-known__grid a >> nth=0")]);
+    const at = await fileOpen(page);
+    check(at.ready && at.name === "Timothy D. Cook", width + "px: the first Familiar face opens Tim Cook's file", at);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, `person-${width}.png`), fullPage: true });
+    check(errors.length === 0, width + "px: no errors on the people page or the file", errors);
     await context.close();
   }
 
@@ -1016,9 +1201,10 @@ try {
     await input.click(); await input.fill("coo");
     await page.waitForFunction(() => document.querySelectorAll(".app-search__option").length >= 3, null, { timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(300);
-    const opts = await page.$$eval(".app-search__option", o => o.map(a => ({ label: a.querySelector(".app-search__label")?.textContent, meta: a.querySelector(".app-search__meta")?.textContent, tile: a.querySelector(".ins-media")?.dataset.media || "", hidden: a.querySelector(".ins-media")?.getAttribute("aria-hidden"), nested: a.querySelectorAll("a").length })));
+    const opts = await page.$$eval(".app-search__option", o => o.map(a => ({ href: a.getAttribute("href"), label: a.querySelector(".app-search__label")?.textContent, meta: a.querySelector(".app-search__meta")?.textContent, tile: a.querySelector(".ins-media")?.dataset.media || "", hidden: a.querySelector(".ins-media")?.getAttribute("aria-hidden"), nested: a.querySelectorAll("a").length })));
     check(opts.length === 3 && opts.every(o => o.tile && o.hidden === "true" && !o.nested), width + "px: every header-search result carries its identity tile (aria-hidden, no link inside the option)", opts);
     check(opts[0]?.tile === "company" && opts[0]?.meta === "AAPL · Company" && opts[2]?.tile === "person" && opts[2]?.label === "Timothy D. Cook" && opts[2]?.meta === "Insider · AAPL", width + "px: companies get a logo tile with the ticker beside the name; people a headshot tile and their name as written", opts);
+    check(opts[2]?.href === "person.html?cik=1214156" && opts[0]?.href === "company.html?ticker=AAPL", width + "px: a person in the header search opens their file by SEC CIK", opts.map(o => o.href));
     const panel = await page.evaluate(() => { const r = document.querySelector(".app-search__results").getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right), innerWidth]; });
     check(panel[0] >= 0 && panel[1] <= panel[2], width + "px: the search results stay inside the screen", panel);
     if (SHOTS) await page.screenshot({ path: join(SHOTS, `dashboard-search-${width}.png`) });

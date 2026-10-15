@@ -30,7 +30,7 @@ function scope(f){
  if(!n){el.textContent="Purchases and sales reported on SEC Form 4, from the latest imported trades.";return;}
  el.textContent=(n>=100?"The latest "+D.count(n):"All "+D.count(n))+" trades imported from SEC Form 4 filings: "+
   [D.rangeText(f),D.plural(f.companies.size,"company","companies"),D.plural(f.people.size,"person","people"),
-   f.replaced?D.plural(f.replaced,"amended line replaces its original","amended lines replace their originals"):""].filter(Boolean).join(" · ")+".";
+   f.replaced?D.plural(f.replaced,"line restated by a later 4/A, counted once","lines restated by a later 4/A, counted once"):""].filter(Boolean).join(" · ")+".";
 }
 
 /* ---------- five totals ---------- */
@@ -201,16 +201,16 @@ function biggest(f){
  if(!list.length){host.innerHTML='<li class="rd-empty">'+(f.rows.length?"No priced purchases or sales among the loaded trades.":"No trades have been imported yet.")+'</li>';return;}
  const max=D.valueOf(list[0]);
  host.innerHTML=list.map((x,i)=>{
-  const k=D.kind(x),v=D.valueOf(x),p=D.priceOf(x),s=D.sharesOf(x),lag=D.lagOf(x),t=D.tick(x.ticker);
+  const k=D.kind(x),v=D.valueOf(x),p=D.rawPrice(x),s=D.sharesText(x),lag=D.lagOf(x),t=D.tick(x.ticker);
   const traded=D.validDate(x.transaction_date)?"traded "+D.tradedShort(x.transaction_date):"trade date not reported";
   return '<li class="rd-big rd-big--'+k+'" style="--i:'+i+'">'+
    '<span class="rd-big__rank">'+String(i+1).padStart(2,"0")+'</span>'+
-   '<span class="rd-big__value">'+E(D.money(v))+'</span>'+
+   '<span class="rd-big__value">'+E(D.moneyCents(D.valueCents(x)))+'</span>'+
    '<span class="rd-big__bar" aria-hidden="true"><span style="width:'+Math.max(1.5,v/max*100).toFixed(2)+'%"></span></span>'+
    '<span class="rd-big__what">'+D.badge(x)+
     '<span class="rd-ent">'+D.coTile(x,"sm")+(t?'<span data-ent="company">'+E(t)+'</span>':'<span data-ent="company">'+E(D.companyName(x.issuer_name)||"Issuer not reported")+'</span>')+'</span>'+
     '<span class="rd-ent">'+D.whoTile(x,"sm")+D.personName(x)+'</span></span>'+
-   '<span class="rd-big__terms">'+nb((s!==null?D.qty(Math.abs(s))+" shares":"")+(p!==null?" × "+D.price(p):""))+' · '+nb(traded)+(D.validDate(x.published_at)?' · '+nb("filed "+D.filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+D.lagWords(lag)+")":"")):'')+(x.is_amendment?' · '+nb("amended filing (4/A)"):'')+'</span>'+
+   '<span class="rd-big__terms">'+nb((s!==null?s+" shares":"")+(D.priceOf(x)!==null?" × "+D.price(p):""))+' · '+nb(traded)+(D.validDate(x.published_at)?' · '+nb("filed "+D.filedShort(x.published_at)+(lag!==null&&!x.is_amendment?" ("+D.lagWords(lag)+")":"")):'')+(x.is_amendment?' · '+nb("amended filing (4/A)"):'')+'</span>'+
    '<a class="rd-arrow" href="'+E(D.filingHref(x.accession))+'" aria-label="'+E("Open the filing: "+D.sentence(x))+'">Filing ↗</a>'+
   '</li>';
  }).join("");
