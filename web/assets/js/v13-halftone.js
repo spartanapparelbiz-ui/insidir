@@ -326,7 +326,9 @@
     if (host === document) document.addEventListener("pointerout", onOut);
     else host.addEventListener("pointerleave", onLeave);
     host.addEventListener("pointerdown", onDown);
-    const ro = new ResizeObserver(() => { layout(); wake(); });
+    // A layout clears the canvas (it is resized): draw at once, on screen or not, so a field off screen is never left
+    // blank until it scrolls into view.
+    const ro = new ResizeObserver(() => { layout(); draw(performance.now()); wake(); });
     ro.observe(root);
     // Scrolled out of view: put every dot home, so the field is at rest when it comes back.
     const io = new IntersectionObserver(entries => {
@@ -340,7 +342,7 @@
     io.observe(root);
     // The wordmark is set in the page's web font once it has landed.
     if (document.fonts && document.fonts.load) {
-      document.fonts.load(o.fontWeight + " 100px " + o.fontFamily).catch(() => {}).then(() => { if (alive) { layout(); wake(); } });
+      document.fonts.load(o.fontWeight + " 100px " + o.fontFamily).catch(() => {}).then(() => { if (alive) { layout(); draw(performance.now()); wake(); } });
     }
 
     const api = {
