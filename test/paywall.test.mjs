@@ -10,7 +10,8 @@ import {
 import { paywallEnabled, complimentaryEmails, billingSettings } from "../src/config.mjs";
 import {
   createStripeClient, verifyStripeSignature, pickSubscription, periodEnd, syncCustomer, listCustomerSubscriptions,
-  expireOpenCheckouts, cancelSubscriptionForDeletion, cancelOrphanCheckout, deleteAccount, billingRoutes, exclusiveBilling
+  expireOpenCheckouts, cancelSubscriptionForDeletion, cancelOrphanCheckout, deleteAccount, billingRoutes, exclusiveBilling,
+  shouldApplySync, integrationIdentifier
 } from "../src/billing.mjs";
 import { createApiServer } from "../src/api.mjs";
 
@@ -113,10 +114,12 @@ test("paywall switch: on unless INSIDIR_PAYWALL is exactly 0", () => {
 });
 
 test("the /v1/me access object", () => {
-  assert.deepEqual(accessSummary(USERS.paid, BILLING), { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" });
-  assert.deepEqual(accessSummary(USERS.none, ON), { active: false, plan: "none", status: null, billingEnabled: false, complimentary: false, currentPeriodEnd: null });
-  assert.deepEqual(accessSummary(USERS.lapsed, BILLING), { active: false, plan: "none", status: "past_due", billingEnabled: true, complimentary: false, currentPeriodEnd: null });
-  assert.deepEqual(accessSummary(USERS.owner, COMP), { active: true, plan: "none", status: null, billingEnabled: false, complimentary: true, currentPeriodEnd: null });
+  assert.deepEqual(accessSummary(USERS.paid, BILLING), { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z", cancelAtPeriodEnd: false });
+  assert.deepEqual(accessSummary(USERS.none, ON), { active: false, plan: "none", status: null, billingEnabled: false, complimentary: false, currentPeriodEnd: null, cancelAtPeriodEnd: false });
+  assert.deepEqual(accessSummary(USERS.lapsed, BILLING), { active: false, plan: "none", status: "past_due", billingEnabled: true, complimentary: false, currentPeriodEnd: null, cancelAtPeriodEnd: false });
+  assert.deepEqual(accessSummary(USERS.owner, COMP), { active: true, plan: "none", status: null, billingEnabled: false, complimentary: true, currentPeriodEnd: null, cancelAtPeriodEnd: false });
+  assert.equal(accessSummary({ ...USERS.paid, cancel_at_period_end: true }, BILLING).cancelAtPeriodEnd, true);
+  assert.equal(hasAccess({ ...USERS.paid, cancel_at_period_end: true }, BILLING), true, "cancel at period end keeps access");
   assert.equal(accessSummary(USERS.none, OFF).active, true, "development mode: everyone can use the product");
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: new Date(0) }, ON).currentPeriodEnd, null, "epoch placeholder is not a date");
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: "2026-12-01T00:00:00Z" }, ON).currentPeriodEnd, "2026-12-01T00:00:00.000Z");
@@ -241,11 +244,11 @@ test("gate: INSIDIR_PAYWALL=0 turns gating off for local development", async () 
 
 function fakeStripe(handlers = {}) {
   const calls = [];
-  const call = method => async (path, params) => {
+  const call = method => async (path, params, options) => {
     calls.push(method + " " + path);
     const h = handlers[method + " " + path] ?? handlers[method];
     if (h instanceof Error) throw h;
-    return typeof h === "function" ? h(path, params) : (h ?? {});
+    return typeof h === "function" ? h(path, params, options) : (h ?? {});
   };
   return { calls, get: call("GET"), post: call("POST"), del: call("DELETE") };
 }
@@ -343,15 +346,31 @@ function stripeWorld({ subs = [], sessions = [], pageSize = 100, fail = {} } = {
       check("GET " + path);
       if (path === "/subscriptions") return page(subs.filter(x => x.customer === params.customer && (params.status === "all" || x.status === params.status)), params);
       if (path === "/checkout/sessions") return page(sessions.filter(x => x.customer === params.customer && (!params.status || x.status === params.status)), params);
+      if (path.startsWith("/prices/")) {
+        const id = path.split("/").pop();
+        if (id !== "price_pro") throw missing();
+        return { id, object: "price", active: true, currency: "usd", unit_amount: 3900, type: "recurring", recurring: { interval: "month", interval_count: 1 } };
+      }
       const found = [...subs, ...sessions].find(x => path.endsWith("/" + x.id));
       if (!found) throw missing();
       return { ...found };
     },
-    async post(path, params) {
+    idempotent: new Map(),
+    async post(path, params, options) {
       calls.push("POST " + path);
       check("POST " + path);
-      if (path === "/customers") return { id: "cus_NEW" };
-      if (path === "/checkout/sessions") { const cs = { id: "cs_test_" + (sessions.length + 1), customer: params.customer, status: "open", url: "https://checkout.stripe.com/c/pay/" + (sessions.length + 1) }; sessions.push(cs); return cs; }
+      if (path === "/customers") return { id: "cus_NEW", idempotencyKey: options?.idempotencyKey || null };
+      if (path === "/checkout/sessions") {
+        const key = options?.idempotencyKey || "";
+        if (key && world.idempotent.has(key)) return { ...world.idempotent.get(key) };
+        const cs = { id: "cs_test_" + (sessions.length + 1), customer: params.customer, status: "open", mode: params.mode,
+          url: "https://checkout.stripe.com/c/pay/" + (sessions.length + 1), client_reference_id: params.client_reference_id,
+          metadata: { insidir_user_id: params["metadata[insidir_user_id]"], insidir_price_id: params["metadata[insidir_price_id]"] },
+          created: sessions.length + 1 };
+        sessions.push(cs);
+        if (key) world.idempotent.set(key, cs);
+        return { ...cs };
+      }
       const m = /^\/checkout\/sessions\/(cs_\w+)\/expire$/.exec(path);
       const cs = m && sessions.find(x => x.id === m[1]);
       if (!cs) throw missing();
@@ -499,6 +518,11 @@ test("Stripe client sends authenticated form posts, query-string GETs and DELETE
   assert.equal(sent[0].init.body, "email=a%40b.co");
   assert.equal(sent[0].init.headers["Content-Type"], "application/x-www-form-urlencoded");
   assert.equal(sent[0].init.headers.Authorization, "Bearer sk_test_1");
+  assert.equal(sent[0].init.headers["Stripe-Version"], "2026-09-30.endive");
+  assert.equal(sent[0].init.headers["Idempotency-Key"], undefined);
+  await stripe.post("/checkout/sessions", { mode: "subscription" }, { idempotencyKey: "insidir-co-1" });
+  assert.equal(sent[3].init.headers["Idempotency-Key"], "insidir-co-1");
+  assert.equal(sent[3].init.body, "mode=subscription");
   assert.equal(sent[1].url, "https://api.stripe.com/v1/subscriptions?customer=cus_1&status=all");
   assert.equal(sent[1].init.body, undefined);
   assert.deepEqual([sent[2].url, sent[2].init.method], ["https://api.stripe.com/v1/subscriptions/sub_1", "DELETE"]);
@@ -536,11 +560,17 @@ test("subscription sync: only the configured price counts, the best standing win
   const stripe = fakeStripe({ "GET /subscriptions": { data: [sub("sub_old", "canceled", 1), sub("sub_new", "active", 2)] } });
   const query = fakeQuery();
   const stored = await syncCustomer("cus_ABC", { stripe, query, priceId: "price_pro" });
-  assert.deepEqual(stored, { stripe_subscription_id: "sub_new", subscription_status: "active", current_period_end: new Date(1793404800 * 1000) });
-  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3 WHERE stripe_customer_id=\$4/);
+  assert.equal(stored.stripe_subscription_id, "sub_new");
+  assert.equal(stored.subscription_status, "active");
+  assert.equal(stored.cancel_at_period_end, false);
+  assert.equal(stored.current_period_end.toISOString(), "2026-10-31T00:00:00.000Z");
+  assert.ok(stored.subscription_synced_at instanceof Date);
+  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3,cancel_at_period_end=\$4,subscription_synced_at=\$5 WHERE stripe_customer_id=\$6 AND \(subscription_synced_at IS NULL OR subscription_synced_at<=\$5\)/);
   assert.deepEqual(query.statements[0].params.slice(0, 2), ["sub_new", "active"]);
   const other = fakeQuery();
-  assert.equal(await syncCustomer("cus_ABC", { stripe: fakeStripe({ GET: { data: [sub("sub_x", "active", 1, "price_other")] } }), query: other, priceId: "price_pro" }), null);
+  const cleared = await syncCustomer("cus_ABC", { stripe: fakeStripe({ GET: { data: [sub("sub_x", "active", 1, "price_other")] } }), query: other, priceId: "price_pro" });
+  assert.equal(cleared.subscription_status, "inactive");
+  assert.equal(cleared.stripe_subscription_id, null);
   assert.match(other.statements[0].sql, /subscription_status='inactive'/);
   const untouched = fakeStripe();
   assert.equal(await syncCustomer("cus_1;DROP", { stripe: untouched, query: fakeQuery() }), null);
@@ -555,7 +585,7 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
 
   await billingRoutes(req("GET", "/v1/billing/status"), {}, "/v1/billing/status", json,
     deps(USERS.none, { "SELECT email": { rows: [{ ...USERS.none, stripe_customer_id: null }] } }));
-  assert.deepEqual(replies.at(-1), { status: 200, body: { billingEnabled: true, plan: "none", active: false, complimentary: false, subscriptionStatus: null, currentPeriodEnd: null, hasCustomer: false } });
+  assert.deepEqual(replies.at(-1), { status: 200, body: { billingEnabled: true, plan: "none", active: false, complimentary: false, subscriptionStatus: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, hasCustomer: false } });
   await billingRoutes(req("GET", "/v1/billing/status"), {}, "/v1/billing/status", json,
     deps(USERS.paid, { "SELECT email": { rows: [{ ...USERS.paid, stripe_customer_id: "cus_1" }] } }));
   assert.equal(replies.at(-1).body.plan, "pro");
@@ -572,16 +602,27 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
 
   // Checkout: a new customer, the configured price, success → billing, cancel → subscribe.
   const posted = [];
-  const stripe = fakeStripe({ "POST /customers": { id: "cus_new" }, "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/x" }; } });
+  const proPrice = { id: "price_pro", active: true, currency: "usd", unit_amount: 3900, type: "recurring", recurring: { interval: "month", interval_count: 1 } };
+  const stripe = fakeStripe({ "GET /prices/price_pro": proPrice, "POST /customers": (path, params, options) => { posted.push({ path, params, options }); return { id: "cus_new" }; },
+    "POST /checkout/sessions": (path, params, options) => { posted.push({ path, params, options }); return { url: "https://checkout.stripe.com/c/pay/x" }; } });
   await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
     deps(USERS.none, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe));
   assert.deepEqual(replies.at(-1), { status: 200, body: { url: "https://checkout.stripe.com/c/pay/x" } });
-  assert.equal(posted[0].success_url, "https://insidir.example/billing.html?checkout=success");
-  assert.equal(posted[0].cancel_url, "https://insidir.example/subscribe.html?checkout=cancel");
-  assert.equal(posted[0]["line_items[0][price]"], "price_pro");
-  assert.equal(posted[0].customer, "cus_new");
-  assert.equal(posted[0].mode, "subscription");
-  assert.ok(!("subscription_data[trial_period_days]" in posted[0]), "no free trial");
+  const session = posted.find(x => x.path === "/checkout/sessions");
+  const customer = posted.find(x => x.path === "/customers");
+  assert.equal(session.params.success_url, "https://insidir.example/billing.html?checkout=success");
+  assert.equal(session.params.cancel_url, "https://insidir.example/subscribe.html?checkout=cancel");
+  assert.equal(session.params["line_items[0][price]"], "price_pro");
+  assert.equal(session.params.customer, "cus_new");
+  assert.equal(session.params.mode, "subscription");
+  assert.equal(session.params.client_reference_id, USERS.none.id);
+  assert.equal(session.params["metadata[insidir_user_id]"], USERS.none.id);
+  assert.equal(session.params["subscription_data[metadata][insidir_user_id]"], USERS.none.id);
+  assert.match(session.params.integration_identifier, /^insidir_pro_[a-z]{8}$/);
+  assert.match(session.options.idempotencyKey, /^insidir-co-/);
+  assert.match(customer.options.idempotencyKey, /^insidir-customer-/);
+  assert.ok(!("subscription_data[trial_period_days]" in session.params), "no free trial");
+  assert.ok(!("payment_method_types" in session.params) && !("payment_method_types[0]" in session.params));
 
   // No Stripe customer yet: the stored status is the only record, and it still guards.
   for (const status of ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"])
@@ -619,7 +660,7 @@ test("checkout asks Stripe first: a paid checkout whose webhook is pending block
     sessions: [{ id: "cs_test_earlier", customer: "cus_1", status: "open" }] });
   const { run } = checkout(world, { subscription_status: "active" });
   await run;
-  assert.deepEqual(world.calls, ["GET /subscriptions", "GET /checkout/sessions", "POST /checkout/sessions/cs_test_earlier/expire", "POST /checkout/sessions"]);
+  assert.deepEqual(world.calls, ["GET /subscriptions", "GET /prices/price_pro", "GET /checkout/sessions", "POST /checkout/sessions/cs_test_earlier/expire", "POST /checkout/sessions"]);
   assert.equal(world.sessions[0].status, "expired");
   assert.equal(replies.at(-1).status, 200);
   assert.match(replies.at(-1).body.url, /^https:\/\/checkout\.stripe\.com\//);
@@ -636,7 +677,7 @@ test("checkout asks Stripe first: a paid checkout whose webhook is pending block
   const gone = stripeWorld({ fail: { "GET /subscriptions": () => Object.assign(new Error("No such customer"), { status: 400, stripeStatus: 400, stripeCode: "resource_missing" }) } });
   const fresh = checkout(gone);
   await fresh.run;
-  assert.deepEqual(gone.calls, ["GET /subscriptions", "POST /customers", "POST /checkout/sessions"]);
+  assert.deepEqual(gone.calls, ["GET /subscriptions", "POST /customers", "GET /prices/price_pro", "POST /checkout/sessions"]);
   assert.ok(fresh.query.statements.some(x => x.sql.startsWith("UPDATE users SET stripe_customer_id=NULL")));
   assert.equal(gone.sessions[0].customer, "cus_NEW");
 
@@ -691,6 +732,189 @@ test("webhook: an Insidir checkout that completes after its account was deleted 
   await assert.rejects(d.run, e => e.status === 503);
   assert.ok(d.query.statements.some(x => x.sql.startsWith("DELETE FROM stripe_events")));
   assert.equal(await cancelOrphanCheckout({ ...session, subscription: "sub_x/../y" }, USERS.none.id, { stripe: stripeWorld(), query: fakeQuery() }), false);
+});
+
+const PRO_PRICE = { id: "price_pro", active: true, currency: "usd", unit_amount: 3900, type: "recurring", recurring: { interval: "month", interval_count: 1 } };
+
+function signedWebhook(event, secret = BILLING.INSIDIR_STRIPE_WEBHOOK_SECRET) {
+  const raw = JSON.stringify(event);
+  const ts = Math.floor(Date.now() / 1000);
+  const sig = createHmac("sha256", secret).update(ts + "." + raw).digest("hex");
+  const req = Object.assign([Buffer.from(raw)], { method: "POST", url: "/v1/billing/webhook", headers: { "stripe-signature": `t=${ts},v1=${sig}` } });
+  return { raw, req };
+}
+
+test("checkout is idempotent: a refresh reuses the open session and a bad price is refused", async () => {
+  const replies = [];
+  const json = (res, status, body) => { replies.push({ status, body }); return true; };
+  const post = (headers = {}) => Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example", ...headers } });
+  const user = { ...USERS.none, id: randomUUID() };
+  const world = stripeWorld();
+  const query = fakeQuery({ "SELECT email": { rows: [{ email: user.email, stripe_customer_id: "cus_1", subscription_status: null }] } });
+  const run = () => billingRoutes(post({ "idempotency-key": "attempt-1" }), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => user, stripe: world, query });
+  await run();
+  await run();
+  assert.equal(world.calls.filter(c => c === "POST /checkout/sessions").length, 1, "refresh does not create a second session");
+  assert.equal(replies[0].body.url, replies[1].body.url);
+  assert.match(world.sessions[0].url, /^https:\/\/checkout\.stripe\.com\//);
+  assert.match(integrationIdentifier("insidir-co-" + user.id + "-attempt-1"), /^insidir_pro_[a-z]{8}$/);
+  assert.equal(world.sessions[0].metadata.insidir_price_id, "price_pro");
+  assert.equal(world.sessions[0].client_reference_id, user.id);
+
+  const wrong = stripeWorld();
+  const realGet = wrong.get.bind(wrong);
+  wrong.get = async (path, params) => path.startsWith("/prices/") ? { ...PRO_PRICE, unit_amount: 100 } : realGet(path, params);
+  const again = { ...USERS.none, id: randomUUID() };
+  await assert.rejects(billingRoutes(post(), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => again, stripe: wrong,
+    query: fakeQuery({ "SELECT email": { rows: [{ email: again.email, stripe_customer_id: "cus_1", subscription_status: null }] } }) }),
+    e => e.status === 503 && /not configured correctly/.test(e.message));
+  assert.ok(!wrong.calls.includes("POST /checkout/sessions"));
+});
+
+test("webhook: bad signatures, duplicates, retries, failed payments and out-of-order events", async () => {
+  const secret = BILLING.INSIDIR_STRIPE_WEBHOOK_SECRET;
+  const seen = new Set();
+  const stored = [];
+  const query = fakeQuery({
+    "INSERT INTO stripe_events": params => seen.has(params[0]) ? { rows: [] } : (seen.add(params[0]), { rows: [{ event_id: params[0] }] }),
+    "UPDATE users SET stripe_subscription_id": params => { stored.push(params); return { rows: [{}], rowCount: 1 }; },
+    "UPDATE users SET stripe_customer_id": { rows: [{}] },
+    "SELECT 1 FROM users": { rows: [{ "?column?": 1 }] }
+  });
+  const deliver = async (event, stripe) => {
+    const { req } = signedWebhook(event, secret);
+    let reply;
+    const json = (res, status, body) => { reply = { status, body }; return true; };
+    await billingRoutes(req, {}, "/v1/billing/webhook", json, { env: BILLING, currentUser: async () => null, stripe, query });
+    return reply;
+  };
+  const sub = (status, extra = {}) => ({ id: "sub_A1", customer: "cus_A1", status, created: 2, cancel_at_period_end: false, items: { data: [{ price: { id: "price_pro" }, current_period_end: 1793404800 }] }, ...extra });
+
+  // Bad signature: nothing is stored.
+  const forged = signedWebhook({ id: "evt_bad", type: "customer.subscription.updated", data: { object: sub("active") } }, "whsec_other");
+  const badQuery = fakeQuery();
+  await assert.rejects(billingRoutes(forged.req, {}, "/v1/billing/webhook", () => true, { env: BILLING, stripe: stripeWorld(), query: badQuery }), e => e.status === 400);
+  assert.equal(badQuery.statements.length, 0);
+  const ok = signedWebhook({ id: "evt_buf", type: "customer.subscription.updated" });
+  assert.equal(verifyStripeSignature(Buffer.from(ok.raw), ok.req.headers["stripe-signature"], secret), true);
+  assert.equal(verifyStripeSignature(Buffer.from(forged.raw), forged.req.headers["stripe-signature"], secret), false);
+
+  // Active subscription grants access immediately, including when cancellation is scheduled.
+  let world = stripeWorld({ subs: [sub("active", { cancel_at_period_end: true })] });
+  let reply = await deliver({ id: "evt_active", type: "customer.subscription.updated", data: { object: { id: "sub_A1", customer: "cus_A1", status: "canceled" } } }, world);
+  assert.equal(reply.body.received, true);
+  assert.deepEqual(stored.at(-1).slice(0, 2), ["sub_A1", "active"], "the event payload is not trusted; Stripe still says active");
+  assert.equal(stored.at(-1)[3], true, "cancel_at_period_end is stored");
+  assert.equal(hasAccess({ subscription_status: "active", cancel_at_period_end: true }, BILLING), true);
+
+  // Duplicate delivery does not read Stripe again.
+  const callsBefore = world.calls.length;
+  reply = await deliver({ id: "evt_active", type: "customer.subscription.updated", data: { object: sub("past_due") } }, world);
+  assert.deepEqual(reply.body, { received: true, duplicate: true });
+  assert.equal(world.calls.length, callsBefore);
+
+  // A failed handler forgets the event so Stripe's retry is applied. past_due removes access.
+  world = stripeWorld({ subs: [sub("past_due")], fail: { "GET /subscriptions": stripeError(500) } });
+  const failing = fakeQuery({ "INSERT INTO stripe_events": () => ({ rows: [{ event_id: "evt_due" }] }) });
+  const { req } = signedWebhook({ id: "evt_due", type: "customer.subscription.updated", data: { object: sub("active") } });
+  await assert.rejects(billingRoutes(req, {}, "/v1/billing/webhook", () => true, { env: BILLING, stripe: world, query: failing }), e => e.message === "Stripe failed");
+  assert.ok(failing.statements.some(x => x.sql.startsWith("DELETE FROM stripe_events")));
+  world = stripeWorld({ subs: [sub("past_due")] });
+  reply = await deliver({ id: "evt_due", type: "customer.subscription.updated", data: { object: sub("active") } }, world);
+  assert.equal(reply.status, 200);
+  assert.equal(stored.at(-1)[1], "past_due");
+  assert.equal(hasAccess({ subscription_status: "past_due" }, BILLING), false);
+  assert.equal(hasAccess({ subscription_status: "unpaid" }, BILLING), false);
+  assert.equal(hasAccess({ subscription_status: "canceled" }, BILLING), false);
+  assert.equal(hasAccess({ subscription_status: "incomplete_expired" }, BILLING), false);
+
+  // A delayed "created" event cannot restore access once Stripe says the subscription ended.
+  world = stripeWorld({ subs: [sub("canceled")] });
+  await deliver({ id: "evt_late_created", type: "customer.subscription.created", created: 1, data: { object: sub("active") } }, world);
+  assert.equal(stored.at(-1)[1], "canceled");
+  world = stripeWorld({ subs: [sub("unpaid")] });
+  const beforeUnsupported = stored.length;
+  await deliver({ id: "evt_ignored", type: "invoice.payment_failed", data: { object: { customer: "cus_A1" } } }, world);
+  assert.equal(stored.length, beforeUnsupported, "events this integration does not handle are not applied");
+  await deliver({ id: "evt_unpaid_real", type: "customer.subscription.updated", data: { object: sub("active") } }, world);
+  assert.equal(stored.at(-1)[1], "unpaid");
+
+  // Live-mode event against a test key is acknowledged and not applied.
+  const before = stored.length;
+  reply = await deliver({ id: "evt_live", type: "customer.subscription.updated", livemode: true, data: { object: sub("active") } }, stripeWorld({ subs: [sub("active")] }));
+  assert.deepEqual(reply.body, { received: true, ignored: true });
+  assert.equal(stored.length, before);
+
+  // An older read loses to a newer one.
+  assert.equal(shouldApplySync(null, new Date("2026-10-15T00:00:02Z")), true);
+  assert.equal(shouldApplySync(new Date("2026-10-15T00:00:02Z"), new Date("2026-10-15T00:00:01Z")), false);
+  assert.equal(shouldApplySync(new Date("2026-10-15T00:00:02Z"), new Date("2026-10-15T00:00:02Z")), true);
+  let row = { subscription_synced_at: null, status: null };
+  const racing = async (sql, params) => {
+    if (sql.startsWith("UPDATE users SET stripe_subscription_id")) {
+      if (!shouldApplySync(row.subscription_synced_at, params[4])) return { rows: [], rowCount: 0, applied: false };
+      row = { status: params[1], subscription_synced_at: params[4] };
+      return { rows: [row], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  };
+  const activeStripe = fakeStripe({ GET: { data: [sub("active")] } });
+  const canceledStripe = fakeStripe({ GET: { data: [sub("canceled")] } });
+  const newer = await syncCustomer("cus_A1", { stripe: activeStripe, query: racing, priceId: "price_pro", syncedAt: new Date("2026-10-15T00:00:02Z") });
+  const older = await syncCustomer("cus_A1", { stripe: canceledStripe, query: racing, priceId: "price_pro", syncedAt: new Date("2026-10-15T00:00:01Z") });
+  assert.equal(newer.subscription_status, "active");
+  assert.equal(older.stale, true);
+  assert.equal(row.status, "active");
+});
+
+test("billing refresh follows Stripe, including when access has just been removed", async () => {
+  const replies = [];
+  const json = (res, status, body) => { replies.push({ status, body }); return true; };
+  const user = { ...USERS.paid, id: randomUUID() };
+  const active = { id: "sub_n", status: "active", created: 2, cancel_at_period_end: true, items: { data: [{ price: { id: "price_pro" }, current_period_end: 1793404800 }] } };
+  const stripe = fakeStripe({ "GET /subscriptions": { data: [active], has_more: false } });
+  const deps = { env: BILLING, currentUser: async () => user, stripe, query: fakeQuery({ "SELECT email": { rows: [{ ...user, stripe_customer_id: "cus_1", subscription_status: null }] } }) };
+  await billingRoutes(Object.assign([], { method: "GET", url: "/v1/billing/status?refresh=1", headers: {} }), {}, "/v1/billing/status", json, deps);
+  assert.equal(replies.at(-1).body.plan, "pro");
+  assert.equal(replies.at(-1).body.active, true);
+  assert.equal(replies.at(-1).body.cancelAtPeriodEnd, true);
+  assert.equal(replies.at(-1).body.subscriptionStatus, "active");
+  // A second refresh is a read, never a checkout.
+  assert.ok(!stripe.calls.some(c => c.startsWith("POST")));
+  const removed = fakeStripe({ "GET /subscriptions": { data: [], has_more: false } });
+  await billingRoutes(Object.assign([], { method: "GET", url: "/v1/billing/status?refresh=1", headers: {} }), {}, "/v1/billing/status", json,
+    { ...deps, stripe: removed, currentUser: async () => ({ ...user, id: randomUUID() }) });
+  assert.equal(replies.at(-1).body.subscriptionStatus, "inactive");
+  assert.equal(replies.at(-1).body.active, false);
+  assert.equal(replies.at(-1).body.plan, "none");
+});
+
+test("portal session cancels at period end and exposes invoices and card updates", async () => {
+  const replies = [];
+  const json = (res, status, body) => { replies.push({ status, body }); return true; };
+  const created = [];
+  const stripe = fakeStripe({
+    "GET /billing_portal/configurations": { data: [], has_more: false },
+    "POST /billing_portal/configurations": (path, params, options) => { created.push({ params, options }); return { id: "bpc_pro" }; },
+    "POST /billing_portal/sessions": (path, params, options) => { created.push({ params, options }); return { url: "https://billing.stripe.com/p/session/test_1" }; }
+  });
+  const user = { ...USERS.paid, id: randomUUID() };
+  const deps = { env: BILLING, currentUser: async () => user, stripe, query: fakeQuery({ "SELECT stripe_customer_id": { rows: [{ stripe_customer_id: "cus_1" }] } }) };
+  const post = () => Object.assign([], { method: "POST", url: "/v1/billing/portal", headers: { origin: "https://insidir.example" } });
+  await billingRoutes(post(), {}, "/v1/billing/portal", json, deps);
+  await billingRoutes(post(), {}, "/v1/billing/portal", json, deps);
+  const config = created.find(x => x.params["metadata[insidir_portal]"]);
+  assert.equal(config.params["features[subscription_cancel][mode]"], "at_period_end");
+  assert.equal(config.params["features[subscription_cancel][enabled]"], "true");
+  assert.equal(config.params["features[invoice_history][enabled]"], "true");
+  assert.equal(config.params["features[payment_method_update][enabled]"], "true");
+  assert.equal(config.options.idempotencyKey, "insidir-portal-config-insidir-pro-v1");
+  assert.equal(created.filter(x => x.params["metadata[insidir_portal]"]).length, 1, "the portal configuration is reused");
+  assert.equal(created.at(-1).params.configuration, "bpc_pro");
+  assert.equal(created.at(-1).params.customer, "cus_1");
+  assert.match(created.at(-1).options.idempotencyKey, /^insidir-portal-/);
+  assert.equal(replies.at(-1).body.url, "https://billing.stripe.com/p/session/test_1");
+  await assert.rejects(billingRoutes(post(), {}, "/v1/billing/portal", json, { ...deps, env: { ...BILLING, INSIDIR_BILLING_ENABLED: "0" } }), e => e.status === 503);
 });
 
 /* ---------------------------------------------------------------- end to end through the router */
@@ -806,11 +1030,11 @@ test("router: GET /v1/me returns the user and the access object, never the raw a
     let r = await send(base, "/v1/me", as("paid"));
     assert.equal(r.status, 200);
     assert.deepEqual(JSON.parse(r.text), { user: { id: USERS.paid.id, email: USERS.paid.email },
-      access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" } });
+      access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z", cancelAtPeriodEnd: false } });
     r = await send(base, "/v1/me", as("none"));
-    assert.deepEqual(JSON.parse(r.text).access, { active: false, plan: "none", status: null, billingEnabled: true, complimentary: false, currentPeriodEnd: null });
+    assert.deepEqual(JSON.parse(r.text).access, { active: false, plan: "none", status: null, billingEnabled: true, complimentary: false, currentPeriodEnd: null, cancelAtPeriodEnd: false });
     r = await send(base, "/v1/me", as("owner"));
-    assert.deepEqual(JSON.parse(r.text).access, { active: true, plan: "none", status: null, billingEnabled: true, complimentary: true, currentPeriodEnd: null });
+    assert.deepEqual(JSON.parse(r.text).access, { active: true, plan: "none", status: null, billingEnabled: true, complimentary: true, currentPeriodEnd: null, cancelAtPeriodEnd: false });
   });
 });
 

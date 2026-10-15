@@ -77,11 +77,27 @@
     if (who && email) { who.textContent = email; who.hidden = false; }
   }
 
-  async function call(path, method = "GET") {
+  const ATTEMPT_KEY = "insidir:checkout-attempt";
+  function attemptKey(rotate) {
+    try {
+      if (rotate) sessionStorage.removeItem(ATTEMPT_KEY);
+      let key = sessionStorage.getItem(ATTEMPT_KEY);
+      if (!key || !/^[A-Za-z0-9_-]{8,80}$/.test(key)) {
+        const raw = globalThis.crypto && crypto.randomUUID ? crypto.randomUUID() : "k" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+        key = raw.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80);
+        if (key.length < 8) key = (key + "insidirpro").slice(0, 16);
+        sessionStorage.setItem(ATTEMPT_KEY, key);
+      }
+      return key;
+    } catch (_) { return ""; }
+  }
+  if (params.get("checkout") === "cancel") attemptKey(true);
+
+  async function call(path, method = "GET", extraHeaders) {
     const res = await fetch(path, {
       method,
       credentials: "same-origin",
-      headers: method === "GET" ? { Accept: "application/json" } : { Accept: "application/json", "Content-Type": "application/json" },
+      headers: method === "GET" ? { Accept: "application/json" } : { Accept: "application/json", "Content-Type": "application/json", ...extraHeaders },
       body: method === "GET" ? undefined : "{}"
     });
     let data = null;
@@ -169,7 +185,8 @@
     say("");
     busy(button, true);
     let res;
-    try { res = await call(route, "POST"); } catch (_) { res = null; }
+    const extra = route === "/v1/billing/checkout" ? { "Idempotency-Key": attemptKey(false) } : undefined;
+    try { res = await call(route, "POST", extra); } catch (_) { res = null; }
     const url = res && res.ok && typeof res.data.url === "string" ? res.data.url : "";
     if (/^https:\/\/[^/\\\s]+\//.test(url)) {
       if (!portal) {
@@ -183,7 +200,7 @@
     switch (res.status) {
       case 401: show("signedout"); return say("Your session has ended. Log in again to continue.");
       // The engine refuses a second subscription and says why (already active, unpaid invoice, payment pending, paused…).
-      case 409: { const why = serverText(res); await load(); return say(why || "You already have an Insidir subscription. Manage it from Billing."); }
+      case 409: { attemptKey(true); const why = serverText(res); await load(); return say(why || "You already have an Insidir subscription. Manage it from Billing."); }
       case 429: return say(serverText(res) || "Too many attempts. Please wait a few minutes and try again.");
       case 403: return say("Your browser sent this request from an unexpected address. Reload the page and try again.");
       case 404: return say(portal ? "There's no Stripe billing account for you yet. Subscribe first, or " + CONTACT + "." : NOT_STARTED);

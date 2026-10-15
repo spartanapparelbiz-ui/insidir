@@ -117,7 +117,9 @@ export function accessSummary(row, env = process.env) {
     status: statusOf(row) || null,
     billingEnabled: billingSettings(env).enabled,
     complimentary: isComplimentary(row?.email, env),
-    currentPeriodEnd: isoOrNull(row?.current_period_end ?? row?.currentPeriodEnd)
+    currentPeriodEnd: isoOrNull(row?.current_period_end ?? row?.currentPeriodEnd),
+    // Paid-through cancellation: status stays active/trialing until the period ends.
+    cancelAtPeriodEnd: row?.cancel_at_period_end === true || row?.cancelAtPeriodEnd === true
   };
 }
 

@@ -84,12 +84,14 @@
     badge.textContent = label;
     badge.dataset.tone = tone;
 
+    const ended = status === "canceled" || status === "incomplete_expired";
+    const canceling = !!((bill && bill.cancelAtPeriodEnd) || access.cancelAtPeriodEnd) && (status === "active" || status === "trialing");
     $("[data-bl-status]").textContent = complimentary && !["active", "trialing"].includes(status)
       ? "Complimentary access. There's nothing to pay."
       : waiting && !status ? "Waiting for Stripe's confirmation"
+      : canceling ? "Active · cancels at period end"
       : status ? (STATUS[status] || status.replace(/_/g, " ")) : "No subscription";
-    const ended = status === "canceled" || status === "incomplete_expired";
-    $("[data-bl-period-label]").textContent = ended ? "Ended" : "Current period ends";
+    $("[data-bl-period-label]").textContent = ended ? "Ended" : canceling ? "Access through" : "Current period ends";
     $("[data-bl-period]").textContent = dateText(period) || "—";
     $("[data-bl-method]").textContent = status ? "Held by Stripe. Update it in Manage billing." : waiting ? "With Stripe, being confirmed" : "None on file";
     if (me && me.user && me.user.email) $("[data-bl-email]").textContent = String(me.user.email);

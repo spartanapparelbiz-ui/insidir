@@ -36,6 +36,57 @@ const USER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // in which case it cannot bill anyone from this account either.
 const missingInStripe = e => e?.stripeStatus === 404 || e?.stripeCode === "resource_missing";
 
+// Insidir Pro is exactly $39.00 USD every month, with no trial and no metered component.
+export const PRO_PRICE_CENTS = 3900;
+const PRICE_ID = /^price_[A-Za-z0-9]{1,250}$/;
+const PORTAL_CONFIG_ID = /^bpc_[A-Za-z0-9]+$/;
+const CLIENT_IDEMPOTENCY_KEY = /^[A-Za-z0-9_-]{8,80}$/;
+// Latest Stripe API version. Pinned per request so Checkout and portal fields stay stable.
+const STRIPE_VERSION = "2026-09-30.endive";
+const PORTAL_MARKER = "insidir-pro-v1";
+
+// A later Stripe read wins. Equal timestamps still apply so a retry of the same read is stored.
+export function shouldApplySync(previousSyncedAt, nextSyncedAt) {
+  const next = nextSyncedAt instanceof Date ? nextSyncedAt.getTime() : new Date(nextSyncedAt).getTime();
+  if (!Number.isFinite(next)) return false;
+  if (previousSyncedAt == null || previousSyncedAt === "") return true;
+  const previous = previousSyncedAt instanceof Date ? previousSyncedAt.getTime() : new Date(previousSyncedAt).getTime();
+  return !Number.isFinite(previous) || next >= previous;
+}
+
+function stripeResourceId(value, pattern) {
+  const id = typeof value === "string" ? value : (value && typeof value.id === "string" ? value.id : "");
+  return pattern.test(id) ? id : "";
+}
+
+// Stable per checkout attempt. Stripe rejects an idempotent retry whose parameters differ, so the
+// label is derived from the same key rather than randomized on each call.
+export function integrationIdentifier(seed) {
+  const letters = String(seed || "").toLowerCase().replace(/[^a-z]/g, "");
+  return "insidir_pro_" + (letters + "abcdefgh").slice(-8);
+}
+
+export function checkoutAttemptKey(userId, sessions, clientKey) {
+  const header = CLIENT_IDEMPOTENCY_KEY.test(String(clientKey || "")) ? String(clientKey) : "";
+  if (header) return ("insidir-co-" + userId + "-" + header).slice(0, 255);
+  const closed = (sessions || []).filter(s => s && s.status && s.status !== "open" && CHECKOUT_ID.test(String(s.id || "")));
+  closed.sort((a, b) => (Number(b.created) || 0) - (Number(a.created) || 0) || String(b.id).localeCompare(String(a.id)));
+  return ("insidir-co-" + userId + "-" + (closed[0]?.id || "none")).slice(0, 255);
+}
+
+const httpsUrl = value => typeof value === "string" && /^https:\/\/[^/\\\s]+\//.test(value);
+
+// An open Checkout for this account and price can be shown again. A refresh must not start a second one.
+export function reusableCheckout(sessions, userId, priceId) {
+  return (sessions || []).find(s => {
+    if (s?.status !== "open" || !CHECKOUT_ID.test(String(s.id || "")) || !httpsUrl(s.url)) return false;
+    const ref = s.client_reference_id || s.metadata?.insidir_user_id;
+    if (ref !== userId) return false;
+    const price = s.metadata?.insidir_price_id;
+    return !price || price === priceId;
+  }) || null;
+}
+
 /* One billing change per account at a time (checkout, account deletion), so a double click
  * cannot open two checkouts and a deletion cannot race a checkout. Per process: Insidir
  * runs as one service; the Stripe re-reads below still apply across instances. */
@@ -49,14 +100,17 @@ export async function exclusiveBilling(userId, fn) {
 
 /* A minimal Stripe REST client. Inject `fetchImpl` (or replace the whole client) in tests. */
 export function createStripeClient({ secretKey = billingSettings().secretKey, fetchImpl = globalThis.fetch, timeoutMs = 12000 } = {}) {
-  async function request(method, path, params) {
+  async function request(method, path, params, options) {
     if (!secretKey) throw failure(503, "Stripe is not connected for Insidir");
+    const idempotencyKey = options?.idempotencyKey ? String(options.idempotencyKey).slice(0, 255) : "";
     const form = params ? new URLSearchParams(params).toString() : "";
     const url = "https://api.stripe.com/v1" + path + (method !== "POST" && form ? "?" + form : "");
     let response;
     try {
       response = await fetchImpl(url, { method, redirect: "error", signal: AbortSignal.timeout(timeoutMs),
-        headers: { Authorization: "Bearer " + secretKey, ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}) },
+        headers: { Authorization: "Bearer " + secretKey, "Stripe-Version": STRIPE_VERSION,
+          ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+          ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}) },
         body: method === "POST" ? form : undefined });
     } catch { throw failure(503, "Could not reach Stripe. Try again shortly."); }
     const data = await response.json().catch(() => ({}));
@@ -67,7 +121,11 @@ export function createStripeClient({ secretKey = billingSettings().secretKey, fe
     }
     return data;
   }
-  return { get: (path, params) => request("GET", path, params), post: (path, params) => request("POST", path, params), del: (path, params) => request("DELETE", path, params) };
+  return {
+    get: (path, params) => request("GET", path, params),
+    post: (path, params, options) => request("POST", path, params, options),
+    del: (path, params) => request("DELETE", path, params)
+  };
 }
 
 export function verifyStripeSignature(raw, signature, secret, now = Date.now()) {
@@ -79,9 +137,15 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
   }
   const ts = Number(parts.t?.[0]);
   if (!Number.isSafeInteger(ts) || Math.abs(now / 1000 - ts) > 300) return false;
-  const expected = Buffer.from(createHmac("sha256", secret).update(String(ts) + "." + raw).digest("hex"));
+  const payload = Buffer.isBuffer(raw) ? raw : Buffer.from(String(raw), "utf8");
+  const signed = Buffer.concat([Buffer.from(String(ts) + ".", "utf8"), payload]);
+  const expected = Buffer.from(createHmac("sha256", secret).update(signed).digest("hex"), "utf8");
   // Stripe may send several v1 signatures while a secret is being rolled.
-  return (parts.v1 || []).some(v => /^[a-f0-9]{64}$/.test(v) && timingSafeEqual(expected, Buffer.from(v)));
+  return (parts.v1 || []).some(v => {
+    if (!/^[a-f0-9]{64}$/.test(v)) return false;
+    const got = Buffer.from(v, "utf8");
+    return expected.length === got.length && timingSafeEqual(expected, got);
+  });
 }
 
 const hasPrice = (sub, priceId) => !!priceId && (sub?.items?.data || []).some(item => item?.price?.id === priceId);
@@ -124,35 +188,37 @@ export async function listCustomerSubscriptions(customerId, { stripe }) {
 
 /* Stores the subscription that decides access, from a list just read from Stripe.
  * Returns the stored fields, or null when the customer has no subscription for the plan. */
-export async function storeSubscriptions(customerId, subscriptions, { query = dbQuery, priceId = billingSettings().priceId } = {}) {
+export async function storeSubscriptions(customerId, subscriptions, { query = dbQuery, priceId = billingSettings().priceId, syncedAt = new Date() } = {}) {
+  const when = syncedAt instanceof Date ? syncedAt : new Date(syncedAt);
   const best = pickSubscription(subscriptions, priceId);
   if (!best) {
-    // Only the exact configured Price grants access.
-    await query("UPDATE users SET subscription_status='inactive' WHERE stripe_customer_id=$1 AND subscription_status IS NOT NULL AND subscription_status<>'inactive'", [customerId]);
-    return null;
+    // Only the exact configured Price grants access. A newer read is left untouched.
+    const cleared = { stripe_subscription_id: null, subscription_status: "inactive", current_period_end: null, cancel_at_period_end: false, subscription_synced_at: when };
+    const result = await query("UPDATE users SET stripe_subscription_id=NULL,subscription_status='inactive',current_period_end=NULL,cancel_at_period_end=FALSE,subscription_synced_at=$2 WHERE stripe_customer_id=$1 AND (subscription_synced_at IS NULL OR subscription_synced_at<=$2)", [customerId, when]);
+    return result?.applied === false ? { stale: true } : cleared;
   }
-  const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId) };
-  await query("UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3 WHERE stripe_customer_id=$4",
-    [fields.stripe_subscription_id, fields.subscription_status, fields.current_period_end, customerId]);
-  return fields;
+  const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId),
+    cancel_at_period_end: best.cancel_at_period_end === true, subscription_synced_at: when };
+  const result = await query("UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3,cancel_at_period_end=$4,subscription_synced_at=$5 WHERE stripe_customer_id=$6 AND (subscription_synced_at IS NULL OR subscription_synced_at<=$5)",
+    [fields.stripe_subscription_id, fields.subscription_status, fields.current_period_end, fields.cancel_at_period_end, fields.subscription_synced_at, customerId]);
+  return result?.applied === false ? { stale: true } : fields;
 }
 
 /* Re-reads a customer's subscriptions from Stripe and stores the one that decides access.
  * Returns the stored fields, or null when the customer has no subscription for the plan. */
-export async function syncCustomer(customerId, { stripe, query = dbQuery, priceId = billingSettings().priceId } = {}) {
+export async function syncCustomer(customerId, { stripe, query = dbQuery, priceId = billingSettings().priceId, syncedAt = new Date() } = {}) {
   if (!CUSTOMER_ID.test(String(customerId || ""))) return null;
-  return storeSubscriptions(customerId, await listCustomerSubscriptions(customerId, { stripe }), { query, priceId });
+  // Timestamp the read when it starts, so a slower older read cannot overwrite a newer one.
+  const started = syncedAt instanceof Date && !Number.isNaN(syncedAt.getTime()) ? syncedAt : new Date();
+  return storeSubscriptions(customerId, await listCustomerSubscriptions(customerId, { stripe }), { query, priceId, syncedAt: started });
 }
 
-/* Expires a customer's open Checkout pages, so none of them can start a subscription later
- * (after the account is deleted, or next to a newer checkout). Returns how many it expired.
- * Throws (503) unless Stripe confirms that no checkout for the customer is still open. */
-export async function expireOpenCheckouts(customerId, { stripe }) {
-  if (!CUSTOMER_ID.test(String(customerId || ""))) throw failure(400, "Invalid Stripe customer");
+async function expireListedCheckouts(sessions, { stripe, exceptId = null }) {
   const unconfirmed = () => failure(503, "Could not close an open Stripe checkout. Try again shortly.");
   let expired = 0;
-  for (const session of await listAll(stripe, "/checkout/sessions", { customer: customerId, status: "open" })) {
+  for (const session of sessions || []) {
     if (session?.status && session.status !== "open") continue;
+    if (exceptId && session?.id === exceptId) continue;
     if (!CHECKOUT_ID.test(String(session?.id || ""))) throw unconfirmed();
     try { await stripe.post("/checkout/sessions/" + session.id + "/expire"); expired++; }
     catch {
@@ -162,6 +228,14 @@ export async function expireOpenCheckouts(customerId, { stripe }) {
     }
   }
   return expired;
+}
+
+/* Expires a customer's open Checkout pages, so none of them can start a subscription later
+ * (after the account is deleted, or next to a newer checkout). Returns how many it expired.
+ * Throws (503) unless Stripe confirms that no checkout for the customer is still open. */
+export async function expireOpenCheckouts(customerId, { stripe, exceptId = null } = {}) {
+  if (!CUSTOMER_ID.test(String(customerId || ""))) throw failure(400, "Invalid Stripe customer");
+  return expireListedCheckouts(await listAll(stripe, "/checkout/sessions", { customer: customerId, status: "open" }), { stripe, exceptId });
 }
 
 // Cancels one subscription immediately; resolves only once Stripe confirms it has ended.
@@ -261,6 +335,66 @@ async function readBody(req, limit = 65536) {
   return Buffer.concat(chunks);
 }
 
+// The configured Price is the only thing Checkout sells. Refuse anything that is not $39/month with no trial.
+export async function assertProPrice(stripe, priceId) {
+  if (!PRICE_ID.test(String(priceId || ""))) throw failure(503, "The Insidir Pro price is not configured correctly. Contact hello@aethric.llc.");
+  const price = await stripe.get("/prices/" + priceId);
+  const recurring = price?.recurring || {};
+  const count = Number(recurring.interval_count || 1);
+  const trialDays = Number(recurring.trial_period_days || 0);
+  const ok = price?.active === true && Number(price.unit_amount) === PRO_PRICE_CENTS && String(price.currency || "").toLowerCase() === "usd"
+    && recurring.interval === "month" && count === 1 && recurring.usage_type !== "metered" && !(trialDays > 0) && price.type !== "one_time";
+  if (!ok) throw failure(503, "The Insidir Pro price is not configured correctly. Contact hello@aethric.llc.");
+  return price;
+}
+
+const portalConfigs = new WeakMap();
+function portalConfigParams(returnUrl) {
+  return {
+    "features[invoice_history][enabled]": "true",
+    "features[payment_method_update][enabled]": "true",
+    "features[subscription_cancel][enabled]": "true",
+    "features[subscription_cancel][mode]": "at_period_end",
+    "features[subscription_cancel][proration_behavior]": "none",
+    "business_profile[headline]": "Manage your Insidir Pro subscription",
+    "default_return_url": returnUrl,
+    "metadata[insidir_portal]": PORTAL_MARKER
+  };
+}
+
+// Invoices, card updates and cancel-at-period-end. One plan, so the portal cannot change the Price.
+export async function ensurePortalConfiguration(stripe, returnUrl) {
+  const cached = portalConfigs.get(stripe);
+  if (cached) return cached;
+  const configs = await listAll(stripe, "/billing_portal/configurations", { active: "true" });
+  const found = configs.find(c => c?.metadata?.insidir_portal === PORTAL_MARKER && c.active !== false && PORTAL_CONFIG_ID.test(String(c.id || "")));
+  if (found) { portalConfigs.set(stripe, found.id); return found.id; }
+  const created = await stripe.post("/billing_portal/configurations", portalConfigParams(returnUrl), { idempotencyKey: "insidir-portal-config-" + PORTAL_MARKER });
+  if (!PORTAL_CONFIG_ID.test(String(created?.id || ""))) throw failure(503, "Could not prepare the billing portal. Try again shortly.");
+  portalConfigs.set(stripe, created.id);
+  return created.id;
+}
+
+const checkoutSessionUsable = session => httpsUrl(session?.url) && (session.status === "open" || session.status == null);
+
+async function createCheckoutSession(stripe, params, idempotencyKey) {
+  const body = { ...params, integration_identifier: integrationIdentifier(idempotencyKey) };
+  const session = await stripe.post("/checkout/sessions", body, { idempotencyKey });
+  if (checkoutSessionUsable(session)) return session;
+  // The key replayed a session that can no longer be paid. A new key starts a new one.
+  const retryKey = ("insidir-co-retry-" + (session?.id || "new") + "-" + idempotencyKey).slice(0, 255);
+  const again = await stripe.post("/checkout/sessions", { ...params, integration_identifier: integrationIdentifier(retryKey) }, { idempotencyKey: retryKey });
+  if (!checkoutSessionUsable(again)) throw failure(503, "Stripe did not return a checkout page. Try again shortly.");
+  return again;
+}
+
+function keyMode(secretKey) {
+  const key = String(secretKey || "");
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return "live";
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return "test";
+  return null;
+}
+
 function publicOrigin(settings) {
   if (!settings.publicUrl) throw failure(503, "Public website URL is not configured");
   let u;
@@ -282,17 +416,21 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
 
   if (p === "/v1/billing/status" && method === "GET") {
     const u = await signedIn();
-    let row = (await query("SELECT email,stripe_customer_id,stripe_subscription_id,subscription_status,current_period_end FROM users WHERE id=$1", [u.id])).rows[0];
+    let row = (await query("SELECT email,stripe_customer_id,stripe_subscription_id,subscription_status,current_period_end,cancel_at_period_end FROM users WHERE id=$1", [u.id])).rows[0];
     if (!row) throw failure(401, "Sign in required");
     // ?refresh=1 (e.g. right after checkout) re-reads Stripe in case the webhook has not arrived yet.
     const url = new URL(req.url || "/", "http://localhost");
     if (url.searchParams.get("refresh") === "1" && settings.secretKey && row.stripe_customer_id && !limited("billing-refresh:" + u.id, 12, 60_000)) {
-      try { const synced = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId }); if (synced) row = { ...row, ...synced }; }
+      try {
+        const synced = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
+        if (synced && !synced.stale) row = { ...row, ...synced };
+      }
       catch (e) { console.warn("Stripe refresh failed:", e?.message); }
     }
     const access = accessSummary(row, env);
     return json(res, 200, { billingEnabled: access.billingEnabled, plan: access.plan, active: access.active, complimentary: access.complimentary,
-      subscriptionStatus: access.status, currentPeriodEnd: access.currentPeriodEnd, hasCustomer: !!row.stripe_customer_id });
+      subscriptionStatus: access.status, currentPeriodEnd: access.currentPeriodEnd, cancelAtPeriodEnd: access.cancelAtPeriodEnd,
+      hasCustomer: !!row.stripe_customer_id });
   }
 
   if (p === "/v1/billing/checkout" && method === "POST") {
@@ -304,6 +442,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       const row = (await query("SELECT email,stripe_customer_id,subscription_status FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
       let customer = row.stripe_customer_id;
+      let freshCustomer = false;
       if (customer) {
         // Stripe, not the stored status, decides: a checkout that completed before its webhook
         // arrived already has a subscription, and paying again would bill twice.
@@ -314,8 +453,6 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
           await storeSubscriptions(customer, subscriptions, { query, priceId: settings.priceId });
           const live = pickSubscription(subscriptions.filter(canStillBill), settings.priceId);
           if (live) throw failure(409, BLOCKS_CHECKOUT[statusOf(live)] || BLOCKS_CHECKOUT_OTHER);
-          // Only the newest checkout page can be paid; earlier open ones are closed.
-          await expireOpenCheckouts(customer, { stripe });
         } else {
           // The stored customer does not exist in this Stripe account (e.g. test-mode data
           // after switching to live keys): start again with a new customer.
@@ -327,16 +464,30 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (blocked) throw failure(409, blocked);
       }
       if (!customer) {
-        const created = await stripe.post("/customers", { email: row.email || u.email, "metadata[insidir_user_id]": u.id });
+        freshCustomer = true;
+        const previousCustomer = stripeResourceId(row.stripe_customer_id, CUSTOMER_ID);
+        const created = await stripe.post("/customers", { email: row.email || u.email, "metadata[insidir_user_id]": u.id },
+          { idempotencyKey: "insidir-customer-" + u.id + (previousCustomer ? "-after-" + previousCustomer : "") });
+        if (!CUSTOMER_ID.test(String(created?.id || ""))) throw failure(503, "Could not prepare checkout. Try again shortly.");
         const saved = await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND stripe_customer_id IS NULL RETURNING stripe_customer_id", [created.id, u.id]);
         customer = saved.rows[0]?.stripe_customer_id || (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0]?.stripe_customer_id;
         if (!customer) throw failure(503, "Could not prepare checkout. Try again shortly.");
       }
+      await assertProPrice(stripe, settings.priceId);
+      // A customer created in this request has no Checkout yet. Reuse one that is still open
+      // so a refresh returns the same page; only then is a new session created.
+      const open = freshCustomer ? [] : await listAll(stripe, "/checkout/sessions", { customer, status: "open" });
+      const reuse = reusableCheckout(open, u.id, settings.priceId);
+      if (reuse) {
+        await expireListedCheckouts(open, { stripe, exceptId: reuse.id });
+        return json(res, 200, { url: reuse.url });
+      }
+      if (open.length) await expireListedCheckouts(open, { stripe });
       const site = publicOrigin(settings);
-      const session = await stripe.post("/checkout/sessions", { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
+      const idempotencyKey = checkoutAttemptKey(u.id, open, req.headers["idempotency-key"]);
+      const session = await createCheckoutSession(stripe, { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
         client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
-        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id });
-      if (typeof session.url !== "string" || !session.url.startsWith("https://")) throw failure(503, "Stripe did not return a checkout page. Try again shortly.");
+        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id, "metadata[insidir_price_id]": settings.priceId }, idempotencyKey);
       return json(res, 200, { url: session.url });
     });
   }
@@ -347,7 +498,11 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     const u = await signedIn();
     const row = (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0];
     if (!row?.stripe_customer_id) throw failure(404, "No subscription found for this account");
-    const portal = await stripe.post("/billing_portal/sessions", { customer: row.stripe_customer_id, return_url: publicOrigin(settings) + "/billing.html" });
+    const returnUrl = publicOrigin(settings) + "/billing.html";
+    const configuration = await ensurePortalConfiguration(stripe, returnUrl);
+    const portal = await stripe.post("/billing_portal/sessions", { customer: row.stripe_customer_id, return_url: returnUrl, configuration },
+      { idempotencyKey: ("insidir-portal-" + u.id + "-" + Math.floor(Date.now() / 60_000)).slice(0, 255) });
+    if (!httpsUrl(portal?.url)) throw failure(503, "Stripe did not return a billing portal. Try again shortly.");
     return json(res, 200, { url: portal.url });
   }
 
@@ -360,17 +515,28 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     const supported = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
       "customer.subscription.paused", "customer.subscription.resumed"];
     if (!supported.includes(event?.type) || typeof event.id !== "string") return json(res, 200, { received: true });
+    const mode = keyMode(settings.secretKey);
+    if (mode && typeof event.livemode === "boolean" && event.livemode !== (mode === "live")) {
+      console.warn("Billing: ignored Stripe event " + event.id + " because its mode does not match the configured API key");
+      return json(res, 200, { received: true, ignored: true });
+    }
     const fresh = await query("INSERT INTO stripe_events(event_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING event_id", [event.id]);
     if (!fresh.rows.length) return json(res, 200, { received: true, duplicate: true });
     const obj = event.data?.object || {};
+    const started = new Date();
     try {
-      if (event.type === "checkout.session.completed" && obj.mode === "subscription" && CUSTOMER_ID.test(String(obj.customer || ""))) {
+      if (event.type === "checkout.session.completed" && obj.mode === "subscription") {
+        const customer = stripeResourceId(obj.customer, CUSTOMER_ID);
         const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
-        if (ref) await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND (stripe_customer_id IS NULL OR stripe_customer_id=$1)", [obj.customer, ref]);
-        await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-        await cancelOrphanCheckout(obj, ref, { stripe, query });
+        if (customer && ref) await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND (stripe_customer_id IS NULL OR stripe_customer_id=$1)", [customer, ref]);
+        if (customer) await syncCustomer(customer, { stripe, query, priceId: settings.priceId, syncedAt: started });
+        await cancelOrphanCheckout({ ...obj, customer, subscription: stripeResourceId(obj.subscription, SUBSCRIPTION_ID) }, ref, { stripe, query });
       }
-      if (event.type.startsWith("customer.subscription.")) await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      if (event.type.startsWith("customer.subscription.")) {
+        const customer = stripeResourceId(obj.customer, CUSTOMER_ID);
+        // Re-read Stripe. The event payload is not applied in arrival order; a newer read wins.
+        if (customer) await syncCustomer(customer, { stripe, query, priceId: settings.priceId, syncedAt: started });
+      }
     } catch (e) {
       // Let Stripe retry: forget the event so the retry is processed.
       await query("DELETE FROM stripe_events WHERE event_id=$1", [event.id]);
