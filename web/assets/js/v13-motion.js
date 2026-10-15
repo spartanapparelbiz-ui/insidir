@@ -9,8 +9,8 @@
      - a click on empty page sends one shock ring out from that point, through the atoms and through
        every dot field on the page (the hero wordmark included), exactly like a click on the word;
      - an atom pops a little when the pointer reaches it and gives when it is pressed, on the same spring;
-     - scrolling leaves atoms and dots a few pixels behind (PHYSICS.scroll), and they spring back when the
-       page stops, so the page itself feels hung on the dots' springs;
+     - scrolling leaves dots (and, on the public pages, atoms) a few pixels behind (PHYSICS.scroll), and they
+       spring back when the page stops, so the page itself feels hung on the dots' springs;
      - blocks marked data-hf-reveal (or every child of a data-hf-reveal-group) wait a little low and
        transparent below the fold and rise into place on the spring as they scroll in, a beat apart;
      - hover transitions elsewhere settle on the same spring (--hf-spring in v13-halftone.css).
@@ -107,12 +107,15 @@
 
   /* Home positions: the element's box with its own offset taken out, in page coordinates
      (viewport coordinates for atoms in fixed or sticky bars). */
+  let repin = false;
   function measure(only) {
     const sx = window.scrollX, sy = window.scrollY;
     for (const a of atoms) {
       if (only && !only(a)) continue;
       const r = a.el.getBoundingClientRect();
-      if (a.pin === undefined || !only) { a.pin = pinned(a.el); a.fixed = a.pin === "fixed"; }
+      // Whether an atom sits in a fixed or sticky bar is read once (and again on resize): walking every
+      // ancestor's computed style on each re-measure is what made re-measures expensive.
+      if (a.pin === undefined || repin) { a.pin = pinned(a.el); a.fixed = a.pin === "fixed"; }
       const ox = a.fixed ? 0 : sx, oy = a.fixed ? 0 : sy;
       // A sticky atom whose page position changed on a scroll-only re-measure is stuck to the viewport.
       if (only && a.pin === "sticky") a.stuck = Math.abs(r.top - a.y + oy - a.t) > 0.5;
@@ -124,6 +127,10 @@
 
   // Offsets are written in quarter pixels and scale in 0.002 steps: a spring's last tiny movements cost no restyle.
   const q = (v, step) => Math.round(v / step) * step;
+  // Many things ask for a full re-measure (a block finished rising, a transition or animation moved a
+  // container, the page changed size): they are coalesced into one, at most every 150ms.
+  let remeasureT = 0;
+  function remeasure() { if (!remeasureT) remeasureT = setTimeout(() => { remeasureT = 0; measure(); }, 150); }
   function write(a, force) {
     const x = Math.abs(a.x) < 0.125 ? 0 : q(a.x, 0.25), y = Math.abs(a.y) < 0.125 ? 0 : q(a.y, 0.25), s = Math.abs(a.s) < 0.001 ? 0 : q(a.s, 0.002);
     if (force || x !== a.wx || y !== a.wy) {
@@ -137,10 +144,24 @@
     }
   }
 
-  let last = 0, acc = 0, scrolled = false;
+  let last = 0, acc = 0, scrolled = false, sweepT = 0, lastSweepY = NaN, stickyAt = 0, stickyT = 0;
+  const productPage = !!(document.body && document.body.classList.contains("app-body"));
   function frame(now) {
     raf = 0;
-    if (scrolled) { scrolled = false; measure(a => a.pin === "sticky"); sweepReveal(); }
+    if (scrolled) {
+      scrolled = false;
+      // Sticky homes follow the scroll, but reading layout while blocks are rising forces the browser to
+      // restyle first: re-read at most every 100ms while scrolling, and once more when it settles.
+      if (now - stickyAt > 100) { stickyAt = now; measure(a => a.pin === "sticky"); }
+      clearTimeout(stickyT); stickyT = setTimeout(() => { stickyAt = performance.now(); measure(a => a.pin === "sticky"); wake(); }, 120);
+      // Ordinary scrolling reveals through the IntersectionObserver; the sweep is for jumps (a big step
+      // in one frame) and runs again once the scroll has settled.
+      if (waiting.size) {
+        if (Math.abs(window.scrollY - (lastSweepY === lastSweepY ? lastSweepY : window.scrollY)) > window.innerHeight * 0.6) sweepReveal();
+        clearTimeout(sweepT); sweepT = setTimeout(sweepReveal, 150);
+      }
+      lastSweepY = window.scrollY;
+    }
     if (reducedQ.matches) { for (const a of atoms) { a.x = a.y = a.vx = a.vy = a.s = a.vs = 0; write(a); } awake = false; return; }
     // A fixed 60 fps clock: the same number of physics steps per second at 60, 120 or 144 Hz.
     acc = last ? Math.min(acc + (now - last), 4 * FRAME) : FRAME;
@@ -148,7 +169,10 @@
     const steps = Math.floor(acc / FRAME);
     acc -= steps * FRAME;
     const sx = window.scrollX, sy = window.scrollY, vw = window.innerWidth, vh = window.innerHeight;
-    const push = inside && fineQ.matches, trail = fineQ.matches;
+    // The scroll trail restyles every visible atom on every scrolling frame: worth it on the landing and
+    // marketing pages, not on the product's data pages (dashboard, desk, reports), where it cost ~6 fps and
+    // the figures should sit still while you read them. Touch screens never trail.
+    const push = inside && fineQ.matches, trail = fineQ.matches && !productPage;
     rings = rings.filter(g => now - g.t < P.ringLife);
     // The pointer's movement and the page's scroll since the last frame.
     const mx = steps ? mdx / steps : 0, my = steps ? mdy / steps : 0;
@@ -256,7 +280,7 @@
     el.style.setProperty("--hf-i", String(Math.min(i || 0, 6)));
     el.classList.add("hf-revealing");
     el.classList.remove("hf-pending");
-    setTimeout(() => { el.classList.remove("hf-revealing"); el.style.removeProperty("--hf-i"); measure(); }, REVEAL_MS + Math.min(i || 0, 6) * 70);
+    setTimeout(() => { el.classList.remove("hf-revealing"); el.style.removeProperty("--hf-i"); remeasure(); }, REVEAL_MS + Math.min(i || 0, 6) * 70);
   }
   // Shown in place at once: the block's own transitions are held off for two frames (an inline !important
   // outranks every stylesheet), so nothing slides or fades in from the waiting state.
@@ -317,7 +341,7 @@
     document.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("pointerout", onLeave, { passive: true });
     document.addEventListener("pointerdown", onDown, { passive: true });
-    window.addEventListener("resize", () => { measure(); wake(); }, { passive: true });
+    window.addEventListener("resize", () => { repin = true; measure(); repin = false; wake(); }, { passive: true });
     // Sticky boxes move with the page until they stick: follow them, once per frame at most.
     // A scroll only flags work: the next frame reads positions (sticky homes, reveals) before it writes any.
     window.addEventListener("scroll", () => { scrolled = true; wake(); }, { passive: true });
@@ -325,14 +349,17 @@
     // Focus that lands inside a waiting block (a script focusing a card it just added) shows it at once.
     document.addEventListener("focusin", e => { const b = e.target && e.target.closest && e.target.closest(".hf-pending"); if (b) release(b, 0); });
     // A reveal or slide that moved a container has moved its atoms' homes too.
-    let tq = 0;
     const settled = e => {
       if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-hf-atom")) return; // an atom's own hover nudge
-      if (/^(translate|transform|inset|top|left|margin)/.test(e.propertyName || "transform")) { clearTimeout(tq); tq = setTimeout(() => measure(), 60); }
+      // Only movement re-measures: a transition of a position property, or a keyframe animation on an
+      // element that holds atoms (fades, pops and tile landings move nothing that is measured).
+      const moved = e.type === "transitionend" ? /^(translate|transform|inset|top|left|margin)/.test(e.propertyName || "")
+        : !!(e.target && e.target.querySelector && e.target.querySelector("[data-hf-atom]"));
+      if (moved) remeasure();
     };
     document.addEventListener("transitionend", settled, { passive: true });
     document.addEventListener("animationend", settled, { passive: true });
-    if (window.ResizeObserver) new ResizeObserver(() => { measure(); }).observe(document.body);
+    if (window.ResizeObserver) new ResizeObserver(() => { remeasure(); }).observe(document.body);
     // Rows rendered after load (dashboard modules, menus) join or leave the set.
     // Tooltips and one-line status messages rewrite themselves constantly and hold no atoms or reveal blocks:
     // their changes do not trigger a rescan. (Live regions that hold rows, like followed people, still do.)

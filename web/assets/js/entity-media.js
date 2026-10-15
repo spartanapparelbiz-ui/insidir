@@ -16,11 +16,13 @@
  *
  * Fallback chain (the first that exists wins)
  *   person:  engine headshot -> curated Commons portrait -> the owner's own logo (a listed company that
- *            files as an owner) or the issuer's logo standing in -> curated mark -> monogram initials
+ *            files as an owner) or the issuer's logo standing in (by ticker, or by issuer CIK when the row
+ *            has none) -> curated mark -> monogram initials
  *   company: engine logo by ticker (by issuer CIK when no ticker was reported) -> curated mark -> monogram
  *   Monogram initials appear only when every lookup came back empty, or the engine was unavailable and
- *   nothing curated exists. While a headshot is still resolving the issuer's logo stands in if it is
- *   already known; otherwise the tile shows a still field of halftone dots.
+ *   nothing curated exists. While a headshot is still resolving the issuer's logo is asked for at the same
+ *   time (on the logo schedule, never held back by the photo queue's retryAfter) and stands in once known;
+ *   until then the tile shows a still field of halftone dots.
  *
  * Tiles never change size: the box comes from --ins-size and every state only swaps the tile's classes
  * and its one <img>'s src (no nodes are added or removed, so the motion layer never rescans for it).
@@ -29,11 +31,11 @@
  * A tile next to the name it pictures is aria-hidden with alt=""; {label:true} makes it role="img".
  * No links inside tiles: photo credits go to a [data-media-credits] footnote (credits()).
  *
- * API (window.InsidirMedia): logo(ticker,size,{cik,name,label}), portrait(name,ticker,size,{cik,label}),
- * company({ticker,cik,name,size,label}), person({name,cik,ticker,size,label}), hydrate(root),
+ * API (window.InsidirMedia): logo(ticker,size,{cik,name,label}), portrait(name,ticker,size,{cik,issuerCik,label}),
+ * company({ticker,cik,name,size,label}), person({name,cik,ticker,issuerCik,size,label}), hydrate(root),
  * credits(root), ready(root) (a Promise, for checks), refresh(), logoFor(ticker,{cik}) and
- * photoFor(cik,ticker) (Promises for pages that draw their own frames), photo(name,ticker) (curated
- * portrait record), displayName, initials, knownBrand.
+ * photoFor(cik,ticker,{issuerCik}) (Promises for pages that draw their own frames), photo(name,ticker)
+ * (curated portrait record), displayName, initials, knownBrand.
  */
 (() => {
 "use strict";
@@ -171,13 +173,25 @@ const put=(k,v)=>{cache.set(k,{v,exp:Date.now()+(v?HIT_TTL:MISS_TTL)});saveSoon(
 const broken=new Set(),retried=new Set();   // image URLs that failed to load (twice) / once
 
 /* ---------- requests: one batch, then follow-ups for pending keys only ---------- */
-// Request keys: t:<TICKER>, c:<CIK>, p:<owner CIK>:<TICKER>.
+// Request keys: t:<TICKER>, c:<CIK>, and a headshot by owner CIK: p:<owner CIK>:<TICKER> (the issuer's ticker),
+// p:<owner CIK>:cik:<issuer CIK> (an issuer with no ticker) or p:<owner CIK> (no issuer known). The part after
+// "p:" is what goes in people=; an engine that does not know a form lists it as invalid and the tile steps down.
 const queue=new Set(),inflight=new Set(),tries=new Map(),due=new Map(),gaveUp=new Set();
 const LIMITS={t:60,c:60,p:100};
 const SCHEDULE=[2,4,8,15,30,60,60,60,60,60];   // seconds: about six minutes in all
-let offlineUntil=0,flushTimer=0,firstQueued=0,retryTimer=0,wanted=new Set();
+const OUTAGE=[30,120];                          // a 5xx or a dropped connection: asked again after 30 s, then 2 min, then not this visit
+let offlineUntil=0,outages=0,lostOnline=false,flushTimer=0,firstQueued=0,retryTimer=0,wanted=new Set();
 const isOffline=()=>offlineUntil>Date.now();
 const cacheKey=rk=>rk[0]==="t"?"L:"+rk.slice(2):rk[0]==="c"?"L:cik:"+rk.slice(2):"P:"+rk.split(":")[1];
+const photoKey=(C,T,IC)=>C?"p:"+C+(T?":"+T:IC?":cik:"+IC:""):"";
+// A pending pair as the engine lists it ("<owner>:<TICKER>", "<owner>:cik:<issuer>" or "<owner>") -> request key.
+function pairKey(s){
+ const m=/^(\d{1,10})(?::(?:cik:(\d{1,10})|([^:]+)))?$/i.exec(String(s));
+ if(!m||!apiCik(m[1]))return "";
+ if(m[2])return apiCik(m[2])?photoKey(apiCik(m[1]),"",apiCik(m[2])):"";
+ if(m[3])return apiTicker(m[3])?photoKey(apiCik(m[1]),apiTicker(m[3])):"";
+ return photoKey(apiCik(m[1]));
+}
 function need(rk){
  if(queue.has(rk)||inflight.has(rk)||due.has(rk)||gaveUp.has(rk)||isOffline())return;
  queue.add(rk);
@@ -215,17 +229,29 @@ async function send(c){
   if(res.ok)body=await res.json();
  }catch{body=null;}
  for(const k of keys)inflight.delete(k);
- if(body&&typeof body==="object")apply(body,keys);
+ if(body&&typeof body==="object"){outages=0;apply(body,keys);}
  else if(res&&res.status===429){const s=Number(res.headers.get("Retry-After"))||15;for(const k of keys)later(k,s,false);}
+ else if(res&&res.status===400){
+  // The engine could read nothing in this request (a key form it does not know): nothing to show for these keys
+  // on this visit; every other request goes on as before.
+  for(const k of keys){tries.delete(k);gaveUp.add(k);}
+ }
  else{
   // Not available to this page (a preview without the engine, signed out, unpaid): curated pictures and
-  // initials for this visit. A server error or a dropped connection gets one more try in 30 s.
-  const lasting=res&&res.status>=400&&res.status<500;
-  offlineUntil=lasting?Infinity:Date.now()+30000;
-  if(!lasting)setTimeout(()=>{if(offlineUntil!==Infinity){offlineUntil=0;wakeSoft();}},30500);
+  // initials for this visit. A server error or a dropped connection is asked again after 30 s, then after
+  // 2 minutes; after that, not on this visit (unless the browser comes back online).
+  const unavailable=Boolean(res&&res.status>=400&&res.status<500);
+  if(unavailable||outages>=OUTAGE.length){offlineUntil=Infinity;lostOnline=!unavailable;}
+  else if(!isOffline()){   // two batches failing together count as one outage
+   const wait=1000*OUTAGE[outages++];
+   offlineUntil=Date.now()+wait;
+   setTimeout(()=>{if(offlineUntil!==Infinity&&!isOffline()){offlineUntil=0;wakeSoft();}},wait+500);
+  }
  }
  update();
 }
+// Given up after repeated outages: a browser that comes back online asks once more.
+window.addEventListener("online",()=>{if(lostOnline&&offlineUntil===Infinity){lostOnline=false;outages=OUTAGE.length;offlineUntil=0;wakeSoft();}});
 function apply(body,sent){
  const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:{};
  for(const [k,v] of Object.entries(obj(body.logos))){
@@ -236,14 +262,22 @@ function apply(body,sent){
  for(const [k,v] of Object.entries(obj(body.photos))){const c=apiCik(k);if(c)put("P:"+c,cleanPhoto(v));}
  const pending=new Set(),p=obj(body.pending);
  for(const k of Array.isArray(p.logos)?p.logos:[]){const s=String(k);const rk=s.startsWith("cik:")?(apiCik(s.slice(4))?"c:"+apiCik(s.slice(4)):""):(apiTicker(s)?"t:"+apiTicker(s):"");if(rk)pending.add(rk);}
- for(const k of Array.isArray(p.photos)?p.photos:[]){const [c,t]=String(k).split(":");if(apiCik(c)&&apiTicker(t))pending.add("p:"+apiCik(c)+":"+apiTicker(t));}
- const after=Math.max(0,Math.min(120,Number(body.retryAfter)||0));
- for(const rk of pending){if(get(cacheKey(rk))===undefined)later(rk,after,true);}
- // Asked for, answered neither way (dropped as invalid): nothing to show for it.
+ const pendingPhotos=Array.isArray(p.photos)?p.photos:[];
+ for(const k of pendingPhotos){const rk=pairKey(k);if(rk)pending.add(rk);}
+ /* When to ask again. retryAfter is the engine's hint for the slowest pending kind (a photo job that waits
+    its turn says 15 s), so it paces headshots only. Logos resolve in a second or two: they follow their own
+    hint (retryAfterLogos) or the 2/4/8 s schedule, so a logo, and the person tile it stands in for, is never
+    held back by a photo queue. */
+ const secs=(v,fallback)=>{const n=Number(v);return v!=null&&Number.isFinite(n)?Math.max(0,Math.min(120,n)):fallback;};
+ const photoAfter=secs(body.retryAfterPhotos,secs(body.retryAfter,0));
+ const logoAfter=secs(body.retryAfterLogos,pendingPhotos.length?0:secs(body.retryAfter,0));
+ for(const rk of pending){if(get(cacheKey(rk))===undefined)later(rk,rk[0]==="p"?photoAfter:logoAfter,true);}
+ // Asked for, answered neither way (a form this engine does not know, listed as invalid): nothing to show for it on
+ // this visit. Kept in memory only, so the same person asked for another way (with a ticker) is still answered.
  for(const rk of sent){
   if(pending.has(rk))continue;
   tries.delete(rk);
-  if(get(cacheKey(rk))===undefined)put(cacheKey(rk),null);
+  if(get(cacheKey(rk))===undefined)gaveUp.add(rk);
  }
 }
 function later(rk,afterS,counts){
@@ -290,18 +324,20 @@ function companyLogo(T,C,peek){
  if(m&&!broken.has(m.src))return {entry:{src:m.src,name:m.name,hard:true,realSource:m.source},soft};
  return {soft};
 }
-/* d: {media:"person"|"company", name (as filed), ticker, cik, co (company name)} -> a view of the tile:
+/* d: {media:"person"|"company", name (as filed), ticker, cik, issuerCik (a person's company when it has no
+   ticker), co (company name)} -> a view of the tile:
    {kind:"photo"|"logo"|"monogram"|"loading", src, standIn, own, wide, title, label, credit, key, realSource, wait:[...], soft} */
 function decide(d){
  const T=apiTicker(d.ticker),C=apiCik(d.cik);
  if(d.media!=="person"){
   const lg=companyLogo(T,C,false);
   if(lg.wait)return loadingView(d,[lg.wait]);
-  return lg.entry?logoView(d,lg,{}):monogramView(d,lg.soft);
+  return lg.entry?logoView(d,lg,{}):monogramView(d,lg.soft,{logo:Boolean(T||C)});
  }
+ const IC=T?"":apiCik(d.issuerCik),prk=photoKey(C,T,IC);
  const wait=[];let soft=false;
- if(C&&T){
-  const r=lookup("P:"+C,"p:"+C+":"+T);
+ if(prk){
+  const r=lookup("P:"+C,prk);
   if(r.value)return photoView(d,r.value,"P:"+C);
   if(r.wait)wait.push(r.wait);
   soft=Boolean(r.soft);
@@ -310,15 +346,18 @@ function decide(d){
   const cur=curatedFor(d.name,d.ticker);
   if(cur&&!broken.has(cur.thumb))return photoView(d,{src:cur.thumb,w:250,h:250,credit:cur.credit+" · "+cur.license,sourceUrl:cur.source,curated:true},null);
  }
- // A listed company that files as an owner shows its own logo; anyone else the issuer's, standing in.
+ // A listed company that files as an owner shows its own logo; anyone else the issuer's (by ticker, or by issuer
+ // CIK when no ticker was reported), standing in.
  const own=C?get("O:"+C):undefined,ownT=own&&own.ticker||"";
+ const LT=ownT||T,LC=ownT?"":IC;
+ const lg=companyLogo(LT,LC,false);
  if(wait.length){
-  const known=companyLogo(ownT||T,"",true);
-  return known&&known.entry?{...logoView(d,known,{standIn:!ownT,own:Boolean(ownT)}),wait}:loadingView(d,wait);
+  // The headshot is still resolving: the stand-in is asked for at the same time, on its own (faster) schedule.
+  if(lg.entry)return {...logoView(d,lg,{standIn:!ownT,own:Boolean(ownT)}),wait};
+  return loadingView(d,lg.wait?[...wait,lg.wait]:wait);
  }
- const lg=companyLogo(ownT||T,"",false);
  if(lg.wait)return loadingView(d,[lg.wait]);
- return lg.entry?logoView(d,lg,{standIn:!ownT,own:Boolean(ownT),soft:soft||lg.soft}):monogramView(d,soft||lg.soft);
+ return lg.entry?logoView(d,lg,{standIn:!ownT,own:Boolean(ownT),soft:soft||lg.soft}):monogramView(d,soft||lg.soft,{photo:Boolean(prk),logo:Boolean(LT||LC)});
 }
 const personName=d=>displayName(d.name);
 function coName(d,entry){return companyLabel(d.media==="person"?(entry&&entry.name)||"":d.co||(entry&&entry.name)||"")||normalizeTicker(d.ticker)||"Company";}
@@ -336,10 +375,17 @@ function logoView(d,lg,{standIn=false,own=false,soft=false}){
  return {kind:"logo",src:e.src,w:e.w,h:e.h,wide,standIn,key:lg.key||null,realSource:e.hard?e.realSource:"",title,label,wait:[],soft};
 }
 function loadingView(d,wait){return {kind:"loading",label:d.media==="person"?personName(d):coName(d,null),title:"",wait};}
-function monogramView(d,soft){
- if(d.media==="person"){const who=personName(d);return {kind:"monogram",text:initials(d.name),title:who+" · no published photo or logo found",label:who,wait:[],soft};}
+/* The title says what was actually looked for: initials after both lookups came back empty, after only the one
+   that was possible, or while the engine cannot be reached. */
+function monogramView(d,soft,{photo=false,logo=false}={}){
+ if(d.media==="person"){
+  const who=personName(d);
+  const why=soft?"photo not available right now":photo&&logo?"no published photo or company logo found":photo?"no published photo found":logo?"no company logo found":"";
+  return {kind:"monogram",text:initials(d.name),title:why?who+" · "+why:who,label:who,wait:[],soft};
+ }
  const co=coName(d,null),t=normalizeTicker(d.ticker).replace(/[^A-Z0-9]/g,"");
- return {kind:"monogram",text:t?t[0]:initials(d.co||""),title:co+" · no published logo found",label:co,wait:[],soft};
+ const why=soft?"logo not available right now":logo?"no published logo found":"";
+ return {kind:"monogram",text:t?t[0]:initials(d.co||""),title:why?co+" · "+why:co,label:co,wait:[],soft};
 }
 const sigOf=v=>v.kind+"|"+(v.src||"")+"|"+(v.standIn?1:0);
 
@@ -357,6 +403,7 @@ function render(d){
  if(d.name)a.push('data-name="'+esc(d.name)+'"');
  if(d.ticker)a.push('data-ticker="'+esc(normalizeTicker(d.ticker))+'"');
  if(apiCik(d.cik))a.push('data-cik="'+apiCik(d.cik)+'"');
+ if(d.media==="person"&&apiCik(d.issuerCik))a.push('data-issuer-cik="'+apiCik(d.issuerCik)+'"');
  if(d.co)a.push('data-co="'+esc(d.co)+'"');
  if(d.label)a.push('data-label="1" role="img" aria-label="'+esc(v.label)+'"');else a.push('aria-hidden="true"');
  if(v.title)a.push('title="'+esc(v.title)+'"');
@@ -369,10 +416,11 @@ function render(d){
  return '<span '+a.join(" ")+">"+glyph+img+"</span>";
 }
 const creditAttrs=c=>['data-credit-name="'+esc(c.name)+'"','data-credit="'+esc(c.text)+'"',...(c.url?['data-credit-url="'+esc(c.url)+'"']:[]),'data-credit-src="'+esc(c.src)+'"'];
-const describe=el=>({media:el.dataset.media==="person"?"person":"company",name:el.dataset.name||"",ticker:el.dataset.ticker||"",cik:el.dataset.cik||"",co:el.dataset.co||""});
+const describe=el=>({media:el.dataset.media==="person"?"person":"company",name:el.dataset.name||"",ticker:el.dataset.ticker||"",cik:el.dataset.cik||"",issuerCik:el.dataset.issuerCik||"",co:el.dataset.co||""});
 function options(o){return o&&typeof o==="object"?o:{};}
 function logo(ticker,size="sm",opts){const o=options(opts);return render({media:"company",ticker:normalizeTicker(ticker),cik:o.cik,co:o.name?companyLabel(o.name):"",size,label:Boolean(o.label)});}
-function portrait(name,ticker,size="sm",opts){const o=options(opts);return render({media:"person",name:String(name||"").replace(/\s+/g," ").trim().slice(0,160),ticker:normalizeTicker(ticker),cik:o.cik,size,label:Boolean(o.label)});}
+// opts.issuerCik: the person's company by SEC CIK, for an issuer with no ticker (its logo stands in by CIK).
+function portrait(name,ticker,size="sm",opts){const o=options(opts);return render({media:"person",name:String(name||"").replace(/\s+/g," ").trim().slice(0,160),ticker:normalizeTicker(ticker),cik:o.cik,issuerCik:o.issuerCik,size,label:Boolean(o.label)});}
 const person=(o={})=>portrait(o.name,o.ticker,o.size,o);
 const company=(o={})=>logo(o.ticker,o.size,o);
 
@@ -507,6 +555,7 @@ function hydrateLegacy(root){
 }
 function hydrate(root=document){
  if(!root?.querySelectorAll)return;
+ for(const host of document.querySelectorAll("[data-media-credits]"))hold(host);
  hydrateLegacy(root);
  if(root.matches?.("[data-media]"))bind(root);
  for(const el of root.querySelectorAll("[data-media]"))bind(el);
@@ -525,7 +574,7 @@ if(window.MutationObserver)new MutationObserver(muts=>{
 /* ---------- promise lookups for pages that draw their own frames (the company report) ---------- */
 // A watcher {kind:"logo"|"photo", ticker, cik, resolve} waits in the same set as the tiles.
 function checkWatcher(w,now){
- const v=w.kind==="logo"?companyLogo(apiTicker(w.ticker),apiCik(w.cik),false):lookup("P:"+apiCik(w.cik),"p:"+apiCik(w.cik)+":"+apiTicker(w.ticker));
+ const v=w.kind==="logo"?companyLogo(apiTicker(w.ticker),apiCik(w.cik),false):lookup("P:"+apiCik(w.cik),photoKey(apiCik(w.cik),apiTicker(w.ticker),apiTicker(w.ticker)?"":apiCik(w.issuerCik)));
  if(v.wait){waiting.add(w);if(now)now.add(v.wait);wanted.add(v.wait);need(v.wait);return;}
  waiting.delete(w);
  const e=w.kind==="logo"?v.entry||null:v.value||null;
@@ -536,13 +585,51 @@ function logoFor(ticker,opts){
  if(!apiTicker(ticker)&&!apiCik(o.cik))return Promise.resolve(null);
  return new Promise(resolve=>{checkWatcher({kind:"logo",ticker,cik:o.cik,resolve});});
 }
-function photoFor(cik,ticker){
- if(!apiCik(cik)||!apiTicker(ticker))return Promise.resolve(null);
- return new Promise(resolve=>{checkWatcher({kind:"photo",ticker,cik,resolve});});
+// photoFor(ownerCik, issuer ticker, {issuerCik}): the issuer by CIK when it has no ticker.
+function photoFor(cik,ticker,opts){
+ if(!apiCik(cik))return Promise.resolve(null);
+ return new Promise(resolve=>{checkWatcher({kind:"photo",ticker,cik,issuerCik:options(opts).issuerCik,resolve});});
 }
 
-/* ---------- credits footnote ---------- */
-let creditTimer=0;
+/* ---------- credits footnote ----------
+   The footnote ([data-media-credits]) never moves what follows it on screen (a closing note, the footer):
+   - its space is held from the start: the height it had at this width on the last visit to this page
+     (sessionStorage "ins-media-credits:v1"), or one line (two on a narrow screen) on a first visit;
+   - new text goes in only while the footnote is off screen: still below the fold, or scrolled past (the
+     browser's scroll anchoring then keeps the page still). Text that arrives while it is on screen waits until
+     it scrolls away; a page too short to scroll takes it at once, without ever giving space back;
+   - the held space is fitted to the text off screen too, and that height is kept for the next visit.
+   A page that holds the space itself (the dashboard, from its own last visit) keeps its height. */
+const HELD_STORE="ins-media-credits:v1";
+const ownHold=new WeakSet(),pendingText=new Map();
+let creditTimer=0,heldSizes={};
+try{const v=JSON.parse(sessionStorage.getItem(HELD_STORE)||"{}");if(v&&typeof v==="object"&&!Array.isArray(v))heldSizes=v;}catch{/* memory only */}
+function hold(host){
+ if(host.hasAttribute("data-media-held"))return;
+ host.setAttribute("data-media-held","");
+ if(host.style.getPropertyValue("min-height"))return;
+ const e=heldSizes[location.pathname],h=e&&Math.abs(Number(e.w)-innerWidth)<24?Number(e.h):0;
+ host.style.setProperty("min-height",h>0&&h<4000?h+"px":innerWidth<600?"3.4em":"1.7em","important");
+ ownHold.add(host);
+}
+const onScreen=el=>{const r=el.getBoundingClientRect();return r.height>0&&r.bottom>0&&r.top<innerHeight;};
+const hostIO=window.IntersectionObserver?new IntersectionObserver(es=>{for(const e of es)if(!e.isIntersecting&&pendingText.has(e.target))write(e.target,false);}):null;
+function write(host,visible){
+ const html=pendingText.get(host);
+ pendingText.delete(host);
+ hostIO?.unobserve(host);
+ if(html===undefined)return;
+ const before=host.offsetHeight;
+ if(host.innerHTML!==html)host.innerHTML=html;
+ // Nothing to credit yet (pictures still on their way): the held space waits for the text.
+ if(!ownHold.has(host)||!html)return;
+ host.style.removeProperty("min-height");
+ const natural=host.offsetHeight;
+ // On screen (a page too short to scroll) the footnote may grow but never gives space back.
+ if(visible&&natural<before)host.style.setProperty("min-height",before+"px","important");
+ heldSizes[location.pathname]={w:innerWidth,h:natural};
+ try{sessionStorage.setItem(HELD_STORE,JSON.stringify(heldSizes));}catch{/* quota or blocked storage */}
+}
 function creditsSoon(){if(!creditTimer)creditTimer=setTimeout(()=>{creditTimer=0;credits();},250);}
 function credits(){
  const hosts=document.querySelectorAll("[data-media-credits]");
@@ -559,10 +646,16 @@ function credits(){
  }
  if(document.querySelector("[data-media].is-logo,.cx-logo:not([hidden]) img,.cx-mark img"))logos=true;
  const html=items.length?"Photos: "+items.join("; ")+". Shown in grayscale."+(logos?" Logos are trademarks of their owners.":""):logos?"Logos are trademarks of their owners, shown in grayscale.":"";
+ const short=document.documentElement.scrollHeight<=innerHeight+1;
  for(const host of hosts){
   // A one-line footnote, not a live region: aria-live="off" also keeps the motion layer from rescanning for it.
   if(host.tagName==="P"&&!host.hasAttribute("aria-live"))host.setAttribute("aria-live","off");
-  if(host.innerHTML!==html)host.innerHTML=html;
+  hold(host);
+  if(host.innerHTML===html&&!pendingText.has(host))continue;
+  pendingText.set(host,html);
+  const visible=onScreen(host);
+  if(!visible||short||!hostIO)write(host,visible);
+  else hostIO.observe(host);
  }
 }
 

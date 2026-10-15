@@ -19,9 +19,10 @@
        is empty), 02b Your notes and 04 All recent trades (filters crossfade inside a height-locked table).
 
    Requests: /v1/me/people/updates?limit=40, /v1/me/watchlist, /v1/me/research-decisions,
-   /v1/transactions?limit=100, /v1/status, /v1/filings?limit=1, plus /v1/transactions?ticker=X&limit=20 for
-   at most 8 watched tickers with no purchase or sale in the 100-row window, and /v1/insiders only when the
-   reader follows fewer than 3 people (v13-overview.js). /v1/me comes from app.js. No synthetic records,
+   /v1/transactions?limit=100, /v1/status, /v1/filings?limit=1, plus, for at most 8 watched tickers with no purchase
+   or sale in the 100-row window, /v1/transactions?ticker=X&category=reported_purchase|reported_sale&limit=1 (and
+   ?ticker=X&limit=20 when there is neither), and /v1/insiders only when the reader follows fewer than 3 people
+   (v13-overview.js). /v1/me comes from app.js. No synthetic records,
    prices or market metrics: every row comes from one of those responses and links to an Insidir page or
    the original SEC document. 401/402 are handled by app.js (sign in / subscribe); every other failure
    says what failed, in place, with a "Try again" that reloads only that module. */
@@ -170,54 +171,73 @@ const isPlainShares=t=>!t||/^(class [a-z0-9]+ )?(common|ordinary)( stock| shares
 const security=x=>{const t=String(x?.security_title||"").replace(/\s+/g," ").trim().slice(0,60);return isPlainShares(t)?"":t;};
 
 /* ---------- describe(x): every Form 4 code in words ----------
-   Returns {word, cls, c, text, value, valued, suffix}: `word` and `cls` make the badge ("Sold", red ▼),
-   `text` is the sentence after the person's name ("sold 12,500 AAPL shares at $26.00"), `value` is the dollar
-   value counted for purchases and sales (null when nothing is counted), `suffix` the qualifiers
-   (voluntary, amended, held indirectly). opts.ticker:false leaves the symbol out of the sentence;
-   opts.as:"name" uses the company's name instead ("150,000 Tesla, Inc. shares"). */
+   Returns {word, cls, c, text, short, value, valued, suffix}: `word` and `cls` make the badge ("Sold", red ▼),
+   `text` is the sentence after the person's name, always led by a verb ("sold 12,500 AAPL shares at $26.00"),
+   `short` the same deal without the verb, for a line where the badge already says it ("12,500 AAPL shares at
+   $26.00"), `value` is the dollar value counted for purchases and sales (null when nothing is counted),
+   `suffix` the qualifiers (voluntary, amended, held indirectly). opts.ticker:false leaves the symbol out of the
+   sentence; opts.as:"name" uses the company's name instead ("150,000 Tesla, Inc. shares").
+   An option exercise or conversion files two lines: the units given up (Table II, derivative) and the common
+   shares received (Table I, not derivative). Each is described as what it is, so the pair never reads as the
+   same event twice. */
+const an=w=>(/^[aeiou]/i.test(w)?"an ":"a ")+w;
 function describe(x,opts={}){
  const c=code(x),k=kind(x),s=sharesOf(x),p=priceOf(x),v=valueOf(x),T=tick(x?.ticker),ad=String(x?.acquired_disposed||"").toUpperCase();
  const sh=s===null?"an unreported number of":QTY.format(Math.abs(s));
  const company=opts.as==="name"&&x?.issuer_name?companyName(x.issuer_name):T;
  const tk=opts.ticker===false||!company?"":company+" ";
- const sec=security(x),units=sec||(tk+"shares").trim();
+ const sec=security(x),units=sec||(tk+"shares").trim(),dunits=sec||(tk+"derivative securities").trim();
+ // A Table II line, or (when the engine sent no flag) a title that is not plain shares.
+ const deriv=x?.derivative===true||((x?.derivative===undefined||x?.derivative===null)&&!!sec);
  const verb=ad==="A"?"acquired":ad==="D"?"disposed of":"reported";
- let word,cls="other",text,valued=false;
+ let word,cls="other",text,short,valued=false;
  const at=p!==null?" at "+price(p):" (no price reported)";
- if(k==="buy"){word="Bought";cls="buy";text="bought "+sh+" "+tk+"shares"+at;valued=true;}
- else if(k==="sell"){word="Sold";cls="sell";text="sold "+sh+" "+tk+"shares"+at;valued=true;}
+ if(k==="buy"){word="Bought";cls="buy";short=sh+" "+tk+"shares"+at;text="bought "+short;valued=true;}
+ else if(k==="sell"){word="Sold";cls="sell";short=sh+" "+tk+"shares"+at;text="sold "+short;valued=true;}
  else switch(c){
-  case "P":word="Bought";text="bought "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "S":word="Sold";text="sold "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "A":word="Grant";text="received "+sh+" "+tk+(sec||"shares")+" as a grant or award";break;
-  case "M":case "X":case "O":word="Option exercise";text="exercised or converted "+sh+" "+(sec||(tk+"derivative securities").trim());break;
-  case "C":word="Conversion";text="converted "+sh+" "+(sec||"derivative securities")+" into "+(T?T+" ":"")+"shares";break;
-  case "F":word="Tax withholding";text="had "+sh+" "+tk+"shares withheld to pay tax or the exercise price";break;
-  case "G":word="Gift";text=(ad==="A"?"received ":"gave ")+sh+" "+tk+"shares as a gift";break;
-  case "D":word="Returned";text="returned "+sh+" shares to "+(T||"the company");break;
-  case "E":case "H":word="Expired";text=(sec||"Derivative")+" position of "+sh+" expired";break;
-  case "I":word="Discretionary";text=verb+" "+sh+" "+units+" in a discretionary trade";break;
-  case "J":word="Other";text="other transaction, described in the filing: "+verb+" "+sh+" "+units;break;
-  case "K":word="Equity swap";text="equity swap: "+verb+" "+sh+" "+units;break;
-  case "L":word="Small acquisition";text="small acquisition: "+verb+" "+sh+" "+units;break;
-  case "W":word="Will or inheritance";text=verb+" "+sh+" "+units+" by will or inheritance";break;
-  case "Z":word="Voting trust";text=(ad==="D"?"withdrew ":"deposited ")+sh+" "+units+(ad==="D"?" from":" into")+" a voting trust";break;
-  case "U":word="Tender";text="tendered "+sh+" "+units+" in a change of control";break;
-  case "V":word="Voluntary";text=verb+" "+sh+" "+units;break;
-  default:word=c?"Code "+c:"Other";text=verb+" "+sh+" "+units;
+  case "P":word="Bought";short=sh+" "+dunits;text="bought "+short;break;
+  case "S":word="Sold";short=sh+" "+dunits;text="sold "+short;break;
+  case "A":word="Grant";short=sh+" "+tk+(sec||"shares");text="received "+short+" as a grant or award";break;
+  case "M":case "X":case "O":word="Option exercise";
+   if(deriv){short=sh+" "+dunits;text="exercised or converted "+short;}
+   else if(ad==="D"){short=sh+" "+units+" given up";text="disposed of "+sh+" "+units+" in an exercise or conversion";}
+   else{short=sh+" "+units+" received";text="acquired "+sh+" "+units+" by exercising or converting options or units";}
+   break;
+  case "C":word="Conversion";
+   if(deriv){short=sh+" "+(sec||"derivative securities")+" into "+(T?T+" ":"")+"shares";text="converted "+short;}
+   else if(ad==="D"){short=sh+" "+units+" given up";text="disposed of "+sh+" "+units+" in a conversion";}
+   else{short=sh+" "+units+" received";text="acquired "+sh+" "+units+" by converting a derivative security";}
+   break;
+  case "F":word="Tax withholding";short=sh+" "+tk+"shares withheld for tax or the exercise price";text="had "+sh+" "+tk+"shares withheld to pay tax or the exercise price";break;
+  case "G":word="Gift";short=sh+" "+tk+"shares "+(ad==="A"?"received":"given");text=(ad==="A"?"received ":"gave ")+sh+" "+tk+"shares as a gift";break;
+  case "D":word="Returned";short=sh+" shares returned to "+(T||"the company");text="returned "+sh+" shares to "+(T||"the company");break;
+  case "E":word="Expired";short=sh+" "+dunits+" expired";text="let "+an((sec||"derivative")+" position")+" of "+sh+" expire";break;
+  case "H":word="Expired";short=sh+" "+dunits+" expired or cancelled";text="had "+an((sec||"derivative")+" position")+" of "+sh+" expire or be cancelled, with value received";break;
+  case "I":word="Discretionary";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" in a discretionary trade";break;
+  case "J":word="Other";short=sh+" "+units+" "+verb+" (see the filing)";text=verb+" "+sh+" "+units+" in another kind of transaction, described in the filing";break;
+  case "K":word="Equity swap";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" through an equity swap";break;
+  case "L":word="Small acquisition";short=sh+" "+units+" acquired";text="made a small acquisition of "+sh+" "+units;break;
+  case "W":word="Will or inheritance";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units+" by will or inheritance";break;
+  case "Z":word="Voting trust";short=sh+" "+units+(ad==="D"?" withdrawn from":" deposited into")+" a voting trust";text=(ad==="D"?"withdrew ":"deposited ")+sh+" "+units+(ad==="D"?" from":" into")+" a voting trust";break;
+  case "U":word="Tender";short=sh+" "+units+" tendered";text="tendered "+sh+" "+units+" in a change of control";break;
+  case "V":word="Voluntary";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units;break;
+  default:word=c?"Code "+c:"Other";short=sh+" "+units+" "+verb;text=verb+" "+sh+" "+units;
  }
  const suffix=[c==="V"?"(reported early, voluntarily)":"",x?.is_amendment?"· amended filing (4/A)":"",ownership(x)==="Indirect"?"· held indirectly (by a trust or family member, for example)":""].filter(Boolean).join(" ");
- return {word,cls,c,text,suffix,valued,value:valued&&v!==null&&v>0?v:null,priced:p!==null};
+ return {word,cls,c,text,short,suffix,valued,value:valued&&v!==null&&v>0?v:null,priced:p!==null};
 }
-/* The qualifiers in short form for tight lines, each with its full wording: [short, full]. */
-const qualifiers=x=>[code(x)==="V"?["reported early","reported early, voluntarily"]:null,x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
+/* The qualifiers in short form for tight lines, each with its full wording as a sentence: [short, full]. */
+const qualifiers=x=>[code(x)==="V"?["reported early","Reported early, voluntarily"]:null,x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
  ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null].filter(Boolean);
 const badge=x=>{const d=describe(x),m=codeMeaning(d.c);return '<span class="rd-type rd-type--'+d.cls+'"'+(m?' title="'+E(d.c+" — "+m)+'"':'')+'>'+tri(d.cls)+E(d.word)+(d.c?' · '+E(d.c):'')+'</span>';};
-/* "= $37,350,000", or the reason there is no value. */
-const valueText=x=>{const d=describe(x);return d.valued?(d.value!==null?"= "+money(d.value):d.priced?"= $0":"value not reported"):"";};
+/* "= $37,350,000", or the reason there is no value: "= $0" only for a price filed as $0.00 on a known share count. */
+const valueText=x=>{const d=describe(x);if(!d.valued)return "";if(d.value!==null)return "= "+money(d.value);return priceOf(x)===0&&sharesOf(x)!==null?"= $0":"value not reported";};
 /* The full sentence for screen readers: "Elon Musk bought 150,000 Tesla, Inc. shares at $249.00, worth $37,350,000. Traded Oct 11, 2026, filed Oct 12, 2026." */
-const sentence=(x,extra="")=>{const d=describe(x,{as:"name"});return shown(x.owner_name)+" "+d.text+(d.value!==null?", worth "+money(d.value):"")+". "+
- (validDate(x.transaction_date)?"Traded "+date(x.transaction_date)+", ":"")+(validDate(x.published_at)?"filed "+filedDate(x.published_at)+".":"")+(d.suffix?" "+d.suffix.replace(/^· /,"").replace(/ · /g,", ")+".":"")+(extra?" "+extra:"");};
+const sentence=(x,extra="")=>{const d=describe(x,{as:"name"});
+ const when=[validDate(x.transaction_date)?"traded "+date(x.transaction_date):"",validDate(x.published_at)?"filed "+filedDate(x.published_at):""].filter(Boolean).join(", ");
+ return shown(x.owner_name)+" "+d.text+(d.value!==null?", worth "+money(d.value):"")+"."+(when?" "+when.charAt(0).toUpperCase()+when.slice(1)+".":"")+qualifiers(x).map(q=>" "+q[1]+".").join("")+(extra?" "+extra:"");};
+/* A name as the end of a sentence: "Following James D. Farley Jr." takes no second full stop. */
+const endName=n=>String(n||"").replace(/\.+\s*$/,"");
 
 /* ---------- storage (every access can throw: private windows, blocked site data) ---------- */
 const store={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{/* not stored */}}};
@@ -345,7 +365,7 @@ function arrive(host){if(host&&!reduce.matches&&host.animate)host.animate([{opac
 let derived=null,derivedFrom=null;
 function derive(rows){
  if(rows===derivedFrom&&derived)return derived;
- const out={rows,buys:[],sells:[],others:[],buyValue:0,sellValue:0,buyShares:0,sellShares:0,buyUnpriced:0,sellUnpriced:0,
+ const out={rows,buys:[],sells:[],others:[],buyValue:0,sellValue:0,buyShares:0,sellShares:0,buyUnpriced:0,sellUnpriced:0,buyUnshared:0,sellUnshared:0,
   lags:[],companies:new Set(),people:new Set(),first:null,last:null,days:new Map(),undated:0,byCompany:new Map(),priced:[],otherCodes:new Map(),replaced:0};
  const same=x=>[x.owner_cik||x.owner_name,x.issuer_cik||x.ticker,x.transaction_date,code(x),String(x.acquired_disposed||""),!!x.derivative,sharesOf(x)].join("|");
  const amendedAt=new Map();
@@ -360,9 +380,10 @@ function derive(rows){
   const who=String(x.owner_cik||x.owner_name||"").trim();if(who)out.people.add(who);
   if(when){if(!out.first||when<out.first)out.first=when;if(!out.last||when>out.last)out.last=when;}
   if(k==="other"){out.others.push(x);const n=nounKey(x)||"?";out.otherCodes.set(n,(out.otherCodes.get(n)||0)+1);continue;}
-  const priced=v!==null&&v>0;
-  if(k==="buy"){out.buys.push(x);if(s!==null)out.buyShares+=Math.abs(s);if(priced)out.buyValue+=v;else out.buyUnpriced++;}
-  else{out.sells.push(x);if(s!==null)out.sellShares+=Math.abs(s);if(priced)out.sellValue+=v;else out.sellUnpriced++;}
+  // No value counted: either no price was reported, or a price came with no share count (each said in its own words).
+  const priced=v!==null&&v>0,noPrice=!priced&&priceOf(x)===null,noShares=!priced&&!noPrice&&s===null;
+  if(k==="buy"){out.buys.push(x);if(s!==null)out.buyShares+=Math.abs(s);if(priced)out.buyValue+=v;else if(noPrice)out.buyUnpriced++;else if(noShares)out.buyUnshared++;}
+  else{out.sells.push(x);if(s!==null)out.sellShares+=Math.abs(s);if(priced)out.sellValue+=v;else if(noPrice)out.sellUnpriced++;else if(noShares)out.sellUnshared++;}
   if(!priced)continue;
   out.priced.push(x);
   if(when){const key=when.toISOString().slice(0,10),e=out.days.get(key)||{key,buy:0,sell:0,nb:0,ns:0};if(k==="buy"){e.buy+=v;e.nb++;}else{e.sell+=v;e.ns++;}out.days.set(key,e);}
@@ -405,7 +426,7 @@ function watchDetail(t,trades){
  if(best){
   const since=rows.filter(x=>kind(x)==="other"&&newer(x,best)).reduce((b,x)=>!b||newer(x,b)?x:b,null);
   return {row:best,isNew:isNew(best),html:tradeLine(best)+(isNew(best)?" "+NEW:"")+
-   (since?'<small>Also filed since: '+E(noun(since))+' by '+E(shown(since.owner_name))+' ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
+   (since?'<small>Also filed since: '+E(noun(since))+' by <span class="rd-ent rd-ent--inline">'+whoTile(since,"sm")+'<span data-ent="person">'+E(shown(since.owner_name))+'</span></span> ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
  }
  if(look?.error)return {html:'<span class="rd-muted">Latest purchase or sale unavailable right now</span>'};
  const others=rows.filter(x=>kind(x)==="other");
@@ -424,22 +445,24 @@ function watchRow(t,trades,i,{save=false,saved=false}={}){
  '</li>';
 }
 let watchSaved=new Set(),watchSuggest=[];
+const WATCH_EMPTY="You have not saved any companies yet. Save one to see its latest insider purchase or sale here.";
+const savedText=()=>"On your watchlist now: "+[...watchSaved].join(", ")+". ";
 function renderWatchlist(r){
  const host=$("v3-watchlist");if(!host)return;
  const foot=$("v3-watchlist-foot");
  ready(host);ready(foot);
  if(!r.watchlist.ok){host.innerHTML='<li class="rd-rows__msg">'+failBlock("watchlist",r.watchlist.error,"Your watchlist could not be loaded")+'</li>';if(foot)foot.textContent="";return;}
  const trades=r.trades.ok?r.trades.value:[];
- const list=[...new Set(r.watchlist.value.map(x=>tick(x.ticker)).filter(Boolean))];
+ const list=watchedOf(r);
  if(!list.length){
   // Empty: the most-traded companies in the window, each with a Save button. A saved one becomes a watchlist
   // row in place, so nothing moves under the pointer.
   const n=new Map();for(const x of trades){const t=tick(x.ticker);if(t)n.set(t,(n.get(t)||0)+1);}
-  watchSuggest=[...n].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,SAVE_SUGGEST).map(([t])=>t);
-  host.innerHTML='<li class="rd-rows__msg"><p class="rd-empty">You have not saved any companies yet. Save one to see its latest insider purchase or sale here.</p></li>'+
+  watchSuggest=[...n].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:a[0]>b[0]?1:0)).slice(0,SAVE_SUGGEST).map(([t])=>t);
+  host.innerHTML='<li class="rd-rows__msg"><p class="rd-empty" id="v3-watch-empty">'+(watchSaved.size?E(savedText())+'<a href="watchlist.html">Manage your list on the watchlist page</a>.':E(WATCH_EMPTY))+'</p></li>'+
    watchSuggest.map((t,i)=>watchRow(t,trades,i+1,{save:true,saved:watchSaved.has(t)})).join("");
   if(foot)foot.textContent=watchSuggest.length?"Suggested: the companies with the most trades in the latest imports.":"";
-  saveCount("watch",0);
+  saveCount("watch",Math.min(watchSaved.size,WATCH_ROWS));
  }else{
   host.innerHTML=list.slice(0,WATCH_ROWS).map((t,i)=>watchRow(t,trades,i)).join("");
   if(foot)foot.innerHTML=list.length>WATCH_ROWS?'<a href="watchlist.html">'+E(plural(list.length-WATCH_ROWS,"more company","more companies"))+' on your watchlist</a>':"";
@@ -447,30 +470,68 @@ function renderWatchlist(r){
  }
  hydrate(host);arrive(host);
 }
-watch(["watchlist","trades"],r=>{
- // Watched tickers with no purchase or sale in the 100-row window: ask for each one's own latest 20 lines first,
- // then render once (a lookup never redraws the module on its own).
+/* Watched tickers with no purchase or sale in the 100-row window are looked up on their own: the latest purchase and
+   the latest sale anywhere in the import (?category=…&limit=1), and only when there is neither, the ticker's latest 20
+   lines, to say what it filed instead. One lookup per ticker, shared by the module and the Today line. */
+const watchedOf=r=>r.watchlist.ok?[...new Set(r.watchlist.value.map(x=>tick(x.ticker)).filter(Boolean))]:[];
+const inflight=new Map();
+async function lookup(t){
+ const q="/v1/transactions?ticker="+encodeURIComponent(t);
+ try{
+  const [b,s]=await Promise.all([api(q+"&category=reported_purchase&limit=1"),api(q+"&category=reported_sale&limit=1")]);
+  let rows=[...items(b),...items(s)].filter(x=>tick(x.ticker)===t);
+  if(!rows.some(x=>kind(x)!=="other"))rows=[...rows,...items(await api(q+"&limit=20")).filter(x=>tick(x.ticker)===t)];
+  lookups.set(t,{rows});
+ }catch(error){lookups.set(t,{error});}
+}
+function lookupsFor(r){
  const trades=r.trades.ok?r.trades.value:[];
- const list=r.watchlist.ok?[...new Set(r.watchlist.value.map(x=>tick(x.ticker)).filter(Boolean))].slice(0,WATCH_ROWS):[];
- for(const [t,v] of lookups)if(v.error)lookups.delete(t);
- const missing=list.filter(t=>!lookups.has(t)&&!trades.some(x=>tick(x.ticker)===t&&kind(x)!=="other"));
- Promise.allSettled(missing.map(t=>api("/v1/transactions?ticker="+encodeURIComponent(t)+"&limit=20")
-  .then(j=>lookups.set(t,{rows:items(j).filter(x=>tick(x.ticker)===t)}),error=>lookups.set(t,{error})))).then(()=>later(1,()=>renderWatchlist(r)));
+ return Promise.allSettled(watchedOf(r).slice(0,WATCH_ROWS).filter(t=>!trades.some(x=>tick(x.ticker)===t&&kind(x)!=="other")).map(t=>{
+  const known=lookups.get(t);if(known&&!known.error)return null;
+  // A failed lookup is asked again after a "Try again" (a new settle of the watchlist or the trades).
+  if(!inflight.has(t))inflight.set(t,lookup(t).finally(()=>inflight.delete(t)));
+  return inflight.get(t);
+ }));
+}
+/* How many watched companies show a New purchase or sale in the module (the rows it shows, counted its way), for Today. */
+desk.watchNew=r=>lookupsFor(r).then(()=>{
+ const trades=r.trades.ok?r.trades.value:[],list=watchedOf(r);
+ return {watched:list.length,fresh:list.slice(0,WATCH_ROWS).filter(t=>{const b=latestTrade(rowsFor(t,trades));return !!b&&isNew(b);}).length};
 });
+watch(["watchlist","trades"],r=>{lookupsFor(r).then(()=>later(1,()=>renderWatchlist(r)));});
+/* A height kept while a message is rewritten, so nothing below it moves. */
+const keepHeight=el=>{if(el)el.style.setProperty("min-height",Math.max(parseFloat(el.style.minHeight)||0,el.getBoundingClientRect().height)+"px","important");};
 async function saveTicker(btn){
  const t=tick(btn.dataset.save);if(!t||btn.getAttribute("aria-busy")==="true")return;
- const live=$("rd-toast"),saved=watchSaved.has(t);
- if(saved){say(live,t+" is already on your watchlist. Manage it on the watchlist page.");return;}
+ if(watchSaved.has(t)){toast(E(t+" is already on your watchlist. Manage it on the watchlist page."),{near:btn});return;}
  // Optimistic: the button flips at once, and flips back if the server says no.
  btn.setAttribute("aria-busy","true");watchSaved.add(t);setSaved(btn,true);
- try{await api("/v1/me/watchlist",{method:"POST",body:{ticker:t}});say(live,"Saved "+t+" to your watchlist.");}
- catch(e){watchSaved.delete(t);setSaved(btn,false);say(live,"Could not save "+t+": "+e.message.replace(/\.$/,"")+". Nothing was changed.",true);}
+ try{
+  await api("/v1/me/watchlist",{method:"POST",body:{ticker:t}});
+  toast(E("Saved "+t+" to your watchlist."),{near:btn});
+  const msg=$("v3-watch-empty");if(msg){keepHeight(msg);msg.innerHTML=E(savedText())+'<a href="watchlist.html">Manage your list on the watchlist page</a>.';}
+  saveCount("watch",Math.min(watchSaved.size,WATCH_ROWS));
+ }
+ catch(e){watchSaved.delete(t);setSaved(btn,false);toast(E("Could not save "+t+": "+e.message.replace(/\.$/,"")+". Nothing was changed."),{error:true,near:btn});}
  finally{btn.removeAttribute("aria-busy");}
 }
-function setSaved(btn,on){const t=btn.dataset.save;btn.classList.toggle("is-saved",on);btn.closest("li")?.classList.toggle("is-saved",on);btn.setAttribute("aria-pressed",String(on));btn.setAttribute("aria-label",(on?"Saved ":"Save ")+t+" to your watchlist");btn.textContent=on?"Saved ✓":"Save "+t+" +";}
-/* The page's notice at the bottom of the screen (#rd-toast); it leaves after 6 s (8 s for an error). */
-let sayTimer=0;
-function say(el,text,error){if(!el)return;clearTimeout(sayTimer);el.textContent=text;el.classList.toggle("is-error",!!error);sayTimer=setTimeout(()=>{if(el.textContent===text)el.textContent="";},error?8000:6000);}
+/* The label swaps in place: the button keeps at least the width it had, so its edge never moves under the pointer. */
+function setSaved(btn,on){const t=btn.dataset.save;keepWidth(btn);btn.classList.toggle("is-saved",on);btn.closest("li")?.classList.toggle("is-saved",on);btn.setAttribute("aria-pressed",String(on));btn.setAttribute("aria-label",(on?"Saved ":"Save ")+t+" to your watchlist");btn.textContent=on?"Saved ✓":"Save "+t+" +";}
+const keepWidth=el=>{if(el)el.style.setProperty("min-width",Math.max(parseFloat(el.style.minWidth)||0,el.getBoundingClientRect().width)+"px","important");};
+/* The page's notice (#rd-toast, role=status): fixed to the bottom of the screen, or to the top when the reader acted in
+   the lower part of it, so it never covers what they just pressed. It never moves the page. A confirmation leaves after
+   5 s, an Undo after 6 s, an error after 8 s; it stays while focus is inside it. */
+let toastTimer=0;
+function toast(html,{error=false,ms=0,near=null}={}){
+ const el=$("rd-toast");if(!el)return;
+ clearTimeout(toastTimer);
+ const r=near?.getBoundingClientRect?.();
+ el.classList.toggle("is-top",!!r&&r.top+r.height/2>innerHeight*0.5);
+ el.innerHTML=html;el.classList.toggle("is-error",error);
+ const wait=ms||(error?8000:5000),clear=()=>{if(el.contains(document.activeElement)){toastTimer=setTimeout(clear,1500);return;}el.textContent="";};
+ toastTimer=setTimeout(clear,wait);
+}
+Object.assign(desk,{toast,keepHeight,keepWidth,endName});
 
 /* ================= 02b Your notes ================= */
 const STATUS={researching:"Researching",watching:"Watching",passed:"Passed"};
@@ -494,7 +555,7 @@ const FILTER={all:()=>true,reported_purchase:x=>kind(x)==="buy",reported_sale:x=
 const FILTER_NAME={all:["trade","trades"],reported_purchase:["purchase","purchases"],reported_sale:["sale","sales"],other:["grant, exercise or gift","grants, exercises and gifts"]};
 const EMPTY_NAME={reported_purchase:"purchases",reported_sale:"sales",other:"grants, exercises or gifts"};
 const TRADE_ROWS=12,TRADE_COLS=9;
-const table={rows:null,error:null,filter:"all",lock:0};
+const table={rows:null,error:null,filter:"all",lock:0,cols:false};
 function tradeRow(x,i){
  const t=tick(x.ticker),k=kind(x),v=valueOf(x),p=priceOf(x),lag=lagOf(x),d=describe(x);
  const notes=[security(x),ownership(x)==="Indirect"?"held indirectly":"",x.is_amendment?"amended (4/A)":""].filter(Boolean).join(" · ");
@@ -504,11 +565,15 @@ function tradeRow(x,i){
    '<span class="rd-ent">'+coTile(x,"sm")+'<span data-ent="company">'+E(x.issuer_name?companyName(x.issuer_name):"Issuer not reported")+'</span></span><span class="rd-sub">No ticker</span>')+'</td>'+
   '<td data-label="What happened" class="rd-td-what">'+badge(x)+(notes?'<span class="rd-sub">'+E(notes)+'</span>':'')+'</td>'+
   '<td data-label="Shares" class="rd-num rd-td-shares"><span class="rd-qty rd-qty--'+k+'">'+E(signedShares(x))+'</span></td>'+
-  '<td data-label="Price" class="rd-num rd-td-price">'+(p!==null?E(price(p)):'<span class="rd-muted">No price</span>')+'</td>'+
-  '<td data-label="Value" class="rd-num rd-value rd-td-value">'+(d.valued&&v!==null?E(money(v)):'<span class="rd-muted">'+(d.valued?"Not reported":"Not counted")+'</span>')+'</td>'+
+  // Phones read a missing price or value in words on the record's second line ("no price reported").
+  '<td data-label="Price" class="rd-num rd-td-price">'+(p!==null?E(price(p)):'<span class="rd-muted"><span class="rd-long">No price</span><span class="rd-short">no price reported</span></span>')+'</td>'+
+  '<td data-label="Value" class="rd-num rd-value rd-td-value">'+(d.valued&&v!==null?E(money(v)):d.valued?'<span class="rd-muted"><span class="rd-long">Not reported</span><span class="rd-short">value not reported</span></span>':'<span class="rd-muted rd-muted--uncounted">Not counted</span>')+'</td>'+
   // Phones show the short dates ("Oct 12"); the other is display:none there, so each width reads one date.
   '<td data-label="Traded" class="rd-nb rd-td-traded">'+(validDate(x.transaction_date)?'<span class="rd-long">'+E(date(x.transaction_date))+'</span><span class="rd-short">'+E(tradedShort(x.transaction_date))+'</span>':'<span class="rd-muted">Not reported</span>')+'</td>'+
   '<td data-label="Filed" class="rd-nb rd-td-filed">'+(validDate(x.published_at)?'<span class="rd-long">'+E(filedDate(x.published_at))+'</span><span class="rd-short">'+E(filedShort(x.published_at))+'</span>'+(lag!==null&&!x.is_amendment?'<span class="rd-sub">'+E(lagWords(lag))+'</span>':''):'<span class="rd-muted">Not reported</span>')+'</td>'+
+  // The security and the qualifiers as the phone record's last line (on wider screens they sit under the badge). Placed
+  // before the link cell, which stays the row's last cell for the table's own rules.
+  (notes?'<td class="rd-td-q" aria-hidden="true">'+E(notes)+'</td>':'')+
   '<td class="rd-links"><a class="rd-arrow" href="'+E(filingHref(x.accession))+'" aria-label="'+E("Open the filing: "+shown(x.owner_name)+", "+(t||companyName(x.issuer_name))+", "+date(x.transaction_date))+'">Filing ↗</a></td>'+
  '</tr>';
 }
@@ -532,17 +597,34 @@ function renderTradesFoot(list,matching){
    Measured at the click, when the layout is already clean, never right after a render. */
 function lockTable(){
  const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;
+ // Wide screens (a real table): the columns keep the widths "All" gave them, so no heading slides sideways while the
+ // rows crossfade. Read first, then written.
+ const tbl=wrap.querySelector("table"),ths=[...(tbl?.tHead?.rows[0]?.cells||[])];
+ if(!table.cols&&ths.length&&getComputedStyle(tbl).display==="table"){
+  const ws=ths.map(th=>th.getBoundingClientRect().width);
+  ths.forEach((th,i)=>{th.style.setProperty("box-sizing","border-box","important");th.style.setProperty("width",ws[i]+"px","important");});
+  table.cols=true;
+ }
  // The exact (fractional) height: a rounded one would let the page grow or shrink by a pixel on each filter.
  table.lock=Math.max(table.lock,wrap.getBoundingClientRect().height);wrap.style.setProperty("min-height",table.lock+"px","important");
 }
+function unlockCols(){
+ if(!table.cols)return;
+ for(const th of document.querySelector(".rd-table--trades")?.tHead?.rows[0]?.cells||[]){th.style.removeProperty("width");th.style.removeProperty("box-sizing");}
+ table.cols=false;
+}
+/* The filters work once there are rows to filter; while loading and after an error they are disabled (out of the tab
+   order) and show no counts. */
+function setFilters(on){document.querySelectorAll("button[data-filter]").forEach(b=>{b.disabled=!on;});if(!on)document.querySelectorAll("[data-count]").forEach(el=>{el.textContent="";});}
 function renderTrades(){
  const host=$("v3-trades");if(!host)return;
  host.removeAttribute("aria-busy");
- const wrap=document.querySelector(".rd-table-wrap--trades");if(wrap&&table.filter==="all")wrap.style.removeProperty("min-height");
+ const wrap=document.querySelector(".rd-table-wrap--trades");if(wrap&&table.filter==="all"){wrap.style.removeProperty("min-height");unlockCols();}
  remember();
- if(table.error){host.innerHTML=failRow(TRADE_COLS,"trades",table.error,"The latest trades could not be loaded");renderTradesFoot([],[]);return;}
+ if(table.error){host.innerHTML=failRow(TRADE_COLS,"trades",table.error,"The latest trades could not be loaded");renderTradesFoot([],[]);setFilters(false);return;}
  table.lock=0;
  if(!table.rows)return;
+ setFilters(true);
  const c={};for(const k in FILTER)c[k]=table.rows.filter(FILTER[k]).length;
  document.querySelectorAll("[data-count]").forEach(el=>{el.textContent=count(c[el.dataset.count]??0);});
  const {html,list,matching}=tradeRows();
@@ -571,7 +653,7 @@ watch(["trades"],r=>{
 });
 // A new width means new row heights: the lock is measured again at the next filter click.
 let lockTimer=0;
-addEventListener("resize",()=>{clearTimeout(lockTimer);lockTimer=setTimeout(()=>{const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;table.lock=0;wrap.style.removeProperty("min-height");},200);},{passive:true});
+addEventListener("resize",()=>{clearTimeout(lockTimer);lockTimer=setTimeout(()=>{const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;table.lock=0;wrap.style.removeProperty("min-height");unlockCols();},200);},{passive:true});
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{

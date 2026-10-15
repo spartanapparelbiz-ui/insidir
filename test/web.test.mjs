@@ -28,7 +28,7 @@ test("repository photography stays available while pages only show sharp images"
    const home=await(await fetch(base+"/")).text();
    const dash=await(await fetch(base+"/dashboard.html")).text();
    assert.match(home,/data-halftone-hero/);
-   assert.match(dash,/id="v3-filings"/);
+   assert.match(dash,/id="v10-follow-feed"/);
    assert.match(dash,/id="v3-trades"/);
    // Decorative, upscaled photography was blurry: the dashboard and explore pages show none.
    for(const page of ["/dashboard.html","/explore.html"])assert.doesNotMatch(await(await fetch(base+page)).text(),/assets\/img\/[a-z-]+\.jpg/,page+" must not show decorative raster photos");
@@ -110,7 +110,7 @@ test("production dashboard uses readable evidence components without fake market
     const html=await res.text();
     assert.match(html,/data-greeting/);
     assert.match(html,/assets\/js\/v3-dashboard\.js/);
-    for(const id of ["v3-trades","v3-filings","v3-watchlist","v3-notes","v3-ticker"])assert.match(html,new RegExp('id="'+id+'"'),id);
+    for(const id of ["v3-trades","v10-follow-feed","v3-watchlist","v3-notes","rd-today"])assert.match(html,new RegExp('id="'+id+'"'),id);
     assert.doesNotMatch(html,/Jan 8, 2024|Markets open|S&P 500|sample data/i);
     const js=await(await fetch(base+"/assets/js/v3-dashboard.js")).text();
     assert.match(js,/\/v1\/transactions\?limit=/);
@@ -175,7 +175,7 @@ test("real research data and original document icons remain available",async()=>
   for(const id of ["rd-kpis","rd-daily-chart","rd-daily-table","rd-companies","rd-largest","v3-trades"])assert.match(dash,new RegExp('id="'+id+'"'),id);
   assert.match(dash,/v13-dashboard\.css/);
   const derived=await(await fetch(base+"/assets/js/v4-dashboard.js")).text();
-  assert.match(derived,/insidir:transactions-loaded/);
+  assert.match(derived,/D\.watch\(\["trades"\]/);
   assert.doesNotMatch(derived,/Math\.random|mockPrice|fakeReturn/);
   for(const p of ["/research.html","/filings.html"])assert.match(await(await fetch(base+p)).text(),/v13-halftone\.css/);
  });
@@ -346,7 +346,7 @@ test("V10 SEC people directory and verified identity assets are available", asyn
  await withServer(async base=>{
  const dash=await(await fetch(base+"/dashboard.html")).text();
  const people=await(await fetch(base+"/people.html")).text();
- assert.match(dash,/v10-people\.js/);
+ assert.match(dash,/v13-overview\.js/);
  assert.match(people,/v10-people-results/);
  assert.match(people,/v10-followed-results/);
  const peopleJS=await(await fetch(base+"/assets/js/v10-people.js")).text();
@@ -523,4 +523,44 @@ test("every person and company on the product pages gets a real logo or headshot
   assert.match(layer,/animation:ins-land-a var\(--hf-spring-dur[^)]*\) var\(--hf-spring/);
   assert.match(layer,/prefers-reduced-motion:reduce\)\{[^}]*animation:none!important/);
   assert.doesNotMatch(sheet,/#e9762b|--hf-warm|orange/i,"no orange");
+});
+
+test("identity tiles fill their box on every page, logos are not held back by the photo queue, and the credits never move the page",async()=>{
+  const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
+  const sheet=await readFile(new URL("entity-media.css",css),"utf8"),layer=sheet.slice(sheet.indexOf("@layer insidir-v13{"));
+  // explore, filings, watchlist and research still load the legacy v5-media.css (absolute <img>/<svg>, a centred grid
+  // track): the V13 layer gives the tile one cell its own size and puts the picture back in flow.
+  for(const page of ["explore","filings","watchlist","research"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/v5-media\.css/,page+" (legacy stylesheet still loaded, so the reset below matters)");
+  assert.match(layer,/\.ins-media\[data-media\]\{[^}]*grid-template:100%\/100%!important[^}]*place-content:stretch!important/,"one grid cell exactly the tile's content box");
+  assert.match(layer,/\.ins-media\[data-media\]>\*\{[^}]*position:relative!important;inset:auto!important;transform:none!important/,"pictures back in flow (v5-media.css takes them out)");
+  assert.match(layer,/>svg\.ins-media__monogram\{width:100%!important;height:100%!important\}/,"initials fill the tile");
+  // The landing animates the scale property (transform is held at none) and nothing pins the picture's opacity.
+  assert.match(layer,/@keyframes ins-land-a\{from\{opacity:0;scale:\.9\}\}/);
+  assert.doesNotMatch(layer,/@keyframes ins-land-[ab]\{[^}]*transform/);
+  assert.doesNotMatch(layer,/\[data-media\]>img\{[^}]*opacity:1!important/);
+  assert.match(layer,/\[data-media-credits\]\[data-media-held\]:empty\{display:block!important\}/,"an empty footnote keeps its held space");
+  const helper=await readFile(new URL("entity-media.js",js),"utf8");
+  // retryAfter paces headshots only; logos keep their own hint or the 2/4/8 s schedule.
+  assert.match(helper,/retryAfterLogos/);
+  assert.match(helper,/later\(rk,rk\[0\]==="p"\?photoAfter:logoAfter,true\)/);
+  // People at an issuer with no ticker are asked by issuer CIK, and its logo stands in by CIK.
+  assert.match(helper,/":cik:"\+IC/);
+  assert.match(helper,/issuerCik:o\.issuerCik/);
+  assert.match(helper,/data-issuer-cik/);
+  assert.match(helper,/const LT=ownT\|\|T,LC=ownT\?"":IC;/);
+  // A 400 drops only that request's keys; a 5xx or network error is retried after 30 s and 2 min, then not this visit.
+  assert.match(helper,/res\.status===400\)\{[^}]*gaveUp\.add/);
+  assert.match(helper,/const OUTAGE=\[30,120\]/);
+  assert.doesNotMatch(helper,/setTimeout\(\(\)=>\{if\(offlineUntil!==Infinity\)\{offlineUntil=0;wakeSoft\(\);\}\},30500\)/,"no endless 30 s retry loop");
+  // The footnote holds its space and writes only off screen.
+  assert.match(helper,/ins-media-credits:v1/);
+  assert.match(helper,/if\(!visible\|\|short\|\|!hostIO\)write\(host,visible\);\s*else hostIO\.observe\(host\);/);
+  assert.match(await readFile(new URL("v2-filing.js",js),"utf8"),/issuerCik:t\.issuer_cik\|\|f\.issuer_cik/,"filing rows name the issuer by CIK");
+  // The company report's header logo is never drawn above half its stored size (2x sharp wide wordmarks).
+  assert.match(await readFile(new URL("v12-company.js",js),"utf8"),/max-width", `min\(100%, \$\{Math\.floor\(mark\.w \/ 2\)\}px\)`/);
+  // The browser check measures the picture's own box, so a half-size tile cannot pass it again.
+  const check=await readFile(new URL("../scripts/media-check.mjs",import.meta.url),"utf8");
+  assert.match(check,/every picture fills its tile/);
+  assert.match(check,/credits at the bottom/);
+  assert.match(check,/"filing-private"/);
 });

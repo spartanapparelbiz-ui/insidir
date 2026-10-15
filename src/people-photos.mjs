@@ -170,6 +170,8 @@ export async function blockPersonPhoto(cik, { reason = "" } = {}) {
   for (const { key: companyCik, value, expiresAt } of companies) {
     if (mediaSha(value.photos?.[key]?.src)) shas.add(mediaSha(value.photos[key].src));
     const clean = await withoutTakedowns(value, { lookup: async () => new Map([[id, { none: true }]]) });
+    // Their leadership portrait can be another picture than the insider photo.
+    (value.leaders || []).forEach((l, i) => { if (mediaSha(l?.src) && !clean.leaders?.[i]?.src) shas.add(mediaSha(l.src)); });
     const ttl = expiresAt - Date.now();
     if (ttl > 1000) await putRecord("company-photos", companyCik, clean, ttl);
   }

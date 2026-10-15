@@ -78,9 +78,9 @@ export function classifyApi(pathname, method = "GET") {
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/")) return "open";
   // Server-to-server ingestion has its own bearer secret; it is not product data.
   if (p === "/v1/internal/ingest") return "open";
-  // A prepared logo or headshot by content address: an unguessable, immutable public image (the
-  // batch that names it, /v1/media, stays product). Open, so no session lookup per <img> and it
-  // can be cached publicly.
+  // A prepared logo or headshot by content address: an unguessable public image (the batch that
+  // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
+  // cached publicly (for a day, so a takedown reaches caches).
   if (MEDIA_FILE.test(p) && (m === "GET" || m === "HEAD")) return "open";
   if (m === "DELETE" && OWN_DATA_DELETES.some(rule => rule.test(p))) return "account";
   return "product";

@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id),E=x=>String(x??"").replace(/[&<>"']/g,c=
 const d=x=>{if(!x)return "Not reported";const v=new Date(x);return Number.isNaN(v.getTime())?"Not reported":new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(v)};
 const money=x=>x==null||!Number.isFinite(Number(x))?"Not reported":new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(Number(x));
 /* Identity tiles (entity-media.js): the issuer's logo in the heading, each reporting person's headshot (or
-   the issuer's logo standing in for it) in the rows. Names stay visible beside them, so tiles are aria-hidden. */
+   the issuer's logo standing in for it, found by issuer CIK when the filing has no ticker) in the rows. Names stay visible beside them, so tiles are aria-hidden. */
 const media=window.InsidirMedia;
 const source=x=>{try{let u=new URL(String(x));return u.protocol==="https:"&&(u.hostname==="sec.gov"||u.hostname==="www.sec.gov")&&!u.username&&!u.password?u.toString():"";}catch{return ""}};
 document.addEventListener("DOMContentLoaded",async()=>{
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
     rows.innerHTML=items.length?items.map(t=>{
       const type=t.category==="reported_purchase"?"Reported purchase":t.category==="reported_sale"?"Reported sale":"Other ownership transaction";
       const who=E(t.owner_name||"Reporting person");
-      return "<tr><td>"+(media?"<div class='ins-person-cell'>"+media.portrait(t.owner_name||"",t.ticker||f.ticker,"sm",{cik:t.owner_cik})+"<span class='ins-person-cell__name'>"+who+"</span></div>":who)+"</td><td>"+E(type)+"<span class='cl-muted'>Code: "+E(t.transaction_code||"not provided")+"</span></td><td>"+E(d(t.transaction_date))+"</td><td>"+E(money(t.estimated_value))+"</td></tr>";
+      return "<tr><td>"+(media?"<div class='ins-person-cell'>"+media.portrait(t.owner_name||"",t.ticker||f.ticker,"sm",{cik:t.owner_cik,issuerCik:t.issuer_cik||f.issuer_cik})+"<span class='ins-person-cell__name'>"+who+"</span></div>":who)+"</td><td>"+E(type)+"<span class='cl-muted'>Code: "+E(t.transaction_code||"not provided")+"</span></td><td>"+E(d(t.transaction_date))+"</td><td>"+E(money(t.estimated_value))+"</td></tr>";
     }).join(""):'<tr><td colspan="4" class="cl-empty">No parsed transactions are available for this filing. Open the original SEC document.</td></tr>';
     media?.hydrate(heading);media?.hydrate(rows);
   }catch(e){status.textContent=e.message;rows.innerHTML='<tr><td colspan="4" class="cl-empty">Filing details unavailable. <a href="filings.html">Browse other filings →</a></td></tr>';}

@@ -13,10 +13,12 @@
      - suggestions (#v10-follow-suggest): the most active people in the latest 100 imported trades, ranked by
        priced value (shares × price), plus /v1/insiders when the reader follows fewer than 3 people, each with
        a Follow + button; six of them in place of the feed when the reader follows nobody yet, four otherwise.
+   The feed shows up to 8 rows at first; every other loaded line (up to 40) opens in place under "Show N more trades".
    Follow and unfollow happen in place, with nothing moving under the pointer: the button flips at once
-   (optimistic) and flips back with the reason if the server says no; a new person and their trades rise into
-   space reserved for them (up to 8 feed rows and 6 people, then "and N more"); an unfollowed person dims, with
-   Undo for 6 seconds, and leaves on the next visit. Every list renders once per load (or per "Try again"). */
+   (optimistic, at a fixed width) and flips back with the reason if the server says no; a new person and their trades
+   rise into the space the module already has (6 people, then "and N more"; the feed keeps its height and the rows
+   on screen slide on the spring); an unfollowed person dims, with Undo for 6 seconds, and leaves on the next visit.
+   Every list renders once per load (or per "Try again"). */
 (() => {"use strict";
 const D=window.InsidirDesk;if(!D)return;
 const $=id=>document.getElementById(id),E=D.E;
@@ -28,47 +30,55 @@ const EMPTY_MSG="You are not following anyone yet. Follow an insider and every t
 
 /* ================= Today ================= */
 const line=(id,html)=>{const el=$(id);if(!el)return;el.innerHTML=html;el.classList.remove("is-skeleton");el.removeAttribute("aria-busy");rememberToday();};
-/* Once all three lines are in, their heights at this width are kept for the next visit's skeleton (dashboard.html),
-   so a sentence that wraps to four lines on a phone has four lines' room before it arrives. */
+/* Once all three lines are in, their heights at this width are kept for the next visit's skeleton (dashboard.html):
+   each measured with the stylesheet's reserve (room for the longest usual sentence at this width) but without the height
+   kept from earlier visits, and saved as the largest seen at this width. The sentence changes from visit to visit by
+   design ("You follow 5 people…", then "Since your last visit…"), so a short one never shrinks the room a long one needs. */
 let todayTimer=0;
 function rememberToday(){
  clearTimeout(todayTimer);
  todayTimer=setTimeout(()=>D.later(9,()=>{
   const els=["rd-today-you","rd-today-market","rd-today-fresh"].map($);
   if(els.some(el=>!el||el.classList.contains("is-skeleton")))return;
-  // Measured without the reserved minimum, then the minimum is put back (same frame: nothing paints in between).
+  // Measured without the kept height, which is put back in the same frame (nothing paints in between).
   const kept=els.map(el=>[el.style.getPropertyValue("min-height"),el.style.getPropertyPriority("min-height")]);
-  const h=els.map(el=>{el.style.setProperty("min-height","0px","important");return el.offsetHeight;});
-  els.forEach((el,i)=>{if(kept[i][0])el.style.setProperty("min-height",kept[i][0],kept[i][1]);else el.style.removeProperty("min-height");});
-  D.saveCount("today",{w:innerWidth,you:h[0],market:h[1],fresh:h[2]});
+  const h=els.map(el=>{el.style.removeProperty("min-height");return el.getBoundingClientRect().height;});
+  els.forEach((el,i)=>{if(kept[i][0])el.style.setProperty("min-height",kept[i][0],kept[i][1]);});
+  const prev=D.counts.today,same=prev&&typeof prev==="object"&&Math.abs(Number(prev.w)-innerWidth)<24,was=k=>same?Number(prev[k])||0:0;
+  D.saveCount("today",{w:innerWidth,you:Math.max(Math.ceil(h[0]),was("you")),market:Math.max(Math.ceil(h[1]),was("market")),fresh:Math.max(Math.ceil(h[2]),was("fresh"))});
  }),200);
 }
+/* What changed for this reader. The watchlist part counts the companies whose row in 02 carries a New marker (its latest
+   purchase or sale, after the same per-ticker lookups), so the sentence and the markers below always agree. */
+let youToken=0;
 function todayYou(r){
- const watched=r.watchlist.ok?[...new Set(r.watchlist.value.map(x=>D.tick(x.ticker)).filter(Boolean))]:[];
- const trades=r.trades.ok?r.trades.value:[];
- const W=watched.length,newWatch=watched.filter(t=>trades.some(x=>D.tick(x.ticker)===t&&D.isNew(x))).length;
- const when=D.lastVisitText(),seen=D.lastSeen!==null;
- const watchAdd=newWatch?" "+(newWatch===1?"1 company on your watchlist has new trades.":D.count(newWatch)+" companies on your watchlist have new trades."):"";
- let text;
- if(!r.updates.ok)text="Updates from the people you follow could not be loaded."+watchAdd;
- else{
-  const v=r.updates.value||{},people=Array.isArray(v.people)?v.people:[],F=Number.isFinite(Number(v.following))?Number(v.following):people.length;
-  const items=Array.isArray(v.items)?v.items:[];
-  const them=F===1?"the person you follow":"the "+D.plural(F,"person","people")+" you follow";
-  if(F>0){
-   if(!seen)text="You follow "+D.plural(F,"person","people")+". Trades they file from now on are marked New."+watchAdd;
-   else{
-    const fresh=items.filter(D.isNew),k=new Set(fresh.map(x=>x.owner_cik)).size;
-    text=fresh.length?"Since your last visit on "+when+": "+D.plural(fresh.length,"new trade")+" from "+(F===1?them:D.count(k)+" of "+them)+"."+watchAdd
-     :"Nothing new from "+them+" since your last visit on "+when+"."+watchAdd;
+ const token=++youToken;
+ return D.watchNew(r).then(w=>{
+  if(token!==youToken)return;
+  const W=w.watched,newWatch=w.fresh;
+  const when=D.lastVisitText(),seen=D.lastSeen!==null;
+  const watchAdd=newWatch?" "+(newWatch===1?"1 company on your watchlist has new trades.":D.count(newWatch)+" companies on your watchlist have new trades."):"";
+  let text;
+  if(!r.updates.ok)text="Updates from the people you follow could not be loaded."+watchAdd;
+  else{
+   const v=r.updates.value||{},people=Array.isArray(v.people)?v.people:[],F=Number.isFinite(Number(v.following))?Number(v.following):people.length;
+   const items=Array.isArray(v.items)?v.items:[];
+   const them=F===1?"the person you follow":"the "+D.plural(F,"person","people")+" you follow";
+   if(F>0){
+    if(!seen)text="You follow "+D.plural(F,"person","people")+". Trades they file from now on are marked New."+watchAdd;
+    else{
+     const fresh=items.filter(D.isNew),k=new Set(fresh.map(x=>x.owner_cik)).size;
+     text=fresh.length?"Since your last visit on "+when+": "+D.plural(fresh.length,"new trade")+" from "+(F===1?them:D.count(k)+" of "+them)+"."+watchAdd
+      :"Nothing new from "+them+" since your last visit on "+when+"."+watchAdd;
+    }
    }
+   else if(!W)text="Follow insiders or save companies below. This line will then tell you what they filed since your last visit.";
+   else if(!seen)text="You watch "+D.plural(W,"company","companies")+". Trades filed there from now on are marked New.";
+   else text=newWatch?"Since your last visit on "+when+": "+(newWatch===1?"1 company":D.count(newWatch)+" of the "+D.count(W)+" companies")+" on your watchlist "+(newWatch===1?"has":"have")+" new trades."
+    :"Nothing new at the "+D.plural(W,"company","companies")+" on your watchlist since your last visit on "+when+".";
   }
-  else if(!W)text="Follow insiders or save companies below. This line will then tell you what they filed since your last visit.";
-  else if(!seen)text="You watch "+D.plural(W,"company","companies")+". Trades filed there from now on are marked New.";
-  else text=newWatch?"Since your last visit on "+when+": "+(newWatch===1?"1 company":D.count(newWatch)+" of the "+D.count(W)+" companies")+" on your watchlist "+(newWatch===1?"has":"have")+" new trades."
-   :"Nothing new at the "+D.plural(W,"company","companies")+" on your watchlist since your last visit on "+when+".";
- }
- line("rd-today-you",E(text));
+  line("rd-today-you",E(text));
+ });
 }
 function todayMarket(r){
  if(!r.trades.ok){line("rd-today-market",E("The latest imported trades could not be loaded, so the market figures are missing below."));return;}
@@ -88,33 +98,27 @@ function todayFresh(r){
  parts.push(pub?"newest filing published "+D.filedDate(pub):r.filing.ok?"no filings imported yet":"newest filing unavailable");
  line("rd-today-fresh",E(parts.join(" · ")+"."));
 }
-D.watch(["updates","watchlist","trades"],r=>D.now(()=>todayYou(r)));
+D.watch(["updates","watchlist","trades"],r=>D.now(()=>{void todayYou(r);}));
 D.watch(["trades"],r=>D.now(()=>todayMarket(r)));
 D.watch(["status","filing"],r=>D.now(()=>todayFresh(r)));
 
 /* ================= 01 People you follow ================= */
 const live=text=>{const el=$("v10-follow-live");if(el)el.textContent=text;};
-/* The notice (#rd-toast, role=status) sits at the bottom of the screen, so it never moves the page. An Undo stays for 6 s;
-   other notices leave after 6 s (8 s for an error). */
-let undoTimer=0;
-function status(html,{error=false,keep=false}={}){
- const el=$("rd-toast");if(!el)return;
- clearTimeout(undoTimer);
- el.innerHTML=html;el.classList.toggle("is-error",error);
- if(!keep)undoTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.textContent="";},error?8000:UNDO_MS);
-}
 const followBtn=(cik,name,on)=>'<button type="button" class="v10-follow-btn'+(on?" is-following":"")+'" data-follow="'+E(cik)+'" aria-pressed="'+on+'" aria-label="'+E((on?"Unfollow ":"Follow ")+name)+'">'+(on?"Following ✓":"Follow +")+'</button>';
 const isFollowing=cik=>st.followed.has(cik)&&!st.dropped.has(cik);
 
-/* A feed row: two lines of fixed height on wide screens, a four-line record on phones. */
+/* A feed row: two lines of fixed height on wide screens, a four-line record on phones. Line 1 is the person, the badge
+   (word and code) and the deal without a verb, since the badge says it: "Elon Musk [▲ Bought · P] 150,000 TSLA shares at
+   $249.00 = $37,350,000 [New]". */
+const keyOf=x=>String(x.id??[x.accession,x.owner_cik,x.transaction_date,x.transaction_code,x.shares,x.security_title].join("|"));
 function feedRow(x,i){
  const cik=D.cikOf(x.owner_cik),t=D.tick(x.ticker),d=D.describe(x),v=D.valueText(x),lag=D.lagOf(x),fresh=D.isNew(x);
  const co=t?(x.issuer_name?D.companyName(x.issuer_name):t):D.companyName(x.issuer_name)||"Issuer not reported";
  const when=[D.validDate(x.transaction_date)?"traded "+D.date(x.transaction_date):"",D.validDate(x.published_at)?"filed "+D.filedDate(x.published_at)+(lag!==null&&!x.is_amendment?" ("+D.lagWords(lag)+")":""):""].filter(Boolean);
- return '<li class="rd-feed__row'+(st.dropped.has(cik)?" is-dropped":"")+'" data-key="'+E(x.id||x.accession+":"+i)+'" data-owner="'+E(cik)+'" style="--i:'+Math.min(i,8)+'" aria-label="'+E(D.sentence(x,fresh?"New since your last visit.":""))+'">'+
+ return '<li class="rd-feed__row'+(st.dropped.has(cik)?" is-dropped":"")+'" data-key="'+E(keyOf(x))+'" data-owner="'+E(cik)+'" style="--i:'+Math.min(i,8)+'" aria-label="'+E(D.sentence(x,fresh?"New since your last visit.":""))+'">'+
   D.whoTile(x,"md")+
   '<div class="rd-feed__body">'+
-   '<p class="rd-feed__l1">'+D.personName(x)+' '+D.badge(x)+' <span class="rd-feed__deal">'+E(d.text)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+'</span>'+(fresh?" "+D.NEW:"")+'</p>'+
+   '<p class="rd-feed__l1">'+D.personName(x)+' '+D.badge(x)+' <span class="rd-feed__deal">'+E(d.short)+(v?' <span class="rd-nb">'+E(v)+'</span>':'')+'</span>'+(fresh?" "+D.NEW:"")+'</p>'+
    '<p class="rd-feed__l2"><span class="rd-ent rd-ent--inline">'+D.coTile(x,"sm")+'<span data-ent="company">'+E(co)+'</span></span>'+when.map(w=>' · <span class="rd-nb">'+E(w)+'</span>').join("")+
     // Qualifiers in short form on the second line; the full wording is in the title and the row's label.
     D.qualifiers(x).map(q=>' · <span class="rd-nb" title="'+E(q[1])+'">'+E(q[0])+'</span>').join("")+
@@ -144,9 +148,12 @@ function listItem(p,i){
   '</div>'+
  '</li>';
 }
+/* Under the feed: every loaded line is reachable here. "Show N more trades" opens the rest in place, below the button. */
+const FEED_LIMIT=40;
 function feedMore(total,shown){
  const el=$("v10-follow-more");if(!el)return;
- el.innerHTML=total>shown?'And '+E(D.plural(total-shown,"more recent trade"))+'. <a href="people.html#v10-follows-title">People you follow ↗</a>':"";
+ el.innerHTML=total>shown?'<button type="button" class="rd-more-btn" data-feed-more data-hf-atom>Show '+E(D.plural(total-shown,"more trade"))+'</button>':
+  total>=FEED_LIMIT&&shown>=total?E("These are the latest "+D.count(total)+" trades from the people you follow."):"";
 }
 function listMore(total,shown){
  const el=$("v10-follow-list-more");if(!el)return;
@@ -157,19 +164,77 @@ const setReserve=()=>{
  feed?.style.setProperty("--rows",String(st.feedRows));
  list?.style.setProperty("--slots",String(st.listSlots));list?.style.setProperty("--slot-rows",String(Math.ceil(st.listSlots/3)));
 };
-/* Feed rows: the newest filings first, at most the reserved number; people unfollowed in this visit stay, dimmed. */
-const feedItems=()=>st.items.slice().sort((a,b)=>String(b.published_at||"").localeCompare(String(a.published_at||""))||String(b.transaction_date||"").localeCompare(String(a.transaction_date||"")));
+/* Feed rows: the newest filings first (ISO timestamps compare as text, with no collator), at most the reserved number;
+   people unfollowed in this visit stay, dimmed. */
+const desc=(a,b)=>a>b?-1:a<b?1:0;
+const feedItems=()=>st.items.slice().sort((a,b)=>desc(String(a.published_at||""),String(b.published_at||""))||desc(String(a.transaction_date||""),String(b.transaction_date||"")));
+const rise=(el,i=0)=>{if(!el||D.reduce.matches)return;el.style.setProperty("--d",String(Math.min(i,8)));el.classList.add("rd-rise");setTimeout(()=>el.classList.remove("rd-rise"),1300+Math.min(i,8)*40);};
 function drawFeed(animate){
  const host=$("v10-follow-feed");if(!host)return;
  const all=feedItems(),rows=all.slice(0,st.feedRows);
- let html;
- // Following nobody: the feed stays empty (and hidden) below the suggestions until a follow fills it.
- if(!st.followed.size&&!rows.length)html="";
- else if(!rows.length)html='<li class="rd-feed__msg"><p class="rd-empty">None of the people you follow has filed a trade in the imported records yet.</p></li>';
- else html=rows.map(feedRow).join("");
- if(animate)flip(host,()=>{host.innerHTML=html;});else host.innerHTML=html;
- feedMore(all.length,rows.length);
+ let shown=rows.length;
+ if(!st.followed.size&&!rows.length)host.innerHTML=""; // following nobody: the feed stays empty (and hidden) until a follow fills it
+ else if(!rows.length)host.innerHTML='<li class="rd-feed__msg"><p class="rd-empty">None of the people you follow has filed a trade in the imported records yet.</p></li>';
+ else if(animate&&host.querySelector(":scope>.rd-feed__row"))shown=reconcile(host,rows);
+ else{
+  host.innerHTML=rows.map(feedRow).join("");
+  // The first follow from the empty state: the rows rise into the space opened below the suggestions, a beat apart.
+  if(animate)[...host.children].forEach(rise);
+ }
+ feedMore(all.length,shown);
  D.hydrate(host);
+}
+/* After a follow: rows already on screen are kept (their pictures and New markers are not drawn again) and slide to
+   their new places on the dots' spring; the new person's rows are inserted and rise in. The feed keeps the height it
+   had, showing as many of the newest rows as fit, so nothing below it (the suggestion just pressed) moves; the rest
+   are counted in "Show N more trades". */
+function reconcile(host,rows){
+ const lock=host.getBoundingClientRect().height,old=new Map(),before=new Map();
+ for(const el of host.querySelectorAll(":scope>.rd-feed__row")){old.set(el.dataset.key,el);before.set(el.dataset.key,el.getBoundingClientRect().top);}
+ host.querySelectorAll(":scope>:not(.rd-feed__row)").forEach(el=>el.remove());
+ const want=new Set(rows.map(keyOf));
+ for(const [k,el] of old)if(!want.has(k))el.remove();
+ const tpl=document.createElement("template"),added=[];
+ rows.forEach((x,i)=>{
+  const k=keyOf(x);let el=old.get(k);
+  if(el)el.classList.toggle("is-dropped",st.dropped.has(D.cikOf(x.owner_cik)));
+  else{tpl.innerHTML=feedRow(x,i);el=tpl.content.firstElementChild;added.push(el);}
+  if(host.children[i]!==el)host.insertBefore(el,host.children[i]||null);
+ });
+ host.style.setProperty("min-height",lock+"px","important");
+ let shown=rows.length;
+ while(shown>1&&host.getBoundingClientRect().height>lock+0.5){host.lastElementChild.remove();shown--;}
+ if(D.reduce.matches)return shown;
+ const moved=[];
+ for(const el of host.children){
+  const k=el.dataset.key;
+  if(!before.has(k))continue;
+  const dy=before.get(k)-el.getBoundingClientRect().top;
+  if(Math.abs(dy)>=1)moved.push([el,dy]);
+ }
+ // Written with priority: the stylesheet's own transition (background, opacity) is !important too.
+ for(const [el,dy] of moved){el.style.setProperty("transition","none","important");el.style.setProperty("translate","0 "+dy+"px","important");}
+ added.filter(el=>el.isConnected).forEach((el,i)=>rise(el,i));
+ if(moved.length)requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  for(const [el] of moved){el.style.setProperty("transition","translate var(--hf-spring-dur) var(--hf-spring)","important");el.style.removeProperty("translate");}
+  setTimeout(()=>{for(const [el] of moved)el.style.removeProperty("transition");},1100);
+ }));
+ return shown;
+}
+/* "Show N more trades": the rest of the loaded lines, appended below the rows on screen; they rise a beat apart and
+   keyboard focus continues at the first of them. */
+function expandFeed(){
+ const host=$("v10-follow-feed");if(!host)return;
+ const all=feedItems(),from=host.querySelectorAll(":scope>.rd-feed__row").length;
+ if(from>=all.length)return;
+ st.feedRows=Math.max(st.feedRows,all.length);
+ host.insertAdjacentHTML("beforeend",all.slice(from).map((x,i)=>feedRow(x,from+i)).join(""));
+ const added=[...host.children].slice(from);
+ added.forEach(rise);
+ feedMore(all.length,all.length);
+ D.hydrate(host);
+ added[0]?.querySelector("a[href]")?.focus({preventScroll:true});
+ live("Showing all "+D.plural(all.length,"latest trade")+" from the people you follow.");
 }
 function drawList(){
  const host=$("v10-follow-list");if(!host)return;
@@ -181,23 +246,6 @@ function drawList(){
  D.hydrate(host);
 }
 const label=()=>{const l=$("rd-list-label");if(l)l.textContent="Following · "+D.count(Math.max(0,st.following));};
-
-/* FLIP: rows that stay slide from where they were to where they are now, on the dots' spring; new rows rise in. */
-function flip(host,render){
- if(D.reduce.matches){render();return;}
- const before=new Map([...host.children].map(el=>[el.dataset.key,el.getBoundingClientRect().top]));
- render();
- const moved=[];
- for(const el of host.children){
-  const k=el.dataset.key;
-  if(!k)continue;
-  if(!before.has(k)){el.classList.add("rd-rise");setTimeout(()=>el.classList.remove("rd-rise"),1300);continue;}
-  const dy=before.get(k)-el.getBoundingClientRect().top;
-  if(Math.abs(dy)>=1)moved.push([el,dy]);
- }
- for(const [el,dy] of moved){el.style.transition="none";el.style.translate="0 "+Math.round(dy)+"px";}
- if(moved.length)requestAnimationFrame(()=>requestAnimationFrame(()=>{for(const [el] of moved){el.style.transition="translate var(--hf-spring-dur) var(--hf-spring)";el.style.translate="";}setTimeout(()=>{for(const [el] of moved)el.style.transition="";},1000);}));
-}
 
 function renderFollow(res){
  const feed=$("v10-follow-feed"),list=$("v10-follow-list");
@@ -220,12 +268,12 @@ function renderFollow(res){
  st.following=Number.isFinite(Number(v.following))?Number(v.following):st.people.length;
  st.followed=new Set(st.people.map(p=>D.cikOf(p.owner_cik)));
  st.dropped.clear();
- // Reserved space: the rows this visit shows (one for the "nothing yet" line, at most eight), kept for the next visit's
- // skeleton. A follow made in place fills that space; anything past it is counted in "and N more".
+ // Reserved space: the rows this visit shows first (one for the "nothing yet" line, at most eight), kept for the next
+ // visit's skeleton. A follow made in place fills that space; anything past it opens under "Show N more trades".
  st.feedRows=st.following?clamp(st.items.length,1,FEED_MAX):0;
  $("rd-follow")?.classList.toggle("is-empty",!st.following);
  $("rd-follow")?.classList.remove("is-unknown","is-error");
- const empty=$("v10-follow-empty");if(empty&&!st.following)empty.textContent=EMPTY_MSG;
+ const empty=$("v10-follow-empty");if(empty&&!st.following){empty.style.removeProperty("min-height");empty.textContent=EMPTY_MSG;}
  // The followed list keeps room for six people (three when following nobody), so a follow made here shows up in it.
  st.listSlots=st.following?LIST_MAX:RESERVE;
  D.saveCount("feed",st.feedRows);D.saveCount("list",st.listSlots);D.saveCount("follows",st.following);
@@ -307,16 +355,24 @@ function setButtons(cik,on){
  }
 }
 const dim=(cik,on)=>{for(const el of document.querySelectorAll('#v10-follow-feed [data-owner="'+CSS.escape(cik)+'"],#v10-follow-list [data-owner="'+CSS.escape(cik)+'"]'))el.classList.toggle("is-dropped",on);};
+/* The message above the suggestions (a reader who followed nobody at load) says how many people they follow now, after
+   every follow and unfollow; it keeps the height it had, so nothing below it moves. */
+function updateEmpty(){
+ const el=$("v10-follow-empty");if(!el||!$("rd-follow")?.classList.contains("is-empty"))return;
+ D.keepHeight(el);
+ el.textContent=st.following>0?"You follow "+D.plural(st.following,"person","people")+" now. Their trades appear under Latest trades, below, marked New until you have seen them."
+  :"You are not following anyone now. Follow an insider and every trade they file appears here, marked New until you have seen it.";
+}
 /* After a follow: the new person takes a free reserved slot in the list (or counts in "and N more"), and the
-   feed takes the refreshed rows inside its reserved height, existing rows sliding to their new places. */
+   feed takes the refreshed rows inside the height it has, rows on screen sliding to their new places. */
 async function refreshAfterFollow(cik,fallback){
  let v=null;
  try{v=await D.api("/v1/me/people/updates?limit=40");}catch{/* the follow itself succeeded */}
  if(v&&Array.isArray(v.people)){
   const keep=st.items.filter(x=>st.dropped.has(D.cikOf(x.owner_cik)));
   const fresh=Array.isArray(v.items)?v.items:[];
-  const ids=new Set(fresh.map(x=>String(x.id)));
-  st.items=[...fresh,...keep.filter(x=>!ids.has(String(x.id)))];
+  const ids=new Set(fresh.map(keyOf));
+  st.items=[...fresh,...keep.filter(x=>!ids.has(keyOf(x)))];
   const person=v.people.find(p=>D.cikOf(p.owner_cik)===cik);
   if(person&&!st.people.some(p=>D.cikOf(p.owner_cik)===cik))st.people.push(person);
   else if(person)st.people=st.people.map(p=>D.cikOf(p.owner_cik)===cik?person:p);
@@ -325,13 +381,9 @@ async function refreshAfterFollow(cik,fallback){
  }
  st.following=st.followed.size-st.dropped.size;
  // The first follow from the empty state: the feed below the suggestions opens for this person's newest rows
- // (nothing above the pointer moves); the message above keeps its height and says what happened.
- const box=$("rd-follow");
- if(box?.classList.contains("is-empty")&&!st.feedRows){
-  st.feedRows=FIRST_ROWS;setReserve();
-  const empty=$("v10-follow-empty");
-  if(empty){empty.style.minHeight=empty.offsetHeight+"px";empty.textContent="You follow "+D.plural(st.following,"person","people")+" now. Their trades appear under Latest trades, below, marked New until you have seen them.";}
- }
+ // (nothing above the pointer moves).
+ if($("rd-follow")?.classList.contains("is-empty")&&!st.feedRows){st.feedRows=FIRST_ROWS;setReserve();}
+ updateEmpty();
  insertListItem(cik);
  drawFeed(true);
  label();
@@ -348,13 +400,13 @@ function insertListItem(cik){
  if(shown<st.listSlots){
   host.querySelector(".rd-fl__msg")?.remove();
   host.insertAdjacentHTML("beforeend",listItem(st.people[i],shown));
-  const el=host.lastElementChild;
-  if(el&&!D.reduce.matches){el.classList.add("rd-rise");setTimeout(()=>el.classList.remove("rd-rise"),1300);}
+  rise(host.lastElementChild);
   D.hydrate(host);
  }
  listMore(st.people.length,Math.min(st.people.length,st.listSlots));
 }
-async function follow(cik,{undo=false}={}){
+const reason=e=>String(e?.message||"").replace(/\.$/,"");
+async function follow(cik,{undo=false,near=null}={}){
  if(st.busy.has(cik))return;
  const name=nameOf(cik),wasDropped=st.dropped.has(cik);
  st.busy.add(cik);
@@ -363,16 +415,16 @@ async function follow(cik,{undo=false}={}){
  try{
   await D.api("/v1/me/people",{method:"POST",body:{owner_cik:cik}});
   const known=st.followed.has(cik);st.followed.add(cik);
-  status(E(undo?"Following "+name+" again.":"Following "+name+". Their trades now appear under Latest trades."));
+  D.toast(E(undo?"Following "+D.endName(name)+" again.":"Following "+D.endName(name)+". Their trades now appear under Latest trades."),{near});
   if(!known)await refreshAfterFollow(cik,st.suggestions.find(s=>s.owner_cik===cik));
-  else{st.following=st.followed.size-st.dropped.size;label();}
+  else{st.following=st.followed.size-st.dropped.size;label();updateEmpty();}
  }catch(e){
   if(wasDropped){st.dropped.add(cik);dim(cik,true);}
   setButtons(cik,isFollowing(cik));
-  status(E("Could not follow "+name+": "+String(e.message||"").replace(/\.$/,"")+". Nothing was changed."),{error:true});
+  D.toast(E("Could not follow "+name+": "+reason(e)+". Nothing was changed."),{error:true,near});
  }finally{st.busy.delete(cik);}
 }
-async function unfollow(cik){
+async function unfollow(cik,{near=null}={}){
  if(st.busy.has(cik))return;
  const name=nameOf(cik);
  st.busy.add(cik);
@@ -380,21 +432,21 @@ async function unfollow(cik){
  st.dropped.add(cik);setButtons(cik,false);dim(cik,true);
  try{
   await D.api("/v1/me/people/"+encodeURIComponent(cik),{method:"DELETE"});
-  st.following=st.followed.size-st.dropped.size;label();
-  status('Unfollowed '+E(name)+'. <button type="button" class="rd-undo" data-undo="'+E(cik)+'" aria-label="'+E("Undo: follow "+name+" again")+'">Undo</button>',{keep:true});
-  // Undo stays for 6 s; then the notice goes (focus on Undo returns to the person's button first).
-  undoTimer=setTimeout(()=>{const el=$("rd-toast");if(el?.querySelector(`[data-undo="${CSS.escape(cik)}"]`)){const had=el.contains(document.activeElement);el.textContent="";if(had)document.querySelector('#v10-follow-list button[data-follow="'+CSS.escape(cik)+'"]')?.focus({preventScroll:true});}},UNDO_MS);
+  st.following=st.followed.size-st.dropped.size;label();updateEmpty();
+  // Undo stays for 6 s, and for as long as keyboard focus is on it.
+  D.toast('Unfollowed '+E(D.endName(name))+'. <button type="button" class="rd-undo" data-undo="'+E(cik)+'" aria-label="'+E("Undo: follow "+name+" again")+'">Undo</button>',{ms:UNDO_MS,near});
  }catch(e){
   st.dropped.delete(cik);setButtons(cik,true);dim(cik,false);
-  status(E("Could not unfollow "+name+": "+String(e.message||"").replace(/\.$/,"")+". Nothing was changed."),{error:true});
+  D.toast(E("Could not unfollow "+name+": "+reason(e)+". Nothing was changed."),{error:true,near});
  }finally{st.busy.delete(cik);}
 }
 document.addEventListener("click",e=>{
+ if(e.target.closest?.("button[data-feed-more]")){expandFeed();return;}
  const u=e.target.closest?.("button[data-undo]");
- if(u){const cik=D.cikOf(u.dataset.undo);if(cik){const btn=document.querySelector('#v10-follow-list button[data-follow="'+CSS.escape(cik)+'"]');void follow(cik,{undo:true}).then(()=>btn?.focus({preventScroll:true}));}return;}
+ if(u){const cik=D.cikOf(u.dataset.undo);if(cik){const btn=document.querySelector('#v10-follow-list button[data-follow="'+CSS.escape(cik)+'"]')||document.querySelector('button[data-follow="'+CSS.escape(cik)+'"]');void follow(cik,{undo:true,near:btn}).then(()=>btn?.focus({preventScroll:true}));}return;}
  const b=e.target.closest?.("button[data-follow]");if(!b)return;
  const cik=D.cikOf(b.dataset.follow);if(!cik)return;
- if(!st.ok){status(E("Following is unavailable until your followed people load. Use Try again above."),{error:true});return;}
- if(isFollowing(cik))void unfollow(cik);else void follow(cik);
+ if(!st.ok){D.toast(E("Following is unavailable until your followed people load. Use Try again above."),{error:true,near:b});return;}
+ if(isFollowing(cik))void unfollow(cik,{near:b});else void follow(cik,{near:b});
 });
 })();

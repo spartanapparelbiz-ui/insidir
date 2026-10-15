@@ -119,7 +119,7 @@
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
         item.is_amendment ? "Amended filing" : ""
       ].filter(Boolean).join(" · ");
-      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm",{cik:item.owner_cik})||"") +
+      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm",{cik:item.owner_cik,issuerCik:item.issuer_cik})||"") +
         "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
         "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + directionLabel(item.category, category) +
         "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td data-label='Reported value'>" +

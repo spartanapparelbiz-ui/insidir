@@ -23,6 +23,10 @@ import { tickerIndex, tickerRecord } from "./intelligence.mjs";
 
 const DAY = 86_400_000;
 export const LOGO_TTL = 30 * DAY;
+/* The preparation pass stamped on every record (`prep`). 2: dark ink is judged on the grey the
+ * page shows (grayscale filter), so red marks are lifted too. GET /v1/media resolves an ok
+ * record from an older pass again instead of serving it. */
+export const LOGO_PREP = 2;
 export const NEGATIVE_TTL = 7 * DAY;
 export const PARTIAL_TTL = DAY; // found a logo, but a better-ranked source could not be reached
 const RISK_MONTHS = 36;
@@ -778,7 +782,7 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
   const now = options.now ?? Date.now();
   if (!options.refresh) {
     const cached = await store.getRecord("logo", cik10).catch(() => null);
-    if (cached) return cached;
+    if (cached && (cached.status !== "ok" || cached.prep === LOGO_PREP)) return cached;
   }
   const checkedAt = new Date(now).toISOString();
   const override = (await store.getRecord("logo-override", cik10).catch(() => null)) || (options.overrides || LOGO_OVERRIDES)[cik10] || null;
@@ -793,7 +797,7 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
     const prepared = usable(c) ? await prepareCandidate(c, store).catch(() => null) : null;
     if (prepared) {
       const slot = slotFor(prepared.aspect) === "wide" ? "wide" : "square";
-      const result = { status: "ok", ticker: T, cik: cik10, variants: { [slot]: prepared }, risk: null, support: ["override" + (override.reason ? ": " + override.reason : "")], sources: { override: "found" }, review: false, incomplete: false, checkedAt };
+      const result = { status: "ok", ticker: T, cik: cik10, variants: { [slot]: prepared }, risk: null, support: ["override" + (override.reason ? ": " + override.reason : "")], sources: { override: "found" }, review: false, incomplete: false, checkedAt, prep: LOGO_PREP };
       await store.putRecord("logo", cik10, result, LOGO_TTL);
       return result;
     }
@@ -897,7 +901,7 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
     variants: Object.fromEntries(Object.entries(variants).map(([k, v]) => [k, (({ step, ...rest }) => rest)(v)])),
     risk: { flag: risk.flag, unknown: risk.unknown, reasons: risk.reasons.slice(0, 6) },
     support: [...selection.notes, ...support],
-    sources, ...(Object.keys(errors).length ? { errors } : {}), review, incomplete, checkedAt
+    sources, ...(Object.keys(errors).length ? { errors } : {}), review, incomplete, checkedAt, prep: LOGO_PREP
   };
   const ttl = result.status === "ok" ? (incomplete ? PARTIAL_TTL : LOGO_TTL) : incomplete ? 0 : NEGATIVE_TTL;
   if (ttl > 0 && options.cache !== false) await store.putRecord("logo", cik10, result, ttl).catch(() => {});

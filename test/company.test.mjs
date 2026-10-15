@@ -275,7 +275,10 @@ test("open image URLs: a day of caching with an ETag, takedowns answer 404, and 
   for (let i = 2; i <= 119; i++) assert.equal((await call(unknown(i))).status, 404);
   assert.deepEqual(await call(unknown(120)), { status: 429, error: "Too many requests for missing images. Try again shortly." });
   assert.equal(store.storeStats().misses, misses + 119, "the 121st miss is refused before any lookup");
-  assert.equal((await call(saved.url, "192.0.2.10")).status, 429, "that client waits out the minute");
+  assert.equal((await call(unknown(1))).status, 429, "its misses stay refused for the minute");
+  assert.equal(store.storeStats().misses, misses + 119, "still without a lookup");
+  assert.equal((await call(saved.url, "192.0.2.10")).status, 200, "images held in memory are still served to that client");
+  assert.equal((await call(saved.url, "192.0.2.10", { "if-none-match": '"' + saved.sha + '"' })).status, 304);
   assert.equal((await call(unknown(121), "192.0.2.11")).status, 404, "other clients are not affected");
   // An address stored later is no longer 'missing'.
   const late = Buffer.from("stored after it was asked for");

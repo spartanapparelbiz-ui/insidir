@@ -577,9 +577,12 @@ test("blockPersonPhoto: the takedown stops the image address and rewrites the fi
   const saved = await store.putMedia({ bytes: Buffer.from("takedown test portrait"), type: "webp", width: 256, height: 256 });
   const other = await store.putMedia({ bytes: Buffer.from("someone else's portrait"), type: "webp", width: 256, height: 256 });
   await store.putRecord("person-photo", "555", { src: saved.url, source: "sec-proxy", credit: "SEC proxy statement" }, 3600e3);
-  await store.putRecord("company-photos", "0000000777", { cik: "0000000777", complete: true, photos: { "cik:555": { src: saved.url }, "cik:6": { src: other.url } }, names: { "cik:555": "Pat Doe" }, leaders: [] }, 3600e3);
+  const portrait = await store.putMedia({ bytes: Buffer.from("takedown test leadership portrait"), type: "webp", width: 256, height: 256 });
+  await store.putRecord("company-photos", "0000000777", { cik: "0000000777", complete: true, photos: { "cik:555": { src: saved.url }, "cik:6": { src: other.url } }, names: { "cik:555": "Pat Doe" },
+    leaders: [{ key: "wd:Q9", name: "Pat Doe", insider: true, insiderKey: "cik:555", src: portrait.url, source: "wikimedia" }] }, 3600e3);
   assert.equal((await route(saved.url)).status, 200);
-  assert.deepEqual(await blockPersonPhoto("0000000555", { reason: "the person asked" }), { cik: "555", images: 1, companies: 1 });
+  assert.deepEqual(await blockPersonPhoto("0000000555", { reason: "the person asked" }), { cik: "555", images: 2, companies: 1 });
+  assert.equal((await route(portrait.url, { ip: "10.9.9.8" })).status, 404, "their leadership portrait too");
   assert.equal((await store.getRecord("person-photo-override", "555")).none, true);
   const rewritten = await store.getRecord("company-photos", "0000000777");
   assert.deepEqual(Object.keys(rewritten.photos), ["cik:6"]);

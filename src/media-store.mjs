@@ -84,11 +84,13 @@ export async function putMedia(image) {
     [sha, mime, image.bytes, image.width || null, image.height || null]);
   return { sha, url: "/v1/media/" + sha + "." + image.type, mime };
 }
-export async function getMedia(sha) {
+/* cachedOnly: answer from memory alone (undefined when that is not enough to know). */
+export async function getMedia(sha, { cachedOnly = false } = {}) {
   if (!/^[a-f0-9]{64}$/.test(String(sha || "")) || await mediaBlocked(sha)) return null;
   const hit = media.get(sha);
   if (hit) return hit;
   if (knownMissing(sha)) return null;
+  if (cachedOnly) return undefined;
   const row = (await db("SELECT mime,bytes,width,height FROM entity_media WHERE sha256=$1", [sha]))?.rows?.[0];
   if (!row) { rememberMissing(sha); return null; }
   const item = { bytes: row.bytes, mime: row.mime, width: row.width, height: row.height };
@@ -100,9 +102,10 @@ export async function getMedia(sha) {
  * (getMedia selects the whole image). Stored images are never deleted from the database, so a
  * positive answer is remembered; a miss is asked again next time. */
 const present = new Set();
-export async function hasMedia(sha) {
+export async function hasMedia(sha, { cachedOnly = false } = {}) {
   if (!/^[a-f0-9]{64}$/.test(String(sha || "")) || await mediaBlocked(sha)) return false;
   if (media.has(sha) || present.has(sha)) return true;
+  if (cachedOnly) return undefined;
   const row = (await db("SELECT 1 FROM entity_media WHERE sha256=$1", [sha]))?.rows?.[0];
   if (!row) return false;
   if (present.size >= 50000) present.delete(present.values().next().value);

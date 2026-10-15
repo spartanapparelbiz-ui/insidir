@@ -410,5 +410,20 @@ body.v13 .cl-source{margin:20px 0 0!important;font:400 11px/1.8 var(--hf-mono)!i
   body.v13 :is(.rd-row>b,.v10-known__grid b,.rd-row,.v10-known__grid>a,.v10-person-card,.v10-follow-row){transition:none!important;transform:none!important}
 }
 
+/* ---------- identity tiles in shared chrome ----------
+   The header search: each company and person in the results carries its tile (a logo, a headshot, or the issuer's logo
+   standing in for one) where the text badge was; the ticker moves into the second line. A name inline with a small
+   tile (people.html cards and followed rows) sits on the top of its line box, so the line never grows when the
+   picture arrives. */
+body.v13 .app-search__option--tile{grid-template-columns:28px minmax(0,1fr)!important;grid-template-areas:"tile label" "tile meta"!important;column-gap:12px!important}
+body.v13 .app-search__option--tile>.ins-media{grid-area:tile!important;--ins-size:28px!important;align-self:center!important}
+body.v13 .ins-inline{display:inline-flex!important;align-items:center!important;gap:6px!important;vertical-align:top!important;max-width:100%!important}
+body.v13 .ins-inline>.ins-media{--ins-size:16px!important;flex:none!important}
+/* On a phone the results open as a panel across the screen, under the header, instead of hanging off its right edge
+   from the search box. */
+@media (max-width:600px){
+  body.v13 .app-search__results{position:fixed!important;left:16px!important;right:16px!important;top:62px!important;min-width:0!important;max-height:calc(100vh - 86px)!important}
+}
+
 }
 /* end @layer insidir-v13 */

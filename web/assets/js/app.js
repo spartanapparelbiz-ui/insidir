@@ -282,13 +282,26 @@
       list.querySelectorAll("[role=option]").forEach((el, i) => el.setAttribute("aria-selected", String(i === index)));
       if (index >= 0) input.setAttribute("aria-activedescendant", "app-search-option-" + index); else input.removeAttribute("aria-activedescendant");
     };
+    /* Each result carries its identity tile from entity-media.js (a company's logo, a person's headshot, or the issuer's
+       logo standing in for one; initials only when neither exists), aria-hidden inside the option, so no link is nested.
+       Pages without the helper (account, billing) keep the text badge. */
+    const tileFor = s => {
+      const media = window.InsidirMedia;
+      if (!media) return "";
+      try { return s.kind === "person" ? media.portrait(s.name, s.ticker || "", "sm", { cik: s.cik }) : media.logo(s.ticker, "sm", { name: s.label }); } catch { return ""; }
+    };
     const renderList = q => {
       if (!suggestions.length) {
         list.innerHTML = `<p class="app-search__empty">${tickerPattern.test(q.toUpperCase()) ? "Press Enter to open " + escapeHTML(q.toUpperCase()) : "No matching companies or people"}</p>`;
       } else {
-        list.innerHTML = suggestions.map((s, i) => `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option">
-          <span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>
-          <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(s.meta || "")}</span></a>`).join("");
+        list.innerHTML = suggestions.map((s, i) => {
+          const tile = tileFor(s);
+          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>`;
+          const meta = tile && s.kind === "company" ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
+          return `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option${tile ? " app-search__option--tile" : ""}">${lead}
+          <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(meta)}</span></a>`;
+        }).join("");
+        try { window.InsidirMedia?.hydrate?.(list); } catch { /* a tile that cannot resolve keeps its initials */ }
       }
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
@@ -309,7 +322,7 @@
       }
       suggestions = [
         ...(companies.status === "fulfilled" ? companies.value.items || [] : []).slice(0, 7).map(c => ({ kind: "company", ticker: c.ticker, label: c.name, meta: "Company", href: "company.html?ticker=" + encodeURIComponent(c.ticker) })),
-        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", label: p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
+        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", name: p.owner_name, cik: /^\d{1,12}$/.test(String(p.owner_cik || "")) ? String(p.owner_cik) : "", ticker: p.ticker || "", label: window.InsidirMedia?.displayName ? window.InsidirMedia.displayName(p.owner_name) : p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
       ];
       renderList(q);
     };

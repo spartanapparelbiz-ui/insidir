@@ -32,13 +32,16 @@ function followButton(id,compact){
  const saved=following.has(id),ready=followState==="ready";
  return '<button type="button" class="v10-follow-btn'+(saved?" is-following":"")+'" data-person-follow="'+esc(id)+'" aria-pressed="'+saved+'"'+(ready?"":" disabled")+'>'+(saved?"Following ✓":compact?"Follow +":"Follow person +")+'</button>';
 }
+/* The company a person files for, named with its own logo tile (aria-hidden; the ticker says it). */
+const companyWithLogo=(t,issuer)=>t?'<span class="ins-inline">'+(media?.logo(t,"xs",{name:issuer?String(issuer).slice(0,60):""})||"")+'<span>'+esc(t)+'</span></span>':"";
 function card(p){
  const raw=p.owner_name||"Reporting person",name=shown(raw),t=ticker(p.ticker),id=cik(p.owner_cik);
- const title=esc(name);
+ const title=esc(name),issuer=p.issuer_name?String(p.issuer_name).slice(0,60):"";
  const facts=['<div><dt>Latest transaction</dt><dd>'+esc(day(p.last_transaction_date))+'</dd></div>'];
  if(Number.isFinite(Number(p.filings))&&Number(p.filings)>0)facts.push('<div><dt>Filings imported</dt><dd>'+esc(Number(p.filings))+'</dd></div>');
+ const where=t?companyWithLogo(t,issuer)+(issuer?" · "+esc(issuer):""):esc(issuer||"SEC reporting person");
  return '<article class="v10-person-card">'+
-  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong>'+title+'</strong><small>'+esc([t,p.issuer_name?String(p.issuer_name).slice(0,60):""].filter(Boolean).join(" · ")||"SEC reporting person")+'</small></div></div>'+
+  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong>'+title+'</strong><small>'+where+'</small></div></div>'+
   '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
   '<div class="v10-person-card__actions">'+(t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<a href="filings.html">Filings ↗</a>')+followButton(id,false)+'</div></article>';
 }
@@ -73,7 +76,7 @@ function drawFollowing(items){
  followingHost.innerHTML=items.length?items.map(p=>{
   const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik);
   return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md",{cik:id})||"")+
-  '<div><strong>'+esc(shown(raw))+'</strong><small>'+esc(t||"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
+  '<div><strong>'+esc(shown(raw))+'</strong><small>'+(t?companyWithLogo(t,p.issuer_name):"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
   (t?'<a href="'+esc(companyHref(t))+'" data-hf-atom>'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true" data-hf-atom>Unfollow</button>':"")+'</div>';
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
  media?.hydrate(followingHost);

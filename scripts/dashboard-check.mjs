@@ -5,22 +5,33 @@
      - Today: the greeting and date, what changed since the last visit (counted from a seeded
        localStorage["insidir:overview:last-seen"] against each row's created_at), what the latest imported trades
        add up to (the same figures as 03), and how fresh the import is;
-     - 01 People you follow (GET /v1/me/people/updates): the feed's exact sentences, New markers only on rows
-       imported after the last visit, the followed list with each person's last 30 days, suggestions that exclude
-       followed people; following and unfollowing live, with no reload: the button flips at once, the new person
-       and their trades appear, an unfollowed person dims with Undo, a refused follow is reverted with the reason;
-       the empty state (message, suggestions with Follow) and the error state (message, Try again);
-     - describe(): the plain-English wording of every Form 4 code shown (P, S, A, M, F, G and the rest);
-     - 02 Your watchlist and notes: each saved company's latest purchase or sale (looked up per ticker,
-       /v1/transactions?ticker=X&limit=20, when the 100-row window has none), "Also filed since", the empty state's
-       Save buttons (POST /v1/me/watchlist);
+     - 01 People you follow (GET /v1/me/people/updates): the feed's exact lines (badge, then the deal without a
+       repeated verb), New markers only on rows imported after the last visit, every loaded line reachable ("Show N
+       more trades" opens the rest in place), the followed list (read before the feed, at every width) with each
+       person's last 30 days, suggestions that exclude followed people; following and unfollowing live, with no
+       reload: the button flips at once at a fixed width, the new person and their trades appear, rows already on
+       screen slide on the spring (never jump, New markers never pop again), nothing under the pointer moves (also
+       at 390 with a slow server), an unfollowed person dims with an Undo of at least 24px, a refused follow is
+       reverted with the reason; the empty state (message kept current after each follow, suggestions with Follow)
+       and the error state (message, Try again);
+     - describe(): the plain-English wording of every Form 4 code shown (P, S, A, M, F, G and the rest), each line
+       of an option exercise as what it is (units given up, common shares received), verb-led sentences;
+     - Today agrees with the modules below: the watchlist count is the number of rows marked New in 02;
+     - 02 Your watchlist and notes: each saved company's latest purchase or sale (looked up per ticker when the
+       100-row window has none: its latest purchase and sale anywhere in the import, ?category=…&limit=1, and its
+       latest 20 lines only when there is neither), "Also filed since" with that person's tile, the empty state's
+       Save buttons (POST /v1/me/watchlist) and a message that says what was saved;
      - 03 Across the market: exact totals, the day chart (one tab stop, arrow keys, a readout on hover and focus),
        the Chart | Table switch inside its fixed frame, by company and the biggest trades;
      - 04 All recent trades: exact rows, word + code badges, the code legend, filters that crossfade without
-       changing the page height; 05 About this data;
+       changing the page height or any column's width (disabled, with no counts, while there are no rows to filter);
+       phone records that say "no price reported" and keep the security and qualifiers; 05 About this data, each fact
+       said once;
+     - the header search: every company and person in its results carries a tile;
      - a logo or headshot tile beside every person and company the page names, identified by SEC CIK;
      - layout: no load shift (the header shell holds its 70px; skeletons hold the content's space) with staggered
-       latency, no horizontal overflow at 360–1440px, touch targets, sharp images, no orange anywhere;
+       latency, also on a return visit whose Today sentence is longer than the last one's; no horizontal overflow and
+       no text cut off mid-word at 360–1440px, touch targets, sharp images, no orange anywhere;
      - motion: atoms written per frame during a scroll never exceed the atoms on screen (plus a few settling);
      - links: every internal link returns 200, none goes to the landing page, external links only to the SEC or
        Wikimedia Commons; 503 everywhere then recovery through each "Try again"; 401 → sign in, 402 → subscribe;
@@ -71,10 +82,10 @@ const ALL_LINES = [...trades, ...olderTrades];
    server's clock, which answers as of Oct 14 00:00 UTC (so the window opens Sep 14 00:00 UTC). */
 const PERSON = { [COOK]: ["COOK TIMOTHY D", "AAPL", "Apple Inc."], [HUANG]: ["HUANG JEN HSUN", "NVDA", "NVIDIA CORP"], [MUSK]: ["MUSK ELON", "TSLA", "Tesla, Inc."], [NADELLA]: ["NADELLA SATYA", "MSFT", "MICROSOFT CORP"], [OTHER]: ["OTHER PUBLIC FILER", "AAPL", "Apple Inc."], [KRESS]: ["KRESS COLETTE", "NVDA", "NVIDIA CORP"] };
 const SERVER_NOW = Date.parse("2026-10-14T00:00:00Z");
-function updatesFor(ciks) {
+function updatesFor(ciks, lines = ALL_LINES) {
   const since = SERVER_NOW - 30 * 86400000;
   const byPub = (a, b) => b.published_at.localeCompare(a.published_at) || b.transaction_date.localeCompare(a.transaction_date);
-  const items = ALL_LINES.filter(x => ciks.includes(x.owner_cik)).sort(byPub);
+  const items = lines.filter(x => ciks.includes(x.owner_cik)).sort(byPub);
   const people = ciks.map(cik => {
     const rows = items.filter(x => x.owner_cik === cik), recent = rows.filter(x => Date.parse(x.published_at) >= since), last = rows[0] || null;
     return { owner_cik: cik, owner_name: PERSON[cik][0], followed_at: "2026-09-01T00:00:00Z", ticker: PERSON[cik][1], issuer_name: PERSON[cik][2], last, last_published_at: last?.published_at ?? null, last_transaction_date: last?.transaction_date ?? null,
@@ -94,6 +105,8 @@ const FULL = {
   "/v1/me/research-decisions": { items: [{ ticker: "AAPL", review_status: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }, { ticker: "BRK.B", review_status: "watching", notes: "Annual letter first.", created_at: "2026-08-02T00:00:00Z", updated_at: "2026-08-03T00:00:00Z" }] },
   "/v1/insiders": { items: insiders }, "/v1/search": { items: [] }, follows: FOLLOWED, older: olderTrades
 };
+// A member whose followed people filed more lines than the feed's first eight rows (seven more Cook sales in July).
+const MORELINES = { ...FULL, older: [...olderTrades, ...Array.from({ length: 7 }, (_, i) => T({ id: 40 + i, accession: "0000320193260000" + (40 + i), ticker: "AAPL", issuer_name: "Apple Inc.", issuer_cik: "0000320193", owner_name: "COOK TIMOTHY D", owner_cik: COOK, transaction_date: "2026-07-" + String(10 + i).padStart(2, "0"), transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 1000 + i, price_per_share: 200, estimated_value: (1000 + i) * 200, published_at: "2026-07-" + String(12 + i).padStart(2, "0") + "T20:00:00Z", created_at: "2026-07-" + String(12 + i).padStart(2, "0") + "T20:05:00Z" }))] };
 // A first-time member: the import is there, their own account is empty.
 const FIRST = { ...FULL, "/v1/me/watchlist": { items: [] }, "/v1/me/research-decisions": { items: [] }, follows: [] };
 const EMPTY = { "/v1/me": me, "/v1/transactions": { items: [] }, "/v1/filings": { items: [] }, "/v1/status": { engine: "online", sec: "configured", filings: 0, lastIngest: null },
@@ -182,10 +195,10 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     if (method === "DELETE" && path.startsWith("/v1/me/people/")) { const cik = decodeURIComponent(path.split("/").pop()); state.posts.push("unfollow " + cik); state.follows = state.follows.filter(c => c !== cik); return { status: 200, body: { deleted: true, owner_cik: cik } }; }
     if (method === "POST" && path === "/v1/me/watchlist") { const t = JSON.parse(body || "{}").ticker; state.posts.push("save " + t); state.saved.push(t); return { status: 200, body: { saved: true, ticker: t } }; }
     if (method !== "GET") return { status: 200, body: { saved: true } };
-    if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows) };
+    if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
     if (path === "/v1/transactions" && q?.has("ticker")) {
-      const all = [...(data["/v1/transactions"]?.items || []), ...(data.older || [])].filter(x => x.ticker === q.get("ticker"));
+      const all = [...(data["/v1/transactions"]?.items || []), ...(data.older || [])].filter(x => x.ticker === q.get("ticker") && (!q.get("category") || x.category === q.get("category")));
       return { status: 200, body: { items: all.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)).slice(0, Number(q.get("limit")) || 30) } };
     }
     if (path === "/v1/filings" && q?.get("limit")) return { status: 200, body: { items: (data["/v1/filings"]?.items || []).slice(0, Number(q.get("limit"))) } };
@@ -246,6 +259,7 @@ try {
       heroSearch: !!document.querySelector("#v3-search, #v3-ticker"), shortcuts: document.querySelectorAll(".rd-shortcuts").length, filingsModule: !!document.getElementById("v3-filings"),
       headerSearch: !!document.querySelector("#app-search-input"),
       order: [...document.querySelectorAll("#rd-today,#v10-follow-feed,#v10-follow-list,#v3-watchlist,#v3-notes,#rd-kpis,#rd-daily-chart,#rd-companies,#rd-largest,#v3-trades,#v4-data-state")].map(e => e.id),
+      watchNew: document.querySelectorAll("#v3-watchlist .rd-row--watch .rd-new").length,
       decorativePhotos: document.querySelectorAll('.app-main img[src*="assets/img/"]').length,
       credits: !!document.querySelector("[data-media-credits]"),
       today: ["rd-today-you", "rd-today-market", "rd-today-fresh"].map(id => document.getElementById(id)?.textContent.replace(/\s+/g, " ").trim())
@@ -254,7 +268,8 @@ try {
     check(H.date === "Overview · Wed, Oct 14, 2026", "Today's eyebrow names the day", H.date);
     check(!H.heroSearch && !H.shortcuts && !H.filingsModule, "no duplicate hero search, no shortcut row, no Latest filings module", H);
     check(H.headerSearch, "the header search (⌘K, /) is the page's one search");
-    check(JSON.stringify(H.order) === JSON.stringify(["rd-today", "v10-follow-feed", "v10-follow-list", "v3-watchlist", "v3-notes", "rd-kpis", "rd-daily-chart", "rd-companies", "rd-largest", "v3-trades", "v4-data-state"]), "reading order: Today, people you follow (feed, list), watchlist, notes, across the market, all recent trades, about this data", H.order);
+    check(JSON.stringify(H.order) === JSON.stringify(["rd-today", "v10-follow-list", "v10-follow-feed", "v3-watchlist", "v3-notes", "rd-kpis", "rd-daily-chart", "rd-companies", "rd-largest", "v3-trades", "v4-data-state"]), "reading and tab order: Today, people you follow (who you follow, then their trades: the order phones and tablets show), watchlist, notes, across the market, all recent trades, about this data", H.order);
+    check(H.watchNew === 2 && /2 companies on your watchlist have new trades\.$/.test(H.today[0]), "Today's watchlist count is the number of rows marked New in 02 (" + H.watchNew + ")", [H.watchNew, H.today[0]]);
     check(H.decorativePhotos === 0, "no decorative photographs on the dashboard", H.decorativePhotos);
     check(H.credits, "a media credits footnote ([data-media-credits]) is on the page");
     check(H.today[0] === "Since your last visit on Sep 1 at 12:00 AM: 2 new trades from 2 of the 3 people you follow. 2 companies on your watchlist have new trades.", "Today says what is new since the last visit, from the people followed and the watchlist", H.today[0]);
@@ -266,11 +281,13 @@ try {
     // 01: the feed, in words, newest filing first; New only on rows imported after the last visit.
     const feed = await page.$$eval("#v10-follow-feed .rd-feed__row", rows => rows.map(r => ({ text: r.innerText.replace(/\s+/g, " ").trim(), owner: r.dataset.owner, isNew: !!r.querySelector(".rd-new"), label: r.getAttribute("aria-label"), filing: r.querySelector('a[href^="filing.html"]')?.getAttribute("href"), tiles: [...r.querySelectorAll(".ins-media")].map(t => t.classList.contains("ins-media--person") ? "person" : "company") })));
     check(feed.length === 5, "the feed shows every line the followed people filed (5)", feed.length);
-    check(/^Timothy D\. Cook Sold · S sold 12,500 AAPL shares at \$26\.00 = \$325,000 New since your last visit Apple Inc\. · traded Sep 12, 2026 · filed Sep 14, 2026 \(2 days later\) · Filing ↗$/i.test(feed[0]?.text), "feed row 1: who, what (word + code), shares × price = value, company, trade and filing dates with the lag", feed[0]?.text);
-    check(/^Jen Hsun Huang Bought · P bought 1,500 NVDA shares at \$28\.00 = \$42,000 New since your last visit NVIDIA Corp · /i.test(feed[1]?.text), "feed row 2: a purchase, marked New", feed[1]?.text);
-    check(/Gift · G gave 5,000 AAPL shares as a gift Apple Inc\./i.test(feed[2]?.text) && !feed[2]?.isNew, "a gift reads as a gift, not new (imported before the last visit)", feed[2]);
-    check(/Tax withholding · F had 2,000 AAPL shares withheld to pay tax or the exercise price/i.test(feed[3]?.text), "a code F line reads as tax withholding", feed[3]?.text);
-    check(/^Elon Musk Sold · S sold 1,000 TSLA shares at \$250\.00 = \$250,000/i.test(feed[4]?.text) && /traded Jun 2, 2026 · filed Jun 4, 2026/.test(feed[4]?.text), "an older sale from a followed person", feed[4]?.text);
+    check(/^Timothy D\. Cook Sold · S 12,500 AAPL shares at \$26\.00 = \$325,000 New since your last visit Apple Inc\. · traded Sep 12, 2026 · filed Sep 14, 2026 \(2 days later\) · Filing ↗$/i.test(feed[0]?.text), "feed row 1: who, what (word + code), then shares × price = value without repeating the verb, company, trade and filing dates with the lag", feed[0]?.text);
+    check(/^Jen Hsun Huang Bought · P 1,500 NVDA shares at \$28\.00 = \$42,000 New since your last visit NVIDIA Corp · /i.test(feed[1]?.text), "feed row 2: a purchase, marked New", feed[1]?.text);
+    check(/Gift · G 5,000 AAPL shares given Apple Inc\./i.test(feed[2]?.text) && !feed[2]?.isNew, "a gift reads as a gift, not new (imported before the last visit)", feed[2]);
+    check(/Tax withholding · F 2,000 AAPL shares withheld for tax or the exercise price/i.test(feed[3]?.text), "a code F line reads as tax withholding", feed[3]?.text);
+    check(/^Elon Musk Sold · S 1,000 TSLA shares at \$250\.00 = \$250,000/i.test(feed[4]?.text) && /traded Jun 2, 2026 · filed Jun 4, 2026/.test(feed[4]?.text), "an older sale from a followed person", feed[4]?.text);
+    check(!/(Sold · S sold|Bought · P bought|Grant · A received|Gift · G (gave|received))/i.test(feed.map(r => r.text).join(" ")), "no feed line repeats its badge's verb");
+    check(await said(page, "#v10-follow-more") === "", "every loaded line is on screen, so there is no Show more", await said(page, "#v10-follow-more"));
     check(feed.filter(r => r.isNew).length === 2 && feed[0].isNew && feed[1].isNew, "New marks exactly the rows imported after the seeded last visit", feed.map(r => r.isNew));
     check(feed[0]?.label === "Timothy D. Cook sold 12,500 Apple Inc. shares at $26.00, worth $325,000. Traded Sep 12, 2026, filed Sep 14, 2026. New since your last visit.", "each feed row's label is the full sentence", feed[0]?.label);
     check(feed.every(r => /^filing\.html\?accession=\d{18}$/.test(r.filing || "")) && feed.every(r => r.tiles.includes("person") && r.tiles.includes("company")), "each feed row links its filing and carries a headshot tile and a logo tile", feed);
@@ -299,7 +316,21 @@ try {
         C: d({ ...base, transaction_code: "C", category: "other", acquired_disposed: "A", security_title: "Series A Preferred", shares: 10 }),
         D: d({ ...base, transaction_code: "D", category: "other", acquired_disposed: "D", shares: 40 }),
         Pderiv: d({ ...base, transaction_code: "P", category: "other", acquired_disposed: "A", derivative: true, security_title: "Call Option", shares: 10 }),
-        amended: d({ ...base, transaction_code: "P", category: "reported_purchase", acquired_disposed: "A", shares: 1, price_per_share: 2, estimated_value: 2, is_amendment: true })
+        amended: d({ ...base, transaction_code: "P", category: "reported_purchase", acquired_disposed: "A", shares: 1, price_per_share: 2, estimated_value: 2, is_amendment: true }),
+        // The Table I line of an option exercise or RSU vesting: the common shares received (or given up), not "derivative securities".
+        Mcommon: d({ ...base, transaction_code: "M", category: "other", acquired_disposed: "A", derivative: false, shares: 3300 }),
+        McommonD: d({ ...base, transaction_code: "M", category: "other", acquired_disposed: "D", derivative: false, shares: 3300 }),
+        Ccommon: d({ ...base, transaction_code: "C", category: "other", acquired_disposed: "A", derivative: false, shares: 10 }),
+        unshared: d({ ...base, transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: null, price_per_share: 5, estimated_value: null }),
+        zero: d({ ...base, transaction_code: "P", category: "reported_purchase", acquired_disposed: "A", shares: 10, price_per_share: 0, estimated_value: 0 }),
+        // Sentences for screen readers: the name, then a verb; qualifiers as their own capitalised sentences.
+        sJ: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "J", category: "other", acquired_disposed: "A", shares: 7, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        sE: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "E", category: "other", acquired_disposed: "D", derivative: true, security_title: "Put Option", shares: 1000, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        sK: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "K", category: "other", acquired_disposed: "A", shares: 5, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        sL: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "L", category: "other", acquired_disposed: "A", shares: 5, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        sH: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "H", category: "other", acquired_disposed: "D", derivative: true, security_title: "", shares: 5, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        sIndirect: D.sentence({ ...base, owner_name: "COOK TIMOTHY D", transaction_code: "S", category: "reported_sale", acquired_disposed: "D", shares: 1, price_per_share: 2, estimated_value: 2, direct_ownership: "I", is_amendment: true, transaction_date: "2026-09-01", published_at: "2026-09-03T20:00:00Z" }),
+        endName: D.endName("James D. Farley Jr.") + "|" + D.endName("Timothy D. Cook")
       };
     });
     check(words.P === "Bought | bought 150,000 TSLA shares at $249.00 | = $37,350,000", "describe P: bought N shares at $p = $v", words.P);
@@ -311,6 +342,15 @@ try {
     check(words.Gd === "Gift | gave 5,000 TSLA shares as a gift" && words.Ga === "Gift | received 5,000 TSLA shares as a gift", "describe G: gave or received N shares as a gift", [words.Gd, words.Ga]);
     check(words.C === "Conversion | converted 10 Series A Preferred into TSLA shares" && words.D === "Returned | returned 40 shares to TSLA" && words.Pderiv === "Bought | bought 10 Call Option", "describe C, D and a derivative P", [words.C, words.D, words.Pderiv]);
     check(/· amended filing \(4\/A\)$/.test(words.amended), "describe marks an amended filing (4/A)", words.amended);
+    check(words.Mcommon === "Option exercise | acquired 3,300 TSLA shares by exercising or converting options or units" && words.McommonD === "Option exercise | disposed of 3,300 TSLA shares in an exercise or conversion" && words.Ccommon === "Conversion | acquired 10 TSLA shares by converting a derivative security", "describe M/C on the common-stock line: the shares received or given up, never 'derivative securities'", [words.Mcommon, words.McommonD, words.Ccommon]);
+    check(words.unshared === "Sold | sold an unreported number of TSLA shares at $5.00 | value not reported" && words.zero === "Bought | bought 10 TSLA shares at $0.00 | = $0", "a priced sale with no share count reads 'value not reported'; '= $0' only for a $0.00 price on a known share count", [words.unshared, words.zero]);
+    check(words.sJ === "Timothy D. Cook acquired 7 Tesla, Inc. shares in another kind of transaction, described in the filing. Traded Sep 1, 2026, filed Sep 3, 2026." &&
+      words.sE === "Timothy D. Cook let a Put Option position of 1,000 expire. Traded Sep 1, 2026, filed Sep 3, 2026." &&
+      words.sK === "Timothy D. Cook acquired 5 Tesla, Inc. shares through an equity swap. Traded Sep 1, 2026, filed Sep 3, 2026." &&
+      words.sL === "Timothy D. Cook made a small acquisition of 5 Tesla, Inc. shares. Traded Sep 1, 2026, filed Sep 3, 2026." &&
+      words.sH === "Timothy D. Cook had a derivative position of 5 expire or be cancelled, with value received. Traded Sep 1, 2026, filed Sep 3, 2026.", "J, K, L, E and H read as sentences led by a verb", [words.sJ, words.sE, words.sK, words.sL, words.sH]);
+    check(words.sIndirect === "Timothy D. Cook sold 1 Tesla, Inc. shares at $2.00, worth $2. Traded Sep 1, 2026, filed Sep 3, 2026. An amended filing (Form 4/A) restating an earlier one. Held indirectly (by a trust or family member, for example).", "qualifiers are their own capitalised sentences for screen readers", words.sIndirect);
+    check(words.endName === "James D. Farley Jr|Timothy D. Cook", "a name that ends in a full stop takes no second one in a notice", words.endName);
 
     // 02: watchlist and notes.
     const watch = await page.$$eval("#v3-watchlist .rd-row--watch", rows => rows.map(r => ({ href: r.querySelector("a.rd-row__link")?.getAttribute("href"), text: r.innerText.replace(/\s+/g, " ").trim(), isNew: !!r.querySelector(".rd-new") })));
@@ -320,7 +360,8 @@ try {
     check(/Elon Musk sold 1,000 shares at \$250\.00 = \$250,000 · traded Jun 2, filed Jun 4 \(2 days later\)/.test(watch[2]?.text), "a watched ticker outside the window shows its own latest sale (looked up)", watch[2]?.text);
     check(/IBM.*No insider filings imported yet/.test(watch[3]?.text), "a watched ticker with no records says so plainly", watch[3]?.text);
     const lookups = api.filter(a => /\/v1\/transactions\?ticker=/.test(a)).sort();
-    check(JSON.stringify(lookups) === JSON.stringify(["GET /v1/transactions?ticker=IBM&limit=20", "GET /v1/transactions?ticker=TSLA&limit=20"]), "per-ticker lookups (limit 20) only for watched tickers with no purchase or sale in the window", lookups);
+    check(JSON.stringify(lookups) === JSON.stringify(["GET /v1/transactions?ticker=IBM&category=reported_purchase&limit=1", "GET /v1/transactions?ticker=IBM&category=reported_sale&limit=1", "GET /v1/transactions?ticker=IBM&limit=20", "GET /v1/transactions?ticker=TSLA&category=reported_purchase&limit=1", "GET /v1/transactions?ticker=TSLA&category=reported_sale&limit=1"]),
+      "per-ticker lookups only for watched tickers with no purchase or sale in the window: the latest purchase and sale anywhere in the import, then the latest 20 lines only when there is neither; each asked once (Today and 02 share them)", lookups);
     const notes = await page.$$eval("#v3-notes .rd-row--note", rows => rows.map(r => ({ href: r.getAttribute("href"), text: r.innerText.replace(/\s+/g, " ").trim(), logo: !!r.querySelector(".ins-media--company") })));
     check(notes.length === 2 && notes[0].href === "research.html?ticker=AAPL" && /Researching/.test(notes[0].text) && /latest 10-K/.test(notes[0].text) && /Sep 2, 2026/.test(notes[0].text) && notes.every(n => n.logo), "notes: status, text, date, a logo on each row, linking the research desk", notes);
     const noteX = await page.$$eval("#v3-notes .rd-row__detail", d => d.map(e => Math.round(e.getBoundingClientRect().left)));
@@ -329,7 +370,7 @@ try {
     // 03: exact totals.
     const flow = await page.evaluate(() => ({
       scope: document.getElementById("rd-flow-scope").textContent,
-      kpis: Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/ /g, " ").trim()])),
+      kpis: Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [[...k.querySelector(".rd-kpi__label").childNodes].filter(n => n.nodeType === 3 || getComputedStyle(n).display !== "none").map(n => n.textContent).join("").trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/ /g, " ").trim()])),
       days: [...document.querySelectorAll("#rd-daily-chart .rd-day")].map(d => d.getAttribute("aria-label")),
       tabStops: [...document.querySelectorAll("#rd-daily-chart .rd-day")].filter(d => d.tabIndex === 0).length,
       up: [...document.querySelectorAll("#rd-daily-chart .rd-day__bar--up")].map(b => getComputedStyle(b).backgroundColor),
@@ -379,6 +420,8 @@ try {
     check(await page.getAttribute("#v3-trades tr:first-child .rd-type", "title") === "S — Open market or private sale", "each code keeps its SEC meaning in the badge title");
     const tradeLinks = await page.$$eval("#v3-trades tr:first-child a", a => a.map(x => x.getAttribute("href")));
     check(tradeLinks.includes("people.html?q=COOK%20TIMOTHY%20D#v10-directory") && tradeLinks.includes("company.html?ticker=AAPL") && tradeLinks.includes("filing.html?accession=000032019326000001"), "a trade row links the person, the company and the filing", tradeLinks);
+    const linkEdges = await page.$$eval("#v3-trades .rd-links a", a => [...new Set(a.map(x => Math.round(x.getBoundingClientRect().right)))]);
+    check(linkEdges.length === 1, "every Filing ↗ link in the table ends at the same right edge (rows with and without a security note alike)", linkEdges);
     const foot = flat(await text(page, "#v3-trades-foot"));
     check(foot === "Showing all 5 trades. Browse every filing ↗ Codes: P bought on the market, S sold on the market, A grant or award, M option exercise.", "the foot says what is shown and explains only the codes on screen", foot);
     const chips = [];
@@ -386,7 +429,7 @@ try {
     check(JSON.stringify(chips) === JSON.stringify(["All 5", "Purchases 1", "Sales 2", "Grants, exercises & gifts 2"]), "filters name what they hold, with real counts (5 / 1 / 2 / 2)", chips);
     await page.locator(".rd-filters").scrollIntoViewIfNeeded();
     const hBefore = await page.evaluate(() => document.documentElement.scrollHeight);
-    const heights = [];
+    const heights = [], colsOf = () => page.$$eval(".rd-table--trades thead th", t => t.map(th => { const r = th.getBoundingClientRect(); return Math.round(r.left * 10) / 10 + "+" + Math.round(r.width * 10) / 10; }).join(" ")), cols = [await colsOf()];
     await page.click('[data-filter="reported_purchase"]'); await page.waitForTimeout(400); t = await rows(); heights.push(await page.evaluate(() => document.documentElement.scrollHeight));
     check(t.length === 1 && /NVDA/.test(t[0]) && /Bought · P/i.test(t[0]), "Purchases shows only purchases", t);
     check(await page.getAttribute('[data-filter="reported_purchase"]', "aria-pressed") === "true" && await text(page, "#v3-trades-status") === "Showing 1 purchase", "the pressed filter is announced (aria-pressed, live region)");
@@ -394,8 +437,11 @@ try {
     check(t.length === 2 && t.every(r => /Sold · S/i.test(r)), "Sales shows only sales", t);
     await page.click('[data-filter="other"]'); await page.waitForTimeout(400); t = await rows(); heights.push(await page.evaluate(() => document.documentElement.scrollHeight));
     check(t.length === 2 && /Option exercise · M/i.test(t[0]) && /Grant · A/i.test(t[1]), "Grants, exercises & gifts shows the other codes", t);
+    cols.push(await colsOf());
     await page.click('[data-filter="all"]'); await page.waitForTimeout(400); heights.push(await page.evaluate(() => document.documentElement.scrollHeight));
+    cols.push(await colsOf());
     check((await rows()).length === 5, "All restores every row");
+    check(new Set(cols).size === 1, "filtering never moves a column heading (the columns keep the widths All gave them)", cols);
     check(heights.every(h => h === hBefore), "filters never change the page height (the table keeps the height of All)", [hBefore, ...heights]);
 
     // Colour: green and red carry direction; nothing is orange.
@@ -421,9 +467,10 @@ try {
     // The line as drawn: visible labels, values, and the " · " separators and full stop CSS puts between them.
     const about = await page.evaluate(() => {
       const pseudo = (e, p) => { const c = getComputedStyle(e, p).content; return c && c !== "none" && c !== "normal" ? c.replace(/^"|"$/g, "") : ""; };
-      return [...document.querySelectorAll("#rd-about > div")].map(d => pseudo(d, "::before") + [...d.children].filter(c => !c.classList.contains("sr-only")).map(c => c.textContent.replace(/\s+/g, " ").trim()).join(" ") + pseudo(d, "::after")).join("");
+      return { shown: [...document.querySelectorAll("#rd-about > li")].map(d => pseudo(d, "::before") + d.textContent.replace(/\s+/g, " ").trim() + pseudo(d, "::after")).join(""), hidden: document.querySelectorAll("#rd-about .sr-only").length, items: document.querySelectorAll("#rd-about > li").length };
     });
-    check(about === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026.", "about this data reads as one line with exact figures", about);
+    check(about.shown === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026." && about.items === 5, "about this data reads as one line with exact figures", about);
+    check(about.hidden === 0, "about this data says each fact once to a screen reader (no hidden label repeating the words shown)", about);
 
     // Tiles: every name has its logo or headshot.
     const tiles = await tileAudit(page);
@@ -468,14 +515,33 @@ try {
     await settle(page);
     const btn = page.locator(`#v10-follow-suggest-list button[data-follow="${OTHER}"]`);
     await btn.scrollIntoViewIfNeeded(); await rest(page, "#rd-follow");
-    const y0 = await btn.evaluate(b => b.getBoundingClientRect().top);
+    const [y0, w0] = await btn.evaluate(b => [b.getBoundingClientRect().top, b.getBoundingClientRect().width]);
+    // Watch the feed for 2.5 s from the click: each row's translate per frame, New markers popping again, the notice.
+    await page.evaluate(() => {
+      const W = window.__watch = { tr: {}, pops: 0, toast: "" };
+      document.querySelectorAll("#v10-follow-feed .rd-new").forEach(e => { e.dataset.was = "1"; });
+      addEventListener("animationstart", e => { if (e.animationName === "rd-pop" && e.target.dataset?.was) W.pops++; }, true);
+      const box = document.getElementById("rd-toast");
+      new MutationObserver(() => { const t = box.textContent.replace(/\s+/g, " ").trim(); if (t && !W.toast) W.toast = t; }).observe(box, { childList: true, characterData: true, subtree: true });
+      const t0 = performance.now();
+      const loop = () => { for (const el of document.querySelectorAll("#v10-follow-feed > .rd-feed__row")) (W.tr[el.dataset.key] = W.tr[el.dataset.key] || []).push(getComputedStyle(el).translate); if (performance.now() - t0 < 2500) requestAnimationFrame(loop); };
+      requestAnimationFrame(loop);
+    });
+    const toastSeen = async () => { await page.waitForFunction(() => !!window.__watch.toast, null, { timeout: 4000 }).catch(() => {}); const t = await page.evaluate(() => window.__watch.toast); await page.evaluate(() => { window.__watch.toast = ""; }); return t; };
     await btn.click();
     const flipped = await btn.evaluate(b => [b.textContent, b.getAttribute("aria-pressed"), b.getAttribute("aria-label")]);
     check(flipped[0] === "Following ✓" && flipped[1] === "true" && flipped[2] === "Unfollow Public Filer Other", "Follow flips the button at once (optimistic)", flipped);
+    const followToast = await toastSeen();
     await page.waitForFunction(o => !!document.querySelector(`#v10-follow-list .rd-fl[data-owner="${o}"]`), OTHER, { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(2600);
     await rest(page, "#rd-follow");
-    const after = await page.evaluate(o => ({ label: document.getElementById("rd-list-label").textContent, inList: !!document.querySelector(`#v10-follow-list .rd-fl[data-owner="${o}"]`), inFeed: !!document.querySelector(`#v10-follow-feed .rd-feed__row[data-owner="${o}"]`), focus: document.activeElement?.dataset?.follow, toast: document.getElementById("rd-toast").textContent }), OTHER);
-    const y1 = await btn.evaluate(b => b.getBoundingClientRect().top);
+    const after = await page.evaluate(o => ({ label: document.getElementById("rd-list-label").textContent, inList: !!document.querySelector(`#v10-follow-list .rd-fl[data-owner="${o}"]`), inFeed: !!document.querySelector(`#v10-follow-feed .rd-feed__row[data-owner="${o}"]`), focus: document.activeElement?.dataset?.follow, toast: "" }), OTHER);
+    after.toast = followToast;
+    const [y1, w1] = await btn.evaluate(b => [b.getBoundingClientRect().top, b.getBoundingClientRect().width]);
+    const flip = await page.evaluate(() => { const W = window.__watch; return { pops: W.pops, slid: Object.entries(W.tr).map(([k, v]) => [k, new Set(v.filter(t => t !== "none" && t !== "0px")).size]) }; });
+    check(flip.slid.some(([, n]) => n >= 3), "rows already in the feed slide to their new places on the spring (several positions per row, not a jump)", flip.slid);
+    check(flip.pops === 0, "New markers already on screen do not pop again when the feed updates", flip.pops);
+    check(Math.abs(w1 - w0) < 0.5, "the Follow button keeps its width when its label becomes Following ✓ (" + w0.toFixed(1) + " → " + w1.toFixed(1) + "px)", [w0, w1]);
     check(fx.state.posts.includes("follow " + OTHER) && api.filter(a => a === "GET /v1/me/people/updates?limit=40").length === 2, "following POSTs the CIK and reads the updates again, without reloading the page", [fx.state.posts, api.filter(a => /updates/.test(a))]);
     check(after.label === "Following · 4" && after.inList && after.inFeed, "the new person joins the followed list and their trade the feed, live", after);
     check(after.focus === OTHER && Math.abs(y1 - y0) < 1, "focus stays on the button, which has not moved", [after.focus, y0, y1]);
@@ -484,8 +550,10 @@ try {
     const lb = page.locator(`#v10-follow-list button[data-follow="${COOK}"]`);
     await lb.scrollIntoViewIfNeeded(); await rest(page, "#rd-follow");
     const rowsBefore = await page.$$eval("#v10-follow-list .rd-fl", r => r.map(x => x.getBoundingClientRect().top));
-    await lb.click(); await page.waitForTimeout(400); await rest(page, "#rd-follow");
-    const un = await page.evaluate(c => ({ dim: document.querySelector(`#v10-follow-list .rd-fl[data-owner="${c}"]`)?.classList.contains("is-dropped"), feedDim: [...document.querySelectorAll(`#v10-follow-feed .rd-feed__row[data-owner="${c}"]`)].every(r => r.classList.contains("is-dropped")), btn: document.querySelector(`#v10-follow-list button[data-follow="${c}"]`)?.textContent, toast: document.getElementById("rd-toast").textContent.replace(/\s+/g, " ").trim(), undo: !!document.querySelector("#rd-toast button[data-undo]"), rows: [...document.querySelectorAll("#v10-follow-list .rd-fl")].map(x => x.getBoundingClientRect().top) }), COOK);
+    await lb.click(); const unToast = await toastSeen(); await page.waitForTimeout(200); await rest(page, "#rd-follow");
+    const un = await page.evaluate(c => { const u = document.querySelector("#rd-toast button[data-undo]")?.getBoundingClientRect(); return { dim: document.querySelector(`#v10-follow-list .rd-fl[data-owner="${c}"]`)?.classList.contains("is-dropped"), feedDim: [...document.querySelectorAll(`#v10-follow-feed .rd-feed__row[data-owner="${c}"]`)].every(r => r.classList.contains("is-dropped")), btn: document.querySelector(`#v10-follow-list button[data-follow="${c}"]`)?.textContent, toast: "", undo: !!u, undoSize: u ? [Math.round(u.width), Math.round(u.height)] : null, rows: [...document.querySelectorAll("#v10-follow-list .rd-fl")].map(x => x.getBoundingClientRect().top) }; }, COOK);
+    un.toast = unToast;
+    check(un.undoSize && un.undoSize[0] >= 24 && un.undoSize[1] >= 24, "Undo is a target of at least 24 × 24px", un.undoSize);
     check(fx.state.posts.includes("unfollow " + COOK) && un.dim && un.feedDim && un.btn === "Follow +", "Unfollow: DELETE, the person and their rows dim where they are, the button reads Follow +", un);
     check(/^Unfollowed Timothy D\. Cook\. Undo$/i.test(un.toast) && un.undo && near(un.rows, rowsBefore), "an Undo button appears and nothing in the list moves", { ...un, rowsBefore });
     await page.click("#rd-toast button[data-undo]"); await page.waitForTimeout(500);
@@ -498,6 +566,44 @@ try {
     check(refused.btn === "Follow +" && refused.toast === "Could not follow Satya Nadella: 150 people maximum; unfollow someone first. Nothing was changed.", "a refused follow flips back and says why", refused);
     const unexpected = errors.filter(e => !/409/.test(e));
     check(unexpected.length === 0, "no errors following and unfollowing", unexpected);
+    await context.close();
+  }
+
+  /* ---------- 1d. Every loaded line is reachable: "Show N more trades" opens the rest in place ---------- */
+  {
+    const { context, page, errors } = await open(1440, fixture(MORELINES));
+    await settle(page);
+    const more = page.locator("#v10-follow-more button[data-feed-more]");
+    const m0 = await page.evaluate(() => ({ rows: document.querySelectorAll("#v10-follow-feed .rd-feed__row").length, text: document.getElementById("v10-follow-more").textContent.trim(), firstTop: document.querySelector("#v10-follow-feed .rd-feed__row").getBoundingClientRect().top + scrollY }));
+    check(m0.rows === 8 && m0.text === "Show 4 more trades", "the feed shows its first 8 rows and says how many more it holds (Show 4 more trades)", m0);
+    await more.scrollIntoViewIfNeeded(); await rest(page, "#rd-follow");
+    await more.click(); await page.waitForTimeout(150);
+    const m1 = await page.evaluate(() => ({ rows: document.querySelectorAll("#v10-follow-feed .rd-feed__row").length, rising: document.querySelectorAll("#v10-follow-feed .rd-feed__row.rd-rise").length, focusRow: [...document.querySelectorAll("#v10-follow-feed .rd-feed__row")].indexOf(document.activeElement?.closest(".rd-feed__row")), text: document.getElementById("v10-follow-more").textContent.trim(), firstTop: document.querySelector("#v10-follow-feed .rd-feed__row").getBoundingClientRect().top + scrollY, live: document.getElementById("v10-follow-live").textContent }));
+    const tiles = await page.$$eval("#v10-follow-feed .rd-feed__row", r => r.slice(8).every(x => x.querySelector(".ins-media--person") && x.querySelector(".ins-media--company")));
+    check(m1.rows === 12 && m1.text === "" && Math.abs(m1.firstTop - m0.firstTop) < 1, "Show more opens the 4 other lines in place below the rows on screen; nothing above them moves", { m0, m1 });
+    check(m1.rising === 4 && m1.focusRow === 8 && /Showing all 12 latest trades/.test(m1.live), "the opened rows rise in a beat apart, focus continues at the first of them, and the change is announced", m1);
+    check(tiles, "every opened row carries a headshot tile and a logo tile");
+    check(errors.length === 0, "no errors opening more of the feed", errors);
+    await context.close();
+  }
+
+  /* ---------- 1e. 390 with a slow server: following from the suggestions moves nothing under the finger ---------- */
+  {
+    const shifts = () => { window.__shifts = []; new PerformanceObserver(l => { for (const e of l.getEntries()) window.__shifts.push({ v: e.value, input: e.hadRecentInput, t: Math.round(e.startTime) }); }).observe({ type: "layout-shift", buffered: true }); };
+    const { context, page, errors } = await open(390, fixture(FULL), { latency: { "/v1/me/people": 700 }, init: shifts });
+    await settle(page);
+    const fb = page.locator(`#v10-follow-suggest-list button[data-follow="${OTHER}"]`);
+    await fb.scrollIntoViewIfNeeded(); await rest(page, "#rd-follow");
+    const at = () => fb.evaluate(b => { const r = b.getBoundingClientRect(); return [Math.round((r.top + scrollY) * 10) / 10, Math.round(r.width * 10) / 10]; });
+    const before = await at(), t0 = await page.evaluate(() => performance.now());
+    await fb.tap();
+    await page.waitForFunction(o => !!document.querySelector(`#v10-follow-feed .rd-feed__row[data-owner="${o}"]`), OTHER, { timeout: 6000 }).catch(() => {});
+    await page.waitForTimeout(1400); await rest(page, "#rd-follow");
+    const after = await at();
+    const late = await page.evaluate(t => window.__shifts.filter(s => s.t > t), t0);
+    check(Math.abs(after[0] - before[0]) < 1 && Math.abs(after[1] - before[1]) < 0.5, "390px: the pressed Follow button stays where it was, at the same width, after the feed takes the new person's trades", { before, after });
+    check(late.filter(s => !s.input).reduce((a, s) => a + s.v, 0) === 0, "390px: a follow answered after 700 ms shifts nothing on screen", late);
+    check(errors.length === 0, "390px: no errors following from the suggestions", errors);
     await context.close();
   }
 
@@ -530,8 +636,17 @@ try {
         const r = target(e), cs = getComputedStyle(e);
         return r.width > 0 && cs.visibility !== "hidden" && !e.closest("p, td.rd-empty, .rd-toast") && r.height < 24;
       }).map(e => (e.textContent || e.getAttribute("aria-label") || "").trim().slice(0, 30) + " " + Math.round(target(e).height) + "px");
-      return { overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, blurry, wide, small, h1: parseFloat(getComputedStyle(document.querySelector("h1")).fontSize) };
+      // Text cut off mid-word: a box that hides its overflow, holds text wider than itself and shows no ellipsis (an
+      // ellipsis does not apply to a flex or grid box's text).
+      const clipped = [...document.querySelectorAll("main *")].filter(e => {
+        if (!e.getClientRects().length || !e.textContent.trim() || e.closest(".ins-media,svg,.rd-table-wrap,.rd-flist,.rd-dtable,.sr-only")) return false;
+        const cs = getComputedStyle(e);
+        if (!/hidden|clip/.test(cs.overflowX) || e.scrollWidth <= e.clientWidth + 1) return false;
+        return !(cs.textOverflow === "ellipsis" && !/flex|grid/.test(cs.display));
+      }).slice(0, 6).map(e => e.tagName.toLowerCase() + "." + [...e.classList].join(".") + " “" + e.textContent.trim().slice(0, 40) + "” " + e.scrollWidth + ">" + e.clientWidth);
+      return { overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, blurry, wide, small, clipped, h1: parseFloat(getComputedStyle(document.querySelector("h1")).fontSize) };
     });
+    check(m.clipped.length === 0, width + "px: no text is cut off mid-word (labels fit, or end in an ellipsis)", m.clipped);
     check(m.overflow <= 1 && m.wide.length === 0, width + "px: no horizontal overflow", m);
     check(m.blurry.length === 0, width + "px: no upscaled raster image", m.blurry);
     check(m.h1 >= 30 && m.h1 <= 44, width + "px: the greeting stays small (" + m.h1 + "px)");
@@ -554,13 +669,15 @@ try {
       // A grant filed at $0.00, and two different issuers that both put the placeholder "NONE" in the ticker field.
       T({ id: 24, accession: "000000000026000024", ticker: "NONE", issuer_cik: "0000000003", issuer_name: "PRIVATE ONE LLC", owner_name: "POE EDGAR", owner_cik: "0000000007", transaction_date: "2026-09-09", transaction_code: "A", acquired_disposed: "A", category: "other", shares: 5000, price_per_share: 0, estimated_value: 0, published_at: "2026-09-11T20:00:00Z" }),
       T({ id: 25, accession: "000000000026000025", ticker: "NONE", issuer_cik: "0000000004", issuer_name: "PRIVATE TWO INC", owner_name: "LOE ANN", owner_cik: "0000000006", transaction_date: "2026-09-09", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 100, price_per_share: 10, estimated_value: 1000, published_at: "2026-09-11T20:00:00Z" }),
-      T({ id: 26, accession: "000000000026000026", ticker: "NONE", issuer_cik: "0000000005", issuer_name: "PRIVATE THREE CO", owner_name: "MOE MAX", owner_cik: "0000000005", transaction_date: "2026-09-09", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 200, price_per_share: 10, estimated_value: 2000, published_at: "2026-09-11T20:00:00Z" })
+      T({ id: 26, accession: "000000000026000026", ticker: "NONE", issuer_cik: "0000000005", issuer_name: "PRIVATE THREE CO", owner_name: "MOE MAX", owner_cik: "0000000005", transaction_date: "2026-09-09", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 200, price_per_share: 10, estimated_value: 2000, published_at: "2026-09-11T20:00:00Z" }),
+      // A sale filed with no price, held indirectly: the phone record still says both.
+      T({ id: 27, accession: "000000000026000027", ticker: "ACME", issuer_cik: "0000000001", issuer_name: "ACME CORP", owner_name: "WOODS DARREN W", owner_cik: "0000000010", transaction_date: "2026-09-10", transaction_code: "S", acquired_disposed: "D", category: "reported_sale", shares: 800, price_per_share: null, estimated_value: null, direct_ownership: "I", published_at: "2026-09-14T20:00:00Z" })
     ] } };
     for (const width of [1440, 390]) {
       const { context, page, errors } = await open(width, fixture(big));
       await settle(page);
       const e = await page.evaluate(() => {
-        const kpi = Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [k.querySelector(".rd-kpi__label").textContent.trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/ /g, " ").trim()]));
+        const kpi = Object.fromEntries([...document.querySelectorAll(".rd-kpi")].map(k => [[...k.querySelector(".rd-kpi__label").childNodes].filter(n => n.nodeType === 3 || getComputedStyle(n).display !== "none").map(n => n.textContent).join("").trim(), k.querySelector(".rd-kpi__value").textContent.trim() + " | " + k.querySelector(".rd-kpi__note").textContent.replace(/ /g, " ").trim()]));
         const tiles = [...document.querySelectorAll(".rd-kpi")].map(k => { const v = k.querySelector(".rd-kpi__value"), r = k.getBoundingClientRect(); const range = document.createRange(); range.selectNodeContents(v); const tr = range.getBoundingClientRect(); return { fits: tr.right <= r.right + 1 && tr.left >= r.left - 1 }; });
         return {
           kpi, tiles, scope: document.getElementById("rd-flow-scope").textContent,
@@ -572,7 +689,10 @@ try {
       });
       check(e.kpi.Bought.startsWith("$1,000,000 | 1 purchase"), width + "px: an amended 4/A replaces the line it restates instead of doubling it", e.kpi.Bought);
       check(/1 amended line replaces its original/.test(e.scope), width + "px: the scope says an amended line replaced its original", e.scope);
-      check(e.kpi.Sold.startsWith("$2,491,929,000 | 3 sales"), width + "px: sold total to the dollar", e.kpi.Sold);
+      check(e.kpi.Sold.startsWith("$2,491,929,000 | 4 sales") && /1 without a price/.test(e.kpi.Sold), width + "px: sold total to the dollar; a sale with no price is counted and named", e.kpi.Sold);
+      const woods = e.rows.find(r => /Darren W\. Woods/.test(r)) || "";
+      if (width < 760) check(/−800 no price reported/.test(woods) && /held indirectly/.test(woods) && !/Not reported|No price\b/.test(woods), width + "px: a phone record says when no price was reported and keeps 'held indirectly'", woods);
+      else check(/No price/.test(woods) && /Not reported/.test(woods) && /held indirectly/.test(woods), width + "px: the row says no price and no value were reported, and that the shares are held indirectly", woods);
       check(e.tiles.every(t => t.fits) && e.overflow <= 1, width + "px: ten-digit totals fit their tiles", e);
       const bigRow = e.rows.find(r => /BIGC/.test(r)) || "";
       check(/\$41\.5321/.test(bigRow) && /Sep 14/.test(bigRow) && /4 days later/.test(bigRow), width + "px: a four-decimal price prints as filed and an evening filing keeps its SEC (Eastern) day and lag", bigRow);
@@ -619,10 +739,16 @@ try {
     // Save: optimistic, POST /v1/me/watchlist, nothing moves.
     const sb = page.locator('#v3-watchlist button[data-save="NVDA"]');
     await sb.scrollIntoViewIfNeeded(); await rest(page);
-    const sy = await sb.evaluate(b => b.getBoundingClientRect().top);
-    await sb.click(); await page.waitForTimeout(400); await rest(page);
-    const s = await sb.evaluate(b => [b.textContent, b.getAttribute("aria-pressed"), b.getBoundingClientRect().top]);
-    check(fx.state.posts.includes("save NVDA") && s[0] === "Saved ✓" && s[1] === "true" && Math.abs(s[2] - sy) < 1 && await said(page, "#rd-toast") === "Saved NVDA to your watchlist.", "Save adds the company (POST) and the button says so, in place", [...s, sy, await said(page, "#rd-toast")]);
+    const [sy, sw, rowsY] = await sb.evaluate(b => [b.getBoundingClientRect().top, b.getBoundingClientRect().width, [...document.querySelectorAll("#v3-watchlist .rd-row--watch")].map(r => r.getBoundingClientRect().top)]);
+    await sb.click();
+    await page.waitForFunction(() => /Saved NVDA/.test(document.getElementById("rd-toast").textContent), null, { timeout: 4000 }).catch(() => {});
+    const saveToast = await said(page, "#rd-toast");
+    await page.waitForTimeout(500); await rest(page);
+    const s = await sb.evaluate(b => [b.textContent, b.getAttribute("aria-pressed"), b.getBoundingClientRect().top, b.getBoundingClientRect().width]);
+    check(fx.state.posts.includes("save NVDA") && s[0] === "Saved ✓" && s[1] === "true" && Math.abs(s[2] - sy) < 1 && s[3] >= sw - 0.5 && saveToast === "Saved NVDA to your watchlist.", "Save adds the company (POST) and the button says so, in place, without narrowing", [...s, sy, sw, saveToast]);
+    const sv = await page.evaluate(() => ({ msg: document.getElementById("v3-watch-empty")?.textContent.replace(/\s+/g, " ").trim(), link: document.querySelector("#v3-watch-empty a")?.getAttribute("href"), rows: [...document.querySelectorAll("#v3-watchlist .rd-row--watch")].map(r => r.getBoundingClientRect().top), saved: JSON.parse(localStorage.getItem("insidir:overview:counts") || "{}").watch }));
+    check(sv.msg === "On your watchlist now: NVDA. Manage your list on the watchlist page." && sv.link === "watchlist.html" && near(sv.rows, rowsY), "after a Save the module says what is on the watchlist now (not 'You have not saved any companies yet'), and no row moves", { ...sv, rowsY });
+    check(sv.saved === 1, "the next visit's skeleton keeps a row for the saved company", sv.saved);
     // Follow from the empty state: the person and their trades appear below the suggestions; nothing above moves.
     const fb = page.locator(`#v10-follow-suggest-list button[data-follow="${COOK}"]`);
     await fb.scrollIntoViewIfNeeded(); await rest(page);
@@ -633,6 +759,14 @@ try {
     const f = await page.evaluate(c => ({ label: document.getElementById("rd-list-label").textContent, list: [...document.querySelectorAll("#v10-follow-list .rd-fl")].map(x => x.dataset.owner), feed: document.querySelectorAll("#v10-follow-feed .rd-feed__row").length, empty: document.getElementById("v10-follow-empty").textContent, y: document.querySelector(`#v10-follow-suggest-list button[data-follow="${c}"]`).getBoundingClientRect().top }), COOK);
     check(f.label === "Following · 1" && f.list.includes(COOK) && f.feed >= 1 && /^You follow 1 person now\./.test(f.empty), "the first follow: the person is listed, their trades open below, the message says what happened", f);
     check(Math.abs(f.y - fy) < 1, "the Follow button did not move", [fy, f.y]);
+    // A second follow: the message and the count stay in step.
+    const fb2 = page.locator(`#v10-follow-suggest-list button[data-follow="${OTHER}"]`);
+    await fb2.scrollIntoViewIfNeeded(); await rest(page);
+    await fb2.click();
+    await page.waitForFunction(() => /Following · 2/.test(document.getElementById("rd-list-label").textContent), null, { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const f2 = await page.evaluate(() => ({ label: document.getElementById("rd-list-label").textContent, empty: document.getElementById("v10-follow-empty").textContent }));
+    check(f2.label === "Following · 2" && /^You follow 2 people now\./.test(f2.empty), "after a second follow the message says 2 people, as the label does", f2);
     if (SHOTS) await page.screenshot({ path: join(SHOTS, "dashboard-first-time-1440.png"), fullPage: true });
     check(errors.length === 0, "no errors for a first-time member", errors);
     await context.close();
@@ -675,6 +809,8 @@ try {
     for (const id of ["v3-watchlist", "v3-notes", "rd-kpis", "rd-daily-chart", "rd-companies", "rd-largest", "v3-trades", "v4-data-state"]) check(/could not be loaded|unavailable/i.test(s[id]) && !/Loading|checking/i.test(s[id]), "503: #" + id + " shows a clear message", s[id]);
     check(await page.locator("button[data-retry]").count() >= 6, "503: every module offers Try again");
     check(await page.locator(".rd-follow.is-error .rd-follow__side").isHidden(), "503: the followed module keeps no room for a list that is not coming");
+    const dead = await page.$$eval("button[data-filter]", b => b.map(x => x.disabled + ":" + x.querySelector("[data-count]")?.textContent));
+    check(dead.length === 4 && dead.every(d => d === "true:" || d === "true:undefined"), "503: the four trade filters are disabled (out of the tab order) and show no counts", dead);
     if (SHOTS) await page.screenshot({ path: join(SHOTS, "dashboard-error-1024.png"), fullPage: true });
     healthy = true;
     await page.click('#v10-follow-feed button[data-retry="follow"]');
@@ -683,6 +819,8 @@ try {
     await page.click('#v3-trades button[data-retry="trades"]');
     await page.waitForFunction(() => document.querySelectorAll("#v3-trades tr.rd-trade").length === 5 && document.querySelectorAll("#rd-daily-chart .rd-day").length === 3, null, { timeout: 10000 }).catch(() => {});
     check(await page.locator("#v3-trades tr.rd-trade").count() === 5 && await page.locator("#rd-daily-chart .rd-day").count() === 3 && await page.locator("#rd-kpis .rd-kpi").count() === 5, "Try again reloads the trades, the totals and the chart");
+    const alive = await page.$$eval("button[data-filter]", b => b.map(x => x.disabled + ":" + x.querySelector("[data-count]")?.textContent));
+    check(JSON.stringify(alive) === JSON.stringify(["false:5", "false:1", "false:2", "false:2"]), "the filters come back, with their counts, once the trades load", alive);
     for (const key of ["watchlist", "notes"]) { const b = page.locator(`button[data-retry="${key}"]`); if (await b.count()) await b.click(); }
     await page.waitForFunction(() => document.querySelectorAll("#v3-watchlist .rd-row--watch").length === 4 && document.querySelectorAll("#v3-notes .rd-row--note").length === 2, null, { timeout: 10000 }).catch(() => {});
     check(await page.locator("#v3-watchlist .rd-row--watch").count() === 4 && await page.locator("#v3-notes .rd-row--note").count() === 2, "Try again reloads the watchlist and the notes");
@@ -714,6 +852,33 @@ try {
       check(again.sum <= 0.01, width + "px: a returning visit shifts nothing (" + again.sum.toFixed(4) + ")", again.list);
       check(Math.abs(again.doc - sk.doc) <= 24, width + "px: a returning visit's skeleton is as tall as the page it becomes (" + sk.doc + " → " + again.doc + ")", { skeleton: sk.doc, loaded: again.doc });
       check(errors.length === 0, width + "px: no errors while loading slowly", errors);
+      await context.close();
+    }
+  }
+
+  /* ---------- 5b. A return visit whose Today sentence is longer than the last visit's shifts nothing ----------
+     Visit 1 is a first visit ("You follow 3 people…"); visit 2 has new trades since then ("Since your last visit on …: 2 new
+     trades from 2 of the 3 people you follow. 2 companies on your watchlist have new trades."). The room kept for Today
+     never shrinks below the stylesheet's reserve for the longest usual sentence. */
+  {
+    const latency = { "/v1/me": 90, "/v1/transactions": 420, "/v1/filings": 260, "/v1/status": 140, "/v1/me/watchlist": 160, "/v1/me/research-decisions": 210, "/v1/insiders": 380, "/v1/me/people/updates": 300, "*": 150 };
+    const init = () => {
+      try { if (sessionStorage.getItem("check:force-seen")) { localStorage.setItem("insidir:overview:last-seen", "2026-09-01T00:00:00.000Z"); sessionStorage.removeItem("check:force-seen"); } } catch {}
+      window.__shifts = []; new PerformanceObserver(l => { for (const e of l.getEntries()) window.__shifts.push({ v: e.value, src: (e.sources || []).map(x => x.node && x.node.nodeType === 1 ? x.node.tagName.toLowerCase() + "." + [...x.node.classList].slice(0, 2).join(".") : "?") }); }).observe({ type: "layout-shift", buffered: true });
+    };
+    for (const width of [390, 1440]) {
+      const { context, page, errors } = await open(width, fixture(FULL), { latency, init, seen: null, reveal: false });
+      await settle(page);
+      const v1 = await page.evaluate(() => document.getElementById("rd-today-you").textContent.trim());
+      await page.waitForTimeout(4300); // seen for 4 s: leaving records this visit; the counts and heights are saved meanwhile
+      await page.evaluate(() => sessionStorage.setItem("check:force-seen", "1"));
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await settle(page);
+      await page.waitForTimeout(400);
+      const v2 = await page.evaluate(() => ({ you: document.getElementById("rd-today-you").textContent.trim(), sum: window.__shifts.reduce((a, x) => a + x.v, 0), list: window.__shifts }));
+      check(/^You follow 3 people\./.test(v1) && /^Since your last visit on Sep 1 at 12:00 AM: 2 new trades/.test(v2.you), width + "px: the second visit's Today sentence is the longer one", [v1, v2.you]);
+      check(v2.sum <= 0.01, width + "px: a return visit with a longer Today sentence shifts nothing (" + v2.sum.toFixed(4) + ")", v2.list);
+      check(errors.length === 0, width + "px: no errors on a return visit", errors);
       await context.close();
     }
   }
@@ -774,6 +939,10 @@ try {
     const { context, page, errors } = await open(width, fixture(FULL), { path: "/people.html" });
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length === 4, null, { timeout: 10000 });
     await page.evaluate(() => { window.__stay = 1; });
+    // The company each person files for is named with its own logo tile, in the directory and in the followed list.
+    await page.waitForFunction(() => document.querySelectorAll("#v10-followed-results .v10-follow-row").length === 3, null, { timeout: 10000 }).catch(() => {});
+    const coTiles = await page.evaluate(() => ({ cards: [...document.querySelectorAll("#v10-people-results .v10-person-card")].map(c => !!c.querySelector(".v10-person-card__identity small .ins-inline [data-media=company]")), rows: [...document.querySelectorAll("#v10-followed-results .v10-follow-row")].map(r => !!r.querySelector("small .ins-inline [data-media=company]")) }));
+    check(coTiles.cards.length === 4 && coTiles.cards.every(Boolean) && coTiles.rows.length === 3 && coTiles.rows.every(Boolean), width + "px: people.html names each person's company with its logo tile (directory cards and followed rows)", coTiles);
     const faces = await page.$$eval(".v10-known__grid a", a => a.map(x => ({ href: x.getAttribute("href"), tile: !!x.querySelector(".ins-media, img") })));
     check(faces.length === 4 && faces.every(f => /^people\.html\?q=[^#]+#v10-directory$/.test(f.href) && f.tile), width + "px: Familiar faces link to the directory search, each with a portrait", faces);
     await page.click(".v10-known__grid a >> nth=0");
@@ -835,6 +1004,25 @@ try {
     const { context, page } = await open(390, (path) => path === "/v1/me" && status === 402 ? { status: 200, body: { ...me, access: { ...me.access, active: false, plan: "none", status: null } } } : path.startsWith("/v1/billing") ? { status: 200, body: {} } : { status, body });
     await page.waitForURL(target, { timeout: 10000 }).catch(() => {});
     check(target.test(page.url()), status + " sends the reader to " + (status === 401 ? "signin" : "subscribe") + ".html?next=dashboard.html", page.url());
+    await context.close();
+  }
+  /* ---------- 12. The header search (the page's one search): every company and person in its results has a tile ---------- */
+  for (const width of [1440, 390]) {
+    const data = { ...FULL, "/v1/search": { items: [{ ticker: "AAPL", name: "Apple Inc." }, { ticker: "COST", name: "Costco Wholesale Corp" }] } };
+    const { context, page, errors } = await open(width, fixture(data));
+    await settle(page);
+    const input = page.locator("#app-search-input");
+    if (!(await input.isVisible())) { const t = page.locator(".app-search input, .app-search__toggle, button[aria-label*=earch]").first(); if (await t.count()) await t.click().catch(() => {}); await page.waitForTimeout(300); }
+    await input.click(); await input.fill("coo");
+    await page.waitForFunction(() => document.querySelectorAll(".app-search__option").length >= 3, null, { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const opts = await page.$$eval(".app-search__option", o => o.map(a => ({ label: a.querySelector(".app-search__label")?.textContent, meta: a.querySelector(".app-search__meta")?.textContent, tile: a.querySelector(".ins-media")?.dataset.media || "", hidden: a.querySelector(".ins-media")?.getAttribute("aria-hidden"), nested: a.querySelectorAll("a").length })));
+    check(opts.length === 3 && opts.every(o => o.tile && o.hidden === "true" && !o.nested), width + "px: every header-search result carries its identity tile (aria-hidden, no link inside the option)", opts);
+    check(opts[0]?.tile === "company" && opts[0]?.meta === "AAPL · Company" && opts[2]?.tile === "person" && opts[2]?.label === "Timothy D. Cook" && opts[2]?.meta === "Insider · AAPL", width + "px: companies get a logo tile with the ticker beside the name; people a headshot tile and their name as written", opts);
+    const panel = await page.evaluate(() => { const r = document.querySelector(".app-search__results").getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right), innerWidth]; });
+    check(panel[0] >= 0 && panel[1] <= panel[2], width + "px: the search results stay inside the screen", panel);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, `dashboard-search-${width}.png`) });
+    check(errors.length === 0, width + "px: no errors searching", errors);
     await context.close();
   }
 } catch (e) {

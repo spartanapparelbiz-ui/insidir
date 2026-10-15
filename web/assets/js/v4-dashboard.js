@@ -39,18 +39,18 @@ function kpis(f){
  const host=$("rd-kpis");if(!host)return;
  D.ready(host);
  if(!f.rows.length){host.innerHTML='<p class="rd-empty">No trades have been imported yet. The first SEC import fills this page.</p>';return;}
- const side=(list,shares,unpriced,word)=>E(D.plural(list.length,word))+(list.length?'&nbsp;· '+nb(D.qty(shares)+" shares"):"")+(unpriced?'&nbsp;· '+nb(unpriced+" without a price"):"");
+ const side=(list,shares,unpriced,unshared,word)=>E(D.plural(list.length,word))+(list.length?'&nbsp;· '+nb(D.qty(shares)+" shares"):"")+(unpriced?'&nbsp;· '+nb(D.count(unpriced)+" without a price"):"")+(unshared?'&nbsp;· '+nb(D.count(unshared)+" without a share count"):"");
  const netCls=f.net>0?"rd-kpi__value--up":f.net<0?"rd-kpi__value--down":"";
  const netWord=!f.buyValue&&!f.sellValue?"No priced purchases or sales":f.net>0?"More bought than sold":f.net<0?"More sold than bought":"Bought equals sold";
- const others=[...f.otherCodes].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+ const others=[...f.otherCodes].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:a[0]>b[0]?1:0));
  const otherNote=others.length?cap(others.map(([k,n])=>D.noun(k,n)+" ("+n+")").join(", "))+". No dollar value counted.":"None in these trades.";
  const lo=f.lags[0],hi=f.lags[f.lags.length-1],med=median(f.lags);
  const lagNote=med===null?"No dated filings":lo===hi?(f.lags.length===1?"From trade to SEC filing, 1 dated trade":"From trade to SEC filing, the same for all "+f.lags.length):"Median from trade to SEC filing&nbsp;· range "+nb(lo+"–"+days(hi));
  host.innerHTML=
-  tile("rd-kpi--buy",D.tri("buy")+"Bought",E(D.money(f.buyValue)),side(f.buys,f.buyShares,f.buyUnpriced,"purchase"),"Code P on non-derivative securities: value = shares × price per share as filed",0)+
-  tile("rd-kpi--sell",D.tri("sell")+"Sold",E(D.money(f.sellValue)),side(f.sells,f.sellShares,f.sellUnpriced,"sale"),"Code S on non-derivative securities: value = shares × price per share as filed",1)+
+  tile("rd-kpi--buy",D.tri("buy")+"Bought",E(D.money(f.buyValue)),side(f.buys,f.buyShares,f.buyUnpriced,f.buyUnshared,"purchase"),"Code P on non-derivative securities: value = shares × price per share as filed",0)+
+  tile("rd-kpi--sell",D.tri("sell")+"Sold",E(D.money(f.sellValue)),side(f.sells,f.sellShares,f.sellUnpriced,f.sellUnshared,"sale"),"Code S on non-derivative securities: value = shares × price per share as filed",1)+
   tile("rd-kpi--net","Bought minus sold",'<span class="'+netCls+'">'+(f.net?D.tri(f.net>0?"buy":"sell"):"")+E(D.signedMoney(f.net))+'</span>',E(netWord),"Reported purchase value minus reported sale value",2)+
-  tile("rd-kpi--other","Not a purchase or sale",E(D.count(f.others.length)),E(otherNote),others.map(([k])=>k.slice(0,1)+" — "+D.codeMeaning(k.slice(0,1))).join("; "),3)+
+  tile("rd-kpi--other",'<span class="rd-wide">Not a purchase or sale</span><span class="rd-narrow">Not bought or sold</span>',E(D.count(f.others.length)),E(otherNote),others.map(([k])=>k.slice(0,1)+" — "+D.codeMeaning(k.slice(0,1))).join("; "),3)+
   tile("rd-kpi--lag","Days to report",med===null?'<span class="rd-muted">—</span>':E(days(med)),lagNote,"Calendar days from the trade date to the SEC filing date of the original Form 4; it is due within two business days",4);
  // One size for every figure, set by the longest, so a ten-digit total still fits its tile.
  host.style.setProperty("--rd-len",String(Math.max(...[...host.querySelectorAll(".rd-kpi__value")].map(v=>v.textContent.trim().length),8)));
@@ -70,7 +70,7 @@ const dayLabel=x=>D.date(x.key+"T00:00:00Z")+": bought "+D.money(x.buy)+" ("+D.p
 function daily(f){
  const host=$("rd-daily-chart"),table=$("rd-daily-table"),seg=$("rd-daily-switch"),frame=$("rd-daily-frame");if(!host)return;
  frame?.removeAttribute("aria-busy");
- const all=[...f.days.values()].sort((a,b)=>a.key.localeCompare(b.key));
+ const all=[...f.days.values()].sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0);
  if(!all.length){
   host.innerHTML='<p class="rd-empty">'+(f.rows.length?"No priced purchases or sales among the "+D.plural(f.rows.length,"loaded trade")+" to chart.":"No dated trades to chart yet. The chart fills in as SEC filings are imported.")+'</p>';
   if(seg)seg.hidden=true;if(table)table.innerHTML="";setView("chart",false);
@@ -172,7 +172,7 @@ function restore(){const f=document.activeElement;if(f?.classList?.contains("rd-
 function companies(f){
  const host=$("rd-companies");if(!host)return;
  D.ready(host);
- const list=[...f.byCompany.values()].sort((a,b)=>(b.buy+b.sell)-(a.buy+a.sell)||(a.t||a.name).localeCompare(b.t||b.name)).slice(0,6);
+ const list=[...f.byCompany.values()].sort((a,b)=>(b.buy+b.sell)-(a.buy+a.sell)||((a.t||a.name)<(b.t||b.name)?-1:(a.t||a.name)>(b.t||b.name)?1:0)).slice(0,6);
  // The next visit's skeleton draws this many rows (and the "more companies" line only when there was one).
  D.saveCount("co",list.length);D.saveCount("coMore",f.byCompany.size>list.length?1:0);
  if(!list.length){host.innerHTML='<p class="rd-empty">'+(f.rows.length?"No priced purchases or sales to compare by company.":"No companies yet. They appear after the first SEC import.")+'</p>';return;}

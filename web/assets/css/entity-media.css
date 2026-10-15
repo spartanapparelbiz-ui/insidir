@@ -31,10 +31,16 @@
 @layer insidir-v13{
 
 /* ---------- Tiles from entity-media.js v2 ([data-media]) ---------- */
-body.v13 .ins-media[data-media]{display:inline-grid!important;place-items:center!important;width:var(--ins-size)!important;height:var(--ins-size)!important;min-width:var(--ins-size)!important;flex:0 0 var(--ins-size)!important;
+/* One cell exactly the size of the tile's content box (grid-template), filled by the picture. The legacy
+   v5-media.css (still loaded by explore, filings, watchlist and research) centres the cell's content
+   (justify-content:center) and takes the <img> and <svg> out of flow (position:absolute, a translate on the
+   svg); a layered !important beats its unlayered !important, so both are undone here and the picture fills
+   the tile on every page. */
+body.v13 .ins-media[data-media]{display:inline-grid!important;grid-template:100%/100%!important;place-content:stretch!important;place-items:center!important;width:var(--ins-size)!important;height:var(--ins-size)!important;min-width:var(--ins-size)!important;flex:0 0 var(--ins-size)!important;
   padding:0!important;overflow:hidden!important;position:relative!important;box-sizing:border-box!important;vertical-align:middle!important}
-body.v13 .ins-media[data-media]>*{grid-area:1/1!important}
-body.v13 .ins-media[data-media]>img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-sizing:border-box!important;opacity:1!important}
+body.v13 .ins-media[data-media]>*{grid-area:1/1!important;position:relative!important;inset:auto!important;transform:none!important;margin:0!important}
+body.v13 .ins-media[data-media]>img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;border-radius:0!important;box-sizing:border-box!important}
+body.v13 .ins-media[data-media]>svg.ins-media__monogram{width:100%!important;height:100%!important}
 /* What shows in each state: the image only for a photo or a logo, the initials only for a monogram. */
 body.v13 .ins-media[data-media]:not(.is-photo):not(.is-logo)>img{visibility:hidden!important}
 body.v13 .ins-media[data-media]:not(.is-monogram)>svg{display:none!important}
@@ -48,11 +54,12 @@ body.v13 .ins-media[data-media].is-logo:is([data-real-source*="Apple_logo_black"
 body.v13 .ins-media[data-media].is-logo{background:var(--hf-surface)!important}
 /* Nothing known yet: a still field of halftone dots, the site's mark in miniature. */
 body.v13 .ins-media[data-media].is-loading{background-color:var(--hf-surface)!important;background-image:radial-gradient(circle,var(--hf-line-2) 0 1px,transparent 1.35px)!important;background-size:6px 6px!important;background-position:center!important}
-/* Arrival: the picture pops in on the same spring as every atom on the site (≈ ×1.025 at the top). */
+/* Arrival: the picture fades and pops in on the same spring as every atom on the site (≈ ×1.025 at the top).
+   It animates the scale property, not transform (held at none above), and nothing here pins opacity. */
 body.v13 .ins-media[data-media][data-land="a"]>:is(img,svg){animation:ins-land-a var(--hf-spring-dur,.95s) var(--hf-spring,cubic-bezier(.2,.7,.1,1)) both!important}
 body.v13 .ins-media[data-media][data-land="b"]>:is(img,svg){animation:ins-land-b var(--hf-spring-dur,.95s) var(--hf-spring,cubic-bezier(.2,.7,.1,1)) both!important}
-@keyframes ins-land-a{from{opacity:0;transform:scale(.9)}}
-@keyframes ins-land-b{from{opacity:0;transform:scale(.9)}}
+@keyframes ins-land-a{from{opacity:0;scale:.9}}
+@keyframes ins-land-b{from{opacity:0;scale:.9}}
 @media (prefers-reduced-motion:reduce){body.v13 .ins-media[data-media]>:is(img,svg){animation:none!important}}
 @media (forced-colors:active){body.v13 .ins-media[data-media]{border:1px solid CanvasText!important}body.v13 .ins-media[data-media].is-loading{background-image:none!important}}
 
@@ -74,6 +81,8 @@ body.v13 #main :is(.live-table,.portfolio-table) :is(.ins-company-cell,.ins-pers
 /* ---------- Photo credits footnote ([data-media-credits], filled by entity-media.js) ---------- */
 body.v13 .ins-media-credits{display:block!important;max-width:820px!important;margin:clamp(28px,4vw,48px) 0 0!important;font:400 10.5px/1.7 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-faint)!important}
 body.v13 .ins-media-credits:empty{display:none!important}
+/* Its space is held from the start (entity-media.js sets the height), so text arriving later moves nothing. */
+body.v13 [data-media-credits][data-media-held]:empty{display:block!important}
 body.v13 .ins-media-credits a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
 body.v13 .ins-media-credits a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13 .cx-sources .ins-media-credits{margin:10px 0 0!important}

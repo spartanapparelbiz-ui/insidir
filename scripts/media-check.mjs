@@ -10,27 +10,35 @@
    Fixture people (owner CIK -> engine answer): Cook a headshot (SEC proxy), Huang a headshot from Commons,
    Musk a headshot that is pending once, Woods a headshot whose image 404s, Nadella none (the curated Commons
    portrait), Berkshire Hathaway an entity owner listed as BRK-B (its own logo), Nobody none at a company
-   with no logo (the only person monogram); everyone else none (the company's logo stands in). Companies:
-   logos for every ticker (square, wide-only, square + wide, PLTR pending once) except ZZZZ (the only company
-   monogram), plus a company with no ticker found by issuer CIK.
+   with no logo (the only person monogram), Smith at Private Holdings (an issuer with no ticker: the
+   engine's people= takes owner:TICKER only today, so his tile asks by issuer CIK and that logo stands in);
+   everyone else none (the company's logo stands in). Companies: logos for every ticker (square, wide-only,
+   square + wide, PLTR pending once) except ZZZZ (the only company monogram), plus a company with no ticker
+   found by issuer CIK.
 
    For every page and width it verifies:
      - every visible tile holds a loaded <img> (complete, naturalWidth > 0) except the two fixture keys that
        have neither a photo nor a logo (.is-monogram), and each tile shows exactly what the fallback chain
        says for its person or company (photo, curated portrait, own logo, stand-in with the issuer's logo src);
+     - the picture fills its tile: the <img> box (or the initials' <svg>) equals the tile's content box within
+       1px on every page, including those that still load the legacy v5-media.css;
      - loading: exactly one /v1/media request before the first answer, follow-ups only for keys that were
        pending, no /v1/company/logo per tile, no image host but this origin and the curated Commons files;
      - tiles keep their size from first paint to settled, and the layout shift they cause stays under 0.005
        (the page's own shift while its records load is printed as INFO);
-     - every picture is at least 2x sharp (natural size against the rendered box, after cover/contain and
-       padding);
+     - every picture is at least 2x sharp (natural size against the <img>'s own content box, after
+       cover/contain and padding);
      - tiles beside names are aria-hidden with alt="", no link inside a tile and no nested links, and the
        [data-media-credits] footnote lists every Commons photo with its author, licence and file page;
      - no page errors and no console errors.
    And once: the batch returning 503 (curated marks and portraits, then initials, no errors), a headshot
    whose image 404s (asked again once, then the company's logo), sessionStorage reuse across pages (tiles
-   final at insertion, no new request), reduced motion (no landing animation), the company picker (every
-   popular company's logo from one batch) and the company report (header logo, headshots, logo stand-ins, credits).
+   final at insertion, no new request), reduced motion (no landing animation), a cold logo while a photo job
+   waits its turn (retryAfter 15: the logo is asked again on its own 2 s schedule and stands in at once), the
+   photo-credits footnote with the reader at the bottom of the page when the pictures arrive (nothing moves;
+   the text goes in once the footnote is off screen), an engine that accepts people by "<owner>:cik:<issuer>"
+   (the headshot then shows for a person at an issuer with no ticker), the company picker (every popular
+   company's logo from one batch) and the company report (header logo, headshots, logo stand-ins, credits).
 
    Usage: node scripts/media-check.mjs [--pages dashboard,people,explore,...] [--widths 390,1440] [--shots DIR] [--once]
    Exits non-zero on any failure and prints every check it ran. */
@@ -44,7 +52,7 @@ import { serveStatic } from "../src/web.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
-const PAGES_ALL = ["dashboard", "people", "explore", "filings", "watchlist", "filing", "research", "alerts", "portfolio", "company", "company-picker"];
+const PAGES_ALL = ["dashboard", "people", "explore", "filings", "watchlist", "filing", "filing-private", "research", "alerts", "portfolio", "company", "company-picker"];
 const PAGES = opt("pages", "").split(",").filter(Boolean).length ? opt("pages", "").split(",").filter(p => PAGES_ALL.includes(p)) : PAGES_ALL;
 // The one-off scenarios (503, image 404, cache, reduced motion, landing) run with the full set, or alone with --once --pages none.
 const ONCE = !opt("pages", "") || args.includes("--once");
@@ -90,6 +98,8 @@ const PHOTOS = {
   "1408356": { src: MISSING_PHOTO, w: 256, h: 256, source: "company-site", credit: "Company website (exxonmobil.com)", sourceUrl: "https://corporate.exxonmobil.com/" }
 };
 const PHOTO_PENDING = { "1494730": 1 };
+// Answered only by an engine that accepts people= as "<owner>:cik:<issuer>" or "<owner>" (the extended scenario).
+const PHOTOS_BY_CIK = { "1900001": { src: await fixtureImage(256, 256, "photo"), w: 256, h: 256, source: "sec-proxy", credit: "SEC proxy statement (DEF 14A, filed 2026-03-02)", sourceUrl: "https://www.sec.gov/Archives/edgar/data/1999999/000199999926000002/def14a.htm" } };
 const ENTITIES = { "1067983": "BRK-B" };
 
 /* ---------- fixture records ---------- */
@@ -123,7 +133,12 @@ for (const [ticker, issuer, issuerCik, owners] of CO) for (const [owner, cik, pr
 tx.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date) || a.id - b.id);
 const filings = [...new Map(tx.map(x => [x.ticker, x])).values()].map(x => ({ accession: x.accession, ticker: x.ticker, issuer_name: x.issuer_name, issuer_cik: x.issuer_cik, form_type: "4",
   published_at: x.published_at, period_of_report: x.transaction_date, source_url: SEC, is_amendment: false, owner_names: [x.owner_name] }));
-filings.push({ accession: "000199999926000001", ticker: null, issuer_name: "PRIVATE HOLDINGS CORP", issuer_cik: "1999999", form_type: "4", published_at: "2026-10-01T20:00:00Z", period_of_report: "2026-09-30", source_url: SEC, is_amendment: false, owner_names: ["SMITH JOHN"] });
+const PRIVATE = { accession: "000199999926000001", ticker: null, issuer_name: "PRIVATE HOLDINGS CORP", issuer_cik: "1999999", form_type: "4", published_at: "2026-10-01T20:00:00Z", period_of_report: "2026-09-30", source_url: SEC, is_amendment: false, owner_names: ["SMITH JOHN"] };
+filings.push(PRIVATE);
+// The no-ticker filing's one reporting person (an issuer the SEC lists without a ticker).
+const PRIVATE_TX = [{ id: 9001, accession: PRIVATE.accession, ticker: null, issuer_name: PRIVATE.issuer_name, issuer_cik: "1999999", owner_name: "SMITH JOHN", owner_cik: "0001900001", transaction_date: "2026-09-30",
+  transaction_code: "P", acquired_disposed: "A", category: "reported_purchase", derivative: false, shares: 4000, price_per_share: 25, estimated_value: 100000, direct_ownership: "D", security_title: "Common Stock",
+  published_at: PRIVATE.published_at, created_at: PRIVATE.published_at, is_amendment: false, source_url: SEC }];
 const companies = [...CO.map(([ticker, issuer_name, issuer_cik]) => ({ ticker, issuer_name, issuer_cik, published_at: "2026-10-10T20:00:00Z" })), { ticker: null, issuer_name: "PRIVATE HOLDINGS CORP", issuer_cik: "1999999", published_at: "2026-10-01T20:00:00Z" }];
 const people = [...new Map(tx.map(x => [x.owner_cik, { owner_name: x.owner_name, owner_cik: x.owner_cik, ticker: x.ticker, issuer_name: x.issuer_name, filings: 2, last_transaction_date: x.transaction_date }])).values()];
 const FOLLOW = ["0001214156", "0001197649", "0001494730", "0001195345", "0001408356", "0001067983", "0009999991"];
@@ -167,31 +182,42 @@ const DATA = {
 };
 const FILING = filings.find(f => f.ticker === "AAPL");
 DATA["/v1/filings/" + FILING.accession] = { filing: FILING, transactions: tx.filter(x => x.ticker === "AAPL") };
+DATA["/v1/filings/" + PRIVATE.accession] = { filing: PRIVATE, transactions: PRIVATE_TX };
 const COMPANY_PHOTOS = { ticker: "AAPL", complete: true, photos: { "cik:1214156": { src: PHOTOS["1214156"].src, sourceUrl: PHOTOS["1214156"].sourceUrl, credit: PHOTOS["1214156"].credit, source: "sec-proxy" } }, names: {},
   leaders: [{ name: "Arthur Levinson", roles: ["Chair"], src: PHOTOS["1197649"].src, credit: "Fixture Photographer · CC BY 4.0", sourceUrl: "https://commons.wikimedia.org/wiki/File:Fixture_portrait_(cropped).jpg", insider: false }, { name: "Jony Example", roles: ["Founder"], insider: false }] };
 
 /* ---------- the /v1/media contract (as src/media-batch.mjs answers it) ---------- */
 const cleanTicker = v => { const t = String(v ?? "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : null; };
 const cleanCik = v => { const s = String(v ?? "").trim(); return /^\d{1,10}$/.test(s) ? s.replace(/^0+/, "") || null : null; };
-function mediaAnswer(url, seen) {
+/* opts: forms "server" (people= is "<owner>:<TICKER>" only, exactly as src/media-batch.mjs parses it today) or
+   "extended" (also "<owner>:cik:<issuer>" and "<owner>"); logoPending (extra logos pending once); photoRetry (the
+   retryAfter sent while a headshot is pending: the engine says 8, or 15 when the photo job waits its turn). */
+function mediaAnswer(url, seen, { forms = "server", logoPending = {}, photoRetry = 3 } = {}) {
   const list = name => url.searchParams.getAll(name).join(",").split(",").map(s => s.trim()).filter(Boolean);
   const raw = { tickers: list("tickers"), people: list("people"), ciks: list("ciks") };
   if (raw.tickers.length > 60 || raw.people.length > 100 || raw.ciks.length > 60) return { status: 400, body: { error: "too many" } };
   const logos = {}, photos = {}, owners = {}, pending = { logos: [], photos: [] }, invalid = [];
   const once = (key, times) => (seen[key] = (seen[key] || 0) + 1) <= (times || 0);
-  const logo = key => { if (key in logos || pending.logos.includes(key)) return; if (once("L:" + key, LOGO_PENDING[key])) pending.logos.push(key); else logos[key] = key in LOGOS ? LOGOS[key] : null; };
+  const logo = key => { if (key in logos || pending.logos.includes(key)) return; if (once("L:" + key, LOGO_PENDING[key] || logoPending[key])) pending.logos.push(key); else logos[key] = key in LOGOS ? LOGOS[key] : null; };
   for (const t of raw.tickers) { const c = cleanTicker(t); if (c) logo(c); else invalid.push(t); }
   for (const c of raw.ciks) { const k = cleanCik(c); if (k) logo("cik:" + k); else invalid.push(c); }
   for (const p of raw.people) {
-    const [c0, t0] = p.split(":"), cik = cleanCik(c0), t = cleanTicker(t0);
+    const ext = forms === "extended" && /^(\d{1,10})(?::cik:(\d{1,10}))?$/.exec(p);
+    if (ext) {
+      const cik = cleanCik(ext[1]);
+      if (ext[2]) logo("cik:" + cleanCik(ext[2]));
+      photos[cik] = PHOTOS_BY_CIK[cik] || PHOTOS[cik] || null;
+      continue;
+    }
+    const m = /^([^:]+):(.+)$/.exec(p), cik = m && cleanCik(m[1]), t = m && cleanTicker(m[2]);
     if (!cik || !t) { invalid.push(p); continue; }
     logo(t);
     if (ENTITIES[cik]) { owners[cik] = { entity: true, ticker: ENTITIES[cik] }; photos[cik] = null; logo(ENTITIES[cik]); continue; }
     if (once("P:" + cik, PHOTO_PENDING[cik])) { pending.photos.push(cik + ":" + t); continue; }
     photos[cik] = PHOTOS[cik] || null;
   }
-  if (!raw.tickers.length && !raw.people.length && !raw.ciks.length) return { status: 400, body: { error: "Nothing valid to look up" } };
-  return { status: 200, body: { logos, photos, owners, pending, retryAfter: pending.photos.length ? 3 : pending.logos.length ? 2 : 0, invalid } };
+  if (Object.keys(logos).length + Object.keys(photos).length + pending.logos.length + pending.photos.length === 0) return { status: 400, body: { error: "Nothing valid to look up: pass tickers, people (ownerCik:TICKER) or ciks" } };
+  return { status: 200, body: { logos, photos, owners, pending, retryAfter: pending.photos.length ? photoRetry : pending.logos.length ? 2 : 0, invalid } };
 }
 const keysOf = u => { const s = new URL(u, "http://x").searchParams; return [...(s.get("tickers") || "").split(",").filter(Boolean).map(t => "t:" + t), ...(s.get("ciks") || "").split(",").filter(Boolean).map(c => "c:" + c), ...(s.get("people") || "").split(",").filter(Boolean).map(p => "p:" + p)]; };
 
@@ -216,7 +242,7 @@ const INIT = () => {
   addEventListener("DOMContentLoaded", () => setTimeout(go, 0)); addEventListener("load", go);
 };
 
-async function open(width, path, { media = "ok", reducedMotion = "no-preference", context = null } = {}) {
+async function open(width, path, { media = "ok", reducedMotion = "no-preference", context = null, answer = {}, hold = null } = {}) {
   const ctx = context || await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion });
   const log = ctx.__log || (ctx.__log = { media: [], images: [], logoRoute: 0, thirdParty: [], seen: {}, answered: [] });
   if (!context) {
@@ -232,8 +258,9 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
       if (p === "/v1/media") {
         const at = log.media.length;
         log.media.push({ url: p + url.search, keys: keysOf(url.search ? "?" + url.search.slice(1) : ""), at: Date.now() - (ctx.__t0 || Date.now()) });
+        if (ctx.__hold) await ctx.__hold;   // held until the page has rendered (the bottom-of-page scenario)
         if (ctx.__media === "503") return json(503, { error: "SEC_USER_AGENT is required" });
-        const out = mediaAnswer(url, log.seen);
+        const out = mediaAnswer(url, log.seen, ctx.__answer);
         log.answered[at] = out.body.pending ? [...out.body.pending.logos.map(k => k.startsWith("cik:") ? "c:" + k.slice(4) : "t:" + k), ...out.body.pending.photos.map(k => "p:" + k)] : [];
         await new Promise(ok => setTimeout(ok, 60));
         return json(out.status, out.body);
@@ -254,6 +281,8 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
     });
   }
   ctx.__media = media;
+  ctx.__answer = answer;
+  ctx.__hold = hold;
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", e => errors.push("pageerror: " + e.message));
@@ -264,6 +293,7 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
   return { ctx, page, errors, log };
 }
 const PATH = { dashboard: "/dashboard.html", people: "/people.html", explore: "/explore.html", filings: "/filings.html", watchlist: "/watchlist.html", filing: "/filing.html?accession=" + FILING.accession,
+  "filing-private": "/filing.html?accession=" + PRIVATE.accession,
   research: "/research.html?ticker=AAPL", alerts: "/alerts.html", portfolio: "/portfolio.html", company: "/company.html?ticker=AAPL", "company-picker": "/company.html" };
 // Each page has rendered its records when this holds.
 const RENDERED = {
@@ -271,6 +301,7 @@ const RENDERED = {
   people: () => document.querySelectorAll("#v10-people-results [data-media]").length >= 4,
   explore: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12, filings: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12,
   watchlist: () => document.querySelectorAll("#collection-rows [data-media]").length >= 6, filing: () => document.querySelectorAll("#filing-rows [data-media]").length >= 4,
+  "filing-private": () => document.querySelectorAll("#filing-rows [data-media]").length >= 1 && !!document.querySelector("#filing-heading [data-media]"),
   research: () => document.querySelectorAll("#research-transactions [data-media]").length >= 4 && !!document.querySelector("#research-company [data-media]"),
   alerts: () => document.querySelectorAll("#alerts-real [data-media]").length >= 12, portfolio: () => document.querySelectorAll("#portfolio-activity [data-media]").length >= 4 && document.querySelectorAll("#manual-evidence [data-media]").length >= 4,
   company: () => document.querySelectorAll("#cx-insiders-table .cx-avatar").length >= 4 && !!document.querySelector("#cx-logo img"),
@@ -278,30 +309,39 @@ const RENDERED = {
 };
 
 /* What the fallback chain must show for a tile (the oracle), evaluated in the page with the fixture tables. */
-const ORACLE = { LOGOS: Object.fromEntries(Object.entries(LOGOS).map(([k, v]) => [k, v && v.src])), PHOTOS: Object.fromEntries(Object.entries(PHOTOS).map(([k, v]) => [k, v.src])), MISSING_PHOTO, ENTITIES };
+const ORACLE = { LOGOS: Object.fromEntries(Object.entries(LOGOS).map(([k, v]) => [k, v && v.src])), PHOTOS: Object.fromEntries(Object.entries(PHOTOS).map(([k, v]) => [k, v.src])), MISSING_PHOTO, ENTITIES,
+  BY_CIK: Object.fromEntries(Object.entries(PHOTOS_BY_CIK).map(([k, v]) => [k, v.src])), extended: false };
 const inspect = (O) => {
   const M = window.InsidirMedia;
   const cik = v => String(v || "").replace(/^0+/, ""), tk = v => String(v || "").toUpperCase().replace(/\./g, "-");
   const expect = t => {
-    const T = tk(t.dataset.ticker), C = cik(t.dataset.cik);
+    const T = tk(t.dataset.ticker), C = cik(t.dataset.cik), IC = T ? "" : cik(t.dataset.issuerCik);
     if (t.dataset.media === "person") {
       if (C && T && O.PHOTOS[C] && O.PHOTOS[C] !== O.MISSING_PHOTO) return { state: "photo", src: O.PHOTOS[C] };
+      if (C && !T && O.extended && O.BY_CIK[C]) return { state: "photo", src: O.BY_CIK[C] };
       const cur = M.photo(t.dataset.name, t.dataset.ticker);
       if (cur) return { state: "photo", src: cur.thumb };
       if (C && O.ENTITIES[C]) return { state: "logo", src: O.LOGOS[O.ENTITIES[C]] };
       if (T && O.LOGOS[T]) return { state: "stand-in", src: O.LOGOS[T] };
+      if (IC && O.LOGOS["cik:" + IC]) return { state: "stand-in", src: O.LOGOS["cik:" + IC] };
       return { state: "monogram" };
     }
     const src = T ? O.LOGOS[T] : C ? O.LOGOS["cik:" + C] : null;
     return src ? { state: "logo", src } : { state: "monogram" };
   };
+  // Boxes are measured at rest: a landing still in flight (a scale) is finished first.
+  for (const a of document.getAnimations()) if (/^ins-land/.test(a.animationName || "")) { try { a.finish(); } catch {} }
   const tiles = [...document.querySelectorAll("[data-media]")].filter(t => t.offsetWidth > 0);
   return tiles.map(t => {
     const img = t.querySelector(":scope>img"), cs = getComputedStyle(t), is = img && getComputedStyle(img);
+    // The tile's content box (inside its border) against the picture's box: both must match within 1px.
+    const tr = t.getBoundingClientRect(), content = [tr.left + t.clientLeft, tr.top + t.clientTop, t.clientWidth, t.clientHeight];
+    const off = el => { if (!el) return null; const r = el.getBoundingClientRect(); return +Math.max(Math.abs(r.left - content[0]), Math.abs(r.top - content[1]), Math.abs(r.width - content[2]), Math.abs(r.height - content[3])).toFixed(2); };
+    const ir = img ? img.getBoundingClientRect() : null;
     const state = t.classList.contains("is-photo") ? "photo" : t.classList.contains("is-stand-in") ? "stand-in" : t.classList.contains("is-logo") ? "logo" : t.classList.contains("is-monogram") ? "monogram" : "loading";
     const first = window.__first.get(t);
     const pad = is ? parseFloat(is.paddingLeft) + parseFloat(is.paddingRight) : 0, padV = is ? parseFloat(is.paddingTop) + parseFloat(is.paddingBottom) : 0;
-    const boxW = t.clientWidth - pad, boxH = t.clientHeight - padV;
+    const boxW = (ir ? ir.width : t.clientWidth) - pad, boxH = (ir ? ir.height : t.clientHeight) - padV;
     let sharp = null;
     if (img && img.naturalWidth && (state === "photo" || state === "logo" || state === "stand-in")) {
       const nw = img.naturalWidth, nh = img.naturalHeight, fit = is.objectFit;
@@ -310,7 +350,8 @@ const inspect = (O) => {
     }
     return { media: t.dataset.media, name: t.dataset.name || "", ticker: t.dataset.ticker || "", cik: t.dataset.cik || "", state, expect: expect(t), src: img?.getAttribute("src") || "",
       loaded: !!(img && img.complete && img.naturalWidth > 0), shown: state === "monogram" ? getComputedStyle(t.querySelector("svg")).display !== "none" : is ? is.visibility !== "hidden" && is.display !== "none" : false,
-      size: [t.offsetWidth, t.offsetHeight], first: first || null, sharp, hidden: t.getAttribute("aria-hidden"), role: t.getAttribute("role"), label: t.getAttribute("aria-label"), alt: img ? img.getAttribute("alt") : null,
+      size: [t.offsetWidth, t.offsetHeight], first: first || null, sharp, content: content.map(v => Math.round(v * 10) / 10),
+      imgBox: ir ? [ir.left, ir.top, ir.width, ir.height].map(v => Math.round(v * 10) / 10) : null, imgOff: off(img), svgOff: off(t.querySelector(":scope>svg.ins-media__monogram")), hidden: t.getAttribute("aria-hidden"), role: t.getAttribute("role"), label: t.getAttribute("aria-label"), alt: img ? img.getAttribute("alt") : null,
       anchors: t.querySelectorAll("a").length, wait: t.hasAttribute("data-media-wait"), credit: t.dataset.credit || "", creditUrl: t.dataset.creditUrl || "", visible: cs.visibility !== "hidden" };
   });
 };
@@ -330,6 +371,8 @@ function tileChecks(tag, tiles) {
   check(monos.every(t => t.expect.state === "monogram" && t.shown && ((t.media === "person" && t.cik === "9999991") || (t.media === "company" && /ZZZZ/.test(t.ticker)))), tag + ": initials only for the fixture keys with neither a photo nor a logo", monos.map(t => t.name || t.ticker));
   const standIns = tiles.filter(t => t.state === "stand-in");
   check(standIns.every(t => t.src === t.expect.src), tag + ": a person with no photo shows .is-stand-in with the issuer's logo src", standIns.length);
+  const unfilled = tiles.filter(t => t.state === "monogram" ? !(t.svgOff !== null && t.svgOff <= 1) : t.state !== "loading" && !(t.imgOff !== null && t.imgOff <= 1));
+  check(!unfilled.length, tag + ": every picture fills its tile (the <img>, or the initials' <svg>, equals the tile's content box within 1px)", unfilled.slice(0, 4).map(t => ({ name: t.name || t.ticker, state: t.state, content: t.content, imgBox: t.imgBox, imgOff: t.imgOff, svgOff: t.svgOff })));
   const moved = tiles.filter(t => t.first && (t.first[0] !== t.size[0] || t.first[1] !== t.size[1]));
   check(!moved.length, tag + ": tiles keep their size from first paint to settled", moved.slice(0, 4));
   const blurry = tiles.filter(t => t.sharp !== null && t.sharp < 2);
@@ -490,6 +533,59 @@ try {
       await page.evaluate(() => window.InsidirMedia.ready(document));
       const r = await page.evaluate(() => { const t = document.querySelector("[data-media][data-land]"); const cs = t && getComputedStyle(t.querySelector("img")); return t ? { name: cs.animationName, timing: cs.animationTimingFunction.slice(0, 20), dur: cs.animationDuration } : null; });
       check(r && /ins-land-[ab]/.test(r.name) && /^linear\(/.test(r.timing) && r.dur === "0.95s", "motion: late pictures land with ins-land on --hf-spring over --hf-spring-dur", r);
+      await ctx.close();
+    }
+    // 6. A cold logo while a headshot job waits its turn (the engine says retryAfter 15 for the whole answer): the logo
+    //    keeps its own 2 s schedule, so the person's tile shows the company's logo standing in long before 15 s.
+    {
+      const { ctx, page, log, errors } = await open(1440, "/alerts.html", { answer: { logoPending: { TSLA: 1 }, photoRetry: 15 } });
+      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      const standIn = await page.waitForFunction(() => { const m = document.querySelector("[data-media][data-cik='1494730']"); return m && m.classList.contains("is-stand-in") ? Math.round(performance.now()) : 0; }, null, { timeout: 12000, polling: 50 }).then(h => h.jsonValue(), () => 0);
+      const asks = log.media.filter(r => r.keys.includes("t:TSLA")), photoAsks = log.media.filter(r => r.keys.includes("p:1494730:TSLA"));
+      const gap = asks.length > 1 ? asks[1].at - asks[0].at : null;
+      check(asks.length >= 2 && gap !== null && gap < 3500 && photoAsks.length === 1, "logo schedule: a pending logo is asked again " + gap + " ms after the first ask while the headshot waits (retryAfter 15 paces headshots only)", { asks: asks.map(r => r.at), photoAsks: photoAsks.map(r => r.at) });
+      check(standIn > 0, "logo schedule: the person waiting for a headshot shows the company's logo standing in within seconds, not after the photo queue", standIn);
+      check(errors.length === 0, "logo schedule: no page or console errors", errors);
+      await ctx.close();
+    }
+    // 7. The photo credits with the reader at the very bottom when the pictures arrive: the footnote holds its space
+    //    from the start and takes new text only off screen, so the footer and the notes below it do not move.
+    for (const [key, width] of [["people", 1440], ["filing", 1440], ["alerts", 1440], ["alerts", 390], ["portfolio", 390]]) {
+      const tag = "credits at the bottom, " + key + " " + width + "px";
+      let release = () => {};
+      const hold = new Promise(ok => { release = ok; });
+      const { ctx, page, errors } = await open(width, PATH[key], { hold });
+      await page.waitForFunction(RENDERED[key], null, { timeout: 20000 });
+      await page.waitForTimeout(900);
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(700);
+      const look = () => page.evaluate(() => { const f = document.querySelector("footer.v13-footer") || document.querySelector("footer"), c = document.querySelector("[data-media-credits]");
+        return { now: performance.now(), y: scrollY, height: document.documentElement.scrollHeight, footer: f ? Math.round(f.getBoundingClientRect().top) : null, credits: c ? c.innerHTML : null, held: c ? c.offsetHeight : 0 }; });
+      const before = await look();
+      release();
+      await settleNear(page, 20000);
+      await page.waitForTimeout(1600);
+      const after = await look();
+      const shifts = await page.evaluate(t0 => (window.__shifts || []).filter(e => e.at >= t0), before.now);
+      const total = +shifts.reduce((a, e) => a + e.value, 0).toFixed(4);
+      check(total < 0.005 && after.footer === before.footer, tag + ": layout shift " + total + " while the pictures land; the footer stays at " + after.footer + "px on screen", { before, after, shifts: shifts.slice(0, 4) });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(700);
+      const text = await page.evaluate(() => document.querySelector("[data-media-credits]")?.innerHTML || "");
+      check(/^(Photos: |Logos are trademarks)/.test(text), tag + ": the footnote's text goes in once it is off screen (" + text.replace(/<[^>]+>/g, "").slice(0, 70) + "...)", text.slice(0, 200));
+      check(errors.length === 0, tag + ": no page or console errors", errors);
+      await ctx.close();
+    }
+    // 8. An engine that accepts people by "<owner>:cik:<issuer>": a person at an issuer with no ticker gets their headshot.
+    {
+      const { ctx, page, log, errors } = await open(1440, PATH["filing-private"], { answer: { forms: "extended" } });
+      await page.waitForFunction(RENDERED["filing-private"], null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 10000 }));
+      const tiles = await page.evaluate(inspect, { ...ORACLE, extended: true });
+      const smith = tiles.find(t => t.cik === "1900001");
+      check(smith && smith.state === "photo" && smith.src === PHOTOS_BY_CIK["1900001"].src, "issuer without a ticker: asked as people=1900001:cik:1999999, the person's headshot shows", { smith, asked: log.media.map(r => r.url) });
+      check(log.media.some(r => r.keys.includes("p:1900001:cik:1999999")), "issuer without a ticker: the request names the issuer by CIK", log.media.map(r => r.url));
+      check(errors.length === 0, "issuer without a ticker: no page or console errors", errors);
       await ctx.close();
     }
   }

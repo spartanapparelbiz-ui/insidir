@@ -96,15 +96,19 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
   const media = MEDIA_PATH.exec(p);
   if (media) {
     const sha = media[1], etag = '"' + sha + '"';
-    if (spent("media-miss:" + ip, 120)) throw failure(429, "Too many requests for missing images. Try again shortly.");
+    // A client past its 404 allowance is still served what this instance holds in memory; only
+    // further lookups are refused.
+    const throttled = spent("media-miss:" + ip, 120), lookup = { cachedOnly: throttled };
+    const tooMany = () => failure(429, "Too many requests for missing images. Try again shortly.");
     const cache = { "Cache-Control": "public, max-age=86400", ETag: etag };
     const asked = String(req.headers?.["if-none-match"] || "").split(",").map(x => x.trim().replace(/^W\//, ""));
-    if (asked.includes(etag) && await hasMedia(sha)) {
-      res.writeHead(304, { ...cache, "X-Content-Type-Options": "nosniff" });
-      return res.end(), true;
+    if (asked.includes(etag)) {
+      const known = await hasMedia(sha, lookup);
+      if (known) { res.writeHead(304, { ...cache, "X-Content-Type-Options": "nosniff" }); return res.end(), true; }
     }
-    const item = await getMedia(sha);
-    if (!item) { limited("media-miss:" + ip, 120); throw failure(404, "Media not found"); }
+    const item = await getMedia(sha, lookup);
+    if (item === undefined) throw tooMany();
+    if (!item) { if (limited("media-miss:" + ip, 120)) throw tooMany(); throw failure(404, "Media not found"); }
     const type = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpeg", "image/svg+xml": "svg" }[item.mime];
     return sendImage(res, { bytes: item.bytes, type }, 86400, cache), true;
   }

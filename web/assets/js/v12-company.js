@@ -301,6 +301,12 @@ function renderLogo() {
     const img = new Image();
     img.alt = "";
     img.src = mark.url;
+    // Never drawn larger than half its stored size, so the mark stays at least 2x sharp: a 552x113 wordmark is
+    // at most 276x56 here, not stretched to the 300px slot. (Inline !important: the slot's rules are !important.)
+    if (mark.w > 0 && mark.h > 0) {
+      img.style.setProperty("max-width", `min(100%, ${Math.floor(mark.w / 2)}px)`, "important");
+      img.style.setProperty("max-height", `min(100%, ${Math.floor(mark.h / 2)}px)`, "important");
+    }
     // A curated mark (the engine unreachable) has no stored size: its shape is read once it loads.
     if (!mark.ratio) img.addEventListener("load", () => brand.classList.toggle("is-wide-logo", img.naturalHeight > 0 && img.naturalWidth / img.naturalHeight > 1.8), { once: true });
     host.className = "cx-logo";
@@ -315,7 +321,7 @@ function renderLogo() {
       if (seq !== state.seq) return;
       state.logo = entry?.src ? entry : null;
       if (state.logo) { renderOverviewInsiders(); renderInsiders(); renderPeople(); }
-      show(state.logo ? { url: state.logo.src, ratio: state.logo.w && state.logo.h ? state.logo.w / state.logo.h : 0 } : null);
+      show(state.logo ? { url: state.logo.src, ratio: state.logo.w && state.logo.h ? state.logo.w / state.logo.h : 0, w: state.logo.w, h: state.logo.h } : null);
     });
     return;
   }

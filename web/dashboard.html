@@ -6,10 +6,10 @@
 <link rel="preload" href="assets/fonts/JetBrainsMono-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/entity-media.js?v=media-2"></script><script defer src="assets/js/app.js?v=14"></script><script defer src="assets/js/v3-dashboard.js?v=18"></script><script defer src="assets/js/v4-dashboard.js?v=18"></script><script defer src="assets/js/v13-overview.js?v=1"></script>
+<script defer src="assets/js/entity-media.js?v=media-2"></script><script defer src="assets/js/app.js?v=15"></script><script defer src="assets/js/v3-dashboard.js?v=19"></script><script defer src="assets/js/v4-dashboard.js?v=19"></script><script defer src="assets/js/v13-overview.js?v=2"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=18">
-<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=4">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=19">
+<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=5">
 <script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
@@ -33,20 +33,20 @@
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow ↗</a></header>
     <p id="v10-follow-live" class="sr-only" aria-live="polite">Loading updates from the people you follow…</p>
     <div class="rd-follow" id="rd-follow">
-      <div class="rd-follow__feed">
-        <p class="rd-label" id="rd-feed-label">Latest trades</p>
-        <ol id="v10-follow-feed" class="rd-feed" aria-labelledby="rd-feed-label" data-hf-reveal-group></ol>
-        <p id="v10-follow-more" class="rd-more rd-more--feed"></p>
-      </div>
       <div class="rd-follow__side">
         <p class="rd-label" id="rd-list-label">Following</p>
-        <ul id="v10-follow-list" class="rd-flist" aria-labelledby="rd-list-label" data-hf-reveal-group></ul>
+        <ul id="v10-follow-list" class="rd-flist" aria-labelledby="rd-list-label" data-hf-reveal></ul>
         <p id="v10-follow-list-more" class="rd-more rd-more--list"></p>
+      </div>
+      <div class="rd-follow__feed">
+        <p class="rd-label" id="rd-feed-label">Latest trades</p>
+        <ol id="v10-follow-feed" class="rd-feed" aria-labelledby="rd-feed-label" data-hf-reveal></ol>
+        <p id="v10-follow-more" class="rd-more rd-more--feed"></p>
       </div>
       <p id="v10-follow-empty" class="rd-follow__empty">You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.</p>
       <div id="v10-follow-suggest" class="rd-suggest">
         <p class="rd-label" id="v10-follow-suggest-title">Most active in the latest imports</p>
-        <ul id="v10-follow-suggest-list" class="rd-sglist" aria-labelledby="v10-follow-suggest-title" data-hf-reveal-group></ul>
+        <ul id="v10-follow-suggest-list" class="rd-sglist" aria-labelledby="v10-follow-suggest-title" data-hf-reveal></ul>
         <p id="v10-follow-suggest-foot" class="rd-module__foot">Following is private to your account. <a href="people.html">Find anyone by name ↗</a></p>
       </div>
     </div>
@@ -55,13 +55,13 @@
 
   <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02</p><h2 id="rd-watch-title">Your watchlist</h2><p>The latest purchase or sale at each company you saved.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist ↗</a></header>
-    <ul id="v3-watchlist" class="rd-rows" aria-labelledby="rd-watch-title" data-hf-reveal-group></ul>
+    <ul id="v3-watchlist" class="rd-rows" aria-labelledby="rd-watch-title" data-hf-reveal></ul>
     <p id="v3-watchlist-foot" class="rd-module__foot"></p>
   </section>
 
   <section class="rd-module rd-module--notes" aria-labelledby="rd-notes-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02b</p><h2 id="rd-notes-title">Your notes</h2><p>Private to you, most recent first.</p></div><a class="rd-link" href="research.html">Write a note ↗</a></header>
-    <ul id="v3-notes" class="rd-rows" aria-labelledby="rd-notes-title" data-hf-reveal-group></ul>
+    <ul id="v3-notes" class="rd-rows" aria-labelledby="rd-notes-title" data-hf-reveal></ul>
   </section>
 
   <section class="rd-module rd-module--flow" aria-labelledby="rd-flow-title">
@@ -85,13 +85,13 @@
     </div>
     <div class="rd-panel rd-panel--largest">
       <div class="rd-panel__head" data-hf-reveal><div><h3 id="rd-largest-title">Biggest trades</h3><p>Ranked by value: shares × price per share, as filed.</p></div></div>
-      <ol id="rd-largest" class="rd-largest" aria-labelledby="rd-largest-title" data-hf-reveal-group></ol>
+      <ol id="rd-largest" class="rd-largest" aria-labelledby="rd-largest-title" data-hf-reveal></ol>
     </div>
   </section>
 
   <section class="rd-module rd-module--trades" aria-labelledby="rd-trades-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">04</p><h2 id="rd-trades-title">All recent trades</h2><p>Each line of each filing, newest trade first. Value is shares × price per share as reported.</p></div><a class="rd-link" href="research.html">Research a company ↗</a></header>
-    <div class="rd-filters" role="group" aria-label="Show" data-hf-reveal><button type="button" data-filter="all" aria-pressed="true">All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false"><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false"><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false">Grants, exercises &amp; gifts <span data-count="other"></span></button></div>
+    <div class="rd-filters" role="group" aria-label="Show" data-hf-reveal><button type="button" data-filter="all" aria-pressed="true" disabled>All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false" disabled><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false" disabled><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false" disabled>Grants, exercises &amp; gifts <span data-count="other"></span></button></div>
     <p id="v3-trades-status" class="sr-only" aria-live="polite"></p>
     <div class="rd-table-wrap rd-table-wrap--trades" data-hf-reveal><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Person</th><th scope="col">Company</th><th scope="col">What happened</th><th scope="col" class="rd-num">Shares</th><th scope="col" class="rd-num">Price</th><th scope="col" class="rd-num">Value</th><th scope="col">Traded</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"></tbody></table></div>
     <p class="rd-module__foot" id="v3-trades-foot" data-hf-reveal></p>
@@ -100,13 +100,13 @@
   <section class="rd-module rd-module--status" aria-labelledby="rd-status-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">05</p><h2 id="rd-status-title">About this data</h2></div></header>
     <div class="rd-about-line" data-hf-reveal>
-      <dl class="rd-about" id="rd-about" aria-busy="true">
-        <div><dt>Source:</dt><dd>SEC EDGAR, Form 4</dd></div>
-        <div><dt>Status:</dt><dd id="v4-data-state">checking…</dd></div>
-        <div><dt class="sr-only">Filings imported:</dt><dd id="v4-filing-count">checking the import…</dd></div>
-        <div><dt class="sr-only">Last import:</dt><dd id="v4-last-import">last import: checking…</dd></div>
-        <div><dt class="sr-only">Newest filing:</dt><dd id="v4-latest-filing-date">newest filing: checking…</dd></div>
-      </dl>
+      <ul class="rd-about" id="rd-about" aria-busy="true">
+        <li><span class="rd-about__k">Source:</span> SEC EDGAR, Form 4</li>
+        <li><span class="rd-about__k">Status:</span> <span id="v4-data-state">checking…</span></li>
+        <li id="v4-filing-count">checking the import…</li>
+        <li id="v4-last-import">last import: checking…</li>
+        <li id="v4-latest-filing-date">newest filing: checking…</li>
+      </ul>
       <a class="rd-link" href="data.html">How the data works ↗</a>
     </div>
   </section>
@@ -119,7 +119,7 @@
 (()=>{let c={};try{c=JSON.parse(localStorage.getItem("insidir:overview:counts")||"{}")||{};}catch(e){}
 const n=(k,d,lo,hi)=>{const v=Number(c[k]);return Math.max(lo,Math.min(hi,Number.isFinite(v)&&c[k]!==null&&c[k]!==undefined?v:d));};
 const b=w=>'<i class="rd-skel" style="--w:'+w+'%"></i>',t='<span class="rd-skel rd-skel--tile"></span>',rep=(k,f)=>Array.from({length:k},(_,i)=>f(i)).join("");
-const td=c.today;if(td&&typeof td==="object"&&Math.abs(Number(td.w)-innerWidth)<24)for(const [k,id] of [["you","rd-today-you"],["market","rd-today-market"],["fresh","rd-today-fresh"]]){const v=Number(td[k]),e=document.getElementById(id);if(e&&v>0&&v<400)e.style.setProperty("min-height",v+"px","important");}
+const td=c.today;if(td&&typeof td==="object"&&Math.abs(Number(td.w)-innerWidth)<24)for(const [k,id] of [["you","rd-today-you"],["market","rd-today-market"],["fresh","rd-today-fresh"]]){const v=Number(td[k]),e=document.getElementById(id);if(e&&v>0&&v<400)e.style.setProperty("min-height","max("+v+"px, var(--line-min))","important");}
 const hs=c.heights;if(hs&&typeof hs==="object"&&Math.abs(Number(hs.w)-innerWidth)<24)for(const id in hs){if(id==="w")continue;const v=Number(hs[id]),e=id==="trades"?document.querySelector(".rd-table-wrap--trades"):document.getElementById(id);if(e&&v>0&&v<6000){e.style.setProperty("min-height",v+"px","important");if(id==="rd-credits")e.classList.add("is-held");}}
 const put=(id,html,vars)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=html;e.setAttribute("aria-busy","true");for(const k in vars||{})e.style.setProperty(k,String(vars[k]));};
 const follows=n("follows",0,0,1e4),feed=n("feed",3,1,8),list=follows?6:3,watch=n("watch",0,0,8),notes=n("notes",0,0,6),sg=follows?n("suggest",4,0,4):n("suggest",6,0,6),co=n("co",6,0,6),coMore=n("coMore",1,0,1),big=n("big",6,0,6),rows=n("rows",12,0,12);
