@@ -571,7 +571,20 @@ function hydrateLegacy(root){
   img.dataset.realReady="1";
   const cell=img.closest(".ins-media");
   const ready=()=>cell?.classList.remove("ins-media--pending","ins-media--missing");
-  const fail=()=>{cell?.classList.remove("ins-media--pending");cell?.classList.add("ins-media--missing");img.remove();};
+  // A failed Commons image falls back to the standard chain (the engine's verified headshot, else the
+  // company logo) when the cell names the person (data-cik / data-ticker); initials only without them.
+  const fail=()=>{
+   if(cell&&(cell.dataset.cik||cell.dataset.ticker)){
+    const box=document.createElement("div");
+    box.innerHTML=portrait(cell.dataset.name||"",cell.dataset.ticker||"","lg",{cik:cell.dataset.cik||""});
+    const tile=box.firstElementChild;
+    if(tile){
+     for(const c of cell.classList)if(!c.startsWith("ins-media"))tile.classList.add(c);
+     cell.replaceWith(tile);bind(tile);update();return;
+    }
+   }
+   cell?.classList.remove("ins-media--pending");cell?.classList.add("ins-media--missing");img.remove();
+  };
   img.addEventListener("load",()=>{if(img.naturalWidth>0)ready();else fail();},{once:true});
   img.addEventListener("error",fail,{once:true});
   // Static markup can finish (or fail, e.g. when Wikimedia is blocked) before this runs.
