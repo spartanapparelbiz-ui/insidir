@@ -1,0 +1,7 @@
+# Rebuildable intermediates (see README "Rebuild")
+frames/
+renders/
+product/
+audio/*.wav
+audio/vo/*.wav
+audio/vo/vo_f3_raw.wav

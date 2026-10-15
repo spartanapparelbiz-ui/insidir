@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Insidir film renderer</title>
+<style>
+@font-face{font-family:JBM;font-weight:100 800;src:url(/web/assets/fonts/JetBrainsMono-normal-latin.woff2) format("woff2")}
+html,body{margin:0;background:#000;overflow:hidden}
+canvas{display:block;width:1920px;height:1080px}
+</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script src="lib.js"></script><script src="data.js"></script>
+<script>
+const film = new URLSearchParams(location.search).get("film") || "1";
+const s = document.createElement("script"); s.src = `film${film}.js?v=${Date.now()}`; document.body.appendChild(s);
+window.ready = new Promise(res => { window.__resolveReady = res; });
+s.onload = async () => {
+  await document.fonts.load('800 100px JBM'); await document.fonts.load('600 40px JBM'); await document.fonts.load('500 20px JBM'); await document.fonts.load('700 40px JBM');
+  await FILM.load();
+  const ctx = document.getElementById("c").getContext("2d");
+  window.FRAMES = Math.round(FILM.duration * FPS);
+  window.renderFrame = f => { ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = 1; ctx.filter = "none"; FILM.draw(ctx, f / FPS); ctx.restore(); return true; };
+  window.__resolveReady(window.FRAMES);
+};
+</script></body></html>
