@@ -207,9 +207,9 @@
       <form class="app-search" role="search" action="company.html">
         ${icons.search}
         <label class="sr-only" for="app-search-input">Search tickers, companies, or people</label>
-        <input id="app-search-input" name="ticker" type="search" autocomplete="off" spellcheck="false" placeholder="Search tickers, companies, or people…"
+        <input id="app-search-input" name="ticker" type="search" autocomplete="off" spellcheck="false" placeholder="Search companies, people, filings"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="app-search-results">
-        <kbd class="app-search__key" aria-hidden="true">${/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K"}</kbd>
+        <kbd class="app-search__key" aria-hidden="true">Ctrl K</kbd>
         <div class="app-search__results" id="app-search-results" role="listbox" aria-label="Search suggestions" hidden></div>
       </form>
       <a class="icon-btn app-header__bell" href="alerts.html" aria-label="Alerts">${icons.bell}</a>
@@ -273,6 +273,11 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveTo(current));
 
     const form = host.querySelector(".app-search"), input = form.querySelector("input"), list = form.querySelector(".app-search__results");
+    // The full hint where the field is wide; one word on phones, where the field shares the bar with the logo and menu.
+    const narrow = window.matchMedia ? window.matchMedia("(max-width: 759px)") : null;
+    const placeholder = () => { input.placeholder = narrow && narrow.matches ? "Search" : "Search companies, people, filings"; };
+    placeholder();
+    if (narrow) (narrow.addEventListener ? narrow.addEventListener("change", placeholder) : narrow.addListener(placeholder));
     const tickerPattern = /^[A-Z0-9][A-Z0-9.-]{0,14}$/;
     const escapeHTML = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     let suggestions = [], activeOption = -1, searchSeq = 0, searchTimer = 0;

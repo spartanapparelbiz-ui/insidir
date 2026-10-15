@@ -18,8 +18,8 @@ body.v13.pf-page{--pf-box:150px!important;--pf-photo:124px!important}
 /* ---------- File header strip ---------- */
 body.v13 .pf-topline{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:8px 16px!important;flex-wrap:wrap!important;margin:0!important;padding:2px 0 16px!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;
   font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13 .pf-topline a{color:var(--hf-soft)!important;text-decoration:none!important;background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 .pf-topline a:hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
+body.v13 .pf-topline a{color:var(--hf-soft)!important;text-decoration:none!important;background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
+body.v13 .pf-topline a:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important}
 body.v13 .pf-topline b{font-weight:600!important;color:var(--hf-ink)!important;letter-spacing:.12em!important;font-variant-numeric:tabular-nums!important}
 
 /* ---------- Subject ---------- */
@@ -41,7 +41,7 @@ body.v13 .pf-id>*{grid-column:2!important;min-width:0!important}
 body.v13 .pf-stamp{position:absolute!important;top:clamp(14px,1.6vw,24px)!important;right:clamp(12px,3vw,44px)!important;z-index:1!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:0!important;
   margin:0!important;padding:7px 14px 6px!important;border:2px solid var(--hf-ink)!important;outline:1px solid var(--hf-ink)!important;outline-offset:3px!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important;
   rotate:-5deg!important;transform-origin:50% 50%!important;pointer-events:none!important;user-select:none!important;opacity:.94!important;transition:opacity .3s!important}
-body.v13 .pf-stamp>span:first-child{font:800 17px/1.2 var(--hf-mono)!important;letter-spacing:.26em!important;text-transform:uppercase!important;margin-right:-.26em!important}
+body.v13 .pf-stamp>span:first-child{font:700 17px/1.2 var(--hf-mono)!important;letter-spacing:.26em!important;text-transform:uppercase!important;margin-right:-.26em!important}
 body.v13 .pf-stamp>span:last-child{margin:4px 0 0!important;padding:4px 0 0!important;border-top:1px solid var(--hf-ink)!important;font:700 9.5px/1.3 var(--hf-mono)!important;letter-spacing:.24em!important;text-transform:uppercase!important;margin-right:-.24em!important}
 body.v13 .pf.is-loading .pf-stamp{opacity:0!important}
 /* It fades in once, where it stands, when the file has loaded (opacity only; nothing moves). */
@@ -62,7 +62,7 @@ body.v13 .pf-photo .ins-media:not([data-media]){display:block!important;backgrou
 body.v13 .pf-photo figcaption{margin:10px 0 0!important;font:var(--hf-label)!important;font-size:9.5px!important;letter-spacing:.16em!important;text-transform:uppercase!important;color:var(--hf-faint)!important;line-height:1.5!important}
 
 body.v13 .pf-kicker{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
-body.v13 .pf-head h1{margin:8px 0 6px!important;min-height:1.04em!important;font:800 clamp(30px,4.1vw,60px)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;color:var(--hf-ink)!important;text-wrap:balance!important;overflow-wrap:anywhere!important}
+body.v13 .pf-head h1{margin:8px 0 6px!important;min-height:1.04em!important;font:700 clamp(30px,4.1vw,60px)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;color:var(--hf-ink)!important;text-wrap:balance!important;overflow-wrap:anywhere!important}
 body.v13 .pf-asfiled{margin:0!important;font:400 11.5px/1.7 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
 body.v13 .pf-asfiled>span{color:var(--hf-soft)!important;letter-spacing:.08em!important}
 
@@ -87,7 +87,7 @@ body.v13 .pf-link.pf-link--inline{display:inline!important;font:inherit!importan
 body.v13 .pf-link.pf-link--inline:hover{text-decoration-color:currentColor!important}
 body.v13 .pf-co{display:inline-flex!important;align-items:center!important;gap:7px!important;vertical-align:-1px!important;margin-right:6px!important;color:var(--hf-ink)!important;font-weight:600!important;letter-spacing:.04em!important}
 body.v13 .pf-co .ins-media{--ins-size:20px!important}
-body.v13 .pf-co small{display:block!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-faint)!important}
+body.v13 .pf-co small{display:block!important;font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important}
 /* person.js still marks the fields on screen .pf-typed; they no longer animate: the file is simply there. */
 body.v13 .pf-fields>div.pf-typed{animation:none!important}
 @keyframes pf-type{from{clip-path:inset(0 100% 0 0)}}
@@ -96,11 +96,11 @@ body.v13 .pf-fields>div.pf-typed{animation:none!important}
 body.v13 .pf-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important;margin:22px 0 0!important}
 body.v13 .pf-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;min-height:38px!important;height:auto!important;margin:0!important;padding:0 14px!important;box-sizing:border-box!important;
   background:transparent!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;box-shadow:none!important;color:var(--hf-ink)!important;cursor:pointer!important;text-decoration:none!important;white-space:nowrap!important;
-  font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;transition:border-color .25s,background-color .25s,color .25s!important}
-body.v13 .pf-btn:hover{border-color:var(--hf-ink)!important;background:transparent!important;color:var(--hf-ink)!important}
+  font:500 13px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;transition:border-color .12s linear,background-color .12s linear,color .12s linear!important}
+body.v13 .pf-btn:hover{border-color:var(--hf-line-strong)!important;background:transparent!important;color:var(--hf-ink)!important}
 body.v13 .pf-btn span{color:var(--hf-muted)!important}
-body.v13 .pf-btn--follow.is-following{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}
-body.v13 .pf-btn--follow.is-following:hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
+body.v13 .pf-btn--follow.is-following{background:transparent!important;border-color:var(--hf-line)!important;color:var(--hf-muted)!important}
+body.v13 .pf-btn--follow.is-following:hover{background:transparent!important;border-color:var(--hf-line-2)!important;color:var(--hf-soft)!important}
 body.v13 .pf-btn:disabled{cursor:default!important;opacity:.55!important}
 /* While a follow request runs the button keeps focus (it is aria-disabled, not disabled) and shows it is busy. */
 body.v13 .pf-btn.is-busy{cursor:progress!important;opacity:.72!important}
@@ -125,9 +125,9 @@ body.v13 .pf-down{color:var(--hf-down)!important}
 body.v13 .pf-tri{display:inline-block!important;flex:none!important;width:8px!important;height:7px!important;margin:0 7px 1px 0!important;vertical-align:middle!important;background:currentColor!important}
 body.v13 .pf-tri--up{clip-path:polygon(50% 0,100% 100%,0 100%)!important;background:var(--hf-up)!important}
 body.v13 .pf-tri--down{clip-path:polygon(0 0,100% 0,50% 100%)!important;background:var(--hf-down)!important}
-body.v13 .pf-link{display:inline-flex!important;align-items:center!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;white-space:nowrap!important;
-  background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 .pf-link:hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
+body.v13 .pf-link{display:inline-flex!important;align-items:center!important;gap:8px!important;font:500 12px/1.6 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;text-decoration:none!important;white-space:nowrap!important;
+  background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
+body.v13 .pf-link:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 
 /* 01 Record: all imported records against the last 30 days, exact. */
 body.v13 .pf-table{width:100%!important;max-width:1080px!important;border-collapse:collapse!important;table-layout:fixed!important;margin:0!important;background:transparent!important}
@@ -150,7 +150,7 @@ body.v13 .pf-aff{display:grid!important;gap:14px!important;align-content:start!i
 body.v13 .pf-aff__id{display:flex!important;align-items:center!important;gap:14px!important;min-width:0!important}
 body.v13 .pf-aff__id .ins-media{--ins-size:48px!important}
 body.v13 .pf-aff h3{margin:0!important;font:700 17px/1.25 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
-body.v13 .pf-aff__id p{margin:2px 0 0!important;font:400 10.5px/1.6 var(--hf-mono)!important;letter-spacing:.06em!important;color:var(--hf-faint)!important}
+body.v13 .pf-aff__id p{margin:2px 0 0!important;font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important}
 body.v13 .pf-aff__facts{display:grid!important;gap:0!important;margin:0!important;padding:0!important}
 body.v13 .pf-aff__facts>div{display:grid!important;grid-template-columns:110px minmax(0,1fr)!important;gap:12px!important;padding:6px 0!important;border-bottom:1px dashed var(--hf-line)!important}
 body.v13 .pf-aff__facts dt{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
@@ -163,7 +163,7 @@ body.v13 .pf-also ul{list-style:none!important;margin:0!important;padding:0!impo
 body.v13 .pf-also li{display:grid!important;grid-template-columns:32px minmax(0,1fr) auto!important;align-items:center!important;gap:12px!important;padding:10px 0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .pf-also li .ins-media{--ins-size:32px!important}
 body.v13 .pf-also li>span{min-width:0!important;font:600 12px/1.5 var(--hf-mono)!important;color:var(--hf-ink)!important}
-body.v13 .pf-also li small{display:block!important;font:400 10.5px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
+body.v13 .pf-also li small{display:block!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
 
 /* 03 Activity log: date | what happened | company and filing, one ruled line each. */
 body.v13 .pf-log{list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important}
@@ -179,13 +179,15 @@ body.v13 .pf-log__where .pf-co{margin:0!important}
 body.v13 .pf-log__value{font-weight:700!important;white-space:nowrap!important;color:var(--hf-ink)!important}
 body.v13 .pf-log__value.pf-up{color:var(--hf-up)!important}
 body.v13 .pf-log__value.pf-down{color:var(--hf-down)!important}
-body.v13 .pf-log__notes{display:block!important;margin:2px 0 0!important;font:400 10.5px/1.6 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
+body.v13 .pf-log__notes{display:block!important;margin:2px 0 0!important;font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important}
 /* A line a later Form 4/A repeats: listed, marked, its value struck through (counted once, from the latest copy). */
 body.v13 .pf-log__row.is-restated .pf-log__value{text-decoration:line-through!important;text-decoration-thickness:1px!important;color:var(--hf-muted)!important}
 body.v13 .pf-log__row.is-restated .pf-log__text{color:var(--hf-soft)!important}
 body.v13 .pf-log__notes .pf-link--inline{color:var(--hf-soft)!important}
-body.v13 .pf-badge{display:inline-flex!important;align-items:center!important;margin:0 6px 0 0!important;padding:1px 7px!important;border:1px solid var(--hf-line-2)!important;background:transparent!important;white-space:nowrap!important;vertical-align:1px!important;
-  font:500 9.5px/1.7 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important}
+body.v13 .pf-badge{display:inline-flex!important;align-items:center!important;height:20px!important;box-sizing:border-box!important;margin:0 6px 0 0!important;padding:0 7px!important;border:0!important;background:var(--hf-raise)!important;white-space:nowrap!important;vertical-align:1px!important;
+  font:500 11px/1 var(--hf-mono)!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--hf-soft)!important}
+body.v13 .pf-badge--buy{color:var(--hf-up)!important;background:var(--hf-up-tint)!important}
+body.v13 .pf-badge--sell{color:var(--hf-down)!important;background:var(--hf-down-tint)!important}
 body.v13 .pf-badge .pf-tri{margin-right:6px!important}
 body.v13 .pf-more{padding:18px 0 0!important}
 
@@ -193,7 +195,7 @@ body.v13 .pf-more{padding:18px 0 0!important}
 body.v13 .pf-filings{list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important}
 body.v13 .pf-filing{display:grid!important;grid-template-columns:90px minmax(180px,1fr) 170px 80px 200px auto!important;gap:6px 18px!important;align-items:center!important;margin:0!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;
   font:400 11.5px/1.6 var(--hf-mono)!important;color:var(--hf-ink)!important;outline-offset:-1px!important}
-body.v13 .pf-filing__form{font:600 10.5px/1.6 var(--hf-mono)!important;letter-spacing:.12em!important;text-transform:uppercase!important}
+body.v13 .pf-filing__form{font:var(--hf-label)!important;font-weight:600!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important}
 body.v13 .pf-filing .pf-co .ins-media{--ins-size:28px!important}
 body.v13 :is(.pf-filing__date,.pf-filing__lines){color:var(--hf-soft)!important}
 body.v13 .pf-filing__acc{color:var(--hf-faint)!important;letter-spacing:.04em!important;font-variant-numeric:tabular-nums!important}
@@ -204,10 +206,10 @@ body.v13 .pf-state{margin:clamp(28px,4vw,48px) 0 0!important;padding:18px 0 0!im
 body.v13 .pf-state.is-error{border-top-color:var(--hf-alert)!important}
 body.v13 .pf-state__label{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 .pf-state.is-error .pf-state__label{color:var(--hf-alert)!important}
-body.v13 .pf-state h1{margin:10px 0 10px!important;font:800 clamp(26px,3vw,40px)/1.1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important}
+body.v13 .pf-state h1{margin:10px 0 10px!important;font:700 clamp(26px,3vw,40px)/1.1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important}
 body.v13 .pf-state>p:not(.pf-state__label){margin:0!important;font:400 12.5px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13 .pf-state__links{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px 22px!important;margin:20px 0 0!important}
-body.v13 .pf-state__links>a{font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+body.v13 .pf-state__links>a{font:500 13px/1.4 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-strong)!important;text-underline-offset:3px!important}
 body.v13 .pf-state__links>a:hover{text-decoration-color:currentColor!important}
 
 /* ---------- Footer note and the follow notice ---------- */
@@ -223,7 +225,7 @@ body.v13 .pf-toast:empty{opacity:0!important;translate:-50% 12px!important;paddi
 body.v13 .pf-toast.is-error{border-color:var(--hf-alert)!important}
 body.v13 .pf-toast :is(button,a){pointer-events:auto!important}
 body.v13 .pf-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!important;height:auto!important;min-height:0!important;background:none!important;border:0!important;cursor:pointer!important;color:var(--hf-ink)!important;
-  font:500 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;text-decoration:underline!important;text-underline-offset:3px!important}
+  font:500 12px/1.6 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;text-decoration:underline!important;text-underline-offset:3px!important}
 
 /* ---------- Narrower screens ---------- */
 @media (max-width:1099px){
@@ -246,7 +248,7 @@ body.v13 .pf-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!
   body.v13 .pf-photo figcaption{font-size:8.5px!important;letter-spacing:.12em!important}
   body.v13 .pf-kicker{font-size:9.5px!important;letter-spacing:.14em!important;line-height:1.5!important}
   body.v13 .pf-head h1{font-size:clamp(24px,7vw,32px)!important;margin:6px 0 4px!important}
-  body.v13 .pf-asfiled{font-size:10.5px!important}
+  body.v13 .pf-asfiled{font-size:11px!important}
   body.v13 :is(.pf-fields,.pf-actions,.pf-honest){grid-column:1/-1!important}
   body.v13 .pf-fields>div{grid-template-columns:minmax(0,1fr)!important;gap:2px!important;padding:8px 0 7px!important}
   body.v13 .pf-actions{gap:8px!important}
@@ -269,8 +271,8 @@ body.v13 .pf-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!
   body.v13 .pf-also li>.pf-link{grid-column:2!important;justify-self:start!important}
   /* Activity log: a compact three-line record (what · when · company and filing). */
   body.v13 .pf-log__row{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"what" "when" "where"!important;gap:4px!important;padding:13px 0!important}
-  body.v13 .pf-log__when{display:flex!important;flex-wrap:wrap!important;column-gap:8px!important;font-size:10.5px!important}
-  body.v13 .pf-log__when time{font-size:10.5px!important;display:inline!important}
+  body.v13 .pf-log__when{display:flex!important;flex-wrap:wrap!important;column-gap:8px!important;font-size:11px!important}
+  body.v13 .pf-log__when time{font-size:11px!important;display:inline!important}
   body.v13 .pf-log__when span{display:inline!important}
   body.v13 .pf-log__when span::before{content:"· "!important;color:var(--hf-faint)!important}
   body.v13 .pf-log__where{flex-direction:row!important;align-items:center!important;justify-content:space-between!important}

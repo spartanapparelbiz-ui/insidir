@@ -3,9 +3,19 @@
    lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css); colours only
    through tokens.
 
+   Grammar: each module is a compact head (index, 22px title, one-line description, action link at the right; v13-app.css)
+   over square --hf-surface panels with a 1px --hf-line border. Panels hold the data; rows inside them are divided by
+   --hf-line-faint. Modules are 48px apart (40px on phones), panels 24px. On phones the panels run to the screen's edges.
+   The Today band is two columns from 1180px: the greeting and what changed for the reader at the left, the latest SEC
+   import in a brief panel at the right (a static halftone corner on it is the page's only dot ornament).
+
    Colour does one job here: market direction. Purchases and rises are --hf-up (green), sales and falls are
-   --hf-down (red), always beside a word, a sign or a ▲/▼ marker so colour never carries the meaning alone.
-   "New" is a word in an ink box, not a colour. Everything else is ink on paper.
+   --hf-down (red), always beside a word, a sign or a ▲/▼ marker so colour never carries the meaning alone. Badges
+   are 20px tint chips; "New" is a dot and the word; "Following ✓" steps back (transparent, a quiet border, muted
+   text). Values are ink and bold; everything else is three greys on paper.
+
+   Nothing moves under the pointer: hover changes a colour, an underline or a control's border, never fills a row.
+   The one fill is the chart's day highlight (--hf-surface-2, no transition).
 
    Nothing jumps:
      - every module reserves the space its content will take before the data arrives: skeleton rows use the
@@ -14,10 +24,7 @@
        someone in place fills instead of growing;
      - filters crossfade inside a table locked to the height of "All"; Chart | Table crossfade inside one
        fixed-height frame; an unfollowed person dims in place.
-   Motion, the same as the rest of the site: module heads, lists and the totals rise in on the dots' spring as they
-   scroll into view (data-hf-reveal / data-hf-reveal-group, v13-motion.js); content that arrives on screen fades in
-   over 200 ms and its rows rise a beat apart; the New marker pops once on the spring; state changes move only
-   opacity and transform on --hf-spring. Numbers never animate. Under reduced motion nothing moves. */
+   Content that arrives fades in over 200 ms. Numbers never animate. Under reduced motion nothing fades. */
 /* Custom properties that are only read on the element that sets them do not inherit, so changing one restyles that
    element alone, not its whole subtree. --hf-i is the scroll reveal's stagger (v13-motion.js sets it on a block while it
    rises and removes it after): unregistered, each change restyled every row of a 12-row table twice (80 ms of style per
@@ -30,30 +37,46 @@
 @property --w{syntax:"<percentage>";inherits:false;initial-value:60%}
 @layer insidir-v13{
 
+/* ---------- page frame ----------
+   --rd-px is a panel's inner horizontal padding: 20px for the people panels and the notes, 24px for the rest; on phones
+   every panel is full bleed and pads to the gutter. */
+body.v13.rd-page{--rd-gap:24px;--rd-module-gap:48px}
+body.v13 .rd-topline{display:none!important}            /* "Insidir / Overview" repeated the active nav item */
+body.v13 .rd-today>.pd-band{display:none!important}      /* the canvas field is replaced by the brief panel's static dot corner */
+body.v13.rd-page .rd-module{border-top:0!important}
+body.v13.rd-page .rd-grid{gap:var(--rd-module-gap) var(--rd-gap)!important;margin-top:48px!important}
+
 /* ---------- direction markers (CSS triangles: the self-hosted font has no ▲▼) ---------- */
 body.v13 .rd-tri{display:inline-block!important;flex:none!important;width:8px!important;height:7px!important;margin:0 7px 1px 0!important;vertical-align:middle!important;background:currentColor!important}
 body.v13 .rd-tri--up{clip-path:polygon(50% 0,100% 100%,0 100%)!important;background:var(--hf-up)!important}
 body.v13 .rd-tri--down{clip-path:polygon(0 0,100% 0,50% 100%)!important;background:var(--hf-down)!important}
-body.v13 .rd-type{display:inline-flex!important;align-items:center!important;white-space:nowrap!important;vertical-align:1px!important}
-body.v13 .rd-type .rd-tri{margin-right:6px!important}
-body.v13 .rd-type--other{color:var(--hf-soft)!important;border-color:var(--hf-line-2)!important}
+/* Badges are the shared 20px tint chips (v13-halftone.css); the triangle inside takes the badge's colour. */
+body.v13 .rd-type{flex:none!important}
+body.v13 .rd-type .rd-tri{width:7px!important;height:6px!important;margin:0!important;background:currentColor!important}
 body.v13 .rd-qty{font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
 body.v13 .rd-qty--buy{color:var(--hf-up)!important}
 body.v13 .rd-qty--sell{color:var(--hf-down)!important}
 body.v13 .rd-qty--other{color:var(--hf-soft)!important}
 body.v13 .rd-filters button .rd-tri{margin:0!important}
 body.v13 .rd-filters button[aria-pressed="true"] .rd-tri--up,body.v13 .rd-filters button[aria-pressed="true"] .rd-tri--down{background:var(--hf-bg)!important}
+/* NEW since the last visit: the shared dot and word; in a followed person's row, "N new" with a 5px ink dot. */
+body.v13 .rd-new{flex:none!important;white-space:nowrap!important;vertical-align:baseline!important}
+body.v13 .rd-fl__new{display:inline-flex!important;align-items:center!important;gap:6px!important;vertical-align:top!important;line-height:inherit!important;color:var(--hf-ink)!important;font-weight:600!important}
+body.v13 .rd-fl__new::before{content:""!important;flex:none!important;width:5px!important;height:5px!important;border-radius:50%!important;background:var(--hf-ink)!important}
 
 /* ---------- identity tiles: one size per place ----------
-   Feed 48px, followed list and suggestions 40px, table rows 28px, inline beside a name or ticker 20px. */
+   Feed 40px, followed list and suggestions 36px, watchlist 32px, table rows 28px, by company 24px, inline beside a
+   name or ticker 20px (18px in the feed's second line, 16px in a followed person's meta line). */
 body.v13 .rd-ent{display:inline-flex!important;align-items:center!important;gap:8px!important;min-width:0!important;vertical-align:middle!important}
-/* An inline name with its 20px tile sits on the top of its line box (never on the tile's own baseline, which changes while
-   its picture loads), so a line never grows by a pixel when the picture arrives. */
+/* An inline name with its small tile sits on the top of its line box (never on the tile's own baseline, which changes
+   while its picture loads), so a line never grows by a pixel when the picture arrives. */
 body.v13 .rd-ent--inline{gap:6px!important;vertical-align:top!important}
 body.v13 .rd-ent--inline>.ins-media{align-self:center!important}
 body.v13 .rd-ent .ins-media,body.v13 .rd-ent--inline .ins-media{--ins-size:20px!important}
-body.v13 .rd-feed__row>.ins-media{--ins-size:48px!important}
-body.v13 :is(.rd-fl,.rd-sg)>.ins-media{--ins-size:40px!important}
+body.v13 .rd-feed__l2 .rd-ent--inline .ins-media{--ins-size:18px!important}
+body.v13 .rd-fl__meta .rd-ent--inline .ins-media,body.v13 .rd-sg__co .rd-ent--inline .ins-media{--ins-size:16px!important}
+body.v13 .rd-feed__row>.ins-media{--ins-size:40px!important}
+body.v13 :is(.rd-fl,.rd-sg)>.ins-media{--ins-size:36px!important}
 body.v13 .rd-table--trades .rd-ent .ins-media{--ins-size:28px!important}
 body.v13 .rd-row--watch>.ins-media{--ins-size:32px!important}
 body.v13 .rd-co__id .ins-media{--ins-size:24px!important}
@@ -64,17 +87,20 @@ body.v13 .rd-ent>[data-ent],body.v13 .rd-ent>a[data-ent]{min-width:0!important}
 body.v13 .rd-who{display:inline-flex!important;align-items:baseline!important;gap:0 .6ch!important;min-width:0!important;max-width:100%!important;white-space:nowrap!important;vertical-align:baseline!important}
 body.v13 .rd-who>[data-ent]{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 body.v13 .rd-who>.rd-who__more{flex:none!important;font-weight:400!important;color:var(--hf-muted)!important;white-space:nowrap!important}
-body.v13 a.rd-who__more{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
+body.v13 a.rd-who__more{text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:4px!important;transition:color .12s linear!important}
 body.v13 a.rd-who__more:hover,body.v13 a.rd-who__more:focus-visible{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
-/* A tile's image lands on the spring when it loads (entity-media.js); here the tile only keeps its box. */
+/* Entity names in rows: ink, never underlined at rest; pointed at or focused, an ink underline. */
+body.v13 :is(.rd-feed__l1,.rd-fl__name,.rd-sg__name,.rd-big__what,.rd-table--trades,.rd-row__detail) a[data-ent]{text-decoration:none!important;transition:color .12s linear!important}
+body.v13 :is(.rd-feed__l1,.rd-fl__name,.rd-sg__name,.rd-big__what,.rd-table--trades,.rd-row__detail) a[data-ent]:is(:hover,:focus-visible){text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
+/* A tile's image lands when it loads (entity-media.js); here the tile only keeps its box. */
 body.v13 .ins-media{flex-shrink:0!important}
 
 /* ---------- skeletons: the real rows' boxes, with quiet bars where the text will be ---------- */
 body.v13 .rd-skel{display:inline-block!important;width:var(--w,60%)!important;max-width:100%!important;height:.62em!important;margin:0 8px 0 0!important;vertical-align:middle!important;background:var(--hf-surface-2)!important;border:0!important}
 body.v13 .rd-skel--tile{display:block!important;width:var(--ins-size,28px)!important;height:var(--ins-size,28px)!important;flex:none!important;margin:0!important;
-  background:radial-gradient(circle,var(--hf-line-2) 1px,transparent 1.4px) 0 0/6px 6px,var(--hf-surface)!important;border:1px solid var(--hf-line)!important}
-body.v13 .rd-feed__row>.rd-skel--tile{--ins-size:48px}
-body.v13 :is(.rd-fl,.rd-sg)>.rd-skel--tile{--ins-size:40px}
+  background:radial-gradient(circle,var(--hf-line-2) 1px,transparent 1.4px) 0 0/6px 6px,var(--hf-surface-2)!important;border:1px solid var(--hf-line)!important}
+body.v13 .rd-feed__row>.rd-skel--tile{--ins-size:40px}
+body.v13 :is(.rd-fl,.rd-sg)>.rd-skel--tile{--ins-size:36px}
 body.v13 .rd-row--watch>.rd-skel--tile{--ins-size:32px}
 body.v13 .rd-co__id>.rd-skel--tile{--ins-size:24px}
 body.v13 .rd-big .rd-skel--tile,body.v13 .rd-ent>.rd-skel--tile{--ins-size:20px}
@@ -92,34 +118,67 @@ body.v13 .rd-today__line.is-skeleton{animation:none!important}
 /* A person followed in place, and their rows, fade into the space kept for them. */
 body.v13 .rd-rise{animation:rd-fade .2s cubic-bezier(.2,.7,.1,1) backwards!important}
 
-/* ---------- topline and Today ---------- */
-body.v13 .rd-today{display:block!important;padding:clamp(30px,4vw,52px) 0 0!important;margin:0!important;border:0!important}
-body.v13 .rd-today+.rd-grid{margin-top:clamp(36px,4vw,56px)!important}
-body.v13 .rd-today .rd-eyebrow{margin:0!important}
-body.v13 .rd-today h1{font:800 clamp(30px,3.2vw,44px)/1.08 var(--hf-mono)!important;letter-spacing:-.04em!important;margin:12px 0 18px!important;color:var(--hf-ink)!important;max-width:64%!important;text-wrap:balance!important}
-body.v13 .rd-today__lines{display:grid!important;gap:12px!important;max-width:min(900px,100%)!important;margin:0!important}
-/* Each line keeps the height of its usual text before it arrives (2, 2 and 1 lines here; more on phones). */
-/* --line-min is the room for the longest usual sentence at this width; a height kept from earlier visits only adds to it. */
-body.v13 .rd-today__line{--line-min:calc(2 * 1.75em);position:relative!important;margin:0!important;font:400 13px/1.75 var(--hf-mono)!important;letter-spacing:.005em!important;color:var(--hf-soft)!important;min-height:var(--line-min)!important;text-wrap:pretty!important}
-body.v13 .rd-today__line--you{--line-min:calc(2 * 1.65em);font-size:15px!important;line-height:1.65!important;color:var(--hf-ink)!important}
-body.v13 .rd-today__line--fresh{--line-min:1.75em;font-size:11px!important;color:var(--hf-muted)!important;letter-spacing:.02em!important}
-body.v13 .rd-today__line strong{font-weight:600!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
-body.v13 .rd-today__line.is-skeleton::before{content:""!important;position:absolute!important;left:0!important;top:.55em!important;width:min(560px,82%)!important;height:.62em!important;background:var(--hf-surface-2)!important;
-  box-shadow:0 1.65em 0 -0px var(--hf-surface-2)!important}
-body.v13 .rd-today__line--fresh.is-skeleton::before{width:min(360px,60%)!important;box-shadow:none!important}
+/* ---------- panels ----------
+   Every module body sits on one square --hf-surface panel with a 1px --hf-line border and a faint top highlight. */
+body.v13 :is(.rd-follow__feed,.rd-follow__side,.rd-suggest,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades){
+  background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;border-radius:0!important;box-shadow:var(--hf-hl)!important;box-sizing:border-box!important}
+body.v13 :is(.rd-feed,.rd-flist,.rd-rows,.rd-largest){border-top:0!important}
+body.v13 :is(.rd-follow__feed,.rd-follow__side){--rd-px:20px;padding:0 var(--rd-px) 4px!important}
+/* The panel header: a 48px band across the panel with its label in muted caps. */
+body.v13 :is(.rd-follow__feed,.rd-follow__side,.rd-suggest)>.rd-label{display:flex!important;align-items:center!important;gap:8px!important;box-sizing:border-box!important;min-height:48px!important;margin:0 calc(-1 * var(--rd-px,20px))!important;padding:12px var(--rd-px,20px)!important;
+  border-bottom:1px solid var(--hf-line)!important;color:var(--hf-muted)!important}
+
+/* ---------- Today ---------- */
+body.v13 .rd-today{display:block!important;padding:0!important;margin:0!important;border:0!important}
+body.v13 .rd-today .rd-eyebrow{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13 .rd-today h1{margin:10px 0 14px!important;max-width:none!important;font:700 var(--hf-fs-h1)/1.1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;text-wrap:balance!important}
+body.v13 .rd-today__lines{display:contents!important}
+/* Each line keeps the height of its usual text before it arrives. --line-min is the room for the longest usual sentence at
+   this width; a height kept from earlier visits (the inline script in dashboard.html) only adds to it. */
+body.v13 .rd-today__line{--line-min:calc(2 * 1.6em);position:relative!important;margin:0!important;min-height:var(--line-min)!important;text-wrap:pretty!important;font-variant-numeric:tabular-nums!important}
+body.v13 #rd-today-you{--line-min:calc(2 * 1.6em);max-width:58ch!important;font:400 16px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-ink)!important}
+body.v13 #rd-today-you strong{font-weight:600!important;color:var(--hf-ink)!important}
+/* The latest SEC import: a brief panel with a label, the market sentence and the import time under a faint rule. */
+body.v13 .rd-today__brief{position:relative!important;box-sizing:border-box!important;margin:20px 0 0!important;max-width:760px!important;padding:16px 20px 14px!important;overflow:hidden!important;
+  background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important}
+body.v13 .rd-today__brief::before{content:"Latest SEC import" / ""!important;display:block!important;margin:0 0 8px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+/* The static halftone corner: the identity in print, no canvas. */
+body.v13 .rd-today__brief::after{content:""!important;position:absolute!important;top:0!important;right:0!important;width:45%!important;height:40px!important;pointer-events:none!important;
+  background:radial-gradient(circle,var(--hf-faint) 1px,transparent 1.5px) 0 0/6px 6px!important;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important}
+body.v13 #rd-today-market{--line-min:calc(3 * 1.7em);font:400 12.5px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
+body.v13 #rd-today-market strong{font-weight:600!important;color:var(--hf-ink)!important}
+body.v13 #rd-today-fresh{--line-min:calc(2 * 1.6em + 10px);text-wrap:pretty!important;margin:12px -20px 0!important;padding:10px 20px 0!important;border-top:1px solid var(--hf-line-faint)!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
+/* The fresh line's dot is soft, never green: green means purchases. */
+body.v13 #rd-today-fresh:not(.is-skeleton)::before{content:""!important;display:inline-block!important;width:6px!important;height:6px!important;border-radius:50%!important;background:var(--hf-soft)!important;margin-right:8px!important;vertical-align:1px!important}
+body.v13 .rd-today__line.is-skeleton::before{content:""!important;position:absolute!important;left:0!important;top:.5em!important;width:min(560px,82%)!important;height:.62em!important;background:var(--hf-surface-2)!important;box-shadow:0 1.6em 0 var(--hf-surface-2)!important}
+body.v13 #rd-today-market.is-skeleton::before{width:92%!important;box-shadow:0 1.7em 0 var(--hf-surface-2),0 3.4em 0 var(--hf-surface-2)!important}
+body.v13 #rd-today-fresh.is-skeleton::before{left:20px!important;top:calc(10px + .5em)!important;width:min(360px,60%)!important;box-shadow:none!important}
+@media (min-width:1180px){
+  /* 13 : 11 rather than 7 : 5, so the import line fits on one line at 1440 and the panel ends level with the lead. */
+  body.v13 .rd-today{display:grid!important;grid-template-columns:minmax(0,13fr) minmax(0,11fr)!important;column-gap:48px!important;
+    grid-template-areas:"eyebrow brief" "title brief" "you brief" ". brief"!important;grid-template-rows:auto auto auto 1fr!important}
+  body.v13 .rd-today .rd-eyebrow{grid-area:eyebrow!important}
+  body.v13 .rd-today h1{grid-area:title!important}
+  body.v13 #rd-today-you{grid-area:you!important}
+  body.v13 .rd-today__brief{grid-area:brief!important;align-self:start!important;margin:0!important;max-width:none!important}
+}
+@media (min-width:1380px){body.v13 #rd-today-fresh{--line-min:calc(1.6em + 10px)}}
 
 /* ---------- 01 People you follow ---------- */
-body.v13 .rd-label{display:flex!important;align-items:center!important;gap:8px!important;margin:0 0 10px!important}
 /* One grid: the feed beside the followed people, suggestions below both. Following nobody, the message and the
    suggestions come first and the feed (empty until a follow) below them, so a follow never moves what is above. */
-body.v13 .rd-follow{display:grid!important;grid-template-columns:minmax(0,8fr) minmax(0,4fr)!important;grid-template-areas:"feed side" "suggest suggest"!important;gap:0 clamp(28px,3vw,48px)!important;align-items:start!important;margin:6px 0 0!important}
+body.v13 .rd-follow{display:grid!important;grid-template-columns:minmax(0,8fr) minmax(0,4fr)!important;grid-template-areas:"feed side" "suggest suggest"!important;gap:24px!important;align-items:start!important;margin:0!important}
+/* The Following panel runs as tall as the feed beside it (or the message and suggestions, following nobody), so the two
+   panels end on one line. */
+@media (min-width:1180px){body.v13 .rd-follow>.rd-follow__side{align-self:stretch!important}}
 body.v13 .rd-follow.is-empty{grid-template-areas:"empty side" "suggest side" "feed side"!important;grid-template-rows:auto auto 1fr!important}
 body.v13 .rd-follow__feed{grid-area:feed!important;min-width:0!important}
 body.v13 .rd-follow__side{grid-area:side!important;min-width:0!important}
-body.v13 .rd-follow__empty{grid-area:empty!important;display:none!important;margin:0!important;padding:0 0 4px!important;font:400 13px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:62ch!important;text-wrap:pretty!important}
+body.v13 .rd-follow__empty{grid-area:empty!important;display:none!important;margin:0!important;padding:0!important;font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:62ch!important;text-wrap:pretty!important}
 body.v13 .rd-follow.is-empty .rd-follow__empty{display:block!important}
 body.v13 .rd-follow.is-empty .rd-follow__feed:has(>ol:empty){display:none!important}
-body.v13 .rd-follow.is-empty .rd-follow__feed{margin-top:clamp(22px,2.6vw,34px)!important}
+@media (min-width:1180px){body.v13 .rd-follow.is-empty:has(.rd-follow__feed>ol:empty){grid-template-areas:"empty side" "suggest side"!important;grid-template-rows:auto 1fr!important}}
 /* A browser with no saved counts does not know yet whether the reader follows anyone: it keeps room for feed rows and
    draws no suggestions until the answer arrives, so whichever it is, nothing already drawn has to move. */
 body.v13 .rd-follow.is-unknown .rd-suggest{display:none!important}
@@ -130,387 +189,511 @@ body.v13 .rd-follow.is-error :is(.rd-feed,.rd-more--feed){min-height:0!important
 /* A module that failed to load keeps no room for content that is not coming. */
 body.v13 .rd-kpis:has(>.rd-empty--error),body.v13 .rd-dframe:has(.rd-empty--error){min-height:0!important;height:auto!important}
 body.v13 .rd-narrow{display:none!important}
-/* Latest trades: two lines per row, a fixed row height; the list keeps room for --rows rows. */
-body.v13 .rd-feed{--feed-row:78px;list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-height:calc(var(--rows,3) * var(--feed-row))!important}
-body.v13 .rd-feed__row{position:relative!important;display:grid!important;grid-template-columns:48px minmax(0,1fr)!important;align-items:center!important;column-gap:16px!important;box-sizing:border-box!important;
-  min-height:var(--feed-row)!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;transition:background-color .15s,opacity .35s!important}
-body.v13 .rd-feed__row:not(.is-skeleton):hover{background:var(--hf-surface)!important}
-body.v13 .rd-feed__body{min-width:0!important}
-body.v13 .rd-feed__l1{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:2px 10px!important;margin:0!important;font:400 12.5px/24px var(--hf-mono)!important;color:var(--hf-soft)!important}
-body.v13 .rd-feed__l1>a[data-ent],body.v13 .rd-feed__l1>.rd-who>a[data-ent]{font-weight:700!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important;white-space:nowrap!important}
-body.v13 .rd-feed__l1>a[data-ent]:hover,body.v13 .rd-feed__l1>.rd-who>a[data-ent]:hover{text-decoration-color:currentColor!important}
-body.v13 .rd-feed__deal{color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
-body.v13 .rd-feed__suffix{color:var(--hf-muted)!important;font-size:11px!important}
-body.v13 .rd-feed__l2{margin:2px 0 0!important;font:400 11px/20px var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
-body.v13 .rd-feed__l2 [data-ent]{color:var(--hf-soft)!important}
-body.v13 .rd-feed__l2 .rd-feed__filing{margin:0!important;vertical-align:0!important;line-height:20px!important}
 body.v13 .rd-feed__msg,body.v13 .rd-fl__msg,body.v13 .rd-sg__msg,body.v13 .rd-rows__msg{list-style:none!important;margin:0!important;padding:0!important}
 body.v13 .rd-feed__msg .rd-empty,body.v13 .rd-fl__msg .rd-empty{max-width:62ch!important}
-/* New since the last visit: a word in an ink box. */
-body.v13 .rd-new{display:inline-flex!important;align-items:center!important;height:18px!important;padding:0 6px!important;border:1px solid var(--hf-ink)!important;color:var(--hf-ink)!important;background:transparent!important;
-  font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;white-space:nowrap!important;vertical-align:1px!important}
-body.v13 .rd-fl__new{color:var(--hf-ink)!important;font-weight:500!important}
-/* Following: one person per item, room kept for --slots of them. */
-body.v13 .rd-flist{--fl-h:104px;list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-height:calc(var(--slots,3) * var(--fl-h))!important}
-body.v13 .rd-fl{display:grid!important;grid-template-columns:40px minmax(0,1fr)!important;column-gap:12px!important;align-items:start!important;box-sizing:border-box!important;min-height:var(--fl-h)!important;margin:0!important;padding:14px 0!important;
-  border-bottom:1px solid var(--hf-line)!important;list-style:none!important;transition:opacity .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13 .rd-fl__body,body.v13 .rd-sg__body{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:10px!important;min-width:0!important}
-body.v13 :is(.rd-fl__body,.rd-sg__body)>p{grid-column:1/-1!important;margin:0!important;min-width:0!important}
-body.v13 :is(.rd-fl__name,.rd-sg__name){grid-column:1!important;grid-row:1!important;font:700 13px/22px var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-body.v13 :is(.rd-fl__name,.rd-sg__name) a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
-body.v13 :is(.rd-fl__name,.rd-sg__name) a:hover{text-decoration-color:currentColor!important}
-body.v13 :is(.rd-fl__body,.rd-sg__body)>.v10-follow-btn{grid-column:2!important;grid-row:1!important;align-self:center!important}
-body.v13 :is(.rd-fl__meta,.rd-sg__co){font:400 11px/20px var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-body.v13 :is(.rd-fl__meta,.rd-sg__co) [data-ent]{color:var(--hf-soft)!important}
-body.v13 :is(.rd-fl__sum,.rd-sg__sum){font:400 11px/18px var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;margin-top:2px!important}
+
+/* Latest trades: two lines per row at a fixed row height (72px); the list keeps room for --rows rows. */
+body.v13 .rd-feed{--feed-row:72px;list-style:none!important;margin:0!important;padding:0!important;min-height:calc(var(--rows,3) * var(--feed-row))!important}
+body.v13 .rd-feed__row{position:relative!important;display:grid!important;grid-template-columns:40px minmax(0,1fr)!important;align-items:center!important;column-gap:14px!important;box-sizing:border-box!important;
+  min-height:var(--feed-row)!important;margin:0!important;padding:14px 0!important;border:0!important;box-shadow:inset 0 -1px 0 var(--hf-line-faint)!important;list-style:none!important;transition:opacity .35s!important}
+/* The divider is drawn inside the row (a 1px inset shadow), so every row is exactly --feed-row tall, the last one too. */
+body.v13 .rd-feed__row:last-child{box-shadow:none!important}
+body.v13 .rd-feed__body{min-width:0!important}
+body.v13 .rd-feed__l1{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:2px 10px!important;margin:0!important;font:400 12.5px/22px var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
+body.v13 .rd-feed__l1>[data-ent],body.v13 .rd-feed__l1>.rd-who>[data-ent]{font:600 13px/22px var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;white-space:nowrap!important}
+/* The deal: the shares and price in soft, the value it comes to ("= $51,600") in ink and bold, since it is what the row is for. */
+body.v13 .rd-feed__deal{color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-feed__deal>.rd-nb{color:var(--hf-ink)!important;font-weight:600!important}
+body.v13 .rd-feed__l1>.rd-new{margin-left:auto!important}
+body.v13 .rd-feed__suffix{color:var(--hf-muted)!important;font-size:11px!important}
+body.v13 .rd-feed__l2{margin:2px 0 0!important;font:400 11px/20px var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-feed__l2 [data-ent]{color:var(--hf-soft)!important}
+body.v13 .rd-feed__l2 .rd-feed__filing{margin:0!important;vertical-align:0!important;font:500 11px/20px var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-feed__l2 .rd-feed__filing:hover{color:var(--hf-ink)!important}
 /* Unfollowed in this visit: dimmed where it is, until the next visit. */
 body.v13 :is(.rd-fl,.rd-feed__row).is-dropped{opacity:.45!important}
-body.v13 .rd-more--feed,body.v13 .rd-more--list{min-height:calc(1.7em + 12px)!important}
 /* Under the feed, room for the Show more button is kept even when there is nothing more yet: a follow that adds rows
    past the feed's height brings the button in without moving what is below it. */
-body.v13 .rd-more--feed{min-height:calc(12px + 28px)!important}
-/* Show N more trades: a small outlined control under the feed that presses like an atom. */
-body.v13 .rd-more-btn{display:inline-flex!important;align-items:center!important;height:28px!important;min-height:28px!important;margin:0!important;padding:0 12px!important;border:1px solid var(--hf-line-2)!important;background:transparent!important;color:var(--hf-ink)!important;
-  font:var(--hf-label)!important;letter-spacing:.14em!important;text-transform:uppercase!important;white-space:nowrap!important;cursor:pointer!important;transition:border-color .2s!important}
-body.v13 .rd-more-btn:hover{border-color:var(--hf-ink)!important}
-/* Suggestions: six in place of the feed for a reader who follows nobody, one compact row of four otherwise. */
-body.v13 .rd-suggest{grid-area:suggest!important;min-width:0!important;margin:clamp(26px,3vw,40px) 0 0!important;padding:0!important}
-body.v13 .rd-follow.is-empty .rd-suggest{margin-top:18px!important}
-body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body.v13 .rd-more--feed{box-sizing:border-box!important;min-height:calc(12px + 32px + 12px)!important;padding:12px 0!important;margin:0!important}
+body.v13 .rd-more--list{box-sizing:border-box!important;min-height:calc(12px + 1.7em + 8px)!important;padding:12px 0 8px!important;margin:0!important}
+body.v13 .rd-more--feed:empty{padding:0!important}
+body.v13 .rd-more--list:empty{min-height:0!important;padding:0!important}
+/* Show N more trades: a ghost sm button, its label on the rows' edge. */
+body.v13 .rd-more-btn{display:inline-flex!important;align-items:center!important;height:32px!important;min-height:32px!important;margin:0 0 0 -12px!important;padding:0 12px!important;border:0!important;background:transparent!important;color:var(--hf-soft)!important;
+  font:500 12px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;white-space:nowrap!important;cursor:pointer!important;transition:color .12s linear,background-color .12s linear!important}
+body.v13 .rd-more-btn:hover{color:var(--hf-ink)!important}
+body.v13 .rd-more-btn:active{background:var(--hf-raise)!important}
+
+/* Following: one person per row, room kept for --slots of them (84px each). */
+body.v13 .rd-flist{--fl-h:84px;list-style:none!important;margin:0!important;padding:0!important;min-height:calc(var(--slots,3) * var(--fl-h))!important}
+body.v13 .rd-fl{display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;column-gap:12px!important;align-items:start!important;box-sizing:border-box!important;min-height:var(--fl-h)!important;margin:0!important;padding:12px 0!important;
+  border:0!important;box-shadow:inset 0 -1px 0 var(--hf-line-faint)!important;list-style:none!important;transition:opacity .35s cubic-bezier(.2,.7,.1,1)!important}
+body.v13 .rd-fl:last-child{box-shadow:none!important}
+/* Following nobody (wide screens): the panel holds its short message only; it sits beside the suggestions, so a first
+   follow that fills it moves nothing else. */
+@media (min-width:1180px){body.v13 .rd-flist:has(>.rd-fl__msg){min-height:0!important}body.v13 .rd-fl__msg .rd-empty{padding:16px 0 12px!important}}
+body.v13 .rd-fl__body,body.v13 .rd-sg__body{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:10px!important;min-width:0!important}
+body.v13 :is(.rd-fl__body,.rd-sg__body)>p{grid-column:1/-1!important;margin:0!important;min-width:0!important}
+body.v13 :is(.rd-fl__name,.rd-sg__name){grid-column:1!important;grid-row:1!important;font:600 13px/24px var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 :is(.rd-fl__name,.rd-sg__name) a{color:var(--hf-ink)!important}
+/* The button sits at the top right of the first line without making the line taller (28px in a 24px line). */
+body.v13 :is(.rd-fl__body,.rd-sg__body)>.v10-follow-btn{grid-column:2!important;grid-row:1!important;align-self:center!important;margin:-2px 0!important}
+body.v13 :is(.rd-fl__meta,.rd-sg__co){font:400 11px/18px var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 :is(.rd-fl__meta,.rd-sg__co) [data-ent]{color:var(--hf-soft)!important}
+body.v13 :is(.rd-fl__sum,.rd-sg__sum){font:400 11px/18px var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+
+/* Suggestions: six beside the Following panel for a reader who follows nobody, one compact row of four otherwise. */
+body.v13 .rd-suggest{grid-area:suggest!important;min-width:0!important;margin:0!important;padding:0!important;--rd-px:20px}
+body.v13 .rd-suggest>.rd-label{margin:0!important}
 body.v13 .rd-suggest.is-off{display:none!important}
-body.v13 .rd-sglist{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0 clamp(20px,2.4vw,36px)!important;list-style:none!important;margin:0!important;padding:0!important}
+body.v13 .rd-sglist{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;list-style:none!important;margin:0!important;padding:0!important}
+body.v13 .rd-sg{display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;column-gap:12px!important;align-items:start!important;box-sizing:border-box!important;min-height:108px!important;margin:0!important;padding:16px 20px!important;
+  border:0!important;border-left:1px solid var(--hf-line-faint)!important;list-style:none!important}
+body.v13 .rd-sglist>.rd-sg:nth-child(3n+1){border-left:0!important}
+body.v13 .rd-sglist>.rd-sg:nth-child(n+4){border-top:1px solid var(--hf-line-faint)!important}
 body.v13 .rd-suggest.is-compact .rd-sglist{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-body.v13 .rd-sg{display:grid!important;grid-template-columns:40px minmax(0,1fr)!important;column-gap:12px!important;align-items:start!important;box-sizing:border-box!important;min-height:104px!important;margin:0!important;padding:14px 0!important;
-  border-top:1px solid var(--hf-line)!important;list-style:none!important;transition:border-color .2s!important}
-body.v13 .rd-sg:not(.is-skeleton):hover{border-top-color:var(--hf-ink)!important}
-body.v13 .rd-sg__msg{grid-column:1/-1!important}
-/* Follow / Save buttons: a small ink-outlined control that presses like an atom (v13-motion.js). */
-/* A Follow button is as wide as its longest label ("Following ✓", 11 characters), so swapping the label never moves its edge. */
-body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn{box-sizing:border-box!important;min-width:calc(11 * (1ch + .14em) + 22px)!important}
-body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:28px!important;min-height:28px!important;padding:0 10px!important;margin:0!important;
-  border:1px solid var(--hf-line-2)!important;background:transparent!important;color:var(--hf-ink)!important;font:var(--hf-label)!important;letter-spacing:.14em!important;text-transform:uppercase!important;white-space:nowrap!important;cursor:pointer!important;
-  transition:background-color .2s,color .2s,border-color .2s!important}
-body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn:hover,body.v13 .rd-save-btn:hover{border-color:var(--hf-ink)!important}
-body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn.is-following,body.v13 .rd-save-btn.is-saved{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}
-/* The notice under the followed list: fixed to the bottom of the screen, so it never moves the page. */
-body.v13 .rd-toast{position:fixed!important;left:50%!important;bottom:22px!important;z-index:70!important;display:block!important;box-sizing:border-box!important;width:max-content!important;max-width:min(560px,calc(100vw - 32px))!important;margin:0!important;padding:12px 16px!important;
-  translate:-50% 0!important;background:var(--hf-surface-2)!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-ink)!important;font:400 11.5px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;
-  transition:opacity .25s cubic-bezier(.2,.7,.1,1),translate var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13 .rd-toast:empty{opacity:0!important;translate:-50% 12px!important;pointer-events:none!important;padding:0!important;border:0!important}
-body.v13 .rd-toast.is-error{border-color:var(--hf-alert)!important}
+body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n){border-left:1px solid var(--hf-line-faint)!important;border-top:0!important}
+body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(4n+1){border-left:0!important}
+body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n+5){border-top:1px solid var(--hf-line-faint)!important}
+body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n){border-left:1px solid var(--hf-line-faint)!important;border-top:0!important}
+body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(2n+1){border-left:0!important}
+body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n+3){border-top:1px solid var(--hf-line-faint)!important}
+body.v13 .rd-sg__msg{grid-column:1/-1!important;padding:0 20px!important}
+body.v13 #v10-follow-suggest-foot{margin:0!important;padding:12px 20px!important;border-top:1px solid var(--hf-line-faint)!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
+body.v13 #v10-follow-suggest-foot:empty{display:none!important}
+/* Follow / Save: the shared xs button (28px, 12px sentence case); "Following ✓" and "Saved ✓" are the quiet pressed
+   state. A Follow button is as wide as its longest label, so swapping the label never moves its edge. */
+body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn{box-sizing:border-box!important;min-width:calc(11ch + 24px)!important}   /* the ✓ is a little wider than 1ch */
+
+/* The notice after a follow or an unfollow: the shared popover shell, fixed to the bottom of the screen, so it never
+   moves the page. */
+body.v13 .rd-toast{position:fixed!important;left:50%!important;bottom:22px!important;z-index:70!important;display:block!important;box-sizing:border-box!important;width:max-content!important;max-width:min(560px,calc(100vw - 32px))!important;margin:0!important;
+  translate:-50% 0!important;transition:opacity .2s linear!important}
+body.v13 .rd-toast:empty{opacity:0!important;pointer-events:none!important;padding:0!important;border:0!important;box-shadow:none!important}
 /* The reader acted in the lower half of the screen: the notice shows under the header instead, clear of what they pressed. */
 body.v13 .rd-toast.is-top{top:86px!important;bottom:auto!important}
-body.v13 .rd-toast.is-top:empty{translate:-50% -12px!important}
 /* The message never blocks a click on what lies under it; only its Undo button takes the pointer. */
 body.v13 .rd-toast{pointer-events:none!important}
 body.v13 .rd-toast :is(button,a){pointer-events:auto!important}
-body.v13 .rd-undo{display:inline-flex!important;align-items:center!important;vertical-align:middle!important;box-sizing:border-box!important;margin:-4px 0 -4px 6px!important;padding:0 8px!important;height:auto!important;min-height:24px!important;min-width:44px!important;justify-content:center!important;background:none!important;border:1px solid var(--hf-line-2)!important;cursor:pointer!important;color:var(--hf-ink)!important;
-  font:500 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;text-decoration:none!important;transition:border-color .2s!important}
+body.v13 .rd-undo{display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;box-sizing:border-box!important;margin:-4px 0 -4px 8px!important;padding:0 10px!important;height:auto!important;min-height:24px!important;min-width:44px!important;
+  background:transparent!important;border:1px solid var(--hf-line-strong)!important;cursor:pointer!important;color:var(--hf-ink)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;text-decoration:none!important;transition:border-color .12s linear!important}
 body.v13 .rd-undo:hover{border-color:var(--hf-ink)!important}
+body.v13 .rd-undo:active{background:var(--hf-raise-2)!important}
 
-/* ---------- 02 Your watchlist and your notes ---------- */
-body.v13 .rd-rows{list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important}
+/* ---------- 02 Your watchlist and 03 your notes ---------- */
+body.v13 :is(.rd-module--watch,.rd-module--notes){display:flex!important;flex-direction:column!important}
+body.v13 :is(.rd-module--watch,.rd-module--notes)>.rd-rows{flex:1 0 auto!important}
+/* The notes panel ends on the watchlist panel's bottom edge (the watchlist keeps room for its foot below the panel). */
+body.v13 .rd-module--notes{padding-bottom:calc(11px * 1.7 + 12px)!important}
+body.v13 .rd-rows{list-style:none!important;margin:0!important}
+body.v13 #v3-watchlist{padding:0 24px!important}
+body.v13 #v3-notes{padding:0 20px!important}
 body.v13 .rd-row{list-style:none!important}
-body.v13 .rd-row--watch{position:relative!important;grid-template-columns:32px minmax(96px,.62fr) minmax(0,1.8fr) auto!important;box-sizing:border-box!important;min-height:86px!important;align-items:center!important}
-body.v13 .rd-row--watch:not(.is-skeleton):hover{background:var(--hf-surface)!important}
+body.v13 .rd-rows>li:last-child,body.v13 .rd-rows>.rd-row-wrap:last-child>.rd-row{border-bottom:0!important}
+body.v13 .rd-row--watch{position:relative!important;grid-template-columns:32px minmax(120px,.7fr) minmax(0,2fr) 16px!important;column-gap:16px!important;box-sizing:border-box!important;min-height:72px!important;padding:14px 0!important;align-items:center!important}
+body.v13 .rd-row--suggest{grid-template-columns:32px minmax(120px,.7fr) minmax(0,2fr) auto!important}
 /* The ticker is the row's one link, stretched over the row; the save button and the tiles sit above it. */
-body.v13 .rd-row__link{font:700 13.5px/1.25 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-ink)!important;text-decoration:none!important}
+body.v13 .rd-row__link{font:600 13px/1.25 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-ink)!important;text-decoration:none!important}
 body.v13 .rd-row__link::after{content:""!important;position:absolute!important;inset:0!important;z-index:0!important}
 body.v13 .rd-row__link:focus-visible{outline:0!important}
-body.v13 .rd-row--watch:has(.rd-row__link:focus-visible){outline:1px solid var(--hf-ink)!important;outline-offset:-1px!important}
+body.v13 .rd-row--watch:has(.rd-row__link:focus-visible){outline:2px solid var(--hf-ink)!important;outline-offset:-2px!important}
 body.v13 .rd-row--watch :is(.rd-save-btn,.ins-media,.ins-media a){position:relative!important;z-index:1!important}
-body.v13 .rd-row--watch .rd-row__detail{line-height:1.75!important}
-/* A name in the watchlist line opens that person's file: above the row's stretched company link. */
-body.v13 .rd-row--watch .rd-row__detail a[data-ent]{position:relative!important;z-index:1!important;color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 .rd-row--watch .rd-row__detail a[data-ent]:hover{text-decoration-color:currentColor!important}
+body.v13 .rd-row__id{gap:2px!important}
+body.v13 .rd-row__id small{font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
+body.v13 .rd-row__detail{font:400 12px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
+body.v13 .rd-row__detail .rd-nb{font-variant-numeric:tabular-nums!important}
+body.v13 .rd-row__detail small{margin:4px 0 0!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-row__detail .rd-type{margin:0 2px!important}
+body.v13 .rd-row__detail .rd-new{margin-left:4px!important}
+/* A name in the watchlist sentence opens that person's file: a prose link, above the row's stretched company link. */
+body.v13 .rd-row--watch .rd-row__detail a[data-ent]{position:relative!important;z-index:1!important;color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important}
+body.v13 .rd-row--watch .rd-row__detail a[data-ent]:is(:hover,:focus-visible){text-decoration-color:currentColor!important}
+/* The row's arrow turns ink when the row is pointed at: colour only, no fill. */
+body.v13 .rd-row>b{font:500 13px/1 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-row:hover>b{color:var(--hf-ink)!important}
 body.v13 .rd-row--suggest>.rd-save-btn{justify-self:end!important}
 body.v13 .rd-row-wrap{list-style:none!important;margin:0!important;padding:0!important}
-body.v13 .rd-row--note{grid-template-columns:112px minmax(0,1fr) 14px!important;box-sizing:border-box!important;min-height:76px!important}
-body.v13 .rd-row--note .rd-row__id .rd-ent strong{font:700 13.5px/1.25 var(--hf-mono)!important;color:var(--hf-ink)!important}
+/* Notes, stacked at every width: the ticker line (tile, ticker, status), then the note and when it was updated. */
+body.v13 .rd-row--note{grid-template-columns:minmax(0,1fr) 14px!important;grid-template-areas:"id a" "detail a"!important;row-gap:6px!important;column-gap:12px!important;box-sizing:border-box!important;min-height:76px!important;padding:14px 0!important}
+body.v13 .rd-row--note>.rd-row__id{grid-area:id!important;flex-direction:row!important;align-items:center!important;gap:10px!important}
+body.v13 .rd-row--note>.rd-row__detail{grid-area:detail!important}
+body.v13 .rd-row--note>b{grid-area:a!important;align-self:start!important;margin-top:4px!important}
+body.v13 .rd-row--note .rd-row__id .rd-ent{gap:8px!important}
+body.v13 .rd-row--note .rd-row__id .rd-ent strong{font:600 13px/1.25 var(--hf-mono)!important;color:var(--hf-ink)!important}
+body.v13 .rd-row--note .rd-row__id small{font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-row--note .rd-row__detail{font:400 12px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13 .rd-row--note .rd-row__detail small{margin:2px 0 0!important}
+body.v13 .rd-row--note:hover .rd-row__id strong{text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 body.v13 .rd-rows__msg .rd-empty{padding:14px 0!important}
 body.v13 #v3-notes .rd-rows__msg.is-skeleton .rd-empty{min-height:calc(2 * 1.75em)!important;box-sizing:content-box!important}
-body.v13 #v3-watchlist .rd-rows__msg .rd-empty{padding:14px 0 10px!important}
+body.v13 #v3-watchlist .rd-rows__msg .rd-empty{padding:14px 0 10px!important;border-bottom:1px solid var(--hf-line-faint)!important}
+body.v13 #v3-watchlist-foot{min-height:calc(1.7em + 12px)!important}
+/* An empty foot keeps no room (it is below the first screen; a return visit keeps the height it had), and the notes panel
+   then ends on the watchlist panel's edge again. */
+body.v13 #v3-watchlist-foot:empty{min-height:0!important;padding:0!important}
+body.v13 .rd-grid:has(#v3-watchlist-foot:empty) .rd-module--notes{padding-bottom:0!important}
 
-/* ---------- 03 Across the market ---------- */
-body.v13 .rd-module--flow .rd-module__head{padding-bottom:22px!important}
-body.v13 .rd-kpis{display:grid!important;container-type:inline-size!important;--rd-col:20cqi;--rd-pad:36px;grid-template-columns:repeat(5,minmax(0,1fr))!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important;min-height:166px!important}
-body.v13 .rd-kpis>.rd-empty{grid-column:1/-1!important;padding:18px 0!important}
-body.v13 .rd-kpi{min-width:0!important;margin:0!important;padding:18px 18px 20px!important;border-left:1px solid var(--hf-line)!important}
-body.v13 .rd-kpi:first-child{padding-left:0!important;border-left:0!important}
+/* ---------- 04 Across the market ---------- */
+/* Totals: one panel, five equal cells divided by faint rules. The value's size fits its cell (--rd-len characters in
+   a cell --rd-col wide with --rd-pad of padding), so ten-digit totals never overflow. */
+body.v13 .rd-kpis{display:grid!important;container-type:inline-size!important;--rd-col:20cqi;--rd-pad:48px;grid-template-columns:repeat(5,minmax(0,1fr))!important;margin:0!important;padding:0!important;min-height:154px!important}
+body.v13 .rd-kpis>.rd-empty{grid-column:1/-1!important;padding:18px 24px!important}
+body.v13 .rd-kpi{min-width:0!important;margin:0!important;padding:20px 24px 22px!important;border-left:1px solid var(--hf-line-faint)!important}
+body.v13 .rd-kpi:first-child{border-left:0!important;padding-left:24px!important}
 body.v13 .rd-kpi__label{display:block!important;margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 body.v13 .rd-kpi__label .rd-tri{vertical-align:0!important}
-body.v13 .rd-kpi__value{margin:12px 0 0!important;font:700 clamp(22px,2.1vw,30px)/1.1 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important;white-space:nowrap!important;overflow-wrap:normal!important}
-body.v13 .rd-kpi__value{font-size:min(clamp(22px,2.1vw,30px),calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
+body.v13 .rd-kpi__value{margin:10px 0 0!important;font:700 var(--hf-fs-stat)/1.1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important;white-space:nowrap!important;overflow-wrap:normal!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-kpi__value{font-size:min(var(--hf-fs-stat),calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
 body.v13 .rd-kpi__value>span{display:inline!important}
-body.v13 .rd-kpi__value .rd-tri{width:11px!important;height:10px!important;margin-right:8px!important}
+body.v13 .rd-kpi__value .rd-tri{width:10px!important;height:9px!important;margin-right:8px!important}
 body.v13 .rd-kpi__value--up{color:var(--hf-up)!important}
 body.v13 .rd-kpi__value--down{color:var(--hf-down)!important}
-body.v13 .rd-kpi__note{margin:10px 0 0!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
+body.v13 .rd-kpi__note{margin:8px 0 0!important;max-width:30ch!important;font:400 11px/1.55 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
 
-body.v13 .rd-flow{display:grid!important;grid-template-columns:minmax(0,7fr) minmax(0,5fr)!important;gap:clamp(32px,4vw,64px)!important;margin:clamp(28px,3vw,40px) 0 0!important;align-items:start!important}
-body.v13 .rd-panel{min-width:0!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
-body.v13 .rd-panel--largest{margin:clamp(36px,4vw,52px) 0 0!important}
+/* The chart and by company side by side (7 : 5), both panels as tall as the taller. */
+body.v13 .rd-flow{display:grid!important;grid-template-columns:minmax(0,7fr) minmax(0,5fr)!important;gap:24px!important;margin:24px 0 0!important;align-items:stretch!important}
+body.v13 .rd-panel{min-width:0!important;margin:0!important}
+body.v13 :is(.rd-panel--daily,.rd-panel--companies){padding:20px 24px 16px!important}
+body.v13 .rd-panel--largest{margin:24px 0 0!important;padding:0 24px!important}
 body.v13 .rd-panel__head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:10px 18px!important;margin:0 0 16px!important;padding:0!important}
 body.v13 .rd-panel__head>div{min-width:0!important}
-body.v13 .rd-panel h3{margin:0!important;font:700 16px/1.25 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
-body.v13 .rd-panel__head p{margin:6px 0 0!important;font:400 11px/1.65 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;max-width:60ch!important;text-wrap:pretty!important}
+body.v13 .rd-panel h3{margin:0!important;font:600 14px/1.3 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important}
+body.v13 .rd-panel__head p{margin:4px 0 0!important;max-width:56ch!important;font:400 11.5px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;text-wrap:pretty!important}
+body.v13 .rd-panel--largest>.rd-panel__head{margin:0 -24px!important;padding:16px 24px!important;border-bottom:1px solid var(--hf-line)!important}
 
-/* Chart | Table: a two-way switch; both views share one fixed-height frame and crossfade in place. */
-body.v13 .rd-seg{display:inline-flex!important;flex:none!important;margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important}
+/* Chart | Table: the shared segmented control; both views share one fixed-height frame and crossfade in place. The
+   plot's height (300px; 260px on tablets; 200px on phones) is drawn by v4-dashboard.js (PLOT); the frame adds the
+   28px legend and the 8 + 40px day axis. */
+body.v13 .rd-seg{flex:none!important;margin:0!important}
 body.v13 .rd-seg[hidden]{display:none!important}
-body.v13 .rd-seg button{height:30px!important;min-height:30px!important;margin:0!important;padding:0 12px!important;border:0!important;background:transparent!important;color:var(--hf-soft)!important;cursor:pointer!important;
-  font:var(--hf-label)!important;letter-spacing:.14em!important;text-transform:uppercase!important;transition:background-color .2s,color .2s!important}
-body.v13 .rd-seg button+button{border-left:1px solid var(--hf-line-2)!important}
-body.v13 .rd-seg button:hover{color:var(--hf-ink)!important}
-body.v13 .rd-seg button[aria-pressed="true"]{background:var(--hf-ink)!important;color:var(--hf-bg)!important}
-body.v13 .rd-seg button:focus-visible{outline-offset:-3px!important}
-body.v13 .rd-dframe{--plot-h:340px;position:relative!important;display:grid!important;height:calc(var(--plot-h) + 84px)!important;margin:0!important}
+body.v13 .rd-seg button{cursor:pointer!important}
+body.v13 .rd-dframe{--plot-h:300px;position:relative!important;display:grid!important;height:calc(var(--plot-h) + 76px)!important;margin:0!important}
 body.v13 .rd-dview{grid-area:1/1!important;min-width:0!important;min-height:0!important;transition:opacity .2s cubic-bezier(.2,.7,.1,1),visibility 0s linear .2s!important;opacity:0!important;visibility:hidden!important}
 body.v13 .rd-dview.is-active{opacity:1!important;visibility:visible!important;transition:opacity .2s cubic-bezier(.2,.7,.1,1) .06s,visibility 0s!important}
 body.v13 .rd-dtable{overflow:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;scrollbar-color:var(--hf-line-2) transparent!important}
-body.v13 .rd-dtable:focus-visible{outline:1px solid var(--hf-ink)!important;outline-offset:2px!important}
+body.v13 .rd-dtable:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:2px!important}
 body.v13 .rd-table--days{min-width:0!important}
-body.v13 .rd-table--days thead th{position:sticky!important;top:0!important;z-index:1!important;background:var(--hf-bg)!important}
+body.v13 .rd-table--days thead th{position:sticky!important;top:0!important;z-index:1!important;background:var(--hf-surface)!important}
 body.v13 .rd-table--days td,body.v13 .rd-table--days td:first-child{color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
 
-/* Legend: square keys mirror the bars; the scope sits at the right. */
-body.v13 .rd-legend{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px 18px!important;height:30px!important;margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;overflow:hidden!important}
+/* Legend: 8px square keys mirror the bars; the scope sits at the right. */
+body.v13 .rd-legend{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:4px 18px!important;height:28px!important;margin:0!important;font:400 11px/1.4 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important;overflow:hidden!important}
 body.v13 .rd-legend>span{display:inline-flex!important;align-items:center!important;gap:8px!important}
-body.v13 .rd-legend__scope{margin-left:auto!important;letter-spacing:.06em!important;text-transform:none!important;color:var(--hf-faint)!important}
-body.v13 .rd-swatch{display:inline-block!important;width:10px!important;height:10px!important}
+body.v13 .rd-legend__scope{margin-left:auto!important;color:var(--hf-faint)!important}
+body.v13 .rd-swatch{display:inline-block!important;width:8px!important;height:8px!important}
 body.v13 .rd-swatch--up{background:var(--hf-up)!important}
 body.v13 .rd-swatch--down{background:var(--hf-down)!important}
 
-/* The day chart: a diverging column chart. Ticks and labels are mono, figures tabular. */
+/* The day chart: a diverging column chart. Barely visible gridlines, the zero line drawn above the bars; ticks are
+   mono, figures tabular. */
 body.v13 .rd-dchart{margin:0!important;padding:0!important}
-body.v13 .rd-dchart__frame{position:relative!important;display:grid!important;grid-template-columns:64px minmax(0,1fr)!important;margin:0!important}
+body.v13 .rd-dchart__frame{position:relative!important;display:grid!important;grid-template-columns:56px minmax(0,1fr)!important;margin:0!important}
 body.v13 .rd-dchart__axis{position:relative!important;height:100%!important}
-body.v13 .rd-dchart__axis span{position:absolute!important;right:12px!important;transform:translateY(-50%)!important;font:400 10px/1 var(--hf-mono)!important;letter-spacing:.02em!important;font-variant-numeric:tabular-nums!important;color:var(--hf-faint)!important;white-space:nowrap!important}
+body.v13 .rd-dchart__axis span{position:absolute!important;right:10px!important;transform:translateY(-50%)!important;font:400 10.5px/1 var(--hf-mono)!important;letter-spacing:.02em!important;font-variant-numeric:tabular-nums!important;color:var(--hf-faint)!important;white-space:nowrap!important}
 body.v13 .rd-dchart__plot{position:relative!important;height:100%!important;min-width:0!important}
-body.v13 .rd-dchart__grid{position:absolute!important;left:0!important;right:0!important;height:1px!important;display:block!important;background:var(--hf-line)!important;pointer-events:none!important;z-index:1!important}
-body.v13 .rd-dchart__grid--zero{background:var(--hf-soft)!important}
+body.v13 .rd-dchart__grid{position:absolute!important;left:0!important;right:0!important;height:1px!important;display:block!important;background:var(--hf-line-faint)!important;pointer-events:none!important;z-index:1!important}
+body.v13 .rd-dchart__grid--zero{background:var(--hf-muted)!important;z-index:3!important}
 body.v13 :is(.rd-day__bar,.rd-day__val){z-index:2!important}
 body.v13 .rd-dchart__cols{position:absolute!important;inset:0!important;display:flex!important;margin:0!important;padding:0!important;list-style:none!important}
 body.v13 .rd-day{position:relative!important;flex:1 1 0!important;min-width:0!important;margin:0!important;padding:0!important;list-style:none!important;cursor:default!important;outline:none!important}
-body.v13 .rd-day:hover,body.v13 .rd-day.is-active{background:var(--hf-surface)!important}
-body.v13 .rd-day:focus-visible{box-shadow:inset 0 0 0 1px var(--hf-ink)!important}
-body.v13 .rd-day__bar{position:absolute!important;left:50%!important;width:min(24px,56%)!important;transform:translateX(-50%)!important;display:block!important}
+/* The one fill on the page: the day under the pointer or the keyboard, at once (no transition). */
+body.v13 .rd-day:hover,body.v13 .rd-day.is-active{background:var(--hf-surface-2)!important;transition:none!important}
+body.v13 .rd-day:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:-2px!important}
+body.v13 .rd-day__bar{position:absolute!important;left:50%!important;width:min(18px,52%)!important;transform:translateX(-50%)!important;display:block!important;border-radius:0!important}
 body.v13 .rd-day__bar--up{background:var(--hf-up)!important}
 body.v13 .rd-day__bar--down{background:var(--hf-down)!important}
-body.v13 .rd-day__val{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;font:500 10.5px/14px var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important;white-space:nowrap!important;pointer-events:none!important;background:var(--hf-bg)!important;padding:0 4px!important}
-body.v13 .rd-day:hover .rd-day__val,body.v13 .rd-day.is-active .rd-day__val{background:var(--hf-surface)!important}
+body.v13 .rd-day__val{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;padding:0 4px!important;background:var(--hf-surface)!important;font:600 10.5px/14px var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important;white-space:nowrap!important;pointer-events:none!important}
+body.v13 .rd-day:hover .rd-day__val,body.v13 .rd-day.is-active .rd-day__val{background:var(--hf-surface-2)!important}
 /* Exact peak labels on the first and last day hug the inner edge instead of running past the chart. */
 body.v13 .rd-day:first-child .rd-day__val{left:0!important;transform:none!important}
 body.v13 .rd-day:last-child .rd-day__val{left:auto!important;right:0!important;transform:none!important}
-body.v13 .rd-dchart__x{display:flex!important;height:46px!important;margin:8px 0 0 64px!important}
-body.v13 .rd-dchart__x span{flex:1 1 0!important;min-width:0!important;text-align:center!important;font:400 10px/1.4 var(--hf-mono)!important;letter-spacing:.04em!important;color:var(--hf-faint)!important;white-space:nowrap!important}
+body.v13 .rd-dchart__x{display:flex!important;height:40px!important;margin:8px 0 0 56px!important}
+body.v13 .rd-dchart__x span{flex:1 1 0!important;min-width:0!important;text-align:center!important;font:400 10px/1.4 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important;white-space:nowrap!important}
 body.v13 .rd-dchart--tight .rd-dchart__x span{display:flex!important;flex-direction:column!important;align-items:center!important;line-height:1.35!important}
-body.v13 .rd-dchart__x b{font-weight:500!important;text-transform:uppercase!important;letter-spacing:.12em!important;color:var(--hf-muted)!important}
+body.v13 .rd-dchart__x b{font-weight:500!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.08em!important;color:var(--hf-muted)!important}
 
-/* The readout for a hovered or focused day, placed with `translate` (no layout), values first. */
-body.v13 .rd-tip{position:fixed!important;left:0!important;top:0!important;z-index:60!important;min-width:196px!important;margin:0!important;padding:10px 12px!important;background:var(--hf-surface-2)!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;color:var(--hf-ink)!important;pointer-events:auto!important}
+/* The readout for a hovered or focused day (the shared popover shell), placed with `translate` (no layout), values first. */
+body.v13 .rd-tip{position:fixed!important;left:0!important;top:0!important;z-index:60!important;min-width:196px!important;margin:0!important;padding:10px 12px!important;border-radius:0!important;color:var(--hf-ink)!important;pointer-events:auto!important}
 body.v13 .rd-tip[hidden]{display:none!important}
 body.v13 .rd-tip p{margin:0!important}
 body.v13 .rd-tip__date{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;margin:0 0 6px!important}
-body.v13 .rd-tip__row{display:flex!important;align-items:center!important;gap:8px!important;font:400 11px/1.8 var(--hf-mono)!important;color:var(--hf-muted)!important}
-body.v13 .rd-tip__row strong{font:700 12.5px/1.8 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important}
-body.v13 .rd-tip__key{display:inline-block!important;width:12px!important;height:2px!important}
+body.v13 .rd-tip__row{display:flex!important;align-items:center!important;gap:8px!important;font:400 12px/1.8 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-tip__row strong{font:600 12.5px/1.8 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-ink)!important}
+body.v13 .rd-tip__key{display:inline-block!important;width:8px!important;height:8px!important}
 body.v13 .rd-tip__key--up{background:var(--hf-up)!important}
 body.v13 .rd-tip__key--down{background:var(--hf-down)!important}
-body.v13 .rd-tip__net{margin:6px 0 0!important;padding:6px 0 0!important;border-top:1px solid var(--hf-line)!important;font:500 11px/1.6 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-soft)!important}
+body.v13 .rd-tip__net{margin:6px 0 0!important;padding:6px 0 0!important;border-top:1px solid var(--hf-line-2)!important;font:500 12px/1.6 var(--hf-mono)!important;font-variant-numeric:tabular-nums!important;color:var(--hf-soft)!important}
 
 /* By company: sold grows left from the centre line, bought right; the net and exact values are printed. */
 body.v13 .rd-co{display:grid!important;grid-template-columns:minmax(120px,1.6fr) minmax(0,1fr) minmax(0,1fr) minmax(92px,auto)!important;column-gap:0!important;margin:0!important}
 body.v13 .rd-co>*,body.v13 .rd-co__row{grid-column:1/-1!important}
 body.v13 .rd-co__head,body.v13 .rd-co__list,body.v13 .rd-co__row{display:grid!important;grid-template-columns:subgrid!important;align-items:center!important}
-body.v13 .rd-co__head{min-height:28px!important;padding:0 0 8px!important;border-bottom:1px solid var(--hf-line)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;box-sizing:border-box!important}
+body.v13 .rd-co__head{min-height:28px!important;padding:0 0 8px!important;border-bottom:1px solid var(--hf-line-faint)!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;box-sizing:border-box!important}
 body.v13 .rd-co__head>span{display:flex!important;align-items:center!important}
+body.v13 .rd-co__head .rd-tri{width:7px!important;height:6px!important;margin-right:6px!important}
 body.v13 .rd-co__side{padding:0 10px!important}
 body.v13 .rd-co__side--sell{justify-content:flex-end!important}
 body.v13 .rd-co__head .rd-num{justify-content:flex-end!important}
 body.v13 .rd-co__list{margin:0!important;padding:0!important;list-style:none!important}
-body.v13 .rd-co__row{row-gap:6px!important;box-sizing:border-box!important;min-height:76px!important;margin:0!important;padding:12px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;transition:background-color .15s!important}
+body.v13 .rd-co__row{row-gap:4px!important;box-sizing:border-box!important;min-height:60px!important;margin:0!important;padding:10px 0!important;border-bottom:1px solid var(--hf-line-faint)!important;list-style:none!important}
 body.v13 .rd-co__row:last-child{border-bottom:0!important}
-body.v13 .rd-co__row:not(.is-skeleton):hover{background:var(--hf-surface)!important}
 body.v13 .rd-co__id{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding-right:10px!important;color:var(--hf-ink)!important;text-decoration:none!important}
 body.v13 .rd-co__id>span{display:flex!important;flex-direction:column!important;min-width:0!important}
-body.v13 .rd-co__id strong{font:700 12.5px/1.3 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important}
+body.v13 .rd-co__id strong{font:600 12.5px/1.3 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-ink)!important}
 /* The company's name in full on up to two lines ("Occidental Petroleum Corp"), cut only past that. */
-body.v13 .rd-co__id small{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;font:400 10px/1.4 var(--hf-mono)!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:normal!important;overflow-wrap:break-word!important}
-body.v13 .rd-co__id:hover strong{text-decoration:underline!important;text-underline-offset:4px!important}
-body.v13 .rd-co__track{display:flex!important;height:10px!important;min-width:0!important}
-body.v13 .rd-co__track--sell{justify-content:flex-end!important;border-right:1px solid var(--hf-soft)!important}
+body.v13 .rd-co__id small{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;font:400 10.5px/1.4 var(--hf-mono)!important;color:var(--hf-muted)!important;overflow:hidden!important;white-space:normal!important;overflow-wrap:break-word!important}
+body.v13 .rd-co__id:is(:hover,:focus-visible) strong{text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
+body.v13 .rd-co__track{display:flex!important;height:8px!important;min-width:0!important}
+body.v13 .rd-co__track--sell{justify-content:flex-end!important;border-right:1px solid var(--hf-muted)!important}
 body.v13 .rd-co__track--buy{justify-content:flex-start!important}
-body.v13 .rd-co__bar{display:block!important;height:10px!important}
+body.v13 .rd-co__bar{display:block!important;height:8px!important}
 body.v13 .rd-co__bar--down{background:var(--hf-down)!important}
 body.v13 .rd-co__bar--up{background:var(--hf-up)!important}
-body.v13 .rd-co__net{padding-left:12px!important;font:500 12px/1.4 var(--hf-mono)!important;text-align:right!important}
-body.v13 .rd-co__detail{grid-column:2/-1!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-co__net{padding-left:12px!important;font:600 12.5px/1.3 var(--hf-mono)!important;text-align:right!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-co__detail{grid-column:2/-1!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-co__detail .rd-nb{color:var(--hf-soft)!important}
 body.v13 .rd-co__row.is-skeleton .rd-co__track{height:auto!important}
+body.v13 .rd-panel--companies .rd-more{padding:12px 0 0!important;border-top:1px solid var(--hf-line-faint)!important}
 
-/* Biggest trades: ranked, value first, the bar scaled to the largest, a headshot and a logo beside each name. */
-body.v13 .rd-largest{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line)!important}
+/* Biggest trades: ranked, value first, the bar scaled to the largest on a faint track, a logo and a headshot beside
+   each name. Three short lines below 1360px; one line per trade from 1360px. */
+body.v13 .rd-largest{margin:0!important;padding:0!important;list-style:none!important}
 body.v13 .rd-largest>.rd-empty{list-style:none!important}
-body.v13 .rd-big{display:grid!important;grid-template-columns:34px minmax(120px,170px) minmax(0,1fr) auto!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;align-items:center!important;gap:6px 16px!important;box-sizing:border-box!important;min-height:104px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;transition:background-color .15s!important}
-body.v13 .rd-big__rank{grid-area:rank!important;font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.08em!important;color:var(--hf-faint)!important}
-body.v13 .rd-big__value{grid-area:value!important;font:700 17px/1.2 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;white-space:nowrap!important}
-body.v13 .rd-big__bar{grid-area:bar!important;display:block!important;height:6px!important;background:transparent!important}
+body.v13 .rd-big{display:grid!important;grid-template-columns:28px minmax(120px,150px) minmax(0,1fr) auto!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;align-items:center!important;gap:6px 16px!important;
+  box-sizing:border-box!important;min-height:96px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line-faint)!important;list-style:none!important}
+body.v13 .rd-big:last-child{border-bottom:0!important}
+body.v13 .rd-big__rank{grid-area:rank!important;font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.06em!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-big__value{grid-area:value!important;font:600 15px/1.2 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-big__bar{grid-area:bar!important;display:block!important;height:4px!important;background:var(--hf-line-faint)!important}
 body.v13 .rd-big__bar>span{display:block!important;height:100%!important}
+body.v13 .rd-big.is-skeleton .rd-big__bar{background:var(--hf-surface-2)!important}
 body.v13 .rd-big--buy .rd-big__bar>span{background:var(--hf-up)!important}
 body.v13 .rd-big--sell .rd-big__bar>span{background:var(--hf-down)!important}
 body.v13 .rd-big__what{grid-area:what!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px 14px!important;min-width:0!important;font:400 12px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13 .rd-big__what [data-ent]{color:var(--hf-ink)!important}
-body.v13 .rd-big__what a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
-body.v13 .rd-big__what a:hover{text-decoration-color:currentColor!important}
-body.v13 .rd-big__terms{grid-area:terms!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .rd-big__what a[data-ent]{font-weight:500!important}
+body.v13 .rd-big__terms{grid-area:terms!important;font:400 11px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .rd-big>.rd-arrow{grid-area:link!important;justify-self:end!important}
-body.v13 .rd-big:not(.is-skeleton):hover{background:var(--hf-surface)!important}
-/* Wide screens: one line per trade, the bar last before the link. No column is sized by its content (the what and
-   terms columns share the space 1.1 : 1, the bar takes up to 72px), so every row has the same columns, every bar
-   starts at the same x and shares one scale. The what column has the room a full name needs; the terms wrap to a
-   second line when they must, inside a row height that already allows two. The badge and the ticker never shrink;
-   only a long name shortens, with an ellipsis. Room is kept around the links for their focus ring. */
+/* Wide screens: one line per trade. No column is sized by its content (the what and terms columns share the space
+   1.1 : 1), so every row has the same columns and every bar starts at the same x on one scale. The badge and the
+   ticker never shrink; only a long name shortens, with an ellipsis. Room is kept around the links for their focus ring. */
 @media (min-width:1360px){
-  body.v13 .rd-big{grid-template-columns:34px 150px minmax(0,1.1fr) minmax(0,1fr) minmax(48px,72px) auto!important;grid-template-areas:"rank value what terms bar link"!important;gap:0 16px!important;min-height:60px!important;padding:12px 0!important}
+  body.v13 .rd-big{grid-template-columns:28px 136px 120px minmax(0,1.1fr) minmax(0,1fr) auto!important;grid-template-areas:"rank value bar what terms link"!important;gap:0 16px!important;min-height:56px!important;padding:10px 0!important}
   body.v13 .rd-big__what>:not(:last-child){flex:none!important}
   body.v13 .rd-big__what{flex-wrap:nowrap!important;overflow:hidden!important;padding:4px!important;margin:-4px!important}
   body.v13 .rd-big__what>.rd-ent:last-child{min-width:0!important;overflow:hidden!important}
   body.v13 .rd-big__what>.rd-ent:last-child a{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 }
 
-/* ---------- 04 All recent trades ---------- */
-body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight:500!important}
+/* ---------- 05 All recent trades ---------- */
+/* The table sits in its panel with fixed columns, so no column changes width between filters and nothing is left as a
+   dead gap; the first and last cells keep 24px from the panel's edges. */
+body.v13 .rd-table-wrap--trades{padding:0!important}
+@media (min-width:1120px){body.v13 .rd-table--trades{table-layout:fixed!important;min-width:1040px!important}}
+body.v13 .rd-table--trades th:nth-child(1){width:17%!important}
+body.v13 .rd-table--trades th:nth-child(2){width:15%!important}
+body.v13 .rd-table--trades th:nth-child(3){width:17%!important}
+body.v13 .rd-table--trades th:nth-child(4){width:7%!important}
+body.v13 .rd-table--trades th:nth-child(5){width:8%!important}
+body.v13 .rd-table--trades th:nth-child(6){width:10%!important}
+body.v13 .rd-table--trades th:nth-child(7){width:10%!important}
+body.v13 .rd-table--trades th:nth-child(8){width:9%!important}
+body.v13 .rd-table--trades th:nth-child(9){width:7%!important}
+body.v13 .rd-table--trades :is(th,td):first-child{padding-left:24px!important}
+body.v13 .rd-table--trades :is(th,td):last-child{padding-right:24px!important}
+body.v13 .rd-table--trades tbody tr{height:60px!important}
+body.v13 .rd-table--trades td{white-space:nowrap!important}
+body.v13 .rd-table--trades td.rd-td-who{white-space:normal!important}
+/* Dates read as their own block after the right-aligned value. */
+@media (min-width:1120px){body.v13 .rd-table--trades :is(th:nth-child(7),td.rd-td-traded){padding-left:24px!important}}
+body.v13 .rd-table--trades td.rd-value{color:var(--hf-ink)!important;font-weight:600!important}
+body.v13 .rd-table--trades td.rd-td-price{color:var(--hf-soft)!important}
+body.v13 .rd-table--trades .rd-muted{color:var(--hf-faint)!important;font-weight:400!important}
 body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:right!important}
 body.v13 .rd-table--trades td.rd-nb .rd-sub{white-space:nowrap!important}
-body.v13 .rd-table--trades .rd-td-co .rd-sub{max-width:180px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+/* The company: its 28px logo beside two lines, the ticker over the name. */
+@media (min-width:1120px){
+  body.v13 .rd-table--trades td.rd-td-co{position:relative!important;padding-left:36px!important}
+  body.v13 .rd-table--trades td.rd-td-co>.rd-ent>:is(.ins-media,.rd-skel--tile){position:absolute!important;left:0!important;top:calc(50% - 14px)!important}
+}
+body.v13 .rd-table--trades .rd-td-co .rd-sub{overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+body.v13 .rd-table--trades .rd-td-what .rd-sub{margin-top:3px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 body.v13 .rd-table--trades .rd-ent>a,body.v13 .rd-table--trades .rd-ent>span[data-ent],body.v13 .rd-table--trades .rd-who>[data-ent]{color:var(--hf-ink)!important;font-weight:500!important;overflow-wrap:anywhere!important}
-body.v13 .rd-table--trades .rd-ent>a,body.v13 .rd-table--trades .rd-who>a[data-ent]{text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:4px!important}
-body.v13 .rd-table--trades .rd-ent>a:hover,body.v13 .rd-table--trades .rd-who>a[data-ent]:hover{text-decoration-color:currentColor!important}
-body.v13 .rd-table--trades tbody tr{height:66px!important}
+body.v13 .rd-table--trades .rd-td-co .rd-ent>a{font-weight:600!important;letter-spacing:.01em!important}
 /* In the wide table a joint filing's label takes two short lines: the lead owner (wrapping like every other name in the
    column), then "and N others" under it, so the Person column never widens for it. */
 @media (min-width:1120px){
   body.v13 .rd-table--trades .rd-who{flex-direction:column!important;align-items:flex-start!important;gap:1px 0!important;white-space:normal!important}
   body.v13 .rd-table--trades .rd-who>[data-ent]{max-width:100%!important;white-space:normal!important;overflow:visible!important}
-  body.v13 .rd-table--trades .rd-who>.rd-who__more{font-size:10.5px!important;line-height:1.5!important}
+  body.v13 .rd-table--trades .rd-who>.rd-who__more{font-size:11px!important;line-height:1.5!important}
 }
-body.v13 .rd-table--trades .rd-td-what .rd-sub{max-width:220px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 body.v13 .rd-table--trades tr.is-skeleton td{color:transparent!important}
 body.v13 .rd-table--trades .rd-short{display:none!important}
-body.v13 .rd-row__detail .rd-type{margin-right:6px!important}
-@media (min-width:760px){body.v13 .rd-table--trades th:nth-child(7),body.v13 .rd-table--trades td.rd-td-traded{padding-left:28px!important}}
-/* Filters: outgoing rows fade over 120 ms; incoming rows fade in and rise 8px on the spring, 30 ms apart. The wrap
-   keeps the height of "All" (min-height set by v3-dashboard.js), so nothing below the table moves. */
+body.v13 .rd-table--trades td.rd-links{text-align:right!important}
+/* Filters: outgoing rows fade over 120 ms, incoming rows fade in. The wrap keeps the height of "All" (min-height set by
+   v3-dashboard.js), so nothing below the table moves. */
 body.v13 #v3-trades.is-leaving>tr{opacity:0!important;transition:opacity .12s linear!important}
 body.v13 #v3-trades.is-entering>tr{animation:rd-fade .16s cubic-bezier(.2,.7,.1,1) backwards!important}
 body.v13 .rd-filters button:disabled{opacity:.42!important;cursor:default!important;pointer-events:none!important}
-body.v13 .rd-filters button{transition:background-color .2s,color .2s,border-color .2s,opacity .25s!important}
+body.v13 .rd-filters button{transition:background-color .12s linear,color .12s linear,border-color .12s linear,opacity .25s!important}
 /* The qualifiers cell is the phone record's last line only. */
 body.v13 .rd-table--trades td.rd-td-q{display:none!important}
-body.v13 #v3-trades-foot{min-height:calc(2 * 1.7em + 12px)!important}
-body.v13 #v3-watchlist-foot{min-height:calc(1.7em + 12px)!important}
-body.v13 .rd-legend-codes{display:block!important;margin:4px 0 0!important;color:var(--hf-faint)!important}
-body.v13 .rd-module__foot a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+/* The foot sits below the panel: the rows shown, the link to every filing, the code legend. */
+body.v13 #v3-trades-foot{min-height:calc(2 * 1.7em + 12px)!important;padding:12px 0 0!important;font:400 11px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .rd-legend-codes{display:block!important;margin:2px 0 0!important;color:var(--hf-faint)!important}
+body.v13 .rd-module__foot a{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;transition:text-decoration-color .12s linear!important}
+body.v13 .rd-module__foot a:hover{text-decoration-color:currentColor!important}
+/* Tablets: each trade a short record on a 12-column grid inside the panel. */
 @media (min-width:760px) and (max-width:1119px){
-  body.v13 .rd-table-wrap--trades{overflow:visible!important}
+  body.v13 .rd-table-wrap--trades{overflow:visible!important;padding:0 24px!important}
   body.v13 .rd-table--trades{display:block!important;min-width:0!important;width:100%!important}
   body.v13 .rd-table--trades thead{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   body.v13 .rd-table--trades tbody{display:block!important}
-  body.v13 .rd-table--trades tbody tr{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:12px 14px!important;height:auto!important;min-height:118px!important;padding:16px 0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important;box-sizing:border-box!important}
+  body.v13 .rd-table--trades tbody tr{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:12px 14px!important;height:auto!important;min-height:118px!important;padding:16px 0!important;border:0!important;border-bottom:1px solid var(--hf-line-faint)!important;background:transparent!important;box-sizing:border-box!important}
   body.v13 .rd-table--trades tbody tr:last-child{border-bottom:0!important}
-  body.v13 .rd-table--trades tbody tr:hover td{background:transparent!important}
-  body.v13 .rd-table--trades td,body.v13 .rd-table--trades td:last-child{display:block!important;grid-column:span 2!important;padding:0!important;border:0!important;text-align:left!important;white-space:normal!important;min-width:0!important}
+  body.v13 .rd-table--trades td,body.v13 .rd-table--trades td:last-child,body.v13 .rd-table--trades td:first-child{display:block!important;grid-column:span 2!important;padding:0!important;border:0!important;text-align:left!important;white-space:normal!important;min-width:0!important;overflow:visible!important}
   body.v13 .rd-table--trades td:nth-child(-n+3){grid-column:span 4!important}
   body.v13 .rd-table--trades td[colspan]{grid-column:1/-1!important}
-  body.v13 .rd-table--trades td.rd-td-traded{padding-left:0!important}
   body.v13 .rd-table--trades td.rd-num .rd-sub{text-align:left!important}
   body.v13 .rd-table--trades td.rd-links{align-self:end!important;text-align:right!important}
   body.v13 .rd-table--trades td[data-label]::before{content:attr(data-label)!important;display:block!important;margin:0 0 4px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
   body.v13 .rd-table--trades tbody td.rd-td-q{display:none!important}
 }
 
-/* ---------- 05 About this data: one line ---------- */
-body.v13 .rd-about-line{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;gap:10px 24px!important;padding:14px 0 0!important}
-body.v13 .rd-about{display:inline!important;list-style:none!important;margin:0!important;padding:0!important;font:400 12px/1.8 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important;flex:1 1 520px!important;min-width:0!important}
+/* ---------- 06 About this data: one line in a hairline box ---------- */
+body.v13 .rd-about-line{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px 24px!important;margin:0!important;padding:14px 20px!important;border:1px solid var(--hf-line)!important;background:none!important}
+body.v13 .rd-about{display:inline!important;list-style:none!important;margin:0!important;padding:0!important;font:400 12px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important;font-variant-numeric:tabular-nums!important;flex:1 1 520px!important;min-width:0!important}
 body.v13 .rd-about>li{display:inline!important;margin:0!important;padding:0!important;border:0!important;list-style:none!important}
 body.v13 .rd-about>li+li::before{content:" · "!important;color:var(--hf-faint)!important}
 body.v13 .rd-about__k{color:var(--hf-muted)!important}
-body.v13 .rd-about>li:last-child::after{content:"."!important;color:var(--hf-ink)!important}
-body.v13 .rd-credits{margin:18px 0 0!important;max-width:820px!important;font:400 10.5px/1.7 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
+body.v13 .rd-about>li:last-child::after{content:"."!important;color:var(--hf-soft)!important}
+body.v13 .rd-disclosure{margin:56px 0 0!important}
+body.v13 .rd-credits{margin:16px 0 0!important;max-width:820px!important;font:400 11px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
 body.v13 .rd-credits:empty{display:none!important}
-body.v13 .rd-credits a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
+body.v13 .rd-credits a{color:var(--hf-soft)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important}
 body.v13 .rd-credits.is-held:empty{display:block!important}
 
-/* ---------- responsive ---------- */
+/* ---------- tablets (760–1179px) ---------- */
 @media (max-width:1179px){
-  /* 01: the followed people above the feed, three to a row; both full width. */
-  body.v13 .rd-follow{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"side" "feed" "suggest"!important;row-gap:22px!important}
+  /* 01: the followed people above the feed, three to a row (two under 960px); all three as panels. */
+  body.v13 .rd-follow{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"side" "feed" "suggest"!important}
   body.v13 .rd-follow.is-empty{grid-template-areas:"side" "empty" "suggest" "feed"!important;grid-template-rows:none!important}
-  body.v13 .rd-follow.is-empty .rd-follow__feed{margin-top:0!important}
   body.v13 .rd-follow.is-error{grid-template-areas:"feed" "suggest"!important}
-  body.v13 .rd-follow .rd-suggest,body.v13 .rd-follow.is-empty .rd-suggest{margin-top:0!important}
-  body.v13 .rd-flist{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;column-gap:clamp(20px,3vw,32px)!important;align-content:start!important;min-height:calc(var(--slot-rows,1) * var(--fl-h))!important}
-  body.v13 .rd-fl__msg{grid-column:1/-1!important}
   body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  body.v13 .rd-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;--rd-col:33.333cqi}
+  body.v13 .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n){border-left:1px solid var(--hf-line-faint)!important;border-top:0!important}
+  body.v13 .rd-sglist>.rd-sg:nth-child(2n+1),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(2n+1),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(2n+1){border-left:0!important}
+  body.v13 .rd-sglist>.rd-sg:nth-child(n+3),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n+3),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n+3){border-top:1px solid var(--hf-line-faint)!important}
+  /* Totals: three cells over two (a 6-column grid), faint rules between. */
+  body.v13 .rd-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;--rd-col:33.333cqi;min-height:302px!important}
   body.v13 .rd-kpi{grid-column:span 2!important}
-  body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 3!important;border-top:1px solid var(--hf-line)!important}
-  body.v13 .rd-kpi:nth-child(4){padding-left:0!important;border-left:0!important}
-  body.v13 .rd-flow{grid-template-columns:minmax(0,1fr)!important}
-  body.v13 .rd-dframe{--plot-h:300px}
-}
-@media (max-width:759px){
-  body.v13 .rd-today h1{max-width:none!important;margin:10px 0 14px!important}
-  body.v13 .rd-today__line{--line-min:calc(5 * 1.75em);font-size:12.5px!important}
-  body.v13 .rd-today__line--you{--line-min:calc(4 * 1.65em);font-size:14px!important}
-  body.v13 .rd-today__line--fresh{--line-min:calc(2 * 1.75em);font-size:11px!important}
-  /* The fourth total's label in a phone's half-width tile: its short form, with tighter tracking. */
-  body.v13 .rd-kpi__label{letter-spacing:.1em!important}
-  body.v13 .rd-kpi__label .rd-wide{display:none!important}
-  body.v13 .rd-kpi__label .rd-narrow{display:inline!important}
-  /* 01 on phones: the followed people as a strip that scrolls sideways; the feed below as four-line records. */
-  body.v13 .rd-flist{display:flex!important;gap:12px!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scroll-snap-type:x mandatory!important;scrollbar-width:thin!important;scrollbar-color:var(--hf-line-2) transparent!important;
-    border-top:0!important;min-height:0!important;height:150px!important;padding:0 0 6px!important;align-items:stretch!important}
-  body.v13 .rd-fl,body.v13 .rd-fl__msg{flex:0 0 min(270px,78vw)!important;scroll-snap-align:start!important;min-height:0!important;height:auto!important;padding:12px!important;border:1px solid var(--hf-line)!important}
-  body.v13 .rd-fl__msg{display:flex!important;align-items:center!important;flex-basis:100%!important}
-  body.v13 .rd-fl__msg .rd-wide{display:none!important}
-  body.v13 .rd-fl__msg .rd-narrow{display:inline!important}
-  body.v13 .rd-follow.is-empty .rd-follow__empty{display:none!important}
-  body.v13 .rd-follow.is-empty{grid-template-areas:"side" "suggest" "feed"!important}
-  body.v13 .rd-fl__msg .rd-empty{padding:0!important}
-  body.v13 .rd-fl__body{grid-template-columns:minmax(0,1fr)!important}
-  body.v13 .rd-fl__body>.v10-follow-btn{grid-column:1!important;grid-row:auto!important;justify-self:start!important;margin-top:8px!important}
-  body.v13 .rd-fl__sum{white-space:normal!important}
-  body.v13 .rd-feed{--feed-row:160px}
-  body.v13 .rd-feed__row{grid-template-columns:44px minmax(0,1fr)!important;align-items:start!important;column-gap:12px!important;padding:14px 0!important}
-  body.v13 .rd-feed__row>.ins-media,body.v13 .rd-feed__row>.rd-skel--tile{--ins-size:44px!important}
-  body.v13 .rd-feed__l1{font-size:12px!important;line-height:22px!important;gap:2px 8px!important}
-  body.v13 .rd-more--list:empty{display:none!important}
-  body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:minmax(0,1fr)!important}
-  body.v13 .rd-sg{min-height:111px!important}
-  body.v13 .rd-row--watch{min-height:134px!important}
-  body.v13 #v3-trades-foot{min-height:calc(4 * 1.7em + 12px)!important}
-  body.v13 .rd-kpis{min-height:448px!important}
-  body.v13 .rd-big{min-height:142px!important}
-  body.v13 .rd-about{display:block!important;min-height:calc(4 * 1.8em)!important}
-  body.v13 #v3-watchlist .rd-rows__msg.is-skeleton .rd-empty{min-height:calc(2 * 1.75em)!important;box-sizing:content-box!important}
-  body.v13 .rd-row--watch{grid-template-columns:32px minmax(0,1fr) auto!important;grid-template-areas:"m id a" "m detail detail"!important;row-gap:6px!important}
+  body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 3!important;border-top:1px solid var(--hf-line-faint)!important}
+  body.v13 .rd-kpi:nth-child(4){border-left:0!important}
+  /* A saved company: the ticker and name beside its logo, the latest trade under them across the row. */
+  body.v13 .rd-row--watch,body.v13 .rd-row--suggest{grid-template-columns:32px minmax(0,1fr) auto!important;grid-template-areas:"m id a" "m detail detail"!important;row-gap:6px!important;column-gap:16px!important;align-items:start!important}
   body.v13 .rd-row--watch>:is(.ins-media,.rd-skel--tile){grid-area:m!important;align-self:start!important}
-  body.v13 .rd-row--watch>.rd-row__id{grid-area:id!important}
+  body.v13 .rd-row--watch>.rd-row__id{grid-area:id!important;align-self:center!important}
   body.v13 .rd-row--watch>.rd-row__detail{grid-area:detail!important}
   body.v13 .rd-row--watch>:is(b,.rd-save-btn){grid-area:a!important;align-self:start!important}
-  body.v13 .rd-row--note{grid-template-columns:minmax(0,1fr) 14px!important;grid-template-areas:"id a" "detail a"!important;row-gap:6px!important}
-  body.v13 .rd-row--note>.rd-row__id{grid-area:id!important;flex-direction:row!important;align-items:center!important;gap:10px!important}
-  body.v13 .rd-row--note>.rd-row__detail{grid-area:detail!important}
-  body.v13 .rd-row--note>b{grid-area:a!important}
-  body.v13 .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;--rd-col:50cqi;--rd-pad:14px}
-  body.v13 .rd-kpi,body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 1!important;padding:16px 0 16px 14px!important;border-left:1px solid var(--hf-line)!important;border-top:1px solid var(--hf-line)!important}
-  body.v13 .rd-kpi:nth-child(odd){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-row--watch>b{margin-top:4px!important}
+  /* The chart over by company. */
+  body.v13 .rd-flow{grid-template-columns:minmax(0,1fr)!important}
+  body.v13 .rd-dframe{--plot-h:260px}
+}
+@media (min-width:760px) and (max-width:1179px){
+  /* The followed people two to a row inside their panel, each cell the desktop row (name and button, meta, 30 days). */
+  body.v13 .rd-flist{--fl-h:84px;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:0!important;align-content:start!important;min-height:calc(var(--slot-rows,1) * 1.5 * var(--fl-h))!important}
+  body.v13 .rd-fl,body.v13 .rd-fl:last-child{padding:12px 16px!important;border-left:1px solid var(--hf-line-faint)!important;box-shadow:none!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(2n+1){padding-left:0!important;border-left:0!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(2n){padding-right:0!important}
+  body.v13 .rd-flist>.rd-fl:nth-child(n+3){box-shadow:inset 0 1px 0 var(--hf-line-faint)!important}
+  body.v13 .rd-fl__msg{grid-column:1/-1!important}
+  /* One column: the brief panel's sentences take two lines and one. */
+  body.v13 #rd-today-market{--line-min:calc(2 * 1.7em)}
+  body.v13 #rd-today-market.is-skeleton::before{box-shadow:0 1.7em 0 var(--hf-surface-2)!important}
+  body.v13 #rd-today-fresh{--line-min:calc(1.6em + 10px)}
+}
+@media (min-width:760px) and (max-width:959px){
+  body.v13 .rd-flist{--fl-h:102px}
+  body.v13 .rd-fl__sum{white-space:normal!important}
+}
+
+/* ---------- phones (≤759px; target 390×844) ----------
+   Panels run to the screen's edges (no side borders) and pad to the gutter; heads, figures and rows stay on the 20px edge. */
+@media (max-width:759px){
+  body.v13.rd-page{--rd-module-gap:40px}
+  body.v13 :is(.rd-follow__feed,.rd-suggest,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){margin-inline:calc(-1 * var(--hf-gutter))!important;border-left:0!important;border-right:0!important}
+  body.v13 :is(.rd-follow__feed,.rd-suggest){--rd-px:var(--hf-gutter)}
+  body.v13 .rd-follow__feed{padding:0 var(--hf-gutter) 4px!important}
+  body.v13 #v3-watchlist,body.v13 #v3-notes,body.v13 .rd-panel--largest{padding:0 var(--hf-gutter)!important}
+  body.v13 :is(.rd-panel--daily,.rd-panel--companies){padding:16px var(--hf-gutter)!important}
+  body.v13 .rd-panel--largest>.rd-panel__head{margin:0 calc(-1 * var(--hf-gutter))!important;padding:16px var(--hf-gutter)!important}
+  /* Today */
+  body.v13 .rd-today h1{font-size:30px!important}
+  body.v13 #rd-today-you{--line-min:calc(4 * 1.55em);font-size:15px!important;line-height:1.55!important}
+  body.v13 .rd-today__brief{margin-top:16px!important;max-width:none!important;padding:16px var(--hf-gutter) 14px!important}
+  body.v13 #rd-today-market{--line-min:calc(4 * 1.65em);line-height:1.65!important}
+  body.v13 #rd-today-market.is-skeleton::before{box-shadow:0 1.65em 0 var(--hf-surface-2),0 3.3em 0 var(--hf-surface-2)!important}
+  body.v13 #rd-today-fresh{--line-min:calc(2 * 1.6em + 10px);margin:12px calc(-1 * var(--hf-gutter)) 0!important;padding:10px var(--hf-gutter) 0!important}
+  body.v13 #rd-today-fresh.is-skeleton::before{left:var(--hf-gutter)!important}
+  /* The fourth total's label in a phone's half-width tile: its short form, with tighter tracking. */
+  body.v13 .rd-kpi__label{letter-spacing:.08em!important}
+  body.v13 .rd-kpi__label .rd-wide{display:none!important}
+  body.v13 .rd-kpi__label .rd-narrow{display:inline!important}
+  /* 01 on phones: the followed people as a strip of cards that scrolls sideways to the screen's edges; the feed below. */
+  body.v13 .rd-follow{gap:16px!important}
+  body.v13 .rd-follow__side{padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+  body.v13 .rd-follow__side>.rd-label{min-height:0!important;margin:0 0 10px!important;padding:0!important;border:0!important}
+  body.v13 .rd-flist{display:flex!important;gap:10px!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scroll-snap-type:x mandatory!important;scroll-padding-inline:var(--hf-gutter)!important;scrollbar-width:none!important;
+    margin:0 calc(-1 * var(--hf-gutter))!important;padding:0 var(--hf-gutter)!important;min-height:0!important;height:154px!important;align-items:stretch!important}
+  body.v13 .rd-flist::-webkit-scrollbar{display:none!important}
+  body.v13 .rd-fl,body.v13 .rd-fl__msg{flex:0 0 min(260px,74vw)!important;scroll-snap-align:start!important;min-height:0!important;height:auto!important;padding:14px!important;
+    background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important;grid-template-columns:32px minmax(0,1fr)!important}
+  body.v13 .rd-fl:last-child{box-shadow:var(--hf-hl)!important}
+  body.v13 .rd-fl>:is(.ins-media,.rd-skel--tile){--ins-size:32px!important}
+  body.v13 .rd-fl__msg{display:flex!important;align-items:center!important;flex-basis:calc(100vw - 2 * var(--hf-gutter))!important}
+  body.v13 .rd-fl__msg .rd-wide{display:none!important}
+  body.v13 .rd-fl__msg .rd-narrow{display:inline!important}
+  body.v13 .rd-fl__msg .rd-empty{padding:0!important}
+  body.v13 .rd-follow.is-empty .rd-follow__empty{display:none!important}
+  body.v13 .rd-follow.is-empty{grid-template-areas:"side" "suggest" "feed"!important}
+  body.v13 .rd-fl__body{grid-template-columns:minmax(0,1fr)!important}
+  body.v13 .rd-fl__name{grid-column:1!important}
+  body.v13 .rd-fl__meta,body.v13 .rd-fl__sum{grid-column:1!important;grid-row:auto!important}
+  body.v13 .rd-fl__body>.v10-follow-btn{grid-column:1!important;grid-row:auto!important;justify-self:start!important;margin:10px 0 0!important}
+  body.v13 .rd-fl__sum{white-space:normal!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;min-height:36px!important}
+  body.v13 .rd-more--list:empty{display:none!important}
+  body.v13 .rd-more--list{padding:10px 0 0!important;min-height:0!important}
+  /* Rows take the height their two wrapped lines need; the list keeps about that much room per row (--feed-row). Below the
+     first screen, nothing above them moves when they arrive, and a follow keeps the list's height (v13-overview.js). */
+  body.v13 .rd-feed{--feed-row:124px}
+  body.v13 .rd-feed__row{grid-template-columns:36px minmax(0,1fr)!important;align-items:start!important;column-gap:12px!important;min-height:0!important;padding:14px 0!important}
+  body.v13 .rd-feed__row>.ins-media,body.v13 .rd-feed__row>.rd-skel--tile{--ins-size:36px!important}
+  body.v13 .rd-feed__l1{gap:0 8px!important}
+  body.v13 .rd-feed__l2{line-height:19px!important}
+  body.v13 .rd-feed__l2 .rd-feed__filing{line-height:19px!important}
+  body.v13 .rd-sglist,body.v13 .rd-suggest.is-compact .rd-sglist,body.v13 .rd-follow.is-empty .rd-sglist{grid-template-columns:minmax(0,1fr)!important;padding:0 var(--hf-gutter)!important}
+  body.v13 .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-suggest.is-compact .rd-sglist>.rd-sg:nth-child(n),body.v13 .rd-follow.is-empty .rd-sglist>.rd-sg:nth-child(n){min-height:96px!important;padding:14px 0!important;border:0!important;border-bottom:1px solid var(--hf-line-faint)!important}
+  body.v13 .rd-sglist>.rd-sg:last-child{border-bottom:0!important}
+  body.v13 .rd-sg__msg{padding:0!important}
+  body.v13 #v10-follow-suggest-foot{padding:12px var(--hf-gutter)!important}
+  /* 02 and 03 */
+  body.v13 .rd-row--watch,body.v13 .rd-row--suggest{min-height:112px!important;column-gap:12px!important}
+  body.v13 #v3-watchlist .rd-rows__msg.is-skeleton .rd-empty{min-height:calc(2 * 1.75em)!important;box-sizing:content-box!important}
+  body.v13 .rd-module--notes{padding-bottom:0!important}
+  /* 04: totals two to a row, the fifth across; the value capped at 22px. */
+  body.v13 .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;--rd-col:50cqi;--rd-pad:40px;min-height:430px!important}
+  body.v13 .rd-kpi,body.v13 .rd-kpi:nth-child(4),body.v13 .rd-kpi:nth-child(5){grid-column:span 1!important;padding:16px 20px!important;border-left:1px solid var(--hf-line-faint)!important;border-top:1px solid var(--hf-line-faint)!important}
+  body.v13 .rd-kpi:nth-child(odd){padding-left:var(--hf-gutter)!important;border-left:0!important}
   body.v13 .rd-kpi:nth-child(-n+2){border-top:0!important}
   body.v13 .rd-kpi:nth-child(5){grid-column:1/-1!important}
+  body.v13 .rd-kpi__value{font-size:min(22px,calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
+  body.v13 .rd-kpi__note{max-width:none!important}
+  body.v13 .rd-flow{gap:16px!important;margin-top:16px!important}
+  body.v13 .rd-panel--largest{margin-top:16px!important}
   body.v13 .rd-panel__head{flex-direction:column!important}
-  body.v13 .rd-dframe{--plot-h:200px}
-  body.v13 .rd-legend{height:auto!important;min-height:30px!important}
+  body.v13 .rd-dframe{--plot-h:200px;height:calc(var(--plot-h) + 98px)!important}
+  body.v13 .rd-legend{height:auto!important;min-height:28px!important;row-gap:2px!important}
   body.v13 .rd-legend__scope{margin-left:0!important;flex-basis:100%!important}
   body.v13 .rd-dchart__frame{grid-template-columns:52px minmax(0,1fr)!important}
   body.v13 .rd-dchart__axis span{right:8px!important}
@@ -525,14 +708,18 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-co__id{gap:6px!important}
   body.v13 .rd-co__id small{display:none!important}
   body.v13 .rd-co__detail{grid-column:1/-1!important}
-  body.v13 .rd-big{grid-template-columns:28px minmax(0,1fr) auto!important;grid-template-areas:"rank value link" ". bar bar" ". what what" ". terms terms"!important}
-  /* Trades as three-line records: who and where; what happened with the figures; the dates and the filing.
-     The cells flow in one wrapping line, broken twice by the row's own ::before and ::after. */
-  body.v13 .rd-table--trades tbody tr.rd-trade{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:6px!important;height:auto!important;min-height:131px!important;padding:14px 0!important;box-sizing:border-box!important}
+  body.v13 .rd-big{grid-template-columns:24px auto minmax(0,1fr) auto!important;grid-template-areas:"rank value bar link" ". what what what" ". terms terms terms"!important;gap:6px 12px!important;min-height:112px!important;padding:14px 0!important}
+  /* Trades as three-line records inside the full-bleed panel: who and where; what happened with the figures; the dates
+     and the filing. The cells flow in one wrapping line, broken twice by the row's own ::before and ::after. */
+  body.v13 .rd-table-wrap--trades{padding:0 var(--hf-gutter)!important}
+  body.v13 .rd-table--trades tbody tr{border-bottom:1px solid var(--hf-line-faint)!important}
+  body.v13 .rd-table--trades tbody tr:last-child{border-bottom:0!important}
+  body.v13 .rd-table--trades tbody tr.rd-trade{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:4px!important;height:auto!important;min-height:108px!important;padding:14px 0!important;box-sizing:border-box!important}
+  body.v13 .rd-table--trades tr.rd-trade .rd-ent .ins-media,body.v13 .rd-table--trades tr.rd-trade .rd-ent>.rd-skel--tile{--ins-size:20px!important}
   body.v13 .rd-table--trades tr.rd-trade::before,body.v13 .rd-table--trades tr.rd-trade::after{content:""!important;display:block!important;flex:0 0 100%!important;height:0!important}
   body.v13 .rd-table--trades tr.rd-trade::before{order:3!important}
   body.v13 .rd-table--trades tr.rd-trade::after{order:8!important}
-  body.v13 .rd-table--trades tr.rd-trade td{display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;padding:0!important;font-size:11.5px!important;line-height:22px!important;white-space:nowrap!important}
+  body.v13 .rd-table--trades tr.rd-trade td,body.v13 .rd-table--trades tr.rd-trade td:first-child,body.v13 .rd-table--trades tr.rd-trade td:last-child{display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;padding:0!important;font-size:12px!important;line-height:22px!important;white-space:nowrap!important;overflow:visible!important}
   body.v13 .rd-table--trades tr.rd-trade td::before{content:none!important}
   body.v13 .rd-table--trades tr.rd-trade td .rd-sub{display:none!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-td-who{order:1!important;flex:0 1 auto!important;min-width:0!important}
@@ -568,7 +755,16 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-long{display:none!important}
   body.v13 .rd-table--trades tr.rd-trade .rd-short{display:inline!important}
   body.v13 .rd-table--trades tr.rd-trade.is-skeleton td{flex:0 0 auto!important;width:auto!important}
-  body.v13 .rd-about{flex-basis:100%!important}
+  body.v13 #v3-trades-foot{min-height:calc(4 * 1.7em + 12px)!important}
+  /* 06 */
+  body.v13 .rd-about-line{display:block!important;padding:14px var(--hf-gutter)!important}
+  body.v13 .rd-about{display:block!important;min-height:calc(4 * 1.7em)!important}
+  body.v13 .rd-about-line>.rd-link{margin-top:8px!important}
+  body.v13 .rd-disclosure{margin-top:48px!important}
+}
+@media (max-width:374px){
+  body.v13 #rd-today-market{--line-min:calc(5 * 1.65em)}
+  body.v13 .rd-kpi__label{white-space:normal!important}
 }
 @media (max-width:389px){
   body.v13 .rd-kpi__value{font-size:min(20px,calc((var(--rd-col) - var(--rd-pad) - 19px) / (var(--rd-len,12) * .57)))!important}
@@ -581,17 +777,19 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 :is(.rd-big__what,.rd-table--trades) .rd-ent>a[data-ent],body.v13 :is(.rd-big__what,.rd-table--trades) .rd-who>a{display:flex!important;align-items:center!important;min-height:24px!important}
   body.v13 .rd-row__detail .rd-ent>a[data-ent],body.v13 .rd-row__detail .rd-who>a{display:inline-flex!important;align-items:center!important;min-height:24px!important}
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button{height:32px!important;min-height:32px!important}
-  body.v13 .rd-undo{min-height:32px!important;margin:-8px 0 -8px 6px!important}
+  body.v13 .rd-undo{min-height:32px!important;margin:-8px 0 -8px 8px!important}
 }
 @media (pointer:coarse){
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button,body.v13 .rd-filters button,body.v13 .rd-more-btn{height:44px!important;min-height:44px!important}
-  body.v13 .rd-undo{min-height:44px!important;margin:-14px 0 -14px 6px!important}
-  body.v13 .rd-more--feed{min-height:calc(12px + 44px)!important}
+  body.v13 .rd-undo{min-height:44px!important;margin:-14px 0 -14px 8px!important}
+  body.v13 .rd-more--feed{min-height:calc(12px + 44px + 12px)!important}
+}
+@media (max-width:759px) and (pointer:coarse){
+  body.v13 .rd-flist{height:166px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  body.v13 :is(.rd-rise,.rd-today__line,#v3-trades.is-entering>tr,.rd-new){animation:none!important}
+  body.v13 :is(.rd-rise,.rd-today__line,#v3-trades.is-entering>tr){animation:none!important}
   body.v13 :is(.rd-dview,.rd-dview.is-active,.rd-toast,.rd-toast:empty,#v3-trades.is-leaving>tr,.rd-fl,.rd-feed__row){transition:none!important}
-  body.v13 :is(.rd-toast,.rd-toast.is-top):empty{translate:-50% 0!important}
 }
 @media (forced-colors:active){
   body.v13 :is(.rd-day__bar,.rd-co__bar,.rd-swatch,.rd-tri,.rd-tip__key),body.v13 .rd-big .rd-big__bar>span{background:CanvasText!important}
@@ -600,7 +798,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 .rd-day:focus-visible{outline:2px solid Highlight!important;outline-offset:-2px!important}
   body.v13 :is(.rd-filters button,.rd-seg button,.v10-follow-btn,.rd-save-btn)[aria-pressed="true"]{forced-color-adjust:none!important;background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}
   body.v13 .rd-filters button[aria-pressed="true"] .rd-tri{background:HighlightText!important}
-  body.v13 .rd-new{border-color:CanvasText!important;color:CanvasText!important}
+  body.v13 .rd-new::before,body.v13 .rd-fl__new::before{background:CanvasText!important}
+  body.v13 :is(.rd-follow__feed,.rd-follow__side,.rd-suggest,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){border:1px solid CanvasText!important}
   body.v13 .rd-skel,body.v13 .rd-skel--tile{background:GrayText!important}
 }
 }

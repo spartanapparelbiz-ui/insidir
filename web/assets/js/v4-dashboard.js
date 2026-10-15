@@ -64,8 +64,8 @@ let last=null,lastLimit=0,lastTight=null,chartW=0;
 /* The chart's width comes from a ResizeObserver, so drawing never forces a layout of everything rendered before it. */
 const chartWidth=host=>chartW||host.clientWidth||960;
 const limitFor=w=>w>=700?14:w>=560?12:w>=480?8:6;
-const tightFor=(w,n)=>(w-64)/n<58;
-const PLOT=w=>w<760?200:w<1180?300:340; // the plot's height: fixed per width, so the frame never resizes with the data
+const tightFor=(w,n)=>(w-56)/n<58;
+const PLOT=w=>w<760?200:w<1180?260:300; // the plot's height: fixed per width (v13-dashboard.css .rd-dframe --plot-h), so the frame never resizes with the data
 const dayLabel=x=>D.date(x.key+"T00:00:00Z")+": bought "+D.money(x.buy)+" ("+D.plural(x.nb,"trade")+"), sold "+D.money(x.sell)+" ("+D.plural(x.ns,"trade")+"), net "+D.signedMoney(x.buy-x.sell);
 function daily(f){
  const host=$("rd-daily-chart"),table=$("rd-daily-table"),seg=$("rd-daily-switch"),frame=$("rd-daily-frame");if(!host)return;
