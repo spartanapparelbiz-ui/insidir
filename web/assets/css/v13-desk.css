@@ -9,10 +9,12 @@
    the same red, as --hf-alert, marks error messages and the destructive actions (delete account, remove a holding).
    No other colour. Square corners, no shadows, no coloured pills.
 
-   Scroll: the masthead is on screen at load; below it the sections, panels and cards rise in as they scroll into
-   view (data-hf-reveal / data-hf-reveal-group, v13-motion.js). Blocks that arrive hidden (research results, saved
-   holdings, connected accounts) are tagged by their scripts when they are first shown. The alerts page keeps its
-   entrance (motion.js data-reveal), retuned below to the same 28px rise on the dots' spring. */
+   Motion: the pages hold still; nothing moves under the pointer, on a press or on a scroll, and hovers change
+   colour, borders and underlines only. The masthead is on screen at load. Below it, sections, panels and cards are
+   marked data-hf-reveal / data-hf-reveal-group (blocks that arrive hidden, such as research results, saved holdings
+   and connected accounts, are tagged by their scripts when they are first shown); v13-motion.js fades them up once,
+   a few pixels, as they scroll in on the pages without body.app-body (the research desk and the portfolio), and holds
+   nothing back on the body.app-body pages (alerts, account, billing), where the marks are inert. */
 @layer insidir-v13{
 
 /* ---------- Shared desk primitives ---------- */
@@ -193,17 +195,11 @@ body.v13 #main .portfolio-next>a{display:inline-flex!important;margin:6px 0 0!im
 body.v13 #main.alerts-main{--t:1px!important;padding-top:clamp(26px,3.6vw,52px)!important}
 body.v13 #main .alerts-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"topline topline" "title action" "sub sub"!important;column-gap:24px!important;align-items:start!important}
 body.v13 #main .alerts-topline{grid-area:topline!important}
-/* The alerts page's lead and panel enter once (motion.js [data-reveal]) exactly as the site's scroll reveal does
-   (v13-motion.js .hf-pending/.hf-revealing): 28px low and transparent, rising on the dots' spring while they fade up on
-   the same curve, each keeping its own delay so they arrive a beat apart. They carry no data-hf-reveal, so nothing
-   animates twice. Focus inside a reveal still skips it. The split heading keeps its ease (its words rise out of a mask
-   that would clip an overshoot), and so does the tab fill. The Manage alerts button is a motion atom (v13-motion.js)
-   rather than motion.js-magnetic, so only one thing moves it.
-   [data-observed] is motion.js's own mark, so without scripts nothing waits low. */
+/* The alerts page holds nothing back: alerts.html no longer loads motion.js or carries its [data-reveal] / data-split
+   marks, so the lead, the filters and the panel are simply there. The rules below are what is left of that entrance:
+   they keep a [data-reveal] block from ever sitting low ([data-observed] was motion.js's own mark). */
 body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]{transition:opacity .7s cubic-bezier(.2,.7,.1,1) var(--delay,0s),transform var(--hf-spring-dur) var(--hf-spring) var(--delay,0s)!important}
-@media (prefers-reduced-motion:no-preference){
-  body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal="up"][data-observed]:not(.is-in){transform:translate3d(0,28px,0)!important}
-}
+body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal][data-observed]:not(.is-in){transform:none!important}
 body.v13 #main.alerts-main :is(.alerts-sub,.alerts-panel)[data-reveal]:focus-within{transition:none!important}
 body.v13 #main .alerts-title{grid-area:title!important;line-height:1!important;margin:0!important}
 body.v13 #main .alerts-sub{grid-area:sub!important;margin:18px 0 0!important}
@@ -256,7 +252,7 @@ body.v13 #main .alert-detail__card{margin:0 0 18px!important;padding:18px 20px!i
 body.v13 #main .alert-facts dt{font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:1.75!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;margin:0!important}
 body.v13 #main .alert-facts dd{font:400 12px/1.7 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-ink)!important;margin:0!important}
 body.v13 #main .alert-src svg{width:12px!important;height:12px!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13 #main .alert-src:hover svg{transform:translate(2px,-2px)!important}
+body.v13 #main .alert-src:hover svg{transform:none!important}
 body.v13 #main .alert-links .btn{font-size:10.5px!important;height:36px!important;min-height:36px!important;padding:0 14px!important}
 body.v13 #main .alert-detail__note{grid-column:1/-1!important;padding:12px 0 0!important;border-top:1px solid var(--hf-line)!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-faint)!important}
 body.v13 #main .alerts-empty{display:grid!important;justify-items:start!important;text-align:left!important;gap:8px!important;padding:40px 0 44px!important;border:0!important}
@@ -270,9 +266,9 @@ body.v13 #main .alerts-empty .btn{margin:12px 0 0!important;height:36px!importan
 /* Manage-alerts drawer: a paper panel on a hairline, tracked labels, square switches. */
 body.v13 .drawer__backdrop{background:color-mix(in srgb,var(--hf-bg) 62%,transparent)!important;-webkit-backdrop-filter:blur(2px)!important;backdrop-filter:blur(2px)!important}
 body.v13 .drawer__panel{background:var(--hf-bg)!important;color:var(--hf-ink)!important;border:0!important;border-left:1px solid var(--hf-line)!important;box-shadow:none!important;border-radius:0!important}
-/* The panel slides in on the dots' spring (v13-halftone.css --hf-spring). The spring overshoots by a quarter of the
-   travel, so the panel reaches 160px past the right edge (padding, never content) and no gap opens; it leaves on its
-   quick ease-in. The preferences follow it in on the same spring. */
+/* Opened by the reader, the panel slides in on --hf-spring (v13-halftone.css: a short ease-out, no overshoot) and
+   leaves on its quick ease-in; it reaches 160px past the right edge (padding, never content), so no gap can open
+   there. The preferences follow it in on the same curve, a beat apart. */
 body.v13 .drawer__panel{right:-160px!important;width:calc(min(100vw,460px) + 160px)!important;padding-right:160px!important}
 body.v13 .drawer.is-open .drawer__panel{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .drawer.is-open :is(.pref,.drawer__foot){transition:opacity .6s ease-out calc(.16s + var(--i,0) * 55ms),transform var(--hf-spring-dur) var(--hf-spring) calc(.16s + var(--i,0) * 55ms)!important}

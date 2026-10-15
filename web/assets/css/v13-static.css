@@ -13,18 +13,18 @@
    above the shared file's :is() lists. Never set `display` on an element that can carry the `hidden`
    attribute without a :not([hidden]) guard.
 
-   Motion: the pages move like the landing wordmark (v13-halftone.js, v13-motion.js). Each hero carries a live dot
-   field in its top padding, the platform's report schematic plots its price area as one, and the closing call sits
-   over another; small free-standing marks are atoms that part around the pointer, pop when it arrives and trail a
-   scroll (index numbers and arrows, step, rule and cadence numbers, the schematic's keys, chips and tabs, the
-   transaction-code letters, tags, the legal contents' numbers). Rows and cards that link somewhere answer a
-   pointer at once: an ink hairline or a surface fill, and their arrow nudged on the spring. Movement transitions
-   settle on the dots' spring (var(--hf-spring) over var(--hf-spring-dur)); colour transitions keep their plain
-   easing.
+   Motion: the pages hold still (v13-motion.js moves nothing). Each hero carries a dot field in its top padding,
+   the platform's report schematic plots its price area as one, and the closing call sits over another; these are
+   still print texture (v13-halftone.js) and do not answer the pointer or a click. Nothing moves under the pointer,
+   on a press or on a scroll: index numbers and arrows, step, rule and cadence numbers, the schematic's keys, chips
+   and tabs, the transaction-code letters, tags and the legal contents' numbers all stay exactly where they are.
+   Rows and cards that link somewhere answer a pointer with colour only: an ink hairline, an underline or a surface
+   fill; their arrows do not move. Colour transitions keep their plain easing.
 
-   Scroll: below the hero each page assembles as it is read. Section heads, diagrams, grids and the closing call
-   carry data-hf-reveal (one block) or data-hf-reveal-group (each child in turn) in the markup, and v13-motion.js
-   lifts them in on the spring (.hf-pending / .hf-revealing, v13-halftone.css). Grids drawn with 1px gaps over a
+   Scroll: below the hero each page assembles once as it is read. Section heads, diagrams, grids and the closing
+   call carry data-hf-reveal (one block) or data-hf-reveal-group (each child in turn) in the markup, and
+   v13-motion.js fades them up a few pixels into place, once (.hf-pending / .hf-revealing, v13-halftone.css: a
+   short ease-out, no spring). Grids drawn with 1px gaps over a
    hairline background (.mk-cells, .mk-codes, .mk-statuses) reveal as one block so no empty cell shows its
    hairline fill, and nothing that holds a sticky box (the questions' heading, the legal contents) is ever tagged.
 
@@ -77,8 +77,8 @@ body.v13.v3-static.v6-static .v9-nav .v6-mobile a:focus-visible{outline-offset:-
 /* ---------- Buttons, links and the arrow ---------- */
 body.v13.v3-static.v6-static .v12-outline-button{background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .v12-outline-button:hover{background:var(--hf-surface)!important;border-color:var(--hf-ink)!important;color:var(--hf-ink)!important}
-/* Pressed: the ink button dims a step further than its hover, the hairline one fills, a text link dims to soft
-   (the atom under the finger also gives a little, v13-motion.js). */
+/* Pressed: the ink button dims a step further than its hover, the hairline one fills, a text link dims to soft;
+   nothing changes size or position. */
 body.v13.v3-static.v6-static :is(.v9-btn--ink,.v6-mobile a:last-child):active{background:var(--hf-muted)!important;border-color:var(--hf-muted)!important;color:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .v12-outline-button:active{background:var(--hf-raise)!important}
 body.v13.v3-static.v6-static :is(.mk-link,.v6-nav__links a,.v6-signin,.v6-mobile a:not(:last-child)):active{color:var(--hf-soft)!important}
@@ -87,7 +87,7 @@ body.v13.v3-static.v6-static .mk-link{display:inline-flex!important;align-items:
 body.v13.v3-static.v6-static .mk-link:hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
 body.v13.v3-static.v6-static .mk-link::after{content:""!important;position:absolute!important;inset:-14px -8px!important;background:transparent!important}
 body.v13.v3-static.v6-static :is(.v9-btn,.mk-link) .v13-arrow{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13.v3-static.v6-static :is(.v9-btn,.mk-link):hover .v13-arrow{transform:translate(2px,-2px)!important}
+body.v13.v3-static.v6-static :is(.v9-btn,.mk-link):hover .v13-arrow{transform:none!important}
 /* Drawn from the text colour (shaft and open head, 1px like the mono's stroke) so it matches the type at every
    size; the glyph stays in the markup as the no-CSS fallback. */
 body.v13.v3-static.v6-static .v13-arrow{position:relative!important;display:inline-block!important;width:10px!important;height:10px!important;font-size:0!important;line-height:0!important;color:inherit!important;vertical-align:-1px!important;flex:none!important;overflow:hidden!important;text-align:left!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important}
@@ -131,7 +131,7 @@ body.v13.v3-static.v6-static .mk-index a span:first-child{font:500 10.5px/1 var(
 body.v13.v3-static.v6-static .mk-index a span:last-child{font:400 12px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;text-align:right!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static .mk-index a:hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-index a:hover span:first-child,body.v13.v3-static.v6-static .mk-index a:hover span:last-child{color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-index a:hover span:last-child{transform:translateY(2px)!important}
+body.v13.v3-static.v6-static .mk-index a:hover span:last-child{transform:none!important}
 body.v13.v3-static.v6-static .mk-index a:focus-visible{outline-offset:-2px!important}
 
 /* ---------- Sections: hairline rule, folio, head ---------- */
@@ -172,9 +172,9 @@ body.v13.v3-static.v6-static a.mk-cell:focus-visible{outline-offset:-4px!importa
 body.v13.v3-static.v6-static .mk-cell__top{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;margin:0 0 clamp(24px,2.6vw,40px)!important}
 body.v13.v3-static.v6-static .mk-num{font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;transition:color .25s!important}
 body.v13.v3-static.v6-static a.mk-cell:hover .mk-num{color:var(--hf-ink)!important}
-/* A whole cell is the link: pointing anywhere on it draws its link's underline and nudges the arrow. */
+/* A whole cell is the link: pointing anywhere on it draws its link's underline; the arrow stays put. */
 body.v13.v3-static.v6-static a.mk-cell:hover .mk-link{background-size:100% 1px!important}
-body.v13.v3-static.v6-static a.mk-cell:hover .v13-arrow{transform:translate(2px,-2px)!important}
+body.v13.v3-static.v6-static a.mk-cell:hover .v13-arrow{transform:none!important}
 body.v13.v3-static.v6-static .mk-cell h3{margin:0 0 10px!important;font:700 clamp(17px,1.4vw,20px)/1.25 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-cell p{margin:0!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:46ch!important}
 body.v13.v3-static.v6-static .mk-cell p+p{margin-top:12px!important}
@@ -186,8 +186,8 @@ body.v13.v3-static.v6-static .mk-steps--4{grid-template-columns:repeat(4,minmax(
 body.v13.v3-static.v6-static .mk-step{position:relative!important;margin:0!important;padding:30px clamp(20px,3vw,48px) 0 0!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;list-style:none!important;min-width:0!important}
 body.v13.v3-static.v6-static .mk-step::before{content:""!important;position:absolute!important;top:-4px!important;left:0!important;width:7px!important;height:7px!important;background:var(--hf-ink)!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static .mk-step:last-child::after{content:""!important;position:absolute!important;top:-4px!important;right:0!important;width:7px!important;height:7px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important;box-sizing:border-box!important}
-/* A pointed-at step turns its square on the rule into a diamond on the dots' spring and inks its number. */
-body.v13.v3-static.v6-static .mk-step:hover::before{transform:rotate(45deg) scale(1.2)!important}
+/* A pointed-at step inks its number; its square on the rule stays put. */
+body.v13.v3-static.v6-static .mk-step:hover::before{transform:none!important}
 body.v13.v3-static.v6-static .mk-step__num{display:block!important;width:fit-content!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .2s!important}
 body.v13.v3-static.v6-static .mk-step:hover .mk-step__num{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-step h3{margin:16px 0 10px!important;font:700 clamp(17px,1.45vw,20px)/1.25 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
@@ -221,9 +221,9 @@ body.v13.v3-static.v6-static .mk-ana__lines i:first-child{width:min(260px,62%)!i
 body.v13.v3-static.v6-static .mk-ana__lines i:last-child{width:min(420px,88%)!important}
 body.v13.v3-static.v6-static .mk-ana__actions{display:flex!important;flex:none!important;gap:6px!important;margin:0 0 0 auto!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__actions li{display:inline-flex!important;align-items:center!important;height:28px!important;padding:0 10px!important;border:1px solid var(--hf-line-2)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;list-style:none!important}
-/* The plot area is a live dot field (data-halftone-field, 12px pitch): a place for the delayed price series, drawn with no
-   line of its own. Its dots part around the pointer anywhere in the chart box and ripple on a click, printed at half ink so
-   the schematic stays quiet. The box is sized here (flex, min-height) before the script draws into it. */
+/* The plot area is a dot field (data-halftone-field, 12px pitch): a place for the delayed price series, drawn with no
+   line of its own. Its dots hold still (a plain field does not answer the pointer), printed at half ink so the
+   schematic stays quiet. The box is sized here (flex, min-height) before the script draws into it. */
 body.v13.v3-static.v6-static .mk-ana__plot{position:relative!important;display:block!important;overflow:hidden!important;flex:1 1 auto!important;min-height:120px!important;
   border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important;background:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .mk-ana__plot>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important;opacity:.5!important}
@@ -296,8 +296,8 @@ body.v13.v3-static.v6-static .mk-notebox b{font-weight:500!important;color:var(-
 /* ---------- Principles (Why Insidir) ---------- */
 body.v13.v3-static.v6-static .mk-rules{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-rule{display:grid!important;grid-template-columns:minmax(64px,.32fr) minmax(0,1.15fr) minmax(0,1fr)!important;gap:16px clamp(24px,4vw,64px)!important;margin:0!important;padding:clamp(28px,3.2vw,44px) 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important}
-/* The numeral's box is only as big as the numeral (not the grid row it sits in), so it parts around the pointer
-   like a dot and pops when the pointer reaches it. */
+/* The numeral's box is only as big as the numeral (not the grid row it sits in); a pointed-at principle inks its
+   numeral, which stays where it is. */
 body.v13.v3-static.v6-static .mk-rule__num{justify-self:start!important;align-self:start!important;font:800 clamp(28px,2.6vw,40px)/1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-faint)!important;transition:color .25s!important}
 body.v13.v3-static.v6-static .mk-rule:hover .mk-rule__num{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-rule h3{margin:0 0 14px!important;font:700 clamp(20px,1.8vw,26px)/1.2 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
@@ -375,9 +375,9 @@ body.v13.v3-static.v6-static .mk-faq summary::-webkit-details-marker{display:non
 body.v13.v3-static.v6-static .mk-faq summary::marker{content:""!important}
 body.v13.v3-static.v6-static .mk-faq summary::after{content:"+"!important;position:absolute!important;right:4px!important;top:50%!important;transform:translateY(-50%)!important;width:24px!important;text-align:center!important;font:400 18px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-static.v6-static .mk-faq details[open]>summary::after{content:"\2212"!important;color:var(--hf-ink)!important}
-/* A pointed-at question inks its sign, which swells a little on the spring, and draws its rule in ink; pressed, the
-   question dims to soft. */
-body.v13.v3-static.v6-static .mk-faq summary:hover::after{color:var(--hf-ink)!important;transform:translateY(-50%) scale(1.3)!important}
+/* A pointed-at question inks its sign (which keeps its size) and draws its rule in ink; pressed, the question dims
+   to soft. */
+body.v13.v3-static.v6-static .mk-faq summary:hover::after{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-faq details:has(>summary:hover){border-bottom-color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-faq summary:active{color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-faq summary:focus-visible{outline-offset:-3px!important}

@@ -8,11 +8,10 @@
    (--hf-alert) marks only what needs attention: the past-due badge, a slow checkout confirmation and error messages.
    A checkout still being confirmed is not a problem, so its badge stays in soft ink with a pulsing dot.
 
-   Motion, as on log in and get started: the plan sheet's empty top-right corner carries a live dot field
-   (data-halftone-field, mounted by v13-halftone.js) — the landing wordmark's dots without the word, parting
-   around the pointer anywhere over the sheet, rippling on a click and springing home. Header links, buttons and
-   the index numbers part around the pointer like the dots (v13-motion.js) and hold still when aimed at; movement
-   transitions settle on the dots' spring (var(--hf-spring) over var(--hf-spring-dur)), colours keep plain easing. */
+   Motion, as on log in and get started: next to none. The plan sheet's empty top-right corner carries a dot field
+   (data-halftone-field, mounted by v13-halftone.js) — the landing wordmark's dots without the word, printed as still
+   texture that does not answer the pointer or a click. Header links, buttons and the index numbers never move: hover
+   and press change colour, borders and underlines only, with plain easing. */
 @layer insidir-v13{
 
 body.v13.pw-page [hidden]{display:none!important}

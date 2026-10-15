@@ -1,10 +1,11 @@
 /* Insidir V13 halftone engine.
    A wordmark set enormous and cropped by the bottom edge, printed as a field of
    halftone dots: each dot is sized by how much of the letter covers its cell, so
-   the type keeps its edges at any size. Move across it and the dots part around
-   the pointer on springs and settle back, always in ink (nothing on the site
-   glows); click and a shock ring runs through the word. The same engine draws a
-   plain dot field (data-halftone-field) behind the landing hero.
+   the type keeps its edges at any size. Move across it and the dots part a little
+   around the pointer and settle back, always in ink (nothing on the site glows);
+   click the word and a soft ring runs through it. It is the only thing on the
+   site that answers the pointer. The same engine draws the plain dot fields
+   (data-halftone-field) used as quiet print texture elsewhere: those hold still.
 
    Plain JavaScript port of the Halftone Wordmark Footer React component so it
    runs under the site's no-build, same-origin Content-Security-Policy. The word is
@@ -15,13 +16,12 @@
   "use strict";
 
   const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
-  /* The motion of the whole site. Every dot, and every element v13-motion.js moves, uses these numbers:
-     a pointer within the radius pushes with up to `push` per frame and drags what it passes along with
-     `drag` of its own movement; a spring of `spring` pulls home and `damping` keeps what is left each frame
-     (60 fps); a click sends a ring out at `ringSpeed` px/ms, `ringBand` px wide, with `ringForce`, for
-     `ringLife` ms; scrolling leaves everything behind by `scroll` of each frame's scroll, so it lags and
-     springs back like the dots were hung on the page. */
-  const PHYSICS = Object.freeze({ push: 2.6, spring: 0.05, damping: 0.84, ringSpeed: 0.9, ringBand: 26, ringForce: 3.2, ringLife: 900, drag: 0.05, scroll: 0.03 });
+  /* The wordmark's dots: a pointer within the radius pushes with up to `push` per frame and drags what it
+     passes along with `drag` of its own movement; a spring of `spring` pulls home and `damping` keeps what is
+     left each frame (60 fps), so a dot moves at most push / spring ≈ 12px and settles in about half a second
+     without bouncing far; a click on the word sends a ring out at `ringSpeed` px/ms, `ringBand` px wide, with
+     `ringForce`, for `ringLife` ms. `scroll` is 0: nothing trails a scroll. */
+  const PHYSICS = Object.freeze({ push: 1, spring: 0.08, damping: 0.8, ringSpeed: 0.9, ringBand: 22, ringForce: 1.1, ringLife: 650, drag: 0.015, scroll: 0 });
   const KICK_MAX = 48;  // px of scroll per frame that count; a jump further than that is one hard flick
   const SANS_STACK = '"Inter", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif';
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -88,7 +88,9 @@
       crop: num("crop", 0.2),
       grain: num("grain", field ? 0 : 0.5),
       fieldCoverage: num("fieldCoverage", 0.12),
-      interactive: d.interactive !== "false",
+      // Only a word answers the pointer (the landing wordmark, the 404's numerals); a plain field is print
+      // texture and holds still unless it asks with data-interactive="true".
+      interactive: d.interactive ? d.interactive !== "false" : (d.mode || (field ? "field" : "word")) === "word",
       fontWeight: d.fontWeight || "800",
       fontFamily: d.fontFamily || v("--hwf-font") || SANS_STACK,
       letterSpacing: d.letterSpacing || "-0.045em",

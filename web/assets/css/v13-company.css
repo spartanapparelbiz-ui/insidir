@@ -10,11 +10,11 @@
    prints in --hf-alert. Surface fills are kept for identity tiles (logo, avatars, marks), inputs, badges, the chart
    tooltip and the hover of rows that link somewhere.
 
-   Motion: report sections and cards rise in as they scroll into view (data-hf-reveal / data-hf-reveal-group in
-   company.html, v13-motion.js), never the quote card (it holds the chart tooltip), the tab bar or the annual
-   statements (their first column is sticky); the tabs, arrows, links, form badges, logo marks and avatars outside
-   tables are atoms that part around the pointer; the range buttons and the metric/filter chips are ruled
-   segmented controls and stay still. */
+   Motion: none to speak of. This is a product page (body.app-body), so the site's scroll reveal holds nothing
+   back: the data-hf-reveal / data-hf-reveal-group marks in company.html are inert here and every section is
+   simply there. Nothing moves under the pointer, on a press or on a scroll: the tabs, arrows, links, form badges,
+   logo marks, avatars, range buttons and filter chips change colour, borders and underlines on hover, never their
+   position or size. */
 @layer insidir-v13{
 
 /* ---------- Shell ---------- */
@@ -179,11 +179,9 @@ body.v13 .cx-tabs button{position:relative!important;flex:none!important;padding
 body.v13 .cx-tabs button:hover{color:var(--hf-ink)!important;background:transparent!important}
 body.v13 .cx-tabs button[aria-selected="true"]{color:var(--hf-ink)!important;font-weight:500!important}
 body.v13 .cx-tabs button[aria-selected="true"]::after{content:""!important;position:absolute!important;left:0!important;right:0!important;bottom:-1px!important;height:1px!important;border-radius:0!important;background:var(--hf-ink)!important}
-/* The tabs are atoms (company.html): they part around the pointer, trail a scroll and pop. Above 700px all six fit
-   with room to spare, so the bar need not scroll and lets them move without clipping the first or last; on phones
-   the bar scrolls sideways under a fade, so there the tabs hold their place (the press and pop remain). */
+/* Above 700px all six tabs fit with room to spare, so the bar need not scroll; on phones it scrolls sideways under
+   a fade. The tabs themselves never move. */
 @media (min-width:701px){body.v13 .cx-tabs{overflow:visible!important}}
-@media (max-width:700px){body.v13 .cx-tabs [data-hf-atom]{translate:none!important}}
 body.v13 .cx-panel{padding-top:clamp(26px,3vw,40px)!important}
 body.v13 .cx-panel__kicker{margin:0 0 clamp(18px,2.2vw,28px)!important}
 
@@ -233,7 +231,7 @@ body.v13 .cx-filing-rows time{font:400 11px/1.8 var(--hf-mono)!important;letter-
 body.v13 .cx-filing-rows b{font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important;padding:3px 7px!important}
 body.v13 .cx-filing-rows a:hover b{color:var(--hf-ink)!important;border-color:var(--hf-ink)!important}
 body.v13 .cx-filing-rows .cx-ext{color:var(--hf-faint)!important;justify-self:end!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13 .cx-filing-rows a:hover .cx-ext{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
+body.v13 .cx-filing-rows a:hover .cx-ext{color:var(--hf-ink)!important}
 body.v13 .cx-insider-rows>div{display:grid!important;grid-template-columns:36px minmax(0,1fr) auto auto!important;align-items:center!important;gap:12px!important;padding:10px 0!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13 .cx-insider-rows>div:last-child{border-bottom:0!important}
 body.v13 .cx-person-name{min-width:0!important}
@@ -256,7 +254,8 @@ body.v13 .cx-avatar--sm{width:30px!important;height:30px!important;font-size:9.5
 /* No published photo: the company's own logo stands in, contained with a margin like every logo tile (never cropped). */
 body.v13 .cx-avatar.is-stand-in{background:var(--hf-surface)!important}
 body.v13 .cx-avatar.is-stand-in img{object-fit:contain!important;padding:16%!important;box-sizing:border-box!important;filter:grayscale(1) contrast(1.05)!important}
-/* The picker's logos arrive after first paint and land on the site's spring (keyframes in entity-media.css). */
+/* The picker's logos arrive after first paint and fade in where they stand (keyframes in entity-media.css: opacity
+   only, nothing moves). */
 body.v13 .cx-picker__grid .cx-mark>img{animation:ins-land-a var(--hf-spring-dur) var(--hf-spring) both!important}
 @media (prefers-reduced-motion:reduce){body.v13 .cx-picker__grid .cx-mark>img{animation:none!important}}
 body.v13 .cx-empty{margin:0!important;padding:16px 0!important}
@@ -333,7 +332,7 @@ body.v13 .cx-table td:is(.is-up,.is-down) a{color:inherit!important}
 body.v13 .cx-table a{color:var(--hf-ink)!important;white-space:nowrap!important;display:inline-flex!important;align-items:center!important;gap:5px!important;text-decoration:none!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.12em!important;text-transform:uppercase!important;transition:color .2s!important}
 body.v13 .cx-table a:hover{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:currentColor!important;text-underline-offset:3px!important}
 body.v13 .cx-table a .cx-ext{color:var(--hf-faint)!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13 .cx-table a:hover .cx-ext{color:var(--hf-ink)!important;transform:translate(2px,-2px)!important}
+body.v13 .cx-table a:hover .cx-ext{color:var(--hf-ink)!important}
 body.v13 .cx-statements a{font-family:var(--hf-sans)!important;font-size:13px!important;font-weight:600!important;letter-spacing:-.01em!important;text-transform:none!important;color:var(--hf-ink)!important}
 body.v13 .cx-statements a:hover{color:var(--hf-ink)!important}
 body.v13 .cx-statements th:first-child,body.v13 .cx-statements td:first-child{position:sticky!important;left:0!important;background:var(--hf-bg)!important}

@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="stylesheet" href="assets/css/alerts.css">
-  <script defer src="assets/js/motion.js"></script>
+  
   <script defer src="assets/js/site.js"></script>
   <script defer src="assets/js/app.js?v=16"></script>
   <script defer src="assets/js/entity-media.js?v=media-4"></script>
@@ -22,11 +22,11 @@
   <link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
 <link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=20">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=7">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=4"></script>
+<link rel="stylesheet" href="assets/css/v13-halftone.css?v=8">
+<link rel="stylesheet" href="assets/css/v13-app.css?v=21">
+<link rel="stylesheet" href="assets/css/v13-desk.css?v=8">
+<link rel="stylesheet" href="assets/css/entity-media.css?v=media-3">
+<script defer src="assets/js/v13-halftone.js?v=6"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -36,10 +36,10 @@
     <div class="alerts-head desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="140" aria-hidden="true"></div>
       <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note">Watchlist matches · imported SEC Form 4 filings · in-app only</p></div>
-      <h1 class="page-title alerts-title" data-split>Alerts</h1>
-      <p class="page-sub alerts-sub desk-lead" data-reveal="up" data-delay="140">See new research activity related to the companies you follow.</p>
+      <h1 class="page-title alerts-title">Alerts</h1>
+      <p class="page-sub alerts-sub desk-lead">See new research activity related to the companies you follow.</p>
       <button class="btn btn--dark alerts-manage" type="button" id="manage-alerts" aria-haspopup="dialog" aria-controls="alerts-drawer"
-        data-reveal="fade" data-delay="260">Manage alerts</button>
+       >Manage alerts</button>
     </div>
 
     <div class="alerts-dateline" aria-label="Where alerts come from">
@@ -49,19 +49,19 @@
     </div>
 
     <div class="alert-filters-scroll">
-      <div class="alert-filters" role="tablist" aria-label="Filter alerts by type" data-stagger="70" data-delay="240">
-        <button class="alert-filter" type="button" role="tab" id="tab-all" data-filter="all" aria-selected="true" aria-controls="alerts-panel" style="--g:63" data-reveal="left">All</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-insider" data-filter="insider" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:126" data-reveal="left">Insider Trades</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-filings" data-filter="filings" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:108" data-reveal="left">SEC Filings</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-political" data-filter="political" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:136" data-reveal="left">Political Trades</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-price" data-filter="price" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:118" data-reveal="left">Price Moves</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-watchlist" data-filter="watchlist" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:102" data-reveal="left">Watchlist</button>
-        <span class="alert-filters__fill" aria-hidden="true" style="--g:43" data-reveal="left"></span>
+      <div class="alert-filters" role="tablist" aria-label="Filter alerts by type">
+        <button class="alert-filter" type="button" role="tab" id="tab-all" data-filter="all" aria-selected="true" aria-controls="alerts-panel" style="--g:63">All</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-insider" data-filter="insider" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:126">Insider Trades</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-filings" data-filter="filings" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:108">SEC Filings</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-political" data-filter="political" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:136">Political Trades</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-price" data-filter="price" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:118">Price Moves</button>
+        <button class="alert-filter" type="button" role="tab" id="tab-watchlist" data-filter="watchlist" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:102">Watchlist</button>
+        <span class="alert-filters__fill" aria-hidden="true" style="--g:43"></span>
         <span class="alert-filters__thumb" aria-hidden="true"></span>
       </div>
     </div>
 
-    <section class="panel alerts-panel" id="alerts-panel" role="tabpanel" aria-labelledby="tab-all" data-reveal="up" data-delay="320">
+    <section class="panel alerts-panel" id="alerts-panel" role="tabpanel" aria-labelledby="tab-all">
       <table class="data-table alerts-table">
         <caption class="sr-only">Recent alerts. Select a row to show its source links.</caption>
         <colgroup><col class="c-time"><col class="c-type"><col class="c-desc"><col class="c-co"></colgroup>
