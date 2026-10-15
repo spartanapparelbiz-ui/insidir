@@ -250,6 +250,45 @@ test("company routes validate input before any upstream request", async () => {
   assert.throws(() => parseTicker("../etc"), e => e.status === 400);
 });
 
+test("open image URLs: a day of caching with an ETag, takedowns answer 404, and unknown addresses are remembered and limited per client", async () => {
+  const store = await import("../src/media-store.mjs");
+  const call = async (path, ip = "192.0.2.10", headers = {}) => {
+    const res = { status: 0, headers: {}, body: null, writeHead(s, h) { this.status = s; this.headers = h; }, end(b) { this.body = b ?? null; } };
+    try { await handleCompanyRoute({ method: "GET", headers, socket: { remoteAddress: ip } }, res, new URL(path, "http://x")); return { status: res.status, headers: res.headers, body: res.body }; }
+    catch (e) { return { status: e.status, error: e.message }; }
+  };
+  const saved = await store.putMedia({ bytes: Buffer.from("company route test image"), type: "png", width: 1, height: 1 });
+  let r = await call(saved.url);
+  assert.equal(r.status, 200);
+  assert.equal(r.headers["Cache-Control"], "public, max-age=86400", "no longer immutable for a year: a takedown must reach caches");
+  assert.equal(r.headers.ETag, '"' + saved.sha + '"');
+  assert.equal(r.headers["Content-Type"], "image/png");
+  r = await call(saved.url, "192.0.2.10", { "if-none-match": 'W/"' + saved.sha + '"' });
+  assert.deepEqual([r.status, r.body], [304, null], "revalidation is cheap");
+  // Unknown addresses: 404, remembered for a few minutes (one lookup each), at most 120 a minute per client.
+  const unknown = n => "/v1/media/" + n.toString(16).padStart(64, "0") + ".webp";
+  const misses = store.storeStats().misses;
+  assert.equal((await call(unknown(1))).status, 404);
+  assert.equal(store.storeStats().misses, misses + 1);
+  assert.equal((await call(unknown(1))).status, 404);
+  assert.equal(store.storeStats().misses, misses + 1, "asked again: answered from memory");
+  for (let i = 2; i <= 119; i++) assert.equal((await call(unknown(i))).status, 404);
+  assert.deepEqual(await call(unknown(120)), { status: 429, error: "Too many requests for missing images. Try again shortly." });
+  assert.equal(store.storeStats().misses, misses + 119, "the 121st miss is refused before any lookup");
+  assert.equal((await call(saved.url, "192.0.2.10")).status, 429, "that client waits out the minute");
+  assert.equal((await call(unknown(121), "192.0.2.11")).status, 404, "other clients are not affected");
+  // An address stored later is no longer 'missing'.
+  const late = Buffer.from("stored after it was asked for");
+  const lateSha = (await import("node:crypto")).createHash("sha256").update(late).digest("hex");
+  assert.equal((await call("/v1/media/" + lateSha + ".png", "192.0.2.12")).status, 404);
+  await store.putMedia({ bytes: late, type: "png" });
+  assert.equal((await call("/v1/media/" + lateSha + ".png", "192.0.2.12")).status, 200);
+  // A blocked address is never served again, not even as a 304.
+  await store.blockMedia(saved.sha, "test takedown");
+  assert.equal((await call(saved.url, "192.0.2.13")).status, 404);
+  assert.equal((await call(saved.url, "192.0.2.13", { "if-none-match": '"' + saved.sha + '"' })).status, 404);
+});
+
 test("external fetches are limited to the allowlisted public data hosts", () => {
   for (const ok of ["https://query1.finance.yahoo.com/v8/finance/chart/NVDA", "https://query.wikidata.org/sparql", "https://en.wikipedia.org/api/rest_v1/page/summary/Nvidia"]) assert.equal(allowedExternalUrl(ok), true, ok);
   for (const bad of ["http://query1.finance.yahoo.com/x", "https://query1.finance.yahoo.com.evil.com/x", "https://user:pw@en.wikipedia.org/", "https://example.com/", "file:///etc/passwd"]) assert.equal(allowedExternalUrl(bad), false, bad);

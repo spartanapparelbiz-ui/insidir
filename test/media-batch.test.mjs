@@ -6,9 +6,10 @@ import assert from "node:assert/strict";
 globalThis.fetch = async url => { throw new Error("Network used in a unit test: " + url); };
 // The route needs a configured SEC contact before it answers (config reads it once, at import).
 process.env.SEC_USER_AGENT ||= "Insidir Research hello@aethric.llc";
-const { parseMediaQuery, mediaBatch, createMediaState, indexMaps, ownersParams, loadOwnersFrom, OWNERS_SQL, createLimiter } = await import("../src/media-batch.mjs");
-const { handleCompanyRoute } = await import("../src/company-routes.mjs");
-const { createPhotoQueue, mergeRoster, cleanExtras } = await import("../src/people-photos.mjs");
+const { parseMediaQuery, mediaBatch, createMediaState, indexMaps, ownersParams, loadOwnersFrom, OWNERS_SQL, loadIssuersFrom, ISSUERS_SQL, createLimiter } = await import("../src/media-batch.mjs");
+const { handleCompanyRoute, START_ALLOWANCE } = await import("../src/company-routes.mjs");
+const { createPhotoQueue, mergeRoster, cleanExtras, withoutTakedowns, blockPersonPhoto } = await import("../src/people-photos.mjs");
+const store = await import("../src/media-store.mjs");
 const { groupRecent, warmMedia, RECENT_SQL } = await import("../src/media-warm.mjs");
 
 const INDEX = {
@@ -27,11 +28,12 @@ const png = c => "/v1/media/" + sha(c) + ".png", webp = c => "/v1/media/" + sha(
 const q = search => parseMediaQuery(new URL("http://x/v1/media?" + search));
 const settle = () => new Promise(r => setTimeout(r, 5));
 
-/* A memory world: records and stored bytes, resolver stubs that record every call. */
-function world({ records = {}, stored = [], owners = [], ticket = () => ({ status: "queued", started: true }) } = {}) {
+/* A memory world: records and stored bytes, resolver stubs that record every call. jobs: issuer
+ * CIK (10 digits) -> "queued" | "running" for photo jobs someone else started. */
+function world({ records = {}, stored = [], owners = [], issuers = [], jobs = {}, ticket = () => ({ status: "queued", started: true }) } = {}) {
   const rec = new Map(Object.entries(records));
   const media = new Set(stored.map(sha));
-  const calls = { logo: [], resolve: [], photos: [], owners: [], records: [] };
+  const calls = { logo: [], resolve: [], photos: [], owners: [], issuers: [], jobs: [], records: [] };
   const gates = new Map(); // ticker -> {resolve, reject} for logo resolutions
   let clock = 1_800_000_000_000;
   const deps = {
@@ -43,9 +45,12 @@ function world({ records = {}, stored = [], owners = [], ticket = () => ({ statu
     logoForTicker: (t, options) => { calls.logo.push([t, options]); return new Promise((resolve, reject) => gates.set(t, { resolve, reject })); },
     resolveLogo: (subject, options) => { calls.resolve.push([subject, options]); return new Promise((resolve, reject) => gates.set("cik:" + subject.cik, { resolve, reject })); },
     requestPhotos: async options => { calls.photos.push(options); return ticket(options); },
-    loadOwners: async pairs => { calls.owners.push(pairs); return owners; }
+    photoJob: async cik => { calls.jobs.push(cik); return jobs[cik] ?? null; },
+    logoPrep: async () => null,
+    loadOwners: async pairs => { calls.owners.push(pairs); return owners; },
+    loadIssuers: async ciks => { calls.issuers.push(ciks); return issuers.map(issuer_cik => ({ issuer_cik })); }
   };
-  return { deps, calls, rec, media, gates, tick: ms => { clock += ms; } };
+  return { deps, calls, rec, media, gates, jobs, tick: ms => { clock += ms; } };
 }
 const okLogo = (cik, variants) => ({ status: "ok", cik, variants, incomplete: false });
 const SQUARE = { url: png("a"), sha: sha("a"), width: 306, height: 370, source: "stockanalysis-dark" };
@@ -148,13 +153,47 @@ test("a stored logo whose bytes are gone is refreshed, not served", async () => 
   assert.deepEqual(w.calls.logo, [["AAPL", { refresh: true }]]);
 });
 
-test("issuer CIKs without a ticker resolve by CIK and answer under cik:<CIK>", async () => {
-  const w = world({ records: { ["logo:" + AAPL]: okLogo(AAPL, { square: SQUARE }) }, stored: ["a"] });
-  const body = await mediaBatch(q("ciks=320193,0001234567"), w.deps);
+test("a logo prepared by an older pass is resolved again (once), not served", async () => {
+  const w = world({ records: { ["logo:" + AAPL]: { ...okLogo(AAPL, { square: SQUARE }), prep: 1 }, ["logo:" + KO]: { ...okLogo(KO, { square: { ...SQUARE, url: png("c"), sha: sha("c") } }), prep: 2 } }, stored: ["a", "c"] });
+  w.deps.logoPrep = async () => 2;
+  const body = await mediaBatch(q("tickers=AAPL,KO"), w.deps);
+  assert.deepEqual(body.pending.logos, ["AAPL"]);
+  assert.equal(body.logos.KO.src, png("c"));
+  assert.deepEqual(w.calls.logo, [["AAPL", { refresh: true }]]);
+  // The resolution returns a record without the stamp: it is served, not refreshed again.
+  w.gates.get("AAPL").resolve(okLogo(AAPL, { square: SQUARE }));
+  await settle();
+  assert.equal((await mediaBatch(q("tickers=AAPL"), w.deps)).logos.AAPL.src, png("a"));
+  assert.equal(w.calls.logo.length, 1);
+  // A resolver without a preparation version: every ok record is served as before.
+  const old = world({ records: { ["logo:" + AAPL]: okLogo(AAPL, { square: SQUARE }) }, stored: ["a"] });
+  assert.equal((await mediaBatch(q("tickers=AAPL"), old.deps)).logos.AAPL.src, png("a"));
+});
+
+test("issuer CIKs without a ticker resolve by CIK only when the SEC import has filings for them", async () => {
+  const w = world({ records: { ["logo:" + AAPL]: okLogo(AAPL, { square: SQUARE }) }, stored: ["a"], issuers: ["0001234567"] });
+  const body = await mediaBatch(q("ciks=320193,0001234567,4100000000"), w.deps);
   assert.equal(body.logos["cik:320193"].src, png("a"));
   assert.equal(body.logos["cik:320193"].ticker, "AAPL");
   assert.deepEqual(body.pending.logos, ["cik:1234567"]);
-  assert.deepEqual(w.calls.resolve, [[{ cik: "0001234567" }, {}]]);
+  assert.equal(body.logos["cik:4100000000"], null, "a number no filing names is no company: null");
+  assert.deepEqual(w.calls.resolve, [[{ cik: "0001234567" }, {}]], "and starts no resolution (no SEC request)");
+  assert.deepEqual(w.calls.issuers, [["1234567", "4100000000"]], "one lookup, unlisted CIKs only");
+  // The import is unreachable: asked again later, nothing resolved meanwhile.
+  const down = world();
+  down.deps.loadIssuers = async () => { throw new Error("connection refused"); };
+  const later = await mediaBatch(q("ciks=1234567"), down.deps);
+  assert.deepEqual(later.pending.logos, ["cik:1234567"]);
+  assert.equal(down.calls.resolve.length, 0);
+  // The website preview has no database: only listed CIKs resolve.
+  const preview = world();
+  preview.deps.loadIssuers = null;
+  assert.equal((await mediaBatch(q("ciks=1234567"), preview.deps)).logos["cik:1234567"], null);
+  assert.equal(preview.calls.resolve.length, 0);
+  // The issuer lookup asks for both spellings in one query.
+  const seen = [];
+  await loadIssuersFrom(async (sql, params) => { seen.push([sql, params]); return { rows: [] }; }, ["1234567", "x"]);
+  assert.deepEqual(seen, [[ISSUERS_SQL, [["1234567", "0001234567"]]]]);
 });
 
 test("a verified person photo is returned with credit and source wherever that CIK files", async () => {
@@ -178,7 +217,7 @@ test("finished company: on the roster -> null; off it -> the job gets the name f
   assert.deepEqual(body.pending.photos, ["222:AAPL"]);
   assert.deepEqual(w.calls.owners, [[{ cik: "222", ticker: "AAPL" }, { cik: "333", ticker: "AAPL" }]], "one lookup, owners off the roster only");
   assert.equal(w.calls.photos.length, 1);
-  assert.deepEqual(w.calls.photos[0], { ticker: "AAPL", cik: AAPL, extra: [{ cik: "222", name: "ADAMS KATHERINE L" }], keys: [], priority: "user", rerun: true, create: true });
+  assert.deepEqual(w.calls.photos[0], { ticker: "AAPL", cik: AAPL, extra: [{ cik: "222", name: "ADAMS KATHERINE L" }], keys: [], priority: "user", requester: "anonymous", rerun: true, create: true });
   // Nothing the client could send carries a name: the query has none, and the job saw only the database's.
   assert.ok(!JSON.stringify(w.calls.photos).includes("333"));
 
@@ -194,17 +233,45 @@ test("finished company: on the roster -> null; off it -> the job gets the name f
   assert.equal(down.calls.photos.length, 0);
 });
 
-test("unfinished companies: one queued job per company, pending, and a cap on new jobs per request", async () => {
-  const owners = [{ owner_cik: "1214156", ticker: "AAPL", owner_name: "COOK TIMOTHY D" }];
+test("unfinished companies: one queued job per company for confirmed owners, pending, and a cap on new jobs per request", async () => {
+  const owners = [{ owner_cik: "1214156", ticker: "AAPL", owner_name: "COOK TIMOTHY D" }, { owner_cik: "7", ticker: "KO", owner_name: "QUINCEY JAMES" }];
   const w = world({ records: { ["company-photos:" + KO]: { complete: false, photos: {} } }, owners });
-  const body = await mediaBatch(q("people=1214156:AAPL,5:AAPL,6:KO"), w.deps);
-  assert.deepEqual(body.pending.photos, ["1214156:AAPL", "5:AAPL", "6:KO"]);
+  const body = await mediaBatch(q("people=1214156:AAPL,5:AAPL,7:KO"), w.deps);
+  assert.deepEqual(body.pending.photos, ["1214156:AAPL", "5:AAPL", "7:KO"], "5 is unconfirmed, but waits for the AAPL job a confirmed owner started");
+  assert.deepEqual(body.queued, ["1214156:AAPL", "5:AAPL", "7:KO"], "jobs still waiting for their turn are listed, so a client keeps waiting");
   assert.equal(body.retryAfter, 15, "queued jobs: ask again in 15 s");
-  assert.deepEqual(w.calls.photos.map(c => [c.ticker, c.rerun, c.extra.map(e => e.name)]), [["AAPL", false, ["COOK TIMOTHY D"]], ["KO", false, []]]);
-  const many = world({ ticket: o => ({ status: o.create ? "queued" : "none", started: o.create }) });
-  await mediaBatch(q("people=" + Array.from({ length: 14 }, (_, i) => (i + 1) + ":T" + String(i).padStart(2, "0")).join(",")), many.deps);
+  assert.deepEqual(w.calls.photos.map(c => [c.ticker, c.rerun, c.extra.map(e => e.name)]), [["AAPL", false, ["COOK TIMOTHY D"]], ["KO", false, ["QUINCEY JAMES"]]]);
+  const running = world({ owners, ticket: () => ({ status: "running", started: false }) });
+  assert.deepEqual((await mediaBatch(q("people=1214156:AAPL"), running.deps)).queued, [], "a running job is not 'queued'");
+  const people = Array.from({ length: 14 }, (_, i) => ({ owner_cik: String(i + 1), ticker: "T" + String(i).padStart(2, "0"), owner_name: "PERSON NUMBER " + i }));
+  const many = world({ owners: people, ticket: o => ({ status: o.create ? "queued" : "none", started: o.create }) });
+  await mediaBatch(q("people=" + people.map(p => p.owner_cik + ":" + p.ticker).join(",")), many.deps);
   assert.equal(many.calls.photos.filter(c => c.create).length, 10, "at most 10 new company jobs per request");
   assert.equal(many.calls.photos.length, 14, "the rest may only join jobs already running");
+});
+
+test("a made-up owner starts no job at an unfinished company either; it only waits for a job already under way", async () => {
+  // KO: an unfinished record and no job; NVDA: no record; AAPL: someone else's job is running.
+  const w = world({ records: { ["company-photos:" + KO]: { complete: false, photos: {} } }, jobs: { [AAPL]: "running", [NVDA]: null } });
+  const body = await mediaBatch(q("people=900000001:KO,900000002:NVDA,900000003:AAPL"), w.deps);
+  assert.equal(body.photos["900000001"], null);
+  assert.equal(body.photos["900000002"], null);
+  assert.deepEqual(body.pending.photos, ["900000003:AAPL"]);
+  assert.deepEqual(body.queued, []);
+  assert.equal(w.calls.photos.length, 0, "no company job is started or extended");
+  assert.equal(w.calls.owners.length, 1, "one owner lookup for the whole request");
+  // The engine's database is down: pending, with nothing started on an unconfirmed pair.
+  const down = world();
+  down.deps.loadOwners = async () => { throw new Error("connection refused"); };
+  assert.deepEqual((await mediaBatch(q("people=900000002:NVDA"), down.deps)).pending.photos, ["900000002:NVDA"]);
+  assert.equal(down.calls.photos.length + down.calls.jobs.length, 0);
+  // The website preview has no database: there a company's own roster job may still start.
+  const preview = world();
+  preview.deps.loadOwners = null;
+  const shown = await mediaBatch(q("people=900000002:NVDA"), preview.deps);
+  assert.deepEqual(shown.pending.photos, ["900000002:NVDA"]);
+  assert.deepEqual(preview.calls.photos.map(c => [c.ticker, c.extra]), [["NVDA", []]]);
+  assert.equal(preview.calls.owners.length, 0);
 });
 
 test("entity owners get an owners entry: a listed CIK with its own ticker and logo, a fund by its filed name", async () => {
@@ -271,6 +338,21 @@ test("owner lookups ask for both CIK and ticker spellings, and only exact pairs 
   assert.deepEqual(w.calls.photos[0].extra, [{ cik: "222", name: "ADAMS KATHERINE L" }]);
 });
 
+test("the logo limiter shares its slots between requesters and caps each one's waiting jobs", async () => {
+  const limiter = createLimiter(1, { maxPerRequester: 2 });
+  const order = [];
+  let release;
+  limiter.run(() => new Promise(r => { release = r; }), "user", "ip:a");
+  const runs = ["a1", "a2", "a3"].map(n => limiter.run(async () => order.push(n), "user", "ip:a"));
+  assert.deepEqual(runs.map(r => r.accepted), [true, true, false]);
+  await assert.rejects(runs[2].promise, e => e.busy === true);
+  limiter.run(async () => order.push("b1"), "user", "ip:b");
+  await settle();
+  release();
+  await settle();
+  assert.deepEqual(order, ["b1", "a1", "a2"], "the requester served least recently goes first");
+});
+
 test("the priority limiter runs page work before warm-up work and can promote a waiting job", async () => {
   const limiter = createLimiter(1);
   const order = [];
@@ -314,6 +396,57 @@ test("photo jobs: two run at once, a third waits its turn, and pages go before t
   assert.equal(g.started[3].cik, "0000000003");
   assert.equal(g.started[3].priority, "user", "promoted when a page asked for it");
   assert.equal(queue.request({ ticker: "A", cik: "1" }).status, "settling", "a job that just finished is read, not restarted");
+});
+
+test("photo jobs: one requester cannot fill the queue, and requesters are served in turn", async () => {
+  const g = gated();
+  const queue = createPhotoQueue({ concurrency: 1, reserved: 0, execute: g.execute, maxPerRequester: 3 });
+  const asks = [1, 2, 3, 4, 5].map(i => queue.request({ ticker: "A" + i, cik: String(i), requester: "ip:flood" }));
+  assert.deepEqual(asks.map(a => a.status), ["running", "queued", "queued", "queued", "busy"], "three waiting jobs each at most");
+  assert.deepEqual(queue.request({ ticker: "B", cik: "20", requester: "user:7" }), { status: "queued", started: true }, "someone else still gets in");
+  await settle();
+  g.gates.get("0000000001")({ roster: [] });
+  await settle();
+  assert.equal(g.started[1].cik, "0000000020", "and goes before the flood's backlog");
+  queue.request({ ticker: "C", cik: "21", requester: "user:7" });
+  g.gates.get("0000000020")({ roster: [] });
+  await settle();
+  g.gates.get("0000000002")({ roster: [] });
+  await settle();
+  assert.deepEqual(g.started.map(s => s.cik.replace(/^0+/, "")), ["1", "20", "2", "21"], "turns alternate between requesters");
+  assert.equal(queue.peek("3"), "queued");
+  assert.equal(queue.peek("21"), "running");
+  assert.equal(queue.peek("99"), null);
+  // The warm-up has its own cap and is never "busy" for a member.
+  const warm = createPhotoQueue({ concurrency: 1, execute: g.execute, maxWarm: 1 });
+  warm.request({ ticker: "W", cik: "30", priority: "warm" });
+  warm.request({ ticker: "W", cik: "31", priority: "warm" });
+  assert.equal(warm.request({ ticker: "W", cik: "32", priority: "warm" }).status, "skipped");
+});
+
+test("photo jobs: the company report someone has open starts at once, in a slot only it may use", async () => {
+  const g = gated();
+  const queue = createPhotoQueue({ concurrency: 2, execute: g.execute });
+  for (const cik of ["1", "2", "3"]) queue.request({ ticker: "D" + cik, cik, requester: "user:1" });
+  assert.deepEqual(queue.request({ ticker: "P", cik: "4", priority: "page", requester: "user:2" }), { status: "running", started: true }, "behind a dashboard's batch, it still starts");
+  assert.deepEqual(queue.request({ ticker: "Q", cik: "5", priority: "page", requester: "user:3" }), { status: "queued", started: true }, "one reserved slot");
+  queue.request({ ticker: "U", cik: "6", requester: "user:4" });
+  // Opening the report of a company whose batch job is waiting raises it to a page job.
+  assert.deepEqual(queue.request({ ticker: "D3", cik: "3", priority: "page", requester: "user:5" }), { status: "queued", started: false });
+  await settle();
+  assert.deepEqual(g.started.map(s => s.cik.replace(/^0+/, "")), ["1", "2", "4"]);
+  g.gates.get("0000000001")({ roster: [] });
+  await settle();
+  g.gates.get("0000000002")({ roster: [] });
+  await settle();
+  assert.deepEqual(g.started.map(s => [s.cik.replace(/^0+/, ""), s.priority]), [["1", "user"], ["2", "user"], ["4", "page"], ["5", "page"], ["3", "page"]], "page jobs before the batch's");
+  assert.deepEqual(queue.stats(), { running: 3, queued: 1, warmQueued: 0 });
+  g.gates.get("0000000004")({ roster: [] });
+  await settle();
+  assert.deepEqual(queue.stats(), { running: 2, queued: 1, warmQueued: 0 }, "a batch job never takes the reserved slot...");
+  g.gates.get("0000000005")({ roster: [] });
+  await settle();
+  assert.equal(g.started.at(-1).cik, "0000000006", "...and runs as soon as fewer than two jobs run");
 });
 
 test("photo jobs: extras merge into a waiting job, ride a quiet re-run after a running one, and re-runs are limited", async () => {
@@ -368,4 +501,96 @@ test("warm-up: recent filings become low-priority batches within the endpoint's 
   const w = world();
   await warmMedia(["F"], w.deps);
   assert.equal(w.deps.state.running.size, 1);
+});
+
+/* ---------------- the routes: allowances, takedowns, the company report ---------------- */
+
+const route = async (path, { ip = "10.0.0.1", headers = {}, ...options } = {}) => {
+  const res = { status: 0, headers: {}, body: "", writeHead(s, h) { this.status = s; this.headers = h; }, end(b) { this.body = b ?? ""; } };
+  try {
+    await handleCompanyRoute({ method: "GET", headers, socket: { remoteAddress: ip } }, res, new URL(path, "http://x"), options);
+    const text = Buffer.isBuffer(res.body) ? null : String(res.body);
+    return { status: res.status, headers: res.headers, body: text && /^[{[]/.test(text) ? JSON.parse(text) : res.body };
+  } catch (e) { return { status: e.status, error: e.message }; }
+};
+
+test("GET /v1/media: each requester may start a bounded amount of new work per 10 minutes; joining work is free", async () => {
+  assert.deepEqual({ ...START_ALLOWANCE }, { logos: 60, photos: 10, pages: 20 });
+  const big = {};
+  for (let i = 0; i < 100; i++) big[i] = { cik_str: 7000000 + i, ticker: "U" + String(i).padStart(2, "0"), title: "Unit " + i };
+  const people = Array.from({ length: 24 }, (_, i) => ({ owner_cik: String(500 + i), ticker: "U" + String(i).padStart(2, "0"), owner_name: "PERSON NUMBER " + i }));
+  const w = world({ owners: people, ticket: o => ({ status: o.create ? "queued" : "none", started: o.create }) });
+  w.deps.tickerIndex = async () => big;
+  const tickers = (from, n) => "tickers=" + Array.from({ length: n }, (_, i) => "U" + String(from + i).padStart(2, "0")).join(",");
+  const pairs = (from, n) => "people=" + people.slice(from, from + n).map(p => p.owner_cik + ":" + p.ticker).join(",");
+  const flood = { ip: "198.51.100.20", mediaDeps: w.deps };
+  // Photos: 10 new company jobs in the window, then only joins.
+  await route("/v1/media?" + pairs(0, 12), flood);
+  assert.equal(w.calls.photos.filter(c => c.create).length, 10);
+  await route("/v1/media?" + pairs(12, 6), flood);
+  assert.equal(w.calls.photos.filter(c => c.create).length, 10, "the requester's photo allowance is used up");
+  assert.ok(w.calls.photos.every(c => c.requester === "ip:198.51.100.20"), "jobs carry who asked, for the queue's turns");
+  // Logos: 60 new resolutions in the window (18 issuers above, then 20 per request).
+  for (const from of [18, 38, 58, 78]) await route("/v1/media?" + tickers(from, 20), flood);
+  assert.equal(w.deps.state.running.size, 60, "the requester's logo allowance is used up");
+  assert.deepEqual(w.deps.state.logos.stats(), { active: 4, queued: 56 });
+  const after = await route("/v1/media?" + tickers(0, 20), flood);
+  assert.equal(after.status, 200);
+  assert.equal(after.body.pending.logos.length, 20, "already resolving: joined, not refused");
+  assert.equal(w.deps.state.running.size, 60);
+  // Someone else is not affected, and a member is counted as the member, whatever the address.
+  await route("/v1/media?" + pairs(18, 2), { ip: "203.0.113.50", mediaDeps: w.deps });
+  assert.equal(w.calls.photos.filter(c => c.create).length, 12);
+  await route("/v1/media?" + pairs(20, 1), { ip: "198.51.100.20", requester: "user:42", mediaDeps: w.deps });
+  assert.equal(w.calls.photos.at(-1).requester, "user:42");
+  assert.equal(w.calls.photos.at(-1).create, true);
+});
+
+test("GET /v1/company/photos: runs as the page's job, within the requester's allowance, and a takedown removes the photo at once", async () => {
+  await store.putRecord("person-photo-override", "1214156", { none: true }, 3600e3);
+  const photo = (c, source = "company-site") => ({ src: webp(c), source, sourceUrl: "https://www.apple.com/leadership/", credit: "Company website (apple.com)" });
+  const record = { cik: AAPL, ticker: "AAPL", complete: true, roster: ["cik:1214156", "cik:222"],
+    photos: { "cik:1214156": photo("1"), "cik:222": photo("2") }, names: { "cik:1214156": "Tim Cook", "cik:222": "Kate Adams" },
+    leaders: [{ key: "wd:Q1", name: "Tim Cook", insider: true, insiderKey: "cik:1214156", ...photo("1") }, { key: "wd:Q2", name: "Tim Cook", insider: true, ...photo("1") },
+      { key: "wd:Q3", name: "Arthur Levinson", insider: false, ...photo("3", "wikimedia") }],
+    coverage: { people: 2, withPhoto: 2 }, sources: {} };
+  const seen = [];
+  const photoDeps = { companyPhotos: async (ticker, options) => { seen.push([ticker, { ...options, usage: undefined }]); if (options.create) options.usage.photos++; return record; } };
+  const r = await route("/v1/company/photos?ticker=AAPL", { ip: "192.0.2.77", photoDeps });
+  assert.equal(r.status, 200);
+  assert.deepEqual(Object.keys(r.body.photos), ["cik:222"], "the taken-down person's photo is gone, the others stay");
+  assert.deepEqual(r.body.names, { "cik:222": "Kate Adams" });
+  assert.deepEqual(r.body.leaders.map(l => l.src), [null, null, webp("3")], "also from the leadership list, by key or (older records) by name");
+  assert.equal(r.body.coverage.withPhoto, 1);
+  assert.equal(record.photos["cik:1214156"].src, webp("1"), "the stored record itself is not changed by a read");
+  assert.deepEqual(seen[0], ["AAPL", { wait: 0, priority: "page", requester: "ip:192.0.2.77", create: true, usage: undefined }]);
+  // 20 new report jobs per requester in the window; after that it only joins jobs that exist.
+  for (let i = 0; i < 19; i++) await route("/v1/company/photos?ticker=AAPL", { ip: "192.0.2.77", photoDeps });
+  await route("/v1/company/photos?ticker=AAPL", { ip: "192.0.2.77", photoDeps });
+  assert.deepEqual(seen.map(([, o]) => o.create), [...Array(20).fill(true), false]);
+  // Nothing to filter: the record passes through as it is.
+  const plain = { photos: { "cik:9": photo("4") }, names: {} };
+  assert.equal(await withoutTakedowns(plain, { lookup: async () => new Map() }), plain);
+});
+
+test("blockPersonPhoto: the takedown stops the image address and rewrites the finished company records", async () => {
+  const saved = await store.putMedia({ bytes: Buffer.from("takedown test portrait"), type: "webp", width: 256, height: 256 });
+  const other = await store.putMedia({ bytes: Buffer.from("someone else's portrait"), type: "webp", width: 256, height: 256 });
+  await store.putRecord("person-photo", "555", { src: saved.url, source: "sec-proxy", credit: "SEC proxy statement" }, 3600e3);
+  await store.putRecord("company-photos", "0000000777", { cik: "0000000777", complete: true, photos: { "cik:555": { src: saved.url }, "cik:6": { src: other.url } }, names: { "cik:555": "Pat Doe" }, leaders: [] }, 3600e3);
+  assert.equal((await route(saved.url)).status, 200);
+  assert.deepEqual(await blockPersonPhoto("0000000555", { reason: "the person asked" }), { cik: "555", images: 1, companies: 1 });
+  assert.equal((await store.getRecord("person-photo-override", "555")).none, true);
+  const rewritten = await store.getRecord("company-photos", "0000000777");
+  assert.deepEqual(Object.keys(rewritten.photos), ["cik:6"]);
+  assert.deepEqual(rewritten.names, {});
+  assert.equal((await route(saved.url, { ip: "10.9.9.9" })).status, 404, "the image is no longer served");
+  assert.equal((await route(saved.url, { ip: "10.9.9.9", headers: { "if-none-match": '"' + saved.sha + '"' } })).status, 404, "not even to a cache that asks to revalidate");
+  assert.equal(await store.hasMedia(saved.sha), false);
+  assert.equal((await route(other.url)).status, 200, "nobody else is touched");
+  // The batch answers null for them from now on.
+  const w = world({ records: { "person-photo:555": { src: saved.url, source: "sec-proxy" }, "person-photo-override:555": { none: true } }, stored: [] });
+  assert.equal((await mediaBatch(q("people=555:AAPL"), w.deps)).photos["555"], null, "and a taken-down photo is never looked for again as 'lost'");
+  assert.equal(w.calls.photos.length, 0);
+  await assert.rejects(blockPersonPhoto("abc"), /CIK/);
 });

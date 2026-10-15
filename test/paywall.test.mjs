@@ -919,7 +919,8 @@ test("router: prepared images are served signed out with no session lookup; the 
     let r = await send(base, saved.url);
     assert.equal(r.status, 200);
     assert.equal(r.headers["content-type"], "image/png");
-    assert.equal(r.headers["cache-control"], "public, max-age=31536000, immutable");
+    assert.equal(r.headers["cache-control"], "public, max-age=86400", "a day, so a takedown reaches caches");
+    assert.equal(r.headers.etag, '"' + saved.sha + '"');
     assert.equal(r.headers.vary, undefined, "not varied by Cookie: any cache may keep it");
     r = await send(base, saved.url, { method: "HEAD", ...as("lapsed") });
     assert.equal(r.status, 200);

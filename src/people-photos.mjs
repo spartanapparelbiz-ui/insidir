@@ -10,7 +10,7 @@
  * (by CIK) appears. Work runs in the background and the page receives results as they land. */
 import { fetchImage, imageSize } from "./media.mjs";
 import { preparePhoto } from "./image-analysis.mjs";
-import { putMedia, getMedia, hasMedia, mediaSha, getRecord, putRecord } from "./media-store.mjs";
+import { putMedia, getMedia, hasMedia, mediaSha, getRecord, getRecords, putRecord, blockMedia, recordsWithPhoto } from "./media-store.mjs";
 import { isEntityName, samePerson, nameTokens, givenVariants } from "./person-match.mjs";
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
@@ -134,6 +134,49 @@ function publish(state) {
  * photo off every page (initials or the company logo instead). */
 const photoBlocked = async cik => Boolean(cik && (await getRecord("person-photo-override", String(cik).replace(/^0+/, "")).catch(() => null))?.none);
 
+/* A company record as the page may see it: every person with a takedown loses the photo and the
+ * display name taken from it, here and in the leadership list, even while an older record (kept
+ * up to 7 days) still names them. One record lookup for the whole company. */
+export async function withoutTakedowns(state, { lookup = getRecords } = {}) {
+  if (!state || typeof state !== "object") return state;
+  const leaders = Array.isArray(state.leaders) ? state.leaders : [];
+  const keys = [...new Set([...Object.keys(state.photos || {}), ...leaders.map(l => l?.insiderKey)].filter(k => /^cik:\d{1,10}$/.test(String(k || ""))))];
+  if (!keys.length) return state;
+  const overrides = await lookup("person-photo-override", keys.map(k => k.slice(4))).catch(() => new Map());
+  const gone = keys.filter(k => overrides.get(k.slice(4))?.none);
+  if (!gone.length) return state;
+  const photos = { ...(state.photos || {}) }, names = { ...(state.names || {}) };
+  const goneNames = gone.map(k => names[k]).filter(Boolean);
+  for (const k of gone) { delete photos[k]; delete names[k]; }
+  // Older records carry no insiderKey on leaders: the person's display name still ties them.
+  const hidden = l => gone.includes(l?.insiderKey) || (l?.insider && goneNames.some(n => samePerson(n, l.name, l.aliases || [])));
+  const out = { ...state, photos, names, leaders: leaders.map(l => hidden(l) ? { ...l, src: null, source: null, sourceUrl: null, credit: null } : l) };
+  if (state.coverage && typeof state.coverage.withPhoto === "number") out.coverage = { ...state.coverage, withPhoto: Math.max(0, state.coverage.withPhoto - gone.filter(k => state.photos?.[k]).length) };
+  return out;
+}
+
+/* The takedown itself (operators): the person's photo is kept off every page from now on, the
+ * images chosen for them stop being served at /v1/media/<sha>, and finished company records
+ * that name them are rewritten without them (same expiry), so no rebuild is needed. */
+export async function blockPersonPhoto(cik, { reason = "" } = {}) {
+  const id = String(cik ?? "").replace(/^0+/, "");
+  if (!/^\d{1,10}$/.test(id)) throw new Error("A person's SEC CIK is required");
+  const key = "cik:" + id, note = String(reason).slice(0, 200);
+  await putRecord("person-photo-override", id, { none: true, reason: note, at: new Date().toISOString() }, 10 * 365 * DAY);
+  const shas = new Set();
+  const own = await getRecord("person-photo", id).catch(() => null);
+  if (mediaSha(own?.src)) shas.add(mediaSha(own.src));
+  const companies = await recordsWithPhoto("company-photos", key).catch(() => []);
+  for (const { key: companyCik, value, expiresAt } of companies) {
+    if (mediaSha(value.photos?.[key]?.src)) shas.add(mediaSha(value.photos[key].src));
+    const clean = await withoutTakedowns(value, { lookup: async () => new Map([[id, { none: true }]]) });
+    const ttl = expiresAt - Date.now();
+    if (ttl > 1000) await putRecord("company-photos", companyCik, clean, ttl);
+  }
+  for (const sha of shas) await blockMedia(sha, "person " + id + (note ? ": " + note : ""));
+  return { cik: id, images: shas.size, companies: companies.length };
+}
+
 /* People added to a company's roster beyond its last 16 Form 4 filings. The caller vouches for
  * each {cik, name} (GET /v1/media takes both from the engine's own SEC import, never from the
  * request). Entities and malformed entries are dropped. */
@@ -233,8 +276,9 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
     // Wikidata keeps some roles open after people leave; its own description often says so
     // ("former CEO of Yum! Brands"). Founders stay listed as founders.
     if (formerHere(leader.description, company.name) && !(leader.roles || []).includes("Founder")) continue;
+    const twin = people.find(p => samePerson(p.name, leader.name, leader.aliases || []));
     let photo = null;
-    if (leader.photo?.src) {
+    if (leader.photo?.src && !(twin && blocked.has(twin.key))) {
       try {
         const { saved, size } = await fromUrl(leader.photo.large || leader.photo.src);
         if (weakPicture(size) && !usableWeak(leader.photo, leader.name)) throw Object.assign(new Error("group or distant picture"), { skip: true });
@@ -243,7 +287,7 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
     }
     state.leaders.push({ key: "wd:" + (leader.qid || leader.name), name: leader.name, qid: leader.qid || null, roles: leader.roles || [], current: leader.current !== false,
       wikidataUrl: leader.wikidataUrl || null, src: photo?.src || null, source: photo?.source || null, sourceUrl: photo?.sourceUrl || null, credit: photo?.credit || null, ...(photo?.weak ? { weak: true } : {}),
-      insider: people.some(p => samePerson(p.name, leader.name, leader.aliases || [])) });
+      insider: Boolean(twin), ...(twin ? { insiderKey: twin.key } : {}) });
   }
   await publish(state);
 
@@ -263,7 +307,11 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
   // stays for everyone the company does not picture itself.
   const replaceable = current => !current || current.source === "sec-proxy" || current.source === "wikimedia";
   const proxyReplaceable = current => !current || current.source === "wikimedia";
-  const leaderPhoto = (leader, photo) => { Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit }); delete leader.weak; };
+  const leaderPhoto = (leader, photo) => {
+    if (leader.insiderKey && blocked.has(leader.insiderKey)) return;
+    Object.assign(leader, { src: photo.src, source: photo.source, sourceUrl: photo.sourceUrl, credit: photo.credit });
+    delete leader.weak;
+  };
 
   const applySite = async site => {
     if (site.status === "error") state.transient = true;
@@ -380,30 +428,54 @@ async function otherBoards(company, persons, proxyModule, assign) {
 
 /* ---------------- one queue for every company's photo job ----------------
  * A job reads SEC filings (8 requests/s shared with the whole server), Commons and company sites
- * for a minute or two, so at most `concurrency` run at once and the rest wait their turn. Pages
- * people are looking at ("user") go before the warm-up after each SEC import ("warm").
- *   request({ticker, cik, extra, priority, rerun, keys, create}) -> {status, started}
+ * for a minute or two, so at most `concurrency` run at once and the rest wait their turn.
+ *   priority: "page" (the company report someone has open: one company, and one more slot,
+ *             `reserved`, that only such a job may use, so it starts at once even behind a
+ *             dashboard's batch), then "user" (logos and faces on a page), then "warm" (the
+ *             warm-up after each SEC import).
+ *   requester: who asked (a member or an address). Within a priority the requester served least
+ *             recently goes first, and no requester holds more than `maxPerRequester` waiting
+ *             jobs, so one member (or one cold page) cannot hold the queue for everyone else.
+ *   request({ticker, cik, extra, priority, requester, rerun, keys, create}) -> {status, started}
  *     status: queued | running | settling (just finished: read the record again) |
  *             throttled (a re-run for these people already ran in the last 6 h) |
- *             busy (queue full) | skipped (warm-up queue full) | none (create:false, no job)
- *   A request for a company already waiting merges its extras into that job; one for a company
- *   whose job is running is remembered and runs as a quiet re-run right after it.
- *   rerun: the company's record is finished, but `extra` (or `keys`) still need looking at. */
-export function createPhotoQueue({ concurrency = 2, execute, maxQueue = 200, maxWarm = 40, rerunGapMs = 6 * 3600 * 1000, settleMs = 5000, failMs = 60000, now = Date.now } = {}) {
+ *             busy (queue full, or this requester's share is) | skipped (warm-up queue full) |
+ *             none (create:false, no job)
+ *   A request for a company already waiting merges its extras into that job (and raises its
+ *   priority); one for a company whose job is running is remembered and runs as a quiet re-run
+ *   right after it. rerun: the company's record is finished, but `extra` (or `keys`) still need
+ *   looking at. peek(cik) -> "queued" | "running" | null changes nothing. */
+const PRIORITY_RANK = { page: 0, user: 1, warm: 2 };
+const priorityOf = p => p === "page" || p === "warm" ? p : "user";
+export function createPhotoQueue({ concurrency = 2, reserved = 1, execute, maxQueue = 200, maxWarm = 40, maxPerRequester = 10, rerunGapMs = 6 * 3600 * 1000, settleMs = 5000, failMs = 60000, now = Date.now } = {}) {
   const active = new Map(); // cik10 -> entry
   const waiting = [];
   const tried = new Map();  // "cik10|key" -> when a re-run covering that key started
   const settling = new Map(); // cik10 -> until
-  let running = 0;
+  const served = new Map(); // requester -> turn of its last start (least recently served first)
+  let running = 0, turn = 0;
   const pad = cik => String(cik ?? "").replace(/^0+/, "").padStart(10, "0");
   const prune = () => {
     if (tried.size > 5000) for (const [k, t] of tried) if (now() - t >= rerunGapMs) tried.delete(k);
     if (settling.size > 2000) for (const [k, t] of settling) if (t <= now()) settling.delete(k);
+    while (served.size > 5000) served.delete(served.keys().next().value);
+  };
+  const next = () => {
+    let best = -1;
+    for (let i = 0; i < waiting.length; i++) {
+      if (best < 0) { best = i; continue; }
+      const e = waiting[i], b = waiting[best], re = PRIORITY_RANK[e.priority], rb = PRIORITY_RANK[b.priority];
+      if (re < rb || (re === rb && (served.get(e.requester) || 0) < (served.get(b.requester) || 0))) best = i;
+    }
+    return best;
   };
   function pump() {
-    while (running < concurrency && waiting.length) {
-      const first = waiting.findIndex(e => e.priority === "user");
-      const entry = waiting.splice(first >= 0 ? first : 0, 1)[0];
+    while (waiting.length) {
+      const i = next(), entry = waiting[i];
+      if (running >= concurrency + (entry.priority === "page" ? reserved : 0)) return;
+      waiting.splice(i, 1);
+      served.delete(entry.requester);
+      served.set(entry.requester, ++turn);
       entry.status = "running";
       running++;
       if (entry.rerun) for (const k of [...entry.extras.keys(), ...entry.keys]) tried.set(entry.cik + "|" + k, now());
@@ -416,13 +488,13 @@ export function createPhotoQueue({ concurrency = 2, execute, maxQueue = 200, max
           // People asked for while it ran and not on its roster: a quiet re-run picks them up straight away.
           const covered = new Set(Array.isArray(result?.roster) ? result.roster : []);
           const later = [...entry.followUp.values()].filter(e => !covered.has(e.key));
-          if (ok && later.length) schedule({ ticker: entry.ticker, cik: entry.cik, extra: later, priority: entry.priority, rerun: true });
+          if (ok && later.length) schedule({ ticker: entry.ticker, cik: entry.cik, extra: later, priority: entry.priority, requester: entry.requester, rerun: true });
           pump();
         });
     }
   }
-  function schedule({ ticker, cik, extra, priority, rerun, keys = [] }) {
-    const entry = { cik, ticker, priority, rerun, keys: [...keys], extras: new Map(extra.map(e => [e.key, e])), followUp: new Map(), status: "queued" };
+  function schedule({ ticker, cik, extra, priority, requester, rerun, keys = [] }) {
+    const entry = { cik, ticker, priority, requester, rerun, keys: [...keys], extras: new Map(extra.map(e => [e.key, e])), followUp: new Map(), status: "queued" };
     entry.promise = new Promise(r => { entry.resolve = r; });
     active.set(cik, entry);
     waiting.push(entry);
@@ -430,19 +502,21 @@ export function createPhotoQueue({ concurrency = 2, execute, maxQueue = 200, max
     pump();
     return entry;
   }
-  function request({ ticker, cik, extra = [], priority = "user", rerun = false, keys = [], create = true } = {}) {
+  function request({ ticker, cik, extra = [], priority = "user", requester, rerun = false, keys = [], create = true } = {}) {
     const cik10 = pad(cik);
     if (!/^\d{10}$/.test(cik10) || cik10 === "0000000000") return { status: "none", started: false };
-    priority = priority === "warm" ? "warm" : "user";
+    priority = priorityOf(priority);
+    const who = String(requester || (priority === "warm" ? "warm" : "anonymous")).slice(0, 120);
     const extras = cleanExtras(extra);
     const current = active.get(cik10);
     if (current) {
       if (current.status === "queued") {
         for (const e of extras) if (!current.extras.has(e.key)) current.extras.set(e.key, e);
         for (const k of keys) if (!current.keys.includes(k)) current.keys.push(k);
-        if (priority === "user") current.priority = "user";
+        if (PRIORITY_RANK[priority] < PRIORITY_RANK[current.priority]) current.priority = priority;
         current.rerun = current.rerun && rerun;
-        return { status: "queued", started: false };
+        pump(); // a page request may now use the reserved slot
+        return { status: current.status, started: false };
       }
       for (const e of extras) if (!current.extras.has(e.key)) current.followUp.set(e.key, e);
       return { status: "running", started: false };
@@ -458,12 +532,14 @@ export function createPhotoQueue({ concurrency = 2, execute, maxQueue = 200, max
     }
     if (priority === "warm" && waiting.filter(e => e.priority === "warm").length >= maxWarm) return { status: "skipped", started: false };
     if (waiting.length >= maxQueue) return { status: "busy", started: false };
-    const entry = schedule({ ticker, cik: cik10, extra: ride, priority, rerun, keys: also });
+    if (priority !== "warm" && waiting.filter(e => e.requester === who).length >= maxPerRequester) return { status: "busy", started: false };
+    const entry = schedule({ ticker, cik: cik10, extra: ride, priority, requester: who, rerun, keys: also });
     return { status: entry.status, started: true };
   }
   return {
     request,
     entry: cik => active.get(pad(cik)) || null,
+    peek: cik => active.get(pad(cik))?.status || null,
     stats: () => ({ running, queued: waiting.length, warmQueued: waiting.filter(e => e.priority === "warm").length })
   };
 }
@@ -477,13 +553,16 @@ const queue = createPhotoQueue({
   }
 });
 export const requestPhotos = options => queue.request(options);
+export const photoJobStatus = cik => queue.peek(cik);
 export const photoQueueStats = () => queue.stats();
 
 /* Returns what is known now; starts or continues the background job. wait (ms) lets a caller
  * hold briefly for fast sources. extra: verified [{cik, name}] reporting people to include
- * beyond the SEC's last 16 Form 4 filers (see cleanExtras). A company whose job is waiting for
- * its turn answers {complete:false, queued:true}. */
-export async function companyPhotos(ticker, { wait = 0, extra = [], priority = "user" } = {}) {
+ * beyond the SEC's last 16 Form 4 filers (see cleanExtras). create:false only joins a job that
+ * already exists; usage.photos counts a job this call started. A company whose job is waiting
+ * for its turn answers {complete:false, queued:true}. The raw record: GET /v1/company/photos
+ * passes every answer through withoutTakedowns before it is sent. */
+export async function companyPhotos(ticker, { wait = 0, extra = [], priority = "user", requester, create = true, usage = null } = {}) {
   const resolved = await resolveCompany(ticker);
   if (!resolved) return null;
   const { company } = resolved;
@@ -491,7 +570,8 @@ export async function companyPhotos(ticker, { wait = 0, extra = [], priority = "
   const extras = cleanExtras(extra);
   const missing = cached?.complete ? extras.filter(e => !(cached.roster || []).includes(e.key)) : extras;
   if (cached?.complete && !missing.length) return cached;
-  queue.request({ ticker, cik: company.cik, extra: missing, priority, rerun: Boolean(cached?.complete) });
+  const ticket = queue.request({ ticker, cik: company.cik, extra: missing, priority, requester, rerun: Boolean(cached?.complete), create });
+  if (ticket.started && usage) usage.photos = (usage.photos || 0) + 1;
   const job = queue.entry(company.cik);
   if (wait > 0 && job) await Promise.race([job.promise, new Promise(r => setTimeout(r, wait))]);
   const latest = (await getRecord("company-photos", company.cik)) || cached;

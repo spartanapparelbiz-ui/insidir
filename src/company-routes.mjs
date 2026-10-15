@@ -7,7 +7,7 @@ import { getCompanyProfile } from "./company-profile.mjs";
 import { getCompanyInsiders } from "./insiders.mjs";
 import { getHeadlines, announcementsFromFilings, focusHeadlines, relevanceTerms } from "./news.mjs";
 import { searchCompanies } from "./search.mjs";
-import { getMedia } from "./media-store.mjs";
+import { getMedia, hasMedia } from "./media-store.mjs";
 import { sendImage } from "./media.mjs";
 import { parseMediaQuery, mediaBatch, mediaPending } from "./media-batch.mjs";
 
@@ -21,6 +21,26 @@ function limited(key, limit, windowMs = 60_000) {
   entry.count++;
   return entry.count > limit;
 }
+// Whether `key` has used up its limit in the current window, without counting this request.
+const spent = (key, limit) => { const entry = hits.get(key); return Boolean(entry && entry.until > Date.now() && entry.count >= limit); };
+
+/* New upstream work each requester (a member, else an address) may start per 10 minutes: logo
+ * resolutions and company photo jobs from GET /v1/media, and company report photo jobs
+ * (/v1/company/photos). Joining work that is already running is always free. Past the allowance
+ * a key stays pending until the window turns, so one member cannot fill the shared queues. */
+export const START_ALLOWANCE = Object.freeze({ logos: 60, photos: 10, pages: 20 });
+const START_WINDOW_MS = 10 * 60_000;
+const allowances = new Map();
+function allowanceFor(requester) {
+  const now = Date.now();
+  if (allowances.size > 10000) for (const [k, v] of allowances) if (v.until <= now) allowances.delete(k);
+  let entry = allowances.get(requester);
+  if (!entry || entry.until <= now) allowances.set(requester, entry = { ...START_ALLOWANCE, until: now + START_WINDOW_MS });
+  return entry;
+}
+// Reserved before the work and the unused part given back after, so parallel requests from one
+// requester cannot spend the same allowance twice.
+const reserve = (entry, kind, most) => { const n = Math.max(0, Math.min(most, entry[kind])); entry[kind] -= n; return n; };
 /* Behind the hosting proxy every request arrives from the proxy's socket address. The proxy
  * appends the real client to X-Forwarded-For, so the last entry is the one a client cannot forge. */
 export function clientAddress(req) {
@@ -58,22 +78,35 @@ export function isCompanyRoute(pathname) { return ROUTES.has(pathname) || MEDIA_
 const optional = async path => { try { return await import(path); } catch { return null; } };
 
 /* Returns false when the path is not a company route; otherwise responds or throws {status}.
- * loadOwners(pairs [{cik, ticker}]) -> [{owner_cik, ticker, owner_name}] confirms reporting owners
- * from the engine's SEC import for GET /v1/media (the website preview has no database: []).
- * mediaDeps replaces the media batch's resolvers in tests. */
-export async function handleCompanyRoute(req, res, url, { loadTransactions = async () => [], loadOwners = async () => [], mediaDeps = null } = {}) {
+ * loadOwners(pairs [{cik, ticker}]) -> [{owner_cik, ticker, owner_name}] and
+ * loadIssuers(ciks) -> [{issuer_cik}] confirm reporting owners and issuers from the engine's SEC
+ * import for GET /v1/media; null (the website preview, no database) means nothing is confirmed.
+ * requester: who is asking (the engine passes "user:<id>"); otherwise the client address.
+ * mediaDeps / photoDeps replace the media batch's resolvers and companyPhotos in tests. */
+export async function handleCompanyRoute(req, res, url, { loadTransactions = async () => [], loadOwners = null, loadIssuers = null, requester = null, mediaDeps = null, photoDeps = null } = {}) {
   const p = url.pathname;
   if (!isCompanyRoute(p)) return false;
   if (req.method !== "GET" && req.method !== "HEAD") throw failure(405, "Method not allowed");
   const ip = clientAddress(req);
+  const who = String(requester || "ip:" + ip).slice(0, 120);
 
-  // Prepared logos and photos: content-addressed, immutable, served from this origin.
+  // Prepared logos and photos: content-addressed, served from this origin without a session. A
+  // takedown stops serving an address, so caches keep a copy for a day, not for ever, and check
+  // back cheaply (ETag). Unknown addresses are limited per client: each one costs a lookup.
   const media = MEDIA_PATH.exec(p);
   if (media) {
-    const item = await getMedia(media[1]);
-    if (!item) throw failure(404, "Media not found");
+    const sha = media[1], etag = '"' + sha + '"';
+    if (spent("media-miss:" + ip, 120)) throw failure(429, "Too many requests for missing images. Try again shortly.");
+    const cache = { "Cache-Control": "public, max-age=86400", ETag: etag };
+    const asked = String(req.headers?.["if-none-match"] || "").split(",").map(x => x.trim().replace(/^W\//, ""));
+    if (asked.includes(etag) && await hasMedia(sha)) {
+      res.writeHead(304, { ...cache, "X-Content-Type-Options": "nosniff" });
+      return res.end(), true;
+    }
+    const item = await getMedia(sha);
+    if (!item) { limited("media-miss:" + ip, 120); throw failure(404, "Media not found"); }
     const type = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpeg", "image/svg+xml": "svg" }[item.mime];
-    return sendImage(res, { bytes: item.bytes, type }, 31536000, { "Cache-Control": "public, max-age=31536000, immutable" }), true;
+    return sendImage(res, { bytes: item.bytes, type }, 86400, cache), true;
   }
 
   // Logos and headshots for a whole page in one request; see src/media-batch.mjs.
@@ -81,8 +114,17 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     if (limited("media:" + ip, 120)) throw failure(429, "Too many media requests. Try again shortly.");
     const query = parseMediaQuery(url);
     requireSec();
+    const allowance = allowanceFor(who);
+    const grant = { logos: reserve(allowance, "logos", 20), photos: reserve(allowance, "photos", 10) };
+    const usage = { logos: 0, photos: 0 };
     let body;
-    try { body = await mediaBatch(query, { ...(mediaDeps || {}), loadOwners: mediaDeps?.loadOwners || loadOwners }); } catch (e) { upstream("Company media", e); }
+    try {
+      body = await mediaBatch(query, { loadOwners, loadIssuers, ...(mediaDeps || {}) }, { requester: who, maxStarts: grant.logos, maxPhotoStarts: grant.photos, usage });
+    } catch (e) { upstream("Company media", e); }
+    finally {
+      allowance.logos += Math.max(0, grant.logos - usage.logos);
+      allowance.photos += Math.max(0, grant.photos - usage.photos);
+    }
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       // Pending keys are asked for again shortly, so only a settled answer may be reused.
@@ -161,10 +203,15 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
   if (p === "/v1/company/photos") {
     if (limited("photos:" + ip, 60)) throw failure(429, "Too many photo requests. Try again shortly.");
     requireSec();
-    const { companyPhotos } = await import("./people-photos.mjs");
+    const photosApi = await import("./people-photos.mjs");
+    const companyPhotos = photoDeps?.companyPhotos || photosApi.companyPhotos;
     const wait = Math.max(0, Math.min(8000, Number(url.searchParams.get("wait")) || 0));
+    // The report someone has open goes before photo jobs started by page batches.
+    const allowance = allowanceFor(who), grant = reserve(allowance, "pages", 1), usage = { photos: 0 };
     let state;
-    try { state = await companyPhotos(t, { wait }); } catch (e) { upstream("People photos", e); }
+    try { state = await photosApi.withoutTakedowns(await companyPhotos(t, { wait, priority: "page", requester: who, create: grant > 0, usage })); }
+    catch (e) { upstream("People photos", e); }
+    finally { allowance.pages += Math.max(0, grant - usage.photos); }
     if (!state) throw notListed();
     return send(res, 200, { ticker: t, complete: Boolean(state.complete), ...(state.queued ? { queued: true } : {}), photos: state.photos || {}, names: state.names || {}, leaders: state.leaders || [], sources: state.sources || {},
       coverage: state.coverage || null, updatedAt: state.updatedAt || null,

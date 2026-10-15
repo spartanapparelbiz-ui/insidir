@@ -11,9 +11,12 @@
  *
  * Names never come from the request. person-photo records are global by owner CIK, so a name a
  * client typed for someone else's CIK could attach the wrong face to that CIK for every member.
- * A person beyond the SEC's own roster (the issuer's last 16 Form 4 filings) is looked for only
- * when the engine's own SEC import confirms that owner filed for that issuer (loadOwners), and
- * the job gets the name from that import. */
+ * With the engine's database (loadOwners given), a pair starts or extends a company job only when
+ * the SEC import confirms that owner filed for that issuer (or the company's finished roster has
+ * them), and the job gets the name from that import; any other pair is null with no job (pending
+ * only while a job someone else started for that company is under way). An issuer CIK without a
+ * ticker is looked up only when the import has filings for it (loadIssuers). The website preview
+ * has no database: there a company's own roster job may start, and only listed CIKs resolve. */
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
 import { getRecord, hasMedia, mediaSha } from "./media-store.mjs";
 import { isEntityName } from "./person-match.mjs";
@@ -86,33 +89,48 @@ export function indexMaps(index) {
   return maps;
 }
 
-/* A small priority limiter: "user" work (a page someone is looking at) runs before "warm" work. */
-export function createLimiter(concurrency = 4, { maxQueue = 400 } = {}) {
-  let active = 0;
-  const queues = { user: [], warm: [] };
+/* A small priority limiter: "user" work (a page someone is looking at) runs before "warm" work.
+ * Within "user", the requester served least recently goes first, and one requester may hold at
+ * most maxPerRequester waiting jobs, so nobody can fill the queue for everyone else. */
+export function createLimiter(concurrency = 4, { maxQueue = 400, maxPerRequester = 60 } = {}) {
+  let active = 0, turn = 0;
+  const queues = { user: [], warm: [] }, served = new Map();
+  const nextUser = () => {
+    let best = -1;
+    for (let i = 0; i < queues.user.length; i++) if (best < 0 || (served.get(queues.user[i].requester) || 0) < (served.get(queues.user[best].requester) || 0)) best = i;
+    return best < 0 ? null : queues.user.splice(best, 1)[0];
+  };
   const pump = () => {
     while (active < concurrency) {
-      const job = queues.user.shift() || queues.warm.shift();
+      const job = nextUser() || queues.warm.shift();
       if (!job) return;
+      served.delete(job.requester);
+      served.set(job.requester, ++turn);
+      while (served.size > 5000) served.delete(served.keys().next().value);
       job.queue = null;
       active++;
       Promise.resolve().then(job.fn).then(job.resolve, job.reject).finally(() => { active--; pump(); });
     }
   };
+  const full = message => Object.assign(new Error(message), { busy: true });
   return {
-    run(fn, priority = "user") {
-      const job = { fn };
+    /* -> {promise, job, accepted} */
+    run(fn, priority = "user", requester = "anonymous") {
+      const job = { fn, requester: String(requester || "anonymous") };
       const promise = new Promise((resolve, reject) => Object.assign(job, { resolve, reject }));
-      if (queues.user.length + queues.warm.length >= maxQueue) { job.reject(Object.assign(new Error("Logo queue is full"), { busy: true })); return { promise, job }; }
-      job.queue = priority === "warm" ? "warm" : "user";
+      const level = priority === "warm" ? "warm" : "user";
+      if (queues.user.length + queues.warm.length >= maxQueue) { job.reject(full("Logo queue is full")); return { promise, job, accepted: false }; }
+      if (level === "user" && queues.user.filter(j => j.requester === job.requester).length >= maxPerRequester) { job.reject(full("Too many logos waiting for this requester")); return { promise, job, accepted: false }; }
+      job.queue = level;
       queues[job.queue].push(job);
       pump();
-      return { promise, job };
+      return { promise, job, accepted: true };
     },
-    promote(job) {
+    promote(job, requester) {
       if (job?.queue !== "warm") return;
       queues.warm.splice(queues.warm.indexOf(job), 1);
       job.queue = "user";
+      if (requester) job.requester = String(requester);
       queues.user.push(job);
     },
     stats: () => ({ active, queued: queues.user.length + queues.warm.length })
@@ -135,18 +153,27 @@ const DEFAULTS = {
   getRecord, hasMedia,
   logoForTicker: async (ticker, options) => (await logoApi()).logoForTicker(ticker, options),
   resolveLogo: async (subject, options) => (await logoApi()).resolveLogo(subject, options),
+  // The resolver's current preparation pass (LOGO_PREP, stamped on its records as `prep`), or null
+  // while it has none: a logo prepared by an older pass is resolved again instead of served.
+  logoPrep: async () => (await logoApi()).LOGO_PREP ?? null,
   requestPhotos: async options => (await photoApi()).requestPhotos(options),
-  loadOwners: async () => [],
+  // -> "queued" | "running" | null for the issuer's photo job; changes nothing.
+  photoJob: async cik => (await photoApi()).photoJobStatus(cik),
+  // The engine's SEC import (src/api.mjs). null: no database (website preview).
+  loadOwners: null,
+  loadIssuers: null,
   now: () => Date.now()
 };
 
 /* ---------------- logos ---------------- */
 const shaFor = variant => mediaSha(variant?.url) || (/^[a-f0-9]{64}$/.test(String(variant?.sha || "")) ? variant.sha : null);
-/* {kind:"ok", value} | {kind:"none"} | {kind:"stale"} (chosen, but its bytes are gone) | null (unknown) */
-async function logoValue(result, name, d) {
+/* {kind:"ok", value} | {kind:"none"} | {kind:"stale"} (chosen, but its bytes are gone or it was
+ * prepared by an older pass) | null (unknown) */
+async function logoValue(result, name, d, prep = null) {
   if (!result || typeof result !== "object") return null;
   if (result.status === "none") return { kind: "none" };
   if (result.status !== "ok") return null;
+  if (prep != null && result.prep !== prep) return { kind: "stale" };
   const v = result.variants || {};
   // Square first (it fills a square tile); a wide wordmark becomes the alternative.
   const main = [v.square, v.wide, ...Object.values(v)].find(x => x?.url);
@@ -161,13 +188,13 @@ function pruneSettled(state, now) {
   if (state.settled.size > 5000) for (const [k, s] of state.settled) if (s.until <= now) state.settled.delete(k);
 }
 function startLogo(subject, refresh, ctx) {
-  const { d, state, priority, budget } = ctx;
+  const { d, state, priority, budget, usage, requester } = ctx;
   const current = state.running.get(subject.cik);
-  if (current) { if (priority === "user") state.logos.promote(current.job); return current.promise; }
-  if (budget.logos <= 0) return null;
-  budget.logos--;
+  if (current) { if (priority === "user") state.logos.promote(current.job, requester); return current.promise; }
+  if (ctx.noStarts || budget.logos <= 0) return null;
   const options = refresh ? { refresh: true } : {};
-  const { promise, job } = state.logos.run(() => subject.ticker ? d.logoForTicker(subject.ticker, options) : d.resolveLogo({ cik: subject.cik }, options), priority);
+  const { promise, job, accepted } = state.logos.run(() => subject.ticker ? d.logoForTicker(subject.ticker, options) : d.resolveLogo({ cik: subject.cik }, options), priority, requester);
+  if (accepted) { budget.logos--; usage.logos++; }
   const tracked = promise.then(
     result => { state.settled.set(subject.cik, { result: result && typeof result === "object" ? result : null, until: d.now() + SETTLED_MS }); },
     error => {
@@ -182,13 +209,15 @@ function startLogo(subject, refresh, ctx) {
 async function logoFor(subject, ctx) {
   const { d, state } = ctx;
   const record = await d.getRecord("logo", subject.cik).catch(() => null);
-  const known = await logoValue(record, subject.name, d);
+  const known = await logoValue(record, subject.name, d, ctx.prep);
   if (known?.kind === "ok") return { value: known.value };
   if (known?.kind === "none") return { value: null };
   const settled = state.settled.get(subject.cik);
   if (settled && settled.until > d.now()) {
     // A resolver error is not "no logo": the page asks again after the back-off.
     if (settled.error) return { pending: true, promise: null };
+    // What a resolution just returned is served even if it carries no preparation stamp, so a
+    // resolver that does not stamp every record cannot cause a refresh on every request.
     const done = await logoValue(settled.result, subject.name, d);
     if (done?.kind === "ok") return { value: done.value };
     if (!settled.result || done?.kind === "none") return { value: null };
@@ -218,10 +247,14 @@ async function firstLook(pair, maps, d) {
   ]);
   const name = company?.names?.[k] || null;
   const atCompany = company?.photos?.[k];
+  let takedown;
   for (const photo of [known, atCompany]) {
-    if (!photo?.src || !(await d.hasMedia(mediaSha(photo.src)))) continue;
-    // A takedown keeps the photo off every page even while an older record still names it.
-    if ((await d.getRecord("person-photo-override", pair.cik).catch(() => null))?.none) return { none: true };
+    if (!photo?.src) continue;
+    // A takedown keeps the photo off every page even while an older record still names it (and
+    // a taken-down photo is never "lost" bytes to look for again).
+    takedown ??= Boolean((await d.getRecord("person-photo-override", pair.cik).catch(() => null))?.none);
+    if (takedown) return { none: true };
+    if (!(await d.hasMedia(mediaSha(photo.src)))) continue;
     return { photo: shapePhoto(photo, name) };
   }
   if (!issuer) return { none: true };
@@ -242,14 +275,21 @@ function ownerNames(rows) {
   return out;
 }
 
-/* The answer for one batch. options: priority ("user" | "warm"), maxStarts (new logo resolutions),
- * maxPhotoStarts (new company photo jobs). deps are injectable for tests. */
-export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 20, maxPhotoStarts = 10 } = {}) {
+/* The answer for one batch. options: priority ("user" | "warm"), requester (who asked: queues
+ * share their slots between requesters), maxStarts (new logo resolutions), maxPhotoStarts (new
+ * company photo jobs), usage ({logos, photos}: incremented by what this call started, for the
+ * caller's per-requester allowance). deps are injectable for tests. */
+export async function mediaBatch(q, deps = {}, { priority = "user", requester = null, maxStarts = 20, maxPhotoStarts = 10, usage = null } = {}) {
   const d = { ...DEFAULTS, ...deps };
   const state = deps.state || shared;
-  const ctx = { d, state, priority: priority === "warm" ? "warm" : "user", budget: { logos: maxStarts, photos: maxPhotoStarts } };
+  const level = priority === "warm" ? "warm" : "user";
+  const ctx = { d, state, priority: level, requester: String(requester || (level === "warm" ? "warm" : "anonymous")).slice(0, 120),
+    budget: { logos: Math.max(0, maxStarts), photos: Math.max(0, maxPhotoStarts) }, usage: usage || { logos: 0, photos: 0 }, noStarts: false };
+  ctx.usage.logos ||= 0; ctx.usage.photos ||= 0;
+  const verified = typeof d.loadOwners === "function";
   const maps = indexMaps(await d.tickerIndex());
-  const logos = {}, photos = {}, owners = {}, pending = { logos: [], photos: [] };
+  ctx.prep = await Promise.resolve(d.logoPrep?.()).catch(() => null) ?? null;
+  const logos = {}, photos = {}, owners = {}, pending = { logos: [], photos: [] }, queuedPairs = new Set();
 
   // Every company whose logo is answered: requested tickers, ciks, the issuer of every person and
   // listed companies that file as owners.
@@ -261,8 +301,17 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
   };
   for (const t of q.tickers) addTicker(t);
   for (const p of q.people) addTicker(p.ticker);
+  // An issuer CIK is looked up only when it is listed or the SEC import has filings for it, so a
+  // made-up number starts no resolution (and no SEC request).
+  const unlisted = q.ciks.filter(cik => !maps.byCik.has(cik));
+  let issuers = new Set(), issuersFailed = false;
+  if (unlisted.length && typeof d.loadIssuers === "function") {
+    try { issuers = new Set((await d.loadIssuers(unlisted)).map(r => cleanCik(r?.issuer_cik ?? r)).filter(Boolean)); }
+    catch (e) { issuersFailed = true; console.warn("Issuer lookup for media failed:", e?.message); }
+  }
   for (const cik of q.ciks) {
     const ticker = maps.byCik.get(cik) || null, rec = ticker ? maps.byTicker.get(ticker) : null;
+    if (!ticker && !issuers.has(cik)) { subjects.set("cik:" + cik, { key: "cik:" + cik, missing: true, retry: issuersFailed }); continue; }
     subjects.set("cik:" + cik, { key: "cik:" + cik, ticker, cik: rec?.cik || pad10(cik), name: rec?.name || null, listed: ticker });
   }
 
@@ -271,21 +320,25 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
   // 2: one database round trip confirms the owners still to look for, with their filed names.
   const unsure = q.people.filter((p, i) => answers[i].issuer && !answers[i].inRoster);
   let names = new Map(), ownersFailed = false;
-  if (unsure.length) {
+  if (unsure.length && verified) {
     try { names = ownerNames(await d.loadOwners(unsure.map(({ cik, ticker }) => ({ cik, ticker })))); }
     catch (e) { ownersFailed = true; console.warn("Owner lookup for media failed:", e?.message); }
   }
-  // 3: group the rest by company and ask the photo queue.
-  const groups = new Map();
+  // 3: group the confirmed ones by company and ask the photo queue.
+  const groups = new Map(), watching = [];
   q.people.forEach((p, i) => {
     const a = answers[i];
     if (!a.issuer) return;
     const name = names.get(p.cik + ":" + p.ticker);
     if (name && isEntityName(name)) { answers[i] = { entity: true, ownTicker: null }; return; }
-    if (a.complete && !a.inRoster) {
+    if (!a.inRoster && !name) {
       if (ownersFailed) { answers[i] = { pending: true, waitingOn: "owners" }; return; }
-      // Not a filer the engine knows at this company: nothing is looked up for them.
-      if (!name) { answers[i] = { none: true }; return; }
+      // Not a filer the engine knows at this company: nothing is looked up for them. With a
+      // database that holds for every company; a job someone else already started may still
+      // put them on its roster, so they wait for it (without changing it).
+      if (a.complete) { answers[i] = { none: true }; return; }
+      if (verified) { watching.push(i); return; }
+      // Website preview (no database): the company's own roster job may start.
     }
     const g = groups.get(a.issuer.cik) || { ticker: p.ticker, cik: a.issuer.cik, rerun: a.complete, extras: [], keys: [], members: [] };
     if (name) g.extras.push({ cik: p.cik, name });
@@ -294,19 +347,28 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
     groups.set(a.issuer.cik, g);
   });
   let queued = false;
+  const jobs = new Map(); // issuer CIK -> "queued" | "running" | other status of its photo job
   for (const g of groups.values()) {
-    const create = ctx.budget.photos > 0;
-    const ticket = await d.requestPhotos({ ticker: g.ticker, cik: g.cik, extra: g.extras, keys: g.keys, priority: ctx.priority, rerun: g.rerun, create });
-    if (ticket?.started) ctx.budget.photos--;
+    const create = !ctx.noStarts && ctx.budget.photos > 0;
+    const ticket = await d.requestPhotos({ ticker: g.ticker, cik: g.cik, extra: g.extras, keys: g.keys, priority: ctx.priority, requester: ctx.requester, rerun: g.rerun, create });
+    if (ticket?.started) { ctx.budget.photos--; ctx.usage.photos++; }
     const status = ticket?.status || "none";
+    jobs.set(g.cik, status);
     if (status === "queued") queued = true;
     for (const i of g.members) {
       if (status === "throttled" || status === "settling") {
         // The job may have just finished: the records decide, and a throttled re-run means no photo for now.
         const again = await firstLook(q.people[i], maps, d);
         answers[i] = again.photo || again.none || again.entity ? again : status === "throttled" ? { none: true } : { pending: true };
-      } else answers[i] = { pending: true };
+      } else answers[i] = { pending: true, queued: status === "queued" };
     }
+  }
+  for (const i of watching) {
+    const cik = answers[i].issuer.cik;
+    if (!jobs.has(cik)) jobs.set(cik, await Promise.resolve(d.photoJob(cik)).catch(() => null));
+    const job = jobs.get(cik);
+    if (job === "queued" || job === "running") { answers[i] = { pending: true, queued: job === "queued" }; if (job === "queued") queued = true; }
+    else answers[i] = { none: true };
   }
   // 4: one answer per owner CIK: a photo from any pair wins, then pending, then null.
   const byOwner = new Map();
@@ -314,7 +376,7 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
     const a = answers[i], o = byOwner.get(p.cik) || { photo: null, entity: null, pending: [] };
     if (a.photo && !o.photo) o.photo = a.photo;
     if (a.entity) { o.entity = { entity: true, ticker: a.ownTicker || o.entity?.ticker || null }; if (a.ownTicker) addTicker(a.ownTicker); }
-    if (a.pending) o.pending.push(p.pair);
+    if (a.pending) { o.pending.push(p.pair); if (a.queued) queuedPairs.add(p.pair); }
     byOwner.set(p.cik, o);
   });
   for (const [cik, o] of byOwner) {
@@ -328,7 +390,7 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
   const shape = (subject, value) => value && subject.listed ? { ...value, ticker: subject.listed } : value;
   const inFlight = [];
   const answerLogo = async subject => {
-    if (subject.missing) { logos[subject.key] = null; return; }
+    if (subject.missing) { if (subject.retry) pending.logos.push(subject.key); else logos[subject.key] = null; return; }
     const r = await logoFor(subject, ctx);
     if (r.pending) { pending.logos.push(subject.key); if (r.promise) inFlight.push(r.promise); }
     else logos[subject.key] = shape(subject, r.value);
@@ -337,14 +399,16 @@ export async function mediaBatch(q, deps = {}, { priority = "user", maxStarts = 
   // wait: logos that are already resolving may land in this response.
   if (q.wait > 0 && inFlight.length) {
     await Promise.race([Promise.allSettled(inFlight), sleep(q.wait)]);
-    ctx.budget.logos = 0;
+    ctx.noStarts = true;
     const again = pending.logos.splice(0);
     await Promise.all(again.map(key => answerLogo(subjects.get(key))));
   }
   pending.logos.sort();
   pending.photos.sort();
   const retryAfter = pending.photos.length ? (queued ? 15 : 8) : pending.logos.length ? 3 : 0;
-  return { logos, photos, owners, pending, retryAfter, invalid: q.invalid || [] };
+  // queued: pending pairs whose company job is still waiting for its turn (not running yet), so a
+  // client need not count those polls against its patience.
+  return { logos, photos, owners, pending, queued: pending.photos.filter(pair => queuedPairs.has(pair)), retryAfter, invalid: q.invalid || [] };
 }
 export const mediaPending = body => Boolean(body?.pending?.logos?.length || body?.pending?.photos?.length);
 
@@ -368,4 +432,14 @@ export async function loadOwnersFrom(run, pairs) {
   const [ciks, tickers] = ownersParams(pairs);
   if (!ciks.length || !tickers.length) return [];
   return (await run(OWNERS_SQL, [ciks, tickers])).rows || [];
+}
+
+/* loadIssuers for GET /v1/media: which of these issuer CIKs the SEC import has filings for. */
+export const ISSUERS_SQL = `SELECT issuer_cik FROM sec_filings WHERE issuer_cik = ANY($1::text[])
+  UNION SELECT issuer_cik FROM sec_transactions WHERE issuer_cik = ANY($1::text[])`;
+export async function loadIssuersFrom(run, ciks) {
+  const ask = new Set();
+  for (const value of ciks || []) { const cik = cleanCik(value); if (cik) { ask.add(cik); ask.add(pad10(cik)); } }
+  if (!ask.size) return [];
+  return (await run(ISSUERS_SQL, [[...ask]])).rows || [];
 }

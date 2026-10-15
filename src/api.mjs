@@ -11,7 +11,7 @@ import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavail
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute } from "./company-routes.mjs";
-import { loadOwnersFrom } from "./media-batch.mjs";
+import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -171,8 +171,10 @@ async function route(req,res,ctx){
       FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
       WHERE t.ticker=$1 AND f.ingest_status='parsed'
       ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST LIMIT 30`,[t]).catch(()=>({rows:[]}))).rows,
-      // GET /v1/media confirms reporting owners (and their filed names) from the SEC import.
-      loadOwners:pairs=>loadOwnersFrom(ctx.query,pairs)});
+      // GET /v1/media confirms reporting owners (and their filed names) and issuers from the SEC
+      // import; new upstream work is budgeted per member (else per address).
+      loadOwners:pairs=>loadOwnersFrom(ctx.query,pairs),loadIssuers:ciks=>loadIssuersFrom(ctx.query,ciks),
+      requester:decision.user?.id!=null?"user:"+decision.user.id:null});
     if(handled!==false)return;
   }
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe}); if(result!==false) return result; }
