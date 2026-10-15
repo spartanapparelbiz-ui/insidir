@@ -1,0 +1,35 @@
+{
+  "name": "insidir-videos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone video production system for Insidir ads: JSON script + assets -> finished 1080x1920 H.264 MP4 (Remotion, React, FFmpeg). Not part of the website or the engine.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "assets": "node tools/prepare-assets.mjs",
+    "screens": "node tools/capture-screens.mjs",
+    "render": "node tools/render.mjs",
+    "render:all": "node tools/render.mjs --all",
+    "verify": "node tools/verify.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.530",
+    "@remotion/cli": "4.0.530",
+    "@remotion/fonts": "4.0.530",
+    "@remotion/renderer": "4.0.530",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.530",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "playwright-core": "1.56.1",
+    "sharp": "0.33.5",
+    "typescript": "5.6.3"
+  }
+}

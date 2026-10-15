@@ -1,0 +1,310 @@
+{
+  "id": "financial-intelligence",
+  "title": "Insidir — Financial intelligence (15s, 9:16)",
+  "notes": "Claims from the site: 'Original sources. Not opinions.' (index.html #02); 'Financial statement values exactly as the company reported them' (index.html, XBRL company facts); 'One report for every listed company' and 'Calculated values show their inputs' (platform.html #1); 'No made-up numbers. If a figure is not in the record, the page says so.' (index.html, four rules); rule ii for the caption. The 10-K is the blank official cover page. Footage: platform.html report anatomy and calculated values.",
+  "bpm": 120,
+  "seconds": 15,
+  "score": {
+    "key": "A",
+    "mood": "pulse",
+    "seed": 23
+  },
+  "scenes": [
+    {
+      "type": "mosaic",
+      "beats": 4,
+      "label": "Financial intelligence",
+      "cols": 3,
+      "rows": 3,
+      "order": "center",
+      "cells": [
+        {
+          "src": "photos/lens-company.jpg",
+          "focus": [
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "text": "10-K",
+          "sub": "Annual report",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/informed-right.jpg",
+          "focus": [
+            0.32,
+            0.5
+          ]
+        },
+        {
+          "text": "XBRL",
+          "sub": "Company facts",
+          "theme": "ink"
+        },
+        {
+          "src": "photos/hero.jpg",
+          "focus": [
+            0.62,
+            0.5
+          ]
+        },
+        {
+          "text": "8-K",
+          "sub": "Current report",
+          "theme": "ink"
+        },
+        {
+          "src": "photos/records-right.jpg",
+          "focus": [
+            0.42,
+            0.5
+          ]
+        },
+        {
+          "text": "10-Q",
+          "sub": "Quarterly report",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/pricing-right.jpg",
+          "focus": [
+            0.45,
+            0.5
+          ]
+        }
+      ],
+      "path": [
+        {
+          "at": 0,
+          "view": 4
+        },
+        {
+          "at": 1.5,
+          "view": "all"
+        },
+        {
+          "at": 2.4,
+          "view": "all"
+        },
+        {
+          "at": 4,
+          "view": 2
+        }
+      ],
+      "reveal": 1.6
+    },
+    {
+      "type": "photo",
+      "beats": 4,
+      "label": "Where the data comes from",
+      "src": "photos/informed-right.jpg",
+      "focus": [
+        0.32,
+        0.5
+      ],
+      "camera": {
+        "from": {
+          "scale": 1
+        },
+        "to": {
+          "scale": 1.14,
+          "y": 0.02
+        },
+        "ease": "out"
+      },
+      "copy": {
+        "kicker": "Financial intelligence",
+        "headline": [
+          "Original",
+          "sources.",
+          "Not opinions."
+        ],
+        "soft": [
+          2
+        ],
+        "size": 140,
+        "at": 0.1
+      }
+    },
+    {
+      "type": "document",
+      "beats": 4,
+      "label": "SEC EDGAR",
+      "form": "10k",
+      "highlight": 1,
+      "caption": "Financial statement values exactly as the company reported them.",
+      "camera": {
+        "from": {
+          "scale": 1.2,
+          "y": 0.12
+        },
+        "to": {
+          "scale": 1.42,
+          "x": -0.03,
+          "y": 0.04
+        }
+      },
+      "transition": {
+        "type": "shutter",
+        "beats": 1,
+        "cols": 5,
+        "direction": "alternate",
+        "spread": 0.45
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 4,
+      "label": "Company reports",
+      "mode": "card",
+      "src": "screens/report-anatomy.png",
+      "from": [
+        0.42,
+        0.3,
+        0.62
+      ],
+      "to": [
+        0.78,
+        0.5,
+        0.32
+      ],
+      "tilt": 5,
+      "copy": {
+        "kicker": "Company reports",
+        "headline": [
+          "One report",
+          "for every listed",
+          "company."
+        ],
+        "soft": [
+          2
+        ],
+        "size": 118,
+        "position": "top",
+        "at": 0.3
+      },
+      "highlight": {
+        "rect": [
+          0.6,
+          0.26,
+          0.37,
+          0.55
+        ],
+        "at": 2.0
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "antidiagonal",
+        "motion": "flip",
+        "spread": 0.55
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 4,
+      "label": "Key facts",
+      "mode": "card",
+      "src": "screens/calculated-values.png",
+      "from": [
+        0.15,
+        0.38,
+        0.3
+      ],
+      "to": [
+        0.22,
+        0.48,
+        0.38
+      ],
+      "tilt": 4,
+      "copy": {
+        "kicker": "Key facts",
+        "headline": [
+          "Calculated values",
+          "show their inputs."
+        ],
+        "soft": [
+          1
+        ],
+        "size": 108,
+        "at": 0.3
+      },
+      "highlight": {
+        "rect": [
+          0.03,
+          0.2,
+          0.4,
+          0.12
+        ],
+        "at": 1.6
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 6,
+        "rows": 1,
+        "order": "columns",
+        "motion": "rise",
+        "spread": 0.5
+      }
+    },
+    {
+      "type": "headline",
+      "beats": 4,
+      "theme": "paper",
+      "label": "Four rules",
+      "section": "Why Insidir",
+      "photo": {
+        "src": "photos/lens-sec.jpg",
+        "focus": [
+          0.6,
+          0.5
+        ],
+        "caption": "Every filing, financial figure and insider trade links back to the document it came from."
+      },
+      "copy": {
+        "kicker": "Built on four rules",
+        "headline": [
+          "No made-up",
+          "numbers."
+        ],
+        "deck": "If a figure is not in the record, the page says so.",
+        "soft": [
+          1
+        ],
+        "size": 150,
+        "at": 0.3
+      },
+      "transition": {
+        "type": "halftone",
+        "beats": 1,
+        "cell": 60,
+        "ink": "paper",
+        "from": "top"
+      }
+    },
+    {
+      "type": "endcard",
+      "chrome": false,
+      "kicker": "SEC-sourced company research",
+      "tagline": [
+        "Know what moves",
+        "a company."
+      ],
+      "cta": "Get Insidir",
+      "url": "insidir.com",
+      "fineprint": "$39 a month · Cancel any time · Not a broker, not investment advice.",
+      "beats": 6,
+      "transition": {
+        "type": "halftone",
+        "beats": 1,
+        "cell": 60,
+        "ink": "night",
+        "from": "bottom"
+      }
+    }
+  ]
+}

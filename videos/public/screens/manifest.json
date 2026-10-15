@@ -1,0 +1,149 @@
+{
+  "landing-hero-mobile": {
+    "file": "screens/landing-hero-mobile.png",
+    "width": 1170,
+    "height": 2532,
+    "source": "web/index.html",
+    "device": "mobile"
+  },
+  "landing-scroll-mobile": {
+    "file": "screens/landing-scroll-mobile.png",
+    "width": 1170,
+    "height": 5121,
+    "source": "web/index.html",
+    "device": "mobile"
+  },
+  "platform-hero-mobile": {
+    "file": "screens/platform-hero-mobile.png",
+    "width": 1170,
+    "height": 2532,
+    "source": "web/platform.html",
+    "device": "mobile"
+  },
+  "people-hero-mobile": {
+    "file": "screens/people-hero-mobile.png",
+    "width": 1170,
+    "height": 2916,
+    "source": "web/people.html",
+    "device": "mobile"
+  },
+  "landing-hero-desktop": {
+    "file": "screens/landing-hero-desktop.png",
+    "width": 4320,
+    "height": 2700,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "platform-hero": {
+    "file": "screens/platform-hero.png",
+    "width": 4320,
+    "height": 1956,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "report-anatomy": {
+    "file": "screens/report-anatomy.png",
+    "width": 4152,
+    "height": 2385,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "report-legend": {
+    "file": "screens/report-legend.png",
+    "width": 4152,
+    "height": 684,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "calculated-values": {
+    "file": "screens/calculated-values.png",
+    "width": 4200,
+    "height": 1455,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "filing-library": {
+    "file": "screens/filing-library.png",
+    "width": 4104,
+    "height": 1677,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "kept-apart": {
+    "file": "screens/kept-apart.png",
+    "width": 4152,
+    "height": 1200,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "two-dates": {
+    "file": "screens/two-dates.png",
+    "width": 4200,
+    "height": 882,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "watch-alerts": {
+    "file": "screens/watch-alerts.png",
+    "width": 4104,
+    "height": 1617,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "journal": {
+    "file": "screens/journal.png",
+    "width": 4104,
+    "height": 1845,
+    "source": "web/platform.html",
+    "device": "desktop"
+  },
+  "form4-panel": {
+    "file": "screens/form4-panel.png",
+    "width": 2133,
+    "height": 1488,
+    "source": "web/people.html",
+    "device": "desktop"
+  },
+  "tools-grid": {
+    "file": "screens/tools-grid.png",
+    "width": 4104,
+    "height": 2742,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "sources-table": {
+    "file": "screens/sources-table.png",
+    "width": 4104,
+    "height": 3075,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "how-it-works": {
+    "file": "screens/how-it-works.png",
+    "width": 4104,
+    "height": 1440,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "four-rules": {
+    "file": "screens/four-rules.png",
+    "width": 4104,
+    "height": 1356,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "plan": {
+    "file": "screens/plan.png",
+    "width": 4104,
+    "height": 2193,
+    "source": "web/index.html",
+    "device": "desktop"
+  },
+  "data-freshness": {
+    "file": "screens/data-freshness.png",
+    "width": 4104,
+    "height": 1971,
+    "source": "web/data.html",
+    "device": "desktop"
+  }
+}

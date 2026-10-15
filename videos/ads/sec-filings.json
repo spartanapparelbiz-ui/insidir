@@ -1,0 +1,310 @@
+{
+  "id": "sec-filings",
+  "title": "Insidir — SEC filings (15s, 9:16)",
+  "notes": "Claims, verbatim or near-verbatim from the site: 'A Form 4 is generally due within two business days of the transaction' (platform.html, Two dates); 'Purchases and sales, kept apart' (platform.html #3); 'with the trade date shown next to the date it was published' (index.html, Insider activity); end card from index.html hero and pricing. The Form 4 is the blank official form (SEC wording, OMB 3235-0287); no filer or figures are shown. Product footage: platform.html #3 codes, people.html Form 4 panel, captured from this checkout.",
+  "bpm": 120,
+  "seconds": 15,
+  "score": {
+    "key": "D",
+    "mood": "ticker",
+    "seed": 11
+  },
+  "scenes": [
+    {
+      "type": "photo",
+      "beats": 4,
+      "label": "Insider trades",
+      "src": "photos/records-left.jpg",
+      "focus": [
+        0.42,
+        0.45
+      ],
+      "camera": {
+        "from": {
+          "scale": 1.06,
+          "x": 0.02
+        },
+        "to": {
+          "scale": 1.2,
+          "x": -0.03
+        },
+        "ease": "linear"
+      },
+      "copy": {
+        "kicker": "SEC Form 4 · Insider trades",
+        "headline": [
+          "When insiders",
+          "trade, they",
+          "file."
+        ],
+        "soft": [
+          2
+        ],
+        "size": 150,
+        "at": 0.15
+      },
+      "halftone": true
+    },
+    {
+      "type": "document",
+      "beats": 4,
+      "label": "SEC EDGAR",
+      "form": "form4",
+      "highlight": 0,
+      "caption": "A Form 4 is generally due within two business days of the transaction.",
+      "camera": {
+        "from": {
+          "scale": 1.32,
+          "x": 0.04,
+          "y": 0.2
+        },
+        "to": {
+          "scale": 1.6,
+          "x": -0.06,
+          "y": 0.14
+        }
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "diagonal",
+        "motion": "flip",
+        "spread": 0.55
+      }
+    },
+    {
+      "type": "statement",
+      "beats": 3,
+      "theme": "paper",
+      "label": "Insider activity",
+      "kicker": "Form 4 transaction codes",
+      "words": [
+        "Purchases",
+        "and",
+        "sales,",
+        "kept",
+        "apart."
+      ],
+      "soft": [
+        3,
+        4
+      ],
+      "size": 150,
+      "transition": {
+        "type": "shutter",
+        "beats": 1,
+        "cols": 6,
+        "direction": "alternate",
+        "spread": 0.4
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 3,
+      "label": "Platform",
+      "mode": "card",
+      "src": "screens/kept-apart.png",
+      "from": [
+        0.17,
+        0.38,
+        0.33
+      ],
+      "to": [
+        0.25,
+        0.45,
+        0.42
+      ],
+      "tilt": 6,
+      "highlight": {
+        "rect": [
+          0.008,
+          0.075,
+          0.6,
+          0.105
+        ],
+        "at": 1.0
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "center",
+        "motion": "scale",
+        "spread": 0.6
+      },
+      "copy": {
+        "kicker": "What each transaction shows",
+        "headline": [
+          "Every code,",
+          "in words."
+        ],
+        "soft": [
+          1
+        ],
+        "size": 130,
+        "at": 0.4,
+        "position": "bottom"
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 4,
+      "label": "People",
+      "mode": "phone",
+      "src": "screens/people-hero-mobile.png",
+      "from": [
+        0.0
+      ],
+      "to": [
+        1.0
+      ],
+      "transition": {
+        "type": "halftone",
+        "beats": 1,
+        "cell": 64,
+        "ink": "night",
+        "from": "bottom"
+      }
+    },
+    {
+      "type": "headline",
+      "beats": 4,
+      "theme": "paper",
+      "label": "Two dates",
+      "section": "Insider activity",
+      "photo": {
+        "src": "photos/moves-wallst.jpg",
+        "focus": [
+          0.48,
+          0.5
+        ],
+        "caption": "A trade and its filing are different days, so every table shows both."
+      },
+      "copy": {
+        "kicker": "Side by side",
+        "headline": [
+          "The trade date,",
+          "next to the date",
+          "it was published."
+        ],
+        "soft": [
+          2
+        ],
+        "size": 104,
+        "at": 0.3
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 6,
+        "rows": 10,
+        "order": "rows",
+        "motion": "flipX",
+        "spread": 0.7
+      }
+    },
+    {
+      "type": "mosaic",
+      "beats": 3,
+      "label": "The record",
+      "cols": 3,
+      "rows": 3,
+      "order": "center",
+      "cells": [
+        {
+          "src": "photos/lens-sec.jpg",
+          "focus": [
+            0.62,
+            0.5
+          ]
+        },
+        {
+          "text": "Form 4",
+          "sub": "Ownership",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/research-search.jpg",
+          "focus": [
+            0.55,
+            0.5
+          ]
+        },
+        {
+          "text": "10-K",
+          "sub": "Annual report",
+          "theme": "ink"
+        },
+        {
+          "text": "",
+          "theme": "night"
+        },
+        {
+          "text": "8-K",
+          "sub": "Current report",
+          "theme": "ink"
+        },
+        {
+          "src": "photos/records-right.jpg",
+          "focus": [
+            0.4,
+            0.5
+          ]
+        },
+        {
+          "text": "10-Q",
+          "sub": "Quarterly",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/informed-right.jpg",
+          "focus": [
+            0.35,
+            0.5
+          ]
+        }
+      ],
+      "path": [
+        {
+          "at": 0,
+          "view": "all"
+        },
+        {
+          "at": 1.6,
+          "view": "all"
+        },
+        {
+          "at": 3,
+          "view": 4
+        }
+      ],
+      "reveal": 1.4,
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "random",
+        "motion": "cut",
+        "spread": 0.8,
+        "seed": 3
+      }
+    },
+    {
+      "type": "endcard",
+      "beats": 5,
+      "chrome": false,
+      "kicker": "SEC-sourced company research",
+      "tagline": [
+        "Know what moves",
+        "a company."
+      ],
+      "cta": "Get Insidir",
+      "url": "insidir.com",
+      "fineprint": "$39 a month · Cancel any time · Not a broker, not investment advice."
+    }
+  ]
+}

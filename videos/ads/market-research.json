@@ -1,0 +1,308 @@
+{
+  "id": "market-research",
+  "title": "Insidir — Market research (15s, 9:16)",
+  "notes": "Claims from the site: 'Search. Read the evidence. Decide.' and its three steps (index.html #03: 'Type a ticker or a name.', 'each linked to its document', 'Your conclusions stay yours; Insidir never places a trade.'); research journal and six tools from platform.html and index.html. Footage: the landing page on a phone, platform.html research journal, index.html six tools.",
+  "bpm": 120,
+  "seconds": 15,
+  "score": {
+    "key": "E",
+    "mood": "drive",
+    "seed": 37
+  },
+  "scenes": [
+    {
+      "type": "photo",
+      "beats": 4,
+      "label": "Market research",
+      "src": "photos/research-search.jpg",
+      "focus": [
+        0.6,
+        0.5
+      ],
+      "camera": {
+        "from": {
+          "scale": 1.04,
+          "x": 0.02
+        },
+        "to": {
+          "scale": 1.18,
+          "x": -0.02
+        },
+        "ease": "linear"
+      },
+      "copy": {
+        "kicker": "How it works",
+        "headline": [
+          "Search.",
+          "Read the",
+          "evidence.",
+          "Decide."
+        ],
+        "soft": [
+          3
+        ],
+        "size": 150,
+        "at": 0.1
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 4,
+      "label": "insidir.com",
+      "mode": "phone",
+      "src": "screens/landing-scroll-mobile.png",
+      "from": [
+        0.0
+      ],
+      "to": [
+        0.62
+      ],
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 5,
+        "rows": 9,
+        "order": "center",
+        "motion": "flip",
+        "spread": 0.55
+      }
+    },
+    {
+      "type": "statement",
+      "beats": 3,
+      "theme": "night",
+      "label": "01 · Search",
+      "kicker": "01 · Search a company",
+      "words": [
+        "Type",
+        "a",
+        "ticker",
+        "or",
+        "a",
+        "name."
+      ],
+      "soft": [
+        3,
+        4,
+        5
+      ],
+      "size": 150,
+      "transition": {
+        "type": "shutter",
+        "beats": 1,
+        "cols": 6,
+        "direction": "alternate",
+        "spread": 0.4
+      }
+    },
+    {
+      "type": "mosaic",
+      "beats": 4,
+      "label": "02 · Evidence",
+      "cols": 3,
+      "rows": 3,
+      "order": "diagonal",
+      "cells": [
+        {
+          "src": "photos/lens-insider.jpg",
+          "focus": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "text": "Form 4",
+          "sub": "Insider trades",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/moves-people.jpg",
+          "focus": [
+            0.55,
+            0.5
+          ]
+        },
+        {
+          "text": "10-K",
+          "sub": "Annual report",
+          "theme": "ink"
+        },
+        {
+          "src": "photos/signin.jpg",
+          "focus": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "text": "8-K",
+          "sub": "Current report",
+          "theme": "ink"
+        },
+        {
+          "src": "photos/pricing-left.jpg",
+          "focus": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "text": "XBRL",
+          "sub": "Financials",
+          "theme": "paper"
+        },
+        {
+          "src": "photos/research-discover.jpg",
+          "focus": [
+            0.45,
+            0.5
+          ]
+        }
+      ],
+      "path": [
+        {
+          "at": 0,
+          "view": "all"
+        },
+        {
+          "at": 2.6,
+          "view": "all"
+        },
+        {
+          "at": 4,
+          "view": 6
+        }
+      ],
+      "reveal": 1.6,
+      "copy": {
+        "kicker": "02 · Read the evidence",
+        "headline": [
+          "Each linked",
+          "to its document."
+        ],
+        "soft": [
+          1
+        ],
+        "size": 100,
+        "position": "top",
+        "at": 0.6
+      },
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "diagonal",
+        "motion": "flipX",
+        "spread": 0.6
+      }
+    },
+    {
+      "type": "photo",
+      "beats": 4,
+      "label": "03 · Decide",
+      "src": "photos/pricing-left.jpg",
+      "focus": [
+        0.5,
+        0.5
+      ],
+      "camera": {
+        "from": {
+          "scale": 1
+        },
+        "to": {
+          "scale": 1.15,
+          "y": 0.03
+        },
+        "ease": "out"
+      },
+      "copy": {
+        "kicker": "03 · Decide for yourself",
+        "headline": [
+          "Your conclusions",
+          "stay yours."
+        ],
+        "deck": "Insidir never places a trade.",
+        "soft": [
+          1
+        ],
+        "size": 114,
+        "at": 0.15
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 3,
+      "label": "Research journal",
+      "mode": "card",
+      "src": "screens/journal.png",
+      "from": [
+        0.2,
+        0.3,
+        0.34
+      ],
+      "to": [
+        0.3,
+        0.62,
+        0.4
+      ],
+      "tilt": 5,
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 6,
+        "rows": 1,
+        "order": "columns",
+        "motion": "drop",
+        "spread": 0.5
+      }
+    },
+    {
+      "type": "screen",
+      "beats": 3,
+      "label": "Platform",
+      "mode": "card",
+      "src": "screens/tools-grid.png",
+      "from": [
+        0.25,
+        0.2,
+        0.42
+      ],
+      "to": [
+        0.45,
+        0.55,
+        0.6
+      ],
+      "tilt": 4,
+      "transition": {
+        "type": "tiles",
+        "beats": 1,
+        "cols": 4,
+        "rows": 7,
+        "order": "edges",
+        "motion": "scale",
+        "spread": 0.6
+      }
+    },
+    {
+      "type": "endcard",
+      "chrome": false,
+      "kicker": "SEC-sourced company research",
+      "tagline": [
+        "Know what moves",
+        "a company."
+      ],
+      "cta": "Get Insidir",
+      "url": "insidir.com",
+      "fineprint": "$39 a month · Cancel any time · Not a broker, not investment advice.",
+      "beats": 5,
+      "transition": {
+        "type": "halftone",
+        "beats": 1,
+        "cell": 56,
+        "ink": "night",
+        "from": "center"
+      }
+    }
+  ]
+}

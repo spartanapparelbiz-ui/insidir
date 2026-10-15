@@ -1,0 +1,61 @@
+{
+  "file": "/home/user/insidir/videos/output/insidir-financial-intelligence.mp4",
+  "ok": true,
+  "checks": {
+    "container": true,
+    "codec": true,
+    "profile": true,
+    "resolution": true,
+    "squarePixels": true,
+    "aspect9x16": true,
+    "fps": true,
+    "pixelFormat": true,
+    "bt709": true,
+    "frameCount": true,
+    "duration": true,
+    "audio": true,
+    "faststart": true,
+    "cleanDecode": true,
+    "noBars": true
+  },
+  "measured": {
+    "format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "duration": 15,
+    "bitRate": 9858980,
+    "size": 18485588,
+    "video": {
+      "codec": "h264",
+      "profile": "High",
+      "level": 41,
+      "width": 1080,
+      "height": 1920,
+      "sar": "1:1",
+      "dar": "9:16",
+      "r_frame_rate": "30/1",
+      "avg_frame_rate": "30/1",
+      "pix_fmt": "yuv420p",
+      "color": [
+        "bt709",
+        "bt709",
+        "bt709",
+        "tv"
+      ],
+      "frames": 450,
+      "duration": 15
+    },
+    "audio": {
+      "codec": "aac",
+      "channels": 2,
+      "sample_rate": 48000,
+      "duration": 15,
+      "bit_rate": 203789
+    },
+    "cropdetectLast": null,
+    "edgeBandsNearBlackFrames": {
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+    }
+  }
+}
