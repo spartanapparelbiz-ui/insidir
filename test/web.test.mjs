@@ -410,7 +410,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
       else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
-      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-scroll-scatter="\d+" data-wordmark="insidir"/, "landing hero prints the dotted wordmark, which comes apart as it scrolls away");
+      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
       else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }
     assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
@@ -556,7 +556,7 @@ test("identity tiles fill their box on every page, logos are not held back by th
   assert.match(layer,/\.ins-media\[data-media\]>\*\{[^}]*position:relative!important;inset:auto!important;transform:none!important/,"pictures back in flow (v5-media.css takes them out)");
   assert.match(layer,/>svg\.ins-media__monogram\{width:100%!important;height:100%!important\}/,"initials fill the tile");
   // The landing animates the scale property (transform is held at none) and nothing pins the picture's opacity.
-  assert.match(layer,/@keyframes ins-land-a\{from\{opacity:0;scale:\.9\}\}/);
+  assert.match(layer,/@keyframes ins-land-a\{from\{opacity:0\}\}/, "a late picture fades in place; it never grows");
   assert.doesNotMatch(layer,/@keyframes ins-land-[ab]\{[^}]*transform/);
   assert.doesNotMatch(layer,/\[data-media\]>img\{[^}]*opacity:1!important/);
   assert.match(layer,/\[data-media-credits\]\[data-media-held\]:empty\{display:block!important\}/,"an empty footnote keeps its held space");

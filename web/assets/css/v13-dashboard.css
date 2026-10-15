@@ -85,14 +85,12 @@ body.v13 .rd-kpi.is-skeleton .rd-kpi__value .rd-skel{height:.8em!important}
 body.v13 .rd-kpi.is-skeleton .rd-kpi__note .rd-skel{display:block!important;margin:6px 0!important}
 body.v13 .is-skeleton{pointer-events:none!important}
 
-/* ---------- arrival: fade in place, rows rise a beat apart ---------- */
+/* ---------- arrival: data fades in place; nothing rises, slides or pops ---------- */
 @keyframes rd-fade{from{opacity:0}}
-@keyframes rd-up{from{translate:0 8px}}
-@keyframes rd-pop{from{scale:.7}}
 body.v13 .rd-today__line{animation:rd-fade .2s cubic-bezier(.2,.7,.1,1) backwards!important}
 body.v13 .rd-today__line.is-skeleton{animation:none!important}
-/* A person followed in place, and their rows, rise into the space kept for them. */
-body.v13 .rd-rise{animation:rd-fade .3s cubic-bezier(.2,.7,.1,1) backwards,rd-up var(--hf-spring-dur) var(--hf-spring) backwards!important;animation-delay:calc(var(--d,0) * 40ms)!important}
+/* A person followed in place, and their rows, fade into the space kept for them. */
+body.v13 .rd-rise{animation:rd-fade .2s cubic-bezier(.2,.7,.1,1) backwards!important}
 
 /* ---------- topline and Today ---------- */
 body.v13 .rd-today{display:block!important;padding:clamp(30px,4vw,52px) 0 0!important;margin:0!important;border:0!important}
@@ -148,10 +146,9 @@ body.v13 .rd-feed__l2 [data-ent]{color:var(--hf-soft)!important}
 body.v13 .rd-feed__l2 .rd-feed__filing{margin:0!important;vertical-align:0!important;line-height:20px!important}
 body.v13 .rd-feed__msg,body.v13 .rd-fl__msg,body.v13 .rd-sg__msg,body.v13 .rd-rows__msg{list-style:none!important;margin:0!important;padding:0!important}
 body.v13 .rd-feed__msg .rd-empty,body.v13 .rd-fl__msg .rd-empty{max-width:62ch!important}
-/* New since the last visit: a word in an ink box, popping once on the spring as its row arrives. */
+/* New since the last visit: a word in an ink box. */
 body.v13 .rd-new{display:inline-flex!important;align-items:center!important;height:18px!important;padding:0 6px!important;border:1px solid var(--hf-ink)!important;color:var(--hf-ink)!important;background:transparent!important;
   font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;white-space:nowrap!important;vertical-align:1px!important}
-body.v13 :not(.hf-pending)>.rd-feed__body .rd-new,body.v13 .rd-row--watch:not(.hf-pending) .rd-new{animation:rd-pop var(--hf-spring-dur) var(--hf-spring) both!important}
 body.v13 .rd-fl__new{color:var(--hf-ink)!important;font-weight:500!important}
 /* Following: one person per item, room kept for --slots of them. */
 body.v13 .rd-flist{--fl-h:104px;list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-height:calc(var(--slots,3) * var(--fl-h))!important}
@@ -405,7 +402,7 @@ body.v13 .rd-row__detail .rd-type{margin-right:6px!important}
 /* Filters: outgoing rows fade over 120 ms; incoming rows fade in and rise 8px on the spring, 30 ms apart. The wrap
    keeps the height of "All" (min-height set by v3-dashboard.js), so nothing below the table moves. */
 body.v13 #v3-trades.is-leaving>tr{opacity:0!important;transition:opacity .12s linear!important}
-body.v13 #v3-trades.is-entering>tr{animation:rd-fade .22s cubic-bezier(.2,.7,.1,1) backwards,rd-up var(--hf-spring-dur) var(--hf-spring) backwards!important;animation-delay:calc(min(var(--i,0),6) * 30ms)!important}
+body.v13 #v3-trades.is-entering>tr{animation:rd-fade .16s cubic-bezier(.2,.7,.1,1) backwards!important}
 body.v13 .rd-filters button:disabled{opacity:.42!important;cursor:default!important;pointer-events:none!important}
 body.v13 .rd-filters button{transition:background-color .2s,color .2s,border-color .2s,opacity .25s!important}
 /* The qualifiers cell is the phone record's last line only. */

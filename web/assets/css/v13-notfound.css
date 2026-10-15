@@ -3,8 +3,9 @@
    insidir-v13 layer and is !important (see the note at the top of v13-halftone.css).
 
    The page is the marketing page's measure: the message and its actions on the left, and on the right a
-   framed plate where "404" is printed as halftone dots by v13-halftone.js (data-halftone-field in word mode;
-   the dots part around the pointer like the rest of the site). The canvas is drawn at the screen's pixel
+   framed plate where "404" is printed as halftone dots by v13-halftone.js (data-halftone-field in word mode:
+   like the landing wordmark, its dots part a little around the pointer and settle back; everything else on the
+   page holds still and hovers change colour only). The canvas is drawn at the screen's pixel
    density, so it stays sharp on high-density displays; there is no photograph. */
 @layer insidir-v13{
 body.v13.v2-notfound.v3-static{display:flex!important;flex-direction:column!important;min-height:100dvh!important;background:var(--hf-bg)!important;color:var(--hf-ink)!important}
@@ -16,7 +17,7 @@ body.v13.v2-notfound.v3-static .nf-copy h1 span{color:var(--hf-soft)!important}
 body.v13.v2-notfound.v3-static .nf-copy .mk-lede{max-width:48ch!important}
 body.v13.v2-notfound.v3-static .nf-pages{margin:44px 0 0!important;max-width:440px!important}
 body.v13.v2-notfound.v3-static .nf-pages .mk-index a span:last-child{transform:none!important}
-body.v13.v2-notfound.v3-static .nf-pages .mk-index a:hover span:last-child{transform:translateX(3px)!important}
+body.v13.v2-notfound.v3-static .nf-pages .mk-index a:hover span:last-child{transform:none!important}
 
 /* The plate: a hairline frame, a label row, and the dotted numeral sitting on the bottom edge. */
 body.v13.v2-notfound.v3-static .nf-print{position:relative!important;display:flex!important;flex-direction:column!important;min-width:0!important;margin:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important}

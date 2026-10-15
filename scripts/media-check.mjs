@@ -695,13 +695,13 @@ try {
       check(anims === 0, "reduced motion: no landing animation on any tile", anims);
       await ctx.close();
     }
-    // 5. Motion: a picture that arrives after first paint lands on the site's spring.
+    // 5. Motion: a picture that arrives after first paint fades in place on the site's short ease-out.
     {
       const { ctx, page } = await open(1440, "/explore.html");
       await page.waitForFunction(RENDERED.explore, null, { timeout: 20000 });
       await page.evaluate(() => window.InsidirMedia.ready(document));
       const r = await page.evaluate(() => { const t = document.querySelector("[data-media][data-land]"); const cs = t && getComputedStyle(t.querySelector("img")); return t ? { name: cs.animationName, timing: cs.animationTimingFunction.slice(0, 20), dur: cs.animationDuration } : null; });
-      check(r && /ins-land-[ab]/.test(r.name) && /^linear\(/.test(r.timing) && r.dur === "0.95s", "motion: late pictures land with ins-land on --hf-spring over --hf-spring-dur", r);
+      check(r && /ins-land-[ab]/.test(r.name) && /^cubic-bezier\(/.test(r.timing) && parseFloat(r.dur) > 0 && parseFloat(r.dur) <= 0.35, "motion: late pictures fade in place (ins-land) on the site's short ease-out (--hf-spring over --hf-spring-dur, at most .35s)", r);
       await ctx.close();
     }
     // 6. A cold logo while a headshot job waits its turn (the engine says retryAfter 15 for the whole answer): the logo

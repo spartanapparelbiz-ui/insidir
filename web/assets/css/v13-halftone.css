@@ -20,12 +20,6 @@
    Keep that rule when adding to this file or to the v13-<family>.css files.
    ============================================================================ */
 
-/* The motion offsets are registered as non-inherited, so writing one restyles the atom alone, not everything
-   inside it (v13-motion.js writes them on every frame an atom moves). */
-@property --hf-dx{syntax:"<length>";inherits:false;initial-value:0px}
-@property --hf-dy{syntax:"<length>";inherits:false;initial-value:0px}
-@property --hf-s{syntax:"<number>";inherits:false;initial-value:1}
-
 @font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;
   src:url(../fonts/JetBrainsMono-normal-latin.woff2) format("woff2");
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
@@ -42,11 +36,11 @@
 
 /* ---------- Tokens ---------- */
 :root{
-  /* The dots' spring as an easing curve: v = (v + (1 − x)·0.05)·0.84 per 60 fps frame, sampled from the
-     simulation (settles in 950ms, overshoots 25% then 6%). Movement transitions use it so the whole site
-     moves like the wordmark; colours keep plain easing. */
-  --hf-spring:linear(0, .0741, .2029, .37, .5519, .7305, .8912, 1.0276, 1.1288, 1.1992, 1.237, 1.247, 1.2354, 1.206, 1.1669, 1.1224, 1.0777, 1.0365, 1.0015, .9736, .9547, .943, .9391, .9407, .9469, .9562, .9669, .978, .9885, .9976, 1.0049, 1.0102, 1.0135, 1.015, 1.0148, 1.0136, 1.0115, 1.0089, 1.0061, 1.0035, 1)!important;
-  --hf-spring-dur:.95s!important;
+  /* The site's one movement curve: a short ease-out with no overshoot. Panels that open, tiles that land and
+     the public pages' scroll reveal use it; nothing bounces. Colours keep plain easing. (The names are kept
+     from when this was the dots' spring, so every rule that uses them calmed at once.) */
+  --hf-spring:cubic-bezier(.22,.61,.36,1);
+  --hf-spring-dur:.28s!important;
   --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var(--hf-ink)!important;
   /* Market direction, for data only: purchases and rises in green, sales and falls in red. Validated as a pair on
      paper, surface and surface-2 (OKLab ΔE 9.6 under deuteranopia, 31.9 normal; ≥4.86:1 contrast), always shown with
@@ -146,8 +140,7 @@ body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.app-header .logo,.v2-no
   font-family:var(--hf-mono)!important;font-weight:800!important;font-size:24px!important;line-height:1!important;letter-spacing:-.04em!important;text-transform:lowercase!important;
   color:var(--hf-ink)!important;text-decoration:none!important;display:inline-flex!important;align-items:baseline!important;white-space:nowrap!important;font-variation-settings:normal!important}
 body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover{color:var(--hf-ink)!important}
-body.v13 :is(.v12-logo-dot,.v13-dot){color:inherit!important;display:inline-block!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13 :is(.logo,.v6-logo,.v3-static__logo,.auth-logo,.v13-logo):hover :is(.v12-logo-dot,.v13-dot){transform:translateY(-.08em)!important}
+body.v13 :is(.v12-logo-dot,.v13-dot){color:inherit!important;display:inline-block!important}
 body.v13 .auth-logo,body.v13 .v3-static__logo{font-size:26px!important}
 
 /* ---------- Marketing navigation (index) ---------- */
@@ -291,19 +284,13 @@ body.v13 :is(.v4-ui-icon,.v4-heading-icon,.v12-feature-icon,.v3-quicklinks .v4-q
 body.v13 :is(.v12-feature-icon,.v3-quicklinks .v4-quick-icon){background:transparent!important;border:1px solid var(--hf-line)!important;border-radius:0!important}
 
 /* ---------- Motion (v13-motion.js) ----------
-   Atoms part around the pointer, trail a scroll and ripple on a click with the dots' physics; the offset
-   arrives in --hf-dx/--hf-dy and rides on `translate`, the pop and press in --hf-s on `scale`, both of which
-   compose with any transform a rule already sets. */
-body.v13 [data-hf-atom]{translate:var(--hf-dx,0px) var(--hf-dy,0px)!important;scale:var(--hf-s,1)!important}
-body.v13 [data-hf-atom="inline"]{display:inline-block!important}
-@media (prefers-reduced-motion:reduce){body.v13 [data-hf-atom]{translate:none!important;scale:none!important}}
-
-/* Scroll reveal: a block still below the fold waits 28px low and transparent, then rises into place on the
-   dots' spring while it fades up, a beat (--hf-i × 70ms) after the block that arrived before it. The
-   transition is set only while it reveals, so the block's own hover transitions are untouched. An atom
-   keeps its pointer offset while it waits. */
-body.v13 .hf-pending.hf-pending{opacity:0!important;translate:var(--hf-dx,0px) calc(var(--hf-dy,0px) + var(--hf-rise,28px))!important;transition:none!important}
-body.v13 .hf-revealing.hf-revealing{transition:opacity .7s cubic-bezier(.2,.7,.1,1) calc(var(--hf-i,0) * 70ms),translate var(--hf-spring-dur) var(--hf-spring) calc(var(--hf-i,0) * 70ms)!important}
+   The site holds still: nothing moves under the pointer, on a click or with a scroll, and hover states change
+   colour, borders and underlines only. The public pages keep a quiet scroll reveal: a block still below the
+   fold waits 12px low and transparent, then fades up into place once, a short beat (--hf-i × 60ms) after the
+   block that arrived before it. The transition is set only while it reveals, so the block's own hover
+   transitions are untouched. Product pages (body.app-body) never hold anything back. */
+body.v13 .hf-pending.hf-pending{opacity:0!important;translate:0 var(--hf-rise,12px)!important;transition:none!important}
+body.v13 .hf-revealing.hf-revealing{transition:opacity .5s cubic-bezier(.25,.6,.3,1) calc(var(--hf-i,0) * 60ms),translate .62s cubic-bezier(.2,.7,.25,1) calc(var(--hf-i,0) * 60ms)!important}
 @media (prefers-reduced-motion:reduce){body.v13 :is(.hf-pending,.hf-revealing){opacity:1!important;translate:none!important;transition:none!important}}
 @media print{body.v13 :is(.hf-pending,.hf-revealing){opacity:1!important;translate:none!important}}
 

@@ -4,17 +4,17 @@
    the field states and the public navigation are complete here.
 
    Composition: the public navigation on top; below it two panels on the same paper — the form on the
-   left, and a surface sheet on the right whose margins carry a live dot field (data-halftone-field,
-   mounted by v13-halftone.js): the landing wordmark's dots without the word, parting around the pointer
-   anywhere over the sheet, rippling on a click and springing home. Under 800px the sheet follows the
-   form instead of disappearing, with the dots as a strip along its top edge.
+   left, and a surface sheet on the right whose margins carry a dot field (data-halftone-field, mounted by
+   v13-halftone.js): the landing wordmark's dots without the word, printed as still texture that does not
+   answer the pointer or a click. Under 800px the sheet follows the form instead of disappearing, with the
+   dots as a strip along its top edge.
 
-   Motion: movement (arrow nudges, the menu toggle, underlines growing) settles on the dots' own spring,
-   var(--hf-spring) over var(--hf-spring-dur); colour changes keep their plain easing. Inputs, labels and
-   validation messages never move (v13-motion.js leaves them still); buttons part around the pointer
-   like the dots and hold still when aimed at. The sheet's blocks carry data-hf-reveal / data-hf-reveal-group,
-   so where the sheet sits below the form (phones) they rise in on the spring as they scroll into view; the
-   form itself is never held back.
+   Motion: the page holds still. Nothing moves under the pointer, on a press or on a click: hover, focus and
+   press change colour, borders and underlines only (underlines draw in on a short ease), and arrows stay
+   where they are. The menu toggle's bars turn on var(--hf-spring) over var(--hf-spring-dur), a short
+   ease-out with no overshoot. The sheet's blocks carry data-hf-reveal / data-hf-reveal-group, so where the
+   sheet sits below the form (phones) they fade up once as they scroll into view (v13-motion.js); the form
+   itself is never held back.
 
    Colour: ink on paper, nothing else. Numbers, dashes and markers step down through soft, muted and faint;
    only an error (an invalid field, its message, the form alert) is red, through --hf-alert. */
@@ -22,8 +22,8 @@
 
 /* ---------- Page ---------- */
 html.v13-menu-open{overflow:hidden!important}
-/* --au-ease is the plain curve for things that change size in the form flow (the message rows): on a spring
-   they would make every field below them bob. */
+/* --au-ease is the plain curve for things that change size in the form flow (the message rows), so the
+   fields below them slide down once and stop. */
 body.v13.v3-auth{--au-gutter:clamp(16px,4.2vw,60px)!important;--au-nav:72px!important;--au-ease:cubic-bezier(.2,.7,.1,1)!important;
   background:var(--hf-bg)!important;color:var(--hf-ink)!important;opacity:1!important;animation:none!important;overflow-x:clip!important}
 
@@ -41,7 +41,7 @@ body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin){position:relat
 /* Text links keep their size but get a 44px-tall invisible hit area for touch screens. */
 body.v13.v3-auth :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin)::after{content:""!important;position:absolute!important;inset:-15px -8px!important;background:transparent!important}
 body.v13.v3-auth .v9-nav :is(.v6-nav__links a,.v6-signin)[aria-current=page]{color:var(--hf-ink)!important;background-size:100% 1px!important}
-/* The hover underline grows on the dots' spring, as on the landing and public pages. */
+/* The hover underline draws in on a short ease, as on the landing and public pages; the link itself stays put. */
 body.v13.v3-auth .v9-nav :is(.v6-nav__links a,.v6-signin){transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13.v3-auth .v9-nav .v6-nav__actions{flex:none!important;display:flex!important;align-items:center!important;gap:clamp(16px,1.8vw,26px)!important}
 body.v13.v3-auth .v9-nav .v6-nav__actions .v9-btn{display:inline-flex!important;align-items:center!important;height:44px!important;min-height:44px!important;padding:0 18px!important;gap:14px!important;white-space:nowrap!important;text-decoration:none!important}
@@ -74,7 +74,7 @@ body.v13.v3-auth .v9-nav .v6-mobile a:not(:last-child):active{color:var(--hf-sof
 body.v13.v3-auth .v13-arrow{position:relative!important;display:inline-block!important;width:10px!important;height:10px!important;font-size:0!important;line-height:0!important;color:inherit!important;vertical-align:-1px!important;flex:none!important;overflow:hidden!important;text-align:left!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-auth .v13-arrow::before{content:""!important;position:absolute!important;left:1.5px!important;bottom:1.5px!important;width:9px!important;height:1px!important;background:currentColor!important;transform-origin:0 50%!important;transform:rotate(-45deg)!important}
 body.v13.v3-auth .v13-arrow::after{content:""!important;position:absolute!important;right:1.5px!important;top:1.5px!important;width:4.5px!important;height:4.5px!important;border-top:1px solid currentColor!important;border-right:1px solid currentColor!important;background:transparent!important}
-body.v13.v3-auth :is(.v9-btn,.auth-action):hover .v13-arrow{transform:translate(2px,-2px)!important}
+body.v13.v3-auth :is(.v9-btn,.auth-action):hover .v13-arrow{transform:none!important}
 
 /* ---------- Two panels ---------- */
 body.v13.v3-auth .auth{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,.92fr)!important;min-height:calc(100svh - var(--au-nav))!important;margin:0!important;background:var(--hf-bg)!important}
@@ -96,13 +96,12 @@ body.v13.v3-auth .auth-session p{margin:0 0 8px!important;font:400 12px/1.7 var(
 body.v13.v3-auth .auth-session strong{font-weight:500!important;color:var(--hf-ink)!important}
 body.v13.v3-auth .auth-session__go{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important}
 /* The two "go on" links (this one and the log in / get started switch under the form): a dim hairline at rest
-   that an ink underline draws over on hover or focus, and an arrow that steps forward on the dots' spring. The
-   link itself is an atom (data-hf-atom), so it also parts around the pointer and pops when it arrives. */
+   that an ink underline draws over on hover or focus. The link and its arrow stay exactly where they are. */
 body.v13.v3-auth :is(.auth-session__go,.auth-switch a){background-image:linear-gradient(currentColor,currentColor),linear-gradient(var(--hf-line-2),var(--hf-line-2))!important;
   background-size:0% 1px,100% 1px!important;background-repeat:no-repeat!important;background-position:0 100%,0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
 body.v13.v3-auth :is(.auth-session__go,.auth-switch a)::after{content:"\2192"!important;display:inline-block!important;margin-left:.6em!important;transition:translate var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13.v3-auth :is(.auth-session__go,.auth-switch a):is(:hover,:focus-visible){color:var(--hf-ink)!important;background-size:100% 1px,100% 1px!important}
-body.v13.v3-auth :is(.auth-session__go,.auth-switch a):is(:hover,:focus-visible)::after{translate:3px 0!important}
+body.v13.v3-auth :is(.auth-session__go,.auth-switch a):is(:hover,:focus-visible)::after{translate:none!important}
 body.v13.v3-auth :is(.auth-session__go,.auth-switch a):active{color:var(--hf-soft)!important}
 
 /* Step marker on get started. */
@@ -195,8 +194,7 @@ body.v13.v3-auth .v6-auth-story>p.auth-story__note{margin:22px 0 0!important;pad
 /* Numbered index of the workspace / the three steps. */
 body.v13.v3-auth .auth-index{list-style:none!important;margin:30px 0 0!important;padding:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-auth .auth-index li{display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;gap:2px 10px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important}
-/* The numbers are faint labels; the one beside the row under the pointer comes up to ink (and, as an atom, parts
-   around the pointer like a dot). */
+/* The numbers are faint labels; the one beside the row under the pointer comes up to ink (colour only). */
 body.v13.v3-auth .auth-index li>span{grid-row:span 2!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;padding-top:1px!important;transition:color .25s!important}
 body.v13.v3-auth .auth-index li:hover>span{color:var(--hf-ink)!important}
 body.v13.v3-auth .auth-index li>strong{font:700 13.5px/1.5 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important}
@@ -217,7 +215,7 @@ body.v13.v3-auth .auth-ledger dt{font:var(--hf-label)!important;letter-spacing:v
 body.v13.v3-auth .auth-ledger dd{font:400 12.5px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:0!important}
 
 @keyframes v13AuthSpin{to{transform:rotate(360deg)}}
-@keyframes v13AuthNudge{0%,100%{transform:none}25%{transform:translateX(-5px)}55%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
+@keyframes v13AuthNudge{from{opacity:.35}}
 
 /* ---------- Narrower screens ---------- */
 @media (min-width:1600px){

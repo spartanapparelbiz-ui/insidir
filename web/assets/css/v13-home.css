@@ -119,7 +119,7 @@ body.v13.v12-home.v9-site.v6-site .v13-hero .v13-hero__meta{font:var(--hf-label)
 
 /* ---------- Buttons and links ---------- */
 body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link) .v13-arrow{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link):hover .v13-arrow{transform:translate(2px,-2px)!important}}
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site :is(.v9-btn,.v12-secondary-link):hover .v13-arrow{transform:none!important}}
 body.v13.v12-home.v9-site.v6-site .v12-outline-button{background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .v12-outline-button:hover{background:var(--hf-surface)!important;border-color:var(--hf-ink)!important;color:var(--hf-ink)!important}}
 body.v13.v12-home.v9-site.v6-site .v12-secondary-link{display:inline-flex!important;align-items:center!important;gap:12px!important}
@@ -164,7 +164,7 @@ body.v13.v12-home.v9-site.v6-site .lp-tool__top{display:flex!important;justify-c
 body.v13.v12-home.v9-site.v6-site .lp-tool__num{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .25s!important}
 body.v13.v12-home.v9-site.v6-site .lp-tool__icon{width:22px!important;height:22px!important;flex:none!important;fill:none!important;stroke:currentColor!important;stroke-width:1.25!important;stroke-linecap:square!important;stroke-linejoin:miter!important;color:var(--hf-soft)!important;transition:color .25s,transform var(--hf-spring-dur) var(--hf-spring)!important}
 @media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover :is(.lp-tool__num,.lp-tool__icon){color:var(--hf-ink)!important}}
-@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover .lp-tool__icon{transform:translateY(-2px)!important}}
+@media (hover:hover){body.v13.v12-home.v9-site.v6-site .lp-tool:hover .lp-tool__icon{transform:none!important}}
 body.v13.v12-home.v9-site.v6-site .lp-tool h3{font:700 clamp(18px,1.55vw,22px)/1.2 var(--hf-sans)!important;letter-spacing:-.03em!important;margin:0 0 12px!important;color:var(--hf-ink)!important}
 body.v13.v12-home.v9-site.v6-site .lp-tool p{font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;margin:0!important;max-width:42ch!important}
 
@@ -191,7 +191,7 @@ body.v13.v12-home.v9-site.v6-site .lp-step:last-child::after{content:""!importan
 body.v13.v12-home.v9-site.v6-site .lp-step:not(.hf-pending,.hf-revealing){transition:border-color .2s!important}
 @media (hover:hover){
   body.v13.v12-home.v9-site.v6-site .lp-step:hover{border-color:var(--hf-ink)!important}
-  body.v13.v12-home.v9-site.v6-site .lp-step:hover::before{scale:1.43!important}
+  body.v13.v12-home.v9-site.v6-site .lp-step:hover::before{scale:none!important}
   body.v13.v12-home.v9-site.v6-site .lp-step:last-child:hover::after{border-color:var(--hf-ink)!important}
   body.v13.v12-home.v9-site.v6-site .lp-step:hover .lp-step__num{color:var(--hf-ink)!important}
 }

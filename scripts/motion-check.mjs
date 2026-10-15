@@ -1,32 +1,61 @@
-/* Insidir site motion check: every page moves like the landing wordmark, and nothing on it is orange.
+/* Insidir site motion check: the site holds still, only the landing wordmark answers the pointer, public pages
+   fade blocks up once as they scroll in, and nothing on any page is orange.
 
-   Opens every page in headless Chromium (the /v1 API mocked) and verifies, with a real pointer and wheel:
-     - the motion layer and the dot engine are running: atoms are registered and every page has at
-       least one mounted dot field (the footer strip at minimum), drawn into a canvas;
-     - scrolling leaves the dots and, on public pages, the atoms a little behind: during eight 120px wheel
-       steps the dot fields take the scroll and at least one atom trails by 1px or more (when the page can
-       scroll); on product pages (body.app-body) the atoms sit still (under 0.5px) while the fields still
-       take it; no atom trails by more than 14px, and within 2s of the last wheel every atom is home
-       again (no --hf-dx/--hf-dy/--hf-s left);
-     - every offset the motion layer writes (--hf-dx, --hf-dy, --hf-s, recorded by a MutationObserver
-       on style attributes for the whole visit: scroll, pointer and click) is a finite number;
-     - landing only: the hero wordmark scatters as it scrolls away (its canvas differs at scrollY 300)
-       and gathers again when the page is scrolled back to the top;
-     - an atom near the pointer is pushed away from it (by at most ~10px), the atom under the pointer
-       settles back and holds still, and once the pointer leaves every atom returns exactly home;
-     - a click on empty space sends one ring through every dot field on the page;
-     - while the pointer rests on an atom and just after the click, a screenshot has no orange pixels
+   Opens every page in headless Chromium (the /v1 API mocked) and verifies, with a real mouse and wheel:
+
+   At 1440px with a fine pointer (every scroll-reveal block shown at once with InsidirMotion.revealAll()):
+     - the motion layer (window.InsidirMotion) and the dot engine (window.InsidirHalftone) are loaded, and every
+       page has at least one mounted dot field drawn into a canvas (the footer strip at minimum);
+     - up to 40 visible free-standing elements on the first screen are sampled (navigation links, buttons,
+       chips, stand-alone links, arrows, index numbers, identity tiles .ins-media, logos: the selector list of
+       the old "atoms", topped up with any visible link, button, tab or summary);
+     - stillness under scroll: during eight 120px wheel steps the document position of those elements and of up
+       to 40 more across the page (rect + scrollY; for elements in a fixed bar the viewport position, in a sticky
+       box the position relative to that box) is sampled after every step, and each sample must equal the
+       position before the scroll or the one after it has settled (held for 300ms), within 0.5px: nothing lags
+       or trails (a layout shift that simply lands is not motion);
+     - the dot fields take no scroll: every field canvas is pixel-identical (a word canvas within 0.05%) to its
+       at-rest image in the middle and at the end of the wheel steps;
+     - landing only: the hero wordmark does not scatter as the page scrolls: its canvas at scrollY 300 and back
+       at 0 equals its at-rest image (within 0.05% of its pixels);
+     - stillness under the pointer: the mouse sweeps across and next to the sampled elements and across the
+       whole screen (sampled after every path, and again a moment later on some), presses and releases a few
+       of them (their click events are cancelled, so nothing navigates or opens), and clicks on empty space;
+       during all of it and once the pointer has left, every sampled element keeps its box (0.5px) and its
+       computed transform, translate, scale and rotate, and up to six of its descendants (arrows, icons, tiles)
+       keep their boxes; the page does not scroll; and nothing anywhere ever
+       writes --hf-dx / --hf-dy / --hf-s (a MutationObserver watches every style attribute for the whole visit,
+       and none is left inline at the end);
+     - plain dot fields (data-halftone-field without data-mode="word", the footer strip) are print texture:
+       up to three per page are scrolled into view, the pointer sweeps across each and clicks on it, and its
+       canvas stays pixel-identical, mid-sweep, just after the click and once a ring would have run;
+     - the landing wordmark (data-halftone-hero) answers the pointer: its canvas changes while the pointer moves
+       over it and is back at its at-rest image (within 0.05%) within 1.5s of the pointer leaving; any other
+       word field (the 404 numerals) may answer too, and must also be back at rest within 1.5s;
+     - hover moves nothing: up to 4 links/buttons on the first screen and 2 halfway down are hovered one at a
+       time; after 400ms each keeps its box and transform, and so do its children (arrows .v13-arrow and the
+       rest) and the ::before/::after of each;
+     - while the pointer rests on an element and just after a click, a screenshot has no orange pixels
        (clusters of r > 110, r − g > 35, g − b > 15, r − b > 70, captured with text glyphs transparent so
        subpixel text fringes can't count; real photographs in <img> ignored);
-     - scroll reveal, in a fresh visit WITHOUT revealAll: every block marked data-hf-reveal, each child of
-       a data-hf-reveal-group, and each footer column that is below the fold when v13-motion.js first
-       sees it waits hidden (.hf-pending, opacity 0); scrolling down a viewport at a time, every block
-       above 90% of the viewport is shown (no .hf-pending, opacity 1) within 1.5s of reaching it, the
-       blocks rise in on the spring (.hf-revealing), and at the bottom nothing is pending or mid-reveal;
-       a page with no such block below the fold reports "n/a" (at 1440px and on a 390px phone);
-     - with prefers-reduced-motion nothing moves (no offsets, no rings) and nothing ever waits to be
-       revealed (InsidirMotion.pending is 0 and no .hf-pending, at load and after scrolling);
-     - phones (390px, touch) load every page without overflow or script errors.
+     - no page errors and no console errors.
+
+   Scroll reveal, in a fresh visit WITHOUT revealAll (at 1440px and on a 390px phone):
+     - public pages (neither body.app-body nor body.v6-app): every block marked data-hf-reveal, each child of a data-hf-reveal-group
+       and each footer column that is below the fold when v13-motion.js first sees it waits (.hf-pending,
+       opacity 0, held at most 16px off its place); scrolling down a viewport at a time, every block above 90%
+       of the viewport is shown within 1.2s of reaching it (no .hf-pending; one that waited is back at opacity 1
+       with its translate/transform offset at 0); the blocks fade up through .hf-revealing; at the bottom
+       nothing is pending or mid-reveal; a page with no such block below the fold reports "n/a";
+     - product pages (body.app-body or body.v6-app): nothing is ever held back: InsidirMotion.pending is 0 and no element has
+       .hf-pending, at load, after scrolling to the bottom, or at any moment in between (watched by a
+       MutationObserver from document start).
+
+   With prefers-reduced-motion: nothing waits to be revealed (pending 0, no .hf-pending/.hf-revealing, at load
+   or after scrolling), and the word canvases (the landing hero, the 404 numerals) do not change under the
+   pointer or a press.
+
+   Phones (390px, touch) load every page without horizontal overflow or script errors, with a mounted dot field.
 
    Usage: node scripts/motion-check.mjs [--pages index,dashboard,...] [--no-phone-reveal]
             [--inject-css "<css>"] [--inject-js "<js>"]
@@ -55,6 +84,7 @@ const wanted = opt("pages", "").split(",").filter(Boolean);
 const PAGES = wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL;
 const passed = [], failed = [];
 const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : label + (detail === undefined ? "" : " — " + JSON.stringify(detail))); return ok; };
+const pct = v => (v * 100).toFixed(v && v < 0.001 ? 3 : 2) + "%";
 
 const me = { user: { id: 1, email: "reader@example.com" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true } };
 const mock = url => url.pathname === "/v1/me" ? me : url.pathname === "/v1/billing/status" ? { billingEnabled: true, plan: "pro", subscriptionStatus: "active" } : url.pathname === "/v1/status" ? { engine: "online", filings: 0 } : { items: [] };
@@ -98,8 +128,244 @@ await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 const base = "http://127.0.0.1:" + server.address().port;
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-lcd-text", "--font-render-hinting=none"] });
 
+/* ---------- what is sampled ---------- */
+/* The free-standing elements the old motion layer used to move ("atoms"): if any of them moves again, it is
+   one of these. Any other visible link, button, tab or summary tops the sample up. */
+const ATOMS = [
+  "[data-hf-atom]",
+  // brand and navigation
+  ".v6-logo", ".v13-logo", ".app-header .logo", ".v6-nav__links a", ".v6-signin", ".app-nav a", ".user-menu__btn", ".app-header__bell",
+  // buttons and chips
+  ".v9-btn", ".btn", ".auth-btn", ".cx-btn", ".rd-toggle", ".rd-filters button", ".v10-follow-btn", ".v3-account__button", ".cl-more", ".hwf-up",
+  // links that stand alone, arrows and markers
+  ".rd-link", ".v13-link", ".mk-link", ".pw-link", ".auth-switch a", ".rd-shortcuts__name b", ".rd-row > b", ".mk-index a span:last-child",
+  ".v12-secondary-link", ".cl-result__head > a", ".cl-finish a", ".research-text-link", ".portfolio-small-link", ".v3-account__links a",
+  ".cx-link", ".cx-arrow", ".cx-crumbs a", ".v10-jump", ".v10-known__grid b", ".v10-people-topline a", ".v10-follows__head > a", ".v10-person-card__actions > a", ".alert-src",
+  // index numbers and step markers
+  ".rd-index", ".mk-num", ".lp-step__num", ".lp-tool__num", ".lp-tool__icon", ".lp-rule__num", ".lp-folio", ".auth-index li > span", ".pw-list li > span",
+  // identity tiles outside tables
+  ".ins-media", ".cx-logo",
+  // footer
+  ".hwf-col a"
+].join(",");
+const GENERIC = "a[href],button,[role=button],[role=tab],summary,.ins-media";
+const HOVERABLE = "a[href],button,[role=button],[role=tab],summary,.v9-btn,.btn";
+// Where a click or a press could do something: an "empty" point is outside all of these.
+const CONTROL = "a,button,input,select,textarea,label,summary,details,[role=button],[role=tab],[role=row],[role=link],[role=menuitem],[role=option],[tabindex],[onclick],[contenteditable],tr,dialog";
+const FIELDS = "[data-halftone-hero],[data-halftone-footer],[data-halftone-field]";
+const REVEAL_SEL = "[data-hf-reveal],[data-hf-reveal-group]>*,footer .hwf-top>*";
+
 /* ---------- init scripts ---------- */
-// The pointer checks measure atoms in place, so every scroll-reveal block is shown at once (and any transition of
+/* Page-side helpers (window.__mc): sampling elements, measuring boxes and transforms, snapshots of dot-field
+   canvases, empty points, and a click blocker for presses. */
+const MC_LIB = ({ ATOMS, GENERIC, HOVERABLE, CONTROL, FIELDS }) => {
+  const mc = window.__mc = { sets: {}, base: {}, snaps: {}, blocking: false };
+  // While pressing controls, their click is cancelled before any page listener sees it: nothing navigates or opens.
+  addEventListener("click", e => { if (mc.blocking) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  const name = mc.name = el => { const bits = []; for (let n = el, i = 0; n && n.nodeType === 1 && i < 3; i++, n = n.parentElement) bits.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : n.classList.length ? "." + [...n.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".") : "")); return bits.join(" > "); };
+  const shown = el => {
+    if (!el.isConnected || el.closest("[hidden],.skip-link,canvas,noscript,template")) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return false;
+    const cs = getComputedStyle(el);
+    return cs.visibility !== "hidden" && cs.display !== "none" && parseFloat(cs.opacity) > 0;
+  };
+  const inView = r => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+  const spread = (list, n) => n <= 0 ? [] : list.length <= n ? list : Array.from({ length: n }, (_, i) => list[Math.floor(i * list.length / n)]);
+  // The centre of an element, if the pointer there would really be on it.
+  mc.hit = el => {
+    const r = el.getBoundingClientRect();
+    const x = Math.min(innerWidth - 2, Math.max(1, r.left + r.width / 2)), y = Math.min(innerHeight - 2, Math.max(1, r.top + r.height / 2));
+    const h = document.elementFromPoint(x, y);
+    return h && el.contains(h) ? { x, y } : null;
+  };
+  mc.pick = (key, { view, max }) => {
+    const ok = el => shown(el) && (!view || inView(el.getBoundingClientRect()));
+    const atoms = [...document.querySelectorAll(ATOMS)].filter(ok), seen = new Set(atoms);
+    const a = spread(atoms, Math.min(atoms.length, Math.ceil(max * 0.7)));
+    const generic = [...document.querySelectorAll(GENERIC)].filter(el => !seen.has(el) && ok(el));
+    const list = mc.sets[key] = a.concat(spread(generic, max - a.length));
+    return { n: list.length, atoms: a.length, names: list.slice(0, 3).map(name) };
+  };
+  mc.join = (key, ...keys) => { const s = new Set(); for (const k of keys) for (const el of mc.sets[k] || []) s.add(el); mc.sets[key] = [...s]; return s.size; };
+  // Computed transform, translate, scale and rotate as numbers: [a, b, c, d, e, f, tx, ty, sx, sy, rotate].
+  const vec = mc.vec = (el, pseudo) => {
+    const cs = getComputedStyle(el, pseudo || null);
+    let m;
+    try { m = cs.transform && cs.transform !== "none" ? new DOMMatrixReadOnly(cs.transform) : new DOMMatrixReadOnly(); } catch { m = new DOMMatrixReadOnly(); }
+    const tr = !cs.translate || cs.translate === "none" ? [0, 0] : cs.translate.split(/\s+/).map(parseFloat);
+    const sc = !cs.scale || cs.scale === "none" ? [1, 1] : cs.scale.split(/\s+/).map(parseFloat);
+    const ro = !cs.rotate || cs.rotate === "none" ? 0 : parseFloat(cs.rotate.split(/\s+/).pop());
+    return [m.a, m.b, m.c, m.d, m.e, m.f, tr[0] || 0, tr[1] || 0, sc[0], sc.length > 1 ? sc[1] : sc[0], ro || 0];
+  };
+  const TOL = [0.005, 0.005, 0.005, 0.005, 0.5, 0.5, 0.5, 0.5, 0.005, 0.005, 0.5];
+  const vdiff = (a, b) => a.some((x, i) => !(Math.abs(x - b[i]) <= TOL[i]));
+  const fmt = v => "[" + v.map(x => +x.toFixed(3)).join(",") + "]";
+  mc.box = el => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; };
+  // How far an element is held off its place: its translate plus its transform's translation.
+  mc.off = el => { const v = vec(el); return Math.hypot(v[4] + v[6], v[5] + v[7]); };
+  const boxDiff = (a, b) => Math.max(...a.map((v, j) => Math.abs(v - b[j])));
+  mc.state = key => mc.sets[key].map(el => el.isConnected ? { b: mc.box(el), v: vec(el) } : null);
+  // The baseline also keeps the box of up to six laid-out descendants of each element (an arrow, an icon, a tile).
+  const kidsOf = el => [...el.querySelectorAll("*")].filter(k => { const r = k.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).slice(0, 6);
+  mc.baseline = key => {
+    mc.base[key] = { s: mc.state(key), y: scrollY, x: scrollX, kids: mc.sets[key].map(el => el.isConnected ? kidsOf(el).map(k => [k, mc.box(k)]) : []) };
+    return mc.base[key].s.length;
+  };
+  // A compact signature of the set's boxes, to wait for a still layout.
+  mc.sig = key => mc.sets[key].map(el => el.isConnected ? mc.box(el).map(v => v.toFixed(1)).join(",") : "-").join(";") + "|" + scrollY;
+  // Sampled elements whose box moved by more than 0.5px or whose transform changed since the baseline.
+  mc.moved = key => {
+    const base = mc.base[key], now = mc.state(key), out = [];
+    if (Math.abs(scrollY - base.y) > 0.5 || Math.abs(scrollX - base.x) > 0.5) out.push("the page scrolled from " + base.y + " to " + scrollY);
+    now.forEach((s, i) => {
+      const b = base.s[i];
+      if (!s || !b) return;
+      const d = boxDiff(s.b, b.b);
+      if (d > 0.5) out.push(name(mc.sets[key][i]) + " moved " + d.toFixed(1) + "px");
+      else if (vdiff(s.v, b.v)) out.push(name(mc.sets[key][i]) + " transform " + fmt(b.v) + " -> " + fmt(s.v));
+      else for (const [k, kb] of base.kids[i]) {
+        if (!k.isConnected) continue;
+        const kbox = mc.box(k);
+        if (kbox[2] === 0 && kbox[3] === 0) continue;
+        const dk = boxDiff(kbox, kb);
+        if (dk > 0.5) { out.push(name(k) + " (inside " + name(mc.sets[key][i]) + ") moved " + dk.toFixed(1) + "px"); break; }
+      }
+    });
+    return out;
+  };
+
+  /* Scroll: where each element sits on the page. In a fixed bar its viewport position; in a sticky box its
+     position relative to that box (an element that is itself sticky is not judged). */
+  mc.prepScroll = key => {
+    mc.anchors = mc.sets[key].map(el => {
+      for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+        const p = getComputedStyle(n).position;
+        if (p === "fixed" || p === "sticky") return n === el && p === "sticky" ? "skip" : { n, p };
+      }
+      return null;
+    });
+    mc.scrollSamples = [];
+    mc.scrollFrom = mc.docPos(key);
+    return mc.anchors.filter(a => a && a !== "skip").length;
+  };
+  mc.docPos = key => mc.sets[key].map((el, i) => {
+    const a = mc.anchors[i];
+    if (a === "skip" || !el.isConnected) return null;
+    const r = el.getBoundingClientRect();
+    if (!a) return [r.left + scrollX, r.top + scrollY, r.width, r.height];
+    if (a.p === "fixed") return [r.left, r.top, r.width, r.height];
+    const b = a.n.getBoundingClientRect();
+    return [r.left - b.left, r.top - b.top, r.width, r.height];
+  });
+  mc.scrollSample = key => { mc.scrollSamples.push({ y: scrollY, p: mc.docPos(key) }); };
+  // Every sample must match where the element was before the scroll or where it is once the scroll settled.
+  mc.scrollEnd = key => {
+    const to = mc.docPos(key), from = mc.scrollFrom, out = [];
+    for (const s of mc.scrollSamples) s.p.forEach((p, i) => {
+      if (!p || !from[i] || !to[i]) return;
+      const d = Math.min(boxDiff(p, from[i]), boxDiff(p, to[i]));
+      if (d > 0.5 && out.length < 8) out.push(name(mc.sets[key][i]) + " off by " + d.toFixed(1) + "px at scrollY " + Math.round(s.y));
+    });
+    return out;
+  };
+
+  /* Dot fields. */
+  mc.fields = () => {
+    mc.roots = [...document.querySelectorAll(FIELDS)];
+    return mc.roots.map((r, i) => {
+      const h = r.__halftone, c = r.querySelector(":scope > canvas"), b = r.getBoundingClientRect();
+      return { i, name: name(r), mounted: !!h, word: !!h && h.options.mode === "word", hero: r.hasAttribute("data-halftone-hero"),
+        footer: r.classList.contains("hwf-field"), interactive: !!(h && h.options.interactive), w: c ? c.width : 0, h: c ? c.height : 0,
+        shown: b.width > 0 && b.height > 0 && !r.closest("[hidden]") && getComputedStyle(r).visibility !== "hidden" };
+    });
+  };
+  mc.snap = (i, key) => {
+    const c = mc.roots[i] && mc.roots[i].querySelector(":scope > canvas");
+    if (!c || !c.width || !c.height) return 0;
+    mc.snaps[key] = { w: c.width, h: c.height, d: c.getContext("2d").getImageData(0, 0, c.width, c.height).data };
+    return c.width * c.height;
+  };
+  // Share of pixels that differ between two snapshots by more than `thr` (sum over the four channels).
+  mc.diff = (a, b, thr) => {
+    const A = mc.snaps[a], B = mc.snaps[b];
+    if (!A || !B) return -1;
+    if (A.w !== B.w || A.h !== B.h) return 1;
+    let n = 0;
+    const x = A.d, y = B.d;
+    for (let i = 0; i < x.length; i += 4) if (Math.abs(x[i] - y[i]) + Math.abs(x[i + 1] - y[i + 1]) + Math.abs(x[i + 2] - y[i + 2]) + Math.abs(x[i + 3] - y[i + 3]) > thr) n++;
+    return n / (x.length / 4);
+  };
+  mc.drop = prefix => { for (const k of Object.keys(mc.snaps)) if (k.startsWith(prefix)) delete mc.snaps[k]; };
+  // The part of field i on screen (scrolled into view first when asked), a point on it where a click reaches the
+  // field's pointer host and no control, and a point outside the host for the pointer to leave to.
+  mc.fieldBox = (i, scroll) => {
+    const root = mc.roots[i], h = root.__halftone, host = h && h.options.pointerHost;
+    if (scroll) {
+      const r = root.getBoundingClientRect();
+      window.scrollTo({ top: Math.max(0, r.top + scrollY - Math.max(80, (innerHeight - r.height) / 2)), left: 0, behavior: "instant" });
+    }
+    const r = root.getBoundingClientRect();
+    const box = { left: Math.max(2, r.left), top: Math.max(2, r.top), right: Math.min(innerWidth - 2, r.right), bottom: Math.min(innerHeight - 2, r.bottom) };
+    if (box.right - box.left < 8 || box.bottom - box.top < 8) return null;
+    const inHost = el => !!el && (host === document || (host && host.contains(el)));
+    let click = null;
+    for (let y = box.top + 4; y < box.bottom - 2 && !click; y += 9) for (let x = box.left + 6; x < box.right - 4; x += 17) {
+      const el = document.elementFromPoint(x, y);
+      if (el && inHost(el) && !el.closest(CONTROL)) { click = { x, y }; break; }
+    }
+    let out = null;
+    if (host !== document) for (let y = 6; y < innerHeight - 4 && !out; y += 13) for (let x = 6; x < innerWidth - 4; x += 41) {
+      const el = document.elementFromPoint(x, y);
+      if (el && !(host && host.contains(el)) && !el.closest(CONTROL)) { out = { x, y }; break; }
+    }
+    return Object.assign(box, { click, out, scrollY });
+  };
+
+  // A point on empty page: nothing clickable under it (and, first, no dot field either).
+  mc.empty = () => {
+    for (const skip of [CONTROL + ",canvas," + FIELDS, CONTROL]) {
+      for (let y = 140; y < innerHeight - 20; y += 23) for (let x = 30; x < innerWidth - 30; x += 37) {
+        const e = document.elementFromPoint(x, y);
+        if (e && e !== document.documentElement && !e.closest(skip)) return { x, y };
+      }
+    }
+    return null;
+  };
+
+  /* Hover: an element, its children, and the ::before/::after of each. */
+  mc.hoverPick = n => {
+    const list = [...document.querySelectorAll(HOVERABLE)].filter(el => shown(el) && inView(el.getBoundingClientRect()) && mc.hit(el));
+    // Half of them with something inside (an arrow, an icon, a tile), which is what a hover used to nudge.
+    const rich = list.filter(el => el.querySelector("*")), plain = list.filter(el => !el.querySelector("*"));
+    const a = spread(rich, Math.min(rich.length, Math.max(n - plain.length, Math.ceil(n / 2))));
+    mc.sets.hover = a.concat(spread(plain, n - a.length));
+    return mc.sets.hover.map(el => Object.assign(mc.hit(el), { name: name(el) }));
+  };
+  const hoverState = el => {
+    const all = [el, ...[...el.querySelectorAll("*")].slice(0, 24)];
+    return { all, boxes: all.map(mc.box), vecs: all.map(n => [vec(n), vec(n, "::before"), vec(n, "::after")]) };
+  };
+  mc.hoverBase = () => { mc.hb = mc.sets.hover.map(hoverState); return mc.hb.length; };
+  mc.hoverCheck = i => {
+    const b = mc.hb[i], s = hoverState(mc.sets.hover[i]), out = [];
+    if (s.all.length !== b.all.length) return [];
+    s.boxes.forEach((box, j) => {
+      const who = j ? name(s.all[j]) + " (inside " + name(s.all[0]) + ")" : name(s.all[0]);
+      const d = boxDiff(box, b.boxes[j]);
+      if (d > 0.5) out.push(who + " moved " + d.toFixed(1) + "px");
+      ["", "::before", "::after"].forEach((p, k) => { if (vdiff(s.vecs[j][k], b.vecs[j][k])) out.push(who + p + " transform " + fmt(b.vecs[j][k]) + " -> " + fmt(s.vecs[j][k])); });
+    });
+    return out;
+  };
+  // Presses: buttons, tabs and chips first, then links.
+  mc.pressPick = (key, n) => {
+    const els = mc.sets[key].filter(el => el.isConnected && mc.hit(el) && !el.matches("input,select,textarea"));
+    const btn = els.filter(el => el.matches("button,[role=button],[role=tab],.btn,.v9-btn") || el.closest("button"));
+    return spread(btn.concat(els.filter(el => !btn.includes(el))), n).map(el => Object.assign(mc.hit(el), { name: name(el) }));
+  };
+};
+// The pointer checks measure elements in place, so every scroll-reveal block is shown at once (and any transition of
 // its own that a block let go from .hf-pending starts from the hidden state is finished).
 const REVEAL_ALL = () => {
   const go = () => {
@@ -112,26 +378,27 @@ const REVEAL_ALL = () => {
   addEventListener("DOMContentLoaded", () => setTimeout(go, 0));
   addEventListener("load", go);
 };
-// Every --hf-dx / --hf-dy / --hf-s the motion layer writes, from each style mutation's old value and the value
-// after it: any that is not a finite number, and (while `track` is on) the largest offset written.
-const WATCH_WRITES = () => {
-  const w = window.__hfWrites = { n: 0, bad: [], peak: 0, peakAt: "", track: false };
+/* For the whole visit, from document start: every --hf-dx / --hf-dy / --hf-s written into a style attribute (the old
+   pointer/scroll offsets; nothing may write one now), every element that is given .hf-pending, and every one that
+   goes through .hf-revealing. */
+const WATCH = () => {
+  const w = window.__hfWrites = { n: 0, at: [] }, ever = window.__hfEverPending = new Set(), rose = window.__hfRose = new Set();
   const rx = /--hf-(dx|dy|s)\s*:\s*([^;]*)/g;
-  const name = el => (el.tagName || "").toLowerCase() + (el.classList && el.classList.length ? "." + [...el.classList].slice(0, 2).join(".") : "");
-  const read = (style, el) => {
-    if (!style || style.indexOf("--hf-") < 0) return;
-    let dx = 0, dy = 0;
-    for (const m of style.matchAll(rx)) {
-      const raw = m[2].trim(), v = parseFloat(raw);
-      w.n++;
-      if (!Number.isFinite(v) || /nan|infinity/i.test(raw)) { if (w.bad.length < 6) w.bad.push(name(el) + " --hf-" + m[1] + ": " + raw); continue; }
-      if (m[1] === "dx") dx = v; else if (m[1] === "dy") dy = v;
+  const name = el => (el.tagName || "").toLowerCase() + (el.classList && el.classList.length ? "." + [...el.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".") : "");
+  const note = el => { if (el.classList.contains("hf-pending")) ever.add(el); if (el.classList.contains("hf-revealing")) rose.add(el); };
+  new MutationObserver(ms => {
+    for (const m of ms) {
+      const el = m.target;
+      if (el.nodeType !== 1) continue;
+      if (m.type === "attributes" && m.attributeName === "class") { note(el); continue; }
+      if (m.type === "attributes") {
+        const style = el.getAttribute("style") || "";
+        for (const x of style.matchAll(rx)) if (x[2].trim()) { w.n++; if (w.at.length < 6) w.at.push(name(el) + " --hf-" + x[1] + ": " + x[2].trim()); }
+        continue;
+      }
+      for (const n of m.addedNodes) if (n.nodeType === 1) { note(n); for (const d of n.querySelectorAll(".hf-pending,.hf-revealing")) note(d); }
     }
-    const d = Math.hypot(dx, dy);
-    if (w.track && d > w.peak) { w.peak = d; w.peakAt = name(el); }
-  };
-  new MutationObserver(ms => { for (const m of ms) { read(m.oldValue, m.target); read(m.target.getAttribute && m.target.getAttribute("style"), m.target); } })
-    .observe(document, { subtree: true, attributes: true, attributeFilter: ["style"], attributeOldValue: true });
+  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["style", "class"] });
 };
 /* What v13-motion.js should hold back: the same rule it applies (a block marked for reveal that is rendered and
    below 92% of the viewport the first time it is scanned while shown, and that the page can scroll into view), applied right
@@ -140,7 +407,7 @@ const WATCH_WRITES = () => {
    later by content loading above them are rightly never hidden, so they are not expected to wait. */
 const REVEAL_ORACLE = () => {
   const SEL = "[data-hf-reveal],[data-hf-reveal-group]>*,footer .hwf-top>*";
-  const seen = new WeakSet(), expect = window.__hfExpect = new Set(), rose = window.__hfRose = new Set();
+  const seen = new WeakSet(), expect = window.__hfExpect = new Set();
   const scan = () => {
     const limit = innerHeight * 0.92, maxY = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     for (const el of document.querySelectorAll(SEL)) {
@@ -159,10 +426,8 @@ const REVEAL_ORACLE = () => {
   const after = () => {
     scan();
     let t = 0;
-    new MutationObserver(ms => {
-      for (const m of ms) if (m.type === "attributes" && m.attributeName === "class" && m.target.classList.contains("hf-revealing")) rose.add(m.target);
-      if (ms.some(m => m.type === "childList" || m.attributeName === "hidden")) { clearTimeout(t); t = setTimeout(scan, 120); }
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
+    new MutationObserver(ms => { if (ms.some(m => m.type === "childList" || m.attributeName === "hidden")) { clearTimeout(t); t = setTimeout(scan, 120); } })
+      .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] });
   };
   let motion;
   Object.defineProperty(window, "InsidirMotion", { configurable: true, enumerable: true, get: () => motion,
@@ -171,9 +436,10 @@ const REVEAL_ORACLE = () => {
 
 async function open(path, { width = 1440, reducedMotion = "no-preference", touch = false, reveal = true, oracle = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, reducedMotion, isMobile: touch, hasTouch: touch, deviceScaleFactor: 1 });
+  await context.addInitScript(MC_LIB, { ATOMS, GENERIC, HOVERABLE, CONTROL, FIELDS });
   if (reveal) await context.addInitScript(REVEAL_ALL);
   if (oracle) await context.addInitScript(REVEAL_ORACLE);
-  await context.addInitScript(WATCH_WRITES);
+  await context.addInitScript(WATCH);
   // Self-test hooks: prove the check fails when motion breaks (see the header).
   if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
   if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
@@ -185,22 +451,37 @@ async function open(path, { width = 1440, reducedMotion = "no-preference", touch
   page.on("console", m => { if (m.type() === "error" && !/Failed to load resource|404/.test(m.text())) errors.push(m.text()); });
   await page.goto(base + path, { waitUntil: "networkidle", timeout: 30000 }).catch(() => page.goto(base + path, { waitUntil: "domcontentloaded" }));
   await page.evaluate(() => document.fonts && document.fonts.ready);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
   return { context, page, errors };
 }
-const offsets = page => page.evaluate(() => [...document.querySelectorAll("[data-hf-atom]")].map(e => [parseFloat(e.style.getPropertyValue("--hf-dx")) || 0, parseFloat(e.style.getPropertyValue("--hf-dy")) || 0]));
 const scrollTo = (page, y) => page.evaluate(y => window.scrollTo({ top: y, left: 0, behavior: "instant" }), y);
-const pointerGone = page => page.evaluate(() => document.dispatchEvent(new PointerEvent("pointerout", { relatedTarget: null, bubbles: true })));
-// Atoms that are not home: any offset or scale still written.
-const awayAtoms = page => page.evaluate(() => [...document.querySelectorAll("[data-hf-atom]")]
-  .filter(e => ["--hf-dx", "--hf-dy", "--hf-s"].some(p => e.style.getPropertyValue(p).trim()))
-  .map(e => e.tagName.toLowerCase() + "." + [...e.classList].slice(0, 2).join(".") + " " + ["--hf-dx", "--hf-dy", "--hf-s"].map(p => e.style.getPropertyValue(p).trim() || "-").join(" ")));
-async function untilHome(page, ms) {
+// Poll until `read` gives the same answer twice in a row, `gap` ms apart (or `ms` have passed).
+async function steady(page, read, { gap = 150, ms = 2500 } = {}) {
   const t0 = Date.now();
-  let left = await awayAtoms(page);
-  while (left.length && Date.now() - t0 < ms) { await page.waitForTimeout(100); left = await awayAtoms(page); }
-  return left;
+  let a = await read();
+  for (;;) {
+    await page.waitForTimeout(gap);
+    const b = await read();
+    if (b === a || Date.now() - t0 > ms) return b === a;
+    a = b;
+  }
 }
+const settle = (page, key) => steady(page, () => page.evaluate(key => window.__mc.sig(key), key));
+// Snapshot field i under `key` once two snapshots `gap` ms apart agree (a word may still be settling).
+async function restSnap(page, i, key, thr = 0, gap = 200) {
+  const t0 = Date.now();
+  await page.evaluate(([i, key]) => window.__mc.snap(i, key), [i, key]);
+  for (;;) {
+    await page.waitForTimeout(gap);
+    await page.evaluate(([i, key]) => window.__mc.snap(i, key + "~"), [i, key]);
+    const d = await page.evaluate(([key, thr]) => window.__mc.diff(key, key + "~", thr), [key, thr]);
+    await page.evaluate(([i, key]) => window.__mc.snap(i, key), [i, key]);
+    if (d === 0 || Date.now() - t0 > 3000) return d === 0;
+  }
+}
+const snapDiff = (page, i, key, rest, thr) => page.evaluate(([i, key, rest, thr]) => window.__mc.snap(i, key) ? window.__mc.diff(rest, key, thr) : -1, [i, key, rest, thr]);
+// A word canvas counts as changed when more than 0.05% of its pixels differ by more than 60 (four channels summed).
+const WORD_THR = 60, WORD_TOL = 0.0005;
 
 /* ---------- orange pixels (same rule as scripts/v13-palette-audit.mjs) ---------- */
 /* Screenshots for the pixel pass show no text: every glyph (HTML and SVG text) is made transparent for the
@@ -288,108 +569,276 @@ async function orangeShot(page) {
   return clusters.map((c, i) => names[i] && c.n + "px under " + names[i]).filter(Boolean);
 }
 
-/* ---------- scroll: dot fields and (on public pages) atoms trail it and come home ----------
-   Product pages (body.app-body: the overview, desk, reports, people and files) keep their atoms still while the page
-   scrolls (v13-motion.js: the trail cost frames there, and figures should sit still while they are read); their dot
-   fields still take the scroll. */
-async function scrollTrail(page, key) {
-  const { room, product } = await page.evaluate(() => {
-    // Count the scroll kicks the motion layer gives the dot fields during the wheel steps.
-    window.__hfKicks = 0;
-    for (const r of document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")) {
-      const h = r.__halftone;
-      if (!h || typeof h.kick !== "function" || h.__counted) continue;
-      const orig = h.kick; h.kick = (...a) => { if (a.some(v => v)) window.__hfKicks++; return orig.apply(h, a); }; h.__counted = true;
+/* ---------- (b) scroll: nothing lags, the dot fields take no scroll, the wordmark does not scatter ---------- */
+async function scrollStill(page, key, fields) {
+  const room = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  const n = await page.evaluate(() => window.__mc.join("page", "view", "across"));
+  const anchored = await page.evaluate(() => window.__mc.prepScroll("page"));
+  // Every field drawn at rest first (the pointer has not moved on this page yet).
+  const shown = fields.filter(f => f.mounted && f.shown && f.w > 0 && f.h > 0);
+  for (const f of shown) await restSnap(page, f.i, "s" + f.i, f.word ? WORD_THR : 0, f.word ? 200 : 80);
+  const fieldBad = [], relaid = new Set();
+  const resized = (a, b) => page.evaluate(([a, b]) => { const A = window.__mc.snaps[a], B = window.__mc.snaps[b]; return !!(A && B && (A.w !== B.w || A.h !== B.h)); }, [a, b]);
+  const fieldsAgree = async when => {
+    for (const f of shown) {
+      const d = await snapDiff(page, f.i, "s" + f.i + "~now", "s" + f.i, f.word ? WORD_THR : 0);
+      // A canvas drawn again at a new size was re-laid out (content above it finished loading and the page changed
+      // width or the strip changed size): a layout change, not motion. Its new at-rest image becomes the reference,
+      // so a field that also trails the scroll still fails at the next comparison.
+      if (d === 1 && await resized("s" + f.i, "s" + f.i + "~now")) {
+        await restSnap(page, f.i, "s" + f.i, f.word ? WORD_THR : 0, f.word ? 200 : 80);
+        relaid.add(f.name);
+        continue;
+      }
+      if (f.word ? d > WORD_TOL : d !== 0) fieldBad.push(f.name + " " + pct(d) + " changed " + when);
     }
-    return { room: document.documentElement.scrollHeight - innerHeight, product: document.body.classList.contains("app-body") };
-  });
-  await page.evaluate(() => { const w = window.__hfWrites; w.peak = 0; w.peakAt = ""; w.track = true; });
-  let sampled = 0;
-  const bad = [];
+  };
   for (let i = 0; i < 8; i++) {
     await page.mouse.wheel(0, 120);
-    await page.waitForTimeout(70);
-    const s = await page.evaluate(() => {
-      let max = 0;
-      const bad = [];
-      for (const e of document.querySelectorAll("[data-hf-atom]")) {
-        for (const p of ["--hf-dx", "--hf-dy", "--hf-s"]) { const v = e.style.getPropertyValue(p).trim(); if (v && !Number.isFinite(parseFloat(v))) bad.push(e.tagName.toLowerCase() + " " + p + ": " + v); }
-        max = Math.max(max, Math.hypot(parseFloat(e.style.getPropertyValue("--hf-dx")) || 0, parseFloat(e.style.getPropertyValue("--hf-dy")) || 0));
-      }
-      return { max, bad };
-    });
-    sampled = Math.max(sampled, s.max);
-    bad.push(...s.bad);
+    await page.waitForTimeout(60);
+    await page.evaluate(() => window.__mc.scrollSample("page"));
+    if (i === 2) await fieldsAgree("mid-scroll");
   }
+  // Let the wheel's scroll, and anything that might still be making its way back, come to rest before taking the
+  // "after" position: the page and every sampled position unchanged over 300ms.
+  await steady(page, () => page.evaluate(() => scrollY), { gap: 120, ms: 1500 });
+  await steady(page, () => page.evaluate(() => JSON.stringify(window.__mc.docPos("page"))), { gap: 300, ms: 3000 });
   const scrolled = await page.evaluate(() => scrollY);
-  await pointerGone(page);
-  const left = await untilHome(page, 2000);
-  const w = await page.evaluate(() => { const w = window.__hfWrites; w.track = false; return { peak: w.peak, peakAt: w.peakAt }; });
-  const peak = Math.max(w.peak, sampled), kicks = await page.evaluate(() => window.__hfKicks);
-  if (room <= 40) check(true, `${key}: atoms trail a wheel scroll: n/a (the page cannot scroll)`);
-  else if (product) {
-    check(peak < 0.5 && scrolled > 0, `${key}: product page: atoms sit still while the page scrolls (${peak.toFixed(1)}px at most, page scrolled ${scrolled}px)`, { peak, at: w.peakAt, scrolled });
-    check(kicks > 0, `${key}: product page: the dot fields still take the scroll (${kicks} kick(s))`, { kicks });
-  } else {
-    check(peak >= 1 && scrolled > 0, `${key}: atoms trail a wheel scroll (${peak.toFixed(1)}px at most, page scrolled ${scrolled}px)`, { peak, at: w.peakAt, scrolled });
-    check(kicks > 0, `${key}: the dot fields trail the scroll too (${kicks} kick(s))`, { kicks });
+  await fieldsAgree("after the wheel");
+  // A field re-laid out during the wheel is compared once more, still scrolled, against its new at-rest image.
+  if (relaid.size) { await page.waitForTimeout(400); await fieldsAgree("after the wheel, once re-laid out"); }
+  const lag = await page.evaluate(() => window.__mc.scrollEnd("page"));
+  if (room <= 40) check(true, `${key}: nothing lags a wheel scroll: n/a (the page cannot scroll)`);
+  else check(lag.length === 0 && scrolled > 0, `${key}: nothing lags a wheel scroll (8 x 120px, ${n} elements, ${anchored} in fixed/sticky bars; within 0.5px; page scrolled ${scrolled}px)`, { lag: lag.slice(0, 4), scrolled });
+  check(fieldBad.length === 0, `${key}: the dot fields take no scroll (${shown.length} canvas(es) unchanged mid-scroll and after${relaid.size ? "; " + relaid.size + " re-laid out at a new size while the page loaded" : ""})`, fieldBad.slice(0, 4));
+
+  // The landing wordmark: still itself at scrollY 300 and back at the top (no scatter).
+  const hero = fields.find(f => f.hero && f.mounted);
+  if (hero) {
+    await scrollTo(page, 0);
+    await restSnap(page, hero.i, "hero-rest", WORD_THR);
+    await scrollTo(page, 300);
+    await page.waitForTimeout(400);
+    const down = await snapDiff(page, hero.i, "hero-300", "hero-rest", WORD_THR);
+    await scrollTo(page, 0);
+    await page.waitForTimeout(400);
+    const back = await snapDiff(page, hero.i, "hero-0", "hero-rest", WORD_THR);
+    check(down >= 0 && down <= WORD_TOL && back >= 0 && back <= WORD_TOL, `${key}: the hero wordmark does not scatter on scroll (scrollY 300: ${pct(down)} of its canvas differs; back at 0: ${pct(back)})`, { down, back });
   }
-  check(peak <= 14, `${key}: no atom trails a scroll by more than 14px`, { peak, at: w.peakAt });
-  check(bad.length === 0, `${key}: every atom offset sampled during the scroll is a finite number`, bad.slice(0, 4));
-  check(left.length === 0, `${key}: every atom is home within 2s of the last wheel`, left.slice(0, 4));
+  await page.evaluate(() => window.__mc.drop("s"));
 }
 
-/* ---------- landing: the wordmark scatters as it scrolls away, and gathers again ---------- */
-async function heroScatter(page, key) {
-  const snap = name => page.evaluate(name => {
-    const c = document.querySelector("[data-halftone-hero] canvas");
-    if (!c || !c.width || !c.height) return 0;
-    (window.__hfSnaps = window.__hfSnaps || {})[name] = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
-    return c.width * c.height;
-  }, name);
-  // Share of the canvas's pixels that changed between two snapshots.
-  const diff = (a, b) => page.evaluate(([a, b]) => {
-    const A = window.__hfSnaps[a], B = window.__hfSnaps[b];
-    if (!A || !B || A.length !== B.length) return -1;
-    let n = 0;
-    for (let i = 0; i < A.length; i += 4) if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) + Math.abs(A[i + 3] - B[i + 3]) > 60) n++;
-    return n / (A.length / 4);
-  }, [a, b]);
-  // Scroll there, let the dots' spring settle (~1.2s), then keep looking until two frames 250ms apart agree.
-  const settle = async (y, name) => {
-    await scrollTo(page, y); await page.waitForTimeout(1200);
+/* ---------- (c) word fields answer the pointer gently and settle; plain fields hold still ---------- */
+async function wordFields(page, key, fields) {
+  for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
+    const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
+    if (!check(!!box, `${key}: the word canvas ${f.name} is on screen to test`)) continue;
+    await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2);
+    await restSnap(page, f.i, "w-rest", WORD_THR);
+    // Across the word, low (where the letters sit) and through the middle.
+    let moved = 0;
+    for (const fy of [0.82, 0.6, 0.9]) {
+      const y = box.top + (box.bottom - box.top) * fy;
+      await page.mouse.move(box.left + (box.right - box.left) * 0.15, y);
+      await page.mouse.move(box.left + (box.right - box.left) * 0.85, y, { steps: 12 });
+      moved = Math.max(moved, await snapDiff(page, f.i, "w-on", "w-rest", WORD_THR));
+    }
+    // The pointer leaves: back at rest within 1.5s.
+    await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2, { steps: 2 });
     const t0 = Date.now();
-    let px = await snap(name);
-    while (px && Date.now() - t0 < 3000) { await page.waitForTimeout(250); await snap(name + "~"); if (await diff(name, name + "~") < 0.0002) break; px = await snap(name); }
-    return px;
-  };
-  const px = await settle(0, "top");
-  if (!check(px > 0, key + ": the hero wordmark canvas can be read")) return;
-  await settle(300, "down");
-  await settle(0, "back");
-  const moved = await diff("top", "down"), back = await diff("top", "back");
-  check(moved > 0.002, `${key}: the wordmark scatters as the page scrolls away (${(moved * 100).toFixed(2)}% of the canvas changed at scrollY 300)`, { moved });
-  check(back >= 0 && back <= Math.max(0.0005, moved * 0.1), `${key}: the wordmark gathers again when the page is back at the top (${(back * 100).toFixed(3)}% still differs)`, { moved, back });
+    let left = 1, took = 0;
+    for (;;) {
+      left = await snapDiff(page, f.i, "w-now", "w-rest", WORD_THR);
+      took = Date.now() - t0;
+      if ((left >= 0 && left <= WORD_TOL) || took > 1500) break;
+      await page.waitForTimeout(80);
+    }
+    if (f.hero) check(moved > WORD_TOL, `${key}: the hero wordmark answers the pointer (${pct(moved)} of its canvas changed while the pointer moved over it)`, { moved });
+    check(left >= 0 && left <= WORD_TOL && took <= 1500, `${key}: ${f.hero ? "the hero wordmark" : "the word field " + f.name} is back at rest within 1.5s of the pointer leaving (${took}ms; ${f.hero ? "" : "it answered with " + pct(moved) + "; "}${pct(left)} still differs)`, { left, took, moved });
+    await page.evaluate(() => window.__mc.drop("w-"));
+  }
+}
+async function plainFields(page, key, fields) {
+  const plain = fields.filter(f => !f.word && f.mounted && f.shown && f.w > 0 && f.h > 0).slice(0, 3);
+  const bad = [];
+  let tested = 0;
+  for (const f of plain) {
+    const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
+    if (!box) continue;
+    tested++;
+    await page.waitForTimeout(80);
+    await restSnap(page, f.i, "p-rest", 0, 100);
+    const same = async when => { const d = await snapDiff(page, f.i, "p-now", "p-rest", 0); if (d !== 0) bad.push(f.name + " " + pct(d) + " changed " + when); };
+    for (const fy of [0.3, 0.75]) {
+      const y = box.top + (box.bottom - box.top) * fy;
+      await page.mouse.move(box.left + 4, y);
+      await page.mouse.move(box.right - 4, y, { steps: 6 });
+      await same("while the pointer swept across it");
+    }
+    if (box.click) {
+      await page.mouse.click(box.click.x, box.click.y);
+      await page.waitForTimeout(120);
+      await same("just after a click on it");
+      await page.waitForTimeout(300);
+      await same("after the click");
+    }
+    await page.evaluate(() => window.__mc.drop("p-"));
+  }
+  check(bad.length === 0 && tested > 0, `${key}: plain dot fields hold still under the pointer and a click (${tested} field(s), canvases pixel-identical)`, bad.length ? bad.slice(0, 4) : { tested });
 }
 
-/* ---------- scroll reveal ---------- */
-const REVEAL_SEL = "[data-hf-reveal],[data-hf-reveal-group]>*,footer .hwf-top>*";
+/* ---------- (a) nothing moves under the pointer, a press or a click ---------- */
+async function pointerStill(page, key) {
+  await scrollTo(page, 0);
+  await settle(page, "view");
+  const n = await page.evaluate(() => window.__mc.baseline("view"));
+  const during = [];
+  let samples = 0;
+  const sample = async tag => { const m = await page.evaluate(() => window.__mc.moved("view")); samples++; if (m.length) during.push(tag + ": " + m.slice(0, 3).join("; ")); };
+  const { W, H, paths } = await page.evaluate(() => {
+    const els = window.__mc.sets.view.filter(el => el.isConnected);
+    const step = Math.max(1, Math.floor(els.length / 8));
+    const paths = [];
+    for (let i = 0; i < els.length && paths.length < 8; i += step) {
+      const r = els[i].getBoundingClientRect(), y = Math.min(innerHeight - 3, Math.max(3, r.top + r.height / 2));
+      // Across the element, and alongside it (just below), so the pointer passes over and near it.
+      paths.push({ name: window.__mc.name(els[i]), x0: Math.max(2, r.left - 40), x1: Math.min(innerWidth - 2, r.right + 40), y, y2: Math.min(innerHeight - 3, r.bottom + 14) });
+    }
+    return { W: innerWidth, H: innerHeight, paths };
+  });
+  for (const [k, p] of paths.entries()) {
+    await page.mouse.move(p.x0, p.y);
+    await page.mouse.move(p.x1, p.y, { steps: 4 });
+    await sample("across " + p.name);
+    await page.mouse.move(p.x0, p.y2, { steps: 4 });
+    await sample("beside " + p.name);
+    if (k % 3 === 0) { await page.waitForTimeout(120); await sample("resting near " + p.name); }
+  }
+  for (const fy of [0.15, 0.45, 0.75]) {
+    await page.mouse.move(6, H * fy);
+    await page.mouse.move(W / 2, H * fy + 20, { steps: 8 });
+    await sample("sweeping the screen at " + Math.round(H * fy) + "px");
+    await page.mouse.move(W - 6, H * fy, { steps: 8 });
+    await sample("sweeping the screen at " + Math.round(H * fy) + "px");
+  }
+  await page.mouse.move(6, 6);
+  await page.mouse.move(W - 6, H - 6, { steps: 12 });
+  await sample("diagonal sweep");
+  check(during.length === 0, `${key}: nothing moves while the pointer sweeps over and near ${n} sampled elements (${samples} samples, 0.5px, transforms equal)`, during.slice(0, 4));
+
+  // Press and release a few (their clicks cancelled: nothing navigates or opens).
+  const presses = await page.evaluate(() => window.__mc.pressPick("view", 4));
+  const pressed = [];
+  await page.evaluate(() => { window.__mc.blocking = true; });
+  try {
+    for (const p of presses) {
+      await page.mouse.move(p.x, p.y, { steps: 3 });
+      await page.mouse.down();
+      await page.waitForTimeout(140);
+      const m1 = await page.evaluate(() => window.__mc.moved("view"));
+      await page.mouse.up();
+      await page.waitForTimeout(80);
+      const m2 = await page.evaluate(() => window.__mc.moved("view"));
+      if (m1.length) pressed.push("pressing " + p.name + ": " + m1.slice(0, 3).join("; "));
+      if (m2.length) pressed.push("releasing " + p.name + ": " + m2.slice(0, 3).join("; "));
+    }
+  } finally { await page.evaluate(() => { window.__mc.blocking = false; }); }
+  check(pressed.length === 0, `${key}: nothing moves while an element is pressed and released (${presses.length} press(es))`, pressed.slice(0, 4));
+
+  // A click on empty space.
+  const spot = await page.evaluate(() => window.__mc.empty());
+  if (spot) {
+    await page.mouse.click(spot.x, spot.y);
+    await page.waitForTimeout(60);
+    const m1 = await page.evaluate(() => window.__mc.moved("view"));
+    await page.waitForTimeout(40);
+    const clicked = await orangeShot(page);
+    check(clicked.length === 0, key + ": no orange pixels right after a click", clicked.slice(0, 4));
+    await page.waitForTimeout(350);
+    const m2 = await page.evaluate(() => window.__mc.moved("view"));
+    check(m1.length === 0 && m2.length === 0, `${key}: nothing moves after a click on empty space (at ${spot.x},${spot.y})`, m1.concat(m2).slice(0, 4));
+  }
+
+  // The pointer leaves: everything is exactly where it was.
+  const park = await page.evaluate(() => window.__mc.empty());
+  await page.mouse.move(park ? park.x : 2, park ? park.y : 2, { steps: 3 });
+  await page.waitForTimeout(350);
+  const after = await page.evaluate(() => window.__mc.moved("view"));
+  check(after.length === 0, `${key}: once the pointer has gone, every sampled element keeps its box and its transform/translate/scale/rotate`, after.slice(0, 4));
+}
+
+/* ---------- (e) hover moves nothing ---------- */
+async function hoverStill(page, key) {
+  const bad = [];
+  let total = 0, shot = null;
+  for (const where of ["top", "middle"]) {
+    if (where === "middle") {
+      const room = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      if (room < 300) break;
+      await scrollTo(page, Math.round(room / 2));
+    } else await scrollTo(page, 0);
+    const list = await page.evaluate(n => window.__mc.hoverPick(n), where === "top" ? 4 : 2);
+    if (!list.length) continue;
+    await settle(page, "hover");
+    const park = await page.evaluate(() => window.__mc.empty());
+    await page.mouse.move(park ? park.x : 2, park ? park.y : 2, { steps: 2 });
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.__mc.hoverBase());
+    for (const [i, p] of list.entries()) {
+      await page.mouse.move(p.x, p.y, { steps: 2 });
+      await page.waitForTimeout(400);
+      const d = await page.evaluate(i => window.__mc.hoverCheck(i), i);
+      if (d.length) bad.push("hovering " + p.name + ": " + d.slice(0, 3).join("; "));
+      total++;
+      if (!shot) { shot = await orangeShot(page); check(shot.length === 0, `${key}: no orange pixels while the pointer rests on an element (${p.name})`, shot.slice(0, 4)); }
+    }
+  }
+  check(bad.length === 0 && total > 0, `${key}: hovering ${total} link(s)/button(s) moves nothing (after 400ms each keeps its box and transform, and so do its children and their ::before/::after)`, bad.length ? bad.slice(0, 4) : { total });
+}
+
+/* ---------- (d) scroll reveal ---------- */
 async function revealCheck(page, label) {
+  const product = await page.evaluate(() => ["app-body", "v6-app"].some(c => document.body.classList.contains(c)));
+  const state = () => page.evaluate(() => ({
+    pending: window.InsidirMotion ? window.InsidirMotion.pending : -1,
+    classed: [...document.querySelectorAll(".hf-pending,.hf-revealing")].map(el => el.tagName.toLowerCase() + "." + [...el.classList].slice(0, 3).join(".")).slice(0, 4),
+    ever: [...(window.__hfEverPending || [])].map(el => el.tagName.toLowerCase() + "." + [...el.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".")).slice(0, 4)
+  }));
+  if (product) {
+    // A product page holds nothing back: at load, all the way down, and at any moment in between.
+    const load = await state();
+    for (let i = 0; i < 40; i++) {
+      const done = await page.evaluate(() => { const max = document.documentElement.scrollHeight - innerHeight; window.scrollTo({ top: Math.min(max, scrollY + Math.round(innerHeight * 0.85)), behavior: "instant" }); return scrollY >= max - 1; });
+      await page.waitForTimeout(90);
+      if (done) break;
+    }
+    await page.waitForTimeout(250);
+    const end = await state();
+    check(load.pending === 0 && !load.classed.length && end.pending === 0 && !end.classed.length && !end.ever.length,
+      `${label}: product page holds nothing back (InsidirMotion.pending 0, no .hf-pending at load, after scrolling to the bottom, or at any moment)`, { load, end });
+    return;
+  }
   const at = await page.evaluate(SEL => {
+    const off = window.__mc.off;
     const path = el => { const bits = []; for (let n = el, i = 0; n && n.nodeType === 1 && i < 3; i++, n = n.parentElement) bits.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : n.classList.length ? "." + [...n.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".") : "")); return bits.join(" > "); };
     const vh = innerHeight, expected = [...(window.__hfExpect || [])].filter(el => el.isConnected);
     const below = expected.filter(el => el.getBoundingClientRect().top >= vh * 0.93);
+    const waiting = [...document.querySelectorAll(".hf-pending")];
+    const offsets = waiting.map(off);
     return {
       tagged: document.querySelectorAll("[data-hf-reveal],[data-hf-reveal-group]>*").length, blocks: document.querySelectorAll(SEL).length,
       expected: expected.length, below: below.length,
       notPending: below.filter(el => !el.classList.contains("hf-pending")).map(path).slice(0, 4),
-      visible: [...document.querySelectorAll(".hf-pending")].filter(el => parseFloat(getComputedStyle(el).opacity) >= 0.05).map(el => path(el) + " opacity " + getComputedStyle(el).opacity).slice(0, 4),
+      visible: waiting.filter(el => parseFloat(getComputedStyle(el).opacity) >= 0.05).map(el => path(el) + " opacity " + getComputedStyle(el).opacity).slice(0, 4),
+      maxOffset: offsets.length ? Math.max(...offsets) : 0,
+      far: waiting.filter((el, i) => offsets[i] > 16).map((el, i) => path(el) + " " + offsets[i].toFixed(1) + "px").slice(0, 4),
       pending: window.InsidirMotion ? window.InsidirMotion.pending : -1
     };
   }, REVEAL_SEL);
   if (!at.expected) { check(true, `${label}: scroll reveal n/a (no block below the fold; ${at.tagged} tagged, ${at.blocks} with the footer)`); return; }
-  check(at.notPending.length === 0 && at.visible.length === 0 && at.pending >= at.below, `${label}: ${at.below} block(s) below the fold wait hidden (.hf-pending, opacity 0; ${at.tagged} tagged)`, at);
-  // Down the page a viewport at a time: whatever is above 90% of the viewport is shown within 1.5s of reaching it.
+  check(at.notPending.length === 0 && at.visible.length === 0 && at.pending >= at.below, `${label}: ${at.below} block(s) below the fold wait (.hf-pending, opacity 0; ${at.tagged} tagged)`, at);
+  check(at.maxOffset <= 16, `${label}: a waiting block is held at most 16px off its place (${at.maxOffset.toFixed(1)}px)`, at.far);
+  // Down the page a viewport at a time: whatever is above 90% of the viewport is shown within 1.2s of reaching it.
   const late = [];
   let steps = 0, y = 0;
   for (;;) {
@@ -399,122 +848,72 @@ async function revealCheck(page, label) {
     await scrollTo(page, y);
     const t0 = Date.now();
     let left;
-    await page.waitForTimeout(150);
     for (;;) {
-      left = await page.evaluate(SEL => [...document.querySelectorAll(SEL)].filter(el => {
-        if (el.closest("[hidden]")) return false;
-        const r = el.getBoundingClientRect();
-        if ((r.width === 0 && r.height === 0) || r.top >= innerHeight * 0.9) return false;
-        const op = parseFloat(getComputedStyle(el).opacity);
-        return el.classList.contains("hf-pending") || (el.classList.contains("hf-revealing") && op < 0.99);
-      }).map(el => el.tagName.toLowerCase() + "." + [...el.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".") + (el.classList.contains("hf-pending") ? " still pending" : " opacity " + getComputedStyle(el).opacity)), REVEAL_SEL);
-      if (!left.length || Date.now() - t0 > 1500) break;
       await page.waitForTimeout(100);
+      left = await page.evaluate(SEL => {
+        const off = window.__mc.off;
+        const ever = window.__hfEverPending || new Set();
+        return [...document.querySelectorAll(SEL)].filter(el => {
+          if (el.closest("[hidden]")) return false;
+          const r = el.getBoundingClientRect();
+          if ((r.width === 0 && r.height === 0) || r.top >= innerHeight * 0.9) return false;
+          if (el.classList.contains("hf-pending")) return true;
+          // A block that waited is shown in full: opaque and back in its place.
+          return ever.has(el) && (parseFloat(getComputedStyle(el).opacity) < 0.99 || off(el) > 0.5);
+        }).map(el => el.tagName.toLowerCase() + "." + [...el.classList].filter(c => !/^hf-/.test(c)).slice(0, 2).join(".") +
+          (el.classList.contains("hf-pending") ? " still pending" : " opacity " + getComputedStyle(el).opacity + ", " + off(el).toFixed(1) + "px off"));
+      }, REVEAL_SEL);
+      if (!left.length || Date.now() - t0 > 1200) break;
     }
     if (left.length) late.push(...left.map(l => l + " at scrollY " + y));
     if (y >= h - vh || steps > 80) break;
   }
-  check(late.length === 0, `${label}: every block is shown within 1.5s of scrolling to it (${steps} step(s))`, late.slice(0, 4));
+  check(late.length === 0, `${label}: every block is shown within 1.2s of scrolling to it (opacity 1, no offset; ${steps} step(s))`, late.slice(0, 4));
   // At the bottom nothing is left waiting or mid-reveal.
   const t1 = Date.now();
   let end;
   for (;;) {
-    end = await page.evaluate(() => ({ pending: window.InsidirMotion ? window.InsidirMotion.pending : -1, left: [...document.querySelectorAll(".hf-pending,.hf-revealing")].map(el => el.tagName.toLowerCase() + "." + [...el.classList].slice(0, 3).join(".")).slice(0, 4) }));
-    if ((end.pending === 0 && !end.left.length) || Date.now() - t1 > 2500) break;
+    end = await state();
+    if ((end.pending === 0 && !end.classed.length) || Date.now() - t1 > 2500) break;
     await page.waitForTimeout(150);
   }
-  check(end.pending === 0 && end.left.length === 0, `${label}: at the bottom nothing is pending or mid-reveal`, end);
+  check(end.pending === 0 && end.classed.length === 0, `${label}: at the bottom nothing is pending or mid-reveal`, end);
   const rose = await page.evaluate(() => window.__hfRose ? window.__hfRose.size : 0);
-  check(rose >= 1, `${label}: blocks rise in on the spring (${rose} revealed)`, rose);
+  check(rose >= 1, `${label}: blocks fade up into place (.hf-revealing, ${rose} revealed)`, rose);
 }
 
 try {
   for (const [key, path] of PAGES) {
-    /* ---------- fine pointer, motion allowed, every block revealed at once ---------- */
+    /* ---------- fine pointer, every block revealed at once ---------- */
     {
       const { context, page, errors } = await open(path);
       const s = await page.evaluate(() => ({
-        motion: !!window.InsidirMotion, physics: window.InsidirMotion && window.InsidirHalftone && window.InsidirMotion.PHYSICS === window.InsidirHalftone.PHYSICS,
-        atoms: window.InsidirMotion ? window.InsidirMotion.count : 0,
-        fields: [...document.querySelectorAll("[data-halftone-field]")].map(f => { const c = f.querySelector("canvas"); return { mounted: !!f.__halftone, w: c ? c.width : 0, h: c ? c.height : 0 }; }),
-        footer: !!document.querySelector("footer.v13-footer--plain > .hwf-field")
+        motion: !!window.InsidirMotion && typeof window.InsidirMotion.revealAll === "function", engine: !!(window.InsidirHalftone && window.InsidirHalftone.mount),
+        fields: window.__mc.fields(), footer: !!document.querySelector("footer.v13-footer--plain > .hwf-field")
       }));
-      check(s.motion && s.physics, key + ": the motion layer runs on the wordmark's physics", s);
-      check(s.atoms >= 5, key + ": atoms registered (" + s.atoms + ")", s.atoms);
-      check(s.fields.length >= 1 && s.fields.every(f => f.mounted && f.w > 0 && f.h > 0), key + ": " + s.fields.length + " dot field(s) mounted and drawn", s.fields);
+      check(s.motion && s.engine, key + ": the motion layer (InsidirMotion) and the dot engine (InsidirHalftone) are loaded", { motion: s.motion, engine: s.engine });
+      const drawn = s.fields.filter(f => f.mounted && f.w > 0 && f.h > 0);
+      check(drawn.length >= 1 && s.fields.filter(f => f.shown).every(f => f.mounted && f.w > 0 && f.h > 0),
+        `${key}: ${drawn.length} dot field(s) mounted and drawn${s.footer ? " (the footer strip included)" : ""}`, s.fields.map(f => ({ name: f.name, mounted: f.mounted, w: f.w, h: f.h })));
+      if (key === "index") check(s.fields.some(f => f.hero && f.mounted), key + ": the hero wordmark is mounted");
 
-      // Scrolling: atoms trail the page and spring home (pointer never moved yet).
-      await scrollTrail(page, key);
-      if (key === "index") await heroScatter(page, key);
-      await scrollTo(page, 0);
-      await page.waitForTimeout(200);
-      await untilHome(page, 2000);
+      // The sample: the first screen, and elements across the whole page for the scroll (picked again once the
+      // layout is still).
+      await page.evaluate(() => window.__mc.pick("view", { view: true, max: 40 }));
+      await settle(page, "view");
+      const picked = await page.evaluate(() => ({ view: window.__mc.pick("view", { view: true, max: 40 }), across: window.__mc.pick("across", { view: false, max: 40 }) }));
+      check(picked.view.n >= 3, `${key}: ${picked.view.n} elements sampled on the first screen (${picked.view.atoms} from the old atom list)`, picked.view);
 
-      // An atom on screen, away from the edges, with room around it.
-      const pick = () => page.evaluate(() => {
-        const ok = r => r.width > 6 && r.height > 6 && r.left > 40 && r.right < innerWidth - 40;
-        const all = [...document.querySelectorAll("[data-hf-atom]")].map(e => ({ e, r: e.getBoundingClientRect() })).filter(o => ok(o.r));
-        const o = all.find(o => o.r.top > 90 && o.r.bottom < innerHeight - 40);
-        if (!o) {
-          // None in view below the sticky bar: bring the first one further down the page into view.
-          const next = all.find(o => o.r.top + scrollY > 90);
-          if (next) window.scrollTo({ top: Math.max(0, next.r.top + scrollY - innerHeight / 2), behavior: "instant" });
-          return null;
-        }
-        o.e.setAttribute("data-probe", "");
-        return { left: o.r.left, top: o.r.top, w: o.r.width, h: o.r.height };
-      });
-      let target = await pick();
-      if (!target) { await untilHome(page, 2000); target = await pick(); }
-      if (check(!!target, key + ": an atom is on screen to test")) {
-        const read = () => page.evaluate(() => { const e = document.querySelector("[data-probe]"); return [parseFloat(e.style.getPropertyValue("--hf-dx")) || 0, parseFloat(e.style.getPropertyValue("--hf-dy")) || 0]; });
-        // Pointer 24px to the left of the atom: it is pushed right, away from the pointer, by a few px.
-        await page.mouse.move(target.left - 24, target.top + target.h / 2, { steps: 4 });
-        await page.waitForTimeout(450);
-        const pushed = await read();
-        check(pushed[0] > 0.5 && Math.hypot(...pushed) <= 10.5, key + ": an atom near the pointer parts away from it, by a few px", pushed);
-        // Pointer on the atom: it settles back and holds still under the pointer.
-        await page.mouse.move(target.left + target.w / 2, target.top + target.h / 2, { steps: 2 });
-        await page.waitForTimeout(1500);
-        const held = await read();
-        check(Math.hypot(...held) < 0.4, key + ": the atom under the pointer holds still", held);
-        const hovered = await orangeShot(page);
-        check(hovered.length === 0, key + ": no orange pixels while the pointer rests on an atom", hovered.slice(0, 4));
-        // Pointer gone: every atom returns exactly home.
-        await page.mouse.move(2, 2);
-        await pointerGone(page);
-        await page.waitForTimeout(1600);
-        const all = await offsets(page);
-        check(all.every(([x, y]) => x === 0 && y === 0), key + ": every atom returns home", all.filter(([x, y]) => x || y).slice(0, 4));
-      }
+      // Scroll first, before the pointer has ever moved over the page.
+      await scrollStill(page, key, s.fields);
+      await wordFields(page, key, s.fields);
+      await plainFields(page, key, s.fields);
+      await pointerStill(page, key);
+      await hoverStill(page, key);
 
-      // A click on empty space sends one ring through every dot field.
-      const rung = await page.evaluate(() => {
-        const roots = [...document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")].filter(r => r.__halftone);
-        // A field that heard the click itself starts its own ring (and marks the event); the rest are rung by v13-motion.js.
-        window.__rang = new Set();
-        for (const r of roots) { const orig = r.__halftone.ring; r.__halftone.ring = (...a) => { window.__rang.add(r); return orig.apply(r.__halftone, a); }; }
-        window.addEventListener("pointerdown", e => { for (const r of e.__hfRingFrom || []) window.__rang.add(r); });
-        // Empty page first; a screen that is all dot field (the landing hero) is clicked on the field itself.
-        for (const skip of [",canvas,[data-halftone-field],[data-halftone-hero]", ""]) {
-          for (let y = 140; y < innerHeight - 20; y += 23) for (let x = 30; x < innerWidth - 30; x += 37) {
-            const e = document.elementFromPoint(x, y);
-            if (e && !e.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],[data-hf-atom]" + skip)) return { x, y, roots: roots.length };
-          }
-        }
-        return { roots: roots.length };
-      });
-      if (rung.x !== undefined) {
-        await page.mouse.click(rung.x, rung.y);
-        await page.waitForTimeout(60);
-        const n = await page.evaluate(() => window.__rang.size);
-        check(n === rung.roots, key + ": a click on empty space ripples through all " + rung.roots + " dot field(s)", { rings: n, fields: rung.roots });
-        await page.waitForTimeout(90);
-        const clicked = await orangeShot(page);
-        check(clicked.length === 0, key + ": no orange pixels while the click ring runs", clicked.slice(0, 4));
-      }
-      const writes = await page.evaluate(() => ({ n: window.__hfWrites.n, bad: window.__hfWrites.bad }));
-      check(writes.bad.length === 0, key + ": every offset written during scroll, pointer and click is a finite number (" + writes.n + " values)", writes.bad);
+      const w = await page.evaluate(() => ({ n: window.__hfWrites.n, at: window.__hfWrites.at,
+        inline: [...document.querySelectorAll("[style]")].filter(el => /--hf-(dx|dy|s)\s*:/.test(el.getAttribute("style"))).map(el => el.tagName.toLowerCase() + "." + [...el.classList].slice(0, 2).join(".")).slice(0, 4) }));
+      check(w.n === 0 && w.inline.length === 0, `${key}: nothing writes --hf-dx/--hf-dy/--hf-s during the visit (${w.n} write(s); none left inline)`, w);
       check(errors.length === 0, key + ": no script errors", errors);
       await context.close();
     }
@@ -525,15 +924,31 @@ try {
       check(errors.length === 0, key + ": no script errors while revealing", errors);
       await context.close();
     }
-    /* ---------- reduced motion: still, and nothing waits to be revealed ---------- */
+    /* ---------- reduced motion: nothing waits, and the words hold still ---------- */
     {
       const { context, page, errors } = await open(path, { reducedMotion: "reduce", reveal: false });
       const r0 = await page.evaluate(() => ({ pending: window.InsidirMotion ? window.InsidirMotion.pending : -1, classed: document.querySelectorAll(".hf-pending,.hf-revealing").length }));
-      for (let i = 0; i < 12; i++) await page.mouse.move(60 + i * 100, 300 + (i % 3) * 120, { steps: 2 });
-      await page.mouse.click(30, 500).catch(() => {});
-      await page.waitForTimeout(200);
-      const all = await offsets(page);
-      check(all.every(([x, y]) => x === 0 && y === 0), key + ": reduced motion keeps every atom still", all.filter(([x, y]) => x || y).length);
+      const fields = await page.evaluate(() => window.__mc.fields());
+      const changed = [];
+      let words = 0;
+      for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
+        const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
+        if (!box) continue;
+        words++;
+        await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2);
+        await restSnap(page, f.i, "r-rest", 0);
+        for (const fy of [0.85, 0.6]) {
+          const yy = box.top + (box.bottom - box.top) * fy;
+          await page.mouse.move(box.left + (box.right - box.left) * 0.15, yy);
+          await page.mouse.move(box.left + (box.right - box.left) * 0.85, yy, { steps: 10 });
+        }
+        const d1 = await snapDiff(page, f.i, "r-on", "r-rest", 0);
+        if (box.click) { await page.mouse.click(box.click.x, box.click.y); await page.waitForTimeout(150); }
+        const d2 = await snapDiff(page, f.i, "r-click", "r-rest", 0);
+        if (d1 !== 0 || d2 !== 0) changed.push(f.name + ": " + pct(d1) + " under the pointer, " + pct(d2) + " after a press");
+        await page.evaluate(() => window.__mc.drop("r-"));
+      }
+      if (words) check(changed.length === 0, `${key}: reduced motion: the word canvas(es) hold still under the pointer and a press (${words})`, changed);
       for (const f of [0.5, 1]) { await page.evaluate(f => window.scrollTo({ top: (document.documentElement.scrollHeight - innerHeight) * f, behavior: "instant" }), f); await page.waitForTimeout(250); }
       const r1 = await page.evaluate(() => ({ pending: window.InsidirMotion ? window.InsidirMotion.pending : -1, classed: document.querySelectorAll(".hf-pending,.hf-revealing").length }));
       check(r0.pending === 0 && r0.classed === 0 && r1.pending === 0 && r1.classed === 0, key + ": reduced motion: nothing waits to be revealed, at load or after scrolling", { load: r0, scrolled: r1 });
@@ -544,7 +959,7 @@ try {
     {
       const phoneReveal = !flag("no-phone-reveal");
       const { context, page, errors } = await open(path, { width: 390, touch: true, reveal: !phoneReveal, oracle: phoneReveal });
-      const m = await page.evaluate(() => ({ overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, fields: [...document.querySelectorAll("[data-halftone-field]")].filter(f => f.__halftone).length }));
+      const m = await page.evaluate(() => ({ overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, fields: [...document.querySelectorAll("[data-halftone-field],[data-halftone-hero]")].filter(f => f.__halftone).length }));
       check(m.overflow <= 1 && m.fields >= 1, key + ": 390px touch: no overflow, " + m.fields + " field(s)", m);
       if (phoneReveal) await revealCheck(page, key + " 390px");
       check(errors.length === 0, key + ": 390px: no script errors", errors);

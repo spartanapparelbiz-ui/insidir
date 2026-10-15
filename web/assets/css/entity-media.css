@@ -8,8 +8,8 @@
      .is-stand-in  a person with no published photo: their company's logo, contained like any logo
      .is-monogram  initials, only when neither a photo nor a logo exists anywhere
 
-   A picture that arrives after first paint lands on the site's spring ([data-land], two keyframe names so a
-   second arrival plays again); none of that under reduced motion. */
+   A picture that arrives after first paint fades in place ([data-land], two keyframe names so a second
+   arrival plays again); none of that under reduced motion. */
 
 /* ---------- Structure (no colour; the V13 layer below paints) ---------- */
 .ins-media{--ins-size:32px;display:inline-grid;place-items:center;width:var(--ins-size);height:var(--ins-size);flex:0 0 var(--ins-size);position:relative;overflow:hidden;vertical-align:middle;isolation:isolate;box-sizing:border-box}
@@ -54,12 +54,12 @@ body.v13 .ins-media[data-media].is-logo:is([data-real-source*="Apple_logo_black"
 body.v13 .ins-media[data-media].is-logo{background:var(--hf-surface)!important}
 /* Nothing known yet: a still field of halftone dots, the site's mark in miniature. */
 body.v13 .ins-media[data-media].is-loading{background-color:var(--hf-surface)!important;background-image:radial-gradient(circle,var(--hf-line-2) 0 1px,transparent 1.35px)!important;background-size:6px 6px!important;background-position:center!important}
-/* Arrival: the picture fades and pops in on the same spring as every atom on the site (≈ ×1.025 at the top).
-   It animates the scale property, not transform (held at none above), and nothing here pins opacity. */
-body.v13 .ins-media[data-media][data-land="a"]>:is(img,svg){animation:ins-land-a var(--hf-spring-dur,.95s) var(--hf-spring,cubic-bezier(.2,.7,.1,1)) both!important}
-body.v13 .ins-media[data-media][data-land="b"]>:is(img,svg){animation:ins-land-b var(--hf-spring-dur,.95s) var(--hf-spring,cubic-bezier(.2,.7,.1,1)) both!important}
-@keyframes ins-land-a{from{opacity:0;scale:.9}}
-@keyframes ins-land-b{from{opacity:0;scale:.9}}
+/* Arrival: a picture that comes in after first paint fades in place over the site's short ease-out; it never
+   grows or moves. Nothing here pins opacity. */
+body.v13 .ins-media[data-media][data-land="a"]>:is(img,svg){animation:ins-land-a var(--hf-spring-dur,.28s) var(--hf-spring,cubic-bezier(.22,.61,.36,1)) both!important}
+body.v13 .ins-media[data-media][data-land="b"]>:is(img,svg){animation:ins-land-b var(--hf-spring-dur,.28s) var(--hf-spring,cubic-bezier(.22,.61,.36,1)) both!important}
+@keyframes ins-land-a{from{opacity:0}}
+@keyframes ins-land-b{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){body.v13 .ins-media[data-media]>:is(img,svg){animation:none!important}}
 @media (forced-colors:active){body.v13 .ins-media[data-media]{border:1px solid CanvasText!important}body.v13 .ins-media[data-media].is-loading{background-image:none!important}}
 

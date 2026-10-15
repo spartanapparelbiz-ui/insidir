@@ -9,9 +9,8 @@
    affiliations, 03 Activity log, 04 Filed records. Green and red mark purchases and sales only; errors use
    --hf-alert. One column on phones; the activity log becomes a three-line record.
 
-   Motion: the stamp lands once on the dots' spring when the file has loaded; the fields on screen are typed
-   in one line after another (person.js adds .pf-typed); everything else rises with the site's scroll reveal
-   (data-hf-reveal in person.html). Nothing moves under reduced motion. Figures never animate. */
+   Motion: the stamp fades in once when the file has loaded; nothing else animates (this is a product page,
+   so the site's scroll reveal holds nothing back here). Figures never animate. */
 @layer insidir-v13{
 
 body.v13.pf-page{--pf-box:150px!important;--pf-photo:124px!important}
@@ -45,9 +44,9 @@ body.v13 .pf-stamp{position:absolute!important;top:clamp(14px,1.6vw,24px)!import
 body.v13 .pf-stamp>span:first-child{font:800 17px/1.2 var(--hf-mono)!important;letter-spacing:.26em!important;text-transform:uppercase!important;margin-right:-.26em!important}
 body.v13 .pf-stamp>span:last-child{margin:4px 0 0!important;padding:4px 0 0!important;border-top:1px solid var(--hf-ink)!important;font:700 9.5px/1.3 var(--hf-mono)!important;letter-spacing:.24em!important;text-transform:uppercase!important;margin-right:-.24em!important}
 body.v13 .pf.is-loading .pf-stamp{opacity:0!important}
-/* It lands once, on the dots' spring: pressed down from a little above the page. */
+/* It fades in once, where it stands, when the file has loaded (opacity only; nothing moves). */
 body.v13 .pf-head.is-stamped .pf-stamp{animation:pf-stamp var(--hf-spring-dur) var(--hf-spring) both!important}
-@keyframes pf-stamp{from{opacity:0;scale:1.35;rotate:-11deg}}
+@keyframes pf-stamp{from{opacity:0}}
 
 /* File photo: a fixed frame with corner ticks; the tile inside is the person's headshot, or their company's logo
    standing in (entity-media.js). 124px keeps the 256px engine headshot at least 2x sharp. */
@@ -89,8 +88,8 @@ body.v13 .pf-link.pf-link--inline:hover{text-decoration-color:currentColor!impor
 body.v13 .pf-co{display:inline-flex!important;align-items:center!important;gap:7px!important;vertical-align:-1px!important;margin-right:6px!important;color:var(--hf-ink)!important;font-weight:600!important;letter-spacing:.04em!important}
 body.v13 .pf-co .ins-media{--ins-size:20px!important}
 body.v13 .pf-co small{display:block!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-faint)!important}
-/* One line after another, as if typed onto the file (person.js, lines on screen only). */
-body.v13 .pf-fields>div.pf-typed{animation:pf-type .5s steps(16,end) calc(var(--i,0) * 110ms + 120ms) both!important}
+/* person.js still marks the fields on screen .pf-typed; they no longer animate: the file is simply there. */
+body.v13 .pf-fields>div.pf-typed{animation:none!important}
 @keyframes pf-type{from{clip-path:inset(0 100% 0 0)}}
 
 /* Buttons: square, hairline; Follow fills with ink once followed. */
