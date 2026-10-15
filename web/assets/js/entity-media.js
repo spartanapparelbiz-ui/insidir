@@ -553,7 +553,18 @@ const io="IntersectionObserver" in window?new IntersectionObserver(entries=>{
   st(e.target).near=true;
   settle(e.target);
  }
-},{rootMargin:MARGIN+"px",scrollMargin:MARGIN+"px"}):null;
+},{rootMargin:MARGIN+"px"}):null;
+/* The observer's margin covers the page's own scrolling (no scrollMargin: Chromium applies it to the page's
+   scroller as well, which doubles the reach to 1200px). A tile that a scrolling strip or panel clips is checked
+   by its laid-out box whenever that strip scrolls, so it too asks within 600px of the screen. */
+if(io)document.addEventListener("scroll",e=>{
+ const box=e.target;
+ if(!(box instanceof Element))return;
+ for(const el of waiting){
+  if(!(el instanceof Element)||st(el).near||!box.contains(el)||!nearBox(el.getBoundingClientRect()))continue;
+  io.unobserve(el);st(el).near=true;settle(el);
+ }
+},{capture:true,passive:true});
 const bound=new WeakSet();
 function bind(el){
  if(bound.has(el))return;

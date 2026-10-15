@@ -84,16 +84,18 @@ function drawFollowing(items){
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
  media?.hydrate(followingHost);
 }
-async function getFollowing(){
- try{const x=await request("/v1/me/people");const list=Array.isArray(x.items)?x.items:[];followState="ready";following=new Set(list.map(p=>cik(p.owner_cik)).filter(Boolean));drawFollowing(list);}
+// pending: an answer already asked for (the first load hands both lists theirs, see below).
+async function getFollowing(pending){
+ try{const x=await (pending||request("/v1/me/people"));const list=Array.isArray(x.items)?x.items:[];followState="ready";following=new Set(list.map(p=>cik(p.owner_cik)).filter(Boolean));drawFollowing(list);}
  catch(e){followState="error";following=new Set();if(followingHost)followingHost.innerHTML='<p class="v10-people-empty" role="alert">Your followed people could not be loaded: '+esc(e.message)+'. Reload the page to try again.</p>';}
  draw();
 }
-async function load(query=""){
+const directoryPath=query=>"/v1/insiders"+(query?"?q="+encodeURIComponent(query):"");
+async function load(query="",pending){
  const mine=++seq;current=query;visible=PAGE;
  say(query?"Searching SEC reporting people for “"+query+"”…":"Loading SEC reporting people…");
  try{
-  const x=await request("/v1/insiders"+(query?"?q="+encodeURIComponent(query):""));
+  const x=await (pending||request(directoryPath(query)));
   if(mine!==seq)return;
   loadError=null;records=(Array.isArray(x.items)?x.items:[]).filter(p=>cik(p.owner_cik));draw();
   say(query?records.length+" result"+(records.length===1?"":"s")+" for “"+query+"” in imported SEC Form 4 records.":"Most recently active reporting people in imported SEC Form 4 records. Portraits appear only for verified name and company matches.");
@@ -137,7 +139,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   (where&&document.querySelector("#"+CSS.escape(where)+' button[data-person-follow="'+id+'"]'))?.focus({preventScroll:true});}
   catch(error){btn.disabled=false;say("Could not update following: "+error.message+".")}
  });
- // Reveal once both lists have drawn, so nothing above the directory changes height afterwards.
- void Promise.allSettled([load(q),getFollowing()]).then(()=>{if(q&&host)reveal();});
+ // First load: both lists draw in the same task once both answers are in (2 s at most, so a slow one never
+ // holds the other back). Their pictures then go to the engine in one /v1/media request, and nothing above
+ // the directory changes height afterwards. Reveal once both have drawn.
+ const dir=request(directoryPath(q)),mine=request("/v1/me/people");
+ const both=Promise.race([Promise.allSettled([dir,mine]),new Promise(ok=>setTimeout(ok,2000))]);
+ void Promise.allSettled([load(q,both.then(()=>dir)),getFollowing(both.then(()=>mine))]).then(()=>{if(q&&host)reveal();});
 });
 })();
