@@ -157,7 +157,10 @@ function personInfo(secName, short = false, ownerCik = null) {
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
 /* Outside tables an avatar is an identity tile that parts around the pointer like the logo (an atom, v13-motion.js);
-   table cells never move, so the small size used in the insider ledger stays put. */
+   table cells never move, so the small size used in the insider ledger stays put.
+   A person with no published photo gets the company's own logo standing in, as on every other page (the
+   logo is the one in the report's header, from the same /v1/media answer); initials only when the
+   company has no logo either. A photo carries its credit for the footnote (InsidirMedia.credits()). */
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
   const atom = size === "sm" ? "" : " data-hf-atom";
@@ -165,7 +168,13 @@ function avatar(name, photo, size = "") {
   const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
   if (src) {
     const credit = photo.credit ? `Photo: ${photo.credit}` : "";
-    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+    const credits = ` data-credit-src="${esc(src)}" data-credit-name="${esc(name)}" data-credit="${esc(photo.credit || "")}"${photo.source ? ` data-credit-url="${esc(photo.source)}"` : ""}`;
+    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}${credits}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+  }
+  const logo = state.logo?.src;
+  if (logo) {
+    const title = "No published photo of " + name + " · " + companyName() + " logo";
+    return `<span class="${cls} is-stand-in"${atom} data-initials="${fallback}" title="${esc(title)}" aria-hidden="true"><img src="${esc(logo)}" alt="" decoding="async" onerror="this.parentNode.classList.remove('is-stand-in');this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
   return `<span class="${cls}"${atom} aria-hidden="true">${fallback}</span>`;
 }
@@ -285,18 +294,33 @@ function renderLogo() {
   if (host.dataset.src === src) return;
   host.dataset.src = src;
   const seq = state.seq;
-  const prepare = window.InsidirBrand?.prepare;
-  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(mark => {
+  const show = mark => {
     if (seq !== state.seq || host.dataset.src !== src) return;
     brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
     if (!mark) { host.hidden = true; host.replaceChildren(); return; }
     const img = new Image();
     img.alt = "";
     img.src = mark.url;
+    // A curated mark (the engine unreachable) has no stored size: its shape is read once it loads.
+    if (!mark.ratio) img.addEventListener("load", () => brand.classList.toggle("is-wide-logo", img.naturalHeight > 0 && img.naturalWidth / img.naturalHeight > 1.8), { once: true });
     host.className = "cx-logo";
     host.hidden = false;
     host.replaceChildren(img);
-  });
+  };
+  // One /v1/media batch (entity-media.js) answers the header logo; the same logo then stands in for people
+  // without a published photo. Without the helper, the logo route and brand-mark.js answer as before.
+  const media = window.InsidirMedia;
+  if (media?.logoFor) {
+    media.logoFor(state.ticker).then(entry => {
+      if (seq !== state.seq) return;
+      state.logo = entry?.src ? entry : null;
+      if (state.logo) { renderOverviewInsiders(); renderInsiders(); renderPeople(); }
+      show(state.logo ? { url: state.logo.src, ratio: state.logo.w && state.logo.h ? state.logo.w / state.logo.h : 0 } : null);
+    });
+    return;
+  }
+  const prepare = window.InsidirBrand?.prepare;
+  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(show);
 }
 
 /* ---------- key facts ---------- */
@@ -724,10 +748,11 @@ function renderPeople() {
   $("cx-leaders-head").hidden = !leaders.length;
   armReveal($("people"));
   $("cx-people-wiki").innerHTML = leaders.map(p => {
-    const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
+    const photo = p.src ? { src: p.src, credit: p.credit, source: p.sourceUrl } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons", source: p.photo.source || p.photo.sourceUrl } : null;
     const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
     return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div></article>`;
   }).join("");
+  window.InsidirMedia?.credits?.();
 }
 
 /* ---------- news tab ---------- */
@@ -825,7 +850,7 @@ async function loadPhotos(seq, attempt = 0) {
 }
 function resetView() {
   state.intel = null; state.intelError = null; state.profile = null; state.profileDone = false; state.insiders = null; state.insidersError = null;
-  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null;
+  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null; state.logo = undefined;
   state.annualMetric = "revenue"; state.filingFilter = "all"; state.insiderFilter = "all";
   statusNotes.clear(); setStatus("");
   $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").hidden = false; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
@@ -887,10 +912,12 @@ function showPicker() {
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
     return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-hf-atom data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
+  // All twelve logos come from one /v1/media batch (entity-media.js coalesces the calls into one request).
+  const media = window.InsidirMedia;
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
-    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
-      if (mark) slot.innerHTML = `<img src="${mark.url}" alt="">`; else slot.remove();
-    });
+    const place = url => { if (url) slot.innerHTML = `<img src="${esc(url)}" alt="">`; else slot.remove(); };
+    if (media?.logoFor) media.logoFor(slot.dataset.logo).then(entry => place(entry?.src));
+    else window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => place(mark?.url));
   }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };

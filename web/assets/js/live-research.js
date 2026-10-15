@@ -42,7 +42,12 @@ async function alerts(){
  const panel=document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
  document.querySelector("#manage-alerts")?.setAttribute("hidden","");
  document.querySelector(".alert-filters")?.setAttribute("hidden","");
- try{const r=await get("/v1/me/alerts");const rows=(r.items||[]).map(x=>'<tr>'+cell(d(x.published_at))+cell(link(x.ticker))+cell(E(x.owner_name))+'<td class="'+(x.category==="reported_purchase"?"buy":x.category==="reported_sale"?"sell":"")+'">'+(x.category==="reported_purchase"?'<span class="desk-glyph is-up" aria-hidden="true"></span>':x.category==="reported_sale"?'<span class="desk-glyph is-down" aria-hidden="true"></span>':"")+E(x.category==="reported_purchase"?"Reported purchase":x.category==="reported_sale"?"Reported sale":"Other transaction")+"</td>"+cell(d(x.transaction_date))+"</tr>");document.querySelector("#alerts-real").innerHTML=rows.length?table(["Filed","Ticker","Reporting person","Category","Transaction date"],rows):status("No matching transactions in the last 30 days. Save a ticker to start monitoring.");
+ /* Identity tiles (entity-media.js): the company's logo beside its ticker, the reporting person's headshot
+    (found by SEC owner CIK, or the company's logo standing in for it) beside their name. */
+ const M=window.InsidirMedia;
+ const co=t=>M?'<div class="ins-company-cell">'+M.logo(cleanTicker(t),"sm")+link(t)+"</div>":link(t);
+ const who=x=>M?'<div class="ins-person-cell">'+M.portrait(x.owner_name||"",cleanTicker(x.ticker),"sm",{cik:x.owner_cik})+'<span class="ins-person-cell__name">'+E(x.owner_name)+"</span></div>":E(x.owner_name);
+ try{const r=await get("/v1/me/alerts");const rows=(r.items||[]).map(x=>'<tr>'+cell(d(x.published_at))+cell(co(x.ticker))+cell(who(x))+'<td class="'+(x.category==="reported_purchase"?"buy":x.category==="reported_sale"?"sell":"")+'">'+(x.category==="reported_purchase"?'<span class="desk-glyph is-up" aria-hidden="true"></span>':x.category==="reported_sale"?'<span class="desk-glyph is-down" aria-hidden="true"></span>':"")+E(x.category==="reported_purchase"?"Reported purchase":x.category==="reported_sale"?"Reported sale":"Other transaction")+"</td>"+cell(d(x.transaction_date))+"</tr>");document.querySelector("#alerts-real").innerHTML=rows.length?table(["Filed","Ticker","Reporting person","Category","Transaction date"],rows):status("No matching transactions in the last 30 days. Save a ticker to start monitoring.");M?.hydrate(document.querySelector("#alerts-real"));
  }catch(ex){document.querySelector("#alerts-real").innerHTML=status(ex.message+". Sign in to access personalized activity.")}
 }
 async function filing(){

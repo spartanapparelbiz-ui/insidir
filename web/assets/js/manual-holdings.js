@@ -23,6 +23,11 @@
       block.removeAttribute("data-desk-reveal");
     }
   };
+  /* Identity tiles (entity-media.js): each stock's real company logo, and each reporting person's headshot
+     (found by SEC owner CIK, or the company's logo standing in for it). */
+  const media=window.InsidirMedia;
+  const withLogo=(ticker,html)=>media&&validTicker(ticker)?'<div class="ins-company-cell">'+media.logo(ticker,"sm")+'<div>'+html+'</div></div>':html;
+  const owner=item=>media?'<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(item.owner_name||"",String(item.ticker||"").toUpperCase(),"xs",{cik:item.owner_cik})+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></div>':'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small>';
   const feedback=(message,isError=false)=>{const node=el("manual-feedback");node.textContent=message;node.classList.toggle("is-error",Boolean(isError));};
   async function request(path,options={}){
     const res=await fetch(path,{credentials:"same-origin",headers:{
@@ -37,7 +42,7 @@
     const rows=items.map(item=>{
       const ticker=String(item.ticker||"").toUpperCase();
       if(!validTicker(ticker))return "";
-      return '<tr><td data-label="Ticker"><strong>'+escapeHTML(ticker)+'</strong><small>Entered manually</small></td>'+
+      return '<tr><td data-label="Ticker">'+withLogo(ticker,'<strong>'+escapeHTML(ticker)+'</strong><small>Entered manually</small>')+'</td>'+
         '<td data-label="Shares entered">'+escapeHTML(qty(item.quantity))+'</td><td data-label="Last edited">'+escapeHTML(date(item.updated_at))+'</td>'+
         '<td data-label="Research"><a class="portfolio-small-link" href="research.html?ticker='+encodeURIComponent(ticker)+'">View SEC research →</a></td>'+
         '<td class="manual-holdings-table__remove"><button class="manual-remove" type="button" data-remove-ticker="'+escapeHTML(ticker)+'" aria-label="Remove '+escapeHTML(ticker)+'">Remove</button></td></tr>';
@@ -45,6 +50,7 @@
     host.innerHTML='<div class="portfolio-table-scroll"><table class="portfolio-table manual-holdings-table">'+
       '<caption class="sr-only">Stocks you entered manually</caption><thead><tr><th>Ticker</th><th>Shares entered</th><th>Last edited</th><th>Research</th><th></th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table></div>';
+    media?.hydrate(host);
   }
   function renderEvidence(items){
     const host=el("manual-evidence");
@@ -55,12 +61,13 @@
         const ticker=String(item.ticker||"");
         const category=item.category==="reported_purchase"?"Reported purchase":item.category==="reported_sale"?"Reported sale":"Other Form 4 transaction";
         const link=sourceURL(item.source_url);
-        return '<tr><td data-label="Ticker"><strong>'+escapeHTML(ticker)+'</strong><small>Ticker-only match</small></td>'+
-          '<td data-label="Published event">'+event(item.category,category)+'<small>'+escapeHTML(item.owner_name||"Reporting person")+'</small></td>'+
+        return '<tr><td data-label="Ticker">'+withLogo(ticker.toUpperCase(),'<strong>'+escapeHTML(ticker)+'</strong><small>Ticker-only match</small>')+'</td>'+
+          '<td data-label="Published event">'+event(item.category,category)+owner(item)+'</td>'+
           '<td data-label="Filed">'+escapeHTML(date(item.published_at))+'</td><td data-label="Original source">'+
           (link?'<a class="portfolio-small-link" href="'+escapeHTML(link)+'" rel="noopener noreferrer" target="_blank">SEC filing ↗</a>':'Source unavailable')+
           '</td></tr>';
       }).join("")+'</tbody></table></div>';
+    media?.hydrate(host);
   }
   async function load(){
     try{

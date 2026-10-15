@@ -253,6 +253,12 @@ body.v13 .cx-avatar{width:36px!important;height:36px!important;border-radius:0!i
 body.v13 .cx-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;filter:var(--hf-photo)!important}
 body.v13 .cx-avatar--lg{width:52px!important;height:52px!important;font-size:13px!important}
 body.v13 .cx-avatar--sm{width:30px!important;height:30px!important;font-size:9.5px!important}
+/* No published photo: the company's own logo stands in, contained with a margin like every logo tile (never cropped). */
+body.v13 .cx-avatar.is-stand-in{background:var(--hf-surface)!important}
+body.v13 .cx-avatar.is-stand-in img{object-fit:contain!important;padding:16%!important;box-sizing:border-box!important;filter:grayscale(1) contrast(1.05)!important}
+/* The picker's logos arrive after first paint and land on the site's spring (keyframes in entity-media.css). */
+body.v13 .cx-picker__grid .cx-mark>img{animation:ins-land-a var(--hf-spring-dur) var(--hf-spring) both!important}
+@media (prefers-reduced-motion:reduce){body.v13 .cx-picker__grid .cx-mark>img{animation:none!important}}
 body.v13 .cx-empty{margin:0!important;padding:16px 0!important}
 
 /* ---------- Detail sections ---------- */

@@ -65,7 +65,7 @@ let last=null,lastLimit=0,lastTight=null,chartW=0;
 const chartWidth=host=>chartW||host.clientWidth||960;
 const limitFor=w=>w>=700?14:w>=560?12:w>=480?8:6;
 const tightFor=(w,n)=>(w-64)/n<58;
-const PLOT=w=>w<560?200:w<1180-120?300:340; // the plot's height: fixed per width, so the frame never resizes with the data
+const PLOT=w=>w<760?200:w<1180?300:340; // the plot's height: fixed per width, so the frame never resizes with the data
 const dayLabel=x=>D.date(x.key+"T00:00:00Z")+": bought "+D.money(x.buy)+" ("+D.plural(x.nb,"trade")+"), sold "+D.money(x.sell)+" ("+D.plural(x.ns,"trade")+"), net "+D.signedMoney(x.buy-x.sell);
 function daily(f){
  const host=$("rd-daily-chart"),table=$("rd-daily-table"),seg=$("rd-daily-switch"),frame=$("rd-daily-frame");if(!host)return;
@@ -173,6 +173,8 @@ function companies(f){
  const host=$("rd-companies");if(!host)return;
  D.ready(host);
  const list=[...f.byCompany.values()].sort((a,b)=>(b.buy+b.sell)-(a.buy+a.sell)||(a.t||a.name).localeCompare(b.t||b.name)).slice(0,6);
+ // The next visit's skeleton draws this many rows (and the "more companies" line only when there was one).
+ D.saveCount("co",list.length);D.saveCount("coMore",f.byCompany.size>list.length?1:0);
  if(!list.length){host.innerHTML='<p class="rd-empty">'+(f.rows.length?"No priced purchases or sales to compare by company.":"No companies yet. They appear after the first SEC import.")+'</p>';return;}
  const max=Math.max(...list.map(x=>Math.max(x.buy,x.sell)));
  const pct=v=>v?Math.max(1.5,v/max*100).toFixed(2):"0";
@@ -195,6 +197,7 @@ function biggest(f){
  const host=$("rd-largest");if(!host)return;
  D.ready(host);
  const list=f.priced.slice().sort((a,b)=>D.valueOf(b)-D.valueOf(a)).slice(0,6);
+ D.saveCount("big",list.length);
  if(!list.length){host.innerHTML='<li class="rd-empty">'+(f.rows.length?"No priced purchases or sales among the loaded trades.":"No trades have been imported yet.")+'</li>';return;}
  const max=D.valueOf(list[0]);
  host.innerHTML=list.map((x,i)=>{

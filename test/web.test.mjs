@@ -481,3 +481,46 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
   const js=await readFile(new URL("../web/assets/js/v3-dashboard.js",import.meta.url),"utf8");
   for(const code of ["P","S","A","M","F","G"])assert.match(js,new RegExp("\\b"+code+':"'),"code "+code+" has its SEC meaning");
 });
+
+test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
+  const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
+  // Every page that names a person or a company loads the identity helper and its stylesheet.
+  for(const page of ["dashboard","people","explore","filings","watchlist","filing","research","alerts","portfolio","company"]){
+    const html=await readFile(new URL(page+".html",web),"utf8");
+    assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
+    assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
+  }
+  // Pages that show headshots carry the credits footnote the helper fills.
+  for(const page of ["people","filing","research","alerts","portfolio","company"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  const helper=await readFile(new URL("entity-media.js",js),"utf8");
+  assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
+  assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");
+  assert.doesNotMatch(helper,/\/v1\/company\/logo|ui-avatars|pravatar|randomuser\.me|picsum|dicebear|robohash|gravatar|clearbit|logo\.dev|simpleicons\.org|s2\/favicons|favicon\.ico|Math\.random/,"no per-tile logo requests, avatar generators or favicon services");
+  assert.match(helper,/sessionStorage/,"answers are reused across pages");
+  assert.match(helper,/IntersectionObserver/,"tiles ask only as they come near the viewport");
+  assert.match(helper,/aria-hidden="true"/,"tiles beside names are hidden from assistive technology");
+  const tile=helper.slice(helper.indexOf("function render(d){"),helper.indexOf("const creditAttrs="));
+  assert.ok(tile.length>200,"the tile markup function is found");
+  assert.doesNotMatch(tile+helper,/class="ins-media__credit"/,"no credit link wrapped round a picture");
+  assert.doesNotMatch(tile,/<a[ >]/,"no links inside tiles (credits go to the [data-media-credits] footnote)");
+  for(const fn of ["logo","portrait","person","company","hydrate","credits","ready","refresh","logoFor","photoFor","photo","displayName","initials","knownBrand"])
+    assert.match(helper,new RegExp("InsidirMedia=Object\\.freeze\\(\\{[^}]*\\b"+fn+"\\b"),"InsidirMedia."+fn);
+  // Call sites identify people by SEC owner CIK and companies without a ticker by issuer CIK.
+  const sites={"research.js":/cik:item\.owner_cik/,"v2-filing.js":/cik:t\.owner_cik/,"live-research.js":/cik:x\.owner_cik/,"portfolio.js":/cik:t\.owner_cik/,
+    "manual-holdings.js":/cik:item\.owner_cik/,"v2-collections.js":/cik:x\.issuer_cik/,"v12-company.js":/InsidirMedia[\s\S]*logoFor/};
+  for(const [file,rule] of Object.entries(sites))assert.match(await readFile(new URL(file,js),"utf8"),rule,file);
+  // The company picker and header ask the batch, not one logo request per tile.
+  assert.match(await readFile(new URL("v12-company.js",js),"utf8"),/media\.logoFor\(slot\.dataset\.logo\)/);
+  // Tile states live in the V13 layer: fixed boxes, logos contained (stand-ins never cropped), a still dot field while
+  // loading, a landing on the site's spring, and no movement under reduced motion.
+  const sheet=await readFile(new URL("entity-media.css",css),"utf8");
+  const layer=sheet.slice(sheet.indexOf("@layer insidir-v13{"));
+  assert.ok(layer.length>100,"entity-media.css has its V13 layer");
+  for(const decl of layer.replace(/\/\*[\s\S]*?\*\//g,"").replace(/@keyframes[^{]*\{[^{}]*\{[^}]*\}\}/g,"").match(/[a-z-]+:[^;{}]+(?=[;}])/g)||[])
+    if(!/^(from|to)$/.test(decl.split(":")[0]))assert.match(decl,/!important$/,"entity-media.css V13 declaration without !important: "+decl);
+  assert.match(layer,/\.is-stand-in|\.is-logo>img\{object-fit:contain!important/);
+  assert.match(layer,/\.is-loading\{[^}]*radial-gradient/);
+  assert.match(layer,/animation:ins-land-a var\(--hf-spring-dur[^)]*\) var\(--hf-spring/);
+  assert.match(layer,/prefers-reduced-motion:reduce\)\{[^}]*animation:none!important/);
+  assert.doesNotMatch(sheet,/#e9762b|--hf-warm|orange/i,"no orange");
+});

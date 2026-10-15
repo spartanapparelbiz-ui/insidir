@@ -71,6 +71,15 @@
       block.removeAttribute("data-desk-reveal");
     }
   };
+  /* Identity tiles (entity-media.js): each reporting person's headshot, found by their SEC owner CIK (or the
+     company's logo standing in for it), and the company's logo by ticker or issuer CIK. */
+  const media = window.InsidirMedia;
+  const setCompanyHeading = (name, ticker, cik) => {
+    const host = byId("research-company");
+    const label = esc(name) + " (" + esc(ticker) + ")";
+    host.innerHTML = media ? media.company({ticker, cik, name, size: "md"}) + "<span>" + label + "</span>" : label;
+    media?.hydrate(host);
+  };
   const setFeedback = (id, message, error = false) => {
     const el = byId(id);
     if (!el) return;
@@ -110,7 +119,7 @@
         item.transaction_code ? "Code " + item.transaction_code : "Code unavailable",
         item.is_amendment ? "Amended filing" : ""
       ].filter(Boolean).join(" · ");
-      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm")||"") +
+      return "<tr><td data-label='Reporting person'><div class='ins-person-cell'>" + (window.InsidirMedia?.portrait(item.owner_name,item.ticker||selectedTicker,"sm",{cik:item.owner_cik})||"") +
         "<div><strong>" + esc(item.owner_name || "Reporting person unavailable") +
         "</strong><small>" + esc(qualifiers) + "</small></div></div></td><td data-label='Transaction'>" + directionLabel(item.category, category) +
         "<small>Trade: " + esc(displayDate(item.transaction_date)) + "</small></td><td data-label='Reported value'>" +
@@ -134,7 +143,7 @@
       const details = accessionLink(item.accession);
       const local = details ? '<a class="research-text-link" href="' + esc(details) + '">Review parsed details →</a>' : "";
       const original = sourceLink(item.source_url, "SEC source");
-      return "<tr><td data-label='Filing'><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm")||"") +
+      return "<tr><td data-label='Filing'><div class='ins-company-cell'>" + (window.InsidirMedia?.logo(item.ticker||selectedTicker,"sm",{cik:item.issuer_cik,name:item.issuer_name})||"") +
         "<div><strong>" + esc(item.form_type || "Form 4") +
         (item.is_amendment ? " · amended" : "") + "</strong><small>" + esc(item.issuer_name || "Company") +
         "</small></div></div></td><td data-label='Published'>" + esc(displayDate(item.published_at)) +
@@ -193,7 +202,7 @@
       const brief=data.brief||{};
       host.hidden=false;
       byId("intel-summary").textContent=brief.summary||"No intelligence summary available.";
-      byId("research-company").textContent=String(data.company?.name||ticker)+" ("+ticker+")";
+      setCompanyHeading(String(data.company?.name||ticker), ticker, data.company?.cik);
       renderIntelFindings(Array.isArray(brief.findings)?brief.findings:[]);
       renderIntelFacts(facts);
       renderIntelFilings(filings);
@@ -255,7 +264,8 @@
       const filings = Array.isArray(all[1].items) ? all[1].items : [];
       const name = filings.find(x => x.issuer_name)?.issuer_name ||
         transactions.find(x => x.issuer_name)?.issuer_name || ticker;
-      byId("research-company").textContent = name + " (" + ticker + ")";
+      const issuerCik = filings.find(x => x.issuer_cik)?.issuer_cik || transactions.find(x => x.issuer_cik)?.issuer_cik || "";
+      setCompanyHeading(name, ticker, issuerCik);
       byId("research-company-link").href = "company.html?ticker=" + encodeURIComponent(ticker);
       byId("research-count").textContent = String(transactions.length);
       byId("research-owners").textContent = String(new Set(transactions.map(x => x.owner_name).filter(Boolean)).size);

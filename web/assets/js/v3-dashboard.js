@@ -35,32 +35,62 @@ const cikOf=x=>/^\d{1,12}$/.test(String(x??"").trim())?String(x).trim():"";
 const accession=x=>{const s=String(x||"").replace(/-/g,"");return /^\d{18}$/.test(s)?s:"";};
 const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
 const DAY=86400000;
-/* Intl formatters are built on first use: each one costs about a millisecond to construct, and most are only needed
-   once the data has arrived. */
-const lazy=make=>{let f=null;return {format:d=>(f||(f=make())).format(d)};};
-const fmtDate=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}));
-const fmtDay=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"UTC"}));
+/* ---------- exact formatting, without Intl ----------
+   Nothing else on the page uses Intl, and its first use loads ICU's locale data (about 20 ms of main thread on a desktop,
+   four times that on a phone), so figures and dates are written out here, exactly as en-US Intl would:
+   numbers from their shortest round-trip digits, rounded half away from zero, grouped by thousands. */
+const MONTHS="Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
+const pad2=n=>(n<10?"0":"")+n;
+const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,",");
+function roundDigits(a,max){
+ let s=String(a);if(/e/i.test(s))s=a.toFixed(Math.min(20,max+6));
+ let [i,f=""]=s.split(".");
+ if(f.length<=max)return [i,f];
+ const keep=f.slice(0,max);
+ if(f.charCodeAt(max)-48<5)return [i,keep];
+ const d=(i+keep).split("").map(Number);let k=d.length-1;
+ while(k>=0){if(d[k]<9){d[k]++;break;}d[k]=0;k--;}
+ if(k<0)d.unshift(1);
+ const all=d.join(""),cut=all.length-keep.length;
+ return [all.slice(0,cut)||"0",all.slice(cut)];
+}
+function decimal(n,min,max){
+ const [i,f]=roundDigits(Math.abs(n),max);let g=f.replace(/0+$/,"");while(g.length<min)g+="0";
+ const out=group(i.replace(/^0+(?=\d)/,""))+(g?"."+g:"");
+ return (n<0&&/[1-9]/.test(out)?"-":"")+out;
+}
+const cash=(n,min,max)=>{const s=decimal(n,min,max);return s.charAt(0)==="-"?"-$"+s.slice(1):"$"+s;};
+const QTY={format:n=>decimal(n,0,4)};
+const USD0={format:n=>cash(n,0,0)};
+const USD4={format:n=>cash(n,2,4)};
+// Compact axis labels ("$25M", "$2.5K"), one decimal at most.
+const USDC={format:n=>{const a=Math.abs(n);for(const [u,l] of [[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"]]){if(a>=u*0.99995){const v=decimal(a/u,0,1);if(v!=="1,000"||l==="T")return (n<0?"-":"")+"$"+v+l;}}return cash(n,0,1);}};
+/* US Eastern calendar day of an instant (SEC filing dates): EDT from the second Sunday of March 2:00 to the first Sunday of
+   November 2:00 since 2007; from the first Sunday of April to the last Sunday of October before. */
+function eastern(d){
+ const y=d.getUTCFullYear(),sun=(m,n)=>{const w=new Date(Date.UTC(y,m,1)).getUTCDay();return 1+(7-w)%7+7*(n-1);},lastSun=m=>{const l=new Date(Date.UTC(y,m+1,0));return l.getUTCDate()-l.getUTCDay();};
+ const [a,b]=y>=2007?[Date.UTC(y,2,sun(2,2),7),Date.UTC(y,10,sun(10,1),6)]:[Date.UTC(y,3,sun(3,1),7),Date.UTC(y,9,lastSun(9),6)];
+ const t=d.getTime(),e=new Date(t+(t>=a&&t<b?-4:-5)*3600000);
+ return {y:e.getUTCFullYear(),m:e.getUTCMonth(),d:e.getUTCDate()};
+}
+const utcDay=d=>({y:d.getUTCFullYear(),m:d.getUTCMonth(),d:d.getUTCDate()});
+const dayText=(p,year)=>MONTHS[p.m]+" "+p.d+(year?", "+p.y:"");
+const fmtDate={format:d=>dayText(utcDay(d),true)};
+const fmtDay={format:d=>dayText(utcDay(d),false)};
 const date=x=>{const d=validDate(x);return d?fmtDate.format(d):"Not reported";};
 /* Filing dates are SEC (Eastern) calendar days: a Form 4 accepted at 9:30 p.m. ET is filed that day, though it is past
    midnight UTC. Trade dates are date-only values and stay in UTC. */
-const fmtFiled=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"}));
-const fmtFiledDay=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",timeZone:"America/New_York"}));
-const yearET=lazy(()=>new Intl.DateTimeFormat("en-US",{year:"numeric",timeZone:"America/New_York"}));
-const etDay=lazy(()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}));
-const fmtStamp=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"UTC"}));
+const fmtFiled={format:d=>dayText(eastern(d),true)};
+const etDay={format:d=>{const p=eastern(d);return p.y+"-"+pad2(p.m+1)+"-"+pad2(p.d);}};
 const filedDate=x=>{const d=validDate(x);return d?fmtFiled.format(d):"Not reported";};
 const shortDate=x=>{const d=validDate(x);return d?fmtDay.format(d):"";};
 // Short forms drop the year when it is this year: "Oct 12", but "Dec 30, 2025".
 const THIS_YEAR=new Date().getFullYear();
-const tradedShort=x=>{const d=validDate(x);return !d?"":d.getUTCFullYear()===THIS_YEAR?fmtDay.format(d):fmtDate.format(d);};
-const filedShort=x=>{const d=validDate(x);return !d?"":Number(yearET.format(d))===THIS_YEAR?fmtFiledDay.format(d):fmtFiled.format(d);};
-const stamp=x=>{const d=validDate(x);return d?fmtStamp.format(d)+" UTC":"Not reported";};
+const tradedShort=x=>{const d=validDate(x);if(!d)return "";const p=utcDay(d);return dayText(p,p.y!==THIS_YEAR);};
+const filedShort=x=>{const d=validDate(x);if(!d)return "";const p=eastern(d);return dayText(p,p.y!==THIS_YEAR);};
+const stamp=x=>{const d=validDate(x);return d?dayText(utcDay(d),true)+", "+pad2(d.getUTCHours())+":"+pad2(d.getUTCMinutes())+" UTC":"Not reported";};
 /* Numbers: exact, never rounded to "about". */
 const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
-const USD0=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}));
-const USD4=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4}));
-const USDC=lazy(()=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1}));
-const QTY=lazy(()=>new Intl.NumberFormat("en-US",{maximumFractionDigits:4}));
 const MINUS="−";
 const money=x=>{const n=num(x);return n===null?"Not reported":USD0.format(n);};
 const signedMoney=n=>(n>0?"+":n<0?MINUS:"")+USD0.format(Math.abs(n));
@@ -210,8 +240,8 @@ addEventListener("pagehide",leaving);
 const importedAt=x=>{const c=Date.parse(x?.created_at);return Number.isFinite(c)?c:Date.parse(x?.published_at);};
 const isNew=x=>{if(lastSeen===null)return false;const t=importedAt(x);return Number.isFinite(t)&&t>lastSeen;};
 const NEW='<span class="rd-new">New<span class="sr-only"> since your last visit</span></span>';
-const fmtVisit=lazy(()=>new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"})),fmtVisitTime=lazy(()=>new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit"}));
-const lastVisitText=()=>lastSeen===null?"":fmtVisit.format(new Date(lastSeen))+" at "+fmtVisitTime.format(new Date(lastSeen));
+// The reader's own clock: "Oct 12 at 6:40 PM".
+const lastVisitText=()=>{if(lastSeen===null)return "";const d=new Date(lastSeen),h=d.getHours();return MONTHS[d.getMonth()]+" "+d.getDate()+" at "+(h%12||12)+":"+pad2(d.getMinutes())+" "+(h<12?"AM":"PM");};
 
 /* ---------- network ---------- */
 function explain(status,body){
@@ -265,14 +295,19 @@ const reload=name=>{const r=REQUESTS[name];if(r)load(name,r[0],r[1]);};
 
 /* ---------- render scheduler ----------
    now(fn): the first screen, as soon as its data is in. later(priority, fn): everything below it, lowest
-   priority number first, in idle time (at most 300 ms late), one module per slice of at most ~8 ms. */
+   priority number first, in idle time (at most 300 ms late), one module per frame: the next one waits until the
+   browser has drawn this one, so each module's style and layout work is its own short task, not one long one. */
 const queue=[];let pumping=0;
 const idle=window.requestIdleCallback?(fn=>requestIdleCallback(fn,{timeout:300})):(fn=>setTimeout(fn,16));
+const afterFrame=fn=>document.hidden||!window.requestAnimationFrame?fn():requestAnimationFrame(()=>idle(fn));
 function pump(){
  if(pumping)return;
- pumping=idle(()=>{pumping=0;const t0=performance.now();
-  do{const job=queue.shift();if(!job)break;try{job.fn();}catch(e){console.error(e);}}while(queue.length&&performance.now()-t0<8);
-  if(queue.length)pump();});
+ pumping=1;
+ idle(function run(){
+  const job=queue.shift();
+  if(job){try{job.fn();}catch(e){console.error(e);}}
+  if(queue.length)afterFrame(run);else pumping=0;
+ });
 }
 function later(priority,fn){queue.push({priority,fn});queue.sort((a,b)=>a.priority-b.priority);pump();}
 const now=fn=>{try{fn();}catch(e){console.error(e);}};
@@ -289,13 +324,20 @@ function remember(){
   if(els.some(el=>el.getAttribute("aria-busy")==="true"||el.querySelector(".is-skeleton"))||$("v3-trades")?.querySelector(".is-skeleton"))return;
   const h={w:innerWidth};for(const el of els)h[el.id]=el.offsetHeight;
   if(wrap)h.trades=Math.max(table.lock,wrap.offsetHeight);
+  // The photo credits (filled by entity-media.js) are measured without the space held for them at load.
+  const cr=$("rd-credits");
+  // Not written yet (pictures still loading): keep the height measured at the last visit.
+  if(cr){
+   if(cr.firstChild){const held=cr.style.getPropertyValue("min-height");if(held)cr.style.removeProperty("min-height");h["rd-credits"]=cr.offsetHeight;if(held)cr.style.setProperty("min-height",held,"important");}
+   else h["rd-credits"]=Number(counts.heights?.["rd-credits"])||0;
+  }
   saveCount("heights",h);
  }),700);
 }
-/* Content replacing a skeleton fades in place over 200 ms; rows that arrive on screen rise a beat apart
-   (blocks below the fold are left to the scroll reveal in v13-motion.js). The class stays on the host: every child a
-   render inserts starts the animation by being new, so nothing has to be reset or re-measured. Never under reduced motion. */
-function arrive(host){if(host&&!reduce.matches)host.classList.add("rd-arrive");}
+/* Content replacing a skeleton crossfades in place over 200 ms: one opacity animation on the module (one layer, not one
+   per row; restarted by each render without re-measuring anything). Rows below the fold rise in a beat apart through
+   the scroll reveal (v13-motion.js). Never under reduced motion. */
+function arrive(host){if(host&&!reduce.matches&&host.animate)host.animate([{opacity:0},{opacity:1}],{duration:200,easing:"cubic-bezier(.2,.7,.1,1)"});}
 
 /* ---------- derive(): purchases, sales and the rest, from the 100-row window ----------
    One result feeds the Today sentence and 03 Across the market, so their figures always match. An amended
@@ -417,7 +459,7 @@ watch(["watchlist","trades"],r=>{
 });
 async function saveTicker(btn){
  const t=tick(btn.dataset.save);if(!t||btn.getAttribute("aria-busy")==="true")return;
- const live=$("v3-watchlist-status"),saved=watchSaved.has(t);
+ const live=$("rd-toast"),saved=watchSaved.has(t);
  if(saved){say(live,t+" is already on your watchlist. Manage it on the watchlist page.");return;}
  // Optimistic: the button flips at once, and flips back if the server says no.
  btn.setAttribute("aria-busy","true");watchSaved.add(t);setSaved(btn,true);
@@ -426,7 +468,9 @@ async function saveTicker(btn){
  finally{btn.removeAttribute("aria-busy");}
 }
 function setSaved(btn,on){const t=btn.dataset.save;btn.classList.toggle("is-saved",on);btn.closest("li")?.classList.toggle("is-saved",on);btn.setAttribute("aria-pressed",String(on));btn.setAttribute("aria-label",(on?"Saved ":"Save ")+t+" to your watchlist");btn.textContent=on?"Saved ✓":"Save "+t+" +";}
-function say(el,text,error){if(!el)return;el.textContent=text;el.classList.toggle("is-error",!!error);}
+/* The page's notice at the bottom of the screen (#rd-toast); it leaves after 6 s (8 s for an error). */
+let sayTimer=0;
+function say(el,text,error){if(!el)return;clearTimeout(sayTimer);el.textContent=text;el.classList.toggle("is-error",!!error);sayTimer=setTimeout(()=>{if(el.textContent===text)el.textContent="";},error?8000:6000);}
 
 /* ================= 02b Your notes ================= */
 const STATUS={researching:"Researching",watching:"Watching",passed:"Passed"};
@@ -488,7 +532,8 @@ function renderTradesFoot(list,matching){
    Measured at the click, when the layout is already clean, never right after a render. */
 function lockTable(){
  const wrap=document.querySelector(".rd-table-wrap--trades");if(!wrap)return;
- table.lock=Math.max(table.lock,wrap.offsetHeight);wrap.style.setProperty("min-height",table.lock+"px","important");
+ // The exact (fractional) height: a rounded one would let the page grow or shrink by a pixel on each filter.
+ table.lock=Math.max(table.lock,wrap.getBoundingClientRect().height);wrap.style.setProperty("min-height",table.lock+"px","important");
 }
 function renderTrades(){
  const host=$("v3-trades");if(!host)return;
@@ -502,6 +547,7 @@ function renderTrades(){
  document.querySelectorAll("[data-count]").forEach(el=>{el.textContent=count(c[el.dataset.count]??0);});
  const {html,list,matching}=tradeRows();
  host.innerHTML=html;
+ if(table.filter==="all")saveCount("rows",list.length);
  renderTradesFoot(list,matching);
  hydrate(host);arrive(host);
 }

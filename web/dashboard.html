@@ -5,8 +5,8 @@
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/JetBrainsMono-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
-<script defer src="assets/js/entity-media.js?v=real-assets-5"></script><script defer src="assets/js/app.js?v=14"></script><script defer src="assets/js/v3-dashboard.js?v=18"></script><script defer src="assets/js/v4-dashboard.js?v=18"></script><script defer src="assets/js/v13-overview.js?v=1"></script>
+<link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
+<script defer src="assets/js/entity-media.js?v=media-2"></script><script defer src="assets/js/app.js?v=14"></script><script defer src="assets/js/v3-dashboard.js?v=18"></script><script defer src="assets/js/v4-dashboard.js?v=18"></script><script defer src="assets/js/v13-overview.js?v=1"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=18">
 <link rel="stylesheet" href="assets/css/v13-dashboard.css?v=4">
@@ -42,7 +42,6 @@
         <p class="rd-label" id="rd-list-label">Following</p>
         <ul id="v10-follow-list" class="rd-flist" aria-labelledby="rd-list-label" data-hf-reveal-group></ul>
         <p id="v10-follow-list-more" class="rd-more rd-more--list"></p>
-        <p id="rd-toast" class="rd-toast" role="status"></p>
       </div>
       <p id="v10-follow-empty" class="rd-follow__empty">You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.</p>
       <div id="v10-follow-suggest" class="rd-suggest">
@@ -51,6 +50,7 @@
         <p id="v10-follow-suggest-foot" class="rd-module__foot">Following is private to your account. <a href="people.html">Find anyone by name ↗</a></p>
       </div>
     </div>
+    <p id="rd-toast" class="rd-toast" role="status"></p>
   </section>
 
   <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
@@ -113,19 +113,21 @@
 </div>
 
 <div id="rd-tip" class="rd-tip" role="tooltip" hidden></div>
-<p class="rd-credits" data-media-credits></p>
 <p class="rd-disclosure" data-hf-reveal>Insidir organizes public SEC records for independent research. Records can be delayed, partial or amended; always confirm details in the original filing. Insidir is not a broker and nothing here is investment advice. <a href="company-info.html">About Insidir ↗</a></p>
+<p class="rd-credits" id="rd-credits" data-media-credits></p>
 <script>/* Skeletons sized like the content they stand for, from the counts this browser saved at the last visit, so nothing moves when the data arrives. */
 (()=>{let c={};try{c=JSON.parse(localStorage.getItem("insidir:overview:counts")||"{}")||{};}catch(e){}
 const n=(k,d,lo,hi)=>{const v=Number(c[k]);return Math.max(lo,Math.min(hi,Number.isFinite(v)&&c[k]!==null&&c[k]!==undefined?v:d));};
 const b=w=>'<i class="rd-skel" style="--w:'+w+'%"></i>',t='<span class="rd-skel rd-skel--tile"></span>',rep=(k,f)=>Array.from({length:k},(_,i)=>f(i)).join("");
 const td=c.today;if(td&&typeof td==="object"&&Math.abs(Number(td.w)-innerWidth)<24)for(const [k,id] of [["you","rd-today-you"],["market","rd-today-market"],["fresh","rd-today-fresh"]]){const v=Number(td[k]),e=document.getElementById(id);if(e&&v>0&&v<400)e.style.setProperty("min-height",v+"px","important");}
-const hs=c.heights;if(hs&&typeof hs==="object"&&Math.abs(Number(hs.w)-innerWidth)<24)for(const id in hs){if(id==="w")continue;const v=Number(hs[id]),e=id==="trades"?document.querySelector(".rd-table-wrap--trades"):document.getElementById(id);if(e&&v>0&&v<6000)e.style.setProperty("min-height",v+"px","important");}
+const hs=c.heights;if(hs&&typeof hs==="object"&&Math.abs(Number(hs.w)-innerWidth)<24)for(const id in hs){if(id==="w")continue;const v=Number(hs[id]),e=id==="trades"?document.querySelector(".rd-table-wrap--trades"):document.getElementById(id);if(e&&v>0&&v<6000){e.style.setProperty("min-height",v+"px","important");if(id==="rd-credits")e.classList.add("is-held");}}
 const put=(id,html,vars)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=html;e.setAttribute("aria-busy","true");for(const k in vars||{})e.style.setProperty(k,String(vars[k]));};
-const follows=n("follows",0,0,1e4),feed=n("feed",3,1,8),list=n("list",3,3,6),watch=n("watch",0,0,8),notes=n("notes",0,0,6),sg=follows?4:n("suggest",6,0,6);
-/* Following nobody: the message and the suggestions come first, and the feed (empty until a follow) below them. */
-if(!follows)document.getElementById("rd-follow")?.classList.add("is-empty");
-put("v10-follow-feed",follows?rep(feed,i=>'<li class="rd-feed__row is-skeleton">'+t+'<div class="rd-feed__body"><p class="rd-feed__l1">'+b(64-i%3*8)+'</p><p class="rd-feed__l2">'+b(46)+'</p></div></li>'):'',{"--rows":follows?feed:0});
+const follows=n("follows",0,0,1e4),feed=n("feed",3,1,8),list=follows?6:3,watch=n("watch",0,0,8),notes=n("notes",0,0,6),sg=follows?n("suggest",4,0,4):n("suggest",6,0,6),co=n("co",6,0,6),coMore=n("coMore",1,0,1),big=n("big",6,0,6),rows=n("rows",12,0,12);
+/* Following nobody: the message and the suggestions come first, and the feed (empty until a follow) below them.
+   No saved counts at all: feed rows are kept and the suggestions wait (is-unknown), so either answer moves nothing. */
+const known=c.follows!==undefined&&c.follows!==null,box=document.getElementById("rd-follow");
+if(!known)box?.classList.add("is-unknown");else if(!follows)box?.classList.add("is-empty");
+put("v10-follow-feed",follows||!known?rep(feed,i=>'<li class="rd-feed__row is-skeleton">'+t+'<div class="rd-feed__body"><p class="rd-feed__l1">'+b(64-i%3*8)+'</p><p class="rd-feed__l2">'+b(46)+'</p></div></li>'):'',{"--rows":follows?feed:0});
 put("v10-follow-list",follows?rep(Math.min(list,follows),()=>'<li class="rd-fl is-skeleton">'+t+'<div class="rd-fl__body"><p class="rd-fl__name">'+b(60)+'</p><p class="rd-fl__meta">'+b(30)+'</p><p class="rd-fl__sum">'+b(86)+'</p></div></li>'):'<li class="rd-fl__msg is-skeleton"><p class="rd-empty">'+b(90)+b(60)+'</p></li>',{"--slots":list,"--slot-rows":Math.ceil(list/3)});
 const sgEl=document.getElementById("v10-follow-suggest"),sgT=document.getElementById("v10-follow-suggest-title");if(sgEl&&follows){sgEl.classList.add("is-compact");if(sgT)sgT.textContent="More people to follow · most active in the latest imports";}
 
@@ -134,9 +136,9 @@ const wrow=()=>'<li class="rd-row rd-row--watch is-skeleton">'+t+'<span class="r
 put("v3-watchlist",watch?rep(watch,wrow):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+'</p></li>'+rep(4,wrow));
 put("v3-notes",notes?rep(notes,()=>'<li class="rd-row-wrap is-skeleton"><span class="rd-row rd-row--note"><span class="rd-row__id">'+b(60)+b(70)+'</span><span class="rd-row__detail">'+b(92)+b(40)+'</span></span></li>'):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+b(40)+'</p></li>');
 put("rd-kpis",rep(5,()=>'<div class="rd-kpi is-skeleton"><p class="rd-kpi__label">'+b(50)+'</p><p class="rd-kpi__value">'+b(76)+'</p><p class="rd-kpi__note">'+b(90)+b(56)+'</p></div>'));
-put("rd-companies",'<div class="rd-co__head" aria-hidden="true">'+b(30)+'</div><ul class="rd-co__list">'+rep(6,()=>'<li class="rd-co__row is-skeleton"><span class="rd-co__id">'+t+b(60)+'</span><span class="rd-co__track">'+b(70)+'</span><span class="rd-co__track">'+b(40)+'</span><span class="rd-co__net">'+b(80)+'</span><span class="rd-co__detail">'+b(50)+'</span></li>')+'</ul><p class="rd-more">'+b(50)+'</p>');
-put("rd-largest",rep(6,i=>'<li class="rd-big is-skeleton"><span class="rd-big__rank">'+b(70)+'</span><span class="rd-big__value">'+b(80)+'</span><span class="rd-big__bar"></span><span class="rd-big__what">'+t+b(60)+'</span><span class="rd-big__terms">'+b(70)+'</span></li>'));
-put("v3-trades",rep(12,()=>'<tr class="rd-trade is-skeleton"><td class="rd-td-who"><span class="rd-ent">'+t+b(70)+'</span></td><td class="rd-td-co"><span class="rd-ent">'+t+b(40)+'</span><span class="rd-sub">'+b(70)+'</span></td><td class="rd-td-what">'+b(70)+'</td><td class="rd-num rd-td-shares">'+b(80)+'</td><td class="rd-num rd-td-price">'+b(70)+'</td><td class="rd-num rd-td-value">'+b(80)+'</td><td class="rd-td-traded">'+b(80)+'</td><td class="rd-td-filed">'+b(80)+'<span class="rd-sub">'+b(50)+'</span></td><td class="rd-links">'+b(60)+'</td></tr>'));
+put("rd-companies",co?'<div class="rd-co__head" aria-hidden="true">'+b(30)+'</div><ul class="rd-co__list">'+rep(co,()=>'<li class="rd-co__row is-skeleton"><span class="rd-co__id">'+t+b(60)+'</span><span class="rd-co__track">'+b(70)+'</span><span class="rd-co__track">'+b(40)+'</span><span class="rd-co__net">'+b(80)+'</span><span class="rd-co__detail">'+b(50)+'</span></li>')+'</ul>'+(coMore?'<p class="rd-more">'+b(50)+'</p>':''):'<p class="rd-empty">'+b(80)+'</p>');
+put("rd-largest",big?rep(big,i=>'<li class="rd-big is-skeleton"><span class="rd-big__rank">'+b(70)+'</span><span class="rd-big__value">'+b(80)+'</span><span class="rd-big__bar"></span><span class="rd-big__what">'+t+b(60)+'</span><span class="rd-big__terms">'+b(70)+'</span></li>'):'<li class="rd-empty">'+b(80)+'</li>');
+put("v3-trades",rows?rep(rows,()=>'<tr class="rd-trade is-skeleton"><td class="rd-td-who"><span class="rd-ent">'+t+b(70)+'</span></td><td class="rd-td-co"><span class="rd-ent">'+t+b(40)+'</span><span class="rd-sub">'+b(70)+'</span></td><td class="rd-td-what">'+b(70)+'</td><td class="rd-num rd-td-shares">'+b(80)+'</td><td class="rd-num rd-td-price">'+b(70)+'</td><td class="rd-num rd-td-value">'+b(80)+'</td><td class="rd-td-traded">'+b(80)+'</td><td class="rd-td-filed">'+b(80)+'<span class="rd-sub">'+b(50)+'</span></td><td class="rd-links">'+b(60)+'</td></tr>'):'<tr class="is-skeleton"><td colspan="9" class="rd-empty">'+b(80)+'</td></tr>');
 })();</script>
 </main>
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">

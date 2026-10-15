@@ -256,15 +256,20 @@
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');
+    // The sliding indicator is hidden by the V13 theme (an underline marks the page instead): when it is not drawn,
+    // nothing reads link positions on hover or resize.
+    let drawn = null;
+    const shown = () => drawn === null ? (drawn = getComputedStyle(ind).display !== "none") : drawn;
     const moveTo = a => {
+      if (!shown()) return;
       if (!a) { ind.style.width = "0px"; return; }
       ind.style.width = a.offsetWidth + "px";
       ind.style.transform = `translateX(${a.offsetLeft}px)`;
     };
-    requestAnimationFrame(() => { ind.style.transition = "none"; moveTo(current); requestAnimationFrame(() => { ind.style.transition = ""; }); });
+    requestAnimationFrame(() => { if (!shown()) return; ind.style.transition = "none"; moveTo(current); requestAnimationFrame(() => { ind.style.transition = ""; }); });
     nav.querySelectorAll("a").forEach(a => a.addEventListener("pointerenter", () => moveTo(a)));
     nav.addEventListener("pointerleave", () => moveTo(current));
-    window.addEventListener("resize", () => moveTo(current));
+    window.addEventListener("resize", () => { drawn = null; moveTo(current); }, { passive: true });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveTo(current));
 
     const form = host.querySelector(".app-search"), input = form.querySelector("input"), list = form.querySelector(".app-search__results");

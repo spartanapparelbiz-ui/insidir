@@ -1,0 +1,506 @@
+/* Insidir media check: every person and company on every product page shows a real logo or headshot.
+
+   Opens each page in headless Chromium at 390px (touch) and 1440px with the /v1 API mocked, including
+   GET /v1/media with the engine's exact contract (src/media-batch.mjs): logos by ticker or "cik:<CIK>",
+   headshots by owner CIK, owners that are entities, `pending` keys and `retryAfter`. The images it serves
+   at /v1/media/<sha256>.<ext> are plain grey fixtures (PNG logos, WebP headshots) drawn with sharp inside
+   this run only; they are never written to disk or shipped. Wikimedia Commons is mocked with 250px
+   thumbnails, so the curated portraits load offline.
+
+   Fixture people (owner CIK -> engine answer): Cook a headshot (SEC proxy), Huang a headshot from Commons,
+   Musk a headshot that is pending once, Woods a headshot whose image 404s, Nadella none (the curated Commons
+   portrait), Berkshire Hathaway an entity owner listed as BRK-B (its own logo), Nobody none at a company
+   with no logo (the only person monogram); everyone else none (the company's logo stands in). Companies:
+   logos for every ticker (square, wide-only, square + wide, PLTR pending once) except ZZZZ (the only company
+   monogram), plus a company with no ticker found by issuer CIK.
+
+   For every page and width it verifies:
+     - every visible tile holds a loaded <img> (complete, naturalWidth > 0) except the two fixture keys that
+       have neither a photo nor a logo (.is-monogram), and each tile shows exactly what the fallback chain
+       says for its person or company (photo, curated portrait, own logo, stand-in with the issuer's logo src);
+     - loading: exactly one /v1/media request before the first answer, follow-ups only for keys that were
+       pending, no /v1/company/logo per tile, no image host but this origin and the curated Commons files;
+     - tiles keep their size from first paint to settled, and the layout shift they cause stays under 0.005
+       (the page's own shift while its records load is printed as INFO);
+     - every picture is at least 2x sharp (natural size against the rendered box, after cover/contain and
+       padding);
+     - tiles beside names are aria-hidden with alt="", no link inside a tile and no nested links, and the
+       [data-media-credits] footnote lists every Commons photo with its author, licence and file page;
+     - no page errors and no console errors.
+   And once: the batch returning 503 (curated marks and portraits, then initials, no errors), a headshot
+   whose image 404s (asked again once, then the company's logo), sessionStorage reuse across pages (tiles
+   final at insertion, no new request), reduced motion (no landing animation), the company picker (every
+   popular company's logo from one batch) and the company report (header logo, headshots, logo stand-ins, credits).
+
+   Usage: node scripts/media-check.mjs [--pages dashboard,people,explore,...] [--widths 390,1440] [--shots DIR] [--once]
+   Exits non-zero on any failure and prints every check it ran. */
+import { createServer } from "node:http";
+import { createHash } from "node:crypto";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import sharp from "sharp";
+import { chromium } from "playwright-core";
+import { serveStatic } from "../src/web.mjs";
+
+const args = process.argv.slice(2);
+const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
+const PAGES_ALL = ["dashboard", "people", "explore", "filings", "watchlist", "filing", "research", "alerts", "portfolio", "company", "company-picker"];
+const PAGES = opt("pages", "").split(",").filter(Boolean).length ? opt("pages", "").split(",").filter(p => PAGES_ALL.includes(p)) : PAGES_ALL;
+// The one-off scenarios (503, image 404, cache, reduced motion, landing) run with the full set, or alone with --once --pages none.
+const ONCE = !opt("pages", "") || args.includes("--once");
+const WIDTHS = opt("widths", "390,1440").split(",").map(Number).filter(Boolean);
+const SHOTS = opt("shots", "");
+if (SHOTS) await mkdir(SHOTS, { recursive: true });
+const passed = [], failed = [];
+const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : label + (detail === undefined ? "" : " — " + JSON.stringify(detail).slice(0, 1500))); return ok; };
+
+/* ---------- fixture images (made here, served from memory, never shipped) ---------- */
+const IMAGES = new Map();   // "<sha>.<ext>" -> {type, bytes}
+let shade = 70;
+async function fixtureImage(w, h, kind) {
+  shade = (shade + 23) % 160 + 60;
+  const g = shade;
+  const svg = kind === "photo"
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="rgb(${g},${g},${g})"/><circle cx="${w / 2}" cy="${h * 0.42}" r="${w * 0.2}" fill="rgb(${g + 40},${g + 40},${g + 40})"/><rect x="${w * 0.22}" y="${h * 0.66}" width="${w * 0.56}" height="${h * 0.34}" fill="rgb(${g + 40},${g + 40},${g + 40})"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="${w * 0.04}" y="${h * 0.04}" width="${w * 0.92}" height="${h * 0.92}" fill="none" stroke="rgb(${g},${g},${g})" stroke-width="${Math.min(w, h) * 0.06}"/><circle cx="${w / 2}" cy="${h / 2}" r="${Math.min(w, h) * 0.28}" fill="rgb(${g},${g},${g})"/></svg>`;
+  const pipeline = sharp(Buffer.from(svg));
+  const bytes = kind === "photo" ? await pipeline.webp({ quality: 80 }).toBuffer() : await pipeline.png().toBuffer();
+  const ext = kind === "photo" ? "webp" : "png";
+  const sha = createHash("sha256").update(bytes).digest("hex");
+  IMAGES.set(sha + "." + ext, { type: kind === "photo" ? "image/webp" : "image/png", bytes });
+  return "/v1/media/" + sha + "." + ext;
+}
+const logoEntry = async (name, w, h, extra = {}) => ({ src: await fixtureImage(w, h, "logo"), w, h, source: "stockanalysis", name, ...extra });
+const LOGOS = {
+  AAPL: await logoEntry("Apple Inc.", 306, 370, { alt: { src: await fixtureImage(548, 163, "logo"), w: 548, h: 163 } }),
+  NVDA: await logoEntry("NVIDIA CORP", 316, 316), MSFT: await logoEntry("MICROSOFT CORP", 316, 316), TSLA: await logoEntry("Tesla, Inc.", 300, 300),
+  JPM: await logoEntry("JPMORGAN CHASE & CO", 552, 113), XOM: await logoEntry("EXXON MOBIL CORP", 332, 300), PLTR: await logoEntry("Palantir Technologies Inc.", 280, 332),
+  KO: await logoEntry("COCA COLA CO", 314, 121), F: await logoEntry("FORD MOTOR CO", 370, 156), OXY: await logoEntry("OCCIDENTAL PETROLEUM CORP", 300, 300),
+  "BRK-B": await logoEntry("BERKSHIRE HATHAWAY INC", 300, 300), ZZZZ: null,
+  GOOGL: await logoEntry("Alphabet Inc.", 300, 300), AMZN: await logoEntry("AMAZON COM INC", 520, 160), META: await logoEntry("Meta Platforms, Inc.", 300, 300), AVGO: await logoEntry("Broadcom Inc.", 300, 300),
+  LLY: await logoEntry("ELI LILLY & Co", 400, 200), V: await logoEntry("VISA INC.", 300, 300), WMT: await logoEntry("Walmart Inc.", 300, 300), NFLX: await logoEntry("NETFLIX INC", 480, 130), COST: await logoEntry("COSTCO WHOLESALE CORP /NEW", 440, 150),
+  "cik:1999999": await logoEntry("PRIVATE HOLDINGS CORP", 300, 300)
+};
+const LOGO_PENDING = { PLTR: 1 };   // answered pending this many times first
+const MISSING_PHOTO = "/v1/media/" + "0".repeat(63) + "1.webp";   // a headshot whose bytes are gone (404)
+const PHOTOS = {
+  "1214156": { src: await fixtureImage(256, 256, "photo"), w: 256, h: 256, source: "sec-proxy", credit: "SEC proxy statement (DEF 14A, filed 2026-01-08)", sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000130817926000008/aapl4359751-def14a.htm" },
+  "1197649": { src: await fixtureImage(256, 256, "photo"), w: 256, h: 256, source: "wikimedia", credit: "Fixture Photographer · CC BY 4.0", sourceUrl: "https://commons.wikimedia.org/wiki/File:Fixture_portrait_(cropped).jpg", name: "Jensen Huang" },
+  "1494730": { src: await fixtureImage(256, 256, "photo"), w: 256, h: 256, source: "company-site", credit: "Company website (tesla.com)", sourceUrl: "https://www.tesla.com/leadership", name: "Elon Musk" },
+  "1408356": { src: MISSING_PHOTO, w: 256, h: 256, source: "company-site", credit: "Company website (exxonmobil.com)", sourceUrl: "https://corporate.exxonmobil.com/" }
+};
+const PHOTO_PENDING = { "1494730": 1 };
+const ENTITIES = { "1067983": "BRK-B" };
+
+/* ---------- fixture records ---------- */
+const SEC = "https://www.sec.gov/Archives/edgar/data/320193/000032019326000077/aapl-report.htm";
+// [ticker, issuer, issuer CIK, [[owner as filed, owner CIK, price]]]
+const CO = [
+  ["AAPL", "Apple Inc.", "320193", [["COOK TIMOTHY D", "0001214156", 226.4], ["ADAMS KATHERINE L", "0001408568", 226.4]]],
+  ["NVDA", "NVIDIA CORP", "1045810", [["HUANG JEN HSUN", "0001197649", 131.25], ["KRESS COLETTE", "0001580197", 130.8]]],
+  ["MSFT", "MICROSOFT CORP", "789019", [["NADELLA SATYA", "0001513142", 412.1]]],
+  ["TSLA", "Tesla, Inc.", "1318605", [["MUSK ELON", "0001494730", 249], ["KIRKHORN ZACHARY", "0001771364", 251.2]]],
+  ["JPM", "JPMORGAN CHASE & CO", "19617", [["DIMON JAMES", "0001195345", 201.5]]],
+  ["XOM", "EXXON MOBIL CORP", "34088", [["WOODS DARREN W", "0001408356", 112.3]]],
+  ["PLTR", "Palantir Technologies Inc.", "1321655", [["KARP ALEXANDER C", "0001823466", 38.71]]],
+  ["KO", "COCA COLA CO", "21344", [["QUINCEY JAMES", "0001257950", 62.18]]],
+  ["F", "FORD MOTOR CO", "37996", [["FARLEY JAMES D JR", "0001461290", 10.42]]],
+  ["OXY", "OCCIDENTAL PETROLEUM CORP", "797468", [["BERKSHIRE HATHAWAY INC", "0001067983", 58.1]]],
+  ["ZZZZ", "NO LOGO HOLDINGS INC", "1999998", [["NOBODY PATRICIA Q", "0009999991", 12.5]]]
+];
+const tx = [];
+let n = 0;
+for (const [ticker, issuer, issuerCik, owners] of CO) for (const [owner, cik, price] of owners) for (let k = 0; k < 2; k++) {
+  const day = new Date(Date.UTC(2026, 9, 12) - (n % 13) * 86400000).toISOString().slice(0, 10);
+  const cat = n % 3 === 0 ? "reported_purchase" : n % 5 === 4 ? "other" : "reported_sale";
+  const shares = [1200, 5000, 25000, 800, 150000, 3300, 40000, 12500][n % 8];
+  tx.push({ id: 1000 + n, accession: String(320193260000500 + n).padStart(18, "0"), ticker, issuer_name: issuer, issuer_cik: issuerCik, owner_name: owner, owner_cik: cik,
+    transaction_date: day, transaction_code: cat === "reported_purchase" ? "P" : cat === "reported_sale" ? "S" : "A", acquired_disposed: cat === "reported_sale" ? "D" : "A",
+    category: cat, derivative: false, shares, price_per_share: cat === "other" ? null : price, estimated_value: cat === "other" ? null : Math.round(shares * price * 100) / 100,
+    direct_ownership: "D", security_title: "Common Stock", published_at: day + "T21:00:00Z", created_at: day + "T21:05:00Z", is_amendment: false, source_url: SEC });
+  n++;
+}
+tx.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date) || a.id - b.id);
+const filings = [...new Map(tx.map(x => [x.ticker, x])).values()].map(x => ({ accession: x.accession, ticker: x.ticker, issuer_name: x.issuer_name, issuer_cik: x.issuer_cik, form_type: "4",
+  published_at: x.published_at, period_of_report: x.transaction_date, source_url: SEC, is_amendment: false, owner_names: [x.owner_name] }));
+filings.push({ accession: "000199999926000001", ticker: null, issuer_name: "PRIVATE HOLDINGS CORP", issuer_cik: "1999999", form_type: "4", published_at: "2026-10-01T20:00:00Z", period_of_report: "2026-09-30", source_url: SEC, is_amendment: false, owner_names: ["SMITH JOHN"] });
+const companies = [...CO.map(([ticker, issuer_name, issuer_cik]) => ({ ticker, issuer_name, issuer_cik, published_at: "2026-10-10T20:00:00Z" })), { ticker: null, issuer_name: "PRIVATE HOLDINGS CORP", issuer_cik: "1999999", published_at: "2026-10-01T20:00:00Z" }];
+const people = [...new Map(tx.map(x => [x.owner_cik, { owner_name: x.owner_name, owner_cik: x.owner_cik, ticker: x.ticker, issuer_name: x.issuer_name, filings: 2, last_transaction_date: x.transaction_date }])).values()];
+const FOLLOW = ["0001214156", "0001197649", "0001494730", "0001195345", "0001408356", "0001067983", "0009999991"];
+const followed = tx.filter(x => FOLLOW.includes(x.owner_cik));
+const updates = {
+  people: FOLLOW.map(cik => { const rows = followed.filter(x => x.owner_cik === cik), last = rows[0];
+    return { owner_cik: cik, owner_name: last.owner_name, followed_at: "2026-09-01T00:00:00Z", ticker: last.ticker, issuer_name: last.issuer_name, last_published_at: last.published_at, last_transaction_date: last.transaction_date, last,
+      filings_30d: rows.length, transactions_30d: rows.length, purchases_30d_value: rows.filter(x => x.category === "reported_purchase").reduce((s, x) => s + (x.estimated_value || 0), 0),
+      sales_30d_value: rows.filter(x => x.category === "reported_sale").reduce((s, x) => s + (x.estimated_value || 0), 0) }; }),
+  items: followed.slice(0, 40), following: FOLLOW.length, source: "SEC Form 4"
+};
+const pick = (...ciks) => tx.filter(x => ciks.includes(x.owner_cik));
+const insidersFor = t => {
+  const rows = tx.filter(x => x.ticker === t);
+  return { company: { cik: rows[0]?.issuer_cik, name: rows[0]?.issuer_name }, activity: rows.map(r => ({ accession: r.accession, form: "4", filedAt: r.published_at.slice(0, 10), transactionDate: r.transaction_date,
+    owner: { name: r.owner_name, cik: r.owner_cik, role: "Officer" }, kind: r.category === "reported_purchase" ? "purchase" : r.category === "reported_sale" ? "sale" : "other", code: r.transaction_code,
+    codeLabel: r.category === "reported_purchase" ? "Open-market purchase" : r.category === "reported_sale" ? "Open-market sale" : "Grant or award", netShares: r.acquired_disposed === "D" ? -r.shares : r.shares,
+    value: r.estimated_value, sharesAfter: 100000, transactions: [], sourceUrl: SEC })),
+  people: [...new Map(rows.map(r => [r.owner_cik, { name: r.owner_name, cik: r.owner_cik, role: "Officer", filings: 2, lastFiled: r.published_at.slice(0, 10), sharesAfter: 100000 }])).values()] };
+};
+const me = { user: { id: 1, email: "reader@example.com" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true } };
+const DATA = {
+  "/v1/me": me, "/v1/billing/status": { billingEnabled: true, plan: "pro", subscriptionStatus: "active" },
+  "/v1/status": { engine: "online", sec: "configured", filings: 18342, lastIngest: { started_at: "2026-10-14T09:00:00Z", finished_at: "2026-10-14T09:12:00Z", status: "success" } },
+  "/v1/transactions": { items: tx }, "/v1/filings": { items: filings }, "/v1/companies": { items: companies },
+  "/v1/me/watchlist": { items: ["NVDA", "AAPL", "PLTR", "F", "XOM", "ZZZZ"].map((t, i) => ({ ticker: t, created_at: "2026-09-0" + (i + 1) + "T00:00:00Z" })) },
+  "/v1/me/research-decisions": { items: [{ ticker: "NVDA", review_status: "researching", notes: "Reading the 10-Q.", updated_at: "2026-10-12T00:00:00Z" }, { ticker: "F", review_status: "watching", notes: "CEO bought.", updated_at: "2026-10-09T00:00:00Z" }] },
+  "/v1/insiders": { items: people }, "/v1/me/people": { items: updates.people.map(p => ({ owner_cik: p.owner_cik, created_at: p.followed_at, owner_name: p.owner_name, ticker: p.ticker, last_transaction_date: p.last_transaction_date })) },
+  "/v1/me/people/updates": updates, "/v1/search": { items: [] },
+  "/v1/me/alerts": { items: pick("0001214156", "0001580197", "0001408356", "0001067983", "0009999991", "0001494730").map(x => ({ id: x.id, ticker: x.ticker, owner_cik: x.owner_cik, owner_name: x.owner_name, transaction_date: x.transaction_date, category: x.category, estimated_value: x.estimated_value, source_url: SEC, published_at: x.published_at })) },
+  "/v1/me/brokerage/status": { available: true, connected: true },
+  "/v1/me/brokerage/portfolio": { accounts: [{ name: "Individual brokerage", maskedNumber: "••••4821", positionsAsOf: "2026-10-14T13:00:00Z", netValue: 48210.55, currency: "USD", positions: [
+    { symbol: "AAPL", description: "Apple Inc", kind: "equity", quantity: 40, price: 226.4, currency: "USD", researchTicker: "AAPL" },
+    { symbol: "F", description: "Ford Motor Co", kind: "equity", quantity: 300, price: 10.42, currency: "USD", researchTicker: "F" },
+    { symbol: "VTI", description: "Vanguard Total Stock Market ETF", kind: "etf", quantity: 12, price: 291.1, currency: "USD", researchTicker: null }] }],
+    recentSecActivity: pick("0001214156", "0001461290").map(x => ({ ticker: x.ticker, category: x.category, owner_name: x.owner_name, owner_cik: x.owner_cik, published_at: x.published_at, source_url: SEC })) },
+  "/v1/me/manual-holdings": { items: [{ ticker: "NVDA", quantity: "5", updated_at: "2026-10-01T00:00:00Z" }, { ticker: "KO", quantity: "12.5", updated_at: "2026-10-02T00:00:00Z" }],
+    recentSecActivity: pick("0001580197", "0001257950").map(x => ({ ticker: x.ticker, category: x.category, owner_name: x.owner_name, owner_cik: x.owner_cik, published_at: x.published_at, source_url: SEC })) },
+  "/v1/intelligence": { company: { name: "Apple Inc.", cik: "0000320193" }, profile: { exchange: "Nasdaq" }, filings: [], facts: [], brief: { summary: "Fixture summary.", findings: [], caveats: [] }, warnings: [] },
+  "/v1/company/profile": { matched: false }, "/v1/company/news": { announcements: [], headlines: [] }
+};
+const FILING = filings.find(f => f.ticker === "AAPL");
+DATA["/v1/filings/" + FILING.accession] = { filing: FILING, transactions: tx.filter(x => x.ticker === "AAPL") };
+const COMPANY_PHOTOS = { ticker: "AAPL", complete: true, photos: { "cik:1214156": { src: PHOTOS["1214156"].src, sourceUrl: PHOTOS["1214156"].sourceUrl, credit: PHOTOS["1214156"].credit, source: "sec-proxy" } }, names: {},
+  leaders: [{ name: "Arthur Levinson", roles: ["Chair"], src: PHOTOS["1197649"].src, credit: "Fixture Photographer · CC BY 4.0", sourceUrl: "https://commons.wikimedia.org/wiki/File:Fixture_portrait_(cropped).jpg", insider: false }, { name: "Jony Example", roles: ["Founder"], insider: false }] };
+
+/* ---------- the /v1/media contract (as src/media-batch.mjs answers it) ---------- */
+const cleanTicker = v => { const t = String(v ?? "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : null; };
+const cleanCik = v => { const s = String(v ?? "").trim(); return /^\d{1,10}$/.test(s) ? s.replace(/^0+/, "") || null : null; };
+function mediaAnswer(url, seen) {
+  const list = name => url.searchParams.getAll(name).join(",").split(",").map(s => s.trim()).filter(Boolean);
+  const raw = { tickers: list("tickers"), people: list("people"), ciks: list("ciks") };
+  if (raw.tickers.length > 60 || raw.people.length > 100 || raw.ciks.length > 60) return { status: 400, body: { error: "too many" } };
+  const logos = {}, photos = {}, owners = {}, pending = { logos: [], photos: [] }, invalid = [];
+  const once = (key, times) => (seen[key] = (seen[key] || 0) + 1) <= (times || 0);
+  const logo = key => { if (key in logos || pending.logos.includes(key)) return; if (once("L:" + key, LOGO_PENDING[key])) pending.logos.push(key); else logos[key] = key in LOGOS ? LOGOS[key] : null; };
+  for (const t of raw.tickers) { const c = cleanTicker(t); if (c) logo(c); else invalid.push(t); }
+  for (const c of raw.ciks) { const k = cleanCik(c); if (k) logo("cik:" + k); else invalid.push(c); }
+  for (const p of raw.people) {
+    const [c0, t0] = p.split(":"), cik = cleanCik(c0), t = cleanTicker(t0);
+    if (!cik || !t) { invalid.push(p); continue; }
+    logo(t);
+    if (ENTITIES[cik]) { owners[cik] = { entity: true, ticker: ENTITIES[cik] }; photos[cik] = null; logo(ENTITIES[cik]); continue; }
+    if (once("P:" + cik, PHOTO_PENDING[cik])) { pending.photos.push(cik + ":" + t); continue; }
+    photos[cik] = PHOTOS[cik] || null;
+  }
+  if (!raw.tickers.length && !raw.people.length && !raw.ciks.length) return { status: 400, body: { error: "Nothing valid to look up" } };
+  return { status: 200, body: { logos, photos, owners, pending, retryAfter: pending.photos.length ? 3 : pending.logos.length ? 2 : 0, invalid } };
+}
+const keysOf = u => { const s = new URL(u, "http://x").searchParams; return [...(s.get("tickers") || "").split(",").filter(Boolean).map(t => "t:" + t), ...(s.get("ciks") || "").split(",").filter(Boolean).map(c => "c:" + c), ...(s.get("people") || "").split(",").filter(Boolean).map(p => "p:" + p)]; };
+
+/* ---------- server and browser ---------- */
+const server = createServer((req, res) => { serveStatic(req, res).then(f => { if (!f) { res.writeHead(404); res.end("not found"); } }).catch(e => { res.writeHead(500); res.end(String(e)); }); });
+await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+const base = "http://127.0.0.1:" + server.address().port;
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || "/opt/pw-browsers/chromium", args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-lcd-text", "--font-render-hinting=none"] });
+const CURATED = new Set();
+const PAGE_CLS = {};   // layout shift totals while each page's records load (informational)   // Commons URLs the helper may load directly (read from the page)
+
+// In the page from the first byte: layout shifts with their sources, and every tile's size and state when it is inserted.
+const INIT = () => {
+  window.__shifts = [];
+  try { new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shifts.push({ value: e.value, at: Math.round(e.startTime), sources: (e.sources || []).map(s => s.node ? (s.node.nodeType === 1 ? s.node.tagName.toLowerCase() + (s.node.id ? "#" + s.node.id : "") + "." + String(s.node.className || "").split(" ").slice(0, 3).join(".") : "#text") : "?") }); }).observe({ type: "layout-shift", buffered: true }); } catch {}
+  window.__first = new WeakMap(); window.__inserted = [];
+  const measure = (t, tries) => requestAnimationFrame(() => { if (!t.isConnected) return; if (t.offsetWidth) window.__first.set(t, [t.offsetWidth, t.offsetHeight]); else if (tries < 120) measure(t, tries + 1); });
+  new MutationObserver(ms => { for (const m of ms) for (const node of m.addedNodes) { if (node.nodeType !== 1) continue; for (const t of [node, ...node.querySelectorAll("[data-media]")]) if (t.matches("[data-media]")) { window.__inserted.push({ loading: t.classList.contains("is-loading"), media: t.dataset.media, ticker: t.dataset.ticker || "", cik: t.dataset.cik || "" }); measure(t, 0); } } })
+    .observe(document, { childList: true, subtree: true });
+  // Measuring tools see every scroll-reveal block in place.
+  const go = () => { const M = window.InsidirMotion; if (!M) return; const held = new Set(document.querySelectorAll(".hf-pending,.hf-revealing")); M.revealAll(); if (held.size) for (const a of document.getAnimations()) if (a instanceof CSSTransition && a.effect && held.has(a.effect.target)) { try { a.finish(); } catch {} } };
+  addEventListener("DOMContentLoaded", () => setTimeout(go, 0)); addEventListener("load", go);
+};
+
+async function open(width, path, { media = "ok", reducedMotion = "no-preference", context = null } = {}) {
+  const ctx = context || await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion });
+  const log = ctx.__log || (ctx.__log = { media: [], images: [], logoRoute: 0, thirdParty: [], seen: {}, answered: [] });
+  if (!context) {
+    await ctx.addInitScript(INIT);
+    await ctx.route("**/v1/**", async route => {
+      const url = new URL(route.request().url()), p = url.pathname;
+      const json = (status, body) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) }).catch(() => {});
+      if (p.startsWith("/v1/media/")) {
+        log.images.push(p);
+        const item = IMAGES.get(p.slice("/v1/media/".length));
+        return item ? route.fulfill({ status: 200, contentType: item.type, body: item.bytes, headers: { "Cache-Control": "public, max-age=31536000, immutable" } }).catch(() => {}) : json(404, { error: "Not found" });
+      }
+      if (p === "/v1/media") {
+        const at = log.media.length;
+        log.media.push({ url: p + url.search, keys: keysOf(url.search ? "?" + url.search.slice(1) : ""), at: Date.now() - (ctx.__t0 || Date.now()) });
+        if (ctx.__media === "503") return json(503, { error: "SEC_USER_AGENT is required" });
+        const out = mediaAnswer(url, log.seen);
+        log.answered[at] = out.body.pending ? [...out.body.pending.logos.map(k => k.startsWith("cik:") ? "c:" + k.slice(4) : "t:" + k), ...out.body.pending.photos.map(k => "p:" + k)] : [];
+        await new Promise(ok => setTimeout(ok, 60));
+        return json(out.status, out.body);
+      }
+      if (p === "/v1/company/logo") { log.logoRoute++; return json(404, { error: "Not found" }); }
+      if (p === "/v1/company/insiders") return json(200, insidersFor(url.searchParams.get("ticker")));
+      if (p === "/v1/company/photos") return json(200, url.searchParams.get("ticker") === "AAPL" ? COMPANY_PHOTOS : { complete: true, photos: {}, names: {}, leaders: [] });
+      if (p === "/v1/transactions" && url.searchParams.has("ticker")) return json(200, { items: tx.filter(x => x.ticker === url.searchParams.get("ticker")).slice(0, Number(url.searchParams.get("limit")) || 30) });
+      if (p === "/v1/filings" && url.searchParams.has("ticker")) return json(200, { items: filings.filter(x => x.ticker === url.searchParams.get("ticker")) });
+      if (route.request().method() !== "GET") return json(200, { saved: true });
+      return json(p in DATA ? 200 : 200, p in DATA ? DATA[p] : { items: [] });
+    });
+    await ctx.route(/wikimedia\.org/, route => {
+      const u = route.request().url();
+      log.wikimedia = (log.wikimedia || 0) + 1;
+      const w = Number((/\/(\d+)px-[^/]+$/.exec(u) || [])[1]) || 400;
+      route.fulfill({ status: 200, contentType: "image/svg+xml", body: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${Math.round(w * 1.25)}" viewBox="0 0 10 12.5"><rect width="10" height="12.5" fill="#555"/><circle cx="5" cy="4.6" r="2.2" fill="#888"/></svg>` });
+    });
+  }
+  ctx.__media = media;
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", e => errors.push("pageerror: " + e.message));
+  page.on("console", m => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
+  page.on("request", r => { const u = new URL(r.url()); if (u.origin !== base && r.resourceType() === "image") log.thirdParty.push(r.url()); });
+  ctx.__t0 = Date.now();
+  await page.goto(base + path, { waitUntil: "domcontentloaded", timeout: 30000 });
+  return { ctx, page, errors, log };
+}
+const PATH = { dashboard: "/dashboard.html", people: "/people.html", explore: "/explore.html", filings: "/filings.html", watchlist: "/watchlist.html", filing: "/filing.html?accession=" + FILING.accession,
+  research: "/research.html?ticker=AAPL", alerts: "/alerts.html", portfolio: "/portfolio.html", company: "/company.html?ticker=AAPL", "company-picker": "/company.html" };
+// Each page has rendered its records when this holds.
+const RENDERED = {
+  dashboard: () => document.querySelectorAll("[data-media]").length >= 12 && !/Loading/.test(document.querySelector("#v3-trades")?.textContent || "Loading"),
+  people: () => document.querySelectorAll("#v10-people-results [data-media]").length >= 4,
+  explore: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12, filings: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12,
+  watchlist: () => document.querySelectorAll("#collection-rows [data-media]").length >= 6, filing: () => document.querySelectorAll("#filing-rows [data-media]").length >= 4,
+  research: () => document.querySelectorAll("#research-transactions [data-media]").length >= 4 && !!document.querySelector("#research-company [data-media]"),
+  alerts: () => document.querySelectorAll("#alerts-real [data-media]").length >= 12, portfolio: () => document.querySelectorAll("#portfolio-activity [data-media]").length >= 4 && document.querySelectorAll("#manual-evidence [data-media]").length >= 4,
+  company: () => document.querySelectorAll("#cx-insiders-table .cx-avatar").length >= 4 && !!document.querySelector("#cx-logo img"),
+  "company-picker": () => document.querySelectorAll("#cx-picker-grid .cx-mark").length > 0 && [...document.querySelectorAll("#cx-picker-grid .cx-mark")].every(m => m.querySelector("img"))
+};
+
+/* What the fallback chain must show for a tile (the oracle), evaluated in the page with the fixture tables. */
+const ORACLE = { LOGOS: Object.fromEntries(Object.entries(LOGOS).map(([k, v]) => [k, v && v.src])), PHOTOS: Object.fromEntries(Object.entries(PHOTOS).map(([k, v]) => [k, v.src])), MISSING_PHOTO, ENTITIES };
+const inspect = (O) => {
+  const M = window.InsidirMedia;
+  const cik = v => String(v || "").replace(/^0+/, ""), tk = v => String(v || "").toUpperCase().replace(/\./g, "-");
+  const expect = t => {
+    const T = tk(t.dataset.ticker), C = cik(t.dataset.cik);
+    if (t.dataset.media === "person") {
+      if (C && T && O.PHOTOS[C] && O.PHOTOS[C] !== O.MISSING_PHOTO) return { state: "photo", src: O.PHOTOS[C] };
+      const cur = M.photo(t.dataset.name, t.dataset.ticker);
+      if (cur) return { state: "photo", src: cur.thumb };
+      if (C && O.ENTITIES[C]) return { state: "logo", src: O.LOGOS[O.ENTITIES[C]] };
+      if (T && O.LOGOS[T]) return { state: "stand-in", src: O.LOGOS[T] };
+      return { state: "monogram" };
+    }
+    const src = T ? O.LOGOS[T] : C ? O.LOGOS["cik:" + C] : null;
+    return src ? { state: "logo", src } : { state: "monogram" };
+  };
+  const tiles = [...document.querySelectorAll("[data-media]")].filter(t => t.offsetWidth > 0);
+  return tiles.map(t => {
+    const img = t.querySelector(":scope>img"), cs = getComputedStyle(t), is = img && getComputedStyle(img);
+    const state = t.classList.contains("is-photo") ? "photo" : t.classList.contains("is-stand-in") ? "stand-in" : t.classList.contains("is-logo") ? "logo" : t.classList.contains("is-monogram") ? "monogram" : "loading";
+    const first = window.__first.get(t);
+    const pad = is ? parseFloat(is.paddingLeft) + parseFloat(is.paddingRight) : 0, padV = is ? parseFloat(is.paddingTop) + parseFloat(is.paddingBottom) : 0;
+    const boxW = t.clientWidth - pad, boxH = t.clientHeight - padV;
+    let sharp = null;
+    if (img && img.naturalWidth && (state === "photo" || state === "logo" || state === "stand-in")) {
+      const nw = img.naturalWidth, nh = img.naturalHeight, fit = is.objectFit;
+      const scale = fit === "cover" ? Math.max(boxW / nw, boxH / nh) : Math.min(boxW / nw, boxH / nh);
+      sharp = +(1 / scale).toFixed(2);   // natural pixels per rendered pixel
+    }
+    return { media: t.dataset.media, name: t.dataset.name || "", ticker: t.dataset.ticker || "", cik: t.dataset.cik || "", state, expect: expect(t), src: img?.getAttribute("src") || "",
+      loaded: !!(img && img.complete && img.naturalWidth > 0), shown: state === "monogram" ? getComputedStyle(t.querySelector("svg")).display !== "none" : is ? is.visibility !== "hidden" && is.display !== "none" : false,
+      size: [t.offsetWidth, t.offsetHeight], first: first || null, sharp, hidden: t.getAttribute("aria-hidden"), role: t.getAttribute("role"), label: t.getAttribute("aria-label"), alt: img ? img.getAttribute("alt") : null,
+      anchors: t.querySelectorAll("a").length, wait: t.hasAttribute("data-media-wait"), credit: t.dataset.credit || "", creditUrl: t.dataset.creditUrl || "", visible: cs.visibility !== "hidden" };
+  });
+};
+// Tiles within 600px of the viewport (the helper's lazy margin), across and down; a strip scrolled sideways keeps the rest for later.
+async function settleNear(page, ms = 20000) {
+  return page.waitForFunction(() => [...document.querySelectorAll("[data-media]")].filter(t => { const r = t.getBoundingClientRect(); return t.offsetWidth > 0 && r.bottom > -600 && r.top < innerHeight + 600 && r.right > -600 && r.left < innerWidth + 600; })
+    .every(t => !t.hasAttribute("data-media-wait") && !t.classList.contains("is-loading")), null, { timeout: ms, polling: 100 }).then(() => true, () => false);
+}
+
+function tileChecks(tag, tiles) {
+  check(tiles.length > 0, tag + ": tiles are on the page", tiles.length);
+  const wrong = tiles.filter(t => t.state !== t.expect.state || (t.expect.src && t.src !== t.expect.src));
+  check(!wrong.length, tag + ": every tile shows what the fallback chain gives its person or company (photo, curated portrait, own logo, issuer logo standing in, initials last)", wrong.slice(0, 6));
+  const unloaded = tiles.filter(t => t.state !== "monogram" && !(t.loaded && t.shown));
+  check(!unloaded.length, tag + ": every visible tile holds a loaded image (complete, naturalWidth > 0)", unloaded.slice(0, 6));
+  const monos = tiles.filter(t => t.state === "monogram");
+  check(monos.every(t => t.expect.state === "monogram" && t.shown && ((t.media === "person" && t.cik === "9999991") || (t.media === "company" && /ZZZZ/.test(t.ticker)))), tag + ": initials only for the fixture keys with neither a photo nor a logo", monos.map(t => t.name || t.ticker));
+  const standIns = tiles.filter(t => t.state === "stand-in");
+  check(standIns.every(t => t.src === t.expect.src), tag + ": a person with no photo shows .is-stand-in with the issuer's logo src", standIns.length);
+  const moved = tiles.filter(t => t.first && (t.first[0] !== t.size[0] || t.first[1] !== t.size[1]));
+  check(!moved.length, tag + ": tiles keep their size from first paint to settled", moved.slice(0, 4));
+  const blurry = tiles.filter(t => t.sharp !== null && t.sharp < 2);
+  check(!blurry.length, tag + ": every picture is at least 2x sharp in its tile", blurry.slice(0, 4).map(t => ({ name: t.name || t.ticker, sharp: t.sharp, size: t.size })));
+  const aria = tiles.filter(t => t.role === "img" ? !t.label : t.hidden !== "true" || (t.alt !== null && t.alt !== ""));
+  check(!aria.length, tag + ": tiles beside names are aria-hidden with alt=\"\" (labelled tiles are role=img with a label)", aria.slice(0, 4));
+  check(tiles.every(t => !t.anchors), tag + ": no link inside a tile", tiles.filter(t => t.anchors).length);
+  check(tiles.every(t => !t.wait), tag + ": nothing still waiting after settling", tiles.filter(t => t.wait).map(t => t.name || t.ticker));
+}
+
+try {
+  for (const width of WIDTHS) for (const key of PAGES) {
+    const tag = key + " " + width + "px";
+    const { ctx, page, errors, log } = await open(width, PATH[key]);
+    const rendered = await page.waitForFunction(RENDERED[key], null, { timeout: 20000 }).then(() => true, e => e.message);
+    check(rendered === true, tag + ": the page rendered its records", rendered);
+    if (rendered !== true) { await ctx.close(); continue; }
+    if (key === "company-picker" || key === "company") {
+      await page.waitForTimeout(400);
+      const r = await page.evaluate(() => ({ marks: [...document.querySelectorAll("#cx-picker-grid .cx-mark img")].map(i => ({ src: i.getAttribute("src"), ok: i.complete && i.naturalWidth > 0 })),
+        logo: document.querySelector("#cx-logo:not([hidden]) img")?.getAttribute("src") || null,
+        avatars: [...document.querySelectorAll("#cx-insiders-table .cx-avatar,#cx-people-sec .cx-avatar,#cx-people-wiki .cx-avatar")].map(a => ({ name: a.closest("tr,article")?.querySelector("strong,h4")?.textContent, standIn: a.classList.contains("is-stand-in"), src: a.querySelector("img")?.getAttribute("src") || null, text: a.textContent })),
+        credits: document.querySelector("[data-media-credits]")?.innerHTML || "", nested: document.querySelectorAll("a a").length }));
+      if (key === "company-picker") {
+        check(r.marks.length >= 12 && r.marks.every(m => m.ok && /^\/v1\/media\/[a-f0-9]{64}\.png$/.test(m.src)), tag + ": the picker shows a real logo from the media store for every company (" + r.marks.length + ")", r.marks);
+        check(log.media.length === 1 && log.logoRoute === 0, tag + ": one /v1/media request for the whole picker, no /v1/company/logo per tile", { media: log.media.map(m => m.url), logoRoute: log.logoRoute });
+      } else {
+        check(r.logo === LOGOS.AAPL.src, tag + ": the report header shows the company's logo from /v1/media", r.logo);
+        const cook = r.avatars.find(a => /Cook/i.test(a.name || "")), adams = r.avatars.find(a => /Adams/i.test(a.name || ""));
+        check(cook && cook.src === PHOTOS["1214156"].src && !cook.standIn, tag + ": a person with a verified photo shows it", cook);
+        check(adams && adams.standIn && adams.src === LOGOS.AAPL.src, tag + ": a person with no photo gets the company's logo standing in, not initials", adams);
+        check(r.avatars.filter(a => !a.src).every(a => /Jony/.test(a.name || "") === false), tag + ": no initials while the company has a logo", r.avatars.filter(a => !a.src).map(a => a.name));
+        check(/Fixture Photographer · CC BY 4\.0/.test(r.credits) && /commons\.wikimedia\.org\/wiki\/File:Fixture_portrait/.test(r.credits) && /SEC proxy statement/.test(r.credits), tag + ": the credits footnote names the Commons author, licence and file page, and the SEC source", r.credits.slice(0, 300));
+        check(log.logoRoute === 0, tag + ": no /v1/company/logo request", log.logoRoute);
+      }
+      check(r.nested === 0, tag + ": no nested links", r.nested);
+      if (SHOTS) await page.screenshot({ path: join(SHOTS, `${key}-${width}.png`) });
+      check(errors.length === 0, tag + ": no page or console errors", errors);
+      await ctx.close();
+      continue;
+    }
+    const settled = await settleNear(page);
+    const stuck = settled ? [] : await page.evaluate(() => [...document.querySelectorAll("[data-media]")].filter(t => { const r = t.getBoundingClientRect(); return t.offsetWidth > 0 && r.bottom > -600 && r.top < innerHeight + 600 && r.right > -600 && r.left < innerWidth + 600 && (t.hasAttribute("data-media-wait") || t.classList.contains("is-loading")); })
+      .slice(0, 6).map(t => { const r = t.getBoundingClientRect(); let p = t.parentElement, clip = ""; while (p && p !== document.body) { const o = getComputedStyle(p).overflowX; if (o !== "visible") { clip = p.className + " " + o; break; } p = p.parentElement; } return { name: t.dataset.name || t.dataset.ticker, cls: t.className, x: Math.round(r.left), y: Math.round(r.top), clip }; }));
+    check(settled, tag + ": tiles near the viewport settle", stuck);
+    // Loading: what was asked before scrolling or forcing anything.
+    const nearFirst = await page.evaluate(() => [...document.querySelectorAll("[data-media]")].filter(t => { const r = t.getBoundingClientRect(); return t.offsetWidth > 0 && r.bottom > -600 && r.top < innerHeight + 600 && r.right > -600 && r.left < innerWidth + 600; }).length);
+    const loadRequests = log.media.slice();
+    const pendingSoFar = new Set(Object.entries(PHOTOS).filter(([, v]) => v.src === MISSING_PHOTO).flatMap(([cik]) => CO.flatMap(([t, , , o]) => o.some(x => x[1].replace(/^0+/, "") === cik) ? ["p:" + cik + ":" + t] : [])));
+    let initial = 0, strayFollowUps = [], waves = 0;
+    const askedBefore = new Set(), repeats = [];
+    loadRequests.forEach((r, i) => {
+      const fresh = r.keys.filter(k => !pendingSoFar.has(k));
+      if (fresh.length) { waves++; if (i === 0 || initial === 0) initial++; else strayFollowUps.push({ i, fresh: fresh.slice(0, 6) }); }
+      for (const k of fresh) if (askedBefore.has(k)) repeats.push(k);
+      for (const k of r.keys) askedBefore.add(k);
+      for (const k of log.answered[i] || []) pendingSoFar.add(k);
+    });
+    const firstAt = 0;
+    // The overview renders its modules in priority order (first screen first, the rest in idle callbacks), so a module
+    // drawn more than 150 ms after the first may ask in a batch of its own; no key is ever asked twice unless it was pending.
+    if (key === "dashboard") check(initial === 1 && !repeats.length, tag + ": " + loadRequests.length + " /v1/media requests on load in " + waves + " render wave(s); no key asked twice unless pending (" + loadRequests.map((r, i) => r.keys.length + " keys at " + r.at + " ms" + (i ? " " + r.keys.join(" ") : "")).join(", ") + ")", { requests: loadRequests.map(r => r.url.slice(0, 200)), repeats });
+    else {
+      // Exactly one when tiles are near the first screen; none when the first tiles are further down (they ask as they come near).
+      check(initial === (nearFirst ? 1 : 0) && !strayFollowUps.length, tag + ": " + (nearFirst ? "exactly one /v1/media request on load" : "no /v1/media request until tiles come near (none within 600px of the first screen)") + "; follow-ups ask only for keys that were pending (or a headshot whose image failed, once)", { nearFirst, requests: loadRequests.map(r => r.url.slice(0, 160)), strayFollowUps });
+    }
+    check(log.logoRoute === 0, tag + ": no /v1/company/logo request per tile", log.logoRoute);
+    // Then every tile on the page, offscreen included.
+    const ready = await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 20000 }));
+    check(ready.settled, tag + ": InsidirMedia.ready() settles every tile", ready);
+    await page.waitForTimeout(200);
+    const tiles = await page.evaluate(inspect, ORACLE);
+    tileChecks(tag, tiles);
+    const curated = await page.evaluate(() => [...document.querySelectorAll("img")].map(i => i.currentSrc || i.src).filter(s => /wikimedia\.org/.test(s)));
+    for (const u of curated) CURATED.add(u);
+    const third = [...new Set(log.thirdParty)].filter(u => !/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\//.test(u));
+    check(!third.length, tag + ": no image host but this origin and the curated Wikimedia Commons files", third);
+    const extra = await page.evaluate(() => {
+      const shifts = window.__shifts || [];
+      return { cls: +shifts.reduce((s, e) => s + e.value, 0).toFixed(4), tileShift: +shifts.filter(e => e.sources.some(s => /ins-media/.test(s))).reduce((s, e) => s + e.value, 0).toFixed(4), shifts: shifts.slice(0, 6),
+        nested: document.querySelectorAll("a a").length, credits: [...document.querySelectorAll("[data-media-credits]")].map(c => c.innerHTML).join(" | "),
+        commons: [...document.querySelectorAll("[data-media].is-photo[data-credit-url*='commons.wikimedia.org']")].map(t => ({ name: t.dataset.creditName, credit: t.dataset.credit, url: t.dataset.creditUrl })) };
+    });
+    // Tiles must never move anything; the page's own data loading (rows arriving) is reported, not judged here.
+    check(extra.tileShift < 0.005, tag + ": layout shift from tiles " + extra.tileShift + " (under 0.005; page total while its records load: " + extra.cls + ")", extra.shifts);
+    PAGE_CLS[tag] = extra.cls;
+    check(extra.nested === 0, tag + ": no nested links", extra.nested);
+    const missing = extra.commons.filter(c => !extra.credits.includes(c.credit.split(" · ")[0].replace(/&/g, "&amp;")) || !extra.credits.includes(c.url.replace(/&/g, "&amp;")) || !/CC BY|Public domain/.test(c.credit) || !extra.credits.includes(c.credit.split(" · ").at(-1)));
+    check(!missing.length && (!extra.commons.length || extra.credits.length > 0), tag + ": the credits footnote lists every Commons photo with author, licence and file page (" + extra.commons.length + ")", { missing, credits: extra.credits.slice(0, 300) });
+    if (SHOTS) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(250);
+      await page.screenshot({ path: join(SHOTS, `${key}-${width}.png`) });
+      await page.screenshot({ path: join(SHOTS, `${key}-${width}-full.png`), fullPage: true });
+    }
+    check(errors.length === 0, tag + ": no page or console errors", errors);
+    await ctx.close();
+  }
+
+  /* ---------- once: failure modes and reuse ---------- */
+  if (ONCE) {
+    // 1. The batch is unavailable (503): curated marks and portraits, then initials; no errors.
+    {
+      const { ctx, page, errors, log } = await open(1440, "/alerts.html", { media: "503" });
+      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 8000 }));
+      const t = await page.evaluate(() => [...document.querySelectorAll("[data-media]")].map(x => ({ media: x.dataset.media, ticker: x.dataset.ticker, name: x.dataset.name, state: x.classList.contains("is-photo") ? "photo" : x.classList.contains("is-logo") ? "logo" : x.classList.contains("is-monogram") ? "monogram" : "loading", src: x.querySelector("img")?.getAttribute("src") || "", real: x.dataset.realSource || "", ok: (x.querySelector("img")?.naturalWidth || 0) > 0 })));
+      const apple = t.filter(x => x.media === "company" && x.ticker === "AAPL"), cook = t.find(x => /COOK/.test(x.name || "")), kress = t.find(x => /KRESS/.test(x.name || "")), woods = t.find(x => /WOODS/.test(x.name || ""));
+      check(apple.length && apple.every(x => x.state === "logo" && /assets\/icons\/apple\.svg/.test(x.src) && /Apple_logo_black/.test(x.real) && x.ok), "503: companies with a curated mark show it (Apple)", apple);
+      check(cook && cook.state === "photo" && /upload\.wikimedia\.org.*Tim_Cook/.test(cook.src), "503: a person with a curated Commons portrait shows it (Tim Cook)", cook);
+      check(kress && kress.state === "logo" && /nvidia\.svg/.test(kress.src), "503: a person without one gets the company's curated mark standing in (Colette Kress, NVIDIA)", kress);
+      check(woods && woods.state === "monogram" && t.filter(x => x.media === "company" && x.ticker === "XOM").every(x => x.state === "monogram"), "503: initials when nothing curated exists (Exxon Mobil, Darren Woods)", woods);
+      check(log.media.length === 1, "503: the unavailable batch is not asked again on this visit", log.media.length);
+      check(errors.length === 0, "503: no page or console errors", errors);
+      if (SHOTS) { await page.waitForTimeout(1500); await page.locator("#alerts-real").scrollIntoViewIfNeeded(); await page.screenshot({ path: join(SHOTS, "alerts-503-1440.png") }); }
+      await ctx.close();
+    }
+    // 2. A headshot whose image 404s: asked again once, then the company's logo stands in.
+    {
+      const { ctx, page, log } = await open(1440, "/alerts.html");
+      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 15000 }));
+      const woods = await page.evaluate(() => [...document.querySelectorAll("[data-media][data-cik='1408356']")].map(x => ({ state: x.className, src: x.querySelector("img")?.getAttribute("src") })));
+      const asked = log.media.filter(r => r.keys.includes("p:1408356:XOM")).length;
+      check(woods.length && woods.every(w => /is-stand-in/.test(w.state) && w.src === LOGOS.XOM.src), "image 404: the person's tile steps down to the company's logo", woods);
+      check(asked === 2, "image 404: the headshot is asked for again exactly once", asked);
+      await ctx.close();
+    }
+    // 3. sessionStorage: a second page shows final tiles at insertion and asks for nothing it already knows.
+    {
+      const { ctx, page, log } = await open(1440, "/filings.html");
+      await page.waitForFunction(RENDERED.filings, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document));
+      await page.waitForTimeout(500);   // the cache is written 300 ms after the last answer
+      const before = log.media.length;
+      await page.goto(base + "/explore.html", { waitUntil: "domcontentloaded" });
+      await page.waitForFunction(RENDERED.explore, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document));
+      const inserted = await page.evaluate(() => window.__inserted);
+      const loading = inserted.filter(x => x.loading);
+      check(inserted.length >= 12 && !loading.length, "cache: on the next page every known tile is final when it is inserted (no dots, no swap)", { inserted: inserted.length, loading });
+      check(log.media.length === before, "cache: the next page sends no /v1/media request for what it already knows", log.media.slice(before).map(r => r.url));
+      await ctx.close();
+    }
+    // 4. Reduced motion: pictures appear without the landing animation.
+    {
+      const { ctx, page } = await open(1440, "/explore.html", { reducedMotion: "reduce" });
+      await page.waitForFunction(RENDERED.explore, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document));
+      const anims = await page.evaluate(() => [...document.querySelectorAll("[data-media]>img,[data-media]>svg")].reduce((n, el) => n + el.getAnimations().filter(a => /ins-land/.test(a.animationName || "")).length, 0) + [...document.querySelectorAll("[data-media]")].filter(t => getComputedStyle(t.querySelector("img")).animationName !== "none").length);
+      check(anims === 0, "reduced motion: no landing animation on any tile", anims);
+      await ctx.close();
+    }
+    // 5. Motion: a picture that arrives after first paint lands on the site's spring.
+    {
+      const { ctx, page } = await open(1440, "/explore.html");
+      await page.waitForFunction(RENDERED.explore, null, { timeout: 20000 });
+      await page.evaluate(() => window.InsidirMedia.ready(document));
+      const r = await page.evaluate(() => { const t = document.querySelector("[data-media][data-land]"); const cs = t && getComputedStyle(t.querySelector("img")); return t ? { name: cs.animationName, timing: cs.animationTimingFunction.slice(0, 20), dur: cs.animationDuration } : null; });
+      check(r && /ins-land-[ab]/.test(r.name) && /^linear\(/.test(r.timing) && r.dur === "0.95s", "motion: late pictures land with ins-land on --hf-spring over --hf-spring-dur", r);
+      await ctx.close();
+    }
+  }
+} catch (e) {
+  failed.push("check crashed: " + (e && e.stack || e));
+} finally {
+  await browser.close();
+  server.close();
+}
+for (const p of passed) console.log("PASS " + p);
+console.log("INFO page layout shift totals while records load (not caused by tiles): " + JSON.stringify(PAGE_CLS));
+for (const f of failed) console.log("FAIL " + f);
+console.log(`\n${passed.length} passed, ${failed.length} failed`);
+process.exit(failed.length ? 1 : 0);

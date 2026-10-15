@@ -24,6 +24,7 @@ const FEED_MAX=8,LIST_MAX=6,RESERVE=3,SUGGEST_EMPTY=6,SUGGEST_MORE=4,UNDO_MS=600
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const st={ok:false,people:[],items:[],following:0,followed:new Set(),dropped:new Set(),names:new Map(),feedRows:RESERVE,listSlots:RESERVE,suggestions:[],busy:new Set()};
 const nameOf=cik=>st.names.get(cik)||"this person";
+const EMPTY_MSG="You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.";
 
 /* ================= Today ================= */
 const line=(id,html)=>{const el=$(id);if(!el)return;el.innerHTML=html;el.classList.remove("is-skeleton");el.removeAttribute("aria-busy");rememberToday();};
@@ -93,11 +94,14 @@ D.watch(["status","filing"],r=>D.now(()=>todayFresh(r)));
 
 /* ================= 01 People you follow ================= */
 const live=text=>{const el=$("v10-follow-live");if(el)el.textContent=text;};
+/* The notice (#rd-toast, role=status) sits at the bottom of the screen, so it never moves the page. An Undo stays for 6 s;
+   other notices leave after 6 s (8 s for an error). */
 let undoTimer=0;
-function status(html,{error=false}={}){
- const el=$("v10-follow-status");if(!el)return;
+function status(html,{error=false,keep=false}={}){
+ const el=$("rd-toast");if(!el)return;
  clearTimeout(undoTimer);
  el.innerHTML=html;el.classList.toggle("is-error",error);
+ if(!keep)undoTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.textContent="";},error?8000:UNDO_MS);
 }
 const followBtn=(cik,name,on)=>'<button type="button" class="v10-follow-btn'+(on?" is-following":"")+'" data-follow="'+E(cik)+'" aria-pressed="'+on+'" aria-label="'+E((on?"Unfollow ":"Follow ")+name)+'">'+(on?"Following ✓":"Follow +")+'</button>';
 const isFollowing=cik=>st.followed.has(cik)&&!st.dropped.has(cik);
@@ -170,7 +174,8 @@ function drawFeed(animate){
 function drawList(){
  const host=$("v10-follow-list");if(!host)return;
  const people=st.people.slice(0,st.listSlots);
- host.innerHTML=people.length?people.map(listItem).join(""):'<li class="rd-fl__msg"><p class="rd-empty">Nobody yet. The people you follow appear here, with what they traded in the last 30 days.</p></li>';
+ // Phones show the module's own empty message in the strip (one card, the strip's fixed height); wider screens a short note.
+ host.innerHTML=people.length?people.map(listItem).join(""):'<li class="rd-fl__msg"><p class="rd-empty"><span class="rd-wide">Nobody yet. The people you follow appear here, with what they traded in the last 30 days.</span><span class="rd-narrow">'+E(EMPTY_MSG)+'</span></p></li>';
  listMore(st.people.length,people.length);
  label();
  D.hydrate(host);
@@ -198,7 +203,9 @@ function renderFollow(res){
  const feed=$("v10-follow-feed"),list=$("v10-follow-list");
  for(const el of [feed,list])D.ready(el);
  if(!res.ok){
-  st.ok=false;
+  // Nothing to keep room for: the message takes the module's width and the reserves collapse.
+  st.ok=false;st.feedRows=1;st.listSlots=0;setReserve();
+  const box=$("rd-follow");box?.classList.remove("is-unknown","is-empty");box?.classList.add("is-error");
   const e=res.error,msg="Updates from the people you follow could not be loaded: "+String(e.message||"").replace(/\.$/,"")+".";
   if(feed)feed.innerHTML='<li class="rd-feed__msg"><p class="rd-empty rd-empty--error" role="alert">'+E(msg)+(D.canRetry(e)?D.retry("follow"):"")+'</p></li>';
   if(list)list.innerHTML="";
@@ -217,8 +224,10 @@ function renderFollow(res){
  // skeleton. A follow made in place fills that space; anything past it is counted in "and N more".
  st.feedRows=st.following?clamp(st.items.length,1,FEED_MAX):0;
  $("rd-follow")?.classList.toggle("is-empty",!st.following);
- const empty=$("v10-follow-empty");if(empty&&!st.following)empty.textContent="You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.";
- st.listSlots=clamp(st.people.length,RESERVE,LIST_MAX);
+ $("rd-follow")?.classList.remove("is-unknown","is-error");
+ const empty=$("v10-follow-empty");if(empty&&!st.following)empty.textContent=EMPTY_MSG;
+ // The followed list keeps room for six people (three when following nobody), so a follow made here shows up in it.
+ st.listSlots=st.following?LIST_MAX:RESERVE;
  D.saveCount("feed",st.feedRows);D.saveCount("list",st.listSlots);D.saveCount("follows",st.following);
  setReserve();
  drawFeed(false);drawList();
@@ -372,8 +381,9 @@ async function unfollow(cik){
  try{
   await D.api("/v1/me/people/"+encodeURIComponent(cik),{method:"DELETE"});
   st.following=st.followed.size-st.dropped.size;label();
-  status('Unfollowed '+E(name)+'. <button type="button" class="rd-undo" data-undo="'+E(cik)+'" aria-label="'+E("Undo: follow "+name+" again")+'">Undo</button>');
-  undoTimer=setTimeout(()=>{const el=$("v10-follow-status");if(el?.querySelector(`[data-undo="${CSS.escape(cik)}"]`)){const had=el.contains(document.activeElement);el.textContent="Unfollowed "+name+".";if(had)document.querySelector('#v10-follow-list button[data-follow="'+CSS.escape(cik)+'"]')?.focus({preventScroll:true});}},UNDO_MS);
+  status('Unfollowed '+E(name)+'. <button type="button" class="rd-undo" data-undo="'+E(cik)+'" aria-label="'+E("Undo: follow "+name+" again")+'">Undo</button>',{keep:true});
+  // Undo stays for 6 s; then the notice goes (focus on Undo returns to the person's button first).
+  undoTimer=setTimeout(()=>{const el=$("rd-toast");if(el?.querySelector(`[data-undo="${CSS.escape(cik)}"]`)){const had=el.contains(document.activeElement);el.textContent="";if(had)document.querySelector('#v10-follow-list button[data-follow="'+CSS.escape(cik)+'"]')?.focus({preventScroll:true});}},UNDO_MS);
  }catch(e){
   st.dropped.delete(cik);setButtons(cik,true);dim(cik,false);
   status(E("Could not unfollow "+name+": "+String(e.message||"").replace(/\.$/,"")+". Nothing was changed."),{error:true});

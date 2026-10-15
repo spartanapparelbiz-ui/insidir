@@ -18,6 +18,16 @@
    scroll into view (data-hf-reveal / data-hf-reveal-group, v13-motion.js); content that arrives on screen fades in
    over 200 ms and its rows rise a beat apart; the New marker pops once on the spring; state changes move only
    opacity and transform on --hf-spring. Numbers never animate. Under reduced motion nothing moves. */
+/* Custom properties that are only read on the element that sets them do not inherit, so changing one restyles that
+   element alone, not its whole subtree. --hf-i is the scroll reveal's stagger (v13-motion.js sets it on a block while it
+   rises and removes it after): unregistered, each change restyled every row of a 12-row table twice (80 ms of style per
+   reveal at phone speed). --i is this page's own stagger; --rows / --slots the space the followed lists keep. */
+@property --hf-i{syntax:"<number>";inherits:false;initial-value:0}
+@property --i{syntax:"<number>";inherits:false;initial-value:0}
+@property --rows{syntax:"<number>";inherits:false;initial-value:3}
+@property --slots{syntax:"<number>";inherits:false;initial-value:3}
+@property --slot-rows{syntax:"<number>";inherits:false;initial-value:1}
+@property --w{syntax:"<percentage>";inherits:false;initial-value:60%}
 @layer insidir-v13{
 
 /* ---------- direction markers (CSS triangles: the self-hosted font has no ▲▼) ---------- */
@@ -68,7 +78,6 @@ body.v13 .is-skeleton{pointer-events:none!important}
 @keyframes rd-fade{from{opacity:0}}
 @keyframes rd-up{from{translate:0 8px}}
 @keyframes rd-pop{from{scale:.7}}
-body.v13 .rd-arrive>:not(.is-skeleton){animation:rd-fade .2s cubic-bezier(.2,.7,.1,1) backwards,rd-up var(--hf-spring-dur) var(--hf-spring) backwards!important;animation-delay:calc(min(var(--i,0),6) * 40ms)!important}
 body.v13 .rd-today__line{animation:rd-fade .2s cubic-bezier(.2,.7,.1,1) backwards!important}
 body.v13 .rd-today__line.is-skeleton{animation:none!important}
 /* A person followed in place, and their rows, rise into the space kept for them. */
@@ -101,6 +110,16 @@ body.v13 .rd-follow__empty{grid-area:empty!important;display:none!important;marg
 body.v13 .rd-follow.is-empty .rd-follow__empty{display:block!important}
 body.v13 .rd-follow.is-empty .rd-follow__feed:has(>ol:empty){display:none!important}
 body.v13 .rd-follow.is-empty .rd-follow__feed{margin-top:clamp(22px,2.6vw,34px)!important}
+/* A browser with no saved counts does not know yet whether the reader follows anyone: it keeps room for feed rows and
+   draws no suggestions until the answer arrives, so whichever it is, nothing already drawn has to move. */
+body.v13 .rd-follow.is-unknown .rd-suggest{display:none!important}
+body.v13 .rd-follow.is-error{grid-template-areas:"feed feed" "suggest suggest"!important}
+body.v13 .rd-follow.is-error .rd-follow__side{display:none!important}
+/* The error message and its Try again take only the room they need. */
+body.v13 .rd-follow.is-error .rd-feed{min-height:0!important}
+/* A module that failed to load keeps no room for content that is not coming. */
+body.v13 .rd-kpis:has(>.rd-empty--error),body.v13 .rd-dframe:has(.rd-empty--error){min-height:0!important;height:auto!important}
+body.v13 .rd-narrow{display:none!important}
 /* Latest trades: two lines per row, a fixed row height; the list keeps room for --rows rows. */
 body.v13 .rd-feed{--feed-row:78px;list-style:none!important;margin:0!important;padding:0!important;border-top:1px solid var(--hf-line)!important;min-height:calc(var(--rows,3) * var(--feed-row))!important}
 body.v13 .rd-feed__row{position:relative!important;display:grid!important;grid-template-columns:48px minmax(0,1fr)!important;align-items:center!important;column-gap:16px!important;box-sizing:border-box!important;
@@ -156,11 +175,14 @@ body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn{display:inline
 body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn:hover,body.v13 .rd-save-btn:hover{border-color:var(--hf-ink)!important}
 body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn.is-following,body.v13 .rd-save-btn.is-saved{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}
 /* The notice under the followed list: fixed to the bottom of the screen, so it never moves the page. */
-body.v13 .rd-toast{position:fixed!important;left:50%!important;bottom:22px!important;z-index:70!important;display:block!important;box-sizing:border-box!important;max-width:min(560px,calc(100vw - 32px))!important;margin:0!important;padding:12px 16px!important;
+body.v13 .rd-toast{position:fixed!important;left:50%!important;bottom:22px!important;z-index:70!important;display:block!important;box-sizing:border-box!important;width:max-content!important;max-width:min(560px,calc(100vw - 32px))!important;margin:0!important;padding:12px 16px!important;
   translate:-50% 0!important;background:var(--hf-surface-2)!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-ink)!important;font:400 11.5px/1.6 var(--hf-mono)!important;letter-spacing:.01em!important;
   transition:opacity .25s cubic-bezier(.2,.7,.1,1),translate var(--hf-spring-dur) var(--hf-spring)!important}
 body.v13 .rd-toast:empty{opacity:0!important;translate:-50% 12px!important;pointer-events:none!important;padding:0!important;border:0!important}
 body.v13 .rd-toast.is-error{border-color:var(--hf-alert)!important}
+/* The message never blocks a click on what lies under it; only its Undo button takes the pointer. */
+body.v13 .rd-toast{pointer-events:none!important}
+body.v13 .rd-toast :is(button,a){pointer-events:auto!important}
 body.v13 .rd-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!important;height:auto!important;min-height:0!important;background:none!important;border:0!important;cursor:pointer!important;color:var(--hf-ink)!important;
   font:500 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;text-decoration:underline!important;text-underline-offset:3px!important}
 
@@ -373,10 +395,10 @@ body.v13 .rd-about dt{display:inline!important;margin:0 .5ch 0 0!important;font:
 body.v13 .rd-about dt.sr-only{position:absolute!important}
 body.v13 .rd-about dd{display:inline!important;margin:0!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
 body.v13 .rd-about>div:last-child::after{content:"."!important;color:var(--hf-ink)!important}
-body.v13 .rd-credits{margin:clamp(44px,5vw,64px) 0 0!important;max-width:820px!important;font:400 10.5px/1.7 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
+body.v13 .rd-credits{margin:18px 0 0!important;max-width:820px!important;font:400 10.5px/1.7 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-muted)!important}
 body.v13 .rd-credits:empty{display:none!important}
 body.v13 .rd-credits a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important}
-body.v13 .rd-credits+.rd-disclosure{margin-top:18px!important}
+body.v13 .rd-credits.is-held:empty{display:block!important}
 
 /* ---------- responsive ---------- */
 @media (max-width:1179px){
@@ -384,6 +406,7 @@ body.v13 .rd-credits+.rd-disclosure{margin-top:18px!important}
   body.v13 .rd-follow{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"side" "feed" "suggest"!important;row-gap:22px!important}
   body.v13 .rd-follow.is-empty{grid-template-areas:"side" "empty" "suggest" "feed"!important;grid-template-rows:none!important}
   body.v13 .rd-follow.is-empty .rd-follow__feed{margin-top:0!important}
+  body.v13 .rd-follow.is-error{grid-template-areas:"feed" "suggest"!important}
   body.v13 .rd-follow .rd-suggest,body.v13 .rd-follow.is-empty .rd-suggest{margin-top:0!important}
   body.v13 .rd-flist{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;column-gap:clamp(20px,3vw,32px)!important;align-content:start!important;min-height:calc(var(--slot-rows,1) * var(--fl-h))!important}
   body.v13 .rd-fl__msg{grid-column:1/-1!important}
@@ -404,7 +427,11 @@ body.v13 .rd-credits+.rd-disclosure{margin-top:18px!important}
   body.v13 .rd-flist{display:flex!important;gap:12px!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scroll-snap-type:x mandatory!important;scrollbar-width:thin!important;scrollbar-color:var(--hf-line-2) transparent!important;
     border-top:0!important;min-height:0!important;height:150px!important;padding:0 0 6px!important;align-items:stretch!important}
   body.v13 .rd-fl,body.v13 .rd-fl__msg{flex:0 0 min(270px,78vw)!important;scroll-snap-align:start!important;min-height:0!important;height:auto!important;padding:12px!important;border:1px solid var(--hf-line)!important}
-  body.v13 .rd-fl__msg{display:flex!important;align-items:center!important}
+  body.v13 .rd-fl__msg{display:flex!important;align-items:center!important;flex-basis:100%!important}
+  body.v13 .rd-fl__msg .rd-wide{display:none!important}
+  body.v13 .rd-fl__msg .rd-narrow{display:inline!important}
+  body.v13 .rd-follow.is-empty .rd-follow__empty{display:none!important}
+  body.v13 .rd-follow.is-empty{grid-template-areas:"side" "suggest" "feed"!important}
   body.v13 .rd-fl__msg .rd-empty{padding:0!important}
   body.v13 .rd-fl__body{grid-template-columns:minmax(0,1fr)!important}
   body.v13 .rd-fl__body>.v10-follow-btn{grid-column:1!important;grid-row:auto!important;justify-self:start!important;margin-top:8px!important}
@@ -499,6 +526,7 @@ body.v13 .rd-credits+.rd-disclosure{margin-top:18px!important}
 @media (max-width:600px){
   /* Touch targets: standalone links and controls in the flow are at least 32px tall on phones. */
   body.v13 .rd-co__id{min-height:32px!important}
+  body.v13 :is(.rd-big__what,.rd-table--trades) .rd-ent>a[data-ent]{display:flex!important;align-items:center!important;min-height:24px!important}
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button{height:32px!important;min-height:32px!important}
   body.v13 .rd-undo{min-height:28px!important}
 }
@@ -506,7 +534,7 @@ body.v13 .rd-credits+.rd-disclosure{margin-top:18px!important}
   body.v13 :is(.rd-fl,.rd-sg) .v10-follow-btn,body.v13 .rd-save-btn,body.v13 .rd-seg button,body.v13 .rd-filters button{height:44px!important;min-height:44px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  body.v13 :is(.rd-arrive>*,.rd-rise,.rd-today__line,#v3-trades.is-entering>tr,.rd-new){animation:none!important}
+  body.v13 :is(.rd-rise,.rd-today__line,#v3-trades.is-entering>tr,.rd-new){animation:none!important}
   body.v13 :is(.rd-dview,.rd-dview.is-active,.rd-toast,.rd-toast:empty,#v3-trades.is-leaving>tr,.rd-fl,.rd-feed__row){transition:none!important}
   body.v13 .rd-toast:empty{translate:-50% 0!important}
 }

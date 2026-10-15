@@ -1,6 +1,7 @@
-/* Real SEC reporting people (from /v1/insiders) and the reader's followed people (/v1/me/people).
-   Used by people.html (directory + following) and the dashboard's reporting-people preview.
-   Every person shows a verified portrait or monogram initials, never an empty photo tile.
+/* Real SEC reporting people (from /v1/insiders) and the reader's followed people (/v1/me/people), on people.html
+   (directory + following). The overview's own "People you follow" module is v13-overview.js.
+   Every person gets a tile from entity-media.js identified by their SEC CIK: a headshot, the issuer's logo standing in
+   for one, or initials only when neither exists.
 
    Arriving with ?q= (a person link from the dashboard, or a Familiar faces tile) runs that search
    and brings the directory into view, with focus on its status line, so the result is on screen
@@ -14,7 +15,7 @@ const day=x=>{let d=new Date(x);return x&&!Number.isNaN(d.getTime())?new Intl.Da
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
 const companyHref=t=>t?"company.html?ticker="+encodeURIComponent(t):"filings.html";
 const personHref=n=>"people.html?q="+encodeURIComponent(String(n||"").trim().slice(0,80))+"#v10-directory";
-const host=$("v10-people-results"),preview=$("v10-people-preview"),followingHost=$("v10-followed-results"),status=$("v10-people-status");
+const host=$("v10-people-results"),followingHost=$("v10-followed-results"),status=$("v10-people-status");
 const PAGE=24;
 let records=[],following=new Set(),followState="loading",loadError=null,visible=PAGE,current="",seq=0;
 const say=x=>{if(status)status.textContent=x};
@@ -31,15 +32,15 @@ function followButton(id,compact){
  const saved=following.has(id),ready=followState==="ready";
  return '<button type="button" class="v10-follow-btn'+(saved?" is-following":"")+'" data-person-follow="'+esc(id)+'" aria-pressed="'+saved+'"'+(ready?"":" disabled")+'>'+(saved?"Following ✓":compact?"Follow +":"Follow person +")+'</button>';
 }
-function card(p,where){
+function card(p){
  const raw=p.owner_name||"Reporting person",name=shown(raw),t=ticker(p.ticker),id=cik(p.owner_cik);
- const title=where==="preview"?'<a href="'+esc(personHref(raw))+'">'+esc(name)+'</a>':esc(name);
+ const title=esc(name);
  const facts=['<div><dt>Latest transaction</dt><dd>'+esc(day(p.last_transaction_date))+'</dd></div>'];
  if(Number.isFinite(Number(p.filings))&&Number(p.filings)>0)facts.push('<div><dt>Filings imported</dt><dd>'+esc(Number(p.filings))+'</dd></div>');
  return '<article class="v10-person-card">'+
-  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md")||"")+'<div class="v10-person-card__identity"><strong>'+title+'</strong><small>'+esc([t,p.issuer_name?String(p.issuer_name).slice(0,60):""].filter(Boolean).join(" · ")||"SEC reporting person")+'</small></div></div>'+
+  '<div class="v10-person-card__head">'+(media?.portrait(raw,t,"md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong>'+title+'</strong><small>'+esc([t,p.issuer_name?String(p.issuer_name).slice(0,60):""].filter(Boolean).join(" · ")||"SEC reporting person")+'</small></div></div>'+
   '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
-  '<div class="v10-person-card__actions">'+(t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<a href="filings.html">Filings ↗</a>')+followButton(id,where==="preview")+'</div></article>';
+  '<div class="v10-person-card__actions">'+(t?'<a href="'+esc(companyHref(t))+'">'+esc(t)+' report ↗</a>':'<a href="filings.html">Filings ↗</a>')+followButton(id,false)+'</div></article>';
 }
 const moreButton=()=>{const left=records.length-visible;return left>0?'<div class="v10-people-more"><button type="button" data-people-more data-hf-atom>Show more people <span>· '+left+' more</span></button></div>':""};
 function countLabel(){
@@ -48,14 +49,9 @@ function countLabel(){
  return n>visible?base+" · "+visible+" shown":base;
 }
 function draw(){
- if(preview){
-  preview.innerHTML=loadError?'<p class="rd-empty rd-empty--error" role="alert">Reporting people are unavailable: '+esc(loadError)+'. '+retryButton+'</p>':
-   records.length?records.slice(0,8).map(p=>card(p,"preview")).join(""):'<p class="rd-empty">No reporting people in the current import yet. <a href="filings.html">Open the filing library</a></p>';
-  media?.hydrate(preview);
- }
  if(host){
   host.innerHTML=loadError?'<p class="v10-people-empty" role="alert">The reporting-person directory could not be loaded. '+retryButton+'</p>':
-   records.length?records.slice(0,visible).map(p=>card(p,"directory")).join("")+moreButton():'<p class="v10-people-empty">No SEC reporting people matched that name in the current import. Try a last name, as filed with the SEC.</p>';
+   records.length?records.slice(0,visible).map(p=>card(p)).join("")+moreButton():'<p class="v10-people-empty">No SEC reporting people matched that name in the current import. Try a last name, as filed with the SEC.</p>';
   media?.hydrate(host);
   const n=$("v10-people-count");if(n)n.textContent=countLabel();
  }
@@ -66,7 +62,7 @@ function showMore(){
  if(!host)return;
  const from=visible;visible=Math.min(records.length,visible+PAGE);
  host.querySelector(".v10-people-more")?.remove();
- host.insertAdjacentHTML("beforeend",records.slice(from,visible).map(p=>card(p,"directory")).join("")+moreButton());
+ host.insertAdjacentHTML("beforeend",records.slice(from,visible).map(p=>card(p)).join("")+moreButton());
  media?.hydrate(host);
  const n=$("v10-people-count");if(n)n.textContent=countLabel();
  host.querySelectorAll(".v10-person-card")[from]?.querySelector("a,button:not([disabled])")?.focus({preventScroll:true});
@@ -76,7 +72,7 @@ function drawFollowing(items){
  if(!followingHost)return;
  followingHost.innerHTML=items.length?items.map(p=>{
   const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik);
-  return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md")||"")+
+  return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md",{cik:id})||"")+
   '<div><strong>'+esc(shown(raw))+'</strong><small>'+esc(t||"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
   (t?'<a href="'+esc(companyHref(t))+'" data-hf-atom>'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true" data-hf-atom>Unfollow</button>':"")+'</div>';
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
@@ -108,7 +104,7 @@ function reveal(){
  status?.focus({preventScroll:true});
 }
 document.addEventListener("DOMContentLoaded",()=>{
- if(!host&&!preview&&!followingHost)return;
+ if(!host&&!followingHost)return;
  const form=$("v10-people-search"),input=$("v10-person-query"),q=(new URLSearchParams(location.search).get("q")||"").trim().slice(0,80);
  if(input)input.value=q;
  // show: scroll to the directory now (one smooth scroll; the results render below its heading,
