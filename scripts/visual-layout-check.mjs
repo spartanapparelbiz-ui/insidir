@@ -73,7 +73,7 @@ try{
     return {headerX:h.x,headerY:h.y,headerW:h.width,headerH:h.height,mainX:m.x,mainW:m.width,mainY:m.y,
       navDisplay:getComputedStyle(nav).display,headerPosition:getComputedStyle(header).position,
       overflow:document.documentElement.scrollWidth-innerWidth,bodyColor:getComputedStyle(document.body).backgroundColor,
-      hasData:!!document.getElementById("v3-filings")&&!!document.getElementById("v3-trades")};
+      hasData:!!document.getElementById("v10-follow-feed")&&!!document.getElementById("v3-trades")};
    });
    assert.ok(app.overflow<=4,item.width+"px dashboard overflow "+JSON.stringify(app));
    assert.ok(Math.abs(app.headerX)<3&&Math.abs(app.headerW-item.width)<5,"Dashboard has a side navigation, not a top header: "+JSON.stringify(app));
@@ -82,7 +82,7 @@ try{
    assert.ok(Math.abs(app.mainX+app.mainW/2-item.width/2)<5,"App main content not centered");
    assert.ok(app.hasData,"SEC research modules missing");
    assert.equal(await page.locator('.app-main img[src*="assets/img/"]').count(),0,"Dashboard must not show decorative raster photos");
-   assert.ok(await page.locator("#v3-ticker").isVisible(),"Dashboard company search missing");
+   assert.ok(await page.locator("#app-search-input").isVisible(),"Dashboard company search missing");
    if(item.width>=1140)assert.notEqual(app.navDisplay,"none","Horizontal desktop navigation missing");
    else {
     const toggle=page.locator(".app-menu-btn");

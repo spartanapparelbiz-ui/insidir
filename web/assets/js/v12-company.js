@@ -156,8 +156,28 @@ function personInfo(secName, short = false, ownerCik = null) {
   const natural = readable(state.photos?.names?.[key]) || (verified?.source !== "sec-proxy" ? readable(verified?.personName) : null);
   return { name: natural && (!short || natural.length <= 28) ? natural : displayName(secName, { short }), photo };
 }
+/* A reporting person's own file (person.html?cik=, the SEC owner CIK without leading zeros) whenever the row has
+   their CIK; null without one (the name then opens the people directory's search instead). */
+const personFile = cik => { const c = String(cik ?? "").trim(); return /^\d{1,10}$/.test(c) && /[1-9]/.test(c) ? "person.html?cik=" + c.replace(/^0+/, "") : null; };
+const personSearch = name => "people.html?q=" + encodeURIComponent(String(name || "").replace(/\s+/g, " ").trim().slice(0, 80)) + "#v10-directory";
+/* The name as shown, linked to the person's file when the CIK is known, else to the directory's search for the name
+   as filed (the directory matches filed names, "COOK TIMOTHY D", so the search uses that form, not the display one). */
+const personLink = (shown, cik, filed) => {
+  const href = personFile(cik) || (String(filed || shown || "").trim() ? personSearch(filed || shown) : null);
+  return href ? `<a class="cx-person-link" href="${esc(href)}">${esc(shown)}</a>` : esc(shown);
+};
+/* A leader's name in the form the SEC files names ("Arthur D. Levinson" -> "Levinson Arthur D"), so the directory
+   search can find a Form 4 filer listed under the name as filed. Generational suffixes stay off the search. */
+const filedForm = name => {
+  const words = String(name || "").replace(/[.,]/g, " ").split(/\s+/).filter(Boolean);
+  while (words.length > 2 && /^(?:jr|sr|ii|iii|iv)$/i.test(words.at(-1))) words.pop();
+  return words.length > 1 ? [words.at(-1), ...words.slice(0, -1)].join(" ") : words.join(" ");
+};
 /* Outside tables an avatar is an identity tile that parts around the pointer like the logo (an atom, v13-motion.js);
-   table cells never move, so the small size used in the insider ledger stays put. */
+   table cells never move, so the small size used in the insider ledger stays put.
+   A person with no published photo gets the company's own logo standing in, as on every other page (the
+   logo is the one in the report's header, from the same /v1/media answer); initials only when the
+   company has no logo either. A photo carries its credit for the footnote (InsidirMedia.credits()). */
 function avatar(name, photo, size = "") {
   const cls = "cx-avatar" + (size ? " cx-avatar--" + size : "");
   const atom = size === "sm" ? "" : " data-hf-atom";
@@ -165,7 +185,13 @@ function avatar(name, photo, size = "") {
   const src = photo?.src && (/^\/v1\/media\/[a-f0-9]{64}\.(webp|png|jpeg)$/.test(photo.src) ? photo.src : safeUrl(photo.src, ["wikimedia.org"]));
   if (src) {
     const credit = photo.credit ? `Photo: ${photo.credit}` : "";
-    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+    const credits = ` data-credit-src="${esc(src)}" data-credit-name="${esc(name)}" data-credit="${esc(photo.credit || "")}"${photo.source ? ` data-credit-url="${esc(photo.source)}"` : ""}`;
+    return `<span class="${cls}"${atom} data-initials="${fallback}"${credit ? ` title="${esc(credit)}"` : ""}${credits}><img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
+  }
+  const logo = state.logo?.src;
+  if (logo) {
+    const title = "No published photo of " + name + " · " + companyName() + " logo";
+    return `<span class="${cls} is-stand-in"${atom} data-initials="${fallback}" title="${esc(title)}" aria-hidden="true"><img src="${esc(logo)}" alt="" decoding="async" onerror="this.parentNode.classList.remove('is-stand-in');this.parentNode.textContent=this.parentNode.dataset.initials"></span>`;
   }
   return `<span class="${cls}"${atom} aria-hidden="true">${fallback}</span>`;
 }
@@ -285,18 +311,39 @@ function renderLogo() {
   if (host.dataset.src === src) return;
   host.dataset.src = src;
   const seq = state.seq;
-  const prepare = window.InsidirBrand?.prepare;
-  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(mark => {
+  const show = mark => {
     if (seq !== state.seq || host.dataset.src !== src) return;
     brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
     if (!mark) { host.hidden = true; host.replaceChildren(); return; }
     const img = new Image();
     img.alt = "";
     img.src = mark.url;
+    // Never drawn larger than half its stored size, so the mark stays at least 2x sharp: a 552x113 wordmark is
+    // at most 276x56 here, not stretched to the 300px slot. (Inline !important: the slot's rules are !important.)
+    if (mark.w > 0 && mark.h > 0) {
+      img.style.setProperty("max-width", `min(100%, ${Math.floor(mark.w / 2)}px)`, "important");
+      img.style.setProperty("max-height", `min(100%, ${Math.floor(mark.h / 2)}px)`, "important");
+    }
+    // A curated mark (the engine unreachable) has no stored size: its shape is read once it loads.
+    if (!mark.ratio) img.addEventListener("load", () => brand.classList.toggle("is-wide-logo", img.naturalHeight > 0 && img.naturalWidth / img.naturalHeight > 1.8), { once: true });
     host.className = "cx-logo";
     host.hidden = false;
     host.replaceChildren(img);
-  });
+  };
+  // One /v1/media batch (entity-media.js) answers the header logo; the same logo then stands in for people
+  // without a published photo. Without the helper, the logo route and brand-mark.js answer as before.
+  const media = window.InsidirMedia;
+  if (media?.logoFor) {
+    media.logoFor(state.ticker).then(entry => {
+      if (seq !== state.seq) return;
+      state.logo = entry?.src ? entry : null;
+      if (state.logo) { renderOverviewInsiders(); renderInsiders(); renderPeople(); }
+      show(state.logo ? { url: state.logo.src, ratio: state.logo.w && state.logo.h ? state.logo.w / state.logo.h : 0, w: state.logo.w, h: state.logo.h } : null);
+    });
+    return;
+  }
+  const prepare = window.InsidirBrand?.prepare;
+  (prepare ? prepare(src, { prepared: true }) : Promise.resolve(null)).then(show);
 }
 
 /* ---------- key facts ---------- */
@@ -552,7 +599,7 @@ function renderOverviewInsiders() {
   const rows = activity().slice(0, 4);
   host.innerHTML = rows.length ? rows.map(a => {
     const p = personInfo(a.owner.name, true, a.owner.cik);
-    return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
+    return `<div>${avatar(p.name, p.photo)}<div class="cx-person-name"><strong>${personLink(p.name, a.owner.cik, a.owner.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div><time datetime="${esc(a.transactionDate || a.filedAt)}">${esc(day(a.transactionDate || a.filedAt))}</time>${amountCell(a)}</div>`;
   }).join("") : '<p class="cx-empty">No Form 4 insider filings were found for this company.</p>';
 }
 function renderAbout() {
@@ -699,7 +746,7 @@ function renderInsiders() {
     // No blended average for a mixed filing: its split line gives each side's shares and value instead.
     const price = a.kind === "mixed" ? [] : (a.transactions || []).filter(t => t.price > 0 && !t.derivative);
     const avg = price.length ? price.reduce((s, t) => s + t.price * t.shares, 0) / Math.max(1, price.reduce((s, t) => s + t.shares, 0)) : null;
-    return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${esc(p.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
+    return `<tr><td><div class="cx-person-cell">${avatar(p.name, p.photo, "sm")}<div class="cx-person-name"><strong>${personLink(p.name, a.owner.cik, a.owner.name)}</strong><span title="${esc(a.owner.role || "")}">${esc(shortRole(a.owner.role))}</span></div></div></td>
       <td>${esc(insiderLabel(a) || "Reported transaction")}${extra}${mixedSplit(a) ? `<small>${esc(mixedSplit(a))}</small>` : ""}${finite(avg) ? `<small>Avg. ${esc(money(avg, "USD", { precise: true }))}</small>` : ""}</td>
       <td>${esc(day(a.transactionDate))}</td><td>${esc(day(a.filedAt))}</td>
       <td class="num ${finite(a.netShares) && a.netShares !== 0 && insiderDir(a) ? "is-" + insiderDir(a) : ""}">${finite(a.netShares) ? glyphDir(insiderDir(a)) + signed(a.netShares) : "—"}</td>
@@ -712,10 +759,11 @@ function renderInsiders() {
 function renderPeople() {
   const secPeople = state.insiders?.people || [];
   $("cx-people-sec").innerHTML = state.insiders ? (secPeople.length ? secPeople.slice(0, 24).map(person => {
-    const p = personInfo(person.name, false, person.cik);
-    return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
+    const p = personInfo(person.name, false, person.cik), file = personFile(person.cik);
+    // With the owner CIK the name and the link open the person's own file; without one, the directory search.
+    return `<article class="cx-person">${avatar(p.name, p.photo, "lg")}<div class="cx-person__body"><h4>${personLink(p.name, person.cik, person.name)}</h4><p>${esc(person.role || "Reporting owner")}</p>
       <dl><dt>Last filing</dt><dd>${esc(day(person.lastFiled))}</dd><dt>Filings</dt><dd>${esc(String(person.filings))} in this window</dd>${finite(person.sharesAfter) ? `<dt>Owned after</dt><dd>${esc(integer(person.sharesAfter))} shares</dd>` : ""}</dl>
-      <a href="people.html?q=${encodeURIComponent(person.name)}" data-hf-atom>Search insider records →</a></div></article>`;
+      ${file ? `<a class="cx-person__file" href="${esc(file)}" data-hf-atom>Open personnel file →</a>` : `<a href="${esc(personSearch(person.name))}" data-hf-atom>Search insider records →</a>`}</div></article>`;
   }).join("") : '<p class="cx-empty">No officers or directors have filed recent Form 4 reports for this company.</p>')
     : `<p class="cx-empty">${esc(state.insidersError || "Loading reporting people…")}</p>`;
   const matched = new Set(secPeople.map(s => (state.profile?.people || []).find(p => matchesPerson(s.name, p))?.name).filter(Boolean));
@@ -723,11 +771,17 @@ function renderPeople() {
   const leaders = serverLeaders || (state.profile?.people || []).filter(p => !matched.has(p.name) || p.roles.includes("Founder"));
   $("cx-leaders-head").hidden = !leaders.length;
   armReveal($("people"));
+  /* A leader who also files Form 4 here (a founder-CEO) opens their own file: the photo job names their owner CIK
+     (insiderKey "cik:<CIK>"); without the job's list, the reporting owner the profile's person matches. Anyone else
+     opens the directory's search for the name in the form the SEC files it. */
+  const leaderCik = p => /^cik:\d{1,10}$/.test(p.insiderKey || "") ? p.insiderKey.slice(4)
+    : !serverLeaders ? secPeople.find(s => personFile(s.cik) && matchesPerson(s.name, p))?.cik || null : null;
   $("cx-people-wiki").innerHTML = leaders.map(p => {
-    const photo = p.src ? { src: p.src, credit: p.credit } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons" } : null;
-    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]);
-    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${esc(p.name)}</h4><p>${esc((p.roles || []).join(" · "))}</p>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div></article>`;
+    const photo = p.src ? { src: p.src, credit: p.credit, source: p.sourceUrl } : p.photo ? { src: p.photo.src, credit: "Wikimedia Commons", source: p.photo.source || p.photo.sourceUrl } : null;
+    const link = safeUrl(p.wikidataUrl, ["wikidata.org"]), file = personFile(leaderCik(p));
+    return `<article class="cx-person">${avatar(p.name, photo, "lg")}<div class="cx-person__body"><h4>${personLink(p.name, leaderCik(p), filedForm(p.name))}</h4><p>${esc((p.roles || []).join(" · "))}</p>${file || link ? `<div class="cx-person__links">${file ? `<a class="cx-person__file" href="${esc(file)}" data-hf-atom>Open personnel file →</a>` : ""}${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-hf-atom>Wikidata profile ↗</a>` : ""}</div>` : ""}</div></article>`;
   }).join("");
+  window.InsidirMedia?.credits?.();
 }
 
 /* ---------- news tab ---------- */
@@ -810,22 +864,29 @@ async function addToWatchlist() {
 const signIn = () => { location.href = "signin.html?next=" + encodeURIComponent(location.pathname + location.search); };
 
 /* ---------- load ---------- */
-/* Verified photos arrive from a background job; check back a few times while it works. */
-async function loadPhotos(seq, attempt = 0) {
+/* Verified photos arrive from a background job; check back a few times while it works. Company sites are crawled
+ * politely (one request a second), so a first visit can take a few minutes; photos appear as each source finishes.
+ * While the job still waits its turn behind other companies ({queued:true}) the schedule does not advance: the
+ * page asks again every 15-30 s instead, and stops asking about 15 minutes after the first answer either way. */
+const PHOTO_DELAYS = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
+const PHOTO_QUEUED = [15000, 15000, 20000, 30000], PHOTO_CEILING = 15 * 60e3;
+async function loadPhotos(seq, attempt = 0, queued = 0, since = 0) {
   try {
-    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 ? "&wait=2500" : ""));
+    const data = await getJSON("/v1/company/photos?ticker=" + encodeURIComponent(state.ticker) + (attempt === 0 && !queued ? "&wait=2500" : ""));
     if (seq !== state.seq) return;
     state.photos = data;
     renderOverviewInsiders(); renderInsiders(); renderPeople();
-    // Company sites are crawled politely (one request a second), so a first visit can take a few
-    // minutes; photos appear as each source finishes.
-    const delays = [2500, 4000, 6000, 8000, 12000, 15000, 20000, 30000, 30000, 45000, 45000, 60000, 60000];
-    if (!data.complete && attempt < delays.length) setTimeout(() => { if (seq === state.seq) loadPhotos(seq, attempt + 1); }, delays[attempt]);
+    if (data.complete) return;
+    const first = since || Date.now(), left = first + PHOTO_CEILING - Date.now();
+    if (left <= 0) return;
+    const again = (delay, next) => setTimeout(() => { if (seq === state.seq) loadPhotos(seq, ...next, first); }, Math.min(delay, Math.max(1000, left)));
+    if (data.queued) again(PHOTO_QUEUED[Math.min(queued, PHOTO_QUEUED.length - 1)], [attempt, queued + 1]);
+    else if (attempt < PHOTO_DELAYS.length) again(PHOTO_DELAYS[attempt], [attempt + 1, queued]);
   } catch { /* initials stay */ }
 }
 function resetView() {
   state.intel = null; state.intelError = null; state.profile = null; state.profileDone = false; state.insiders = null; state.insidersError = null;
-  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null;
+  state.news = null; state.newsLoading = false; state.market = {}; state.marketError = null; state.watch = null; state.photos = null; state.logo = undefined;
   state.annualMetric = "revenue"; state.filingFilter = "all"; state.insiderFilter = "all";
   statusNotes.clear(); setStatus("");
   $("cx-logo").className = "cx-logo is-loading"; $("cx-logo").hidden = false; $("cx-logo").innerHTML = ""; delete $("cx-logo").dataset.src;
@@ -841,7 +902,8 @@ function renderAll() {
 function fallbackInsiders(rows) {
   const activity = rows.map(r => ({
     accession: r.accession, form: "4", filedAt: String(r.published_at || "").slice(0, 10), transactionDate: r.transaction_date ? String(r.transaction_date).slice(0, 10) : null,
-    owner: { name: r.owner_name, cik: r.owner_cik, role: null }, kind: r.category === "reported_purchase" ? "purchase" : r.category === "reported_sale" ? "sale" : "other",
+    // A joint line (owner_cik null) is listed under its first reporting owner, as /v1/company/insiders lists it.
+    owner: r.owner_cik || !r.owners?.length ? { name: r.owner_name, cik: r.owner_cik, role: null } : { name: r.owners[0].name || r.owner_name, cik: r.owners[0].cik || null, role: null }, kind: r.category === "reported_purchase" ? "purchase" : r.category === "reported_sale" ? "sale" : "other",
     code: r.transaction_code, codeLabel: r.category === "reported_purchase" ? "Open-market purchase" : r.category === "reported_sale" ? "Open-market sale" : "Reported transaction",
     netShares: finite(Number(r.shares)) ? (r.acquired_disposed === "D" ? -Number(r.shares) : Number(r.shares)) : null,
     value: finite(Number(r.estimated_value)) ? Number(r.estimated_value) : null, sharesAfter: null, transactions: [], sourceUrl: r.source_url
@@ -887,10 +949,12 @@ function showPicker() {
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
     return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-hf-atom data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
+  // All twelve logos come from one /v1/media batch (entity-media.js coalesces the calls into one request).
+  const media = window.InsidirMedia;
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
-    window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => {
-      if (mark) slot.innerHTML = `<img src="${mark.url}" alt="">`; else slot.remove();
-    });
+    const place = url => { if (url) slot.innerHTML = `<img src="${esc(url)}" alt="">`; else slot.remove(); };
+    if (media?.logoFor) media.logoFor(slot.dataset.logo).then(entry => place(entry?.src));
+    else window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => place(mark?.url));
   }
 }
 const normalizeTicker = v => { const t = String(v || "").trim().toUpperCase().replace(/\./g, "-"); return /^[A-Z0-9][A-Z0-9-]{0,14}$/.test(t) ? t : ""; };

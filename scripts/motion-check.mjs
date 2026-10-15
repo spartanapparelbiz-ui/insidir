@@ -3,9 +3,11 @@
    Opens every page in headless Chromium (the /v1 API mocked) and verifies, with a real pointer and wheel:
      - the motion layer and the dot engine are running: atoms are registered and every page has at
        least one mounted dot field (the footer strip at minimum), drawn into a canvas;
-     - scrolling leaves the atoms a little behind: during eight 120px wheel steps at least one atom
-       trails by 1px or more (when the page can scroll), none by more than 14px, and within 2s of the
-       last wheel every atom is home again (no --hf-dx/--hf-dy/--hf-s left);
+     - scrolling leaves the dots and, on public pages, the atoms a little behind: during eight 120px wheel
+       steps the dot fields take the scroll and at least one atom trails by 1px or more (when the page can
+       scroll); on product pages (body.app-body) the atoms sit still (under 0.5px) while the fields still
+       take it; no atom trails by more than 14px, and within 2s of the last wheel every atom is home
+       again (no --hf-dx/--hf-dy/--hf-s left);
      - every offset the motion layer writes (--hf-dx, --hf-dy, --hf-s, recorded by a MutationObserver
        on style attributes for the whole visit: scroll, pointer and click) is a finite number;
      - landing only: the hero wordmark scatters as it scrolls away (its canvas differs at scrollY 300)
@@ -46,7 +48,8 @@ const ALL = [
   ["watchlist", "/watchlist.html"], ["portfolio", "/portfolio.html"], ["alerts", "/alerts.html"], ["people", "/people.html"],
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
-  ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"]
+  ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const PAGES = wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL;
@@ -55,6 +58,40 @@ const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : 
 
 const me = { user: { id: 1, email: "reader@example.com" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true } };
 const mock = url => url.pathname === "/v1/me" ? me : url.pathname === "/v1/billing/status" ? { billingEnabled: true, plan: "pro", subscriptionStatus: "active" } : url.pathname === "/v1/status" ? { engine: "online", filings: 0 } : { items: [] };
+/* GET /v1/people/<cik>: Tim Cook's personnel file in the shape src/person-profile.mjs answers (personProfile()), long
+   enough that its sections start below the fold; dates are relative to the run so the 30-day record has lines. Any
+   other CIK answers 404 {error}, as the engine does. GET /v1/me/people is { items: [] } (the mock above): unfollowed. */
+function personFile() {
+  const DAY = 86400000, now = Date.now(), cik = "0001214156", name = "COOK TIMOTHY D";
+  const tradeDay = ago => new Date(now - ago * DAY).toISOString().slice(0, 10) + "T00:00:00.000Z";
+  const filedAt = ago => new Date(now - ago * DAY).toISOString().slice(0, 10) + "T22:30:00.000Z";
+  const AAPL = ["AAPL", "0000320193", "Apple Inc."], NKE = ["NKE", "0000320187", "NIKE, Inc."];
+  // [accession, issuer, filed days ago, lines: [code, A/D, shares, price, traded days ago]]
+  const FILED = [["0000320193-26-000063", AAPL, 4, [["S", "D", "18000", "227.4", 6], ["S", "D", "4116.5", "229.8812", 6]]], ["0000320187-26-000070", NKE, 12, [["P", "A", "10000", "72.415", 14]]],
+    ["0000320193-26-000058", AAPL, 40, [["M", "A", "196410", null, 42], ["F", "D", "100348", "223.19", 42]]], ["0000320187-26-000044", NKE, 90, [["A", "A", "3107", null, 92]]]];
+  const tx = [], filings = [];
+  for (const [accession, [ticker, issuer_cik, issuer_name], ago, lines] of FILED) {
+    const published_at = filedAt(ago), source_url = "https://www.sec.gov/Archives/edgar/data/" + Number(issuer_cik) + "/" + accession.replace(/-/g, "") + "/xslF345X05/wk-form4.xml";
+    for (const [code, ad, shares, price, traded] of lines) tx.push({ id: String(tx.length + 1), accession, ticker, issuer_cik, issuer_name, owner_cik: cik, owner_name: name, transaction_date: tradeDay(traded),
+      transaction_code: code, acquired_disposed: ad, category: code === "P" ? "reported_purchase" : code === "S" ? "reported_sale" : "other", derivative: false, shares, price_per_share: price,
+      estimated_value: price === null ? null : (Number(shares) * Number(price)).toFixed(2), direct_ownership: "D", security_title: "Common Stock", source_url, created_at: published_at, published_at, is_amendment: false, superseded: false });
+    filings.push({ accession, form_type: "4", ticker, issuer_cik, issuer_name, published_at, source_url, lines: lines.length });
+  }
+  const sum = list => Math.round(list.reduce((a, v) => a + Number(v || 0), 0) * 100) / 100;
+  const totals = rows => { const days = rows.map(x => x.transaction_date).sort(), part = cat => { const r = rows.filter(x => x.category === cat); return { count: r.length, shares: sum(r.map(x => x.shares)), value: sum(r.map(x => x.estimated_value)) }; };
+    return { transactions: rows.length, superseded: 0, filings: new Set(rows.map(x => x.accession)).size, purchases: part("reported_purchase"), sales: part("reported_sale"), other: { count: rows.filter(x => x.category === "other").length },
+      first_transaction_date: days[0] || null, last_transaction_date: days.at(-1) || null, last_published_at: rows.map(x => x.published_at).sort().at(-1) || null }; };
+  const companies = [AAPL, NKE].map(([ticker, issuer_cik, issuer_name]) => { const t = totals(tx.filter(x => x.issuer_cik === issuer_cik));
+    return { ticker, issuer_cik, issuer_name, roles: ticker === "AAPL" ? ["Chief Executive Officer", "Director"] : ["Director"], first_transaction_date: t.first_transaction_date, last_transaction_date: t.last_transaction_date,
+      last_published_at: t.last_published_at, transactions: t.transactions, purchases_value: t.purchases.value, sales_value: t.sales.value }; });
+  return { person: { cik, name, filed_names: [name] }, companies, totals: { all: totals(tx), d30: totals(tx.filter(x => Date.parse(x.published_at) >= now - 30 * DAY)) },
+    transactions: [...tx].sort((a, b) => b.transaction_date.localeCompare(a.transaction_date) || Number(b.id) - Number(a.id)), filings, other_issuers: [],
+    edgar_url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + cik + "&type=4&dateb=&owner=include&count=40", source: "SEC Form 4", disclaimer: "Public SEC records. Not a recommendation or a prediction." };
+}
+// [status, body] for a mocked /v1 request.
+const respond = url => /^\/v1\/people\/[^/]+$/.test(url.pathname)
+  ? (decodeURIComponent(url.pathname.slice(11)).replace(/^0+/, "") === "1214156" ? [200, personFile()] : [404, { error: "Reporting person not found in imported SEC records" }])
+  : [200, mock(url)];
 
 const server = createServer((req, res) => { serveStatic(req, res).then(f => { if (!f) { res.writeHead(404); res.end("not found"); } }).catch(e => { res.writeHead(500); res.end(String(e)); }); });
 await new Promise(ok => server.listen(0, "127.0.0.1", ok));
@@ -140,7 +177,7 @@ async function open(path, { width = 1440, reducedMotion = "no-preference", touch
   // Self-test hooks: prove the check fails when motion breaks (see the header).
   if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
   if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
-  await context.route("**/v1/**", r => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mock(new URL(r.request().url()))) }));
+  await context.route("**/v1/**", r => { const [status, body] = respond(new URL(r.request().url())); return r.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) }); });
   await context.route(/wikimedia/, r => r.fulfill({ status: 200, contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="250" height="320"/>' }));
   const page = await context.newPage();
   const errors = [];
@@ -251,9 +288,21 @@ async function orangeShot(page) {
   return clusters.map((c, i) => names[i] && c.n + "px under " + names[i]).filter(Boolean);
 }
 
-/* ---------- scroll: atoms trail it and come home ---------- */
+/* ---------- scroll: dot fields and (on public pages) atoms trail it and come home ----------
+   Product pages (body.app-body: the overview, desk, reports, people and files) keep their atoms still while the page
+   scrolls (v13-motion.js: the trail cost frames there, and figures should sit still while they are read); their dot
+   fields still take the scroll. */
 async function scrollTrail(page, key) {
-  const room = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  const { room, product } = await page.evaluate(() => {
+    // Count the scroll kicks the motion layer gives the dot fields during the wheel steps.
+    window.__hfKicks = 0;
+    for (const r of document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")) {
+      const h = r.__halftone;
+      if (!h || typeof h.kick !== "function" || h.__counted) continue;
+      const orig = h.kick; h.kick = (...a) => { if (a.some(v => v)) window.__hfKicks++; return orig.apply(h, a); }; h.__counted = true;
+    }
+    return { room: document.documentElement.scrollHeight - innerHeight, product: document.body.classList.contains("app-body") };
+  });
   await page.evaluate(() => { const w = window.__hfWrites; w.peak = 0; w.peakAt = ""; w.track = true; });
   let sampled = 0;
   const bad = [];
@@ -276,9 +325,15 @@ async function scrollTrail(page, key) {
   await pointerGone(page);
   const left = await untilHome(page, 2000);
   const w = await page.evaluate(() => { const w = window.__hfWrites; w.track = false; return { peak: w.peak, peakAt: w.peakAt }; });
-  const peak = Math.max(w.peak, sampled);
-  if (room > 40) check(peak >= 1 && scrolled > 0, `${key}: atoms trail a wheel scroll (${peak.toFixed(1)}px at most, page scrolled ${scrolled}px)`, { peak, at: w.peakAt, scrolled });
-  else check(true, `${key}: atoms trail a wheel scroll: n/a (the page cannot scroll)`);
+  const peak = Math.max(w.peak, sampled), kicks = await page.evaluate(() => window.__hfKicks);
+  if (room <= 40) check(true, `${key}: atoms trail a wheel scroll: n/a (the page cannot scroll)`);
+  else if (product) {
+    check(peak < 0.5 && scrolled > 0, `${key}: product page: atoms sit still while the page scrolls (${peak.toFixed(1)}px at most, page scrolled ${scrolled}px)`, { peak, at: w.peakAt, scrolled });
+    check(kicks > 0, `${key}: product page: the dot fields still take the scroll (${kicks} kick(s))`, { kicks });
+  } else {
+    check(peak >= 1 && scrolled > 0, `${key}: atoms trail a wheel scroll (${peak.toFixed(1)}px at most, page scrolled ${scrolled}px)`, { peak, at: w.peakAt, scrolled });
+    check(kicks > 0, `${key}: the dot fields trail the scroll too (${kicks} kick(s))`, { kicks });
+  }
   check(peak <= 14, `${key}: no atom trails a scroll by more than 14px`, { peak, at: w.peakAt });
   check(bad.length === 0, `${key}: every atom offset sampled during the scroll is a finite number`, bad.slice(0, 4));
   check(left.length === 0, `${key}: every atom is home within 2s of the last wheel`, left.slice(0, 4));

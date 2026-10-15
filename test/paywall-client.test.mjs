@@ -48,6 +48,12 @@ test("app.js sends a lapsed subscription to subscribe.html and an ended session 
   assert.deepEqual(await appGate("/billing.html", "", "/v1/me", 401), ["signin.html?next=billing.html"], "account pages still need a session");
 });
 
+test("app.js sends a reader of a personnel file back to that file after sign-in or subscribing", async () => {
+  assert.deepEqual(await appGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 401), ["signin.html?next=person.html%3Fcik%3D1214156"]);
+  assert.deepEqual(await appGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 402), ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
+  assert.deepEqual(await appGate("/person", "?cik=0001214156", "/v1/me/people", 401), ["signin.html?next=person.html%3Fcik%3D0001214156"], "the extensionless path too");
+});
+
 test("app.js leaves open routes, other origins and account pages' 402s alone", async () => {
   assert.deepEqual(await appGate("/billing.html", "", "/v1/search?q=AAP", 402), [], "billing exists to fix the subscription");
   assert.deepEqual(await appGate("/account.html", "", "/v1/me/watchlist", 402), []);
@@ -96,6 +102,14 @@ test("auth.js: logging in checks /v1/me and lands on the dashboard, next= or the
   assert.deepEqual((await authSubmit({ mode: "login", me: inactive, search: "?next=%2Fwatchlist.html" })).assigned, ["subscribe.html?next=watchlist.html"]);
 });
 
+test("auth.js: next= to a personnel file is honoured after logging in, and kept through the paywall", async () => {
+  const next = "?next=" + encodeURIComponent("/person.html?cik=1214156");
+  assert.deepEqual((await authSubmit({ mode: "login", me: active, search: next })).assigned, ["person.html?cik=1214156"]);
+  assert.deepEqual((await authSubmit({ mode: "login", me: active, search: "?next=" + encodeURIComponent("person.html?cik=1214156") })).assigned, ["person.html?cik=1214156"], "the relative form app.js writes");
+  assert.deepEqual((await authSubmit({ mode: "login", me: inactive, search: next })).assigned, ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
+  assert.deepEqual((await authSubmit({ mode: "register", search: next })).assigned, ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
+});
+
 test("auth.js: account pages need a login but no subscription, so next= to them skips the paywall", async () => {
   assert.deepEqual((await authSubmit({ mode: "login", me: inactive, search: "?next=%2Fbilling.html" })).assigned, ["billing.html"]);
   assert.deepEqual((await authSubmit({ mode: "login", me: inactive, search: "?next=%2Faccount" })).assigned, ["account.html"]);
@@ -114,4 +128,34 @@ test("auth.js: a failed login stays on the page", async () => {
   const failed = await authSubmit({ mode: "login", auth: reply(401, { error: "Invalid email or password" }) });
   assert.deepEqual(failed.assigned, []);
   assert.ok(!failed.calls.includes("GET /v1/me"));
+});
+
+/* ---------- subscribe.js: the subscription step names where the reader is going and continues there ---------- */
+async function subscribePage(search, me) {
+  const calls = [];
+  const { ctx, assigned } = sandbox("/subscribe.html", search, async (path, init = {}) => { calls.push((init.method || "GET") + " " + path); return path === "/v1/me" ? me : reply(200, {}); });
+  const els = new Map();
+  const el = sel => { if (!els.has(sel)) els.set(sel, element()); return els.get(sel); };
+  ctx.document = { body: { dataset: {}, classList: classList() }, title: "", querySelector: el, querySelectorAll: () => [] };
+  ctx.sessionStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+  ctx.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+  vm.createContext(ctx);
+  vm.runInContext(await source("subscribe.js"), ctx);
+  for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
+  return { el, calls, assigned, body: ctx.document.body };
+}
+
+test("subscribe.js: next= to a personnel file is named, and an active member continues to it", async () => {
+  const search = "?next=" + encodeURIComponent("person.html?cik=1214156");
+  const done = await subscribePage(search, active);
+  assert.equal(done.body.dataset.pwState, "active");
+  assert.equal(done.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the personnel file.");
+  assert.equal(done.el('[data-pw-notice="next"]').hidden, false);
+  assert.equal(done.el("[data-pw-continue]").getAttribute("href"), "person.html?cik=1214156");
+  assert.equal(done.el("[data-pw-continue]").textContent, "Continue to the personnel file");
+  const ready = await subscribePage(search, reply(200, { user: { email: "a@b.co" }, access: { active: false, billingEnabled: true } }));
+  assert.equal(ready.body.dataset.pwState, "ready", "a member without access is offered the plan, with the file still named");
+  assert.equal(ready.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the personnel file.");
+  const other = await subscribePage("?next=" + encodeURIComponent("https://evil.example/person.html?cik=1"), active);
+  assert.equal(other.el("[data-pw-continue]").getAttribute("href"), "dashboard.html", "only a page on this site is honoured");
 });

@@ -14,7 +14,7 @@
   const NS = "http://www.w3.org/2000/svg";
 
   /* ---------- paywall: 401 → sign in, 402 → subscribe ---------- */
-  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "watchlist", "portfolio", "alerts"];
+  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"];
   const ACCOUNT_PAGES = ["billing", "account"];
   const OPEN_API = /^\/v1(\/?$|\/auth\/|\/billing\/|\/sources$)/;
   const pageKey = () => (/^\/([a-z]+)(?:\.html)?$/.exec(location.pathname) || [])[1] || "";
@@ -256,15 +256,20 @@
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');
+    // The sliding indicator is hidden by the V13 theme (an underline marks the page instead): when it is not drawn,
+    // nothing reads link positions on hover or resize.
+    let drawn = null;
+    const shown = () => drawn === null ? (drawn = getComputedStyle(ind).display !== "none") : drawn;
     const moveTo = a => {
+      if (!shown()) return;
       if (!a) { ind.style.width = "0px"; return; }
       ind.style.width = a.offsetWidth + "px";
       ind.style.transform = `translateX(${a.offsetLeft}px)`;
     };
-    requestAnimationFrame(() => { ind.style.transition = "none"; moveTo(current); requestAnimationFrame(() => { ind.style.transition = ""; }); });
+    requestAnimationFrame(() => { if (!shown()) return; ind.style.transition = "none"; moveTo(current); requestAnimationFrame(() => { ind.style.transition = ""; }); });
     nav.querySelectorAll("a").forEach(a => a.addEventListener("pointerenter", () => moveTo(a)));
     nav.addEventListener("pointerleave", () => moveTo(current));
-    window.addEventListener("resize", () => moveTo(current));
+    window.addEventListener("resize", () => { drawn = null; moveTo(current); }, { passive: true });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveTo(current));
 
     const form = host.querySelector(".app-search"), input = form.querySelector("input"), list = form.querySelector(".app-search__results");
@@ -277,13 +282,26 @@
       list.querySelectorAll("[role=option]").forEach((el, i) => el.setAttribute("aria-selected", String(i === index)));
       if (index >= 0) input.setAttribute("aria-activedescendant", "app-search-option-" + index); else input.removeAttribute("aria-activedescendant");
     };
+    /* Each result carries its identity tile from entity-media.js (a company's logo, a person's headshot, or the issuer's
+       logo standing in for one; initials only when neither exists), aria-hidden inside the option, so no link is nested.
+       Pages without the helper (account, billing) keep the text badge. */
+    const tileFor = s => {
+      const media = window.InsidirMedia;
+      if (!media) return "";
+      try { return s.kind === "person" ? media.portrait(s.name, s.ticker || "", "sm", { cik: s.cik, issuerCik: s.issuerCik }) : media.logo(s.ticker, "sm", { name: s.label }); } catch { return ""; }
+    };
     const renderList = q => {
       if (!suggestions.length) {
         list.innerHTML = `<p class="app-search__empty">${tickerPattern.test(q.toUpperCase()) ? "Press Enter to open " + escapeHTML(q.toUpperCase()) : "No matching companies or people"}</p>`;
       } else {
-        list.innerHTML = suggestions.map((s, i) => `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option">
-          <span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>
-          <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(s.meta || "")}</span></a>`).join("");
+        list.innerHTML = suggestions.map((s, i) => {
+          const tile = tileFor(s);
+          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>`;
+          const meta = tile && s.kind === "company" ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
+          return `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option${tile ? " app-search__option--tile" : ""}">${lead}
+          <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(meta)}</span></a>`;
+        }).join("");
+        try { window.InsidirMedia?.hydrate?.(list); } catch { /* a tile that cannot resolve keeps its initials */ }
       }
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
@@ -304,7 +322,13 @@
       }
       suggestions = [
         ...(companies.status === "fulfilled" ? companies.value.items || [] : []).slice(0, 7).map(c => ({ kind: "company", ticker: c.ticker, label: c.name, meta: "Company", href: "company.html?ticker=" + encodeURIComponent(c.ticker) })),
-        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => ({ kind: "person", label: p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider", href: "people.html?q=" + encodeURIComponent(p.owner_name) }))
+        ...(people.status === "fulfilled" ? people.value.items || [] : []).slice(0, 3).map(p => {
+          const cik = /^\d{1,12}$/.test(String(p.owner_cik || "")) && /[1-9]/.test(String(p.owner_cik)) ? String(p.owner_cik) : "";
+          const issuerCik = /^\d{1,12}$/.test(String(p.issuer_cik || "")) ? String(p.issuer_cik) : "";
+          // A person opens their own file (person.html?cik=, the owner CIK without leading zeros); with no CIK, the directory search.
+          return { kind: "person", name: p.owner_name, cik, issuerCik, ticker: p.ticker || "", label: window.InsidirMedia?.displayName ? window.InsidirMedia.displayName(p.owner_name) : p.owner_name, meta: p.ticker ? "Insider · " + p.ticker : "Insider",
+            href: cik ? "person.html?cik=" + cik.replace(/^0+/, "") : "people.html?q=" + encodeURIComponent(String(p.owner_name || "").slice(0, 80)) + "#v10-directory" };
+        })
       ];
       renderList(q);
     };

@@ -24,6 +24,27 @@
       block.removeAttribute("data-desk-reveal");
     }
   };
+  /* Identity tiles (entity-media.js): the real logo of each matched U.S. company, and the headshot of each
+     reporting person (found by SEC owner CIK, or the company's logo standing in for it). */
+  const media=window.InsidirMedia;
+  const coTile=t=>media&&safeTicker(t)?media.logo(t,"sm"):"";
+  /* The reporting person's name opens their own file (person.html?cik=, the owner CIK without leading zeros) when the
+     row carries the CIK. A joint filing (owner_cik null) names each owner the engine lists in owners:[{cik,name}], each
+     linked; with no list its joined owner_name is split on the commas (a ", Inc." or ", Jr." stays on the name before
+     it). A name with no CIK opens the people directory's search for it (people.html?q=<name>#v10-directory). The tile
+     pictures the first owner with a CIK. */
+  const fileHref=cik=>{const c=String(cik??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"";};
+  const personHref=(cik,name)=>{const n=String(name??"").replace(/\s+/g," ").trim().slice(0,80);return fileHref(cik)||(n?"people.html?q="+encodeURIComponent(n)+"#v10-directory":"");};
+  const SUFFIX=/^(?:inc|llc|l\.?l\.?c|l\.?p|lp|ltd|limited|co|corp|corporation|company|plc|n\.?a|n\.?v|s\.?a|ag|se|jr|sr|ii|iii|iv|v|esq|m\.?d|ph\.?d)\.?$/i;
+  const splitNames=s=>String(s??"").split(/\s*,\s*/).filter(Boolean).reduce((out,p)=>{if(out.length&&SUFFIX.test(p))out[out.length-1]+=", "+p;else out.push(p);return out;},[]);
+  const ownersOf=t=>{const listed=t.owner_cik?[{cik:t.owner_cik,name:t.owner_name}]:Array.isArray(t.owners)&&t.owners.length?t.owners.filter(o=>o&&(o.cik||o.name)):splitNames(t.owner_name).map(name=>({cik:null,name}));return listed.length?listed.slice(0,12):[{cik:null,name:""}];};
+  const nameLink=o=>{const n=escapeHtml(o.name||"Reporting person"),h=personHref(o.cik,o.name);return h?'<a class="ins-person-link" href="'+escapeHtml(h)+'">'+n+'</a>':n;};
+  const personName=t=>ownersOf(t).map(nameLink).join(", ");
+  const whoLine=t=>{
+    if(!media)return '<small>'+personName(t)+'</small>';
+    const list=ownersOf(t),lead=list.find(o=>fileHref(o.cik))||list[0];
+    return '<div class="ins-person-cell ins-person-cell--sub">'+media.portrait(lead.name||"",safeTicker(t.ticker)||"","xs",{cik:lead.cik,issuerCik:t.issuer_cik})+'<small>'+personName(t)+'</small></div>';
+  };
   const setStatus=(message,error=false)=>{el("portfolio-status").textContent=message;el("portfolio-status").classList.toggle("is-error",Boolean(error));};
   async function request(path,method="GET"){
     const r=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json"}});
@@ -40,7 +61,8 @@
         const ticker=safeTicker(p.researchTicker);
         const research=ticker?'<a class="portfolio-small-link" href="research.html?ticker='+encodeURIComponent(ticker)+'">SEC research →</a>':
           '<span class="portfolio-muted">No exact U.S. stock match</span>';
-        return '<tr><td data-label="Position"><strong>'+escapeHtml(p.symbol)+'</strong><small>'+escapeHtml(p.description||p.kind)+'</small></td>'+
+        const name='<strong>'+escapeHtml(p.symbol)+'</strong><small>'+escapeHtml(p.description||p.kind)+'</small>';
+        return '<tr><td data-label="Position">'+(ticker&&media?'<div class="ins-company-cell">'+coTile(ticker)+'<div>'+name+'</div></div>':name)+'</td>'+
           '<td data-label="Units">'+escapeHtml(num(p.quantity))+'</td><td data-label="Last reported price">'+escapeHtml(money(p.price,p.currency))+'</td><td data-label="Public research">'+research+'</td></tr>';
       }).join("");
       return '<article class="portfolio-account"><div class="portfolio-account-head"><div>'+
@@ -57,12 +79,13 @@
       '<thead><tr><th>Ticker</th><th>Reported event</th><th>Published</th><th>Original source</th></tr></thead><tbody>'+
       items.map(t=>{
         const link=secLink(t.source_url);
-        return '<tr><td data-label="Ticker"><strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small></td>'+
-          '<td data-label="Reported event">'+event(t.category)+
-          '<small>'+escapeHtml(t.owner_name||"Reporting person")+'</small></td><td data-label="Published">'+escapeHtml(safeDate(t.published_at))+'</td>'+
+        const tick='<strong>'+escapeHtml(t.ticker)+'</strong><small>Unverified ticker match</small>';
+        return '<tr><td data-label="Ticker">'+(coTile(t.ticker)?'<div class="ins-company-cell">'+coTile(t.ticker)+'<div>'+tick+'</div></div>':tick)+'</td>'+
+          '<td data-label="Reported event">'+event(t.category)+whoLine(t)+'</td><td data-label="Published">'+escapeHtml(safeDate(t.published_at))+'</td>'+
           '<td data-label="Original source">'+(link?'<a class="portfolio-small-link" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(link)+'">SEC filing ↗</a>':'Not available')+'</td></tr>';
       }).join("")+'</tbody></table></div>':
       '<p class="portfolio-empty">No matching imported insider filings in the past 30 days. This does not mean no relevant SEC records exist; use the Research Desk for other disclosures.</p>';
+    media?.hydrate(host);media?.hydrate(el("portfolio-activity"));
     if(data.truncatedAccounts)setStatus("Only the first eight investment accounts are shown. Other accounts may be connected.");
     armReveal(el("portfolio-results"));
     el("portfolio-results").hidden=false;

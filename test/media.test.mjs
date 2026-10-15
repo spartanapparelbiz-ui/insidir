@@ -41,3 +41,19 @@ test("fetchImage refuses non-https and private targets before any request", asyn
   await assert.rejects(fetchImage("https://localhost/logo.png"), /Invalid host|private/i);
   await assert.rejects(fetchImage("https://user:pw@example.com/logo.png"), /https/);
 });
+
+test("red and other saturated marks are lifted until the grey the page shows reads on the dark tile", async () => {
+  const { liftDark, inkContrast, shownGrey } = await import("../src/image-analysis.mjs");
+  const w = 24, h = 12, px = new Uint8ClampedArray(w * h * 4);
+  // Coca-Cola red, Exxon red and a Ford blue stroke, each on transparency.
+  const inks = [[244, 0, 9], [227, 6, 19], [16, 57, 150]];
+  for (let y = 2; y < 10; y++) for (let x = 0; x < w; x++) {
+    const [r, g, b] = inks[Math.floor(x / 8)], i = (y * w + x) * 4;
+    px.set([r, g, b, 255], i);
+  }
+  for (const [r, g, b] of inks) assert.ok(inkContrast(r, g, b) < 3, "dark once shown in grey: " + [r, g, b]);
+  assert.ok(liftDark(px, w, h) > .9);
+  for (let i = 0; i < w * h; i++) if (px[i * 4 + 3]) assert.ok(inkContrast(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]) >= 4.5, "pixel " + i + " grey " + shownGrey(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]));
+  // The hue is kept (not turned white): red stays reddest.
+  assert.ok(px[(2 * w) * 4] > px[(2 * w) * 4 + 1]);
+});

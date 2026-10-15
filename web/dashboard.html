@@ -1,110 +1,145 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
-<meta name="description" content="Your Insidir overview: reported insider purchases and sales with exact shares, prices and values, your watchlist and notes, and the latest SEC Form 4 filings, each linked to its original record.">
+<meta name="description" content="Your Insidir overview: what the people you follow and the companies you watch filed since your last visit, then the latest SEC Form 4 purchases and sales across the market, with exact shares, prices and values, each linked to its original record.">
 <title>Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
+<link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/JetBrainsMono-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=real-assets-3">
-<script defer src="assets/js/entity-media.js?v=real-assets-5"></script><script defer src="assets/js/app.js?v=13"></script><script defer src="assets/js/v3-dashboard.js?v=17"></script><script defer src="assets/js/v4-dashboard.js?v=17"></script><script defer src="assets/js/v10-people.js?v=15"></script>
+<link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
+<script defer src="assets/js/entity-media.js?v=media-4"></script><script defer src="assets/js/app.js?v=16"></script><script defer src="assets/js/form4-words.js?v=1"></script><script defer src="assets/js/v3-dashboard.js?v=19"></script><script defer src="assets/js/v4-dashboard.js?v=19"></script><script defer src="assets/js/v13-overview.js?v=2"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=17">
-<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=3">
-<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
+<link rel="stylesheet" href="assets/css/v13-app.css?v=20">
+<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=5">
+<script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=4"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active="dashboard"></header>
+<body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
-<div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date">SEC records · original sources</span></div>
+<div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
 
-<section class="rd-intro" aria-labelledby="rd-heading">
+<section id="rd-today" class="rd-today" aria-labelledby="rd-heading">
   <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="140" aria-hidden="true"></div>
-  <p class="rd-eyebrow">Today</p>
+  <p class="rd-eyebrow" id="rd-today-date">Overview</p>
   <h1 id="rd-heading" data-greeting>Welcome back.</h1>
-  <p class="rd-lede">Reported insider purchases and sales with the exact shares, prices and dates from each Form 4. Every row links to its original SEC record; your watchlist and notes are private to you.</p>
-  <section class="v3-searchbox rd-search" aria-label="Open a company report">
-    <form action="company.html" method="get" id="v3-search" role="search">
-      <label class="rd-search__label" for="v3-ticker">Open a company report</label>
-      <div class="rd-search__field"><span class="v3-searchbox__icon" aria-hidden="true"><svg class="v4-ui-icon"><use href="assets/icons/interface.svg#search"></use></svg></span><input type="search" name="ticker" id="v3-ticker" placeholder="e.g. AAPL" autocomplete="off" maxlength="15" spellcheck="false" autocapitalize="characters" required aria-describedby="v3-ticker-hint"><button type="submit"><span>Open<span class="rd-xs-hide"> report</span></span> ↗</button></div>
-      <p class="rd-search__hint" id="v3-ticker-hint">Opens the company report: SEC filings, reported financials, insider activity and delayed prices.</p>
-    </form>
-  </section>
+  <script>/* Greeting and date before the first paint (plain arrays: building an Intl formatter here would cost more than the page's first paint). */(()=>{const d=new Date(),h=d.getHours(),g=document.querySelector("[data-greeting]"),t=document.getElementById("rd-today-date");if(g)g.textContent=h>=5&&h<12?"Good morning.":h>=12&&h<18?"Good afternoon.":"Good evening.";if(t)t.textContent="Overview · "+"Sun Mon Tue Wed Thu Fri Sat".split(" ")[d.getDay()]+", "+"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();})();</script>
+  <div class="rd-today__lines">
+    <p id="rd-today-you" class="rd-today__line rd-today__line--you is-skeleton" aria-busy="true"><span class="sr-only">Loading what changed since your last visit…</span></p>
+    <p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
+    <p id="rd-today-fresh" class="rd-today__line rd-today__line--fresh is-skeleton" aria-busy="true"><span class="sr-only">Checking the latest import…</span></p>
+  </div>
 </section>
 
-<nav class="rd-shortcuts" aria-label="Research pages">
-  <a href="explore.html"><span class="rd-shortcuts__name">Companies <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Issuers in the SEC import</span></a>
-  <a href="filings.html"><span class="rd-shortcuts__name">SEC filings <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Form 4 ownership library</span></a>
-  <a href="people.html"><span class="rd-shortcuts__name">People <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Reporting persons to follow</span></a>
-  <a href="watchlist.html"><span class="rd-shortcuts__name">Watchlist <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Tickers you save</span></a>
-  <a href="alerts.html"><span class="rd-shortcuts__name">Alerts <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">New filings on watched tickers</span></a>
-  <a href="research.html"><span class="rd-shortcuts__name">Research desk <b aria-hidden="true">↗</b></span><span class="rd-shortcuts__note">Company research and notes</span></a>
-</nav>
-
 <div class="rd-grid">
-  <section class="rd-module rd-module--flow" aria-labelledby="rd-flow-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-flow-title">Insider flow</h2><p id="rd-flow-scope">Reported Form 4 purchases and sales in the latest imported transactions.</p></div><a class="rd-link" href="filings.html">All filings ↗</a></header>
-    <p id="rd-flow-status" class="sr-only" aria-live="polite"></p>
-    <div id="rd-kpis" class="rd-kpis" data-hf-reveal><p class="rd-empty">Loading reported transactions…</p></div>
-    <div class="rd-flow" data-hf-reveal-group>
-      <figure class="rd-panel rd-panel--daily" aria-labelledby="rd-daily-title">
-        <figcaption class="rd-panel__head">
-          <div><h3 id="rd-daily-title">Value by trade date</h3><p id="rd-daily-note">Purchases above the line, sales below. Priced open-market and private transactions only.</p></div>
-          <button type="button" class="rd-toggle" id="rd-daily-toggle" aria-expanded="false" aria-controls="rd-daily-table" hidden>Show the numbers</button>
-        </figcaption>
-        <div id="rd-daily-chart" class="rd-dchart"><p class="rd-empty">Loading the chart…</p></div>
-        <div id="rd-daily-table" class="rd-dtable" hidden></div>
-      </figure>
-      <figure class="rd-panel rd-panel--companies" aria-labelledby="rd-companies-title">
-        <figcaption class="rd-panel__head"><div><h3 id="rd-companies-title">By company</h3><p>Sales to the left, purchases to the right, largest gross value first.</p></div></figcaption>
-        <div id="rd-companies" class="rd-co"><p class="rd-empty">Loading companies…</p></div>
-      </figure>
+  <section class="rd-module rd-module--follow" aria-labelledby="rd-follow-title">
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow ↗</a></header>
+    <p id="v10-follow-live" class="sr-only" aria-live="polite">Loading updates from the people you follow…</p>
+    <div class="rd-follow" id="rd-follow">
+      <div class="rd-follow__side">
+        <p class="rd-label" id="rd-list-label">Following</p>
+        <ul id="v10-follow-list" class="rd-flist" aria-labelledby="rd-list-label" data-hf-reveal></ul>
+        <p id="v10-follow-list-more" class="rd-more rd-more--list"></p>
+      </div>
+      <div class="rd-follow__feed">
+        <p class="rd-label" id="rd-feed-label">Latest trades</p>
+        <ol id="v10-follow-feed" class="rd-feed" aria-labelledby="rd-feed-label" data-hf-reveal></ol>
+        <p id="v10-follow-more" class="rd-more rd-more--feed"></p>
+      </div>
+      <p id="v10-follow-empty" class="rd-follow__empty">You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.</p>
+      <div id="v10-follow-suggest" class="rd-suggest">
+        <p class="rd-label" id="v10-follow-suggest-title">Most active in the latest imports</p>
+        <ul id="v10-follow-suggest-list" class="rd-sglist" aria-labelledby="v10-follow-suggest-title" data-hf-reveal></ul>
+        <p id="v10-follow-suggest-foot" class="rd-module__foot">Following is private to your account. <a href="people.html">Find anyone by name ↗</a></p>
+      </div>
     </div>
-    <div class="rd-panel rd-panel--largest">
-      <div class="rd-panel__head" data-hf-reveal><div><h3 id="rd-largest-title">Largest reported transactions</h3><p>Ranked by reported value: shares × price per share, as filed.</p></div></div>
-      <ol id="rd-largest" class="rd-largest" aria-labelledby="rd-largest-title" data-hf-reveal-group><li class="rd-empty">Loading transactions…</li></ol>
-    </div>
+    <p id="rd-toast" class="rd-toast" role="status"></p>
   </section>
 
   <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02</p><h2 id="rd-watch-title">Your watchlist</h2><p>Each saved ticker with its latest imported insider transaction.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist ↗</a></header>
-    <div id="v3-watchlist" class="rd-rows" data-hf-reveal-group><p class="rd-empty">Loading your saved tickers…</p></div>
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02</p><h2 id="rd-watch-title">Your watchlist</h2><p>The latest purchase or sale at each company you saved.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist ↗</a></header>
+    <ul id="v3-watchlist" class="rd-rows" aria-labelledby="rd-watch-title" data-hf-reveal></ul>
+    <p id="v3-watchlist-foot" class="rd-module__foot"></p>
   </section>
 
   <section class="rd-module rd-module--notes" aria-labelledby="rd-notes-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">03</p><h2 id="rd-notes-title">Research notes</h2><p>Your private notes, most recent first.</p></div><a class="rd-link" href="research.html">Write a note ↗</a></header>
-    <div id="v3-notes" class="rd-rows" data-hf-reveal-group><p class="rd-empty">Loading your research notes…</p></div>
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02b</p><h2 id="rd-notes-title">Your notes</h2><p>Private to you, most recent first.</p></div><a class="rd-link" href="research.html">Write a note ↗</a></header>
+    <ul id="v3-notes" class="rd-rows" aria-labelledby="rd-notes-title" data-hf-reveal></ul>
+  </section>
+
+  <section class="rd-module rd-module--flow" aria-labelledby="rd-flow-title">
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">03</p><h2 id="rd-flow-title">Across the market</h2><p id="rd-flow-scope">Purchases and sales reported on SEC Form 4, from the latest imported trades.</p></div><a class="rd-link" href="filings.html">All filings ↗</a></header>
+    <div id="rd-kpis" class="rd-kpis" data-hf-reveal-group></div>
+    <div class="rd-flow" data-hf-reveal-group>
+      <figure class="rd-panel rd-panel--daily" aria-labelledby="rd-daily-title">
+        <figcaption class="rd-panel__head">
+          <div><h3 id="rd-daily-title">Bought and sold, by trade date</h3><p>Bought above the line, sold below. Only purchases and sales with a reported price.</p></div>
+          <div class="rd-seg" id="rd-daily-switch" role="group" aria-label="Show the days as"><button type="button" data-view="chart" aria-pressed="true" data-hf-atom>Chart</button><button type="button" data-view="table" aria-pressed="false" data-hf-atom>Table</button></div>
+        </figcaption>
+        <div class="rd-dframe" id="rd-daily-frame" aria-busy="true">
+          <div id="rd-daily-chart" class="rd-dchart rd-dview is-active"></div>
+          <div id="rd-daily-table" class="rd-dtable rd-dview" tabindex="0" role="region" aria-label="Bought and sold by trade date, as a table" inert></div>
+        </div>
+      </figure>
+      <figure class="rd-panel rd-panel--companies" aria-labelledby="rd-companies-title">
+        <figcaption class="rd-panel__head"><div><h3 id="rd-companies-title">By company</h3><p>Sold to the left, bought to the right; largest total first.</p></div></figcaption>
+        <div id="rd-companies" class="rd-co"></div>
+      </figure>
+    </div>
+    <div class="rd-panel rd-panel--largest">
+      <div class="rd-panel__head" data-hf-reveal><div><h3 id="rd-largest-title">Biggest trades</h3><p>Ranked by value: shares × price per share, as filed.</p></div></div>
+      <ol id="rd-largest" class="rd-largest" aria-labelledby="rd-largest-title" data-hf-reveal></ol>
+    </div>
   </section>
 
   <section class="rd-module rd-module--trades" aria-labelledby="rd-trades-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">04</p><h2 id="rd-trades-title">Insider transactions</h2><p>Every reported line, newest trade date first: shares, price per share, value, and how long the filing took.</p></div><a class="rd-link" href="research.html">Research a company ↗</a></header>
-    <div class="rd-filters" role="group" aria-label="Transaction type" data-hf-reveal><button type="button" data-filter="all" aria-pressed="true">All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false"><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false"><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false">Other codes <span data-count="other"></span></button></div>
-    <div class="rd-table-wrap" data-hf-reveal><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Reporting person</th><th scope="col">Company</th><th scope="col">Transaction</th><th scope="col" class="rd-num">Shares</th><th scope="col" class="rd-num">Price</th><th scope="col" class="rd-num">Value</th><th scope="col">Traded</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"><tr><td colspan="9" class="rd-empty">Loading reported transactions…</td></tr></tbody></table></div>
-    <p class="rd-module__foot" id="v3-trades-foot" data-hf-reveal>Value is shares × the price per share reported on the filing. Codes follow the SEC's Form 4 instructions.</p>
-  </section>
-
-  <section class="rd-module rd-module--filings" aria-labelledby="rd-filings-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">05</p><h2 id="rd-filings-title">Latest filings</h2><p>Form 4 ownership filings, newest publication first.</p></div><a class="rd-link" href="filings.html">All filings ↗</a></header>
-    <div class="rd-table-wrap" data-hf-reveal><table class="rd-table rd-table--filings"><thead><tr><th scope="col">Company</th><th scope="col">Form</th><th scope="col">Published</th><th scope="col"><span class="sr-only">Record</span></th></tr></thead><tbody id="v3-filings"><tr><td colspan="4" class="rd-empty">Loading SEC filings…</td></tr></tbody></table></div>
-    <p class="rd-module__foot" id="v3-coverage" data-hf-reveal>Publication date is when the SEC posted the filing, not when the trade happened.</p>
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">04</p><h2 id="rd-trades-title">All recent trades</h2><p>Each line of each filing, newest trade first. Value is shares × price per share as reported.</p></div><a class="rd-link" href="research.html">Research a company ↗</a></header>
+    <div class="rd-filters" role="group" aria-label="Show" data-hf-reveal><button type="button" data-filter="all" aria-pressed="true" disabled>All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false" disabled><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false" disabled><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false" disabled>Grants, exercises &amp; gifts <span data-count="other"></span></button></div>
+    <p id="v3-trades-status" class="sr-only" aria-live="polite"></p>
+    <div class="rd-table-wrap rd-table-wrap--trades" data-hf-reveal><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Person</th><th scope="col">Company</th><th scope="col">What happened</th><th scope="col" class="rd-num">Shares</th><th scope="col" class="rd-num">Price</th><th scope="col" class="rd-num">Value</th><th scope="col">Traded</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"></tbody></table></div>
+    <p class="rd-module__foot" id="v3-trades-foot" data-hf-reveal></p>
   </section>
 
   <section class="rd-module rd-module--status" aria-labelledby="rd-status-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">06</p><h2 id="rd-status-title">Data source</h2><p>Where this desk's records come from, and when they were last imported.</p></div></header>
-    <dl class="rd-status" data-hf-reveal>
-      <div><dt>Source</dt><dd>SEC EDGAR · Form 4</dd></div>
-      <div><dt>Status</dt><dd id="v4-data-state">Checking…</dd></div>
-      <div><dt>Parsed filings</dt><dd id="v4-filing-count">Checking…</dd></div>
-      <div><dt>Last import</dt><dd id="v4-last-import">Checking…</dd></div>
-      <div><dt>Latest publication</dt><dd id="v4-latest-filing-date">Checking…</dd></div>
-    </dl>
-    <a class="rd-link" href="data.html">How the data works ↗</a>
-  </section>
-
-  <section class="rd-module rd-module--people" aria-labelledby="rd-people-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">07</p><h2 id="rd-people-title">Reporting people</h2><p>The people behind the latest imported Form 4 transactions.</p></div><a class="rd-link" href="people.html">All people ↗</a></header>
-    <div id="v10-people-preview" class="rd-people" data-hf-reveal-group><p class="rd-empty">Loading reporting people…</p></div>
+    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">05</p><h2 id="rd-status-title">About this data</h2></div></header>
+    <div class="rd-about-line" data-hf-reveal>
+      <ul class="rd-about" id="rd-about" aria-busy="true">
+        <li><span class="rd-about__k">Source:</span> SEC EDGAR, Form 4</li>
+        <li><span class="rd-about__k">Status:</span> <span id="v4-data-state">checking…</span></li>
+        <li id="v4-filing-count">checking the import…</li>
+        <li id="v4-last-import">last import: checking…</li>
+        <li id="v4-latest-filing-date">newest filing: checking…</li>
+      </ul>
+      <a class="rd-link" href="data.html">How the data works ↗</a>
+    </div>
   </section>
 </div>
 
 <div id="rd-tip" class="rd-tip" role="tooltip" hidden></div>
 <p class="rd-disclosure" data-hf-reveal>Insidir organizes public SEC records for independent research. Records can be delayed, partial or amended; always confirm details in the original filing. Insidir is not a broker and nothing here is investment advice. <a href="company-info.html">About Insidir ↗</a></p>
+<p class="rd-credits" id="rd-credits" data-media-credits></p>
+<script>/* Skeletons sized like the content they stand for, from the counts this browser saved at the last visit, so nothing moves when the data arrives. */
+(()=>{let c={};try{c=JSON.parse(localStorage.getItem("insidir:overview:counts")||"{}")||{};}catch(e){}
+const n=(k,d,lo,hi)=>{const v=Number(c[k]);return Math.max(lo,Math.min(hi,Number.isFinite(v)&&c[k]!==null&&c[k]!==undefined?v:d));};
+const b=w=>'<i class="rd-skel" style="--w:'+w+'%"></i>',t='<span class="rd-skel rd-skel--tile"></span>',rep=(k,f)=>Array.from({length:k},(_,i)=>f(i)).join("");
+const td=c.today;if(td&&typeof td==="object"&&Math.abs(Number(td.w)-innerWidth)<24)for(const [k,id] of [["you","rd-today-you"],["market","rd-today-market"],["fresh","rd-today-fresh"]]){const v=Number(td[k]),e=document.getElementById(id);if(e&&v>0&&v<400)e.style.setProperty("min-height","max("+v+"px, var(--line-min))","important");}
+const hs=c.heights;if(hs&&typeof hs==="object"&&Math.abs(Number(hs.w)-innerWidth)<24)for(const id in hs){if(id==="w")continue;const v=Number(hs[id]),e=id==="trades"?document.querySelector(".rd-table-wrap--trades"):document.getElementById(id);if(e&&v>0&&v<6000){e.style.setProperty("min-height",v+"px","important");if(id==="rd-credits")e.classList.add("is-held");}}
+const put=(id,html,vars)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=html;e.setAttribute("aria-busy","true");for(const k in vars||{})e.style.setProperty(k,String(vars[k]));};
+const follows=n("follows",0,0,1e4),feed=n("feed",3,1,8),list=follows?6:3,watch=n("watch",0,0,8),notes=n("notes",0,0,6),sg=follows?n("suggest",4,0,4):n("suggest",6,0,6),co=n("co",6,0,6),coMore=n("coMore",1,0,1),big=n("big",6,0,6),rows=n("rows",12,0,12);
+/* Following nobody: the message and the suggestions come first, and the feed (empty until a follow) below them.
+   No saved counts at all: feed rows are kept and the suggestions wait (is-unknown), so either answer moves nothing. */
+const known=c.follows!==undefined&&c.follows!==null,box=document.getElementById("rd-follow");
+if(!known)box?.classList.add("is-unknown");else if(!follows)box?.classList.add("is-empty");
+put("v10-follow-feed",follows||!known?rep(feed,i=>'<li class="rd-feed__row is-skeleton">'+t+'<div class="rd-feed__body"><p class="rd-feed__l1">'+b(64-i%3*8)+'</p><p class="rd-feed__l2">'+b(46)+'</p></div></li>'):'',{"--rows":follows?feed:0});
+put("v10-follow-list",follows?rep(Math.min(list,follows),()=>'<li class="rd-fl is-skeleton">'+t+'<div class="rd-fl__body"><p class="rd-fl__name">'+b(60)+'</p><p class="rd-fl__meta">'+b(30)+'</p><p class="rd-fl__sum">'+b(86)+'</p></div></li>'):'<li class="rd-fl__msg is-skeleton"><p class="rd-empty">'+b(90)+b(60)+'</p></li>',{"--slots":list,"--slot-rows":Math.ceil(list/3)});
+const sgEl=document.getElementById("v10-follow-suggest"),sgT=document.getElementById("v10-follow-suggest-title");if(sgEl&&follows){sgEl.classList.add("is-compact");if(sgT)sgT.textContent="More people to follow · most active in the latest imports";}
+
+put("v10-follow-suggest-list",rep(sg,()=>'<li class="rd-sg is-skeleton">'+t+'<div class="rd-sg__body"><p class="rd-sg__name">'+b(64)+'</p><p class="rd-sg__co">'+b(80)+'</p><p class="rd-sg__sum">'+b(70)+'</p></div></li>'));
+const wrow=()=>'<li class="rd-row rd-row--watch is-skeleton">'+t+'<span class="rd-row__id">'+b(50)+b(80)+'</span><span class="rd-row__detail">'+b(90)+b(60)+'</span></li>';
+put("v3-watchlist",watch?rep(watch,wrow):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+'</p></li>'+rep(4,wrow));
+put("v3-notes",notes?rep(notes,()=>'<li class="rd-row-wrap is-skeleton"><span class="rd-row rd-row--note"><span class="rd-row__id">'+b(60)+b(70)+'</span><span class="rd-row__detail">'+b(92)+b(40)+'</span></span></li>'):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+b(40)+'</p></li>');
+put("rd-kpis",rep(5,()=>'<div class="rd-kpi is-skeleton"><p class="rd-kpi__label">'+b(50)+'</p><p class="rd-kpi__value">'+b(76)+'</p><p class="rd-kpi__note">'+b(90)+b(56)+'</p></div>'));
+put("rd-companies",co?'<div class="rd-co__head" aria-hidden="true">'+b(30)+'</div><ul class="rd-co__list">'+rep(co,()=>'<li class="rd-co__row is-skeleton"><span class="rd-co__id">'+t+b(60)+'</span><span class="rd-co__track">'+b(70)+'</span><span class="rd-co__track">'+b(40)+'</span><span class="rd-co__net">'+b(80)+'</span><span class="rd-co__detail">'+b(50)+'</span></li>')+'</ul>'+(coMore?'<p class="rd-more">'+b(50)+'</p>':''):'<p class="rd-empty">'+b(80)+'</p>');
+put("rd-largest",big?rep(big,i=>'<li class="rd-big is-skeleton"><span class="rd-big__rank">'+b(70)+'</span><span class="rd-big__value">'+b(80)+'</span><span class="rd-big__bar"></span><span class="rd-big__what">'+t+b(60)+'</span><span class="rd-big__terms">'+b(70)+'</span></li>'):'<li class="rd-empty">'+b(80)+'</li>');
+put("v3-trades",rows?rep(rows,()=>'<tr class="rd-trade is-skeleton"><td class="rd-td-who"><span class="rd-ent">'+t+b(70)+'</span></td><td class="rd-td-co"><span class="rd-ent">'+t+b(40)+'</span><span class="rd-sub">'+b(70)+'</span></td><td class="rd-td-what">'+b(70)+'</td><td class="rd-num rd-td-shares">'+b(80)+'</td><td class="rd-num rd-td-price">'+b(70)+'</td><td class="rd-num rd-td-value">'+b(80)+'</td><td class="rd-td-traded">'+b(80)+'</td><td class="rd-td-filed">'+b(80)+'<span class="rd-sub">'+b(50)+'</span></td><td class="rd-links">'+b(60)+'</td></tr>'):'<tr class="is-skeleton"><td colspan="9" class="rd-empty">'+b(80)+'</td></tr>');
+})();</script>
 </main>
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">

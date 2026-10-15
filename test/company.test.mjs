@@ -6,7 +6,8 @@ import { commonsFileUrl, parseProfile, parsePeople, namesMatch, profileQuery } f
 import { ownershipUrls, recentOwnershipFilings, summarizeOwnershipFiling, ownerRole, summarizePeople } from "../src/insiders.mjs";
 import { parseHeadlines, parseSearchNews, focusHeadlines, relevanceTerms, mergeHeadlines, announcementsFromFilings } from "../src/news.mjs";
 import { rankCompanies } from "../src/search.mjs";
-import { handleCompanyRoute, parseTicker, clientAddress } from "../src/company-routes.mjs";
+import { handleCompanyRoute, parseTicker, clientAddress, isCompanyRoute } from "../src/company-routes.mjs";
+import { secReady } from "../src/config.mjs";
 import { allowedExternalUrl } from "../src/external.mjs";
 
 const CIK = "0001045810", ACC = "0001045810-26-000075";
@@ -235,10 +236,60 @@ test("company routes validate input before any upstream request", async () => {
   assert.equal((await call("/v1/company/profile?ticker=bad!ticker")).status, 400);
   const empty = await call("/v1/search?q=");
   assert.deepEqual(empty.body, { items: [] });
+  // The media batch validates its lists before it needs the SEC ticker file.
+  assert.equal(isCompanyRoute("/v1/media"), true);
+  assert.equal(isCompanyRoute("/v1/media/" + "a".repeat(64) + ".webp"), true);
+  assert.equal(isCompanyRoute("/v1/media/x"), false);
+  for (const path of ["/v1/media", "/v1/media?tickers=bad!", "/v1/media?people=AAPL", "/v1/media?ciks=0",
+    "/v1/media?tickers=" + Array.from({ length: 61 }, (_, i) => "T" + i).join(","), "/v1/media?people=" + Array.from({ length: 101 }, (_, i) => (i + 1) + ":AAPL").join(",")])
+    assert.equal((await call(path)).status, 400, path);
+  if (!secReady()) assert.deepEqual(await call("/v1/media?tickers=AAPL"), { status: 503, error: "SEC_USER_AGENT not configured for official SEC research" });
   assert.equal(parseTicker("brk.b"), "BRK-B");
   assert.equal(clientAddress({ headers: { "x-forwarded-for": "6.6.6.6, 203.0.113.9" }, socket: { remoteAddress: "10.0.0.1" } }), "203.0.113.9");
   assert.equal(clientAddress({ headers: {}, socket: { remoteAddress: "10.0.0.1" } }), "10.0.0.1");
   assert.throws(() => parseTicker("../etc"), e => e.status === 400);
+});
+
+test("open image URLs: a day of caching with an ETag, takedowns answer 404, and unknown addresses are remembered and limited per client", async () => {
+  const store = await import("../src/media-store.mjs");
+  const call = async (path, ip = "192.0.2.10", headers = {}) => {
+    const res = { status: 0, headers: {}, body: null, writeHead(s, h) { this.status = s; this.headers = h; }, end(b) { this.body = b ?? null; } };
+    try { await handleCompanyRoute({ method: "GET", headers, socket: { remoteAddress: ip } }, res, new URL(path, "http://x")); return { status: res.status, headers: res.headers, body: res.body }; }
+    catch (e) { return { status: e.status, error: e.message }; }
+  };
+  const saved = await store.putMedia({ bytes: Buffer.from("company route test image"), type: "png", width: 1, height: 1 });
+  let r = await call(saved.url);
+  assert.equal(r.status, 200);
+  assert.equal(r.headers["Cache-Control"], "public, max-age=86400", "no longer immutable for a year: a takedown must reach caches");
+  assert.equal(r.headers.ETag, '"' + saved.sha + '"');
+  assert.equal(r.headers["Content-Type"], "image/png");
+  r = await call(saved.url, "192.0.2.10", { "if-none-match": 'W/"' + saved.sha + '"' });
+  assert.deepEqual([r.status, r.body], [304, null], "revalidation is cheap");
+  // Unknown addresses: 404, remembered for a few minutes (one lookup each), at most 120 a minute per client.
+  const unknown = n => "/v1/media/" + n.toString(16).padStart(64, "0") + ".webp";
+  const misses = store.storeStats().misses;
+  assert.equal((await call(unknown(1))).status, 404);
+  assert.equal(store.storeStats().misses, misses + 1);
+  assert.equal((await call(unknown(1))).status, 404);
+  assert.equal(store.storeStats().misses, misses + 1, "asked again: answered from memory");
+  for (let i = 2; i <= 119; i++) assert.equal((await call(unknown(i))).status, 404);
+  assert.deepEqual(await call(unknown(120)), { status: 429, error: "Too many requests for missing images. Try again shortly." });
+  assert.equal(store.storeStats().misses, misses + 119, "the 121st miss is refused before any lookup");
+  assert.equal((await call(unknown(1))).status, 429, "its misses stay refused for the minute");
+  assert.equal(store.storeStats().misses, misses + 119, "still without a lookup");
+  assert.equal((await call(saved.url, "192.0.2.10")).status, 200, "images held in memory are still served to that client");
+  assert.equal((await call(saved.url, "192.0.2.10", { "if-none-match": '"' + saved.sha + '"' })).status, 304);
+  assert.equal((await call(unknown(121), "192.0.2.11")).status, 404, "other clients are not affected");
+  // An address stored later is no longer 'missing'.
+  const late = Buffer.from("stored after it was asked for");
+  const lateSha = (await import("node:crypto")).createHash("sha256").update(late).digest("hex");
+  assert.equal((await call("/v1/media/" + lateSha + ".png", "192.0.2.12")).status, 404);
+  await store.putMedia({ bytes: late, type: "png" });
+  assert.equal((await call("/v1/media/" + lateSha + ".png", "192.0.2.12")).status, 200);
+  // A blocked address is never served again, not even as a 304.
+  await store.blockMedia(saved.sha, "test takedown");
+  assert.equal((await call(saved.url, "192.0.2.13")).status, 404);
+  assert.equal((await call(saved.url, "192.0.2.13", { "if-none-match": '"' + saved.sha + '"' })).status, 404);
 });
 
 test("external fetches are limited to the allowlisted public data hosts", () => {

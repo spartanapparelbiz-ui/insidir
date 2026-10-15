@@ -16,6 +16,11 @@ const channel = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 
 export const luminance = (r, g, b) => .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b);
 export const contrast = (a, b) => (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 const BG_LUM = luminance(...PAGE_BG);
+/* Every page draws logos through `filter: grayscale(1)` (no colour on the halftone site), which
+ * maps sRGB to .2126 R + .7152 G + .0722 B. Saturated red passes a colour contrast test and then
+ * shows as dark grey, so ink is judged both ways and lifted until both read. */
+export const shownGrey = (r, g, b) => .2126 * r + .7152 * g + .0722 * b;
+export const inkContrast = (r, g, b) => { const v = shownGrey(r, g, b); return Math.min(contrast(luminance(r, g, b), BG_LUM), contrast(luminance(v, v, v), BG_LUM)); };
 
 /* librsvg must never resolve external entities or fetch anything. */
 export function sanitizeSvg(bytes) {
@@ -164,7 +169,7 @@ export function liftDark(px, w, h) {
   for (let i = 0; i < n; i++) {
     if (px[i * 4 + 3] <= 24) { exposed[i] = 1; stack.push(i); continue; }
     ink++;
-    if (contrast(luminance(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]), BG_LUM) < 3) dark[i] = 1;
+    if (inkContrast(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]) < 3) dark[i] = 1;
   }
   for (let i = 0; i < n; i++) {
     const x = i % w, y = (i - x) / w;
@@ -184,7 +189,7 @@ export function liftDark(px, w, h) {
     if (ss < .22) rgb = [242 / 255, 244 / 255, 247 / 255];
     else {
       let L = Math.max(ll, .5);
-      for (; L < .92; L += .02) { rgb = hslToRgb(hh, ss, L); if (contrast(luminance(rgb[0] * 255, rgb[1] * 255, rgb[2] * 255), BG_LUM) >= 4.5) break; }
+      for (; L < .92; L += .02) { rgb = hslToRgb(hh, ss, L); if (inkContrast(rgb[0] * 255, rgb[1] * 255, rgb[2] * 255) >= 4.5) break; }
       rgb = hslToRgb(hh, ss, L);
     }
     px[i * 4] = Math.round(rgb[0] * 255); px[i * 4 + 1] = Math.round(rgb[1] * 255); px[i * 4 + 2] = Math.round(rgb[2] * 255);
