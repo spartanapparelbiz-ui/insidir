@@ -9,13 +9,13 @@
    Form 4 list with SEC links).
 
    Requests: GET /v1/people/<cik> (the file), GET /v1/me/people (is this person followed), POST /v1/me/people
-   and DELETE /v1/me/people/<cik> (Follow / Unfollow, live, with Undo for 6 s), and GET /v1/media through
+   and DELETE /v1/me/people/<cik> (Follow / Unfollow, live, with Undo), and GET /v1/media through
    entity-media.js (the photo or the company logo standing in, and company logos). 401 sends the browser to
-   sign in and 402 to subscribe, back to this file afterwards; 404 says no imported records exist for the
-   CIK; anything else says what failed with a Try again.
+   sign in and 402 to subscribe, with next= set to this file (honoured once auth.js and subscribe.js list
+   "person"); 404 says no imported records exist for the CIK; anything else says what failed with a Try again.
 
-   The wording of Form 4 codes (describe()) and the exact formatters are copied from v3-dashboard.js so the
-   file reads exactly like the overview; both should move to one shared module. */
+   The wording of Form 4 codes (describe()) is copied from v3-dashboard.js so the file reads exactly like the
+   overview; both should move to one shared module (with the exact formatters below). */
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -33,14 +33,31 @@ const dashed=a=>a?a.slice(0,10)+"-"+a.slice(10,12)+"-"+a.slice(12):"";
 // Links out go to the SEC only (https, sec.gov).
 const secUrl=v=>{try{const u=new URL(String(v||""));return u.protocol==="https:"&&!u.username&&(u.hostname==="sec.gov"||u.hostname.endsWith(".sec.gov"))?u.href:"";}catch{return "";}};
 
-/* ---------- exact formatting (copied from v3-dashboard.js) ----------
-   Numbers from their shortest round-trip digits, rounded half away from zero only past the digits shown,
-   grouped by thousands; trade dates in UTC, SEC filing dates on the Eastern calendar day. */
+/* ---------- exact formatting ----------
+   Figures are written from their digits as filed: a pg NUMERIC string (transaction lines) is used as it is,
+   a JSON number (the API's exact sums) by its shortest round-trip digits, never through arithmetic. Shares
+   and prices keep every significant digit up to the column's 8 decimals (NUMERIC(30,8)); only trailing
+   zeros go. Dollar values are cents as stored (NUMERIC(30,2)). Grouped by thousands; trade dates in UTC,
+   SEC filing dates on the Eastern calendar day. The Form 4 wording below is copied from v3-dashboard.js. */
 const MONTHS="Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
 const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,",");
-function roundDigits(a,max){
- let s=String(a);if(/e/i.test(s))s=a.toFixed(Math.min(20,max+6));
- let [i,f=""]=s.split(".");
+const SCALE=8;
+// "1.23e-7" -> "0.000000123", digit for digit.
+function expand(s){
+ const m=/^([-+]?)(\d+)(?:\.(\d*))?e([-+]?\d+)$/i.exec(s);if(!m)return s;
+ const d=m[2]+(m[3]||""),p=m[2].length+Number(m[4]);
+ return m[1]+(p<=0?"0."+"0".repeat(-p)+d:p>=d.length?d+"0".repeat(p-d.length):d.slice(0,p)+"."+d.slice(p));
+}
+// The decimal digits of a figure, as a string ("-1000.12345678"), or null when there is no figure.
+function digits(x){
+ if(typeof x==="number")return Number.isFinite(x)?expand(String(x)):null;
+ if(typeof x!=="string")return null;
+ const s=x.trim();
+ if(/^[-+]?\d+(\.\d*)?$/.test(s))return s;
+ const n=Number(s);return s&&Number.isFinite(n)?expand(String(n)):null;
+}
+// Past `max` decimals (only a figure finer than its column could get there) round half away from zero.
+function roundDigits(i,f,max){
  if(f.length<=max)return [i,f];
  const keep=f.slice(0,max);
  if(f.charCodeAt(max)-48<5)return [i,keep];
@@ -50,13 +67,23 @@ function roundDigits(a,max){
  const all=d.join(""),cut=all.length-keep.length;
  return [all.slice(0,cut)||"0",all.slice(cut)];
 }
-function decimal(n,min,max){
- const [i,f]=roundDigits(Math.abs(n),max);let g=f.replace(/0+$/,"");while(g.length<min)g+="0";
+function decimal(x,min,max){
+ const s=digits(x);if(s===null)return "";
+ const neg=s.charAt(0)==="-",[i0,f0=""]=s.replace(/^[-+]/,"").split(".");
+ const [i,f]=roundDigits(i0||"0",f0,max);let g=f.replace(/0+$/,"");while(g.length<min)g+="0";
  const out=group(i.replace(/^0+(?=\d)/,""))+(g?"."+g:"");
- return (n<0&&/[1-9]/.test(out)?"-":"")+out;
+ return (neg&&/[1-9]/.test(out)?"-":"")+out;
 }
 const MINUS="−";
-const cash=(n,min,max)=>{const s=decimal(n,min,max);return s.charAt(0)==="-"?MINUS+"$"+s.slice(1):"$"+s;};
+const cash=(x,min,max)=>{const s=decimal(x,min,max);return s.charAt(0)==="-"?MINUS+"$"+s.slice(1):"$"+s;};
+// Whole cents as a BigInt ("41532.10" -> 4153210n), so sums and differences of dollar values stay exact.
+function cents(x){
+ const s=digits(x);if(s===null)return null;
+ const neg=s.charAt(0)==="-",[i,f=""]=s.replace(/^[-+]/,"").split(".");
+ const [ri,rf]=roundDigits(i||"0",f,2);
+ const v=BigInt(ri)*100n+BigInt((rf+"00").slice(0,2));return neg?-v:v;
+}
+const fromCents=v=>{const a=v<0n?-v:v;return (v<0n?"-":"")+(a/100n)+"."+String(a%100n).padStart(2,"0");};
 const validDate=x=>{if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d;};
 function eastern(d){
  const y=d.getUTCFullYear(),sun=(m,n)=>{const w=new Date(Date.UTC(y,m,1)).getUTCDay();return 1+(7-w)%7+7*(n-1);},lastSun=m=>{const l=new Date(Date.UTC(y,m+1,0));return l.getUTCDate()-l.getUTCDay();};
@@ -73,12 +100,13 @@ const tradeIso=x=>{const d=validDate(x);return d?isoOf(utcDay(d)):"";};
 const filedIso=x=>{const d=validDate(x);return d?isoOf(eastern(d)):"";};
 const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
 // Dollar values to the cent when there are cents ($1,132,000 or $41,532.10): nothing is rounded away.
-const money=x=>{const n=num(x);if(n===null)return "Not reported";const c=Math.round(Math.abs(n)*100)%100!==0;return cash(n,c?2:0,2);};
-const signedMoney=n=>n>0?"+"+money(n):n<0?money(n):"$0";
-// Prices as filed: weighted-average prices often carry four decimals ($41.5321).
-const price=x=>{const n=num(x);return n===null?"Not reported":cash(n,2,4);};
-const count=n=>decimal(n,0,4);
-const plural=(n,one,many)=>count(n)+" "+(n===1?one:(many||one+"s"));
+const money=x=>{const c=cents(x);if(c===null)return "Not reported";return cash(fromCents(c),c%100n!==0n?2:0,2);};
+const signedMoney=c=>c>0n?"+"+money(fromCents(c)):c<0n?money(fromCents(c)):"$0";
+// Prices as filed: every decimal the filing gives ($41.5321, $0.000123), at least the cents.
+const price=x=>digits(x)===null?"Not reported":cash(x,2,SCALE);
+// Share counts as filed (fractional shares keep every decimal: 1,000.12345678).
+const count=n=>decimal(n,0,SCALE);
+const plural=(n,one,many)=>count(n)+" "+(Number(n)===1?one:(many||one+"s"));
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person").replace(/\b\w+/g,w=>w.charAt(0)+w.slice(1).toLowerCase());
 const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
 const companyName=raw=>{const s=String(raw||"").replace(/\s+/g," ").trim();if(!s||/[a-z]/.test(s))return s;
@@ -104,9 +132,25 @@ const code=x=>String(x?.transaction_code||"").replace(/[^A-Z]/gi,"").slice(0,1).
 const nounKey=x=>{const c=code(x);return (c==="P"||c==="S")&&x?.derivative?c+" derivative":c;};
 const kind=x=>x?.category==="reported_purchase"?"buy":x?.category==="reported_sale"?"sell":"other";
 const tri=k=>k==="buy"?'<i class="pf-tri pf-tri--up" aria-hidden="true"></i>':k==="sell"?'<i class="pf-tri pf-tri--down" aria-hidden="true"></i>':"";
-const sharesOf=x=>num(x?.shares);
-const priceOf=x=>num(x?.price_per_share??x?.price);
-const valueOf=x=>{const v=num(x?.estimated_value);if(v!==null)return v;const s=sharesOf(x),p=priceOf(x);return s!==null&&s>=0&&p!==null&&p>0?Math.round(s*p*100)/100:null;};
+const rawPrice=x=>x?.price_per_share??x?.price;
+// A figure in units of 1e-8 (the NUMERIC(30,8) scale), as a BigInt.
+function scaled(x){
+ const s=digits(x);if(s===null)return null;
+ const neg=s.charAt(0)==="-",[i,f=""]=s.replace(/^[-+]/,"").split(".");
+ const [ri,rf]=roundDigits(i||"0",f,SCALE);
+ const v=BigInt(ri)*10n**BigInt(SCALE)+BigInt((rf+"0".repeat(SCALE)).slice(0,SCALE));return neg?-v:v;
+}
+const fromScaled=v=>{const a=v<0n?-v:v,u=10n**BigInt(SCALE);return (v<0n?"-":"")+(a/u)+"."+String(a%u).padStart(SCALE,"0");};
+// Shares as filed, without the sign (the verb carries the direction).
+const sharesText=x=>{const s=digits(x?.shares);return s===null?null:count(s.replace(/^[-+]/,""));};
+/* The line's value in cents: the stored estimated_value (shares x price, to the cent, as imported); only when
+   it is missing, shares x price worked out exactly here and rounded half away from zero to the cent. */
+function valueCents(x){
+ const v=cents(x?.estimated_value);if(v!==null)return v;
+ const s=scaled(x?.shares),p=scaled(rawPrice(x));
+ if(s===null||p===null||s<0n||p<=0n)return null;
+ const q=s*p,unit=10n**BigInt(2*SCALE-2);return (q+unit/2n)/unit;
+}
 /* Calendar days from the trade date to the SEC filing date (the Eastern calendar day of publication). */
 const lagOf=x=>{const t=validDate(x?.transaction_date),p=validDate(x?.published_at);if(!t||!p)return null;const d=Math.round((Date.parse(filedIso(x.published_at))-Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()))/DAY);return d>=0?d:null;};
 const lagWords=n=>n===null?"":n===0?"same day":n===1?"1 day later":count(n)+" days later";
@@ -115,8 +159,8 @@ const isPlainShares=t=>!t||/^(class [a-z0-9]+ )?(common|ordinary)( stock| shares
 const security=x=>{const t=String(x?.security_title||"").replace(/\s+/g," ").trim().slice(0,60);return isPlainShares(t)?"":t;};
 /* describe(x): {word, cls, c, text, value, valued, priced}; the same sentence as the overview's. */
 function describe(x){
- const c=code(x),k=kind(x),s=sharesOf(x),p=priceOf(x),v=valueOf(x),T=tick(x?.ticker),ad=String(x?.acquired_disposed||"").toUpperCase();
- const sh=s===null?"an unreported number of":decimal(Math.abs(s),0,4);
+ const c=code(x),k=kind(x),p=digits(rawPrice(x)),v=valueCents(x),T=tick(x?.ticker),ad=String(x?.acquired_disposed||"").toUpperCase();
+ const sh=sharesText(x)??"an unreported number of";
  const tk=T?T+" ":"";
  const sec=security(x),units=sec||(tk+"shares").trim();
  const verb=ad==="A"?"acquired":ad==="D"?"disposed of":"reported";
@@ -145,12 +189,15 @@ function describe(x){
   case "V":word="Voluntary";text=verb+" "+sh+" "+units;break;
   default:word=c?"Code "+c:"Other";text=verb+" "+sh+" "+units;
  }
- return {word,cls,c,text,valued,value:valued&&v!==null&&v>0?v:null,priced:p!==null};
+ // A stored value of $0.00 on a priced line with shares is a value under half a cent, not nothing.
+ const tiny=valued&&v===0n&&scaled(x?.shares)>0n&&scaled(rawPrice(x))>0n;
+ return {word,cls,c,text,valued,value:valued&&v!==null&&v>0n?v:null,priced:p!==null,tiny};
 }
 const qualifiers=x=>[code(x)==="V"?["reported early","Reported early, voluntarily"]:null,x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
+ x?.superseded===true?["repeated in a later 4/A","A later Form 4/A repeats this line; the record above counts it once"]:null,
  ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null].filter(Boolean);
 const badge=x=>{const d=describe(x),m=CODES[d.c]||"";return '<span class="pf-badge pf-badge--'+d.cls+'"'+(m?' title="'+E(d.c+" — "+m)+'"':'')+'>'+tri(d.cls)+E(d.word)+(d.c?' · '+E(d.c):'')+'</span>';};
-const valueText=x=>{const d=describe(x);return d.valued?(d.value!==null?"= "+money(d.value):d.priced?"= $0":"value not reported"):"";};
+const valueText=x=>{const d=describe(x);return d.valued?(d.value!==null?"= "+money(fromCents(d.value)):d.tiny?"= under $0.01":d.priced?"= $0":"value not reported"):"";};
 
 /* ---------- tiles ---------- */
 const coTile=(t,name,cik,size)=>media?media.logo(tick(t),size||"sm",{cik:cikOf(cik),name:companyName(name)}):"";
@@ -192,40 +239,43 @@ function showState(kind,message){
  if(kind==="badcik"){h="No file number";p=rawCik?"“"+E(rawCik.slice(0,40))+"” is not an SEC CIK. A personnel file is opened by a reporting person’s SEC CIK: up to 10 digits, as in person.html?cik=1214156.":"This address names no reporting person. A personnel file is opened by a reporting person’s SEC CIK, as in person.html?cik=1214156.";extra=people;}
  else if(kind==="missing"){h="No file for CIK "+cik;p="No imported SEC records for CIK "+E(cik)+". Insidir builds a file only from Form 4 filings it has imported; this CIK has none yet.";
   extra=people+'<a href="'+E("https://www.sec.gov/cgi-bin/own-disp?action=getowner&CIK="+cik)+'" target="_blank" rel="noopener noreferrer">Look up CIK '+E(cik)+' on SEC EDGAR ↗</a>';}
- else if(kind==="signin"){h="Sign in to open this file";p="Your session has ended. Taking you to sign in; you will come back to this file afterwards.";}
- else if(kind==="subscribe"){h="This file needs an active subscription";p="Taking you to the subscription step; you will come back to this file afterwards.";}
+ else if(kind==="signin"){h="Sign in to open this file";p="Your session has ended. Taking you to sign in.";}
+ else if(kind==="subscribe"){h="This file needs an active subscription";p="Taking you to the subscription step.";}
  else{h="This file could not be loaded";p="The personnel file for CIK "+E(cik)+" could not be loaded: "+E(message||"unknown error")+".";extra='<button type="button" class="pf-btn" data-hf-atom data-pf-retry>Try again</button>'+people;}
  box.innerHTML='<p class="pf-state__label">'+(kind==="error"?"Error":kind==="missing"||kind==="badcik"?"File not found":"Access")+'</p><h1>'+E(h)+'</h1><p>'+p+'</p>'+(extra?'<div class="pf-state__links">'+extra+'</div>':"");
  box.hidden=false;
  box.classList.toggle("is-error",kind==="error");
  main.classList.add("is-state");main.classList.remove("is-loading");main.removeAttribute("aria-busy");
  $("pf-file").hidden=true;head.hidden=true;
- if(kind==="missing"||kind==="badcik")document.title="No file · Personnel file · Insidir";
+ if(kind==="missing"||kind==="badcik")document.title="No file — personnel file — insidir.";
 }
 function clearState(){const box=$("pf-state");if(box){box.hidden=true;box.innerHTML="";}main.classList.remove("is-state");$("pf-file").hidden=false;head.hidden=false;}
 
 /* ---------- 01 Record ---------- */
 const cellOf=(t,type)=>{
- const bucket=t?.[type]||{},n=num(bucket.count)||0,sh=num(bucket.shares),v=num(bucket.value);
+ const bucket=t?.[type]||{},n=num(bucket.count)||0,sh=digits(bucket.shares),v=digits(bucket.value);
  if(!n)return '<td><b class="pf-none">None</b><span>no '+(type==="purchases"?"purchases":"sales")+'</span></td>';
  const cls=type==="purchases"?"pf-up":"pf-down";
- return '<td><b class="'+cls+'">'+(v!==null?E(money(v)):"Value not reported")+'</b><span>in '+E(plural(n,type==="purchases"?"purchase":"sale"))+(sh!==null?" · "+E(plural(sh,"share"))+"":"")+'</span></td>';
+ // One line whose stored value is $0.00 with shares: worth under half a cent, as in the log.
+ const tiny=n===1&&v!==null&&cents(v)===0n&&sh!==null&&scaled(sh)>0n;
+ return '<td><b class="'+cls+'">'+(tiny?"Under $0.01":v!==null?E(money(v)):"Value not reported")+'</b><span>in '+E(plural(n,type==="purchases"?"purchase":"sale"))+(sh!==null?" · "+E(plural(sh,"share"))+"":"")+'</span></td>';
 };
 function otherCell(t,list){
  const n=num(t?.other?.count)||0;
  if(!n)return '<td><b class="pf-none">None</b><span>no other transactions</span></td>';
- // What they are, from the lines this file loaded: counted when every one of them is here, else named.
- const by=new Map();for(const x of list){if(kind(x)!=="other")continue;const k=nounKey(x);by.set(k,(by.get(k)||0)+1);}
+ // What they are, from the lines this file loaded (a line a later 4/A repeats is counted once, like the
+ // totals): counted when every one of them is here, else named.
+ const by=new Map();for(const x of list){if(kind(x)!=="other"||x.superseded===true)continue;const k=nounKey(x);by.set(k,(by.get(k)||0)+1);}
  const total=[...by.values()].reduce((a,b)=>a+b,0);
  const words=[...by.entries()].sort((a,b)=>b[1]-a[1]).map(([k,c])=>{const w=NOUN[k]||["Form 4 code "+k,"Form 4 code "+k];return total===n?count(c)+" "+w[c===1?0:1]:w[1];});
  const what=words.length?(total===n?words.join(", "):"including "+words.join(", ")):"grants, exercises, withholdings and similar";
  return '<td><b>'+E(plural(n,"transaction"))+'</b><span>'+E(what)+'</span></td>';
 }
 function netCell(t){
- const b=num(t?.purchases?.value),s=num(t?.sales?.value),nb=num(t?.purchases?.count)||0,ns=num(t?.sales?.count)||0;
+ const b=cents(t?.purchases?.value),s=cents(t?.sales?.value),nb=num(t?.purchases?.count)||0,ns=num(t?.sales?.count)||0;
  if(!nb&&!ns)return '<td><b class="pf-none">None</b><span>no purchases or sales</span></td>';
- const n=(b||0)-(s||0);
- return '<td><b>'+E(signedMoney(Math.round(n*100)/100))+'</b><span>'+(n>0?"more bought than sold":n<0?"more sold than bought":"bought and sold the same")+((nb&&b===null)||(ns&&s===null)?" · some values not reported":"")+'</span></td>';
+ const n=(b??0n)-(s??0n);
+ return '<td><b>'+E(signedMoney(n))+'</b><span>'+(n>0n?"more bought than sold":n<0n?"more sold than bought":"bought and sold the same")+((nb&&b===null)||(ns&&s===null)?" · some values not reported":"")+'</span></td>';
 }
 function median(list){
  const lags=list.filter(x=>!x.is_amendment).map(lagOf).filter(n=>n!==null).sort((a,b)=>a-b);
@@ -239,10 +289,12 @@ function lagCell(list){
  return '<td><b>'+E(m.v===1?"1 day":count(m.v)+" days")+'</b><span>median of '+E(plural(m.n,"line"))+', trade date to filing date</span></td>';
 }
 /* Totals counted from the lines themselves: used only when the answer carries none. */
-function totalsOf(list){
- const part=cat=>{const r=list.filter(x=>x.category===cat);const vals=r.map(valueOf);return {count:r.length,shares:r.reduce((a,x)=>a+(sharesOf(x)||0),0),value:vals.some(v=>v!==null)?Math.round(vals.reduce((a,v)=>a+(v||0),0)*100)/100:null};};
- const dates=list.map(x=>tradeIso(x.transaction_date)).filter(Boolean).sort(),pub=list.map(x=>validDate(x.published_at)?x.published_at:"").filter(Boolean).sort();
- return {transactions:list.length,filings:new Set(list.map(x=>x.accession)).size,purchases:part("reported_purchase"),sales:part("reported_sale"),other:{count:list.filter(x=>kind(x)==="other").length},
+function totalsOf(all){
+ const list=all.filter(x=>x.superseded!==true);
+ const part=cat=>{const r=list.filter(x=>x.category===cat);const vals=r.map(valueCents);
+  return {count:r.length,shares:fromScaled(r.reduce((a,x)=>a+(scaled(x.shares)??0n),0n)),value:vals.some(v=>v!==null)?fromCents(vals.reduce((a,v)=>a+(v??0n),0n)):null};};
+ const dates=list.map(x=>tradeIso(x.transaction_date)).filter(Boolean).sort(),pub=all.map(x=>validDate(x.published_at)?x.published_at:"").filter(Boolean).sort();
+ return {transactions:list.length,filings:new Set(all.map(x=>x.accession)).size,purchases:part("reported_purchase"),sales:part("reported_sale"),other:{count:list.filter(x=>kind(x)==="other").length},
   first_transaction_date:dates[0]||null,last_transaction_date:dates.at(-1)||null,last_published_at:pub.at(-1)||null};
 }
 function renderRecord(d){
@@ -262,7 +314,23 @@ function renderRecord(d){
 
 /* ---------- 02 Known affiliations ---------- */
 const roleList=r=>{const arr=Array.isArray(r)?r:String(r||"").split(/\s*[·;]\s*/);return [...new Set(arr.map(s=>String(s||"").replace(/\s+/g," ").trim().slice(0,80)).filter(Boolean))];};
-const rolesText=c=>{const r=roleList(c?.roles);return r.length?r.join(", "):"Role not available from the filings read";};
+/* The newest Form 4 this file holds for each company (filings come newest first), so a company whose role the
+   answer leaves empty can point at the filing that states it. The API reads roles for its 8 most recent
+   companies only, and leaves them empty when a document is missing or slow; it never guesses one. */
+let latestForm=new Map();
+const issuerKeys=o=>[cikOf(o?.issuer_cik)?"c:"+Number(o.issuer_cik):"",tick(o?.ticker)?"t:"+tick(o.ticker):""].filter(Boolean);
+function indexFilings(){
+ latestForm=new Map();
+ const byPublished=[...rows].sort((a,b)=>String(b.published_at||"").localeCompare(String(a.published_at||"")));
+ for(const f of [...filings,...byPublished]){const a=accession(f.accession);if(a)for(const k of issuerKeys(f))if(!latestForm.has(k))latestForm.set(k,a);}
+}
+const latestFormOf=c=>{for(const k of issuerKeys(c)){const a=latestForm.get(k);if(a)return a;}return "";};
+function rolesHtml(c){
+ const r=roleList(c?.roles);
+ if(r.length)return E(r.join(", "));
+ const a=latestFormOf(c);
+ return 'Role not shown here'+(a?'; it is stated in <a class="pf-link pf-link--inline" data-hf-atom href="filing.html?accession='+a+'">the latest Form 4 ↗</a>':'; each Form 4 states it');
+}
 const companyHref=t=>tick(t)?"company.html?ticker="+encodeURIComponent(tick(t)):"";
 const coLabel=c=>companyName(c?.issuer_name)||tick(c?.ticker)||"Issuer CIK "+pad10(c?.issuer_cik||"0");
 function renderAffiliations(d,companies){
@@ -276,7 +344,7 @@ function renderAffiliations(d,companies){
   if(sold)totals.push('<span class="pf-down">sold '+E(money(sold))+'</span>');
   return '<article class="pf-aff">'+
    '<div class="pf-aff__id">'+coTile(t,c.issuer_name,c.issuer_cik,"md")+'<div><h3><span data-ent="company">'+E(coLabel(c))+'</span></h3><p>'+E([t,c.issuer_cik?"issuer CIK "+pad10(c.issuer_cik):""].filter(Boolean).join(" · "))+'</p></div></div>'+
-   '<dl class="pf-aff__facts"><div><dt>Role</dt><dd>'+E(rolesText(c))+'</dd></div><div><dt>Traded</dt><dd>'+E(traded)+'</dd></div>'+
+   '<dl class="pf-aff__facts"><div><dt>Role</dt><dd>'+rolesHtml(c)+'</dd></div><div><dt>Traded</dt><dd>'+E(traded)+'</dd></div>'+
    '<div><dt>On file</dt><dd>'+totals.map((s,i)=>i?s:E(s)).join(" · ")+'</dd></div><div><dt>Last filed</dt><dd>'+E(filedDate(c.last_published_at))+'</dd></div></dl>'+
    (href?'<a class="pf-link" data-hf-atom href="'+E(href)+'">Company report ↗</a>':"")+'</article>';
  });
@@ -309,9 +377,12 @@ const moreButton=(what,left)=>left>0?'<div class="pf-more"><button type="button"
 function renderLog(){
  const host=$("pf-log");logShown=Math.min(rows.length,PAGE);
  host.innerHTML=rows.length?'<ol class="pf-log" id="pf-log-list">'+rows.slice(0,logShown).map(logRow).join("")+'</ol>'+moreButton("log",rows.length-logShown):'<p class="pf-empty">No transactions in the imported records.</p>';
- const total=num(file?.totals?.all?.transactions)||rows.length;
+ // The record counts a line a later 4/A repeats once; the log lists both copies and marks the earlier one.
+ const repeated=rows.filter(x=>x.superseded===true).length,counted=rows.length-repeated;
+ const total=num(file?.totals?.all?.transactions)??counted;
+ const again=repeated?" ("+plural(repeated,"line")+" repeated in a later 4/A "+(repeated===1?"is":"are")+" marked and counted once)":"";
  $("pf-log-note").textContent=!rows.length?"Every imported transaction, newest first, in plain words.":
-  (total>rows.length?"The newest "+count(rows.length)+" of "+plural(total,"imported transaction")+", in plain words; the filed records below and SEC EDGAR hold the rest.":"All "+plural(rows.length,"imported transaction")+", newest first, in plain words.")+" Each badge carries the transaction’s Form 4 code.";
+  (total>counted?"The newest "+count(rows.length)+" lines of "+plural(total,"imported transaction")+", in plain words"+again+"; the filed records below and SEC EDGAR hold the rest.":"All "+plural(rows.length,"imported transaction line")+", newest first, in plain words"+again+".")+" Each badge carries the transaction’s Form 4 code.";
 }
 function filingRow(f,i){
  const acc=accession(f.accession),t=tick(f.ticker),src=secUrl(f.source_url),form=String(f.form_type||"4").slice(0,8),lines=num(f.lines);
@@ -344,25 +415,31 @@ function showMore(what){
 
 /* ---------- the subject ---------- */
 function field(label,value){return '<div><dt>'+E(label)+'</dt><dd>'+value+'</dd></div>';}
+// The subject names the most recent companies only; the rest are one link away, in Known affiliations.
+const SUBJECT_COMPANIES=3;
 function renderSubject(d,companies){
  const p=d.person||{},raw=String(p.name||rows[0]?.owner_name||"").replace(/\s+/g," ").trim()||"Reporting person";
  personName=shown(raw);
  const lead=companies[0],leadT=tick(lead?.ticker)||tick(rows[0]?.ticker);
- document.title=personName+" · Personnel file · Insidir";
+ const leadCik=cikOf(lead?.issuer_cik)||cikOf(rows[0]?.issuer_cik);
+ document.title=personName+" — personnel file — insidir.";
  $("pf-fileno").textContent=pad10(personCik);
  $("pf-name").textContent=personName;
  const filed=[...new Set([raw,...(Array.isArray(p.filed_names)?p.filed_names:[])].map(n=>String(n||"").replace(/\s+/g," ").trim()).filter(Boolean))];
  $("pf-asfiled").innerHTML='As filed: <span>'+E(filed[0])+'</span>'+(filed.length>1?' · also as '+filed.slice(1,4).map(n=>'<span>'+E(n)+'</span>').join(", "):"");
  const frame=document.querySelector(".pf-photo__frame");
- if(frame&&media)frame.innerHTML=media.person({name:raw,cik:personCik,ticker:leadT,size:"lg",label:true});
+ // The headshot; else the lead company's logo stands in, by ticker or (with no ticker) by its SEC CIK.
+ if(frame&&media)frame.innerHTML=media.person({name:raw,cik:personCik,ticker:leadT,issuerCik:leadT?undefined:leadCik||undefined,size:"lg",label:true});
  const all=d.totals?.all||totalsOf(rows);
- const roles=companies.length?companies.map(c=>'<span class="pf-role"><span class="pf-co">'+coTile(c.ticker,c.issuer_name,c.issuer_cik,"xs")+'<span data-ent="company">'+E(tick(c.ticker)||coLabel(c))+'</span></span> '+E(rolesText(c))+'</span>').join(""):"Not stated in the imported filings";
+ const more=companies.length-SUBJECT_COMPANIES;
+ const roles=companies.length?'<span class="pf-roles">'+companies.slice(0,SUBJECT_COMPANIES).map(c=>'<span class="pf-role">'+coTile(c.ticker,c.issuer_name,c.issuer_cik,"xs")+'<b class="pf-role__co" data-ent="company">'+E(tick(c.ticker)||coLabel(c))+'</b><span class="pf-role__text">'+rolesHtml(c)+'</span></span>').join("")+
+  (more>0?'<a class="pf-link pf-role-more" data-hf-atom href="#pf-aff-title">+'+E(count(more))+' more in Known affiliations ↓</a>':"")+'</span>':"Not stated in the imported filings";
  const latest=filings[0];
  $("pf-fields").innerHTML=
   field("Role(s)",roles)+
   field("SEC CIK",'<span class="pf-mono">'+E(pad10(personCik))+'</span>')+
   field("On file",E(plural(num(all.filings)??filings.length,"Form 4 filing"))+" · "+E(plural(num(all.transactions)??rows.length,"transaction line")))+
-  field("First seen in imports",validDate(all.first_transaction_date)?E(date(all.first_transaction_date))+' <small>earliest imported trade</small>':"Not reported")+
+  field("Earliest trade on file",validDate(all.first_transaction_date)?E(date(all.first_transaction_date)):"Not reported")+
   field("Last filed",validDate(all.last_published_at)?E(filedDate(all.last_published_at))+(latest&&tick(latest.ticker)?' <small>Form '+E(String(latest.form_type||"4").slice(0,8))+' for '+E(tick(latest.ticker))+'</small>':""):"Not reported");
  const co=$("pf-company-link");
  if(leadT){co.href=companyHref(leadT);co.textContent="Open "+leadT+" company report ↗";co.hidden=false;}else co.hidden=true;
@@ -371,7 +448,8 @@ function renderSubject(d,companies){
  if(typeof d.disclaimer==="string"&&d.disclaimer.trim()&&!/recommendation|prediction/i.test(d.disclaimer))$("pf-disclaimer").textContent="Everything in this file comes from public SEC filings. Nothing here is secret, a recommendation or a prediction. "+d.disclaimer.trim().slice(0,240);
  // The file photo's caption says what the tile shows once it has settled (a photo, or the company logo standing in).
  const tile=frame?.querySelector("[data-media]"),cap=$("pf-photo-caption");
- const caption=()=>{if(!tile||!cap)return;const c=tile.classList;const text=c.contains("is-photo")?"File photo":c.contains("is-stand-in")?"No published photo · "+(leadT||"company")+" logo":c.contains("is-monogram")?"No published photo or logo":c.contains("is-logo")?"Logo on file":"File photo";if(cap.textContent!==text)cap.textContent=text;};
+ const leadName=leadT||coLabel(lead||{issuer_cik:leadCik});
+ const caption=()=>{if(!tile||!cap)return;const c=tile.classList;const text=c.contains("is-photo")?"File photo":c.contains("is-stand-in")?"No published photo · "+leadName+" logo":c.contains("is-monogram")?"No published photo or logo":c.contains("is-logo")?"Logo on file":"File photo";if(cap.textContent!==text)cap.textContent=text;};
  if(tile&&window.MutationObserver){new MutationObserver(caption).observe(tile,{attributes:true,attributeFilter:["class"]});}
  caption();
 }
@@ -390,6 +468,7 @@ function render(d){
  rows=(Array.isArray(d.transactions)?d.transactions:[]).filter(x=>x&&typeof x==="object")
   .sort((a,b)=>String(tradeIso(b.transaction_date)).localeCompare(String(tradeIso(a.transaction_date)))||String(b.published_at||"").localeCompare(String(a.published_at||"")));
  filings=(Array.isArray(d.filings)?d.filings:[]).filter(f=>f&&typeof f==="object").sort((a,b)=>String(b.published_at||"").localeCompare(String(a.published_at||"")));
+ indexFilings();
  personCik=cikOf(d.person?.cik)||askedCik;
  clearState();
  renderSubject(d,companies);
@@ -404,27 +483,39 @@ function render(d){
 }
 
 /* ---------- Follow / Unfollow, live, with Undo ---------- */
+/* The notice (#pf-toast, role=status) sits right after the Follow button in the page order, so Undo is the next
+   Tab stop; on screen it is fixed to the bottom and never moves the page. A confirmation leaves after 5 s, an
+   Undo after 6 s, an error after 8 s, and it stays while keyboard focus is inside it (as on the overview). */
 let toastTimer=0;
-function toast(html,{error=false,keep=false}={}){
+function toast(html,{error=false,ms=0}={}){
  const el=$("pf-toast");if(!el)return;
  clearTimeout(toastTimer);
  el.innerHTML=html;el.classList.toggle("is-error",error);
- if(!keep)toastTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.textContent="";},error?8000:UNDO_MS);
+ const clear=()=>{if(el.contains(document.activeElement)){toastTimer=setTimeout(clear,1500);return;}el.textContent="";};
+ toastTimer=setTimeout(clear,ms||(error?8000:5000));
 }
+/* The button is never disabled once the file is on screen, so keyboard focus stays on it through a request
+   (a disabled button drops focus to the page); while a request runs it is aria-disabled and presses are ignored. */
 function setFollow(on){
  const b=$("pf-follow");if(!b)return;
- b.disabled=!file||followBusy;
+ b.disabled=!file;
+ b.setAttribute("aria-disabled",String(followBusy));
+ b.classList.toggle("is-busy",followBusy);
  b.classList.toggle("is-following",on===true);
  b.setAttribute("aria-pressed",String(on===true));
  b.textContent=on===true?"Following ✓":"Follow +";
 }
-// The stored CIK (as the records hold it) is what the follow routes match on.
+/* The CIK as the follow list holds it: the forms already followed (the routes match the exact string, and a
+   person may be on the list as "1214156" or "0001214156"), else the CIK as the records store it. */
+let followedAs=[];
 const followCik=()=>cikOf(file?.person?.cik)||personCik;
 async function follow({undo=false}={}){
  if(followBusy)return;
  followBusy=true;const was=following;following=true;setFollow(true);
+ const cik=followCik();
  try{
-  await api("/v1/me/people",{method:"POST",body:{owner_cik:followCik()}});
+  await api("/v1/me/people",{method:"POST",body:{owner_cik:cik}});
+  if(!followedAs.includes(cik))followedAs.push(cik);
   toast(E(undo?"Following "+personName+" again.":"Following "+personName+". Their new filings now appear under People you follow on your overview."));
  }catch(e){
   following=was;
@@ -434,23 +525,24 @@ async function follow({undo=false}={}){
 async function unfollow(){
  if(followBusy)return;
  followBusy=true;following=false;setFollow(false);
- const cik=followCik();
+ const forms=followedAs.length?[...followedAs]:[followCik()];
+ let removed=0;
  try{
-  await api("/v1/me/people/"+encodeURIComponent(cik),{method:"DELETE"});
-  toast('Unfollowed '+E(personName)+'. <button type="button" class="pf-undo" data-pf-undo aria-label="'+E("Undo: follow "+personName+" again")+'">Undo</button>',{keep:true});
-  // Undo stays for 6 s; then the notice goes (focus on Undo returns to the Follow button first).
-  toastTimer=setTimeout(()=>{const el=$("pf-toast");if(el?.querySelector("[data-pf-undo]")){const had=el.contains(document.activeElement);el.textContent="";if(had)$("pf-follow")?.focus({preventScroll:true});}},UNDO_MS);
+  // Every stored form goes, so the person is really off the list; a failure leaves them followed.
+  for(const cik of forms){await api("/v1/me/people/"+encodeURIComponent(cik),{method:"DELETE"});followedAs=followedAs.filter(c=>c!==cik);removed++;}
+  toast('Unfollowed '+E(personName)+'. <button type="button" class="pf-undo" data-pf-undo aria-label="'+E("Undo: follow "+personName+" again")+'">Undo</button>',{ms:UNDO_MS});
  }catch(e){
-  following=true;
-  if(e.status!==401&&e.status!==402)toast(E("Could not unfollow "+personName+": "+String(e.message||"").replace(/\.$/,"")+". Nothing was changed."),{error:true});
+  following=removed<forms.length;
+  if(e.status!==401&&e.status!==402)toast(E("Could not unfollow "+personName+": "+String(e.message||"").replace(/\.$/,"")+". "+(removed?"You still follow them.":"Nothing was changed.")),{error:true});
  }finally{followBusy=false;setFollow(following);}
 }
 async function loadFollowing(){
  try{
   const x=await api("/v1/me/people");
   const list=Array.isArray(x.items)?x.items:[];
-  following=list.some(p=>sameCik(p?.owner_cik,askedCik));
- }catch{following=null;/* unknown: "Follow +" still works, a repeat follow is harmless */}
+  followedAs=[...new Set(list.map(p=>String(p?.owner_cik??"").trim()).filter(c=>sameCik(c,askedCik)))];
+  following=followedAs.length>0;
+ }catch{following=null;followedAs=[];/* unknown: "Follow +" still works, a repeat follow is harmless */}
  if(file)setFollow(following);
 }
 
@@ -467,7 +559,8 @@ async function load(){
 }
 document.addEventListener("click",e=>{
  const t=e.target;
- if(t.closest?.("button[data-pf-undo]")){void follow({undo:true}).then(()=>$("pf-follow")?.focus({preventScroll:true}));return;}
+ // Undo: focus goes back to the Follow button at once (the notice is about to be replaced), then follow again.
+ if(t.closest?.("button[data-pf-undo]")){$("pf-follow")?.focus({preventScroll:true});void follow({undo:true});return;}
  if(t.closest?.("#pf-follow")){if(following===true)void unfollow();else void follow();return;}
  const more=t.closest?.("button[data-pf-more]");if(more){showMore(more.dataset.pfMore);return;}
  const again=t.closest?.("button[data-pf-retry]");

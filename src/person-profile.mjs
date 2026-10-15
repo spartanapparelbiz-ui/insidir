@@ -79,8 +79,9 @@
  * and not the size of sec_filings; amendments are matched by hash join, so no statement sorts all
  * the lines. Never a statement per transaction or per issuer. Measured on PostgreSQL 16 with
  * default planner settings, 400,000 filings / 1.6M lines: a typical person (16 lines) under 1 ms per
- * statement; a 40,000-line, 4,000-filing person about 0.35 s for all four, which is why the SQL part
- * of a profile with HEAVY_LINES lines or more is kept for HEAVY_TTL_MS (30 s).
+ * statement; a 40,000-line, 4,000-filing person about 0.4 s for all four (about 0.46 s with joint
+ * filings attributed), which is why the SQL part of a profile with HEAVY_LINES lines or more is kept
+ * for HEAVY_TTL_MS (30 s).
  * SEC work runs while the SQL runs and is capped at ~3 s. New SEC requests (uncached ownership
  * documents and EDGAR owner pages) are bounded: at most SEC_PER_PROFILE per request,
  * SEC_ALLOWANCE per member (else address) per 10 minutes and SEC_ROUTE_PER_MINUTE for all members

@@ -29,11 +29,13 @@ body.v13 .pf-head{position:relative!important;display:grid!important;grid-templa
 body.v13 .pf-head>:not(.pd-band,.pf-stamp){position:relative!important}
 body.v13 .pf-id{display:contents!important}
 body.v13 .pf-id>*{grid-column:2!important;min-width:0!important}
-/* The subject's name and kicker stay left of the dot field (the band is 30% of the header wide), on plain paper. */
+/* The subject's name and kicker stay left of the dot field (the band is 30% of the header wide), on plain paper.
+   A grid item's percentage is of its column (header width - photo box - gap), so 70% of the header less the photo
+   column is 70% of the column less 30% of (box + gap). No container query: a container is the containing block of
+   fixed descendants, and the follow notice (fixed to the screen) sits inside the header. */
 @media (min-width:760px){
-  body.v13 .pf-head{container-type:inline-size!important}
   body.v13 .pf-id>*{max-width:min(820px,calc(100% - 4px))!important}
-  body.v13 .pf-id>:is(.pf-kicker,h1,.pf-asfiled){max-width:calc(70cqw - var(--pf-box) - clamp(28px,3.4vw,48px) - 16px)!important}
+  body.v13 .pf-id>:is(.pf-kicker,h1,.pf-asfiled){max-width:calc(70% - .3 * (var(--pf-box) + clamp(28px,3.4vw,48px)) - 16px)!important}
 }
 
 /* The stamp: rectangular, ink, a little crooked, over the dot field in the corner. Decorative (aria-hidden). */
@@ -72,8 +74,18 @@ body.v13 .pf-fields dt{margin:0!important;font:var(--hf-label)!important;letter-
 body.v13 .pf-fields dd{margin:0!important;min-width:0!important;font:400 12.5px/1.65 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-ink)!important;overflow-wrap:anywhere!important}
 body.v13 .pf-fields dd small{margin-left:8px!important;font:400 11px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13 .pf-mono{letter-spacing:.12em!important;font-variant-numeric:tabular-nums!important}
-body.v13 .pf-role{display:block!important}
-body.v13 .pf-role+.pf-role{margin-top:4px!important}
+/* Role rows, one grid for all of them so the columns line up: logo tile | company | role text. The company and
+   its role share a baseline; the role wraps in its own column, never under the tile. */
+body.v13 .pf-roles{display:grid!important;grid-template-columns:20px fit-content(24ch) minmax(0,1fr)!important;gap:5px 10px!important;align-items:baseline!important}
+body.v13 .pf-role{display:contents!important}
+body.v13 .pf-role>.ins-media{--ins-size:20px!important;align-self:start!important;margin-top:1px!important}
+body.v13 .pf-role__co{min-width:0!important;font-weight:600!important;letter-spacing:.04em!important;color:var(--hf-ink)!important;overflow-wrap:anywhere!important}
+body.v13 .pf-role__text{min-width:0!important;color:var(--hf-ink)!important}
+body.v13 .pf-role-more{grid-column:2/-1!important;justify-self:start!important;margin:2px 0 0!important;min-height:0!important;white-space:normal!important}
+/* A link inside a sentence: the sentence's own type, underlined on a hairline. */
+body.v13 .pf-link.pf-link--inline{display:inline!important;font:inherit!important;letter-spacing:inherit!important;text-transform:none!important;white-space:normal!important;min-height:0!important;
+  color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;background-image:none!important}
+body.v13 .pf-link.pf-link--inline:hover{text-decoration-color:currentColor!important}
 body.v13 .pf-co{display:inline-flex!important;align-items:center!important;gap:7px!important;vertical-align:-1px!important;margin-right:6px!important;color:var(--hf-ink)!important;font-weight:600!important;letter-spacing:.04em!important}
 body.v13 .pf-co .ins-media{--ins-size:20px!important}
 body.v13 .pf-co small{display:block!important;font:400 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.01em!important;color:var(--hf-faint)!important}
@@ -91,6 +103,8 @@ body.v13 .pf-btn span{color:var(--hf-muted)!important}
 body.v13 .pf-btn--follow.is-following{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}
 body.v13 .pf-btn--follow.is-following:hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
 body.v13 .pf-btn:disabled{cursor:default!important;opacity:.55!important}
+/* While a follow request runs the button keeps focus (it is aria-disabled, not disabled) and shows it is busy. */
+body.v13 .pf-btn.is-busy{cursor:progress!important;opacity:.72!important}
 body.v13 .pf-honest{margin:18px 0 0!important;font:400 11px/1.75 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
 
 /* Loading: placeholders hold the space the file takes, so nothing below them jumps when it arrives. */
@@ -263,7 +277,9 @@ body.v13 .pf-undo{display:inline!important;margin:0 0 0 8px!important;padding:0!
   body.v13 .pf-filing__date{grid-column:2!important;grid-row:1!important;text-align:right!important}
   body.v13 .pf-filing__acc{grid-column:1!important;grid-row:3!important;margin:0!important}
   body.v13 .pf-filing__links{grid-column:2!important;grid-row:3!important}
-  body.v13 :is(.pf-link,.pf-topline a,.pf-state__links>a){min-height:32px!important}
+  body.v13 :is(.pf-link:not(.pf-link--inline),.pf-topline a,.pf-state__links>a){min-height:32px!important}
+  body.v13 .pf-roles{grid-template-columns:20px fit-content(15ch) minmax(0,1fr)!important}
+  body.v13 .pf-role-more{min-height:32px!important}
 }
 @media (prefers-reduced-motion:reduce){
   body.v13 :is(.pf-stamp,.pf-fields>div,.pf-toast){animation:none!important;transition:none!important}

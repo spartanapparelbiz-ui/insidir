@@ -1,14 +1,14 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
 <meta name="description" content="A reporting person's file, built only from public SEC Form 4 records: who they are as filed, the companies they report for, every imported transaction and filing, with links to the original documents.">
-<title>Personnel file · Insidir</title>
+<title>Personnel file — insidir.</title>
 <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=1">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/entity-media.js?v=media-2"></script><script defer src="assets/js/app.js?v=13"></script><script defer src="assets/js/person.js?v=1"></script>
+<script defer src="assets/js/entity-media.js?v=media-2"></script><script defer src="assets/js/app.js?v=13"></script><script defer src="assets/js/person.js?v=2"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=7">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=17">
-<link rel="stylesheet" href="assets/css/v13-person.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-person.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=5"></script><script defer src="assets/js/v13-motion.js?v=3"></script>
 </head><body class="app-body v2-app v3-app v6-app v13 pf-page"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active="insiders"></header>
 <main id="Content" class="app-main pf is-loading" aria-busy="true">
@@ -26,19 +26,19 @@
       <div><dt>Role(s)</dt><dd><span class="pf-skel">Loading</span></dd></div>
       <div><dt>SEC CIK</dt><dd><span class="pf-skel">Loading</span></dd></div>
       <div><dt>On file</dt><dd><span class="pf-skel">Loading</span></dd></div>
-      <div><dt>First seen in imports</dt><dd><span class="pf-skel">Loading</span></dd></div>
+      <div><dt>Earliest trade on file</dt><dd><span class="pf-skel">Loading</span></dd></div>
       <div><dt>Last filed</dt><dd><span class="pf-skel">Loading</span></dd></div>
     </dl>
-    <div class="pf-actions" id="pf-actions"><button type="button" class="pf-btn pf-btn--follow" id="pf-follow" aria-pressed="false" data-hf-atom disabled>Follow +</button><a class="pf-btn" id="pf-company-link" href="explore.html" data-hf-atom hidden>Open company report ↗</a><a class="pf-btn" id="pf-edgar-link" href="https://www.sec.gov/cgi-bin/browse-edgar" target="_blank" rel="noopener noreferrer" data-hf-atom hidden>SEC EDGAR record ↗</a></div>
+    <div class="pf-actions" id="pf-actions"><button type="button" class="pf-btn pf-btn--follow" id="pf-follow" aria-pressed="false" data-hf-atom disabled>Follow +</button><p id="pf-toast" class="pf-toast" role="status"></p><a class="pf-btn" id="pf-company-link" href="explore.html" data-hf-atom hidden>Open company report ↗</a><a class="pf-btn" id="pf-edgar-link" href="https://www.sec.gov/cgi-bin/browse-edgar" target="_blank" rel="noopener noreferrer" data-hf-atom hidden>SEC EDGAR record ↗</a></div>
   </div>
-  <p class="pf-honest">Every line in this file is copied from public SEC filings imported by Insidir. Nothing in it is hidden, redacted or added.</p>
+  <p class="pf-honest">Every record here comes from public SEC filings imported by Insidir; totals and delays are computed from them. Nothing is hidden or redacted. Photos and logos are credited below.</p>
 </section>
 
 <div id="pf-state" class="pf-state" role="alert" hidden></div>
 
 <div id="pf-file">
 <section class="pf-sec pf-sec--record" aria-labelledby="pf-record-title">
-  <div class="pf-sec__head" data-hf-reveal><p class="pf-index">01</p><div><h2 id="pf-record-title">Record</h2><p>Exact figures from the imported Form 4 lines, never rounded. Purchases and sales are open-market or private trades (codes P and S); everything else is listed as other.</p></div></div>
+  <div class="pf-sec__head" data-hf-reveal><p class="pf-index">01</p><div><h2 id="pf-record-title">Record</h2><p>Exact figures from the imported Form 4 lines: shares and prices as filed, dollar values to the cent as stored. Purchases and sales are open-market or private trades (codes P and S); everything else is listed as other. Net and filing delay are worked out from those lines.</p></div></div>
   <div class="pf-record" id="pf-record" data-hf-reveal><div class="pf-skel-block"></div></div>
 </section>
 
@@ -61,7 +61,6 @@
 <p class="pf-foot" data-hf-reveal><span id="pf-disclaimer">Everything in this file comes from public SEC filings. Nothing here is secret, a recommendation or a prediction.</span> SEC data may be partial or delayed. <a href="data.html">How the data works ↗</a></p>
 <p class="ins-media-credits" data-media-credits></p>
 <p id="pf-live" class="sr-only" aria-live="polite"></p>
-<p id="pf-toast" class="pf-toast" role="status"></p>
 </main><footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>

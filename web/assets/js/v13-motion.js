@@ -145,7 +145,7 @@
   }
 
   let last = 0, acc = 0, scrolled = false, sweepT = 0, lastSweepY = NaN, stickyAt = 0, stickyT = 0;
-  const productPage = !!(document.body && document.body.classList.contains("app-body"));
+  const productPage = !!(document.body && document.body.classList && document.body.classList.contains("app-body"));
   function frame(now) {
     raf = 0;
     if (scrolled) {
