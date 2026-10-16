@@ -353,7 +353,9 @@ def score():
     mix.add(A.impact(2.0, 60, 0.2), T(FREEZE), 0.5, bus="fx")                                # ...and stops
     mix.add(A.pad([A.note_hz(n) for n in ["G4", "C5"]], T(225)), T(FREEZE), 0.08, bus="pad")
     mix.add(A.drone(A.note_hz("G1"), T(225)), T(FREEZE), 0.45, bus="pad")
-    mix.add(A.whoosh(0.5, 2000, 9000), T(330), 0.5, bus="fx")                                # pages lock
+    mix.add(A.whoosh(0.5, 2000, 9000), T(330) - 0.35, 0.5, bus="fx")                         # pages fly in...
+    mix.add(A.shutter(), T(330), 0.55, bus="fx")
+    mix.add(A.impact(1.2, 70, 0.7), T(345), 0.7, bus="fx")                                    # ...and lock mid-air
     for k in range(40):
         mix.add(A.click(5200 + 600 * (k % 5), 0.008, 10), T(330) + k * 0.012, 0.12, pan=np.sin(k * 1.3), bus="fx")
     mix.add(A.ratchet(1.9, 18, 1400), T(420), 0.35, bus="fx")                                # the room turns

@@ -379,8 +379,9 @@ def score():
     mix.add(A.ratchet(1.0, 30, 2200), T(120), 0.4, bus="fx")         # the wheel spinning up
     mix.add(A.whoosh(0.7, 200, 3000), T(150), 0.45, bus="fx")
     mix.add(A.rumble(T(80)), T(160), 0.55, bus="amb")                 # tunnel rumble
-    mix.add(A.whoosh(0.5, 300, 6000), T(228) - 0.2, 0.55, bus="fx")
-    mix.add(A.click(3400, 0.015, 6), T(228), 0.45, bus="fx")
+    mix.add(A.whoosh(0.5, 300, 6000, 0.95), T(228) - 0.45, 0.45, bus="fx")
+    mix.add(A.rim(), T(228), 0.7, bus="fx")
+    mix.add(A.click(3400, 0.015, 6), T(228), 0.6, bus="fx")
     mix.add(A.impact(1.0, 60, 0.5), T(246), 0.55, bus="fx")                 # out of the tunnel light, into the shaft
     mix.add(A.reverse_swell(1.2, 180), T(300) - 1.2, 0.5, bus="fx")
     mix.add(A.impact(2.0, 42, 0.9), T(300), 0.85, bus="fx")
