@@ -66,19 +66,27 @@ def walk(f):
 SUBJ_Z = 2.4
 
 
-def corridor(f):
+def corridor_cam(t):
+    cz = -0.75 * V.ease_io(t, 2)                                  # camera retreats from him...
+    fo = 1400 * (1.06 + 0.32 * V.ease_io(t, 2)) * (SUBJ_Z - cz) / SUBJ_Z   # ...zooming in: he holds size, the hall warps
+    return (0, -0.05 * t, cz), fo
+
+
+def corridor(f, text=True):
     img, p = walk(f)
     i = int(round(p))
     d = V.depth(C("walk")[i], f"v2walk_{i}")
     t = np.clip(f / 105.0, 0, 1)
-    cz = -0.75 * V.ease_io(t, 2)                                   # camera retreats from him...
-    fo = 1400 * (1.06 + 0.32 * V.ease_io(t, 2)) * (SUBJ_Z - cz) / SUBJ_Z                     # ...while zooming in: he holds size, the hall warps around him
-    out = V.reproject(img, d, (0, -0.05 * t, cz), f=1400, near=1.0, far=9.0, f_out=fo)
-    if 28 <= f < 104:
-        a = np.clip(seg(f, 28, 33), 0, 1)
-        dz = V.reproject(d, d, (0, -0.05 * t, cz), f=1400, near=1.0, far=9.0, f_out=fo)
+    cam, fo = corridor_cam(t)
+    out = V.reproject(img, d, cam, f=1400, near=1.0, far=9.0, f_out=fo)
+    if text and 28 <= f < 104:
+        a = np.clip(seg(f, 28, 33), 0, 1) * (1 - V.smooth(seg(f, 92, 104)))
+        dz = V.reproject(d, d, cam, f=1400, near=1.0, far=9.0, f_out=fo)
         out, _ = S.kinetic_word(out, "WHO SOLD?", 300, 960, 430, a, dz, 0.62, scale=1 + 0.35 * t, value=0.03)
     return out
+
+
+SUBJ_SCALE = 1.38      # corridor_cam(1) magnifies the subject plane by this much about the frame centre
 
 
 # ------------------------------------------------------------------ 2. into the eye
@@ -118,18 +126,24 @@ def into_eye(f):
     t = np.clip(seg(f, 105, 160), 0, 1)
     s = np.exp(np.log(26.0) * V.ease_in(t, 2.0))
     e = eye_track()[min(f, 169)]
-    img, _ = walk(f)
+    e = np.array([W / 2, H / 2]) + (e - np.array([W / 2, H / 2])) * SUBJ_SCALE   # through the corridor camera
+    img = corridor(f, text=False) if f < 128 else V.affine(walk(f)[0], SUBJ_SCALE, 0)
+    if 120 <= f < 128:                                    # hand-off from 3D to 2D while the face fills frame
+        k = V.smooth(seg(f, 120, 128))
+        img = img * (1 - k) + V.affine(walk(f)[0], SUBJ_SCALE, 0) * k
     A_, c2 = S.push(img, s, e, V.smooth(t))
     A_ = V.radial_blur(A_, 0.06 * V.ease_in(t, 2) * 2, c2, 8)
-    # the macro iris, placed so its iris matches the pushed eye's iris (about 9 px radius at 1x), takes over
-    k = V.smooth(seg(f, 138, 158))
+    # the macro iris, placed so its iris matches his iris (about 8 px radius at 1x), takes over through a matte
+    # that starts at the iris and grows past the frame
+    k = V.smooth(seg(f, 136, 160))
     if k > 0:
-        r_now = 8 * s
+        r_now = 8 * SUBJ_SCALE * s
         sm = r_now / EYE_MACRO[2]
         macro = C("eye")[int(np.clip(f - 130, 0, len(C("eye")) - 1))]
         Bm = V.affine(macro, sm, 0, c2[0] - EYE_MACRO[0], c2[1] - EYE_MACRO[1], center=EYE_MACRO[:2],
-                      border=cv2.BORDER_REPLICATE)
-        A_ = A_ * (1 - k) + Bm * k
+                      border=cv2.BORDER_REFLECT)
+        m = S.circle(c2, r_now * (1.2 + 9 * k ** 2), r_now * 0.8 + 10)
+        A_ = A_ * (1 - m) + Bm * m
     return A_
 
 
@@ -145,7 +159,7 @@ def eye_to_watch(f):
     t = seg(f, 165, 226)
     macro_i = int(np.clip(f - 130, 0, len(C("eye")) - 1))
     macro = C("eye")[macro_i]
-    s_prev = (8 * np.exp(np.log(26.0))) / EYE_MACRO[2]
+    s_prev = (8 * SUBJ_SCALE * np.exp(np.log(26.0))) / EYE_MACRO[2]
     a = V.affine(macro, s_prev, 0, W / 2 - EYE_MACRO[0], H / 2 - EYE_MACRO[1], center=EYE_MACRO[:2], border=cv2.BORDER_REPLICATE)
     b = watch_centered(int(np.clip(f - 165, 0, 80)))
     pupil_r = 60 * s_prev
@@ -307,7 +321,7 @@ def frame(f):
 
 
 def prepare():
-    for f in range(0, 106):
+    for f in range(0, 128):
         i = int(round(walk_pos(f)))
         V.depth(C("walk")[i], f"v2walk_{i}")
     V.depth(C("walk")[PAGE_SRC], f"v2walk_{PAGE_SRC}")
