@@ -177,9 +177,28 @@ export async function secFetchBytes(url, { maxBytes = 3_000_000 } = {}) {
   }
   throw new Error("SEC request attempts exhausted");
 }
-export async function recentForm4Filings() {
-  const xml = await secFetch("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100");
+export async function recentForm4Filings({ start = 0 } = {}) {
+  const from = Math.max(0, Math.floor(Number(start) || 0));
+  const xml = await secFetch("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100" + (from ? "&start=" + from : ""));
   return parseAtom(xml);
+}
+/* EDGAR's current-filings feed lists each Form 4 under the issuer and again under each reporting owner, so a page of
+ * 100 entries is only about 50 filings, and a busy hour files more than that. Pages back, newest first, until a page
+ * holds nothing that isKnown(accession) has not already stored (or maxPages), so no filing between runs is skipped. */
+export async function recentForm4Backlog({ isKnown, maxPages = 8, fetchPage = recentForm4Filings } = {}) {
+  const out = [], seen = new Set();
+  for (let page = 0; page < maxPages; page++) {
+    const batch = await fetchPage({ start: page * 100 });
+    if (!batch.length) break;
+    let unknown = 0;
+    for (const f of batch) {
+      if (seen.has(f.accession)) continue;
+      seen.add(f.accession); out.push(f);
+      if (!await isKnown(f.accession)) unknown++;
+    }
+    if (!unknown) break;
+  }
+  return out;
 }
 export async function loadOwnership(filing) {
   const path = filing.indexBase + "index.json";

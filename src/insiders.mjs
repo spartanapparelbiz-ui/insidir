@@ -72,6 +72,43 @@ export function ownerSummary(owner) {
     isTenPercentOwner: Boolean(owner?.isTenPercentOwner), entity: isEntityName(name) };
 }
 
+/* The lines a filing's headline counts: open-market trades (P/S) when present, otherwise every equity line;
+ * their net signed shares and reported value. */
+function countLines(rows) {
+  const equity = rows.filter(r => !r.derivative && Number.isFinite(r.shares));
+  const trades = equity.filter(r => r.code === "P" || r.code === "S");
+  const counted = trades.length ? trades : equity;
+  const signed = r => r.acquiredDisposed === "D" ? -r.shares : r.shares;
+  const netShares = counted.reduce((sum, r) => sum + signed(r), 0);
+  const value = counted.reduce((sum, r) => sum + (Number.isFinite(r.value) && r.price > 0 ? r.value : 0), 0);
+  return { counted, netShares, value };
+}
+
+/* Amendments: a Form 4/A usually restates the original's lines. As on person profiles, a line repeated by a
+ * 4/A filed later for the same reporting owner (same date, code, A/D, derivative flag, shares and price) is
+ * superseded and counted once, in the amendment. An earlier filing whose every line is repeated is marked
+ * superseded and adds nothing to the people totals; one only partly repeated keeps its other lines. */
+const lineKey = r => [r.date, r.code, r.acquiredDisposed, r.derivative ? 1 : 0, r.shares, r.price].join("|");
+const ownerKeys = item => (item.owners?.length ? item.owners : [item.owner]).map(o => o?.cik ? "cik:" + String(o.cik).replace(/^0+/, "") : "name:" + String(o?.name || "").toUpperCase());
+export function markSuperseded(activity) {
+  const amendments = activity.filter(a => a.form === "4/A");
+  for (const item of activity) {
+    const owners = new Set(ownerKeys(item));
+    const later = amendments.filter(a => a !== item && a.filedAt >= item.filedAt && a.accession !== item.accession && ownerKeys(a).some(k => owners.has(k)));
+    if (!later.length) continue;
+    const all = item.lines || item.transactions;
+    const repeated = new Set(later.flatMap(a => (a.lines || a.transactions).map(lineKey)));
+    const kept = all.filter(r => !repeated.has(lineKey(r)));
+    if (kept.length === all.length) continue;
+    item.supersededLines = all.length - kept.length;
+    item.superseded = kept.length === 0;
+    const { counted, netShares, value } = countLines(kept);
+    item.countedNetShares = counted.length ? netShares : 0;
+    item.countedValue = value > 0 ? Math.round(value * 100) / 100 : 0;
+  }
+  return activity;
+}
+
 /* One row per ownership filing: net non-derivative shares and reported value.
  * owner is the first reporting owner (as before); owners lists every reporting owner of the filing,
  * in filing order, with their CIK and role (a joint Form 4 has several: each of them reported these
@@ -85,18 +122,14 @@ export function summarizeOwnershipFiling(parsed, filing) {
     category: t.category
   }));
   const equity = rows.filter(r => !r.derivative && Number.isFinite(r.shares));
-  // Open-market trades (P/S) define the headline when present; otherwise every equity line counts.
   const trades = equity.filter(r => r.code === "P" || r.code === "S");
-  const counted = trades.length ? trades : equity;
-  const signed = r => r.acquiredDisposed === "D" ? -r.shares : r.shares;
-  const netShares = counted.reduce((sum, r) => sum + signed(r), 0);
-  const value = counted.reduce((sum, r) => sum + (Number.isFinite(r.value) && r.price > 0 ? r.value : 0), 0);
+  const { counted, netShares, value } = countLines(rows);
   const primary = trades[0] || equity[0] || rows[0] || null;
   const dates = rows.map(r => r.date).filter(isDate).sort();
   const buys = trades.some(r => r.code === "P"), sells = trades.some(r => r.code === "S");
   const kind = buys && !sells ? "purchase" : sells && !buys ? "sale" : buys && sells ? "mixed"
     : netShares > 0 ? "acquisition" : netShares < 0 ? "disposition" : "other";
-  return {
+  const summary = {
     accession: filing.accession, form: filing.form, filedAt: filing.filedAt,
     transactionDate: dates.at(-1) || null,
     owner: { name: owner?.name || "Reporting person", cik: owner?.cik || null, role: ownerRole(owner),
@@ -110,6 +143,9 @@ export function summarizeOwnershipFiling(parsed, filing) {
     transactions: rows.slice(0, 30),
     sourceUrl: filing.viewUrl, xmlUrl: filing.xmlUrl
   };
+  // Every line (transactions above is capped at 30), for markSuperseded; not part of the JSON.
+  Object.defineProperty(summary, "lines", { value: rows, enumerable: false });
+  return summary;
 }
 
 /* Every reporting owner of the activity, once each (by CIK without leading zeros, else by name):
@@ -132,8 +168,8 @@ export function summarizePeople(activity) {
         lastFiled: item.filedAt, lastTransaction: item.transactionDate, sharesAfter: item.sharesAfter };
       person.filings += 1;
       if (item.joint || owners.length > 1) person.jointFilings += 1;
-      person.netShares += item.netShares || 0;
-      person.value += item.value || 0;
+      person.netShares += ("countedNetShares" in item ? item.countedNetShares : item.netShares) || 0;
+      person.value += ("countedValue" in item ? item.countedValue : item.value) || 0;
       if (!person.role && o.role) person.role = o.role;
       people.set(key, person);
     }
@@ -161,7 +197,7 @@ export async function getCompanyInsiders(ticker, { limit = 16, fetcher = secFetc
     }
     activity.sort((a, b) => b.filedAt.localeCompare(a.filedAt) || String(b.transactionDate || "").localeCompare(String(a.transactionDate || "")));
     return {
-      company, activity, people: summarizePeople(activity),
+      company, activity, people: summarizePeople(markSuperseded(activity)),
       coverage: { requested: filings.length, parsed: activity.length, failed, excludedOtherIssuer: otherIssuer },
       source: { name: "SEC EDGAR Form 4 ownership filings", url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + company.cik + "&type=4&owner=include&count=40" },
       retrievedAt: new Date().toISOString()

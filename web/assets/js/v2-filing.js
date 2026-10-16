@@ -2,6 +2,9 @@
 "use strict";
 const $=id=>document.getElementById(id),E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const d=x=>{if(!x)return "Not reported";const v=new Date(x);return Number.isNaN(v.getTime())?"Not reported":new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(v)};
+/* Filing timestamps are shown on the SEC's calendar day (America/New_York): a Form 4 accepted at 9:30 p.m. ET was filed that day,
+   though it is already past midnight UTC. Date-only values (trade and report dates) stay in UTC. */
+const filed=x=>{if(!x)return "Not reported";const v=new Date(x);return Number.isNaN(v.getTime())?"Not reported":new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"}).format(v)};
 const money=x=>x==null||!Number.isFinite(Number(x))?"Not reported":new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(Number(x));
 /* Identity tiles (entity-media.js): the issuer's logo in the heading, each reporting person's headshot (or
    the issuer's logo standing in for it, found by issuer CIK when the filing has no ticker) in the rows. Names stay visible beside them, so tiles are aria-hidden. */
@@ -29,9 +32,9 @@ document.addEventListener("DOMContentLoaded",async()=>{
     const f=data.filing,items=Array.isArray(data.transactions)?data.transactions:[];
     const heading=$("filing-heading"),title=String(f.issuer_name||f.ticker||"Ownership filing").slice(0,150);
     heading.innerHTML=(media&&(f.ticker||f.issuer_cik)?media.company({ticker:f.ticker,cik:f.issuer_cik,name:f.issuer_name,size:"lg"}):"")+"<span>"+E(title)+"</span>";
-    $("filing-subtitle").textContent=(f.form_type||"Form 4")+" · "+(f.ticker||"No ticker")+" · Published "+d(f.published_at);
+    $("filing-subtitle").textContent=(f.form_type||"Form 4")+" · "+(f.ticker||"No ticker")+" · Published "+filed(f.published_at);
     status.textContent="Imported SEC record retrieved. Verify reported details against the original filing.";
-    meta.innerHTML="<span><strong>Form</strong> "+E(f.form_type||"4")+"</span><span><strong>Published</strong> "+E(d(f.published_at))+"</span><span><strong>Report period</strong> "+E(d(f.period_of_report))+"</span>"+(f.is_amendment?"<span>Amendment</span>":"");
+    meta.innerHTML="<span><strong>Form</strong> "+E(f.form_type||"4")+"</span><span><strong>Published</strong> "+E(filed(f.published_at))+"</span><span><strong>Report period</strong> "+E(d(f.period_of_report))+"</span>"+(f.is_amendment?"<span>Amendment</span>":"");
     let url=source(f.source_url);
     src.innerHTML=url?'<a href="'+E(url)+'" target="_blank" rel="noopener noreferrer" class="cl-source-link" data-hf-atom>Read original SEC filing ↗</a>':"Original source URL unavailable";
     rows.innerHTML=items.length?items.map(t=>{

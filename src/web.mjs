@@ -29,6 +29,8 @@ const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "X-Frame-Options": "DENY",
+  // HTTPS only from here on (one year, subdomains included); left out where cookies are not Secure (local http development).
+  ...(process.env.COOKIE_SECURE !== "0" ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" } : {}),
   "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https://upload.wikimedia.org https://thumb.wikimedia.org; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 };
 

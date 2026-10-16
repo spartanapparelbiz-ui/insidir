@@ -3,6 +3,8 @@ import { migrate, pool, query } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { createApiServer } from "./api.mjs";
 import { warmAfterIngest } from "./media-warm.mjs";
+import { reconcileLapsed, createStripeClient } from "./billing.mjs";
+import { billingSettings } from "./config.mjs";
 
 async function main() {
   if(!config.databaseUrl)throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -21,6 +23,22 @@ async function main() {
     setTimeout(tick,2000).unref();
     setInterval(tick,15*60*1000).unref();
   }
+  // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
+  if(billingSettings().enabled){
+    const reconcile=async()=>{
+      try{console.log(JSON.stringify({event:"billing.reconcile",...await reconcileLapsed({stripe:createStripeClient()})}))}
+      catch(e){console.error(JSON.stringify({event:"billing.reconcile_error",error:String(e?.message||e)}))}
+    };
+    setTimeout(reconcile,60*1000).unref();
+    setInterval(reconcile,6*60*60*1000).unref();
+  }
+  // Expired sign-in sessions are already refused at lookup; this removes their rows (hourly, after a minute).
+  const purgeSessions=async()=>{
+    try{const r=await query("DELETE FROM sessions WHERE expires_at<now()");if(r.rowCount)console.log(JSON.stringify({event:"sessions.purged",count:r.rowCount}))}
+    catch(e){console.error(JSON.stringify({event:"sessions.purge_failed",error:String(e?.message||e)}))}
+  };
+  setTimeout(purgeSessions,60*1000).unref();
+  setInterval(purgeSessions,60*60*1000).unref();
   const shutdown=async()=>{console.log("Shutting down Insidir API");server.close();await pool?.end();process.exit(0)};
   process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);
 }

@@ -477,3 +477,16 @@ body.v13 #main #account-delete-feedback.is-error{max-width:720px!important;paddi
 
 }
 /* end @layer insidir-v13 */
+
+/* Account deletion confirmation: inline, password required; the destructive button keeps the alert red. */
+body.v13 #main .v3-account__confirm{margin:18px 0 0!important;padding:22px 0 0!important;border-top:1px solid var(--hf-line)!important;max-width:760px!important}
+body.v13 #main .v3-account__confirm p{margin:0 0 16px!important;color:var(--hf-soft)!important}
+body.v13 #main .v3-account__confirm label{display:block!important;margin:0 0 8px!important;font:500 10.5px/1.2 var(--hf-mono)!important;letter-spacing:.16em!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13 #main .v3-account__confirm-row{display:flex!important;flex-wrap:wrap!important;gap:10px!important;align-items:stretch!important}
+body.v13 #main .v3-account__confirm input{flex:1 1 260px!important;min-width:0!important;height:44px!important;padding:0 14px!important;background:transparent!important;border:1px solid var(--hf-line-2)!important;border-radius:0!important;color:var(--hf-ink)!important;font:400 15px var(--hf-mono)!important}
+body.v13 #main .v3-account__confirm input:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:2px!important}
+body.v13 #main .v3-account__confirm button{height:44px!important;padding:0 18px!important;border-radius:0!important;cursor:pointer!important;font:500 10.5px var(--hf-mono)!important;letter-spacing:.16em!important;text-transform:uppercase!important}
+body.v13 #main #account-delete-confirm{background:var(--hf-alert)!important;border:1px solid var(--hf-alert)!important;color:var(--hf-bg)!important}
+body.v13 #main #account-delete-confirm:disabled{opacity:.6!important;cursor:progress!important}
+body.v13 #main #account-delete-cancel{background:transparent!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-ink)!important}
+body.v13 #main #account-delete-cancel:is(:hover,:focus-visible){border-color:var(--hf-ink)!important}
