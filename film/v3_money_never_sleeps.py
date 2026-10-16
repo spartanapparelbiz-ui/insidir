@@ -6,7 +6,7 @@ Every physical action triggers a transformation:
   105-150  the crowd's shadows open onto a telephone; the receiver is slammed down (slow, then real speed)
   150-200  the slam becomes a black car's headlights racing through a tunnel, out under an elevated road
   200-255  a steel bridge folds up out of frame and the skyscrapers behind it rise into view
-  255-300  newspaper presses: the paper web turns into a glass curtain wall; MONEY NEVER SLEEPS tracked onto it
+  255-300  newspaper presses: the paper web turns into a glass curtain wall
   300-390  trading floors multiply on every beat: 4, 16, 64, 256, 1024 live panels
   390-465  the panels collapse into one enormous night skyline (photomosaic resolve)
   465-540  insidir rises behind the skyline, occluded by the bridge and towers
@@ -17,6 +17,14 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M
 
 N_FRAMES = 540
+VERTICAL = True
+from lib.vertical import Captions
+CAPTIONS = Captions([
+    (8, 98, "Wall Street always ran\non who knew first."),
+    (150, 246, "Today, insiders have to\nreport their trades."),
+    (300, 388, "It's all public.\nMost of it goes unread."),
+    (478, 540, "Insidir puts it\nin front of you."),
+])
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"
@@ -195,19 +203,6 @@ def press(f):
 def facade(f):
     i = int(min((f - 270) * 1.0, len(C("facade")) - 1))
     img = C("facade")[max(i, 0)]
-    if 278 <= f < 330:
-        Hm = facade_tracks()[max(i, 0)]
-        for word, y0, f0 in (("MONEY", 300, 278), ("NEVER", 520, 285), ("SLEEPS", 740, 292)):
-            if f < f0:
-                continue
-            ti = V.text_image(word, 210, 800, -0.02)
-            a = np.zeros((H, W), np.float32)
-            lay = V.place((H, W), ti, 900, y0, 1.0)
-            # the type lives on the building: warped by the facade's tracked homography, glass mullions over it
-            a = cv2.warpPerspective(lay, Hm, (W, H)) * np.clip(seg(f, f0, f0 + 3), 0, 1)
-            grid_dark = np.clip((0.35 - cv2.GaussianBlur(img, (0, 0), 1.2)) * 4, 0, 1)
-            a = a * (1 - 0.6 * grid_dark)
-            img = img * (1 - a) + 0.97 * a
     return img
 
 
@@ -298,21 +293,43 @@ def halftone_word(text, size, gap=9):
 _hw = None
 
 
+def sky_index(f):
+    return int(min(max(f - 380, 0) * 0.8, len(C("skyline")) - 1))
+
+
 def reveal(f):
-    global _hw
-    img = skyline(f)
-    i = int(min(max(f - 380, 0) * 0.8, len(C("skyline")) - 1))
-    d = V.depth(C("skyline")[i], f"v3sky_{i}")
-    d = V.affine(d, 1.08, 0, 0, 30)
-    if _hw is None:
-        _hw = halftone_word("insidir", 400)
+    return skyline(f)
+
+
+_ht = None
+SKY_CX = 1450
+
+
+def post(f, img, M):
+    """insidir rises behind the bridge and the towers, dot by dot, at full vertical resolution."""
+    global _ht
+    if f < 465:
+        return img
+    if _ht is None:
+        _ht = S.Halftone("insidir", 400, gap=10, seed=3)
+    h, w = _ht.shape
+    d = V.affine(V.depth(C("skyline")[sky_index(f)], f"v3sky_{sky_index(f)}"), 1.08, 0, 0, 30)
+    dv = cv2.warpAffine(d, M, (img.shape[1], img.shape[0]), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
     t = np.clip(seg(f, 465, 500), 0, 1)
-    y = 820 - 330 * V.ease_out(t, 3)                         # rises from behind the towers
-    a = V.place((H, W), _hw, 960, y, 1.0)
-    occl = V.depth_layer_mask(d, 0.16, 0.05)                 # towers and the bridge stay in front
-    a = a * (1 - occl) * np.clip(seg(f, 465, 470), 0, 1)
-    out = img * (1 - a) + 0.95 * a
-    return out
+    sc = 900.0 / w
+    y = 1230 - 420 * V.ease_out(t, 3)                        # rises from behind the skyline
+    A_ = np.float32([[sc, 0, 540 - sc * w / 2], [0, sc, y - sc * h / 2]])
+    dots = _ht.image(V.ease_out(np.clip(seg(f, 465, 495), 0, 1), 2) * 1.08, 0.05)
+    a = cv2.warpAffine(dots, A_, (img.shape[1], img.shape[0]), flags=cv2.INTER_AREA)
+    a = a * (1 - V.depth_layer_mask(dv, 0.16, 0.05))          # the bridge and near towers stay in front
+    glow = cv2.GaussianBlur(a, (0, 0), 8) * 0.3
+    return img * (1 - a) + 0.95 * a + glow * (1 - img)
+
+
+def focus(f):
+    from lib.vertical import keyframes
+    return keyframes([(0, 1150), (14, 1250), (15, 960), (104, 960), (116, 1000), (135, 1000), (136, 640),
+                      (166, 760), (180, 1060), (200, 960), (380, 960), (400, SKY_CX), (540, SKY_CX)], f), 1.0
 
 
 def frame(f):
@@ -339,8 +356,8 @@ def frame(f):
     else:
         img = reveal(f)
     hits = [(FREEZE, 1.0), (SLAM, 1.3), (200, 0.5), (255, 0.6), (300, 0.7), (315, 0.4), (330, 0.4), (345, 0.4), (360, 0.5), (465, 0.8)]
-    dx, dy, r = V.shake(f, hits, amp=18)
-    img = V.affine(img, 1.03, r, dx, dy)
+    dx, dy, r = V.shake(f, [(FREEZE, 0.5), (SLAM, 0.6), (465, 0.3)], amp=8)
+    img = V.affine(img, 1.02, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.25).astype(np.float32)
 
 
@@ -409,32 +426,19 @@ def score():
 
 def cues(mx):
     from lib.realaudio import cue
-    cue(mx, "crowd_trading_floor_1", 0, -2, src=20, length=FREEZE / 30 + 0.02, fade_in=0.05, hit=20, bus="amb")
-    cue(mx, "telephone_ring_old_2", 2, -12, src=0.2, length=0.9, fade_out=0.3, hit=0.28)
-    cue(mx, "cinematic_impact_1", FREEZE, 0)                                                 # time stops
-    cue(mx, "sub_drop_1", FREEZE, -12)
-    cue(mx, "heartbeat_1", 45, -6, src=0.5, length=2.5, hit=0.95, bus="amb")
-    cue(mx, "reverse_cymbal_2", 104, -6, hit=5.06)
-    cue(mx, "phone_hangup_slam_2", SLAM, -1)                                                 # the slam
-    cue(mx, "phone_hangup_slam_1", SLAM, -5)
-    cue(mx, "engine_rev_2", SLAM + 2, -3)
-    cue(mx, "car_pass_1", 160, -2)
-    cue(mx, "tire_spin_2", 182, -6)
-    cue(mx, "metal_creak_2", 214, -4, src=90, length=1.6, fade_out=0.4, hit=90)              # the bridge folds
-    cue(mx, "cinematic_impact_1", 250, -6)
-    cue(mx, "printing_press_2", 250, -4, src=150, length=1.8, fade_in=0.05, fade_out=0.3, hit=150)
-    for f in (278, 285, 292):                                                                # each word lands
-        cue(mx, "door_open_heavy_1", f, -6)
-    for k, f in enumerate((300, 315, 330, 345, 360, 375)):                                   # each multiplication
-        cue(mx, "camera_shutter_1", f, -7, pan=(k % 2 - 0.5) * 0.6)
-    cue(mx, "teletype_2", 300, -12, src=10, length=3.0, fade_out=0.2, hit=10)
-    cue(mx, "riser_1", 465, -5, src=8, hit=16)
-    cue(mx, "braam_2", 465, -3)
-    cue(mx, "cinematic_impact_2", 465, -5)
-    cue(mx, "wind_high_2", 470, -12, src=55, length=2.4, fade_in=0.5, hit=55, bus="amb")
+    cue(mx, "crowd_trading_floor_1", 0, -4, src=20, length=FREEZE / 30 + 0.02, fade_in=0.05, hit=20, bus="amb")
+    cue(mx, "telephone_ring_old_2", 2, -14, src=0.2, length=0.9, fade_out=0.3, hit=0.28)
+    cue(mx, "cinematic_impact_1", FREEZE, -6, lp=3500)                                       # time stops
+    cue(mx, "heartbeat_1", 45, -9, src=0.5, length=2.5, hit=0.95, bus="amb")
+    cue(mx, "phone_hangup_slam_2", SLAM, -3)                                                 # the slam
+    cue(mx, "car_pass_1", 160, -5)
+    cue(mx, "metal_creak_2", 214, -8, src=90, length=1.6, fade_out=0.4, hit=90)              # the bridge folds
+    cue(mx, "printing_press_2", 250, -8, src=150, length=1.8, fade_in=0.05, fade_out=0.3, hit=150)
+    cue(mx, "teletype_2", 300, -16, src=10, length=3.0, fade_out=0.2, hit=10)
+    cue(mx, "wind_high_2", 455, -14, src=55, length=2.8, fade_in=0.5, hit=55, bus="amb")
 
 
-HITS_BIG = [FREEZE, SLAM, 250, 465]
+HITS_BIG = [FREEZE, SLAM]
 
 
 def score():                                     # music: Raptom Snig - Vidom (CC BY 4.0), slam on the phone slam

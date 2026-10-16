@@ -18,14 +18,30 @@ def _chunk(args):
     modname, a, b, path, finish = args
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     m = importlib.import_module(modname)
-    w = V.Writer(path)
+    vert = getattr(m, "VERTICAL", False)
+    w = V.Writer(path, size=(1080, 1920) if vert else None)
     for f in range(a, b):
-        img = m.frame(f)
-        if finish:
-            img = m.finish(img, f) if hasattr(m, "finish") else V.finish(img, f)
+        img = output_frame(m, f, finish)
         w.write(img)
     w.close()
     return path
+
+
+def output_frame(m, f, finish=True):
+    """The delivered frame: plate -> (vertical reframe -> sharp overlays -> captions) -> film finish."""
+    img = m.frame(f)
+    if getattr(m, "VERTICAL", False):
+        from . import vertical as VT
+        cx, zoom = m.focus(f)
+        M = VT.crop_matrix(cx, zoom)
+        img = VT.reframe(img, M)
+        if hasattr(m, "post"):
+            img = m.post(f, img, M)
+        if hasattr(m, "CAPTIONS"):
+            img = m.CAPTIONS.draw(img, f)
+    if finish:
+        img = V.finish(img, f)
+    return img
 
 
 def render(modname, out_mp4, frames=None, workers=4, finish=True):
@@ -59,10 +75,9 @@ def sheet(modname, frames, path, cols=5, width=384, finish=True):
         m.prepare()
     tiles = []
     for f in frames:
-        img = m.frame(f)
-        if finish:
-            img = V.finish(img, f)
-        t = cv2.resize((np.clip(img, 0, 1) * 255).astype(np.uint8), (width, int(width * 9 / 16)), interpolation=cv2.INTER_AREA)
+        img = output_frame(m, f, finish)
+        t = cv2.resize((np.clip(img, 0, 1) * 255).astype(np.uint8), (width, int(width * img.shape[0] / img.shape[1])),
+                       interpolation=cv2.INTER_AREA)
         t = cv2.cvtColor(t, cv2.COLOR_GRAY2BGR)
         cv2.putText(t, f"f{f} b{f / 15:.2f}", (6, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
         tiles.append(t)
@@ -73,7 +88,7 @@ def sheet(modname, frames, path, cols=5, width=384, finish=True):
 
 
 def deliver(video, wav, out_mp4, bitrate="16M"):
-    """Two-pass H.264 High at a fixed delivery bitrate (grain-tuned), AAC 320k, 1080p30, faststart."""
+    """Two-pass H.264 High at a fixed delivery bitrate (grain-tuned), AAC 320k, 30 fps, faststart."""
     log = os.path.join(OUT, os.path.basename(out_mp4) + ".2pass")
     base = ["ffmpeg", "-v", "error", "-y", "-i", video]
     enc = ["-c:v", "libx264", "-preset", "slow", "-tune", "grain", "-profile:v", "high", "-b:v", bitrate,

@@ -64,13 +64,16 @@ def texture(kind, seed):
 
 
 class Cloud:
-    def __init__(self, n=340, subject_z=2.6, seed=5, avoid=(0.0, 0.0, 0.55)):
+    def __init__(self, n=340, subject_z=2.6, seed=5, avoid=(0.0, 0.0, 0.55), xr=3.6, zr=(1.1, 8.5)):
         rng = np.random.default_rng(seed)
         P = []
         while len(P) < n:
-            x, y, z = rng.uniform(-3.6, 3.6), rng.uniform(-2.2, 2.0), rng.uniform(1.1, 8.5)
+            x, y, z = rng.uniform(-xr, xr), rng.uniform(-2.2, 2.0), rng.uniform(*zr)
             # keep a column around the protagonist clear so pages float around him, not through him
             if np.hypot(x - avoid[0], (z - subject_z) * 0.8) < avoid[2] and y > -1.6:
+                continue
+            # keep the line of sight to his face clear: nothing between the lens and him in a cone around his head
+            if z < subject_z + 1.1 and abs(x - avoid[0]) < 0.32 * z + 0.12 and -1.0 < y < 0.9:
                 continue
             P.append((x, y, z))
         self.pos = np.array(P)
@@ -116,7 +119,7 @@ class Cloud:
             shade = 0.35 + 0.65 * abs(n @ L)
             zc = float(Xc[:, 2].mean())
             pt = pt * shade * exposure
-            dof = min(abs(zc - focus) * 2.2, 9)
+            dof = min(abs(zc - focus) * 1.1, 3.5)
             if dof > 0.6:
                 pt = cv2.GaussianBlur(pt, (0, 0), dof)
                 pa = cv2.GaussianBlur(pa, (0, 0), dof)

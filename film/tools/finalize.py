@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import importlib
 from lib import audio as A
 
-NAMES = {"v1_wall_street": "insidir_01_wall_street_after_dark", "v2_obsession": "insidir_02_the_obsession",
-         "v3_money_never_sleeps": "insidir_03_money_never_sleeps"}
+NAMES = {"v1_wall_street": "insidir_reel_01_wall_street_after_dark", "v2_obsession": "insidir_reel_02_the_obsession",
+         "v3_money_never_sleeps": "insidir_reel_03_money_never_sleeps"}
 
 
 def main(mod, picture):

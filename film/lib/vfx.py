@@ -100,8 +100,9 @@ def load(path, start=0.0, dur=None, fps=FPS, size=(W, H), mix=(0.30, 0.59, 0.11)
 
 
 class Writer:
-    def __init__(self, path, fps=FPS, crf=14):
-        self.p = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
+    def __init__(self, path, fps=FPS, crf=14, size=None):
+        w, h = size or (W, H)
+        self.p = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{w}x{h}",
                                    "-r", str(fps), "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
                                    "-pix_fmt", "yuv420p", "-x264-params", "aq-mode=3", path], stdin=subprocess.PIPE)
 
@@ -681,23 +682,23 @@ def vignette(shape, strength=0.35, power=2.4):
     h, w = shape
     g = grid(h, w)
     x, y = (g[..., 0] - w / 2) / (w / 2), (g[..., 1] - h / 2) / (h / 2)
-    r = np.sqrt(x * x * 0.8 + y * y)
+    r = np.sqrt(x * x * 0.8 + y * y) if w >= h else np.sqrt(x * x + y * y * 0.8)
     return 1 - strength * np.clip(r / 1.3, 0, 1) ** power
 
 
-_vig = None
+_vig = {}
 
 
 def finish(img, frame, grain=0.035, vig=0.32, halo=0.3, weave=0.0, rng=None):
-    """Film finish: halation, vignette, luma-dependent grain, optional gate weave."""
-    global _vig
-    if _vig is None:
-        _vig = vignette((H, W), vig)
+    """Film finish: halation, vignette, luma-dependent grain, optional gate weave. Works at any frame size."""
+    h, w = img.shape[:2]
+    if (h, w) not in _vig:
+        _vig[(h, w)] = vignette((h, w), vig)
     x = halation(img, amount=halo)
-    x = x * _vig
+    x = x * _vig[(h, w)]
     rng = rng or np.random.default_rng(frame * 7919 + 13)
-    g = rng.standard_normal((H // 2, W // 2)).astype(np.float32)
-    g = cv2.resize(g, (W, H), interpolation=cv2.INTER_LINEAR)
+    g = rng.standard_normal((h // 2, w // 2)).astype(np.float32)
+    g = cv2.resize(g, (w, h), interpolation=cv2.INTER_LINEAR)
     lum = np.clip(x, 0, 1)
     x = x + g * grain * (0.35 + lum * (1 - lum) * 2.6)
     if weave:

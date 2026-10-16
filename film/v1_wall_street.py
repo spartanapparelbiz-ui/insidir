@@ -1,12 +1,14 @@
-"""VIDEO 1 - WALL STREET AFTER DARK (20 s, 600 frames, 120 BPM = 15 frames per beat).
+"""VIDEO 1 - WALL STREET AFTER DARK (20 s, 600 frames, 120 BPM = 15 frames per beat). 9:16 Reel.
+
+What it says: insiders have to report their own trades; Insidir reads those filings for you.
 
 One continuous impossible camera journey:
-  000-090  rain street: 3D camera dolly through live footage (per-frame monocular depth re-projection), type in depth
+  000-090  rain street: 3D camera dolly through live footage (per-frame monocular depth re-projection)
   090-120  the camera hits a rain-covered car window; droplets refract the street, then burst past the lens
   120-165  spinning wheel hub; the tunnel opens in the gaps between the spokes (luma-keyed reveal, rotation matched)
   165-240  subway tunnel at speed; the camera rolls 90 deg and flies through the light at the end
   240-300  up the elevator shaft (hyperlapse, push) and out through the top
-  300-375  above the city: towers lean and fold over the camera, AFTER DARK tracked behind the buildings
+  300-375  above the city: towers lean and fold over the camera
   375-480  hundreds of live tiles assemble into the Empire State aerial, then melt into the full shot
   480-512  dive into a night facade (portal)
   512-600  insidir switches on in the tower's own windows, tracked with the building as the camera drifts in
@@ -17,6 +19,15 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M
 
 N_FRAMES = 600
+VERTICAL = True
+from lib.vertical import Captions
+CAPTIONS = Captions([
+    (14, 104, "When a company insider\nbuys or sells its stock,"),
+    (116, 214, "the law says they have\nto report it."),
+    (232, 330, "Within two business days.\nOn SEC Form 4."),
+    (384, 476, "Thousands are filed.\nMost people never see them."),
+    (536, 600, "Insidir reads them for you."),
+])
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"
@@ -100,17 +111,6 @@ def street(f):
     out = V.reproject(img, d, cam, f=1500, near=1.2, far=10)
     sp = cam[2] - street_cam(max(f - 1, 0))[2]
     out = V.radial_blur(out, sp * 0.9, (1100, 420), 8)
-    # WALL STREET set in depth at z=5.5 between the near puddle and the far signs; scales with the dolly
-    zt = 5.5
-    if 18 <= f < 100:
-        k = zt / max(zt - cam[2], 0.5)
-        a = np.clip(seg(f, 18, 26), 0, 1) * (1 - np.clip(seg(f, 88, 100), 0, 1))
-        ti = V.text_image("WALL STREET", 230, 800, -0.04)
-        al = V.place((H, W), ti, 1080, 380, 0.95 * k) * a
-        # occlusion: anything nearer than the type's plane (high disparity) covers it
-        zmap = 10 - (10 - 1.2) * d
-        al = al * np.clip((zmap - zt + 0.4) / 0.8, 0, 1)
-        out = out * (1 - al) + 0.96 * al
     return out
 
 
@@ -196,7 +196,7 @@ def shaft(f):
     return np.clip(img * (1 + 2.2 * burst) + 0.25 * burst, 0, 1)
 
 
-def aerial(f, with_type=True):
+def aerial(f, with_type=False):
     pos = max(f - 290, 0) * 1.0
     i = int(min(pos, len(C("aerial")) - 1))
     img = C("aerial").at(min(pos, len(C("aerial")) - 1))
@@ -300,18 +300,62 @@ def lit_word(f):
     return cv2.warpPerspective(dots, Ht @ Hq, (W, H), flags=cv2.INTER_AREA), band
 
 
+def tower_cam(f):
+    """The slow drift into the tower, as a 3x3 plate transform."""
+    e = V.ease_io(np.clip(seg(f, 512, 600), 0, 1), 2)
+    Mc = cv2.getRotationMatrix2D((1230, 560), 0, 1.0 + 0.22 * e)
+    Mc[0, 2] += -120 * e
+    Mc[1, 2] += 60 * e
+    return np.vstack([Mc, [0, 0, 1]])
+
+
 def tower(f):
     img = facade(f)
-    t = np.clip(seg(f, 512, 600), 0, 1)
-    if f >= 524:
-        a, band = lit_word(f)
-        # those floors go dark first, then the word's windows switch on
+    if f >= 520:
+        _, band = lit_word(f)
+        # those floors go dark first (only the lit windows; glass and mullions stay), then the word switches on
         dark = V.smooth(seg(f, 520, 532)) * 0.72
-        lights = V.smooth((img - 0.28) / 0.45)              # only the lit windows switch off; glass and mullions stay
+        lights = V.smooth((img - 0.28) / 0.45)
         img = img * (1 - band * dark * (0.25 + 0.75 * lights))
-        glow = cv2.GaussianBlur(a, (0, 0), 6) * 0.35
-        img = np.maximum(img, a * 0.97) + glow * (1 - img)
-    return V.affine(img, 1.0 + 0.22 * V.ease_io(t, 2), 0, -120 * V.ease_io(t, 2), 60 * V.ease_io(t, 2), center=(1230, 560))
+    return cv2.warpAffine(img, tower_cam(f)[:2], (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+
+
+def word_quad_H(f):
+    """Plate homography of the word's dot image onto the tower face at frame f (track + camera drift)."""
+    global _ht
+    if _ht is None:
+        _ht = S.Halftone("insidir", 400, gap=11, seed=6)
+    h, w = _ht.shape
+    def edge(a, b, t):
+        return FACE[a] + (FACE[b] - FACE[a]) * t
+    v0, v1 = 0.27, 0.49
+    L0, L1 = edge(0, 3, v0), edge(0, 3, v1)
+    R0, R1 = edge(1, 2, v0), edge(1, 2, v1)
+    ins = 0.05
+    quad = np.float32([L0 + (R0 - L0) * ins, R0 - (R0 - L0) * ins, R1 - (R1 - L1) * ins, L1 + (R1 - L1) * ins])
+    Hq = cv2.getPerspectiveTransform(np.float32([[0, 0], [w, 0], [w, h], [0, h]]), quad)
+    return tower_cam(f) @ facade_tracks()[int(round(fac_pos(f)))] @ Hq
+
+
+def post(f, img, M):
+    """insidir switches on in the tower's windows, drawn at full vertical resolution."""
+    if f < 524:
+        return img
+    Hv = np.vstack([M, [0, 0, 1]]) @ word_quad_H(f)
+    reveal = V.ease_out(np.clip(seg(f, 524, 566), 0, 1), 2) * 1.08
+    a = cv2.warpPerspective(_ht.image(reveal, 0.05), Hv, (img.shape[1], img.shape[0]), flags=cv2.INTER_AREA)
+    glow = cv2.GaussianBlur(a, (0, 0), 10) * 0.35
+    return np.maximum(img, a * 0.97) + glow * (1 - img)
+
+
+def focus(f):
+    """Vertical reframe: crop centre on the plate."""
+    from lib.vertical import keyframes
+    if f >= 512:
+        p = tower_cam(f) @ np.array([1180, 560, 1.0])            # keep the word's floors centred as we drift
+        return float(p[0]), 1.0
+    return keyframes([(0, 1080), (88, 1060), (90, 1050), (119, 1050), (120, 960), (300, 960), (375, 980),
+                      (480, 990), (511, 1010)], f), 1.0
 
 
 def frame(f):
@@ -342,8 +386,9 @@ def frame(f):
     else:
         img = tower(f)
     # impact shakes on the big hits
-    dx, dy, r = V.shake(f, [(30, 0.6), (90, 0.8), (120, 0.5), (240, 0.6), (300, 1.0), (480, 0.7)], amp=14)
-    img = V.affine(img, 1.03, r, dx, dy)
+    if f < 512:                                       # gentle handheld; the final shot is locked off
+        dx, dy, r = V.shake(f, [(90, 0.35), (300, 0.45), (480, 0.35)], amp=8)
+        img = V.affine(img, 1.02, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.18).astype(np.float32)
 
 
@@ -430,20 +475,19 @@ def cues(mx):
     cue(mx, "elevator_1", 252, -6, src=9.5, length=2.8, fade_in=0.2, hit=9.5)
     cue(mx, "elevator_1", 286, -4, src=11.9, length=1.4, hit=12.12)  # the ding at the top of the shaft
     cue(mx, "wind_high_2", 300, -6, src=42.0, length=3.2, fade_out=0.8, hit=43.7)
-    cue(mx, "cinematic_impact_1", 300, -2)
+    cue(mx, "cinematic_impact_1", 300, -8, lp=4000)
     for k, f in enumerate((315, 330, 345, 360)):                    # the towers bend: real steel groans
         cue(mx, "metal_creak_2", f, -7, src=20 + 4 * k, length=1.2, fade_out=0.4, hit=20 + 4 * k, pan=0.5 - k * 0.3)
     cue(mx, "teletype_2", 375, -14, src=5, length=3.5, fade_in=0.3, fade_out=0.3, hit=5)   # tiles clatter in
     cue(mx, "reverse_cymbal_1", 480, -6, src=5.5, hit=8.45)
-    cue(mx, "cinematic_impact_2", 480, -3)
+    cue(mx, "cinematic_impact_2", 480, -9, lp=5000)
     cue(mx, "whoosh_2", 496, -8, src=3.6, length=1.4, hit=4.3)
     cue(mx, "city_night_ambience_1", 512, -14, src=30, length=3.0, fade_in=0.4, hit=30, bus="amb")
     cue(mx, "door_open_heavy_1", 523, -8)                           # the floors' lights trip off...
     cue(mx, "camera_shutter_2", 532, -10)                           # ...and the word's windows click on
-    cue(mx, "cinematic_impact_1", 540, -9, lp=3000)
 
 
-HITS_BIG = [30, 90, 120, 228, 300, 480, 523]
+HITS_BIG = [300, 523]
 
 
 def score():                                     # music: Raptom Snig - Arf (CC BY 4.0), kick returns on the car window

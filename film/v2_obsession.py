@@ -17,6 +17,15 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M, pages as P
 
 N_FRAMES = 750
+VERTICAL = True
+from lib.vertical import Captions
+CAPTIONS = Captions([
+    (18, 100, "You watch the price.\nYou read the headlines."),
+    (114, 214, "The people who run\nthe company know more."),
+    (236, 326, "When they trade its stock,\nthey have to say so."),
+    (352, 474, "Officers. Directors.\n10% owners. On the record."),
+    (564, 656, "Insidir reads the filings\nand shows you the trades."),
+])
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"
@@ -71,7 +80,7 @@ def corridor_cam(t):
     return (0, -0.05 * t, cz), fo
 
 
-def corridor(f, text=True):
+def corridor(f, text=False):
     img, p = walk(f)
     i = int(round(p))
     d = V.depth(C("walk")[i], f"v2walk_{i}")
@@ -190,7 +199,7 @@ _cloud = None
 def cloud():
     global _cloud
     if _cloud is None:
-        _cloud = P.Cloud(n=340, subject_z=SUBJ_Z, seed=9, avoid=(0.0, 0.0, 0.6))
+        _cloud = P.Cloud(n=380, subject_z=SUBJ_Z, seed=9, avoid=(0.0, 0.0, 0.42), xr=1.9, zr=(1.25, 4.4))
     return _cloud
 
 
@@ -199,9 +208,9 @@ def pages(f):
     d = V.depth(fr, f"v2walk_{PAGE_SRC}")
     t = np.clip(seg(f, 330, 480), 0, 1)
     a = V.ease_io(t, 2)
-    roll = np.pi * V.ease_io(np.clip(seg(f, 420, 476), 0, 1), 3)
-    cam = (0.55 * np.sin(a * 2.2 - 0.6) + 0.3, -0.08, -0.2 + 0.9 * a, -0.10 * np.sin(a * 2.2 - 0.6), 0.02, roll)
-    fo = 1400 * (1.0 + 0.32 * np.sin(roll) ** 2 + 0.2 * (roll > 0.1))
+    roll = np.radians(30) * V.ease_io(np.clip(seg(f, 400, 480), 0, 1), 2)      # a slow, gentle turn
+    cam = (0.10 * np.sin(a * 2.0 - 0.5) + 0.04, -0.02, -0.18 + 0.20 * a, -0.025 * np.sin(a * 2.0 - 0.5), 0.01, roll)
+    fo = 1400 * (1.06 + 0.10 * np.sin(roll))
     img = V.reproject(fr, d, cam, f=1400, near=1.0, far=9.0, f_out=fo)
     dz = V.reproject(d, d, cam, f=1400, near=1.0, far=9.0, f_out=fo)
     # pages fly in, then lock in place on the beat (frame 345): time freezes around him
@@ -225,7 +234,7 @@ def doorway(f):
 
 
 def floor(f):
-    pos = max(f - 496, 0) * 1.0
+    pos = max(f - 478, 0) * 1.0
     return C("floor").at(min(pos, len(C("floor")) - 1))
 
 
@@ -243,68 +252,78 @@ CIRCLES = {
     "post": ((1080, 200), 260), "dial": ((960, 630), 220), "watch": ((750, 500), 520), "eye": ((820, 490), 170),
     "hub": ((333, 535), 150), "tunnel": ((960, 528), 330), "empire": ((980, 330), 300),
 }
-CHAIN = ["post", "dial", "watch", "eye", "hub", "tunnel", "empire", "dial", "watch", "eye", "hub", "tunnel",
-         "post", "dial", "watch", "eye", "eye"]
-LENS16 = [4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1]      # lengths in 16th notes (sums to 36 = 135 frames)
-CUTS = np.round(540 + np.concatenate([[0], np.cumsum(LENS16)]) * 3.75).astype(int)
+CHAIN = ["watch", "dial", "hub", "tunnel", "watch", "dial", "eye"]
+CHAIN_START, CHAIN_LEN = 555, 15                     # one shot per beat: calm, not strobing
+CUTS = CHAIN_START + np.arange(len(CHAIN) + 1) * CHAIN_LEN
 
 
 def chain_angle(f):
-    t = np.clip(seg(f, 540, 675), 0, 1)
-    return 40 * t + 420 * t ** 3
+    t = np.clip(seg(f, CHAIN_START, CUTS[-1]), 0, 1)
+    return 50 * t                                     # one slow continuous roll across every cut
 
 
 def chain(f):
-    k = int(np.searchsorted(CUTS, f, side="right") - 1)
-    k = min(k, len(CHAIN) - 1)
-    a0, a1 = CUTS[k], CUTS[k + 1]
-    lt = (f - a0) / max(a1 - a0, 1)
+    k = int(np.clip(np.searchsorted(CUTS, f, side="right") - 1, 0, len(CHAIN) - 1))
+    lt = (f - CUTS[k]) / CHAIN_LEN
     name = CHAIN[k]
     (cx, cy), r = CIRCLES[name]
     clip = C(name)
-    img = clip[int((f - 540) * 1.0 + k * 9) % len(clip)]
-    R0 = 330                                              # every circle is matched to the same on-screen radius
-    s = R0 / r * (1 + 0.45 * lt)                          # and keeps being pushed, so the zoom never stops
-    out = V.affine(img, s, chain_angle(f), W / 2 - cx, H / 2 - cy, center=(cx, cy), border=cv2.BORDER_REPLICATE)
-    da = chain_angle(f) - chain_angle(f - 1)
-    if da > 1.5:
-        out = V.spin_blur(out, da * 0.8, samples=8)
-    # one-frame exposure kick on each cut (a shutter, not a flash)
-    if f == a0 and k > 0:
-        out = np.clip(out * 1.25 + 0.05, 0, 1)
-    return out
+    img = clip.at(min((f - CHAIN_START) * 0.8 + k * 9, len(clip) - 1))
+    R0 = 330                                          # every circle matched to the same on-screen radius...
+    s = R0 / r * (1 + 0.22 * lt)                      # ...and pushed at the same rate, so the move never breaks
+    return V.affine(img, s, chain_angle(f), W / 2 - cx, H / 2 - cy, center=(cx, cy), border=cv2.BORDER_REPLICATE)
 
 
-# ------------------------------------------------------------------ 6. found it
+# ------------------------------------------------------------------ 6. the door
 
-END_SRC = 116          # walk-clip frame: he faces the lens
+DOOR = (1003, 520)          # centre of the lit doorway on the plate (before the push)
+FIN = 660
+
+
+def door_cam(f):
+    e = V.ease_out(np.clip(seg(f, FIN, 750), 0, 1), 2)
+    M = cv2.getRotationMatrix2D(DOOR, 0, 1.0 + 0.30 * e)
+    return np.vstack([M, [0, 0, 1]])
+
+
+def door_final(f):
+    img = C("door").at(min(14 + (f - FIN) * 0.9, len(C("door")) - 1))
+    return cv2.warpAffine(img, door_cam(f)[:2], (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+
+
+def to_door(f):
+    t = np.clip(seg(f, FIN, 676), 0, 1)
+    return S.portal(chain(FIN - 1), door_final(f), t, (W / 2, H / 2), 330 * 0.35, smax=6, blur=0.12, recentre=0)
+
+
 _ht = None
 
 
-def finale(f, text=True):
+def post(f, img, M):
+    """insidir in the doorway's light, inked in dot by dot; his silhouette stays in front of it."""
     global _ht
-    fr = C("walk")[END_SRC]
-    d = V.depth(fr, f"v2walk_{END_SRC}")
-    t = np.clip(seg(f, 675, 750), 0, 1)
-    cam = (0.0, -0.02 * t, 0.05 + 0.40 * V.ease_out(t, 2))      # one slow, steady push: the obsession resolved
-    img = V.reproject(fr, d, cam, f=1400, near=1.0, far=9.0)
-    if text and f >= 684:
-        if _ht is None:
-            _ht = S.Halftone("insidir", 400, gap=9, seed=12)
-        dz = V.reproject(d, d, cam, f=1400, near=1.0, far=9.0)
-        dots = _ht.image(V.ease_out(np.clip(seg(f, 684, 720), 0, 1), 2) * 1.08, 0.05)
-        k = 1 + 0.55 * V.ease_out(t, 2) / (SUBJ_Z - cam[2])          # set in the hall, behind him: scales with depth
-        a = V.place((H, W), dots, 960, 175, 0.70 * k)
-        a = a * (1 - V.depth_layer_mask(dz, 0.55, 0.05))              # he stands in front of it
-        img = img * (1 - a * 0.94)                                      # ink on the glass, light still through it
+    if f < 684:
+        return img
+    if _ht is None:
+        _ht = S.Halftone("insidir", 400, gap=12, seed=12)
+    h, w = _ht.shape
+    dots = _ht.image(V.ease_out(np.clip(seg(f, 684, 716), 0, 1), 2) * 1.08, 0.05)
+    width_v = 470.0                                   # on-screen width in the Reel, inside the door's light
+    sc = width_v / w
+    c = np.vstack([M, [0, 0, 1]]) @ door_cam(f) @ np.array([DOOR[0], DOOR[1] - 60, 1.0])
+    A_ = np.float32([[sc, 0, c[0] - sc * w / 2], [0, sc, c[1] - sc * h / 2]])
+    a = cv2.warpAffine(dots, A_, (img.shape[1], img.shape[0]), flags=cv2.INTER_AREA)
+    figure = cv2.dilate((img < 0.5).astype(np.float32), np.ones((5, 5), np.uint8))
+    figure = cv2.GaussianBlur(figure, (0, 0), 1.5)
+    a = a * (1 - figure)
+    img = img * (1 - a * 0.92)
+    # the line under it is set in the same ink, in the same light
+    k = V.smooth(seg(f, 700, 710))
+    if k > 0:
+        ti = V.text_image("Know what moves a company.", 40, 600, 0.0, pad=20)
+        t = V.place(img.shape, ti, c[0], c[1] + sc * h / 2 + 34, 1.0) * k * (1 - figure)
+        img = img * (1 - t * 0.9)
     return img
-
-
-def discovery(f):
-    t = np.clip(seg(f, 675, 692), 0, 1)
-    if t < 1:
-        return S.portal(chain(674), finale(f), t, (W / 2, H / 2), 330, smax=5, blur=0.15, recentre=0)
-    return finale(f)
 
 
 def frame(f):
@@ -318,19 +337,29 @@ def frame(f):
         img = watch_shot(f)
     elif f < 480:
         img = pages(f)
-    elif f < 496:
-        img = doorway(f)
-    elif f < 516:
-        img = door_to_floor(f)
-    elif f < 540:
+    elif f < 494:
+        t = seg(f, 480, 494)                          # on the drop the frozen room gives way to the floor
+        img, _ = S.luma_reveal(pages(479), floor(f), t, lo=0.0, hi=1.0)
+    elif f < CHAIN_START:
         img = floor(f)
-    elif f < 675:
+    elif f < FIN:
         img = chain(f)
+    elif f < 676:
+        img = to_door(f)
     else:
-        img = discovery(f)
-    dx, dy, r = V.shake(f, [(480, 1.0), (512, 0.5), (540, 0.6), (FREEZE, 0.3), (675, 0.5)], amp=16)
-    img = V.affine(img, 1.03, r, dx, dy)
+        img = door_final(f)
+    if f < FIN:
+        dx, dy, r = V.shake(f, [(480, 0.4)], amp=8)
+        img = V.affine(img, 1.02, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.2).astype(np.float32)
+
+
+def focus(f):
+    from lib.vertical import keyframes
+    if f >= FIN:
+        p = door_cam(f) @ np.array([DOOR[0], DOOR[1], 1.0])
+        return float(p[0]), 1.0
+    return keyframes([(0, 975), (104, 975), (105, 975), (160, 960), (330, 960), (480, 960), (555, 960)], f), 1.0
 
 
 def prepare():
@@ -340,7 +369,6 @@ def prepare():
     V.depth(C("walk")[PAGE_SRC], f"v2walk_{PAGE_SRC}")
     V.depth(watch_centered(FREEZE - 165), "v2watch_freeze")
     eye_track()
-    V.depth(C("walk")[END_SRC], f"v2walk_{END_SRC}")
     for n in set(CHAIN) | {"door", "floor"}:
         C(n)
 
@@ -405,27 +433,19 @@ def cues(mx):
     for b in range(0, 17):                                          # a real mechanical clock: tick on the beat,
         cue(mx, "clock_tick_2", b * B, -2, src=0.0, length=0.45, hit=0.07)
         cue(mx, "clock_tick_2", b * B + 10, -9, src=1.05, length=0.4, hit=1.11, lp=2500)   # tock on the lurch
-    cue(mx, "heartbeat_2", 0, -10, src=30, length=8.5, fade_in=1.0, fade_out=0.6, hit=30, bus="amb")
-    cue(mx, "watch_wind_1", 118, -6, src=36, length=2.2, fade_out=0.3, hit=36)                # winding into the eye
-    cue(mx, "whoosh_2", 150, -10, src=3.8, length=1.0, hit=4.3)
-    cue(mx, "watch_wind_1", 168, -6, src=5, length=2.9, fade_in=0.2, fade_out=0.05, hit=5)    # the watch ticks...
-    cue(mx, "cinematic_impact_1", FREEZE, -10, lp=2500)                                       # ...and stops
-    cue(mx, "wind_high_1", FREEZE, 10, src=20, length=7.5, fade_in=1.5, fade_out=1.0, hit=20, bus="amb")
-    cue(mx, "paper_flutter_1", 330, -3, src=0.2, length=1.4, fade_out=0.3, hit=0.2)
-    cue(mx, "camera_shutter_1", 345, -4)                                                      # pages lock mid-air
-    cue(mx, "metal_creak_2", 420, -6, src=60, length=2.0, fade_in=0.3, fade_out=0.4, hit=60)  # the room turns
-    cue(mx, "riser_1", 478, -4, src=6, hit=16)
-    cue(mx, "door_open_heavy_2", 480, -2)                                                     # the doorway: drop
-    cue(mx, "braam_1", 480, -4)
-    cue(mx, "cinematic_impact_2", 480, -4)
-    cue(mx, "crowd_trading_floor_1", 500, -8, src=10, length=2.0, fade_in=0.2, fade_out=0.5, hit=10, bus="amb")
-    for k in range(len(CUTS) - 1):                                                            # every cut clicks
-        cue(mx, "camera_shutter_2", int(CUTS[k]), -12, pan=((k % 3) - 1) * 0.4)
-    cue(mx, "cinematic_impact_1", 675, -4)
-    cue(mx, "teletype_2", 684, -12, src=5, length=1.3, fade_out=0.3, hit=5)                   # the word inks in
+    cue(mx, "heartbeat_2", 0, -12, src=30, length=8.5, fade_in=1.0, fade_out=0.6, hit=30, bus="amb")
+    cue(mx, "watch_wind_1", 118, -8, src=36, length=2.2, fade_out=0.3, hit=36)                # winding into the eye
+    cue(mx, "watch_wind_1", 168, -7, src=5, length=2.9, fade_in=0.2, fade_out=0.05, hit=5)    # the watch ticks...
+    cue(mx, "wind_high_1", FREEZE, 8, src=20, length=7.5, fade_in=1.5, fade_out=1.0, hit=20, bus="amb")  # ...and stops
+    cue(mx, "paper_flutter_1", 330, -5, src=0.2, length=1.4, fade_out=0.3, hit=0.2)
+    cue(mx, "riser_1", 478, -9, src=6, hit=16)
+    cue(mx, "door_open_heavy_2", 480, -6)                                                     # the drop
+    cue(mx, "crowd_trading_floor_1", 482, -10, src=10, length=2.4, fade_in=0.2, fade_out=0.6, hit=10, bus="amb")
+    cue(mx, "door_open_heavy_1", FIN + 8, -10)                                                # into the doorway
+    cue(mx, "teletype_2", 686, -16, src=5, length=1.2, fade_in=0.1, fade_out=0.3, hit=5)      # the word inks in
 
 
-HITS_BIG = [FREEZE, 345, 480, 675]
+HITS_BIG = [480]
 
 
 def score():                                     # music: Insanity Circle - Climax (CC BY-SA 4.0), drop on the doorway
