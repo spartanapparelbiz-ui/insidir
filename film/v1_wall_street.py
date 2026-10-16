@@ -8,8 +8,8 @@ One continuous impossible camera journey:
   240-300  up the elevator shaft (hyperlapse, push) and out through the top
   300-375  above the city: towers lean and fold over the camera, AFTER DARK tracked behind the buildings
   375-480  hundreds of live tiles assemble into the Empire State aerial, then melt into the full shot
-  480-525  dive into a lit office window on a night facade (planar-tracked)
-  525-600  the window glass is Insidir: push in, the interface fills frame, wordmark lockup
+  480-512  dive into a night facade (portal)
+  512-600  insidir switches on in the tower's own windows, tracked with the building as the camera drifts in
 """
 import os
 import numpy as np
@@ -38,8 +38,6 @@ def C(name):
         "aerial": (PIX + "f_nycaerialdusk231168.mp4", 0.5, 6.0, {}),
         "empire": (PIX + "f_empirestatedusk272511.mp4", 0.5, 10.0, {}),
         "facade": (PIX + "g_nightfacadewindows303.mp4", 5.15, 2.3, {}),
-        "ui_co": (UI + "/ui_company.mp4", 9.5, 4.0, {"mix": (0.33, 0.34, 0.33)}),
-        "ui_land": (UI + "/ui_landing.mp4", 4.0, 5.0, {"mix": (0.33, 0.34, 0.33)}),
     }[name]
     p, st, du, kw = spec
     _c[name] = V.load(p, st, du, **kw)
@@ -193,8 +191,9 @@ def shaft(f):
     s = 1.05 + 1.2 * V.ease_in(t, 2.5)
     img = V.affine(img, s, 0, center=(960, 75))
     img = V.radial_blur(img, 0.04 + 0.2 * V.ease_in(t, 3), (W / 2, 100), 8)
-    burst = V.ease_in(np.clip(seg(f, 288, 300), 0, 1), 2)
-    return img * (1 - burst) + burst * 1.0
+    # exiting the shaft into the open sky: the exposure blows out the way a real sensor clips, image stays
+    burst = V.ease_in(np.clip(seg(f, 286, 300), 0, 1), 2)
+    return np.clip(img * (1 + 2.2 * burst) + 0.25 * burst, 0, 1)
 
 
 def aerial(f, with_type=True):
@@ -220,8 +219,8 @@ def aerial(f, with_type=True):
         if f >= 327:
             a2 = np.clip(seg(f, 327, 333), 0, 1)
             img, _ = S.kinetic_word(img, "DARK", 250, 960, 560 - 30 * t, a2, d, 0.72, scale=1 + 0.2 * t)
-    flash = np.exp(-max(f - 300, 0) / 5) if f >= 300 else 0
-    return img * (1 - flash) + flash
+    flash = np.exp(-max(f - 300, 0) / 4) if f >= 300 else 0
+    return np.clip(img * (1 + 2.0 * flash) + 0.15 * flash, 0, 1)
 
 
 def empire(f, zoom=1.0):
@@ -242,57 +241,77 @@ def mosaic_shot(f):
     return V.affine(img, z, 0)
 
 
-FAC_Q0 = np.float32([[1312, 868], [1432, 868], [1432, 918], [1312, 918]])   # lit window at facade frame 30
 _fac_H = None
+FACE = np.float32([[1000, 262], [1322, 222], [1600, 1080], [830, 1080]])   # tower face at facade frame 30
 
 
 def facade_tracks():
     global _fac_H
     if _fac_H is None:
         frames = [C("facade")[i] for i in range(len(C("facade")))]
-        Hs = V.planar_track(frames, (1150, 650, 450, 400), f0=30)
-        _fac_H = V.smooth_homographies(Hs, 2.0)
+        Hs = V.planar_track(frames, (880, 260, 650, 760), f0=30)
+        _fac_H = V.smooth_homographies(Hs, 2.5)
     return _fac_H
 
 
-def window_quad(i):
-    Hm = facade_tracks()[int(np.clip(i, 0, len(C("facade")) - 1))]
-    return cv2.perspectiveTransform(FAC_Q0[None], Hm)[0]
+def fac_pos(f):
+    return np.clip((f - 480) * 0.55 + 6, 0, len(C("facade")) - 1)
 
 
-def ui_company(f):
-    pos = max(f - 520, 0) * 1.0
-    return C("ui_co")[int(min(pos, len(C("ui_co")) - 1))]
+def facade(f):
+    return C("facade").at(fac_pos(f))
 
 
 def dive(f):
     """Empire aerial pushes down; a lit window region opens (portal) into the facade shot."""
     t = seg(f, 480, 512)
-    a = empire(f)
-    i = int(np.clip((f - 480) * 0.9 + 6, 0, len(C("facade")) - 1))
-    b = C("facade")[i]
-    return S.portal(a, b, np.clip(t * 1.25, 0, 1), (1010, 470), 26, smax=26, blur=0.3)
+    return S.portal(empire(f), facade(f), np.clip(t * 1.25, 0, 1), (1010, 470), 26, smax=26, blur=0.3)
 
 
-def window_reveal(f):
-    i = int(np.clip((f - 480) * 0.9 + 6, 0, len(C("facade")) - 1))
-    base = C("facade")[i]
-    q = window_quad(i)
-    ui = ui_company(f)
-    t = np.clip(seg(f, 512, 562), 0, 1)
-    out, q2 = S.quad_push(base, ui, q, t, smax=17)
-    # glass reflection of the facade on the window, fading as we pass the glass
-    refl = 0.18 * (1 - t)
-    return out * (1 - refl) + base * refl
+_ht = None
 
 
-def lockup(f):
-    """The interface's own landing page: halftone wordmark answering the pointer, headline set in the same face."""
-    t = np.clip(seg(f, 572, 600), 0, 1)
-    pos = (f - 560) * 1.4
-    img = C("ui_land")[int(min(pos, len(C("ui_land")) - 1))]
-    s = 1.18 - 0.12 * V.ease_out(t, 3)
-    return V.affine(img, s, 0, 0, -40, center=(960, 700))
+def lit_word(f):
+    """insidir written in the building's own windows: the halftone dots are mapped onto the tower face in
+    perspective, carried by the planar track, and switch on like office lights."""
+    global _ht
+    if _ht is None:
+        _ht = S.Halftone("insidir", 400, gap=11, seed=6)
+    reveal = V.ease_out(np.clip(seg(f, 524, 566), 0, 1), 2) * 1.08
+    dots = _ht.image(reveal, 0.05)
+    h, w = dots.shape
+    # a band across the face between 34% and 52% of its height, inset from both edges
+    def edge(a, b, t):
+        return FACE[a] + (FACE[b] - FACE[a]) * t
+    v0, v1 = 0.27, 0.49
+    L0, L1 = edge(0, 3, v0), edge(0, 3, v1)
+    R0, R1 = edge(1, 2, v0), edge(1, 2, v1)
+    ins = 0.05
+    quad = np.float32([L0 + (R0 - L0) * ins, R0 - (R0 - L0) * ins, R1 - (R1 - L1) * ins, L1 + (R1 - L1) * ins])
+    Hq = cv2.getPerspectiveTransform(np.float32([[0, 0], [w, 0], [w, h], [0, h]]), quad)
+    Ht = facade_tracks()[int(round(fac_pos(f)))]
+    # whole floors go dark: the band runs edge to edge across the face, a few floors taller than the word
+    F0, F1 = edge(0, 3, v0 - 0.03), edge(0, 3, v1 + 0.03)
+    G0, G1 = edge(1, 2, v0 - 0.03), edge(1, 2, v1 + 0.03)
+    floors = np.float32([F0, G0, G1, F1])
+    band = np.zeros((H, W), np.float32)
+    cv2.fillConvexPoly(band, cv2.perspectiveTransform(floors[None], Ht)[0].astype(np.int32), 1.0, cv2.LINE_AA)
+    band = cv2.GaussianBlur(band, (0, 0), 5)
+    return cv2.warpPerspective(dots, Ht @ Hq, (W, H), flags=cv2.INTER_AREA), band
+
+
+def tower(f):
+    img = facade(f)
+    t = np.clip(seg(f, 512, 600), 0, 1)
+    if f >= 524:
+        a, band = lit_word(f)
+        # those floors go dark first, then the word's windows switch on
+        dark = V.smooth(seg(f, 520, 532)) * 0.72
+        lights = V.smooth((img - 0.28) / 0.45)              # only the lit windows switch off; glass and mullions stay
+        img = img * (1 - band * dark * (0.25 + 0.75 * lights))
+        glow = cv2.GaussianBlur(a, (0, 0), 6) * 0.35
+        img = np.maximum(img, a * 0.97) + glow * (1 - img)
+    return V.affine(img, 1.0 + 0.22 * V.ease_io(t, 2), 0, -120 * V.ease_io(t, 2), 60 * V.ease_io(t, 2), center=(1230, 560))
 
 
 def frame(f):
@@ -320,19 +339,11 @@ def frame(f):
         img = mosaic_shot(f)
     elif f < 512:
         img = dive(f)
-    elif f < 566:
-        img = window_reveal(f)
     else:
-        t = seg(f, 566, 574)
-        if t < 1:
-            # logo-matched: push into the report's header logo, come out of the same logo on the landing page
-            img = S.portal(ui_company(f), lockup(f), t, (292, 34), 26, smax=9, blur=0.2, recentre=0.6)
-        else:
-            img = lockup(f)
+        img = tower(f)
     # impact shakes on the big hits
-    dx, dy, r = V.shake(f, [(30, 0.6), (90, 0.8), (120, 0.5), (240, 0.6), (300, 1.0), (480, 0.7), (525, 0.6)], amp=14)
-    if abs(dx) + abs(dy) > 0.3:
-        img = V.affine(img, 1.02, r, dx, dy)
+    dx, dy, r = V.shake(f, [(30, 0.6), (90, 0.8), (120, 0.5), (240, 0.6), (300, 1.0), (480, 0.7)], amp=14)
+    img = V.affine(img, 1.03, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.18).astype(np.float32)
 
 

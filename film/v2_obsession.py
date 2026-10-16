@@ -9,7 +9,7 @@
   420-480  the room rolls 180 degrees around him
   480-540  DROP. A figure walks into a doorway of light; the light becomes the 1958 NYSE floor
   540-675  accelerating chain of circle-matched transformations (dial, iris, hub, tunnel...) on 16th notes
-  675-750  the last circle opens onto Insidir: search, the company report, insider activity
+  675-750  the last iris opens back onto him; insidir assembles in ink on the glass hall behind him
 """
 import os
 import numpy as np
@@ -39,7 +39,6 @@ def C(name):
             "tunnel": (PIX + "d_tunnelrails25392.mp4", 2.0, 4.0, {}),
             "empire": (PIX + "f_empirestatedusk272511.mp4", 0.5, 4.0, {}),
             "ticker": (ARC + "ticker_tape_projection2_717.mp4", 0.0, 3.4, {}),
-            "ui": (UI + "/ui_discovery.mp4", 0.0, None, {"mix": (0.33, 0.34, 0.33)}),
         }[name]
         _c[name] = V.load(p, st, du, **kw)
     return _c[name]
@@ -276,21 +275,36 @@ def chain(f):
     return out
 
 
-# ------------------------------------------------------------------ 6. discovery
+# ------------------------------------------------------------------ 6. found it
 
-def ui(f):
-    clip = C("ui")
-    pos = (f - 668) * 1.0 * len(clip) / 82.0               # the captured search -> report -> insiders flow
-    return clip.at(np.clip(pos, 0, len(clip) - 1))
+END_SRC = 116          # walk-clip frame: he faces the lens
+_ht = None
+
+
+def finale(f, text=True):
+    global _ht
+    fr = C("walk")[END_SRC]
+    d = V.depth(fr, f"v2walk_{END_SRC}")
+    t = np.clip(seg(f, 675, 750), 0, 1)
+    cam = (0.0, -0.02 * t, 0.05 + 0.40 * V.ease_out(t, 2))      # one slow, steady push: the obsession resolved
+    img = V.reproject(fr, d, cam, f=1400, near=1.0, far=9.0)
+    if text and f >= 684:
+        if _ht is None:
+            _ht = S.Halftone("insidir", 400, gap=9, seed=12)
+        dz = V.reproject(d, d, cam, f=1400, near=1.0, far=9.0)
+        dots = _ht.image(V.ease_out(np.clip(seg(f, 684, 720), 0, 1), 2) * 1.08, 0.05)
+        k = 1 + 0.55 * V.ease_out(t, 2) / (SUBJ_Z - cam[2])          # set in the hall, behind him: scales with depth
+        a = V.place((H, W), dots, 960, 175, 0.70 * k)
+        a = a * (1 - V.depth_layer_mask(dz, 0.55, 0.05))              # he stands in front of it
+        img = img * (1 - a * 0.94)                                      # ink on the glass, light still through it
+    return img
 
 
 def discovery(f):
-    t = np.clip(seg(f, 675, 690), 0, 1)
-    a = chain(674)
-    b = ui(f)
+    t = np.clip(seg(f, 675, 692), 0, 1)
     if t < 1:
-        return S.portal(a, b, t, (W / 2, H / 2), 330, smax=5, blur=0.15, recentre=0)
-    return b
+        return S.portal(chain(674), finale(f), t, (W / 2, H / 2), 330, smax=5, blur=0.15, recentre=0)
+    return finale(f)
 
 
 def frame(f):
@@ -315,8 +329,7 @@ def frame(f):
     else:
         img = discovery(f)
     dx, dy, r = V.shake(f, [(480, 1.0), (512, 0.5), (540, 0.6), (FREEZE, 0.3), (675, 0.5)], amp=16)
-    if abs(dx) + abs(dy) > 0.3:
-        img = V.affine(img, 1.02, r, dx, dy)
+    img = V.affine(img, 1.03, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.2).astype(np.float32)
 
 
@@ -327,7 +340,8 @@ def prepare():
     V.depth(C("walk")[PAGE_SRC], f"v2walk_{PAGE_SRC}")
     V.depth(watch_centered(FREEZE - 165), "v2watch_freeze")
     eye_track()
-    for n in set(CHAIN) | {"door", "floor", "ui"}:
+    V.depth(C("walk")[END_SRC], f"v2walk_{END_SRC}")
+    for n in set(CHAIN) | {"door", "floor"}:
         C(n)
 
 
@@ -374,8 +388,6 @@ def score():
     mix.add(A.riser(T(135), 300, 9000), T(540), 0.4, bus="fx")
     mix.add(A.impact(2.6, 42, 0.5), T(675), 0.8, bus="fx")
     mix.add(A.shutter(), T(675), 0.6, bus="fx")
-    for k, c in enumerate("Tesla"):                                                           # keystrokes
-        mix.add(A.click(2600 + 300 * k, 0.015, 6), T(684 + k * 3), 0.35, bus="fx")
     mix.add(A.stab([A.note_hz(x) for x in ["C3", "Eb3", "G3", "Bb3"]], 2.0, 1500, 0.8), T(705), 0.45, bus="synth")
     mix.sidechain("bass", kicks)
     mix.sidechain("synth", kicks, 0.5)

@@ -127,3 +127,35 @@ def kinetic_word(base, word, size, cx, cy, t, disp=None, occl=None, weight=800, 
     if disp is not None:
         a = a * (1 - V.depth_layer_mask(disp, occl, 0.04))
     return base * (1 - a) + value * a, a
+
+
+class Halftone:
+    """The landing page's halftone wordmark: one dot per grid cell, sized by the letter's coverage. Every dot has
+    its own switch-on time, so the word can assemble dot by dot (lit windows, ink, lights) instead of fading in."""
+
+    def __init__(self, text="insidir", size=400, gap=9, seed=4):
+        ti = V.text_image(text, size, 800, -0.02)
+        h, w = ti.shape
+        cov = cv2.resize(cv2.GaussianBlur(ti, (0, 0), gap * 0.4), (w // gap, h // gap), interpolation=cv2.INTER_AREA)
+        rng = np.random.default_rng(seed)
+        self.labels = np.zeros((h, w), np.int32)
+        self.dots = np.zeros((h, w), np.float32)
+        on = [0.0]
+        k = 0
+        for (yy, xx), v in np.ndenumerate(cov):
+            if v > 0.05:
+                k += 1
+                c = (xx * gap + gap // 2, yy * gap + gap // 2)
+                r = max(1, int(gap * 0.5 * np.sqrt(v)))
+                cv2.circle(self.dots, c, r, 1.0, -1, cv2.LINE_AA)
+                cv2.circle(self.labels, c, r + 1, k, -1)
+                # left-to-right sweep with scatter, like a building's lights coming on floor by floor
+                on.append(0.65 * xx / cov.shape[1] + 0.35 * rng.random())
+        self.on = np.array(on, np.float32)
+        self.shape = (h, w)
+
+    def image(self, reveal, soft=0.06):
+        """Dot image with every dot whose switch-on time is below `reveal` lit (each eases on over `soft`)."""
+        k = np.clip((reveal - self.on) / soft, 0, 1)
+        k[0] = 0
+        return self.dots * k[self.labels]

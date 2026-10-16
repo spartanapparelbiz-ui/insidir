@@ -705,14 +705,30 @@ def finish(img, frame, grain=0.035, vig=0.32, halo=0.3, weave=0.0, rng=None):
     return np.clip(x, 0, 1)
 
 
-def shake(frame, hits, amp=18.0, decay=6.0, freq=19.0):
-    """Procedural camera shake from impact frames: returns (dx, dy, rot)."""
-    dx = dy = r = 0.0
+_shake_noise = None
+
+
+def _noise_track(n=4000, seed=21):
+    """Band-limited random walk (what a handheld/body-mounted camera actually does), three channels."""
+    global _shake_noise
+    if _shake_noise is None:
+        from scipy.ndimage import gaussian_filter1d
+        r = np.random.default_rng(seed).standard_normal((n, 3))
+        hi = gaussian_filter1d(r, 1.2, axis=0)            # jolt
+        lo = gaussian_filter1d(r[::-1], 6.0, axis=0) * 2.2  # sway
+        _shake_noise = (hi + lo) / np.std(hi + lo, axis=0)
+    return _shake_noise
+
+
+def shake(frame, hits, amp=18.0, decay=6.0, freq=19.0, base=1.2):
+    """Camera reaction: always-on subtle handheld drift plus noise jolts after impact frames that decay like a
+    real rig settling. Returns (dx, dy, rot)."""
+    N = _noise_track()
+    nz = N[int(frame) % len(N)]
+    e = 0.0
     for h0, a in hits:
         t = (frame - h0) / FPS
-        if 0 <= t < 0.8:
-            e = np.exp(-t * decay) * a
-            dx += amp * e * np.sin(2 * np.pi * freq * t + 0.3)
-            dy += amp * 0.7 * e * np.sin(2 * np.pi * freq * 1.31 * t + 1.1)
-            r += 0.35 * e * np.sin(2 * np.pi * freq * 0.77 * t)
-    return dx, dy, r
+        if 0 <= t < 1.0:
+            e += a * np.exp(-t * decay) * (1 - np.exp(-t * 60))
+    k = base / amp + e
+    return float(amp * k * nz[0]), float(amp * 0.7 * k * nz[1]), float(0.25 * k * nz[2])

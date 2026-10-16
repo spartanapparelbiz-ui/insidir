@@ -9,7 +9,7 @@ Every physical action triggers a transformation:
   255-300  newspaper presses: the paper web turns into a glass curtain wall; MONEY NEVER SLEEPS tracked onto it
   300-390  trading floors multiply on every beat: 4, 16, 64, 256, 1024 live panels
   390-465  the panels collapse into one enormous night skyline (photomosaic resolve)
-  465-540  insidir rises behind the skyline, occluded by the towers
+  465-540  insidir rises behind the skyline, occluded by the bridge and towers
 """
 import os
 import numpy as np
@@ -312,10 +312,6 @@ def reveal(f):
     occl = V.depth_layer_mask(d, 0.16, 0.05)                 # towers and the bridge stay in front
     a = a * (1 - occl) * np.clip(seg(f, 465, 470), 0, 1)
     out = img * (1 - a) + 0.95 * a
-    if f >= 505:
-        k = np.clip(seg(f, 505, 512), 0, 1)
-        tag = V.text_image("Know what moves a company.", 56, 500, 0.0)
-        out = out * (1 - V.place((H, W), tag, 960, 900, 1.0) * k) + V.place((H, W), tag, 960, 900, 1.0) * k * 0.92
     return out
 
 
@@ -344,8 +340,7 @@ def frame(f):
         img = reveal(f)
     hits = [(FREEZE, 1.0), (SLAM, 1.3), (200, 0.5), (255, 0.6), (300, 0.7), (315, 0.4), (330, 0.4), (345, 0.4), (360, 0.5), (465, 0.8)]
     dx, dy, r = V.shake(f, hits, amp=18)
-    if abs(dx) + abs(dy) > 0.3:
-        img = V.affine(img, 1.03, r, dx, dy)
+    img = V.affine(img, 1.03, r, dx, dy)
     return V.grade(np.asarray(img, np.float32), contrast=1.25).astype(np.float32)
 
 
