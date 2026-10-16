@@ -43,13 +43,26 @@ def main(pix, arc):
             c = Aa[k]
             lines.append(f"| {k} | {', '.join(sorted(u[k]))} | {c['what'][:90].replace('|', '/')} | {c['title']} ({c['year']}) | "
                          f"{str(c['license_evidence'])[:90].replace('|', '/')} | {c['archive_url']} |")
-    lines += ["", "## Insidir interface", "",
-              "Screen recordings of this repository's own website (`npm run web`), driven by Playwright in headless Chromium:",
-              "the landing page (halftone wordmark answering the pointer), the company report for NVDA, and the picker ->",
-              "Tesla report -> Insider activity flow. Prices and filings are live public data (Yahoo Finance delayed prices,",
-              "SEC EDGAR) as of the capture date, October 2026.", "",
-              "## Music and sound", "",
-              "Original. Every sound is synthesized in `lib/audio.py` (oscillators and filtered noise): no samples or loops.", "",
+    lines += ["",
+              "## Music", "",
+              "Real netlabel releases from the Internet Archive, time-stretched to 120 BPM (pitch preserved) and phase-locked to the",
+              "picture's beat grid. Licences as stated by each release.", "",
+              "| film | track | licence | source |", "|---|---|---|---|"]
+    picks = json.load(open(os.path.join(ROOT, "sources", "music_picks.json")))
+    for key, film in (("A", "V1"), ("B", "V2"), ("C", "V3")):
+        m = picks[key]["primary"]
+        lines.append(f"| {film} | \"{m['title']}\" by {m['artist']} ({m['label']}) | {m['license_url']} | {m['source_url']} |")
+    lines += ["", "## Sound effects", "",
+              "Real recordings from Freesound (CC0 or CC BY), credited below.", "",
+              "| sound | author | licence | page |", "|---|---|---|---|"]
+    sfx_used = set()
+    for f in FILMS:
+        sfx_used |= set(re.findall(r'cue\(mx, "([a-z_0-9]+)"', open(os.path.join(ROOT, f)).read()))
+    for e in json.load(open(os.path.join(ROOT, "sources", "sfx_manifest.json"))):
+        stem = os.path.splitext(os.path.basename(e["file"]))[0]
+        if stem in sfx_used:
+            lines.append(f"| {e['title'][:60].replace('|', '/')} | {e['author']} | {e['license']} | {e['pageUrl']} |")
+    lines += ["",
               "## Type", "", "JetBrains Mono (SIL Open Font License), converted from the site's own font files.", ""]
     open(os.path.join(ROOT, "SOURCES.md"), "w").write("\n".join(lines))
     print("wrote SOURCES.md:", sum(1 for k in P if k in u), "Pixabay,", sum(1 for k in Aa if k in u), "archive clips")

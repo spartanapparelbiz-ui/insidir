@@ -65,16 +65,62 @@ its licence. No footage was AI-generated. The films grade everything to black an
 | wall_street_1920_139 | V3 | Wall Street 1920 (Paul Strand): pedestrians walking past the huge dark windows of the J.P. | Manhatta (Paul Strand & Charles Sheeler) (1921) | archive.org item licenseurl http://creativecommons.org/publicdomain/zero/1.0/ (CC0); film  | https://archive.org/details/Manhatta |
 | wall_street_flags_1921_112 | V1, V3 | Looking down Wall Street 1921 with large US flags hanging from facades, pedestrians and tr | New York City, Regional Geography, Volume V (Ford Educational Library) (1921) | archive.org item licenseurl https://creativecommons.org/publicdomain/mark/1.0/ (Public Dom | https://archive.org/details/fc-fc-942 |
 
-## Insidir interface
+## Music
 
-Screen recordings of this repository's own website (`npm run web`), driven by Playwright in headless Chromium:
-the landing page (halftone wordmark answering the pointer), the company report for NVDA, and the picker ->
-Tesla report -> Insider activity flow. Prices and filings are live public data (Yahoo Finance delayed prices,
-SEC EDGAR) as of the capture date, October 2026.
+Real netlabel releases from the Internet Archive, time-stretched to 120 BPM (pitch preserved) and phase-locked to the
+picture's beat grid. Licences as stated by each release.
 
-## Music and sound
+| film | track | licence | source |
+|---|---|---|---|
+| V1 | "Arf" by Raptom Snig (Yarn Audio [YARN022]) | http://creativecommons.org/licenses/by/4.0/ | https://archive.org/details/yarn022 |
+| V2 | "Climax" by Insanity Circle (Monofonicos [MNF036]) | https://creativecommons.org/licenses/by-sa/4.0/ | https://archive.org/details/MNF036_Insanity_Circle--Itinerario_Nocturno |
+| V3 | "Vidom" by Raptom Snig (Yarn Audio [YARN022]) | http://creativecommons.org/licenses/by/4.0/ | https://archive.org/details/yarn022 |
 
-Original. Every sound is synthesized in `lib/audio.py` (oscillators and filtered noise): no samples or loops.
+## Sound effects
+
+Real recordings from Freesound (CC0 or CC BY), credited below.
+
+| sound | author | licence | page |
+|---|---|---|---|
+| Heavy Rain in the City | EduFigueres | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/EduFigueres/sounds/539332/ |
+| Rain, Car Interior, A.wav | InspectorJ | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/InspectorJ/sounds/400402/ |
+| One car passing by | JPBILLINGSLEYJR | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/JPBILLINGSLEYJR/sounds/465397/ |
+| Passing Car (Wet road) | Breviceps | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Breviceps/sounds/462862/ |
+| Nissan Maxima burnout (04-25-2009).wav | audible-edge | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/audible-edge/sounds/71740/ |
+| Tires Squeaking.aif | RutgerMuller | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/RutgerMuller/sounds/104026/ |
+| rbh NYC subway pass.wav | RHumphries | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/RHumphries/sounds/1933/ |
+| Elevator Movement and Ding.wav | maxmaxmaxmaxmaxmaxmax | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/maxmaxmaxmaxmaxmaxmax/sounds/439432/ |
+| World Trade Center during wind storm | xzuma | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/xzuma/sounds/336803/ |
+| Wind_blowing_gusting_through_french_castle_tower.wav | Astounded | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/Astounded/sounds/483479/ |
+| CANAL_STREET_NEW_YORK_A011.wav | G_M_D_THREE | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/G_M_D_THREE/sounds/424404/ |
+| Glass Smash.wav | chewiesmissus | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/chewiesmissus/sounds/244238/ |
+| Ticking Clock, A.wav | InspectorJ | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/InspectorJ/sounds/343130/ |
+| Antique Pocket Watch Ticking and Winding | apintofmild | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/apintofmild/sounds/847217/ |
+| Four Heartbeats HQ_BeatSmith.wav | Lunardrive | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Lunardrive/sounds/22416/ |
+| heart beat.mp3 | greyseraphim | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/greyseraphim/sounds/21409/ |
+| paper_toss.wav | themfish | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/themfish/sounds/45827/ |
+| dorm door opening.wav | pagancow | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/pagancow/sounds/15419/ |
+| Gate-Heavy-OpenClose-WAV.wav | Omnisis | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Omnisis/sounds/336888/ |
+| Floor_trading5.wav | fugacious | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/fugacious/sounds/146321/ |
+| Phone Hang Up Hard.MP3 | FunWithSound | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/FunWithSound/sounds/361154/ |
+| Vintage Telephone Hanging Up | crz1990 | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/crz1990/sounds/135902/ |
+| Bell System Ringer Model 687A (8-70).wav | FreqMan | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/FreqMan/sounds/20069/ |
+| Big Block V8 Rev.mp3 | Henaway | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Henaway/sounds/127980/ |
+| printing press machine start running slow and fast various h | kyles | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/kyles/sounds/405009/ |
+| Ticker Tape Machine FF652.aif | martinimeniscus | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/martinimeniscus/sounds/199484/ |
+| Vintage Camera Flash Powder and Shutter | Werra | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Werra/sounds/232130/ |
+| Camera Shutter, Fast, A.wav | InspectorJ | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/InspectorJ/sounds/360329/ |
+| Small metal bridge creaking and squeaking as it moves up and | Kranhytt | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/Kranhytt/sounds/672693/ |
+| Bang/Explosion Metallic | Werra | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/Werra/sounds/244394/ |
+| Cinematic Impact | deleted_user_3277771 | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/deleted_user_3277771/sounds/177242/ |
+| Stick-Swoosh Whoosh  | Hitrison | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/Hitrison/sounds/216675/ |
+| Woosh | lebaston100 | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/lebaston100/sounds/264438/ |
+| Reverse Cymbal Crash Sweep | Alastair_Pursloe | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/Alastair_Pursloe/sounds/134941/ |
+| Reverse Crash Cymbal Projection | deleted_user_7146007 | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/deleted_user_7146007/sounds/383903/ |
+| crash1_reverse.wav | Halleck | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/Halleck/sounds/30938/ |
+| SUB A# 2 secs.wav | uzerx | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/uzerx/sounds/63138/ |
+| Braam | unfa | https://creativecommons.org/publicdomain/zero/1.0/ | https://freesound.org/people/unfa/sounds/647712/ |
+| "BRAAAM" Cinematic Horn 88200Hz | steaq | https://creativecommons.org/licenses/by/4.0/ | https://freesound.org/people/steaq/sounds/581842/ |
 
 ## Type
 

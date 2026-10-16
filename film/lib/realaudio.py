@@ -106,17 +106,57 @@ class Mixer:
         for f in frames:
             t0 = f / FPS
             d = tt - t0
-            shape = np.where(d < 0, np.exp(d / attack), np.exp(-d / release))
+            shape = np.where(d < 0, np.exp(np.maximum(d, -1) / attack), np.exp(-np.maximum(d, 0) / release))
             env = np.minimum(env, 1 - g * shape)
         self.bus(bus)[:] *= env
 
-    def master(self, ceiling_db=-1.0, drive=1.3):
+    def master(self, lufs=-11.0, ceiling_db=-1.6):
         out = sum(self.buses.values())
-        out = signal.sosfilt(signal.butter(2, 28, "high", fs=SR, output="sos"), out)
-        peak = np.abs(out).max() + 1e-9
-        out = out / peak * drive
-        out = np.tanh(out) / np.tanh(drive)                      # gentle bus saturation / limiting
-        return (out * 10 ** (ceiling_db / 20)).astype(np.float32)
+        out = signal.sosfilt(signal.butter(2, 28, "high", fs=SR, output="sos"), out).astype(np.float32)
+        for _ in range(3):                                  # loudness-normalise, then limit, re-measure
+            out = out * 10 ** ((lufs - integrated_lufs(out)) / 20)
+            out = limit(out, ceiling_db)
+        return out
+
+
+def integrated_lufs(x):
+    """ITU-R BS.1770 integrated loudness (K-weighting, 400 ms blocks, absolute and relative gates)."""
+    pre = signal.sosfilt(np.array([[1.53512485958697, -2.69169618940638, 1.19839281085285, 1.0, -1.69065929318241,
+                                    0.73248077421585]]), x)
+    k = signal.sosfilt(np.array([[1.0, -2.0, 1.0, 1.0, -1.99004745483398, 0.99007225036621]]), pre)
+    blk, hop = int(0.4 * SR), int(0.1 * SR)
+    ms = np.array([np.mean(k[:, i:i + blk] ** 2, axis=1).sum() for i in range(0, k.shape[1] - blk, hop)])
+    l = -0.691 + 10 * np.log10(ms + 1e-12)
+    g = ms[l > -70]
+    rel = -0.691 + 10 * np.log10(g.mean() + 1e-12) - 10
+    g = g[(-0.691 + 10 * np.log10(g + 1e-12)) > rel]
+    return float(-0.691 + 10 * np.log10(g.mean() + 1e-12))
+
+
+def limit(x, ceiling_db=-1.0, look=0.005, release=0.08):
+    """Look-ahead brickwall limiter: gain = ceiling/peak, minimum over the look-ahead window, smoothed release."""
+    from scipy.ndimage import minimum_filter1d
+    c = 10 ** (ceiling_db / 20)
+    pk = np.abs(x).max(axis=0)
+    g = np.minimum(1.0, c / np.maximum(pk, 1e-9))
+    n = int(look * SR)
+    g = minimum_filter1d(g, 2 * n + 1)
+    a = np.exp(-1 / (release * SR))
+    return (x * _release(g.astype(np.float64), a)).astype(np.float32)
+
+
+from numba import njit
+
+
+@njit(cache=True)
+def _release(g, a):
+    out = np.empty_like(g)
+    cur = 1.0
+    for i in range(len(g)):                             # instant attack (already looked ahead), smooth release
+        v = g[i]
+        cur = v if v < cur else a * cur + (1 - a) * v
+        out[i] = cur
+    return out
 
 
 def music_pick(film):
@@ -134,3 +174,40 @@ def cue(mx, name, frame, gain_db=0.0, src=0.0, length=None, hit=None, bus="sfx",
     x = x[:, i:]
     hh = (h if h else src) if hit is None else hit
     mx.put(x, frame=frame, gain_db=gain_db, hit=hh - src, length=length, bus=bus, **kw)
+
+
+def grid_phase(mus, after_frame):
+    """Seconds to shift the music so its kick-driven beats (measured after `after_frame`) sit on the beat grid."""
+    import librosa
+    lo = signal.sosfilt(signal.butter(4, 120, "low", fs=SR, output="sos"), mus.mean(0))
+    i0 = int(after_frame / FPS * SR)
+    env = librosa.onset.onset_strength(y=lo[i0:], sr=SR, hop_length=128)
+    _, beats = librosa.beat.beat_track(onset_envelope=env, sr=SR, hop_length=128, start_bpm=BPM, tightness=400,
+                                       units="time")
+    if len(beats) < 4:
+        return 0.0
+    beat = 60 / BPM
+    ph = ((beats + i0 / SR) % beat) / beat * 2 * np.pi
+    mean = np.angle(np.mean(np.exp(1j * ph)))            # circular mean phase of the beats
+    return float(-mean / (2 * np.pi) * beat)
+
+
+def build(module, film_key, src_time, frame, music_from=None, fade_in=0.02, music_db=-1.5, duck_db=-6.0):
+    """Full score: the film's music pick conformed to the grid (src_time lands on frame), silent before
+    music_from (frame) with a fade, the module's recorded SFX cues, music ducked under the big hits."""
+    secs = module.N_FRAMES / FPS
+    p = music_pick(film_key)
+    mus = conform(p["file"], p["bpm"], src_time, frame, secs, music_db)
+    shift = grid_phase(mus, frame)                       # phase-lock the kicks to the 15-frame grid
+    if abs(shift) > 0.002:
+        mus = conform(p["file"], p["bpm"], src_time, frame + shift * FPS, secs, music_db)
+    if music_from is not None:
+        t = np.arange(mus.shape[1]) / SR - music_from / FPS
+        mus *= np.clip(t / max(fade_in, 1e-3), 0, 1)
+    k = int(0.25 * SR)                                   # tail: let the last bar breathe out
+    mus[:, -k:] *= np.linspace(1, 0.15, k)
+    mx = Mixer(secs)
+    mx.bus("music")[:] += mus
+    module.cues(mx)
+    mx.duck("music", module.HITS_BIG, duck_db)
+    return mx.master()

@@ -1,0 +1,157 @@
+{
+ "A": {
+  "primary": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/A_primary_RaptomSnig_Arf_125bpm_Fmin.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/A_primary_RaptomSnig_Arf_125bpm_Fmin_excerpt.wav",
+   "artist": "Raptom Snig",
+   "title": "Arf",
+   "label": "Yarn Audio [YARN022]",
+   "source_url": "https://archive.org/details/yarn022",
+   "file_url": "https://archive.org/download/yarn022/01-Raptom_Snig-Arf.mp3",
+   "license_url": "http://creativecommons.org/licenses/by/4.0/",
+   "attribution": "\"Arf\" by Raptom Snig (Yarn Audio [YARN022]), licensed http://creativecommons.org/licenses/by/4.0/",
+   "bpm": 125.0,
+   "key": "F minor",
+   "first_downbeat_s": 0.02,
+   "recommended_start_s": 211.22,
+   "excerpt_duration_s": 20,
+   "drop_times_s": [
+    218.9
+   ],
+   "drop_offsets_in_excerpt_s": [
+    7.68
+   ],
+   "lufs_full_track": -9.5,
+   "lufs_excerpt": -10.4,
+   "notes": "Kick cut ~203.0s (hats/percs continue = tension), full kick slam on downbeat 218.90 (+7.68s into excerpt). Driving 4/4 after."
+  },
+  "backup": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/A_backup_Cyanea_Compas_130bpm.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/A_backup_Cyanea_Compas_130bpm_excerpt.wav",
+   "artist": "Cyanea",
+   "title": "Compas",
+   "label": "Monofonicos [MNF045]",
+   "source_url": "https://archive.org/details/MNF045_Cyanea--Strepto_Sonaris",
+   "file_url": "https://archive.org/download/MNF045_Cyanea--Strepto_Sonaris/02_Cyanea_-_Compas.mp3",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "\"Compas\" by Cyanea (Monofonicos [MNF045]), licensed https://creativecommons.org/licenses/by-sa/4.0/",
+   "bpm": 130.0,
+   "key": "D (low confidence)",
+   "first_downbeat_s": 0.0,
+   "recommended_start_s": 110.77,
+   "excerpt_duration_s": 20,
+   "drop_times_s": [
+    118.15
+   ],
+   "drop_offsets_in_excerpt_s": [
+    7.38
+   ],
+   "lufs_full_track": -9.9,
+   "lufs_excerpt": -10.8,
+   "notes": "Kick out ~104-118s with rising hats/filter build; kick returns 118.15 (+7.38s). Alt: Das Boogie - Caribbean Vibes (tek03, CC BY-SA 2.5, 125bpm, drop 299.54, excerpt -7.6 LUFS) in cand/."
+  }
+ },
+ "B": {
+  "primary": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/B_primary_InsanityCircle_Climax_130bpm_Cmin.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/B_primary_InsanityCircle_Climax_130bpm_Cmin_excerpt.wav",
+   "artist": "Insanity Circle",
+   "title": "Climax",
+   "label": "Monofonicos [MNF036]",
+   "source_url": "https://archive.org/details/MNF036_Insanity_Circle--Itinerario_Nocturno",
+   "file_url": "https://archive.org/download/MNF036_Insanity_Circle--Itinerario_Nocturno/04_Insanity_Circle_-_Climax.mp3",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "\"Climax\" by Insanity Circle (Monofonicos [MNF036]), licensed https://creativecommons.org/licenses/by-sa/4.0/",
+   "bpm": 130.0,
+   "key": "C minor",
+   "first_downbeat_s": 1.32,
+   "recommended_start_s": 126.86,
+   "excerpt_duration_s": 25,
+   "drop_times_s": [
+    137.94,
+    147.7
+   ],
+   "drop_offsets_in_excerpt_s": [
+    11.08,
+    20.84
+   ],
+   "lufs_full_track": -12.0,
+   "lufs_excerpt": -12.7,
+   "notes": "Long kickless breakdown 104-137.9s made of repeated riser sweeps (tension); full kick slam 137.94 (+11.08s = 6 bars); second lift (hats/top end in) ~147.7 (+20.8s)."
+  },
+  "backup": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/B_backup_AFM_BlackStrings_125bpm_Cmin.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/B_backup_AFM_BlackStrings_125bpm_Cmin_excerpt.wav",
+   "artist": "AFM",
+   "title": "Black Strings",
+   "label": "Monofonicos [MNF033]",
+   "source_url": "https://archive.org/details/MNF033_AFM--Sometimes_EP",
+   "file_url": "https://archive.org/download/MNF033_AFM--Sometimes_EP/04_AFM_-_Black_Strings.mp3",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "\"Black Strings\" by AFM (Monofonicos [MNF033]), licensed https://creativecommons.org/licenses/by-sa/4.0/",
+   "bpm": 125.0,
+   "key": "C minor",
+   "first_downbeat_s": 0.0,
+   "recommended_start_s": 172.79,
+   "excerpt_duration_s": 25,
+   "drop_times_s": [
+    184.31
+   ],
+   "drop_offsets_in_excerpt_s": [
+    11.52
+   ],
+   "lufs_full_track": -10.7,
+   "lufs_excerpt": -12.2,
+   "notes": "Section 154-184s is filtered/sparse kick pulses (ticking tension); full beat drop 184.31 (+11.52s = 6 bars)."
+  }
+ },
+ "C": {
+  "primary": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/C_primary_RaptomSnig_Vidom_128bpm.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/C_primary_RaptomSnig_Vidom_128bpm_excerpt.wav",
+   "artist": "Raptom Snig",
+   "title": "Vidom",
+   "label": "Yarn Audio [YARN022]",
+   "source_url": "https://archive.org/details/yarn022",
+   "file_url": "https://archive.org/download/yarn022/02-Raptom_Snig-Vidom.mp3",
+   "license_url": "http://creativecommons.org/licenses/by/4.0/",
+   "attribution": "\"Vidom\" by Raptom Snig (Yarn Audio [YARN022]), licensed http://creativecommons.org/licenses/by/4.0/",
+   "bpm": 128.0,
+   "key": "G (low confidence)",
+   "first_downbeat_s": 0.0,
+   "recommended_start_s": 206.25,
+   "excerpt_duration_s": 18,
+   "drop_times_s": [
+    206.25
+   ],
+   "drop_offsets_in_excerpt_s": [
+    0.0
+   ],
+   "lufs_full_track": -10.9,
+   "lufs_excerpt": -10.1,
+   "notes": "Relentless 4/4 with dense hats from 205.9s; 2-bar kick cut 202.5-206.25 then slam on 206.25. Start 202.5 instead to open with the cut->slam."
+  },
+  "backup": {
+   "file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/C_backup_Dsum_Temptation_131bpm.mp3",
+   "excerpt_file": "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/music/C_backup_Dsum_Temptation_131bpm_excerpt.wav",
+   "artist": "Dsum",
+   "title": "Temptation",
+   "label": "Monofonicos [MNF045]",
+   "source_url": "https://archive.org/details/MNF045_Cyanea--Strepto_Sonaris",
+   "file_url": "https://archive.org/download/MNF045_Cyanea--Strepto_Sonaris/05_Dsum_-_Temptation.mp3",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "\"Temptation\" by Dsum (Monofonicos [MNF045]), licensed https://creativecommons.org/licenses/by-sa/4.0/",
+   "bpm": 131.0,
+   "key": "A# / Bb (low confidence)",
+   "first_downbeat_s": 1.13,
+   "recommended_start_s": 100.07,
+   "excerpt_duration_s": 18,
+   "drop_times_s": [],
+   "drop_offsets_in_excerpt_s": [],
+   "lufs_full_track": -9.4,
+   "lufs_excerpt": -9.3,
+   "notes": "Non-stop rolling kick/bass from 0s to ~285s with no breakdown; any bar-aligned start works (bars at 1.13 + n*1.832s). Darker/less bright top than Vidom."
+  }
+ },
+ "_notes": "BPMs from comb-fit of low-band onsets (integer DAW tempos). Drop times = measured kick re-entry (authoritative sync points); first_downbeat is drop-time modulo bar length and may drift a few ms. Keys estimated by chroma/Krumhansl. All licenses verified from archive.org item metadata licenseurl. CC BY-SA requires attribution + share-alike of the music itself."
+}

@@ -435,3 +435,8 @@ def cues(mx):
 
 
 HITS_BIG = [FREEZE, SLAM, 250, 465]
+
+
+def score():                                     # music: Raptom Snig - Vidom (CC BY 4.0), slam on the phone slam
+    from lib import realaudio as R
+    return R.build(__import__(__name__), "C", 206.25, SLAM, music_from=FREEZE, fade_in=0.01)

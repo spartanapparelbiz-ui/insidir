@@ -426,3 +426,8 @@ def cues(mx):
 
 
 HITS_BIG = [FREEZE, 345, 480, 675]
+
+
+def score():                                     # music: Insanity Circle - Climax (CC BY-SA 4.0), drop on the doorway
+    from lib import realaudio as R
+    return R.build(__import__(__name__), "B", 137.94, 480, music_from=150, fade_in=1.2)

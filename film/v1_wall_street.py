@@ -444,3 +444,8 @@ def cues(mx):
 
 
 HITS_BIG = [30, 90, 120, 228, 300, 480, 523]
+
+
+def score():                                     # music: Raptom Snig - Arf (CC BY 4.0), kick returns on the car window
+    from lib import realaudio as R
+    return R.build(__import__(__name__), "A", 218.90, 90, music_from=0, fade_in=0.4)
