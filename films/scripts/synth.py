@@ -159,6 +159,46 @@ def mouse_click(): return tick(4200, .02, .0015) * .8
 def keyclick(): return tick(3800, .025, .002) * .6 + bp(noise(.025), 600, 2500) * np.exp(-T(.025) / .004) * .5
 def heartbeat(): return np.tanh(lp(kick(.7, .4, 90, 38), 300) * 1.4)
 
+
+# ---- voices & foley for the 3D films
+VOWELS = [(730, 1090), (270, 2290), (530, 1840), (570, 840), (300, 870), (660, 1700), (440, 1020)]
+def voice(d, f0, seed, shout=False):
+    """A babbling voice: a glottal pulse train through two formants that change every syllable."""
+    rr = np.random.default_rng(seed); t = T(d); n = len(t)
+    f = f0 * (1 + .06 * np.sin(2 * np.pi * (.5 + rr.random()) * t) + (.25 if shout else 0) * np.sin(np.pi * np.clip(t / d, 0, 1)))
+    ph = np.cumsum(f) / SR; src = (ph % 1) * 2 - 1 + rr.standard_normal(n) * .08
+    out = np.zeros(n); seg = int(SR / (4 + rr.random() * 3)); i = 0
+    while i < n:
+        j = min(n, i + seg); F1, F2 = VOWELS[rr.integers(len(VOWELS))]
+        if rr.random() < .82:
+            x = bp(src[i:j], F1 * .8, F1 * 1.25) + bp(src[i:j], F2 * .85, F2 * 1.15) * .6
+            out[i:j] += x * np.hanning(j - i)
+        i = j
+    return np.tanh(out * (3 if shout else 1.5)) * (1.4 if shout else 1)
+def crowd(d, n=26, seed=1, shouts=4, level=1.):
+    rr = np.random.default_rng(seed); out = np.zeros(int(d * SR))
+    for k in range(n):
+        v = voice(d, 95 + rr.random() * 120, seed * 100 + k) * (.3 + rr.random() * .5)
+        sh = int(rr.random() * .3 * SR); out[sh:] += v[:len(out) - sh]
+    for k in range(shouts):
+        st = rr.random() * max(.01, d - .5); dd = min(d - st, .4 + rr.random() * .6)
+        v = voice(dd, 170 + rr.random() * 90, seed * 1000 + k, shout=True); i = int(st * SR); out[i:i + len(v)] += v[:len(out) - i] * .9
+    return lp(hp(out, 120), 5000) / max(1, n ** .5) * 2.2 * level
+def footstep(heavy=1.):
+    t = T(.18); return np.tanh(lp(noise(.18), 300) * np.exp(-t / .03) * 2 * heavy + bp(noise(.18), 1500, 6000) * np.exp(-t / .012) * .6)
+def engine(d, f=38):
+    t = T(d); x = saw(f, d) + saw(f * 1.5, d) * .4 + sine(f / 2, d)
+    return lp(x, 220) * (1 + .2 * np.sin(2 * np.pi * 3 * t)) * .35
+def tires(d): return bp(noise(d), 700, 5500) * .25 * (1 + .3 * np.sin(2 * np.pi * .7 * T(d)))
+def creak(d=.5, f=90):
+    t = T(d); fr = f * (1 + .4 * np.sin(2 * np.pi * 1.3 * t)); ph = np.cumsum(fr) / SR
+    pulses = (np.diff(np.floor(ph), prepend=0) > 0).astype(float)
+    return bp(pulses, 300, 2800) * adsr(len(t), .05, .1) * 2.5
+def hinge(): return creak(.7, 70) * .8
+def thunk():
+    t = T(.2); x = lp(noise(.2), 500) * np.exp(-t / .02) * 2; c = tick(1200, .05, .006) * .4; x[:len(c)] += c
+    return np.tanh(x)
+
 def pluck(f, d=.25, cutoff=2400, decay=.18):
     x = saw(f, d) + saw(f, d, .006) * .7
     return lp(x, cutoff) * np.exp(-T(d) / decay) * adsr(int(d * SR), .002, .02)
@@ -242,24 +282,25 @@ def film1():
     rg = np.ones(len(r)); i0, i1 = int(b(28) * SR), int(b(36) * SR); rg[i0:i1] = .3; rg = lp(rg, 8, 1)
     sfx.add(0, r * rg, .42)
     sfx.add(b(8) - .09, shutter(), .9); sfx.add(b(17) - .09, shutter(), .9)
-    cut_sfx = {8: "phone", 9: "flap", 10: "ticker", 11: "press", 12: "watch", 13: "flap", 14: "press", 15: "ticker", 16: "watch", 16.5: "phone"}
+    sfx.add(0, engine(b(8)) * np.linspace(.3, 1, int(b(8) * SR)), .55); sfx.add(b(5), tires(b(3)), .7, .3)   # the sedan
+    cut_sfx = {8: "phone", 9: "floor", 10: "ticker", 11: "press", 12: "floor", 13: "shout", 14: "press", 15: "ticker", 16: "floor", 16.5: "slam"}
     for k, kind in cut_sfx.items():
         t = b(k); dur = B if k != 16 else B / 2
         if kind == "phone": sfx.add(t + .13, phone_clack(), .8, -.2); sfx.add(t, phone_bell(.35), .22, .3)
-        if kind == "flap": sfx.add(t, clatter(dur, 22, 3000), .55, .2)
+        if kind in ("floor", "shout"): sfx.add(t - .05, crowd(dur + .15, 22, int(k * 10), 3 if kind == "floor" else 1), .9, .1)
+        if kind == "shout": sfx.add(t + .05, voice(dur * .9, 210, 77, shout=True), .7, .2)
+        if kind == "slam": sfx.add(t + .06, phone_clack(), 1.0); sfx.add(t + .06, paper_slam(), .4)
         if kind == "ticker": sfx.add(t, clatter(dur, 14, 1800, .1), .6, -.2)
         if kind == "press":
             for s in range(4): sfx.add(t + s * B / 4, press_thump(), .5)
             sfx.add(t, bp(noise(dur), 300, 2500) * .25, .6)
-        if kind == "watch":
-            for s in range(int(dur * 8)): sfx.add(t + s / 8, tick(4200, .02, .0015), .5)
     sfx.add(b(22), paper(.5), .6, .2)                               # page under the lamp
     for k in (25, 26, 27): sfx.add(b(k), shutter(), .45); sfx.add(b(k), paper(.25, 1.2), .35)
     sfx.add(b(25), riser(b(28) - b(25), 400, 7000), .22)
     sfx.add(b(28), room(b(36) - b(28)), 1.0)                         # the silence has air in it
     sfx.add(b(28) + .45, pen(1.05), .7, .1)                          # the pen underlines the line
     sfx.add(b(34) - .1, whoosh(.9), .35)                             # pull back
-    sfx.add(b(36), impact(.8, 55, .5), .5); sfx.add(b(36) + 1.0, pen(.3), .35)
+    sfx.add(b(36), impact(.8, 55, .5), .5)
     sfx.add(b(39) + .62, tick(5000, .03, .002), .4)                  # dots lock into the wordmark
     s = sfx.stereo()
     return m, s, 1.0, .85
@@ -302,12 +343,23 @@ def film2():
     for s in (21, 22, 23): sfx.add(s, clock_tick(s % 2 == 1), .4, -.1)
     sfx.add(0, room(D), 1.0)
     # pencil taps on beats in the document scene
-    for t in (5.0, 5.5, 6.0, 6.5, 7.0, 9.0): sfx.add(t + .25, tick(2200, .03, .003), .35, .3)
+    # his footsteps down the office, one every 0.725 m of the walk
+    for k in range(1, 9):
+        d_ = k * .725
+        if d_ > 5.9: break
+        lo, hi = 0., 4.3
+        for _ in range(30):   # walk distance is 5.9 * (t / 4.3); steps fall where it crosses each stride
+            mid = (lo + hi) / 2
+            if 5.9 * (mid / 4.3) < d_: lo = mid
+            else: hi = mid
+        sfx.add(lo, footstep(.9), .55, (-1) ** k * .15)
+    sfx.add(4.35, creak(.6, 80), .45); sfx.add(4.9, thunk(), .35)                       # he sits
     for t in (5.0, 6.0, 7.0, 8.5, 9.0): sfx.add(t, paper(.3, .8), .35)
     sfx.add(7.5, pen(.3), .6); sfx.add(9.5, pen(.3), .6)
     for s in range(4): sfx.add(8.0 + s / 8, tick(4500, .02, .0015), .45)
     # investigation
-    for t in (10.0, 10.5, 11.0, 13.0): sfx.add(t + .05, highlight_squeak(.35), .55, .15)
+    for t in (10.0, 10.5, 11.5, 12.5): sfx.add(t + .05, highlight_squeak(.35), .55, .15)
+    sfx.add(13.0, creak(.4, 110), .35)
     for t in (11.5, 12.0, 13.5, 14.25, 14.5, 15.0, 15.5): sfx.add(t, paper(.22, 1.1), .4)
     sfx.add(12.45, pen(.3), .5, -.4); sfx.add(12.5, pen(.3), .5, .4)
     for s in range(6): sfx.add(14.0 + s / 24, tick(5200, .015, .001), .45)
@@ -316,8 +368,7 @@ def film2():
     # silence, then one low pulse under the realization
     sfx.add(16.0, impact(1.8, 38, .6), .6); sfx.add(18.5, heartbeat(), .45)
     # the product, the link, the source
-    sfx.add(21.0, impact(.6, 60, .35), .5); sfx.add(21.9, whoosh(.4), .25)
-    sfx.add(22.35, mouse_click(), .7); sfx.add(22.7, paper(.4), .6); sfx.add(22.7, shutter(), .4)
+    sfx.add(21.0, hinge(), .5); sfx.add(21.72, thunk(), .3); sfx.add(21.75, impact(.6, 60, .35), .35)
     sfx.add(23.3, impact(1.6, 42), .9)
     sfx.add(24.88, np.concatenate([tick(2800, .06, .004) * 1.4, np.zeros(10)]), 1.0)   # the last, sharp click
     return m, sfx.stereo(), .95, .9
@@ -362,18 +413,20 @@ def film3():
     m = gate(m, quiet0, quiet1, .003)
     # ---- sound design
     sfx.add(0, impact(1.2, 50), .7)
-    sfx.add(0, clatter(q(1.5), 26, 3000), .45, .2)
+    for a_, b_ in ((0, q(1.5)), (q(3), q(6.5)), (q(12), q(13)), (q(15), q(16.5)), (q(20.5), q(22))): sfx.add(a_, crowd(b_ - a_ + .1, 28, int(a_ * 100) + 3, 5), 1.0, .1)
+    sfx.add(q(3) + .25, voice(.8, 230, 991, shout=True), .9, .1)
     sfx.add(q(1.5) + .05, phone_clack(), 1.0); sfx.add(q(1.5) + .05, paper_slam(), .5)
     sfx.add(q(3), impact(1.0, 55), .8)
-    sfx.add(q(4.5), clatter(q(2), 16, 1800, .1), .5, -.2)
     sfx.add(q(6.5) - .06, shutter(), .9); sfx.add(q(15) - .06, shutter(), .9)
     for k in range(4): sfx.add(q(6.5) + k * q(.25), press_thump(), .45)
     sfx.add(q(7.5), whoosh(.45), .4)
-    sfx.add(q(8.5), clatter(q(.5), 16, 1800), .5); sfx.add(q(9), clatter(q(.5), 26, 3000), .5)
+    sfx.add(q(8.5), clatter(q(.5), 16, 1800), .5)
+    for k in range(10): sfx.add(q(9) + k * .09, footstep(.6), .35, (-1) ** k * .3)
+    sfx.add(q(9), traffic(q(1.5)) + tires(q(1.5)), .5)
     sfx.add(q(9.5), whoosh(.4), .35)
     for k in range(2): sfx.add(q(10.5) + k * q(.25), press_thump(), .45)
-    sfx.add(q(11), phone_bell(.4), .3, .3); sfx.add(q(11) + .1, phone_clack(), .6)
-    sfx.add(q(12) + .16, paper_slam(), 1.0)
+    sfx.add(q(13), phone_bell(.4), .3, .3); sfx.add(q(13) + .1, phone_clack(), .6)
+    sfx.add(q(11) + .16, paper_slam(), 1.0)
     for s in range(4): sfx.add(q(14) + s / 8, tick(4200, .02, .0015), .5)
     sfx.add(q(15), paper(.6, .7), .6)
     sfx.add(q(18), impact(.8, 60, .7), .7); sfx.add(q(22), impact(.8, 52, .8), .8)
@@ -387,8 +440,8 @@ def film3():
     sfx.add(quiet0, room(quiet1 - quiet0), 1.2)
     sfx.add(quiet0 + 1.4, pen(1.0), .45, .1)
     vo = read_wav("audio/vo/vo_f3.wav")
-    voice = Bus(D); voice.add(quiet0 + .0, vo, 1.0)
-    v = reverb(voice.stereo(), .8, .12, 3500)
+    vbus = Bus(D); vbus.add(quiet0 + .0, vo, 1.0)
+    v = reverb(vbus.stereo(), .8, .12, 3500)
     # product: three cuts and the mark
     sfx.add(quiet1, impact(1.2, 44), 1.0); sfx.add(quiet1, shutter(), .6)
     sfx.add(q(34.5), shutter(), .6); sfx.add(q(35.5), shutter(), .6)
