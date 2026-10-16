@@ -10,6 +10,7 @@ import { query as dbQuery } from "./db.mjs";
 import { currentUser } from "./auth.mjs";
 import { billingSettings } from "./config.mjs";
 import { accessSummary } from "./paywall.mjs";
+import { recordFirstPaidInvoice } from "./creator-program.mjs";
 
 const failure = (status, message, extra = {}) => Object.assign(new Error(message), { status }, extra);
 
@@ -358,7 +359,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     let event;
     try { event = JSON.parse(raw); } catch { throw failure(400, "Invalid webhook payload"); }
     const supported = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
-      "customer.subscription.paused", "customer.subscription.resumed"];
+      "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid"];
     if (!supported.includes(event?.type) || typeof event.id !== "string") return json(res, 200, { received: true });
     const fresh = await query("INSERT INTO stripe_events(event_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING event_id", [event.id]);
     if (!fresh.rows.length) return json(res, 200, { received: true, duplicate: true });
@@ -371,6 +372,16 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         await cancelOrphanCheckout(obj, ref, { stripe, query });
       }
       if (event.type.startsWith("customer.subscription.")) await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      if (event.type === "invoice.paid" && obj.billing_reason === "subscription_create") {
+        // Re-read Stripe to verify that the customer's actual subscription is active
+        // on Insidir's exact Price, not just any invoice marked paid.
+        const plans = /^cus_[A-Za-z0-9]+$/.test(String(obj.customer||""))
+          ? await listCustomerSubscriptions(obj.customer,{stripe}) : [];
+        const active = pickSubscription(plans.filter(sub => sub.status === "active"), settings.priceId);
+        const invoiceSub = obj.subscription || obj.parent?.subscription_details?.subscription;
+        if (active && (!invoiceSub || invoiceSub === active.id))
+          await recordFirstPaidInvoice(obj,{query,verifiedPlan:true});
+      }
     } catch (e) {
       // Let Stripe retry: forget the event so the retry is processed.
       await query("DELETE FROM stripe_events WHERE event_id=$1", [event.id]);

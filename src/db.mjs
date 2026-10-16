@@ -38,6 +38,8 @@ export async function migrate() {
     await client.query(mediaSchema);
     const ownersSchema=await readFile(new URL("../sql/008_filing_owners.sql",import.meta.url),"utf8");
     await client.query(ownersSchema);
+    const creatorsSchema=await readFile(new URL("../sql/009_creator_referrals.sql",import.meta.url),"utf8");
+    await client.query(creatorsSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

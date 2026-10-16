@@ -216,6 +216,12 @@
       if (invalid) { invalid.focus(); return; }
 
       const body = { email: fields.email.value.trim(), password: fields.password.value };
+      if(mode==="register") {
+        try {
+          const r=JSON.parse(localStorage.getItem("insidir:creator-ref")||"null");
+          if(r && r.until>Date.now() && /^[a-z0-9][a-z0-9_-]{2,39}$/.test(r.code))body.ref=r.code;
+        } catch (_) { /* storage unavailable */ }
+      }
       const path = mode === "register" ? "/v1/auth/register" : "/v1/auth/login";
       setPending(true);
 
