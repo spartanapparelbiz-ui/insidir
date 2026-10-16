@@ -1,5 +1,11 @@
 # Insidir — three black-and-white VFX films
 
+**Instagram Reels (9:16, 1080×1920)**: `media/films/insidir_reel_01_wall_street_after_dark.mp4`,
+`insidir_reel_02_the_obsession.mp4`, `insidir_reel_03_money_never_sleeps.mp4`. Each says, in a few short
+captions, what Insidir is: insiders must report their own trades to the SEC (Form 4); those filings are public but
+mostly unread; Insidir reads them and shows you. Slogans, flashes and shakes were removed; captions sit above
+Instagram's bottom UI. The 16:9 versions below are the earlier cut.
+
 | file | length | music |
 |---|---|---|
 | `media/films/insidir_01_wall_street_after_dark.mp4` | 20 s, 600 frames | dark house, 120 BPM |
