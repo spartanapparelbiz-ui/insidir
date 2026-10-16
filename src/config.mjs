@@ -7,7 +7,7 @@ export const config = Object.freeze({
   allowSignup: process.env.ALLOW_SIGNUP === "1",
   cookieSecure: process.env.COOKIE_SECURE !== "0",
   origins: new Set((process.env.ALLOWED_ORIGINS || "").split(",").map(v => v.trim()).filter(Boolean)),
-  maxPerRun: Math.min(100, Math.max(1, Number(process.env.SEC_MAX_FILINGS_PER_RUN || 35))),
+  maxPerRun: Math.min(100, Math.max(1, Number(process.env.SEC_MAX_FILINGS_PER_RUN || 100))),
   timeoutMs: Math.min(30000, Math.max(4000, Number(process.env.SEC_TIMEOUT_MS || 15000))),
   brokerageConnectEnabled: process.env.BROKERAGE_CONNECT_ENABLED === "1",
   snaptradeOAuthClientId: process.env.SNAPTRADE_OAUTH_CLIENT_ID || "",

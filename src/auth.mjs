@@ -1,4 +1,4 @@
-import { randomBytes, createHash, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, createHash, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { config } from "./config.mjs";
 import { query } from "./db.mjs";
@@ -65,15 +65,24 @@ export async function register(email,password) {
     return {user,token,account};
   }catch(err){if(err.code==="23505")throw Object.assign(new Error("An account with this email already exists"),{status:409});throw err}
 }
+let decoy=null;
+const decoyHash=()=>decoy||(decoy=hashPassword(randomUUID()));
 export async function login(email,password) {
   const e=typeof email==="string"?email.trim().toLowerCase():"";
   const bad=Object.assign(new Error("Invalid email or password"),{status:401});
   if(!e || !password)throw bad;
   const res=await query("SELECT id,email,password_hash,subscription_status,current_period_end FROM users WHERE email=$1",[e]);
-  if(!res.rows[0] || !await verifyPassword(password,res.rows[0].password_hash))throw bad;
+  // An unknown email still costs one scrypt verification, so response time does not reveal which emails have accounts.
+  if(!res.rows[0]){await verifyPassword(password,await decoyHash());throw bad}
+  if(!await verifyPassword(password,res.rows[0].password_hash))throw bad;
   const {password_hash,...account}=res.rows[0];
   const user={id:account.id,email:account.email};
   return {user,token:await newSession(user.id),account};
+}
+export async function passwordMatches(userId,password) {
+  if(typeof password!=="string" || !password || password.length>1024)return false;
+  const r=await query("SELECT password_hash FROM users WHERE id=$1",[userId]);
+  return !!r.rows[0] && await verifyPassword(password,r.rows[0].password_hash);
 }
 export function checkOrigin(req) {
   const origin=req.headers.origin;

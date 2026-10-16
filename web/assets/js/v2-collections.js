@@ -7,6 +7,9 @@ if(!["companies","filings","watchlist"].includes(kind))return;
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clean=v=>{let t=String(v??"").trim().toUpperCase();return /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(t)?t:"";};
 const d=v=>{if(!v)return "—";let x=new Date(v);return Number.isNaN(x.getTime())?"—":new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(x)};
+/* Filing timestamps are shown on the SEC's calendar day (America/New_York): a Form 4 accepted at 9:30 p.m. ET was filed that day,
+   though it is already past midnight UTC. Date-only values (trade and report dates) stay in UTC. */
+const filed=v=>{if(!v)return "—";let x=new Date(v);return Number.isNaN(x.getTime())?"—":new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"}).format(x)};
 const sec=v=>{try{const u=new URL(String(v));return u.protocol==="https:"&&(u.hostname==="sec.gov"||u.hostname==="www.sec.gov")&&!u.username&&!u.password?u.toString():""}catch{return ""}};
 const a=(url,label)=>'<a href="'+E(url)+'">'+E(label)+'</a>';
 const src=(url,label)=>{const u=sec(url);return u?'<a href="'+E(u)+'" target="_blank" rel="noopener noreferrer">'+E(label)+' ↗</a>':"Source not provided"};
@@ -25,9 +28,9 @@ async function request(path,options={}){
 function render(){
  const html=all.map(x=>{
   const t=clean(x.ticker);
-  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(x.issuer_name||"Reported issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(d(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
-  if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(x.issuer_name||"Reporting issuer"))+'<span class="cl-muted">'+E(x.issuer_name||"")+'</span></div></div></td><td>'+E(x.form_type||"Form 4")+(x.is_amendment?" · amended":"")+'</td><td>'+E(d(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
-  return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(d(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
+  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(x.issuer_name||"Reported issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+E(filed(x.published_at))+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
+  if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(x.issuer_name||"Reporting issuer"))+'<span class="cl-muted">'+E(x.issuer_name||"")+'</span></div></div></td><td>'+E(x.form_type||"Form 4")+(x.is_amendment?" · amended":"")+'</td><td>'+E(filed(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
+  return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(filed(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
  }).join("");
  const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.": "No companies match this search in the imported dataset.";
  tbody.innerHTML=html||'<tr><td class="cl-empty" colspan="4">'+empty+'</td></tr>';

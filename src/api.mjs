@@ -4,13 +4,13 @@ import { config,secReady } from "./config.mjs";
 import { query,health } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
-import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin } from "./auth.mjs";
+import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin,passwordMatches } from "./auth.mjs";
 import { serveStatic } from "./web.mjs";
 import { billingRoutes,createStripeClient,deleteAccount } from "./billing.mjs";
 import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavailablePage } from "./paywall.mjs";
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
-import { handleCompanyRoute } from "./company-routes.mjs";
+import { handleCompanyRoute,clientAddress } from "./company-routes.mjs";
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
@@ -24,6 +24,9 @@ function isLimited(key,limit=15,windowMs=15*60*1000){
   if(!v || v.until<=now){hits.set(key,{count:1,until:now+windowMs});return false}
   v.count++;return v.count>limit;
 }
+// Read-only check, and a separate counter, so only failed attempts spend the allowance.
+function atLimit(key,limit){const v=hits.get(key);return !!v && v.until>Date.now() && v.count>=limit}
+function countFailure(key,windowMs=15*60*1000){isLimited(key,Infinity,windowMs)}
 function json(res,status,body,headers={}) {
   res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",
     "X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin",
@@ -356,7 +359,7 @@ async function route(req,res,ctx){
     if(category && !["reported_purchase","reported_sale","other"].includes(category))throw failure(400,"Invalid category");
     const rows=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
       JOIN sec_filings f ON f.accession=t.accession
-      WHERE ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
+      WHERE f.ingest_status='parsed' AND ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
     await withJointOwners(rows.rows,query,await hasFilingOwners(query));
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
@@ -454,15 +457,21 @@ async function route(req,res,ctx){
   }
   if(m==="POST"||m==="DELETE"){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
-    const ip=req.socket.remoteAddress||"unknown";
+    // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
+    const ip=clientAddress(req);
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password);
       return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
-      if(isLimited("login:"+ip,12))throw failure(429,"Too many login attempts");
-      const x=await body(req),r=await login(x.email,x.password);
+      const x=await body(req),who=typeof x?.email==="string"?x.email.trim().toLowerCase().slice(0,320):"";
+      // Only failed attempts count: per client address and per account, so one network cannot lock everyone out
+      // and nobody can guess at one account from many addresses.
+      if(atLimit("login-ip:"+ip,30) || (who && atLimit("login-email:"+who,10)))throw failure(429,"Too many failed sign-in attempts. Wait 15 minutes and try again.");
+      let r;
+      try{r=await login(x.email,x.password)}
+      catch(e){if(e?.status===401){countFailure("login-ip:"+ip);if(who)countFailure("login-email:"+who)}throw e}
       return json(res,200,{user:r.user,access:accessSummary(r.account,ctx.env)},{"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/logout" && m==="POST"){
@@ -471,6 +480,9 @@ async function route(req,res,ctx){
     if(p==="/v1/me" && m==="DELETE"){
       const user=await requireUser(req,ctx);
       if(isLimited("delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
+      // Deleting an account needs the account's password as well as the session, so a borrowed or stolen session cannot do it.
+      const confirm=await body(req);
+      if(!await passwordMatches(user.id,confirm?.password))throw failure(403,"That password is not correct, so nothing was deleted.");
       // Cancel a live Stripe subscription FIRST (nothing is deleted if Stripe cannot confirm it),
       // then revoke an active brokerage grant, then remove the account and its data.
       const result=await deleteAccount(user,{query,stripe:ctx.stripe||createStripeClient({secretKey:billingSettings(ctx.env).secretKey}),
@@ -551,6 +563,9 @@ export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
   return createServer((req,res)=>{route(req,res,ctx).catch(error=>{
+    // A database that can't be reached is an outage, not a bug: answer 503 with a retry hint instead of 500.
+    const dbDown=!error?.status&&(/^(ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENOTFOUND|57P0[1-3]|08\d\d\d|53300)$/.test(String(error?.code||""))||/Connection terminated|timeout exceeded when trying to connect/i.test(String(error?.message||"")));
+    if(dbDown){console.error("API database unavailable",error?.code||error?.message);if(!res.headersSent)return json(res,503,{error:"Insidir is temporarily unavailable. Try again shortly."},{"Retry-After":"30"});return res.end();}
     const status=Number(error?.status)||500;
     // 503s carry deliberate, user-safe service messages (e.g. SEC data temporarily unavailable).
     if(status>=500&&status!==503)console.error("API error",error);

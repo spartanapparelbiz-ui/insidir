@@ -605,3 +605,6 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
 }
 }
 /* end @layer insidir-v13 */
+/* Long reporting-person and company names wrap inside the feed instead of pushing the row wider than the screen. */
+body.v13 .rd-feed__l1>a[data-ent],body.v13 .rd-feed__l1>.rd-who>a[data-ent]{white-space:normal!important;overflow-wrap:anywhere!important;min-width:0!important}
+body.v13 :is(.rd-fl__name,.rd-sg__name){min-width:0!important}

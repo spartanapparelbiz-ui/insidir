@@ -144,6 +144,21 @@ export async function syncCustomer(customerId, { stripe, query = dbQuery, priceI
   return storeSubscriptions(customerId, await listCustomerSubscriptions(customerId, { stripe }), { query, priceId });
 }
 
+/* Reconciliation: accounts still marked active or trialing whose paid period ended more than an hour ago are
+ * re-read from Stripe. A renewed subscription gets its new period end; a cancelled or unpaid one gets its real status.
+ * This keeps access right even when webhooks were missed. Returns counts; one failing customer does not stop the rest. */
+export async function reconcileLapsed({ stripe, query = dbQuery, priceId = billingSettings().priceId, limit = 200 } = {}) {
+  const due = await query(`SELECT stripe_customer_id FROM users WHERE stripe_customer_id IS NOT NULL
+    AND subscription_status IN ('active','trialing') AND current_period_end IS NOT NULL
+    AND current_period_end < now() - interval '1 hour' ORDER BY current_period_end LIMIT $1`, [limit]);
+  let synced = 0, failed = 0;
+  for (const { stripe_customer_id: id } of due.rows) {
+    try { await syncCustomer(id, { stripe, query, priceId }); synced++; }
+    catch (e) { failed++; console.error(JSON.stringify({ event: "billing.reconcile_failed", customer: id, error: String(e?.message || e) })); }
+  }
+  return { checked: due.rows.length, synced, failed };
+}
+
 /* Expires a customer's open Checkout pages, so none of them can start a subscription later
  * (after the account is deleted, or next to a newer checkout). Returns how many it expired.
  * Throws (503) unless Stripe confirms that no checkout for the customer is still open. */

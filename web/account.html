@@ -21,6 +21,12 @@
 <section class="v3-account__panel"><p class="v3-eyebrow">04 / Privacy</p><h2>Your data, your choice</h2><p>Read how Aethric LLC handles Insidir account data, and ask us about anything the controls here don't cover.</p><div class="v3-account__actions"><a class="v3-account__button" href="privacy.html" data-hf-atom>Privacy policy →</a><a class="v3-account__text" href="mailto:hello@aethric.llc" data-hf-atom>hello@aethric.llc</a></div></section>
 </div>
 <section class="v3-account__danger" data-hf-reveal><div><p class="v3-eyebrow">Account deletion</p><h2>Delete your account</h2><p>Deleting your account first cancels any Insidir subscription with Stripe, so no further payments are taken; if Stripe can't confirm the cancellation, nothing is deleted. It then revokes any read-only brokerage connection and removes your login, every session, your watchlist, research journal, followed people and manually entered holdings. This cannot be undone.</p></div><button type="button" id="account-delete" data-hf-atom disabled>Delete account</button></section>
+<form id="account-delete-form" class="v3-account__confirm" hidden novalidate>
+ <p>Enter your password to permanently delete <strong id="account-delete-email">this account</strong>. Any subscription is cancelled with Stripe first. This cannot be undone.</p>
+ <label for="account-delete-password">Password</label>
+ <div class="v3-account__confirm-row"><input id="account-delete-password" type="password" autocomplete="current-password" required maxlength="1024">
+ <button type="submit" id="account-delete-confirm">Delete permanently</button><button type="button" id="account-delete-cancel">Keep my account</button></div>
+</form>
 <p id="account-delete-feedback" role="status" aria-live="polite" class="v3-account__hint"></p>
 </main>
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">

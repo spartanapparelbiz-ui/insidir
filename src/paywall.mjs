@@ -89,9 +89,20 @@ export function classifyApi(pathname, method = "GET") {
 
 const statusOf = row => String(row?.subscription_status ?? row?.subscriptionStatus ?? "").trim().toLowerCase();
 
-// A Stripe subscription in good standing.
-export function subscriptionActive(row) {
-  return ACCESS_STATUSES.includes(statusOf(row));
+// Stripe moves current_period_end forward at every renewal (webhook, then the six-hourly reconciliation in
+// billing.mjs). A status still marked active more than PERIOD_GRACE_MS after the period it paid for has gone stale,
+// for example if webhooks stopped arriving after a cancellation, so it no longer grants access.
+export const PERIOD_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+export function periodLapsed(row, now = Date.now()) {
+  const end = row?.current_period_end ?? row?.currentPeriodEnd;
+  if (end == null || end === "") return false;
+  const t = (end instanceof Date ? end : new Date(end)).getTime();
+  return Number.isFinite(t) && t > 0 && t + PERIOD_GRACE_MS < now;
+}
+
+// A Stripe subscription in good standing, within the period it has paid for.
+export function subscriptionActive(row, now = Date.now()) {
+  return ACCESS_STATUSES.includes(statusOf(row)) && !periodLapsed(row, now);
 }
 
 export function isComplimentary(email, env = process.env) {

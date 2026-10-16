@@ -1018,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = $("cx-alert");
     b.disabled = true;
     try { if (state.watch !== true) await addToWatchlist(); location.href = "alerts.html?ticker=" + encodeURIComponent(state.ticker); }
-    catch (e) { if (e.status === 401) return signIn(); note("watch", "Alert could not be set: " + e.message); }
+    catch (e) { if (e.status === 401) return signIn(); note("watch", "Filing tracking could not be turned on: " + e.message); }
     finally { b.disabled = false; renderWatch(); }
   });
   $("cx-share").addEventListener("click", async () => {

@@ -7,8 +7,9 @@
 const $=id=>document.getElementById(id);
 const HINT="insidir:signed-in";
 const forget=()=>{try{localStorage.removeItem(HINT)}catch(_){/* storage unavailable */}};
-async function req(path,method="GET"){
- const r=await fetch(path,{method,credentials:"same-origin",headers:{Accept:"application/json"}});
+async function req(path,method="GET",payload){
+ const r=await fetch(path,{method,credentials:"same-origin",headers:{Accept:"application/json",...(payload?{"Content-Type":"application/json"}:{})},
+  ...(payload?{body:JSON.stringify(payload)}:{})});
  let data;try{data=await r.json()}catch{throw Object.assign(Error(""),{status:r.status})}
  if(!r.ok){const e=Error(typeof data?.error==="string"?data.error:"");e.status=r.status;throw e;}return data;
 }
@@ -58,22 +59,29 @@ document.addEventListener("DOMContentLoaded",async()=>{
    if(e.status===401){forget();$("account-signin").hidden=false;$("account-signout").hidden=true;}
  }
  $("account-signout").addEventListener("click",async()=>{try{await req("/v1/auth/logout","POST");forget();location.assign("signin.html");}catch(e){$("account-status").textContent=e.message||"We couldn't sign you out just now. Please try again.";}});
- $("account-delete").addEventListener("click",async()=>{
-  const out=$("account-delete-feedback");
+ const form=$("account-delete-form"),pw=$("account-delete-password"),out=$("account-delete-feedback");
+ $("account-delete").addEventListener("click",()=>{
+  out.classList.remove("is-error");out.textContent="";
+  $("account-delete-email").textContent=$("account-email").textContent||"this account";
+  form.hidden=false;$("account-delete").hidden=true;pw.value="";pw.focus();
+ });
+ $("account-delete-cancel").addEventListener("click",()=>{
+  form.hidden=true;$("account-delete").hidden=false;pw.value="";out.classList.remove("is-error");out.textContent="Nothing was changed.";$("account-delete").focus();
+ });
+ form.addEventListener("submit",async ev=>{
+  ev.preventDefault();
   out.classList.remove("is-error");
-  if(!confirm("Permanently delete your Insidir account? Any subscription will be cancelled with Stripe and your saved research removed. This cannot be undone."))return;
-  const answer=prompt('To confirm, type DELETE in capital letters:');
-  if(answer!=="DELETE"){out.textContent="Account deletion cancelled. Nothing was changed.";return;}
-  const button=$("account-delete");button.disabled=true;
+  if(!pw.value){deleteFailed("Enter your password to delete the account.");pw.focus();return;}
+  const button=$("account-delete-confirm");button.disabled=true;
   out.textContent="Cancelling any subscription and deleting your account…";
-  try{await req("/v1/me","DELETE");forget();location.assign("account-deleted.html");}
+  try{await req("/v1/me","DELETE",{password:pw.value});pw.value="";forget();location.assign("account-deleted.html");}
   catch(e){
-   // The engine explains what happened (e.g. Stripe couldn't confirm the cancellation); show it as is.
+   // The engine explains what happened (a wrong password, or Stripe couldn't confirm the cancellation); show it as is.
    const server=e instanceof TypeError?"":String(e.message||"").trim();
    deleteFailed(e instanceof TypeError?"We couldn't reach Insidir, so your account was not deleted. Check your connection and try again."
     :e.status===401?"Your session has ended, so nothing was deleted. Log in again to delete your account."
     :server?server.replace(/([^.!?])$/,"$1."):"Your account was not deleted and nothing was changed. Please try again, or email hello@aethric.llc.");
-   button.disabled=false;
+   button.disabled=false;pw.select();
   }
  });
 });
