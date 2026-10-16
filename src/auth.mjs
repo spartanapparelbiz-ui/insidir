@@ -2,6 +2,7 @@ import { randomBytes, createHash, scrypt as scryptCallback, timingSafeEqual } fr
 import { promisify } from "node:util";
 import { config } from "./config.mjs";
 import { query } from "./db.mjs";
+import { normalizeReferralCode } from "./creator-program.mjs";
 const scrypt=promisify(scryptCallback);
 const ttl=14*86400;
 export function getCookie(req,name="insidir_sid") {
@@ -54,13 +55,24 @@ export async function revokeSession(req) {
   const token=getCookie(req);
   if(token && /^[a-f0-9]{64}$/.test(token))await query("DELETE FROM sessions WHERE token_hash=$1",[digest(token)]);
 }
-export async function register(email,password) {
+export async function register(email,password,referralCode=null) {
   if(!config.allowSignup)throw Object.assign(new Error("Account registration is not enabled"),{status:403});
   const e=typeof email==="string"?email.trim().toLowerCase():"";
   if(!/^[^@\s]{1,100}@[^@\s]{1,150}\.[^@\s]{2,20}$/.test(e))throw Object.assign(new Error("Invalid email"),{status:400});
   const hash=await hashPassword(password);
   try{
-    const result=await query("INSERT INTO users(email,password_hash) VALUES($1,$2) RETURNING id,email,subscription_status,current_period_end",[e,hash]);
+    const code=normalizeReferralCode(referralCode);
+    const result=code?await query(`WITH u AS (
+      INSERT INTO users(email,password_hash) VALUES($1,$2)
+      RETURNING id,email,subscription_status,current_period_end
+    ), tracked AS (
+      INSERT INTO creator_referrals(user_id,creator_id)
+      SELECT u.id,p.id FROM u JOIN creator_partners p
+        ON p.code=$3 AND p.status='approved'
+        AND (p.contact_email IS NULL OR lower(p.contact_email)<>$1)
+      ON CONFLICT DO NOTHING RETURNING user_id
+    ) SELECT id,email,subscription_status,current_period_end FROM u`,[e,hash,code])
+      :await query("INSERT INTO users(email,password_hash) VALUES($1,$2) RETURNING id,email,subscription_status,current_period_end",[e,hash]);
     const account=result.rows[0],user={id:account.id,email:account.email},token=await newSession(user.id);
     return {user,token,account};
   }catch(err){if(err.code==="23505")throw Object.assign(new Error("An account with this email already exists"),{status:409});throw err}
