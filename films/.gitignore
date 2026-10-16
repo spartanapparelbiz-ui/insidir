@@ -6,3 +6,6 @@ audio/*.wav
 audio/vo/*.wav
 audio/vo/vo_f3_raw.wav
 cine/node_modules/
+stock/*.mp4
+stock/sheets/
+archive/

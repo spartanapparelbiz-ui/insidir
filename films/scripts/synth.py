@@ -282,14 +282,15 @@ def film1():
     rg = np.ones(len(r)); i0, i1 = int(b(28) * SR), int(b(36) * SR); rg[i0:i1] = .3; rg = lp(rg, 8, 1)
     sfx.add(0, r * rg, .42)
     sfx.add(b(8) - .09, shutter(), .9); sfx.add(b(17) - .09, shutter(), .9)
-    sfx.add(0, engine(b(8)) * np.linspace(.3, 1, int(b(8) * SR)), .55); sfx.add(b(5), tires(b(3)), .7, .3)   # the sedan
-    cut_sfx = {8: "phone", 9: "floor", 10: "ticker", 11: "press", 12: "floor", 13: "shout", 14: "press", 15: "ticker", 16: "floor", 16.5: "slam"}
+    sfx.add(b(5), tires(b(3)), .55, .3)   # taxis through the rain
+    cut_sfx = {8: "phone", 9: "floor", 10: "press", 11: "floor", 12: "watch", 13: "shout", 14: "press", 15: "floor", 16: "watch", 16.5: "floor"}
     for k, kind in cut_sfx.items():
         t = b(k); dur = B if k != 16 else B / 2
         if kind == "phone": sfx.add(t + .13, phone_clack(), .8, -.2); sfx.add(t, phone_bell(.35), .22, .3)
         if kind in ("floor", "shout"): sfx.add(t - .05, crowd(dur + .15, 22, int(k * 10), 3 if kind == "floor" else 1), .9, .1)
         if kind == "shout": sfx.add(t + .05, voice(dur * .9, 210, 77, shout=True), .7, .2)
-        if kind == "slam": sfx.add(t + .06, phone_clack(), 1.0); sfx.add(t + .06, paper_slam(), .4)
+        if kind == "watch":
+            for s_ in range(int(dur * 8)): sfx.add(t + s_ / 8, tick(4200, .02, .0015), .5)
         if kind == "ticker": sfx.add(t, clatter(dur, 14, 1800, .1), .6, -.2)
         if kind == "press":
             for s in range(4): sfx.add(t + s * B / 4, press_thump(), .5)
@@ -343,23 +344,14 @@ def film2():
     for s in (21, 22, 23): sfx.add(s, clock_tick(s % 2 == 1), .4, -.1)
     sfx.add(0, room(D), 1.0)
     # pencil taps on beats in the document scene
-    # his footsteps down the office, one every 0.725 m of the walk
-    for k in range(1, 9):
-        d_ = k * .725
-        if d_ > 5.9: break
-        lo, hi = 0., 4.3
-        for _ in range(30):   # walk distance is 5.9 * (t / 4.3); steps fall where it crosses each stride
-            mid = (lo + hi) / 2
-            if 5.9 * (mid / 4.3) < d_: lo = mid
-            else: hi = mid
-        sfx.add(lo, footstep(.9), .55, (-1) ** k * .15)
-    sfx.add(4.35, creak(.6, 80), .45); sfx.add(4.9, thunk(), .35)                       # he sits
+    for k in range(18): sfx.add(3.0 + k * .105 + (k % 3) * .012, keyclick(), .55, .1)   # he types
+    sfx.add(5.0, paper(.45, 1.1), .6)                                                    # the page comes out of the typewriter
     for t in (5.0, 6.0, 7.0, 8.5, 9.0): sfx.add(t, paper(.3, .8), .35)
     sfx.add(7.5, pen(.3), .6); sfx.add(9.5, pen(.3), .6)
     for s in range(4): sfx.add(8.0 + s / 8, tick(4500, .02, .0015), .45)
     # investigation
-    for t in (10.0, 10.5, 11.5, 12.5): sfx.add(t + .05, highlight_squeak(.35), .55, .15)
-    sfx.add(13.0, creak(.4, 110), .35)
+    for t in (10.0, 11.0): sfx.add(t + .05, highlight_squeak(.35), .55, .15)
+    sfx.add(10.5, pen(.45), .7); sfx.add(13.0, pen(.45), .7)
     for t in (11.5, 12.0, 13.5, 14.25, 14.5, 15.0, 15.5): sfx.add(t, paper(.22, 1.1), .4)
     sfx.add(12.45, pen(.3), .5, -.4); sfx.add(12.5, pen(.3), .5, .4)
     for s in range(6): sfx.add(14.0 + s / 24, tick(5200, .015, .001), .45)
@@ -368,7 +360,8 @@ def film2():
     # silence, then one low pulse under the realization
     sfx.add(16.0, impact(1.8, 38, .6), .6); sfx.add(18.5, heartbeat(), .45)
     # the product, the link, the source
-    sfx.add(21.0, hinge(), .5); sfx.add(21.72, thunk(), .3); sfx.add(21.75, impact(.6, 60, .35), .35)
+    sfx.add(21.0, impact(.6, 60, .35), .5); sfx.add(21.9, whoosh(.4), .25)
+    sfx.add(22.35, mouse_click(), .7); sfx.add(22.7, paper(.4), .6); sfx.add(22.7, shutter(), .4)
     sfx.add(23.3, impact(1.6, 42), .9)
     sfx.add(24.88, np.concatenate([tick(2800, .06, .004) * 1.4, np.zeros(10)]), 1.0)   # the last, sharp click
     return m, sfx.stereo(), .95, .9
@@ -426,7 +419,7 @@ def film3():
     sfx.add(q(9.5), whoosh(.4), .35)
     for k in range(2): sfx.add(q(10.5) + k * q(.25), press_thump(), .45)
     sfx.add(q(13), phone_bell(.4), .3, .3); sfx.add(q(13) + .1, phone_clack(), .6)
-    sfx.add(q(11) + .16, paper_slam(), 1.0)
+    sfx.add(q(11) + .1, paper(.5, 1.1), .9)
     for s in range(4): sfx.add(q(14) + s / 8, tick(4200, .02, .0015), .5)
     sfx.add(q(15), paper(.6, .7), .6)
     sfx.add(q(18), impact(.8, 60, .7), .7); sfx.add(q(22), impact(.8, 52, .8), .8)

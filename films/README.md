@@ -1,56 +1,53 @@
 # Insidir — three black-and-white films
 
-| File | Length | Tempo | Identity |
+| File | Length | Tempo | Story |
 | --- | --- | --- | --- |
-| `insidir_city_never_sleeps.mp4` | 20 s | 128 BPM, F minor | Night. Anamorphic 2.39 letterbox, rain, a lamp-lit desk. Dark hypnotic house. |
-| `insidir_one_who_looked_closer.mp4` | 25 s | 120 BPM, D minor | Dawn. Full frame, blind light, a wall clock that ticks on every other beat. Minimal analog arpeggio. |
-| `insidir_price_of_information.mp4` | 18 s | 130 BPM, E | Hard light. Shake on impacts, 0.11–0.46 s cuts, slam captions, a calm voice in silence. Big-beat bass. |
+| `insidir_city_never_sleeps.mp4` | 20 s | 128 BPM, F minor | Night, rain, 2.39 letterbox. A drone push between Manhattan towers, rain in a Times Square puddle. A beat-cut montage of the real NYSE floor, newspaper presses, a telephone lifted, watches. A man working alone late, hands on the keyboard, a pen under the lamp. The real Form 4, one line underlined. The same trade in Insidir. |
+| `insidir_one_who_looked_closer.mp4` | 25 s | 120 BPM, D minor | A 1950 newsroom. One deskman at his typewriter under the wall clock pulls the page and reads it closely, pencil in hand. His reading is cut against the real Form 4 being marked. Silence on his face, then the line. The trade in Insidir, then the source. |
+| `insidir_price_of_information.mp4` | 18 s | 130 BPM, E | Straight onto the 1960s NYSE floor, a receiver slammed down, a man facing the lens. Presses, ticker boards, 1945 New York crowds, towers. Old and new cut faster and faster. Then silence: one hand on one page, a calm voice, the real Form 4, three cuts of the product, the mark. |
 
-All three are 1920×1080, 30 fps, H.264 High + AAC 320 kbps, graded to strict monochrome with animated grain in the final encode.
+All three are 1920×1080, 30 fps, H.264 High plus AAC 320 kb/s, strict monochrome (chroma flat at 128) with grain.
 
-## What is real
+## Footage: real people, real objects
 
-- **The filing.** Every document shot is the SEC's own rendering of a real Form 4: NVIDIA director Mark A. Stevens, accession
-  `0001199039-26-000016`, filed 09/22/2026. Two open-market sales on 09/18/2026: 1,356,000 shares at a weighted average $219.7219
-  (footnote 1: $219.40 to $220.35) and 10,000 at $220.4199, held by the Third Millennium Trust. Source:
-  `https://www.sec.gov/Archives/edgar/data/1045810/000119903926000016/`. Saved in `filing/`.
-- **The product.** The Insidir screens are the real company report (`company.html?ticker=NVDA`), served by `npm run web` with live
-  SEC EDGAR and Yahoo Finance data and captured at 2× in Chromium (`product2x/`). The row the films land on
-  (Mark A. Stevens, Sep 18, 2026, −1,366,000 shares, $300,147,095, 2 line items, avg. $219.73) is the same two Form 4 lines summed,
-  which is why each film can match-cut from the filing to the product.
-- **The data on the split-flap board and ticker tape** is copied from NVIDIA's Form 4 filings (`render/data.js`).
-- **The brand.** The `insidir.` wordmark is set in the site's own JetBrains Mono at 800 with −0.04em tracking, ink `#e9e4da` on
-  night paper `#0c0c0b`. The end cards build it from the landing page's halftone dots, then settle on the solid mark.
+Every moving shot is real live-action film. No AI-generated video is in the final cut, and the coded 3D experiment
+kept in `cine/` is not used.
 
-## How the picture was made
+- **Archive film (Internet Archive, Prelinger Archives):**
+  - *Vista Stock Shots: New York Stock Exchange* (1960s) has the real NYSE trading floor.
+    https://archive.org/details/0803_Vista_Stock_Shots_New_York_Stock_Exchange_13_00_55_00
+  - *Newspaper Story* (1950, public domain) has the newsroom, Film 2's deskman, the clock, the typewriter, the pencil and the
+    rotary press. https://archive.org/details/NewspaperSto
+  - *17 Days: The Story of Newspaper History in the Making* (1945, public domain) has New York crowds.
+    https://archive.org/details/17DaysTh1945
 
-- **Generated footage** (`source_clips/`): two clips from MiniMax H3 through ChatCut. One is a night aerial over Manhattan
-  (Film 1's opening; the "old newspaper" halftone and the aerial montage cuts in Film 3). The other is a hand lifting a rotary
-  telephone receiver (Film 1's montage; played in reverse it becomes Film 3's receiver slam). Video generation then stopped,
-  because the ChatCut account ran out of credits. The prompts for all 31 planned shots are in `prompts/shots.json`.
-- **Everything else is coded** in a deterministic canvas renderer (`render/`): the camera moves, depth of field and lamp light on
-  the real filing, pen, pencil and highlighter marks drawn in the document's own coordinates, the split-flap board, ticker tape,
-  newspaper press, wall clock, wristwatch, watch movement, the lit window in a dark tower, the rain, the shutters and the halftone
-  wordmark. `render/film1.js`, `film2.js` and `film3.js` are the editable edits: each shot is one entry with its start, its end and
-  how it draws, and the cuts are written on the beat grid (`b(n)`, `q(n)`).
+  The two newspaper films carry an explicit public-domain mark. The Vista NYSE reel is in the Prelinger collection, which is
+  offered for free reuse, but the item itself has no license field; confirm it before paid broadcast use.
+- **Modern stock (Pixabay Content License, free commercial use, no attribution required):** the aerial, the rain, the man
+  working late, hands on keyboards, the pen, the watches, the telephone, street crowds, towers. `stock/manifest.json` lists
+  each clip's author, page URL and in/out points.
+- **From the first version:** the real Form 4 being read and underlined, the Insidir product screens and the halftone end card
+  (frames reused by `scripts/build_real.py` from the first cut).
+
+## What is real in the story
+
+- **The filing.** The SEC's rendering of a real Form 4: NVIDIA director Mark A. Stevens, accession `0001199039-26-000016`,
+  filed 09/22/2026. On 09/18/2026 he sold 1,356,000 shares at a weighted average of $219.7219 and 10,000 shares at $220.4199,
+  held by the Third Millennium Trust. https://www.sec.gov/Archives/edgar/data/1045810/000119903926000016/
+- **The product.** The real Insidir company report for NVDA, captured from the running site with live SEC EDGAR data. Its row
+  for Mark A. Stevens (−1,366,000 shares, $300,147,095) is the same two Form 4 lines summed.
 
 ## Sound
 
-`scripts/synth.py` synthesizes all three scores and every effect from oscillators and filtered noise. It uses no samples and no
-existing recordings: the references (Bicep "Glue", Chromatics "Tick of the Clock", Leftfield "Phat Planet") set only tempo, energy and
-texture. The cue times are the same numbers as the picture's cuts. The script writes music, SFX and mix stems to `audio/` (committed as FLAC).
-The Film 3 voiceover is Piper TTS (`en_US-ryan-high`, MIT-licensed engine), `audio/vo/`.
+`scripts/synth.py` synthesizes the scores and every effect from oscillators and filtered noise, with no samples or existing
+recordings. That includes formant-synthesized trading-floor crowds. Cues sit on the picture's cut times. The references
+(Bicep, Chromatics, Leftfield) set only tempo, energy and texture. The Film 3 voiceover is Piper TTS (`en_US-ryan-high`).
 
 ## Rebuild
 
 ```sh
-npm run web                                   # from the repo root, with SEC_USER_AGENT set (for product captures)
-python3 -m http.server 5300 --bind 127.0.0.1  # from the repo root (the renderer loads the fonts from web/assets)
-node films/scripts/capture-product.mjs http://localhost:5199 films/product2x
-node films/scripts/capture-filing.mjs films/filing/form4.html films/filing/form4_full.png
-ffmpeg -i films/source_clips/A01_manhattan_aerial.mp4 -vf format=gray -q:v 2 films/frames/A01/%03d.jpg   # same for A04
-cd films
-node scripts/render-film.mjs 1 renders/film1_picture.mp4   # 2, 3 likewise
-python3 scripts/synth.py
-scripts/mux.sh
+# put the clips from stock/manifest.json in stock/ and the three archive films in archive/ (see URLs above)
+python3 films/scripts/build_real.py      # pictures → films/renders/realN_picture.mp4
+python3 films/scripts/synth.py           # soundtracks → films/audio/
+films/scripts/mux.sh                     # deliverables
 ```
