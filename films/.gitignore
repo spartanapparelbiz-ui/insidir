@@ -9,3 +9,4 @@ cine/node_modules/
 stock/*.mp4
 stock/sheets/
 archive/
+cine/package-lock.json
