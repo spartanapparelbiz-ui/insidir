@@ -22,7 +22,7 @@
   <script>/* Greeting and date before the first paint (plain arrays: building an Intl formatter here would cost more than the page's first paint). */(()=>{const d=new Date(),h=d.getHours(),g=document.querySelector("[data-greeting]"),t=document.getElementById("rd-today-date");if(g)g.textContent=h>=5&&h<12?"Good morning.":h>=12&&h<18?"Good afternoon.":"Good evening.";if(t)t.textContent="Overview · "+"Sun Mon Tue Wed Thu Fri Sat".split(" ")[d.getDay()]+", "+"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();})();</script>
   <div class="rd-today__lines">
     <p id="rd-today-you" class="rd-today__line rd-today__line--you is-skeleton" aria-busy="true"><span class="sr-only">Loading what changed since your last visit…</span></p>
-    <div class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field data-dot-gap="7" data-field-coverage="0.12" data-radius="80" aria-hidden="true"></div><p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
+    <div class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field data-dot-gap="7" data-field-coverage="0.12" data-radius="40" aria-hidden="true"></div><p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
     <p id="rd-today-fresh" class="rd-today__line rd-today__line--fresh is-skeleton" aria-busy="true"><span class="sr-only">Checking the latest import…</span></p></div>
   </div>
 </section>

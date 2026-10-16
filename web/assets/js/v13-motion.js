@@ -3,7 +3,7 @@
    The page's content holds still. Nothing a reader aims at, reads or compares moves under the pointer, on a
    click or with a scroll: hover states change colour, borders and underlines, never position or size. The
    dots are the exception, and they answer everything: every halftone dot field on the site (the landing
-   wordmark, the page bands, the heroes, the footer strip, the 404, the overview's brief corner) parts hard
+   wordmark, the person file's band, the heroes, the footer strip, the 404, the overview's brief corner) parts hard
    around the pointer, sweeps after it, opens wider under a press and rings out on every click or tap
    (v13-halftone.js). Only canvas dots move; this layer moves nothing.
 

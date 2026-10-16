@@ -27,7 +27,7 @@
        keep their boxes; the page does not scroll; and nothing anywhere ever
        writes --hf-dx / --hf-dy / --hf-s (a MutationObserver watches every style attribute for the whole visit,
        and none is left inline at the end);
-     - every plain dot field (data-halftone-field without data-mode="word": the page bands, the heroes, the
+     - every plain dot field (data-halftone-field without data-mode="word": the person file's band, the heroes, the
        footer strip, the brief corner; up to three per page, scrolled into view) answers: the pointer sweeps
        across it and its canvas changes (more than 0.05% of its pixels), the pointer leaves to the point on
        screen farthest from it (and out of the window when even that is within the field's reach) and within
@@ -36,6 +36,10 @@
      - every word field (the landing wordmark, data-halftone-hero; the 404 numerals) answers hard: its canvas
        changes by more than 0.2% while the pointer moves over it and is back at its at-rest image (within
        0.05%) within 2.5s of the pointer leaving;
+     - every plain dot field also goes to sleep within 3s once the pointer comes to rest on it (after a short press),
+       so a resting pointer never keeps a field repainting;
+     - reduced motion turned on after load (page.emulateMedia): up to two dot canvases stay pixel-identical under a
+       sweep and a click;
      - hover moves nothing: up to 4 links/buttons on the first screen and 2 halfway down are hovered one at a
        time; after 400ms each keeps its box and transform, and so do its children (arrows .v13-arrow and the
        rest) and the ::before/::after of each;
@@ -657,6 +661,13 @@ async function backAtRest(page, f, rest, thr, tol) {
   }
   return { left, took, ok: left >= 0 && left <= tol && took <= SETTLE_MS };
 }
+// How long field i keeps drawing once nothing moves (the pointer resting on it, or gone): -1 if still awake at the limit.
+const SLEEP_MS = 3000;
+const sleeps = (page, i) => page.evaluate(([i, limit]) => new Promise(res => {
+  const h = window.__mc.roots[i].__halftone, t0 = performance.now();
+  const tick = () => { if (!h.moving) res(Math.round(performance.now() - t0)); else if (performance.now() - t0 > limit) res(-1); else requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}), [i, SLEEP_MS]);
 async function wordFields(page, key, fields) {
   for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
     const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
@@ -697,6 +708,14 @@ async function plainFields(page, key, fields) {
       await page.mouse.move(box.right - 4, y, { steps: 6 });
       swept = Math.max(swept, await snapDiff(page, f.i, "p-on", "p-rest", 0));
     }
+    // The pointer comes to rest on the field (pressed for a moment, then released): the dots it holds settle round
+    // its hole and the field stops drawing, instead of repainting every frame while one dot creeps.
+    let restMs = -2;
+    if (box.click) {
+      await page.mouse.move(box.click.x, box.click.y, { steps: 3 });
+      await page.mouse.down(); await page.waitForTimeout(150); await page.mouse.up();
+      restMs = await sleeps(page, f.i);
+    }
     // Out of reach and settled, then a click on the field: its ring runs through the dots.
     await leave(page, box, 2);
     const r1 = await backAtRest(page, f, "p-rest", 0, 0);
@@ -707,7 +726,8 @@ async function plainFields(page, key, fields) {
       rang = await snapDiff(page, f.i, "p-ring", "p-rest", 0);
     }
     const r2 = await backAtRest(page, f, "p-rest", 0, 0);
-    seen.push(f.name + " " + pct(swept) + " swept" + (rang >= 0 ? ", " + pct(rang) + " rung" : "") + ", " + Math.max(r1.took, r2.took) + "ms to rest");
+    seen.push(f.name + " " + pct(swept) + " swept" + (rang >= 0 ? ", " + pct(rang) + " rung" : "") + ", " + Math.max(r1.took, r2.took) + "ms to rest" + (restMs >= 0 ? ", asleep " + restMs + "ms under a resting pointer" : ""));
+    if (restMs === -1) bad.push(f.name + " still drawing " + SLEEP_MS + "ms after the pointer came to rest on it");
     if (!(swept > 0.0005)) bad.push(f.name + " hardly answered the pointer (" + pct(swept) + " changed)");
     if (box.click && !(rang > 0.0005)) bad.push(f.name + " did not ring on a click (" + pct(rang) + " changed)");
     if (!r1.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after the pointer left (" + pct(r1.left) + " differs)");
@@ -798,6 +818,32 @@ async function pointerStill(page, key) {
 }
 
 /* ---------- (e) hover moves nothing ---------- */
+/* ---------- reduced motion turned on after the page loaded: the dots go home and stop answering ---------- */
+async function reducedLater(page, key) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const fields = await page.evaluate(() => window.__mc.fields());
+  const changed = [];
+  let n = 0;
+  for (const f of fields.filter(f => f.mounted && f.shown && f.w > 0 && f.h > 0).slice(0, 2)) {
+    const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
+    if (!box) continue;
+    n++;
+    await leave(page, box);
+    await restSnap(page, f.i, "rl-rest", 0, 100);
+    for (const fy of [0.35, 0.8]) {
+      const y = box.top + (box.bottom - box.top) * fy;
+      await page.mouse.move(box.left + 4, y);
+      await page.mouse.move(box.right - 4, y, { steps: 6 });
+    }
+    if (box.click) { await page.mouse.click(box.click.x, box.click.y); await page.waitForTimeout(150); }
+    const d = await snapDiff(page, f.i, "rl-now", "rl-rest", 0);
+    if (d !== 0) changed.push(f.name + " " + pct(d) + " changed");
+    await page.evaluate(() => window.__mc.drop("rl-"));
+  }
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  check(n > 0 && changed.length === 0, `${key}: reduced motion turned on after load stills the dots at once (${n} field(s) unchanged under a sweep and a click)`, changed.length ? changed : { n });
+}
+
 async function hoverStill(page, key) {
   const bad = [];
   let total = 0, shot = null;
@@ -940,6 +986,7 @@ try {
       await plainFields(page, key, s.fields);
       await pointerStill(page, key);
       await hoverStill(page, key);
+      await reducedLater(page, key);
 
       const w = await page.evaluate(() => ({ n: window.__hfWrites.n, at: window.__hfWrites.at,
         inline: [...document.querySelectorAll("[style]")].filter(el => /--hf-(dx|dy|s)\s*:/.test(el.getAttribute("style"))).map(el => el.tagName.toLowerCase() + "." + [...el.classList].slice(0, 2).join(".")).slice(0, 4) }));

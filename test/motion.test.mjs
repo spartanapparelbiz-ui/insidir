@@ -50,8 +50,13 @@ test("every dot answers hard: a resting pointer clears a wide hole, a thrown dot
 test("every dot field answers the pointer anywhere on the page, a press and a tap; under reduced motion none does", async () => {
   assert.match(engine, /interactive: d\.interactive !== "false"/, "every field is interactive unless it opts out");
   for (const type of ["pointermove", "pointerdown", "pointerup", "pointercancel"]) assert.ok(engine.includes('on(document, "' + type + '"'), "fields follow " + type + " across the page");
-  assert.match(engine, /const live = o\.interactive && !still;\n\s*const on = /, "nothing is listened to under reduced motion");
-  assert.match(engine, /if \(live\) \{\n\s*on\(document, "pointermove"/);
+  // Reduced motion is followed live: every handler returns at once under it, and turning it on sends every dot home.
+  for (const h of ["onMove", "onDown", "onScroll"]) assert.match(engine, new RegExp("const " + h + " = [^\\n]*\\n?\\s*(if \\(still[^)]*\\) return|if \\(!still)"), h + " does nothing under reduced motion");
+  assert.match(engine, /motionQ\.addEventListener\("change", onMotionPref\)/, "a change to prefers-reduced-motion is followed without a reload");
+  assert.match(engine, /const onMotionPref = \(\) => \{ still = motionQ\.matches;[^}]*rest\(\);/);
+  // A field off screen takes no ring and never stays awake.
+  assert.match(engine, /if \(!visible\) return;/);
+  assert.match(engine, /awake = visible && \(/);
   const pages = (await readdir(web)).filter(f => f.endsWith(".html"));
   for (const f of pages) assert.doesNotMatch(await readFile(new URL(f, web), "utf8"), /data-interactive="false"/, f + " has no still dot field");
   // The overview's dot corner is a live field, not a CSS pattern.

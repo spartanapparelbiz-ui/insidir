@@ -142,9 +142,10 @@ body.v13 .rd-today__brief{position:relative!important;box-sizing:border-box!impo
   background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important}
 body.v13 .rd-today__brief::before{content:"Latest SEC import" / ""!important;display:block!important;position:relative!important;z-index:1!important;margin:0 0 8px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 /* The brief's dot corner: a live dot field (v13-halftone.js) in the panel's top-right corner, in faint ink on the panel's
-   surface, fading to nothing at its left and bottom edges. It sits under the panel's text (the lines come after it and
-   paint above), and its dots answer the pointer, a press and a tap like every dot field on the site. */
-body.v13 .rd-today__brief>.rd-brief__dots{--hwf-bg:var(--hf-surface)!important;--hwf-ink:var(--hf-faint)!important;position:absolute!important;top:0!important;right:0!important;width:45%!important;height:56px!important;
+   surface, fading to nothing at its left and bottom edges. 1px down, so the panel's top highlight runs edge to edge, and
+   40px tall, so it ends where the market sentence starts. Its dots answer the pointer, a press and a tap like every dot
+   field on the site, with a reach sized to the corner (data-radius 40) so a press never empties it. */
+body.v13 .rd-today__brief>.rd-brief__dots{--hwf-bg:var(--hf-surface)!important;--hwf-ink:var(--hf-faint)!important;position:absolute!important;top:1px!important;right:0!important;width:45%!important;height:40px!important;
   display:block!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
   -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important}
 body.v13 .rd-today__brief>.rd-brief__dots>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
@@ -893,6 +894,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 :is(.rd-dview,.rd-dview.is-active,.rd-toast,.rd-toast:empty,#v3-trades.is-leaving>tr,.rd-fl,.rd-feed__row){transition:none!important}
 }
 @media (forced-colors:active){
+  /* The canvas paints its own colours, which forced colours cannot reach: the corner steps aside. */
+  body.v13 .rd-today__brief>.rd-brief__dots{display:none!important}
   body.v13 :is(.rd-day__bar,.rd-co__bar,.rd-swatch,.rd-tri,.rd-tip__key),body.v13 .rd-big .rd-big__bar>span{background:CanvasText!important}
   body.v13 .rd-dchart__grid{background:GrayText!important}
   body.v13 .rd-dchart__grid--zero{background:CanvasText!important}
