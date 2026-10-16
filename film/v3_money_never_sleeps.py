@@ -403,3 +403,35 @@ def score():
     mix.reverb("drums", 0.05, A.make_ir(0.8, 0.2))
     out = mix.master()
     return out[:, : int(N_FRAMES / 30 * A.SR)]
+
+
+# ------------------------------------------------------------------ real recordings (replaces the synth score)
+
+def cues(mx):
+    from lib.realaudio import cue
+    cue(mx, "crowd_trading_floor_1", 0, -2, src=20, length=FREEZE / 30 + 0.02, fade_in=0.05, hit=20, bus="amb")
+    cue(mx, "telephone_ring_old_2", 2, -12, src=0.2, length=0.9, fade_out=0.3, hit=0.28)
+    cue(mx, "cinematic_impact_1", FREEZE, 0)                                                 # time stops
+    cue(mx, "sub_drop_1", FREEZE, -12)
+    cue(mx, "heartbeat_1", 45, -6, src=0.5, length=2.5, hit=0.95, bus="amb")
+    cue(mx, "reverse_cymbal_2", 104, -6, hit=5.06)
+    cue(mx, "phone_hangup_slam_2", SLAM, -1)                                                 # the slam
+    cue(mx, "phone_hangup_slam_1", SLAM, -5)
+    cue(mx, "engine_rev_2", SLAM + 2, -3)
+    cue(mx, "car_pass_1", 160, -2)
+    cue(mx, "tire_spin_2", 182, -6)
+    cue(mx, "metal_creak_2", 214, -4, src=90, length=1.6, fade_out=0.4, hit=90)              # the bridge folds
+    cue(mx, "cinematic_impact_1", 250, -6)
+    cue(mx, "printing_press_2", 250, -4, src=150, length=1.8, fade_in=0.05, fade_out=0.3, hit=150)
+    for f in (278, 285, 292):                                                                # each word lands
+        cue(mx, "door_open_heavy_1", f, -6)
+    for k, f in enumerate((300, 315, 330, 345, 360, 375)):                                   # each multiplication
+        cue(mx, "camera_shutter_1", f, -7, pan=(k % 2 - 0.5) * 0.6)
+    cue(mx, "teletype_2", 300, -12, src=10, length=3.0, fade_out=0.2, hit=10)
+    cue(mx, "riser_1", 465, -5, src=8, hit=16)
+    cue(mx, "braam_2", 465, -3)
+    cue(mx, "cinematic_impact_2", 465, -5)
+    cue(mx, "wind_high_2", 470, -12, src=55, length=2.4, fade_in=0.5, hit=55, bus="amb")
+
+
+HITS_BIG = [FREEZE, SLAM, 250, 465]

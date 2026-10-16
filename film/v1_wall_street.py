@@ -413,3 +413,34 @@ def score():
     mix.reverb("drums", 0.06, A.make_ir(0.9, 0.2))
     out = mix.master()
     return out[:, : int(N_FRAMES / 30 * A.SR)]
+
+
+# ------------------------------------------------------------------ real recordings (replaces the synth score)
+
+def cues(mx):
+    from lib.realaudio import cue
+    cue(mx, "rain_city_2", 0, -8, src=14, length=4.0, fade_out=0.8, bus="amb", hit=14)
+    cue(mx, "car_pass_2", 72, -3)                                   # the wet pass-by as we reach the car
+    cue(mx, "rain_glass_1", 86, -4, src=10, length=1.4, fade_in=0.1, fade_out=0.3, hit=10)
+    cue(mx, "glass_shatter_1", 108, -9)                             # droplets burst past the lens
+    cue(mx, "tire_spin_2", 122, -4)
+    cue(mx, "tire_spin_1", 140, -9, src=2.7, length=1.3, fade_out=0.4, hit=2.7)
+    cue(mx, "subway_train_1", 195, -2, src=8.0, length=3.0, fade_in=0.4, fade_out=0.5, hit=10.1)
+    cue(mx, "whoosh_1", 228, -4)
+    cue(mx, "elevator_1", 252, -6, src=9.5, length=2.8, fade_in=0.2, hit=9.5)
+    cue(mx, "elevator_1", 286, -4, src=11.9, length=1.4, hit=12.12)  # the ding at the top of the shaft
+    cue(mx, "wind_high_2", 300, -6, src=42.0, length=3.2, fade_out=0.8, hit=43.7)
+    cue(mx, "cinematic_impact_1", 300, -2)
+    for k, f in enumerate((315, 330, 345, 360)):                    # the towers bend: real steel groans
+        cue(mx, "metal_creak_2", f, -7, src=20 + 4 * k, length=1.2, fade_out=0.4, hit=20 + 4 * k, pan=0.5 - k * 0.3)
+    cue(mx, "teletype_2", 375, -14, src=5, length=3.5, fade_in=0.3, fade_out=0.3, hit=5)   # tiles clatter in
+    cue(mx, "reverse_cymbal_1", 480, -6, src=5.5, hit=8.45)
+    cue(mx, "cinematic_impact_2", 480, -3)
+    cue(mx, "whoosh_2", 496, -8, src=3.6, length=1.4, hit=4.3)
+    cue(mx, "city_night_ambience_1", 512, -14, src=30, length=3.0, fade_in=0.4, hit=30, bus="amb")
+    cue(mx, "door_open_heavy_1", 523, -8)                           # the floors' lights trip off...
+    cue(mx, "camera_shutter_2", 532, -10)                           # ...and the word's windows click on
+    cue(mx, "cinematic_impact_1", 540, -9, lp=3000)
+
+
+HITS_BIG = [30, 90, 120, 228, 300, 480, 523]

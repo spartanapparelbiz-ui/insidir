@@ -124,3 +124,13 @@ def music_pick(film):
     p = json.load(open(os.path.join(MUSIC, "picks.json")))
     v = p[film]
     return v.get("primary", v) if isinstance(v, dict) else v
+
+
+def cue(mx, name, frame, gain_db=0.0, src=0.0, length=None, hit=None, bus="sfx", **kw):
+    """Place recording `name` (manifest stem, e.g. 'car_pass_2') from source second `src` so that its event
+    lands on `frame`. hit: the event's time in the source file (default: manifest hit_time, else src)."""
+    x, h = sfx(name)
+    i = int(src * SR)
+    x = x[:, i:]
+    hh = (h if h else src) if hit is None else hit
+    mx.put(x, frame=frame, gain_db=gain_db, hit=hh - src, length=length, bus=bus, **kw)

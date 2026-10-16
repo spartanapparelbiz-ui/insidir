@@ -396,3 +396,33 @@ def score():
     mix.reverb("drums", 0.12, A.make_ir(1.2, 0.3))
     out = mix.master()
     return out[:, : int(N_FRAMES / 30 * A.SR)]
+
+
+# ------------------------------------------------------------------ real recordings (replaces the synth score)
+
+def cues(mx):
+    from lib.realaudio import cue
+    for b in range(0, 17):                                          # a real mechanical clock: tick on the beat,
+        cue(mx, "clock_tick_2", b * B, -2, src=0.0, length=0.45, hit=0.07)
+        cue(mx, "clock_tick_2", b * B + 10, -9, src=1.05, length=0.4, hit=1.11, lp=2500)   # tock on the lurch
+    cue(mx, "heartbeat_2", 0, -10, src=30, length=8.5, fade_in=1.0, fade_out=0.6, hit=30, bus="amb")
+    cue(mx, "watch_wind_1", 118, -6, src=36, length=2.2, fade_out=0.3, hit=36)                # winding into the eye
+    cue(mx, "whoosh_2", 150, -10, src=3.8, length=1.0, hit=4.3)
+    cue(mx, "watch_wind_1", 168, -6, src=5, length=2.9, fade_in=0.2, fade_out=0.05, hit=5)    # the watch ticks...
+    cue(mx, "cinematic_impact_1", FREEZE, -10, lp=2500)                                       # ...and stops
+    cue(mx, "wind_high_1", FREEZE, 10, src=20, length=7.5, fade_in=1.5, fade_out=1.0, hit=20, bus="amb")
+    cue(mx, "paper_flutter_1", 330, -3, src=0.2, length=1.4, fade_out=0.3, hit=0.2)
+    cue(mx, "camera_shutter_1", 345, -4)                                                      # pages lock mid-air
+    cue(mx, "metal_creak_2", 420, -6, src=60, length=2.0, fade_in=0.3, fade_out=0.4, hit=60)  # the room turns
+    cue(mx, "riser_1", 478, -4, src=6, hit=16)
+    cue(mx, "door_open_heavy_2", 480, -2)                                                     # the doorway: drop
+    cue(mx, "braam_1", 480, -4)
+    cue(mx, "cinematic_impact_2", 480, -4)
+    cue(mx, "crowd_trading_floor_1", 500, -8, src=10, length=2.0, fade_in=0.2, fade_out=0.5, hit=10, bus="amb")
+    for k in range(len(CUTS) - 1):                                                            # every cut clicks
+        cue(mx, "camera_shutter_2", int(CUTS[k]), -12, pan=((k % 3) - 1) * 0.4)
+    cue(mx, "cinematic_impact_1", 675, -4)
+    cue(mx, "teletype_2", 684, -12, src=5, length=1.3, fade_out=0.3, hit=5)                   # the word inks in
+
+
+HITS_BIG = [FREEZE, 345, 480, 675]
