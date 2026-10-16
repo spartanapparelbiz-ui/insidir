@@ -29,7 +29,7 @@ test("every dot answers hard: a resting pointer clears a wide hole, a thrown dot
   const ctx = sandbox();
   vm.runInContext(engine, ctx);
   const H = ctx.window.InsidirHalftone, P = H.PHYSICS;
-  assert.deepEqual(plain(P), { push: 4, spring: 0.045, damping: 0.85, drag: 0.14, press: 2.2, pressReach: 1.35, ringSpeed: 1.05, ringBand: 36, ringForce: 4, ringLife: 1300, rings: 6 });
+  assert.deepEqual(plain(P), { push: 4, spring: 0.045, damping: 0.85, drag: 0.14, press: 2.2, pressReach: 1.35, hold: 0.5, ringSpeed: 1.05, ringBand: 36, ringForce: 4, ringLife: 1300, rings: 6 });
   assert.ok(Object.isFrozen(P));
   // A pointer resting on a dot's home holds it well clear: the hole is tens of pixels wide, not a nudge.
   let d = [0.5, 0, 0, 0];
@@ -44,7 +44,7 @@ test("every dot answers hard: a resting pointer clears a wide hole, a thrown dot
   for (let k = 0; k < 60; k++) [x, y, vx, vy] = plain(H.step(x, y, vx, vy, 0, 0, -1e5, -1e5, 170));
   assert.ok(Math.abs(x) < 1 && Math.abs(vx) < 0.5, "settled within a second: " + [x, vx]);
   assert.ok(!("scroll" in P) && !/\.kick\(|kick\(dx/.test(engine), "no scroll physics: a scroll never pushes a dot");
-  assert.doesNotMatch(engine.replace(/const PHYSICS = Object\.freeze\(\{[^}]*\}\);/, ""), /\b(0\.045|0\.86|0\.14|1300)\b/, "no physics number is repeated outside PHYSICS");
+  assert.doesNotMatch(engine.replace(/const PHYSICS = Object\.freeze\(\{[^}]*\}\);/, ""), /\b(0\.045|0\.85|0\.14|2\.2|1\.35|1\.05|1300)\b/, "no physics number is repeated outside PHYSICS");
 });
 
 test("every dot field answers the pointer anywhere on the page, a press and a tap; under reduced motion none does", async () => {

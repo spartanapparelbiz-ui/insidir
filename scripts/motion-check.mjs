@@ -28,16 +28,19 @@
        writes --hf-dx / --hf-dy / --hf-s (a MutationObserver watches every style attribute for the whole visit,
        and none is left inline at the end);
      - every plain dot field (data-halftone-field without data-mode="word": the person file's band, the heroes, the
-       footer strip, the brief corner; up to three per page, scrolled into view) answers: the pointer sweeps
-       across it and its canvas changes (more than 0.05% of its pixels), the pointer leaves to the point on
-       screen farthest from it (and out of the window when even that is within the field's reach) and within
-       2.5s the canvas is pixel-identical to its at-rest image again, a
-       click on it rings through it (changed 100ms later) and within 2.5s it is pixel-identical again;
+       footer strip, the brief corner; every one shown, scrolled into view; any that cannot be put on screen is
+       named in the result) answers: the pointer sweeps across it and its canvas changes (more than 0.05% of
+       its pixels); the pointer leaves to the point on screen farthest from it (and out of the window when even
+       that is within the field's reach), the field goes to sleep within 4s (InsidirHalftone's own .moving,
+       watched by an in-page frame loop) and its canvas is then pixel-identical to its at-rest image; a click on
+       it rings through it (within the ring's life, more than 0.05% of the pixels farther from the click than
+       the press's reach change, so the press itself cannot pass for a ring) and it is asleep and
+       pixel-identical again within 4s;
      - every word field (the landing wordmark, data-halftone-hero; the 404 numerals) answers hard: its canvas
-       changes by more than 0.2% while the pointer moves over it and is back at its at-rest image (within
-       0.05%) within 2.5s of the pointer leaving;
-     - every plain dot field also goes to sleep within 3s once the pointer comes to rest on it (after a short press),
-       so a resting pointer never keeps a field repainting;
+       changes by more than 0.2% while the pointer moves over it, and within 4s of the pointer leaving it is
+       asleep and back at its at-rest image (within 0.05%);
+     - every plain dot field also goes to sleep within 4s once the pointer comes to rest on it, and within 4s of its
+       ring ending while a press is held there, so a resting pointer never keeps a field repainting;
      - reduced motion turned on after load (page.emulateMedia): up to two dot canvases stay pixel-identical under a
        sweep and a click;
      - hover moves nothing: up to 4 links/buttons on the first screen and 2 halfway down are hovered one at a
@@ -304,6 +307,23 @@ const MC_LIB = ({ ATOMS, GENERIC, HOVERABLE, CONTROL, FIELDS }) => {
     for (let i = 0; i < x.length; i += 4) if (Math.abs(x[i] - y[i]) + Math.abs(x[i + 1] - y[i + 1]) + Math.abs(x[i + 2] - y[i + 2]) + Math.abs(x[i + 3] - y[i + 3]) > thr) n++;
     return n / (x.length / 4);
   };
+  // Like diff, over the pixels farther than minD (CSS px) from the viewport point (x, y) only.
+  mc.diffFar = (a, b, thr, i, x, y, minD) => {
+    const A = mc.snaps[a], B = mc.snaps[b];
+    if (!A || !B) return -1;
+    if (A.w !== B.w || A.h !== B.h) return 1;
+    const c = mc.roots[i].querySelector(":scope > canvas"), r = c.getBoundingClientRect(), s = c.width / r.width;
+    const ox = (x - r.left) * s, oy = (y - r.top) * s, m2 = (minD * s) * (minD * s);
+    let n = 0, tot = 0;
+    for (let py = 0; py < A.h; py++) for (let px = 0; px < A.w; px++) {
+      const dx = px - ox, dy = py - oy;
+      if (dx * dx + dy * dy <= m2) continue;
+      tot++;
+      const k = (py * A.w + px) * 4;
+      if (Math.abs(A.d[k] - B.d[k]) + Math.abs(A.d[k + 1] - B.d[k + 1]) + Math.abs(A.d[k + 2] - B.d[k + 2]) + Math.abs(A.d[k + 3] - B.d[k + 3]) > thr) n++;
+    }
+    return tot ? n / tot : -2;
+  };
   mc.drop = prefix => { for (const k of Object.keys(mc.snaps)) if (k.startsWith(prefix)) delete mc.snaps[k]; };
   // The part of field i on screen (scrolled into view first when asked), a point on it where a click lands on no
   // control, and the point on screen farthest from it (on no control) for the pointer to leave to: every field
@@ -481,6 +501,8 @@ async function steady(page, read, { gap = 150, ms = 2500 } = {}) {
 const settle = (page, key) => steady(page, () => page.evaluate(key => window.__mc.sig(key), key));
 // Snapshot field i under `key` once two snapshots `gap` ms apart agree (a word may still be settling).
 async function restSnap(page, i, key, thr = 0, gap = 200) {
+  // The field asleep first (every dot home), then two snapshots `gap` ms apart that agree.
+  await page.evaluate(i => new Promise(res => { const r = window.__mc.roots[i], h = r && r.__halftone, t0 = performance.now(); const f = () => { if (!h || !h.moving || performance.now() - t0 > 3000) res(); else requestAnimationFrame(f); }; requestAnimationFrame(f); }), i);
   const t0 = Date.now();
   await page.evaluate(([i, key]) => window.__mc.snap(i, key), [i, key]);
   for (;;) {
@@ -649,25 +671,22 @@ async function leave(page, box, steps = 1) {
 }
 // A field is back at rest when its canvas equals its at-rest image (a word within 0.05% of its pixels, a plain field
 // pixel for pixel: every dot snaps exactly home); it has 2.5s from the moment the pointer leaves its reach.
-const SETTLE_MS = 2500;
+const SETTLE_MS = 4000;
+// Waits on the engine's own sleep (an in-page frame loop, so the wait does not slow the frames it is timing), then
+// compares one snapshot with the at-rest image.
 async function backAtRest(page, f, rest, thr, tol) {
-  const t0 = Date.now();
-  let left = 1, took = 0;
-  for (;;) {
-    left = await snapDiff(page, f.i, rest + "-now", rest, thr);
-    took = Date.now() - t0;
-    if ((left >= 0 && left <= tol) || took > SETTLE_MS) break;
-    await page.waitForTimeout(80);
-  }
-  return { left, took, ok: left >= 0 && left <= tol && took <= SETTLE_MS };
+  const took = await sleeps(page, f.i, SETTLE_MS);
+  const left = await snapDiff(page, f.i, rest + "-now", rest, thr);
+  return { left, took, ok: took >= 0 && left >= 0 && left <= tol };
 }
-// How long field i keeps drawing once nothing moves (the pointer resting on it, or gone): -1 if still awake at the limit.
-const SLEEP_MS = 3000;
-const sleeps = (page, i) => page.evaluate(([i, limit]) => new Promise(res => {
+// How long field i keeps drawing once nothing moves (the pointer resting on it, or gone): -1 if still awake at `limit`.
+// A resting pointer gets SLEEP_MS; a held press also sent a ring, so it gets the ring's life on top.
+const SLEEP_MS = 4000;
+const sleeps = (page, i, limit) => page.evaluate(([i, limit]) => new Promise(res => {
   const h = window.__mc.roots[i].__halftone, t0 = performance.now();
   const tick = () => { if (!h.moving) res(Math.round(performance.now() - t0)); else if (performance.now() - t0 > limit) res(-1); else requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
-}), [i, SLEEP_MS]);
+}), [i, limit]);
 async function wordFields(page, key, fields) {
   for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
     const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
@@ -691,15 +710,13 @@ async function wordFields(page, key, fields) {
   }
 }
 async function plainFields(page, key, fields) {
-  const plain = fields.filter(f => !f.word && f.mounted && f.shown && f.w > 0 && f.h > 0).slice(0, 3);
-  const bad = [], seen = [];
-  let tested = 0;
+  const plain = fields.filter(f => !f.word && f.mounted && f.shown && f.w > 0 && f.h > 0);
+  const bad = [], seen = [], skipped = [];
+  const P = await page.evaluate(() => window.InsidirHalftone.PHYSICS);
   for (const f of plain) {
     const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
-    if (!box || !box.out) continue;
-    tested++;
+    if (!box || !box.out) { skipped.push(f.name); continue; }
     await leave(page, box);
-    await page.waitForTimeout(80);
     await restSnap(page, f.i, "p-rest", 0, 100);
     let swept = 0, rang = -1;
     for (const fy of [0.3, 0.75]) {
@@ -708,33 +725,44 @@ async function plainFields(page, key, fields) {
       await page.mouse.move(box.right - 4, y, { steps: 6 });
       swept = Math.max(swept, await snapDiff(page, f.i, "p-on", "p-rest", 0));
     }
-    // The pointer comes to rest on the field (pressed for a moment, then released): the dots it holds settle round
-    // its hole and the field stops drawing, instead of repainting every frame while one dot creeps.
-    let restMs = -2;
+    // The pointer comes to rest on the field, then holds a press there: each time the dots it holds settle round its
+    // hole and the field stops drawing, instead of repainting every frame while one dot creeps.
+    let restMs = -2, heldMs = -2;
     if (box.click) {
       await page.mouse.move(box.click.x, box.click.y, { steps: 3 });
-      await page.mouse.down(); await page.waitForTimeout(150); await page.mouse.up();
-      restMs = await sleeps(page, f.i);
+      restMs = await sleeps(page, f.i, SLEEP_MS);
+      await page.mouse.down();
+      heldMs = await sleeps(page, f.i, P.ringLife + SLEEP_MS);
+      await page.mouse.up();
     }
-    // Out of reach and settled, then a click on the field: its ring runs through the dots.
+    // Out of reach and settled.
     await leave(page, box, 2);
     const r1 = await backAtRest(page, f, "p-rest", 0, 0);
+    // A click on the field rings through it: only pixels beyond the press's reach of the click count, so the press
+    // and the pointer's own jump to the click point cannot pass for a ring.
+    let far = -1;
     if (box.click) {
+      far = await page.evaluate(([i, P]) => window.__mc.roots[i].__halftone.options.radius * P.pressReach + 12, [f.i, P]);
       await page.mouse.click(box.click.x, box.click.y);
+      for (let t = 0; t < P.ringLife; t += 100) {
+        rang = Math.max(rang, await page.evaluate(([i, x, y, d]) => window.__mc.snap(i, "p-ring") ? window.__mc.diffFar("p-rest", "p-ring", 0, i, x, y, d) : -1, [f.i, box.click.x, box.click.y, far]));
+        if (rang > 0.0005) break;
+        await page.waitForTimeout(100);
+      }
       await leave(page, box);
-      await page.waitForTimeout(100);
-      rang = await snapDiff(page, f.i, "p-ring", "p-rest", 0);
     }
     const r2 = await backAtRest(page, f, "p-rest", 0, 0);
-    seen.push(f.name + " " + pct(swept) + " swept" + (rang >= 0 ? ", " + pct(rang) + " rung" : "") + ", " + Math.max(r1.took, r2.took) + "ms to rest" + (restMs >= 0 ? ", asleep " + restMs + "ms under a resting pointer" : ""));
+    seen.push(f.name + " " + pct(swept) + " swept" + (rang >= 0 ? ", " + pct(rang) + " rung beyond " + Math.round(far) + "px" : rang === -2 ? ", nothing beyond the press's reach to ring" : "") + ", " + Math.max(r1.took, r2.took) + "ms to rest" + (restMs >= 0 ? ", asleep " + restMs + "ms under a resting pointer and " + heldMs + "ms under a held press" : ""));
     if (restMs === -1) bad.push(f.name + " still drawing " + SLEEP_MS + "ms after the pointer came to rest on it");
+    if (heldMs === -1) bad.push(f.name + " still drawing " + (P.ringLife + SLEEP_MS) + "ms into a held press (its ring lasts " + P.ringLife + "ms)");
     if (!(swept > 0.0005)) bad.push(f.name + " hardly answered the pointer (" + pct(swept) + " changed)");
-    if (box.click && !(rang > 0.0005)) bad.push(f.name + " did not ring on a click (" + pct(rang) + " changed)");
-    if (!r1.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after the pointer left (" + pct(r1.left) + " differs)");
-    if (!r2.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after a click (" + pct(r2.left) + " differs)");
+    if (box.click && !(rang > 0.0005)) bad.push(f.name + " did not ring on a click (" + pct(rang) + " of the pixels beyond " + Math.round(far) + "px of it changed)");
+    if (!r1.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after the pointer left (" + (r1.took < 0 ? "still drawing" : pct(r1.left) + " differs") + ")");
+    if (!r2.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after a click (" + (r2.took < 0 ? "still drawing" : pct(r2.left) + " differs") + ")");
     await page.evaluate(() => window.__mc.drop("p-"));
   }
-  check(bad.length === 0 && tested > 0, `${key}: every dot field answers the pointer and a click and settles back exactly (${tested} field(s): ${seen.join("; ")})`, bad.length ? bad.slice(0, 4) : { tested });
+  const tested = plain.length - skipped.length;
+  check(bad.length === 0 && tested > 0, `${key}: every dot field answers the pointer and a click and settles back exactly (${tested} field(s)${skipped.length ? ", " + skipped.length + " not on screen to test: " + skipped.join(", ") : ""}: ${seen.join("; ")})`, bad.length ? bad.slice(0, 4) : { tested, skipped });
 }
 
 /* ---------- (a) nothing moves under the pointer, a press or a click ---------- */
