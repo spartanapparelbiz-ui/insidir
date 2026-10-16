@@ -74,7 +74,7 @@ def sheet(modname, frames, path, cols=5, width=384, finish=True):
 
 def deliver(video, wav, out_mp4, bitrate="16M"):
     """Two-pass H.264 High at a fixed delivery bitrate (grain-tuned), AAC 320k, 1080p30, faststart."""
-    log = out_mp4 + ".2pass"
+    log = os.path.join(OUT, os.path.basename(out_mp4) + ".2pass")
     base = ["ffmpeg", "-v", "error", "-y", "-i", video]
     enc = ["-c:v", "libx264", "-preset", "slow", "-tune", "grain", "-profile:v", "high", "-b:v", bitrate,
            "-maxrate", "24M", "-bufsize", "32M", "-pix_fmt", "yuv420p", "-r", "30", "-passlogfile", log]
