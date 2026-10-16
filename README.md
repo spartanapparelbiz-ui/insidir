@@ -1,3 +1,9 @@
+## Insidir V20: every dot answers (October 2026)
+
+- **Live dots.** Every halftone dot field on the site answers the pointer, hard: the landing wordmark, the page bands, the marketing heroes and closing panels, the sign-in panel, the plan card, the 404's numerals, the footer strip on every page and a new live dot corner in the overview's brief (it replaces the static CSS pattern). The pointer anywhere on the page blows a hole through any field within reach and sweeps the dots after it; holding the button or a finger down widens the hole; every click or tap sends a shock ring through every field on screen. The dots spring home and settle in about a second.
+- **Content still.** Only the dots move: links, buttons, numbers, tiles and text stay exactly where they are, hovers change colour only, and with reduced motion the dots hold still too.
+- **Fixes and speed.** A field can no longer fall asleep with its dots still displaced (a frame too early for a physics step used to stop it); each field draws all its dots in one fill, skips dots at rest out of reach, and only wakes when the pointer comes within reach. `scripts/motion-check.mjs` now requires every dot field to answer a sweep and a click and to come back pixel-identical to rest within 2.5s, while every sampled element stays put.
+
 ## Insidir V19: a calm site, and a more precise design (October 2026)
 
 - **Calm.** Nothing on the site moves under the pointer, on a click or with a scroll; hovers change colour only. The landing wordmark is the one thing that answers the pointer, gently. Public pages keep a quiet 12px fade-up as blocks arrive; the product's pages hold nothing back. (Shipped first, on its own.)

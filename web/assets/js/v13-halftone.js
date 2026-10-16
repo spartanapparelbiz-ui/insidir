@@ -1,11 +1,16 @@
 /* Insidir V13 halftone engine.
    A wordmark set enormous and cropped by the bottom edge, printed as a field of
    halftone dots: each dot is sized by how much of the letter covers its cell, so
-   the type keeps its edges at any size. Move across it and the dots part a little
-   around the pointer and settle back, always in ink (nothing on the site glows);
-   click the word and a soft ring runs through it. It is the only thing on the
-   site that answers the pointer. The same engine draws the plain dot fields
-   (data-halftone-field) used as quiet print texture elsewhere: those hold still.
+   the type keeps its edges at any size. The same engine draws the plain dot fields
+   (data-halftone-field): the page bands, the marketing heroes, the footer strip, the
+   sign-in panel, the plans, the 404's numerals and the overview's brief corner.
+
+   Every dot answers the pointer, hard: the pointer anywhere on the page blows a hole
+   through any field within reach and sweeps the dots along the way it moves; holding
+   the button (or a finger) down widens and deepens the hole; every press or tap sends
+   a shock ring out through every field on screen. The dots spring home and settle by
+   themselves. Only the dots move: the page's content never does (v13-motion.js), and
+   under prefers-reduced-motion the dots hold still too. Always in ink: nothing glows.
 
    Plain JavaScript port of the Halftone Wordmark Footer React component so it
    runs under the site's no-build, same-origin Content-Security-Policy. The word is
@@ -16,14 +21,14 @@
   "use strict";
 
   const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
-  /* The wordmark's dots: a pointer within the radius pushes with up to `push` per frame and drags what it
-     passes along with `drag` of its own movement; a spring of `spring` pulls home and `damping` keeps what is
-     left each frame (60 fps), so a dot moves at most push / spring ≈ 12px and settles in about half a second
-     without bouncing far; a click on the word sends a ring out at `ringSpeed` px/ms, `ringBand` px wide, with
-     `ringForce`, for `ringLife` ms. `scroll` is 0: nothing trails a scroll. */
-  const PHYSICS = Object.freeze({ push: 1, spring: 0.08, damping: 0.8, ringSpeed: 0.9, ringBand: 22, ringForce: 1.1, ringLife: 650, drag: 0.015, scroll: 0 });
-  const KICK_MAX = 48;  // px of scroll per frame that count; a jump further than that is one hard flick
+  /* A pointer within a field's radius pushes each dot with up to `push` per frame and drags what it passes with
+     `drag` of its own movement; held down it pushes `press` times as hard over `pressReach` times the radius. A spring
+     of `spring` pulls home and `damping` keeps what is left each frame (60 fps), so a resting pointer clears a hole
+     some 50px across and a dot thrown out swings back once and settles in well under a second. A press sends a ring
+     out at `ringSpeed` px/ms, `ringBand` px wide, with `ringForce`, for `ringLife` ms; up to `rings` run at once. */
+  const PHYSICS = Object.freeze({ push: 4, spring: 0.045, damping: 0.85, drag: 0.14, press: 2.2, pressReach: 1.35, ringSpeed: 1.05, ringBand: 36, ringForce: 4, ringLife: 1300, rings: 6 });
   const SANS_STACK = '"Inter", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif';
+  const TAU = Math.PI * 2;
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- pure helpers (shared with test/halftone.test.mjs) ---------- */
@@ -43,12 +48,12 @@
   }
 
   /** One step of a dot's spring back to home plus the push from a pointer at (px, py) within r, which also
-      drags the dot along with its movement (mx, my) this frame. */
-  function step(x, y, vx, vy, hx, hy, px, py, r, mx, my) {
+      drags the dot along with its movement (mx, my) this frame; `boost` multiplies the push (a held press). */
+  function step(x, y, vx, vy, hx, hy, px, py, r, mx, my, boost) {
     const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy;
     if (r > 0 && d2 < r * r) {
       const d = Math.sqrt(d2) + 0.001;
-      const k = 1 - d / r, f = k * PHYSICS.push;
+      const k = 1 - d / r, f = k * PHYSICS.push * (boost || 1);
       vx += (dx / d) * f + (mx || 0) * k * PHYSICS.drag;
       vy += (dy / d) * f + (my || 0) * k * PHYSICS.drag;
     }
@@ -57,10 +62,11 @@
     return [x + vx, y + vy, vx, vy];
   }
 
-  /** How strongly a dot at home (hx, hy) takes a scroll kick: an even weave from 0.1 to 1, so a field
-      ripples as the page moves instead of sliding as one sheet. */
-  function weave(hx, hy) {
-    return 0.55 + 0.45 * Math.sin(hx * 0.021 + hy * 0.013);
+  /** The push a ring started `age` ms ago at distance `d` from a dot gives it this frame (0 outside the ring's band). */
+  function ringPush(d, age) {
+    if (age < 0 || age >= PHYSICS.ringLife) return 0;
+    const band = 1 - Math.min(1, Math.abs(d - age * PHYSICS.ringSpeed) / PHYSICS.ringBand);
+    return band > 0 ? band * PHYSICS.ringForce * (1 - age / PHYSICS.ringLife) : 0;
   }
   /** Font size that sets `measured` (width at 100px) to fill `width` exactly. */
   function fitSize(measured, width) {
@@ -97,25 +103,20 @@
         ink: v("--hwf-ink") || PRESET.ink
       },
       dotGap: num("dotGap", field ? 11 : 6),
-      radius: num("radius", field ? 140 : 100),
+      radius: num("radius", field ? 170 : 130),
       // data-scroll-scatter (px): as the element scrolls up out of view its dots drift apart by up to this much.
       scatter: num("scrollScatter", 0),
       crop: num("crop", 0.2),
       grain: num("grain", field ? 0 : 0.5),
       fieldCoverage: num("fieldCoverage", 0.12),
-      // Only a word answers the pointer (the landing wordmark, the 404's numerals); a plain field is print
-      // texture and holds still unless it asks with data-interactive="true".
-      interactive: d.interactive ? d.interactive !== "false" : (d.mode || (field ? "field" : "word")) === "word",
+      // Every field answers the pointer; data-interactive="false" turns one into still print.
+      interactive: d.interactive !== "false",
       // data-fit-to (a selector inside the element): the word's ink spans exactly that element's width, from its
       // left edge (the landing fits the wordmark to the page grid); without it the word fills the element's width.
       fitTo: d.fitTo || "",
       fontWeight: d.fontWeight || "800",
       fontFamily: d.fontFamily || v("--hwf-font") || SANS_STACK,
-      letterSpacing: d.letterSpacing || "-0.045em",
-      // The field sits behind content that receives the pointer, so listen on its parent.
-      // data-pointer-host="document": the field feels the pointer anywhere on the page (dots still only move
-      // within the radius), for fields that sit right under a navigation bar.
-      pointerHost: d.pointerHost === "document" ? document : field ? root.parentElement : root
+      letterSpacing: d.letterSpacing || "-0.045em"
     }, overrides || {});
   }
 
@@ -130,12 +131,11 @@
     if (!ctx) return null;
 
     const still = reduced();
-    let w = 0, h = 0, dpr = 1, px = -1e5, py = -1e5, raf = 0, visible = true, awake = true, alive = true;
-    let ring = { x: 0, y: 0, t: -1 };
+    let w = 0, h = 0, dpr = 1, px = -1e5, py = -1e5, raf = 0, visible = true, awake = true, alive = true, pressed = false;
+    let rings = [];                                   // shock rings: { x, y, t } in the canvas's own coordinates
     let dots = new Float32Array(0), count = 0, grainTile = null;
     let dirs = new Float32Array(0), spread = 0;   // scroll scatter: each dot's drift direction, and how far along it is
     let mdx = 0, mdy = 0, lastCX = NaN, lastCY = NaN; // pointer movement since the last frame
-    let kx = 0, ky = 0;                               // scroll since the last frame
 
     const layout = () => {
       const rect = root.getBoundingClientRect();
@@ -216,7 +216,7 @@
       awake = true;
     };
 
-    // A fixed 60 fps physics clock, the same as v13-motion.js: identical feel at 60, 120 or 144 Hz.
+    // A fixed 60 fps physics clock: identical feel at 60, 120 or 144 Hz.
     const FRAME = 1000 / 60;
     let last = 0, acc = 0;
     const draw = now => {
@@ -224,50 +224,55 @@
       last = now;
       const steps = Math.floor(acc / FRAME);
       acc -= steps * FRAME;
-      // The pointer's movement and the page's scroll since the last frame, spread over this frame's steps.
+      // The pointer's movement since the last frame, spread over this frame's steps.
       const mx = steps ? mdx / steps : 0, my = steps ? mdy / steps : 0;
-      const kick = steps ? Math.max(-KICK_MAX, Math.min(KICK_MAX, ky)) * PHYSICS.scroll : 0;
-      const kickX = steps ? Math.max(-KICK_MAX, Math.min(KICK_MAX, kx)) * PHYSICS.scroll : 0;
-      if (steps) { mdx = mdy = 0; kx = ky = 0; }
+      if (steps) mdx = mdy = 0;
       const S = o.scatter * spread;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.fillStyle = o.colors.background;
       ctx.fillRect(0, 0, w, h);
-      const r = o.interactive && !still ? Math.max(0, o.radius) : 0;
-      const ringAge = ring.t < 0 ? 1e9 : now - ring.t;
-      const ringR = ringAge * PHYSICS.ringSpeed;
+      const live = !still && o.interactive;
+      const r = live ? Math.max(0, o.radius) * (pressed ? PHYSICS.pressReach : 1) : 0, r2 = r * r;
+      const boost = pressed ? PHYSICS.press : 1;
+      if (rings.length) rings = rings.filter(g => now - g.t < PHYSICS.ringLife);
+      const nr = live ? rings.length : 0;
       let moving = false;
+      // Every dot goes into one path and is filled once.
       ctx.fillStyle = o.colors.ink;
+      ctx.beginPath();
       for (let i = 0; i < count; i++) {
-        const j = i * 7;
+        const j = i * 7, rad = dots[j + 6];
         let x = dots[j], y = dots[j + 1], vx = dots[j + 2], vy = dots[j + 3];
         const hx = dots[j + 4] + dirs[i * 2] * S, hy = dots[j + 5] + dirs[i * 2 + 1] * S;
-        if (!still) {
-          if (kick || kickX) { const f = weave(dots[j + 4], dots[j + 5]); vx += kickX * f; vy += kick * f; }
-          for (let k = 0; k < steps; k++) {
-            if (ringAge < PHYSICS.ringLife) {
-              const dx = hx - ring.x, dy = hy - ring.y;
-              const d = Math.sqrt(dx * dx + dy * dy) + 0.001;
-              const band = 1 - Math.min(1, Math.abs(d - ringR) / PHYSICS.ringBand);
-              if (band > 0) {
-                const f = band * PHYSICS.ringForce * (1 - ringAge / PHYSICS.ringLife);
-                vx += (dx / d) * f; vy += (dy / d) * f;
-              }
-            }
-            const s = step(x, y, vx, vy, hx, hy, px, py, r, mx, my);
-            x = s[0]; y = s[1]; vx = s[2]; vy = s[3];
+        if (live && steps) {
+          // A dot at rest, out of the pointer's reach and clear of every ring's band, stays exactly where it is.
+          let act = vx !== 0 || vy !== 0 || x !== hx || y !== hy || (x - px) * (x - px) + (y - py) * (y - py) < r2;
+          for (let g = 0; g < nr && !act; g++) {
+            const dx = hx - rings[g].x, dy = hy - rings[g].y;
+            act = Math.abs(Math.sqrt(dx * dx + dy * dy) - (now - rings[g].t) * PHYSICS.ringSpeed) < PHYSICS.ringBand + 4;
           }
-          const slow = Math.abs(vx) + Math.abs(vy) <= 0.02, home = Math.abs(x - hx) + Math.abs(y - hy) <= 0.05;
-          if (!slow) moving = true;
-          else if (home) { x = hx; y = hy; vx = 0; vy = 0; }
-          // Off home and slow: still travelling back unless it sits inside a resting pointer's reach, held in balance.
-          else if (ringAge < PHYSICS.ringLife || (x - px) * (x - px) + (y - py) * (y - py) >= r * r) moving = true;
-          dots[j] = x; dots[j + 1] = y; dots[j + 2] = vx; dots[j + 3] = vy;
-        }
-        ctx.beginPath();
-        ctx.arc(x, y, dots[j + 6], 0, 6.2832);
-        ctx.fill();
+          if (act) {
+            for (let k = 0; k < steps; k++) {
+              for (let g = 0; g < nr; g++) {
+                const dx = x - rings[g].x, dy = y - rings[g].y, d = Math.sqrt(dx * dx + dy * dy) + 0.001;
+                const f = ringPush(d, now - rings[g].t);
+                if (f) { vx += (dx / d) * f; vy += (dy / d) * f; }
+              }
+              const s = step(x, y, vx, vy, hx, hy, px, py, r, mx, my, boost);
+              x = s[0]; y = s[1]; vx = s[2]; vy = s[3];
+            }
+            const slow = Math.abs(vx) + Math.abs(vy) <= 0.04, home = Math.abs(x - hx) + Math.abs(y - hy) <= 0.12;
+            if (!slow) moving = true;
+            else if (home) { x = hx; y = hy; vx = 0; vy = 0; }
+            // Off home and slow: still travelling back unless a resting pointer holds it in balance.
+            else if ((x - px) * (x - px) + (y - py) * (y - py) >= r2) moving = true;
+            dots[j] = x; dots[j + 1] = y; dots[j + 2] = vx; dots[j + 3] = vy;
+          }
+        } else if (!live) { x = hx; y = hy; }
+        ctx.moveTo(x + rad, y);
+        ctx.arc(x, y, rad, 0, TAU);
       }
+      ctx.fill();
       if (grainTile && o.grain > 0) {
         ctx.globalAlpha = Math.min(1, o.grain) * 0.09;
         ctx.globalCompositeOperation = "overlay";
@@ -276,8 +281,9 @@
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = "source-over";
       }
-      // Sleep once everything is home, or held still by a resting pointer; the next pointer move wakes it.
-      awake = moving || ringAge < PHYSICS.ringLife;
+      // Sleep once everything is home (or held by a resting pointer) and no ring is running; the next move wakes it. A
+      // frame too early for a physics step (a fast display) decides nothing: the next one does.
+      awake = moving || nr > 0 || (live && !steps);
       if (!awake) { last = 0; acc = 0; }
     };
 
@@ -287,29 +293,49 @@
       draw(now);
       if (awake) raf = requestAnimationFrame(loop);
     };
-    const wake = () => { awake = true; if (!raf && visible && alive) raf = requestAnimationFrame(loop); };
+    // Only a field on screen runs; one off screen is drawn at rest and picks up again when it scrolls in.
+    const wake = () => { if (!visible || !alive) return; awake = true; if (!raf) raf = requestAnimationFrame(loop); };
 
-    const toLocal = e => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    /* The pointer is followed across the whole page: a field feels it wherever it is (dots only move within the
+       radius) and only wakes when it comes within reach, or has just left it. */
+    let cx = NaN, cy = NaN, near = false;
+    const locate = () => {
+      const b = canvas.getBoundingClientRect(), reach = o.radius * PHYSICS.pressReach + 8;
+      px = cx - b.left; py = cy - b.top;
+      const was = near;
+      near = px > -reach && px < b.width + reach && py > -reach && py < b.height + reach;
+      if (!near) { px = py = -1e5; }
+      return near || was;
+    };
     const onMove = e => {
-      if (!o.interactive) return;
-      const p = toLocal(e); px = p[0]; py = p[1];
       if (lastCX === lastCX) { mdx += e.clientX - lastCX; mdy += e.clientY - lastCY; }
-      lastCX = e.clientX; lastCY = e.clientY;
-      wake();
+      lastCX = cx = e.clientX; lastCY = cy = e.clientY;
+      if (visible && locate()) wake(); else mdx = mdy = 0;
     };
-    const onLeave = () => { px = -1e5; py = -1e5; lastCX = lastCY = NaN; mdx = mdy = 0; wake(); };
+    const onLeave = () => { px = py = -1e5; cx = cy = lastCX = lastCY = NaN; mdx = mdy = 0; near = false; pressed = false; wake(); };
+    // The page scrolled under a resting pointer: the field slid beneath it.
+    const onScroll = () => { if (cx === cx && visible && locate()) wake(); };
     const onDown = e => {
-      if (!o.interactive || still) return;
-      if (e.button > 0 || (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea,label,summary,[role=button],[role=tab],[tabindex],[contenteditable]"))) return;
-      const p = toLocal(e);
-      ring = { x: p[0], y: p[1], t: performance.now() };
-      (e.__hfRingFrom = e.__hfRingFrom || new Set()).add(root); // v13-motion.js sends the same ring through the rest of the page
-      wake();
+      if (e.button > 0) return;
+      lastCX = cx = e.clientX; lastCY = cy = e.clientY;
+      pressed = true;
+      const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+      // A ring runs through every field it can reach before it fades.
+      const far = PHYSICS.ringSpeed * PHYSICS.ringLife;
+      const ox = Math.max(0, -x, x - b.width), oy = Math.max(0, -y, y - b.height);
+      if (ox * ox + oy * oy < far * far) {
+        rings.push({ x, y, t: performance.now() });
+        if (rings.length > PHYSICS.rings) rings.shift();
+      }
+      locate();
+      if (visible) wake();
     };
+    // A finger lifted leaves nothing behind; a mouse stays where it is, now unpressed.
+    const onUp = e => { pressed = false; if (e.pointerType && e.pointerType !== "mouse") onLeave(); else wake(); };
+    const onOut = e => { if (!e.relatedTarget) onLeave(); };
 
     layout();
     draw(performance.now());
-    wake();
 
     // Scroll scatter: how far the element has scrolled up out of view, 0 at rest to 1 once it is gone.
     const onScatter = () => {
@@ -320,12 +346,18 @@
     };
     if (o.scatter > 0) { window.addEventListener("scroll", onScatter, { passive: true }); onScatter(); }
 
-    const host = o.pointerHost || root;
-    host.addEventListener("pointermove", onMove);
-    const onOut = e => { if (!e.relatedTarget) onLeave(); };
-    if (host === document) document.addEventListener("pointerout", onOut);
-    else host.addEventListener("pointerleave", onLeave);
-    host.addEventListener("pointerdown", onDown);
+    const live = o.interactive && !still;
+    const on = (t, type, fn) => t.addEventListener(type, fn, { passive: true });
+    const off = (t, type, fn) => t.removeEventListener(type, fn, { passive: true });
+    if (live) {
+      on(document, "pointermove", onMove);
+      on(document, "pointerdown", onDown);
+      on(document, "pointerup", onUp);
+      on(document, "pointercancel", onUp);
+      on(document, "pointerout", onOut);
+      on(window, "blur", onLeave);
+      on(window, "scroll", onScroll);
+    }
     // A layout clears the canvas (it is resized): draw at once, on screen or not, so a field off screen is never left
     // blank until it scrolls into view.
     const ro = new ResizeObserver(() => { layout(); draw(performance.now()); wake(); });
@@ -333,11 +365,12 @@
     // Scrolled out of view: put every dot home, so the field is at rest when it comes back.
     const io = new IntersectionObserver(entries => {
       visible = entries[0] ? entries[0].isIntersecting : true;
-      if (visible) { wake(); return; }
+      if (visible) { if (cx === cx) locate(); wake(); return; }
       const S = o.scatter * spread;
       for (let i = 0; i < count; i++) { const j = i * 7; dots[j] = dots[j + 4] + dirs[i * 2] * S; dots[j + 1] = dots[j + 5] + dirs[i * 2 + 1] * S; dots[j + 2] = dots[j + 3] = 0; }
-      px = py = -1e5; ring.t = -1; last = 0; acc = 0; mdx = mdy = kx = ky = 0; lastCX = lastCY = NaN;
+      rings = []; last = 0; acc = 0; mdx = mdy = 0; px = py = -1e5; near = false;
       draw(performance.now());
+      awake = false;
     });
     io.observe(root);
     // The wordmark is set in the page's web font once it has landed.
@@ -347,30 +380,31 @@
 
     const api = {
       root, canvas, options: o,
-      relayout() { layout(); wake(); },
-      /* A ring started elsewhere on the page (viewport coordinates) runs through this field too. */
+      relayout() { layout(); draw(performance.now()); wake(); },
+      /* A ring at (clientX, clientY), viewport coordinates, as a press there would send. */
       ring(clientX, clientY) {
-        if (!o.interactive || still) return;
+        if (!live) return;
         const b = canvas.getBoundingClientRect();
-        ring = { x: clientX - b.left, y: clientY - b.top, t: performance.now() };
+        rings.push({ x: clientX - b.left, y: clientY - b.top, t: performance.now() });
+        if (rings.length > PHYSICS.rings) rings.shift();
         wake();
       },
-      /* The page scrolled by (dx, dy) px: the dots are left behind a little and spring back (v13-motion.js
-         calls this once a frame while the page scrolls). */
-      kick(dx, dy) {
-        if (!o.interactive || still || !visible) return;
-        kx += dx || 0; ky += dy || 0;
-        wake();
-      },
+      /* True while any dot is away from home or a ring is running. */
+      get moving() { return awake; },
       destroy() {
         alive = false;
         if (o.scatter > 0) window.removeEventListener("scroll", onScatter);
         cancelAnimationFrame(raf);
         ro.disconnect(); io.disconnect();
-        host.removeEventListener("pointermove", onMove);
-        host.removeEventListener("pointerleave", onLeave);
-        document.removeEventListener("pointerout", onOut);
-        host.removeEventListener("pointerdown", onDown);
+        if (live) {
+          off(document, "pointermove", onMove);
+          off(document, "pointerdown", onDown);
+          off(document, "pointerup", onUp);
+          off(document, "pointercancel", onUp);
+          off(document, "pointerout", onOut);
+          off(window, "blur", onLeave);
+          off(window, "scroll", onScroll);
+        }
         delete root.__halftone;
       }
     };
@@ -401,5 +435,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
   else auto();
 
-  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, weave, fitSize, wordFit, PRESET, PHYSICS });
+  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, ringPush, fitSize, wordFit, PRESET, PHYSICS });
 })();

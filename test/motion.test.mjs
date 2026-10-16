@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFile, readdir } from "node:fs/promises";
 
-// The site holds still: nothing moves under the pointer, on a click or with a scroll, and hover states change
-// colour only. The dotted wordmark is the one thing that answers the pointer, gently. Public pages keep a quiet
-// fade-up reveal; product pages hold nothing back. These tests pin that.
+// The page's content holds still: nothing moves under the pointer, on a click or with a scroll, and hover states
+// change colour only. The dots are the exception: every halftone dot field answers the pointer, a press and a tap,
+// hard, and settles by itself. Public pages keep a quiet fade-up reveal; product pages hold nothing back.
+// These tests pin that.
 const web = new URL("../web/", import.meta.url);
 const engine = await readFile(new URL("assets/js/v13-halftone.js", web), "utf8");
 const motion = await readFile(new URL("assets/js/v13-motion.js", web), "utf8");
@@ -24,24 +25,40 @@ function sandbox(bodyClasses = []) {
 }
 const plain = v => JSON.parse(JSON.stringify(v));
 
-test("the wordmark's physics are gentle: a dot moves about 12px at most and nothing trails a scroll", () => {
+test("every dot answers hard: a resting pointer clears a wide hole, a thrown dot settles, nothing trails a scroll", () => {
   const ctx = sandbox();
   vm.runInContext(engine, ctx);
-  const H = ctx.window.InsidirHalftone;
-  assert.deepEqual(plain(H.PHYSICS), { push: 1, spring: 0.08, damping: 0.8, ringSpeed: 0.9, ringBand: 22, ringForce: 1.1, ringLife: 650, drag: 0.015, scroll: 0 });
-  assert.ok(Object.isFrozen(H.PHYSICS));
-  assert.ok(H.PHYSICS.push / H.PHYSICS.spring <= 15, "a steady push holds a dot at most ~12px from home");
-  assert.equal(H.PHYSICS.scroll, 0, "nothing lags behind a scroll");
-  // A dot one pixel from home with no pointer: v = (0 + (0 - 1)·0.08)·0.8 = −0.064.
-  const [x, , vx] = plain(H.step(1, 0, 0, 0, 0, 0, -1e5, -1e5, 80));
-  assert.ok(Math.abs(vx + 0.064) < 1e-12 && Math.abs(x - 0.936) < 1e-12);
-  assert.doesNotMatch(engine.replace(/const PHYSICS = Object\.freeze\(\{[^}]*\}\);/, ""), /\b(0\.08|0\.015|650)\b/, "no physics number is repeated outside PHYSICS");
+  const H = ctx.window.InsidirHalftone, P = H.PHYSICS;
+  assert.deepEqual(plain(P), { push: 4, spring: 0.045, damping: 0.85, drag: 0.14, press: 2.2, pressReach: 1.35, ringSpeed: 1.05, ringBand: 36, ringForce: 4, ringLife: 1300, rings: 6 });
+  assert.ok(Object.isFrozen(P));
+  // A pointer resting on a dot's home holds it well clear: the hole is tens of pixels wide, not a nudge.
+  let d = [0.5, 0, 0, 0];
+  for (let k = 0; k < 240; k++) d = plain(H.step(d[0], d[1], d[2], d[3], 0, 0, 0, 0, 170));
+  assert.ok(d[0] > 30, "a resting pointer holds a dot " + d[0].toFixed(1) + "px from home (more than 30)");
+  // Held down, the same pointer clears much more.
+  let e = [0.5, 0, 0, 0];
+  for (let k = 0; k < 240; k++) e = plain(H.step(e[0], e[1], e[2], e[3], 0, 0, 0, 0, 170 * P.pressReach, 0, 0, P.press));
+  assert.ok(e[0] > d[0] * 1.5, "a press widens the hole: " + e[0].toFixed(1) + "px");
+  // Thrown 80px out with no pointer, a dot is home within a second (60 frames).
+  let x = 80, y = 0, vx = 0, vy = 0;
+  for (let k = 0; k < 60; k++) [x, y, vx, vy] = plain(H.step(x, y, vx, vy, 0, 0, -1e5, -1e5, 170));
+  assert.ok(Math.abs(x) < 1 && Math.abs(vx) < 0.5, "settled within a second: " + [x, vx]);
+  assert.ok(!("scroll" in P) && !/\.kick\(|kick\(dx/.test(engine), "no scroll physics: a scroll never pushes a dot");
+  assert.doesNotMatch(engine.replace(/const PHYSICS = Object\.freeze\(\{[^}]*\}\);/, ""), /\b(0\.045|0\.86|0\.14|1300)\b/, "no physics number is repeated outside PHYSICS");
 });
 
-test("only a word answers the pointer; plain dot fields are still print texture", () => {
-  assert.match(engine, /interactive: d\.interactive \? d\.interactive !== "false" : \(d\.mode \|\| \(field \? "field" : "word"\)\) === "word"/);
-  const index = engine.indexOf("function readOptions");
-  assert.ok(index > 0);
+test("every dot field answers the pointer anywhere on the page, a press and a tap; under reduced motion none does", async () => {
+  assert.match(engine, /interactive: d\.interactive !== "false"/, "every field is interactive unless it opts out");
+  for (const type of ["pointermove", "pointerdown", "pointerup", "pointercancel"]) assert.ok(engine.includes('on(document, "' + type + '"'), "fields follow " + type + " across the page");
+  assert.match(engine, /const live = o\.interactive && !still;\n\s*const on = /, "nothing is listened to under reduced motion");
+  assert.match(engine, /if \(live\) \{\n\s*on\(document, "pointermove"/);
+  const pages = (await readdir(web)).filter(f => f.endsWith(".html"));
+  for (const f of pages) assert.doesNotMatch(await readFile(new URL(f, web), "utf8"), /data-interactive="false"/, f + " has no still dot field");
+  // The overview's dot corner is a live field, not a CSS pattern.
+  const dash = await readFile(new URL("dashboard.html", web), "utf8");
+  assert.match(dash, /class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field/);
+  const dcss = await readFile(new URL("v13-dashboard.css", cssDir), "utf8");
+  assert.doesNotMatch(dcss, /rd-today__brief::after/, "no static dot corner");
 });
 
 test("the site motion layer moves nothing: no pointer, click or scroll physics, only the reveal", () => {

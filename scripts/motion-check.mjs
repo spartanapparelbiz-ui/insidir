@@ -1,5 +1,6 @@
-/* Insidir site motion check: the site holds still, only the landing wordmark answers the pointer, public pages
-   fade blocks up once as they scroll in, and nothing on any page is orange.
+/* Insidir site motion check: the page's content holds still, every halftone dot field answers the pointer and a
+   click hard and settles back exactly, public pages fade blocks up once as they scroll in, and nothing on any page
+   is orange.
 
    Opens every page in headless Chromium (the /v1 API mocked) and verifies, with a real mouse and wheel:
 
@@ -26,12 +27,15 @@
        keep their boxes; the page does not scroll; and nothing anywhere ever
        writes --hf-dx / --hf-dy / --hf-s (a MutationObserver watches every style attribute for the whole visit,
        and none is left inline at the end);
-     - plain dot fields (data-halftone-field without data-mode="word", the footer strip) are print texture:
-       up to three per page are scrolled into view, the pointer sweeps across each and clicks on it, and its
-       canvas stays pixel-identical, mid-sweep, just after the click and once a ring would have run;
-     - the landing wordmark (data-halftone-hero) answers the pointer: its canvas changes while the pointer moves
-       over it and is back at its at-rest image (within 0.05%) within 1.5s of the pointer leaving; any other
-       word field (the 404 numerals) may answer too, and must also be back at rest within 1.5s;
+     - every plain dot field (data-halftone-field without data-mode="word": the page bands, the heroes, the
+       footer strip, the brief corner; up to three per page, scrolled into view) answers: the pointer sweeps
+       across it and its canvas changes (more than 0.05% of its pixels), the pointer leaves to the point on
+       screen farthest from it (and out of the window when even that is within the field's reach) and within
+       2.5s the canvas is pixel-identical to its at-rest image again, a
+       click on it rings through it (changed 100ms later) and within 2.5s it is pixel-identical again;
+     - every word field (the landing wordmark, data-halftone-hero; the 404 numerals) answers hard: its canvas
+       changes by more than 0.2% while the pointer moves over it and is back at its at-rest image (within
+       0.05%) within 2.5s of the pointer leaving;
      - hover moves nothing: up to 4 links/buttons on the first screen and 2 halfway down are hovered one at a
        time; after 400ms each keeps its box and transform, and so do its children (arrows .v13-arrow and the
        rest) and the ::before/::after of each;
@@ -52,8 +56,8 @@
        MutationObserver from document start).
 
    With prefers-reduced-motion: nothing waits to be revealed (pending 0, no .hf-pending/.hf-revealing, at load
-   or after scrolling), and the word canvases (the landing hero, the 404 numerals) do not change under the
-   pointer or a press.
+   or after scrolling), and the dot canvases (up to four per page, words and plain fields) do not change under
+   the pointer or a press.
 
    Phones (390px, touch) load every page without horizontal overflow or script errors, with a mounted dot field.
 
@@ -297,10 +301,11 @@ const MC_LIB = ({ ATOMS, GENERIC, HOVERABLE, CONTROL, FIELDS }) => {
     return n / (x.length / 4);
   };
   mc.drop = prefix => { for (const k of Object.keys(mc.snaps)) if (k.startsWith(prefix)) delete mc.snaps[k]; };
-  // The part of field i on screen (scrolled into view first when asked), a point on it where a click reaches the
-  // field's pointer host and no control, and a point outside the host for the pointer to leave to.
+  // The part of field i on screen (scrolled into view first when asked), a point on it where a click lands on no
+  // control, and the point on screen farthest from it (on no control) for the pointer to leave to: every field
+  // follows the pointer across the whole page, so leaving means going out of its reach.
   mc.fieldBox = (i, scroll) => {
-    const root = mc.roots[i], h = root.__halftone, host = h && h.options.pointerHost;
+    const root = mc.roots[i];
     if (scroll) {
       const r = root.getBoundingClientRect();
       window.scrollTo({ top: Math.max(0, r.top + scrollY - Math.max(80, (innerHeight - r.height) / 2)), left: 0, behavior: "instant" });
@@ -308,18 +313,21 @@ const MC_LIB = ({ ATOMS, GENERIC, HOVERABLE, CONTROL, FIELDS }) => {
     const r = root.getBoundingClientRect();
     const box = { left: Math.max(2, r.left), top: Math.max(2, r.top), right: Math.min(innerWidth - 2, r.right), bottom: Math.min(innerHeight - 2, r.bottom) };
     if (box.right - box.left < 8 || box.bottom - box.top < 8) return null;
-    const inHost = el => !!el && (host === document || (host && host.contains(el)));
     let click = null;
     for (let y = box.top + 4; y < box.bottom - 2 && !click; y += 9) for (let x = box.left + 6; x < box.right - 4; x += 17) {
       const el = document.elementFromPoint(x, y);
-      if (el && inHost(el) && !el.closest(CONTROL)) { click = { x, y }; break; }
+      if (el && !el.closest(CONTROL)) { click = { x, y }; break; }
     }
-    let out = null;
-    if (host !== document) for (let y = 6; y < innerHeight - 4 && !out; y += 13) for (let x = 6; x < innerWidth - 4; x += 41) {
+    let out = null, far = -1;
+    for (let y = 6; y < innerHeight - 4; y += 13) for (let x = 6; x < innerWidth - 4; x += 41) {
+      const dx = Math.max(0, r.left - x, x - r.right), dy = Math.max(0, r.top - y, y - r.bottom), d = Math.hypot(dx, dy);
+      if (d <= far) continue;
       const el = document.elementFromPoint(x, y);
-      if (el && !(host && host.contains(el)) && !el.closest(CONTROL)) { out = { x, y }; break; }
+      if (el && !el.closest(CONTROL)) { out = { x, y }; far = d; }
     }
-    return Object.assign(box, { click, out, scrollY });
+    // A field nearly as big as the screen has no point on screen out of its reach: the pointer leaves the window.
+    const h = root.__halftone, reach = h ? h.options.radius * window.InsidirHalftone.PHYSICS.pressReach + 8 : 0;
+    return Object.assign(box, { click, out, far: Math.round(far), clear: far > reach, scrollY });
   };
 
   // A point on empty page: nothing clickable under it (and, first, no dot field either).
@@ -628,12 +636,32 @@ async function scrollStill(page, key, fields) {
   await page.evaluate(() => window.__mc.drop("s"));
 }
 
-/* ---------- (c) word fields answer the pointer gently and settle; plain fields hold still ---------- */
+/* ---------- (c) every dot field answers the pointer and a click, hard, and settles back exactly ---------- */
+// The pointer leaves a field's reach: to the point on screen farthest from it, and out of the window when even that is
+// within reach (a pointerout with no relatedTarget, as the browser sends when the pointer leaves the page).
+async function leave(page, box, steps = 1) {
+  await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2, { steps });
+  if (!box.clear) await page.evaluate(() => document.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: null })));
+}
+// A field is back at rest when its canvas equals its at-rest image (a word within 0.05% of its pixels, a plain field
+// pixel for pixel: every dot snaps exactly home); it has 2.5s from the moment the pointer leaves its reach.
+const SETTLE_MS = 2500;
+async function backAtRest(page, f, rest, thr, tol) {
+  const t0 = Date.now();
+  let left = 1, took = 0;
+  for (;;) {
+    left = await snapDiff(page, f.i, rest + "-now", rest, thr);
+    took = Date.now() - t0;
+    if ((left >= 0 && left <= tol) || took > SETTLE_MS) break;
+    await page.waitForTimeout(80);
+  }
+  return { left, took, ok: left >= 0 && left <= tol && took <= SETTLE_MS };
+}
 async function wordFields(page, key, fields) {
   for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
     const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
     if (!check(!!box, `${key}: the word canvas ${f.name} is on screen to test`)) continue;
-    await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2);
+    await leave(page, box);
     await restSnap(page, f.i, "w-rest", WORD_THR);
     // Across the word, low (where the letters sit) and through the middle.
     let moved = 0;
@@ -643,48 +671,50 @@ async function wordFields(page, key, fields) {
       await page.mouse.move(box.left + (box.right - box.left) * 0.85, y, { steps: 12 });
       moved = Math.max(moved, await snapDiff(page, f.i, "w-on", "w-rest", WORD_THR));
     }
-    // The pointer leaves: back at rest within 1.5s.
-    await page.mouse.move(box.out ? box.out.x : 2, box.out ? box.out.y : 2, { steps: 2 });
-    const t0 = Date.now();
-    let left = 1, took = 0;
-    for (;;) {
-      left = await snapDiff(page, f.i, "w-now", "w-rest", WORD_THR);
-      took = Date.now() - t0;
-      if ((left >= 0 && left <= WORD_TOL) || took > 1500) break;
-      await page.waitForTimeout(80);
-    }
-    if (f.hero) check(moved > WORD_TOL, `${key}: the hero wordmark answers the pointer (${pct(moved)} of its canvas changed while the pointer moved over it)`, { moved });
-    check(left >= 0 && left <= WORD_TOL && took <= 1500, `${key}: ${f.hero ? "the hero wordmark" : "the word field " + f.name} is back at rest within 1.5s of the pointer leaving (${took}ms; ${f.hero ? "" : "it answered with " + pct(moved) + "; "}${pct(left)} still differs)`, { left, took, moved });
+    // The pointer leaves: back at rest.
+    await leave(page, box, 2);
+    const r = await backAtRest(page, f, "w-rest", WORD_THR, WORD_TOL);
+    check(moved > 0.002, `${key}: ${f.hero ? "the hero wordmark" : "the word field " + f.name} answers the pointer hard (${pct(moved)} of its canvas changed while the pointer moved over it)`, { moved });
+    check(r.ok, `${key}: ${f.hero ? "the hero wordmark" : "the word field " + f.name} is back at rest within ${SETTLE_MS / 1000}s of the pointer leaving (${r.took}ms; ${pct(r.left)} still differs)`, r);
     await page.evaluate(() => window.__mc.drop("w-"));
   }
 }
 async function plainFields(page, key, fields) {
   const plain = fields.filter(f => !f.word && f.mounted && f.shown && f.w > 0 && f.h > 0).slice(0, 3);
-  const bad = [];
+  const bad = [], seen = [];
   let tested = 0;
   for (const f of plain) {
     const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
-    if (!box) continue;
+    if (!box || !box.out) continue;
     tested++;
+    await leave(page, box);
     await page.waitForTimeout(80);
     await restSnap(page, f.i, "p-rest", 0, 100);
-    const same = async when => { const d = await snapDiff(page, f.i, "p-now", "p-rest", 0); if (d !== 0) bad.push(f.name + " " + pct(d) + " changed " + when); };
+    let swept = 0, rang = -1;
     for (const fy of [0.3, 0.75]) {
       const y = box.top + (box.bottom - box.top) * fy;
       await page.mouse.move(box.left + 4, y);
       await page.mouse.move(box.right - 4, y, { steps: 6 });
-      await same("while the pointer swept across it");
+      swept = Math.max(swept, await snapDiff(page, f.i, "p-on", "p-rest", 0));
     }
+    // Out of reach and settled, then a click on the field: its ring runs through the dots.
+    await leave(page, box, 2);
+    const r1 = await backAtRest(page, f, "p-rest", 0, 0);
     if (box.click) {
       await page.mouse.click(box.click.x, box.click.y);
-      await page.waitForTimeout(120);
-      await same("just after a click on it");
-      await page.waitForTimeout(300);
-      await same("after the click");
+      await leave(page, box);
+      await page.waitForTimeout(100);
+      rang = await snapDiff(page, f.i, "p-ring", "p-rest", 0);
     }
+    const r2 = await backAtRest(page, f, "p-rest", 0, 0);
+    seen.push(f.name + " " + pct(swept) + " swept" + (rang >= 0 ? ", " + pct(rang) + " rung" : "") + ", " + Math.max(r1.took, r2.took) + "ms to rest");
+    if (!(swept > 0.0005)) bad.push(f.name + " hardly answered the pointer (" + pct(swept) + " changed)");
+    if (box.click && !(rang > 0.0005)) bad.push(f.name + " did not ring on a click (" + pct(rang) + " changed)");
+    if (!r1.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after the pointer left (" + pct(r1.left) + " differs)");
+    if (!r2.ok) bad.push(f.name + " not back at rest " + SETTLE_MS + "ms after a click (" + pct(r2.left) + " differs)");
     await page.evaluate(() => window.__mc.drop("p-"));
   }
-  check(bad.length === 0 && tested > 0, `${key}: plain dot fields hold still under the pointer and a click (${tested} field(s), canvases pixel-identical)`, bad.length ? bad.slice(0, 4) : { tested });
+  check(bad.length === 0 && tested > 0, `${key}: every dot field answers the pointer and a click and settles back exactly (${tested} field(s): ${seen.join("; ")})`, bad.length ? bad.slice(0, 4) : { tested });
 }
 
 /* ---------- (a) nothing moves under the pointer, a press or a click ---------- */
@@ -924,14 +954,14 @@ try {
       check(errors.length === 0, key + ": no script errors while revealing", errors);
       await context.close();
     }
-    /* ---------- reduced motion: nothing waits, and the words hold still ---------- */
+    /* ---------- reduced motion: nothing waits, and the dots hold still ---------- */
     {
       const { context, page, errors } = await open(path, { reducedMotion: "reduce", reveal: false });
       const r0 = await page.evaluate(() => ({ pending: window.InsidirMotion ? window.InsidirMotion.pending : -1, classed: document.querySelectorAll(".hf-pending,.hf-revealing").length }));
       const fields = await page.evaluate(() => window.__mc.fields());
       const changed = [];
       let words = 0;
-      for (const f of fields.filter(f => f.word && f.mounted && f.shown && f.w > 0)) {
+      for (const f of fields.filter(f => f.mounted && f.shown && f.w > 0 && f.h > 0).slice(0, 4)) {
         const box = await page.evaluate(i => window.__mc.fieldBox(i, true), f.i);
         if (!box) continue;
         words++;
@@ -948,7 +978,7 @@ try {
         if (d1 !== 0 || d2 !== 0) changed.push(f.name + ": " + pct(d1) + " under the pointer, " + pct(d2) + " after a press");
         await page.evaluate(() => window.__mc.drop("r-"));
       }
-      if (words) check(changed.length === 0, `${key}: reduced motion: the word canvas(es) hold still under the pointer and a press (${words})`, changed);
+      check(words > 0 && changed.length === 0, `${key}: reduced motion: every dot canvas holds still under the pointer and a press (${words})`, changed.length ? changed : { words });
       for (const f of [0.5, 1]) { await page.evaluate(f => window.scrollTo({ top: (document.documentElement.scrollHeight - innerHeight) * f, behavior: "instant" }), f); await page.waitForTimeout(250); }
       const r1 = await page.evaluate(() => ({ pending: window.InsidirMotion ? window.InsidirMotion.pending : -1, classed: document.querySelectorAll(".hf-pending,.hf-revealing").length }));
       check(r0.pending === 0 && r0.classed === 0 && r1.pending === 0 && r1.classed === 0, key + ": reduced motion: nothing waits to be revealed, at load or after scrolling", { load: r0, scrolled: r1 });

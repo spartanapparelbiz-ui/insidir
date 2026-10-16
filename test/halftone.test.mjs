@@ -72,7 +72,20 @@ test("dots are always drawn in ink: pushing them never tints them orange", async
   assert.equal(h.warmth, undefined, "no warmth helper");
   const src = await readFile(new URL("../web/assets/js/v13-halftone.js", import.meta.url), "utf8");
   assert.doesNotMatch(src, /warm|e9762b|233,\s*118,\s*43/i, "the engine knows no accent colour");
-  assert.match(src, /ctx\.fillStyle = o\.colors\.ink;\n\s*for \(let i = 0; i < count; i\+\+\)/, "one ink fill for every dot");
+  // Every dot goes into one path, filled once in ink: nothing a push does can change a dot's colour.
+  assert.match(src, /ctx\.fillStyle = o\.colors\.ink;\n\s*ctx\.beginPath\(\);\n\s*for \(let i = 0; i < count; i\+\+\)/, "one ink path for every dot");
+  assert.equal((src.match(/ctx\.fill\(\)/g) || []).length, 1, "the dots are filled once a frame");
+});
+
+test("a held press pushes harder; a ring pushes only within its band and fades out", () => {
+  const h = load();
+  const once = h.step(10, 0, 0, 0, 10, 0, 0, 0, 80), held = h.step(10, 0, 0, 0, 10, 0, 0, 0, 80, 0, 0, h.PHYSICS.press);
+  assert.ok(held[2] > once[2] * 2, "a press pushes " + h.PHYSICS.press + "x as hard: " + [once[2], held[2]]);
+  const P = h.PHYSICS, age = 400, at = age * P.ringSpeed;
+  assert.ok(h.ringPush(at, age) > 0, "a dot on the ring is pushed");
+  assert.equal(h.ringPush(at + P.ringBand + 1, age), 0, "a dot beyond the band is not");
+  assert.equal(h.ringPush(at, P.ringLife), 0, "a spent ring pushes nothing");
+  assert.ok(h.ringPush(at, age) > h.ringPush(P.ringLife * 0.9 * P.ringSpeed, P.ringLife * 0.9), "a ring fades as it runs");
 });
 
 test("fitSize scales a 100px measurement to fill the width", () => {

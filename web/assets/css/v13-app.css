@@ -22,13 +22,13 @@ body.v13 .v4-ui-icon{display:inline-block!important;width:18px!important;height:
 
 /* ---------- Header band: the wordmark's dots, without the word, in every product page's header ----------
    One live dot field (div.pd-band[data-halftone-field], mounted by v13-halftone.js) sits in the empty top-right corner of
-   each page header: the overview's intro, the desk mastheads (research, portfolio, alerts, account, billing), the
-   collection tops (companies, filings, a filing, watchlist), the people hero, and the company picker and report
-   (v13-company.css). The same box on every page: anchored to the header's top-right corner directly under its top
+   each page header: the desk mastheads (research, portfolio, alerts, account, billing), the person file, and the
+   company picker and report (v13-company.css); the overview carries its dots in the brief panel's corner
+   (v13-dashboard.css), and the collection tops and the people hero leave the band out. The same box on every page: anchored to the header's top-right corner directly under its top
    rule, 30% of the header wide and clamp(88px,7.4vw,108px) tall, fading radially to nothing at its left and bottom edges
-   (the marketing hero's mask), so headings, ledes, inputs and figures always sit on plain paper. The field listens to
-   the header, so the pointer anywhere in it parts the dots, and a click on empty space ripples them with the rest of the
-   page. The box is sized here, before the script runs; the header's own content stays above it in source order.
+   (the marketing hero's mask), so headings, ledes, inputs and figures always sit on plain paper. The field follows the
+   pointer across the page: within reach it blows the dots apart and drags them after it, a press widens the hole, and
+   every click or tap rings out through it. The box is sized here, before the script runs; the header's own content stays above it in source order.
    Phones (≤759px) have no free corner beside the headline and leave it out. */
 body.v13{--pd-band-w:30%!important;--pd-band-h:clamp(88px,7.4vw,108px)!important}
 body.v13 :is(.rd-today,.desk-masthead,.cl-top,.v10-people-hero){position:relative!important}
