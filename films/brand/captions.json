@@ -1,6 +1,0 @@
-[
- {"out":"brand/cap2_headline.png","justify":"flex-end","html":"<div style='position:absolute;left:0;right:0;bottom:0;height:330px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6) 55%,rgba(0,0,0,.72))'></div><div class=cap style='position:relative;font-size:34px;letter-spacing:.3em;margin:0 0 132px;'>Everyone read the headline.</div>"},
- {"out":"brand/cap2_filing.png","justify":"flex-end","html":"<div style='position:absolute;left:0;right:0;bottom:0;height:330px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6) 55%,rgba(0,0,0,.72))'></div><div class=cap style='position:relative;font-size:34px;letter-spacing:.3em;margin:0 0 132px;'>Almost nobody read the filing.</div>"},
- {"out":"brand/cap3_fast.png","html":"<div style='position:absolute;left:0;right:0;top:421px;height:238px;background:rgba(0,0,0,.5)'></div><div class=cap style='position:relative;font-size:70px;font-weight:800;letter-spacing:.2em'>The world moves fast.</div>"},
- {"out":"brand/cap3_faster.png","html":"<div style='position:absolute;left:0;right:0;top:400px;height:280px;background:rgba(0,0,0,.5)'></div><div class=cap style='position:relative;font-size:74px;font-weight:800;letter-spacing:.2em;line-height:1.3'>Information<br>moves faster.</div>"}
-]
