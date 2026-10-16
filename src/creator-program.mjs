@@ -31,13 +31,13 @@ export function commissionEligibleInvoice(invoice) {
 export async function recordFirstPaidInvoice(invoice,{query,verifiedPlan}) {
   if(!commissionEligibleInvoice(invoice)||!verifiedPlan)return false;
   const res=await query(
-    \`INSERT INTO creator_commissions(creator_id,referred_user_id,stripe_invoice_id,stripe_customer_id)
+    `INSERT INTO creator_commissions(creator_id,referred_user_id,stripe_invoice_id,stripe_customer_id)
      SELECT r.creator_id,u.id,$2,u.stripe_customer_id
      FROM users u JOIN creator_referrals r ON r.user_id=u.id
      JOIN creator_partners p ON p.id=r.creator_id
      WHERE u.stripe_customer_id=$1 AND p.status='approved'
        AND (p.contact_email IS NULL OR lower(p.contact_email)<>lower(u.email))
-     ON CONFLICT DO NOTHING RETURNING id\`,
+     ON CONFLICT DO NOTHING RETURNING id`,
     [invoice.customer,invoice.id]);
   return !!res.rows.length;
 }
@@ -77,10 +77,10 @@ export async function creatorAdminRoutes(req,res,path,json,{query,env=process.en
   }
   if(path==="/v1/creators/admin/commissions" && req.method==="GET"){
     const rows=await query(
-      \`SELECT c.id,p.instagram_handle,p.display_name,c.amount_cents,c.status,
+      `SELECT c.id,p.instagram_handle,p.display_name,c.amount_cents,c.status,
         c.stripe_invoice_id,c.stripe_customer_id,c.earned_at,c.eligible_at
        FROM creator_commissions c JOIN creator_partners p ON p.id=c.creator_id
-       ORDER BY c.earned_at DESC LIMIT 500\`);
+       ORDER BY c.earned_at DESC LIMIT 500`);
     return json(res,200,{commissions:rows.rows,note:"Manual approval only. Verify payment, refunds and disputes in Stripe before any payout; the eligible date does not authorize payment."});
   }
   throw fail(404,"Unknown creator admin route");
