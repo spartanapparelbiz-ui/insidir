@@ -2,9 +2,10 @@
    shared header and closing call on the not-found page). Layout on top of v13-halftone.css. Every declaration
    in this file lives in the insidir-v13 layer and is !important (see the note at the top of v13-halftone.css).
 
-   The pages are set like the landing page below its hero: the same 1320px measure and gutter, the same
-   navigation, and sections that open on a hairline rule with a mono folio at the right end, a tracked eyebrow
-   and headline on the left and the lead copy on the right. Content is laid out as hairline grids, rules,
+   The pages are set like the landing page below its hero: the same container and 12-column grid, the same
+   navigation, and sections that open on the running head (a --hf-line-2 rule, then the eyebrow at the left and the
+   folio at the right on one line 20px under it), a headline in columns 1-8 and the aside in 9-12. The arrow is the
+   font's glyph: → for another Insidir page, ↗ for a source document. Content is laid out as hairline grids, rules,
    ledgers and typographic diagrams; nothing on these pages shows product data. There is no accent colour:
    every mark, marker, rule and hover is ink (faint or soft at rest, ink when pointed at), and the only other
    colours are the market's own, green for a purchase and red for a sale in the code legend.
@@ -18,8 +19,8 @@
    still print texture (v13-halftone.js) and do not answer the pointer or a click. Nothing moves under the pointer,
    on a press or on a scroll: index numbers and arrows, step, rule and cadence numbers, the schematic's keys, chips
    and tabs, the transaction-code letters, tags and the legal contents' numbers all stay exactly where they are.
-   Rows and cards that link somewhere answer a pointer with colour only: an ink hairline, an underline or a surface
-   fill; their arrows do not move. Colour transitions keep their plain easing.
+   Rows and cards that link somewhere answer a pointer with colour only (the text, an underline, the arrow from faint to
+   ink); nothing fills, and nothing that is not a link answers at all. Colour transitions are 120ms linear.
 
    Scroll: below the hero each page assembles once as it is read. Section heads, diagrams, grids and the closing
    call carry data-hf-reveal (one block) or data-hf-reveal-group (each child in turn) in the markup, and
@@ -35,25 +36,26 @@
 
 /* ---------- Page ---------- */
 html.v13-menu-open{overflow:hidden!important}
-body.v13.v3-static.v6-static{--mk-gutter:clamp(16px,4.2vw,60px)!important;--mk-nav:72px!important;--mk-hero-top:clamp(56px,7.5vw,112px)!important;
-  font:400 13.5px/1.75 var(--hf-sans)!important;color:var(--hf-ink)!important;background:var(--hf-bg)!important;overflow-x:clip!important;min-height:100vh!important}
+body.v13.v3-static.v6-static{--mk-gutter:var(--hf-gutter)!important;--mk-nav:70px!important;--mk-hero-top:clamp(56px,7.5vw,112px)!important;
+  font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-bg)!important;overflow-x:clip!important;min-height:100vh!important}
 body.v13.v3-static.v6-static main{display:block!important;overflow-x:clip!important;background:transparent!important}
-body.v13.v3-static.v6-static .mk-shell{width:min(1320px,calc(100% - 2 * var(--mk-gutter)))!important;max-width:none!important;margin-inline:auto!important;padding-inline:0!important;box-sizing:border-box!important}
+body.v13.v3-static.v6-static .mk-shell{width:min(var(--hf-max),calc(100% - 2 * var(--mk-gutter)))!important;max-width:none!important;margin-inline:auto!important;padding-inline:0!important;box-sizing:border-box!important}
 body.v13.v3-static.v6-static :is(h1,h2,h3){text-wrap:balance!important}
 body.v13.v3-static.v6-static p{text-wrap:pretty!important}
 body.v13.v3-static.v6-static .mk-sr{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
 
 /* ---------- Navigation (same markup and behaviour as the landing page; v6-site.js runs the menu) ---------- */
 body.v13.v3-static.v6-static .v9-nav{position:sticky!important;top:0!important;z-index:60!important;height:var(--mk-nav)!important;margin:0!important;padding:0!important}
-body.v13.v3-static.v6-static .v9-nav .v6-nav__inner{height:100%!important;display:flex!important;align-items:center!important;gap:clamp(20px,2.4vw,38px)!important}
+body.v13.v3-static.v6-static .v9-nav .v6-nav__inner{height:100%!important;display:flex!important;align-items:center!important;gap:28px!important}
 body.v13.v3-static.v6-static .v9-nav .v6-logo{flex:none!important;min-height:44px!important;align-items:center!important}
-body.v13.v3-static.v6-static .v9-nav .v6-nav__links{display:flex!important;margin-left:auto!important;align-items:center!important;gap:clamp(18px,2vw,30px)!important}
+body.v13.v3-static.v6-static .v9-nav .v6-nav__links{display:flex!important;margin-left:auto!important;align-items:center!important;gap:28px!important}
 body.v13.v3-static.v6-static :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin,.mk-link){position:relative!important;white-space:nowrap!important}
 /* Text links keep their size but get a 44px-tall invisible hit area for touch screens. */
 body.v13.v3-static.v6-static :is(.v9-nav .v6-nav__links a,.v9-nav .v6-signin)::after{content:""!important;position:absolute!important;inset:-15px -8px!important;background:transparent!important}
 body.v13.v3-static.v6-static .v9-nav .v6-nav__links a[aria-current="page"]{color:var(--hf-ink)!important;background-size:100% 1px!important}
-body.v13.v3-static.v6-static .v9-nav .v6-nav__actions{flex:none!important;display:flex!important;align-items:center!important;gap:clamp(16px,1.8vw,26px)!important}
-body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{height:44px!important;min-height:44px!important;padding:0 18px!important;gap:14px!important}
+body.v13.v3-static.v6-static .v9-nav .v6-nav__actions{flex:none!important;display:flex!important;align-items:center!important;gap:24px!important;margin-left:20px!important}
+body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{height:40px!important;min-height:40px!important;padding:0 16px!important;gap:10px!important}
+body.v13.v3-static.v6-static .v9-nav .v9-btn .v13-arrow{display:none!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn{display:none!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:44px!important;height:44px!important;margin:0 -10px 0 0!important;padding:0!important;
   border:0!important;background:transparent!important;cursor:pointer!important;gap:6px!important;border-radius:0!important}
 body.v13.v3-static.v6-static .v9-nav .v6-menu-btn span{display:block!important;width:20px!important;height:1.5px!important;background:var(--hf-ink)!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
@@ -66,43 +68,50 @@ body.v13.v3-static.v6-static .v9-nav .v6-mobile:not([hidden]){display:flex!impor
   min-height:calc(100svh - var(--mk-nav) + 1px)!important;max-height:calc(100svh - var(--mk-nav) + 1px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;
   padding:8px var(--mk-gutter) 40px!important;background:var(--hf-bg)!important;border:0!important;border-top:1px solid var(--hf-line)!important}
 body.v13.v3-static.v6-static .v9-nav .v6-mobile a{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;flex:none!important;min-height:56px!important;padding:0!important;
-  border:0!important;border-bottom:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;transition:color .2s,border-color .2s!important}
+  border:0!important;border-bottom:1px solid var(--hf-line-faint)!important;font:450 15px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-ink)!important;text-decoration:none!important;background:transparent!important;transition:color .12s linear,border-color .12s linear!important}
 /* The page you are on: a small ink square at the row's end. A pointed-at row draws its hairline in ink. */
 body.v13.v3-static.v6-static .v9-nav .v6-mobile a[aria-current="page"]::after{content:""!important;flex:none!important;width:6px!important;height:6px!important;background:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .v9-nav .v6-mobile a:not(:last-child):hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .v9-nav .v6-mobile a:last-child{margin-top:28px!important;min-height:52px!important;padding:0 18px!important;border:1px solid var(--hf-ink)!important;background:var(--hf-ink)!important;color:var(--hf-bg)!important;transition:background .25s,border-color .25s!important}
-body.v13.v3-static.v6-static .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-soft)!important;border-color:var(--hf-soft)!important;color:var(--hf-bg)!important}
+body.v13.v3-static.v6-static .v9-nav .v6-mobile a:not(:last-child):hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-line-2)!important}
+body.v13.v3-static.v6-static .v9-nav .v6-mobile a:last-child{margin-top:28px!important;min-height:48px!important;padding:0 20px!important;border:1px solid var(--hf-ink)!important;background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 14px/1 var(--hf-mono)!important;transition:background-color .12s linear,border-color .12s linear!important}
+body.v13.v3-static.v6-static .v9-nav .v6-mobile a:last-child:hover{background:var(--hf-ink-hover)!important;border-color:var(--hf-ink-hover)!important;color:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .v9-nav .v6-mobile a:focus-visible{outline-offset:-3px!important}
 
 /* ---------- Buttons, links and the arrow ---------- */
 body.v13.v3-static.v6-static .v12-outline-button{background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static .v12-outline-button:hover{background:var(--hf-surface)!important;border-color:var(--hf-ink)!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .v12-outline-button:hover{background:transparent!important;border-color:var(--hf-line-strong)!important;color:var(--hf-ink)!important}
 /* Pressed: the ink button dims a step further than its hover, the hairline one fills, a text link dims to soft;
    nothing changes size or position. */
-body.v13.v3-static.v6-static :is(.v9-btn--ink,.v6-mobile a:last-child):active{background:var(--hf-muted)!important;border-color:var(--hf-muted)!important;color:var(--hf-bg)!important}
+body.v13.v3-static.v6-static :is(.v9-btn--ink,.v6-mobile a:last-child):active{background:var(--hf-ink-press)!important;border-color:var(--hf-ink-press)!important;color:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .v12-outline-button:active{background:var(--hf-raise)!important}
 body.v13.v3-static.v6-static :is(.mk-link,.v6-nav__links a,.v6-signin,.v6-mobile a:not(:last-child)):active{color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-link{display:inline-flex!important;align-items:center!important;gap:12px!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-ink)!important;text-decoration:none!important;
-  background-image:linear-gradient(currentColor,currentColor)!important;background-size:0% 1px!important;background-repeat:no-repeat!important;background-position:0 100%!important;transition:color .25s,background-size .35s cubic-bezier(.2,.7,.1,1)!important}
-body.v13.v3-static.v6-static .mk-link:hover{color:var(--hf-ink)!important;background-size:100% 1px!important}
+/* An inline box on a 24px line, its arrow an atomic inline-block spaced by its own margin: the hover underline runs
+   under the words and stops before the arrow (an inline-flex link draws a detached stub under it). */
+body.v13.v3-static.v6-static .mk-link{display:inline-block!important;font:500 13px/24px var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;text-decoration:none!important;
+  background-image:none!important;text-underline-offset:4px!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-link>.v13-arrow{margin-left:8px!important;text-decoration:none!important}
+body.v13.v3-static.v6-static .mk-link:hover{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
+body.v13.v3-static.v6-static .mk-link .v13-arrow{color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-link:hover .v13-arrow{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-link::after{content:""!important;position:absolute!important;inset:-14px -8px!important;background:transparent!important}
-body.v13.v3-static.v6-static :is(.v9-btn,.mk-link) .v13-arrow{transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13.v3-static.v6-static :is(.v9-btn,.mk-link):hover .v13-arrow{transform:none!important}
-/* Drawn from the text colour (shaft and open head, 1px like the mono's stroke) so it matches the type at every
-   size; the glyph stays in the markup as the no-CSS fallback. */
-body.v13.v3-static.v6-static .v13-arrow{position:relative!important;display:inline-block!important;width:10px!important;height:10px!important;font-size:0!important;line-height:0!important;color:inherit!important;vertical-align:-1px!important;flex:none!important;overflow:hidden!important;text-align:left!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important}
-body.v13.v3-static.v6-static .v13-arrow::before{content:""!important;position:absolute!important;left:1.5px!important;bottom:1.5px!important;width:9px!important;height:1px!important;background:currentColor!important;transform-origin:0 50%!important;transform:rotate(-45deg)!important}
-body.v13.v3-static.v6-static .v13-arrow::after{content:""!important;position:absolute!important;right:1.5px!important;top:1.5px!important;width:4.5px!important;height:4.5px!important;border-top:1px solid currentColor!important;border-right:1px solid currentColor!important;background:transparent!important}
-body.v13.v3-static.v6-static .mk-actions{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:14px!important;margin:32px 0 0!important}
-body.v13.v3-static.v6-static .mk-actions .v9-btn{height:48px!important;min-height:48px!important;padding:0 22px!important;gap:18px!important}
+/* The arrow is the font's own glyph, as on the landing page: ↗ opens a source document (sec.gov, a publisher), → goes
+   to another Insidir page. It changes colour only (faint on a hairline button or a link, ink when pointed at). */
+body.v13.v3-static.v6-static .v13-arrow{display:inline-block!important;flex:none!important;font-family:var(--hf-mono)!important;font-weight:400!important;line-height:1!important;text-decoration:none!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-actions{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important;margin:32px 0 0!important}
+body.v13.v3-static.v6-static .mk-actions .v9-btn{height:48px!important;min-height:48px!important;padding:0 20px!important;gap:12px!important;font:500 14px/1 var(--hf-mono)!important}
 
 /* ---------- Shared type ---------- */
-body.v13.v3-static.v6-static .mk-eyebrow{display:flex!important;align-items:center!important;gap:12px!important;margin:0!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
-body.v13.v3-static.v6-static .mk-caption{margin:22px 0 0!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
-body.v13.v3-static.v6-static .mk-note{margin:20px 0 0!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;max-width:96ch!important}
-body.v13.v3-static.v6-static :is(.mk-note,.mk-caption,.mk-prose,.mk-faq details>p,.mk-ledger dd,.mk-cell p) a{color:var(--hf-soft)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:color .2s!important}
+body.v13.v3-static.v6-static .mk-eyebrow{display:flex!important;align-items:center!important;gap:12px!important;margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-caption{margin:20px 0 0!important;font:400 13px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important;max-width:72ch!important}
+/* The hero's terms, built like the landing's: three phrases, each with a dim dot in a 28px gutter in front of it, on a
+   line box that starts one gutter to the left with that gutter clipped, so no line starts or ends on a dot. */
+body.v13.v3-static.v6-static .mk-caption.mk-terms{display:flex!important;flex-wrap:wrap!important;gap:4px 0!important;margin:20px 0 0 -28px!important;max-width:none!important;clip-path:inset(0 0 0 28px)!important}
+body.v13.v3-static.v6-static .mk-terms>span{white-space:nowrap!important}
+body.v13.v3-static.v6-static .mk-terms>span::before{content:"\00B7"!important;display:inline-block!important;width:28px!important;text-align:center!important;color:var(--hf-line-strong)!important}
+body.v13.v3-static.v6-static .mk-terms b{font-weight:500!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-note{margin:20px 0 0!important;font:400 13px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important;max-width:72ch!important}
+body.v13.v3-static.v6-static :is(.mk-note,.mk-caption,.mk-prose,.mk-faq details>p,.mk-ledger dd,.mk-cell p) a{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;transition:color .12s linear,text-decoration-color .12s linear!important}
 body.v13.v3-static.v6-static :is(.mk-note,.mk-caption,.mk-prose,.mk-faq details>p,.mk-ledger dd,.mk-cell p) a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
-body.v13.v3-static.v6-static .mk-tag{display:inline-flex!important;align-items:center!important;min-height:22px!important;padding:0 8px!important;border:1px solid var(--hf-line-2)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;white-space:nowrap!important}
+body.v13.v3-static.v6-static .mk-tag{display:inline-flex!important;align-items:center!important;height:20px!important;min-height:20px!important;padding:0 7px!important;border:0!important;background:var(--hf-raise)!important;font:500 11px/1 var(--hf-mono)!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;white-space:nowrap!important}
 
 /* ---------- Page hero ---------- */
 body.v13.v3-static.v6-static .mk-hero{position:relative!important;padding:var(--mk-hero-top) 0 clamp(48px,5vw,72px)!important;margin:0!important;border:0!important;background:transparent!important}
@@ -114,90 +123,109 @@ body.v13.v3-static.v6-static .mk-hero{position:relative!important;padding:var(--
 body.v13.v3-static.v6-static .mk-hero>.mk-hero__field{inset:0 0 auto auto!important;width:60%!important;height:var(--mk-hero-top)!important;
   -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,var(--hf-ink),transparent)!important}
 body.v13.v3-static.v6-static .mk-hero>.mk-hero__field::after{display:none!important}
-body.v13.v3-static.v6-static .mk-hero__grid{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(0,.85fr)!important;gap:40px clamp(40px,6vw,112px)!important;align-items:end!important}
-body.v13.v3-static.v6-static .mk-hero h1{font:800 clamp(34px,calc(2.8vw + 24px),72px)/1.05 var(--hf-mono)!important;letter-spacing:-.035em!important;margin:24px 0 0!important;max-width:20ch!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-hero__grid{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important;row-gap:40px!important;align-items:end!important}
+body.v13.v3-static.v6-static .mk-hero__grid>:first-child{grid-column:1/9!important;min-width:0!important}
+body.v13.v3-static.v6-static .mk-hero__grid>:nth-child(2){grid-column:9/13!important;min-width:0!important}
+body.v13.v3-static.v6-static .mk-hero h1{font:700 var(--hf-fs-display-2)/1.02 var(--hf-mono)!important;letter-spacing:-.045em!important;word-spacing:-.12em!important;margin:28px 0 0!important;max-width:none!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-hero h1 span{color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-lede{margin:26px 0 0!important;font:400 14px/1.75 var(--hf-sans)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important;max-width:56ch!important}
+body.v13.v3-static.v6-static .mk-lede{margin:28px 0 0!important;font:400 16px/1.6 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;max-width:50ch!important}
 body.v13.v3-static.v6-static .mk-hero--doc{padding-bottom:0!important}
 body.v13.v3-static.v6-static .mk-hero--doc>.mk-shell{padding-bottom:clamp(40px,4.4vw,64px)!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13.v3-static.v6-static .mk-hero--doc h1{max-width:22ch!important}
+body.v13.v3-static.v6-static .mk-hero--doc h1{font-size:var(--hf-fs-h2-lg)!important;line-height:1.04!important;max-width:22ch!important}
 
 /* Hero aside: an index of the page, or a short ledger of facts. */
 body.v13.v3-static.v6-static .mk-index{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-index li{margin:0!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-index a{display:grid!important;grid-template-columns:40px minmax(0,1fr) 16px!important;align-items:center!important;gap:12px!important;min-height:46px!important;padding:8px 0!important;border-bottom:1px solid var(--hf-line)!important;
-  font:400 12.5px/1.45 var(--hf-mono)!important;color:var(--hf-soft)!important;text-decoration:none!important;transition:color .2s,border-color .2s!important}
-body.v13.v3-static.v6-static .mk-index a span:first-child{font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .2s!important}
-body.v13.v3-static.v6-static .mk-index a span:last-child{font:400 12px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;text-align:right!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
-body.v13.v3-static.v6-static .mk-index a:hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
+  font:400 13px/1.45 var(--hf-mono)!important;color:var(--hf-soft)!important;text-decoration:none!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-index a span:first-child{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-index a span:last-child{font:400 13px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;text-align:right!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-index a:hover{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-index a:hover span:first-child,body.v13.v3-static.v6-static .mk-index a:hover span:last-child{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-index a:hover span:last-child{transform:none!important}
 body.v13.v3-static.v6-static .mk-index a:focus-visible{outline-offset:-2px!important}
 
 /* ---------- Sections: hairline rule, folio, head ---------- */
-body.v13.v3-static.v6-static .mk-section{position:relative!important;padding:clamp(64px,8vw,120px) 0 0!important;margin:0!important;background:transparent!important;border:0!important}
+body.v13.v3-static.v6-static .mk-section{position:relative!important;padding:clamp(72px,8.4vw,128px) 0 0!important;margin:0!important;background:transparent!important;border:0!important}
 body.v13.v3-static.v6-static .mk-hero+.mk-section{padding-top:clamp(16px,2.4vw,32px)!important}
-body.v13.v3-static.v6-static .mk-section>.mk-shell{position:relative!important;padding-top:clamp(52px,4.4vw,64px)!important;border-top:1px solid var(--hf-line)!important}
-body.v13.v3-static.v6-static .mk-section>.mk-shell[data-folio]::before{content:attr(data-folio)!important;position:absolute!important;top:clamp(14px,1.4vw,20px)!important;right:0!important;
-  font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13.v3-static.v6-static .mk-head{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr)!important;gap:22px clamp(32px,6vw,96px)!important;align-items:end!important;margin:0 0 clamp(36px,4.4vw,60px)!important;padding:0!important;border:0!important}
-body.v13.v3-static.v6-static .mk-head h2{font:700 clamp(27px,calc(1.6vw + 20px),40px)/1.1 var(--hf-mono)!important;letter-spacing:-.035em!important;margin:16px 0 0!important;max-width:22ch!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-section>.mk-shell{position:relative!important;padding-top:20px!important;border-top:1px solid var(--hf-line-2)!important}
+body.v13.v3-static.v6-static .mk-section>.mk-shell[data-folio]::before{content:attr(data-folio)!important;position:absolute!important;top:20px!important;right:0!important;
+  font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important}
+/* The head sits on the 12-column grid: the eyebrow on the running head's line, then the headline in columns 1-8 and
+   the aside in 9-12, bottom-aligned to the headline (top-aligned when the aside is the taller, so it never starts
+   above its headline). */
+body.v13.v3-static.v6-static .mk-head{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important;row-gap:0!important;align-items:start!important;margin:0 0 clamp(48px,4.6vw,72px)!important;padding:0!important;border:0!important}
+body.v13.v3-static.v6-static .mk-head>div:first-child{display:contents!important}
+body.v13.v3-static.v6-static .mk-head>div:first-child>.mk-eyebrow{grid-column:1/-1!important;grid-row:1!important;margin:0 0 clamp(40px,4.2vw,64px)!important;padding-right:96px!important}
+body.v13.v3-static.v6-static .mk-head h2{grid-column:1/9!important;grid-row:2!important;font:700 var(--hf-fs-h2-lg)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;word-spacing:-.12em!important;margin:0!important;max-width:none!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static :is(.mk-head,.mk-final,.mk-plan,.mk-faq-layout) h2 span{color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-head__aside{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:18px!important;padding:0 0 4px!important}
-body.v13.v3-static.v6-static .mk-head__aside>p{margin:0!important;font:400 13.5px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:46ch!important}
+body.v13.v3-static.v6-static .mk-head__aside{grid-column:9/13!important;grid-row:2!important;align-self:end!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:20px!important;padding:0 0 6px!important;min-width:0!important}
+body.v13.v3-static.v6-static .mk-head__aside>p{margin:0!important;font:400 15px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:40ch!important}
 body.v13.v3-static.v6-static .mk-sub{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:12px 24px!important;flex-wrap:wrap!important;margin:clamp(40px,4.4vw,64px) 0 18px!important}
 body.v13.v3-static.v6-static .mk-sub h3{margin:0!important;font:700 clamp(18px,1.45vw,21px)/1.25 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-sub p{margin:0!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important;max-width:60ch!important}
+body.v13.v3-static.v6-static .mk-sub p{margin:0!important;font:400 13px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important;max-width:60ch!important}
 
 /* ---------- Split: a diagram or specimen beside a list ---------- */
-body.v13.v3-static.v6-static .mk-split{display:grid!important;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr)!important;gap:40px clamp(32px,5vw,80px)!important;align-items:start!important}
-body.v13.v3-static.v6-static .mk-split--even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+body.v13.v3-static.v6-static .mk-split{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:40px 24px!important;align-items:start!important}
+body.v13.v3-static.v6-static .mk-split>:first-child{grid-column:1/8!important}
+body.v13.v3-static.v6-static .mk-split>:nth-child(2){grid-column:9/13!important}
+/* --even (a ledger or table beside a list, or two lists side by side) keeps the same two edges as every other split:
+   the left block in columns 1-7, the right one on axis C (x = 956 at 1440), the edge every aside on these pages
+   starts from, so no list starts a column early. */
+body.v13.v3-static.v6-static .mk-split--even>:first-child{grid-column:1/8!important}
+body.v13.v3-static.v6-static .mk-split--even>:nth-child(2){grid-column:9/13!important}
 body.v13.v3-static.v6-static .mk-split>*{min-width:0!important}
 body.v13.v3-static.v6-static .mk-list{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static .mk-list li{display:flex!important;align-items:baseline!important;gap:16px!important;margin:0!important;padding:14px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;
-  font:400 13px/1.65 var(--hf-sans)!important;color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-list li::before{content:""!important;flex:none!important;width:6px!important;height:6px!important;background:var(--hf-ink)!important;transform:translateY(-2px)!important}
+/* Each item is one run of text with a hanging indent, never a flex row: inline spans (form numbers) and links flow
+   with the words. The bullet is an inline-block in the indent, sitting a fixed 3px above the first line's
+   baseline (vertical-align, not a transform), so it lands on the x-height at any size or padding. */
+body.v13.v3-static.v6-static .mk-list li{display:block!important;margin:0!important;padding:14px 0 14px 21px!important;text-indent:-21px!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;
+  font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-list li::before{content:""!important;display:inline-block!important;width:5px!important;height:5px!important;margin:0 16px 0 0!important;vertical-align:3px!important;background:var(--hf-ink)!important;text-indent:0!important}
+body.v13.v3-static.v6-static .mk-list li{text-wrap:pretty!important}
 body.v13.v3-static.v6-static .mk-list li strong{color:var(--hf-ink)!important;font-weight:600!important}
-body.v13.v3-static.v6-static .mk-list--no li::before{width:9px!important;height:1px!important;background:var(--hf-faint)!important;transform:translateY(-4px)!important}
-body.v13.v3-static.v6-static .mk-list-title{margin:0 0 14px!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-list--no li{padding-left:25px!important;text-indent:-25px!important}
+body.v13.v3-static.v6-static .mk-list--no li::before{width:9px!important;height:1px!important;vertical-align:4px!important;background:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-list-title{margin:0 0 14px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 
 /* ---------- Hairline cells (grids of short explanations) ---------- */
 body.v13.v3-static.v6-static .mk-cells{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:1px!important;background:var(--hf-line)!important;border:1px solid var(--hf-line)!important}
 body.v13.v3-static.v6-static .mk-cells--2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 body.v13.v3-static.v6-static .mk-cells--4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 body.v13.v3-static.v6-static .mk-cell{display:flex!important;flex-direction:column!important;margin:0!important;padding:clamp(22px,2.4vw,34px)!important;background:var(--hf-bg)!important;list-style:none!important;min-width:0!important}
-body.v13.v3-static.v6-static a.mk-cell{color:var(--hf-ink)!important;text-decoration:none!important;transition:background .25s!important}
-body.v13.v3-static.v6-static a.mk-cell:hover{background:var(--hf-surface)!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static a.mk-cell{color:var(--hf-ink)!important;text-decoration:none!important}
+body.v13.v3-static.v6-static a.mk-cell:hover{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static a.mk-cell:focus-visible{outline-offset:-4px!important}
 body.v13.v3-static.v6-static .mk-cell__top{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;margin:0 0 clamp(24px,2.6vw,40px)!important}
-body.v13.v3-static.v6-static .mk-num{font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;transition:color .25s!important}
+body.v13.v3-static.v6-static .mk-num{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important;transition:color .12s linear!important}
 body.v13.v3-static.v6-static a.mk-cell:hover .mk-num{color:var(--hf-ink)!important}
 /* A whole cell is the link: pointing anywhere on it draws its link's underline; the arrow stays put. */
-body.v13.v3-static.v6-static a.mk-cell:hover .mk-link{background-size:100% 1px!important}
+body.v13.v3-static.v6-static a.mk-cell:hover .mk-link{color:var(--hf-ink)!important;text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}
 body.v13.v3-static.v6-static a.mk-cell:hover .v13-arrow{transform:none!important}
-body.v13.v3-static.v6-static .mk-cell h3{margin:0 0 10px!important;font:700 clamp(17px,1.4vw,20px)/1.25 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-cell p{margin:0!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:46ch!important}
+body.v13.v3-static.v6-static .mk-cell h3{margin:0 0 10px!important;font:600 var(--hf-fs-h3)/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-cell p{margin:0!important;font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:46ch!important}
 body.v13.v3-static.v6-static .mk-cell p+p{margin-top:12px!important}
 body.v13.v3-static.v6-static .mk-cell .mk-link{margin-top:auto!important;padding-top:22px!important;align-self:flex-start!important}
 
 /* ---------- Steps and flows: items on one rule ---------- */
-body.v13.v3-static.v6-static .mk-steps{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important}
+/* Steps sit on the 12-column grid with its 24px gutters: four start on columns 1, 4, 7 and 10 (x = 60, 396, 732, 1068 at
+   1440), the landing chain's own edges; three on 1, 5 and 9 (60, 508, 956). The rule belongs to the list, so it runs
+   unbroken under the gutters; each step marks its start on it with an ink square. Where steps wrap into rows (two-up,
+   one column) each step carries its own rule instead. */
+body.v13.v3-static.v6-static .mk-steps{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;column-gap:24px!important;row-gap:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-steps--4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-body.v13.v3-static.v6-static .mk-step{position:relative!important;margin:0!important;padding:30px clamp(20px,3vw,48px) 0 0!important;border:0!important;border-top:1px solid var(--hf-line-2)!important;list-style:none!important;min-width:0!important}
-body.v13.v3-static.v6-static .mk-step::before{content:""!important;position:absolute!important;top:-4px!important;left:0!important;width:7px!important;height:7px!important;background:var(--hf-ink)!important;transition:transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13.v3-static.v6-static .mk-step{position:relative!important;margin:0!important;padding:30px 24px 0 0!important;border:0!important;list-style:none!important;min-width:0!important}
+body.v13.v3-static.v6-static .mk-step::before{content:""!important;position:absolute!important;top:-4px!important;left:0!important;width:7px!important;height:7px!important;background:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-step:last-child::after{content:""!important;position:absolute!important;top:-4px!important;right:0!important;width:7px!important;height:7px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important;box-sizing:border-box!important}
-/* A pointed-at step inks its number; its square on the rule stays put. */
-body.v13.v3-static.v6-static .mk-step:hover::before{transform:none!important}
-body.v13.v3-static.v6-static .mk-step__num{display:block!important;width:fit-content!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;transition:color .2s!important}
-body.v13.v3-static.v6-static .mk-step:hover .mk-step__num{color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-step h3{margin:16px 0 10px!important;font:700 clamp(17px,1.45vw,20px)/1.25 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-step p{margin:0!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:38ch!important}
+body.v13.v3-static.v6-static .mk-step__num{display:block!important;width:fit-content!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important}
+body.v13.v3-static.v6-static .mk-step h3{margin:14px 0 10px!important;font:600 var(--hf-fs-h3)/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-step p{margin:0!important;font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:38ch!important}
 body.v13.v3-static.v6-static .mk-step .mk-tag{margin-top:16px!important}
 
 /* ---------- Ledger: label / value rows ---------- */
 body.v13.v3-static.v6-static .mk-ledger{margin:0!important;padding:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-ledger>div{display:grid!important;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr)!important;gap:6px clamp(16px,2.4vw,36px)!important;align-items:baseline!important;padding:15px 0!important;border-bottom:1px solid var(--hf-line)!important;margin:0!important}
-body.v13.v3-static.v6-static .mk-ledger dt{margin:0!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-ledger dt{margin:0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13.v3-static.v6-static .mk-ledger dd{margin:0!important;font:400 13px/1.65 var(--hf-sans)!important;color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-ledger dd strong{color:var(--hf-ink)!important;font-weight:600!important}
 body.v13.v3-static.v6-static .mk-hero .mk-ledger>div{grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr)!important;padding:12px 0!important}
@@ -212,7 +240,7 @@ body.v13.v3-static.v6-static .mk-ana--chart{grid-area:chart!important;min-height
 body.v13.v3-static.v6-static .mk-ana--facts{grid-area:facts!important}
 body.v13.v3-static.v6-static .mk-ana--tabs{grid-area:tabs!important;flex-direction:row!important;align-items:center!important;flex-wrap:wrap!important;gap:10px 16px!important}
 body.v13.v3-static.v6-static .mk-key{flex:none!important;display:inline-grid!important;place-items:center!important;width:24px!important;height:24px!important;border:1px solid var(--hf-ink)!important;font:700 11px/1 var(--hf-mono)!important;color:var(--hf-ink)!important;letter-spacing:0!important;background:var(--hf-bg)!important}
-body.v13.v3-static.v6-static .mk-ana__label{font:500 10.5px/1.5 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-ana__label{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13.v3-static.v6-static .mk-ana__row{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:wrap!important}
 body.v13.v3-static.v6-static .mk-ana__mark{flex:none!important;width:40px!important;height:40px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface-2)!important}
 body.v13.v3-static.v6-static .mk-ana__lines{display:flex!important;flex-direction:column!important;gap:8px!important;flex:1 1 auto!important;min-width:0!important}
@@ -220,7 +248,7 @@ body.v13.v3-static.v6-static .mk-ana__lines i{display:block!important;height:8px
 body.v13.v3-static.v6-static .mk-ana__lines i:first-child{width:min(260px,62%)!important;height:12px!important;background:var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-ana__lines i:last-child{width:min(420px,88%)!important}
 body.v13.v3-static.v6-static .mk-ana__actions{display:flex!important;flex:none!important;gap:6px!important;margin:0 0 0 auto!important;padding:0!important;list-style:none!important}
-body.v13.v3-static.v6-static .mk-ana__actions li{display:inline-flex!important;align-items:center!important;height:28px!important;padding:0 10px!important;border:1px solid var(--hf-line-2)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-soft)!important;list-style:none!important}
+body.v13.v3-static.v6-static .mk-ana__actions li{display:inline-flex!important;align-items:center!important;height:28px!important;padding:0 10px!important;border:1px solid var(--hf-line-2)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important;list-style:none!important}
 /* The plot area is a dot field (data-halftone-field, 12px pitch): a place for the delayed price series, drawn with no
    line of its own. Its dots hold still (a plain field does not answer the pointer), printed at half ink so the
    schematic stays quiet. The box is sized here (flex, min-height) before the script draws into it. */
@@ -228,54 +256,61 @@ body.v13.v3-static.v6-static .mk-ana__plot{position:relative!important;display:b
   border-top:1px solid var(--hf-line)!important;border-bottom:1px solid var(--hf-line)!important;background:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .mk-ana__plot>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important;opacity:.5!important}
 body.v13.v3-static.v6-static .mk-ana__ranges{display:flex!important;flex-wrap:wrap!important;gap:4px!important;margin:0!important;padding:0!important;list-style:none!important}
-body.v13.v3-static.v6-static .mk-ana__ranges li{min-width:32px!important;height:24px!important;display:inline-grid!important;place-items:center!important;padding:0 6px!important;border:1px solid var(--hf-line)!important;font:500 10px/1 var(--hf-mono)!important;letter-spacing:.1em!important;color:var(--hf-muted)!important;list-style:none!important}
+body.v13.v3-static.v6-static .mk-ana__ranges li{min-width:32px!important;height:24px!important;display:inline-grid!important;place-items:center!important;padding:0 6px!important;border:1px solid var(--hf-line)!important;font:500 12px/1 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__ranges li.is-on{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;color:var(--hf-bg)!important}
 body.v13.v3-static.v6-static .mk-ana__facts{margin:0!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__facts li{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:7px 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;
   font:400 11.5px/1.4 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-ana__facts li::after{content:""!important;flex:none!important;width:34px!important;height:6px!important;background:var(--hf-raise)!important}
 body.v13.v3-static.v6-static .mk-ana__tabs{display:flex!important;flex-wrap:wrap!important;gap:4px 18px!important;margin:0!important;padding:0!important;list-style:none!important}
-body.v13.v3-static.v6-static .mk-ana__tabs li{padding:4px 0!important;font:500 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--hf-muted)!important;border-bottom:1px solid transparent!important;list-style:none!important}
+body.v13.v3-static.v6-static .mk-ana__tabs li{padding:4px 0!important;font:500 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-muted)!important;border-bottom:1px solid transparent!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-ana__tabs li:first-child{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-legend{margin:22px 0 0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:24px clamp(18px,2.4vw,36px)!important}
 body.v13.v3-static.v6-static .mk-legend li{margin:0!important;padding:16px 0 0!important;border-top:1px solid var(--hf-line-2)!important;list-style:none!important;min-width:0!important}
-body.v13.v3-static.v6-static .mk-legend h3{display:flex!important;align-items:center!important;gap:12px!important;margin:0 0 10px!important;font:700 15px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-legend p{margin:0!important;font:400 12.5px/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important}
-body.v13.v3-static.v6-static .mk-legend p.mk-legend__src{margin-top:10px!important;font:400 11px/1.7 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-legend h3{display:flex!important;align-items:center!important;gap:12px!important;margin:0 0 10px!important;font:600 16px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-legend p{margin:0!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-legend p.mk-legend__src{margin-top:12px!important;font:400 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important}
 
 /* ---------- Specimen: formulas set in type ---------- */
 body.v13.v3-static.v6-static .mk-formulas{margin:0!important;padding:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-formulas>div{display:grid!important;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr)!important;gap:6px clamp(16px,2.4vw,36px)!important;align-items:baseline!important;margin:0!important;padding:18px 0!important;border-bottom:1px solid var(--hf-line)!important}
-body.v13.v3-static.v6-static .mk-formulas dt{margin:0!important;font:700 15px/1.4 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-formulas dt{margin:0!important;font:600 15px/1.4 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-formulas dd{display:flex!important;gap:14px!important;margin:0!important;font:400 13px/1.65 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-formulas dd::before{content:"="!important;flex:none!important;color:var(--hf-faint)!important}
 
 /* ---------- Specimen: Form 4 transaction codes ---------- */
 body.v13.v3-static.v6-static .mk-codes{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1px!important;background:var(--hf-line)!important;border:1px solid var(--hf-line)!important}
 body.v13.v3-static.v6-static .mk-codes li{display:flex!important;align-items:center!important;gap:16px!important;margin:0!important;padding:14px 16px!important;background:var(--hf-bg)!important;list-style:none!important;min-width:0!important}
-body.v13.v3-static.v6-static .mk-codes b{flex:none!important;display:inline-grid!important;place-items:center!important;width:44px!important;height:44px!important;border:1px solid var(--hf-line-2)!important;font:800 22px/1 var(--hf-mono)!important;color:var(--hf-soft)!important;letter-spacing:0!important}
-body.v13.v3-static.v6-static .mk-codes span{font:400 12.5px/1.45 var(--hf-sans)!important;color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-codes span small{display:block!important;margin-top:3px!important;font:500 10px/1.5 var(--hf-mono)!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-/* The two codes Insidir counts as trades carry the market's colours: a purchase in green, a sale in red (each
-   labelled in words beside it, so the colour never carries the meaning alone). */
-body.v13.v3-static.v6-static .mk-codes .is-buy b{border-color:var(--hf-up)!important;color:var(--hf-up)!important}
-body.v13.v3-static.v6-static .mk-codes .is-sell b{border-color:var(--hf-down)!important;color:var(--hf-down)!important}
+/* The code squares are neutral, like the landing's code key (a --hf-line-2 square, the letter in ink). */
+body.v13.v3-static.v6-static .mk-codes b{flex:none!important;display:inline-grid!important;place-items:center!important;width:32px!important;height:32px!important;box-sizing:border-box!important;border:1px solid var(--hf-line-2)!important;font:600 14px/1 var(--hf-mono)!important;color:var(--hf-ink)!important;letter-spacing:0!important}
+body.v13.v3-static.v6-static .mk-codes span{font:400 14px/1.45 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-codes span small{display:block!important;margin-top:4px!important;font:400 12.5px/1.45 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-faint)!important}
+/* The two codes Insidir counts as trades say so on the product's direction chip: a 20px tint, no border, a purchase
+   in green and a sale in red, with a CSS triangle (the words carry the meaning; the colour never does alone). */
+body.v13.v3-static.v6-static .mk-codes :is(.is-buy,.is-sell) span small{display:flex!important;align-items:center!important;gap:6px!important;width:fit-content!important;height:20px!important;box-sizing:border-box!important;margin-top:6px!important;padding:0 7px!important;
+  font:500 11px/1 var(--hf-mono)!important;letter-spacing:.06em!important;text-transform:uppercase!important;white-space:nowrap!important}
+body.v13.v3-static.v6-static .mk-codes .is-buy span small{color:var(--hf-up)!important;background:var(--hf-up-tint)!important}
+body.v13.v3-static.v6-static .mk-codes .is-sell span small{color:var(--hf-down)!important;background:var(--hf-down-tint)!important}
+body.v13.v3-static.v6-static .mk-codes :is(.is-buy,.is-sell) span small::before{content:""!important;flex:none!important;width:7px!important;height:6px!important;background:currentColor!important}
+body.v13.v3-static.v6-static .mk-codes .is-buy span small::before{clip-path:polygon(50% 0,100% 100%,0 100%)!important}
+body.v13.v3-static.v6-static .mk-codes .is-sell span small::before{clip-path:polygon(0 0,100% 0,50% 100%)!important}
+@media (forced-colors:active){body.v13.v3-static.v6-static .mk-codes :is(.is-buy,.is-sell) span small{border:1px solid CanvasText!important}}
 
 /* ---------- Diagram: two dates on one rule ---------- */
-body.v13.v3-static.v6-static .mk-dates{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:0 clamp(16px,2.4vw,36px)!important;margin:0!important;padding:34px 0 0!important;list-style:none!important}
+body.v13.v3-static.v6-static .mk-dates{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:0 24px!important;margin:0!important;padding:34px 0 0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-dates::before{content:""!important;position:absolute!important;top:0!important;left:0!important;right:0!important;height:1px!important;background:var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-dates li{position:relative!important;margin:0!important;padding:0!important;list-style:none!important;min-width:0!important}
 body.v13.v3-static.v6-static .mk-dates li::before{content:""!important;position:absolute!important;top:-38px!important;left:0!important;width:9px!important;height:9px!important;border-radius:50%!important;background:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-dates li:nth-child(2)::before{background:var(--hf-bg)!important;border:1px solid var(--hf-ink)!important;box-sizing:border-box!important}
 body.v13.v3-static.v6-static .mk-dates li:nth-child(3)::before{background:var(--hf-ink)!important;border-radius:0!important}
-body.v13.v3-static.v6-static .mk-dates b{display:block!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13.v3-static.v6-static .mk-dates strong{display:block!important;margin:8px 0 6px!important;font:700 15px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-dates p{margin:0!important;font:400 12.5px/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:34ch!important}
+body.v13.v3-static.v6-static .mk-dates b{display:block!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-dates strong{display:block!important;margin:8px 0 6px!important;font:600 16px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-dates p{margin:0!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:34ch!important}
 
 /* ---------- Record card: the fields a record carries ---------- */
 body.v13.v3-static.v6-static .mk-record{margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important}
 body.v13.v3-static.v6-static .mk-record__head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:0!important;padding:14px 18px!important;border-bottom:1px solid var(--hf-line-2)!important;
-  font:500 10.5px/1.5 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
+  font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
 body.v13.v3-static.v6-static .mk-record .mk-ledger{border:0!important}
 body.v13.v3-static.v6-static .mk-record .mk-ledger>div{padding:13px 18px!important}
 body.v13.v3-static.v6-static .mk-record .mk-ledger>div:last-child{border-bottom:0!important}
@@ -287,42 +322,41 @@ body.v13.v3-static.v6-static .mk-statuses b{display:inline-flex!important;align-
 body.v13.v3-static.v6-static .mk-statuses b::before{content:""!important;width:8px!important;height:8px!important;border:1px solid var(--hf-ink)!important;box-sizing:border-box!important}
 body.v13.v3-static.v6-static .mk-statuses li:nth-child(2) b::before{background:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-statuses li:nth-child(3) b::before{border-color:var(--hf-faint)!important;background:var(--hf-faint)!important}
-body.v13.v3-static.v6-static .mk-statuses p{margin:12px 0 0!important;font:400 12.5px/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-statuses p{margin:12px 0 0!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13.v3-static.v6-static .mk-notebox{margin:10px 0 0!important;padding:16px 18px!important;border:1px solid var(--hf-line)!important;background:var(--hf-surface)!important}
-body.v13.v3-static.v6-static .mk-notebox p{margin:0!important;font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-notebox p{margin:0!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13.v3-static.v6-static .mk-notebox p+p{margin-top:8px!important}
-body.v13.v3-static.v6-static .mk-notebox b{font-weight:500!important;color:var(--hf-soft)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;font-size:10.5px!important}
+body.v13.v3-static.v6-static .mk-notebox b{font-weight:500!important;color:var(--hf-soft)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;font-size:11px!important}
 
 /* ---------- Principles (Why Insidir) ---------- */
 body.v13.v3-static.v6-static .mk-rules{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-rule{display:grid!important;grid-template-columns:minmax(64px,.32fr) minmax(0,1.15fr) minmax(0,1fr)!important;gap:16px clamp(24px,4vw,64px)!important;margin:0!important;padding:clamp(28px,3.2vw,44px) 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important}
-/* The numeral's box is only as big as the numeral (not the grid row it sits in); a pointed-at principle inks its
-   numeral, which stays where it is. */
-body.v13.v3-static.v6-static .mk-rule__num{justify-self:start!important;align-self:start!important;font:800 clamp(28px,2.6vw,40px)/1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-faint)!important;transition:color .25s!important}
-body.v13.v3-static.v6-static .mk-rule:hover .mk-rule__num{color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-rule h3{margin:0 0 14px!important;font:700 clamp(20px,1.8vw,26px)/1.2 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-rule__body>p{margin:0!important;font:400 13.5px/1.8 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:54ch!important}
+/* The numeral's box is only as big as the numeral (not the grid row it sits in). */
+body.v13.v3-static.v6-static .mk-rule__num{justify-self:start!important;align-self:start!important;font:700 clamp(28px,2.6vw,40px)/1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-rule h3{margin:0 0 14px!important;font:700 clamp(20px,1.95vw,28px)/1.15 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-rule__body>p{margin:0!important;font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:54ch!important}
 body.v13.v3-static.v6-static .mk-rule__body>p+p{margin-top:12px!important}
 body.v13.v3-static.v6-static .mk-rule .mk-list{border-top:1px solid var(--hf-line)!important}
-body.v13.v3-static.v6-static .mk-rule .mk-list li{padding:11px 0!important;font-size:12.5px!important}
+body.v13.v3-static.v6-static .mk-rule .mk-list li{padding-top:11px!important;padding-bottom:11px!important;font-size:13px!important}
 
 /* Provenance chain: a figure, the filing it came from, the document on sec.gov. */
 body.v13.v3-static.v6-static .mk-chain{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:stretch!important;gap:0!important}
 body.v13.v3-static.v6-static .mk-chain li{position:relative!important;margin:0!important;padding:22px clamp(18px,2vw,28px) 24px!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-bg)!important;list-style:none!important;min-width:0!important}
 body.v13.v3-static.v6-static .mk-chain li+li{border-left:0!important}
 body.v13.v3-static.v6-static .mk-chain li:not(:last-child)::after{content:""!important;position:absolute!important;top:50%!important;right:-7px!important;z-index:1!important;width:12px!important;height:12px!important;border-top:1px solid var(--hf-ink)!important;border-right:1px solid var(--hf-ink)!important;background:var(--hf-bg)!important;transform:translateY(-50%) rotate(45deg)!important;box-sizing:border-box!important}
-body.v13.v3-static.v6-static .mk-chain b{display:block!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-body.v13.v3-static.v6-static .mk-chain strong{display:block!important;margin:10px 0 8px!important;font:700 16px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;overflow-wrap:anywhere!important}
-body.v13.v3-static.v6-static .mk-chain p{margin:0!important;font:400 12.5px/1.7 var(--hf-sans)!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-chain b{display:block!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-chain strong{display:block!important;margin:10px 0 8px!important;font:600 16px/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;overflow-wrap:anywhere!important}
+body.v13.v3-static.v6-static .mk-chain p{margin:0!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
 body.v13.v3-static.v6-static .mk-chain li:last-child{border-color:var(--hf-ink)!important}
 
 /* ---------- Sources (Data) ---------- */
 body.v13.v3-static.v6-static .mk-sources{margin:0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static .mk-source{display:grid!important;grid-template-columns:minmax(0,.9fr) minmax(0,1.5fr) minmax(0,1fr)!important;gap:18px clamp(24px,3.2vw,52px)!important;align-items:start!important;margin:0!important;padding:clamp(24px,2.6vw,36px) 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;scroll-margin-top:calc(var(--mk-nav) + 16px)!important}
-body.v13.v3-static.v6-static .mk-source__name h3{margin:0!important;font:700 clamp(17px,1.4vw,20px)/1.3 var(--hf-mono)!important;letter-spacing:-.025em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-source__name p{margin:8px 0 0!important;font:500 10.5px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-source{display:grid!important;grid-template-columns:3fr 5fr 4fr!important;gap:18px 24px!important;align-items:start!important;margin:0!important;padding:clamp(24px,2.6vw,36px) 0!important;border-bottom:1px solid var(--hf-line)!important;list-style:none!important;scroll-margin-top:calc(var(--mk-nav) + 16px)!important}
+body.v13.v3-static.v6-static .mk-source__name h3{margin:0!important;font:600 var(--hf-fs-h3)/1.3 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-source__name p{margin:8px 0 0!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13.v3-static.v6-static .mk-source__name .mk-link{margin-top:16px!important}
-body.v13.v3-static.v6-static .mk-source__body>p{margin:0!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:60ch!important}
+body.v13.v3-static.v6-static .mk-source__body>p{margin:0!important;font:400 14px/1.65 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:56ch!important}
+body.v13.v3-static.v6-static .mk-source>*{min-width:0!important}
 body.v13.v3-static.v6-static .mk-source__body>p+p{margin-top:12px!important}
 body.v13.v3-static.v6-static .mk-source__body>p strong{color:var(--hf-soft)!important;font-weight:600!important}
 body.v13.v3-static.v6-static .mk-source .mk-ledger>div{grid-template-columns:minmax(0,1fr)!important;gap:2px!important;padding:11px 0!important}
@@ -334,65 +368,75 @@ body.v13.v3-static.v6-static .mk-source .mk-ledger>div:last-child{border-bottom:
 body.v13.v3-static.v6-static .mk-cadence{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:0!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-cadence>li{position:relative!important;margin:0!important;padding:28px clamp(10px,1.2vw,18px) 0 0!important;list-style:none!important;min-width:0!important}
 body.v13.v3-static.v6-static .mk-cadence>li::before{content:""!important;position:absolute!important;top:-6px!important;left:0!important;width:1px!important;height:11px!important;background:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-cadence b{display:block!important;width:fit-content!important;font:800 clamp(20px,1.9vw,28px)/1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-cadence b small{font:500 10.5px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;margin-left:6px!important}
+body.v13.v3-static.v6-static .mk-cadence b{display:block!important;width:fit-content!important;font:700 clamp(20px,1.9vw,28px)/1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-cadence b small{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;margin-left:6px!important}
 body.v13.v3-static.v6-static .mk-cadence ul{margin:18px 0 0!important;padding:0!important;list-style:none!important}
-body.v13.v3-static.v6-static .mk-cadence ul li{margin:0!important;padding:8px 0!important;border-top:1px solid var(--hf-line)!important;list-style:none!important;font:400 12px/1.5 var(--hf-sans)!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-cadence ul li{margin:0!important;padding:8px 0!important;border-top:1px solid var(--hf-line)!important;list-style:none!important;font:400 13px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important}
 
 /* ---------- Tables ---------- */
 body.v13.v3-static.v6-static .mk-table-wrap{margin:0!important;overflow-x:auto!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-table{width:100%!important;border-collapse:collapse!important;margin:0!important;background:transparent!important}
-body.v13.v3-static.v6-static .mk-table caption{caption-side:bottom!important;text-align:left!important;padding:14px 0 0!important;font:400 11px/1.8 var(--hf-mono)!important;letter-spacing:.02em!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-table caption{caption-side:bottom!important;text-align:left!important;padding:16px 0 0!important;font:400 13px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important}
 body.v13.v3-static.v6-static .mk-table th,body.v13.v3-static.v6-static .mk-table td{padding:15px clamp(10px,1.6vw,24px) 15px 0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;text-align:left!important;vertical-align:baseline!important;background:transparent!important}
 body.v13.v3-static.v6-static .mk-table thead th{padding-top:12px!important;padding-bottom:12px!important;font:500 10.5px/1.6 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;white-space:nowrap!important}
-body.v13.v3-static.v6-static .mk-table tbody th{font:700 13.5px/1.45 var(--hf-mono)!important;letter-spacing:-.015em!important;text-transform:none!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-table td{font:400 12.5px/1.65 var(--hf-sans)!important;color:var(--hf-muted)!important}
+body.v13.v3-static.v6-static .mk-table tbody th{font:600 13px/1.5 var(--hf-mono)!important;letter-spacing:-.01em!important;text-transform:none!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-table td{font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-table td.mk-strong{color:var(--hf-soft)!important;font-family:var(--hf-mono)!important}
 
 /* ---------- Pricing: the plan ---------- */
-body.v13.v3-static.v6-static .mk-plan{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important;border-radius:0!important;box-shadow:none!important}
-body.v13.v3-static.v6-static .mk-plan__price,body.v13.v3-static.v6-static .mk-plan__list{padding:clamp(26px,3.4vw,52px)!important;min-width:0!important}
-body.v13.v3-static.v6-static .mk-plan__price{display:flex!important;flex-direction:column!important;align-items:flex-start!important;border-right:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static .mk-plan__head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;width:100%!important}
-body.v13.v3-static.v6-static .mk-plan h2{margin:22px 0 0!important;font:700 clamp(22px,2vw,28px)/1.2 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-plan__amount{display:flex!important;align-items:baseline!important;flex-wrap:wrap!important;gap:6px 16px!important;margin:18px 0 0!important;font:800 clamp(64px,7.2vw,104px)/1 var(--hf-mono)!important;letter-spacing:-.04em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
-body.v13.v3-static.v6-static .mk-plan__amount span{font:500 12px/1 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important}
-body.v13.v3-static.v6-static .mk-plan__terms{margin:20px 0 30px!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:40ch!important}
-body.v13.v3-static.v6-static .mk-plan__price .mk-actions{margin:auto 0 0!important;width:100%!important}
-body.v13.v3-static.v6-static .mk-plan__list .mk-list{margin-top:20px!important}
-body.v13.v3-static.v6-static .mk-plan__list .mk-list li{padding:13px 0!important}
+body.v13.v3-static.v6-static .mk-plan{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;margin:0!important;padding:0!important;border:1px solid var(--hf-line-2)!important;background:var(--hf-surface)!important;border-radius:0!important;box-shadow:var(--hf-hl)!important}
+body.v13.v3-static.v6-static .mk-plan__price{grid-column:1!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;min-width:0!important;padding:40px!important;border-right:1px solid var(--hf-line-2)!important}
+body.v13.v3-static.v6-static .mk-plan__list{grid-column:2/4!important;min-width:0!important;padding:40px 48px!important}
+body.v13.v3-static.v6-static .mk-plan__head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;width:100%!important;margin:0!important}
+/* The plan's name stays for assistive technology (it labels the card); on screen the eyebrow already names it. */
+body.v13.v3-static.v6-static .mk-plan h2{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+body.v13.v3-static.v6-static .mk-plan__amount{display:flex!important;align-items:baseline!important;flex-wrap:wrap!important;gap:6px 14px!important;margin:28px 0 0!important;font:700 clamp(64px,6.4vw,96px)/.9 var(--hf-mono)!important;letter-spacing:-.055em!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
+body.v13.v3-static.v6-static .mk-plan__amount span{font:400 16px/1 var(--hf-mono)!important;letter-spacing:0!important;text-transform:none!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-plan__terms{margin:20px 0 32px!important;font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:34ch!important}
+body.v13.v3-static.v6-static .mk-plan__price .mk-actions{flex-direction:column!important;align-items:stretch!important;gap:8px!important;margin:auto 0 0!important;width:100%!important}
+body.v13.v3-static.v6-static .mk-plan__price .mk-actions .v9-btn{width:100%!important;justify-content:space-between!important}
+/* The payment note closes the list column at the card's bottom edge, level with the button, so both columns end together. */
+body.v13.v3-static.v6-static .mk-plan__list{display:flex!important;flex-direction:column!important}
+body.v13.v3-static.v6-static .mk-plan__fine{margin:auto 0 0!important;padding-top:20px!important;font:400 12.5px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
+body.v13.v3-static.v6-static .mk-plan__list .mk-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:40px!important;margin:16px 0 0!important;border-top:0!important}
+body.v13.v3-static.v6-static .mk-plan__list .mk-list li{padding-top:14px!important;padding-bottom:14px!important;text-wrap:pretty!important}
 
 /* ---------- Questions ---------- */
-body.v13.v3-static.v6-static .mk-faq-layout{display:grid!important;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)!important;gap:32px clamp(32px,6vw,96px)!important;align-items:start!important}
-body.v13.v3-static.v6-static .mk-faq-layout>div:first-child{position:sticky!important;top:calc(var(--mk-nav) + 32px)!important}
-body.v13.v3-static.v6-static .mk-faq-layout h2{margin:16px 0 0!important;font:700 clamp(27px,calc(1.6vw + 20px),40px)/1.1 var(--hf-mono)!important;letter-spacing:-.035em!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-faq-layout>div:first-child>p:not(.mk-eyebrow){margin:18px 0 0!important;font:400 13px/1.75 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:40ch!important}
-body.v13.v3-static.v6-static .mk-faq{border-top:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static .mk-faq details{margin:0!important;padding:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important;transition:border-color .2s!important}
-body.v13.v3-static.v6-static .mk-faq summary{display:block!important;list-style:none!important;position:relative!important;cursor:pointer!important;margin:0!important;padding:20px 52px 20px 0!important;min-height:44px!important;
-  font:600 14px/1.45 var(--hf-sans)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;transition:color .2s!important}
+body.v13.v3-static.v6-static .mk-faq-layout{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important;row-gap:0!important;align-items:start!important}
+body.v13.v3-static.v6-static .mk-faq-layout>div:first-child{grid-column:1/5!important;position:sticky!important;top:calc(var(--mk-nav) + 40px)!important;min-width:0!important}
+body.v13.v3-static.v6-static .mk-faq-layout>div:first-child>.mk-eyebrow{margin:0 0 clamp(40px,4.2vw,64px)!important;padding-right:96px!important}
+body.v13.v3-static.v6-static .mk-faq-layout h2{margin:0!important;font:700 var(--hf-fs-h2-lg)/1.04 var(--hf-mono)!important;letter-spacing:-.045em!important;word-spacing:-.12em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-faq-layout>div:first-child>p:not(.mk-eyebrow){margin:20px 0 0!important;font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:40ch!important}
+body.v13.v3-static.v6-static .mk-faq{grid-column:5/13!important;min-width:0!important;margin-top:calc(16px + clamp(40px,4.2vw,64px))!important;border-top:1px solid var(--hf-line-2)!important}
+body.v13.v3-static.v6-static .mk-faq details{margin:0!important;padding:0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important}
+body.v13.v3-static.v6-static .mk-faq summary{display:block!important;list-style:none!important;position:relative!important;cursor:pointer!important;margin:0!important;padding:22px 56px 22px 0!important;min-height:44px!important;
+  font:500 15px/1.45 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important;transition:color .12s linear!important;text-wrap:balance!important}
 body.v13.v3-static.v6-static .mk-faq summary::-webkit-details-marker{display:none!important}
 body.v13.v3-static.v6-static .mk-faq summary::marker{content:""!important}
-body.v13.v3-static.v6-static .mk-faq summary::after{content:"+"!important;position:absolute!important;right:4px!important;top:50%!important;transform:translateY(-50%)!important;width:24px!important;text-align:center!important;font:400 18px/1 var(--hf-mono)!important;color:var(--hf-faint)!important;transition:color .2s,transform var(--hf-spring-dur) var(--hf-spring)!important}
+body.v13.v3-static.v6-static .mk-faq summary::after{content:"+"!important;position:absolute!important;right:4px!important;top:50%!important;transform:translateY(-50%)!important;width:24px!important;text-align:center!important;font:400 16px/1 var(--hf-mono)!important;color:var(--hf-soft)!important;transition:color .12s linear!important}
 body.v13.v3-static.v6-static .mk-faq details[open]>summary::after{content:"\2212"!important;color:var(--hf-ink)!important}
-/* A pointed-at question inks its sign (which keeps its size) and draws its rule in ink; pressed, the question dims
-   to soft. */
+/* A pointed-at question inks its sign, which keeps its size and place; pressed, the question dims to soft. */
 body.v13.v3-static.v6-static .mk-faq summary:hover::after{color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-faq details:has(>summary:hover){border-bottom-color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-faq summary:active{color:var(--hf-soft)!important}
-body.v13.v3-static.v6-static .mk-faq summary:focus-visible{outline-offset:-3px!important}
-body.v13.v3-static.v6-static .mk-faq details>p{margin:0!important;padding:0 52px 22px 0!important;font:400 13px/1.8 var(--hf-sans)!important;color:var(--hf-muted)!important;max-width:64ch!important}
+/* The ring sits 2px outside the question (nothing here clips it), clear of its first letter. */
+body.v13.v3-static.v6-static .mk-faq summary:focus-visible{outline-offset:2px!important}
+body.v13.v3-static.v6-static .mk-faq details>p{margin:0!important;padding:0 56px 26px 0!important;font:400 14px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:62ch!important}
 body.v13.v3-static.v6-static .mk-faq details>p+p{margin-top:-10px!important}
 
 /* ---------- Closing call, over a dot field that only shows toward the edges ---------- */
-body.v13.v3-static.v6-static .mk-final{position:relative!important;isolation:isolate!important;margin:clamp(72px,9vw,136px) 0 0!important;padding:clamp(88px,11vw,168px) 0!important;border-top:1px solid var(--hf-line)!important;background:var(--hf-bg)!important;text-align:center!important;overflow:hidden!important}
+body.v13.v3-static.v6-static .mk-final{position:relative!important;isolation:isolate!important;margin:clamp(72px,8.4vw,128px) 0 0!important;padding:clamp(112px,12vw,176px) 0!important;border-top:1px solid var(--hf-line)!important;background:var(--hf-bg)!important;text-align:center!important;overflow:hidden!important}
 body.v13.v3-static.v6-static .mk-final>:not(.v13-field){position:relative!important;z-index:1!important}
 body.v13.v3-static.v6-static .mk-final .v13-field::after{display:none!important}
-body.v13.v3-static.v6-static .mk-final .v13-field{-webkit-mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%)!important;mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%)!important}
+/* The dots fade in over the first 120px under the section's rule and out from 200px above the bottom, the last 72px
+   plain paper, as on the landing: the field is a vignette around the call, not a band sitting on the rule, and a clear
+   band of paper separates it from the footer's strip (no moiré where two fields meet). Mask colours are alpha only;
+   they never paint. */
+body.v13.v3-static.v6-static .mk-final .v13-field{-webkit-mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,transparent,var(--hf-ink) 120px,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;-webkit-mask-composite:source-in!important;
+  mask-image:radial-gradient(ellipse 72% 92% at 50% 50%,transparent 46%,var(--hf-ink) 100%),linear-gradient(180deg,transparent,var(--hf-ink) 120px,var(--hf-ink) calc(100% - 200px),transparent calc(100% - 72px))!important;mask-composite:intersect!important}
 body.v13.v3-static.v6-static .mk-final__inner{display:flex!important;flex-direction:column!important;align-items:center!important}
 body.v13.v3-static.v6-static .mk-final .mk-eyebrow{justify-content:center!important}
-body.v13.v3-static.v6-static .mk-final h2{margin:20px auto!important;font:700 clamp(30px,4.2vw,56px)/1.08 var(--hf-mono)!important;letter-spacing:-.035em!important;max-width:21ch!important;color:var(--hf-ink)!important}
-body.v13.v3-static.v6-static .mk-final__copy{margin:0 auto 32px!important;font:400 14px/1.75 var(--hf-sans)!important;color:var(--hf-soft)!important;max-width:48ch!important}
+body.v13.v3-static.v6-static .mk-final h2{margin:24px auto!important;font:700 var(--hf-fs-display-2)/1.02 var(--hf-mono)!important;letter-spacing:-.05em!important;word-spacing:-.12em!important;max-width:none!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-final__copy{margin:0 auto 36px!important;font:400 16px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important;max-width:44ch!important}
 body.v13.v3-static.v6-static .mk-final .mk-actions{justify-content:center!important;margin:0!important}
 body.v13.v3-static.v6-static .mk-final .v12-outline-button{background:var(--hf-bg)!important}
 
@@ -400,7 +444,7 @@ body.v13.v3-static.v6-static .mk-final .v12-outline-button{background:var(--hf-b
 body.v13.v3-static.v6-static .mk-index-title{margin:0 0 14px!important;color:var(--hf-faint)!important}
 body.v13.v3-static.v6-static .mk-list--2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:clamp(24px,4vw,64px)!important;border-top:0!important}
 body.v13.v3-static.v6-static .mk-list--2 li:nth-child(-n+2){border-top:1px solid var(--hf-line-2)!important}
-body.v13.v3-static.v6-static :is(.mk-list li,.mk-ledger dd,.mk-faq-layout p) a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;transition:color .2s!important}
+body.v13.v3-static.v6-static :is(.mk-list li,.mk-ledger dd,.mk-faq-layout p) a{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;transition:text-decoration-color .12s linear!important}
 body.v13.v3-static.v6-static :is(.mk-list li,.mk-ledger dd,.mk-faq-layout p) a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13.v3-static.v6-static .mk-hero .mk-plan{margin-top:clamp(40px,5vw,72px)!important}
 body.v13.v3-static.v6-static .mk-hero__grid>.mk-lede{margin:0!important;align-self:end!important}
@@ -411,25 +455,51 @@ body.v13.v3-static.v6-static .mk-doc__toc{position:sticky!important;top:calc(var
 body.v13.v3-static.v6-static .mk-doc__toc ol{margin:14px 0 0!important;padding:0!important;list-style:none!important;border-top:1px solid var(--hf-line-2)!important}
 body.v13.v3-static.v6-static .mk-doc__toc li{margin:0!important;padding:0!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-doc__toc a{display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:8px!important;align-items:baseline!important;padding:9px 0!important;border-bottom:1px solid var(--hf-line)!important;
-  font:400 12px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important;text-decoration:none!important;transition:color .2s,border-color .2s!important}
-body.v13.v3-static.v6-static .mk-doc__toc a span{font:500 10.5px/1.5 var(--hf-mono)!important;letter-spacing:.1em!important;color:var(--hf-faint)!important;transition:color .2s!important}
-body.v13.v3-static.v6-static .mk-doc__toc a:hover{color:var(--hf-ink)!important;border-bottom-color:var(--hf-ink)!important}
+  font:400 12.5px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important;text-decoration:none!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-doc__toc a span{font:500 12px/1.5 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-faint)!important;font-variant-numeric:tabular-nums!important;transition:color .12s linear!important}
+body.v13.v3-static.v6-static .mk-doc__toc a:hover{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-doc__toc a:hover span{color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-doc__body{min-width:0!important;max-width:78ch!important}
 body.v13.v3-static.v6-static .mk-doc__body section{margin:0 0 36px!important;padding:0 0 32px!important;border-bottom:1px solid var(--hf-line)!important;scroll-margin-top:calc(var(--mk-nav) + 24px)!important}
 body.v13.v3-static.v6-static .mk-doc__body section:last-child{border:0!important;margin-bottom:0!important}
-body.v13.v3-static.v6-static .mk-doc__body h2{display:flex!important;gap:14px!important;margin:0 0 16px!important;font:700 clamp(19px,1.7vw,24px)/1.25 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important}
+body.v13.v3-static.v6-static .mk-doc__body h2{display:flex!important;gap:14px!important;margin:0 0 16px!important;font:700 var(--hf-fs-h2)/1.25 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important}
 body.v13.v3-static.v6-static .mk-doc__body h2 span{flex:none!important;color:var(--hf-faint)!important;font-weight:500!important}
-body.v13.v3-static.v6-static .mk-doc__body :is(p,li){margin:0 0 13px!important;font:400 13.5px/1.85 var(--hf-sans)!important;color:var(--hf-soft)!important}
+body.v13.v3-static.v6-static .mk-doc__body :is(p,li){margin:0 0 14px!important;font:400 14px/1.75 var(--hf-mono)!important;color:var(--hf-soft)!important}
 body.v13.v3-static.v6-static .mk-doc__body ul{margin:12px 0 13px!important;padding:0 0 0 22px!important;list-style:none!important}
 body.v13.v3-static.v6-static .mk-doc__body li{position:relative!important;list-style:none!important}
-body.v13.v3-static.v6-static .mk-doc__body li::before{content:"—"!important;position:absolute!important;left:-22px!important;color:var(--hf-faint)!important;font:400 11px/2.3 var(--hf-mono)!important}
+body.v13.v3-static.v6-static .mk-doc__body li::before{content:"—"!important;position:absolute!important;left:-22px!important;color:var(--hf-faint)!important;font:400 12px/2.05 var(--hf-mono)!important}
 body.v13.v3-static.v6-static .mk-doc__body strong{color:var(--hf-ink)!important;font-weight:600!important}
-body.v13.v3-static.v6-static .mk-doc__body a{color:var(--hf-ink)!important;text-decoration:underline!important;text-decoration-color:var(--hf-line-2)!important;text-underline-offset:3px!important;overflow-wrap:anywhere!important}
+body.v13.v3-static.v6-static .mk-doc__body a{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line-strong)!important;text-underline-offset:3px!important;overflow-wrap:anywhere!important}
 body.v13.v3-static.v6-static .mk-doc__body a:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}
 body.v13.v3-static.v6-static .mk-doc__body code{font:400 12px/1 var(--hf-mono)!important;color:var(--hf-ink)!important;background:var(--hf-surface-2)!important;padding:2px 6px!important}
 body.v13.v3-static.v6-static .mk-callout{margin:4px 0 16px!important;padding:16px 20px!important;border:0!important;border-left:2px solid var(--hf-ink)!important;background:var(--hf-surface)!important;border-radius:0!important}
 body.v13.v3-static.v6-static .mk-doc__body .mk-callout p{margin:0!important;color:var(--hf-ink)!important}
+
+/* ---------- The 12 columns, for rows that sit under the hero's grid ----------
+   Rule rows: the numeral in columns 1-2, the rule from column 3 (x = 284 at 1440), "In practice" on axis C (x = 956,
+   the hero aside's edge). Source rows: the name in 1-4, what it provides from axis B (x = 508), the ledger from axis C,
+   as on the landing. A section's own ledger (Billing, Contact): the term in 1-4 and the value from axis B, the same
+   edge as the questions below it. */
+@media (min-width:1025px){
+  /* A sub-head's note sits on axis C like every aside, on the title's baseline. The dates' three marks start on
+     columns 1, 5 and 9 (x = 60, 508, 956), the three-step chain's edges. */
+  body.v13.v3-static.v6-static .mk-sub{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important}
+  body.v13.v3-static.v6-static .mk-sub>h3{grid-column:1/9!important}
+  body.v13.v3-static.v6-static .mk-sub>p{grid-column:9/13!important}
+  body.v13.v3-static.v6-static .mk-rule{grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important;row-gap:16px!important}
+  body.v13.v3-static.v6-static .mk-rule>.mk-rule__num{grid-column:1/3!important}
+  body.v13.v3-static.v6-static .mk-rule>.mk-rule__body{grid-column:3/9!important}
+  body.v13.v3-static.v6-static .mk-rule>div:last-child:not(.mk-rule__body){grid-column:9/13!important}
+  body.v13.v3-static.v6-static .mk-source{grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important}
+  body.v13.v3-static.v6-static .mk-source>.mk-source__name{grid-column:1/5!important}
+  body.v13.v3-static.v6-static .mk-source>.mk-source__body{grid-column:5/9!important}
+  body.v13.v3-static.v6-static .mk-source>.mk-ledger{grid-column:9/13!important}
+}
+@media (min-width:901px){
+  body.v13.v3-static.v6-static .mk-section>.mk-shell>.mk-ledger>div{grid-template-columns:repeat(12,minmax(0,1fr))!important;column-gap:24px!important}
+  body.v13.v3-static.v6-static .mk-section>.mk-shell>.mk-ledger dt{grid-column:1/5!important}
+  body.v13.v3-static.v6-static .mk-section>.mk-shell>.mk-ledger dd{grid-column:5/13!important}
+}
 
 /* ---------- Large screens ---------- */
 @media (min-width:1600px){
@@ -446,10 +516,13 @@ body.v13.v3-static.v6-static .mk-doc__body .mk-callout p{margin:0!important;colo
   body.v13.v3-static.v6-static .v9-nav .v6-nav__actions{gap:16px!important}
   body.v13.v3-static.v6-static :is(.mk-cells--4,.mk-legend){grid-template-columns:repeat(2,minmax(0,1fr))!important}
   body.v13.v3-static.v6-static .mk-cadence{grid-template-columns:repeat(3,minmax(0,1fr))!important;row-gap:36px!important}
-  body.v13.v3-static.v6-static .mk-steps--4{grid-template-columns:repeat(2,minmax(0,1fr))!important;row-gap:40px!important}
+  /* Two by two: each row of steps keeps its own unbroken rule (no gutter between the pair). */
+  body.v13.v3-static.v6-static .mk-steps--4{grid-template-columns:repeat(2,minmax(0,1fr))!important;row-gap:40px!important;column-gap:0!important;border-top:0!important}
+  body.v13.v3-static.v6-static .mk-steps--4>.mk-step{border-top:1px solid var(--hf-line-2)!important}
 }
 @media (max-width:1024px){
   body.v13.v3-static.v6-static .mk-split{grid-template-columns:minmax(0,1fr)!important}
+  body.v13.v3-static.v6-static .mk-split>:nth-child(n){grid-column:1/-1!important}
   body.v13.v3-static.v6-static .mk-source{grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr)!important}
   body.v13.v3-static.v6-static .mk-source__name{grid-row:1 / span 2!important}
   body.v13.v3-static.v6-static .mk-source>:not(.mk-source__name){grid-column:2!important}
@@ -462,17 +535,25 @@ body.v13.v3-static.v6-static .mk-doc__body .mk-callout p{margin:0!important;colo
   body.v13.v3-static.v6-static .v9-nav .v6-menu-btn{display:flex!important}
   body.v13.v3-static.v6-static .v9-nav .v6-nav__actions{margin-left:auto!important;gap:6px!important}
   body.v13.v3-static.v6-static :is(.mk-hero__grid,.mk-head,.mk-faq-layout){grid-template-columns:minmax(0,1fr)!important}
+  body.v13.v3-static.v6-static .mk-hero__grid>:nth-child(n),body.v13.v3-static.v6-static .mk-faq-layout>div:nth-child(n),body.v13.v3-static.v6-static .mk-head h2{grid-column:1/-1!important}
   body.v13.v3-static.v6-static .mk-hero__grid{gap:40px!important}
-  body.v13.v3-static.v6-static .mk-head{gap:18px!important}
+  body.v13.v3-static.v6-static .mk-head{margin-bottom:40px!important}
+  body.v13.v3-static.v6-static :is(.mk-head>div:first-child,.mk-faq-layout>div:first-child)>.mk-eyebrow{margin-bottom:24px!important}
+  body.v13.v3-static.v6-static .mk-head__aside{grid-column:1/-1!important;grid-row:3!important;align-self:start!important;margin-top:20px!important;padding:0!important}
   body.v13.v3-static.v6-static .mk-head__aside>p{max-width:60ch!important}
   body.v13.v3-static.v6-static .mk-faq-layout>div:first-child{position:static!important}
-  body.v13.v3-static.v6-static .mk-section>.mk-shell{padding-top:36px!important}
-  body.v13.v3-static.v6-static .mk-section>.mk-shell[data-folio]::before{top:36px!important;line-height:1.75!important}
+  body.v13.v3-static.v6-static .mk-faq{margin-top:28px!important}
+  body.v13.v3-static.v6-static .mk-faq summary{padding:18px 44px 18px 0!important}
   body.v13.v3-static.v6-static .mk-plan{grid-template-columns:minmax(0,1fr)!important}
-  body.v13.v3-static.v6-static .mk-plan__price{border-right:0!important;border-bottom:1px solid var(--hf-line-2)!important}
+  body.v13.v3-static.v6-static .mk-plan__price{grid-column:1!important;padding:28px 20px!important;border-right:0!important;border-bottom:1px solid var(--hf-line-2)!important}
+  body.v13.v3-static.v6-static .mk-plan__list{grid-column:1!important;padding:24px 20px 16px!important}
+  body.v13.v3-static.v6-static .mk-plan__list .mk-list{grid-template-columns:minmax(0,1fr)!important}
+  body.v13.v3-static.v6-static .mk-plan__list .mk-list li:last-child{border-bottom:0!important}
   body.v13.v3-static.v6-static .mk-plan__price .mk-actions{margin-top:0!important}
-  body.v13.v3-static.v6-static .mk-final{padding:108px 0!important}
-  body.v13.v3-static.v6-static .mk-final .v13-field{-webkit-mask-image:linear-gradient(180deg,var(--hf-ink),transparent 76px,transparent calc(100% - 76px),var(--hf-ink))!important;mask-image:linear-gradient(180deg,var(--hf-ink),transparent 76px,transparent calc(100% - 76px),var(--hf-ink))!important}
+  body.v13.v3-static.v6-static .mk-final{padding:96px 0!important}
+  /* The copy spans the width here, so the dots could only be a band under the section's rule, which reads as a second
+     footer strip mid-page: the call sits on plain paper and the footer's strip is the dots. */
+  body.v13.v3-static.v6-static .mk-final .v13-field{display:none!important}
   body.v13.v3-static.v6-static .mk-cells{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   body.v13.v3-static.v6-static .mk-doc{grid-template-columns:minmax(0,1fr)!important;gap:32px!important}
   body.v13.v3-static.v6-static .mk-doc__toc{position:static!important}
@@ -483,12 +564,14 @@ body.v13.v3-static.v6-static .mk-doc__body .mk-callout p{margin:0!important;colo
   body.v13.v3-static.v6-static .mk-chain li:not(:last-child)::after{top:auto!important;bottom:-7px!important;right:auto!important;left:50%!important;transform:translateX(-50%) rotate(135deg)!important}
 }
 @media (max-width:760px){
-  body.v13.v3-static.v6-static{--mk-nav:64px!important}
   body.v13.v3-static.v6-static .v9-nav .v6-logo{font-size:22px!important}
+  body.v13.v3-static.v6-static .mk-lede{font-size:15px!important}
+  body.v13.v3-static.v6-static :is(.mk-caption,.mk-note,.mk-table caption){font-size:12.5px!important}
+  body.v13.v3-static.v6-static .mk-final__copy{font-size:15px!important}
   body.v13.v3-static.v6-static :is(.mk-cells,.mk-cells--2,.mk-cells--4,.mk-legend,.mk-statuses,.mk-codes,.mk-list--2){grid-template-columns:minmax(0,1fr)!important}
   body.v13.v3-static.v6-static .mk-list--2 li:nth-child(2){border-top:0!important}
-  body.v13.v3-static.v6-static :is(.mk-steps,.mk-steps--4){grid-template-columns:minmax(0,1fr)!important;row-gap:0!important}
-  body.v13.v3-static.v6-static .mk-step{padding:26px 0 30px 0!important}
+  body.v13.v3-static.v6-static :is(.mk-steps,.mk-steps--4){grid-template-columns:minmax(0,1fr)!important;row-gap:0!important;border-top:0!important}
+  body.v13.v3-static.v6-static .mk-step{padding:26px 0 30px 0!important;border-top:1px solid var(--hf-line-2)!important}
   body.v13.v3-static.v6-static .mk-step:last-child{padding-bottom:0!important}
   body.v13.v3-static.v6-static .mk-step:last-child::after{display:none!important}
   body.v13.v3-static.v6-static .mk-cadence{grid-template-columns:minmax(0,1fr)!important;row-gap:0!important;border-top:0!important;border-left:1px solid var(--hf-line-2)!important;margin-left:4px!important}
@@ -516,21 +599,34 @@ body.v13.v3-static.v6-static .mk-doc__body .mk-callout p{margin:0!important;colo
   body.v13.v3-static.v6-static .mk-table tbody tr:first-child{border-top:1px solid var(--hf-line-2)!important}
   body.v13.v3-static.v6-static .mk-table th,body.v13.v3-static.v6-static .mk-table td{padding:0!important;border:0!important}
   body.v13.v3-static.v6-static .mk-table td{margin-top:6px!important}
-  body.v13.v3-static.v6-static .mk-table td[data-label]::before{content:attr(data-label)!important;display:block!important;font:500 10px/1.75 var(--hf-mono)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+  body.v13.v3-static.v6-static .mk-table td[data-label]::before{content:attr(data-label)!important;display:block!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
   body.v13.v3-static.v6-static .mk-table caption{display:block!important;padding-top:14px!important;border-top:1px solid var(--hf-line)!important}
 }
 @media (max-width:560px){
+  body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{height:36px!important;min-height:36px!important;padding:0 12px!important}
   body.v13.v3-static.v6-static .mk-actions{flex-direction:column!important;align-items:stretch!important}
   body.v13.v3-static.v6-static .mk-actions .v9-btn{width:100%!important;justify-content:space-between!important}
   body.v13.v3-static.v6-static .mk-final .mk-actions{width:100%!important}
+  /* One full-width primary button, and the secondary as a text link, as on the landing (hero, closing call, the
+     not-found page): a block whose 44px line box centres the words, the → (faint, ink when pointed at) an atomic
+     inline box, so the underline (hover, focus) runs under the words only. */
+  body.v13.v3-static.v6-static :is(.mk-hero,.mk-final,.nf-copy) .mk-actions .v12-outline-button{display:block!important;align-self:flex-start!important;width:auto!important;height:44px!important;min-height:44px!important;padding:0!important;
+    border-color:transparent!important;background:transparent!important;color:var(--hf-ink)!important;font:500 14px/44px var(--hf-mono)!important;text-decoration:none!important;text-underline-offset:5px!important}
+  body.v13.v3-static.v6-static :is(.mk-hero,.mk-final,.nf-copy) .mk-actions .v12-outline-button>.v13-arrow{margin-left:10px!important}
+  body.v13.v3-static.v6-static :is(.mk-hero,.mk-final,.nf-copy) .mk-actions .v12-outline-button:is(:hover,:focus-visible){border-color:transparent!important;background:transparent!important;text-decoration:underline 1px var(--hf-line-strong)!important}
+  body.v13.v3-static.v6-static :is(.mk-hero,.mk-final,.nf-copy) .mk-actions .v12-outline-button:active{background:transparent!important;color:var(--hf-soft)!important}
+  body.v13.v3-static.v6-static .mk-final .mk-actions .v12-outline-button{align-self:center!important}
   body.v13.v3-static.v6-static .mk-plan__amount{font-size:64px!important}
   body.v13.v3-static.v6-static .mk-ana--head{flex-wrap:wrap!important}
   body.v13.v3-static.v6-static .mk-index a{grid-template-columns:34px minmax(0,1fr) 16px!important}
+  /* The legal phrase of the hero's terms takes its own line, as on the landing. */
+  body.v13.v3-static.v6-static .mk-terms>.mk-keep{flex-basis:100%!important}
 }
+@media (max-width:339px){body.v13.v3-static.v6-static .mk-terms>.mk-keep{white-space:normal!important}}
 @media (max-width:374px){
   body.v13.v3-static.v6-static .v9-nav .v6-nav__inner{gap:12px!important}
   body.v13.v3-static.v6-static .v9-nav .v6-logo{font-size:21px!important}
-  body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{padding:0 12px!important;gap:10px!important;letter-spacing:.14em!important}
+  body.v13.v3-static.v6-static .v9-nav .v6-nav__actions .v9-btn{padding:0 12px!important;gap:10px!important}
 }
 
 /* ---------- Reduced motion ---------- */

@@ -106,6 +106,16 @@ function displayName(raw){
  const fix=t=>/^[A-Z]\.?$/.test(t)?t.charAt(0)+".":titleCase(t);
  return [...given.map(fix),fix(last),suffix?(/^(II|III|IV|V)$/.test(suffix)?suffix:titleCase(suffix.replace(/\.$/,""))+"."):""].filter(Boolean).join(" ");
 }
+/* Issuer names arrive as filed ("EXXON MOBIL CORP"); shown as people write them ("Exxon Mobil Corp"), the same on every
+   page (the overview, the people directory, the filings, the research desk, a person's file). A name that already has
+   lower case is left as written. EDGAR's conformed names end in a state or series tag ("OCCIDENTAL PETROLEUM CORP /DE/",
+   "… /NEW/", "… /MD"): a filing detail, not part of the name people know, so it is left off. */
+const AS_WRITTEN={NVIDIA:"NVIDIA",JPMORGAN:"JPMorgan",IBM:"IBM",AMD:"AMD",PLC:"plc","&":"&",INC:"Inc.","INC.":"Inc.",CO:"Co","CO.":"Co.",LLC:"LLC",LP:"LP",NV:"N.V.",SA:"S.A.",AG:"AG",SE:"SE",USA:"USA",US:"US",II:"II",III:"III"};
+function companyName(raw){
+ const s=String(raw||"").replace(/\s+/g," ").replace(/(?:\s*\/[A-Za-z]{2,4}\/?)+\s*$/,"").trim();
+ if(!s||/[a-z]/.test(s))return s;
+ return s.split(" ").map(w=>AS_WRITTEN[w]||(/^[A-Z]{1,2}$/.test(w)?w:w.charAt(0)+w.slice(1).toLowerCase().replace(/([-'’.&])([a-z])/g,(m,a,b)=>a+b.toUpperCase()))).join(" ");
+}
 /* Initials: the first letter of the first and the last name word, as people write the name.
    Words split on whitespace only, so "Vanderbilt-Worthington" and "O'Brien" stay one word
    (AV, MO); generational suffixes are dropped; organisations use their first two words. */
@@ -735,6 +745,6 @@ function refresh(){
  update();
 }
 function photo(name,ticker){const slug=images[normalizeTicker(ticker)+":"+normalize(name)];return slug?photos[slug]:null;}
-window.InsidirMedia=Object.freeze({logo,portrait,person,company,photo,hydrate,credits,ready,refresh,logoFor,photoFor,displayName,initials,knownBrand:t=>Boolean(marks[normalizeTicker(t)])});
+window.InsidirMedia=Object.freeze({logo,portrait,person,company,photo,hydrate,credits,ready,refresh,logoFor,photoFor,displayName,companyName,initials,knownBrand:t=>Boolean(marks[normalizeTicker(t)])});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>hydrate());else hydrate();
 })();

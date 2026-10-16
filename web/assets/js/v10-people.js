@@ -14,6 +14,8 @@ const cik=x=>/^\d{1,12}$/.test(String(x||""))?String(x):"";
 const ticker=x=>/^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(x||"").toUpperCase())?String(x).toUpperCase():"";
 const day=x=>{let d=new Date(x);return x&&!Number.isNaN(d.getTime())?new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d):"Not reported"};
 const shown=n=>media?.displayName?media.displayName(n):String(n||"Reporting person");
+/* Issuer names as people write them ("NVIDIA Corp", not "NVIDIA CORP"), as on the overview (entity-media.js). */
+const companyName=n=>media?.companyName?media.companyName(n):String(n||"");
 const companyHref=t=>t?"company.html?ticker="+encodeURIComponent(t):"filings.html";
 /* A person's file whenever the SEC CIK is known; else the directory's search for the name. */
 const personHref=(n,id)=>{const c=String(id??"").trim();return /^\d{1,10}$/.test(c)&&/[1-9]/.test(c)?"person.html?cik="+c.replace(/^0+/,""):"people.html?q="+encodeURIComponent(String(n||"").trim().slice(0,80))+"#v10-directory";};
@@ -36,10 +38,13 @@ function followButton(id,compact){
  return '<button type="button" class="v10-follow-btn'+(saved?" is-following":"")+'" data-person-follow="'+esc(id)+'" aria-pressed="'+saved+'"'+(ready?"":" disabled")+'>'+(saved?"Following ✓":compact?"Follow +":"Follow person +")+'</button>';
 }
 /* The company a person files for, named with its own logo tile (aria-hidden; the ticker says it). */
+/* A run of facts joined by " · " that wraps as whole facts, so no line starts or ends on a separator (.rd-seq in
+   v13-app.css); the text reads exactly as the plain join. */
+const factRun=parts=>parts.filter(Boolean).map((x,i)=>i?'<span class="rd-bit"><span class="rd-sep"> · </span>'+x+'</span>':'<span class="rd-bit rd-bit--first">'+x+'</span>').join("");
 const companyWithLogo=(t,issuer,issuerCik)=>t?'<span class="ins-inline">'+(media?.logo(t,"xs",{cik:cik(issuerCik),name:issuer?String(issuer).slice(0,60):""})||"")+'<span>'+esc(t)+'</span></span>':"";
 function card(p){
  const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik),ic=cik(p.issuer_cik);
- const issuer=p.issuer_name?String(p.issuer_name).slice(0,60):"";
+ const issuer=p.issuer_name?companyName(p.issuer_name).slice(0,60):"";
  const facts=['<div><dt>Latest transaction</dt><dd>'+esc(day(p.last_transaction_date))+'</dd></div>'];
  if(Number.isFinite(Number(p.filings))&&Number(p.filings)>0)facts.push('<div><dt>Filings imported</dt><dd>'+esc(Number(p.filings))+'</dd></div>');
  const where=t?companyWithLogo(t,issuer,ic)+(issuer?" · "+esc(issuer):""):esc(issuer||"SEC reporting person");
@@ -79,7 +84,7 @@ function drawFollowing(items){
  followingHost.innerHTML=items.length?items.map(p=>{
   const raw=p.owner_name||"Reporting person",t=ticker(p.ticker),id=cik(p.owner_cik),ic=cik(p.issuer_cik);
   return '<div class="v10-follow-row">'+(media?.portrait(raw,t,"md",{cik:id,issuerCik:ic})||"")+
-  '<div><strong>'+nameLink(raw,id)+'</strong><small>'+(t?companyWithLogo(t,p.issuer_name,ic):"SEC Form 4")+' · Latest transaction '+esc(day(p.last_transaction_date))+' · Followed '+esc(day(p.created_at))+'</small></div>'+
+  '<div><strong>'+nameLink(raw,id)+'</strong><small class="rd-seq">'+factRun([t?companyWithLogo(t,p.issuer_name,ic):"SEC Form 4","Latest transaction "+esc(day(p.last_transaction_date)),"Followed "+esc(day(p.created_at))])+'</small></div>'+
   (t?'<a href="'+esc(companyHref(t))+'" data-hf-atom>'+esc(t)+' report ↗</a>':'<span></span>')+(id?'<button type="button" data-person-follow="'+esc(id)+'" aria-pressed="true" data-hf-atom>Unfollow</button>':"")+'</div>';
  }).join(""):'<p class="v10-people-empty">You are not following anyone yet. Use “Follow person +” in the directory below; followed people are saved to your account.</p>';
  media?.hydrate(followingHost);

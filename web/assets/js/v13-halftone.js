@@ -66,6 +66,21 @@
   function fitSize(measured, width) {
     return measured > 0 ? (width / measured) * 100 : 0;
   }
+  /** Sets the word's font on `ctx` at the size that fills `availWidth` and returns that size, the word's metrics, its
+      cap height and how far its ink sits from the drawing origin. With `options.fitTo` the word's ink (from the left
+      edge of the first letter to the right edge of the last) fills the width exactly, so it lines up with a grid;
+      without it the advance width does, as it always has. v9-motion.js uses the same sum for the hero's crop. */
+  function wordFit(options, ctx, availWidth) {
+    const o = options || {}, word = o.wordmark || " ";
+    const ink = b => o.fitTo ? (b.actualBoundingBoxLeft || 0) + (b.actualBoundingBoxRight || b.width) : b.width;
+    const set = px => { ctx.font = o.fontWeight + " " + px + "px " + o.fontFamily; return ctx.measureText(word); };
+    if ("letterSpacing" in ctx) ctx.letterSpacing = o.letterSpacing;
+    let size = fitSize(ink(set(100)), availWidth), box = set(size);
+    // Ink does not scale exactly with the size (hinting, spacing rounding): one correction lands it on the width.
+    const got = ink(box);
+    if (o.fitTo && got > 0 && Math.abs(got - availWidth) > 0.25) { size = size * availWidth / got; box = set(size); }
+    return { size, box, cap: box.actualBoundingBoxAscent || size * 0.72, left: o.fitTo ? box.actualBoundingBoxLeft || 0 : 0 };
+  }
 
   /* ---------- options ---------- */
 
@@ -91,6 +106,9 @@
       // Only a word answers the pointer (the landing wordmark, the 404's numerals); a plain field is print
       // texture and holds still unless it asks with data-interactive="true".
       interactive: d.interactive ? d.interactive !== "false" : (d.mode || (field ? "field" : "word")) === "word",
+      // data-fit-to (a selector inside the element): the word's ink spans exactly that element's width, from its
+      // left edge (the landing fits the wordmark to the page grid); without it the word fills the element's width.
+      fitTo: d.fitTo || "",
       fontWeight: d.fontWeight || "800",
       fontFamily: d.fontFamily || v("--hwf-font") || SANS_STACK,
       letterSpacing: d.letterSpacing || "-0.045em",
@@ -142,17 +160,16 @@
         mask.width = w; mask.height = h;
         const m = mask.getContext("2d", { willReadFrequently: true });
         if (!m) return;
-        if ("letterSpacing" in m) m.letterSpacing = o.letterSpacing;
-        m.font = o.fontWeight + " 100px " + o.fontFamily;
         const word = o.wordmark || " ";
-        const fit = fitSize(m.measureText(word).width, w * 1.02);
-        m.font = o.fontWeight + " " + fit + "px " + o.fontFamily;
-        const box = m.measureText(word);
-        const cap = box.actualBoundingBoxAscent || fit * 0.72;
+        let ref = null;
+        if (o.fitTo) { try { ref = root.querySelector(o.fitTo); } catch (e) { ref = null; } }
+        const refBox = ref && ref.getBoundingClientRect();
+        const grid = refBox && refBox.width > 0 ? refBox : null;
+        const f = wordFit(grid ? o : Object.assign({}, o, { fitTo: "" }), m, grid ? grid.width : w * 1.02);
         const c = Math.max(0, Math.min(0.6, o.crop));
         m.fillStyle = "#000";
         m.textBaseline = "alphabetic";
-        m.fillText(word, (w - box.width) / 2, h + cap * c);
+        m.fillText(word, grid ? grid.left - rect.left + f.left : (w - f.box.width) / 2, h + f.cap * c);
         const img = m.getImageData(0, 0, w, h).data;
         for (let gy = 0; gy < rows; gy++) for (let gx = 0; gx < cols; gx++) {
           // Coverage: average alpha over a 3×3 sample of the cell.
@@ -309,7 +326,9 @@
     if (host === document) document.addEventListener("pointerout", onOut);
     else host.addEventListener("pointerleave", onLeave);
     host.addEventListener("pointerdown", onDown);
-    const ro = new ResizeObserver(() => { layout(); wake(); });
+    // A layout clears the canvas (it is resized): draw at once, on screen or not, so a field off screen is never left
+    // blank until it scrolls into view.
+    const ro = new ResizeObserver(() => { layout(); draw(performance.now()); wake(); });
     ro.observe(root);
     // Scrolled out of view: put every dot home, so the field is at rest when it comes back.
     const io = new IntersectionObserver(entries => {
@@ -323,7 +342,7 @@
     io.observe(root);
     // The wordmark is set in the page's web font once it has landed.
     if (document.fonts && document.fonts.load) {
-      document.fonts.load(o.fontWeight + " 100px " + o.fontFamily).catch(() => {}).then(() => { if (alive) { layout(); wake(); } });
+      document.fonts.load(o.fontWeight + " 100px " + o.fontFamily).catch(() => {}).then(() => { if (alive) { layout(); draw(performance.now()); wake(); } });
     }
 
     const api = {
@@ -382,5 +401,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
   else auto();
 
-  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, weave, fitSize, PRESET, PHYSICS });
+  window.InsidirHalftone = Object.assign(window.InsidirHalftone || {}, { mount, auto, hex, radius, step, weave, fitSize, wordFit, PRESET, PHYSICS });
 })();

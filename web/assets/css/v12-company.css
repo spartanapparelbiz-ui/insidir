@@ -18,7 +18,7 @@ body.cx-page .skip-link{background:#fff;color:#0a0e13}
 /* ---------- Header ---------- */
 body.cx-page .app-header{background:rgba(10,14,19,.94);border-bottom:1px solid var(--cx-line);height:84px;
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-body.cx-page .app-header__inner{width:min(100% - 64px,1600px);gap:clamp(14px,2.2vw,34px)}
+body.cx-page .app-header__inner{gap:clamp(14px,2.2vw,34px)}
 body.cx-page .app-header .logo{font:650 34px/1 var(--serif);letter-spacing:-.05em;color:#fff;margin-right:clamp(4px,1.6vw,26px)}
 body.cx-page .app-nav{gap:clamp(2px,.5vw,8px);font-size:15.5px;font-weight:450;color:#c3cad2;overflow:visible}
 body.cx-page .app-nav a{padding:0 clamp(8px,1.05vw,18px);color:#c3cad2;position:relative}
@@ -63,7 +63,6 @@ body.cx-page .app-menu-btn{color:#fff}
 @media (max-width:860px){
   body.cx-page .app-header{height:68px}
   body.cx-page .app-mobile-nav{inset:68px 0 auto}
-  body.cx-page .app-header__inner{width:calc(100% - 28px)}
   body.cx-page .app-header .logo{font-size:27px}
   body.cx-page .app-search,body.cx-page .app-search:focus-within{flex:1 1 auto;min-width:0}
   body.cx-page .app-search input{height:42px;background:#10161d;border-color:#232c36;padding:0 14px 0 42px}

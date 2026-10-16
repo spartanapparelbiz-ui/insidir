@@ -3,7 +3,7 @@
 body.v2-app.v3-app.v6-app{--app-bg:#f8f8f6!important;--app-surface:#fff!important;--app-border:#e4e5e2!important;--cream:#f8f8f6!important;--paper:#fff!important;--ink:#181a1c!important;--muted:#737774!important;--line:#e2e4e1!important;background:#f8f8f6!important;color:#1a1c1e!important;font:400 12px/1.7 var(--sans);min-height:100vh}
 body.v2-app.v3-app.v6-app *,body.v2-app.v3-app.v6-app *:before,body.v2-app.v3-app.v6-app *:after{box-sizing:border-box}
 body.v2-app.v3-app.v6-app .app-header{position:sticky!important;inset:0!important;top:0!important;width:100%!important;height:70px!important;min-height:70px!important;flex:0 0 70px!important;background:rgba(255,255,254,.98)!important;color:#202225!important;border:0!important;border-bottom:1px solid #e6e7e4!important;box-shadow:none!important;backdrop-filter:blur(16px)!important;z-index:120!important}
-body.v2-app.v3-app.v6-app .app-header__inner{height:70px!important;max-width:1510px!important;width:calc(100% - 52px)!important;margin:0 auto!important;padding:0!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:clamp(13px,1.75vw,27px)!important}
+body.v2-app.v3-app.v6-app .app-header__inner{height:70px!important;margin:0 auto!important;padding:0!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:clamp(13px,1.75vw,27px)!important}
 body.v2-app.v3-app.v6-app .app-header .logo{font:630 29px/1 var(--serif)!important;letter-spacing:-.068em!important;color:#16181a!important;white-space:nowrap!important;flex:0 0 auto!important;margin:0 15px 0 0!important}
 body.v2-app.v3-app.v6-app .app-nav{display:flex!important;position:static!important;align-items:center!important;flex-direction:row!important;flex-wrap:nowrap!important;gap:clamp(7px,.9vw,15px)!important;height:100%!important;width:auto!important;min-width:0!important;flex:0 1 auto!important;overflow:visible!important;margin:0!important;color:#5e6262!important;font:550 11px/1.4 var(--sans)!important}
 body.v2-app.v3-app.v6-app .app-nav a{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;gap:6px!important;height:100%!important;min-height:0!important;padding:0 2px!important;border-radius:0!important;white-space:nowrap!important;color:#676b68!important;position:relative;font-weight:550!important;line-height:1.4!important;background:transparent!important}
@@ -148,7 +148,7 @@ body.v2-app.v3-app.v6-app .ins-media--missing{background:#f0f1ef!important;color
 body.v2-app.v3-app.v6-app .ins-media--company{background:#f3f4f2!important;border-color:#dfe1dd!important;color:#595e58!important}
 @media(max-width:1360px){body.v2-app.v3-app.v6-app .app-nav{gap:9px!important;font-size:10px!important}body.v2-app.v3-app.v6-app .app-header__inner{gap:15px!important}body.v2-app.v3-app.v6-app .app-search{max-width:182px!important}}
 @media(max-width:1140px){
- body.v2-app.v3-app.v6-app .app-header__inner{height:66px!important;width:calc(100% - 32px)!important;gap:12px!important}
+ body.v2-app.v3-app.v6-app .app-header__inner{height:66px!important;gap:12px!important}
  body.v2-app.v3-app.v6-app .app-header{height:66px!important;min-height:66px!important;flex-basis:66px!important}
  body.v2-app.v3-app.v6-app .app-menu-btn{display:inline-flex!important;color:#191c1a!important;flex:0 0 35px!important;width:35px!important;height:35px!important;margin:0!important;align-items:center!important;justify-content:center!important;order:4!important;background:#f3f4f2!important;border:1px solid #e1e3df!important;border-radius:7px!important}
  body.v2-app.v3-app.v6-app .app-nav{display:none!important}
@@ -166,7 +166,7 @@ body.v2-app.v3-app.v6-app .ins-media--company{background:#f3f4f2!important;borde
 }
 @media(max-width:680px){
  body.v2-app.v3-app.v6-app .app-header .logo{font-size:25px!important}
- body.v2-app.v3-app.v6-app .app-header__inner{gap:9px!important;width:calc(100% - 22px)!important}
+ body.v2-app.v3-app.v6-app .app-header__inner{gap:9px!important}
  body.v2-app.v3-app.v6-app .app-search{flex:0 1 126px!important;min-width:0!important;max-width:128px!important}
  body.v2-app.v3-app.v6-app .app-search input::placeholder{font-size:0!important}
  body.v2-app.v3-app.v6-app .app-header .icon-btn:not(.app-menu-btn){display:none!important}

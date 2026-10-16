@@ -7,6 +7,7 @@ import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
 import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin,passwordMatches } from "./auth.mjs";
 import { serveStatic } from "./web.mjs";
 import { billingRoutes,createStripeClient,deleteAccount } from "./billing.mjs";
+import { creatorAdminRoutes } from "./creator-program.mjs";
 import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavailablePage } from "./paywall.mjs";
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
@@ -285,7 +286,8 @@ async function route(req,res,ctx){
   }
   // GET /v1/people/<cik>: one reporting person's profile (src/person-profile.mjs); product data.
   if(await handlePersonRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
-  if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe}); if(result!==false) return result; }
+  if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe,query:ctx.query}); if(result!==false) return result; }
+  if(p.startsWith("/v1/creators/admin/")) { const result=await creatorAdminRoutes(req,res,p,json,{query:ctx.query,env:ctx.env}); if(result!==false) return result; }
   if(p==="/v1/me/brokerage/callback" && m==="GET"){
     // Top-level OAuth redirect uses the existing signed-in session; state is single-use and bound to this user.
     let outcome="error";
@@ -461,7 +463,7 @@ async function route(req,res,ctx){
     const ip=clientAddress(req);
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
-      const x=await body(req),r=await register(x.email,x.password);
+      const x=await body(req),r=await register(x.email,x.password,x.ref);
       return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
