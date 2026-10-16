@@ -9,21 +9,20 @@
 <script defer src="assets/js/entity-media.js?v=media-5"></script><script defer src="assets/js/app.js?v=18"></script><script defer src="assets/js/form4-words.js?v=1"></script><script defer src="assets/js/v3-dashboard.js?v=22"></script><script defer src="assets/js/v4-dashboard.js?v=22"></script><script defer src="assets/js/v13-overview.js?v=3"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
-<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=8">
-<script defer src="assets/js/v13-halftone.js?v=7"></script><script defer src="assets/js/v13-motion.js?v=4"></script>
+<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
+<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
 <div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
 
 <section id="rd-today" class="rd-today" aria-labelledby="rd-heading">
-  <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="140" aria-hidden="true"></div>
   <p class="rd-eyebrow" id="rd-today-date">Overview</p>
   <h1 id="rd-heading" data-greeting>Welcome back.</h1>
   <script>/* Greeting and date before the first paint (plain arrays: building an Intl formatter here would cost more than the page's first paint). */(()=>{const d=new Date(),h=d.getHours(),g=document.querySelector("[data-greeting]"),t=document.getElementById("rd-today-date");if(g)g.textContent=h>=5&&h<12?"Good morning.":h>=12&&h<18?"Good afternoon.":"Good evening.";if(t)t.textContent="Overview · "+"Sun Mon Tue Wed Thu Fri Sat".split(" ")[d.getDay()]+", "+"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();})();</script>
   <div class="rd-today__lines">
     <p id="rd-today-you" class="rd-today__line rd-today__line--you is-skeleton" aria-busy="true"><span class="sr-only">Loading what changed since your last visit…</span></p>
-    <div class="rd-today__brief"><p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
+    <div class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field data-dot-gap="7" data-field-coverage="0.12" data-radius="40" aria-hidden="true"></div><p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
     <p id="rd-today-fresh" class="rd-today__line rd-today__line--fresh is-skeleton" aria-busy="true"><span class="sr-only">Checking the latest import…</span></p></div>
   </div>
 </section>

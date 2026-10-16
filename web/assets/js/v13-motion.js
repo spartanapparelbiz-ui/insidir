@@ -1,10 +1,11 @@
-/* Insidir site motion: calm.
+/* Insidir site motion: calm content, live dots.
 
-   The site holds still. Nothing moves under the pointer, a click on the page sends nothing through it, and
-   a scroll leaves nothing behind: whatever a reader aims at, reads or compares stays exactly where it is.
-   Hover states change colour, borders and underlines, never position or size. The one surface that answers
-   the pointer is the dotted "insidir" wordmark in the landing page's first screen (v13-halftone.js), whose
-   dots part a little around it and settle back.
+   The page's content holds still. Nothing a reader aims at, reads or compares moves under the pointer, on a
+   click or with a scroll: hover states change colour, borders and underlines, never position or size. The
+   dots are the exception, and they answer everything: every halftone dot field on the site (the landing
+   wordmark, the person file's band, the heroes, the footer strip, the 404, the overview's brief corner) parts hard
+   around the pointer, sweeps after it, opens wider under a press and rings out on every click or tap
+   (v13-halftone.js). Only canvas dots move; this layer moves nothing.
 
    What remains here is a quiet scroll reveal on the public pages. A block marked data-hf-reveal (or each child
    of a data-hf-reveal-group, and the footer's columns) that is below the fold when the page loads waits

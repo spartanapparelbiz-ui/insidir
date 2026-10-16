@@ -42,7 +42,6 @@
    every panel is full bleed and pads to the gutter. */
 body.v13.rd-page{--rd-gap:24px;--rd-module-gap:48px}
 body.v13 .rd-topline{display:none!important}            /* "Insidir / Overview" repeated the active nav item */
-body.v13 .rd-today>.pd-band{display:none!important}      /* the canvas field is replaced by the brief panel's static dot corner */
 body.v13.rd-page .rd-module{border-top:0!important}
 body.v13.rd-page .rd-grid{gap:var(--rd-module-gap) var(--rd-gap)!important;margin-top:48px!important}
 
@@ -141,11 +140,15 @@ body.v13 #rd-today-you strong{font-weight:600!important;color:var(--hf-ink)!impo
 /* The latest SEC import: a brief panel with a label, the market sentence and the import time under a faint rule. */
 body.v13 .rd-today__brief{position:relative!important;box-sizing:border-box!important;margin:20px 0 0!important;max-width:760px!important;padding:16px 20px 14px!important;overflow:hidden!important;
   background:var(--hf-surface)!important;border:1px solid var(--hf-line)!important;box-shadow:var(--hf-hl)!important}
-body.v13 .rd-today__brief::before{content:"Latest SEC import" / ""!important;display:block!important;margin:0 0 8px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
-/* The static halftone corner: the identity in print, no canvas. */
-body.v13 .rd-today__brief::after{content:""!important;position:absolute!important;top:0!important;right:0!important;width:45%!important;height:40px!important;pointer-events:none!important;
-  background:radial-gradient(circle,var(--hf-faint) 1px,transparent 1.5px) 0 0/6px 6px!important;
+body.v13 .rd-today__brief::before{content:"Latest SEC import" / ""!important;display:block!important;position:relative!important;z-index:1!important;margin:0 0 8px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+/* The brief's dot corner: a live dot field (v13-halftone.js) in the panel's top-right corner, in faint ink on the panel's
+   surface, fading to nothing at its left and bottom edges. 1px down, so the panel's top highlight runs edge to edge, and
+   40px tall, so it ends where the market sentence starts. Its dots answer the pointer, a press and a tap like every dot
+   field on the site, with a reach sized to the corner (data-radius 40) so a press never empties it. */
+body.v13 .rd-today__brief>.rd-brief__dots{--hwf-bg:var(--hf-surface)!important;--hwf-ink:var(--hf-faint)!important;position:absolute!important;top:1px!important;right:0!important;width:45%!important;height:40px!important;
+  display:block!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important;background:transparent!important;
   -webkit-mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important;mask-image:radial-gradient(ellipse 100% 100% at 100% 0,#000,transparent)!important}
+body.v13 .rd-today__brief>.rd-brief__dots>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;max-width:none!important}
 body.v13 #rd-today-market{--line-min:calc(3 * 1.7em);font:400 12.5px/1.7 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-soft)!important}
 body.v13 #rd-today-market strong{font-weight:600!important;color:var(--hf-ink)!important}
 body.v13 #rd-today-fresh{--line-min:calc(2 * 1.6em + 10px);text-wrap:pretty!important;margin:12px -20px 0!important;padding:10px 20px 0!important;border-top:1px solid var(--hf-line-faint)!important;font:400 11px/1.6 var(--hf-mono)!important;letter-spacing:0!important;color:var(--hf-muted)!important}
@@ -891,6 +894,8 @@ body.v13 .rd-credits.is-held:empty{display:block!important}
   body.v13 :is(.rd-dview,.rd-dview.is-active,.rd-toast,.rd-toast:empty,#v3-trades.is-leaving>tr,.rd-fl,.rd-feed__row){transition:none!important}
 }
 @media (forced-colors:active){
+  /* The canvas paints its own colours, which forced colours cannot reach: the corner steps aside. */
+  body.v13 .rd-today__brief>.rd-brief__dots{display:none!important}
   body.v13 :is(.rd-day__bar,.rd-co__bar,.rd-swatch,.rd-tri,.rd-tip__key),body.v13 .rd-big .rd-big__bar>span{background:CanvasText!important}
   body.v13 .rd-dchart__grid{background:GrayText!important}
   body.v13 .rd-dchart__grid--zero{background:CanvasText!important}
