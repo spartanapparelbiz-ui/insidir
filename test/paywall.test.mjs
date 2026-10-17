@@ -552,7 +552,7 @@ test("subscription sync: only the configured price counts, the best standing win
   const query = fakeQuery();
   const stored = await syncCustomer("cus_ABC", { stripe, query, priceId: "price_pro" });
   assert.deepEqual(stored, { stripe_subscription_id: "sub_new", subscription_status: "active", current_period_end: new Date(1793404800 * 1000) });
-  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3 WHERE stripe_customer_id=\$4/);
+  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3,\s*trial_started_at=CASE WHEN \$2='trialing' THEN COALESCE\(trial_started_at,now\(\)\) ELSE trial_started_at END WHERE stripe_customer_id=\$4/);
   assert.deepEqual(query.statements[0].params.slice(0, 2), ["sub_new", "active"]);
   const other = fakeQuery();
   assert.equal(await syncCustomer("cus_ABC", { stripe: fakeStripe({ GET: { data: [sub("sub_x", "active", 1, "price_other")] } }), query: other, priceId: "price_pro" }), null);
@@ -596,7 +596,24 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.equal(posted[0]["line_items[0][price]"], "price_pro");
   assert.equal(posted[0].customer, "cus_new");
   assert.equal(posted[0].mode, "subscription");
-  assert.ok(!("subscription_data[trial_period_days]" in posted[0]), "no free trial");
+  // A first subscription starts with the paid trial: $1 today, 3 days, then the plan's $39 a month.
+  assert.equal(posted[0]["subscription_data[trial_period_days]"], "3");
+  assert.equal(posted[0]["line_items[1][price_data][unit_amount]"], "100");
+  assert.equal(posted[0]["line_items[1][price_data][currency]"], "usd");
+  assert.equal(posted[0]["line_items[1][quantity]"], "1");
+  assert.equal(posted[0].payment_method_collection, "always", "a card is collected so the plan can renew");
+  assert.equal(posted[0]["subscription_data[trial_settings][end_behavior][missing_payment_method]"], "cancel");
+  assert.match(posted[0]["custom_text[submit][message]"], /\$1 today for 3 days.*\$39 a month/);
+
+  // One trial per account: an account that has trialled before checks out at the full price.
+  await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
+    { ...deps({ ...USERS.none, id: randomUUID() }, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null, trial_started_at: "2026-09-01T00:00:00Z" }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe) });
+  assert.ok(!("subscription_data[trial_period_days]" in posted[1]), "no second trial");
+  assert.ok(!("line_items[1][price_data][unit_amount]" in posted[1]), "no trial fee without a trial");
+  // INSIDIR_TRIAL=0 switches the trial off.
+  await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
+    { ...deps({ ...USERS.none, id: randomUUID() }, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe), env: { ...BILLING, INSIDIR_TRIAL: "0" } });
+  assert.ok(!("subscription_data[trial_period_days]" in posted[2]), "trial switched off");
 
   // No Stripe customer yet: the stored status is the only record, and it still guards.
   for (const status of ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"])
@@ -971,4 +988,24 @@ test("router: prepared images are served signed out with no session lookup; the 
     assert.equal(r.status, 400, "a member reaches the handler, which validates before any upstream request");
     assert.equal(r.headers["cache-control"], "no-store");
   });
+});
+
+test("paid trial: a returning customer whose Stripe history has the plan checks out at the full price", async () => {
+  const json = () => true;
+  const posted = [];
+  const ended = { id: "sub_old", status: "canceled", created: 1, items: { data: [{ price: { id: "price_pro" } }] } };
+  const stripe = fakeStripe({ "GET /subscriptions": { data: [ended] }, "GET /checkout/sessions": { data: [] },
+    "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/y" }; } });
+  const user = { ...USERS.none, id: randomUUID() };
+  const query = fakeQuery({ "SELECT email": { rows: [{ email: user.email, stripe_customer_id: "cus_1", subscription_status: "canceled", trial_started_at: null }] } });
+  await billingRoutes(Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example" } }), {}, "/v1/billing/checkout", json,
+    { env: BILLING, currentUser: async () => user, stripe, query });
+  assert.equal(posted.length, 1);
+  assert.ok(!("subscription_data[trial_period_days]" in posted[0]), "no second trial for a past subscriber");
+  // A customer whose only subscriptions are for another price still gets the trial.
+  const other = fakeStripe({ "GET /subscriptions": { data: [{ ...ended, items: { data: [{ price: { id: "price_other" } }] } }] }, "GET /checkout/sessions": { data: [] },
+    "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/z" }; } });
+  await billingRoutes(Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example" } }), {}, "/v1/billing/checkout", json,
+    { env: BILLING, currentUser: async () => ({ ...user, id: randomUUID() }), stripe: other, query });
+  assert.equal(posted[1]["subscription_data[trial_period_days]"], "3");
 });

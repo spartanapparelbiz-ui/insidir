@@ -1,4 +1,7 @@
 /* One-time $10 Insidir creator referrals. No automatic payouts.
+ * The commission is earned on the referred account's first $39 payment: the plan's first invoice, or after
+ * the $1 trial (whose invoice is below $39) the first renewal. creator_commissions.referred_user_id is unique,
+ * so every later renewal is ignored.
  * Only approved partners have active links. No paid customer access is granted here.
  * Commission candidates require verified initial Stripe invoices and a 30-day review hold. */
 import { timingSafeEqual } from "node:crypto";
@@ -19,7 +22,7 @@ export function normalizeHandle(value) {
 }
 export function commissionEligibleInvoice(invoice) {
   return !!invoice && invoice.status==="paid" &&
-    invoice.billing_reason==="subscription_create" && invoice.currency==="usd" &&
+    (invoice.billing_reason==="subscription_create"||invoice.billing_reason==="subscription_cycle") && invoice.currency==="usd" &&
     Number.isSafeInteger(invoice.amount_paid) && invoice.amount_paid>=3900 &&
     /^cus_[A-Za-z0-9]+$/.test(String(invoice.customer||"")) &&
     /^in_[A-Za-z0-9]+$/.test(String(invoice.id||""));

@@ -21,7 +21,9 @@ const types = {
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
   ".txt": "text/plain; charset=utf-8",
-  ".xml": "application/xml; charset=utf-8"
+  ".xml": "application/xml; charset=utf-8",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm"
 };
 
 const securityHeaders = {
@@ -78,6 +80,29 @@ function negotiate(req, ext, file, mtimeMs, body) {
   return { encoding, body: out };
 }
 
+/* A single "bytes=start-end" range (also "start-" and "-suffix"); null for none, false when unsatisfiable. */
+export function parseRange(header, size) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(header || "").trim());
+  if (!m || (!m[1] && !m[2])) return null;
+  let start, end;
+  if (!m[1]) { const n = Number(m[2]); if (!n) return false; start = Math.max(0, size - n); end = size - 1; }
+  else { start = Number(m[1]); end = m[2] ? Math.min(Number(m[2]), size - 1) : size - 1; }
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= size) return false;
+  return { start, end };
+}
+async function sendVideo(req, res, file, ext, method, status) {
+  const { size } = await stat(file);
+  const range = status === 200 ? parseRange(req.headers.range, size) : null;
+  const base = { ...securityHeaders, "Content-Type": types[ext], "Accept-Ranges": "bytes", "Cache-Control": "public, max-age=604800" };
+  if (range === false) { res.writeHead(416, { ...base, "Content-Range": "bytes */" + size, "Content-Length": 0 }); res.end(); return true; }
+  const { start, end } = range || { start: 0, end: size - 1 };
+  res.writeHead(range ? 206 : status, { ...base, "Content-Length": end - start + 1, ...(range ? { "Content-Range": `bytes ${start}-${end}/${size}` } : {}) });
+  if (method === "HEAD") { res.end(); return true; }
+  const { createReadStream } = await import("node:fs");
+  await new Promise((resolve, reject) => { const stream = createReadStream(file, { start, end }); stream.on("error", reject); res.on("close", resolve); stream.on("end", resolve); stream.pipe(res); });
+  return true;
+}
+
 export async function serveStatic(req, res) {
   const method = req.method || "GET";
   if (method !== "GET" && method !== "HEAD") return false;
@@ -90,9 +115,11 @@ export async function serveStatic(req, res) {
     status = 404;
     try { await stat(file); } catch { return false; }
   }
-  const [raw, info] = await Promise.all([readFile(file), stat(file)]);
   const ext = extname(file).toLowerCase();
-  const immutable = /\/assets\/(fonts|img|icons)\//.test(file.split(sep).join("/"));
+  const immutable = /\/assets\/(fonts|img|icons|video)\//.test(file.split(sep).join("/"));
+  // Video is sent whole or by byte range (Safari and iOS only play MP4 that answers Range requests).
+  if (ext === ".mp4" || ext === ".webm") return sendVideo(req, res, file, ext, method, status);
+  const [raw, info] = await Promise.all([readFile(file), stat(file)]);
   const packed = negotiate(req, ext, file, info.mtimeMs, raw);
   const body = packed ? packed.body : raw;
   res.writeHead(status, {

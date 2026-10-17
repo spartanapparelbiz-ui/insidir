@@ -1,4 +1,7 @@
-/* Insidir billing: one plan, Insidir Pro at $39/month (the configured Stripe Price).
+/* Insidir billing: one plan, Insidir Pro at $39/month (the configured Stripe Price), started with a
+ * paid trial: $1 at checkout for 3 days of full access, then $39 a month until cancelled (trialSettings
+ * in config.mjs). One trial per account: an account that has trialled before, or whose Stripe customer
+ * has ever had a subscription for the plan, checks out at the full price.
  *
  * Stripe is the source of truth for a subscription. Webhooks and the billing-status
  * refresh both re-read the customer's subscriptions from Stripe, so events that arrive
@@ -8,7 +11,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { query as dbQuery } from "./db.mjs";
 import { currentUser } from "./auth.mjs";
-import { billingSettings } from "./config.mjs";
+import { billingSettings, trialSettings } from "./config.mjs";
 import { accessSummary } from "./paywall.mjs";
 import { recordFirstPaidInvoice } from "./creator-program.mjs";
 
@@ -85,6 +88,23 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
   return (parts.v1 || []).some(v => /^[a-f0-9]{64}$/.test(v) && timingSafeEqual(expected, Buffer.from(v)));
 }
 
+/* The Checkout fields that start the paid trial: the one-time fee on the first invoice, the trial days
+ * on the subscription, a card collected up front so the plan can renew, and the terms in Stripe's own
+ * words beside the pay button. Without a card at the trial's end the subscription is cancelled. */
+export function trialCheckoutParams({ days, feeCents }) {
+  const fee = "$" + (feeCents / 100).toFixed(feeCents % 100 ? 2 : 0);
+  return {
+    "subscription_data[trial_period_days]": String(days),
+    "subscription_data[trial_settings][end_behavior][missing_payment_method]": "cancel",
+    "line_items[1][price_data][currency]": "usd",
+    "line_items[1][price_data][unit_amount]": String(feeCents),
+    "line_items[1][price_data][product_data][name]": `Insidir ${days}-day trial`,
+    "line_items[1][quantity]": "1",
+    payment_method_collection: "always",
+    "custom_text[submit][message]": `You pay ${fee} today for ${days} days of Insidir. Unless you cancel before the trial ends, Insidir Pro then renews at $39 a month. Cancel any time from Billing.`
+  };
+}
+
 const hasPrice = (sub, priceId) => !!priceId && (sub?.items?.data || []).some(item => item?.price?.id === priceId);
 
 // The subscription that decides access: the plan's subscription in the best standing, newest first.
@@ -133,7 +153,9 @@ export async function storeSubscriptions(customerId, subscriptions, { query = db
     return null;
   }
   const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId) };
-  await query("UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3 WHERE stripe_customer_id=$4",
+  // trial_started_at is set once, the first time a subscription is seen trialing; it never resets.
+  await query(`UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3,
+    trial_started_at=CASE WHEN $2='trialing' THEN COALESCE(trial_started_at,now()) ELSE trial_started_at END WHERE stripe_customer_id=$4`,
     [fields.stripe_subscription_id, fields.subscription_status, fields.current_period_end, customerId]);
   return fields;
 }
@@ -317,9 +339,11 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     const u = await signedIn();
     if (limited("checkout:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many checkout attempts. Try again shortly.");
     return exclusiveBilling(u.id, async () => {
-      const row = (await query("SELECT email,stripe_customer_id,subscription_status FROM users WHERE id=$1", [u.id])).rows[0];
+      const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
       let customer = row.stripe_customer_id;
+      // One trial per account: none after an earlier trial, or once the customer has had any subscription for the plan.
+      let trialUsed = !!row.trial_started_at;
       if (customer) {
         // Stripe, not the stored status, decides: a checkout that completed before its webhook
         // arrived already has a subscription, and paying again would bill twice.
@@ -327,6 +351,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         try { subscriptions = await listCustomerSubscriptions(customer, { stripe }); }
         catch (e) { if (!missingInStripe(e)) throw failure(503, "Could not confirm your subscription with Stripe. Try again shortly."); }
         if (subscriptions) {
+          if (subscriptions.some(sub => hasPrice(sub, settings.priceId))) trialUsed = true;
           await storeSubscriptions(customer, subscriptions, { query, priceId: settings.priceId });
           const live = pickSubscription(subscriptions.filter(canStillBill), settings.priceId);
           if (live) throw failure(409, BLOCKS_CHECKOUT[statusOf(live)] || BLOCKS_CHECKOUT_OTHER);
@@ -349,9 +374,12 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (!customer) throw failure(503, "Could not prepare checkout. Try again shortly.");
       }
       const site = publicOrigin(settings);
-      const session = await stripe.post("/checkout/sessions", { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
+      const trial = trialSettings(env);
+      const params = { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
         client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
-        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id });
+        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id };
+      if (trial.enabled && !trialUsed) Object.assign(params, trialCheckoutParams(trial));
+      const session = await stripe.post("/checkout/sessions", params);
       if (typeof session.url !== "string" || !session.url.startsWith("https://")) throw failure(503, "Stripe did not return a checkout page. Try again shortly.");
       return json(res, 200, { url: session.url });
     });
@@ -387,7 +415,9 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         await cancelOrphanCheckout(obj, ref, { stripe, query });
       }
       if (event.type.startsWith("customer.subscription.")) await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-      if (event.type === "invoice.paid" && obj.billing_reason === "subscription_create") {
+      // The first $39 payment: the plan's first invoice, or after a paid trial its first renewal (the trial
+      // invoice carries only the trial fee and is never eligible). One commission per referred account.
+      if (event.type === "invoice.paid" && (obj.billing_reason === "subscription_create" || obj.billing_reason === "subscription_cycle")) {
         // Re-read Stripe to verify that the customer's actual subscription is active
         // on Insidir's exact Price, not just any invoice marked paid.
         const plans = /^cus_[A-Za-z0-9]+$/.test(String(obj.customer||""))

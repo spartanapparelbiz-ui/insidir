@@ -9,7 +9,8 @@ This document covers the backend engine. The website in `web/` is described in [
 - Subscriber API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
 - **Personnel files**: one reporting person's public SEC record by owner CIK (`GET /v1/people/<cik>`, `src/person-profile.mjs`), behind `person.html?cik=…`. Joint filings (several reporting owners on one Form 4) are attributed to every owner through `sec_filing_owners`, so people who only file jointly have a file, can be followed and show up in the followed feed.
 - Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
-- **Hard paywall** (`src/paywall.mjs`): no free tier and no free trial. Every product page and every product API needs a signed-in account with an active Insidir Pro subscription ($39/month through Stripe) or a complimentary owner/team email. See [Hard paywall and billing](#hard-paywall-and-billing).
+- **Paywall with a paid trial** (`src/paywall.mjs`, `src/billing.mjs`): no free tier. A new subscription starts with a 3-day trial for $1, then renews at $39/month through Stripe. Every product page and every product API needs a signed-in account with an active or trialing Insidir Pro subscription or a complimentary owner/team email.
+- **Public insider pages** (`src/public-pages.mjs`): server-rendered `/insider-trading`, `/insider-trading/<TICKER>` and `/insiders/<cik>-<name>` from the Form 4 import, plus `/sitemap.xml` and `/robots.txt`, readable without an account. See [Public insider pages](#public-insider-pages). See [Hard paywall and billing](#hard-paywall-and-billing).
 - Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
 - Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
@@ -36,7 +37,7 @@ The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, r
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
 
 ## Hard paywall and billing
-Insidir is a paid product with **no free tier and no free trial**. `src/paywall.mjs` holds the rules as pure functions (`classifyPage`, `classifyApi`, `hasAccess`, `accessSummary`, `safeNext`, `gate`); `src/api.mjs` runs `gate()` on every request, before it serves a page, a company report endpoint, billing or any other API. `test/paywall.test.mjs` covers the rules end to end without a database.
+Insidir is a paid product with **no free tier**; a subscription starts with a **3-day trial for $1** (see [Paid trial](#paid-trial)). `src/paywall.mjs` holds the rules as pure functions (`classifyPage`, `classifyApi`, `hasAccess`, `accessSummary`, `safeNext`, `gate`); `src/api.mjs` runs `gate()` on every request, before it serves a page, a company report endpoint, billing or any other API. `test/paywall.test.mjs` covers the rules end to end without a database.
 
 **Access** means the account's `users.subscription_status` is `active` or `trialing`, **or** its email is listed in `INSIDIR_COMPLIMENTARY_EMAILS` (comma-separated, case and spaces ignored; for the owner and team). `past_due`, `unpaid`, `incomplete`, `paused`, `canceled` and no subscription do not have access. **With the paywall on and billing not configured, nobody but complimentary accounts can use the product, and nobody can subscribe.**
 
@@ -68,7 +69,7 @@ Insidir is a paid product with **no free tier and no free trial**. `src/paywall.
 
 ### Billing endpoints (signed in; no subscription needed)
 - `GET /v1/billing/status` → `{billingEnabled, plan:"pro"|"none", active, complimentary, subscriptionStatus, currentPeriodEnd, hasCustomer}`. `?refresh=1` re-reads the customer's subscriptions from Stripe first (rate-limited); call it on `/billing.html?checkout=success` in case the webhook has not arrived yet.
-- `POST /v1/billing/checkout` → `{url}` of a Stripe Checkout page for the configured Price. Success returns to `/billing.html?checkout=success`, cancel to `/subscribe.html?checkout=cancel`. No trial is configured. Requests must come from `INSIDIR_PUBLIC_URL`'s origin. To prevent double billing:
+- `POST /v1/billing/checkout` → `{url}` of a Stripe Checkout page for the configured Price. Success returns to `/billing.html?checkout=success`, cancel to `/subscribe.html?checkout=cancel`. An account's first checkout carries the paid trial (below). Requests must come from `INSIDIR_PUBLIC_URL`'s origin. To prevent double billing:
   - For an account that already has a Stripe customer, the engine **re-reads the customer's subscriptions from Stripe first** (and stores the result), so a checkout that completed before its webhook arrived counts. It refuses with 409 while any subscription for the configured Price can still bill: `active`/`trialing` (manage it instead), `past_due`/`unpaid` (update the payment method in the portal), `incomplete` (first payment still being confirmed) or `paused`. If Stripe cannot be read, it answers 503 and starts nothing. A customer that no longer exists in this Stripe account (e.g. test data after switching to live keys) is replaced by a new one.
   - Any earlier **open** Checkout page of the customer is expired before a new one is created, so only the newest can be paid.
   - One billing change per account at a time: a second checkout (or an account deletion) while one is being prepared answers 409.
@@ -96,11 +97,35 @@ Safety net: if an Insidir checkout (its metadata names the Insidir account) stil
 | `INSIDIR_STRIPE_WEBHOOK_SECRET` | empty | Signing secret of the `https://YOUR_DOMAIN/v1/billing/webhook` endpoint. |
 | `INSIDIR_PUBLIC_URL` | empty | Public HTTPS origin of the site, used for Checkout return URLs and the billing origin check. |
 
+### Paid trial
+An account's first checkout starts with a trial: Stripe Checkout charges a one-time **$1** line item (`price_data`, no extra Stripe product needed) and sets `subscription_data[trial_period_days]=3`; a card is always collected (`payment_method_collection=always`) and, if none is on file when the trial ends, the subscription is cancelled. Stripe's own submit text states the terms: "$1 today for 3 days of Insidir. Unless you cancel before the trial ends, Insidir Pro then renews at $39 a month." A trialing subscription has full access (`ACCESS_STATUSES`), and `current_period_end` is the trial's end.
+
+One trial per account: no trial when `users.trial_started_at` is set (stamped the first time a subscription is seen `trialing`, never reset; `sql/010_paid_trial.sql`) or when the Stripe customer has ever had a subscription for the configured Price. Those checkouts charge $39 at once.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `INSIDIR_TRIAL` | on | `0` switches the trial off (every checkout charges $39 at once). |
+| `INSIDIR_TRIAL_DAYS` | `3` | Trial length, clamped to 1–14 days. |
+| `INSIDIR_TRIAL_FEE_CENTS` | `100` | The one-time trial fee in US cents, clamped to 50–3900. |
+
+Creator commissions (`CREATORS.md`) are earned on the first $39 payment: after a trial that is the first renewal (`billing_reason=subscription_cycle`); the $1 trial invoice never qualifies, and the unique `referred_user_id` keeps later renewals out.
+
 ### Stripe setup
-1. In Stripe create the product "Insidir Pro" with one recurring Price of $39.00 USD per month and no trial; copy its `price_…` ID.
-2. Add a webhook endpoint `https://YOUR_DOMAIN/v1/billing/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused` and `customer.subscription.resumed`; copy its signing secret.
+1. In Stripe create the product "Insidir Pro" with one recurring Price of $39.00 USD per month; copy its `price_…` ID. Do not put a trial on the Price: the engine adds the paid trial at checkout.
+2. Add a webhook endpoint `https://YOUR_DOMAIN/v1/billing/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed` and `invoice.paid` (creator commissions); copy its signing secret.
 3. Configure the customer portal (cancellation, payment method updates, invoice history).
 4. Set the variables above, `INSIDIR_BILLING_ENABLED=1`, then `ALLOW_SIGNUP=1`. Test a full signup → checkout → dashboard → cancel → deletion cycle in Stripe test mode before switching to live keys.
+
+## Public insider pages
+`src/public-pages.mjs` renders plain HTML (no script needed) from the engine's Form 4 import, so search engines and signed-out visitors can read it; the product stays behind the paywall and every page ends with the trial offer.
+
+- `GET /insider-trading`: the biggest open-market purchases and sales of the last 30 days (codes P and S, non-derivative, original filings), the newest filings and the most active companies.
+- `GET /insider-trading/<TICKER>`: one company's 40 newest Form 4 lines, 90-day totals from original filings (Form 4/A restatements are listed, not added up again) and its reporting people. `nvda` and `BRK.B` redirect to `NVDA` and `BRK-B`; a ticker with no imported lines is a `noindex` 404.
+- `GET /insiders/<cik>-<name-slug>`: one reporting person from `personProfile()` (companies and roles, totals, 30 newest lines), with no new SEC requests. A bare or stale slug redirects (301) to the canonical one.
+- `GET /sitemap.xml` (index) → `/sitemaps/pages.xml`, `/sitemaps/companies-N.xml`, `/sitemaps/insiders-N.xml` (40,000 URLs each), absolute URLs on `INSIDIR_PUBLIC_URL` (default `https://insidir.com`).
+- `GET /robots.txt`: everything allowed except `/v1/` and the product and account pages; names the sitemap.
+
+Pages do not depend on who is asking: they are cached in memory for 10 minutes (3,000 entries) and sent with `Cache-Control: public, max-age=600`. Uncached renders are limited to 90 a minute per client address. `src/paywall.mjs` classifies all of these paths as public. Values are shares × the price the filer reported; nothing is estimated.
 
 ## Manual portfolio (no brokerage or vendor account)
 Manually entered stock tickers and share counts work with existing user accounts and PostgreSQL. No paid market-data API or brokerage permissions are needed. The portfolio page shows these entries **above** the optional SnapTrade section. Each ticker links to its SEC Research Desk, and the page displays the most recent imported ownership transaction in the past 30 days when available. This is a ticker-only matching aid, not proof of security identity or a recommendation.

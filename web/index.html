@@ -6,8 +6,8 @@
 <meta name="application-name" content="insidir.">
 <meta property="og:site_name" content="insidir.">
 <meta property="og:title" content="Insidir — Know what moves a company.">
-<meta property="og:description" content="Company reports, SEC filings, insider activity and the people behind them, read from the original public records. One plan, $39 a month.">
-<meta name="description" content="Insidir is research software for public companies: company reports, SEC filings, Form 4 insider activity and the people behind them, each linked to its original source. One plan, $39 a month.">
+<meta property="og:description" content="Company reports, SEC filings, insider activity and the people behind them, read from the original public records. Try every tool for 3 days for $1.">
+<meta name="description" content="Insidir is research software for public companies: company reports, SEC filings, Form 4 insider activity and the people behind them, each linked to its original source. Try it for 3 days for $1, then $39 a month.">
 <title>Insidir — Know what moves a company.</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -15,10 +15,12 @@
 <link rel="stylesheet" href="assets/css/v9-landing.css?v=3">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-home.css?v=8">
+<link rel="stylesheet" href="assets/css/v14-home.css?v=1">
 <script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/v9-motion.js?v=6"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
+<script defer src="assets/js/v14-tour.js?v=1"></script>
 </head>
 <body class="v6-site v9-site v12-home v13">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -26,16 +28,16 @@
  <div class="v9-width v6-nav__inner">
   <a class="v6-logo" href="index.html" aria-label="Insidir home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
   <nav class="v6-nav__links" aria-label="Main navigation">
-   <a href="platform.html">Platform</a><a href="why-insidir.html">Why Insidir</a><a href="data.html">Data</a><a href="pricing.html">Pricing</a><a href="company-info.html">About</a>
+   <a href="platform.html">Platform</a><a href="/insider-trading">Insider trades</a><a href="why-insidir.html">Why Insidir</a><a href="data.html">Data</a><a href="pricing.html">Pricing</a><a href="company-info.html">About</a>
   </nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="signup.html">Get started</a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="signup.html">Try 3 days for $1</a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
  <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>
-  <a href="platform.html">Platform</a><a href="why-insidir.html">Why Insidir</a><a href="data.html">Data</a><a href="pricing.html">Pricing</a><a href="company-info.html">About</a><a href="signin.html">Log in</a><a href="signup.html">Get started</a>
+  <a href="platform.html">Platform</a><a href="/insider-trading">Insider trades</a><a href="why-insidir.html">Why Insidir</a><a href="data.html">Data</a><a href="pricing.html">Pricing</a><a href="company-info.html">About</a><a href="signin.html">Log in</a><a href="signup.html">Try 3 days for $1</a>
  </nav>
 </header>
 <main id="Content">
@@ -46,11 +48,10 @@
   <h1 id="v6-hero-heading">Know what moves<br><em>a company.</em></h1>
   <p class="v9-hero__description">Company reports, SEC filings, insider activity and the people behind them, read from the original public records. One subscription, every tool.</p>
   <div class="v9-hero__actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html">Get Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
-   <a class="v9-btn v12-outline-button" href="platform.html">See the platform<span class="v13-arrow" aria-hidden="true">→</span></a>
+   <a class="v9-btn v9-btn--ink" href="signup.html">Start your 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
+   <a class="v9-btn v12-outline-button" href="/insider-trading">Today's insider trades<span class="v13-arrow" aria-hidden="true">→</span></a>
   </div>
-  <p class="v9-hero__caption lp-terms"><span><b>$39</b> a month</span><span>Cancel any time</span><span class="lp-keep">Not a broker, not investment advice</span></p>
-  <p class="v13-hero__meta v13-caption">Official SEC records · delayed prices</p>
+  <p class="v9-hero__caption lp-terms"><span><b>$1</b> for 3 days</span><span>Then $39 a month</span><span>Cancel any time</span><span class="lp-keep">Not a broker, not investment advice</span></p>
   <dl class="lp-facts" aria-label="Insidir at a glance">
    <div><dt>Sources</dt><dd>Eight named, four from the SEC</dd></div>
    <div><dt>Filings</dt><dd>Annual, quarterly, <span class="hf-nw">8-K</span>, proxy, Form&nbsp;4</dd></div>
@@ -64,9 +65,44 @@
  <span class="hwf-sr">insidir</span>
 </section>
 
+<section class="lp-section lp-tour" aria-labelledby="lp-tour-heading">
+ <div class="v9-width">
+  <span class="lp-folio" data-hf-atom aria-hidden="true">01 / 07</span>
+  <div class="v13-head" data-hf-reveal-group>
+   <div class="v13-head__lead"><p class="v12-eyebrow">See it work</p><h2 id="lp-tour-heading">Four clips. <span>One minute.</span></h2></div>
+   <div class="v13-head__aside"><p>Recorded in the real product on real SEC filings from this week: no mock-ups, no sample data. Pick a step, or let them play in order.</p></div>
+  </div>
+  <div class="lp-tour__body" data-tour>
+   <ol class="lp-tour__list" role="tablist" aria-label="What Insidir does, in four clips">
+    <li><button type="button" class="lp-tour__step" role="tab" id="lp-tour-tab-1" aria-selected="true" aria-controls="lp-tour-panel" data-video="assets/video/insidir-search" data-poster="assets/video/insidir-search.jpg" data-url="insidir.com/dashboard.html → company.html?ticker=RDDT">
+     <span class="lp-tour__num">01</span><span class="lp-tour__copy"><span class="lp-tour__title">Find any company</span><span class="lp-tour__text">Search a name or ticker. The report opens on a delayed price chart, key facts, financials and filings.</span></span><span class="lp-tour__bar" aria-hidden="true"><i></i></span></button></li>
+    <li><button type="button" class="lp-tour__step" role="tab" id="lp-tour-tab-2" aria-selected="false" aria-controls="lp-tour-panel" data-video="assets/video/insidir-insiders" data-poster="assets/video/insidir-insiders.jpg" data-url="insidir.com/company.html?ticker=RDDT · Insider activity">
+     <span class="lp-tour__num">02</span><span class="lp-tour__copy"><span class="lp-tour__title">Read insider trades</span><span class="lp-tour__text">Every Form&nbsp;4 line in plain words: who sold, who bought, at what price, and when it was filed.</span></span><span class="lp-tour__bar" aria-hidden="true"><i></i></span></button></li>
+    <li><button type="button" class="lp-tour__step" role="tab" id="lp-tour-tab-3" aria-selected="false" aria-controls="lp-tour-panel" data-video="assets/video/insidir-people" data-poster="assets/video/insidir-people.jpg" data-url="insidir.com/person.html · Personnel file">
+     <span class="lp-tour__num">03</span><span class="lp-tour__copy"><span class="lp-tour__title">Open anyone's file</span><span class="lp-tour__text">Each officer and director has a file: roles, an exact record of what they bought and sold, and every filing.</span></span><span class="lp-tour__bar" aria-hidden="true"><i></i></span></button></li>
+    <li><button type="button" class="lp-tour__step" role="tab" id="lp-tour-tab-4" aria-selected="false" aria-controls="lp-tour-panel" data-video="assets/video/insidir-follow" data-poster="assets/video/insidir-follow.jpg" data-url="insidir.com/dashboard.html · Overview">
+     <span class="lp-tour__num">04</span><span class="lp-tour__copy"><span class="lp-tour__title">Follow people, save companies</span><span class="lp-tour__text">Follow insiders and save tickers. Their next filings land on your overview, marked New until you have seen them.</span></span><span class="lp-tour__bar" aria-hidden="true"><i></i></span></button></li>
+   </ol>
+   <figure class="lp-tour__screen" id="lp-tour-panel" role="tabpanel" aria-labelledby="lp-tour-tab-1">
+    <div class="lp-tour__chrome" aria-hidden="true"><span></span><span></span><span></span><em data-tour-url>insidir.com/dashboard.html → company.html?ticker=RDDT</em></div>
+    <div class="lp-tour__frame">
+     <video class="lp-tour__video" poster="assets/video/insidir-search.jpg" width="1280" height="800" muted playsinline preload="metadata" controls aria-label="Product clip: find any company"><source src="assets/video/insidir-search.mp4" type="video/mp4"><source src="assets/video/insidir-search.webm" type="video/webm"></video>
+     <button type="button" class="lp-tour__toggle" data-tour-toggle aria-label="Pause" hidden><span aria-hidden="true"></span></button>
+    </div>
+    <figcaption class="lp-tour__caption"><span>Real product · real SEC Form&nbsp;4 data · silent</span><a href="signup.html">Try it yourself: 3 days for $1<span class="v13-arrow" aria-hidden="true">→</span></a></figcaption>
+   </figure>
+  </div>
+  <a class="lp-public" href="/insider-trading">
+   <span class="lp-public__label">Free to read</span>
+   <span class="lp-public__title">Today's insider purchases and sales, from the filings.</span>
+   <span class="lp-public__go">Browse insider trades<span class="v13-arrow" aria-hidden="true">→</span></span>
+  </a>
+ </div>
+</section>
+
 <section class="lp-section lp-tools" aria-labelledby="lp-tools-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">01 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">02 / 07</span>
   <div class="v13-head" data-hf-reveal-group>
    <div class="v13-head__lead"><p class="v12-eyebrow">The platform</p><h2 id="lp-tools-heading">Six tools. <span>One subscription.</span></h2></div>
    <div class="v13-head__aside"><p>Each tool is built on what companies and their insiders file with the SEC, and every filing and financial figure links to the document it came from, so you can check it yourself.</p><a class="v12-secondary-link" data-hf-atom href="platform.html">See the whole platform<span class="v13-arrow" aria-hidden="true">→</span></a></div>
@@ -115,7 +151,7 @@
 
 <section class="lp-section lp-data" aria-labelledby="lp-data-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">02 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">03 / 07</span>
   <div class="v13-head" data-hf-reveal-group>
    <div class="v13-head__lead"><p class="v12-eyebrow">Where the data comes from</p><h2 id="lp-data-heading">Original sources. <span>Not opinions.</span></h2></div>
    <div class="v13-head__aside"><p>Insidir reads SEC records straight from EDGAR and links each figure back to its document. Prices and profiles come from named public sources, credited where they appear. No summaries written by AI.</p><a class="v12-secondary-link" data-hf-atom href="data.html">Data &amp; sources<span class="v13-arrow" aria-hidden="true">→</span></a></div>
@@ -159,7 +195,7 @@
 
 <section class="lp-section lp-flow" aria-labelledby="lp-flow-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">03 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">04 / 07</span>
   <div class="v13-head" data-hf-reveal-group>
    <div class="v13-head__lead"><p class="v12-eyebrow">How it works</p><h2 id="lp-flow-heading">From the filing <span>to your screen.</span></h2></div>
    <div class="v13-head__aside"><p>Insidir does not predict prices or tell you what to buy. It puts the record in front of you, in order, with the source one click away.</p></div>
@@ -190,7 +226,7 @@
 
 <section class="lp-section lp-why" aria-labelledby="lp-why-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">04 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">05 / 07</span>
   <div class="v13-head" data-hf-reveal-group>
    <div class="v13-head__lead"><p class="v12-eyebrow">Why Insidir</p><h2 id="lp-why-heading">Built on four rules.</h2></div>
    <div class="v13-head__aside"><p>The same rules apply to every page, from the first search to the last note.</p><a class="v12-secondary-link" data-hf-atom href="why-insidir.html">Why Insidir<span class="v13-arrow" aria-hidden="true">→</span></a></div>
@@ -206,17 +242,17 @@
 
 <section class="lp-section lp-plan" aria-labelledby="lp-plan-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">05 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">06 / 07</span>
   <div class="v13-head" data-hf-reveal-group>
    <div class="v13-head__lead"><p class="v12-eyebrow">Pricing</p><h2 id="lp-plan-heading">One plan. <span>Everything included.</span></h2></div>
-   <div class="v13-head__aside"><p>Insidir is a paid product, with no free tier and no free trial. Create an account, subscribe, and every tool opens.</p><a class="v12-secondary-link" data-hf-atom href="pricing.html">Pricing details<span class="v13-arrow" aria-hidden="true">→</span></a></div>
+   <div class="v13-head__aside"><p>Start with 3 days of the whole product for $1. After that it is one plan at $39 a month, and you can cancel any time.</p><a class="v12-secondary-link" data-hf-atom href="pricing.html">Pricing details<span class="v13-arrow" aria-hidden="true">→</span></a></div>
   </div>
   <article class="lp-plan__card" aria-label="Insidir subscription" data-hf-reveal-group>
    <div class="lp-plan__price">
-    <p class="v12-eyebrow">Insidir · monthly</p>
-    <p class="lp-plan__amount">$39<span>/ month</span></p>
-    <p class="lp-plan__terms">Billed monthly in US dollars through Stripe. Cancel any time from Billing in your account.</p>
-    <a class="v9-btn v9-btn--ink" href="signup.html">Get Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
+    <p class="v12-eyebrow">3-day trial, then monthly</p>
+    <p class="lp-plan__amount">$1<span>/ 3 days</span></p>
+    <p class="lp-plan__terms">Then $39 a month, billed in US dollars through Stripe. Cancel before the trial ends and you are not charged again.</p>
+    <a class="v9-btn v9-btn--ink" href="signup.html">Start your 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
     <p class="lp-plan__fine">Payment runs through Stripe; Insidir never sees your card number.</p>
    </div>
    <div class="lp-plan__list">
@@ -232,19 +268,19 @@
      <li>The dashboard and search from any page</li>
     </ul>
    </div>
-   <ol class="lp-plan__flow"><li><span>01</span>Create your account</li><li><span>02</span>Subscribe on Stripe</li><li><span>03</span>Every tool opens</li></ol>
+   <ol class="lp-plan__flow"><li><span>01</span>Create your account</li><li><span>02</span>Pay $1 on Stripe</li><li><span>03</span>Every tool opens for 3 days</li></ol>
   </article>
  </div>
 </section>
 
 <section class="lp-section lp-faq" aria-labelledby="lp-faq-heading">
  <div class="v9-width">
-  <span class="lp-folio" data-hf-atom aria-hidden="true">06 / 06</span>
+  <span class="lp-folio" data-hf-atom aria-hidden="true">07 / 07</span>
   <div class="lp-faq__layout">
    <div class="v13-head__lead" data-hf-reveal><p class="v12-eyebrow">Questions</p><h2 id="lp-faq-heading">Good to <span>know.</span></h2><p class="lp-faq__more">Anything else? Write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>.</p></div>
    <div class="lp-questions" data-hf-reveal-group>
-    <details><summary>Is there a free plan or a free trial?</summary><p>No. Insidir is a paid product with one plan at $39 a month. You create an account, subscribe, and the whole product opens.</p></details>
-    <details><summary>What exactly do I pay?</summary><p>$39 a month in US dollars, billed monthly. Payments run through Stripe, so Insidir never sees or stores your card number.</p></details>
+    <details><summary>Is there a trial?</summary><p>Yes. Your first 3 days cost $1 and open the whole product. If you do not cancel before the trial ends, the plan renews at $39 a month. One trial per account; there is no free tier.</p></details>
+    <details><summary>What exactly do I pay?</summary><p>$1 at checkout for the 3-day trial, then $39 a month in US dollars, billed monthly. Payments run through Stripe, so Insidir never sees or stores your card number.</p></details>
     <details><summary>How do I cancel?</summary><p>Open Billing in your account and manage the subscription in Stripe's customer portal. Deleting your account cancels the subscription first.</p></details>
     <details><summary>Where does the data come from?</summary><p>SEC EDGAR filings, XBRL financial facts and Form&nbsp;4 ownership reports, delayed prices from Yahoo Finance, and company profiles from Wikidata and Wikipedia. See <a href="data.html">Data &amp; sources</a>.</p></details>
     <details><summary>Are prices live?</summary><p>No. Prices are delayed. Insidir is built for researching companies, not for timing trades.</p></details>
@@ -258,11 +294,11 @@
 <section class="lp-final v13-field-host" aria-labelledby="lp-final-heading">
  <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="180" aria-hidden="true"></div>
  <div class="v9-width lp-final__inner" data-hf-reveal-group>
-  <p class="v12-eyebrow">Insidir · $39 a month</p>
+  <p class="v12-eyebrow">Insidir · 3 days for $1</p>
   <h2 id="lp-final-heading">Know more.<br><span>Decide for yourself.</span></h2>
-  <p class="lp-final__copy">Every company report, filing and insider trade, linked to its source, in one subscription.</p>
+  <p class="lp-final__copy">Every company report, filing and insider trade, linked to its source. 3 days for $1, then $39 a month.</p>
   <div class="lp-final__actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html">Get Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
+   <a class="v9-btn v9-btn--ink" href="signup.html">Start your 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
    <a class="v9-btn v12-outline-button" href="signin.html">Log in<span class="v13-arrow" aria-hidden="true">→</span></a>
   </div>
  </div>
@@ -271,7 +307,7 @@
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="/insider-trading">Insider trades</a></li><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
