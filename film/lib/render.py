@@ -39,6 +39,18 @@ def output_frame(m, f, finish=True):
             img = m.post(f, img, M)
         if hasattr(m, "CAPTIONS"):
             img = m.CAPTIONS.draw(img, f)
+    else:
+        from . import titles as T
+        M = np.float32([[1, 0, 0], [0, 1, 0]])
+        if hasattr(m, "post"):
+            img = m.post(f, img, M)
+        if hasattr(m, "PULSE"):
+            z = T.beat_pulse(f, m.PULSE)
+            if z > 1.0005:
+                img = V.affine(img, z, 0)
+        if hasattr(m, "TITLES"):
+            img = m.TITLES.draw(img, f)
+        img = T.letterbox(img, getattr(m, "LETTERBOX", 2.2))
     if finish:
         img = V.finish(img, f)
     return img

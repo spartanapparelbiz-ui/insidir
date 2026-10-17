@@ -19,15 +19,15 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M
 
 N_FRAMES = 600
-VERTICAL = True
-from lib.vertical import Captions
-CAPTIONS = Captions([
-    (14, 104, "When a company insider\nbuys or sells its stock,"),
-    (116, 214, "the law says they have\nto report it."),
-    (232, 330, "Within two business days.\nOn SEC Form 4."),
-    (384, 476, "Thousands are filed.\nMost people never see them."),
-    (536, 600, "Insidir reads them for you."),
+VERTICAL = False
+from lib.titles import Titles
+TITLES = Titles([
+    (15, 105, "SEC EDGAR", "Every public company\nfiles with the SEC."),
+    (135, 225, "FORM 4", "Officers and directors\nreport their own trades."),
+    (255, 345, "THE PUBLIC RECORD", "Every filing is public.\nFew are easy to read."),
+    (390, 480, "INSIDIR", "Turns them into clear,\nsourced company research."),
 ])
+PULSE = list(range(90, 525, 15))
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"

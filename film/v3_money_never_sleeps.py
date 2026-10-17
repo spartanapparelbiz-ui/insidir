@@ -17,14 +17,15 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M
 
 N_FRAMES = 540
-VERTICAL = True
-from lib.vertical import Captions
-CAPTIONS = Captions([
-    (8, 98, "Wall Street always ran\non who knew first."),
-    (150, 246, "Today, insiders have to\nreport their trades."),
-    (300, 388, "It's all public.\nMost of it goes unread."),
-    (478, 540, "Insidir puts it\nin front of you."),
+VERTICAL = False
+from lib.titles import Titles
+TITLES = Titles([
+    (15, 105, "NEW YORK STOCK EXCHANGE, 1958", "Markets have always\nrun on information."),
+    (150, 240, "TODAY", "Companies and their insiders\nfile it with the SEC."),
+    (300, 390, "SIX TOOLS, ONE SUBSCRIPTION", "Company reports, filings,\ninsider activity, people."),
+    (480, 560, "COMPANY RESEARCH FROM SEC FILINGS", "Know what moves a company."),
 ])
+PULSE = list(range(135, 465, 15))
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"
@@ -316,9 +317,13 @@ def post(f, img, M):
     d = V.affine(V.depth(C("skyline")[sky_index(f)], f"v3sky_{sky_index(f)}"), 1.08, 0, 0, 30)
     dv = cv2.warpAffine(d, M, (img.shape[1], img.shape[0]), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
     t = np.clip(seg(f, 465, 500), 0, 1)
-    sc = 900.0 / w
-    y = 1230 - 420 * V.ease_out(t, 3)                        # rises from behind the skyline
-    A_ = np.float32([[sc, 0, 540 - sc * w / 2], [0, sc, y - sc * h / 2]])
+    if img.shape[1] > img.shape[0]:                           # 16:9
+        sc, cx = 1100.0 / w, 960
+        y = 700 - 330 * V.ease_out(t, 3)
+    else:                                                     # 9:16
+        sc, cx = 900.0 / w, 540
+        y = 1230 - 420 * V.ease_out(t, 3)                    # rises from behind the skyline
+    A_ = np.float32([[sc, 0, cx - sc * w / 2], [0, sc, y - sc * h / 2]])
     dots = _ht.image(V.ease_out(np.clip(seg(f, 465, 495), 0, 1), 2) * 1.08, 0.05)
     a = cv2.warpAffine(dots, A_, (img.shape[1], img.shape[0]), flags=cv2.INTER_AREA)
     a = a * (1 - V.depth_layer_mask(dv, 0.16, 0.05))          # the bridge and near towers stay in front

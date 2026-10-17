@@ -17,15 +17,17 @@ import cv2
 from lib import vfx as V, shots as S, audio as A, music as M, pages as P
 
 N_FRAMES = 750
-VERTICAL = True
-from lib.vertical import Captions
-CAPTIONS = Captions([
-    (18, 100, "You watch the price.\nYou read the headlines."),
-    (114, 214, "The people who run\nthe company know more."),
-    (236, 326, "When they trade its stock,\nthey have to say so."),
-    (352, 474, "Officers. Directors.\n10% owners. On the record."),
-    (564, 656, "Insidir reads the filings\nand shows you the trades."),
+VERTICAL = False
+from lib.titles import Titles
+TITLES = Titles([
+    (15, 105, "THE HEADLINE", "Headlines tell you\nwhat happened."),
+    (120, 225, "THE FILING", "Filings tell you\nwho did what."),
+    (240, 330, "FORM 4", "When executives trade their own\ncompany's stock, they report it."),
+    (345, 465, "SEC EDGAR", "Insider trades. Financials. Filings.\nAll on the public record."),
+    (555, 645, "INSIDIR", "Every number linked\nto the document it came from."),
+    (690, 770, "COMPANY RESEARCH FROM SEC FILINGS", "Know what moves a company."),
 ])
+PULSE = list(range(480, 660, 15))
 MEDIA = os.environ.get("FILM_MEDIA", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/stock")
 UI = os.environ.get("FILM_UI", "/tmp/claude-0/-home-user-insidir/cd4dae8d-ed8d-5424-aa32-92f44807c414/scratchpad/ui")
 PIX, ARC = MEDIA + "/pix/", MEDIA + "/arc/"
@@ -308,8 +310,7 @@ def post(f, img, M):
         _ht = S.Halftone("insidir", 400, gap=12, seed=12)
     h, w = _ht.shape
     dots = _ht.image(V.ease_out(np.clip(seg(f, 684, 716), 0, 1), 2) * 1.08, 0.05)
-    width_v = 470.0                                   # on-screen width in the Reel, inside the door's light
-    sc = width_v / w
+    sc = 300.0 * float(M[0, 0]) / w                    # ~264 plate px wide, inside the door's light
     c = np.vstack([M, [0, 0, 1]]) @ door_cam(f) @ np.array([DOOR[0], DOOR[1] - 60, 1.0])
     A_ = np.float32([[sc, 0, c[0] - sc * w / 2], [0, sc, c[1] - sc * h / 2]])
     a = cv2.warpAffine(dots, A_, (img.shape[1], img.shape[0]), flags=cv2.INTER_AREA)
@@ -318,10 +319,10 @@ def post(f, img, M):
     a = a * (1 - figure)
     img = img * (1 - a * 0.92)
     # the line under it is set in the same ink, in the same light
-    k = V.smooth(seg(f, 700, 710))
+    k = V.smooth(seg(f, 700, 710)) if img.shape[0] > img.shape[1] else 0.0   # 9:16 only; 16:9 uses a title
     if k > 0:
-        ti = V.text_image("Know what moves a company.", 40, 600, 0.0, pad=20)
-        t = V.place(img.shape, ti, c[0], c[1] + sc * h / 2 + 34, 1.0) * k * (1 - figure)
+        ti = V.text_image("Know what moves a company.", max(16, int(40 * float(M[0, 0]) / 1.778)), 600, 0.0, pad=20)
+        t = V.place(img.shape, ti, c[0], c[1] + sc * h / 2 + 34 * float(M[0, 0]) / 1.778, 1.0) * k * (1 - figure)
         img = img * (1 - t * 0.9)
     return img
 
