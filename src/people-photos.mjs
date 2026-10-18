@@ -15,6 +15,7 @@ import { isEntityName, samePerson, nameTokens, givenVariants } from "./person-ma
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
 import { PUBLIC_UA } from "./public-fetch.mjs";
+import { excludedPhoto } from "./photo-exclusions.mjs";
 
 const DAY = 86400000;
 
@@ -134,11 +135,24 @@ function publish(state) {
  * photo off every page (initials or the company logo instead). */
 const photoBlocked = async cik => Boolean(cik && (await getRecord("person-photo-override", String(cik).replace(/^0+/, "")).catch(() => null))?.none);
 
+/* A company record without photos from sources audited as not being photographs (photo-exclusions.mjs). */
+function withoutExcluded(state) {
+  const photos = state.photos || {}, leaders = Array.isArray(state.leaders) ? state.leaders : [];
+  const bad = Object.keys(photos).filter(k => excludedPhoto(photos[k]));
+  if (!bad.length && !leaders.some(excludedPhoto)) return state;
+  const kept = { ...photos }, names = { ...(state.names || {}) };
+  for (const k of bad) { delete kept[k]; if (photos[k]?.personName || photos[k]?.caption) delete names[k]; }
+  const out = { ...state, photos: kept, names, leaders: leaders.map(l => excludedPhoto(l) ? { ...l, src: null, source: null, sourceUrl: null, credit: null } : l) };
+  if (state.coverage && typeof state.coverage.withPhoto === "number") out.coverage = { ...state.coverage, withPhoto: Math.max(0, state.coverage.withPhoto - bad.length) };
+  return out;
+}
+
 /* A company record as the page may see it: every person with a takedown loses the photo and the
  * display name taken from it, here and in the leadership list, even while an older record (kept
  * up to 7 days) still names them. One record lookup for the whole company. */
 export async function withoutTakedowns(state, { lookup = getRecords } = {}) {
   if (!state || typeof state !== "object") return state;
+  state = withoutExcluded(state);
   const leaders = Array.isArray(state.leaders) ? state.leaders : [];
   const keys = [...new Set([...Object.keys(state.photos || {}), ...leaders.map(l => l?.insiderKey)].filter(k => /^cik:\d{1,10}$/.test(String(k || ""))))];
   if (!keys.length) return state;

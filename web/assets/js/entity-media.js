@@ -91,14 +91,17 @@ const normalizeTicker=s=>String(s||"").trim().toUpperCase();
 const normalize=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9 ]/g," ").replace(/\s+/g," ").trim();
 
 /* ---------- names: SEC files people as "LAST FIRST MIDDLE"; show them as people write them ---------- */
-const ENTITY=/\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|CO|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|N\.?V|S\.?A|PLC|AG|SE|LIMITED|VENTURES|ESTATE)\b|&/i;
+const ENTITY=/\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|PLC|LIMITED|VENTURES|ESTATE)\b|&/i;
+/* Short suffixes that are also surnames (Sá, Co, Ag, Se) mark a company only when dotted (S.A.) or after the first word:
+   SEC files people surname first ("Sa Neto Francisco" is Francisco Sá Neto). Same rule as isEntityName in src/person-match.mjs. */
+const isEntity=s=>ENTITY.test(String(s||""))||String(s||"").split(/[\s,]+/).filter(Boolean).some((w,i)=>/^(S\.?A|A\.?G|N\.?V|S\.?E|CO)\.?$/i.test(w)&&(i>0||/\./.test(w)));
 const ACRONYM=/^(LLC|LP|LLP|PLC|AG|SE|NV|SA|II|III|IV|USA|US|UK|L\.P\.?|N\.A\.?)[.,]?$/;
 const titleCase=s=>String(s).toLowerCase().replace(/(^|[\s\-'’(])([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\/([a-z]{2,3})\//g,(m,a)=>"/"+a.toUpperCase()+"/").split(" ").map(w=>ACRONYM.test(w.toUpperCase())?w.toUpperCase():w).join(" ");
 function displayName(raw){
  const name=String(raw||"").replace(/\s+/g," ").trim();
  if(!name)return "Reporting person";
  if(/[a-z]/.test(name))return name;
- if(ENTITY.test(name))return titleCase(name);
+ if(isEntity(name))return titleCase(name);
  const parts=name.replace(/,/g," ").split(" ").filter(Boolean);
  if(parts.length<2)return titleCase(name);
  const suffix=/^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1))?parts.pop():"";
@@ -123,7 +126,7 @@ const SUFFIX=/^(?:[JjSs][Rr]|II|III|IV|V)$/;
 function initials(raw){
  const words=displayName(raw).split(/\s+/).map(w=>w.replace(/[^\p{L}\p{N}]/gu,"")).filter(Boolean);
  if(!words.length)return "";
- if(ENTITY.test(String(raw||""))||words.length===1)return (words[0][0]+(words[1]?.[0]||"")).toUpperCase();
+ if(isEntity(raw)||words.length===1)return (words[0][0]+(words[1]?.[0]||"")).toUpperCase();
  const named=words.filter(w=>!SUFFIX.test(w)),list=named.length?named:words;
  return (list[0][0]+(list.length>1?list.at(-1)[0]:"")).toUpperCase();
 }

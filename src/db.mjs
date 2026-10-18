@@ -44,6 +44,8 @@ export async function migrate() {
     await client.query(trialSchema);
     const complianceSchema=await readFile(new URL("../sql/011_compliance_records.sql",import.meta.url),"utf8");
     await client.query(complianceSchema);
+    const mediaGifSchema=await readFile(new URL("../sql/012_entity_media_gif.sql",import.meta.url),"utf8");
+    await client.query(mediaGifSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

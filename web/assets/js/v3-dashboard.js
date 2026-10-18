@@ -94,7 +94,10 @@ function owners(x){
 }
 /* The owner a joint line is shown under: one the reader follows (opts.follows(cik), in the followed feed), else the
    first person (not a fund, trust or company), else the first listed. */
-const ORG=/\b(?:INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|CO|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS?|HOLDCO|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|ADVISERS|INVESTMENTS|N\.?V|S\.?A|PLC|AG|SE|LIMITED|VENTURES|ESTATE|GP)\b|&/i;
+const ORG_WORDS=/\b(?:INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS?|HOLDCO|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|ADVISERS|INVESTMENTS|PLC|LIMITED|VENTURES|ESTATE|GP)\b|&/i;
+/* Short suffixes that are also surnames (Sá, Co, Ag, Se) mark a company only when dotted (S.A.) or after the first word:
+   SEC files people surname first ("Sa Neto Francisco" is Francisco Sá Neto). Same rule as isEntityName in src/person-match.mjs. */
+const ORG={test:s=>ORG_WORDS.test(String(s||""))||String(s||"").split(/[\s,]+/).filter(Boolean).some((w,i)=>/^(S\.?A|A\.?G|N\.?V|S\.?E|CO)\.?$/i.test(w)&&(i>0||/\./.test(w)))};
 function leadOf(m,follows){
  if(typeof follows==="function"){const f=m.find(o=>o.cik&&follows(o.cik));if(f)return f;}
  return m.find(o=>!ORG.test(o.name))||m[0];

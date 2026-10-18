@@ -19,8 +19,16 @@ const NICKNAMES = [
 const NICK = new Map();
 for (const group of NICKNAMES) for (const a of group) for (const b of group) if (a !== b) { if (!NICK.has(a)) NICK.set(a, new Set()); NICK.get(a).add(b); }
 
-export const ENTITY_PATTERN = /\b(LLC|L\.?L\.?C|L\.?P\.?|LTD|INC|CORP|CORPORATION|TRUST|FUND|FUNDS|PARTNERS|CAPITAL|MANAGEMENT|HOLDINGS?|GROUP|ADVISORS|ADVISERS|FOUNDATION|BANK|PLC|N\.?V|S\.?A|AG|GMBH|LIMITED|VENTURES|INVESTMENTS?|ASSOCIATES|COMPANY|CO)\b/i;
-export const isEntityName = name => ENTITY_PATTERN.test(String(name || ""));
+export const ENTITY_PATTERN = /\b(LLC|L\.?L\.?C|L\.?P\.?|LTD|INC|CORP|CORPORATION|TRUST|FUND|FUNDS|PARTNERS|CAPITAL|MANAGEMENT|HOLDINGS?|GROUP|ADVISORS|ADVISERS|FOUNDATION|BANK|PLC|GMBH|LIMITED|VENTURES|INVESTMENTS?|ASSOCIATES|COMPANY)\b/i;
+/* Short suffixes that are also surnames (Sá, Co, Ag): an entity only when dotted (S.A., N.V.) or after the
+ * first word. SEC files people surname first, so "Sa Neto Francisco" (Francisco Sá Neto) is a person, while
+ * "AXIA Energia SA" and "Control Empresarial de Capitales S.A. de C.V." are companies. */
+export const SHORT_ENTITY_SUFFIX = /^(S\.?A|A\.?G|N\.?V|CO)\.?$/i;
+export function isEntityName(name) {
+  const s = String(name || "");
+  if (ENTITY_PATTERN.test(s)) return true;
+  return s.split(/[\s,]+/).filter(Boolean).some((w, i) => SHORT_ENTITY_SUFFIX.test(w) && (i > 0 || /\./.test(w)));
+}
 
 /* Upper-case tokens: accents folded, curly apostrophes straightened, in-word hyphens and
  * apostrophes removed (O'Brien -> OBRIEN), honorifics and suffixes dropped. */

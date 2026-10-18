@@ -34,6 +34,7 @@
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
 import { getRecord, hasMedia, mediaSha } from "./media-store.mjs";
 import { isEntityName } from "./person-match.mjs";
+import { excludedPhoto } from "./photo-exclusions.mjs";
 
 const failure = (status, message) => Object.assign(new Error(message), { status });
 export const MEDIA_LIMITS = Object.freeze({ tickers: 60, people: 100, ciks: 60, wait: 1500 });
@@ -280,7 +281,7 @@ async function firstLook(pair, maps, d) {
   const atCompany = company?.photos?.[k];
   let takedown;
   for (const photo of [known, atCompany]) {
-    if (!photo?.src) continue;
+    if (!photo?.src || excludedPhoto(photo)) continue;
     // A takedown keeps the photo off every page even while an older record still names it (and
     // a taken-down photo is never "lost" bytes to look for again).
     takedown ??= Boolean((await d.getRecord("person-photo-override", pair.cik).catch(() => null))?.none);

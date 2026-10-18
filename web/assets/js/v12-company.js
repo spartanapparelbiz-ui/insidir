@@ -89,12 +89,15 @@ const safeUrl = (url, hosts) => {
 };
 const secUrl = url => safeUrl(url, ["sec.gov"]);
 const titleCase = s => String(s || "").toLowerCase().replace(/(^|[\s\-'(/&.])([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(/\bMc([a-z])/g, (m, c) => "Mc" + c.toUpperCase());
-const ENTITY = /\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|CO|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|N\.?V|S\.?A|PLC|AG|SE|LIMITED|VENTURES|ESTATE)\b|&/i;
+const ENTITY = /\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|PLC|LIMITED|VENTURES|ESTATE)\b|&/i;
+/* Short suffixes that are also surnames (Sá, Co, Ag, Se) mark a company only when dotted (S.A.) or after the first word:
+   SEC files people surname first ("Sa Neto Francisco" is Francisco Sá Neto). Same rule as isEntityName in src/person-match.mjs. */
+const isEntity=s=>ENTITY.test(String(s||""))||String(s||"").split(/[\s,]+/).filter(Boolean).some((w,i)=>/^(S\.?A|A\.?G|N\.?V|S\.?E|CO)\.?$/i.test(w)&&(i>0||/\./.test(w)));
 /* SEC owner names are "LAST FIRST MIDDLE"; show "First Middle Last". */
 function displayName(raw, { short = false } = {}) {
   const name = String(raw || "").replace(/\s+/g, " ").trim();
   if (!name) return "Reporting person";
-  if (ENTITY.test(name)) return /[a-z]/.test(name) ? name : titleCase(name);
+  if (isEntity(name)) return /[a-z]/.test(name) ? name : titleCase(name);
   const parts = name.replace(/,/g, " ").split(" ").filter(Boolean);
   if (parts.length < 2) return /[a-z]/.test(name) ? name : titleCase(name);
   const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";

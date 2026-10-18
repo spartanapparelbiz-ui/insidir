@@ -5,7 +5,7 @@ import sharp from "sharp";
 import {
   tickerForms, sourceUrls, classifyFailure, identityRisk, nameTokens, namesAgree, infoboxParams, infoboxLogo, fileNameFrom,
   wikimediaFileUrls, acceptableWikidataLogo, parseWikidataItems, expandSvgEntities, strictBadge, darkMonochrome,
-  opaqueTileColor, innerTileColor, framed, measureMark, prepareMark, resolveLogo, logoForTicker, KNOWN_BAD, LOGO_TTL, NEGATIVE_TTL, PARTIAL_TTL
+  opaqueTileColor, innerTileColor, framed, measureMark, prepareMark, resolveLogo, logoForTicker, staleNameFile, KNOWN_BAD, LOGO_OVERRIDES, LOGO_TTL, NEGATIVE_TTL, PARTIAL_TTL
 } from "../src/logo-resolver.mjs";
 import { iou, rasterize } from "../src/image-analysis.mjs";
 
@@ -278,6 +278,35 @@ test("identity risk without Wikipedia: stockanalysis is accepted, FMP/EODHD neve
   const withS1 = world({ submissions: fresh(), images: { [u.s1Light]: svgImage(CIRCLE_WHITE), [u.fmp]: { bytes: CIRCLE_WHITE, type: "svg" } } });
   const ok = await resolveLogo({ ticker: "NEWC", cik: "99", name: "New Co" }, { fetchers: withS1.fetchers, store: withS1.store, now: NOW });
   assert.equal(ok.variants.square.source, "stockanalysis");
+});
+
+test("a Wikipedia logo named for a former name is the old identity: Firy Inc. never shows the Skillz mark", async () => {
+  const firy = { name: "Firy Inc.", formerNames: [{ name: "Skillz Inc.", from: "2020-10-07", to: "2026-06-18" }, { name: "Flying Eagle Acquisition Corp.", to: "2020-12-17" }] };
+  assert.equal(staleNameFile("Skillz_Logo_Horizontal-01.png", firy), "Skillz Inc.");
+  assert.equal(staleNameFile("Firy logo.svg", firy), null, "a file named for the current name passes");
+  assert.equal(staleNameFile("Meta_Platforms_Inc._logo_(cropped).svg", { name: "Meta Platforms, Inc.", formerNames: [{ name: "Facebook Inc", to: "2021-10-28" }] }), null);
+  assert.equal(staleNameFile("Facebook_logo_2019.svg", { name: "Meta Platforms, Inc.", formerNames: [{ name: "Facebook Inc", to: "2021-10-28" }] }), "Facebook Inc");
+  assert.equal(staleNameFile("Generic_mark.svg", firy), null, "a file that names neither is not judged");
+  assert.equal(staleNameFile("Skillz_logo.png", { name: "Firy Inc." }), null, "no former names, nothing to judge");
+
+  const u = urlsFor("FIRY");
+  const w = world({
+    submissions: { ...fresh(), name: "Firy Inc.", formerNames: [{ name: "Skillz Inc.", from: "2020-10-07T04:00:00.000Z", to: "2026-06-18T04:00:00.000Z" }] },
+    images: { [u.s1Light]: svgImage(CIRCLE_WHITE), [commons("Skillz_Logo_Horizontal-01.png")]: svgImage(CORNERS_WHITE) },
+    wikidataItem: { id: "Q3", label: "Firy", article: "https://en.wikipedia.org/wiki/Skillz" },
+    wikitext: "{{Infobox company\n| logo = [[File:Skillz_Logo_Horizontal-01.png]]\n}}"
+  });
+  const r = await resolveLogo({ ticker: "FIRY", cik: "1801661", name: "Firy Inc." }, { fetchers: w.fetchers, store: w.store, now: NOW });
+  assert.equal(r.sources.wikipedia, "missing");
+  assert.ok(Object.values(r.variants).every(v => v.source !== "wikipedia"), "the Skillz file is never used");
+});
+
+test("checked-in corrections name the company's own file and say why", () => {
+  assert.match(LOGO_OVERRIDES["0000107687"].url, /^https:\/\/www\.winnebagoind\.com\//, "WGO uses Winnebago Industries' own wordmark");
+  for (const [cik, o] of Object.entries(LOGO_OVERRIDES)) {
+    assert.match(cik, /^\d{10}$/);
+    assert.ok(o.reason && (o.none || /^https:\/\//.test(o.url)), cik);
+  }
 });
 
 test("seeded known-bad pairs are never used (PGOL's FMP image)", async () => {

@@ -1,3 +1,33 @@
+## Insidir V25: correct logos, headshots and owner identities (October 2026)
+
+A visual audit of the 60 most active companies' logos and 95 resolved headshots against SEC records found four kinds of mistake. Each is fixed by a rule, so the same mistake can't recur elsewhere:
+
+- **Renamed companies kept their old logo.** Wikipedia still showed the Skillz mark on the article for Firy Inc. after the June 2026 rename. A Wikipedia or Wikidata logo file named for one of the company's SEC former names, and not its current one, is now treated as the old identity and never used (`staleNameFile` in `src/logo-resolver.mjs`).
+- **A ticker-letter placeholder.** The stock-logo file for WGO is just the letters "WGO". Winnebago Industries' own wordmark from its site is now a checked-in override.
+- **An illustrated "headshot".** Reddit's 2026 proxy prints cartoon avatars of its directors, and one passed every automated portrait check as Sarah E. Farrell's photo. Sources audited as not being photographs are listed in `src/photo-exclusions.mjs`. They are never read, and records stored earlier stop being served.
+- **A person classified as a company.** "Sa Neto Francisco" (Francisco Sá Neto) matched the corporate suffix "S.A.", so he could never get a photo. Short suffixes (S.A., AG, N.V., Co) now count only when dotted or after the first word, in the engine and on every page.
+
+Also:
+- GIF proxy originals were refused by the media table's type constraint and lived in memory only; `sql/012_entity_media_gif.sql` accepts them.
+- `scripts/audit-media.mjs --sec` builds a contact sheet of every stored photo and logo against the SEC names, flagging duplicates, caption mismatches, faces on funds, excluded sources and logos named for former names. Run it against the production database to check by eye.
+- The platform page's demo report now shows Reddit's real logo and a People panel: Steve Huffman and Jennifer Wong, with their verified headshots, Form 4 roles and SEC CIK links, credited.
+
+## Insidir V24: a working demo report on the platform page (October 2026)
+
+The company-report diagram on `platform.html` (A header, B chart, C key facts, D tabs) used to be grey placeholder bars and a dot field. It is now a working report for Reddit, Inc. (RDDT), saved from the product at the close on October 16, 2026:
+
+- **B, the chart** (`web/assets/js/v16-demo-chart.js`, `web/assets/css/v16-demo-chart.css`). Six range buttons (1D, 1W, 1M, 3M, 1Y, 5Y) redraw it from real delayed Yahoo Finance series embedded in the page as JSON (`#mk-demo-data`). No request is made and nothing is live. Point at the line, or focus it and use the arrow keys, to read any close; the reading is announced to screen readers. The line is red or green only for the direction of the selected range, always beside a ▲/▼ and a signed figure.
+- **A and C** carry the real header and key facts. Market cap, enterprise value and P/E show their inputs on hover, as in the product.
+- The caption says what it is: a delayed snapshot, not live, and not a recommendation. The company-report screenshot above it is removed because the demo replaces it.
+- `scripts/build-demo-chart.mjs` writes the no-script first paint (the 1Y chart) using the page's own renderer. `test/demo-chart.test.mjs` checks that the snapshot's figures agree with each other (every range ends on the quoted close, the day change, market cap and P/E) and that the first paint matches the script's output.
+
+## Insidir V23: the product, shown (October 2026)
+
+- **Real screens, not descriptions.** Retina screenshots of the live product on real SEC filings (`web/assets/img/product/`, WebP, 10–110 KB each): the overview, a company report, insider activity, a personnel file, the research desk.
+- **Landing page.** After the hero, a showcase: the overview in a window, with two real Form 4 lines (a PepsiCo director's purchase, Natera's executive chairman's sale, both filed October 16, 2026) floating over its edges; a figures band (the 2-business-day filing deadline, the 15-minute import, 8 named sources, the $1 trial); the six tools as a bento of real screens and small real-data lists instead of six identical boxes; the four rules as cards; a larger price and display scale.
+- **Platform page** shows each tool's real screen in a window; every public and legal page gets the larger display scale, receding second lines and a calmer reading measure (`web/assets/css/v15-site.css`).
+- Same identity and rules: paper and ink, green and red for direction only, JetBrains Mono, square corners, no glow, hovers change colour only. The new stylesheets live in the `insidir-v13` cascade layer so they refine the V13 files in source order. Palette, contrast and retina-sharpness audit clean.
+
 ## Insidir V22: research-only safeguards, recorded subscription consent, one-step cancellation (October 2026)
 
 - **Research-only by construction.** `src/capabilities.mjs` refuses personalized-advice and order-placement routes on the server, before the paywall and any handler, for every user. A regulated mode needs a reviewed code change *and* a complete authorization record in `docs/authorizations/`; an environment flag alone does nothing. Emergency stops: `INSIDIR_TRADING_HALT=1`, `INSIDIR_BROKERAGE_HALT=1`. `GET /v1/capabilities` states what the deployment does.
