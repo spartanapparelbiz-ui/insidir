@@ -69,9 +69,20 @@ body.v13.v12-home.v9-site.v6-site .lp-heroshot figcaption span{font:400 12px/1.5
 /* ---------- price: $39 a month is the figure people see first ---------- */
 body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-terms__price{color:var(--hf-ink)!important;font-weight:500!important}
 body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-terms__price b{font:700 16px/1 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important}
-body.v13.v12-home.v9-site.v6-site .lp-plan__trial,body.v13.v3-static.v6-static .mk-plan__trial{display:inline-flex!important;width:max-content!important;max-width:100%!important;justify-self:start!important;align-self:flex-start!important;align-items:baseline!important;gap:6px!important;margin:14px 0 0!important;padding:6px 12px!important;
-  border:1px solid var(--sm-line-2)!important;border-radius:999px!important;background:rgba(233,228,218,.04)!important;font:400 13px/1.2 var(--hf-mono)!important;color:var(--hf-soft)!important}
-body.v13.v12-home.v9-site.v6-site .lp-plan__trial b,body.v13.v3-static.v6-static .mk-plan__trial b{font-weight:700!important;color:var(--hf-ink)!important}
+/* The $1 offer: an ink-filled badge (the palette's strongest mark, no new colour), always next to the monthly price. */
+body.v13.v12-home.v9-site.v6-site .lp-plan__trial,body.v13.v3-static.v6-static .mk-plan__trial,body.v13.v3-auth .auth-deal{display:inline-flex!important;align-items:baseline!important;gap:8px!important;width:max-content!important;max-width:100%!important;
+  justify-self:start!important;align-self:flex-start!important;margin:16px 0 0!important;padding:8px 14px 8px 10px!important;border:0!important;border-radius:10px!important;
+  background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 14px/1.2 var(--hf-mono)!important}
+body.v13.v12-home.v9-site.v6-site .lp-plan__trial b,body.v13.v3-static.v6-static .mk-plan__trial b,body.v13.v3-auth .auth-deal b{font:800 20px/1 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-bg)!important}
+body.v13.v12-home.v9-site.v6-site .lp-plan__trial>span,body.v13.v3-static.v6-static .mk-plan__trial>span,body.v13.v3-auth .auth-deal>span{align-self:center!important;padding:3px 6px!important;border-radius:5px!important;
+  background:rgba(12,12,11,.12)!important;font:700 10px/1 var(--hf-mono)!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:var(--hf-bg)!important}
+body.v13.v3-auth .v6-auth-story p.auth-deal{margin:8px 0 18px!important;max-width:none!important;color:var(--hf-bg)!important;font:500 14px/1.2 var(--hf-mono)!important}
+body.v13.v3-auth .v6-auth-story p.auth-deal b,body.v13.v3-auth .v6-auth-story p.auth-deal>span{color:var(--hf-bg)!important}
+/* Hero: the offer chip leads the price line; "then $39 a month" follows on the same line. */
+body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-deal{display:inline-flex!important;align-items:baseline!important;gap:6px!important;margin-left:28px!important;padding:4px 10px!important;border-radius:8px!important;
+  background:var(--hf-ink)!important;color:var(--hf-bg)!important;font:500 13px/1.3 var(--hf-mono)!important}
+body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-deal::before{display:none!important}
+body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-deal b{font:800 15px/1 var(--hf-mono)!important;color:var(--hf-bg)!important}
 body.v13.v12-home.v9-site.v6-site .lp-plan__terms{margin-top:16px!important}
 
 /* ---------- public pages ---------- */

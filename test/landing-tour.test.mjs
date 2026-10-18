@@ -42,10 +42,10 @@ test("the landing page tours the product in four clips, each shipped as MP4, Web
 test("the landing page offers the paid trial and links the free public insider pages", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    assert.match(home, /<span class="lp-terms__price"><b>\$39<\/b> a month<\/span><span><b>\$1<\/b> for your first 3 days<\/span>/, "the monthly price leads, the trial follows");
+    assert.match(home, /<span class="lp-deal"><b>\$1<\/b> for your first 3 days<\/span><span class="lp-terms__price">then <b>\$39<\/b> a month<\/span>/, "the $1 offer is highlighted with the monthly price right beside it");
     assert.match(home, /After the 3-day trial, \$39 is charged every month/);
     assert.match(home, /Start your 3-day trial/);
-    assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><b>\$1<\/b> for your first 3 days<\/p>/);
+    assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
     assert.match(home, /Know what moves/);
