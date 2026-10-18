@@ -72,10 +72,15 @@
     if (!offer) { $("[data-pw-terms]").textContent = "The subscription terms could not be loaded. Reload the page to continue."; return; }
     $("[data-pw-terms]").textContent = offer.disclosure;
     const trial = offer.kind === "trial";
-    $("[data-pw-price]").innerHTML = trial ? "<strong>" + money(offer.todayCents) + "</strong><span>today, then " + money(offer.recurringCents) + " / month</span>"
+    // The monthly price leads; the trial charge and the date of the first full charge sit right under it.
+    const firstCharge = trial ? new Date(Date.now() + offer.trialDays * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+    $("[data-pw-price]").innerHTML = trial
+      ? "<strong>" + money(offer.recurringCents) + "</strong><span>/ month after a " + offer.trialDays + "-day trial · " + money(offer.todayCents) + " today</span>"
       : "<strong>" + money(offer.recurringCents) + "</strong><span>/ month</span>";
     $("[data-pw-term-1]").textContent = trial ? money(offer.todayCents) + " today for a " + offer.trialDays + "-day trial, once per account" : money(offer.recurringCents) + " today for your first month";
-    $("[data-pw-term-2]").textContent = "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
+    $("[data-pw-term-2]").textContent = trial
+      ? "Then " + money(offer.recurringCents) + " a month in US dollars, first charged on " + firstCharge + " and renewing automatically until you cancel"
+      : "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
     $("#pw-subscribe").textContent = trial ? "Start " + offer.trialDays + "-day trial · " + money(offer.todayCents) : "Subscribe · " + money(offer.recurringCents) + "/month";
     delete $("#pw-subscribe").dataset.idleLabel;
   }

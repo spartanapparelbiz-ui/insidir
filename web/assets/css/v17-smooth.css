@@ -66,6 +66,14 @@ body.v13.v12-home.v9-site.v6-site .lp-heroshot figcaption b{font:600 13px/1.3 va
 body.v13.v12-home.v9-site.v6-site .lp-heroshot figcaption span{font:400 12px/1.55 var(--hf-mono)!important;color:var(--hf-muted)!important}
 @media (max-width:899px){body.v13.v12-home.v9-site.v6-site .lp-heroshot{padding:8px!important}}
 
+/* ---------- price: $39 a month is the figure people see first ---------- */
+body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-terms__price{color:var(--hf-ink)!important;font-weight:500!important}
+body.v13.v12-home.v9-site.v6-site .v13-hero .lp-terms .lp-terms__price b{font:700 16px/1 var(--hf-mono)!important;letter-spacing:-.01em!important;color:var(--hf-ink)!important}
+body.v13.v12-home.v9-site.v6-site .lp-plan__trial,body.v13.v3-static.v6-static .mk-plan__trial{display:inline-flex!important;width:max-content!important;max-width:100%!important;justify-self:start!important;align-self:flex-start!important;align-items:baseline!important;gap:6px!important;margin:14px 0 0!important;padding:6px 12px!important;
+  border:1px solid var(--sm-line-2)!important;border-radius:999px!important;background:rgba(233,228,218,.04)!important;font:400 13px/1.2 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13.v12-home.v9-site.v6-site .lp-plan__trial b,body.v13.v3-static.v6-static .mk-plan__trial b{font-weight:700!important;color:var(--hf-ink)!important}
+body.v13.v12-home.v9-site.v6-site .lp-plan__terms{margin-top:16px!important}
+
 /* ---------- public pages ---------- */
 body.v13.v3-static.v6-static :is(.mk-screen,.mk-plan,.mk-record,.mk-cell,.mk-demo,.mk-step,.mk-rule,.mk-source,.mk-legend>li){
   border-radius:var(--sm-r)!important;border-color:var(--sm-line)!important;overflow:hidden!important}
