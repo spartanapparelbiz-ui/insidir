@@ -93,7 +93,10 @@ body.v13.v12-home.v9-site.v6-site .lp-ledger__table td .lp-dir{white-space:nowra
 body.v13.v12-home.v9-site.v6-site .lp-ledger__val{font-weight:700!important;color:var(--hf-ink)!important;white-space:nowrap!important;width:84px!important}
 /* The value as a bar of halftone dots, as long as its share of the largest line. */
 body.v13.v12-home.v9-site.v6-site .lp-ledger__bar{display:block!important;height:5px!important;margin:6px 0 0 auto!important;width:calc(var(--w) * .84px)!important;max-width:84px!important;min-width:5px!important;
-  background-image:radial-gradient(currentColor 1.4px,transparent 1.7px)!important;background-size:5px 5px!important;background-position:right center!important}
+  /* A solid direction colour cut into dots by a neutral mask: no coloured gradient, nothing glows. */
+  background:currentColor!important;
+  -webkit-mask-image:radial-gradient(#000 1.4px,transparent 1.7px)!important;mask-image:radial-gradient(#000 1.4px,transparent 1.7px)!important;
+  -webkit-mask-size:5px 5px!important;mask-size:5px 5px!important;-webkit-mask-position:right center!important;mask-position:right center!important}
 body.v13.v12-home.v9-site.v6-site .lp-ledger__bar--up{color:var(--hf-up)!important}
 body.v13.v12-home.v9-site.v6-site .lp-ledger__bar--down{color:var(--hf-down)!important}
 body.v13.v12-home.v9-site.v6-site .lp-ledger__note{margin-top:10px!important;padding-top:10px!important;border-top:1px dashed var(--hf-line-2)!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
