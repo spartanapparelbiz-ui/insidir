@@ -89,7 +89,8 @@ const ALL = [
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
-  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"]
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
+  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const PAGES = wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL;

@@ -81,3 +81,4 @@ body.v13.v14-public .pp-notes p{max-width:80ch!important;margin:14px 0 0!importa
   body.v13.v14-public .pp-stat{padding:16px!important}
   body.v13.v14-public .pp-actions .v9-btn{width:100%!important;justify-content:center!important}
 }
+body.v13.v14-public .pp-stories{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))!important}

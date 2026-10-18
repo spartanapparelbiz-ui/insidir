@@ -10,6 +10,9 @@
  *   GET /sitemap.xml                      a sitemap index; /sitemaps/pages.xml, companies-N.xml, insiders-N.xml
  *   GET /robots.txt                       public pages allowed, the product and the API disallowed
  *
+ * The research stories (src/stories.mjs, static pages under /web/stories) are listed on the hub, linked from a
+ * company or person page they cover, and included in the sitemap.
+ *
  * src/paywall.mjs classifies these paths as public (nested paths, and /insider-trading is not a product
  * page). Pages never depend on who is asking, so they are cached in memory for CACHE_TTL_MS and may be
  * cached publicly; uncached renders are limited per client address so a crawler cannot hammer the
@@ -17,6 +20,7 @@
  * sec_filing_owners or the SEC documents already cached. */
 import { TRANSACTION_CODES } from "./insiders.mjs";
 import { personProfile, parsePersonCik, hasFilingOwners, withJointOwners } from "./person-profile.mjs";
+import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPerson } from "./stories.mjs";
 
 export const CACHE_TTL_MS = 10 * 60_000, CACHE_ENTRIES = 3000;
 export const RENDERS_PER_MINUTE = 90;
@@ -90,7 +94,7 @@ export function siteOrigin(env = process.env) {
   try { const u = new URL(raw); if (u.protocol === "https:" || u.protocol === "http:") return u.origin; } catch { /* default */ }
   return "https://insidir.com";
 }
-const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider filings</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
+const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Stories</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
 function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null, current = false }) {
   const nav = NAV.replace("%CUR%", current ? ' aria-current="page"' : "");
   const url = origin + canonical;
@@ -141,9 +145,9 @@ ${body}
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>
@@ -154,7 +158,8 @@ ${body}
 
 const crumbs = items => `<nav class="pp-crumbs" aria-label="Breadcrumb"><ol>${items.map(([label, href]) => `<li>${href ? `<a href="${esc(href)}">${esc(label)}</a>` : `<span aria-current="page">${esc(label)}</span>`}</li>`).join("")}</ol></nav>`;
 
-function upsell(subject) {
+// The trial offer every public page ends with (also used by scripts/build-stories.mjs for the static story pages).
+export function upsell(subject) {
   return `<section class="pp-upsell" aria-labelledby="pp-upsell-h">
  <div class="pp-upsell__copy">
   <p class="pp-label">The full record</p>
@@ -174,6 +179,15 @@ function upsell(subject) {
  </div>
 </section>`;
 }
+
+// Research stories as a list in the pp-companies style (the stories' own pages carry the full design).
+export function storyList(stories) {
+  return `<ul class="pp-companies pp-stories">${stories.map(s => `<li><a href="${esc(storyPath(s))}"><b>${esc(s.title)}</b><span>${esc(s.kind)} · ${esc(s.form)} · filed ${esc(day(s.filed))}</span><em>Read the research <span class="v13-arrow" aria-hidden="true">→</span></em></a></li>`).join("")}</ul>`;
+}
+const storiesSection = (stories, heading, note) => stories.length ? `<section class="pp-section mk-shell" aria-labelledby="pp-stories">
+ <div class="pp-head"><h2 id="pp-stories">${esc(heading)}</h2><p>${esc(note)}</p></div>
+ ${storyList(stories)}
+</section>` : "";
 
 const badge = kind => `<span class="pp-badge pp-badge--${kind}">${KIND_LABEL[kind]}</span>`;
 
@@ -313,6 +327,7 @@ export async function hubPage({ query, origin }) {
  <div class="pp-head"><h2 id="pp-active">Most active companies</h2><p>Most Form 4 filings in the last 30 days.</p></div>
  ${companyList}
 </section>
+${storiesSection(STORIES, "Research stories", "Historical filings explained line by line, free to read and share. Each one links to the original SEC document.")}
 <div class="mk-shell">${upsell("Follow the people behind the trades.")}</div>
 <section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
  <h2 id="pp-about">About this data</h2>
@@ -363,6 +378,7 @@ export async function companyPage(ticker, { query, origin }) {
  <div class="pp-head"><h2 id="pp-people">Insiders at ${esc(name)}</h2><p>People who reported transactions in ${esc(ticker)}, most recent first.</p></div>
  ${people}
 </section>
+${storiesSection(storiesForTicker(ticker), `Research on ${ticker}`, "A historical filing from this company, explained line by line.")}
 <div class="mk-shell">${upsell(`Everything on ${ticker}, in one report.`)}</div>
 <section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
  <h2 id="pp-about">About these numbers</h2>
@@ -410,6 +426,7 @@ ${companyRows ? `<section class="pp-section mk-shell" aria-labelledby="pp-compan
  <div class="pp-head"><h2 id="pp-lines">Recent transactions</h2><p>The ${profile.transactions.length} newest lines by trade date${all.transactions > profile.transactions.length ? ` of ${all.transactions.toLocaleString("en-US")}` : ""}. Each filing date links to the document on SEC EDGAR.</p></div>
  ${linesTable(profile.transactions, { showCompany: true, showPerson: false, caption: `Recent insider transactions by ${name}` })}
 </section>
+${storiesSection(storiesForPerson(cik), "Research on this person's filings", "A historical Form 4, explained line by line.")}
 <div class="mk-shell">${upsell(`Know the next time ${name.split(" ")[0] || name} files.`)}</div>
 <section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
  <h2 id="pp-about">About this record</h2>
@@ -457,7 +474,7 @@ Disallow: /account
 Sitemap: ${origin}/sitemap.xml
 `;
 }
-const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html"];
+const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html", ...PUBLIC_STORY_PATHS];
 const xmlEsc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 const urlset = urls => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `<url><loc>${xmlEsc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export async function sitemapIndex({ query, origin }) {
