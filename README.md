@@ -1,3 +1,13 @@
+## Insidir V27: richer, smoother pages; a clear price with the $1 offer up front; more verified headshots (October 2026)
+
+- **Redesign, same look** (`web/assets/css/v16-rich.css`, `v16-rich-site.css`). The landing hero carries a ledger of five real Form 4 lines filed Oct 16, 2026, each checked against the database, with dot bars scaled to value. The product window has numbered pins and a legend. Figures get dot meters that encode the fact. Every page gets corner ticks, registration crosses, numbered running heads, dot-screen backdrops, "FIG." labels, a halftone price panel and numbered questions. Still JetBrains Mono, paper and ink, square corners, colour-only hovers.
+- **More verified headshots** (a sample of 20 companies went from 117 to 125 of 172 people):
+  - Donnelley-filed proxies print the name ~900 characters after the portrait, past committees, tenure and age. A "card" rule now pairs them when the first name after the card is a known filer, no other name comes first and none sits right before the portrait.
+  - Companies whose Wikidata item lacks their SEC CIK (Marvell, Ferguson) are found by ticker on a US exchange, with the name checked.
+  - With no company item at all, a Wikipedia article whose lead names the company still ties the filer (Martine Rothblatt at United Therapeutics).
+- **Smoother, plainer pages** (`web/assets/css/v17-smooth.css`): rounded, top-lit panels, rounded buttons and screenshots, no corner brackets or section rules. The hero shows a real company report instead of a Form 4 table, the second button reads "See how it works", and "Today's insider trades" wording is gone (nav: "Insider filings").
+- **Price:** $39 a month is stated everywhere next to an ink-filled "$1 for your first 3 days" offer. The plan cards carry a receipt ($1.00 today, $39.00 every month), and checkout states the date of the first $39 charge.
+- **Still without a photo:** mostly executives whose companies' sites refuse automated visitors (PayPal, Ferguson, Qualcomm, Regal Rexnord) and who have no free Wikipedia photo. Those blocks are respected, and no face is ever attached by name alone.
 ## Insidir V26: research stories, sharing and a creator kit (October 2026)
 
 Public research people can read, share and turn into short videos, built around the product without touching accounts, billing or creator commissions.

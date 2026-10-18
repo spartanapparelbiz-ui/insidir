@@ -181,7 +181,7 @@ test("hub page lists the biggest purchases and sales, the newest filings and the
   assert.match(r.body, /\$910M/);
   assert.match(r.body, /<a href="\/insider-trading\/EXMP"><b>EXMP<\/b><span>Example Corp<\/span><em>3 filings · 1 bought · 2 sold<\/em><\/a>/);
   assert.match(r.body, /Fund A Fund B/, "a joint line without an owners list reads as filed");
-  assert.match(r.body, /aria-current="page">Insider trades/);
+  assert.match(r.body, /aria-current="page">Insider filings/);
   assert.match(HUB_SQL.biggest("reported_purchase"), /NOT t\.derivative/);
   const slash = await get("/insider-trading/", query);
   assert.deepEqual([slash.status, slash.headers.location], [301, "/insider-trading"]);

@@ -15,7 +15,8 @@
  * two insiders, leaves everyone involved unmatched. Results are cached per CIK for 7 days (1 hour
  * when a rate limit cut the run short). 429 means "unknown, retry later", never "no photo". */
 import { externalFetch } from "./external.mjs";
-import { fetchLinkedPeople, commonsFileUrl } from "./company-profile.mjs";
+import { fetchLinkedPeople, commonsFileUrl, itemAnchor } from "./company-profile.mjs";
+import { wikidataQueryByTicker, parseWikidataItems, namesAgree } from "./logo-resolver.mjs";
 import { samePerson, isEntityName, nameTokens } from "./person-match.mjs";
 import { getRecord, putRecord } from "./media-store.mjs";
 
@@ -164,14 +165,12 @@ function dropShared(matches, unmatched) {
 }
 
 /* ---------- company item ---------- */
-export function companyItemQuery(cik) {
-  const plain = String(Number(cik)), padded = plain.padStart(10, "0");
+export function companyItemQuery(cik, qids = null) {
   // Notable subsidiaries (with an English article) count as the company for tie checks: officers of
   // Alphabet are usually recorded on Wikidata as Google employees, Meta's as Facebook's.
   return `SELECT ?item ?itemLabel ?article ?sub ?subLabel WHERE {
   hint:Query hint:optimizer "None" .
-  VALUES ?cik { "${plain}" "${padded}" }
-  ?item wdt:P5531 ?cik .
+  ${itemAnchor(cik, qids)}
   OPTIONAL { ?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> }
   OPTIONAL { { ?item wdt:P355 ?sub } UNION { ?sub wdt:P749 ?item } ?subArticle schema:about ?sub ; schema:isPartOf <https://en.wikipedia.org/> . }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul". }
@@ -191,6 +190,14 @@ export function parseCompanyItems(payload) {
   }
   return { qid: best.qid, qids: [...items, ...subs.keys()], label: best.label && !/^Q\d+$/.test(best.label) ? best.label : null, title,
     subsidiaries: [...subs.values()].filter(Boolean) };
+}
+
+/* A company whose Wikidata item has no SEC CIK (Marvell, Ferguson, United Therapeutics in October 2026) is
+ * found by its ticker on a US exchange (P414 with a P249 qualifier, current listings only), accepted only when
+ * exactly one listed item's label agrees with the SEC name: a recycled ticker naming another company is refused. */
+export function pickTickerItem(items, secName) {
+  const agreeing = (items || []).filter(it => it?.id && namesAgree(secName, it.label));
+  return agreeing.length === 1 ? agreeing[0].id : null;
 }
 
 /* ---------- 2. EntitySearch with a tie check ---------- */
@@ -394,7 +401,7 @@ function emptyRecord(cik) {
 
 /* {companyQid, matches:[{ownerCik, ownerName, key, qid, personName, wikidataUrl, roles, current,
  * photo:{src,large,source,credit,author,license,...}|null, rule, evidence}], leaders:[...]} */
-export async function wikidataPhotos({ cik, companyName, insiders = [], fetcher = externalFetch, sleep = realSleep, store = { getRecord, putRecord },
+export async function wikidataPhotos({ cik, companyName, ticker = null, insiders = [], fetcher = externalFetch, sleep = realSleep, store = { getRecord, putRecord },
   refresh = false, wikipediaSearch = true, linkedPeople = fetchLinkedPeople } = {}) {
   const id = String(Number(cik));
   if (!/^\d{1,10}$/.test(id) || id === "0") throw Object.assign(new Error("Invalid CIK"), { status: 400 });
@@ -422,18 +429,24 @@ export async function wikidataPhotos({ cik, companyName, insiders = [], fetcher 
   if (fresh) {
     const ok = await attempt("company", async () => { record.company = parseCompanyItems(await sparql(companyItemQuery(id), ctx)); });
     if (!ok) throw new Error("Wikidata unavailable: " + errors[0]);
+    if (!record.company && ticker && companyName) {
+      await attempt("company-by-ticker", async () => {
+        const qid = pickTickerItem(parseWikidataItems(await sparql(wikidataQueryByTicker(String(ticker).toUpperCase()), ctx)), companyName);
+        if (qid) record.company = parseCompanyItems(await sparql(companyItemQuery(id, [qid]), ctx));
+        if (record.company) record.company.via = "ticker";
+      });
+    }
     if (record.company) {
+      const anchor = record.company.via === "ticker" ? [record.company.qid] : null;
       const ok2 = await attempt("linked", async () => {
-        record.linked = await linkedPeople(id, fetcher === externalFetch ? undefined : fetcher);
+        record.linked = anchor ? await linkedPeople(id, fetcher === externalFetch ? undefined : fetcher, { qids: anchor }) : await linkedPeople(id, fetcher === externalFetch ? undefined : fetcher);
       });
       if (!ok2) throw new Error("Wikidata unavailable: " + errors.at(-1));
     }
   }
-  const company = record.company;
-  if (!company) {
-    if (fresh) await store.putRecord("wikidata-people", id, record, TTL).catch(() => {});
-    return { companyQid: null, matches: [], leaders: [], complete: true, stats: { insiders: people.length, linkedPeople: 0, matched: 0, withPhoto: 0, byRule: {} } };
-  }
+  // No item for the company at all: steps 1 and 2 need one, but step 3 still runs, accepting only an article
+  // whose lead names the company in full (the SEC name), for a human with a strict name match.
+  const company = record.company || { qid: null, qids: [], label: null, title: null, subsidiaries: [] };
   const names = companyNames(company.label, companyName, company.title, ...(company.subsidiaries || []));
 
   // 1. linked people.
@@ -443,7 +456,7 @@ export async function wikidataPhotos({ cik, companyName, insiders = [], fetcher 
 
   // 2. EntitySearch for unmatched officers and directors.
   let budget = MAX_SEARCHES, deferred = 0;
-  for (const u of unmatched) {
+  for (const u of company.qids.length ? unmatched : []) {
     const k = searchKey(u.insider.name);
     if (!record.searches[k]) {
       const terms = searchNames(u.insider.name);
@@ -462,8 +475,11 @@ export async function wikidataPhotos({ cik, companyName, insiders = [], fetcher 
   unmatched = unmatched.filter(u => u.reason === "none" && !found.some(f => f.insider.key === u.insider.key));
 
   // 3. Wikipedia search, quoted name; the article must link to the company page or name it.
-  if (wikipediaSearch && company.title && unmatched.length) {
-    if (!record.titles) await attempt("titles", async () => { record.titles = await companyTitles(company.title, ctx); });
+  if (wikipediaSearch && (company.title || !company.qid) && unmatched.length) {
+    if (!record.titles) {
+      if (company.title) await attempt("titles", async () => { record.titles = await companyTitles(company.title, ctx); });
+      else record.titles = [];
+    }
     let wikiBudget = MAX_WIKI_SEARCHES;
     for (const u of record.titles ? unmatched : []) {
       const k = searchKey(u.insider.name);
@@ -473,8 +489,9 @@ export async function wikidataPhotos({ cik, companyName, insiders = [], fetcher 
         if (wikiBudget-- <= 0) { record.partial = true; deferred++; continue; }
         const ok = await attempt("wikipedia", async () => {
           const data = await wikiApi({ action: "query", generator: "search", gsrsearch: "\"" + safeSearch(term) + "\"", gsrlimit: "5", gsrnamespace: "0",
-            prop: "pageprops|pageimages|extracts|description|links", ppprop: "wikibase_item|disambiguation", piprop: "name", explaintext: "1", exintro: "1", exlimit: "max",
-            redirects: "1", pltitles: record.titles.join("|"), pllimit: "max" }, ctx);
+            // Without the company's article there is no link to look for: only a lead naming the company counts.
+            ...(record.titles.length ? { prop: "pageprops|pageimages|extracts|description|links", pltitles: record.titles.join("|"), pllimit: "max" } : { prop: "pageprops|pageimages|extracts|description" }),
+            ppprop: "wikibase_item|disambiguation", piprop: "name", explaintext: "1", exintro: "1", exlimit: "max", redirects: "1" }, ctx);
           record.wikiSearches[k] = { pages: parseWikipediaSearch(data, u.insider.name, names) };
         });
         if (!ok) { if (errors.at(-1).includes("rate limited")) break; continue; }

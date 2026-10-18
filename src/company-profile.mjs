@@ -67,14 +67,21 @@ export const PEOPLE_RELATIONS = {
   member: { property: "P463", label: "Member", leadership: false }
 };
 const ROLE_ORDER = ["Chief Executive Officer", "Chairperson", "Founder", "Director / manager", "Board member", "Corporate officer", "Position held", "Employee", "Member"];
-export function peopleQuery(cik) {
+/* Where a query starts: the company's Wikidata items by SEC CIK (P5531), or, for a company whose item carries
+ * no CIK, the items already identified another way (by ticker, with the name checked: wikidata-people.mjs). */
+export function itemAnchor(cik, qids = null) {
+  const items = (qids || []).filter(q => /^Q\d+$/.test(q));
+  if (items.length) return `VALUES ?item { ${items.map(q => "wd:" + q).join(" ")} }`;
   const plain = String(Number(cik)), padded = plain.padStart(10, "0");
+  return `VALUES ?cik { "${plain}" "${padded}" }
+  ?item wdt:P5531 ?cik .`;
+}
+export function peopleQuery(cik, qids = null) {
   const ended = "OPTIONAL { ?st pq:P582 ?end } OPTIONAL { ?st pq:P580 ?start }";
   const position = qualifier => `UNION { ?st pq:${qualifier} ?item . ?person p:P39 ?st . BIND("position" AS ?rel) BIND("P39/${qualifier}" AS ?via) OPTIONAL { ?st ps:P39 ?pos } ${ended} }`;
   return `SELECT ?item ?person ?personLabel ?personDescription ?rel ?via ?posLabel ?ended ?rank (MAX(?start) AS ?since) (SAMPLE(?img) AS ?image) (SAMPLE(?art) AS ?article) (GROUP_CONCAT(DISTINCT ?alias; separator="|") AS ?aliases) WHERE {
   hint:Query hint:optimizer "None" .
-  VALUES ?cik { "${plain}" "${padded}" }
-  ?item wdt:P5531 ?cik .
+  ${itemAnchor(cik, qids)}
   { VALUES (?p ?ps ?rel ?via) { (p:P169 ps:P169 "ceo" "P169") (p:P488 ps:P488 "chair" "P488") (p:P1037 ps:P1037 "director" "P1037") (p:P3320 ps:P3320 "board" "P3320") (p:P112 ps:P112 "founder" "P112") (p:P2828 ps:P2828 "officer" "P2828") }
     ?item ?p ?st . ?st ?ps ?person . ${ended} }
   UNION { ?st ps:P108 ?item . ?person p:P108 ?st . BIND("employer" AS ?rel) BIND("P108" AS ?via) ${ended} }
@@ -268,11 +275,12 @@ const sparqlPost = (fetcher, query, timeoutMs) => fetcher(SPARQL, {
 });
 /* Everyone Wikidata links to the company with this CIK (see peopleQuery), parsed. Shared by the
  * profile (leadership list) and the photo matcher, so one query serves both. */
-export function fetchLinkedPeople(cik, fetcher = externalFetch) {
+export function fetchLinkedPeople(cik, fetcher = externalFetch, { qids = null } = {}) {
   const id = String(Number(cik));
   if (!/^\d{1,10}$/.test(id) || id === "0") return Promise.reject(Object.assign(new Error("Invalid CIK"), { status: 400 }));
-  const work = async () => parseLinkedPeople(await sparqlPost(fetcher, peopleQuery(id), 20000));
-  return fetcher === externalFetch ? cache("people:" + id, TTL, work) : work();
+  const anchor = (qids || []).filter(q => /^Q\d+$/.test(q));
+  const work = async () => parseLinkedPeople(await sparqlPost(fetcher, peopleQuery(id, anchor), 20000));
+  return fetcher === externalFetch ? cache("people:" + id + (anchor.length ? ":" + anchor.join(",") : ""), TTL, work) : work();
 }
 
 export async function getCompanyProfile(cik, fetcher = externalFetch) {

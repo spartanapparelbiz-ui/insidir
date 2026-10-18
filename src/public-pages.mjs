@@ -94,7 +94,7 @@ export function siteOrigin(env = process.env) {
   try { const u = new URL(raw); if (u.protocol === "https:" || u.protocol === "http:") return u.origin; } catch { /* default */ }
   return "https://insidir.com";
 }
-const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider trades</a><a href="/stories.html">Stories</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
+const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Stories</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
 function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null, current = false }) {
   const nav = NAV.replace("%CUR%", current ? ' aria-current="page"' : "");
   const url = origin + canonical;
@@ -145,7 +145,7 @@ ${body}
 <footer class="v13-footer v13-footer--plain" aria-label="Site footer">
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider trades</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
@@ -300,7 +300,7 @@ export async function hubPage({ query, origin }) {
   const t = totals[0] || {};
   const companyList = companies.length ? `<ul class="pp-companies">${companies.filter(c => tickerOk(c.ticker)).map(c => `<li><a href="${esc(companyUrl(c.ticker))}"><b>${esc(c.ticker)}</b><span>${esc(displayName(c.issuer_name))}</span><em>${c.filings} filing${c.filings === 1 ? "" : "s"}${c.buys ? ` · ${c.buys} bought` : ""}${c.sells ? ` · ${c.sells} sold` : ""}</em></a></li>`).join("")}</ul>` : `<p class="pp-empty">No filings in the last 30 days are imported yet.</p>`;
   const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider trades", null]])}
+ ${crumbs([["Insidir", "/"], ["Insider filings", null]])}
  <p class="pp-label">SEC Form 4 · updated every 15 minutes</p>
  <h1 id="pp-title">Insider trading, <span>from the filings.</span></h1>
  <p class="pp-lede">What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing. These are legally required public reports, published by the SEC: not nonpublic information, and not a recommendation.</p>
@@ -358,7 +358,7 @@ export async function companyPage(ticker, { query, origin }) {
   const description = `${name} (${ticker}) insider trading: recent SEC Form 4 purchases and sales by its officers, directors and 10% owners` +
     (t.buys || t.sells ? `. Last ${DAY_WINDOW} days: ${t.buys} purchase${t.buys === 1 ? "" : "s"} (${money(t.buy_value)}) and ${t.sells} sale${t.sells === 1 ? "" : "s"} (${money(t.sell_value)}).` : ".");
   const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider trades", "/insider-trading"], [ticker, null]])}
+ ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], [ticker, null]])}
  <p class="pp-label">${esc(ticker)} · SEC Form 4</p>
  <h1 id="pp-title">${esc(name)} <span>insider trading.</span></h1>
  <p class="pp-lede">Purchases, sales and other Form 4 transactions reported by ${esc(name)}'s officers, directors and 10% owners. Latest filing ${esc(day(latest.published_at))}. Form 4s are public reports insiders must file with the SEC, not nonpublic information.</p>
@@ -409,7 +409,7 @@ export async function personPage(cik, { query, origin }) {
   const role = primary ? [roleText(primary), primary.ticker ? displayName(primary.issuer_name) || primary.ticker : displayName(primary.issuer_name)].filter(Boolean).join(", ") : "";
   const description = `${name}${role ? ` (${role})` : ""}: insider trades reported on SEC Form 4. ${all.purchases.count} purchase${all.purchases.count === 1 ? "" : "s"} (${money(all.purchases.value)}) and ${all.sales.count} sale${all.sales.count === 1 ? "" : "s"} (${money(all.sales.value)}) in Insidir's import.`;
   const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider trades", "/insider-trading"], [name, null]])}
+ ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], [name, null]])}
  <p class="pp-label">Reporting person · SEC CIK ${esc(String(cik).replace(/^0+/, ""))}</p>
  <h1 id="pp-title">${esc(name)} <span>insider trades.</span></h1>
  <p class="pp-lede">${role ? esc(role) + ". " : ""}Every Form 4 line below is a public SEC record${filed && filed !== name ? `, filed under the name ${esc(filed)}` : ""}. Last filing ${esc(day(all.last_published_at))}.</p>
@@ -442,11 +442,11 @@ ${storiesSection(storiesForPerson(cik), "Research on this person's filings", "A 
 
 function notFoundPage(origin, what) {
   const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider trades", "/insider-trading"], ["Not found", null]])}
+ ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], ["Not found", null]])}
  <p class="pp-label">404</p>
  <h1 id="pp-title">No Form 4s <span>imported yet.</span></h1>
  <p class="pp-lede">Insidir has no imported Form 4 lines for ${esc(what)}. That does not mean none exist: the import covers recent filings and grows every 15 minutes.</p>
- <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/insider-trading">Latest insider trades <span class="v13-arrow" aria-hidden="true">→</span></a></p>
+ <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/insider-trading">Latest insider filings <span class="v13-arrow" aria-hidden="true">→</span></a></p>
 </section>`;
   return shell({ origin, canonical: "/insider-trading", title: "Not found — Insidir", description: "No imported Form 4 lines.", body, noindex: true });
 }

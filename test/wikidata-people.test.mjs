@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { peopleQuery, parseLinkedPeople, parsePeople, namesMatch } from "../src/company-profile.mjs";
+import { peopleQuery, parseLinkedPeople, parsePeople, namesMatch, itemAnchor } from "../src/company-profile.mjs";
 import {
   matchInsidersToWikidata, searchNames, companyNames, mentionsCompany, acceptSearchCandidates, entitySearchQuery, parseEntitySearch,
-  parseWikipediaSearch, parseFileInfo, strictSamePerson, photoFromFile, parseCompanyItems, entitySearchPeople, wikidataPhotos, resetLanes
+  parseWikipediaSearch, parseFileInfo, strictSamePerson, photoFromFile, parseCompanyItems, entitySearchPeople, wikidataPhotos, resetLanes, pickTickerItem, companyItemQuery
 } from "../src/wikidata-people.mjs";
 
 const b = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, value]) => [k, { value: String(value) }]));
@@ -294,4 +294,53 @@ test("entitySearchPeople returns one tied match per name or nothing", async () =
   const out = await entitySearchPeople({ companyQid: "Q2283", companyName: "MICROSOFT CORP", names: ["Hood Amy", "RUSSELL DAVID ERIC"], fetcher, sleep: async () => {} });
   assert.equal(out[0].match.qid, "Q20");
   assert.equal(out[1].match, null);
+});
+
+test("a company item without an SEC CIK is found by ticker only when exactly one listed item agrees with the SEC name", () => {
+  assert.equal(pickTickerItem([{ id: "Q1347782", label: "Marvell Technology" }], "Marvell Technology, Inc."), "Q1347782");
+  assert.equal(pickTickerItem([{ id: "Q1", label: "Pandora Media" }], "Everpure, Inc."), null, "a recycled ticker naming another company is refused");
+  assert.equal(pickTickerItem([{ id: "Q1", label: "Ferguson plc" }, { id: "Q2", label: "Ferguson Enterprises" }], "Ferguson Enterprises Inc. /DE/"), null, "two agreeing items: no guess");
+  assert.equal(pickTickerItem([], "Anything"), null);
+  // Queries then start from that item instead of the CIK.
+  for (const q of [peopleQuery("1835632", ["Q1347782"]), companyItemQuery("1835632", ["Q1347782"])]) {
+    assert.match(q, /VALUES \?item \{ wd:Q1347782 \}/);
+    assert.doesNotMatch(q, /P5531/);
+  }
+  assert.match(itemAnchor("1835632"), /wdt:P5531/);
+  assert.match(itemAnchor("1835632", ["bad", "Q5"]), /wd:Q5 \}/);
+});
+
+test("with no company item at all, a Wikipedia article whose lead names the company still ties a filer to it", async () => {
+  resetLanes();
+  const asked = [];
+  const fetcher = async (url, options = {}) => {
+    asked.push(url);
+    if (url.startsWith("https://query.wikidata.org/")) {
+      const query = new URLSearchParams(options.body || "").get("query") || "";
+      if (/wdt:P31 wd:Q5/.test(query)) return { results: { bindings: [b({ p: W + "Q6777103", pLabel: "Martine Rothblatt", image: FP + "Martine-Rothblatt2-5773.jpg" })] } };
+      return { results: { bindings: [] } };
+    }
+    if (url.startsWith("https://en.wikipedia.org/w/api.php")) {
+      return { query: { pages: [
+        { index: 1, title: "Martine Rothblatt", pageprops: { wikibase_item: "Q6777103" }, extract: "Martine Aliana Rothblatt is an American lawyer, author, entrepreneur and the founder and chief executive of United Therapeutics.", description: "American entrepreneur" },
+        { index: 2, title: "Martine Rothblatt (disambiguation)", pageprops: { wikibase_item: "Q99", disambiguation: "" } }
+      ] } };
+    }
+    if (url.includes("commons.wikimedia.org") || url.includes("api.php")) return { query: { pages: [] } };
+    throw Object.assign(new Error("unexpected " + url), { upstreamStatus: 404 });
+  };
+  const r = await wikidataPhotos({ cik: "1082554", companyName: "UNITED THERAPEUTICS Corp", insiders: [{ name: "ROTHBLATT MARTINE A", cik: "1106578", role: "Chairperson and CEO" }],
+    fetcher, store: memoryStore(), sleep: async () => {} });
+  assert.equal(r.companyQid, null);
+  assert.deepEqual(r.matches.map(m => [m.ownerName, m.qid, m.rule]), [["ROTHBLATT MARTINE A", "Q6777103", "wikipedia-search"]]);
+  const search = asked.find(u => u.startsWith("https://en.wikipedia.org/w/api.php"));
+  assert.doesNotMatch(search, /pltitles|prop=[^&]*links/, "without the company's article no link test is asked for (it would match any link)");
+
+  // The same article without the company in its lead ties nobody.
+  resetLanes();
+  const unrelated = async (url, options) => url.startsWith("https://en.wikipedia.org/w/api.php")
+    ? { query: { pages: [{ index: 1, title: "Martine Rothblatt", pageprops: { wikibase_item: "Q6777103" }, extract: "An American lawyer and author.", description: "" }] } }
+    : fetcher(url, options);
+  const none = await wikidataPhotos({ cik: "1082554", companyName: "UNITED THERAPEUTICS Corp", insiders: [{ name: "ROTHBLATT MARTINE A", cik: "1106578", role: "CEO" }], fetcher: unrelated, store: memoryStore(), sleep: async () => {} });
+  assert.deepEqual(none.matches, []);
 });
