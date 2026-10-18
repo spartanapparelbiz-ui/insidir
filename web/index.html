@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-home.css?v=8">
 <link rel="stylesheet" href="assets/css/v14-home.css?v=1">
+<link rel="stylesheet" href="assets/css/v15-home.css?v=1">
+<link rel="preload" as="image" href="assets/img/product/overview.webp" type="image/webp">
 <script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/v9-motion.js?v=6"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
@@ -65,6 +67,40 @@
  <span class="hwf-sr">insidir</span>
 </section>
 
+<section class="lp-show" aria-label="Insidir as it looks today">
+ <div class="v9-width lp-show__inner">
+  <figure class="lp-window">
+   <div class="lp-window__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Overview</em></div>
+   <img class="lp-window__img" src="assets/img/product/overview.webp" width="2560" height="1600" decoding="async" fetchpriority="high"
+    alt="The Insidir overview: the latest Form 4 trades by the people you follow, the people you follow with their last 30 days, and a summary of the latest SEC import.">
+  </figure>
+  <aside class="lp-float lp-float--buy" aria-label="A real Form 4 purchase">
+   <p class="lp-float__label">Form 4 · filed Oct 16, 2026</p>
+   <p class="lp-float__who"><b>Robert C. Pohlad</b><span>Director · PepsiCo</span></p>
+   <p class="lp-float__line"><span class="lp-dir lp-dir--up"><i class="lp-tri" aria-hidden="true"></i>Bought · P</span><span>9,989 PEP at $128.28</span></p>
+   <p class="lp-float__value">$1,281,389</p>
+  </aside>
+  <aside class="lp-float lp-float--sell" aria-label="A real Form 4 sale">
+   <p class="lp-float__label">Form 4 · filed Oct 16, 2026</p>
+   <p class="lp-float__who"><b>Matthew Rabinowitz</b><span>Executive Chairman · Natera</span></p>
+   <p class="lp-float__line"><span class="lp-dir lp-dir--down"><i class="lp-tri" aria-hidden="true"></i>Sold · S</span><span>5,974 NTRA at $401.42</span></p>
+   <p class="lp-float__value">$2,398,094</p>
+  </aside>
+  <p class="lp-show__note">Screens and figures are from the live product and real SEC filings from October 2026, not mock-ups.</p>
+ </div>
+</section>
+
+<section class="lp-figures" aria-label="Insidir in numbers">
+ <div class="v9-width">
+  <dl class="lp-figures__row">
+   <div><dt>Filing deadline</dt><dd>2<small>business days</small></dd><p>The SEC's deadline for an insider to report a trade on Form 4.</p></div>
+   <div><dt>Import cycle</dt><dd>15<small>minutes</small></dd><p>How often Insidir reads new Form 4 filings from EDGAR.</p></div>
+   <div><dt>Named sources</dt><dd>8<small>four from the SEC</small></dd><p>Every figure links to, or names, the document it came from.</p></div>
+   <div><dt>Trial</dt><dd>$1<small>for 3 days</small></dd><p>The whole product, then $39 a month. Cancel online in one step.</p></div>
+  </dl>
+ </div>
+</section>
+
 <section class="lp-section lp-tour" aria-labelledby="lp-tour-heading">
  <div class="v9-width">
   <span class="lp-folio" data-hf-atom aria-hidden="true">01 / 07</span>
@@ -107,42 +143,49 @@
    <div class="v13-head__lead"><p class="v12-eyebrow">The platform</p><h2 id="lp-tools-heading">Six tools. <span>One subscription.</span></h2></div>
    <div class="v13-head__aside"><p>Each tool is built on what companies and their insiders file with the SEC, and every filing and financial figure links to the document it came from, so you can check it yourself.</p><a class="v12-secondary-link" data-hf-atom href="platform.html">See the whole platform<span class="v13-arrow" aria-hidden="true">→</span></a></div>
   </div>
-  <ul class="lp-tools__grid">
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#1-reports">
-    <span class="lp-tool__top"><span class="lp-tool__num">01</span></span>
+  <ul class="lp-bento">
+   <li class="lp-card lp-card--hero"><a href="platform.html#1-reports">
+    <span class="lp-card__head"><span class="lp-card__num">01</span><span class="lp-card__src">EDGAR · XBRL · Yahoo · Wikidata</span></span>
     <h3>Company reports</h3>
     <p>One report per company: delayed price chart, key facts, trailing-twelve-month financials from XBRL, filings, insider activity, people and <span class="hf-nw">8-K</span> announcements.</p>
-    <span class="lp-tool__src">From EDGAR, XBRL, Yahoo and Wikidata</span>
+    <span class="lp-card__shot"><img src="assets/img/product/company-report.webp" width="2400" height="1369" loading="lazy" decoding="async" alt="A company report: the delayed price chart, key facts and the company profile, with tabs for financials, filings, insider activity, people and news."></span>
    </a></li>
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#2-filings">
-    <span class="lp-tool__top"><span class="lp-tool__num">02</span></span>
-    <h3>SEC filings</h3>
-    <p>Search imported Form&nbsp;4 filings by company or ticker, open each one with its parsed transactions and follow the link to the original document on EDGAR.</p>
-    <span class="lp-tool__src">From EDGAR and Form&nbsp;4</span>
-   </a></li>
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#3-insiders">
-    <span class="lp-tool__top"><span class="lp-tool__num">03</span></span>
+   <li class="lp-card lp-card--tall"><a href="platform.html#3-insiders">
+    <span class="lp-card__head"><span class="lp-card__num">02</span><span class="lp-card__src">Form 4</span></span>
     <h3>Insider activity</h3>
-    <p>Open-market purchases and sales kept apart from awards, exercises and other events, with the trade date shown next to the date it was published.</p>
-    <span class="lp-tool__src">From Form&nbsp;4</span>
+    <p>Open-market purchases and sales kept apart from awards, exercises and gifts, each with its trade date beside the date it was filed.</p>
+    <span class="lp-card__shot"><img src="assets/img/product/insider-activity.webp" width="1500" height="1270" loading="lazy" decoding="async" alt="Reported transactions on a company report: each insider, their role, the transaction, trade and filing dates."></span>
    </a></li>
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#3-insiders">
-    <span class="lp-tool__top"><span class="lp-tool__num">04</span></span>
-    <h3>People</h3>
-    <p>Search the officers, directors and major owners who report to the SEC, see the companies they file for and follow the names in your research.</p>
-    <span class="lp-tool__src">From Form&nbsp;4</span>
+   <li class="lp-card"><a href="platform.html#3-insiders">
+    <span class="lp-card__head"><span class="lp-card__num">03</span><span class="lp-card__src">Form 4</span></span>
+    <h3>Personnel files</h3>
+    <p>Every officer, director and major owner has a file: roles, an exact record of what they bought and sold, and every filing.</p>
+    <span class="lp-card__shot"><img src="assets/img/product/personnel-file.webp" width="2400" height="1369" loading="lazy" decoding="async" alt="A personnel file: the reporting person's photo, roles, SEC filer number and record."></span>
    </a></li>
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#4-alerts">
-    <span class="lp-tool__top"><span class="lp-tool__num">05</span></span>
+   <li class="lp-card lp-card--text"><a href="platform.html#2-filings">
+    <span class="lp-card__head"><span class="lp-card__num">04</span><span class="lp-card__src">EDGAR · Form 4</span></span>
+    <h3>SEC filings</h3>
+    <p>Search imported Form&nbsp;4 filings by company or ticker, open each with its parsed transactions, and follow the link to the original on EDGAR.</p>
+    <ul class="lp-mini" aria-label="Recent Form 4 filings, October 16, 2026">
+     <li><span class="lp-code">4</span><b>RDDT</b><span>Wong Jennifer L.</span><em>Oct 16</em></li>
+     <li><span class="lp-code">4</span><b>PEP</b><span>Pohlad Robert C</span><em>Oct 16</em></li>
+     <li><span class="lp-code">4</span><b>FIS</b><span>Goldstein Jeffrey A</span><em>Oct 16</em></li>
+    </ul>
+   </a></li>
+   <li class="lp-card lp-card--text"><a href="platform.html#4-alerts">
+    <span class="lp-card__head"><span class="lp-card__num">05</span><span class="lp-card__src">Form 4</span></span>
     <h3>Watchlist &amp; alerts</h3>
-    <p>Save tickers to a private watchlist. Alerts list new Form&nbsp;4 activity at the companies you watch, inside the app.</p>
-    <span class="lp-tool__src">From Form&nbsp;4</span>
+    <p>Save tickers and follow people. New Form&nbsp;4 activity at the companies you watch appears in the app, marked New until you have seen it.</p>
+    <ul class="lp-mini" aria-label="Watchlist matches from Form 4 filings of October 16, 2026">
+     <li><b>NTRA</b><span class="lp-dir lp-dir--down"><i class="lp-tri" aria-hidden="true"></i>Sold</span><span>$2.40M</span><em class="lp-mini__new">New</em></li>
+     <li><b>PEP</b><span class="lp-dir lp-dir--up"><i class="lp-tri" aria-hidden="true"></i>Bought</span><span>$1.28M</span><em class="lp-mini__new">New</em></li>
+    </ul>
    </a></li>
-   <li><a class="lp-tool" data-hf-reveal href="platform.html#5-journal">
-    <span class="lp-tool__top"><span class="lp-tool__num">06</span></span>
-    <h3>Research journal</h3>
-    <p>Give each company a status, researching, watching or passed, and keep your notes beside the evidence. Private to your account.</p>
-    <span class="lp-tool__src">Private to your account</span>
+   <li class="lp-card lp-card--wide"><a href="platform.html#5-journal">
+    <span class="lp-card__head"><span class="lp-card__num">06</span><span class="lp-card__src">Private to your account</span></span>
+    <h3>Research desk &amp; journal</h3>
+    <p>Investigate a company from its filings, give it a status (researching, watching or passed) and keep your notes beside the evidence.</p>
+    <span class="lp-card__shot"><img src="assets/img/product/research-desk.webp" width="2400" height="1369" loading="lazy" decoding="async" alt="The research desk: a ticker search, source-backed company records and a private review."></span>
    </a></li>
   </ul>
   <p class="lp-note" data-hf-reveal>Also included: a dashboard with the latest filings and trades, company search across the SEC's ticker map, and a manual portfolio that needs no brokerage login.</p>

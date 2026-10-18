@@ -1,3 +1,10 @@
+## Insidir V23: the product, shown (October 2026)
+
+- **Real screens, not descriptions.** Retina screenshots of the live product on real SEC filings (`web/assets/img/product/`, WebP, 10–110 KB each): the overview, a company report, insider activity, a personnel file, the research desk.
+- **Landing page.** After the hero, a showcase: the overview in a window, with two real Form 4 lines (a PepsiCo director's purchase, Natera's executive chairman's sale, both filed October 16, 2026) floating over its edges; a figures band (the 2-business-day filing deadline, the 15-minute import, 8 named sources, the $1 trial); the six tools as a bento of real screens and small real-data lists instead of six identical boxes; the four rules as cards; a larger price and display scale.
+- **Platform page** shows each tool's real screen in a window; every public and legal page gets the larger display scale, receding second lines and a calmer reading measure (`web/assets/css/v15-site.css`).
+- Same identity and rules: paper and ink, green and red for direction only, JetBrains Mono, square corners, no glow, hovers change colour only. The new stylesheets live in the `insidir-v13` cascade layer so they refine the V13 files in source order. Palette, contrast and retina-sharpness audit clean.
+
 ## Insidir V22: research-only safeguards, recorded subscription consent, one-step cancellation (October 2026)
 
 - **Research-only by construction.** `src/capabilities.mjs` refuses personalized-advice and order-placement routes on the server, before the paywall and any handler, for every user. A regulated mode needs a reviewed code change *and* a complete authorization record in `docs/authorizations/`; an environment flag alone does nothing. Emergency stops: `INSIDIR_TRADING_HALT=1`, `INSIDIR_BROKERAGE_HALT=1`. `GET /v1/capabilities` states what the deployment does.
