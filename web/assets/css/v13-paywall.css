@@ -174,3 +174,13 @@ body.v13 #main .bl-help a:hover{color:var(--hf-ink)!important;text-decoration-co
   body.v13 .pw-header__nav :is(a,button){transition:none!important}
 }
 }
+
+/* Automatic renewal terms and the consent box beside them (checkout stays disabled until it is ticked). */
+body.v13 .pw-consent{margin:0 0 16px!important;padding:14px 16px!important;border:1px solid var(--hf-line)!important;background:var(--hf-bg)!important}
+body.v13 .pw-consent[hidden]{display:none!important}
+body.v13 .pw-consent__label{margin:0 0 8px!important;font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13 .pw-consent__terms{margin:0 0 12px!important;font:400 12.5px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13 .pw-consent__agree{display:flex!important;gap:10px!important;align-items:flex-start!important;font:500 12.5px/1.5 var(--hf-mono)!important;color:var(--hf-ink)!important;cursor:pointer!important}
+body.v13 .pw-consent__agree input{flex:none!important;width:18px!important;height:18px!important;margin:1px 0 0!important;accent-color:var(--hf-ink)!important}
+body.v13 .pw-consent__agree input:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:2px!important}
+body.v13 .pw-action:disabled{opacity:.45!important;cursor:not-allowed!important}

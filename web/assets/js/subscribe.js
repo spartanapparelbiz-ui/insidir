@@ -60,9 +60,39 @@
     paused: ["Subscription paused. Access returns when you resume it.", "Resume subscription"]
   };
 
+  /* The offer and its automatic-renewal terms come from the engine (GET /v1/billing/status), worded exactly as they
+     are recorded when the customer agrees; checkout stays disabled until the box beside them is ticked. */
+  let offer = null;
+  const agree = $("[data-pw-agree]");
+  const money = cents => "$" + (cents / 100).toFixed(cents % 100 ? 2 : 0);
+  function renderOffer(o) {
+    offer = o && (o.kind === "trial" || o.kind === "full") ? o : null;
+    agree.checked = false;
+    syncAgree();
+    if (!offer) { $("[data-pw-terms]").textContent = "The subscription terms could not be loaded. Reload the page to continue."; return; }
+    $("[data-pw-terms]").textContent = offer.disclosure;
+    const trial = offer.kind === "trial";
+    $("[data-pw-price]").innerHTML = trial ? "<strong>" + money(offer.todayCents) + "</strong><span>today, then " + money(offer.recurringCents) + " / month</span>"
+      : "<strong>" + money(offer.recurringCents) + "</strong><span>/ month</span>";
+    $("[data-pw-term-1]").textContent = trial ? money(offer.todayCents) + " today for a " + offer.trialDays + "-day trial, once per account" : money(offer.recurringCents) + " today for your first month";
+    $("[data-pw-term-2]").textContent = "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
+    $("#pw-subscribe").textContent = trial ? "Start " + offer.trialDays + "-day trial · " + money(offer.todayCents) : "Subscribe · " + money(offer.recurringCents) + "/month";
+    delete $("#pw-subscribe").dataset.idleLabel;
+  }
+  function syncAgree() {
+    const ok = !!offer && agree.checked;
+    for (const id of ["#pw-subscribe", "#pw-resubscribe"]) { const b = $(id); if (b && b.getAttribute("aria-busy") !== "true") b.disabled = !ok; }
+  }
+  agree.addEventListener("change", syncAgree);
+  async function loadOffer() {
+    try { const r = await call("/v1/billing/status"); renderOffer(r.ok && r.data ? r.data.offer : null); } catch (_) { renderOffer(null); }
+  }
   function show(state, copyKey) {
     body.dataset.pwState = state;
     all("[data-pw-when]").forEach(el => { el.hidden = el.dataset.pwWhen !== state; });
+    const consent = state === "ready" || state === "lapsed";
+    $("[data-pw-consent]").hidden = !consent;
+    if (consent) loadOffer();
     const copy = COPY[copyKey || state];
     if (copy) { title.textContent = copy[0]; lead.textContent = copy[1]; }
   }
@@ -77,12 +107,12 @@
     if (who && email) { who.textContent = email; who.hidden = false; }
   }
 
-  async function call(path, method = "GET") {
+  async function call(path, method = "GET", payload = {}) {
     const res = await fetch(path, {
       method,
       credentials: "same-origin",
       headers: method === "GET" ? { Accept: "application/json" } : { Accept: "application/json", "Content-Type": "application/json" },
-      body: method === "GET" ? undefined : "{}"
+      body: method === "GET" ? undefined : JSON.stringify(payload)
     });
     let data = null;
     try { data = await res.json(); } catch (_) { data = null; }
@@ -169,7 +199,9 @@
     say("");
     busy(button, true);
     let res;
-    try { res = await call(route, "POST"); } catch (_) { res = null; }
+    const payload = portal ? {} : offer && agree.checked ? { consent: true, offer: offer.kind, disclosureVersion: offer.disclosureVersion } : null;
+    if (!payload) { busy(button, false); syncAgree(); return say("Tick the box to agree to the automatic renewal terms first."); }
+    try { res = await call(route, "POST", payload); } catch (_) { res = null; }
     const url = res && res.ok && typeof res.data.url === "string" ? res.data.url : "";
     if (/^https:\/\/[^/\\\s]+\//.test(url)) {
       if (!portal) {
@@ -179,7 +211,9 @@
       return;
     }
     busy(button, false);
+    syncAgree();
     if (!res) return say("We couldn't reach Insidir. Check your connection and try again.");
+    if (res.status === 400) return say(serverText(res) || "Tick the box to agree to the automatic renewal terms first.");
     switch (res.status) {
       case 401: show("signedout"); return say("Your session has ended. Log in again to continue.");
       // The engine refuses a second subscription and says why (already active, unpaid invoice, payment pending, paused…).

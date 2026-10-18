@@ -242,7 +242,7 @@ body.v13 #main .alerts-panel{margin:0!important;padding:0!important;background:t
 body.v13 #main .alerts-dateline+.alert-filters-scroll[hidden]+.alerts-panel{border-top:1px solid var(--hf-line-2)!important}
 body.v13 #main .live-status{padding:24px 0!important;max-width:76ch!important}
 body.v13 #main .alerts-foot{margin:40px 0 0!important;padding:16px 0 0!important;border-top:1px solid var(--hf-line)!important;max-width:none!important}
-/* Alert rows (assets/js/alerts.js): hairline rows, mono badges, green for purchases, red for sales; live dots in ink, no halo. */
+/* Alert rows (watchlist matches, assets/js/live-research.js): hairline rows, mono badges, green for purchases, red for sales; live dots in ink, no halo. */
 body.v13 #main .alerts-table{table-layout:auto!important;font:400 12.5px/1.5 var(--hf-sans)!important;border-collapse:collapse!important;border-spacing:0!important;background:transparent!important;color:var(--hf-ink)!important}
 body.v13 #main .alerts-table th{height:auto!important;padding:12px 12px 12px 0!important;border:0!important;border-bottom:1px solid var(--hf-line)!important;background:transparent!important;white-space:nowrap!important;font-family:var(--hf-mono)!important;font-size:10.5px!important;font-weight:500!important;line-height:16px!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
 body.v13 #main .alerts-table th.c-co-head{border-left:0!important;padding-left:0!important}

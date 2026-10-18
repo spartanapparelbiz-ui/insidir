@@ -7,9 +7,9 @@
 <link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
 <link rel="stylesheet" href="assets/css/v13-paywall.css?v=8">
 <script defer src="assets/js/app.js?v=18"></script>
-<script defer src="assets/js/billing.js?v=4"></script>
+<script defer src="assets/js/billing.js?v=5"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-</head><body class="app-body v2-app v3-app v6-app v13 pw-billing"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active=""></header>
+<style>body.v13 .bl-cancel{margin:16px 0 0;padding:16px 18px;border:1px solid var(--hf-line-strong);background:var(--hf-surface)}body.v13 .bl-cancel[hidden]{display:none}body.v13 .bl-cancel h3{margin:0 0 6px}body.v13 .bl-cancel p{margin:0 0 12px;color:var(--hf-soft)}</style></head><body class="app-body v2-app v3-app v6-app v13 pw-billing"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active=""></header>
 <main class="app-main v3-billing" id="main">
 <header class="v3-billing__head desk-masthead" id="Content">
 <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
@@ -43,11 +43,17 @@
 <button type="button" id="manage" class="btn btn--dark" data-busy-label="Opening billing portal…" hidden>Manage billing</button>
 <a class="btn btn--dark" href="subscribe.html" data-bl-subscribe hidden>Subscribe · $39/month</a>
 <a class="btn btn--light" href="dashboard.html" data-bl-dashboard hidden>Open dashboard</a>
+<button type="button" class="btn btn--light" data-bl-cancel data-busy-label="Cancelling…" hidden>Cancel subscription</button>
+</div>
+<div class="bl-cancel" data-bl-cancel-confirm role="alertdialog" aria-labelledby="bl-cancel-h" aria-describedby="bl-cancel-p" hidden>
+<h3 id="bl-cancel-h">Cancel your subscription?</h3>
+<p id="bl-cancel-p" data-bl-cancel-text>You won't be charged again. Access continues until the end of the current period.</p>
+<div class="bl-actions"><button type="button" class="btn btn--dark" data-bl-cancel-yes>Yes, cancel</button><button type="button" class="btn btn--light" data-bl-cancel-no>Keep subscription</button></div>
 </div>
 </section>
 
 <section class="bl-help" aria-label="Billing help" data-hf-reveal-group>
-<div><p class="v3-eyebrow">01 / Change or cancel</p><h3>In Stripe's billing portal</h3><p>Manage billing opens Stripe's secure portal, where you can update your card, download invoices or cancel your subscription.</p></div>
+<div><p class="v3-eyebrow">01 / Change or cancel</p><h3>Right here, or in Stripe's portal</h3><p>Cancel subscription stops renewal in one step; access continues to the end of the period you paid for, and a trial ends without the $39 charge. Manage billing opens Stripe's secure portal to update your card or download invoices. See the <a href="subscription-policy.html">Subscription policy</a>.</p></div>
 <div><p class="v3-eyebrow">02 / Deleting your account</p><h3>Cancels billing first</h3><p>Deleting your account from <a href="account.html">Account</a> cancels the subscription with Stripe before anything is removed, so no further payments are taken.</p></div>
 <div><p class="v3-eyebrow">03 / Questions</p><h3>Talk to a person</h3><p>A charge you don't recognise or a billing question? Email <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>. Subscriptions are covered by the <a href="terms.html">Terms</a>.</p></div>
 </section>
@@ -57,7 +63,7 @@
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer></body></html>

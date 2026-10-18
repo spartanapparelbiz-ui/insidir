@@ -88,6 +88,39 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
   return (parts.v1 || []).some(v => /^[a-f0-9]{64}$/.test(v) && timingSafeEqual(expected, Buffer.from(v)));
 }
 
+/* ---------- the offer a customer is agreeing to ----------
+ * One function decides what a checkout will charge (the trial or the full price) and words the automatic-renewal
+ * terms the customer must accept, so the subscribe page, the consent record and Stripe all say the same thing.
+ * DISCLOSURE_VERSION changes whenever the wording does. */
+export const DISCLOSURE_VERSION = "2026-10-18";
+export const PLAN_CENTS = 3900;
+const usd = cents => "$" + (cents / 100).toFixed(2);
+const longDate = d => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+export function currentOffer({ trialUsed = false, trial = trialSettings(), now = Date.now() } = {}) {
+  const eligible = trial.enabled && !trialUsed;
+  const kind = eligible ? "trial" : "full";
+  const todayCents = eligible ? trial.feeCents : PLAN_CENTS;
+  const trialDays = eligible ? trial.days : 0;
+  const firstRenewal = new Date(now + (eligible ? trial.days : 30) * 86400_000);
+  const disclosure = eligible
+    ? `You agree to pay ${usd(todayCents)} today for a ${trialDays}-day trial of Insidir Pro. Unless you cancel before your trial ends (on or about ${longDate(firstRenewal)}), your subscription renews automatically and your payment method is charged ${usd(PLAN_CENTS)} per month, starting when the trial ends and then every month, until you cancel. You can cancel any time online from Billing in your account; cancelling stops future charges.`
+    : `You agree to pay ${usd(PLAN_CENTS)} today for one month of Insidir Pro. Your subscription renews automatically and your payment method is charged ${usd(PLAN_CENTS)} every month (next on or about ${longDate(firstRenewal)}) until you cancel. You can cancel any time online from Billing in your account; cancelling stops future charges and access continues to the end of the period you paid for.`;
+  return { kind, todayCents, recurringCents: PLAN_CENTS, trialDays, firstRenewalAt: firstRenewal.toISOString(), disclosure, disclosureVersion: DISCLOSURE_VERSION };
+}
+// Without a stored trial or any stored subscription, the account looks eligible; checkout re-checks with Stripe.
+export const trialUsedFromRow = row => !!(row?.trial_started_at || row?.stripe_subscription_id || (row?.subscription_status && row.subscription_status !== "inactive"));
+
+async function readJson(req, limit = 4096) {
+  if (!/^application\/json(?:\s*;|$)/i.test(String(req.headers?.["content-type"] || ""))) throw failure(415, "Expected application/json");
+  const raw = await readBody(req, limit);
+  if (!raw.length) return {};
+  try { return JSON.parse(raw.toString("utf8")); } catch { throw failure(400, "Invalid JSON"); }
+}
+async function logBillingEvent(query, { userId = null, customer = null, kind, detail = {} }) {
+  try { await query("INSERT INTO billing_events(user_id,stripe_customer_id,kind,detail) VALUES($1,$2,$3,$4)", [userId, customer, kind, JSON.stringify(detail)]); }
+  catch (e) { console.error(JSON.stringify({ event: "billing.event_log_failed", kind, error: String(e?.message || e) })); }
+}
+
 /* The Checkout fields that start the paid trial: the one-time fee on the first invoice, the trial days
  * on the subscription, a card collected up front so the plan can renew, and the terms in Stripe's own
  * words beside the pay button. Without a card at the trial's end the subscription is cancelled. */
@@ -152,11 +185,12 @@ export async function storeSubscriptions(customerId, subscriptions, { query = db
     await query("UPDATE users SET subscription_status='inactive' WHERE stripe_customer_id=$1 AND subscription_status IS NOT NULL AND subscription_status<>'inactive'", [customerId]);
     return null;
   }
-  const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId) };
+  const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId),
+    cancel_at_period_end: best.cancel_at_period_end === true || (Number(best.cancel_at) > 0 && !ENDED_STATUSES.includes(statusOf(best))) };
   // trial_started_at is set once, the first time a subscription is seen trialing; it never resets.
   await query(`UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3,
-    trial_started_at=CASE WHEN $2='trialing' THEN COALESCE(trial_started_at,now()) ELSE trial_started_at END WHERE stripe_customer_id=$4`,
-    [fields.stripe_subscription_id, fields.subscription_status, fields.current_period_end, customerId]);
+    trial_started_at=CASE WHEN $2='trialing' THEN COALESCE(trial_started_at,now()) ELSE trial_started_at END,cancel_at_period_end=$5 WHERE stripe_customer_id=$4`,
+    [fields.stripe_subscription_id, fields.subscription_status, fields.current_period_end, customerId, fields.cancel_at_period_end]);
   return fields;
 }
 
@@ -320,7 +354,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
 
   if (p === "/v1/billing/status" && method === "GET") {
     const u = await signedIn();
-    let row = (await query("SELECT email,stripe_customer_id,stripe_subscription_id,subscription_status,current_period_end FROM users WHERE id=$1", [u.id])).rows[0];
+    let row = (await query("SELECT email,stripe_customer_id,stripe_subscription_id,subscription_status,current_period_end,trial_started_at,cancel_at_period_end FROM users WHERE id=$1", [u.id])).rows[0];
     if (!row) throw failure(401, "Sign in required");
     // ?refresh=1 (e.g. right after checkout) re-reads Stripe in case the webhook has not arrived yet.
     const url = new URL(req.url || "/", "http://localhost");
@@ -330,7 +364,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     }
     const access = accessSummary(row, env);
     return json(res, 200, { billingEnabled: access.billingEnabled, plan: access.plan, active: access.active, complimentary: access.complimentary,
-      subscriptionStatus: access.status, currentPeriodEnd: access.currentPeriodEnd, hasCustomer: !!row.stripe_customer_id });
+      subscriptionStatus: access.status, currentPeriodEnd: access.currentPeriodEnd, hasCustomer: !!row.stripe_customer_id,
+      cancelAtPeriodEnd: row.cancel_at_period_end === true, offer: currentOffer({ trialUsed: trialUsedFromRow(row), trial: trialSettings(env) }) });
   }
 
   if (p === "/v1/billing/checkout" && method === "POST") {
@@ -338,6 +373,11 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (!sameOrigin()) throw failure(403, "Untrusted origin");
     const u = await signedIn();
     if (limited("checkout:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many checkout attempts. Try again shortly.");
+    // Express, informed consent to the automatic-renewal terms comes first, separately from the Terms of Service:
+    // the customer ticks a box beside the exact terms and the page sends what it showed.
+    const consent = await readJson(req);
+    if (consent?.consent !== true || !["trial", "full"].includes(consent?.offer) || consent?.disclosureVersion !== DISCLOSURE_VERSION)
+      throw failure(400, "Please review the subscription terms and tick the box to agree to them before checkout.");
     return exclusiveBilling(u.id, async () => {
       const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
@@ -375,13 +415,54 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       }
       const site = publicOrigin(settings);
       const trial = trialSettings(env);
+      // The customer agreed to one offer; if Stripe's history changes it (a returning customer pays the full price),
+      // nothing is charged until they see and accept the terms that apply.
+      const offer = currentOffer({ trialUsed: !trial.enabled || trialUsed, trial });
+      if (offer.kind !== consent.offer) throw failure(409, offer.kind === "full"
+        ? "This account has already used its trial, so checkout would charge $39.00 today. Review the updated terms and agree again to continue."
+        : "This account is eligible for the $1 trial. Review the updated terms and agree again to continue.", { offer });
+      const consentRow = await query(`INSERT INTO billing_consents(user_id,email,offer,amount_today_cents,recurring_cents,trial_days,disclosure_version,disclosure_text,ip,user_agent)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+        [u.id, row.email || u.email, offer.kind, offer.todayCents, offer.recurringCents, offer.trialDays, offer.disclosureVersion, offer.disclosure,
+          String(req.headers?.["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",").at(-1).trim().slice(0, 64) || null,
+          String(req.headers?.["user-agent"] || "").slice(0, 300) || null]);
+      const consentId = String(consentRow.rows?.[0]?.id ?? "");
       const params = { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
         client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
-        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id };
-      if (trial.enabled && !trialUsed) Object.assign(params, trialCheckoutParams(trial));
+        "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id,
+        "metadata[insidir_consent_id]": consentId, "subscription_data[metadata][insidir_consent_id]": consentId,
+        "custom_text[submit][message]": "By subscribing you authorize Insidir to charge $39.00 per month until you cancel. Cancel any time from Billing." };
+      if (offer.kind === "trial") Object.assign(params, trialCheckoutParams(trial));
       const session = await stripe.post("/checkout/sessions", params);
+      if (consentId && typeof session.id === "string") await query("UPDATE billing_consents SET stripe_checkout_id=$1 WHERE id=$2", [session.id, consentId]).catch(() => {});
       if (typeof session.url !== "string" || !session.url.startsWith("https://")) throw failure(503, "Stripe did not return a checkout page. Try again shortly.");
       return json(res, 200, { url: session.url });
+    });
+  }
+
+  /* POST /v1/billing/cancel: cancel online, in one step, in the same place the customer signed up. The subscription
+   * stops renewing at the end of the period already paid for (for a trial: at the trial's end, so the $39 is never
+   * charged). Works even when Stripe's portal is not configured for cancellation. */
+  if (p === "/v1/billing/cancel" && method === "POST") {
+    if (!settings.secretKey) throw failure(503, "Billing is not connected. Email hello@aethric.llc and we will cancel for you.");
+    if (!sameOrigin()) throw failure(403, "Untrusted origin");
+    const u = await signedIn();
+    if (limited("cancel:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many attempts. Try again shortly.");
+    return exclusiveBilling(u.id, async () => {
+      const row = (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0];
+      if (!row?.stripe_customer_id) throw failure(404, "No subscription found for this account");
+      const subscriptions = await listCustomerSubscriptions(row.stripe_customer_id, { stripe });
+      const live = subscriptions.filter(sub => canStillBill(sub) && sub.status !== "incomplete");
+      if (!live.length) { await storeSubscriptions(row.stripe_customer_id, subscriptions, { query, priceId: settings.priceId }); return json(res, 200, { canceled: false, alreadyCanceled: true }); }
+      for (const sub of live) {
+        if (!SUBSCRIPTION_ID.test(String(sub.id || ""))) throw failure(503, "Stripe returned an unexpected subscription");
+        if (sub.cancel_at_period_end === true) continue;
+        await stripe.post("/subscriptions/" + sub.id, { cancel_at_period_end: "true", "metadata[insidir_canceled_via]": "insidir_billing" });
+      }
+      const stored = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
+      await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "cancel_requested", detail: { subscriptions: live.map(s => s.id), accessUntil: stored?.current_period_end ?? null } });
+      return json(res, 200, { canceled: true, accessUntil: stored?.current_period_end ? new Date(stored.current_period_end).toISOString() : null,
+        message: "Your subscription is cancelled. You will not be charged again, and access continues until the end of the current period." });
     });
   }
 
@@ -402,7 +483,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     let event;
     try { event = JSON.parse(raw); } catch { throw failure(400, "Invalid webhook payload"); }
     const supported = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
-      "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid"];
+      "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid",
+      "charge.refunded", "charge.dispute.created", "invoice.payment_failed", "customer.subscription.trial_will_end"];
     if (!supported.includes(event?.type) || typeof event.id !== "string") return json(res, 200, { received: true });
     const fresh = await query("INSERT INTO stripe_events(event_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING event_id", [event.id]);
     if (!fresh.rows.length) return json(res, 200, { received: true, duplicate: true });
@@ -414,7 +496,22 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
         await cancelOrphanCheckout(obj, ref, { stripe, query });
       }
-      if (event.type.startsWith("customer.subscription.")) await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      if (event.type.startsWith("customer.subscription.") && event.type !== "customer.subscription.trial_will_end") await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      // Refunds and chargebacks: recorded, and any creator commission for that customer goes back to manual review.
+      if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
+        let customer = CUSTOMER_ID.test(String(obj.customer || "")) ? obj.customer : null;
+        if (!customer && /^(ch|py)_[A-Za-z0-9]+$/.test(String(obj.charge || ""))) customer = (await stripe.get("/charges/" + obj.charge).catch(() => null))?.customer || null;
+        if (CUSTOMER_ID.test(String(customer || ""))) {
+          await query("UPDATE creator_commissions SET status='needs_review' WHERE stripe_customer_id=$1 AND status IN ('pending','approved')", [customer]);
+          await logBillingEvent(query, { customer, kind: event.type === "charge.refunded" ? "refund" : "dispute", detail: { id: obj.id, amount: obj.amount ?? obj.amount_refunded ?? null, reason: obj.reason ?? null } });
+        }
+      }
+      if (event.type === "invoice.payment_failed" && CUSTOMER_ID.test(String(obj.customer || ""))) {
+        await logBillingEvent(query, { customer: obj.customer, kind: "payment_failed", detail: { invoice: obj.id, attempt: obj.attempt_count ?? null } });
+        await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      }
+      if (event.type === "customer.subscription.trial_will_end" && CUSTOMER_ID.test(String(obj.customer || "")))
+        await logBillingEvent(query, { customer: obj.customer, kind: "trial_will_end", detail: { subscription: obj.id, trialEnd: obj.trial_end ?? null } });
       // The first $39 payment: the plan's first invoice, or after a paid trial its first renewal (the trial
       // invoice carries only the trial fee and is never eligible). One commission per referred account.
       if (event.type === "invoice.paid" && (obj.billing_reason === "subscription_create" || obj.billing_reason === "subscription_cycle")) {
