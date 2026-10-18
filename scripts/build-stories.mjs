@@ -58,13 +58,13 @@ ${noindex ? '<meta name="robots" content="noindex,nofollow">\n' : ""}<link rel="
 <link rel="stylesheet" href="/assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="/assets/css/v13-static.css?v=9">
 <link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
-<link rel="stylesheet" href="/assets/css/v19-stories.css?v=1">
+<link rel="stylesheet" href="/assets/css/v26-stories.css?v=1">
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/v13-halftone.js?v=8"></script><script defer src="/assets/js/v13-motion.js?v=5"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
 <script defer src="/assets/js/public-share.js?v=1"></script>
 ${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
-<body class="v3-static v6-static v13 v14-public v19-stories">
+<body class="v3-static v6-static v13 v14-public v26-stories">
 <a class="skip-link" href="#Content">Skip to content</a>
 <header class="v6-nav v9-nav">
  <div class="mk-shell v6-nav__inner">
