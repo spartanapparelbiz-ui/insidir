@@ -11,8 +11,8 @@
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-paywall.css?v=8">
-<script defer src="assets/js/subscribe.js?v=3"></script>
+<link rel="stylesheet" href="assets/css/v13-paywall.css?v=9">
+<script defer src="assets/js/subscribe.js?v=4"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 </head>
 <body class="pw-page pw-page--subscribe v13" data-pw-state="loading">
@@ -42,21 +42,28 @@
   <aside class="pw-plan" aria-labelledby="pw-plan-name">
   <div class="pw-plan__field" data-halftone-field data-dot-gap="10" data-field-coverage="0.09" data-radius="70" aria-hidden="true"></div>
    <p class="pw-plan__label" id="pw-plan-name">Insidir Pro</p>
-   <p class="pw-plan__price"><strong>$39</strong><span>/ month</span></p>
+   <p class="pw-plan__price" data-pw-price><strong>$1</strong><span>today, then $39 / month</span></p>
    <ul class="pw-plan__terms">
-    <li>$1 today for 3 days, then $39 a month in US dollars</li>
-    <li>Cancel any time from Billing</li>
+    <li data-pw-term-1>$1 today for a 3-day trial, once per account</li>
+    <li data-pw-term-2>Then $39.00 a month in US dollars, renewing automatically until you cancel</li>
+    <li>Cancel online any time from Billing, in one step</li>
     <li>Card details handled by Stripe</li>
    </ul>
    <div class="pw-plan__state" role="status" aria-live="polite">
     <div data-pw-when="loading"><p class="pw-status">Checking your account…</p></div>
+    <div class="pw-consent" data-pw-consent hidden>
+     <p class="pw-consent__label">Automatic renewal terms</p>
+     <p class="pw-consent__terms" data-pw-terms>Loading the terms for your account…</p>
+     <label class="pw-consent__agree"><input type="checkbox" id="pw-agree" data-pw-agree> <span>I have read and agree to these automatic renewal terms, and I authorize the recurring charge.</span></label>
+     <p class="pw-fine">See the <a href="subscription-policy.html">Subscription and cancellation policy</a> and the <a href="terms.html">Terms</a>.</p>
+    </div>
     <div data-pw-when="ready" hidden>
-     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-subscribe" data-busy-label="Opening secure checkout…">Start 3-day trial · $1</button>
+     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-subscribe" data-busy-label="Opening secure checkout…" disabled>Start 3-day trial · $1</button>
      <p class="pw-fine">You'll continue to Stripe's secure checkout. When payment completes you'll come back to Billing, and the dashboard opens as soon as the subscription is active.</p>
     </div>
     <div data-pw-when="lapsed" hidden>
      <p class="pw-status" data-pw-lapsed></p>
-     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-resubscribe" data-busy-label="Opening secure checkout…">Subscribe again · $39/month</button>
+     <button type="button" class="btn btn--dark btn--block pw-action" id="pw-resubscribe" data-busy-label="Opening secure checkout…" disabled>Subscribe again · $39/month</button>
     </div>
     <div data-pw-when="fix" hidden>
      <p class="pw-status" data-pw-fix>Your subscription needs attention in Stripe's billing portal. There's no need to subscribe again.</p>
@@ -103,7 +110,7 @@
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>

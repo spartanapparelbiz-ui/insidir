@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alerts — insidir.</title>
-  <meta name="description" content="Follow source-linked SEC activity related to companies you watch. Additional alert sources and delivery methods are planned.">
+  <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, in the app.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -45,21 +45,9 @@
     <div class="alerts-dateline" aria-label="Where alerts come from">
       <div><span>Source</span><strong>Imported SEC Form 4 filings</strong></div>
       <div><span>Matching</span><strong>Tickers saved to your watchlist</strong></div>
-      <div><span>Delivery</span><strong>In the app · email and push planned</strong></div>
+      <div><span>Delivery</span><strong>In the app only</strong></div>
     </div>
 
-    <div class="alert-filters-scroll">
-      <div class="alert-filters" role="tablist" aria-label="Filter alerts by type">
-        <button class="alert-filter" type="button" role="tab" id="tab-all" data-filter="all" aria-selected="true" aria-controls="alerts-panel" style="--g:63">All</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-insider" data-filter="insider" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:126">Insider Trades</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-filings" data-filter="filings" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:108">SEC Filings</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-political" data-filter="political" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:136">Political Trades</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-price" data-filter="price" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:118">Price Moves</button>
-        <button class="alert-filter" type="button" role="tab" id="tab-watchlist" data-filter="watchlist" aria-selected="false" aria-controls="alerts-panel" tabindex="-1" style="--g:102">Watchlist</button>
-        <span class="alert-filters__fill" aria-hidden="true" style="--g:43"></span>
-        <span class="alert-filters__thumb" aria-hidden="true"></span>
-      </div>
-    </div>
 
     <section class="panel alerts-panel" id="alerts-panel" role="tabpanel" aria-labelledby="tab-all">
       <table class="data-table alerts-table">
@@ -68,7 +56,7 @@
         <thead>
           <tr><th scope="col">Time</th><th scope="col">Type</th><th scope="col">Description</th><th scope="col" class="c-co-head">Company</th></tr>
         </thead>
-        <!-- alert rows are rendered by assets/js/alerts.js (one <tbody> per alert) -->
+        <!-- watchlist matches from GET /v1/me/alerts are rendered by assets/js/live-research.js -->
       </table>
       <div class="alerts-empty" hidden>
         <span class="alerts-empty__icon" aria-hidden="true">
@@ -89,7 +77,7 @@
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>
@@ -117,16 +105,6 @@
           <label class="pref__text" for="pref-filings"><span class="pref__label">New SEC filings for my watchlist</span>
             <span class="pref__hint">8-K, 10-Q, 10-K and other EDGAR filings</span></label>
           <button class="switch" type="button" role="switch" id="pref-filings" data-pref="filingsWatchlist" aria-checked="true"><span class="switch__knob"></span></button>
-        </li>
-        <li class="pref" style="--i:2">
-          <label class="pref__text" for="pref-political"><span class="pref__label">Political trades &amp; disclosures</span>
-            <span class="pref__hint">Periodic transaction reports from members of Congress</span></label>
-          <button class="switch" type="button" role="switch" id="pref-political" data-pref="political" aria-checked="true"><span class="switch__knob"></span></button>
-        </li>
-        <li class="pref" style="--i:3">
-          <label class="pref__text" for="pref-price"><span class="pref__label">Price moves greater than 5%</span>
-            <span class="pref__hint">Large moves on the companies you follow</span></label>
-          <button class="switch" type="button" role="switch" id="pref-price" data-pref="priceMoves" aria-checked="false"><span class="switch__knob"></span></button>
         </li>
         <li class="pref is-disabled" style="--i:4">
           <label class="pref__text" for="pref-digest"><span class="pref__label">Weekly digest email <span class="soon">Coming soon</span></span>

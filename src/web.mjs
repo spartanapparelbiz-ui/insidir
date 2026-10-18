@@ -103,10 +103,18 @@ async function sendVideo(req, res, file, ext, method, status) {
   return true;
 }
 
+/* Retired prototype scripts that hold illustrative sample data (invented trades, prices and a politician's
+ * transactions). No page loads them, and they are never served, so nothing invented can reach a browser.
+ * Kept in the repository only until they are deleted; see docs/COMPLIANCE.md. */
+export const RETIRED_ASSETS = Object.freeze(["/assets/js/alerts.js", "/assets/js/dashboard.js", "/assets/js/company.js"]);
+
 export async function serveStatic(req, res) {
   const method = req.method || "GET";
   if (method !== "GET" && method !== "HEAD") return false;
   const url = new URL(req.url || "/", "http://localhost");
+  let requested = url.pathname;
+  try { requested = decodeURIComponent(requested); } catch { /* resolvePath refuses it below */ }
+  if (RETIRED_ASSETS.includes(normalize(requested).replace(/\\/g, "/").toLowerCase())) return false;
   let file = await findFile(url.pathname);
   let status = 200;
   if (!file) {

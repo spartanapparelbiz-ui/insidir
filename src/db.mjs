@@ -42,6 +42,8 @@ export async function migrate() {
     await client.query(creatorsSchema);
     const trialSchema=await readFile(new URL("../sql/010_paid_trial.sql",import.meta.url),"utf8");
     await client.query(trialSchema);
+    const complianceSchema=await readFile(new URL("../sql/011_compliance_records.sql",import.meta.url),"utf8");
+    await client.query(complianceSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

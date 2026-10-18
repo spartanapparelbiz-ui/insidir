@@ -275,6 +275,10 @@ function fakeQuery(rows = {}, log = []) {
   fn.statements = [];
   return fn;
 }
+// A checkout request as the subscribe page sends it: JSON consent to the offer it showed.
+const consentBody = (offer = "trial") => Buffer.from(JSON.stringify({ consent: true, offer, disclosureVersion: "2026-10-18" }));
+const checkoutReq = (origin = "https://insidir.example", offer = "trial") =>
+  Object.assign([consentBody(offer)], { method: "POST", url: "/v1/billing/checkout", headers: { origin, "content-type": "application/json" } });
 const stripeError = (stripeStatus, message = "Stripe failed") => Object.assign(new Error(message), { status: 400, stripeStatus });
 
 test("account deletion cancels a live Stripe subscription before deleting anything", async () => {
@@ -551,8 +555,8 @@ test("subscription sync: only the configured price counts, the best standing win
   const stripe = fakeStripe({ "GET /subscriptions": { data: [sub("sub_old", "canceled", 1), sub("sub_new", "active", 2)] } });
   const query = fakeQuery();
   const stored = await syncCustomer("cus_ABC", { stripe, query, priceId: "price_pro" });
-  assert.deepEqual(stored, { stripe_subscription_id: "sub_new", subscription_status: "active", current_period_end: new Date(1793404800 * 1000) });
-  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3,\s*trial_started_at=CASE WHEN \$2='trialing' THEN COALESCE\(trial_started_at,now\(\)\) ELSE trial_started_at END WHERE stripe_customer_id=\$4/);
+  assert.deepEqual(stored, { stripe_subscription_id: "sub_new", subscription_status: "active", current_period_end: new Date(1793404800 * 1000), cancel_at_period_end: false });
+  assert.match(query.statements[0].sql, /^UPDATE users SET stripe_subscription_id=\$1,subscription_status=\$2,current_period_end=\$3,\s*trial_started_at=CASE WHEN \$2='trialing' THEN COALESCE\(trial_started_at,now\(\)\) ELSE trial_started_at END,cancel_at_period_end=\$5 WHERE stripe_customer_id=\$4/);
   assert.deepEqual(query.statements[0].params.slice(0, 2), ["sub_new", "active"]);
   const other = fakeQuery();
   assert.equal(await syncCustomer("cus_ABC", { stripe: fakeStripe({ GET: { data: [sub("sub_x", "active", 1, "price_other")] } }), query: other, priceId: "price_pro" }), null);
@@ -570,7 +574,13 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
 
   await billingRoutes(req("GET", "/v1/billing/status"), {}, "/v1/billing/status", json,
     deps(USERS.none, { "SELECT email": { rows: [{ ...USERS.none, stripe_customer_id: null }] } }));
-  assert.deepEqual(replies.at(-1), { status: 200, body: { billingEnabled: true, plan: "none", active: false, complimentary: false, subscriptionStatus: null, currentPeriodEnd: null, hasCustomer: false } });
+  const { offer, ...status } = replies.at(-1).body;
+  assert.deepEqual({ ...replies.at(-1), body: status }, { status: 200, body: { billingEnabled: true, plan: "none", active: false, complimentary: false, subscriptionStatus: null, currentPeriodEnd: null, hasCustomer: false, cancelAtPeriodEnd: false } });
+  // The offer the subscribe page shows: the trial for a new account, with the renewal terms written out.
+  assert.equal(offer.kind, "trial");
+  assert.deepEqual([offer.todayCents, offer.recurringCents, offer.trialDays, offer.disclosureVersion], [100, 3900, 3, "2026-10-18"]);
+  assert.match(offer.disclosure, /\$1\.00 today for a 3-day trial.*renews automatically.*\$39\.00 per month.*until you cancel.*cancel any time online/);
+  assert.ok(Date.parse(offer.firstRenewalAt) > Date.now());
   await billingRoutes(req("GET", "/v1/billing/status"), {}, "/v1/billing/status", json,
     deps(USERS.paid, { "SELECT email": { rows: [{ ...USERS.paid, stripe_customer_id: "cus_1" }] } }));
   assert.equal(replies.at(-1).body.plan, "pro");
@@ -588,8 +598,18 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   // Checkout: a new customer, the configured price, success → billing, cancel → subscribe.
   const posted = [];
   const stripe = fakeStripe({ "POST /customers": { id: "cus_new" }, "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/x" }; } });
-  await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
-    deps(USERS.none, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe));
+  // Without ticking the consent box (or with stale terms) nothing reaches Stripe.
+  for (const body of [{}, { consent: false, offer: "trial", disclosureVersion: "2026-10-18" }, { consent: true, offer: "trial", disclosureVersion: "2020-01-01" }, { consent: true, offer: "cheap", disclosureVersion: "2026-10-18" }])
+    await assert.rejects(billingRoutes(Object.assign([Buffer.from(JSON.stringify(body))], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example", "content-type": "application/json" } }), {}, "/v1/billing/checkout", json,
+      deps({ ...USERS.none, id: randomUUID() }, {}, stripe)), e => e.status === 400 && /tick the box/.test(e.message), JSON.stringify(body));
+  assert.equal(posted.length, 0);
+  const consentQuery = fakeQuery({ "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] }, "INSERT INTO billing_consents": { rows: [{ id: 41 }] } });
+  await billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => USERS.none, stripe, query: consentQuery });
+  // The consent is recorded (offer, amounts, the exact terms shown) before Stripe is asked, and tied to the checkout.
+  const recorded = consentQuery.statements.find(x => x.sql.startsWith("INSERT INTO billing_consents"));
+  assert.deepEqual(recorded.params.slice(0, 7), [USERS.none.id, USERS.none.email, "trial", 100, 3900, 3, "2026-10-18"]);
+  assert.match(recorded.params[7], /renews automatically/);
+  assert.equal(posted[0]["metadata[insidir_consent_id]"], "41");
   assert.deepEqual(replies.at(-1), { status: 200, body: { url: "https://checkout.stripe.com/c/pay/x" } });
   assert.equal(posted[0].success_url, "https://insidir.example/billing.html?checkout=success");
   assert.equal(posted[0].cancel_url, "https://insidir.example/subscribe.html?checkout=cancel");
@@ -606,33 +626,37 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.match(posted[0]["custom_text[submit][message]"], /\$1 today for 3 days.*\$39 a month/);
 
   // One trial per account: an account that has trialled before checks out at the full price.
-  await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
+  // ...and agreeing to the trial is not agreeing to $39 today: a changed offer is refused until the customer agrees again.
+  await assert.rejects(billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json,
+    { ...deps({ ...USERS.none, id: randomUUID() }, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null, trial_started_at: "2026-09-01T00:00:00Z" }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe) }),
+    e => e.status === 409 && /already used its trial/.test(e.message) && e.offer?.kind === "full");
+  assert.equal(posted.length, 1);
+  await billingRoutes(checkoutReq(undefined, "full"), {}, "/v1/billing/checkout", json,
     { ...deps({ ...USERS.none, id: randomUUID() }, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null, trial_started_at: "2026-09-01T00:00:00Z" }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe) });
   assert.ok(!("subscription_data[trial_period_days]" in posted[1]), "no second trial");
   assert.ok(!("line_items[1][price_data][unit_amount]" in posted[1]), "no trial fee without a trial");
   // INSIDIR_TRIAL=0 switches the trial off.
-  await billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
+  await billingRoutes(checkoutReq(undefined, "full"), {}, "/v1/billing/checkout", json,
     { ...deps({ ...USERS.none, id: randomUUID() }, { "SELECT email": { rows: [{ email: USERS.none.email, stripe_customer_id: null, subscription_status: null }] }, "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_new" }] } }, stripe), env: { ...BILLING, INSIDIR_TRIAL: "0" } });
   assert.ok(!("subscription_data[trial_period_days]" in posted[2]), "trial switched off");
 
   // No Stripe customer yet: the stored status is the only record, and it still guards.
   for (const status of ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"])
-    await assert.rejects(billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
-      deps(USERS.paid, { "SELECT email": { rows: [{ email: "x@y.co", stripe_customer_id: null, subscription_status: status }] } })), e => e.status === 409, status);
-  await assert.rejects(billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://evil.example" }), {}, "/v1/billing/checkout", json, deps(USERS.none, {})), e => e.status === 403);
-  await assert.rejects(billingRoutes(req("POST", "/v1/billing/checkout", { origin: "https://insidir.example" }), {}, "/v1/billing/checkout", json,
+    await assert.rejects(billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json,
+      deps({ ...USERS.paid, id: randomUUID() }, { "SELECT email": { rows: [{ email: "x@y.co", stripe_customer_id: null, subscription_status: status }] } })), e => e.status === 409, status);
+  await assert.rejects(billingRoutes(checkoutReq("https://evil.example"), {}, "/v1/billing/checkout", json, deps(USERS.none, {})), e => e.status === 403);
+  await assert.rejects(billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json,
     { ...deps(USERS.none, {}), env: {} }), e => e.status === 503 && /not available/.test(e.message));
 });
 
 test("checkout asks Stripe first: a paid checkout whose webhook is pending blocks a second one", async () => {
   const replies = [];
   const json = (res, status, body) => { replies.push({ status, body }); return true; };
-  const post = () => Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example" } });
   // A fresh account per attempt keeps clear of the per-account checkout rate limit.
-  const checkout = (stripe, row, user = { ...USERS.none, id: randomUUID() }) => {
+  const checkout = (stripe, row, user = { ...USERS.none, id: randomUUID() }, offer = "trial") => {
     const query = fakeQuery({ "SELECT email": { rows: [{ email: user.email, stripe_customer_id: "cus_1", subscription_status: null, ...row }] },
       "UPDATE users SET stripe_customer_id": { rows: [{ stripe_customer_id: "cus_NEW" }] } });
-    return { query, run: billingRoutes(post(), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => user, stripe, query }) };
+    return { query, run: billingRoutes(checkoutReq(undefined, offer), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => user, stripe, query }) };
   };
 
   // Stored status is still null, but Stripe already has a subscription that can bill: 409, no second checkout.
@@ -649,7 +673,7 @@ test("checkout asks Stripe first: a paid checkout whose webhook is pending block
   // Only ended subscriptions (or another product's price): checkout goes ahead, and an earlier open page is expired first.
   const world = stripeWorld({ subs: [plan("sub_old", "cus_1", "canceled"), plan("sub_misc", "cus_1", "active", "price_other")],
     sessions: [{ id: "cs_test_earlier", customer: "cus_1", status: "open" }] });
-  const { run } = checkout(world, { subscription_status: "active" });
+  const { run } = checkout(world, { subscription_status: "active" }, undefined, "full");
   await run;
   assert.deepEqual(world.calls, ["GET /subscriptions", "GET /checkout/sessions", "POST /checkout/sessions/cs_test_earlier/expire", "POST /checkout/sessions"]);
   assert.equal(world.sessions[0].status, "expired");
@@ -998,14 +1022,14 @@ test("paid trial: a returning customer whose Stripe history has the plan checks 
     "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/y" }; } });
   const user = { ...USERS.none, id: randomUUID() };
   const query = fakeQuery({ "SELECT email": { rows: [{ email: user.email, stripe_customer_id: "cus_1", subscription_status: "canceled", trial_started_at: null }] } });
-  await billingRoutes(Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example" } }), {}, "/v1/billing/checkout", json,
+  await billingRoutes(checkoutReq(undefined, "full"), {}, "/v1/billing/checkout", json,
     { env: BILLING, currentUser: async () => user, stripe, query });
   assert.equal(posted.length, 1);
   assert.ok(!("subscription_data[trial_period_days]" in posted[0]), "no second trial for a past subscriber");
   // A customer whose only subscriptions are for another price still gets the trial.
   const other = fakeStripe({ "GET /subscriptions": { data: [{ ...ended, items: { data: [{ price: { id: "price_other" } }] } }] }, "GET /checkout/sessions": { data: [] },
     "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/z" }; } });
-  await billingRoutes(Object.assign([], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example" } }), {}, "/v1/billing/checkout", json,
+  await billingRoutes(checkoutReq(undefined, "trial"), {}, "/v1/billing/checkout", json,
     { env: BILLING, currentUser: async () => ({ ...user, id: randomUUID() }), stripe: other, query });
   assert.equal(posted[1]["subscription_data[trial_period_days]"], "3");
 });

@@ -13,6 +13,7 @@ import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute,clientAddress } from "./company-routes.mjs";
 import { handlePublicPage } from "./public-pages.mjs";
+import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabilities.mjs";
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
@@ -258,6 +259,11 @@ async function route(req,res,ctx){
     return json(res,204,{});
   }
   if(!["GET","HEAD","POST","DELETE"].includes(m))throw failure(405,"Method not allowed");
+  // Regulated capabilities (src/capabilities.mjs): personalized advice and order placement are refused here, before the
+  // paywall and before any handler, in RESEARCH_ONLY mode; the emergency stops close brokerage access.
+  const regulated=capabilityDecision({pathname:p,method:m,env:ctx.env});
+  if(!regulated.allow)return json(res,regulated.status,regulated.body);
+  if(p==="/v1/capabilities" && m==="GET")return json(res,200,capabilitySummary({env:ctx.env}));
   // Hard paywall: decided before any page, company report or product API is served.
   let decision;
   try{decision=await gate({req,url:u,loadUser:ctx.currentUser,env:ctx.env})}
@@ -567,6 +573,7 @@ async function route(req,res,ctx){
 export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
+  if(!options.quiet)for(const notice of capabilityNotices(ctx.env))console.warn("Capabilities:",notice);
   return createServer((req,res)=>{route(req,res,ctx).catch(error=>{
     // A database that can't be reached is an outage, not a bug: answer 503 with a retry hint instead of 500.
     const dbDown=!error?.status&&(/^(ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENOTFOUND|57P0[1-3]|08\d\d\d|53300)$/.test(String(error?.code||""))||/Connection terminated|timeout exceeded when trying to connect/i.test(String(error?.message||"")));

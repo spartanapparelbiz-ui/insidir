@@ -143,7 +143,7 @@ ${body}
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider trades</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>
@@ -289,7 +289,7 @@ export async function hubPage({ query, origin }) {
  ${crumbs([["Insidir", "/"], ["Insider trades", null]])}
  <p class="pp-label">SEC Form 4 · updated every 15 minutes</p>
  <h1 id="pp-title">Insider trading, <span>from the filings.</span></h1>
- <p class="pp-lede">What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing.</p>
+ <p class="pp-lede">What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing. These are legally required public reports, published by the SEC: not nonpublic information, and not a recommendation.</p>
  <dl class="pp-stats">
   ${stat("Filings, 30 days", esc((t.filings ?? 0).toLocaleString("en-US")), "Form 4 and 4/A, as imported")}
   ${stat("Companies", esc((t.companies ?? 0).toLocaleString("en-US")), "with a filing in the window")}
@@ -346,7 +346,7 @@ export async function companyPage(ticker, { query, origin }) {
  ${crumbs([["Insidir", "/"], ["Insider trades", "/insider-trading"], [ticker, null]])}
  <p class="pp-label">${esc(ticker)} · SEC Form 4</p>
  <h1 id="pp-title">${esc(name)} <span>insider trading.</span></h1>
- <p class="pp-lede">Purchases, sales and other Form 4 transactions reported by ${esc(name)}'s officers, directors and 10% owners. Latest filing ${esc(day(latest.published_at))}.</p>
+ <p class="pp-lede">Purchases, sales and other Form 4 transactions reported by ${esc(name)}'s officers, directors and 10% owners. Latest filing ${esc(day(latest.published_at))}. Form 4s are public reports insiders must file with the SEC, not nonpublic information.</p>
  <dl class="pp-stats">
   ${stat(`Purchases, ${DAY_WINDOW} days`, `${esc(money(t.buy_value))} <small>${t.buys ?? 0} line${t.buys === 1 ? "" : "s"}</small>`, "open-market and other reported purchases", num(t.buy_value) ? "buy" : "")}
   ${stat(`Sales, ${DAY_WINDOW} days`, `${esc(money(t.sell_value))} <small>${t.sells ?? 0} line${t.sells === 1 ? "" : "s"}</small>`, "reported sales", num(t.sell_value) ? "sell" : "")}
@@ -457,7 +457,7 @@ Disallow: /account
 Sitemap: ${origin}/sitemap.xml
 `;
 }
-const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html"];
+const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html"];
 const xmlEsc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 const urlset = urls => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `<url><loc>${xmlEsc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export async function sitemapIndex({ query, origin }) {
