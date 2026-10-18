@@ -72,6 +72,8 @@ The page's content holds still. Nothing a reader aims at, reads or compares move
 | Company | `company.html?ticker=AAPL` | V12 dark market terminal for any SEC-listed ticker: delayed price chart (1D–5Y), key facts, and Overview, Financials, SEC filings, Insider activity, People and News tabs (`v12-company.css`, `v12-company.js`). Without a ticker it shows a company picker |
 | Alerts | `alerts.html` | Type filters, expandable rows, "Manage alerts" drawer |
 | Filing viewer | `filing.html` | Form 10-K outline with scrollspy, plus a document pane |
+| Research stories | `stories.html`, `stories/<slug>.html` | Free, public explanations of historical SEC filings with copy-link, share sheet and "copy for a video description". Generated from `src/stories.mjs` by `scripts/build-stories.mjs` (do not edit the HTML by hand); `v26-stories.css` on the public pages' shell |
+| Creator kit / Creators | `creator-kit.html`, `creators.html` | Six short-video concepts, real product clips, the tracked-link builder and disclosure lines; the creator program. Generated like the stories. The `partner-*.html` briefs are private (`noindex`) |
 | Terms / Privacy | `terms.html`, `privacy.html` | Numbered sections with a sticky table of contents |
 | Not found | `404.html` | Served for unknown extensionless paths |
 
