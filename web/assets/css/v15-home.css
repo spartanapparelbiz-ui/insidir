@@ -134,5 +134,7 @@ body.v13.v12-home.v9-site.v6-site .lp-plan__amount{font-size:clamp(72px,8vw,120p
   body.v13.v12-home.v9-site.v6-site .lp-card>a{transition:none!important}
 }
 
+/* V19: the research-stories link beside "Free to read" carries no market colour */
+body.v13.v12-home.v9-site.v6-site .lp-public__label.lp-public__label--plain{background:var(--hf-raise)!important;color:var(--hf-soft)!important}
 }
 /* end @layer insidir-v13 */

@@ -34,5 +34,7 @@ jobs:
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/v13-palette-audit.mjs
       - name: Verify every page moves like the wordmark (dot fields, scroll trail, still atoms on product pages, hero scatter, parting atoms, click ring, scroll reveal, reduced motion, no orange pixels)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/motion-check.mjs
+      - name: Verify the research stories and creator kit in Chrome (layout, palette, copy link, referral codes, link builder)
+        run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/stories-check.mjs
       - name: Verify every person and company has a real logo or headshot tile in Chrome
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/media-check.mjs
