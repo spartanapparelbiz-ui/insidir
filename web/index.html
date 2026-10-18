@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="assets/css/v13-home.css?v=8">
 <link rel="stylesheet" href="assets/css/v14-home.css?v=1">
 <link rel="stylesheet" href="assets/css/v15-home.css?v=1">
+<link rel="stylesheet" href="assets/css/v16-rich.css?v=1">
 <link rel="preload" as="image" href="assets/img/product/overview.webp" type="image/webp">
 <script defer src="assets/js/v6-site.js?v=2"></script>
 <script defer src="assets/js/v9-motion.js?v=6"></script>
@@ -54,14 +55,21 @@
    <a class="v9-btn v12-outline-button" href="/insider-trading">Today's insider trades<span class="v13-arrow" aria-hidden="true">→</span></a>
   </div>
   <p class="v9-hero__caption lp-terms"><span><b>$1</b> for 3 days</span><span>Then $39 a month</span><span>Cancel any time</span><span class="lp-keep">Not a broker, not investment advice</span></p>
-  <dl class="lp-facts" aria-label="Insidir at a glance">
-   <div><dt>Sources</dt><dd>Eight named, four from the SEC</dd></div>
-   <div><dt>Filings</dt><dd>Annual, quarterly, <span class="hf-nw">8-K</span>, proxy, Form&nbsp;4</dd></div>
-   <div><dt>Financials</dt><dd>XBRL facts, as the company filed them</dd></div>
-   <div><dt>Insiders</dt><dd>Form&nbsp;4, parsed from the filed XML</dd></div>
-   <div><dt>Prices</dt><dd>Delayed, never live</dd></div>
-   <div><dt>Advice</dt><dd>None. Not a broker</dd></div>
-  </dl>
+  <aside class="lp-ledger" aria-labelledby="lp-ledger-title">
+   <div class="lp-ledger__head"><p class="lp-ledger__title" id="lp-ledger-title">Form&nbsp;4 &middot; filed Oct 16, 2026</p><p class="lp-ledger__sub">Five open-market purchases and sales</p></div>
+   <table class="lp-ledger__table">
+    <caption class="hwf-sr">Five open-market Form 4 lines filed with the SEC on October 16, 2026</caption>
+    <thead><tr><th scope="col">Ticker</th><th scope="col">Reporting person</th><th scope="col">Trade</th><th scope="col">Value</th></tr></thead>
+    <tbody>
+     <tr><td class="lp-ledger__tk">PAM</td><td class="lp-ledger__who">Marcos Marcelo Mindlin<small>435,000 at $80.78 &middot; traded Oct 15</small></td><td><span class="lp-dir lp-dir--up"><i class="lp-tri" aria-hidden="true"></i>Bought &middot; P</span></td><td class="lp-ledger__val">$35.1M<span class="lp-ledger__bar lp-ledger__bar--up" style="--w:100" aria-hidden="true"></span></td></tr>
+     <tr><td class="lp-ledger__tk">CRBG</td><td class="lp-ledger__who">Nippon Life Insurance Co.<small>602,103 at $34.03 &middot; traded Oct 14</small></td><td><span class="lp-dir lp-dir--up"><i class="lp-tri" aria-hidden="true"></i>Bought &middot; P</span></td><td class="lp-ledger__val">$20.5M<span class="lp-ledger__bar lp-ledger__bar--up" style="--w:58.3" aria-hidden="true"></span></td></tr>
+     <tr><td class="lp-ledger__tk">PEP</td><td class="lp-ledger__who">Robert C. Pohlad<small>84,507 at $128.28 &middot; traded Oct 14</small></td><td><span class="lp-dir lp-dir--up"><i class="lp-tri" aria-hidden="true"></i>Bought &middot; P</span></td><td class="lp-ledger__val">$10.8M<span class="lp-ledger__bar lp-ledger__bar--up" style="--w:30.9" aria-hidden="true"></span></td></tr>
+     <tr><td class="lp-ledger__tk">MRNA</td><td class="lp-ledger__who">Stephen Hoge<small>39,145 at $220.72 &middot; traded Oct 15</small></td><td><span class="lp-dir lp-dir--down"><i class="lp-tri" aria-hidden="true"></i>Sold &middot; S</span></td><td class="lp-ledger__val">$8.6M<span class="lp-ledger__bar lp-ledger__bar--down" style="--w:24.6" aria-hidden="true"></span></td></tr>
+     <tr><td class="lp-ledger__tk">RDDT</td><td class="lp-ledger__who">Jennifer L. Wong<small>26,105 at $148.86 &middot; traded Oct 14</small></td><td><span class="lp-dir lp-dir--down"><i class="lp-tri" aria-hidden="true"></i>Sold &middot; S</span></td><td class="lp-ledger__val">$3.9M<span class="lp-ledger__bar lp-ledger__bar--down" style="--w:11.1" aria-hidden="true"></span></td></tr>
+    </tbody>
+   </table>
+   <p class="lp-ledger__note">From the filings on SEC EDGAR. Value is shares &times; reported price. Delayed, never live.</p>
+  </aside>
  </div>
  <noscript><svg class="lp-word" viewBox="0 0 1000 156" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false"><text x="-17.6" y="200">insidir</text></svg></noscript>
  <span class="hwf-sr">insidir</span>
@@ -71,6 +79,7 @@
  <div class="v9-width lp-show__inner">
   <figure class="lp-window">
    <div class="lp-window__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Overview</em></div>
+   <ol class="lp-pins" aria-hidden="true"><li style="--x:4.3%;--y:14.6%">1</li><li style="--x:68%;--y:16.6%">2</li><li style="--x:4.3%;--y:52.4%">3</li><li style="--x:68%;--y:64.8%">4</li></ol>
    <img class="lp-window__img" src="assets/img/product/overview.webp" width="2560" height="1600" decoding="async" fetchpriority="high"
     alt="The Insidir overview: the latest Form 4 trades by the people you follow, the people you follow with their last 30 days, and a summary of the latest SEC import.">
   </figure>
@@ -86,6 +95,12 @@
    <p class="lp-float__line"><span class="lp-dir lp-dir--down"><i class="lp-tri" aria-hidden="true"></i>Sold · S</span><span>5,974 NTRA at $401.42</span></p>
    <p class="lp-float__value">$2,398,094</p>
   </aside>
+  <ol class="lp-legend" aria-label="What the overview shows">
+   <li><b>1</b><span>What is new since your last visit, from the people you follow</span></li>
+   <li><b>2</b><span>A summary of the latest SEC import, with its date</span></li>
+   <li><b>3</b><span>Their latest Form&nbsp;4 trades, newest filing first</span></li>
+   <li><b>4</b><span>The people you follow, with their last 30 days</span></li>
+  </ol>
   <p class="lp-show__note">Screens and figures are from the live product and real SEC filings from October 2026, not mock-ups.</p>
  </div>
 </section>
@@ -93,10 +108,10 @@
 <section class="lp-figures" aria-label="Insidir in numbers">
  <div class="v9-width">
   <dl class="lp-figures__row">
-   <div><dt>Filing deadline</dt><dd>2<small>business days</small></dd><p>The SEC's deadline for an insider to report a trade on Form 4.</p></div>
-   <div><dt>Import cycle</dt><dd>15<small>minutes</small></dd><p>How often Insidir reads new Form 4 filings from EDGAR.</p></div>
-   <div><dt>Named sources</dt><dd>8<small>four from the SEC</small></dd><p>Every figure links to, or names, the document it came from.</p></div>
-   <div><dt>Trial</dt><dd>$1<small>for 3 days</small></dd><p>The whole product, then $39 a month. Cancel online in one step.</p></div>
+   <div><dt>Filing deadline</dt><dd>2<small>business days</small></dd><dd class="lp-meter lp-meter--5" aria-hidden="true"><span class="lp-meter__dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span><span class="lp-meter__key">2 of 5 business days</span></dd><p>The SEC's deadline for an insider to report a trade on Form 4.</p></div>
+   <div><dt>Import cycle</dt><dd>15<small>minutes</small></dd><dd class="lp-meter lp-meter--12" aria-hidden="true"><span class="lp-meter__dots"><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i></span><span class="lp-meter__key">4 reads an hour</span></dd><p>How often Insidir reads new Form 4 filings from EDGAR.</p></div>
+   <div><dt>Named sources</dt><dd>8<small>four from the SEC</small></dd><dd class="lp-meter lp-meter--8" aria-hidden="true"><span class="lp-meter__dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i><i class="half"></i><i class="half"></i><i class="half"></i></span><span class="lp-meter__key">4 SEC &middot; 4 other</span></dd><p>Every figure links to, or names, the document it came from.</p></div>
+   <div><dt>Trial</dt><dd>$1<small>for 3 days</small></dd><dd class="lp-meter lp-meter--30" aria-hidden="true"><span class="lp-meter__dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="lp-meter__key">days 1&ndash;3 of 30</span></dd><p>The whole product, then $39 a month. Cancel online in one step.</p></div>
   </dl>
  </div>
 </section>
@@ -295,6 +310,11 @@
     <p class="v12-eyebrow">3-day trial, then monthly</p>
     <p class="lp-plan__amount">$1<span>/ 3 days</span></p>
     <p class="lp-plan__terms">Then $39 a month, billed in US dollars through Stripe. Cancel before the trial ends and you are not charged again.</p>
+    <dl class="lp-receipt" aria-label="What you pay">
+     <div><dt>At checkout</dt><dd>$1.00</dd></div>
+     <div><dt>After 3 days, monthly</dt><dd>$39.00</dd></div>
+     <div><dt>Cancel</dt><dd>Online, one step</dd></div>
+    </dl>
     <a class="v9-btn v9-btn--ink" href="signup.html">Start your 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
     <p class="lp-plan__fine">Payment runs through Stripe; Insidir never sees your card number.</p>
    </div>
