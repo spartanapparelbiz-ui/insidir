@@ -46,3 +46,18 @@ export function billingSettings(env = process.env) {
     enabled: String(env.INSIDIR_BILLING_ENABLED || "").trim() === "1" && !!secretKey && !!priceId && !!webhookSecret
   });
 }
+
+/* The paid trial: a new subscriber pays a one-time fee (default $1) at checkout, uses the whole product
+ * for the trial days (default 3), and the subscription then renews at the plan's price unless it is
+ * cancelled first. One trial per account and per Stripe customer (see billing.mjs). INSIDIR_TRIAL=0
+ * switches it off; days and fee are clamped so a typo cannot give the product away or overcharge. */
+export function trialSettings(env = process.env) {
+  const days = Math.trunc(Number(env.INSIDIR_TRIAL_DAYS ?? 3));
+  const feeCents = Math.trunc(Number(env.INSIDIR_TRIAL_FEE_CENTS ?? 100));
+  const enabled = String(env.INSIDIR_TRIAL ?? "").trim() !== "0";
+  return Object.freeze({
+    enabled,
+    days: Number.isFinite(days) ? Math.min(14, Math.max(1, days)) : 3,
+    feeCents: Number.isFinite(feeCents) ? Math.min(3900, Math.max(50, feeCents)) : 100
+  });
+}

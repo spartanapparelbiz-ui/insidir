@@ -10,9 +10,11 @@ test("referral codes are strictly bounded and normalized",()=>{
   assert.equal(normalizeHandle("@Creator.Name"),"creator.name");
   assert.equal(normalizeHandle("bad/name"),null);
 });
-test("only genuinely paid initial subscription invoices qualify",()=>{
+test("only a genuinely paid $39 subscription invoice qualifies, never the $1 trial invoice",()=>{
   assert.equal(commissionEligibleInvoice(valid),true);
-  for(const change of [{status:"open"},{amount_paid:0},{amount_paid:3899},{currency:"eur"},{billing_reason:"subscription_cycle"},{id:"oops"},{customer:"oops"}])
+  // After the $1 trial the first $39 payment is the first renewal; later renewals hit the unique referred_user_id.
+  assert.equal(commissionEligibleInvoice({...valid,billing_reason:"subscription_cycle"}),true);
+  for(const change of [{status:"open"},{amount_paid:0},{amount_paid:100},{amount_paid:3899},{currency:"eur"},{billing_reason:"manual"},{billing_reason:"subscription_update"},{id:"oops"},{customer:"oops"}])
     assert.equal(commissionEligibleInvoice({...valid,...change}),false);
 });
 test("commission insert requires a separately verified plan and never automatically pays",async()=>{

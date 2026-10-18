@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { serveStatic } from "./web.mjs";
 import { handleCompanyRoute } from "./company-routes.mjs";
+import { handlePublicPage } from "./public-pages.mjs";
 
 // Website-only preview: serves /web without a database. The public company report
 // endpoints (SEC, market and profile data) work when SEC_USER_AGENT is set; account
@@ -23,7 +24,8 @@ createServer((req, res) => {
     });
     return;
   }
-  serveStatic(req, res).then(done => {
+  // Without a database only robots.txt of the public pages can be served; the rest need the engine.
+  handlePublicPage(req, res, url).then(done => done || serveStatic(req, res)).then(done => {
     if (!done) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); res.end("Not found"); }
   }).catch(error => {
     console.error("Static error", error);

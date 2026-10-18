@@ -12,6 +12,7 @@ import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavail
 import { billingSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute,clientAddress } from "./company-routes.mjs";
+import { handlePublicPage } from "./public-pages.mjs";
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
@@ -269,6 +270,8 @@ async function route(req,res,ctx){
   if(decision.action==="deny")return json(res,decision.status,decision.body);
   if(decision.kind==="product"||decision.kind==="account")keepPrivate(res);
   if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
+  // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handlePublicPage(req,res,u,{query:ctx.query,env:ctx.env,requester:clientAddress(req)}))return;
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
   if(p==="/healthz" && m==="GET"){const h=await health();return json(res,h.ok?200:503,{...h,secUserAgentConfigured:secReady()})}
   if(m==="GET"||m==="HEAD"){
