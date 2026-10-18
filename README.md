@@ -1,3 +1,12 @@
+## Insidir V24: a working demo report on the platform page (October 2026)
+
+The company-report diagram on `platform.html` (A header, B chart, C key facts, D tabs) used to be grey placeholder bars and a dot field. It is now a working report for Reddit, Inc. (RDDT), saved from the product at the close on October 16, 2026:
+
+- **B, the chart** (`web/assets/js/v16-demo-chart.js`, `web/assets/css/v16-demo-chart.css`). Six range buttons (1D, 1W, 1M, 3M, 1Y, 5Y) redraw it from real delayed Yahoo Finance series embedded in the page as JSON (`#mk-demo-data`). No request is made and nothing is live. Point at the line, or focus it and use the arrow keys, to read any close; the reading is announced to screen readers. The line is red or green only for the direction of the selected range, always beside a ▲/▼ and a signed figure.
+- **A and C** carry the real header and key facts. Market cap, enterprise value and P/E show their inputs on hover, as in the product.
+- The caption says what it is: a delayed snapshot, not live, and not a recommendation. The company-report screenshot above it is removed because the demo replaces it.
+- `scripts/build-demo-chart.mjs` writes the no-script first paint (the 1Y chart) using the page's own renderer. `test/demo-chart.test.mjs` checks that the snapshot's figures agree with each other (every range ends on the quoted close, the day change, market cap and P/E) and that the first paint matches the script's output.
+
 ## Insidir V23: the product, shown (October 2026)
 
 - **Real screens, not descriptions.** Retina screenshots of the live product on real SEC filings (`web/assets/img/product/`, WebP, 10–110 KB each): the overview, a company report, insider activity, a personnel file, the research desk.
