@@ -38,3 +38,13 @@ test("the demo says what it is, and its first paint is the script's own 1Y rende
   assert.equal(chart.changeText("5Y", data.ranges["5Y"]), "▲ +110.14 (+239.44%) since listing");
   assert.deepEqual([...chart.ticks(120, 270, 4)], [150, 200, 250]);
 });
+
+test("the demo's logo and people are the real ones, each with their SEC account and photo credit", () => {
+  assert.match(html, /<img src="assets\/img\/logos\/rddt\.png"[^>]*alt="Reddit logo"/);
+  for (const [name, cik] of [["Steve Huffman", "0001827011"], ["Jennifer Wong", "0001663651"]]) {
+    assert.match(html, new RegExp('alt="' + name + '"'), name + " has a photo");
+    assert.match(html, new RegExp("own-disp\\?action=getowner&amp;CIK=" + cik), name + " links to their SEC filer record");
+  }
+  assert.match(html, /Steve Huffman by Cody Glenn\/Web Summit via Sportsfile, CC BY 2\.0/);
+  assert.doesNotMatch(html, /Farrell/, "no person whose only portrait is an illustration");
+});

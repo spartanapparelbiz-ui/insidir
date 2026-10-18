@@ -16,6 +16,7 @@ import { sniffImage, imageSize } from "./media.mjs";
 import { preparePhoto, rasterize } from "./image-analysis.mjs";
 import { putMedia, getMedia, getRecord, putRecord } from "./media-store.mjs";
 import { samePerson, secNameReadings, nameTokens, isEntityName, givenVariants } from "./person-match.mjs";
+import { illustratedProxy } from "./photo-exclusions.mjs";
 
 const DAY = 86400000;
 const MAX_AGE_MS = 456 * DAY;            // about 15 months: older proxies picture a stale board
@@ -473,6 +474,7 @@ export async function proxyHeadshots({ cik, insiders = [], extraPeople = [], sub
     }
     if (!proxy) return { status: "no-proxy", reason: "none filed", matches: [] };
     ({ accession, filedAt } = proxy);
+    if (illustratedProxy(cikInt)) return { status: "none", reason: illustratedProxy(cikInt), accession, filedAt, matches: [] };
     if (proxy.stale) return { status: "no-proxy", reason: "older than 15 months", accession, filedAt, matches: [] };
     const base = "https://www.sec.gov/Archives/edgar/data/" + cikInt + "/" + accession.replace(/-/g, "") + "/";
     const people = buildPeople(insiders, extraPeople);

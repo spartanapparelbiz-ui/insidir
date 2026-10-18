@@ -1,3 +1,17 @@
+## Insidir V25: correct logos, headshots and owner identities (October 2026)
+
+A visual audit of the 60 most active companies' logos and 95 resolved headshots against SEC records found four kinds of mistake. Each is fixed by a rule, so the same mistake can't recur elsewhere:
+
+- **Renamed companies kept their old logo.** Wikipedia still showed the Skillz mark on the article for Firy Inc. after the June 2026 rename. A Wikipedia or Wikidata logo file named for one of the company's SEC former names, and not its current one, is now treated as the old identity and never used (`staleNameFile` in `src/logo-resolver.mjs`).
+- **A ticker-letter placeholder.** The stock-logo file for WGO is just the letters "WGO". Winnebago Industries' own wordmark from its site is now a checked-in override.
+- **An illustrated "headshot".** Reddit's 2026 proxy prints cartoon avatars of its directors, and one passed every automated portrait check as Sarah E. Farrell's photo. Sources audited as not being photographs are listed in `src/photo-exclusions.mjs`. They are never read, and records stored earlier stop being served.
+- **A person classified as a company.** "Sa Neto Francisco" (Francisco Sá Neto) matched the corporate suffix "S.A.", so he could never get a photo. Short suffixes (S.A., AG, N.V., Co) now count only when dotted or after the first word, in the engine and on every page.
+
+Also:
+- GIF proxy originals were refused by the media table's type constraint and lived in memory only; `sql/012_entity_media_gif.sql` accepts them.
+- `scripts/audit-media.mjs --sec` builds a contact sheet of every stored photo and logo against the SEC names, flagging duplicates, caption mismatches, faces on funds, excluded sources and logos named for former names. Run it against the production database to check by eye.
+- The platform page's demo report now shows Reddit's real logo and a People panel: Steve Huffman and Jennifer Wong, with their verified headshots, Form 4 roles and SEC CIK links, credited.
+
 ## Insidir V24: a working demo report on the platform page (October 2026)
 
 The company-report diagram on `platform.html` (A header, B chart, C key facts, D tabs) used to be grey placeholder bars and a dot field. It is now a working report for Reddit, Inc. (RDDT), saved from the product at the close on October 16, 2026:

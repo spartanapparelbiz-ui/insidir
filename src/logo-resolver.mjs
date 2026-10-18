@@ -48,7 +48,7 @@ export const KNOWN_BAD = Object.freeze({
 
 /* Corrections found by visually auditing a 120-company sample against each company's own site and
  * filings: the usual sources show another company (ALTX, HTCR), a product brand (FMHS), an old
- * identity (CGC, NWFL, ELAB, JPM) or a damaged file (BCAB, DIN). Each replacement is the
+ * identity (CGC, NWFL, ELAB, JPM), a damaged file (BCAB, DIN) or the bare ticker letters (WGO). Each replacement is the
  * company's own published file. Operator overrides in the store take precedence; if a file here
  * stops loading, the normal sources are used again. crop trims fractions of the image first. */
 export const LOGO_OVERRIDES = Object.freeze({
@@ -60,6 +60,7 @@ export const LOGO_OVERRIDES = Object.freeze({
   "0001840563": { url: "https://pmgcholdings.com/images/logo/nav-logo.png", reason: "ELAB: services show the retired PMGC mark" },
   "0001826892": { url: "https://www.bioatla.com/wp-content/uploads/2016/01/logo-footer.svg", reason: "BCAB: the service file is squashed" },
   "0000049754": { url: "https://en.wikipedia.org/wiki/Special:FilePath/Dine_Brands_Logo.png", reason: "DIN: the service file's black frame and BRANDS line vanish on a dark page" },
+  "0000107687": { url: "https://www.winnebagoind.com/content/experience-fragments/winnebago-ind/us/en/site/header/master/_jcr_content/root/section/container/image_960953091.coreimg.svg/1715205266122/winn-ind-wordmark-rgb-mobile.svg", reason: "WGO: the service file is the ticker letters, not Winnebago Industries' wordmark" },
   "0000019617": { url: "https://www.jpmorganchase.com/content/dam/jpmorganchase/images/logos/jpmc-logo-white.svg", reason: "JPM: services show the J.P. Morgan segment wordmark, not JPMorganChase" }
 });
 async function cropped(candidate, crop) {
@@ -161,6 +162,23 @@ export function namesAgree(secName, label) {
   // "EXXON MOBIL" vs "ExxonMobil", "JPMORGAN CHASE" vs "JPMorgan Chase"
   const ja = a.join(""), jb = b.join("");
   return ja.startsWith(jb) || jb.startsWith(ja) || ja.startsWith(b[0]) && b[0].length >= 4 || jb.startsWith(a[0]) && a[0].length >= 4;
+}
+
+/* A logo file named for one of the company's former names and not for its current one shows the old
+ * identity: Wikipedia kept "Skillz_Logo_Horizontal-01.png" on the article for Firy Inc. after Skillz Inc.
+ * renamed itself (June 2026). Returns the former name it carries, or null. Tokens under 3 letters and
+ * tokens the current name shares are ignored, so "Meta_Platforms_logo" still passes for Meta Platforms. */
+export function staleNameFile(file, submissions) {
+  const formers = Array.isArray(submissions?.formerNames) ? submissions.formerNames : [];
+  if (!file || !formers.length) return null;
+  const words = s => nameTokens(String(s).replace(/([a-z])([A-Z])/g, "$1 $2")).filter(t => t.length >= 3 && !/^(logo|logos|svg|png|jpg|horizontal|vertical|wordmark|white|black|color|colour|rgb|cmyk|icon|full|mark|dark|light|stacked|primary|\d+)$/.test(t));
+  const fileWords = new Set(words(String(file).replace(/\.[a-z0-9]+$/i, "")));
+  const current = new Set(words(submissions.name || ""));
+  if ([...current].some(t => fileWords.has(t))) return null;
+  for (const former of formers) {
+    if ((former?.name || "") && words(former.name).some(t => !current.has(t) && fileWords.has(t))) return String(former.name).slice(0, 80);
+  }
+  return null;
 }
 
 /* ---------- Wikipedia / Wikidata (S2) ---------- */
@@ -816,6 +834,8 @@ export async function resolveLogo({ ticker, cik, name } = {}, options = {}) {
   const companyName = name || (typeof submissions?.name === "string" ? submissions.name : "") || T || "";
   const s2 = await measured(tagged("s2", "wikipedia", "wikipedia")(await wikipediaCandidate(f, { cik: cik10, ticker: T, name: companyName }).catch(e => ({ status: "unknown", error: String(e?.message || e) }))));
   if (s2.origin === "wikidata") s2.label = "wikidata";
+  const stale = s2.status === "found" ? staleNameFile(s2.file, submissions) : null;
+  if (stale) Object.assign(s2, { status: "missing", error: "old identity: the file is named for " + stale });
   if (s2.status === "missing" && /^unreadable/.test(s2.error || "") && s2.file) {
     // An SVG librsvg cannot render (or one too large to rasterise) still has a PNG thumbnail.
     const thumb = wikimediaFileUrls(s2.file)?.[(s2.repo || "commons") + "Thumb"];

@@ -11,11 +11,18 @@ const media = new Map(); // sha -> {bytes, mime, width, height}
 let memoryBytes = 0;
 const records = new Map(); // kind:key -> {value, expiresAt}
 let dbOk = Boolean(pool);
-const warnOnce = (() => { let warned = false; return e => { if (!warned) { warned = true; console.warn("Media store database unavailable; using memory only:", e?.message); } }; })();
+// One warning per kind of failure: losing the database and one refused row are different problems.
+const warned = new Set();
+const warnOnce = (e, gone) => {
+  const key = gone ? "gone" : String(e?.code || e?.message || "").slice(0, 60);
+  if (warned.has(key)) return;
+  warned.add(key);
+  console.warn(gone ? "Media store database unavailable; using memory only:" : "Media store database write refused (kept in memory only):", e?.message);
+};
 async function db(sql, params) {
   if (!dbOk) return null;
   try { return await pool.query(sql, params); }
-  catch (e) { if (/relation .* does not exist|ECONNREFUSED|ENOTFOUND/.test(String(e?.message))) dbOk = false; warnOnce(e); return null; }
+  catch (e) { const gone = /relation .* does not exist|ECONNREFUSED|ENOTFOUND/.test(String(e?.message)); if (gone) dbOk = false; warnOnce(e, gone); return null; }
 }
 function remember(sha, item) {
   if (media.has(sha)) return;
