@@ -23,7 +23,9 @@ const MAX_AGE_MS = 456 * DAY;            // about 15 months: older proxies pictu
 const RECORD_TTL = 400 * DAY;            // Archives files never change; key is the accession
 const MAX_DOWNLOADS = 60;
 const MAX_HTML_BYTES = 15_000_000;
-const AFTER_WINDOW = 250, BEFORE_WINDOW = 250;
+const AFTER_WINDOW = 250, BEFORE_WINDOW = 250, CARD_WINDOW = 1800;
+// Pairing rules version: a stored record from older rules is paired again (its downloaded files are reused).
+const PAIRING_VERSION = 2;
 
 /* ---------- HTML token stream ---------- */
 const NAMED = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", ndash: "–", mdash: "—", hyphen: "-", shy: "", bull: "•", middot: "·", eacute: "é", egrave: "è", aacute: "á", iacute: "í", oacute: "ó", uacute: "ú", ntilde: "ñ", ouml: "ö", uuml: "ü", auml: "ä", ccedil: "ç", zwj: "", zwnj: "", ensp: " ", emsp: " ", thinsp: " " };
@@ -273,6 +275,10 @@ export function pairPortraits(tokens, people, files) {
       else if (!after.trim()) nearAlt.push(tokens[k]);
       k++;
     }
+    // Profile cards (Donnelley's layout): portrait, then committees / tenure / age / expertise, then the
+    // name, ~900 characters on. The card's text runs to the next portrait.
+    let card = "";
+    for (let j = run.at(-1) + 1; j < tokens.length && !isCand[j] && card.length < CARD_WINDOW; j++) if (tokens[j].t === "text") card += tokens[j].s;
     let before = "";
     k = run[0] - 1;
     while (k >= 0 && !isCand[k] && before.length < 400) { if (tokens[k].t === "text") before = tokens[k].s + before; k--; }
@@ -286,7 +292,7 @@ export function pairPortraits(tokens, people, files) {
     }
     const b = before.slice(-BEFORE_WINDOW);
     const beforeHits = findNames(b, people).map(h => ({ ...h, dist: b.length - h.end }));
-    return { run, after, distinct, blocked, beforeHits, nearAlt, beforeFolded: fold(b) };
+    return { run, after, card, distinct, blocked, beforeHits, nearAlt, beforeFolded: fold(b) };
   });
 
   // Layout vote for rule (d): how many single portraits have their only nearby name before them.
@@ -323,6 +329,11 @@ export function pairPortraits(tokens, people, files) {
           else rule = "profile-unknown";
         }
         else if (h && h.pos <= AFTER_WINDOW) { personId = single(h); rule = "after"; caption = h.caption; confidence = "high"; }
+        else if (CARD_AFTER.test(c.after.slice(0, 80).replace(/\s+/g, " ")) && !(lb && lb.dist <= 90)) {
+          const first = captionSlots(c.card, people)[0];
+          if (first?.known && single(first.hit) != null) { personId = single(first.hit); rule = "card"; caption = first.hit.caption; confidence = "high"; }
+          else rule = "card-unknown";
+        }
         else if (allowBefore && !c.blocked && c.beforeHits.length && !personLikeLine(c.after.slice(0, 120))) {
           const hb = c.beforeHits.at(-1);
           personId = single(hb); rule = "before"; caption = hb.caption; confidence = "medium";
@@ -351,6 +362,10 @@ const TITLE_WORDS = new Set(("independent lead non executive nonexecutive chair 
   "secretary treasurer controller founder cofounder co senior managing partner of the board and & emeritus former interim acting principal " +
   "administrative communications affairs public policy government risk compliance digital data security transformation operations sales " +
   "growth revenue investment investor relations audit development research science scientific medical innovation engineering").split(" "));
+/* A card that opens with its fields and prints the name last: "[portrait] Board Committees: Audit · Director
+ * since: July 2015 · Age: 49 · Experience ... Jonathan Christodoro". Only the first name-like line of the card
+ * counts, and only when it is a known person and no name sits right before the portrait. */
+const CARD_AFTER = /^[\s|•·]*(?:board\s+committees?\b|committees?\s*:|committee\s+memberships?\b)/i;
 const PROFILE_AFTER = /^[\s|•·]*(?:age[:\s]+\d{2}\b|director\s+since\b|\d{2}\s*years?\s+old\b)/i;
 function profileBefore(c, hit) {
   if (hit.dist > 90) return false;
@@ -360,7 +375,7 @@ function profileBefore(c, hit) {
 }
 
 /* Per-file majority vote and per-person ranked candidate files. */
-const RULE_RANK = { alt: 0, after: 1, "before-profile": 1, run: 2, "alt-adjacent": 3, before: 4 };
+const RULE_RANK = { alt: 0, after: 1, "before-profile": 1, run: 2, card: 2, "alt-adjacent": 3, before: 4 };
 export function selectFiles(placements, sizes = new Map()) {
   const fileVotes = new Map(), bestRule = new Map();
   for (const p of placements) {
@@ -481,7 +496,7 @@ export async function proxyHeadshots({ cik, insiders = [], extraPeople = [], sub
     const wanted = people.map(fingerprint);
 
     const cached = useCache ? await getRecord("proxy-headshots", accession) : null;
-    if (cached && wanted.every(f => cached.evaluated?.includes(f))) {
+    if (cached && cached.v === PAIRING_VERSION && wanted.every(f => cached.evaluated?.includes(f))) {
       documentUrl = cached.documentUrl;
       return await fromRecord(cached, people, fetchBytes);
     }
@@ -501,7 +516,7 @@ export async function proxyHeadshots({ cik, insiders = [], extraPeople = [], sub
     for (const f of cached?.people || []) if (!people.some(p => fingerprint(p) === fingerprint(f))) known.push({ ...f, id: known.length });
     known.forEach((p, i) => { p.id = i; });
 
-    const record = { v: 1, accession, filedAt, documentUrl, evaluated: known.map(fingerprint), people: known.map(({ insider, ...p }) => p), files: { ...(cached?.files || {}) }, matches: [] };
+    const record = { v: PAIRING_VERSION, accession, filedAt, documentUrl, evaluated: known.map(fingerprint), people: known.map(({ insider, ...p }) => p), files: { ...(cached?.files || {}) }, matches: [] };
     // Through the binary path: large proxies (KO, CBRE) exceed the 5MB text limit of secFetch.
     const html = decodeHtml(await fetchBytes(documentUrl, { maxBytes: MAX_HTML_BYTES }));
     const tokens = tokenize(html);

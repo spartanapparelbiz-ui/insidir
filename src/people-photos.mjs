@@ -265,7 +265,7 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
   let leaders = [];
   if (wikidata?.wikidataPhotos) {
     try {
-      const result = await wikidata.wikidataPhotos({ cik: company.cik, companyName: company.name, insiders: people });
+      const result = await wikidata.wikidataPhotos({ cik: company.cik, companyName: company.name, ticker: state.ticker || company.ticker || null, insiders: people });
       state.sources.wikidata = { status: result.complete === false ? "partial" : "ok", matched: result.matches?.length || 0 };
       if (result.complete === false) state.transient = true;
       for (const m of result.matches || []) {

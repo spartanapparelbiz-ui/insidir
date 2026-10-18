@@ -239,3 +239,28 @@ test("director profile layout: name and role words, then the portrait, then the 
   assert.equal(r["li.jpg"].rule, "before-profile");
   assert.equal(r["pair.jpg"].personId, null);
 });
+
+test("profile cards that print the name last (Donnelley's layout) pair the portrait with that name, and only that name", () => {
+  const people = buildPeople([{ name: "CHRISTODORO JONATHAN", cik: "1" }, { name: "CHIK JOY", cik: "2" }]);
+  const fields = (committees, since, age) => `<p>Board Committees:</p><p>• ${committees}</p><p>Director since:</p><p>${since}</p><p>Age:</p><p>${age}</p>` +
+    `<p>Experience, Expertise</p><p>and Attributes</p><p>• Payments / Financial Services / FinTech</p><p>• Technology / Innovation</p><p>• Global Business</p><p>• Senior Leadership</p>` + "<p> </p>".repeat(20);
+  const sq = f => `<img src="${f}" alt="LOGO" style="width:1.89305in;height:1.89305in"/>`;
+  const html = `<p>Proposal 1: Election of Directors</p><p>Director Biographies</p>${sq("g1.jpg")}${fields("Audit", "July 2015", "49")}<p>Jonathan Christodoro</p><p>${"Bio text. ".repeat(40)}</p>` +
+    `<p>Director Biographies</p>${sq("g2.jpg")}${fields("Compensation", "March 2025", "50")}<p>Joy Chik</p><p>${"Bio text. ".repeat(40)}</p>`;
+  const { placements } = pairPortraits(tokenize(html), people, files(["g1.jpg", "g2.jpg"]));
+  const byFile = Object.fromEntries(placements.map(p => [p.file, p]));
+  assert.equal(byFile["g1.jpg"].rule, "card");
+  assert.equal(people[byFile["g1.jpg"].personId].secName, "CHRISTODORO JONATHAN");
+  assert.equal(people[byFile["g2.jpg"].personId].secName, "CHIK JOY");
+
+  // A card whose name is someone we do not know is left alone, even when a known name follows later.
+  const unknown = `${sq("g3.jpg")}${fields("Risk", "June 2015", "72")}<p>Robert Unknownperson</p><p>Joy Chik</p>`;
+  const r = pairPortraits(tokenize(unknown), people, files(["g3.jpg"])).placements[0];
+  assert.equal(r.personId, null);
+  assert.equal(r.rule, "card-unknown");
+
+  // A name printed right before the portrait makes the card ambiguous: the card rule does not apply.
+  const before = `<p>Joy Chik</p>${sq("g4.jpg")}${fields("Audit", "July 2015", "49")}<p>Jonathan Christodoro</p>`;
+  const b = pairPortraits(tokenize(before), people, files(["g4.jpg"])).placements[0];
+  assert.notEqual(b.rule, "card");
+});
