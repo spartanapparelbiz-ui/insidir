@@ -5,6 +5,7 @@ import { createApiServer } from "./api.mjs";
 import { warmAfterIngest } from "./media-warm.mjs";
 import { reconcileLapsed, createStripeClient } from "./billing.mjs";
 import { billingSettings } from "./config.mjs";
+import {initPush,pushTick} from "./push.mjs";
 
 async function main() {
   if(!config.databaseUrl)throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -23,6 +24,11 @@ async function main() {
     setTimeout(tick,2000).unref();
     setInterval(tick,15*60*1000).unref();
   }
+  if(initPush()){
+    const send=async()=>{try{const report=await pushTick(query);if(report.sent||report.failed)console.log("Push delivery",JSON.stringify(report));}catch(e){console.error("Push delivery failed",e?.message||e)}};
+    setTimeout(send,30*1000).unref();
+    setInterval(send,3*60*1000).unref();
+  }else console.warn("Insidir Web Push disabled: VAPID settings incomplete");
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if(billingSettings().enabled){
     const reconcile=async()=>{
