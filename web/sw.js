@@ -1,7 +1,8 @@
 /* Insidir web push service worker. No cross-origin notification links. */
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{}
- const title=typeof data.title==="string"?data.title.slice(0,80):"Insidir research update";
+ const original=String(data.title||"Research update").replace(/^[Ii]nsidir\s*[·—:-]\s*/,"");
+ const title="Insidir · "+original.slice(0,65);
  const safeUrl=typeof data.url==="string"&&data.url.startsWith("/")&&!data.url.startsWith("//")?data.url:"/alerts.html";
  event.waitUntil(self.registration.showNotification(title,{
   body:typeof data.body==="string"?data.body.slice(0,200):"New source-backed research activity.",
