@@ -18,6 +18,7 @@ import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, 
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import {pushStatus,subscribePush,unsubscribePush} from "./push.mjs";
+import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -449,6 +450,14 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     const limit=positive((u.searchParams.get("limit")||"").trim()||null,40,100);
     return json(res,200,await followedPeopleUpdates(user.id,limit,ctx.query));
+  }
+  if(p==="/v1/ai/explain" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(isLimited("ai-explain:"+user.id,20,15*60*1000))throw failure(429,"Too many AI explanations requested");
+    return json(res,200,await explainFiling(u.searchParams.get("accession"),{run:ctx.query}));
+  }
+  if(p==="/v1/ai/status" && m==="GET"){
+    await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",advice:false});
   }
   if(p==="/v1/me/push" && m==="GET"){
     const user=await requireUser(req,ctx);
