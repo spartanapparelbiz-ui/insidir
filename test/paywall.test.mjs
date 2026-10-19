@@ -121,14 +121,34 @@ test("paywall switch: on unless INSIDIR_PAYWALL is exactly 0", () => {
 });
 
 test("the /v1/me access object", () => {
-  assert.deepEqual(accessSummary(USERS.paid, BILLING), { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" });
-  assert.deepEqual(accessSummary(USERS.none, ON), { active: false, plan: "none", status: null, billingEnabled: false, complimentary: false, currentPeriodEnd: null });
-  assert.deepEqual(accessSummary(USERS.lapsed, BILLING), { active: false, plan: "none", status: "past_due", billingEnabled: true, complimentary: false, currentPeriodEnd: null });
-  assert.deepEqual(accessSummary(USERS.owner, COMP), { active: true, plan: "none", status: null, billingEnabled: false, complimentary: true, currentPeriodEnd: null });
+  assert.deepEqual(accessSummary(USERS.paid, BILLING), { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, emailVerified: false, verificationRequired: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" });
+  assert.deepEqual(accessSummary(USERS.none, ON), { active: false, plan: "none", status: null, billingEnabled: false, complimentary: false, emailVerified: false, verificationRequired: false, currentPeriodEnd: null });
+  assert.deepEqual(accessSummary(USERS.lapsed, BILLING), { active: false, plan: "none", status: "past_due", billingEnabled: true, complimentary: false, emailVerified: false, verificationRequired: false, currentPeriodEnd: null });
+  assert.deepEqual(accessSummary(USERS.owner, COMP), { active: true, plan: "none", status: null, billingEnabled: false, complimentary: true, emailVerified: false, verificationRequired: false, currentPeriodEnd: null });
   assert.equal(accessSummary(USERS.none, OFF).active, true, "development mode: everyone can use the product");
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: new Date(0) }, ON).currentPeriodEnd, null, "epoch placeholder is not a date");
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: "2026-12-01T00:00:00Z" }, ON).currentPeriodEnd, "2026-12-01T00:00:00.000Z");
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: "not a date" }, ON).currentPeriodEnd, null);
+});
+
+test("complimentary access needs a confirmed address once verification is enforced", () => {
+  const enforced = { ...COMP, INSIDIR_REQUIRE_EMAIL_VERIFICATION: "1" };
+  assert.equal(hasAccess(USERS.owner, enforced), false, "unconfirmed owner address: no access");
+  assert.equal(hasAccess({ ...USERS.owner, email_verified_at: new Date() }, enforced), true);
+  assert.equal(accessSummary(USERS.owner, enforced).complimentary, false);
+  assert.equal(accessSummary({ ...USERS.owner, email_verified_at: new Date() }, enforced).verificationRequired, true);
+  assert.equal(hasAccess(USERS.owner, { ...COMP, INSIDIR_REQUIRE_EMAIL_VERIFICATION: "0", INSIDIR_EMAIL_PROVIDER: "log" }), true, "explicitly off");
+  assert.equal(hasAccess(USERS.owner, { ...COMP, INSIDIR_EMAIL_PROVIDER: "log" }), false, "on by default once email is configured");
+  assert.equal(hasAccess(USERS.paid, enforced), true, "a paying subscriber is not affected");
+});
+
+test("account management routes need a sign-in but no subscription; admin and email-link routes authenticate themselves", () => {
+  for (const [p, m] of [["/v1/me/password", "POST"], ["/v1/me/sessions/revoke-others", "POST"], ["/v1/me/security-events", "GET"], ["/v1/me/export", "GET"], ["/v1/me/email-preferences", "GET"], ["/v1/me/email-preferences", "POST"]])
+    assert.equal(classifyApi(p, m), "account", p);
+  for (const p of ["/v1/admin/ops", "/v1/admin/session", "/v1/email/unsubscribe", "/v1/email/webhook/postmark", "/v1/auth/forgot-password", "/v1/auth/reset-password", "/v1/auth/verify-email"])
+    assert.equal(classifyApi(p, "POST"), "open", p);
+  assert.equal(classifyApi("/v1/me/notifications", "GET"), "product");
+  assert.equal(classifyApi("/v1/me/password/extra", "POST"), "product", "only the exact routes");
 });
 
 /* ---------------------------------------------------------------- next= */
@@ -893,11 +913,11 @@ test("router: GET /v1/me returns the user and the access object, never the raw a
     let r = await send(base, "/v1/me", as("paid"));
     assert.equal(r.status, 200);
     assert.deepEqual(JSON.parse(r.text), { user: { id: USERS.paid.id, email: USERS.paid.email },
-      access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" } });
+      access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, emailVerified: false, verificationRequired: false, currentPeriodEnd: "2026-11-14T00:00:00.000Z" } });
     r = await send(base, "/v1/me", as("none"));
-    assert.deepEqual(JSON.parse(r.text).access, { active: false, plan: "none", status: null, billingEnabled: true, complimentary: false, currentPeriodEnd: null });
+    assert.deepEqual(JSON.parse(r.text).access, { active: false, plan: "none", status: null, billingEnabled: true, complimentary: false, emailVerified: false, verificationRequired: false, currentPeriodEnd: null });
     r = await send(base, "/v1/me", as("owner"));
-    assert.deepEqual(JSON.parse(r.text).access, { active: true, plan: "none", status: null, billingEnabled: true, complimentary: true, currentPeriodEnd: null });
+    assert.deepEqual(JSON.parse(r.text).access, { active: true, plan: "none", status: null, billingEnabled: true, complimentary: true, emailVerified: false, verificationRequired: false, currentPeriodEnd: null });
   });
 });
 

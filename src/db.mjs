@@ -16,36 +16,17 @@ export function requireDb() {
   return pool;
 }
 export async function query(sql, params=[]) { return requireDb().query(sql,params); }
+// Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
+export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
+  "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","014_email.sql"]);
 export async function migrate() {
   const db=requireDb();
   const client=await db.connect();
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(813076521)");
-    const schema=await readFile(new URL("../sql/001_initial.sql",import.meta.url),"utf8");
-    await client.query(schema);
-    const billingSchema=await readFile(new URL("../sql/002_billing.sql",import.meta.url),"utf8");
-    await client.query(billingSchema);
-    const researchSchema=await readFile(new URL("../sql/003_research_decisions.sql",import.meta.url),"utf8");
-    await client.query(researchSchema);
-    const brokerageSchema=await readFile(new URL("../sql/004_brokerage_oauth.sql",import.meta.url),"utf8");
-    await client.query(brokerageSchema);
-    const manualSchema=await readFile(new URL("../sql/005_manual_holdings.sql",import.meta.url),"utf8");
-    await client.query(manualSchema);
-    const followsSchema=await readFile(new URL("../sql/006_followed_people.sql",import.meta.url),"utf8");
-    await client.query(followsSchema);
-    const mediaSchema=await readFile(new URL("../sql/007_entity_media.sql",import.meta.url),"utf8");
-    await client.query(mediaSchema);
-    const ownersSchema=await readFile(new URL("../sql/008_filing_owners.sql",import.meta.url),"utf8");
-    await client.query(ownersSchema);
-    const creatorsSchema=await readFile(new URL("../sql/009_creator_referrals.sql",import.meta.url),"utf8");
-    await client.query(creatorsSchema);
-    const trialSchema=await readFile(new URL("../sql/010_paid_trial.sql",import.meta.url),"utf8");
-    await client.query(trialSchema);
-    const complianceSchema=await readFile(new URL("../sql/011_compliance_records.sql",import.meta.url),"utf8");
-    await client.query(complianceSchema);
-    const mediaGifSchema=await readFile(new URL("../sql/012_entity_media_gif.sql",import.meta.url),"utf8");
-    await client.query(mediaGifSchema);
+    for(const file of MIGRATIONS)await client.query(await readFile(new URL("../sql/"+file,import.meta.url),"utf8"));
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

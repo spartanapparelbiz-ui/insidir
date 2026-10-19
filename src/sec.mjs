@@ -96,6 +96,17 @@ export function parseOwnership(xml, filing) {
   };
 }
 
+/* Source health for operators (GET /v1/admin/ops): counts and the latest outcome of this process's SEC requests. */
+const stats = { requests: 0, ok: 0, errors: 0, throttled: 0, blocked: 0, lastOkAt: null, lastError: null };
+export const secHealth = () => ({ ...stats, lastError: stats.lastError && { ...stats.lastError }, backlogMs: secBacklogMs() });
+function recordSec(status, message) {
+  stats.requests++;
+  if (status >= 200 && status < 300) { stats.ok++; stats.lastOkAt = new Date().toISOString(); return; }
+  stats.errors++;
+  if (status === 429) stats.throttled++;
+  if (status === 403) stats.blocked++;
+  stats.lastError = { at: new Date().toISOString(), status: status || null, message: String(message || "").slice(0, 160) };
+}
 let nextRequest = 0;
 async function throttle() {
   const wait = Math.max(0, nextRequest - Date.now());
@@ -134,6 +145,7 @@ export async function secFetch(url, { json = false } = {}) {
         headers: { "User-Agent": config.userAgent, "Accept": json ? "application/json" : "application/xml,application/atom+xml,text/xml,*/*;q=0.8", "Accept-Encoding": "gzip, deflate" },
         signal: abort.signal, redirect: "error"
       });
+      recordSec(response.status, response.ok ? "" : "SEC responded " + response.status);
       if ((response.status === 429 || response.status >= 500) && attempt < 2) {
         const retrySeconds = Number(response.headers.get("retry-after"));
         await new Promise(r => setTimeout(r, Number.isFinite(retrySeconds) && retrySeconds > 0 ? Math.min(30000, retrySeconds * 1000) : (attempt + 1) * 1500));
@@ -147,6 +159,9 @@ export async function secFetch(url, { json = false } = {}) {
       const body = await response.text();
       if (body.length > maxLength) throw new Error("SEC response too large");
       return json ? JSON.parse(body) : body;
+    } catch (e) {
+      if (!/^SEC responded/.test(String(e?.message))) recordSec(0, e?.name === "AbortError" ? "timeout" : e?.message);
+      throw e;
     } finally { clearTimeout(timeout); }
   }
   throw new Error("SEC request attempts exhausted");

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { serveStatic, RETIRED_ASSETS } from "../src/web.mjs";
 import {
   personalizedAdviceRequest, promptInjection, directiveFindings, guaranteeFindings, unsupportedFigures, reviewGeneratedText, screenQuestion, ADVICE_REFUSAL
@@ -76,7 +76,13 @@ test("release gate: nothing the site serves carries invented sample data", async
     const js = readFileSync(new URL(path, WEB), "utf8");
     assert.doesNotMatch(js, /Nancy Pelosi|illustrative sample data|sample-data panels|Placeholder insiders \(fictional/i, path);
   }
-  // The retired prototypes that do hold sample data are never served, however the path is written.
+  // The retired prototypes are deleted, and every script in web/ (served or not) is free of the invented-data markers.
+  for (const p of RETIRED_ASSETS) assert.equal(existsSync(new URL("." + p, WEB)), false, p + " must stay deleted");
+  for (const file of readdirSync(new URL("assets/js/", WEB)).filter(f => f.endsWith(".js"))) {
+    const js = readFileSync(new URL("assets/js/" + file, WEB), "utf8");
+    assert.doesNotMatch(js, /Nancy Pelosi|illustrative sample data|sample-data panels|Placeholder insiders \(fictional|sample profiles driven by/i, file);
+  }
+  // A retired path is never served, however it is written, even if the file came back.
   const server = createServer((req, res) => serveStatic(req, res).then(done => { if (!done) { res.writeHead(404); res.end(); } }));
   await new Promise(r => server.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + server.address().port;
@@ -97,17 +103,27 @@ test("the alerts page offers only what exists: no political-trade or price-move 
 
 test("admin audit trail: every admin request is logged with a token fingerprint, never the token", async () => {
   const { creatorAdminRoutes } = await import("../src/creator-program.mjs");
-  const token = "t".repeat(40);
-  const log = [];
-  const query = async (sql, params) => { if (sql.startsWith("INSERT INTO admin_audit_log")) log.push(params); return { rows: [] }; };
-  const req = (auth, method = "GET") => ({ method, headers: { authorization: auth, "x-forwarded-for": "203.0.113.9" }, socket: {} });
+  const { generateTotpSecret, totpCode, base32Decode, stepAt } = await import("../src/totp.mjs");
+  const token = "t".repeat(40), secret = generateTotpSecret();
+  const env = { INSIDIR_CREATOR_ADMIN_TOKEN: token, INSIDIR_ADMIN_TOTP_SECRET: secret };
+  const log = [], used = new Set();
+  const query = async (sql, params) => {
+    if (sql.startsWith("INSERT INTO admin_audit_log")) log.push(params);
+    if (sql.startsWith("INSERT INTO admin_otp_used")) { if (used.has(params[0])) return { rows: [] }; used.add(params[0]); return { rows: [{ step: params[0] }] }; }
+    return { rows: [] };
+  };
+  const req = (auth, otp = "", method = "GET") => ({ method, url: "/v1/creators/admin/commissions", headers: { authorization: auth, "x-insidir-admin-otp": otp, "x-forwarded-for": "203.0.113.9" }, socket: {} });
   const res = { setHeader() {} };
-  await assert.rejects(creatorAdminRoutes(req("Bearer wrong"), res, "/v1/creators/admin/commissions", () => true, { query, env: { INSIDIR_CREATOR_ADMIN_TOKEN: token } }), e => e.status === 401);
+  const code = totpCode(base32Decode(secret), stepAt());
+  await assert.rejects(creatorAdminRoutes(req("Bearer wrong", code), res, "/v1/creators/admin/commissions", () => true, { query, env }), e => e.status === 401);
   assert.equal(log.at(-1)[1], "admin.denied");
-  await creatorAdminRoutes(req("Bearer " + token), res, "/v1/creators/admin/commissions", () => true, { query, env: { INSIDIR_CREATOR_ADMIN_TOKEN: token } });
+  await assert.rejects(creatorAdminRoutes(req("Bearer " + token), res, "/v1/creators/admin/commissions", () => true, { query, env }), e => e.status === 401, "the token alone is not enough");
+  await assert.rejects(creatorAdminRoutes(req("Bearer " + token, code), res, "/v1/creators/admin/commissions", () => true, { query, env: { INSIDIR_CREATOR_ADMIN_TOKEN: token } }), e => e.status === 503, "no MFA configured: closed");
+  await creatorAdminRoutes(req("Bearer " + token, code), res, "/v1/creators/admin/commissions", () => true, { query, env });
   assert.deepEqual([log.at(-1)[1], log.at(-1)[2], log.at(-1)[4]], ["admin.get", "/v1/creators/admin/commissions", "203.0.113.9"]);
   assert.match(log.at(-1)[0], /^token:[a-f0-9]{12}$/);
   assert.ok(!JSON.stringify(log).includes(token), "the token itself is never stored");
+  await assert.rejects(creatorAdminRoutes(req("Bearer " + token, code), res, "/v1/creators/admin/commissions", () => true, { query, env }), e => e.status === 401, "a code works once");
 });
 
 test("cross-account access: private data is always scoped to the signed-in member, whatever the request names", async () => {

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { randomBytes,timingSafeEqual } from "node:crypto";
 import { config,secReady } from "./config.mjs";
-import { query,health } from "./db.mjs";
+import { query,health,pool } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
 import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin,passwordMatches } from "./auth.mjs";
@@ -17,19 +17,20 @@ import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabi
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
+import { memoryLimiter,pgLimiter } from "./rate-limit.mjs";
+import { logSecurityEvent,recentSecurityEvents,emailDigest } from "./security-events.mjs";
+import { sendVerificationEmail,verifyEmail,requestPasswordReset,resetPassword,changePassword,revokeOtherSessions,exportAccount,FORGOT_REPLY } from "./account-security.mjs";
+import { emailSettings } from "./config.mjs";
+import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdminCookie,adminSettings } from "./admin-auth.mjs";
+import { audit as adminAudit } from "./creator-program.mjs";
+import { opsSnapshot } from "./ops.mjs";
+import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
-const hits=new Map();
-function isLimited(key,limit=15,windowMs=15*60*1000){
-  const now=Date.now();
-  if(hits.size>10000)for(const [k,v] of hits)if(v.until<now)hits.delete(k);
-  const v=hits.get(key);
-  if(!v || v.until<=now){hits.set(key,{count:1,until:now+windowMs});return false}
-  v.count++;return v.count>limit;
-}
-// Read-only check, and a separate counter, so only failed attempts spend the allowance.
-function atLimit(key,limit){const v=hits.get(key);return !!v && v.until>Date.now() && v.count>=limit}
-function countFailure(key,windowMs=15*60*1000){isLimited(key,Infinity,windowMs)}
+/* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
+ * database (tests, previews). Failed sign-ins use atLimit + fail, so only failures spend the allowance. */
+const limited=async(ctx,key,limit=15,windowMs=15*60*1000)=>ctx.limiter.hit(key,limit,windowMs);
+async function rawBody(req,limit=65536){const parts=[];let bytes=0;for await(const c of req){bytes+=c.length;if(bytes>limit)throw failure(413,"Payload too large");parts.push(c)}return Buffer.concat(parts)}
 function json(res,status,body,headers={}) {
   res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",
     "X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin",
@@ -247,6 +248,18 @@ function reqOrigin(req,res){
   if(!origin)return;
   if(checkOrigin(req)){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Access-Control-Allow-Credentials","true");res.setHeader("Vary","Origin")}
 }
+/* After an account is deleted: nothing optional is left waiting to be sent to it, and the address gets one
+ * confirmation (kept as the record that the deletion and any cancellation happened). */
+async function accountDeletedNotice(run,user,result,env){
+  await run(`UPDATE email_outbox SET status='cancelled',to_email=NULL,text_body=NULL,html_body=NULL WHERE user_id IS NULL AND recipient_hash=$1 AND status='queued' AND category IN ('alert','digest','security')`,[emailDigest(user.email)]);
+  if(!emailSettings(env).enabled)return;
+  const {text,html}=renderEmail({heading:"Your Insidir account was deleted",
+    paragraphs:["Your Insidir account and the information saved in it (watchlist, research journal, followed people, holdings and sessions) were deleted at your request.",
+      result.subscriptionCanceled?"Your Insidir subscription was cancelled with Stripe before the account was deleted, so no further payments will be taken.":"There was no Insidir subscription that could still bill this account.",
+      "Records the law requires us to keep (your subscription consent, invoices held by Stripe) are kept as the privacy policy describes. If you did not ask for this, email hello@aethric.llc."],
+    footer:["This confirmation is sent once and cannot be unsubscribed from."]});
+  await enqueueEmail(run,{to:user.email,category:"billing",kind:"account_deleted",dedupeKey:"deleted:"+user.id,subject:"Your Insidir account was deleted",text,html,retainBody:true});
+}
 async function route(req,res,ctx){
   const u=new URL(req.url||"/","http://localhost");
   const p=u.pathname,m=req.method||"GET";
@@ -295,8 +308,8 @@ async function route(req,res,ctx){
   }
   // GET /v1/people/<cik>: one reporting person's profile (src/person-profile.mjs); product data.
   if(await handlePersonRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
-  if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe,query:ctx.query}); if(result!==false) return result; }
-  if(p.startsWith("/v1/creators/admin/")) { const result=await creatorAdminRoutes(req,res,p,json,{query:ctx.query,env:ctx.env}); if(result!==false) return result; }
+  if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe,query:ctx.query,limiter:ctx.limiter}); if(result!==false) return result; }
+  if(p.startsWith("/v1/creators/admin/")) { const result=await creatorAdminRoutes(req,res,p,json,{query:ctx.query,env:ctx.env,limiter:ctx.limiter}); if(result!==false) return result; }
   if(p==="/v1/me/brokerage/callback" && m==="GET"){
     // Top-level OAuth redirect uses the existing signed-in session; state is single-use and bound to this user.
     let outcome="error";
@@ -321,13 +334,13 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/me/brokerage/portfolio" && m==="GET"){
     const user=await requireUser(req,ctx);
-    if(isLimited("portfolio:"+user.id,12,60*1000))throw failure(429,"Too many portfolio refreshes");
+    if(await limited(ctx,"portfolio:"+user.id,12,60*1000))throw failure(429,"Too many portfolio refreshes");
     return json(res,200,await readPortfolio(user.id));
   }
   if(p==="/v1/me/brokerage/connect" && m==="POST"){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
     const user=await requireUser(req,ctx);
-    if(isLimited("broker-connect:"+user.id,4,15*60*1000))throw failure(429,"Too many connection attempts");
+    if(await limited(ctx,"broker-connect:"+user.id,4,15*60*1000))throw failure(429,"Too many connection attempts");
     return json(res,200,{url:await startBrokerageLink(user.id),permission:"read"});
   }
   if(p==="/v1/me/brokerage" && m==="DELETE"){
@@ -406,6 +419,23 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     return json(res,200,{user:publicUser(user),access:accessSummary(user,ctx.env)});
   }
+  if(p==="/v1/me/security-events" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,{items:await recentSecurityEvents(ctx.query,user.id,30),note:"Sign-ins and account changes for your account in the last 180 days."});
+  }
+  if(p==="/v1/me/export" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"export:"+user.id,5,60*60*1000))throw failure(429,"Too many exports. Try again in an hour.");
+    return json(res,200,await exportAccount(ctx.query,user,{req}),{"Content-Disposition":'attachment; filename="insidir-account-export.json"'});
+  }
+  if(p==="/v1/admin/ops" && m==="GET"){
+    const auth=await authorizeAdmin(req,{env:ctx.env,query:ctx.query,limiter:ctx.limiter});
+    if(!auth.ok){await adminAudit(ctx.query,req,"admin.denied",p,{status:auth.status});throw failure(auth.status,auth.error)}
+    await adminAudit(ctx.query,req,"admin.get",p,{via:auth.via},auth.actor);
+    return json(res,200,await opsSnapshot({query:ctx.query,env:ctx.env}));
+  }
+  // Provider webhooks are server-to-server (no Origin); they authenticate with their own secret.
+  if(p==="/v1/email/webhook/postmark" && m==="POST")return handleEmailWebhook(req,res,json,{query:ctx.query,env:ctx.env,readBody:rawBody});
   if(p==="/v1/me/manual-holdings" && m==="GET"){
     const user=await requireUser(req,ctx);
     const holdings=await ctx.query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
@@ -471,33 +501,103 @@ async function route(req,res,ctx){
     // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
     const ip=clientAddress(req);
     if(p==="/v1/auth/register" && m==="POST"){
-      if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
+      if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
-      return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
+      await logSecurityEvent(ctx.query,{req,userId:r.user.id,kind:"register"});
+      // A confirmation link goes out whenever email is configured; checkout and complimentary access wait for it when enforced.
+      let sent=false;
+      if(emailSettings(ctx.env).enabled){try{await sendVerificationEmail(ctx.query,r.user,{env:ctx.env,req});sent=true}catch(e){console.error("Verification email not queued",e?.message)}}
+      return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env),verification:{sent}}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
       const x=await body(req),who=typeof x?.email==="string"?x.email.trim().toLowerCase().slice(0,320):"";
       // Only failed attempts count: per client address and per account, so one network cannot lock everyone out
       // and nobody can guess at one account from many addresses.
-      if(atLimit("login-ip:"+ip,30) || (who && atLimit("login-email:"+who,10)))throw failure(429,"Too many failed sign-in attempts. Wait 15 minutes and try again.");
+      if(await ctx.limiter.atLimit("login-ip:"+ip,30) || (who && await ctx.limiter.atLimit("login-email:"+who,10))){
+        await logSecurityEvent(ctx.query,{req,email:who||null,kind:"login_rate_limited"});
+        throw failure(429,"Too many failed sign-in attempts. Wait 15 minutes and try again.");
+      }
       let r;
       try{r=await login(x.email,x.password)}
-      catch(e){if(e?.status===401){countFailure("login-ip:"+ip);if(who)countFailure("login-email:"+who)}throw e}
+      catch(e){
+        if(e?.status===401){await ctx.limiter.fail("login-ip:"+ip,15*60*1000);if(who)await ctx.limiter.fail("login-email:"+who,15*60*1000);await logSecurityEvent(ctx.query,{req,email:who||null,kind:"login_failure"})}
+        throw e;
+      }
+      await logSecurityEvent(ctx.query,{req,userId:r.user.id,kind:"login_success"});
       return json(res,200,{user:r.user,access:accessSummary(r.account,ctx.env)},{"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/logout" && m==="POST"){
-      await revokeSession(req);return json(res,200,{ok:true},{"Set-Cookie":clearCookie()});
+      const who=await ctx.currentUser(req).catch(()=>null);
+      await revokeSession(req);
+      if(who)await logSecurityEvent(ctx.query,{req,userId:who.id,kind:"logout"});
+      return json(res,200,{ok:true},{"Set-Cookie":clearCookie()});
+    }
+    /* Email verification and password recovery (src/account-security.mjs). Tokens arrive in the request body (the
+     * pages read them from the link's #fragment), never in a URL the server logs. */
+    if(p==="/v1/auth/verify-email" && m==="POST"){
+      if(await limited(ctx,"verify-ip:"+ip,30))throw failure(429,"Too many attempts. Try again shortly.");
+      const x=await body(req);
+      return json(res,200,await verifyEmail(ctx.query,x?.token,{req}));
+    }
+    if(p==="/v1/auth/resend-verification" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(!emailSettings(ctx.env).enabled)throw failure(503,"Email is not available yet. Contact hello@aethric.llc.");
+      const row=(await ctx.query("SELECT email,email_verified_at FROM users WHERE id=$1",[user.id])).rows[0];
+      if(row?.email_verified_at)return json(res,200,{sent:false,alreadyVerified:true});
+      if(await limited(ctx,"resend-verify:"+user.id,5,60*60*1000))throw failure(429,"We have sent several links already. Check your inbox and spam folder, or try again in an hour.");
+      await sendVerificationEmail(ctx.query,{id:user.id,email:row?.email||user.email},{env:ctx.env,req});
+      return json(res,200,{sent:true});
+    }
+    if(p==="/v1/auth/forgot-password" && m==="POST"){
+      if(await limited(ctx,"forgot-ip:"+ip,10))throw failure(429,"Too many requests. Wait 15 minutes and try again.");
+      const x=await body(req),who=typeof x?.email==="string"?x.email.trim().toLowerCase().slice(0,320):"";
+      // Per address the answer stays the same past the limit (nothing is sent), so it reveals nothing.
+      if(who && await limited(ctx,"forgot-email:"+who,3,60*60*1000))return json(res,202,{accepted:true,message:FORGOT_REPLY});
+      if(!emailSettings(ctx.env).enabled)throw failure(503,"Password recovery by email is not available yet. Email hello@aethric.llc from your account address.");
+      await requestPasswordReset(ctx.query,x?.email,{env:ctx.env,req});
+      return json(res,202,{accepted:true,message:FORGOT_REPLY});
+    }
+    if(p==="/v1/auth/reset-password" && m==="POST"){
+      if(await limited(ctx,"reset-ip:"+ip,20))throw failure(429,"Too many attempts. Wait 15 minutes and try again.");
+      const x=await body(req);
+      return json(res,200,await resetPassword(ctx.query,x?.token,x?.password,{req}),{"Set-Cookie":clearCookie()});
+    }
+    if(p==="/v1/me/password" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"password-change:"+user.id,6))throw failure(429,"Too many attempts. Try again shortly.");
+      const x=await body(req);
+      return json(res,200,await changePassword(ctx.query,user,x?.currentPassword,x?.newPassword,{req}));
+    }
+    if(p==="/v1/me/sessions/revoke-others" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      return json(res,200,await revokeOtherSessions(ctx.query,user,{req}));
+    }
+    /* Administrator session: token + one-time code once, then a 30-minute HttpOnly SameSite=Strict cookie. */
+    if(p==="/v1/admin/session" && m==="POST"){
+      const auth=await authorizeAdmin(req,{env:ctx.env,query:ctx.query,limiter:ctx.limiter});
+      if(!auth.ok){await adminAudit(ctx.query,req,"admin.denied",p,{status:auth.status});throw failure(auth.status,auth.error)}
+      const token=await openAdminSession(req,auth.actor,{query:ctx.query});
+      await adminAudit(ctx.query,req,"admin.session_opened",p,{via:auth.via},auth.actor);
+      await logSecurityEvent(ctx.query,{req,kind:"admin_access",detail:{via:auth.via}});
+      return json(res,200,{ok:true,expiresInMinutes:30},{"Set-Cookie":adminCookie(token,adminSettings(ctx.env))});
+    }
+    if(p==="/v1/admin/session" && m==="DELETE"){
+      await closeAdminSession(req,{query:ctx.query});
+      return json(res,200,{ok:true},{"Set-Cookie":clearAdminCookie(adminSettings(ctx.env))});
     }
     if(p==="/v1/me" && m==="DELETE"){
       const user=await requireUser(req,ctx);
-      if(isLimited("delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
+      if(await limited(ctx,"delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
       // Deleting an account needs the account's password as well as the session, so a borrowed or stolen session cannot do it.
       const confirm=await body(req);
-      if(!await passwordMatches(user.id,confirm?.password))throw failure(403,"That password is not correct, so nothing was deleted.");
+      if(!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password is not correct, so nothing was deleted.")}
       // Cancel a live Stripe subscription FIRST (nothing is deleted if Stripe cannot confirm it),
       // then revoke an active brokerage grant, then remove the account and its data.
       const result=await deleteAccount(user,{query,stripe:ctx.stripe||createStripeClient({secretKey:billingSettings(ctx.env).secretKey}),
         revokeBrokerage:disconnectBrokerage});
+      // Logged after the row is gone: no user id, only the address digest, so the event outlives nothing personal but that.
+      await logSecurityEvent(ctx.query,{req,email:user.email,kind:"account_deleted",detail:{subscriptionCanceled:!!result.subscriptionCanceled}});
+      await accountDeletedNotice(ctx.query,user,result,ctx.env).catch(e=>console.error("Deletion confirmation not queued",e?.message));
       return json(res,200,result,{"Set-Cookie":clearCookie()});
     }
     if(p==="/v1/me/research-decisions" && m==="POST"){
@@ -519,7 +619,7 @@ async function route(req,res,ctx){
     }
     if(p==="/v1/me/manual-holdings" && m==="POST"){
       const user=await requireUser(req,ctx);
-      if(isLimited("holding-write:"+user.id,40,15*60*1000))throw failure(429,"Too many holding updates");
+      if(await limited(ctx,"holding-write:"+user.id,40,15*60*1000))throw failure(429,"Too many holding updates");
       const item=validateManualHolding(await body(req));
       const record=await query(`INSERT INTO manual_holdings(user_id,ticker,quantity)
         SELECT $1,$2,$3 WHERE
@@ -537,7 +637,7 @@ async function route(req,res,ctx){
     }
     if(p==="/v1/me/people" && m==="POST"){
       const user=await requireUser(req,ctx);
-      if(isLimited("follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
+      if(await limited(ctx,"follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
       const x=await body(req),cik=canonicalOwnerCik(x?.owner_cik);
       if(!cik)throw failure(400,"Valid reporting-person SEC CIK required");
       const sql=(await hasFilingOwners(ctx.query))?FOLLOW_SQL.joint:FOLLOW_SQL.single;
@@ -572,6 +672,7 @@ async function route(req,res,ctx){
  * query(sql, params) (default the PostgreSQL pool; used by the followed-people routes), quiet. */
 export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
+  ctx.limiter=options.limiter||(pool&&!options.query?pgLimiter({query}):memoryLimiter());
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
   if(!options.quiet)for(const notice of capabilityNotices(ctx.env))console.warn("Capabilities:",notice);
   return createServer((req,res)=>{route(req,res,ctx).catch(error=>{
