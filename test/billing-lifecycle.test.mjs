@@ -33,7 +33,11 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     const text = await res.text(); let json = null; try { json = JSON.parse(text); } catch {}
     return { status: res.status, json, cookie: (res.headers.get("set-cookie") || "").split(";")[0] };
   };
-  const deliver = async events => { const out = []; for (const e of events) { const { raw, signature } = signedWebhook(e, WHSEC); out.push(await call("/v1/billing/webhook", { method: "POST", raw, headers: { "Stripe-Signature": signature } })); } return out; };
+  // Like Stripe, redeliver an event that did not get a 2xx (e.g. a lock wait while another suite migrates the shared
+  // test database); handling is idempotent per event id. A delivery that keeps failing fails the test.
+  const deliver = async events => { const out = []; for (const e of events) { const { raw, signature } = signedWebhook(e, WHSEC); let r;
+    for (let attempt = 0; attempt < 3; attempt++) { r = await call("/v1/billing/webhook", { method: "POST", raw, headers: { "Stripe-Signature": signature } }); if (r.status < 300) break; await new Promise(ok => setTimeout(ok, 300)); }
+    assert.ok(r.status < 300, "webhook " + e.type + " answered " + r.status); out.push(r); } return out; };
   const access = async cookie => (await call("/v1/me", { cookie })).json.access;
   const product = async cookie => (await call("/v1/filings", { cookie })).status;
   const mails = async (userId, kind) => (await q("SELECT * FROM email_outbox WHERE user_id=$1 AND kind=$2 ORDER BY id", [userId, kind])).rows;

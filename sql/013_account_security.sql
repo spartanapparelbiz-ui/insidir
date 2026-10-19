@@ -43,9 +43,13 @@ CREATE INDEX IF NOT EXISTS security_events_kind_idx ON security_events(kind, cre
 CREATE INDEX IF NOT EXISTS security_events_created_idx ON security_events(created_at);
 
 -- Every admin one-time code is accepted once (RFC 6238 replay protection across instances).
+-- One row per accepted code, keyed by the secret (a fingerprint, never the secret) and its 30-second step, so a
+-- code is accepted once across every instance and a rotated secret starts clean.
 CREATE TABLE IF NOT EXISTS admin_otp_used (
-  step BIGINT PRIMARY KEY,
-  used_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  secret_fingerprint TEXT NOT NULL,
+  step BIGINT NOT NULL,
+  used_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (secret_fingerprint, step)
 );
 
 -- Background workers report each run here, so operators can see what ran, when, and what failed.

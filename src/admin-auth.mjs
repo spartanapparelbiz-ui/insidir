@@ -58,7 +58,7 @@ export async function authorizeAdmin(req, { env = process.env, query, limiter, n
   if (!supplied) return refuse(401, "Unauthorized");
   const step = verifyTotp(settings.totpSecret, String(req.headers["x-insidir-admin-otp"] || "").trim(), { now });
   if (step == null) return refuse(401, "A valid one-time code is required (X-Insidir-Admin-OTP).", "admin_mfa_failed");
-  const fresh = await query("INSERT INTO admin_otp_used(step) VALUES($1) ON CONFLICT DO NOTHING RETURNING step", [step]);
+  const fresh = await query("INSERT INTO admin_otp_used(secret_fingerprint,step) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING step", [sha("totp:" + settings.totpSecret).slice(0, 16), step]);
   if (!fresh.rows.length) return refuse(401, "That one-time code was already used. Wait for the next one.", "admin_mfa_replay");
   return { ok: true, actor: tokenFingerprint(supplied), via: "otp" };
 }
