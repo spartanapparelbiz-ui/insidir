@@ -1,4 +1,5 @@
-node_modules/
+# No trailing slash: a symlinked node_modules (a worktree sharing another checkout's) is ignored too.
+node_modules
 .env
 .env.*
 !.env.example
