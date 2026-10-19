@@ -7,6 +7,9 @@
   <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, in the app.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Insidir">
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
@@ -16,7 +19,8 @@
   <script defer src="assets/js/site.js"></script>
   <script defer src="assets/js/app.js?v=18"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
-  <script defer src="assets/js/live-research.js?v=7"></script>
+  <script defer src="assets/js/live-research.js?v=8"></script>
+  <script defer src="assets/js/push-settings.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
@@ -42,10 +46,17 @@
        >Manage alerts</button>
     </div>
 
+    <section id="insidir-push-setup" aria-labelledby="push-heading" style="margin:16px 0 28px;padding:18px 20px;border:1px solid #555;max-width:790px">
+      <h2 id="push-heading" style="font-size:18px;margin:0 0 9px">Phone notifications</h2>
+      <p style="font-size:12px;line-height:1.6">Opt in to receive source-backed SEC filing updates for companies and reporting people you follow. On iPhone, install Insidir to your Home Screen first.</p>
+      <p data-push-status role="status" aria-live="polite" style="font-size:12px;margin:10px 0">Checking device support…</p>
+      <button type="button" class="btn btn--dark" data-push-enable>Enable notifications</button>
+      <button type="button" class="btn btn--dark" data-push-disable hidden>Disable notifications</button>
+    </section>
     <div class="alerts-dateline" aria-label="Where alerts come from">
       <div><span>Source</span><strong>Imported SEC Form 4 filings</strong></div>
       <div><span>Matching</span><strong>Tickers saved to your watchlist</strong></div>
-      <div><span>Delivery</span><strong>In the app only</strong></div>
+      <div><span>Delivery</span><strong>In app · optional push</strong></div>
     </div>
 
 
@@ -115,7 +126,7 @@
       <div class="drawer__foot" style="--i:5">
         <p class="drawer__note">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-          <span>Alerts appear in the app. Email and push delivery are not available yet.</span>
+          <span>Alerts appear in the app. You can also opt in to device notifications.</span>
         </p>
         <button class="btn btn--dark btn--block drawer__save" type="button" data-save-prefs>Save preferences</button>
       </div>
