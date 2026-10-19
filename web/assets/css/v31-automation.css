@@ -113,8 +113,8 @@
 .ax-reasons li span:last-child{color:var(--c-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ax-push{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--c-line-2);border-radius:var(--r-md);background:var(--c-surface-2);box-shadow:var(--shadow-pop)}
 .ax-push__icon{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--c-ink);color:var(--c-bg);font:800 15px/1 var(--font)}
-.ax-push b{display:block;color:var(--c-ink);font-size:12.5px;font-weight:600}
-.ax-push span{display:block;color:var(--c-soft);font-size:12px;line-height:1.45}
+.ax-push div b{display:block;color:var(--c-ink);font-size:12.5px;font-weight:600}
+.ax-push div span{display:block;color:var(--c-soft);font-size:12px;line-height:1.45}
 .ax-quote{margin:0;padding:12px 14px;border-left:2px solid var(--c-ink);background:var(--c-surface);color:var(--c-soft);font-size:12.5px;line-height:1.6}
 .ax-quote cite{display:block;margin-top:6px;font-style:normal;color:var(--c-faint);font-size:11px}
 .ax-card a{color:var(--c-ink);text-underline-offset:3px}
