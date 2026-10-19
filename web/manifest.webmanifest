@@ -1,0 +1,19 @@
+{
+  "name": "Insidir — Financial Research",
+  "short_name": "Insidir",
+  "description": "SEC filing intelligence and watchlist notifications",
+  "id": "/",
+  "start_url": "/alerts.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0c0c0b",
+  "theme_color": "#0c0c0b",
+  "icons": [
+    {
+      "src": "/assets/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
