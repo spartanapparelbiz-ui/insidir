@@ -123,6 +123,7 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   if (sec.blocked) alerts.push({ area: "sec", level: "stale", detail: "SEC answered 403 to this process; pause and check SEC_USER_AGENT and request rates" });
   if (email && !email.unavailable && email.provider === "none" && (email.queued || 0) > 0) alerts.push({ area: "email", level: "warning", detail: `${email.queued} message(s) queued and no email provider configured` });
   if (email?.oldestQueuedMinutes > 30 && email.provider !== "none") alerts.push({ area: "email", level: "warning", detail: `oldest queued message waiting ${email.oldestQueuedMinutes} minutes` });
+  if (notifications?.preferences?.email_on > 0 && !String(env.INSIDIR_POSTAL_ADDRESS || "").trim()) alerts.push({ area: "email", level: "warning", detail: "alert emails are on for some members but INSIDIR_POSTAL_ADDRESS is not set (see ATTORNEY-REVIEW.md C-1)" });
   if (billing?.enabled && billing.webhookMinutesAgo == null) alerts.push({ area: "billing", level: "warning", detail: "billing enabled but no Stripe webhook has ever been processed" });
   for (const w of Array.isArray(workers) ? workers : []) if (w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at))) alerts.push({ area: "worker:" + w.name, level: "warning", detail: String(w.last_error || "").slice(0, 160) });
   return { generatedAt: new Date().toISOString(), status: alerts.some(a => a.level === "stale") ? "degraded" : alerts.length ? "warning" : "ok", alerts,

@@ -94,7 +94,8 @@ function alertEmail(user, events, { env, digest }) {
     heading: digest ? "Your daily Insidir alerts" : events.length === 1 ? "New filing for your watchlist" : `${events.length} new filings for your watchlist`,
     paragraphs: [...lines, ...more, "Each line restates a public SEC record as filed. Trade dates and filing dates differ, and the import may be delayed or incomplete. Read the original filing before relying on it. This is not investment advice."],
     action: { label: "Open Alerts", url: site + "/alerts.html" },
-    footer: [`You get these because you turned on ${digest ? "daily" : "immediate"} alert emails. Change or stop them in Alerts, or unsubscribe in one click: ${unsubscribe}`]
+    footer: [`You get these because you turned on ${digest ? "daily" : "immediate"} alert emails. Change or stop them in Alerts, or unsubscribe in one click: ${unsubscribe}`,
+      ...(String(env.INSIDIR_POSTAL_ADDRESS || "").trim() ? ["Aethric LLC · " + String(env.INSIDIR_POSTAL_ADDRESS).trim().slice(0, 200)] : [])]
   });
   return { text, html, headers: { "List-Unsubscribe": `<${unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
 }

@@ -13,6 +13,9 @@ const amount = v => {
 };
 const flag = v => /^(1|true)$/i.test(val(v) || "");
 const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+/* An XML Schema date may carry a time zone ("2026-10-14-05:00", "2026-10-14Z"); the calendar date is the part before
+ * it. Filers do send these: without this the trade date of such a line was stored as unknown. */
+export const xmlDate = v => { const m = /^(\d{4}-\d{2}-\d{2})(?:Z|[+-]\d{2}:\d{2})?$/.exec(String(v ?? "").trim()); return m && isDate(m[1]) ? m[1] : null; };
 
 export function parseAtom(xml) {
   const feed = parser.parse(xml)?.feed;
@@ -63,7 +66,7 @@ export function parseOwnership(xml, filing) {
       const acq = val(t?.transactionAmounts?.transactionAcquiredDisposedCode)?.toUpperCase() || null;
       const shares = amount(t?.transactionAmounts?.transactionShares);
       const price = amount(t?.transactionAmounts?.transactionPricePerShare);
-      const transactionDate = val(t?.transactionDate);
+      const transactionDate = xmlDate(val(t?.transactionDate));
       const owner = owners.length === 1 ? owners[0] : null;
       const category = !derivative && code === "P" && acq === "A" ? "reported_purchase"
         : !derivative && code === "S" && acq === "D" ? "reported_sale"
@@ -73,7 +76,7 @@ export function parseOwnership(xml, filing) {
         accession: filing.accession, issuerCik, ticker,
         ownerCik: owner?.cik || null,
         ownerName: owner?.name || (owners.map(x => x.name).join(", ") || "Unknown"),
-        transactionDate: isDate(transactionDate) ? transactionDate : null,
+        transactionDate,
         securityTitle: val(t?.securityTitle) || null,
         code, acquiredDisposed: acq, category, derivative,
         shares, pricePerShare: price,
@@ -90,7 +93,7 @@ export function parseOwnership(xml, filing) {
     issuerCik, issuerName: scalar(issuer.issuerName) || "Unknown issuer", ticker,
     title: filing.title, formType: val(root.documentType) || filing.formType,
     sourceUrl: filing.sourceUrl, publishedAt: filing.publishedAt,
-    periodOfReport: isDate(val(root.periodOfReport)) ? val(root.periodOfReport) : null,
+    periodOfReport: xmlDate(val(root.periodOfReport)),
     isAmendment: /\/A/i.test(val(root.documentType) || filing.formType || ""),
     owners, transactions
   };

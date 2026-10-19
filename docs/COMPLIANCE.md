@@ -1,5 +1,12 @@
 # Insidir compliance and risk-reduction report
 
+> **Update, October 19, 2026.** Since this report: the retired sample-data scripts are deleted (§6, first item); the
+> motion test passes on `main` (§1 item 8, §6); email now exists with a post-purchase acknowledgment, receipts, trial
+> reminders, failed-payment and cancellation notices (§6, §8 "Post-purchase acknowledgment" is now IMPLEMENTED —
+> TECHNICALLY VERIFIED WITH A STRIPE SIMULATOR · REQUIRES ATTORNEY REVIEW); email alerts exist behind recorded
+> consent; source-backed explanations exist with the AI part off by default; admin access needs MFA. Release status
+> and evidence: [RELEASE-REPORT.md](RELEASE-REPORT.md). Open legal questions: [ATTORNEY-REVIEW.md](ATTORNEY-REVIEW.md).
+
 October 18, 2026. Prepared from the code in this repository. **This is an engineering audit, not legal advice.**
 Nothing here, and no passing test, establishes that Insidir is legally compliant, registered, approved or exempt
 from any law. Every item marked for attorney review or regulatory approval needs a qualified human to act on it.

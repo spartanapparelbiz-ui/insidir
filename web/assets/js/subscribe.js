@@ -224,7 +224,21 @@
       // The engine refuses a second subscription and says why (already active, unpaid invoice, payment pending, paused…).
       case 409: { const why = serverText(res); await load(); return say(why || "You already have an Insidir subscription. Manage it from Billing."); }
       case 429: return say(serverText(res) || "Too many attempts. Please wait a few minutes and try again.");
-      case 403: return say("Your browser sent this request from an unexpected address. Reload the page and try again.");
+      case 403: {
+        // With email verification enforced, checkout waits for a confirmed address: offer a new link right here.
+        const why = serverText(res);
+        if (!/confirm your email/i.test(why)) return say("Your browser sent this request from an unexpected address. Reload the page and try again.");
+        say(why + " ");
+        const resend = document.createElement("button");
+        resend.type = "button"; resend.className = "pw-link"; resend.textContent = "Send a new confirmation link";
+        resend.addEventListener("click", async () => {
+          resend.disabled = true;
+          let r; try { r = await call("/v1/auth/resend-verification", "POST", {}); } catch (_) { r = null; }
+          say(r && r.ok ? (r.data.alreadyVerified ? "Your address is already confirmed. Try subscribing again." : "We sent a confirmation link. Open it, then come back to subscribe.") : (serverText(r) || "We couldn't send a link just now. Try again in a moment."));
+        });
+        feedback.append(resend);
+        return;
+      }
       case 404: return say(portal ? "There's no Stripe billing account for you yet. Subscribe first, or " + CONTACT + "." : NOT_STARTED);
       case 503: {
         // Either checkout isn't switched on, or Stripe didn't answer: the reloaded state tells which.

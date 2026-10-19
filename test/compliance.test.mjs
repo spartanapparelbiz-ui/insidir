@@ -95,10 +95,14 @@ test("release gate: nothing the site serves carries invented sample data", async
   } finally { server.close(); }
 });
 
-test("the alerts page offers only what exists: no political-trade or price-move alerts, delivery in the app only", () => {
+test("the alerts page offers only what exists: no political-trade or price-move alerts, no switch that does nothing", () => {
   const html = readFileSync(new URL("alerts.html", WEB), "utf8");
-  assert.doesNotMatch(html, /political|Political|Price moves|price-move|members of Congress/);
-  assert.match(html, /In the app only/);
+  assert.doesNotMatch(html, /political|Political|Price moves|price-move|members of Congress|Coming soon/);
+  assert.doesNotMatch(html, /role="switch"/, "the old local-only switches are gone; preferences are saved by the engine");
+  assert.match(html, /alerts-center\.js/);
+  const js = readFileSync(new URL("assets/js/alerts-center.js", WEB), "utf8");
+  assert.match(js, /\/v1\/me\/email-preferences/); assert.match(js, /\/v1\/me\/notifications/);
+  assert.doesNotMatch(js, /manual-holdings|brokerage/, "alerts never use holdings");
 });
 
 test("admin audit trail: every admin request is logged with a token fingerprint, never the token", async () => {

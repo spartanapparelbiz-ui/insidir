@@ -59,7 +59,8 @@ const ALL_PAGES = [
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
   ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
-  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
+  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
+  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -177,6 +178,17 @@ function fixture(url, method, from = "") {
   if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", review_status: "researching", reviewStatus: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
   if (p === "/v1/me/people") return { items: insiderPeople.slice(0, 1) };
   if (p === "/v1/me/alerts") return { items: [] };
+  // Alerts and research events (SYNTHETIC fixtures for the colour audit; the copy mirrors the engine's own summaries).
+  const reEvent = { id: "11", event_type: "insider_purchase", status: "active", ticker: "AAPL", issuer_name: "Apple Inc.", transaction_date: "2026-09-10", transaction_date_end: "2026-09-11",
+    filing_date: "2026-09-12T21:00:00Z", ingested_at: "2026-09-12T21:15:00Z", reporting_lag_days: 1, source_urls: [source], summary: "OTHER PUBLIC FILER (Director) reported buying 1,500 shares of AAPL at $28 a share on Sep 10, 2026 to Sep 11, 2026; reported value $42,000. Form 4 filed Sep 12, 2026." };
+  if (p === "/v1/me/notifications") return { items: [{ id: "5", reason: "watchlist", createdAt: "2026-09-12T21:20:00Z", readAt: null, event: { id: "11", type: "insider_purchase", status: "active", ticker: "AAPL", filingDate: reEvent.filing_date, retrievedAt: reEvent.ingested_at, sourceUrls: [source], summary: reEvent.summary } },
+    { id: "4", reason: "followed_person", createdAt: "2026-09-10T21:20:00Z", readAt: "2026-09-11T08:00:00Z", event: { id: "10", type: "insider_sale", status: "active", ticker: "AAPL", filingDate: "2026-09-10T20:00:00Z", retrievedAt: "2026-09-10T20:10:00Z", sourceUrls: [source], summary: "COOK TIMOTHY D (Chief Executive Officer) reported selling 12,500 shares of AAPL at $26 a share on Sep 8, 2026; reported value $325,000. Form 4 filed Sep 10, 2026." } }], unread: 1, next: null };
+  if (p === "/v1/me/email-preferences") return { inApp: true, emailAlerts: "off", eventTypes: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], digestHourUtc: 13, consentedAt: null, unsubscribedAt: null,
+    emailVerified: true, emailAvailable: true, consent: { version: "2026-10-19", text: "Email me factual alerts about new public filings." }, eventTypesAvailable: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], modes: ["off", "immediate", "daily"] };
+  if (p === "/v1/research-events") return { items: [reEvent], next: null, lastImportAt: "2026-09-12T21:15:00Z" };
+  if (/^\/v1\/research-events\/\d+\/explanation$/.test(p)) return { writer: "rules", facts: [{ text: reEvent.summary, evidence_ids: ["E1"] }], interpretation: [{ text: "A Form 4 is the public report an officer or director files after trading.", evidence_ids: [] }],
+    limitations: ["Not a recommendation."], evidence: [{ id: "E1", text: "Form 4 accession 1.", sourceUrl: source, retrievedAt: reEvent.ingested_at }], disclaimer: "Not investment advice." };
+  if (p === "/v1/me/security-events") return { items: [{ kind: "login_success", created_at: "2026-09-12T08:00:00Z" }] };
   if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", quantity: 12.5, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
   if (p === "/v1/me/brokerage/status") return { enabled: false, connected: false, provider: "snaptrade" };
   if (p === "/v1/me/brokerage/portfolio") return { accounts: [], holdings: [] };
