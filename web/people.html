@@ -5,7 +5,7 @@
 <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=2">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/entity-media.js?v=media-6"></script><script defer src="assets/js/app.js?v=18"></script><script defer src="assets/js/v10-people.js?v=19"></script>
+<script defer src="assets/js/entity-media.js?v=media-6"></script><script defer src="assets/js/app.js?v=18"></script><script defer src="assets/js/v10-people.js?v=20"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
@@ -15,7 +15,7 @@
 
 <section class="v10-people-hero" aria-labelledby="v10-people-heading">
   <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-  <div class="v10-people-hero__copy"><p class="v10-kicker">SEC Form 4 · reporting persons</p><h1 id="v10-people-heading">Follow the people.</h1><p>Every ownership filing names the people behind it. Search the reporting persons in Insidir's imported SEC records, follow the names that matter to your research and open the company they report on.</p><button type="button" class="v10-jump" data-focus-search data-hf-atom>Search the directory ↓</button></div>
+  <div class="v10-people-hero__copy"><p class="v10-kicker">SEC Form 4 · reporting persons</p><h1 id="v10-people-heading">Follow the people.</h1><p>Search the reporting people named in Insidir’s imported public SEC Form 4 filings, in either name order. Open their original disclosures and follow their activity when available.</p><button type="button" class="v10-jump" data-focus-search data-hf-atom>Search the directory ↓</button></div>
   <figure class="v10-anatomy" aria-labelledby="v10-anatomy-title" data-hf-reveal>
     <figcaption id="v10-anatomy-title">What a Form 4 tells you</figcaption>
     <dl>
@@ -40,8 +40,8 @@
 
 <section class="v10-follows" aria-labelledby="v10-follows-title"><div class="v10-follows__head" data-hf-reveal><div><p class="v10-kicker">Your private research</p><h2 id="v10-follows-title">People you follow.</h2></div><a href="watchlist.html" data-hf-atom>Your company watchlist →</a></div><div id="v10-followed-results" aria-live="polite" data-hf-reveal-group><p class="v10-people-empty">Loading the people you follow…</p></div></section>
 
-<section id="v10-directory" class="v10-directory" aria-labelledby="v10-directory-title"><div class="v10-directory__head" data-hf-reveal><div><p class="v10-kicker">SEC Form 4 · imported records</p><h2 id="v10-directory-title">Reporting-person directory.</h2><p>Real filings and real dates. No invented profiles.</p></div><span id="v10-people-count">Loading…</span></div>
-<form class="v10-people-search" id="v10-people-search" role="search" data-hf-reveal><label for="v10-person-query">Search by name, as filed (last name first)</label><div><input id="v10-person-query" type="search" placeholder="e.g. Cook Timothy" maxlength="80" autocomplete="off" spellcheck="false"><button type="submit"><span>Search<span class="rd-xs-hide"> people</span></span></button></div></form>
+<section id="v10-directory" class="v10-directory" aria-labelledby="v10-directory-title"><div class="v10-directory__head" data-hf-reveal><div><p class="v10-kicker">SEC Form 4 · imported records</p><h2 id="v10-directory-title">Reporting-person directory.</h2><p>Search first or last name in any order. Coverage includes only SEC reporting people present in our current import.</p></div><span id="v10-people-count">Loading…</span></div>
+<form class="v10-people-search" id="v10-people-search" role="search" data-hf-reveal><label for="v10-person-query">Search by first name, last name, or SEC filer number</label><div><input id="v10-person-query" type="search" placeholder="e.g. Tim Cook, Jensen Huang, 1214156" maxlength="80" autocomplete="off" spellcheck="false"><button type="submit"><span>Search<span class="rd-xs-hide"> people</span></span></button></div></form>
 <p class="v10-people-status" role="status" id="v10-people-status" aria-live="polite" tabindex="-1">Loading SEC reporting people…</p><div class="v10-people-results" id="v10-people-results" data-hf-reveal-group></div></section>
 <p class="ins-media-credits" data-media-credits></p>
 <p class="v10-people-disclaimer" data-hf-reveal>Insidir organizes public disclosures for independent research. Following a reporting person saves a preference to your account; it does not place trades or imply investment advice. SEC data may be partial or delayed. <a href="data.html">How the data works →</a></p>
