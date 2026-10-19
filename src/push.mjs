@@ -4,7 +4,6 @@
  * Queue rows are unique per device and SEC accession. Only filings imported AFTER both
  * the follow and the subscription are eligible. Dispatch retries are bounded. */
 import webPush from "web-push";
-const {sendNotification,setVapidDetails}=webPush;
 import { query } from "./db.mjs";
 
 const PUBLIC=/^[A-Za-z0-9_-]{80,100}$/;
@@ -31,7 +30,7 @@ export function publicPushSettings(env=process.env){
 }
 function setup(env=process.env){
   if(!pushConfigured(env))throw Object.assign(Error("Phone notifications have not been configured."),{status:503});
-  setVapidDetails(env.INSIDIR_VAPID_SUBJECT,env.INSIDIR_VAPID_PUBLIC_KEY,env.INSIDIR_VAPID_PRIVATE_KEY);
+  webPush.setVapidDetails(env.INSIDIR_VAPID_SUBJECT,env.INSIDIR_VAPID_PUBLIC_KEY,env.INSIDIR_VAPID_PRIVATE_KEY);
 }
 export function validateSubscription(value){
   if(!value||typeof value!=="object"||Array.isArray(value)||
@@ -98,7 +97,7 @@ async function send(sub,payload,env=process.env){
   const message=JSON.stringify(payload);
   // Sending is delegated to standard browser push services. No arbitrary HTTP endpoints.
   if(!safeEndpoint(sub.endpoint))throw Object.assign(Error("Unrecognized push service"),{statusCode:400});
-  return sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},message,{TTL:3600,urgency:"normal"});
+  return webPush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},message,{TTL:3600,urgency:"normal"});
 }
 export async function sendTestPush(userId,env=process.env,run=query){
   setup(env);
