@@ -56,6 +56,9 @@ export async function explainFiling(accession,{run=queryDb,generate=requestExpla
  if(!aiReady())throw fail(503,"AI explanation provider not configured");
  const count=(await run("SELECT COUNT(*)::integer AS n FROM filing_explanations WHERE created_at>date_trunc('day',now())",[ ] )).rows[0]?.n||0;
  if(count>=dailyCap())throw fail(429,"Today's AI research processing limit has been reached");
+ const hour=(await run("SELECT COUNT(*)::integer AS n FROM filing_explanations WHERE created_at>now()-interval '1 hour'",[])).rows[0]?.n||0;
+ const hourlyLimit=Math.max(1,Math.min(100,Number(process.env.INSIDIR_AI_HOURLY_LIMIT)||8));
+ if(hour>=hourlyLimit)throw fail(429,"AI research is temporarily rate limited");
  const source=await loadFilingEvidence(accession,run);
  let generated;
  try{
