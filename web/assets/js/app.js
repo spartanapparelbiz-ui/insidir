@@ -434,8 +434,65 @@
     });
   }
 
+  /* One-time branded announcement, visible to signed-in members regardless
+     of whether they have granted Web Push permission. Dismissed per browser. */
+  const PRODUCT_ANNOUNCEMENT = Object.freeze({
+    id: "features-2026-10-19",
+    title: "Insidir · New Features Available",
+    message: "We've upgraded Insidir with financial intelligence alerts, expanded company research, and new market monitoring. Open Insidir to explore what's new.",
+    href: "alerts.html",
+    expiresAt: "2026-10-27T00:00:00Z"
+  });
+  function showPlatformAnnouncement() {
+    const host=document.querySelector("[data-app-header]");
+    if(!host||Date.now()>=Date.parse(PRODUCT_ANNOUNCEMENT.expiresAt))return;
+    const storageKey="insidir:announcement:dismissed:"+PRODUCT_ANNOUNCEMENT.id;
+    try{if(localStorage.getItem(storageKey)==="1")return;}catch{}
+    if(document.querySelector("[data-insidir-announcement]"))return;
+    const css=document.createElement("style");
+    css.textContent=[
+      ".insidir-platform-announcement{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:#191918;color:#e9e4da;padding:15px max(18px,calc((100% - 1280px)/2));border-bottom:1px solid #484541;position:relative;z-index:5}",
+      ".insidir-platform-announcement__lead{display:flex;align-items:center;gap:12px;flex:1 1 450px;min-width:0}",
+      ".insidir-platform-announcement__logo{width:36px;height:36px;flex:none;border:1px solid #534f49;border-radius:8px}",
+      ".insidir-platform-announcement__name{font-weight:650;font-size:13px;letter-spacing:.01em;margin:0 0 4px}",
+      ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:#c5c1ba;margin:0;max-width:900px}",
+      ".insidir-platform-announcement__actions{display:flex;align-items:center;gap:12px}",
+      ".insidir-platform-announcement__open{color:#e9e4da;text-decoration:underline;text-underline-offset:3px;font-size:12px}",
+      ".insidir-platform-announcement__close{color:#c5c1ba;background:transparent;border:1px solid #514d46;border-radius:4px;padding:6px 9px;cursor:pointer;font-size:12px}",
+      "@media(max-width:650px){.insidir-platform-announcement{padding:14px 18px;gap:12px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
+    ].join("");
+    document.head.append(css);
+    const banner=document.createElement("section");
+    banner.className="insidir-platform-announcement";
+    banner.dataset.insidirAnnouncement=PRODUCT_ANNOUNCEMENT.id;
+    banner.setAttribute("role","status");
+    banner.setAttribute("aria-label","Insidir product announcement");
+    const lead=document.createElement("div");lead.className="insidir-platform-announcement__lead";
+    const icon=document.createElement("img");
+    icon.className="insidir-platform-announcement__logo";
+    icon.src="/assets/icons/favicon.svg";icon.alt="Insidir";
+    const words=document.createElement("div");
+    const title=document.createElement("p");title.className="insidir-platform-announcement__name";
+    title.textContent=PRODUCT_ANNOUNCEMENT.title;
+    const body=document.createElement("p");body.className="insidir-platform-announcement__body";
+    body.textContent=PRODUCT_ANNOUNCEMENT.message;
+    words.append(title,body);lead.append(icon,words);
+    const actions=document.createElement("div");actions.className="insidir-platform-announcement__actions";
+    const open=document.createElement("a");open.href=PRODUCT_ANNOUNCEMENT.href;
+    open.className="insidir-platform-announcement__open";open.textContent="Explore updates ↗";
+    const close=document.createElement("button");
+    close.type="button";close.className="insidir-platform-announcement__close";
+    close.textContent="Dismiss";close.setAttribute("aria-label","Dismiss Insidir announcement");
+    close.addEventListener("click",()=>{
+      try{localStorage.setItem(storageKey,"1");}catch{}
+      banner.remove();css.remove();
+    });
+    actions.append(open,close);banner.append(lead,actions);
+    host.insertAdjacentElement("afterend",banner);
+  }
   function init() {
     renderHeader();
+    showPlatformAnnouncement();
     segmented(document);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
