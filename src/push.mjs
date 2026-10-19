@@ -78,7 +78,7 @@ export async function sendNotifications({run=queryDb,send=webpush.sendNotificati
    await run("UPDATE push_subscriptions SET last_success_at=now() WHERE id=$1",[job.subscription_id]);sent++;
   }catch(e){
    if([404,410].includes(Number(e?.statusCode)))await run("DELETE FROM push_subscriptions WHERE id=$1",[job.subscription_id]);
-   else await run("UPDATE push_deliveries SET last_error=$2,status=CASE WHEN attempts>=5 THEN 'failed' ELSE 'pending' END WHERE id=$1",[job.id],String(e?.message||e).slice(0,200)]);
+   else await run("UPDATE push_deliveries SET last_error=$2,status=CASE WHEN attempts>=5 THEN 'failed' ELSE 'pending' END WHERE id=$1",[job.id,String(e?.message||e).slice(0,200)]);
    failed++;
   }
  }
