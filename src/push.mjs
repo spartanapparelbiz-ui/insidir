@@ -3,7 +3,8 @@
  * The browser subscription endpoint is an authenticated credential: treat it as private.
  * Queue rows are unique per device and SEC accession. Only filings imported AFTER both
  * the follow and the subscription are eligible. Dispatch retries are bounded. */
-import { sendNotification, setVapidDetails } from "web-push";
+import webPush from "web-push";
+const {sendNotification,setVapidDetails}=webPush;
 import { query } from "./db.mjs";
 
 const PUBLIC=/^[A-Za-z0-9_-]{80,100}$/;
