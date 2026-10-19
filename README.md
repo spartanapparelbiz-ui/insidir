@@ -1,3 +1,11 @@
+## Insidir V28: account security, research events, sourced explanations and alerts (October 2026)
+
+- **Accounts:** email confirmation, password recovery and change, sign-out of other devices, a security log, a data download; rate limits shared by every instance; admin access needs a token and a one-time code.
+- **Subscription notices:** acknowledgment of the terms after checkout, receipts, trial reminders, failed-payment and cancellation emails, each sent once per Stripe event; the whole lifecycle is tested against PostgreSQL with a Stripe simulator, and `scripts/stripe-test-mode-check.mjs` checks it against Stripe test mode.
+- **Research events** from the SEC import (purchases and sales, amended filings and what changed, purchases by several insiders, watched companies' other filings), with trade, filing and retrieval times kept apart and every source linked; **sourced explanations** with server-side checks (the AI part is off by default); **alerts** in the app and, with recorded consent, by email.
+- **Operations page** (`ops.html`) for ingestion freshness, workers, email, billing webhooks and source health. Removed the retired scripts that held invented data.
+- Runbook: `docs/OPERATIONS.md`. What was verified and what is still blocked: `docs/RELEASE-REPORT.md`. Questions for counsel: `docs/ATTORNEY-REVIEW.md`.
+
 ## Insidir V27: richer, smoother pages; a clear price with the $1 offer up front; more verified headshots (October 2026)
 
 - **Redesign, same look** (`web/assets/css/v16-rich.css`, `v16-rich-site.css`). The landing hero carries a ledger of five real Form 4 lines filed Oct 16, 2026, each checked against the database, with dot bars scaled to value. The product window has numbered pins and a legend. Figures get dot meters that encode the fact. Every page gets corner ticks, registration crosses, numbered running heads, dot-screen backdrops, "FIG." labels, a halftone price panel and numbered questions. Still JetBrains Mono, paper and ink, square corners, colour-only hovers.
