@@ -672,6 +672,9 @@ try {
       addEventListener("load", go);
     });
     // Self-test hooks: prove the audit fails when something orange is added (see the header).
+    // intelligence.html plays a short one-time introduction (headings fade in over ~2 s). Colours and contrast are
+    // judged on the settled page, as every returning visitor sees it, so the audit starts with the intro already seen.
+    await context.addInitScript(() => { try { sessionStorage.setItem("ix-intro", "1"); } catch {} });
     if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
     await context.route("**/v1/**", async route => {
