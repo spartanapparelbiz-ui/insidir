@@ -339,8 +339,10 @@ async function route(req,res,ctx){
   if(p==="/v1/sources" && m==="GET")return json(res,200,{sources:sourceRegistry,disclaimer:"Sources marked disabled are not ingested or republished."});
   if(p==="/v1/status" && m==="GET"){
     const last=await query("SELECT started_at,finished_at,status,discovered,parsed,failed,skipped FROM ingest_runs ORDER BY id DESC LIMIT 1");
-    const count=await query("SELECT count(*)::integer AS filings FROM sec_filings WHERE ingest_status='parsed'");
-    return json(res,200,{engine:"online",sec:secReady()?"configured":"requires_user_agent",filings:count.rows[0]?.filings||0,lastIngest:last.rows[0]||null,paid:false});
+    const count=await query("SELECT count(*)::integer AS filings, MAX(published_at) AS latest_published_at FROM sec_filings WHERE ingest_status='parsed'");
+    return json(res,200,{engine:"online",sec:secReady()?"configured":"requires_user_agent",filings:count.rows[0]?.filings||0,
+      lastIngest:last.rows[0]||null,latestFilingPublishedAt:count.rows[0]?.latest_published_at||null,
+      note:"A recent successful import check can find zero new filings, especially on weekends and holidays. Publication date is not ingestion time.",paid:false});
   }
   if(p==="/v1/filings" && m==="GET"){
     const limit=positive(u.searchParams.get("limit"),30,100);
