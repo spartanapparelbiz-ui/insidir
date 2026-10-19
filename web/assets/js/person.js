@@ -364,6 +364,36 @@ function render(d){
  setFollow(following);
 }
 
+/* ---------- SEC historical index when this owner has no imported Form 4 ---------- */
+function renderSecHistory(d){
+ const box=$("pf-state");
+ if(!box)return;
+ file=d;personCik=cikOf(d.person?.cik)||askedCik;
+ const name=String(d.person?.name||"SEC reporting filer"),entries=Array.isArray(d.sec_filing_index)?d.sec_filing_index:[];
+ const official=secUrl(d.edgar_url),source=secUrl(d.source_url);
+ const rows=entries.map(x=>{
+   const form=/^(3|4|5)(\/A)?$/.test(String(x.form_type||""))?x.form_type:"4";
+   const acc=accession(x.accession);
+   if(!acc)return "";
+   const issued=validDate(x.filed_at)?date(x.filed_at):"Filing date unavailable";
+   const report=validDate(x.report_date)?" · Report period "+date(x.report_date):"";
+   return '<li class="pf-history-row"><span>'+E(issued)+'</span><strong>Form '+E(form)+'</strong><span>'+E(dashed(acc))+'</span><small>'+E(report)+'</small></li>';
+ }).join("");
+ box.innerHTML='<p class="pf-state__label">SEC ARCHIVE / SOURCE-VERIFIED</p>'+
+  '<h1>'+E(shown(name))+'</h1>'+
+  '<p>SEC reporting CIK '+E(pad10(personCik))+' · '+E(entries.length)+' ownership filing'+(entries.length===1?"":"s")+' listed in the latest SEC submissions index.</p>'+
+  '<p><strong>Historical filing index found.</strong> These are original SEC record references. The Form 4 transactions have not yet been imported into Insidir, so we are not showing invented trade totals or holdings.</p>'+
+  '<div class="pf-state__links">'+(official?'<a href="'+E(official)+'" target="_blank" rel="noopener noreferrer">Open all filings on SEC EDGAR ↗</a>':"")+
+  (source?'<a href="'+E(source)+'" target="_blank" rel="noopener noreferrer">Official SEC source data ↗</a>':"")+
+  '<a href="people.html">Back to people directory ↗</a></div>'+
+  '<section aria-labelledby="pf-historical-heading"><h2 id="pf-historical-heading">SEC filing history</h2>'+
+  '<p>'+E(d.history_partial?"This list is partial; additional historical filings may exist in the SEC archive.":"These are the qualifying ownership reports returned by the latest SEC submissions index.")+'</p>'+
+  '<ol class="pf-history-list">'+rows+'</ol></section>';
+ box.hidden=false;box.classList.remove("is-error");
+ main.classList.add("is-state");main.classList.remove("is-loading");main.removeAttribute("aria-busy");
+ $("pf-file").hidden=true;head.hidden=true;
+ document.title=shown(name)+" · SEC filing index — insidir.";
+}
 /* ---------- Follow / Unfollow, live, with Undo ---------- */
 /* The notice (#pf-toast, role=status) sits right after the Follow button in the page order, so Undo is the next
    Tab stop; on screen it is fixed to the bottom and never moves the page. A confirmation leaves after 5 s, an
@@ -434,7 +464,7 @@ async function loadFollowing(){
 /* ---------- load ---------- */
 async function load(){
  main.classList.add("is-loading");main.setAttribute("aria-busy","true");
- try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);render(file);}
+ try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);if(file?.coverage==="sec_submissions_history_only")renderSecHistory(file);else render(file);}
  catch(e){
   if(e.status===401||e.status===402)return;
   if(e.status===404)showState("missing",e.message);
