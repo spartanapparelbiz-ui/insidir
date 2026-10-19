@@ -304,7 +304,7 @@
     };
     const renderList = q => {
       if (!suggestions.length) {
-        list.innerHTML = `<p class="app-search__empty">${tickerPattern.test(q.toUpperCase()) ? "Press Enter to open " + escapeHTML(q.toUpperCase()) : "No matching companies or people"}</p>`;
+        list.innerHTML = `<p class="app-search__empty">No matching imported companies or reporting people. Press Enter to search the people directory.</p>`;
       } else {
         list.innerHTML = suggestions.map((s, i) => {
           const tile = tileFor(s);
@@ -325,6 +325,7 @@
         q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q)) : Promise.resolve({ items: [] })
       ]);
       if (seq !== searchSeq || input.value.trim() !== q) return;
+      if (companies.status === "rejected" && people.status === "rejected") { suggestions=[]; list.innerHTML = '<p class="app-search__empty">Search services are unavailable. Try again shortly.</p>'; list.hidden=false; input.setAttribute("aria-expanded","true"); return; }
       if (companies.status === "rejected" && companies.reason && companies.reason.status === 402) {
         suggestions = [];
         list.innerHTML = '<p class="app-search__empty">Search needs an active subscription. <a href="subscribe.html">Subscribe</a></p>';
@@ -370,9 +371,7 @@
       const exact = suggestions.find(s => s.kind === "company" && s.ticker === upper);
       if (exact) { location.href = exact.href; return; }
       if (suggestions[0]) { location.href = suggestions[0].href; return; }
-      if (tickerPattern.test(upper)) { location.href = "company.html?ticker=" + encodeURIComponent(upper); return; }
-      input.setCustomValidity("Choose a company or person from the suggestions");
-      input.reportValidity();
+      location.href = "people.html?q=" + encodeURIComponent(q.slice(0,80)) + "#v10-directory";
     });
     document.addEventListener("keydown", e => {
       const typing = /input|textarea|select/i.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
