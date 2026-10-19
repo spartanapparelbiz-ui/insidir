@@ -37,7 +37,7 @@ async function main() {
   setInterval(explainNew,15*60*1000).unref();
   const monitorPublicSources=async()=>{try{console.log("Public intelligence monitor",JSON.stringify(await monitorTick(query)))}catch(e){console.error("Public monitor failed",e?.message||e)}};
   setTimeout(monitorPublicSources,90*1000).unref();
-  setInterval(monitorPublicSources,60*60*1000).unref();
+  setInterval(monitorPublicSources,15*60*1000).unref();
   if(process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED==="1"){
     const checkHouse=async()=>{try{console.log("Official House PTR index",JSON.stringify(await pollHouse({run:query})))}catch(e){console.error("House disclosure index failed",e?.message||e)}};
     setTimeout(checkHouse,2*60*1000).unref();
