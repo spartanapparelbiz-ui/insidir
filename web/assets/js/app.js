@@ -14,7 +14,7 @@
   const NS = "http://www.w3.org/2000/svg";
 
   /* ---------- paywall: 401 → sign in, 402 → subscribe ---------- */
-  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"];
+  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence"];
   const ACCOUNT_PAGES = ["billing", "account"];
   const OPEN_API = /^\/v1(\/?$|\/auth\/|\/billing\/|\/sources$)/;
   const pageKey = () => (/^\/([a-z]+)(?:\.html)?$/.exec(location.pathname) || [])[1] || "";
@@ -56,6 +56,7 @@
   const NAV = [
     ["dashboard","Overview","dashboard.html"],
     ["research","Research","research.html"],
+    ["intelligence","Intelligence","intelligence.html"],
     ["insiders","People","people.html"],
     ["companies","Companies","explore.html"],
     ["filings","Filings","filings.html"],
@@ -72,7 +73,7 @@
     insiders:'<path d="M4 19h16M6 16l4-5 3 3 5-7M17 7h2v3"/>',
     alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 8-3 9-3 9h18s-3-1-3-9M10 21h4"/>'
   };
-  const NAV_ICONS = {dashboard:"layers",research:"search",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"activity",alerts:"clock"};
+  const NAV_ICONS = {dashboard:"layers",research:"search",intelligence:"activity",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"activity",alerts:"clock"};
   const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons/interface.svg#'+(NAV_ICONS[key]||"file-text")+'"></use></svg></span>';
 
   const icons = {
