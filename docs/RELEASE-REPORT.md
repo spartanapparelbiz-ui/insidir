@@ -146,3 +146,61 @@ were updated to describe the new behaviour accurately; they remain drafts no att
 - Ops alerts are pull-only (page and API); no pager or chat integration.
 - The SEC disclosure poller covers watched companies only, at most every 6 hours each.
 - The verification in §1.9 reuses the importer's parser for most fields; the independent check was a spot check.
+
+---
+
+## 6. Visual finish and main merge (Insidir 2.0, same identity), October 19, 2026
+
+**Rule followed:** the existing V13 design is the source of truth. No colour, typeface, logo, navigation item or
+page structure was changed. Every new rule lives in the same `insidir-v13` cascade layer and uses its tokens
+(`--hf-*`: paper `#0c0c0b`, ink `#e9e4da`, green/red for direction only, JetBrains Mono).
+
+### 6.1 What changed
+| Area | Change |
+|---|---|
+| `main` merged | Web push, PWA icons, Intelligence, OpenRouter, Bluesky/House monitors (both off by default), ultra-hd.css. Conflicts resolved keeping both sides; this branch's Form 4 events table renamed `sec_events` so it cannot collide with main's `research_events`. |
+| Intelligence | Rebuilt in the V13 system: Briefing (Form 4 events for watchlist and followed people + main's verified notices), Investigate (30 days for one ticker), Mirror (the reported Form 4 record of followed people, with reporting delay; states on the page and in the API that it does not copy trades, place orders or model a portfolio). New read-only, paywalled `GET /v1/me/intelligence/filings` and `/mirror`. |
+| Images | Product screenshots in AVIF and WebP at 720/1080/1440/1920 px plus the original, with `sizes` matched to the real layout; AVIF preload for the landing hero. |
+| 4K / Retina | `ultra-hd.css` moved inside the design layer (its unlayered phone rule `img{object-fit:cover}` cropped logos); measure widens in steps at 1920 and 2400 px; at 3200+ CSS px (4K at 100 %) the interface is zoomed 1.4×. |
+| Motion | Opacity-only fade for arriving rows; 0.22 s cross-document view transition with the header held still; all off with `prefers-reduced-motion`. Nothing moves on hover (motion test unchanged). |
+| Mobile / PWA | Every page links the Home Screen icon and manifest (manifest and icons unchanged); safe-area insets; no tap flash or double-tap delay; opacity press state. |
+| Alerts | Main's push settings and public-source feed restyled with tokens (no inline colours); main's drawer with switches that saved nothing removed (real preferences kept). |
+
+### 6.2 Bugs found and fixed (several were live on main)
+- `package-lock.json` did not list `web-push`/`fflate`, which `package.json` requires.
+- `parseAtom`'s new Form 4 filter broke the DEF 14A proxy-headshot fallback that reads the same parser.
+- The product announcement was inserted above the page after first paint: **CLS 0.06 desktop / 0.19 phone** on every
+  product page until dismissed, and it covered the dashboard's Undo notice. Now a floating card at the bottom
+  (same text, logo and Dismiss) that steps aside while a page notice shows.
+- Header 1360–1600 px: with Intelligence added, "Alerts" touched the search field (clipped with a classic
+  scrollbar); the field now yields space first.
+- People: "the first 100 reporting people" printed in lower case.
+- A class-name collision (`cx-*`, owned by the company report) introduced during this work was caught and renamed
+  before release.
+- Startup migrations now retry on a PostgreSQL deadlock (40P01), seen when an instance migrates while another
+  serves traffic.
+
+### 6.3 Identity check (before = production `main`, after = this branch)
+`scripts/compare-shots.mjs` over full-page renders of every page with the same API fixtures. At 1440 px the public
+and product pages differ from production by **0–0.5 % of pixels** with the same mean colour (e.g. landing 0.45 %,
+dashboard 0.04 %, company 0.05 %, pricing 0 %). Larger differences are expected content: the rebuilt Intelligence
+page (main's was an unstyled light page), the alerts cards, the account security panels and the "Forgot your
+password?" link from §1, and the announcement no longer pushing pages down. Two regressions the comparison caught were
+fixed: `text-wrap:balance` re-breaking two-tone headlines, and `scrollbar-gutter` shifting layouts by 15 px.
+
+### 6.4 Checks (this branch, final run)
+| Check | Result |
+|---|---|
+| `npm test` with PostgreSQL 16 | 459 / 459 |
+| Palette audit, all pages at 1440 and 390; key pages at 3840 and 834 | Clean (one note: the landing overview screenshot is 2560 px native and is shown ~1.2× upscaled on a 4K screen at 100 %; it is a dated product capture, not re-shot) |
+| Motion check (index, dashboard, alerts, intelligence, company, pricing, signin) | 173 passed, 0 failed |
+| Media check (dashboard, people, explore, alerts, index at 390/1440) | 247 passed, 0 failed |
+| Dashboard check (390, 768, 1440) | 308 passed, 0 failed |
+| Member journey (Chrome, 1440 and 390, simulated Stripe) | Passed |
+| Performance, mobile, slow 4G + 4× CPU, local server, production `main` → this branch | Landing LCP 2868 → 2300 ms, 407 → 272 KB, CLS 0; pricing, platform, signin unchanged (≤ 1.1 s) |
+| Performance, live insidir.com before deploy (desktop) | All measured pages LCP ≤ 1.0 s, CLS ≤ 0.001, INP ≤ 40 ms; mobile landing LCP 3188 ms (the hero image) |
+
+### 6.5 Not done here
+- Deployment: not deployed by this section. Production deploys from `main` (Railway); see §2 for what was verified live.
+- Legal: Mirror naming, push product broadcasts, OpenRouter and the Bluesky/House monitors are added to
+  ATTORNEY-REVIEW.md (K-1 to K-4).
