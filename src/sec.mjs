@@ -19,6 +19,14 @@ export function parseAtom(xml) {
   if (!feed) throw new Error("Invalid SEC Atom feed");
   const seen = new Set();
   return list(feed.entry).flatMap(entry => {
+    // SEC getcurrent&type=4 is a PREFIX search: it may also return 424B
+    // prospectuses and other 4xx forms. Those do not contain Form 4 XML.
+    // Use the filing type when supplied, or the leading type in the title;
+    // reject unknown types rather than silently treating them as ownership.
+    const title=scalar(entry.title)||"";
+    const type=String(scalar(entry["filing-type"])||scalar(entry["form-type"])||
+      /^\s*(4(?:\/A)?)\s*[-:–—]/i.exec(title)?.[1]||"").trim().toUpperCase();
+    if(type!=="4" && type!=="4/A")return [];
     const links = list(entry.link);
     const href = links.find(x => String(x?.["@_href"] || "").includes("/Archives/edgar/data/"))?.["@_href"];
     if (!href) return [];
@@ -34,7 +42,7 @@ export function parseAtom(xml) {
       accession, filerCik, title: scalar(entry.title) || "Form 4",
       publishedAt: scalar(entry.updated) || scalar(entry.published),
       sourceUrl: url.toString(), indexBase: "https://www.sec.gov/Archives/edgar/data/" + filerCik + "/" + accession + "/",
-      formType: (scalar(entry["filing-type"]) || "4")
+      formType: type
     }];
   });
 }
