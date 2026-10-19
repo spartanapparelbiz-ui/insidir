@@ -661,11 +661,11 @@ test("person tiles carry the owner CIK and the issuer CIK, so the company's logo
 
 test("asset versions: src, href and srcset name the same versioned URL; fonts stay unversioned to match their stylesheets", async () => {
   const { fingerprintHtml } = await import("../src/web.mjs");
-  const out = await fingerprintHtml('<link rel="preload" as="image" href="assets/img/intelligence-hero.webp"><link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font">' +
-    '<source srcset="assets/img/intelligence-hero.webp" type="image/webp"><img srcset="assets/img/intelligence-hero-1200.jpg 1200w, https://example.com/x.jpg 2x" src="assets/img/intelligence-hero.jpg">');
-  const preload = /href="(assets\/img\/intelligence-hero\.webp\?v=[0-9a-f]{10})"/.exec(out);
+  const out = await fingerprintHtml('<link rel="preload" as="image" href="assets/img/product/company-report.webp"><link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font">' +
+    '<source srcset="assets/img/product/company-report.webp" type="image/webp"><img srcset="assets/img/hero.jpg 1200w, https://example.com/x.jpg 2x" src="assets/img/hero.jpg">');
+  const preload = /href="(assets\/img\/product\/company-report\.webp\?v=[0-9a-f]{10})"/.exec(out);
   assert.ok(preload, "image preload is versioned");
   assert.ok(out.includes('<source srcset="' + preload[1] + '" type="image/webp">'), "the <source> asks for the same URL as the preload");
-  assert.match(out, /srcset="assets\/img\/intelligence-hero-1200\.jpg\?v=[0-9a-f]{10} 1200w, https:\/\/example\.com\/x\.jpg 2x"/);
+  assert.match(out, /srcset="assets\/img\/hero\.jpg\?v=[0-9a-f]{10} 1200w, https:\/\/example\.com\/x\.jpg 2x"/);
   assert.match(out, /href="assets\/fonts\/Inter-normal-latin\.woff2" as="font"/);
 });

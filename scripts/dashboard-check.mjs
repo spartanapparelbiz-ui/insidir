@@ -172,6 +172,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 /* respond: (path, method, url, body) → {status, body} | {status, buffer, type}. */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false, reveal = true, seen = SEEN, latency = null, init = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion, timezoneId: "UTC" });
+  // A member who has already dismissed app.js's dated product announcement; the banner is not what this check covers.
+  await context.addInitScript(() => { try { localStorage.setItem("insidir:announcement:dismissed:features-2026-10-19", "1"); } catch {} });
   if (seen) await context.addInitScript(seenAt => { try { if (!sessionStorage.getItem("check:seeded")) { localStorage.setItem("insidir:overview:last-seen", seenAt); sessionStorage.setItem("check:seeded", "1"); } } catch {} }, seen);
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
   if (reveal) await context.addInitScript(() => {
@@ -1167,14 +1169,14 @@ try {
     const { context, page, errors } = await open(1440, fixture(MANY), { path: "/people.html" });
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length > 0, null, { timeout: 10000 });
     const count = () => page.locator("#v10-people-results .v10-person-card").count();
-    check(await count() === 24 && await text(page, "#v10-people-count") === "The first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
+    check(await count() === 24 && await text(page, "#v10-people-count") === "the first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
     const more = (await text(page, "button[data-people-more]")).replace(/\s+/g, " ");
     check(/Show more people · 76 more/i.test(more), "a Show more button says how many remain", more);
     await page.click("button[data-people-more]");
     const focus = await page.evaluate(() => [...document.querySelectorAll("#v10-people-results .v10-person-card")].indexOf(document.activeElement?.closest(".v10-person-card")));
     check(await count() === 48 && focus === 24, "Show more adds 24 people and moves focus to the first new one", { cards: await count(), focus });
     for (let i = 0; i < 3; i++) if (await page.locator("button[data-people-more]").count()) await page.click("button[data-people-more]");
-    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "The first 100 reporting people", "the button disappears once all 100 are shown");
+    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "the first 100 reporting people", "the button disappears once all 100 are shown");
     await page.fill("#v10-person-query", "FILER 00");
     await page.press("#v10-person-query", "Enter");
     await page.waitForFunction(() => /results? for/.test(document.getElementById("v10-people-status").textContent), null, { timeout: 10000 });

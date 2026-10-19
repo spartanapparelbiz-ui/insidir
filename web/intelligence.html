@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Intelligence — insidir.</title>
-  <meta name="description" content="Insidir Intelligence: a personal briefing from public SEC filings, cited research answers, and Form 13F holdings explored with an illustrative simulator.">
+  <meta name="description" content="Insidir Intelligence: the Insidir instrument over SEC records, an event tape of disclosures, a private briefing, cited research reports and Form 13F holdings explored with an illustrative simulator.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3">
@@ -12,14 +12,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Insidir">
   <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" as="image" type="image/webp" href="assets/img/intelligence-hero-1200.webp" media="(max-width: 599px)" fetchpriority="high">
-  <link rel="preload" as="image" type="image/webp" href="assets/img/intelligence-hero.webp" media="(min-width: 600px)" fetchpriority="high">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('ix-intro'))document.documentElement.classList.add('ix-intro')}catch(e){}</script>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
   <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
-  <script defer src="assets/js/intelligence.js?v=2"></script>
+  <script defer src="assets/js/intelligence-mark.js?v=1"></script>
+  <script defer src="assets/js/intelligence-viz.js?v=2"></script>
+  <script defer src="assets/js/intelligence.js?v=4"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
@@ -28,155 +28,176 @@
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<link rel="stylesheet" href="assets/css/v13-intelligence.css?v=1">
+<link rel="stylesheet" href="assets/css/v13-intelligence.css?v=3">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v29-intelligence.css"><script defer src="/assets/js/funnel.js"></script></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><script defer src="/assets/js/funnel.js"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 ix-page">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="intelligence"></header>
 
   <main id="main" class="app-main ix">
-    <!-- Hero: an archival-toned plate of the financial district, the name, the promise. -->
-    <section class="ix-hero" aria-labelledby="ix-title">
-      <figure class="ix-hero__plate" aria-hidden="true">
-        <picture>
-          <source media="(max-width: 599px)" srcset="assets/img/intelligence-hero-1200.webp" type="image/webp">
-          <source media="(max-width: 599px)" srcset="assets/img/intelligence-hero-1200.jpg">
-          <source srcset="assets/img/intelligence-hero.webp" type="image/webp">
-          <img src="assets/img/intelligence-hero.jpg" width="2400" height="1282" alt="" decoding="async" fetchpriority="high">
-        </picture>
-      </figure>
-      <div class="ix-hero__inner">
-        <p class="ix-kicker">Insidir / Intelligence</p>
-        <h1 class="ix-hero__title" id="ix-title">Insidir Intelligence</h1>
-        <p class="ix-hero__line">Information moves markets. Understand what moves information.</p>
-        <p class="ix-hero__lede">An intelligence system that follows public financial activity, connects the records, and brings what matters into focus.</p>
-        <!-- The dotted i: Insidir's mark, and the way in. Each part opens one experience; the labels say which. -->
-        <div class="ix-instrument" data-instrument data-active="briefing">
-          <svg class="ix-i" viewBox="0 0 220 520" aria-hidden="true" focusable="false">
-            <g class="ix-i__part" data-part="briefing"><circle cx="110" cy="58" r="40"/></g>
-            <g class="ix-i__part" data-part="investigate"><circle cx="50" cy="166" r="30"/><circle cx="110" cy="166" r="30"/><circle cx="110" cy="238" r="30"/><circle cx="110" cy="310" r="30"/><circle cx="110" cy="382" r="30"/></g>
-            <g class="ix-i__part" data-part="mirror"><circle cx="50" cy="454" r="30"/><circle cx="110" cy="454" r="30"/><circle cx="170" cy="454" r="30"/></g>
-          </svg>
-          <ol class="ix-keys" aria-label="Open an Intelligence experience">
-            <li><button type="button" class="ix-key" data-open="briefing" aria-controls="briefing" aria-pressed="true"><span class="ix-key__no">The dot · 01 Discover</span><span class="ix-key__name">Briefing</span><span class="ix-key__meta" data-hero-brief>What changed for what you follow</span></button></li>
-            <li><button type="button" class="ix-key" data-open="investigate" aria-controls="investigate" aria-pressed="false"><span class="ix-key__no">The stem · 02 Investigate</span><span class="ix-key__name">Investigate</span><span class="ix-key__meta">Ask a question, see the sources</span></button></li>
-            <li><button type="button" class="ix-key" data-open="mirror" aria-controls="mirror" aria-pressed="false"><span class="ix-key__no">The base · 03 Understand</span><span class="ix-key__name">Mirror</span><span class="ix-key__meta" data-hero-mirror>Disclosed 13F holdings, hypothetically</span></button></li>
-          </ol>
+    <!-- The instrument: the Insidir mark, each dot a layer of intelligence over stored SEC records. -->
+    <section class="ix-hero" id="instrument" aria-labelledby="ix-title" data-hero>
+      <div class="ix-hero__head">
+        <div class="ix-hero__copy">
+          <p class="ix-kicker">Insidir / Intelligence</p>
+          <h1 class="ix-hero__title" id="ix-title">See what others overlook.</h1>
+          <p class="ix-hero__lede">An intelligence system that follows the public record, connects the information, and brings meaningful changes into focus.</p>
         </div>
       </div>
-      <p class="ix-hero__credit">Research only · No trade recommendations · No order execution</p>
+      <div class="ix-inst" data-instrument aria-busy="true">
+        <svg class="ix-inst__links" data-links aria-hidden="true"></svg>
+        <div class="ix-inst__col ix-inst__col--left">
+          <p class="ix-inst__head">Market intelligence <span>All issuers · stored records</span></p>
+          <ul class="ix-rows" data-rows="market"></ul>
+        </div>
+        <div class="ix-inst__core">
+          <div class="ix-inst__frame" aria-hidden="true"><span class="ix-tick ix-tick--tl"></span><span class="ix-tick ix-tick--tr"></span><span class="ix-tick ix-tick--bl"></span><span class="ix-tick ix-tick--br"></span></div>
+          <div class="ix-inst__mark" data-mark></div>
+          <p class="ix-inst__caption" data-caption>Select a dot to open its records</p>
+        </div>
+        <div class="ix-inst__col ix-inst__col--right">
+          <p class="ix-inst__head">Your intelligence <span>Watchlist · follows · findings</span></p>
+          <ul class="ix-rows" data-rows="member"></ul>
+          <section class="ix-panel" data-panel aria-live="polite" tabindex="-1"></section>
+        </div>
+      </div>
+      <div class="ix-hero__foot">
+        <dl class="ix-hero__meta" data-instrument-meta>
+          <div><dt>Source</dt><dd>SEC EDGAR records stored by Insidir</dd></div>
+          <div><dt>Window</dt><dd>Last 30 days</dd></div>
+          <div><dt>Latest filing</dt><dd data-meta-latest>—</dd></div>
+          <div><dt>Computed</dt><dd data-meta-computed>—</dd></div>
+        </dl>
+  <p class="ix-hero__note" data-instrument-note>Counts come from stored public records; they are not live market data. Research only — no recommendations, no order execution.</p>
+      </div>      <button type="button" class="ix-skip" data-skip-intro>Skip introduction</button>
     </section>
 
-    <!-- The three experiences as tabs: one at a time, kept in the address (#briefing, #investigate, #mirror). -->
-    <div class="ix-bar">
+    <nav class="ix-bar" aria-label="Intelligence sections">
       <div class="ix-bar__inner">
-        <div class="ix-tabs" role="tablist" aria-label="Intelligence">
-          <button type="button" role="tab" id="ix-tab-briefing" aria-controls="briefing" aria-selected="true" data-tab="briefing"><span aria-hidden="true">01</span>Briefing</button>
-          <button type="button" role="tab" id="ix-tab-investigate" aria-controls="investigate" aria-selected="false" tabindex="-1" data-tab="investigate"><span aria-hidden="true">02</span>Investigate</button>
-          <button type="button" role="tab" id="ix-tab-mirror" aria-controls="mirror" aria-selected="false" tabindex="-1" data-tab="mirror"><span aria-hidden="true">03</span>Mirror</button>
-        </div>
+        <span class="ix-bar__mark" data-bar-mark aria-hidden="true"></span>
+        <a href="#instrument" data-spy="instrument">Instrument</a>
+        <a href="#tape" data-spy="tape">Tape</a>
+        <a href="#briefing" data-spy="briefing">Briefing</a>
+        <a href="#structure" data-spy="structure">Structure</a>
+        <a href="#investigate" data-spy="investigate">Investigate</a>
+        <a href="#mirror" data-spy="mirror">Mirror</a>
         <span class="ix-bar__status" data-ai-status aria-live="polite"></span>
       </div>
-    </div>
-    <ul class="ix-kinds" aria-label="How Intelligence labels what you read">
-      <li><span class="ix-k ix-k--new">New</span>Received since your last visit</li>
-      <li><span class="ix-k">Filed</span>Historical disclosure, with its dates</li>
-      <li><span class="ix-k ix-k--source">Source</span>Verified fact, linked to the SEC document</li>
-      <li><span class="ix-k ix-k--ai">AI</span>Written by a model from cited records</li>
-      <li><span class="ix-k ix-k--sim">Hypothetical</span>A simulation, never a trade</li>
-    </ul>
+    </nav>
 
-    <!-- 01 Briefing -->
-    <section class="ix-section ix-panel" id="briefing" role="tabpanel" aria-labelledby="ix-tab-briefing briefing-title">
+    <!-- 01 The tape -->
+    <section class="ix-section" id="tape" aria-labelledby="tape-title">
       <header class="ix-head">
-        <p class="ix-head__no">01</p>
+        <p class="ix-head__no"><span data-head-mark></span>01</p>
         <div class="ix-head__text">
-          <h2 class="ix-head__title" id="briefing-title">The Briefing</h2>
-          <p class="ix-head__dek" data-edition>Public filings from the companies and people you follow, grouped, dated and sourced.</p>
+          <h2 class="ix-head__title" id="tape-title">The Tape</h2>
+          <p class="ix-head__dek">Every disclosure in the order it was filed with the SEC. Records retrieved since your last visit are marked new; everything else is historical. Not a live feed.</p>
         </div>
       </header>
-      <div class="ix-brief">
-        <div class="ix-brief__main">
-          <div class="ix-toolbar" role="group" aria-label="Briefing view">
-            <div class="ix-seg" role="radiogroup" aria-label="Time window" data-window>
-              <button type="button" role="radio" aria-checked="false" data-days="1">24 hours</button>
-              <button type="button" role="radio" aria-checked="true" data-days="7">7 days</button>
-              <button type="button" role="radio" aria-checked="false" data-days="30">30 days</button>
-            </div>
-            <div class="ix-seg" role="radiogroup" aria-label="Order" data-order>
-              <button type="button" role="radio" aria-checked="true" data-order-by="priority">By relevance</button>
-              <button type="button" role="radio" aria-checked="false" data-order-by="latest">Latest first</button>
-            </div>
+      <form class="ix-filters" data-tape-filters>
+        <label class="ix-field"><span>Company</span><input id="tape-ticker" name="ticker" maxlength="15" placeholder="Ticker" autocomplete="off" autocapitalize="characters"></label>
+        <label class="ix-field"><span>Person</span><input id="tape-person" name="person" maxlength="60" placeholder="Name or CIK" autocomplete="off"></label>
+        <div class="ix-field"><span>Filing</span><div class="ix-seg" role="radiogroup" aria-label="Filing type" data-tape-form>
+          <button type="button" role="radio" aria-checked="true" data-value="all">All</button><button type="button" role="radio" aria-checked="false" data-value="4">Form 4</button><button type="button" role="radio" aria-checked="false" data-value="8-K">8-K</button><button type="button" role="radio" aria-checked="false" data-value="13F">13F</button>
+        </div></div>
+        <div class="ix-field"><span>Period</span><div class="ix-seg" role="radiogroup" aria-label="Period" data-tape-days>
+          <button type="button" role="radio" aria-checked="false" data-value="1">24 h</button><button type="button" role="radio" aria-checked="true" data-value="7">7 d</button><button type="button" role="radio" aria-checked="false" data-value="30">30 d</button><button type="button" role="radio" aria-checked="false" data-value="90">90 d</button>
+        </div></div>
+        <button type="button" class="ix-btn ix-btn--quiet" data-tape-clear>Clear</button>
+      </form>
+      <div class="ix-tape" data-tape aria-live="polite" aria-busy="true"></div>
+    </section>
+
+    <!-- 02 Briefing -->
+    <section class="ix-section" id="briefing" aria-labelledby="briefing-title">
+      <header class="ix-masthead">
+        <p class="ix-masthead__rule"><span data-head-mark></span><span>02</span><span>The Insidir Briefing</span><span data-edition-date></span></p>
+        <h2 class="ix-masthead__title" id="briefing-title">Morning report</h2>
+        <p class="ix-masthead__line" data-edition>Public filings from the companies and people you follow, grouped, dated and sourced.</p>
+      </header>
+      <div class="ix-report" data-feed aria-live="polite" aria-busy="true"></div>
+      <div class="ix-settings" aria-label="Edition settings">
+        <section>
+          <h3 class="ix-sub">Edition</h3>
+          <div class="ix-seg" role="radiogroup" aria-label="Time window" data-window>
+            <button type="button" role="radio" aria-checked="false" data-days="1">24 hours</button><button type="button" role="radio" aria-checked="true" data-days="7">7 days</button><button type="button" role="radio" aria-checked="false" data-days="30">30 days</button>
           </div>
-          <div class="ix-feed" data-feed aria-live="polite" aria-busy="true">
-            <div class="ix-skel" aria-hidden="true"><i></i><i></i><i></i></div>
-            <div class="ix-skel" aria-hidden="true"><i></i><i></i></div>
-            <div class="ix-skel" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="ix-seg" role="radiogroup" aria-label="Order" data-order style="margin-top:10px">
+            <button type="button" role="radio" aria-checked="true" data-order-by="priority">By relevance</button><button type="button" role="radio" aria-checked="false" data-order-by="latest">Latest first</button>
           </div>
-        </div>
-        <aside class="ix-rail" aria-label="Briefing settings">
-          <section class="ix-card">
-            <h3 class="ix-card__title">Delivery</h3>
-            <div class="ix-seg ix-seg--stack" role="radiogroup" aria-label="Briefing frequency" data-frequency>
-              <button type="button" role="radio" aria-checked="false" data-frequency-value="immediate"><strong>Immediate</strong><span>A notification for each new filing</span></button>
-              <button type="button" role="radio" aria-checked="false" data-frequency-value="daily"><strong>Daily digest</strong><span>One summary a day, when there is news</span></button>
-              <button type="button" role="radio" aria-checked="false" data-frequency-value="weekly"><strong>Weekly digest</strong><span>One summary a week</span></button>
-            </div>
-            <p class="ix-note" data-delivery role="status" aria-live="polite">Checking delivery…</p>
-          </section>
-          <section class="ix-card">
-            <h3 class="ix-card__title">How stories are ordered</h3>
-            <ul class="ix-rules" data-rules><li>Shown with your briefing.</li></ul>
-            <p class="ix-note">Ordering rules only. Insidir does not score, rate or predict securities.</p>
-          </section>
-          <section class="ix-card">
-            <h3 class="ix-card__title">Coverage</h3>
-            <div data-coverage><p class="ix-note">Shown with your briefing.</p></div>
-          </section>
-        </aside>
+        </section>
+        <section>
+          <h3 class="ix-sub">Delivery</h3>
+          <div class="ix-seg ix-seg--stack" role="radiogroup" aria-label="Briefing frequency" data-frequency>
+            <button type="button" role="radio" aria-checked="false" data-frequency-value="immediate"><strong>Immediate</strong><span>A notification for each new filing</span></button>
+            <button type="button" role="radio" aria-checked="false" data-frequency-value="daily"><strong>Daily digest</strong><span>One summary a day, when there is news</span></button>
+            <button type="button" role="radio" aria-checked="false" data-frequency-value="weekly"><strong>Weekly digest</strong><span>One summary a week</span></button>
+          </div>
+          <p class="ix-note" data-delivery role="status" aria-live="polite">Checking delivery…</p>
+        </section>
+        <section>
+          <h3 class="ix-sub">How stories are ordered</h3>
+          <ul class="ix-rules" data-rules></ul>
+          <p class="ix-note">Ordering rules only. Insidir does not score, rate or predict securities.</p>
+          <div data-coverage></div>
+        </section>
       </div>
     </section>
 
-    <!-- 02 Investigate -->
-    <section class="ix-section ix-section--investigate ix-panel" id="investigate" role="tabpanel" aria-labelledby="ix-tab-investigate investigate-title" hidden>
+    <!-- 03 Capital structure -->
+    <section class="ix-section" id="structure" aria-labelledby="structure-title">
       <header class="ix-head">
-        <p class="ix-head__no">02</p>
+        <p class="ix-head__no"><span data-head-mark></span>03</p>
+        <div class="ix-head__text">
+          <h2 class="ix-head__title" id="structure-title">Capital Structure</h2>
+          <p class="ix-head__dek">How reporting people connect to a company and its securities, according to their own Form 4 filings over the last year. Each line says exactly what the filing establishes, and no more.</p>
+        </div>
+      </header>
+      <form class="ix-filters ix-filters--structure" data-structure-form>
+        <label class="ix-field"><span>Company</span><input id="structure-ticker" maxlength="15" placeholder="Ticker" autocomplete="off" autocapitalize="characters"></label>
+        <button class="ix-btn" type="submit">Open</button>
+        <div class="ix-chips" data-structure-chips aria-label="Your companies"></div>
+      </form>
+      <div class="ix-structure" data-structure aria-live="polite"></div>
+    </section>
+
+    <!-- 04 Investigate -->
+    <section class="ix-section ix-section--investigate" id="investigate" aria-labelledby="investigate-title">
+      <header class="ix-head">
+        <p class="ix-head__no"><span data-head-mark></span>04</p>
         <div class="ix-head__text">
           <p class="ix-kicker">Investigate</p>
-          <h2 class="ix-head__title ix-head__title--ask" id="investigate-title">What would you like to understand?</h2>
-          <p class="ix-head__dek">Ask in plain English. Insidir finds the filings, assembles the facts and cites every one. When the records cannot answer, it says so.</p>
+          <h2 class="ix-head__title ix-head__title--ask" id="investigate-title">What do you want to uncover?</h2>
+          <p class="ix-head__dek">Insidir reads the question, retrieves the filings, connects the records, verifies every citation and prepares a report. When the records cannot answer, the report says so.</p>
         </div>
       </header>
       <form class="ix-ask" data-ask novalidate>
         <label class="sr-only" for="ix-question">Research question</label>
-        <textarea id="ix-question" name="question" rows="1" maxlength="400" placeholder="e.g. What did Nvidia insiders disclose this month?" autocomplete="off" spellcheck="false" enterkeyhint="search" required></textarea>
-        <button class="ix-ask__go" type="submit"><span>Research</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <textarea id="ix-question" name="question" rows="1" maxlength="400" placeholder="Investigate a company, person, or disclosure." autocomplete="off" spellcheck="false" enterkeyhint="search" required></textarea>
+        <button class="ix-ask__go" type="submit"><span>Investigate</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </form>
       <p class="ix-ask__error" data-ask-error role="alert" hidden></p>
       <ul class="ix-examples" aria-label="Example questions" data-examples>
-        <li><button type="button">What did Nvidia insiders disclose this month?</button></li>
-        <li><button type="button">What changed in Tesla’s recent SEC filings?</button></li>
-        <li><button type="button">Show me recent insider sales at Microsoft.</button></li>
-        <li><button type="button">What companies have the executives I follow disclosed transactions in?</button></li>
-        <li><button type="button">Compare Apple’s recent disclosures with Microsoft’s.</button></li>
+        <li><button type="button">What changed at Nvidia this month?</button></li>
+        <li><button type="button">Show recent insider transactions at Tesla.</button></li>
+        <li><button type="button">What did Microsoft’s executives disclose?</button></li>
+        <li><button type="button">Compare recent filings for Apple and Amazon.</button></li>
         <li><button type="button">What changed since my last visit?</button></li>
       </ul>
       <div class="ix-thread" data-thread aria-live="polite"></div>
     </section>
 
-    <!-- 03 Mirror -->
-    <section class="ix-section ix-section--mirror ix-panel" id="mirror" role="tabpanel" aria-labelledby="ix-tab-mirror mirror-title" hidden>
+    <!-- 05 Mirror -->
+    <section class="ix-section ix-section--mirror" id="mirror" aria-labelledby="mirror-title">
       <header class="ix-head">
-        <p class="ix-head__no">03</p>
+        <p class="ix-head__no"><span data-head-mark></span>05</p>
         <div class="ix-head__text">
           <h2 class="ix-head__title" id="mirror-title">Mirror</h2>
-          <p class="ix-head__dek">See what an institutional manager disclosed in its latest quarterly Form 13F, and how a hypothetical budget would divide in the same proportions. A research simulation: nothing is bought, copied or sent to a broker.</p>
+          <p class="ix-head__dek">Ownership intelligence from quarterly Form 13F reports: what an institutional manager disclosed, how it changed between quarters, and how a hypothetical budget would divide in the same proportions. A research simulation: nothing is bought, copied or sent to a broker.</p>
         </div>
       </header>
-      <div class="ix-mirror" data-mirror aria-live="polite" aria-busy="true">
-        <div class="ix-skel ix-skel--tall" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      </div>
+      <div class="ix-mirror" data-mirror aria-live="polite" aria-busy="true"></div>
     </section>
 
     <p class="ix-fine">Insidir Intelligence works from public records: SEC Form 4 ownership reports, 8-K and 6-K company reports, EDGAR filing lists and Form 13F holdings reports. Filings can arrive days after the events they describe; a record Insidir has not indexed is not evidence that nothing happened. Plain-English summaries marked as AI-written are generated from the cited records and checked against them before they are shown. Nothing here is investment advice, a recommendation, or an offer to buy or sell a security. See <a href="disclosures.html">Disclosures</a>.</p>
@@ -186,7 +207,7 @@
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>

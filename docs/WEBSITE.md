@@ -62,8 +62,8 @@ animation. Sticky bars are solid paper without backdrop blur.
 
 New components are plain CSS that uses these tokens, with no `!important` and no layer: `v29-landing.css` (the
 landing's `lx-` components), `v29-public.css` (the public Intelligence page), `v29-app.css` (the product header's
-additions, Alerts, the overview's first steps, touch targets) and `v29-intelligence.css` (the tabs, the dotted-i
-keys and the five labels). Only where a V13 rule itself must change is a short block written inside
+additions, Alerts, the overview's first steps, touch targets). The product Intelligence page keeps its own
+`v13-intelligence.css`. Only where a V13 rule itself must change is a short block written inside
 `@layer insidir-v13{}`, one selector step more specific than the rule it replaces (`html body.v13 …`), each with a
 comment saying why. Prefer new class names over overriding V13 selectors.
 
