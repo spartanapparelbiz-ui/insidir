@@ -55,3 +55,17 @@ CREATE TABLE IF NOT EXISTS filing_explanations (
  error TEXT
 );
 CREATE INDEX IF NOT EXISTS filing_explanations_status_idx ON filing_explanations(status,updated_at DESC);
+
+-- One-time, operator-authorized, opt-in device broadcasts.
+-- A campaign's issue time freezes the audience: new devices registered
+-- after the announcement are never retrospectively notified.
+CREATE TABLE IF NOT EXISTS push_broadcasts (
+ id TEXT PRIMARY KEY,
+ title TEXT NOT NULL,
+ body TEXT NOT NULL,
+ url TEXT NOT NULL DEFAULT '/alerts.html',
+ issued_at TIMESTAMPTZ NOT NULL,
+ expires_at TIMESTAMPTZ NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ CONSTRAINT push_broadcast_expiry CHECK (expires_at > issued_at)
+);
