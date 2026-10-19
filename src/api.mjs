@@ -187,24 +187,32 @@ const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amend
 /* The owners of joint lines: JOINT_OWNERS_SQL / withJointOwners live in person-profile.mjs (one helper
  * for the profile and every route here); JOINT_OWNERS_SQL is re-exported for the tests. */
 export { JOINT_OWNERS_SQL };
-/* GET /v1/insiders: reporting people, newest line first, each person once (padded and unpadded owner
- * CIKs merged; owner_cik answered in the 10-digit form). With sec_filing_owners, owners of joint
- * filings are listed too, under the name they filed with there, so a person who only files jointly
- * can be found from the people directory and the header search. ticker and issuer_cik are from the
- * person's newest line; filings counts distinct filings. q matches the name filed (as before). */
+/* A Form 4 owner is identified by the SEC owner CIK, not name spelling.
+ * Filed names often reverse given/surname order or abbreviate given names.
+ * Keep results strictly limited to people present in imported public filings. */
+export function normalizePersonQuery(input) {
+  return String(input||'').normalize('NFKD').toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim().split(/\s+/).filter(Boolean).slice(0,6).join(' ').slice(0,80);
+}
 const INSIDER_PICK="(ARRAY_AGG(l.%s ORDER BY l.transaction_date DESC NULLS LAST,l.accession DESC))[1]";
 const pick=c=>INSIDER_PICK.replace("%s",c)+" AS "+c;
+/* Bound query. Each term can occur in any order. Three-character prefixes match
+ * registered-name abbreviations, e.g. JENSEN HUANG -> HUANG JEN HSUN. */
+const matchesOwner=(name,cik)=>`($1::text='' OR CASE WHEN $1 ~ '^[0-9]{1,10}$'
+ THEN LTRIM(${cik},'0')=LTRIM($1,'0')
+ ELSE NOT EXISTS (SELECT 1 FROM unnest(string_to_array($1::text,' ')) AS term
+   WHERE term<>'' AND UPPER(${name}) NOT LIKE '%'||LEFT(term,CASE WHEN LENGTH(term)>=4 THEN 3 ELSE LENGTH(term) END)||'%')
+ END)`;
 function insidersSql(joint){
   const own=`SELECT LTRIM(t.owner_cik,'0') AS bare,t.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_transactions t
-    WHERE t.owner_cik IS NOT NULL AND ($1::text='' OR t.owner_name ILIKE '%'||$1||'%')`;
+    WHERE t.owner_cik IS NOT NULL AND ${matchesOwner('t.owner_name','t.owner_cik')}`;
   const shared=`SELECT LTRIM(o.owner_cik,'0'),o.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_filing_owners o
     JOIN sec_transactions t ON t.accession=o.accession AND t.owner_cik IS NULL
-    WHERE ($1::text='' OR o.owner_name ILIKE '%'||$1||'%')`;
+    WHERE ${matchesOwner('o.owner_name','o.owner_cik')}`;
   return `SELECT LPAD(l.bare,10,'0') AS owner_cik,${pick("owner_name")},${pick("ticker")},
   LPAD(LTRIM(${INSIDER_PICK.replace("%s","issuer_cik")},'0'),10,'0') AS issuer_cik,
   COUNT(DISTINCT l.accession)::integer AS filings,MAX(l.transaction_date) AS last_transaction_date
   FROM (${own}${joint?"\n  UNION ALL "+shared:""}) l
-  WHERE l.bare<>'' GROUP BY l.bare ORDER BY last_transaction_date DESC NULLS LAST,l.bare LIMIT 100`;
+  WHERE l.bare<>'' GROUP BY l.bare ORDER BY last_transaction_date DESC NULLS LAST,l.bare LIMIT $2 OFFSET $3`;
 }
 export const INSIDERS_SQL=Object.freeze({single:insidersSql(false),joint:insidersSql(true)});
 const toCount=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):0};
@@ -399,10 +407,13 @@ async function route(req,res,ctx){
       disclaimer:"No forecast or buy/sell recommendation."});
   }
   if(p==="/v1/insiders" && m==="GET"){
-    const q=(u.searchParams.get("q")||"").trim().slice(0,80);
+    const q=normalizePersonQuery(u.searchParams.get("q"));
+    const limit=positive(u.searchParams.get("limit"),100,100);
+    const offset=Math.min(10_000,Math.max(0,Math.trunc(Number(u.searchParams.get("offset"))||0)));
     const sql=(await hasFilingOwners(ctx.query))?INSIDERS_SQL.joint:INSIDERS_SQL.single;
-    const rows=await ctx.query(sql,[q]);
-    return json(res,200,{items:rows.rows,source:"SEC Form 4"});
+    const rows=await ctx.query(sql,[q,limit+1,offset]);
+    return json(res,200,{items:rows.rows.slice(0,limit),offset,limit,hasMore:rows.rows.length>limit,
+      source:"Imported SEC Form 4 reporting owners",coverage:"Only imported reporting owners, not all public officials or SEC filers"});
   }
   if(p==="/v1/me" && m==="GET"){
     const user=await requireUser(req,ctx);
