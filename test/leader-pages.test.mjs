@@ -170,9 +170,40 @@ test("leadershipPhotos: no verified domain, low-confidence domain, and bot-walle
   let calls = 0;
   const r = await leadershipPhotos({ cik: "1", insiders }, {
     store: memoryStore(), companyDomain: async () => ({ domain: "walled.com", host: "www.walled.com", confidence: "high" }),
+    archivePage: async () => null, // no archived copy either
     page: async url => { calls++; return new URL(url).hostname === "www.walled.com" ? { status: "blocked", code: 403, url } : { status: "unreachable", url }; }
   });
   assert.equal(r.status, "blocked");
   assert.equal(r.matches.length, 0);
   assert.ok(calls <= 4, "a blocked or missing host is not retried path by path");
+});
+
+test("leadershipPhotos: a bot-walled site is read from its Internet Archive copy; a robots rule is not", async () => {
+  const insiders = [{ name: "COOK TIMOTHY D", cik: "11", role: "Director" }];
+  const lead = `<html><body><div class="person"><img src="https://web.archive.org/web/20260901000000im_/https://www.walled.com/p/tim.jpg"><h3>Tim Cook</h3><p>Director</p></div></body></html>`;
+  const archived = [];
+  const deps = {
+    store: memoryStore(), companyDomain: async () => ({ domain: "walled.com", host: "www.walled.com", homepage: "https://www.walled.com/", confidence: "high" }),
+    page: async url => ({ status: "blocked", code: 403, url }),
+    archivePage: async url => {
+      archived.push(url);
+      return url === "https://www.walled.com/leadership"
+        ? { status: "ok", url, html: lead, archived: { timestamp: "20260901000000", date: "2026-09-01", snapshot: "https://web.archive.org/web/20260901000000/" + url } }
+        : null;
+    },
+    fetchImage: async url => { if (!url.endsWith("/p/tim.jpg")) throw new Error("404"); return { bytes: png(400, 400, 1), type: "png", url }; }
+  };
+  const r = await leadershipPhotos({ cik: "1", insiders }, deps);
+  assert.equal(r.status, "ok");
+  assert.equal(r.matches.length, 1);
+  assert.equal(r.matches[0].imageUrl, "https://web.archive.org/web/20260901000000im_/https://www.walled.com/p/tim.jpg");
+  assert.equal(r.matches[0].archived.date, "2026-09-01");
+  assert.ok(archived.includes("https://www.walled.com/"), "the walled home page is tried in the archive");
+
+  // robots.txt disallowing the path is a rule, not a wall: the archive is never asked.
+  let asked = 0;
+  const robots = await leadershipPhotos({ cik: "1", insiders }, { ...deps, store: memoryStore(),
+    page: async url => ({ status: "robots", url }), archivePage: async () => { asked++; return null; } });
+  assert.equal(robots.matches.length, 0);
+  assert.equal(asked, 0);
 });

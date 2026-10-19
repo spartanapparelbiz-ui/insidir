@@ -1,3 +1,12 @@
+## Insidir V28: headshots from archived copies of bot-walled company sites (October 2026)
+
+- **Internet Archive fallback** (`src/web-archive.mjs`, `src/leader-pages.mjs`). When a company's own site answers the crawler with a bot wall (PayPal, Ferguson, Qualcomm, Regal Rexnord), its leadership and board pages are read from the Internet Archive's copy instead:
+  - The Wayback availability API picks the closest snapshot of exactly that page. It must be a 200 response and no older than 18 months.
+  - The snapshot is fetched unmodified, and every picture in it is pointed at its archived copy, so nothing more is requested from the site that refused us.
+  - The usual strict card matching then applies. A name alone never attaches a face.
+  - A path that robots.txt disallows is never read, live or archived. A walled host whose first 8 archive lookups all miss is given up.
+- **Credit:** such a photo reads "Company website (host), Internet Archive copy of <date>", and its source link points to the snapshot.
+
 ## Insidir V27: richer, smoother pages; a clear price with the $1 offer up front; more verified headshots (October 2026)
 
 - **Redesign, same look** (`web/assets/css/v16-rich.css`, `v16-rich-site.css`). The landing hero carries a ledger of five real Form 4 lines filed Oct 16, 2026, each checked against the database, with dot bars scaled to value. The product window has numbered pins and a legend. Figures get dot meters that encode the fact. Every page gets corner ticks, registration crosses, numbered running heads, dot-screen backdrops, "FIG." labels, a halftone price panel and numbered questions. Still JetBrains Mono, paper and ink, square corners, colour-only hovers.

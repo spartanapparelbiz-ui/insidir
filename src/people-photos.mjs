@@ -64,7 +64,7 @@ async function fromUrl(url, { referer, userAgent = PUBLIC_UA } = {}) {
  * Retry-After (bounded) before retrying. A failure that may be temporary is marked so the
  * company's result expires soon and is tried again. */
 const imageLanes = new Map();
-const IMAGE_GAP = { "upload.wikimedia.org": 400 };
+const IMAGE_GAP = { "upload.wikimedia.org": 400, "web.archive.org": 500 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const transientImageError = e => [429, 500, 502, 503, 504].includes(e?.upstreamStatus) || /abort|timeout|fetch failed|ECONNRESET|ETIMEDOUT/i.test(String(e?.name) + " " + String(e?.message));
 async function politeImage(url, options) {
@@ -336,8 +336,11 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
       if (person ? !replaceable(state.photos[person.key]) : !leader || !replaceable(leader.src ? leader : null)) continue;
       try {
-        const { saved } = await fromUrl(m.imageUrl, { referer: m.pageUrl, userAgent: PUBLIC_UA });
-        const photo = { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : ""), personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high" };
+        const { saved } = await fromUrl(m.imageUrl, { referer: m.archived ? m.archived.snapshot : m.pageUrl, userAgent: PUBLIC_UA });
+        const site = "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : "");
+        const photo = { src: saved.url, source: "company-site", sourceUrl: m.archived ? m.archived.snapshot : m.pageUrl,
+          credit: m.archived ? site + ", Internet Archive copy of " + m.archived.date : site, personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high",
+          ...(m.archived ? { archived: m.archived.date } : {}) };
         if (person) await assign(person, photo, { replace: true });
         else leaderPhoto(leader, photo);
       } catch (e) { if (transientImageError(e)) state.transient = true; /* try the next source */ }
