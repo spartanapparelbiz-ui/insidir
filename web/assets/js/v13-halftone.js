@@ -155,7 +155,7 @@
     let still = motionQ.matches, lastInput = 0;
     let w = 0, h = 0, dpr = 1, px = -1e5, py = -1e5, raf = 0, visible = true, awake = true, alive = true, pressed = false;
     let rings = [];                                   // shock rings: { x, y, t } in the canvas's own coordinates
-    let dots = new Float32Array(0), count = 0, grainTile = null;
+    let dots = new Float32Array(0), count = 0, grainTile = null, grainLayer = null;
     // A plain field whose dots sit apart (each dot plus a pixel round it fits inside its cell) is printed at rest once,
     // into restImg; each frame copies that print and redraws only the dots away from home (restR: their radius).
     let restImg = null, restR = 0, moved = new Int32Array(0);
@@ -255,8 +255,18 @@
         dirs[i * 2] = Math.cos(a) * len; dirs[i * 2 + 1] = Math.sin(a) * len;
       }
 
-      // A fixed tile of print grain, drawn once per page and laid over every frame.
+      // Print grain: the page's tile, printed once into a still layer over the canvas with the same overlay blend, so
+      // a frame only moves dots (laying the grain over the whole canvas every frame cost ~170ms a frame on a phone).
       grainTile = o.grain > 0 ? grain() : null;
+      if (grainTile) {
+        if (!grainLayer) { grainLayer = document.createElement("canvas"); grainLayer.className = "ht-grain"; grainLayer.setAttribute("aria-hidden", "true"); canvas.after(grainLayer); }
+        const cs = getComputedStyle(canvas);
+        Object.assign(grainLayer.style, { position: cs.position === "static" ? "absolute" : cs.position, top: cs.top, left: cs.left, width: w + "px", height: h + "px",
+          zIndex: cs.zIndex, pointerEvents: "none", mixBlendMode: "overlay", opacity: String(Math.min(1, o.grain) * 0.09) });
+        grainLayer.width = Math.round(w * dpr); grainLayer.height = Math.round(h * dpr);
+        const gg = grainLayer.getContext("2d"), pattern = gg && gg.createPattern(grainTile, "repeat");
+        if (pattern) { gg.setTransform(dpr, 0, 0, dpr, 0, 0); gg.fillStyle = pattern; gg.fillRect(0, 0, w, h); }
+      } else if (grainLayer) { grainLayer.remove(); grainLayer = null; }
       laidOut = w + "x" + h + "@" + dpr;
       awake = true;
     };
@@ -354,14 +364,6 @@
         }
         for (let k = 0; k < nm; k++) { const j = moved[k] * 7; prevIdx[k] = moved[k]; prevXY[k * 2] = dots[j]; prevXY[k * 2 + 1] = dots[j + 1]; }
         prevN = nm;
-      }
-      if (grainTile && o.grain > 0) {
-        ctx.globalAlpha = Math.min(1, o.grain) * 0.09;
-        ctx.globalCompositeOperation = "overlay";
-        const pattern = ctx.createPattern(grainTile, "repeat");
-        if (pattern) { ctx.fillStyle = pattern; ctx.fillRect(0, 0, w, h); }
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = "source-over";
       }
       // Sleep once everything is home (or held by a resting pointer) and no ring is running; the next move wakes it. A
       // frame too early for a physics step (a fast display) decides nothing: the next one does.
@@ -526,6 +528,7 @@
         if (touch) clearTimeout(touch.timer);
         if (o.scatter > 0) window.removeEventListener("scroll", onScatter);
         cancelAnimationFrame(raf);
+        if (grainLayer) { grainLayer.remove(); grainLayer = null; }
         ro.disconnect(); io.disconnect();
         if (motionQ.removeEventListener) motionQ.removeEventListener("change", onMotionPref);
         if (o.interactive) {
