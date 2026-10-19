@@ -2,7 +2,8 @@
    !important and no layer. */
 
 /* "New" beside a section in the navigation (app.js newMark). Inside the header's height: nothing below moves. */
-.app-nav__new{display:inline-flex;align-items:center;height:16px;margin-left:6px;padding:0 5px;border-radius:4px;background:var(--c-ink);color:var(--c-bg);font:600 9.5px/1 var(--font);letter-spacing:.04em;vertical-align:middle}
+/* A dot, as New is marked elsewhere in the product: it adds 9px, so the navigation never runs under the search. */
+.app-nav__new{display:inline-block;width:6px;height:6px;margin-left:5px;border-radius:50%;background:var(--c-ink);vertical-align:super;font-size:0}
 
 /* The header search answers the keystroke at once: a thin line sweeps under the field while results load. Only a
    transform moves, so it costs no layout. */
@@ -60,3 +61,26 @@
 .app-header .logo{display:inline-flex;align-items:center;min-height:44px}
 .ix-ticker,.ix-sources a,.ix-follow button{display:inline-flex;align-items:center;min-height:24px}
 .live-actions a{display:inline-flex;align-items:center;min-height:36px}
+
+/* The header search gives way to the navigation up to 1600px (below 1360px V13 already lets it flex): at a fixed
+   384px it pushed the last section, Alerts, under the field at common laptop widths. Layered, one step more specific,
+   to change V13's layered rule. */
+@layer insidir-v13{
+  /* Eight sections and the search fit side by side from 1200px; below that (iPad landscape included) the
+     navigation folds into the menu, as V13 does under 1140px. */
+  @media (max-width:1199px){
+    html body.v13 .app-nav{display:none!important}
+    html body.v13 .app-header .logo{margin-right:auto!important;order:0!important}
+    html body.v13 .app-search,html body.v13 .app-search:focus-within{order:1!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:420px!important}
+    html body.v13 .app-header__bell{order:2!important}
+    html body.v13 .user-menu{order:3!important}
+    html body.v13 .app-header .app-menu-btn{display:inline-grid!important;order:4!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-2)!important;background:transparent!important}
+    html body.v13 .app-mobile-nav.is-open{display:flex!important;flex-direction:column!important;position:absolute!important;inset:70px 0 auto!important;padding:14px max(16px,calc((100vw - 1100px)/2)) 23px!important;max-height:calc(100dvh - 70px)!important;overflow:auto!important}
+  }
+  @media (min-width:1200px) and (max-width:1279px){
+    html body.v13 .app-nav{gap:12px!important}
+  }
+  @media (min-width:1360px) and (max-width:1599px){
+    html body.v13 .app-search,html body.v13 .app-search:focus-within{flex:1 1 auto!important;width:auto!important;min-width:220px!important;max-width:384px!important}
+  }
+}

@@ -247,7 +247,10 @@
     menu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
     document.addEventListener("click", e => { if (!menu.contains(e.target)) setMenu(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && menu.classList.contains("is-open")) { setMenu(false); menuBtn.focus(); } });
-    window.addEventListener("resize", () => { if (innerWidth > 860) setMenu(false); });
+    // Close the menu only when the page grows wide enough to show the navigation again (v29-app.css: 1200px). A plain
+    // resize is not enough: iOS fires one whenever the address bar hides while scrolling.
+    const wide = window.matchMedia("(min-width: 1200px)");
+    (wide.addEventListener ? wide.addEventListener("change", e => { if (e.matches) setMenu(false); }) : wide.addListener(e => { if (e.matches) setMenu(false); }));
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');
@@ -444,7 +447,7 @@
     if (key !== WHATS_NEW.nav || Date.now() >= WHATS_NEW.until) return "";
     if (document.querySelector('[data-app-header][data-active="' + WHATS_NEW.nav + '"]')) { try { localStorage.setItem(WHATS_NEW.key, "1"); } catch {} return ""; }
     try { if (localStorage.getItem(WHATS_NEW.key) === "1") return ""; } catch {}
-    return '<span class="app-nav__new">New<span class="sr-only">: briefings, research questions and 13F holdings</span></span>';
+    return '<span class="app-nav__new" title="New: briefings, research questions and 13F holdings"><span class="sr-only">New</span></span>';
   }
   function init() {
     renderHeader();
