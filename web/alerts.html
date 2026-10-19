@@ -20,7 +20,7 @@
   <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
   <script defer src="assets/js/live-research.js?v=9"></script>
-  <script defer src="assets/js/push-settings.js?v=2"></script>
+  <script defer src="assets/js/push-settings.js?v=4"></script>
   <script defer src="assets/js/intelligence-feed.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
@@ -49,7 +49,7 @@
 
     <section id="insidir-push-setup" aria-labelledby="push-heading" style="margin:16px 0 28px;padding:18px 20px;border:1px solid #555;max-width:790px">
       <h2 id="push-heading" style="font-size:18px;margin:0 0 9px">Phone notifications</h2>
-      <p style="font-size:12px;line-height:1.6">Opt in to receive source-backed SEC filing updates for companies and reporting people you follow. On iPhone, install Insidir to your Home Screen first.</p>
+      <p style="font-size:12px;line-height:1.6">Opt in to receive source-backed SEC filing updates for companies and reporting people you follow. On iPhone, add Insidir to your Home Screen first. On Android or desktop, enable notifications directly when supported.</p>
       <p data-push-status role="status" aria-live="polite" style="font-size:12px;margin:10px 0">Checking device support…</p>
       <div data-push-ios-help hidden style="margin:12px 0 16px;padding:12px 14px;border-left:2px solid #e9e4da">
         <strong style="display:block;font-size:12px;margin-bottom:7px">Enable notifications on iPhone</strong>
@@ -60,6 +60,11 @@
           <li>Return to Alerts and tap <strong>Enable notifications</strong>.</li>
         </ol>
       </div>
+      <div data-push-android-help hidden style="margin:12px 0 16px;padding:12px 14px;border-left:2px solid #e9e4da;font-size:12px;line-height:1.7">
+        <strong>Android setup</strong>
+        <p>Open Insidir in Chrome, tap the browser menu (⋮), then choose Install app or Add to Home screen. Open Insidir and enable notifications.</p>
+      </div>
+      <button type="button" class="btn btn--dark" data-push-install hidden>Install Insidir</button>
       <button type="button" class="btn btn--dark" data-push-enable>Enable notifications</button>
       <button type="button" class="btn btn--dark" data-push-disable hidden>Disable notifications</button>
     </section>
