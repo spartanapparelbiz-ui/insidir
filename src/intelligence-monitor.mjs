@@ -74,7 +74,7 @@ export async function monitorOfficialCompanyNews({run=queryDb,loadIndex=tickerIn
  let checked=0,newEvents=0,failed=0;
  for(const symbol of symbols){
   const info=tickerRecord(index,symbol);if(!info)continue;
-  const id=String(info.cik_str||"").replace(/^0+/,"");if(!/^\d{1,10}$/.test(id))continue;
+  const id=String(info.cik||"").replace(/^0+/,"");if(!/^\d{1,10}$/.test(id))continue;
   try{
    const data=await fetcher("https://data.sec.gov/submissions/CIK"+id.padStart(10,"0")+".json",{json:true});
    newEvents+=await saveEvents(secAnnouncementEvents(data,symbol,id),run);checked++;
