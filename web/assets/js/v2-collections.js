@@ -22,7 +22,7 @@ const companyLogo=(t,x={})=>window.InsidirMedia?.company({ticker:t,cik:x.issuer_
 const companyName=n=>window.InsidirMedia?.companyName?window.InsidirMedia.companyName(n):String(n||"");
 const formLabel=f=>{const t=String(f||"4").trim();return /^form\b/i.test(t)?t:"Form "+t;};
 const tbody=$("collection-rows"),more=$("collection-more");
-let all=[],offset=0,busy=false,moreAvailable=false,companyDirectoryMode="imported";
+let all=[],offset=0,busy=false,moreAvailable=false,companyDirectoryMode="sec";
 const status=s=>{$("collection-status").textContent=s};
 async function request(path,options={}){
  const r=await fetch(path,{credentials:"same-origin",headers:{Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{})},...options});
@@ -32,15 +32,16 @@ async function request(path,options={}){
 function render(){
  const html=all.map(x=>{
   const t=clean(x.ticker);
-  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(companyName(x.issuer_name||x.name)||"SEC-listed issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+(x.published_at?E(filed(x.published_at)):'<span class="cl-muted">No imported Form 4</span>')+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
+  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(companyName(x.issuer_name||x.name)||"SEC-listed issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+(x.published_at?E(filed(x.published_at)):'<span class="cl-muted">View SEC records</span>')+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
   if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(companyName(x.issuer_name)||"Reporting issuer"))+'<span class="cl-muted">'+E(companyName(x.issuer_name))+'</span></div></div></td><td>'+E(formLabel(x.form_type))+(x.is_amendment&&!/\/A$/i.test(String(x.form_type||""))?" · amended":"")+'</td><td>'+E(filed(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
   return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(filed(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
  }).join("");
- const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.":companyDirectoryMode==="sec"?'No matching SEC-listed company found. Looking for an individual? <a href="people.html">Search reporting people →</a>':"No companies match this search in the imported dataset.";
+ const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.":companyDirectoryMode==="sec"?'No matching ticker in the SEC index. This does not mean the company does not exist. <a href="people.html">Search reporting people →</a>':"No matching company in Insidir’s imported SEC records.";
  tbody.innerHTML=html||'<tr><td class="cl-empty" colspan="4">'+empty+'</td></tr>';
  window.InsidirMedia?.hydrate(tbody);
  $("collection-count").textContent=all.length+" "+(kind==="companies"?(all.length===1?"company":"companies"):(all.length===1?"record":"records"));
- more.hidden=!moreAvailable||kind!=="filings";
+ more.hidden=!moreAvailable||(kind!=="filings"&&kind!=="companies");
+ if(kind==="companies")more.textContent="Load more companies →";
 }
 async function load(reset=true){
  if(busy)return;
@@ -50,25 +51,25 @@ async function load(reset=true){
   let data;
   if(kind==="companies"){
    if(!q){
-    companyDirectoryMode="imported";
-    data=await request("/v1/companies");
+    companyDirectoryMode="sec";
+    data=await request("/v1/company/directory?limit=50&offset="+offset);
    }else{
     // Search the SEC issuer list, not only the Form 4 filings already imported.
     const [official,imported]=await Promise.allSettled([
-      request("/v1/search?q="+encodeURIComponent(q)+"&limit=40"),
+      request("/v1/search?q="+encodeURIComponent(q)+"&limit=50&offset="+offset),
       request("/v1/companies?q="+encodeURIComponent(q))
     ]);
     if(official.status==="fulfilled"){
       companyDirectoryMode="sec";
       const local=imported.status==="fulfilled"&&Array.isArray(imported.value.items)?imported.value.items:[];
       const sameCik=(a,b)=>String(a||"").replace(/^0+/,"")===String(b||"").replace(/^0+/,"");
-      data={items:(official.value.items||[]).map(c=>{
+      data={hasMore:!!official.value.hasMore,items:(official.value.items||[]).map(c=>{
         const match=local.find(x=>clean(x.ticker)===clean(c.ticker)||sameCik(x.issuer_cik,c.cik));
         return {ticker:c.ticker,issuer_name:c.name,issuer_cik:c.cik,published_at:match?.published_at||null};
       })};
     }else if(imported.status==="fulfilled"){
       companyDirectoryMode="imported-fallback";
-      data=imported.value;
+      data={...imported.value,hasMore:false};
     }else throw official.reason;
    }
   }
@@ -76,9 +77,9 @@ async function load(reset=true){
   if(kind==="watchlist")data=await request("/v1/me/watchlist");
   const records=Array.isArray(data.items)?data.items:[];
   all=reset?records:[...all,...records];
-  moreAvailable=kind==="filings"&&records.length===40&&offset<960;
+  moreAvailable=kind==="filings"&&records.length===40&&offset<960||kind==="companies"&&companyDirectoryMode==="sec"&&!!data.hasMore;
   offset+=records.length;
-  status(kind==="watchlist"?"Your private saved symbols. No broker access or trading permission required.":kind==="companies"?(companyDirectoryMode==="sec"?all.length+" SEC-listed companies matched. Filing dates appear only for imported Form 4 records.":companyDirectoryMode==="imported-fallback"?"Official SEC company search is unavailable. Showing imported records only.":"Showing recent imported Form 4 issuers. Search by name or ticker to find other SEC-listed companies."):all.length+" imported records shown. All findings should be checked against original SEC sources.");
+  status(kind==="watchlist"?"Your private saved symbols. No broker access or trading permission required.":kind==="companies"?(companyDirectoryMode==="sec"?all.length+" SEC ticker-index entries shown"+(Number.isInteger(data.total)?" of "+data.total:"")+". Open any report for available filings, financials and insider records.":companyDirectoryMode==="imported-fallback"?"Official company index unavailable; showing imported SEC records only.":"Showing imported SEC companies only."):all.length+" imported records shown. All findings should be checked against original SEC sources.");
   render();
  }catch(e){
   moreAvailable=false;
@@ -91,6 +92,27 @@ async function load(reset=true){
   }
   more.hidden=true;
  }finally{busy=false;more.disabled=false;}
+}
+/* An up-to-date check is separate from the date of the newest filing (weekends may be quiet). */
+async function showFreshness(){
+ if(kind!=="companies")return;
+ const target=$("collection-freshness");
+ if(!target)return;
+ try{
+   const data=await request("/v1/status");
+   const last=data.lastIngest?.finished_at||data.lastIngest?.started_at;
+   const file=data.latestFilingPublishedAt;
+   const dateTime=v=>{
+     const d=new Date(v);
+     return Number.isNaN(d.getTime())?null:new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZone:"America/New_York",timeZoneName:"short"}).format(d);
+   };
+   const checked=last?dateTime(last):null,latest=file?dateTime(file):null;
+   const hours=last?(Date.now()-Date.parse(last))/3600000:Infinity;
+   const quality=data.lastIngest?.failed>0?" · Some filings failed to import.":"";
+   target.textContent=(checked?(hours>0.5?"Importer check may be stale: ":"SEC feed checked: ")+checked:"SEC feed check timestamp unavailable")+
+     (latest?" · Latest imported filing published: "+latest:" · No imported filings yet")+
+     ". The latest filing date can predate the most recent check."+quality;
+ }catch{target.textContent="SEC importer freshness could not be verified. Filing dates may be older than the last successful check.";}
 }
 document.addEventListener("DOMContentLoaded",()=>{
  $("collection-form").addEventListener("submit",async e=>{
@@ -114,5 +136,6 @@ document.addEventListener("DOMContentLoaded",()=>{
  const params=new URLSearchParams(location.search),q=params.get("q");
  if(q&&kind!=="watchlist")$("collection-q").value=q;
  void load();
+ void showFreshness();
 });
 })();
