@@ -125,7 +125,8 @@ export function capabilitySummary({ env = process.env, records } = {}) {
     trading: mode === MODES.TRADING_ENABLED && !tradingHalted(env) ? "enabled" : "disabled_pending_legal_authorization",
     tradingHalted: tradingHalted(env),
     brokerageAccess: brokerageHalted(env) ? "halted" : "read_only",
-    aiGeneratedContent: "none",
+    // Source-backed explanations of public filings only (src/explanations.mjs); off unless switched on with credentials.
+    aiGeneratedContent: String(env.INSIDIR_AI_EXPLANATIONS || "").trim() === "1" && !!String(env.ANTHROPIC_API_KEY || env.ANTHROPIC_AUTH_TOKEN || "").trim() ? "source_backed_explanations_only" : "none",
     politicalDisclosures: "disabled_pending_legal_and_licensing_review",
     statement: "Research software. Not a broker-dealer or registered investment adviser; no personalized investment advice; no order execution."
   };

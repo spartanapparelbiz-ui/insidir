@@ -25,6 +25,7 @@ import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdmi
 import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
 import { listResearchEvents,CAVEATS } from "./research-events.mjs";
+import { explainEvent } from "./explanations.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -436,6 +437,13 @@ async function route(req,res,ctx){
     return json(res,200,{items,next:items.length?String(items.at(-1).id):null,lastImportAt:last,
       source:"Imported SEC filings (Form 4, and EDGAR submissions for watched companies)",caveats:[CAVEATS.form4,CAVEATS.coverage,CAVEATS.notAdvice]});
   }
+  // GET /v1/research-events/<id>/explanation: facts, context and limitations with numbered sources (src/explanations.mjs).
+  const explain=/^\/v1\/research-events\/(\d{1,18})\/explanation$/.exec(p);
+  if(explain && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"explain:"+user.id,120,60*60*1000))throw failure(429,"Too many explanations requested. Try again later.");
+    return json(res,200,await explainEvent({query:ctx.query,eventId:explain[1],user,env:ctx.env,writer:ctx.explanationWriter}));
+  }
   if(p==="/v1/me/security-events" && m==="GET"){
     const user=await requireUser(req,ctx);
     return json(res,200,{items:await recentSecurityEvents(ctx.query,user.id,30),note:"Sign-ins and account changes for your account in the last 180 days."});
@@ -579,6 +587,15 @@ async function route(req,res,ctx){
       const x=await body(req);
       return json(res,200,await resetPassword(ctx.query,x?.token,x?.password,{req}),{"Set-Cookie":clearCookie()});
     }
+    // POST /v1/research-events/<id>/explanation {question}: a question about one record; advice requests are refused unanswered.
+    const ask=/^\/v1\/research-events\/(\d{1,18})\/explanation$/.exec(p);
+    if(ask && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"explain-ask:"+user.id,30,60*60*1000))throw failure(429,"Too many questions. Try again later.");
+      const x=await body(req);
+      if(typeof x?.question!=="string"||!x.question.trim())throw failure(400,"Ask a question about this record.");
+      return json(res,200,await explainEvent({query:ctx.query,eventId:ask[1],user,question:x.question,env:ctx.env,writer:ctx.explanationWriter}));
+    }
     if(p==="/v1/me/password" && m==="POST"){
       const user=await requireUser(req,ctx);
       if(await limited(ctx,"password-change:"+user.id,6))throw failure(429,"Too many attempts. Try again shortly.");
@@ -689,6 +706,7 @@ async function route(req,res,ctx){
  * query(sql, params) (default the PostgreSQL pool; used by the followed-people routes), quiet. */
 export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
+  ctx.explanationWriter=options.explanationWriter||null;
   ctx.limiter=options.limiter||(pool&&!options.query?pgLimiter({query}):memoryLimiter());
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
   if(!options.quiet)for(const notice of capabilityNotices(ctx.env))console.warn("Capabilities:",notice);

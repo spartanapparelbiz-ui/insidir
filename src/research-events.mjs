@@ -360,8 +360,10 @@ export async function listResearchEvents(query, { ticker = null, ownerCik = null
 }
 
 /* ---------- words: what was filed, never why or what to do ---------- */
-const money = v => { if (v == null) return null; const n = Number(v); return Number.isFinite(n) ? "$" + n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) : null; };
-const num = v => { if (v == null) return null; const n = Number(v); return Number.isFinite(n) ? n.toLocaleString("en-US", { maximumFractionDigits: 4 }) : null; };
+// Figures exactly as filed, only grouped: never rounded (an explanation's figures must match its sources).
+const group = v => { const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(v ?? "").trim()); if (!m) return null; const frac = (m[3] || "").replace(/0+$/, ""); return m[1] + m[2].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (frac ? "." + frac : ""); };
+const money = v => { const g = group(v); return g == null ? null : "$" + (/\.\d$/.test(g) ? g + "0" : g); };
+const num = v => group(v);
 const dayOf = (v, read) => v ? new Date(read(v) + "T00:00:00Z").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }) : null;
 const day = v => dayOf(v, isoDate), stamp = v => dayOf(v, utcDay);
 const who = e => { const o = e.facts?.owners || []; const first = o[0]; if (!first) return e.owner_name || "A reporting owner"; const role = first.roles?.length ? ` (${first.roles.join(", ")})` : ""; return first.name + role + (o.length > 1 ? ` and ${o.length - 1} other reporting owner${o.length > 2 ? "s" : ""}` : ""); };

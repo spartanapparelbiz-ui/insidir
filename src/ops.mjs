@@ -102,6 +102,10 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const [p] = await rows(query, `SELECT count(*) FILTER (WHERE email_alerts<>'off')::integer AS email_on, count(*)::integer AS total FROM notification_preferences`);
     return { ...r, preferences: p };
   });
+  const ai = await safe(async () => {
+    const outcomes = await rows(query, "SELECT outcome,count(*)::integer AS n,COALESCE(sum(cost_micros),0)::bigint AS cost_micros FROM ai_usage_log WHERE created_at>=date_trunc('day',now()) GROUP BY outcome ORDER BY outcome");
+    return { enabled: String(env.INSIDIR_AI_EXPLANATIONS || "") === "1", todayByOutcome: outcomes, spentTodayUsd: outcomes.reduce((a, r) => a + Number(r.cost_micros), 0) / 1e6 };
+  });
   const billing = await safe(async () => {
     const [w] = await rows(query, "SELECT max(processed_at) AS last_webhook_at, count(*) FILTER (WHERE processed_at>now()-interval '24 hours')::integer AS webhooks_24h FROM stripe_events");
     const events = await rows(query, "SELECT kind,count(*)::integer AS n FROM billing_events WHERE created_at>now()-interval '7 days' GROUP BY kind ORDER BY kind");
@@ -122,6 +126,6 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   if (billing?.enabled && billing.webhookMinutesAgo == null) alerts.push({ area: "billing", level: "warning", detail: "billing enabled but no Stripe webhook has ever been processed" });
   for (const w of Array.isArray(workers) ? workers : []) if (w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at))) alerts.push({ area: "worker:" + w.name, level: "warning", detail: String(w.last_error || "").slice(0, 160) });
   return { generatedAt: new Date().toISOString(), status: alerts.some(a => a.level === "stale") ? "degraded" : alerts.length ? "warning" : "ok", alerts,
-    ingestion, sec, researchEvents, notifications, email, billing, security, workers,
+    ingestion, sec, researchEvents, notifications, email, billing, ai, security, workers,
     capabilities: capabilitySummary({ env }), sources: sourceRegistry.map(s => ({ id: s.id, status: s.status })) };
 }

@@ -17,6 +17,7 @@
     "web": "node src/web-server.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "fast-xml-parser": "^5.2.5",
     "pg": "^8.16.0",
     "sharp": "^0.33.5"
