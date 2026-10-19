@@ -7,12 +7,12 @@ const time=t=>{let d=new Date(t);return Number.isFinite(d.getTime())?new Intl.Da
 async function read(path){const r=await fetch(path,{credentials:"same-origin",headers:{"Accept":"application/json"}});const data=await r.json();if(!r.ok)throw Error(data.error||"Feed unavailable");return data;}
 function card(x){
  const item=document.createElement("article");
- item.className="cx-feed__item";
- const meta=document.createElement("p");meta.className="cx-label";
+ item.className="vf-feed__item";
+ const meta=document.createElement("p");meta.className="vf-label";
  meta.textContent=(label[x.source_type]||"PUBLIC SOURCE")+" / "+time(x.published_at||x.observed_at);
- const title=document.createElement("p");title.className="cx-feed__title";
+ const title=document.createElement("p");title.className="vf-feed__title";
  title.textContent=String(x.title||"Public source update").slice(0,220);
- const link=document.createElement("a");link.textContent="Open original source ↗";link.className="cx-link";
+ const link=document.createElement("a");link.textContent="Open original source ↗";link.className="vf-link";
  const url=(()=>{try{let u=new URL(String(x.source_url||""));return u.protocol==="https:"&&["www.sec.gov","disclosures-clerk.house.gov","bsky.app"].includes(u.hostname)?u.href:null;}catch{return null;}})();
  if(url){link.href=url;link.target="_blank";link.rel="noopener noreferrer";}
  else{link.textContent="Source unavailable";link.removeAttribute("href");}
@@ -30,7 +30,7 @@ async function refresh(){
     "House disclosures: "+(s.houseFinancialDisclosures||"not active"),
     "Senate disclosures: "+(s.senateFinancialDisclosures||"not active")];
   status.textContent=states.join(" · ");
-  if(!list.children.length){const p=document.createElement("p");p.className="cx-empty";p.textContent="No indexed public-source updates yet. Research coverage begins after the next source check.";list.append(p);}
+  if(!list.children.length){const p=document.createElement("p");p.className="vf-empty";p.textContent="No indexed public-source updates yet. Research coverage begins after the next source check.";list.append(p);}
  }catch(e){status.textContent="Source feed unavailable: "+String(e.message||e);}
 }
 void refresh();

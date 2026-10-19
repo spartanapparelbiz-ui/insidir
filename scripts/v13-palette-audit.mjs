@@ -693,7 +693,13 @@ try {
         await page.waitForTimeout(250);
         Object.assign(entry, await inPage(scan, { palette: PALETTE, tol: TOL }));
         if (key === "index") entry.canvasGlow = await wordmarkGlow(page);
-        if (shots) await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        if (shots) {
+          // Walk the page once so lazy images and scroll reveals have loaded before the full-page capture.
+          await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += innerHeight * .8) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0, 0); });
+          await page.evaluate(() => Promise.all([...document.images].filter(i => !i.complete).map(i => new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 3000); }))));
+          await page.waitForTimeout(300);
+          await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        }
         if (!flag("no-pixels")) { await inPage(() => 0); entry.pixels = await orangePixels(page); }
         let cdp = null;
         if (!flag("no-states")) {
