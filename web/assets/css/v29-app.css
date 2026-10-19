@@ -84,3 +84,9 @@
     html body.v13 .app-search,html body.v13 .app-search:focus-within{flex:1 1 auto!important;width:auto!important;min-width:220px!important;max-width:384px!important}
   }
 }
+
+/* Intelligence briefing desk: each company's and person's links are a full 24px touch target (WCAG 2.2), with the
+   same type; the V13 rule sets only the font, so the extra height sits inside the existing row gap. */
+@layer insidir-v13{
+  html body.v13.ix-page :is(.ix-desk__co,.ix-desk__people) li a{display:flex!important;align-items:center!important;min-height:24px!important}
+}

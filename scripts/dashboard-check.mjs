@@ -1169,14 +1169,14 @@ try {
     const { context, page, errors } = await open(1440, fixture(MANY), { path: "/people.html" });
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length > 0, null, { timeout: 10000 });
     const count = () => page.locator("#v10-people-results .v10-person-card").count();
-    check(await count() === 24 && await text(page, "#v10-people-count") === "the first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
+    check(await count() === 24 && await text(page, "#v10-people-count") === "The first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
     const more = (await text(page, "button[data-people-more]")).replace(/\s+/g, " ");
     check(/Show more people · 76 more/i.test(more), "a Show more button says how many remain", more);
     await page.click("button[data-people-more]");
     const focus = await page.evaluate(() => [...document.querySelectorAll("#v10-people-results .v10-person-card")].indexOf(document.activeElement?.closest(".v10-person-card")));
     check(await count() === 48 && focus === 24, "Show more adds 24 people and moves focus to the first new one", { cards: await count(), focus });
     for (let i = 0; i < 3; i++) if (await page.locator("button[data-people-more]").count()) await page.click("button[data-people-more]");
-    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "the first 100 reporting people", "the button disappears once all 100 are shown");
+    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "The first 100 reporting people", "the button disappears once all 100 are shown");
     await page.fill("#v10-person-query", "FILER 00");
     await page.press("#v10-person-query", "Enter");
     await page.waitForFunction(() => /results? for/.test(document.getElementById("v10-people-status").textContent), null, { timeout: 10000 });
