@@ -171,7 +171,7 @@ export function parseQuestion(question, directory, { now = Date.now(), context =
       intent = context.intent; usedContext = true;
       if (!categories.length && Array.isArray(context.categories)) for (const c of context.categories) if (["reported_sale", "reported_purchase"].includes(c)) categories.push(c);
     }
-    if (time.defaulted && Number.isInteger(context.days) && context.days >= 1 && context.days <= 365 && usedContext) { time.days = context.days; time.label = context.timeLabel && String(context.timeLabel).slice(0, 80) || "the last " + context.days + " days"; delete time.defaulted; }
+    if (time.defaulted && Number.isInteger(context.days) && context.days >= 1 && context.days <= 365 && usedContext) { time.days = context.days; time.label = "the last " + context.days + (context.days === 1 ? " day" : " days"); /* never echo client-supplied text */ delete time.defaulted; }
   }
   if (intent === "compare" && contextCompanies.length < 2) intent = "overview";
   return { question: text, companies: contextCompanies, extraCompanies: extra, unmatched, ambiguous, scope, intent, categories: [...new Set(categories)],

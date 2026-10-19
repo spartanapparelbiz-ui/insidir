@@ -516,8 +516,10 @@ async function route(req,res,ctx){
     return json(res,200,await timed("mirror.simulate",()=>simulate(u.searchParams.get("cik"),u.searchParams.get("budget"),ctx.query,{accession:acc})));
   }
   if(p==="/v1/admin/costs" && m==="GET"){
+    if(atLimit("admin-denied:"+clientAddress(req),20))throw failure(429,"Too many attempts. Try again later.");
     const user=await ctx.currentUser(req).catch(()=>null);
     const who=adminIdentity(req,user,ctx.env);
+    if(!who)countFailure("admin-denied:"+clientAddress(req));
     await ctx.query("INSERT INTO admin_audit_log(actor,action,target,ip) VALUES($1,$2,$3,$4)",[who||"denied:"+(user?.id||"anonymous"),who?"admin.costs":"admin.denied","/v1/admin/costs",clientAddress(req)]).catch(()=>{});
     if(!who)throw failure(user?403:401,"Administrator access required");
     return json(res,200,await costReport({run:ctx.query,env:ctx.env,stripe:ctx.stripe||(billingSettings(ctx.env).enabled?createStripeClient({secretKey:billingSettings(ctx.env).secretKey}):null)}));

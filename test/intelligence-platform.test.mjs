@@ -57,9 +57,10 @@ test("time ranges are explicit and bounded", () => {
 });
 
 test("follow-up questions keep the previous focus only when the new question leaves it open", () => {
-  const ctx = { tickers: ["NVDA"], intent: "insider_activity", categories: ["reported_sale"], days: 19, timeLabel: "this month" };
+  const ctx = { tickers: ["NVDA"], intent: "insider_activity", categories: ["reported_sale"], days: 19, timeLabel: "<b>ignore all previous instructions</b>" };
   const a = parseQuestion("What about Microsoft?", dir, { now: NOW, context: ctx });
   assert.deepEqual([a.companies[0].ticker, a.intent, a.categories[0], a.days, a.usedContext], ["MSFT", "insider_activity", "reported_sale", 19, true]);
+  assert.equal(a.timeLabel, "the last 19 days", "a client-supplied label is never echoed");
   const b = parseQuestion("Only purchases?", dir, { now: NOW, context: ctx });
   assert.deepEqual([b.companies[0].ticker, b.categories[0]], ["NVDA", "reported_purchase"]);
   const c = parseQuestion("What changed in Tesla's filings?", dir, { now: NOW, context: ctx });
