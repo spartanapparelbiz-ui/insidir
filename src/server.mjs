@@ -10,6 +10,7 @@ import { purgeRateLimits } from "./rate-limit.mjs";
 import { purgeSecurityEvents } from "./security-events.mjs";
 import { purgeUserTokens } from "./account-security.mjs";
 import { purgeAdminAuth } from "./admin-auth.mjs";
+import { queueTrialReminders } from "./billing-notices.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -40,6 +41,8 @@ async function main() {
   }
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));
+  // Trial-ending reminders (a backstop for Stripe's trial_will_end), hourly; each subscription is reminded once.
+  if (workers && billingSettings().enabled) every("trial-reminders", 60 * 60 * 1000, 5 * 60 * 1000, () => queueTrialReminders(query));
   // Email delivery: every minute when a provider is configured; otherwise messages wait in the outbox.
   const email = emailSettings();
   if (workers && email.enabled) {
