@@ -138,6 +138,18 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     await page.waitForTimeout(200);
     assert.equal(sent.filter(r => r.p === "/v1/intelligence/tape").at(-1).q, "?days=7&form=all");
   });
+  await check(label + ": every person and company carries a real identity tile, asked for in /v1/media batches", async () => {
+    const tape = F.tape.events.filter(e => e.personCik);
+    const tiles = await page.$$eval(".ix-tape__item", rows => rows.map(r => ({ person: r.querySelector('.ix-tape__who [data-media="person"]')?.dataset.cik || null, company: r.querySelector('.ix-tape__co [data-media="company"]')?.dataset.ticker || null })));
+    assert.equal(tiles.filter(t => t.person).length, tape.length, "a headshot tile for every tape row that names a reporting person");
+    assert.deepEqual(tiles.filter(t => t.person).map(t => t.person), tape.map(e => e.personCik));
+    assert.ok(tiles.every((t, i) => t.company === F.tape.events[i].ticker), "a logo tile for every tape company");
+    for (const p of F.structure.people) assert.ok(await page.$('.ix-cap [data-person="' + p.cik + '"] [data-media="person"][data-cik="' + p.cik.replace(/^0+/, "") + '"]'), "structure headshot for " + p.name);
+    assert.ok(await page.$('.ix-node--company [data-media="company"][data-ticker="' + F.structure.company.ticker + '"]'), "structure company logo");
+    assert.ok(await page.$$eval('.ix-people [data-media="person"]', t => t.length) > 0, "briefing people carry headshot tiles");
+    assert.ok(sent.some(r => r.p === "/v1/media"), "tiles are resolved through the engine's /v1/media batch");
+    assert.ok(await page.$("[data-media-credits]"), "a photo-credits footnote for headshots");
+  });
   await check(label + ": the briefing is a morning report with dated, sourced stories", async () => {
     await page.waitForSelector(".ix-lead");
     assert.match(await page.textContent("[data-edition-date]"), /\d{4}/);
