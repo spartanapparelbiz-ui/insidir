@@ -39,6 +39,14 @@ html:has(body.v13){scrollbar-color:var(--hf-line-strong,#696762) var(--hf-bg,#0c
   ::view-transition-old(root),::view-transition-new(root){animation-duration:.22s;animation-timing-function:cubic-bezier(.2,.7,.2,1)}
 }
 
+/* Header: with Intelligence in the product navigation, the fixed 384px search ran into the last nav item between
+   1360 and 1600px ("Alerts" touched the field, and was clipped with a classic scrollbar). The field now gives way
+   first, down to 260px, and always keeps a 20px gap. Same header, same order, same items. */
+@media (min-width:1360px) and (max-width:1599px){
+  body.v13 .app-search,body.v13 .app-search:focus-within{flex:1 1 auto!important;width:auto!important;min-width:260px!important;max-width:384px!important}
+}
+body.v13 .app-header .app-nav{margin-right:20px!important}
+
 /* ---------- shared pieces ---------- */
 body.v13 :is(.iv-label,.vf-label){font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;margin:0 0 10px!important}
 body.v13 :is(.vf-copy,.iv-panel__head p){color:var(--hf-soft)!important;font:400 14px/1.65 var(--hf-mono)!important;margin:0 0 12px!important;max-width:72ch!important}

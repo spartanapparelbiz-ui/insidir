@@ -452,15 +452,20 @@
     if(document.querySelector("[data-insidir-announcement]"))return;
     const css=document.createElement("style");
     css.textContent=[
-      ".insidir-platform-announcement{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:var(--hf-surface-2,#1b1a18);color:var(--hf-ink,#e9e4da);padding:15px max(18px,calc((100% - 1280px)/2));border-bottom:1px solid var(--hf-line-2,#41403d);position:relative;z-index:5}",
-      ".insidir-platform-announcement__lead{display:flex;align-items:center;gap:12px;flex:1 1 450px;min-width:0}",
+      // A floating card at the bottom of the screen, not a strip above the page: inserted after the first paint,
+      // a strip pushed every page down (CLS 0.06 on desktop, 0.19 on phones). It steps aside while a page notice
+      // (.rd-toast) is showing, so it never covers an Undo button.
+      ".insidir-platform-announcement{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));translate:-50% 0;z-index:80;box-sizing:border-box;width:min(960px,calc(100vw - 32px));display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:var(--hf-surface-2,#1b1a18);color:var(--hf-ink,#e9e4da);padding:14px 18px;border:1px solid var(--hf-line-2,#41403d);box-shadow:var(--hf-shadow-pop,0 16px 40px -8px rgba(12,12,11,.9));transition:opacity .2s linear}",
+      "@media (prefers-reduced-motion:no-preference){.insidir-platform-announcement{animation:insidir-announce-in .32s cubic-bezier(.2,.7,.2,1) both}@keyframes insidir-announce-in{from{opacity:0}to{opacity:1}}}",
+      "body:has(.rd-toast:not(:empty)) .insidir-platform-announcement,body:has(.toast:not(:empty):not([hidden])) .insidir-platform-announcement{opacity:0;pointer-events:none}",
+      ".insidir-platform-announcement__lead{display:flex;align-items:center;gap:12px;flex:1 1 420px;min-width:0}",
       ".insidir-platform-announcement__logo{width:36px;height:36px;flex:none;border:1px solid var(--hf-line-2,#41403d);border-radius:0}",
       ".insidir-platform-announcement__name{font-weight:650;font-size:13px;letter-spacing:.01em;margin:0 0 4px}",
       ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:var(--hf-soft,#bdb9b1);margin:0;max-width:900px}",
       ".insidir-platform-announcement__actions{display:flex;align-items:center;gap:12px}",
       ".insidir-platform-announcement__open{color:var(--hf-ink,#e9e4da);text-decoration:underline;text-underline-offset:3px;font-size:12px}",
       ".insidir-platform-announcement__close{color:var(--hf-soft,#bdb9b1);background:transparent;border:1px solid var(--hf-line-strong,#696762);border-radius:0;padding:6px 12px;min-height:36px;font-family:inherit;cursor:pointer;font-size:12px}",
-      "@media(max-width:650px){.insidir-platform-announcement{padding:14px 18px;gap:12px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
+      "@media(max-width:650px){.insidir-platform-announcement{padding:12px 14px;gap:10px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
     ].join("");
     document.head.append(css);
     const banner=document.createElement("section");
@@ -489,7 +494,7 @@
       banner.remove();css.remove();
     });
     actions.append(open,close);banner.append(lead,actions);
-    host.insertAdjacentElement("afterend",banner);
+    document.body.append(banner);
   }
   function init() {
     renderHeader();
