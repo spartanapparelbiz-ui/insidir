@@ -156,6 +156,12 @@ page structure was changed. Every new rule lives in the same `insidir-v13` casca
 (`--hf-*`: paper `#0c0c0b`, ink `#e9e4da`, green/red for direction only, JetBrains Mono).
 
 ### 6.1 What changed
+> **Superseded in part by the PR #41 integration (October 19).** The owner chose #41's pages, landing, header and
+> tokens (`v29-system.css`) as the visual base. This branch's cinematic layer (`v30-cinematic.css`) and its Intelligence
+> rebuild with `/v1/me/intelligence/filings` and `/mirror` were dropped in favour of main's Intelligence; the backend
+> below (security, billing notices, research events, notifications, ops) was kept and wired into #41's pages. The
+> 1.4× zoom described here was replaced by the 4K step in §7.
+
 | Area | Change |
 |---|---|
 | `main` merged | Web push, PWA icons, Intelligence, OpenRouter, Bluesky/House monitors (both off by default), ultra-hd.css. Conflicts resolved keeping both sides; this branch's Form 4 events table renamed `sec_events` so it cannot collide with main's `research_events`. |
