@@ -78,6 +78,7 @@ export function classifyApi(pathname, method = "GET") {
   if (p === "/healthz" || p === "/v1" || p === "/v1/" || p === "/v1/sources" || p === "/v1/capabilities") return "open";
   if (p === "/v1/me") return m === "GET" || m === "HEAD" || m === "DELETE" ? "open" : "product";
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/") || p.startsWith("/v1/creators/admin/")) return "open";
+  if (p.startsWith("/v1/me/push/")) return "account"; // opt-out works after subscription expires
   // Server-to-server ingestion has its own bearer secret; it is not product data.
   if (p === "/v1/internal/ingest") return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that

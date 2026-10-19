@@ -5,6 +5,7 @@ import { createApiServer } from "./api.mjs";
 import { warmAfterIngest } from "./media-warm.mjs";
 import { reconcileLapsed, createStripeClient } from "./billing.mjs";
 import { billingSettings } from "./config.mjs";
+import { dispatchPushBatch,pushConfigured } from "./push.mjs";
 
 async function main() {
   if(!config.databaseUrl)throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -31,6 +32,13 @@ async function main() {
     };
     setTimeout(reconcile,60*1000).unref();
     setInterval(reconcile,6*60*60*1000).unref();
+  }
+  // Opt-in notification deliveries: retry from the database even when ingestion is externally scheduled.
+  if(pushConfigured()){
+    const tickPush=async()=>{try{const r=await dispatchPushBatch();if(r.sent||r.failed)console.log(JSON.stringify({event:"push.dispatch",...r}));}
+      catch(e){console.error(JSON.stringify({event:"push.dispatch_error",error:String(e?.message||e)}))}};
+    setTimeout(tickPush,10*1000).unref();
+    setInterval(tickPush,60*1000).unref();
   }
   // Expired sign-in sessions are already refused at lookup; this removes their rows (hourly, after a minute).
   const purgeSessions=async()=>{

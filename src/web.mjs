@@ -136,7 +136,7 @@ export async function serveStatic(req, res) {
     "Content-Length": body.length,
     ...(packed ? { "Content-Encoding": packed.encoding } : {}),
     ...(compressible.has(ext) ? { "Vary": "Accept-Encoding" } : {}),
-    "Cache-Control": ext === ".html" ? "no-cache" : immutable ? "public, max-age=604800" : "public, max-age=3600"
+    "Cache-Control": ext === ".html" || requested === "/sw.js" || requested === "/manifest.webmanifest" ? "no-cache" : immutable ? "public, max-age=604800" : "public, max-age=3600"
   });
   res.end(method === "HEAD" ? undefined : body);
   return true;
