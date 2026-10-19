@@ -1,6 +1,7 @@
 import { config, secReady } from "./config.mjs";
 import { requireDb, query, isParsed, persistFiling, persistFailure } from "./db.mjs";
 import { recentForm4Backlog, loadOwnership } from "./sec.mjs";
+import { marketDataChanged } from "./cache.mjs";
 
 export async function ingest({maxFilings=config.maxPerRun}={}) {
   if (!secReady()) throw new Error("SEC_USER_AGENT requires a monitored operator email");
@@ -30,6 +31,7 @@ export async function ingest({maxFilings=config.maxPerRun}={}) {
     }
     await query("UPDATE ingest_runs SET finished_at=now(),status=$2,discovered=$3,parsed=$4,skipped=$5,failed=$6 WHERE id=$1",
       [runId,stats.failed?"partial":"success",stats.discovered,stats.parsed,stats.skipped,stats.failed]);
+    marketDataChanged();
     return stats;
   }catch(err){
     if(runId)await query("UPDATE ingest_runs SET finished_at=now(),status='error',error_message=$2 WHERE id=$1",[runId,String(err?.message||err).slice(0,500)]).catch(()=>{});

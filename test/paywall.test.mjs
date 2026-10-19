@@ -649,6 +649,33 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
     { ...deps(USERS.none, {}), env: {} }), e => e.status === 503 && /not available/.test(e.message));
 });
 
+test("checkout refuses a Stripe price that is not the published $39 a month, and goes ahead when it is", async () => {
+  const { priceMatchesOffer, verifyPlanPrice } = await import("../src/billing.mjs");
+  const ok = { object: "price", active: true, unit_amount: 3900, currency: "usd", recurring: { interval: "month", interval_count: 1 } };
+  assert.equal(priceMatchesOffer(ok), true);
+  for (const bad of [{ ...ok, unit_amount: 4900 }, { ...ok, currency: "eur" }, { ...ok, recurring: { interval: "year", interval_count: 1 } }, { ...ok, recurring: { interval: "month", interval_count: 3 } }, { ...ok, active: false }, null])
+    assert.equal(priceMatchesOffer(bad), false, JSON.stringify(bad));
+  // Unreadable: not a verdict (null), so checkout proceeds and Stripe validates the Price when the session is made.
+  assert.equal(await verifyPlanPrice({ get: async () => { throw new Error("down"); } }, "price_unread"), null);
+  assert.equal(await verifyPlanPrice({ get: async () => ({ ...ok, unit_amount: 4900 }) }, "price_wrong"), false);
+  let reads = 0;
+  const counting = { get: async () => { reads++; return ok; } };
+  assert.equal(await verifyPlanPrice(counting, "price_right"), true);
+  assert.equal(await verifyPlanPrice(counting, "price_right"), true);
+  assert.equal(reads, 1, "a confirmed price is remembered");
+
+  // Through the route: a $49 price stops checkout before a session exists; nothing is charged.
+  const json = () => true;
+  const user = { ...USERS.none, id: randomUUID() };
+  const query = fakeQuery({ "SELECT email": { rows: [{ email: user.email, stripe_customer_id: "cus_1", subscription_status: null }] } });
+  const posted = [];
+  const stripe = { get: async path => path.startsWith("/prices/") ? { ...ok, unit_amount: 4900 } : { object: "list", data: [], has_more: false },
+    post: async path => { posted.push(path); return { id: "cs_x", url: "https://checkout.stripe.com/c/pay/x" }; }, del: async () => ({}) };
+  await assert.rejects(billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json, { env: { ...BILLING, INSIDIR_STRIPE_PRICE_ID: "price_wrong_amount" }, currentUser: async () => user, stripe, query }),
+    e => e.status === 503 && /does not match the published \$39\.00 a month/.test(e.message));
+  assert.ok(!posted.includes("/checkout/sessions"), "no checkout session was created");
+});
+
 test("checkout asks Stripe first: a paid checkout whose webhook is pending blocks a second one", async () => {
   const replies = [];
   const json = (res, status, body) => { replies.push({ status, body }); return true; };
@@ -675,7 +702,8 @@ test("checkout asks Stripe first: a paid checkout whose webhook is pending block
     sessions: [{ id: "cs_test_earlier", customer: "cus_1", status: "open" }] });
   const { run } = checkout(world, { subscription_status: "active" }, undefined, "full");
   await run;
-  assert.deepEqual(world.calls, ["GET /subscriptions", "GET /checkout/sessions", "POST /checkout/sessions/cs_test_earlier/expire", "POST /checkout/sessions"]);
+  // (The plan's Price is read first as well; its own test is "checkout refuses a Stripe price that is not the published $39 a month".)
+  assert.deepEqual(world.calls.filter(c => !c.startsWith("GET /prices/")), ["GET /subscriptions", "GET /checkout/sessions", "POST /checkout/sessions/cs_test_earlier/expire", "POST /checkout/sessions"]);
   assert.equal(world.sessions[0].status, "expired");
   assert.equal(replies.at(-1).status, 200);
   assert.match(replies.at(-1).body.url, /^https:\/\/checkout\.stripe\.com\//);
@@ -692,7 +720,7 @@ test("checkout asks Stripe first: a paid checkout whose webhook is pending block
   const gone = stripeWorld({ fail: { "GET /subscriptions": () => Object.assign(new Error("No such customer"), { status: 400, stripeStatus: 400, stripeCode: "resource_missing" }) } });
   const fresh = checkout(gone);
   await fresh.run;
-  assert.deepEqual(gone.calls, ["GET /subscriptions", "POST /customers", "POST /checkout/sessions"]);
+  assert.deepEqual(gone.calls.filter(c => !c.startsWith("GET /prices/")), ["GET /subscriptions", "POST /customers", "POST /checkout/sessions"]);
   assert.ok(fresh.query.statements.some(x => x.sql.startsWith("UPDATE users SET stripe_customer_id=NULL")));
   assert.equal(gone.sessions[0].customer, "cus_NEW");
 

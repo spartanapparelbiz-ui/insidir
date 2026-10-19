@@ -203,7 +203,8 @@ test("one canonical owner CIK: POST stores the 10-digit form, and padded, unpadd
     for (const sent of ["1214156", "0001214156", " 000001214156 "]) {
       const r = await follow(base, "paid", sent);
       assert.deepEqual([r.status, r.json()], [200, { saved: true, owner_cik: "0001214156" }], sent);
-      const [known, insert] = query.statements.slice(-2);
+      // (Funnel measurement records a first follow too; it is not part of the follow itself.)
+      const [known, insert] = query.statements.filter(x => !/funnel_events/.test(x.sql)).slice(-2);
       assert.deepEqual(known.params, [["1214156", "0001214156"]], "the person is looked up in both forms");
       assert.equal(insert.sql, flat(FOLLOW_INSERT_SQL));
       assert.deepEqual(insert.params, [USERS.paid.id, "0001214156"], "always stored as the 10-digit form");

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Subscribe — insidir.</title>
 <meta name="description" content="Start Insidir with a 3-day trial for $1, then $39 a month. Secure checkout by Stripe; cancel any time from Billing.">
@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="assets/css/v13-paywall.css?v=9">
 <script defer src="assets/js/subscribe.js?v=5"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
+<script defer src="/assets/js/funnel.js"></script>
+<link rel="stylesheet" href="assets/css/v29-system.css">
 </head>
 <body class="pw-page pw-page--subscribe v13" data-pw-state="loading">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -33,8 +35,8 @@
  <div class="pw-topline"><p>Account <span aria-hidden="true">/</span> Subscription</p><p>Secure checkout by Stripe</p></div>
  <div class="pw-grid">
   <section class="pw-intro" aria-labelledby="pw-title">
-   <h1 id="pw-title">Subscribe to open your workspace.</h1>
-   <p class="pw-lead">One plan covers everything below. Start with 3 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing.</p>
+   <h1 id="pw-title">Start your 3-day trial for $1.</h1>
+   <p class="pw-lead">One plan covers everything below. Start with 3 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing. One trial per account: if you have had Insidir before, checkout shows $39.</p>
    <p class="pw-notice" data-pw-notice="cancel" hidden>Checkout was cancelled and nothing was charged. You can subscribe whenever you're ready.</p>
    <p class="pw-notice" data-pw-notice="next" hidden></p>
   </section>
@@ -45,7 +47,7 @@
    <p class="pw-plan__price" data-pw-price><strong>$39</strong><span>/ month after a 3-day trial · $1 today</span></p>
    <ul class="pw-plan__terms">
     <li data-pw-term-1>$1 today for a 3-day trial, once per account</li>
-    <li data-pw-term-2>Then $39.00 a month in US dollars, renewing automatically until you cancel</li>
+    <li data-pw-term-2>Then $39 a month in US dollars, first charged after the trial and renewing automatically until you cancel</li>
     <li>Cancel online any time from Billing, in one step</li>
     <li>Card details handled by Stripe</li>
    </ul>
@@ -81,7 +83,7 @@
     <div data-pw-when="signedout" hidden>
      <p class="pw-status">New to Insidir? Create your account first; it takes a minute.</p>
      <a class="btn btn--dark btn--block pw-action" href="signin.html" data-pw-signin>Log in</a>
-     <a class="pw-link" href="signup.html">Get started</a>
+     <a class="pw-link" href="signup.html">Create an account</a>
     </div>
     <div data-pw-when="error" hidden>
      <p class="pw-status">Your connection or our service may be down for a moment.</p>
@@ -109,7 +111,7 @@
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>

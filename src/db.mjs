@@ -50,6 +50,10 @@ export async function migrate() {
     await client.query(intelligenceSchema);
     const platformSchema=await readFile(new URL("../sql/014_intelligence_platform.sql",import.meta.url),"utf8");
     await client.query(platformSchema);
+    const indexSchema=await readFile(new URL("../sql/015_query_indexes.sql",import.meta.url),"utf8");
+    await client.query(indexSchema);
+    const funnelSchema=await readFile(new URL("../sql/016_funnel_events.sql",import.meta.url),"utf8");
+    await client.query(funnelSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

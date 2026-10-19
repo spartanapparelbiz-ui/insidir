@@ -23,9 +23,11 @@ const companyName=n=>window.InsidirMedia?.companyName?window.InsidirMedia.compan
 const formLabel=f=>{const t=String(f||"4").trim();return /^form\b/i.test(t)?t:"Form "+t;};
 const tbody=$("collection-rows"),more=$("collection-more");
 let all=[],offset=0,busy=false,moreAvailable=false,companyDirectoryMode="sec";
+/* A new search supersedes the one in flight (its requests are cancelled and its answer ignored); "load more" waits. */
+let generation=0,inflight=null;
 const status=s=>{$("collection-status").textContent=s};
 async function request(path,options={}){
- const r=await fetch(path,{credentials:"same-origin",headers:{Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{})},...options});
+ const r=await fetch(path,{credentials:"same-origin",headers:{Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{})},signal:options.signal||inflight?.signal,...options});
  let data;try{data=await r.json()}catch{throw Error("Research service is unavailable")};
  if(!r.ok){let er=Error(data.error||"Request failed");er.status=r.status;throw er;}return data;
 }
@@ -44,7 +46,9 @@ function render(){
  if(kind==="companies")more.textContent="Load more companies →";
 }
 async function load(reset=true){
- if(busy)return;
+ if(busy&&!reset)return;
+ if(reset){generation++;if(inflight)inflight.abort();inflight="AbortController" in window?new AbortController():null;}
+ const mine=generation;
  busy=true;more.disabled=true;const q=$("collection-q").value.trim();
  if(reset){all=[];offset=0;tbody.innerHTML='<tr><td colspan="4" class="cl-empty">Loading source-linked records…</td></tr>';}
  try{
@@ -75,6 +79,7 @@ async function load(reset=true){
   }
   if(kind==="filings")data=await request("/v1/filings?limit=40&offset="+offset+(q?"&q="+encodeURIComponent(q):""));
   if(kind==="watchlist")data=await request("/v1/me/watchlist");
+  if(mine!==generation)return;
   const records=Array.isArray(data.items)?data.items:[];
   all=reset?records:[...all,...records];
   moreAvailable=kind==="filings"&&records.length===40&&offset<960||kind==="companies"&&companyDirectoryMode==="sec"&&!!data.hasMore;
@@ -82,6 +87,7 @@ async function load(reset=true){
   status(kind==="watchlist"?"Your private saved symbols. No broker access or trading permission required.":kind==="companies"?(companyDirectoryMode==="sec"?all.length+" SEC ticker-index entries shown"+(Number.isInteger(data.total)?" of "+data.total:"")+". Open any report for available filings, financials and insider records.":companyDirectoryMode==="imported-fallback"?"Official company index unavailable; showing imported SEC records only.":"Showing imported SEC companies only."):all.length+" imported records shown. All findings should be checked against original SEC sources.");
   render();
  }catch(e){
+  if(mine!==generation||e?.name==="AbortError")return;
   moreAvailable=false;
   if(kind==="watchlist"&&e.status===401){
    tbody.innerHTML='<tr><td colspan="4" class="cl-empty">Sign in to view your saved watchlist. <a href="signin.html">Sign in →</a></td></tr>';
@@ -91,7 +97,7 @@ async function load(reset=true){
    status("Could not load available records.");
   }
   more.hidden=true;
- }finally{busy=false;more.disabled=false;}
+ }finally{if(mine===generation){busy=false;more.disabled=false;}}
 }
 /* An up-to-date check is separate from the date of the newest filing (weekends may be quiet). */
 async function showFreshness(){

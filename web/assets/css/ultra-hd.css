@@ -1,6 +1,7 @@
 /* Insidir high-density display polish. Resolution-independent, mobile-first. */
 :root{--insidir-hairline:color-mix(in srgb,currentColor 13%,transparent)}
-html{-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+/* text-rendering stays auto: optimizeLegibility slows text layout on long pages, most on phones. */
+html{-webkit-text-size-adjust:100%}
 body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 img,video,canvas,svg{max-width:100%}
 img{height:auto}
@@ -15,7 +16,7 @@ svg{shape-rendering:geometricPrecision}
   body.v13 .app-main{font-size:clamp(15px,.5vw,20px)}
 }
 @media(max-width:700px){
-  body.v13 img{object-fit:cover}
+  /* (No blanket object-fit: cover here: it cropped logos and portraits drawn in fixed boxes.) */
   body.v13 main{min-width:0}
 }
 @media(prefers-reduced-motion:reduce){

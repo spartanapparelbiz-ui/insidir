@@ -5,7 +5,9 @@ import { query,health } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { sourceRegistry,clusterPurchases } from "./analysis.mjs";
 import { currentUser,register,login,revokeSession,sessionCookie,clearCookie,checkOrigin,passwordMatches } from "./auth.mjs";
-import { serveStatic } from "./web.mjs";
+import { serveStatic,pickEncoding } from "./web.mjs";
+import { createMarketCache } from "./cache.mjs";
+import { brotliCompressSync,gzipSync,constants as zlibConstants } from "node:zlib";
 import { billingRoutes,createStripeClient,deleteAccount } from "./billing.mjs";
 import { creatorAdminRoutes } from "./creator-program.mjs";
 import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavailablePage } from "./paywall.mjs";
@@ -21,12 +23,13 @@ import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
 import {intelligenceBriefing,savePreferences,FREQUENCIES} from "./intelligence-briefing.mjs";
-import {investigate,synthesize,STAGES} from "./intelligence-investigate.mjs";
+import {investigate,synthesize,STAGES,rememberInvestigation,recallInvestigation} from "./intelligence-investigate.mjs";
 import {instrument,eventTape,parseTapeFilters,capitalStructure} from "./intelligence-instrument.mjs";
 import {listManagers,managerDetail,simulate} from "./intelligence-mirror.mjs";
 import {form13fTick,ingestEnabled as form13fEnabled,managerCiks} from "./form13f.mjs";
 import {aiConfigured,modelFor,aiLimits} from "./ai-gateway.mjs";
 import {costReport,adminIdentity,timed} from "./cost-analytics.mjs";
+import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -40,11 +43,19 @@ function isLimited(key,limit=15,windowMs=15*60*1000){
 // Read-only check, and a separate counter, so only failed attempts spend the allowance.
 function atLimit(key,limit){const v=hits.get(key);return !!v && v.until>Date.now() && v.count>=limit}
 function countFailure(key,windowMs=15*60*1000){isLimited(key,Infinity,windowMs)}
+/* JSON answers of 1.4 KB or more are compressed for clients that accept it (route() notes the encoding on res):
+   brotli at a fast quality, else gzip. Lists of filings and trades shrink by roughly 85-90%. */
 function json(res,status,body,headers={}) {
+  let text=JSON.stringify(body),extra={};
+  const encoding=res.__acceptEncoding;
+  if(encoding&&status!==204&&status!==304&&text.length>=1400){
+    text=encoding==="br"?brotliCompressSync(text,{params:{[zlibConstants.BROTLI_PARAM_QUALITY]:4}}):gzipSync(text,{level:5});
+    extra={"Content-Encoding":encoding,"Vary":mergeVary(res.getHeader("vary"),headers.Vary||headers.vary,"Accept-Encoding")};
+  }
   res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",
     "X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin",
-    "Permissions-Policy":"camera=(), microphone=(), geolocation=()",...headers});
-  res.end(JSON.stringify(body));
+    "Permissions-Policy":"camera=(), microphone=(), geolocation=()",...headers,...extra});
+  res.end(text);
 }
 const failure=(status,message)=>Object.assign(new Error(message),{status});
 async function body(req) {
@@ -268,6 +279,7 @@ function reqOrigin(req,res){
 async function route(req,res,ctx){
   const u=new URL(req.url||"/","http://localhost");
   const p=u.pathname,m=req.method||"GET";
+  if(m!=="HEAD")res.__acceptEncoding=pickEncoding(req.headers["accept-encoding"]);
   reqOrigin(req,res);
   if(m==="OPTIONS"){
     if(!checkOrigin(req))return json(res,403,{error:"Origin not allowed"});
@@ -356,8 +368,9 @@ async function route(req,res,ctx){
   }
   if(p==="/v1/sources" && m==="GET")return json(res,200,{sources:sourceRegistry,disclaimer:"Sources marked disabled are not ingested or republished."});
   if(p==="/v1/status" && m==="GET"){
-    const last=await query("SELECT started_at,finished_at,status,discovered,parsed,failed,skipped FROM ingest_runs ORDER BY id DESC LIMIT 1");
-    const count=await query("SELECT count(*)::integer AS filings, MAX(published_at) AS latest_published_at FROM sec_filings WHERE ingest_status='parsed'");
+    const [last,count]=await ctx.market("status",15_000,()=>Promise.all([
+      query("SELECT started_at,finished_at,status,discovered,parsed,failed,skipped FROM ingest_runs ORDER BY id DESC LIMIT 1"),
+      query("SELECT count(*)::integer AS filings, MAX(published_at) AS latest_published_at FROM sec_filings WHERE ingest_status='parsed'")]));
     return json(res,200,{engine:"online",sec:secReady()?"configured":"requires_user_agent",filings:count.rows[0]?.filings||0,
       lastIngest:last.rows[0]||null,latestFilingPublishedAt:count.rows[0]?.latest_published_at||null,
       note:"A recent successful import check can find zero new filings, especially on weekends and holidays. Publication date is not ingestion time.",paid:false});
@@ -367,11 +380,11 @@ async function route(req,res,ctx){
     const search=(u.searchParams.get("q")||"").trim().slice(0,100);
     const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
     const offset=Math.min(1000,Math.max(0,Number(u.searchParams.get("offset"))||0));
-    const rows=await query(`SELECT accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,
+    const rows=await ctx.market("filings:"+JSON.stringify([t,search,limit,offset]),30_000,()=>query(`SELECT accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,
       is_amendment,source_url,xml_url,owner_names,retrieved_at
       FROM sec_filings WHERE ingest_status='parsed'
       AND ($1::text IS NULL OR ticker=$1) AND ($2::text = '' OR issuer_name ILIKE '%'||$2||'%' OR title ILIKE '%'||$2||'%')
-      ORDER BY published_at DESC NULLS LAST,accession DESC LIMIT $3 OFFSET $4`,[t,search,limit,offset]);
+      ORDER BY published_at DESC NULLS LAST,accession DESC LIMIT $3 OFFSET $4`,[t,search,limit,offset]));
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC EDGAR",note:"Publication is not transaction time."});
   }
   if(p.startsWith("/v1/filings/") && m==="GET"){
@@ -388,19 +401,22 @@ async function route(req,res,ctx){
     const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
     const category=u.searchParams.get("category")||null;
     if(category && !["reported_purchase","reported_sale","other"].includes(category))throw failure(400,"Invalid category");
-    const rows=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
+    const rows=await ctx.market("transactions:"+JSON.stringify([t,category,limit,offset]),30_000,async()=>{
+      const r=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
       JOIN sec_filings f ON f.accession=t.accession
       WHERE f.ingest_status='parsed' AND ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
-    await withJointOwners(rows.rows,query,await hasFilingOwners(query));
+      await withJointOwners(r.rows,query,await hasFilingOwners(query));
+      return r;
+    });
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
   }
   if(p==="/v1/companies" && m==="GET"){
     const search=(u.searchParams.get("q")||"").trim().slice(0,60);
-    const rows=await query(`SELECT DISTINCT ON (issuer_cik) issuer_cik,issuer_name,ticker,published_at
+    const rows=await ctx.market("companies:"+search.toLowerCase(),60_000,()=>query(`SELECT DISTINCT ON (issuer_cik) issuer_cik,issuer_name,ticker,published_at
       FROM sec_filings WHERE ingest_status='parsed' AND issuer_cik IS NOT NULL
       AND ($1::text = '' OR ticker ILIKE $1||'%' OR issuer_name ILIKE '%'||$1||'%')
-      ORDER BY issuer_cik,published_at DESC NULLS LAST LIMIT 100`,[search]);
+      ORDER BY issuer_cik,published_at DESC NULLS LAST LIMIT 100`,[search]));
     return json(res,200,{items:rows.rows});
   }
   if(p==="/v1/clusters" && m==="GET"){
@@ -421,7 +437,7 @@ async function route(req,res,ctx){
     const limit=positive(u.searchParams.get("limit"),100,100);
     const offset=Math.min(10_000,Math.max(0,Math.trunc(Number(u.searchParams.get("offset"))||0)));
     const sql=(await hasFilingOwners(ctx.query))?INSIDERS_SQL.joint:INSIDERS_SQL.single;
-    const rows=await ctx.query(sql,[q,limit+1,offset]);
+    const rows=await ctx.market("insiders:"+JSON.stringify([sql===INSIDERS_SQL.joint,q,limit,offset]),60_000,()=>ctx.query(sql,[q,limit+1,offset]));
     return json(res,200,{items:rows.rows.slice(0,limit),offset,limit,hasMore:rows.rows.length>limit,
       source:"Imported SEC Form 4 reporting owners",coverage:"Only imported reporting owners, not all public officials or SEC filers"});
   }
@@ -540,6 +556,28 @@ async function route(req,res,ctx){
     if(!who)throw failure(user?403:401,"Administrator access required");
     return json(res,200,await costReport({run:ctx.query,env:ctx.env,stripe:ctx.stripe||(billingSettings(ctx.env).enabled?createStripeClient({secretKey:billingSettings(ctx.env).secretKey}):null)}));
   }
+  if(p==="/v1/admin/funnel" && m==="GET"){
+    if(atLimit("admin-denied:"+clientAddress(req),20))throw failure(429,"Too many attempts. Try again later.");
+    const user=await ctx.currentUser(req).catch(()=>null);
+    const who=adminIdentity(req,user,ctx.env);
+    if(!who)countFailure("admin-denied:"+clientAddress(req));
+    await ctx.query("INSERT INTO admin_audit_log(actor,action,target,ip) VALUES($1,$2,$3,$4)",[who||"denied:"+(user?.id||"anonymous"),who?"admin.funnel":"admin.denied","/v1/admin/funnel",clientAddress(req)]).catch(()=>{});
+    if(!who)throw failure(user?403:401,"Administrator access required");
+    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days")}));
+  }
+  /* POST /v1/events: one first-party funnel event from a page (src/funnel.mjs lists what is accepted). Same
+     origin only; a member's id is attached when the request carries their session. Always 204, so a page
+     learns nothing from it and never waits on it. */
+  if(p==="/v1/events" && m==="POST"){
+    if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    if(isLimited("events:"+clientAddress(req),240,15*60*1000))return json(res,204,{});
+    const row=cleanClientEvent(await body(req));
+    const user=await ctx.currentUser(req).catch(()=>null);
+    await recordEvent(ctx.query,{...row,userId:user?.id||null});
+    // A member's first company report counts as their first research, for the activation measure.
+    if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
+    return json(res,204,{});
+  }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});
   }
@@ -606,12 +644,15 @@ async function route(req,res,ctx){
       const x=await body(req);
       if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
       const context=x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null;
-      if(u.searchParams.get("stream")!=="1")return json(res,200,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context})));
+      serverEvent(ctx.query,"intelligence_first_used",{userId:user.id,once:true});
+      serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
+      // The answer is remembered briefly so a follow-up synthesis reuses it instead of researching the question again.
+      if(u.searchParams.get("stream")!=="1")return json(res,200,rememberInvestigation(user.id,x.question,context,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context}))));
       // Streamed: one JSON line per stage as the server actually completes it, then the answer. Nothing is timed for show.
       let started=false;
       const line=obj=>{if(!started){started=true;res.writeHead(200,{"Content-Type":"application/x-ndjson; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Accel-Buffering":"no"});res.write(JSON.stringify({stage:"start",stages:STAGES})+"\n")}res.write(JSON.stringify(obj)+"\n")};
       try{
-        const answer=await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context,onStage:(id,detail)=>line({stage:id,detail})}));
+        const answer=rememberInvestigation(user.id,x.question,context,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context,onStage:(id,detail)=>line({stage:id,detail})})));
         line({stage:"answer",answer});
       }catch(e){if(!started)throw e;line({stage:"error",status:Number(e?.status)||500,error:Number(e?.status)>=500||!e?.status?"Research failed. Try again shortly.":String(e.message)});if(!e?.status||e.status>=500)console.error("Investigation failed",e)}
       return res.end();
@@ -621,7 +662,9 @@ async function route(req,res,ctx){
       if(isLimited("synthesize:"+user.id,15,15*60*1000))throw failure(429,"AI summary limit reached. Try again in a few minutes.");
       const x=await body(req);
       if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
-      return json(res,200,await timed("synthesize",()=>synthesize(user.id,x.question,{run:ctx.query,env:ctx.env,context:x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null})));
+      const context=x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null;
+      // The page asks for the summary right after the answer: reuse that answer rather than research it twice.
+      return json(res,200,await timed("synthesize",()=>synthesize(user.id,x.question,{run:ctx.query,env:ctx.env,context,answer:recallInvestigation(user.id,x.question,context)})));
     }
     if(p==="/v1/me/intelligence/preferences" && m==="POST"){
       const user=await requireUser(req,ctx);
@@ -631,6 +674,7 @@ async function route(req,res,ctx){
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
+      await serverEvent(ctx.query,"signup_completed",{userId:r.user?.id,visitor:x.visitor});
       return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
@@ -703,6 +747,7 @@ async function route(req,res,ctx){
       if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
       const saved=await ctx.query(FOLLOW_INSERT_SQL,[user.id,cik]);
       if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
+      serverEvent(ctx.query,"first_follow",{userId:user.id,once:true});
       return json(res,200,{saved:true,owner_cik:saved.rows[0]?.owner_cik??cik});
     }
     if(p.startsWith("/v1/me/people/") && m==="DELETE"){
@@ -715,6 +760,7 @@ async function route(req,res,ctx){
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req,ctx),x=await body(req),t=ticker(x.ticker);
       await query("INSERT INTO watchlist(user_id,ticker) VALUES($1,$2) ON CONFLICT DO NOTHING",[user.id,t]);
+      serverEvent(ctx.query,"first_watchlist_item",{userId:user.id,once:true});
       return json(res,200,{saved:true,ticker:t});
     }
     if(p.startsWith("/v1/me/watchlist/") && m==="DELETE"){
@@ -730,6 +776,9 @@ async function route(req,res,ctx){
  * query(sql, params) (default the PostgreSQL pool; used by the followed-people routes), quiet. */
 export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
+  // Shared market-wide answers (see createMarketCache); options.marketCache:false turns it off for a test.
+  const market=options.marketCache===false?null:createMarketCache();
+  ctx.market=(key,ttl,work)=>market?market(key,ttl,work):work();
   if(!options.quiet)for(const notice of paywallNotices(ctx.env))console.warn("Paywall:",notice);
   if(!options.quiet)for(const notice of capabilityNotices(ctx.env))console.warn("Capabilities:",notice);
   return createServer((req,res)=>{route(req,res,ctx).catch(error=>{

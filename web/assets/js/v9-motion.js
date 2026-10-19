@@ -75,6 +75,7 @@
     fit(true);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fit(true), () => {});
   };
-  if (hero.__halftone) start(); else document.addEventListener("DOMContentLoaded", start, { once: true });
+  // The engine mounts once the page has painted (v13-halftone.js): fit then.
+  if (hero.__halftone) start(); else hero.addEventListener("halftone:mount", start, { once: true });
   window.addEventListener("load", () => fit(true), { once: true });
 })();

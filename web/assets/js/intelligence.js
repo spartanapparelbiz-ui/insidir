@@ -403,12 +403,15 @@
     else text = "You will receive " + esc(label) + " on " + del.devices + " device" + (del.devices === 1 ? "" : "s") + ". Last 7 days: " + del.sent7d + " delivered" + (del.failed7d ? ", " + del.failed7d + " failed" : "") + (del.pending ? ", " + del.pending + " waiting" : "") + "." + (del.lastSentAt ? " Last delivered " + esc(fmtTime(del.lastSentAt)) + "." : "");
     el.innerHTML = text;
   }
+  // A new member's first steps on the overview (onboarding.js) tick off reading the briefing and asking a question.
+  const onboarded = step => { try { localStorage.setItem("insidir:onboard:" + step, "1"); } catch { /* private mode */ } };
   async function loadBriefing() {
     feed.setAttribute("aria-busy", "true");
     if (!brief.data) feed.innerHTML = loader("Preparing your edition");
     try {
       brief.data = await api("/v1/me/intelligence/briefing?days=" + brief.days);
       renderBriefing();
+      onboarded("briefing");
       inst.brief = brief.data; inst.cats.findings = findingsCategory();
       if (inst.data) { $("[data-rows=member]", instEl).innerHTML = MEMBER.map(rowHtml).join(""); if (inst.selected === "findings") select("findings"); else setState(); drawLinks(); }
       pulse(["findings"]);
@@ -660,6 +663,7 @@
       });
       if (a.plan && a.status !== "refused") lastPlan = a.plan;
       box.innerHTML = reportHtml(a, aid);
+      onboarded("investigate");
       box._answer = a;
       hydrate(box);
     } catch (e) {

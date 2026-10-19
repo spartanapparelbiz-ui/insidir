@@ -53,27 +53,19 @@
     window.fetch = gatedFetch;
   }
 
+  /* The product's sections, in order of use: what changed (Overview), what to look at (Intelligence), the records
+     (Research, Companies, People, Filings), what you follow (Watchlist) and what you are told about (Alerts). */
   const NAV = [
     ["dashboard","Overview","dashboard.html"],
-    ["research","Research","research.html"],
     ["intelligence","Intelligence","intelligence.html"],
-    ["insiders","People","people.html"],
+    ["research","Research","research.html"],
     ["companies","Companies","explore.html"],
+    ["insiders","People","people.html"],
     ["filings","Filings","filings.html"],
     ["watchlist","Watchlist","watchlist.html"],
     ["alerts","Alerts","alerts.html"]
   ];
-  const NAV_PATHS = {
-    dashboard:'<path d="M3 10 12 3l9 7v10h-6v-6H9v6H3z"/>',
-    research:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
-    companies:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h8M8 11h8M8 15h8"/>',
-    portfolio:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18m-11 4 3-3 3 3"/>',
-    watchlist:'<path d="m12 3 2.8 5.7L21 9.6l-4.5 4.4 1.1 6.2L12 17.2l-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/>',
-    filings:'<path d="M6 2h8l5 5v15H6zM14 2v6h5M9 12h7M9 16h7"/>',
-    insiders:'<path d="M4 19h16M6 16l4-5 3 3 5-7M17 7h2v3"/>',
-    alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 8-3 9-3 9h18s-3-1-3-9M10 21h4"/>'
-  };
-  const NAV_ICONS = {dashboard:"layers",research:"search",intelligence:"activity",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"activity",alerts:"clock"};
+  const NAV_ICONS = {dashboard:"layers",research:"search",intelligence:"activity",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"user-round",alerts:"clock"};
   const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons/interface.svg#'+(NAV_ICONS[key]||"file-text")+'"></use></svg></span>';
 
   const icons = {
@@ -177,9 +169,9 @@
   }
 
   /* ---------- API (same-origin engine, optional) ---------- */
-  async function api(path, { method = "GET", body } = {}) {
+  async function api(path, { method = "GET", body, signal } = {}) {
     const res = await fetch(path, {
-      method, credentials: "same-origin",
+      method, credentials: "same-origin", signal,
       headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -202,7 +194,7 @@
       </button>
       <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
       <nav class="app-nav" aria-label="Product">
-        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
+        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>
       </nav>
       <form class="app-search" role="search" action="company.html">
@@ -221,7 +213,7 @@
           <a href="account.html">Account center</a>
           <a href="portfolio.html">Portfolio</a>
           <a href="billing.html">Plan &amp; billing</a>
-          <a href="signin.html" data-account-signin>Sign in</a>
+          <a href="signin.html" data-account-signin hidden>Sign in</a>
           <a href="alerts.html">Alert settings</a>
           <a href="privacy.html">Privacy</a>
           <button type="button" data-signout>Sign out</button>
@@ -229,7 +221,7 @@
       </div>
     </div>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Product">
-      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
+      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>`).join("")}
     </nav>`;
 
     api("/v1/me").then(data => {
@@ -240,9 +232,11 @@
       const initial = email.trim().charAt(0).toUpperCase();
       const avatar = host.querySelector(".user-menu__btn");
       if (avatar && /[A-Z0-9]/.test(initial)) { avatar.innerHTML = `<span class="user-menu__initial" aria-hidden="true">${initial}</span>`; avatar.setAttribute("aria-label", "Account menu for " + email); }
+    }).catch(error => {
+      // Only a visitor the engine does not recognise is offered "Sign in" (a member never sees it flash).
       const signin = host.querySelector("[data-account-signin]");
-      if (signin) signin.hidden = true;
-    }).catch(() => {});
+      if (signin && error && error.status === 401) signin.hidden = false;
+    });
     const menuBtn = host.querySelector(".app-menu-btn"), menu = host.querySelector(".app-mobile-nav");
     const setMenu = open => {
       menu.classList.toggle("is-open", open);
@@ -253,7 +247,10 @@
     menu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
     document.addEventListener("click", e => { if (!menu.contains(e.target)) setMenu(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && menu.classList.contains("is-open")) { setMenu(false); menuBtn.focus(); } });
-    window.addEventListener("resize", () => { if (innerWidth > 860) setMenu(false); });
+    // Close the menu only when the page grows wide enough to show the navigation again (v29-app.css: 1200px). A plain
+    // resize is not enough: iOS fires one whenever the address bar hides while scrolling.
+    const wide = window.matchMedia("(min-width: 1200px)");
+    (wide.addEventListener ? wide.addEventListener("change", e => { if (e.matches) setMenu(false); }) : wide.addListener(e => { if (e.matches) setMenu(false); }));
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');
@@ -319,13 +316,19 @@
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
     };
+    // Each keystroke cancels the requests of the one before it, so only the latest query costs the server anything.
+    let searchAbort = null;
     const lookup = async q => {
       const seq = ++searchSeq;
+      if (searchAbort) searchAbort.abort();
+      const ctrl = searchAbort = "AbortController" in window ? new AbortController() : null;
+      const signal = ctrl ? ctrl.signal : undefined;
       const [companies, people] = await Promise.allSettled([
-        api("/v1/search?q=" + encodeURIComponent(q)),
-        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q)) : Promise.resolve({ items: [] })
+        api("/v1/search?q=" + encodeURIComponent(q), { signal }),
+        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] })
       ]);
       if (seq !== searchSeq || input.value.trim() !== q) return;
+      form.removeAttribute("aria-busy");
       if (companies.status === "rejected" && people.status === "rejected") { suggestions=[]; list.innerHTML = '<p class="app-search__empty">Search services are unavailable. Try again shortly.</p>'; list.hidden=false; input.setAttribute("aria-expanded","true"); return; }
       if (companies.status === "rejected" && companies.reason && companies.reason.status === 402) {
         suggestions = [];
@@ -350,7 +353,9 @@
       input.setCustomValidity("");
       const q = input.value.trim();
       clearTimeout(searchTimer);
-      if (!q) { suggestions = []; closeList(); return; }
+      if (!q) { suggestions = []; form.removeAttribute("aria-busy"); if (searchAbort) searchAbort.abort(); closeList(); return; }
+      // Feedback on the keystroke itself; the request waits for a 140ms pause in typing.
+      form.setAttribute("aria-busy", "true");
       searchTimer = setTimeout(() => lookup(q).catch(() => {}), 140);
     });
     input.addEventListener("keydown", e => {
@@ -435,65 +440,17 @@
     });
   }
 
-  /* One-time branded announcement, visible to signed-in members regardless
-     of whether they have granted Web Push permission. Dismissed per browser. */
-  const PRODUCT_ANNOUNCEMENT = Object.freeze({
-    id: "features-2026-10-19",
-    title: "Insidir · New Features Available",
-    message: "We've upgraded Insidir with financial intelligence alerts, expanded company research, and new market monitoring. Open Insidir to explore what's new.",
-    href: "alerts.html",
-    expiresAt: "2026-10-27T00:00:00Z"
-  });
-  function showPlatformAnnouncement() {
-    const host=document.querySelector("[data-app-header]");
-    if(!host||Date.now()>=Date.parse(PRODUCT_ANNOUNCEMENT.expiresAt))return;
-    const storageKey="insidir:announcement:dismissed:"+PRODUCT_ANNOUNCEMENT.id;
-    try{if(localStorage.getItem(storageKey)==="1")return;}catch{}
-    if(document.querySelector("[data-insidir-announcement]"))return;
-    const css=document.createElement("style");
-    css.textContent=[
-      ".insidir-platform-announcement{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:#191918;color:#e9e4da;padding:15px max(18px,calc((100% - 1280px)/2));border-bottom:1px solid #484541;position:relative;z-index:5}",
-      ".insidir-platform-announcement__lead{display:flex;align-items:center;gap:12px;flex:1 1 450px;min-width:0}",
-      ".insidir-platform-announcement__logo{width:36px;height:36px;flex:none;border:1px solid #534f49;border-radius:8px}",
-      ".insidir-platform-announcement__name{font-weight:650;font-size:13px;letter-spacing:.01em;margin:0 0 4px}",
-      ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:#c5c1ba;margin:0;max-width:900px}",
-      ".insidir-platform-announcement__actions{display:flex;align-items:center;gap:12px}",
-      ".insidir-platform-announcement__open{color:#e9e4da;text-decoration:underline;text-underline-offset:3px;font-size:12px}",
-      ".insidir-platform-announcement__close{color:#c5c1ba;background:transparent;border:1px solid #41403d;border-radius:4px;padding:6px 9px;cursor:pointer;font-size:12px}",
-      "@media(max-width:650px){.insidir-platform-announcement{padding:14px 18px;gap:12px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
-    ].join("");
-    document.head.append(css);
-    const banner=document.createElement("section");
-    banner.className="insidir-platform-announcement";
-    banner.dataset.insidirAnnouncement=PRODUCT_ANNOUNCEMENT.id;
-    banner.setAttribute("role","status");
-    banner.setAttribute("aria-label","Insidir product announcement");
-    const lead=document.createElement("div");lead.className="insidir-platform-announcement__lead";
-    const icon=document.createElement("img");
-    icon.className="insidir-platform-announcement__logo";
-    icon.src="/assets/icons/favicon.svg";icon.alt="Insidir";
-    const words=document.createElement("div");
-    const title=document.createElement("p");title.className="insidir-platform-announcement__name";
-    title.textContent=PRODUCT_ANNOUNCEMENT.title;
-    const body=document.createElement("p");body.className="insidir-platform-announcement__body";
-    body.textContent=PRODUCT_ANNOUNCEMENT.message;
-    words.append(title,body);lead.append(icon,words);
-    const actions=document.createElement("div");actions.className="insidir-platform-announcement__actions";
-    const open=document.createElement("a");open.href=PRODUCT_ANNOUNCEMENT.href;
-    open.className="insidir-platform-announcement__open";open.textContent="Explore updates ↗";
-    const close=document.createElement("button");
-    close.type="button";close.className="insidir-platform-announcement__close";
-    close.textContent="Dismiss";close.setAttribute("aria-label","Dismiss Insidir announcement");
-    close.addEventListener("click",()=>{
-      try{localStorage.setItem(storageKey,"1");}catch{}
-      banner.remove();css.remove();
-    });
-    actions.append(open,close);banner.append(lead,actions);
-    host.insertAdjacentElement("afterend",banner);
+  /* What's new: a small "New" mark on the Intelligence link until the member has opened Intelligence (or until the
+     notice expires). It sits inside the header's own height, so the page never moves to make room for it. */
+  const WHATS_NEW = Object.freeze({ key: "insidir:new:intelligence-2026-10", nav: "intelligence", until: Date.parse("2026-10-27T00:00:00Z") });
+  function newMark(key) {
+    if (key !== WHATS_NEW.nav || Date.now() >= WHATS_NEW.until) return "";
+    if (document.querySelector('[data-app-header][data-active="' + WHATS_NEW.nav + '"]')) { try { localStorage.setItem(WHATS_NEW.key, "1"); } catch {} return ""; }
+    try { if (localStorage.getItem(WHATS_NEW.key) === "1") return ""; } catch {}
+    return '<span class="app-nav__new" aria-hidden="true" title="New: briefings, research questions and 13F holdings"></span><span class="sr-only"> (new)</span>';
   }
   function init() {
     renderHeader();
-    showPlatformAnnouncement();
     segmented(document);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
