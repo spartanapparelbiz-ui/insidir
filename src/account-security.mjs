@@ -143,6 +143,9 @@ export async function exportAccount(query, user, { req = null } = {}) {
     researchJournal: await one("SELECT ticker,review_status,notes,created_at,updated_at FROM research_decisions WHERE user_id=$1 ORDER BY updated_at"),
     manualHoldings: await one("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker"),
     subscriptionConsents: await one("SELECT offer,amount_today_cents,recurring_cents,trial_days,disclosure_version,disclosure_text,created_at FROM billing_consents WHERE user_id=$1 ORDER BY created_at"),
+    alertPreferences: await one("SELECT in_app,email_alerts,event_types,digest_hour_utc,consent_version,consented_at,unsubscribed_at,updated_at FROM notification_preferences WHERE user_id=$1"),
+    alertEmailConsents: await one("SELECT action,setting,consent_version,consent_text,created_at FROM email_consents WHERE user_id=$1 ORDER BY created_at"),
+    notifications: await one("SELECT n.created_at,n.read_at,n.reason,e.event_type,e.ticker,e.accessions FROM notifications n JOIN research_events e ON e.id=n.event_id WHERE n.user_id=$1 ORDER BY n.id DESC LIMIT 1000"),
     emailsSent: await one("SELECT kind,category,status,created_at,sent_at FROM email_outbox WHERE user_id=$1 ORDER BY created_at DESC LIMIT 500"),
     securityEvents: await one("SELECT kind,created_at,ip,user_agent FROM security_events WHERE user_id=$1 ORDER BY created_at DESC LIMIT 500"),
     notes: ["Payment card details are stored by Stripe, not by Insidir.", "Public SEC records shown in the product are not personal data held about you and are not included."]

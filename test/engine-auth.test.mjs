@@ -64,8 +64,10 @@ test("sign-in limits key on the client and count only failures", { skip: !DB && 
   });
 
   await t.test("one address cannot guess across many accounts", async () => {
-    for (let i = 0; i < 30; i++) assert.equal((await post("/v1/auth/login", { email: email("spray"), password: "wrong-password-123" }, "198.51.100.7")).status, 401);
-    assert.equal((await post("/v1/auth/login", { email: email("spray"), password: "wrong-password-123" }, "198.51.100.7")).status, 429);
+    // Limits are kept in PostgreSQL across runs and instances: a fresh address for every run.
+    const sprayer = `198.51.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+    for (let i = 0; i < 30; i++) assert.equal((await post("/v1/auth/login", { email: email("spray"), password: "wrong-password-123" }, sprayer)).status, 401);
+    assert.equal((await post("/v1/auth/login", { email: email("spray"), password: "wrong-password-123" }, sprayer)).status, 429);
   });
 
   await t.test("deleting an account needs the account's password, not just the session", async () => {

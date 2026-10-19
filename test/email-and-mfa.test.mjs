@@ -76,6 +76,7 @@ test("outbox on PostgreSQL: idempotent queueing, retries with backoff, suppressi
   for (const f of MIGRATIONS) await q((await import("node:fs")).readFileSync(new URL("../sql/" + f, import.meta.url), "utf8"));
   await q("DELETE FROM email_outbox WHERE kind LIKE 'test_%'");
   const tag = randomUUID();
+  const K = ["test_alert", "test_billing"]; // other suites share the database: deliver only this test's messages
   const msg = (n, extra = {}) => ({ to: `r${n}-${tag}@example.com`, category: "alert", kind: "test_alert", dedupeKey: `test:${tag}:${n}`, subject: "S", text: "body " + n, ...extra });
 
   assert.deepEqual((await enqueueEmail(q, msg(1))).queued, true);
@@ -87,7 +88,7 @@ test("outbox on PostgreSQL: idempotent queueing, retries with backoff, suppressi
   let calls = 0, failedOnce = false; const sentTo = [];
   const flaky = { name: "fake", async send(m) { calls++; if (m.text === "body 1" && !failedOnce && (failedOnce = true)) throw Object.assign(new Error("temporary"), { permanent: false }); sentTo.push(m.to); return { messageId: "id-" + calls }; } };
   // Two workers at once never claim the same row.
-  const [a, b] = await Promise.all([deliverDue({ query: q, transport: flaky, limit: 10 }), deliverDue({ query: q, transport: flaky, limit: 10 })]);
+  const [a, b] = await Promise.all([deliverDue({ query: q, transport: flaky, limit: 10, kinds: K }), deliverDue({ query: q, transport: flaky, limit: 10, kinds: K })]);
   const row = async n => (await q("SELECT * FROM email_outbox WHERE dedupe_key=$1", [`test:${tag}:${n}`])).rows[0];
   assert.equal((await row(1)).status, "queued", "transient failure: queued again");
   assert.ok(new Date((await row(1)).next_attempt_at) > new Date(Date.now() + 50_000), "with backoff");
@@ -96,7 +97,7 @@ test("outbox on PostgreSQL: idempotent queueing, retries with backoff, suppressi
   assert.equal(billing.status, "sent"); assert.equal(billing.text_body, "body 3", "billing notices keep their body"); assert.ok(billing.to_email);
   assert.equal(a.claimed + b.claimed, 3);
   await q("UPDATE email_outbox SET next_attempt_at=now() WHERE dedupe_key=$1", [`test:${tag}:1`]);
-  await deliverDue({ query: q, transport: flaky, limit: 10 });
+  await deliverDue({ query: q, transport: flaky, limit: 10, kinds: K });
   const alert = await row(1);
   assert.equal(alert.status, "sent"); assert.equal(alert.text_body, null, "alert bodies are erased once delivered"); assert.equal(alert.to_email, null);
   assert.equal(new Set(sentTo).size, sentTo.length, "nobody mailed twice");
@@ -104,7 +105,7 @@ test("outbox on PostgreSQL: idempotent queueing, retries with backoff, suppressi
   // A message that keeps failing is abandoned after MAX_ATTEMPTS and erased.
   await enqueueEmail(q, msg(4));
   const broken = { name: "fake", async send() { throw Object.assign(new Error("down"), { permanent: false }); } };
-  for (let i = 0; i < MAX_ATTEMPTS; i++) { await q("UPDATE email_outbox SET next_attempt_at=now() WHERE dedupe_key=$1", [`test:${tag}:4`]); await deliverDue({ query: q, transport: broken, limit: 10 }); }
+  for (let i = 0; i < MAX_ATTEMPTS; i++) { await q("UPDATE email_outbox SET next_attempt_at=now() WHERE dedupe_key=$1", [`test:${tag}:4`]); await deliverDue({ query: q, transport: broken, limit: 10, kinds: K }); }
   const dead = await row(4);
   assert.equal(dead.status, "failed"); assert.equal(dead.attempts, MAX_ATTEMPTS); assert.equal(dead.text_body, null);
 

@@ -15,6 +15,7 @@ import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from 
 import { loadOwnership } from "./sec.mjs";
 import { persistFiling } from "./db.mjs";
 import { secReady } from "./config.mjs";
+import { fanOut, sendImmediate, sendDigests } from "./notifications.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -42,11 +43,19 @@ async function main() {
       if (result?.ok && result.parsed) warmAfterIngest(query).then(w => console.log("Media warm-up", JSON.stringify(w)), e => console.warn("Media warm-up failed", e?.message || e));
       // Research events for what was just imported (the research-events job below also catches up on its own).
       const events = result?.parsed ? await buildResearchEvents({ query }) : null;
+      if (events) await fanOut({ query }).catch(e => console.error("Alert fan-out failed", e?.message || e));
       return { ok: result?.ok, discovered: result?.discovered, parsed: result?.parsed, failed: result?.failed, deferred: result?.deferred || 0, reason: result?.reason, events };
     });
   }
   // Research events (src/research-events.mjs): incremental, idempotent; also covers imports started by /v1/internal/ingest.
   if (workers) every("research-events", 15 * 60 * 1000, 90 * 1000, () => buildResearchEvents({ query }));
+  // Alerts (src/notifications.mjs): new events to the members watching them every 5 minutes; immediate emails every
+  // 5 minutes and daily digests hourly (each member at their digest hour). Emails wait in the outbox for delivery.
+  if (workers) {
+    every("notifications", 5 * 60 * 1000, 2 * 60 * 1000, () => fanOut({ query }));
+    every("alert-emails", 5 * 60 * 1000, 3 * 60 * 1000, () => sendImmediate({ query, connect }));
+    every("daily-digests", 60 * 60 * 1000, 7 * 60 * 1000, () => sendDigests({ query, connect }));
+  }
   // Failed Form 4 imports, retried with backoff after they leave EDGAR's current feed; watched companies' other
   // SEC filings. Both use the shared SEC client (declared User-Agent, throttle) and stop on a 403.
   if (workers && secReady()) {

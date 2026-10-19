@@ -14,6 +14,8 @@ const PASSWORD = "correct horse battery staple 42";
 const ADMIN_TOKEN = "a".repeat(48), TOTP = generateTotpSecret();
 const OWNER = `owner-${randomUUID()}@example.com`;
 const engines = [];
+// Rate limits persist in PostgreSQL across runs: client addresses differ per run.
+const NET = `198.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
 
 async function start() {
   const port = 20000 + Math.floor(Math.random() * 20000), base = `http://127.0.0.1:${port}`, origin = `http://localhost:${port}`;
@@ -30,7 +32,7 @@ async function start() {
     await new Promise(r => setTimeout(r, 100));
     if (i === 99) throw new Error("engine did not start:\n" + out);
   }
-  const call = async (path, { method = "GET", body, cookie, client = "198.51.100.20", headers = {} } = {}) => {
+  const call = async (path, { method = "GET", body, cookie, client = NET + ".20", headers = {} } = {}) => {
     const res = await fetch(base + path, { method, body: body === undefined ? undefined : JSON.stringify(body), redirect: "manual",
       headers: { "Content-Type": "application/json", Origin: origin, "X-Forwarded-For": client, ...(cookie ? { Cookie: cookie } : {}), ...headers } });
     const text = await res.text();
@@ -67,9 +69,9 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("password recovery: same answer for every address, a reset signs out everywhere, links work once", async () => {
     const email = `reset-${randomUUID()}@example.com`;
-    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.31" });
-    const unknown = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email: `nobody-${randomUUID()}@example.com` }, client: "198.51.100.31" });
-    const known = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: "198.51.100.31" });
+    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".31" });
+    const unknown = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email: `nobody-${randomUUID()}@example.com` }, client: NET + ".31" });
+    const known = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".31" });
     assert.equal(unknown.status, 202); assert.equal(known.status, 202);
     assert.deepEqual(unknown.json, known.json, "the answer does not reveal whether the account exists");
     const token = tokenFrom((await latest(email, "password_reset")).text_body);
@@ -77,8 +79,8 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     assert.equal((await B.call("/v1/auth/reset-password", { method: "POST", body: { token, password: "a brand new passphrase 77" } })).status, 200, "the short attempt did not spend the token");
     assert.equal((await A.call("/v1/me", { cookie: reg.cookie })).status, 401, "existing sessions are signed out");
     assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token, password: "another new passphrase 88" } })).status, 400, "used once");
-    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.32" })).status, 401);
-    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: "a brand new passphrase 77" }, client: "198.51.100.32" })).status, 200);
+    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".32" })).status, 401);
+    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: "a brand new passphrase 77" }, client: NET + ".32" })).status, 200);
     assert.ok(await latest(email, "password_changed"), "a security notice is queued");
     const kinds = (await db.query("SELECT kind FROM security_events WHERE user_id=(SELECT id FROM users WHERE email=$1) ORDER BY id", [email])).rows.map(r => r.kind);
     for (const k of ["register", "password_reset_requested", "password_reset_completed", "login_failure", "login_success"]) {
@@ -89,10 +91,10 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("a newer reset link voids the older one", async () => {
     const email = `twice-${randomUUID()}@example.com`;
-    await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.33" });
-    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: "198.51.100.33" });
+    await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".33" });
+    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".33" });
     const first = tokenFrom((await latest(email, "password_reset")).text_body);
-    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: "198.51.100.33" });
+    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".33" });
     const second = tokenFrom((await latest(email, "password_reset")).text_body);
     assert.notEqual(first, second);
     assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token: first, password: "a brand new passphrase 77" } })).status, 400);
@@ -101,10 +103,10 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("rate limits are shared: failures on one instance count on the other", async () => {
     const email = `shared-${randomUUID()}@example.com`;
-    await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.40" });
-    for (let i = 0; i < 10; i++) assert.equal((await (i % 2 ? A : B).call("/v1/auth/login", { method: "POST", body: { email, password: "wrong-" + i + "-guess-xyz" }, client: "198.51.100." + (41 + i) })).status, 401);
-    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.60" })).status, 429);
-    assert.equal((await B.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.61" })).status, 429);
+    await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".40" });
+    for (let i = 0; i < 10; i++) assert.equal((await (i % 2 ? A : B).call("/v1/auth/login", { method: "POST", body: { email, password: "wrong-" + i + "-guess-xyz" }, client: NET + "." + (41 + i) })).status, 401);
+    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".60" })).status, 429);
+    assert.equal((await B.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".61" })).status, 429);
     const raw = (await db.query("SELECT count(*)::int AS n FROM rate_limits WHERE key LIKE '%@%'")).rows[0].n;
     assert.equal(raw, 0, "keys are digests, never raw addresses");
   });
@@ -116,8 +118,8 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("changing the password keeps this session and signs out the others", async () => {
     const email = `change-${randomUUID()}@example.com`;
-    const one = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.70" });
-    const two = await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.70" });
+    const one = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".70" });
+    const two = await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".70" });
     assert.equal((await A.call("/v1/me/password", { method: "POST", cookie: one.cookie, body: { currentPassword: "wrong password here", newPassword: "fresh passphrase 2026!" } })).status, 403);
     const ok = await A.call("/v1/me/password", { method: "POST", cookie: one.cookie, body: { currentPassword: PASSWORD, newPassword: "fresh passphrase 2026!" } });
     assert.equal(ok.status, 200); assert.equal(ok.json.otherSessionsRevoked, 1);
@@ -130,8 +132,8 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("export holds the member's own data and nobody else's", async () => {
     const a = `export-a-${randomUUID()}@example.com`, b = `export-b-${randomUUID()}@example.com`;
-    const ra = await A.call("/v1/auth/register", { method: "POST", body: { email: a, password: PASSWORD }, client: "198.51.100.80" });
-    await A.call("/v1/auth/register", { method: "POST", body: { email: b, password: PASSWORD }, client: "198.51.100.81" });
+    const ra = await A.call("/v1/auth/register", { method: "POST", body: { email: a, password: PASSWORD }, client: NET + ".80" });
+    await A.call("/v1/auth/register", { method: "POST", body: { email: b, password: PASSWORD }, client: NET + ".81" });
     await db.query("INSERT INTO watchlist(user_id,ticker) SELECT id,'ZZZB' FROM users WHERE email=$1", [b]);
     const ex = await A.call("/v1/me/export", { cookie: ra.cookie });
     assert.equal(ex.status, 200);
@@ -141,7 +143,7 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
   });
 
   await t.test("a complimentary address has access only once its owner confirmed it (verification enforced by email config)", async () => {
-    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email: OWNER, password: PASSWORD }, client: "198.51.100.90" });
+    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email: OWNER, password: PASSWORD }, client: NET + ".90" });
     assert.equal(reg.json.access.active, false);
     assert.equal((await A.call("/v1/filings", { cookie: reg.cookie })).status, 402);
     const token = tokenFrom((await latest(OWNER, "verify_email")).text_body);
@@ -168,7 +170,7 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
 
   await t.test("account deletion: logged without a user id, optional mail cancelled, a confirmation kept", async () => {
     const email = `delete-${randomUUID()}@example.com`;
-    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: "198.51.100.95" });
+    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".95" });
     assert.equal((await A.call("/v1/me", { method: "DELETE", cookie: reg.cookie, body: { password: "not the password" } })).status, 403);
     const del = await A.call("/v1/me", { method: "DELETE", cookie: reg.cookie, body: { password: PASSWORD } });
     assert.equal(del.status, 200);

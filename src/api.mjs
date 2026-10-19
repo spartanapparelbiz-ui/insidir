@@ -26,6 +26,7 @@ import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
 import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { explainEvent } from "./explanations.mjs";
+import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,unsubscribePage } from "./notifications.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -459,6 +460,29 @@ async function route(req,res,ctx){
     await adminAudit(ctx.query,req,"admin.get",p,{via:auth.via},auth.actor);
     return json(res,200,await opsSnapshot({query:ctx.query,env:ctx.env}));
   }
+  /* Unsubscribe links in alert emails: signed tokens, no session. GET shows one confirming button; POST (the button,
+   * or a mail client's RFC 8058 one-click request, which carries no Origin) unsubscribes. */
+  if(p==="/v1/email/unsubscribe" && (m==="GET"||m==="HEAD"||m==="POST")){
+    const token=u.searchParams.get("t")||"";
+    const page=(status,state)=>{const html=unsubscribePage(state,token);res.writeHead(status,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store","Content-Security-Policy":pageCsp,
+      "X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer"});res.end(m==="HEAD"?undefined:html)};
+    if(m!=="POST")return page(200,"confirm");
+    if(await limited(ctx,"unsubscribe:"+clientAddress(req),60))throw failure(429,"Too many requests");
+    const raw=(await rawBody(req,2048)).toString("utf8");
+    const done=await unsubscribe(ctx.query,token,{env:ctx.env,req,oneClick:/List-Unsubscribe=One-Click/i.test(raw)});
+    return page(done?200:400,done?"done":"invalid");
+  }
+  if(p==="/v1/me/email-preferences" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await getPreferences(ctx.query,user.id,ctx.env));
+  }
+  if(p==="/v1/me/notifications" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    const before=u.searchParams.get("before");
+    if(before!=null&&!/^\d{1,18}$/.test(before))throw failure(400,"Invalid cursor");
+    return json(res,200,{...await listNotifications(ctx.query,user.id,{limit:positive(u.searchParams.get("limit"),50,100),before,unread:u.searchParams.get("unread")==="1"}),
+      note:"Factual alerts about public filings for your watchlist and the people you follow. Not investment advice."});
+  }
   // Provider webhooks are server-to-server (no Origin); they authenticate with their own secret.
   if(p==="/v1/email/webhook/postmark" && m==="POST")return handleEmailWebhook(req,res,json,{query:ctx.query,env:ctx.env,readBody:rawBody});
   if(p==="/v1/me/manual-holdings" && m==="GET"){
@@ -595,6 +619,15 @@ async function route(req,res,ctx){
       const x=await body(req);
       if(typeof x?.question!=="string"||!x.question.trim())throw failure(400,"Ask a question about this record.");
       return json(res,200,await explainEvent({query:ctx.query,eventId:ask[1],user,question:x.question,env:ctx.env,writer:ctx.explanationWriter}));
+    }
+    if(p==="/v1/me/email-preferences" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"prefs:"+user.id,30))throw failure(429,"Too many changes. Try again shortly.");
+      return json(res,200,await savePreferences(ctx.query,user,await body(req),{env:ctx.env,req}));
+    }
+    if(p==="/v1/me/notifications/read" && m==="POST"){
+      const user=await requireUser(req,ctx),x=await body(req);
+      return json(res,200,await markRead(ctx.query,user.id,{ids:x?.ids,all:x?.all===true}));
     }
     if(p==="/v1/me/password" && m==="POST"){
       const user=await requireUser(req,ctx);

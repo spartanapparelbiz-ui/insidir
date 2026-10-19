@@ -113,17 +113,18 @@ export const backoffMs = attempts => Math.min(6 * 3600_000, 60_000 * 2 ** Math.m
 
 const CLAIM = `UPDATE email_outbox SET status='sending',locked_until=now()+interval '5 minutes',attempts=attempts+1
   WHERE id IN (SELECT id FROM email_outbox
-    WHERE (status='queued' AND next_attempt_at<=now()) OR (status='sending' AND locked_until<now())
+    WHERE ((status='queued' AND next_attempt_at<=now()) OR (status='sending' AND locked_until<now())) AND ($2::text[] IS NULL OR kind=ANY($2::text[]))
     ORDER BY next_attempt_at,id LIMIT $1 FOR UPDATE SKIP LOCKED)
   RETURNING id,user_id,to_email,category,kind,subject,text_body,html_body,retain_body,headers,attempts`;
 const ERASE = "to_email=CASE WHEN retain_body THEN to_email ELSE NULL END,text_body=CASE WHEN retain_body THEN text_body ELSE NULL END,html_body=CASE WHEN retain_body THEN html_body ELSE NULL END";
 
 /* One delivery pass. Returns counts. A message is at-least-once: if the process dies after the provider accepted it
  * but before the row is marked, the row is re-sent after its 5-minute lock expires (rare; stated in OPERATIONS.md). */
-export async function deliverDue({ query, transport, settings = emailSettings(), limit = 50 }) {
+// kinds: deliver only these message kinds (e.g. security mail first during a backlog); default every kind.
+export async function deliverDue({ query, transport, settings = emailSettings(), limit = 50, kinds = null }) {
   const out = { claimed: 0, sent: 0, retried: 0, failed: 0, suppressed: 0 };
   if (!transport) return { ...out, skipped: "no_transport" };
-  const rows = (await query(CLAIM, [limit])).rows;
+  const rows = (await query(CLAIM, [limit, kinds?.length ? kinds : null])).rows;
   out.claimed = rows.length;
   for (const m of rows) {
     if (!m.to_email || !m.text_body) {
