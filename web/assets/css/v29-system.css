@@ -78,5 +78,9 @@ html{scroll-padding-top:88px}
 @layer insidir-v13{
   html body.v13 :is(.v9-nav,.v3-static__nav,.app-header,.pw-header),html body.v13.ix-page .ix-bar{
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--hf-bg)!important}
+  /* Subscribe: the account links fill in from the right without moving the header, and the plan card keeps the room
+     its terms and button take while the account is checked, so nothing below it jumps. */
+  html body.v13 .pw-header__nav{flex:1 1 auto!important;justify-content:flex-end!important}
+  html body.v13[data-pw-state="loading"] .pw-plan__state{min-height:330px!important}
 }
 html body.cx-page .app-header{-webkit-backdrop-filter:none;backdrop-filter:none}

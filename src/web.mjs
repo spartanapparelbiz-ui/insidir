@@ -110,15 +110,28 @@ async function fingerprint(file) {
     return null;
   }
 }
-const ASSET_REF = /((?:href|src)=")((?:\/|\.\.\/)?assets\/[^"?#]+\.(?:css|js|woff2|webp|png|jpe?g|svg|ico|webmanifest))(?:\?[^"#]*)?(")/g;
+/* Fonts are left out: stylesheets load them through url() without a version, and a versioned preload would then
+   be a second, separate download of the same file. srcset candidates are versioned like src, so a <picture> source
+   and its preload name the same URL. */
+const ASSET_PATH = /^((?:\/|\.\.\/)?assets\/[^"?#\s,]+\.(?:css|js|webp|png|jpe?g|svg|ico|webmanifest))(?:\?[^"#\s,]*)?$/;
+const ASSET_REF = /((?:href|src)=")((?:\/|\.\.\/)?assets\/[^"?#]+\.(?:css|js|webp|png|jpe?g|svg|ico|webmanifest))(?:\?[^"#]*)?(")/g;
+const SRCSET = /(srcset=")([^"]*)(")/g;
+const candidates = list => list.split(",").map(c => c.trim().split(/\s+/));
 export async function fingerprintHtml(html) {
   const refs = new Map();
   for (const m of html.matchAll(ASSET_REF)) refs.set(m[2], null);
+  for (const m of html.matchAll(SRCSET)) for (const [url] of candidates(m[2])) { const a = ASSET_PATH.exec(url || ""); if (a) refs.set(a[1], null); }
   await Promise.all([...refs.keys()].map(async ref => {
     const file = resolvePath("/" + ref.replace(/^(\.\.\/)+|^\//, ""));
     refs.set(ref, file ? await fingerprint(file) : null);
   }));
-  return html.replace(ASSET_REF, (all, pre, ref, post) => refs.get(ref) ? pre + ref + "?v=" + refs.get(ref) + post : all);
+  const versioned = ref => refs.get(ref) ? ref + "?v=" + refs.get(ref) : null;
+  return html
+    .replace(ASSET_REF, (all, pre, ref, post) => versioned(ref) ? pre + versioned(ref) + post : all)
+    .replace(SRCSET, (all, pre, list, post) => pre + candidates(list).map(([url, ...rest]) => {
+      const a = ASSET_PATH.exec(url || "");
+      return [a && versioned(a[1]) || url, ...rest].join(" ");
+    }).join(", ") + post);
 }
 
 /* A single "bytes=start-end" range (also "start-" and "-suffix"); null for none, false when unsatisfiable. */

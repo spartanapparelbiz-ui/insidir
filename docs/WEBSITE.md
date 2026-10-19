@@ -68,7 +68,9 @@ keys and the five labels). Only where a V13 rule itself must change is a short b
 comment saying why. Prefer new class names over overriding V13 selectors.
 
 Asset URLs need no `?v=`: `src/web.mjs` rewrites every `assets/…` reference in a page to `?v=<content hash>` as it
-serves it, and a request whose `?v=` matches is cached for a year as immutable.
+serves it, and a request whose `?v=` matches is cached for a year as immutable. `srcset` candidates are versioned the same way, so a
+`<picture>` source and its preload name one URL. Fonts are the exception: stylesheets load them through `url()` without a
+version, so a font preload stays unversioned too (otherwise the font downloads twice); fonts are cached for a week.
 
 ### Motion: still content, live dots
 
