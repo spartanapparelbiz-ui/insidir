@@ -62,6 +62,44 @@ export async function queueNotifications(run=queryDb){
  }
  return {matched:r.rows.length+eventRows.length,queued};
 }
+/* Required branding for every Insidir notification. */
+export function brandedPushMessage(raw={}){
+ const original=String(raw.title||"Research update").trim().replace(/^[Ii]nsidir\s*[·—:-]\s*/,"");
+ const title="Insidir · "+(original||"Research update").slice(0,65);
+ const url=typeof raw.url==="string"&&raw.url.startsWith("/")&&!raw.url.startsWith("//")?raw.url:"/alerts.html";
+ return {title,body:String(raw.body||"New information is available in Insidir.").slice(0,200),
+  tag:String(raw.tag||"insidir-notification").slice(0,64),url,
+  icon:"/assets/icons/favicon.svg",badge:"/assets/icons/favicon.svg"};
+}
+/* Operator-only one-shot campaign: no customer-facing broadcast route.
+ * Freeze recipients at issue time and deduplicate across deploys/restarts. */
+export function broadcastSettings(env=process.env){
+ const id=String(env.INSIDIR_BROADCAST_ID||"").trim();
+ if(!/^[a-z0-9][a-z0-9-]{3,79}$/.test(id))return null;
+ const title=String(env.INSIDIR_BROADCAST_TITLE||"").trim();
+ const body=String(env.INSIDIR_BROADCAST_BODY||"").trim();
+ const issuedAt=String(env.INSIDIR_BROADCAST_ISSUED_AT||"");
+ const expiresAt=String(env.INSIDIR_BROADCAST_EXPIRES_AT||"");
+ const url=String(env.INSIDIR_BROADCAST_URL||"/alerts.html");
+ if(!title||title.length>90||!body||body.length>240||
+  !Number.isFinite(Date.parse(issuedAt))||!Number.isFinite(Date.parse(expiresAt))||
+  Date.parse(expiresAt)<=Date.parse(issuedAt)||
+  !url.startsWith("/")||url.startsWith("//"))return null;
+ return {id,title,body,url,issuedAt,expiresAt};
+}
+export async function queueBroadcast(run=queryDb,env=process.env,now=Date.now()){
+ const campaign=broadcastSettings(env);
+ if(!campaign)return {enabled:false,eligible:0,queued:0};
+ if(now<Date.parse(campaign.issuedAt)||now>=Date.parse(campaign.expiresAt))
+  return {enabled:false,expired:true,queued:0};
+ const payload=brandedPushMessage({title:campaign.title,body:campaign.body,url:campaign.url});
+ await run("INSERT INTO push_broadcasts(id,title,body,url,issued_at,expires_at) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING",
+ [campaign.id,payload.title,payload.body,payload.url,campaign.issuedAt,campaign.expiresAt]);
+ const result=await run("INSERT INTO push_deliveries(subscription_id,event_key) SELECT s.id,$1 FROM push_subscriptions s JOIN push_broadcasts b ON b.id=$2 WHERE s.created_at<=b.issued_at AND now()>=b.issued_at AND now()<b.expires_at ON CONFLICT DO NOTHING RETURNING id",
+  ["broadcast:"+campaign.id,campaign.id]);
+ const total=await run("SELECT COUNT(*)::integer AS eligible FROM push_subscriptions WHERE created_at<=$1",[campaign.issuedAt]);
+ return {enabled:true,campaign:campaign.id,eligible:total.rows[0]?.eligible||0,queued:result.rowCount||0};
+}
 export function pushMessage(f){
  const symbol=String(f.ticker||"").toUpperCase();
  const valid=/^[A-Z0-9.-]{1,15}$/.test(symbol);
@@ -83,7 +121,10 @@ export async function sendNotifications({run=queryDb,send=(...args)=>webpush.sen
   if(!sub)continue;
   const eventKey=String(job.event_key||"");
   let message;
-  if(eventKey.startsWith("sec:")){
+  if(eventKey.startsWith("broadcast:")){
+   const campaign=(await run("SELECT title,body,url,expires_at FROM push_broadcasts WHERE id=$1 AND expires_at>now()",[eventKey.slice(10)])).rows[0];
+   if(campaign)message=brandedPushMessage({title:campaign.title,body:campaign.body,url:campaign.url,tag:"insidir-"+eventKey.slice(10)});
+  }else if(eventKey.startsWith("sec:")){
    const accession=eventKey.slice(4);
    const filing=(await run("SELECT accession,ticker,form_type FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession])).rows[0];
    if(filing)message=pushMessage(filing);
@@ -93,7 +134,7 @@ export async function sendNotifications({run=queryDb,send=(...args)=>webpush.sen
   }
   if(!message){await run("UPDATE push_deliveries SET status='failed',last_error='Source absent' WHERE id=$1",[job.id]);continue}
   try{
-   await send({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(message),{TTL:3600,urgency:"normal"});
+   await send({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(brandedPushMessage(message)),{TTL:3600,urgency:"normal"});
    await run("UPDATE push_deliveries SET status='sent',sent_at=now(),last_error=NULL WHERE id=$1",[job.id]);
    await run("UPDATE push_subscriptions SET last_success_at=now() WHERE id=$1",[job.subscription_id]);sent++;
   }catch(e){
@@ -108,5 +149,10 @@ let busy=false;
 export async function pushTick(run=queryDb){
  if(!pushReady()||busy)return {enabled:pushReady(),skipped:true};
  busy=true;
- try{return {...await queueNotifications(run),...await sendNotifications({run})}}finally{busy=false}
+ try{
+   const broadcast=await queueBroadcast(run);
+   const research=await queueNotifications(run);
+   const delivery=await sendNotifications({run});
+   return {...research,...delivery,broadcast};
+ }finally{busy=false}
 }
