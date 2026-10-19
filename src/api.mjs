@@ -17,6 +17,7 @@ import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabi
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
+import { pushConfigured,statusFor,saveSubscription,removeSubscription,updatePreferences,sendTestPush } from "./push.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -419,6 +420,10 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     return json(res,200,{user:publicUser(user),access:accessSummary(user,ctx.env)});
   }
+  if(p==="/v1/me/push/status" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await statusFor(user.id,ctx.env,ctx.query));
+  }
   if(p==="/v1/me/manual-holdings" && m==="GET"){
     const user=await requireUser(req,ctx);
     const holdings=await ctx.query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
@@ -469,7 +474,7 @@ async function route(req,res,ctx){
       JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
-    return json(res,200,{items:results.rows,delivery:"in_app_on_demand",note:"No email or push notifications are active."});
+    return json(res,200,{items:results.rows,delivery:pushConfigured(ctx.env)?"in_app_plus_opt_in_browser_push":"in_app_on_demand",note:"Phone notifications require browser permission and an active push subscription."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
     if(!config.ingestSecret || !req.headers.authorization?.startsWith("Bearer "))throw failure(401,"Authorized ingestion token required");
@@ -483,6 +488,26 @@ async function route(req,res,ctx){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
     // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
     const ip=clientAddress(req);
+    if(p==="/v1/me/push/subscribe" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(!pushConfigured(ctx.env))throw failure(503,"Phone notifications are not yet configured");
+      if(isLimited("push-subscribe:"+user.id,20,15*60*1000))throw failure(429,"Too many notification registrations");
+      return json(res,200,await saveSubscription(user.id,await body(req),ctx.query));
+    }
+    if(p==="/v1/me/push/subscription" && m==="DELETE"){
+      const user=await requireUser(req,ctx);
+      return json(res,200,await removeSubscription(user.id,await body(req),ctx.query));
+    }
+    if(p==="/v1/me/push/preferences" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(isLimited("push-preferences:"+user.id,30,15*60*1000))throw failure(429,"Too many notification updates");
+      return json(res,200,await updatePreferences(user.id,await body(req),ctx.query));
+    }
+    if(p==="/v1/me/push/test" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(isLimited("push-test:"+user.id,2,60*60*1000))throw failure(429,"Test limit reached. Try again later.");
+      return json(res,200,await sendTestPush(user.id,ctx.env,ctx.query));
+    }
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);

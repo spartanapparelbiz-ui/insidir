@@ -1,6 +1,7 @@
 import { config, secReady } from "./config.mjs";
 import { requireDb, query, isParsed, persistFiling, persistFailure } from "./db.mjs";
 import { recentForm4Backlog, loadOwnership } from "./sec.mjs";
+import { queueFilingPush } from "./push.mjs";
 
 export async function ingest({maxFilings=config.maxPerRun}={}) {
   if (!secReady()) throw new Error("SEC_USER_AGENT requires a monitored operator email");
@@ -21,6 +22,7 @@ export async function ingest({maxFilings=config.maxPerRun}={}) {
         if(stats.parsed+stats.failed>=budget){stats.deferred=(stats.deferred||0)+1;continue}
         const data=await loadOwnership(f);
         await persistFiling(data);
+        try {await queueFilingPush(data.accession)} catch(pushErr){console.warn("Push enqueue failed",data.accession,String(pushErr?.message||pushErr));}
         stats.parsed++;
       }catch(err){
         stats.failed++;

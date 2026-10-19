@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alerts — insidir.</title>
-  <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, in the app.">
+  <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, with optional phone alerts.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -27,7 +27,7 @@
 <link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-</head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir"><link rel="stylesheet" href="/assets/css/push.css?v=1"><script defer src="/assets/js/push.js?v=1"></script></head>
 <body class="app-body v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="alerts"></header>
@@ -35,7 +35,7 @@
   <main id="main" class="app-main alerts-main">
     <div class="alerts-head desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Watchlist matches</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC Form 4 filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app only</span></p></div>
+      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Watchlist matches</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC Form 4 filings</span><span class="rd-bit"><span class="rd-sep"> · </span>phone alerts optional</span></p></div>
       <h1 class="page-title alerts-title">Alerts</h1>
       <p class="page-sub alerts-sub desk-lead">See new research activity related to the companies you follow.</p>
       <button class="btn btn--dark alerts-manage" type="button" id="manage-alerts" aria-haspopup="dialog" aria-controls="alerts-drawer"
@@ -45,7 +45,7 @@
     <div class="alerts-dateline" aria-label="Where alerts come from">
       <div><span>Source</span><strong>Imported SEC Form 4 filings</strong></div>
       <div><span>Matching</span><strong>Tickers saved to your watchlist</strong></div>
-      <div><span>Delivery</span><strong>In the app only</strong></div>
+      <div><span>Delivery</span><strong>In-app and opt-in phone alerts</strong></div>
     </div>
 
 
