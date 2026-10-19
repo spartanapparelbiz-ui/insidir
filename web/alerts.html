@@ -21,6 +21,7 @@
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
   <script defer src="assets/js/live-research.js?v=9"></script>
   <script defer src="assets/js/push-settings.js?v=1"></script>
+  <script defer src="assets/js/intelligence-feed.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
@@ -77,6 +78,12 @@
         <p class="alerts-empty__text">When a new filing, trade, or event fits, it will appear here.</p>
         <button class="btn btn--light btn--sm" type="button" data-show-all>Show all alerts</button>
       </div>
+    </section>
+    <section id="insidir-intelligence-feed" aria-labelledby="feed-heading" style="margin:32px 0 42px;border-top:1px solid #434343;padding-top:24px">
+      <h2 id="feed-heading" style="font-size:24px;margin:0 0 10px">Public intelligence feed</h2>
+      <p style="font-size:12px;line-height:1.65;color:#b4b0aa;max-width:700px">Source-linked SEC company announcements and posts from configured public social accounts. This is not a comprehensive breaking-news service or a verified feed of every politician's trades.</p>
+      <p data-source-status role="status" aria-live="polite" style="font-size:11px;color:#aaa;margin:14px 0">Loading source coverage…</p>
+      <div data-source-items aria-label="Latest public intelligence events" style="max-width:900px"></div>
     </section>
     <p class="alerts-foot">Alerts are matched against imported public records and may be delayed or incomplete. Verify the original filing before acting. <a href="watchlist.html">Edit your watchlist →</a></p>
     <p class="ins-media-credits" data-media-credits></p>
