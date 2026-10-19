@@ -5,6 +5,7 @@ import {query as queryDb} from "./db.mjs";
 import {secFetch} from "./sec.mjs";
 import {tickerIndex,tickerRecord,secFilingUrl} from "./intelligence.mjs";
 import {externalFetch} from "./external.mjs";
+import {XMLParser} from "fast-xml-parser";
 
 export const monitorSources=()=>({
  secCompanyReports:"enabled",
@@ -13,6 +14,51 @@ export const monitorSources=()=>({
  senateFinancialDisclosures:"blocked_pending_legal_approval_and_access",
  licensedBreakingNews:"not_licensed"
 });
+/* SEC's market-wide current-form Atom feed: all accessible issuers, not merely
+ * the tickers already on someone's watchlist. Type=8-K is a prefix match, so
+ * verify the form exactly. Ticker assignment only comes from the SEC index. */
+const atomParser=new XMLParser({ignoreAttributes:false,attributeNamePrefix:"@_",parseTagValue:false});
+const arrayOf=x=>x==null?[]:Array.isArray(x)?x:[x];
+const atomText=x=>typeof x==="string"?x:typeof x==="object"&&x!=null?String(x["#text"]||""):String(x||"");
+export function parseOfficial8KFeed(xml,index={},now=Date.now()){
+ let parsed;
+ try{parsed=atomParser.parse(String(xml||"")).feed}catch{return []}
+ const byCik=new Map();
+ for(const item of Object.values(index||{})){
+  const cik=String(item?.cik_str||"").replace(/^0+/,"");
+  const t=String(item?.ticker||"").toUpperCase();
+  if(/^\d{1,10}$/.test(cik)&&/^[A-Z0-9.-]{1,15}$/.test(t)&&!byCik.has(cik))byCik.set(cik,t);
+ }
+ const out=[],seen=new Set();
+ for(const entry of arrayOf(parsed?.entry)){
+  const title=atomText(entry.title);
+  const type=atomText(entry["filing-type"]||entry["form-type"]||/^\s*(8-K(?:\/A)?)\s*[-:–—]/i.exec(title)?.[1]).toUpperCase();
+  if(type!=="8-K"&&type!=="8-K/A")continue;
+  const urlText=arrayOf(entry.link).map(x=>String(x?.["@_href"]||"")).find(x=>x.includes("/Archives/edgar/data/"));
+  let url;try{url=new URL(urlText)}catch{continue}
+  if(url.protocol!=="https:"||url.hostname!=="www.sec.gov")continue;
+  const match=/^\/Archives\/edgar\/data\/(\d{1,10})\/(\d{18})\//.exec(url.pathname);
+  if(!match)continue;
+  const cik=match[1].replace(/^0+/,""),acc=match[2],when=Date.parse(atomText(entry.updated||entry.published));
+  if(!Number.isFinite(when)||when<now-30*86400_000||when>now+86400_000||seen.has(acc))continue;
+  seen.add(acc);
+  const ticker=byCik.get(cik)||null,issuer=title.replace(/^\s*8-K(?:\/A)?\s*[-:–—]\s*/i,"").trim().slice(0,140);
+  out.push({event_key:"notice:"+acc,source_type:"sec_notice",
+   title:(issuer||ticker||"Public company")+" filed "+type+" with the SEC",
+   subject:ticker||issuer||"Issuer CIK "+cik,
+   source_url:url.href,published_at:new Date(when).toISOString(),
+   metadata:{cik,accession:acc,ticker,form:type,issuerName:issuer,source:"SEC EDGAR current-filings feed"}});
+ }
+ return out;
+}
+export async function monitorMarketWideSEC({run=queryDb,fetcher=secFetch,loadIndex=tickerIndex}={}){
+ const [xml,index]=await Promise.all([
+  fetcher("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&output=atom&count=100"),
+  loadIndex()
+ ]);
+ const events=parseOfficial8KFeed(xml,index);
+ return {checked:events.length,newEvents:await saveEvents(events,run),source:"SEC current 8-K Atom"};
+}
 export function secAnnouncementEvents(submissions,ticker,cik){
  const recent=submissions?.filings?.recent;
  if(!Array.isArray(recent?.form))return [];
@@ -100,8 +146,9 @@ export async function monitorTick(run=queryDb){
  if(busy)return {skipped:true};
  busy=true;
  try{
-  const [news,social]=await Promise.allSettled([monitorOfficialCompanyNews({run}),monitorBluesky({run})]);
-  return {officialSEC:news.status==="fulfilled"?news.value:{error:String(news.reason?.message||news.reason)},
+  const [market,news,social]=await Promise.allSettled([monitorMarketWideSEC({run}),monitorOfficialCompanyNews({run}),monitorBluesky({run})]);
+  return {marketWideSEC:market.status==="fulfilled"?market.value:{error:String(market.reason?.message||market.reason)},
+   officialSEC:news.status==="fulfilled"?news.value:{error:String(news.reason?.message||news.reason)},
    social:social.status==="fulfilled"?social.value:{error:String(social.reason?.message||social.reason)}};
  }finally{busy=false}
 }
