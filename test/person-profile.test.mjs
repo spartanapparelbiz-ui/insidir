@@ -118,6 +118,24 @@ test("route matching: only /v1/people/<segment>, GET or HEAD", async () => {
   assert.equal(classifyApi("/v1/insiders"), "product");
 });
 
+test("When recent imports are empty, a person with real SEC submissions receives an official historical filing index", async () => {
+ const query=fakeQuery();
+ const calls=[];
+ const payload={cik:1214156,name:"COOK TIMOTHY D",filings:{recent:{
+   form:["4","4/A","10-K"],accessionNumber:["0001214156-25-000011","0001214156-25-000009","0001214156-25-000008"],
+   filingDate:["2025-10-03","2025-09-30","2025-09-28"],reportDate:["2025-10-01","2025-09-28","2025-09-28"]
+ }}};
+ const response=await call("/v1/people/1214156",{query,allowSecFallback:true,
+    fetcher:async(url)=>{calls.push(url);return payload;}});
+ assert.equal(response.status,200);
+ assert.equal(response.json.person.name,"COOK TIMOTHY D");
+ assert.equal(response.json.coverage,"sec_submissions_history_only");
+ assert.equal(response.json.sec_filing_index.length,2);
+ assert.ok(!("transactions" in response.json),"historical index is not counterfeit trade data");
+ assert.deepEqual(calls,["https://data.sec.gov/submissions/CIK0001214156.json"]);
+ assert.deepEqual(query.statements.map(s=>s.sql),[OWNERS_TABLE_SQL,COMPANIES_SQL]);
+});
+
 test("validation: a bad CIK is 400 before any query; an unknown CIK is 404 after the first statement", async () => {
   const query = fakeQuery();
   for (const bad of ["abc", "12a", "9876543890123", "0", "000000000000", "-1", "1.5", "%20", "%E0%A4%A", "", "1%2F2"]) {
