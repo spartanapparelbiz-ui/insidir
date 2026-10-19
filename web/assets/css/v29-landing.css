@@ -74,9 +74,9 @@
 /* ---------- 5. Intelligence: the dotted i ---------- */
 .lx-instrument{display:grid;grid-template-columns:minmax(160px,240px) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;margin-top:var(--s-6)}
 .lx-i{width:100%;height:auto;max-height:440px;overflow:visible}
-.lx-i__part circle{fill:var(--c-ink)}
-.lx-i__part--stem circle{fill:var(--c-soft)}
-.lx-i__part--base circle{fill:var(--c-muted)}
+.lx-i__part{fill:var(--c-ink)}
+.lx-i__part--stem{fill:var(--c-soft)}
+.lx-i__part--base{fill:var(--c-muted)}
 .lx-i__key{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-3)}
 .lx-i__item{position:relative;margin:0;padding:var(--s-4) var(--s-5) var(--s-4) calc(var(--s-5) + 22px)}
 .lx-i__swatch{position:absolute;left:var(--s-5);top:22px;width:12px;height:12px;border-radius:50%;background:var(--c-ink)}

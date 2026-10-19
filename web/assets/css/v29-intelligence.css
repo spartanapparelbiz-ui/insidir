@@ -20,14 +20,14 @@
 /* ---------- the instrument: the dotted i and its three labelled keys ---------- */
 .ix-instrument{display:grid;grid-template-columns:72px minmax(0,1fr);gap:var(--s-5);align-items:center;max-width:980px;margin-top:var(--s-6)}
 .ix-i{width:72px;height:auto;overflow:visible}
-.ix-i__part circle{fill:var(--c-line-2);transition:fill var(--dur-slow) var(--ease)}
-.ix-instrument[data-active="briefing"] [data-part="briefing"] circle,
-.ix-instrument[data-active="investigate"] [data-part="investigate"] circle,
-.ix-instrument[data-active="mirror"] [data-part="mirror"] circle{fill:var(--c-ink)}
+.ix-i__part{fill:var(--c-line-2);transition:fill var(--dur-slow) var(--ease)}
+.ix-instrument[data-active="briefing"] [data-part="briefing"],
+.ix-instrument[data-active="investigate"] [data-part="investigate"],
+.ix-instrument[data-active="mirror"] [data-part="mirror"]{fill:var(--c-ink)}
 /* Pointing at a key lights its part of the i, so the mark always says what it opens. */
-.ix-instrument:has([data-open="briefing"]:is(:hover,:focus-visible)) [data-part="briefing"] circle,
-.ix-instrument:has([data-open="investigate"]:is(:hover,:focus-visible)) [data-part="investigate"] circle,
-.ix-instrument:has([data-open="mirror"]:is(:hover,:focus-visible)) [data-part="mirror"] circle{fill:var(--c-soft)}
+.ix-instrument:has([data-open="briefing"]:is(:hover,:focus-visible)) [data-part="briefing"],
+.ix-instrument:has([data-open="investigate"]:is(:hover,:focus-visible)) [data-part="investigate"],
+.ix-instrument:has([data-open="mirror"]:is(:hover,:focus-visible)) [data-part="mirror"]{fill:var(--c-soft)}
 .ix-keys{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--c-line-2)}
 .ix-keys li{margin:0;display:flex}
 .ix-key{display:grid;gap:4px;align-content:start;width:100%;min-height:var(--tap-min);padding:var(--s-4) var(--s-4) var(--s-2) 0;border:0;border-right:1px solid var(--c-line);background:transparent;color:var(--c-ink);text-align:left;font:inherit;cursor:pointer;transition:color var(--dur) var(--ease)}

@@ -447,7 +447,7 @@
     if (key !== WHATS_NEW.nav || Date.now() >= WHATS_NEW.until) return "";
     if (document.querySelector('[data-app-header][data-active="' + WHATS_NEW.nav + '"]')) { try { localStorage.setItem(WHATS_NEW.key, "1"); } catch {} return ""; }
     try { if (localStorage.getItem(WHATS_NEW.key) === "1") return ""; } catch {}
-    return '<span class="app-nav__new" title="New: briefings, research questions and 13F holdings"><span class="sr-only">New</span></span>';
+    return '<span class="app-nav__new" aria-hidden="true" title="New: briefings, research questions and 13F holdings"></span><span class="sr-only"> (new)</span>';
   }
   function init() {
     renderHeader();
