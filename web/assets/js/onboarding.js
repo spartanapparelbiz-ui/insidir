@@ -1,8 +1,9 @@
 /* A new member's first steps on the overview (dashboard.html #rd-start): follow or save something, see its records,
-   open the briefing, ask Intelligence a question. Optional and never blocking: "Skip for now" hides it for good, and
+   open the briefing, choose how alerts reach them. Optional and never blocking: "Skip for now" hides it for good, and
    it is only shown to an account that has just subscribed (billing.js sets localStorage "insidir:onboard" to "new").
    Steps are ticked from what the page already loaded (InsidirDesk, v3-dashboard.js), from a follow or save made here,
-   and from the Intelligence page (intelligence.js sets "insidir:onboard:briefing" and ":investigate"). */
+   from the Intelligence page (intelligence.js sets "insidir:onboard:briefing"), and from opening the notification
+   settings (":alerts", set when the link here is followed). */
 (() => {
   "use strict";
   const panel = document.getElementById("rd-start");
@@ -11,10 +12,10 @@
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
   const status = panel.querySelector("[data-start-status]");
   const track = label => window.InsidirFunnel && window.InsidirFunnel.send("onboarding_step", { label });
-  const state = { follow: false, briefing: store.get(KEY + ":briefing") === "1", investigate: store.get(KEY + ":investigate") === "1" };
+  const state = { follow: false, briefing: store.get(KEY + ":briefing") === "1", alerts: store.get(KEY + ":alerts") === "1" };
 
   function paint() {
-    const done = { follow: state.follow, records: state.follow, briefing: state.briefing, investigate: state.investigate };
+    const done = { follow: state.follow, records: state.follow, briefing: state.briefing, alerts: state.alerts };
     for (const li of panel.querySelectorAll("[data-step]")) {
       const ok = !!done[li.dataset.step];
       li.classList.toggle("is-done", ok);
@@ -50,7 +51,9 @@
 
   panel.addEventListener("click", e => {
     const link = e.target instanceof Element ? e.target.closest("[data-onboard]") : null;
-    if (link) track(link.dataset.onboard);
+    if (!link) return;
+    track(link.dataset.onboard);
+    if (link.dataset.onboard === "alerts") { state.alerts = true; store.set(KEY + ":alerts", "1"); paint(); }
   });
   panel.querySelector("[data-start-skip]").addEventListener("click", () => {
     store.set(KEY, "skipped");

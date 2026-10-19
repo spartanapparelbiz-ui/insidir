@@ -20,7 +20,8 @@ test("the landing page tours the product in four clips, each shipped as MP4, Web
     assert.match(home, /v14-tour\.js/);
     const steps = [...home.matchAll(/class="lp-tour__step" role="tab"[^>]*data-video="([^"]+)"[^>]*data-poster="([^"]+)"/g)];
     assert.equal(steps.length, 4, "four steps");
-    assert.equal((home.match(/aria-selected="true"/g) || []).length, 1, "one step selected");
+    const tour = home.match(/<ol class="lp-tour__list"[\s\S]*?<\/ol>/)?.[0] || "";
+    assert.equal((tour.match(/aria-selected="true"/g) || []).length, 1, "one step selected");
     for (const [i, name] of CLIPS.entries()) {
       assert.equal(steps[i][1], "assets/video/insidir-" + name);
       for (const ext of [".mp4", ".webm", ".jpg"]) {
@@ -42,13 +43,14 @@ test("the landing page tours the product in four clips, each shipped as MP4, Web
 test("the landing page offers the paid trial and links the free public insider pages", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    assert.match(home, /<span class="lp-deal"><b>\$1<\/b> for your first 3 days<\/span><span class="lp-terms__price">then <b>\$39<\/b> a month<\/span>/, "the $1 offer is highlighted with the monthly price right beside it");
+    assert.match(home, /<span class="lp-deal"><b>\$1<\/b> for the first 3 days<\/span><span class="lp-terms__price">then <b>\$39<\/b>\/month<\/span><span>Cancel online<\/span>/, "the $1 offer is highlighted with the monthly price and online cancellation right beside it");
     assert.match(home, /After the 3-day trial, \$39 is charged every month/);
     assert.match(home, /Start 3 days for \$1/);
     assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
     assert.match(home, /Know what moves/);
+    assert.match(home, /The market doesn't stop\./);
     const pricing = await (await fetch(base + "/pricing.html")).text();
     assert.match(pricing, /3 days for \$1/);
     assert.doesNotMatch(pricing, /no free trial/i);
@@ -80,5 +82,26 @@ test("video is served by byte range", async () => {
     assert.equal((await whole.arrayBuffer()).byteLength, Number(whole.headers.get("content-length")));
     const bad = await fetch(url, { headers: { Range: "bytes=99999999-" } });
     assert.equal(bad.status, 416);
+  });
+});
+
+test("the workflow section is a static, labelled example: seven steps, no data fetched, nothing plays under reduced motion", async () => {
+  await withServer(async base => {
+    const home = await (await fetch(base + "/")).text();
+    const tabs = [...home.matchAll(/class="ax-flow__step" role="tab" id="ax-tab-(\d)"[^>]*aria-controls="ax-step-\1"/g)];
+    assert.equal(tabs.length, 7, "seven steps");
+    for (const verb of ["Follow", "Monitor", "Detect", "Organize", "Brief", "Alert", "Investigate"]) assert.match(home, new RegExp('<span class="ax-flow__verb">' + verb + "</span>"));
+    for (let i = 1; i <= 7; i++) assert.match(home, new RegExp('id="ax-step-' + i + '" role="tabpanel" aria-labelledby="ax-tab-' + i + '"'));
+    assert.match(home, /they are not live data/, "the example says it is not live");
+    assert.match(home, /nothing here is instant or exhaustive/);
+    assert.match(home, /0001061272-26-000004/, "the example names the real SEC filing it is built from");
+    const js = await (await fetch(base + "/assets/js/v31-flow.js")).text();
+    assert.match(js, /prefers-reduced-motion: reduce/);
+    assert.match(js, /IntersectionObserver/);
+    assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|sendBeacon/, "the workflow reads nothing from the network");
+    // The headline experiment: two named arms, assigned before paint and reported by funnel.js.
+    assert.match(home, /insidir:exp:headline/);
+    assert.match(home, /data-exp-headline/);
+    assert.doesNotMatch(home, /insidir:exp:hero"/);
   });
 });
