@@ -42,13 +42,25 @@ export const MATCH_SQL=[
  "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours'",
  ") x ORDER BY x.subscription_id,x.accession LIMIT 400"
 ].join(" ");
+export const PUBLIC_EVENT_MATCH_SQL=[
+ "SELECT DISTINCT s.id AS subscription_id,r.event_key FROM research_events r",
+ "JOIN watchlist w ON w.ticker=r.subject JOIN push_subscriptions s ON s.user_id=w.user_id",
+ "WHERE r.source_type='sec_notice' AND r.verified=true",
+ "AND r.observed_at>=s.created_at AND r.observed_at>=now()-interval '36 hours'",
+ "LIMIT 200"
+].join(" ");
 export async function queueNotifications(run=queryDb){
  const r=await run(MATCH_SQL);let queued=0;
  for(const x of r.rows){
    const inserted=await run("INSERT INTO push_deliveries(subscription_id,event_key) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING id",[x.subscription_id,"sec:"+x.accession]);
    queued+=inserted.rowCount||0;
  }
- return {matched:r.rows.length,queued};
+ const eventRows=(await run(PUBLIC_EVENT_MATCH_SQL)).rows;
+ for(const event of eventRows){
+  const inserted=await run("INSERT INTO push_deliveries(subscription_id,event_key) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING id",[event.subscription_id,"intel:"+event.event_key]);
+  queued+=inserted.rowCount||0;
+ }
+ return {matched:r.rows.length+eventRows.length,queued};
 }
 export function pushMessage(f){
  const symbol=String(f.ticker||"").toUpperCase();
@@ -69,11 +81,19 @@ export async function sendNotifications({run=queryDb,send=(...args)=>webpush.sen
  for(const job of jobs){
   const sub=(await run("SELECT endpoint,p256dh,auth_key FROM push_subscriptions WHERE id=$1",[job.subscription_id])).rows[0];
   if(!sub)continue;
-  const accession=String(job.event_key||"").startsWith("sec:")?String(job.event_key).slice(4):"";
-  const filing=(await run("SELECT accession,ticker,form_type FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession])).rows[0];
-  if(!filing){await run("UPDATE push_deliveries SET status='failed',last_error='Filing absent' WHERE id=$1",[job.id]);continue}
+  const eventKey=String(job.event_key||"");
+  let message;
+  if(eventKey.startsWith("sec:")){
+   const accession=eventKey.slice(4);
+   const filing=(await run("SELECT accession,ticker,form_type FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession])).rows[0];
+   if(filing)message=pushMessage(filing);
+  }else if(eventKey.startsWith("intel:")){
+   const event=(await run("SELECT event_key,title,subject,source_type FROM research_events WHERE event_key=$1 AND source_type='sec_notice' AND verified=true",[eventKey.slice(6)])).rows[0];
+   if(event)message={title:"Insidir · SEC company announcement",body:String(event.title||"New company report").slice(0,160)+". Review the original filing in Insidir.",tag:"insidir-intel-"+String(event.event_key).slice(0,45),url:"/alerts.html"};
+  }
+  if(!message){await run("UPDATE push_deliveries SET status='failed',last_error='Source absent' WHERE id=$1",[job.id]);continue}
   try{
-   await send({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(pushMessage(filing)),{TTL:3600,urgency:"normal"});
+   await send({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth_key}},JSON.stringify(message),{TTL:3600,urgency:"normal"});
    await run("UPDATE push_deliveries SET status='sent',sent_at=now(),last_error=NULL WHERE id=$1",[job.id]);
    await run("UPDATE push_subscriptions SET last_success_at=now() WHERE id=$1",[job.subscription_id]);sent++;
   }catch(e){
