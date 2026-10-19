@@ -190,6 +190,8 @@ const DATA = {
   "/v1/me": me, "/v1/billing/status": { billingEnabled: true, plan: "pro", subscriptionStatus: "active" },
   "/v1/status": { engine: "online", sec: "configured", filings: 18342, lastIngest: { started_at: "2026-10-14T09:00:00Z", finished_at: "2026-10-14T09:12:00Z", status: "success" } },
   "/v1/transactions": { items: tx }, "/v1/filings": { items: filings }, "/v1/companies": { items: companies },
+  // explore.html browses the SEC ticker index (src/search.mjs browseCompanies) when no query is typed.
+  "/v1/company/directory": { items: companies.filter(c => c.ticker).map(c => ({ ticker: c.ticker, name: c.issuer_name, cik: c.issuer_cik })), hasMore: false, total: companies.filter(c => c.ticker).length, source: "SEC official company ticker mapping" },
   "/v1/me/watchlist": { items: ["NVDA", "AAPL", "PLTR", "F", "XOM", "ZZZZ"].map((t, i) => ({ ticker: t, created_at: "2026-09-0" + (i + 1) + "T00:00:00Z" })) },
   "/v1/me/research-decisions": { items: [{ ticker: "NVDA", review_status: "researching", notes: "Reading the 10-Q.", updated_at: "2026-10-12T00:00:00Z" }, { ticker: "F", review_status: "watching", notes: "CEO bought.", updated_at: "2026-10-09T00:00:00Z" }] },
   "/v1/insiders": { items: people }, "/v1/me/people": { items: updates.people.map(p => ({ owner_cik: p.owner_cik, created_at: p.followed_at, owner_name: p.owner_name, ticker: p.ticker, last_transaction_date: p.last_transaction_date })) },
@@ -391,7 +393,7 @@ const PATH = { dashboard: "/dashboard.html", people: "/people.html", explore: "/
 const RENDERED = {
   dashboard: () => document.querySelectorAll("[data-media]").length >= 12 && !/Loading/.test(document.querySelector("#v3-trades")?.textContent || "Loading"),
   people: () => document.querySelectorAll("#v10-people-results [data-media]").length >= 4,
-  explore: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12, filings: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12,
+  explore: () => document.querySelectorAll("#collection-rows [data-media]").length >= 11, /* the 11 tickered fixture companies in the /v1/company/directory mock */ filings: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12,
   watchlist: () => document.querySelectorAll("#collection-rows [data-media]").length >= 6, filing: () => document.querySelectorAll("#filing-rows [data-media]").length >= 4,
   "filing-private": () => document.querySelectorAll("#filing-rows [data-media]").length >= 1 && !!document.querySelector("#filing-heading [data-media]"),
   research: () => document.querySelectorAll("#research-transactions [data-media]").length >= 4 && !!document.querySelector("#research-company [data-media]"),
@@ -682,7 +684,7 @@ try {
       await page.evaluate(() => window.InsidirMedia.ready(document));
       const inserted = await page.evaluate(() => window.__inserted);
       const loading = inserted.filter(x => x.loading);
-      check(inserted.length >= 12 && !loading.length, "cache: on the next page every known tile is final when it is inserted (no dots, no swap)", { inserted: inserted.length, loading });
+      check(inserted.length >= 11 && !loading.length, "cache: on the next page every known tile is final when it is inserted (no dots, no swap)", { inserted: inserted.length, loading });
       check(log.media.length === before, "cache: the next page sends no /v1/media request for what it already knows", log.media.slice(before).map(r => r.url));
       await ctx.close();
     }
