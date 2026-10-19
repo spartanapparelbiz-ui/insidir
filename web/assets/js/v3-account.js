@@ -17,6 +17,23 @@ const dateText=iso=>{const d=new Date(iso);return iso&&!isNaN(d)?d.toLocaleDateS
 /* A live Stripe subscription that needs attention is fixed in Billing (Stripe's portal), never with a new checkout. */
 const FIX={past_due:["Payment past due · access paused","Update payment"],unpaid:["Unpaid invoice · access paused","Update payment"],
  incomplete:["First payment pending · access paused","Finish payment"],paused:["Paused · access paused","Resume subscription"]};
+let currentBilling = null;
+const CANCELLABLE = new Set(["active", "trialing", "past_due", "unpaid", "paused"]);
+function renderCancellation(billing) {
+ currentBilling = billing;
+ const cancel = $("account-cancel"), confirmation = $("account-cancel-confirm");
+ const status = String(billing?.subscriptionStatus || "").toLowerCase();
+ const pending = billing?.cancelAtPeriodEnd === true;
+ cancel.hidden = !billing?.hasCustomer || !CANCELLABLE.has(status) || pending;
+ cancel.setAttribute("aria-expanded", "false");
+ confirmation.hidden = true;
+ if (pending) {
+  const until = dateText(billing.currentPeriodEnd);
+  $("account-plan").textContent = "Cancellation scheduled" + (until ? " · access until " + until : "");
+  $("account-plan-note").textContent = "Automatic renewal is off. No further monthly renewal charges are scheduled."
+   + (until ? " Your current access continues until " + until + "." : "");
+ }
+}
 function plan(access){
  if(!access)return "Subscription status unavailable";
  if(access.complimentary&&access.active)return "Complimentary access";
@@ -52,6 +69,12 @@ document.addEventListener("DOMContentLoaded",async()=>{
    $("account-plan").textContent=plan(r.access);
    actions(r.access);
    $("account-delete").disabled=false;
+   // Never show a cancellation button until the server has checked this account's Stripe status.
+   try {
+    renderCancellation(await req("/v1/billing/status?refresh=1"));
+   } catch (_) {
+    $("account-cancel-feedback").textContent = "We couldn't verify renewal status here. You can still cancel from Billing.";
+   }
  }catch(e){
    $("account-email").textContent=e.status===401?"Not logged in":"Unavailable";
    $("account-status").textContent=e.status===401?"Log in to manage your account.":"We couldn't reach the account service. Reload the page in a moment.";
@@ -59,6 +82,54 @@ document.addEventListener("DOMContentLoaded",async()=>{
    if(e.status===401){forget();$("account-signin").hidden=false;$("account-signout").hidden=true;}
  }
  $("account-signout").addEventListener("click",async()=>{try{await req("/v1/auth/logout","POST");forget();location.assign("signin.html");}catch(e){$("account-status").textContent=e.message||"We couldn't sign you out just now. Please try again.";}});
+ const cancel=$("account-cancel"), cancelBox=$("account-cancel-confirm"), feedback=$("account-cancel-feedback");
+ cancel.addEventListener("click",()=>{
+  const end = dateText(currentBilling?.currentPeriodEnd);
+  const trial = currentBilling?.subscriptionStatus === "trialing";
+  $("account-cancel-copy").textContent = trial
+   ? "The $39 monthly charge will not start. Your $1 trial access continues" + (end ? " until " + end : " until the end of the trial") + "."
+   : "You will not be charged at the next monthly renewal. Your current access continues" + (end ? " until " + end : " until the current period ends") + ".";
+  feedback.textContent = "";
+  feedback.classList.remove("is-error");
+  cancelBox.hidden = false;
+  cancel.setAttribute("aria-expanded", "true");
+  $("account-cancel-yes").focus();
+ });
+ $("account-cancel-keep").addEventListener("click",()=>{
+  cancelBox.hidden=true;cancel.setAttribute("aria-expanded","false");
+  feedback.classList.remove("is-error");
+  feedback.textContent="Nothing was changed.";
+  cancel.focus();
+ });
+ $("account-cancel-yes").addEventListener("click",async()=>{
+  const yes=$("account-cancel-yes"),keep=$("account-cancel-keep");
+  yes.disabled=true;keep.disabled=true;cancel.disabled=true;
+  feedback.textContent="Confirming cancellation with Stripe…";
+  feedback.classList.remove("is-error");
+  try {
+   const result=await req("/v1/billing/cancel","POST",{});
+   cancelBox.hidden=true;cancel.setAttribute("aria-expanded","false");cancel.hidden=true;
+   if(result.canceled){
+    const until=dateText(result.accessUntil || currentBilling?.currentPeriodEnd);
+    renderCancellation({...currentBilling,cancelAtPeriodEnd:true});
+    feedback.textContent="Subscription cancellation confirmed. No further renewal charges."+(until?" Your access continues until "+until+".":"");
+   } else if(result.alreadyCanceled){
+    $("account-plan").textContent="Cancelled · not subscribed";
+    $("account-plan-note").textContent="Your subscription is already cancelled. No further renewal charges are scheduled.";
+    feedback.textContent="Your subscription was already cancelled.";
+   } else {
+    // Do not report a confirmed cancellation if the server did not explicitly confirm it.
+    throw Error("Stripe did not confirm cancellation. Please check Billing or contact hello@aethric.llc.");
+   }
+   $("account-primary").focus();
+  }catch(e){
+   const reason=e instanceof TypeError?"We couldn't reach Insidir, so cancellation was not confirmed. Check your connection and try again."
+    :e.status===401?"Your session ended. Log in again to cancel your subscription."
+    :e.message||"Cancellation could not be confirmed. Please try again or contact hello@aethric.llc.";
+   feedback.classList.add("is-error");feedback.textContent=reason;
+   cancel.hidden=false;cancelBox.hidden=false;cancel.setAttribute("aria-expanded","true");
+  }finally{yes.disabled=false;keep.disabled=false;cancel.disabled=false;}
+ });
  const form=$("account-delete-form"),pw=$("account-delete-password"),out=$("account-delete-feedback");
  $("account-delete").addEventListener("click",()=>{
   out.classList.remove("is-error");out.textContent="";
