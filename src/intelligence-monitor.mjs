@@ -25,6 +25,7 @@ export function secAnnouncementEvents(submissions,ticker,cik){
   const filed=String(recent.filingDate?.[i]||"");
   if(!/^\d{10}-\d{2}-\d{6}$/.test(accession)||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,160}$/.test(doc)||
    !/^\d{4}-\d{2}-\d{2}$/.test(filed)||seen.has(accession))continue;
+  if(Date.parse(filed+"T00:00:00Z")<Date.now()-30*86400_000)continue;
   seen.add(accession);
   rows.push({event_key:"notice:"+accession,source_type:"sec_notice",subject:ticker,
    title:ticker+" filed "+form+" with the SEC",
