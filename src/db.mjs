@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import pg from "pg";
 import { readFile } from "node:fs/promises";
 import { config } from "./config.mjs";
@@ -22,14 +23,23 @@ export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_
   "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_sec_events.sql","016_explanations.sql","017_notifications.sql"]);
 export async function migrate() {
   const db=requireDb();
-  // The idempotent DDL still takes table locks; when another instance's traffic holds them in the other order
-  // PostgreSQL aborts one side with a deadlock (40P01). The whole transaction rolls back, so retrying is safe.
+  // Every file is idempotent, but even a no-op ALTER TABLE takes an exclusive table lock, so re-running them all on
+  // each start deadlocked with another instance's live queries. schema_migrations records each file's SHA-256: a
+  // start runs only files that are new or whose text changed, and an unchanged database takes no table lock.
+  // Should a deadlock still happen (a real migration meeting live traffic), the transaction rolls back and is retried.
+  const files=await Promise.all(MIGRATIONS.map(async name=>{const sql=await readFile(new URL("../sql/"+name,import.meta.url),"utf8");return {name,sql,checksum:createHash("sha256").update(sql).digest("hex")};}));
   for(let attempt=1;;attempt++){
     const client=await db.connect();
     try {
       await client.query("BEGIN");
       await client.query("SELECT pg_advisory_xact_lock(813076521)");
-      for(const file of MIGRATIONS)await client.query(await readFile(new URL("../sql/"+file,import.meta.url),"utf8"));
+      await client.query("CREATE TABLE IF NOT EXISTS schema_migrations(name TEXT PRIMARY KEY, checksum CHAR(64) NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())");
+      const applied=new Map((await client.query("SELECT name,checksum FROM schema_migrations")).rows.map(r=>[r.name,r.checksum]));
+      for(const f of files){
+        if(applied.get(f.name)===f.checksum)continue;
+        await client.query(f.sql);
+        await client.query("INSERT INTO schema_migrations(name,checksum) VALUES($1,$2) ON CONFLICT (name) DO UPDATE SET checksum=EXCLUDED.checksum,applied_at=now()",[f.name,f.checksum]);
+      }
       await client.query("COMMIT");
       return;
     } catch(e) {
