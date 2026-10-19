@@ -39,6 +39,37 @@ One container sets every edge: `min(--hf-max, 100% − 2 × --hf-gutter)` (1320p
 
 The landing page's first screen is the halftone wordmark hero (`section.v13-hero[data-halftone-hero]`): `assets/js/v13-halftone.js` sets `insidir` at a size that fills the width, cropped by the bottom edge, and prints it as dots sized by how much of the letter covers each 6px cell. Its dots blow apart around the pointer, sweep after it and ring out on every click or tap like every dot field on the site (see [Motion](#motion-still-content-live-dots)), always in ink (nothing on the site glows orange); nothing happens when the page scrolls; everything sleeps once the dots are home and pauses off-screen; `prefers-reduced-motion` prints it still. The engine reads its colours from `--hwf-bg` and `--hwf-ink`, and the word, crop, dot gap and push radius from `data-` attributes. It is deliberately used nowhere else — every page ends with the plain tracked footer (`footer.v13-footer--plain`).
 
+### V29: tokens, new components and how to add styles now
+
+`assets/css/v29-system.css` (on every page) gives the V13 values names any stylesheet can use, plus the few rules
+every page shares:
+
+| Group | Tokens | Notes |
+| --- | --- | --- |
+| Colour | `--c-bg`, `--c-surface`, `--c-surface-2`, `--c-raise`, `--c-ink`, `--c-soft`, `--c-muted`, `--c-faint`, `--c-line`, `--c-line-2`, `--c-line-soft`, `--c-line-strong`, `--c-up`, `--c-down` | aliases of the `--hf-*` palette above, with fallbacks |
+| Type | `--font`, `--fs-label` … `--fs-display`, `--lh-tight`, `--lh-body`, `--track-label` | one face, one short scale |
+| Space | `--s-1` (4px) … `--s-9` (112px), `--gutter`, `--page-max` | a 4px rhythm |
+| Shape and depth | `--r-xs` 7, `--r-sm` 10, `--r-md` 14, `--r-lg` 18, `--panel`, `--panel-hover`, `--shadow-panel`, `--shadow-pop` | the V17 soft panels |
+| Motion | `--dur-fast` 120ms, `--dur` 180ms, `--dur-slow` 280ms, `--ease` | transform, opacity or colour only |
+| Interaction | `--focus-ring`, `--tap-min` (44px) | |
+
+Breakpoints are listed in the file's header (media queries cannot read custom properties): phone ≤ 600, tablet ≤ 900,
+desktop ≤ 1440, wide ≥ 1920. The product header folds into its menu below 1200px.
+
+The shared rules: no sideways scrolling (`overflow-x: clip` on the body), anchors land below the sticky header,
+controls answer taps at once (`touch-action: manipulation`), one visible focus ring, and reduced motion stops every
+animation. Sticky bars are solid paper without backdrop blur.
+
+New components are plain CSS that uses these tokens, with no `!important` and no layer: `v29-landing.css` (the
+landing's `lx-` components), `v29-public.css` (the public Intelligence page), `v29-app.css` (the product header's
+additions, Alerts, the overview's first steps, touch targets) and `v29-intelligence.css` (the tabs, the dotted-i
+keys and the five labels). Only where a V13 rule itself must change is a short block written inside
+`@layer insidir-v13{}`, one selector step more specific than the rule it replaces (`html body.v13 …`), each with a
+comment saying why. Prefer new class names over overriding V13 selectors.
+
+Asset URLs need no `?v=`: `src/web.mjs` rewrites every `assets/…` reference in a page to `?v=<content hash>` as it
+serves it, and a request whose `?v=` matches is cached for a year as immutable.
+
 ### Motion: still content, live dots
 
 The page's content holds still. Nothing a reader aims at, reads or compares moves under the pointer, on a click or with a scroll. The dots are the exception, and they answer everything: every halftone dot field on the site (the landing wordmark, the person file's header band, the marketing heroes and closing panels, the sign-in panel, the plan card, the 404's numerals, the overview's brief corner and the footer strip on every page) blows apart around the pointer, sweeps after it, opens wider under a press and rings out on every click or tap, then springs home and settles by itself. Only canvas dots move.
