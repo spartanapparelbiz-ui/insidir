@@ -102,6 +102,7 @@ import { secFetch, parseOwnership } from "./sec.mjs";
 import { secReady } from "./config.mjs";
 import { ownerIssuers as edgarOwnerIssuers, ownerRoles } from "./insiders.mjs";
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
+import { fetchSecOwnerHistory } from "./sec-person-fallback.mjs";
 
 export const DEFAULT_LIMIT = 100, MAX_LIMIT = 500;
 export const MAX_COMPANIES = 100, MAX_ROLE_ISSUERS = 8, MAX_FILINGS = 100, MAX_NAMES = 20, MAX_OTHER_ISSUERS = 40;
@@ -623,6 +624,24 @@ export async function handlePersonRoute(req, res, url, deps = {}) {
   let body;
   try {
     body = await personProfile(segment, { ...deps, jointOwners: joint, limit: parseLimit(url.searchParams.get("limit")), starts: reservation.grant, usage });
+    // Imported data may omit historical Form 4 reporters. On demand, use the SEC's
+    // published submissions INDEX without inventing any transaction records.
+    // Unit tests with injected fetchers remain offline unless explicitly enabled.
+    const allowHistory = deps.allowSecFallback === true ||
+      (deps.allowSecFallback !== false && !deps.fetcher && secReady());
+    if (!body && allowHistory && reservation.grant.ownerPages > 0 &&
+        secQueueMs(deps, true) <= SEC_QUEUE_LIMIT_MS) {
+      usage.ownerPages++;
+      try {
+        body = await fetchSecOwnerHistory(segment, {
+          fetcher: deps.fetcher || secFetch,
+          limit: parseLimit(url.searchParams.get("limit"))
+        });
+      } catch(error) {
+        console.warn("SEC owner archive lookup unavailable:", error?.message);
+        throw failure(503,"SEC historical reporting-person filings are temporarily unavailable. Try again shortly.");
+      }
+    }
   } finally { reservation.release(usage); }
   if (!body) throw failure(404, joint ? NOT_FOUND : NOT_FOUND_SINGLE);
   res.writeHead(200, {
