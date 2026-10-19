@@ -24,6 +24,7 @@ import { emailSettings } from "./config.mjs";
 import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdminCookie,adminSettings } from "./admin-auth.mjs";
 import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
+import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -418,6 +419,22 @@ async function route(req,res,ctx){
   if(p==="/v1/me" && m==="GET"){
     const user=await requireUser(req,ctx);
     return json(res,200,{user:publicUser(user),access:accessSummary(user,ctx.env)});
+  }
+  /* GET /v1/research-events: normalized events from imported public records (src/research-events.mjs), newest filing
+   * first. ticker, owner (an owner CIK), type (comma-separated), limit (1-100), before (an event id, for paging). */
+  if(p==="/v1/research-events" && m==="GET"){
+    const TYPES=["insider_purchase","insider_sale","multi_insider_purchase","form4_amendment","company_disclosure"];
+    const t=u.searchParams.has("ticker")?ticker(u.searchParams.get("ticker")):null;
+    const owner=u.searchParams.get("owner");
+    if(owner!=null&&!/^\d{1,10}$/.test(owner))throw failure(400,"Invalid owner CIK");
+    const types=(u.searchParams.get("type")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(types.some(x=>!TYPES.includes(x)))throw failure(400,"Unknown event type");
+    const before=u.searchParams.get("before");
+    if(before!=null&&!/^\d{1,18}$/.test(before))throw failure(400,"Invalid cursor");
+    const items=await listResearchEvents(ctx.query,{ticker:t,ownerCik:owner,types,limit:positive(u.searchParams.get("limit"),50,100),before});
+    const last=(await ctx.query("SELECT max(finished_at) AS at FROM ingest_runs WHERE status IN ('success','partial')")).rows[0]?.at||null;
+    return json(res,200,{items,next:items.length?String(items.at(-1).id):null,lastImportAt:last,
+      source:"Imported SEC filings (Form 4, and EDGAR submissions for watched companies)",caveats:[CAVEATS.form4,CAVEATS.coverage,CAVEATS.notAdvice]});
   }
   if(p==="/v1/me/security-events" && m==="GET"){
     const user=await requireUser(req,ctx);

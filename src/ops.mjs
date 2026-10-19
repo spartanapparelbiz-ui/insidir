@@ -76,7 +76,12 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const [r] = await rows(query, `SELECT count(*)::integer AS total, max(detected_at) AS newest_detected,
       count(*) FILTER (WHERE detected_at>now()-interval '24 hours')::integer AS detected_24h FROM research_events`);
     const byType = await rows(query, "SELECT event_type,count(*)::integer AS n FROM research_events GROUP BY event_type ORDER BY n DESC");
-    return { ...r, byType };
+    // Builder lag: parsed filings retrieved after the builder's cursor are not yet events.
+    const [lag] = await rows(query, `SELECT (SELECT position FROM research_cursors WHERE name='form4') AS cursor,
+      (SELECT count(*)::integer FROM sec_filings f WHERE f.ingest_status='parsed' AND f.retrieved_at>COALESCE((SELECT position FROM research_cursors WHERE name='form4'),'epoch')) AS pending_filings`);
+    const [retry] = await rows(query, "SELECT count(*) FILTER (WHERE attempts<5)::integer AS retrying, count(*) FILTER (WHERE attempts>=5)::integer AS gave_up FROM sec_filings WHERE ingest_status='error'");
+    const [disc] = await rows(query, "SELECT count(*)::integer AS companies, count(*) FILTER (WHERE failures>0)::integer AS failing, max(last_ok_at) AS last_ok_at FROM disclosure_sources");
+    return { ...r, byType, builder: lag, failedImports: retry, disclosureSources: disc };
   });
   const email = await safe(async () => {
     const [r] = await rows(query, `SELECT count(*) FILTER (WHERE status='queued')::integer AS queued, count(*) FILTER (WHERE status='sending')::integer AS sending,
@@ -107,6 +112,8 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   const workers = await safe(async () => rows(query, "SELECT name,last_started_at,last_finished_at,last_ok_at,last_error,last_error_at,last_result,runs,failures FROM worker_heartbeats ORDER BY name"));
   const alerts = [];
   if (ingestion?.staleness && ingestion.staleness.status !== "ok") alerts.push({ area: "ingestion", level: ingestion.staleness.status, detail: ingestion.staleness.reasons.join("; ") });
+  if (researchEvents?.builder?.pending_filings > 500) alerts.push({ area: "research-events", level: "warning", detail: `${researchEvents.builder.pending_filings} parsed filings not yet turned into events` });
+  if (researchEvents?.failedImports?.gave_up) alerts.push({ area: "ingestion", level: "warning", detail: `${researchEvents.failedImports.gave_up} filing(s) failed to import after 5 attempts` });
   if (ingestion?.stuck_runs) alerts.push({ area: "ingestion", level: "warning", detail: ingestion.stuck_runs + " ingestion run(s) still 'running' after 30 minutes" });
   const sec = secHealth();
   if (sec.blocked) alerts.push({ area: "sec", level: "stale", detail: "SEC answered 403 to this process; pause and check SEC_USER_AGENT and request rates" });

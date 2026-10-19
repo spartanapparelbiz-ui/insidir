@@ -11,6 +11,10 @@ import { purgeSecurityEvents } from "./security-events.mjs";
 import { purgeUserTokens } from "./account-security.mjs";
 import { purgeAdminAuth } from "./admin-auth.mjs";
 import { queueTrialReminders } from "./billing-notices.mjs";
+import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from "./research-events.mjs";
+import { loadOwnership } from "./sec.mjs";
+import { persistFiling } from "./db.mjs";
+import { secReady } from "./config.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -36,8 +40,18 @@ async function main() {
       console.log("Ingestion result", JSON.stringify(result));
       // Logos and roster photos for what was just filed, in the background at low priority.
       if (result?.ok && result.parsed) warmAfterIngest(query).then(w => console.log("Media warm-up", JSON.stringify(w)), e => console.warn("Media warm-up failed", e?.message || e));
-      return { ok: result?.ok, discovered: result?.discovered, parsed: result?.parsed, failed: result?.failed, deferred: result?.deferred || 0, reason: result?.reason };
+      // Research events for what was just imported (the research-events job below also catches up on its own).
+      const events = result?.parsed ? await buildResearchEvents({ query }) : null;
+      return { ok: result?.ok, discovered: result?.discovered, parsed: result?.parsed, failed: result?.failed, deferred: result?.deferred || 0, reason: result?.reason, events };
     });
+  }
+  // Research events (src/research-events.mjs): incremental, idempotent; also covers imports started by /v1/internal/ingest.
+  if (workers) every("research-events", 15 * 60 * 1000, 90 * 1000, () => buildResearchEvents({ query }));
+  // Failed Form 4 imports, retried with backoff after they leave EDGAR's current feed; watched companies' other
+  // SEC filings. Both use the shared SEC client (declared User-Agent, throttle) and stop on a 403.
+  if (workers && secReady()) {
+    every("filing-retry", 30 * 60 * 1000, 4 * 60 * 1000, () => retryFailedFilings({ query, load: loadOwnership, persist: persistFiling }));
+    every("company-disclosures", 30 * 60 * 1000, 6 * 60 * 1000, () => pollCompanyDisclosures({ query }));
   }
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));

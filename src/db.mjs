@@ -19,7 +19,7 @@ export async function query(sql, params=[]) { return requireDb().query(sql,param
 // Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
 export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
   "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
-  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","014_email.sql"]);
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","014_email.sql","015_research_events.sql"]);
 export async function migrate() {
   const db=requireDb();
   const client=await db.connect();
@@ -90,6 +90,8 @@ export async function persistFailure(filing,error) {
   const text=String(error?.message||error).slice(0,500);
   await query(`INSERT INTO sec_filings(accession,filer_cik,title,form_type,source_url,published_at,ingest_status,error_message)
     VALUES($1,$2,$3,$4,$5,$6,'error',$7)
-    ON CONFLICT(accession) DO UPDATE SET ingest_status='error',error_message=EXCLUDED.error_message,updated_at=now()`,
+    ON CONFLICT(accession) DO UPDATE SET ingest_status='error',error_message=EXCLUDED.error_message,updated_at=now()`+
+    // Retried with backoff (15 minutes, doubling, at most a day) by the retry worker; see research-events.mjs.
+    `,attempts=sec_filings.attempts+1,next_retry_at=now()+LEAST(interval '1 day',interval '15 minutes'*power(2,sec_filings.attempts))`,
     [filing.accession,filing.filerCik,filing.title,filing.formType,filing.sourceUrl,filing.publishedAt,text]);
 }
