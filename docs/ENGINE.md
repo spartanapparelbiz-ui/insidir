@@ -277,3 +277,36 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
 - There is no email verification, so a complimentary address must be registered by its owner before it is listed.
 - No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
+
+## Insidir Intelligence
+
+`web/intelligence.html` (Briefing, Investigate, Mirror) and `web/admin-costs.html`. Every route below is paid product data
+(signed in, active or trialing subscription, or a complimentary account) unless marked otherwise.
+
+| Route | What it does |
+|---|---|
+| `GET /v1/me/intelligence/briefing?days=1..30` | Watchlist + followed-people briefing from the shared SEC index (`src/intelligence-briefing.mjs`). Same-day Form 4s at one company and same-day 8-K/6-K notices are grouped; ordering rules are returned with every story; marks the visit for "new since your last visit". No model call. |
+| `GET/POST /v1/me/intelligence/preferences` | Delivery frequency: `immediate` (default), `daily`, `weekly`. Immediate members get per-filing push; daily/weekly members get one digest push (`queueDigests` in `src/push.mjs`, claimed with compare-and-set so it is queued once). |
+| `POST /v1/me/intelligence/investigate` `{question, context?}` | Deterministic parsing, bounded SQL retrieval, a cited answer, gaps and follow-ups (`src/intelligence-investigate.mjs`). Advice and prompt-injection requests are refused before retrieval. |
+| `POST /v1/me/intelligence/synthesize` | Optional AI synthesis of an answer from its cited evidence only; verified and cached by evidence hash. |
+| `GET /v1/intelligence/mirror/managers`, `/managers/<cik>`, `/simulate?cik=&budget=` | Form 13F holdings, history and the illustrative allocation (`src/intelligence-mirror.mjs`). |
+| `GET /v1/ai/explain?accession=` | Shared, cached plain-English explanation of one filing. |
+| `GET /v1/admin/costs` (open route, own auth) | Cost dashboard: `INSIDIR_ADMIN_TOKEN` bearer or an account in `INSIDIR_ADMIN_EMAILS`; every access is written to `admin_audit_log`. |
+| `POST /v1/internal/13f/ingest` (bearer `INGEST_SECRET`) | Runs Form 13F ingestion now (it also runs 5 minutes after start and every 12 hours). |
+
+**AI cost architecture** (`src/ai-gateway.mjs`): one explanation per (source, content SHA-256, explanation type,
+prompt version, model, language), shared by every member; concurrent requests for the same key are coordinated in
+PostgreSQL (one claims the row, the others wait for it); a changed source hashes to a new key. Every provider call
+writes `ai_usage` with the provider's token counts and, when reported, its cost (`usage.include`); list-price
+estimates are stored separately as `estimated`. Global hourly/daily call limits, per-member hourly/daily limits,
+daily and monthly USD budgets, input/output caps, a timeout and one retry are enforced before every call. The
+inexpensive model handles single-source explanations; the stronger model is used only for multi-company or
+multi-person syntheses.
+
+**Form 13F** (`src/form13f.mjs`): EDGAR submissions → `index.json` → `primary_doc.xml` (cover and summary totals) →
+information table. Values are normalised to dollars (filings before 2023-01-03 reported thousands); parsed rows and
+value are compared with the cover page's `tableEntryTotal` / `tableValueTotal` and stored as `completeness`. Each
+filing is stored once by accession with a content hash. Manager names always come from EDGAR.
+
+Tests: `test/intelligence-platform.test.mjs` (pure), `test/intelligence-db.test.mjs` (PostgreSQL, set
+`INSIDIR_TEST_DATABASE_URL`), `scripts/intelligence-check.mjs` (Chrome).

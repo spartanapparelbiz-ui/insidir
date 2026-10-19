@@ -13,7 +13,7 @@ from any law. Every item marked for attorney review or regulatory approval needs
 | Research data | SEC Form 4 filings imported from EDGAR every 15 minutes (`src/ingest.mjs`, `src/sec.mjs`); company reports from SEC submissions and XBRL, delayed Yahoo Finance prices, Wikidata/Wikipedia profiles (`src/company-routes.mjs`). Every figure links to or names its source. |
 | Public pages | Server-rendered insider pages `/insider-trading`, `/insider-trading/<TICKER>`, `/insiders/<cik>` from the import (`src/public-pages.mjs`). |
 | Personal features | Watchlist, followed people, private research journal (statuses "researching / watching / passed"), manually entered holdings, in-app watchlist alerts. All scoped to the signed-in account. |
-| AI | **None.** No model calls, prompts, AI endpoints or AI workers exist anywhere in `src/` or `web/`. The site already says "No summaries written by AI". |
+| AI | **Source-backed summaries only, off unless `INSIDIR_OPENROUTER_API_KEY` is set.** All model calls go through `src/ai-gateway.mjs` (budgets, timeouts, usage ledger, shared verified cache). Filing explanations and Investigate syntheses are written only from retrieved SEC records, must cite them, and pass `reviewGeneratedText` (no directives, guarantees or figures absent from the sources) before display; failures are cached as blocked and never shown. Questions are screened for personalized-advice requests and prompt injection before any retrieval. |
 | Politician trades | **Not ingested or shown.** `src/analysis.mjs` lists House/Senate disclosures as `disabled_pending_permissions`. |
 | Trading | **None.** No order, trade or execution code. The optional brokerage link (SnapTrade, `src/brokerage.mjs`) is OAuth **read scope only**, off unless `BROKERAGE_CONNECT_ENABLED=1`, tokens AES-256-GCM encrypted with per-user AAD; no brokerage passwords collected. |
 | Billing | Stripe Checkout, one Price ($39/month), a $1 3-day trial on an account's first checkout, Stripe customer portal, webhook sync, six-hourly reconciliation, account deletion cancels Stripe first (`src/billing.mjs`). |
@@ -147,7 +147,8 @@ Not run in this session: the Chrome checks (`scripts/visual-layout-check.mjs`, `
 | In-app watchlist alerts (Form 4 matches) | IMPLEMENTED — TECHNICALLY VERIFIED |
 | Email / push alerts | Not built |
 | Politician (congressional) transactions | DISABLED — PENDING LEGAL AUTHORIZATION (licensing and legal review) |
-| AI summaries and explanations | Not built. Guardrails implemented and tested for when it is; DISABLED — PENDING LEGAL AUTHORIZATION for anything beyond source explanation |
+| AI summaries and explanations | Built for source explanation only (Insidir Intelligence), cited and verified; nothing beyond source explanation. **Attorney review recommended** of AI-written summaries under the publisher's exclusion before enabling the provider key in production |
+| Intelligence Mirror (13F illustrative allocation) | Research simulation only: no orders, no brokerage link, no copy action, no recommended allocation. **Regulatory review required** before launch of whether presenting proportional "illustrative" allocations of a named manager's holdings could be viewed as personalized advice or a model portfolio |
 | Personalized AI recommendations (ADVISORY_ENABLED) | DISABLED — PENDING LEGAL AUTHORIZATION · REQUIRES REGULATORY OR PARTNER APPROVAL |
 | Order placement / automated trading (TRADING_ENABLED) | DISABLED — PENDING LEGAL AUTHORIZATION · REQUIRES REGULATORY OR PARTNER APPROVAL |
 | Read-only brokerage link (SnapTrade) | IMPLEMENTED — TECHNICALLY VERIFIED, off by default · REQUIRES REGULATORY OR PARTNER APPROVAL (SnapTrade production agreement) |

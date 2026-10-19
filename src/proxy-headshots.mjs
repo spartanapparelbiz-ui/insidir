@@ -458,7 +458,7 @@ export function latestProxy(submissions, now = Date.now()) {
 /* EDGAR's company browse feed, filtered to DEF 14A: used when the submissions file is too large
  * to fetch (JPM) or its "recent" window no longer reaches the proxy (very active filers). */
 export function latestProxyFromAtom(xml, now = Date.now()) {
-  const entry = parseAtom(xml).filter(e => /^DEF 14A\b(?!\/)/.test(e.title || "") && /^\d{18}$/.test(e.accession))
+  const entry = parseAtom(xml, { forms: ["DEF 14A"] }).filter(e => /^DEF 14A\b(?!\/)/.test(e.title || "") && /^\d{18}$/.test(e.accession))
     .sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)))[0];
   if (!entry) return null;
   const filedAt = String(entry.publishedAt || "").slice(0, 10);

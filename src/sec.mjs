@@ -14,7 +14,8 @@ const amount = v => {
 const flag = v => /^(1|true)$/i.test(val(v) || "");
 const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
-export function parseAtom(xml) {
+export function parseAtom(xml, { forms = ["4", "4/A"] } = {}) {
+  const allowed = new Set(forms.map(f => String(f).toUpperCase()));
   const feed = parser.parse(xml)?.feed;
   if (!feed) throw new Error("Invalid SEC Atom feed");
   const seen = new Set();
@@ -25,8 +26,8 @@ export function parseAtom(xml) {
     // reject unknown types rather than silently treating them as ownership.
     const title=scalar(entry.title)||"";
     const type=String(scalar(entry["filing-type"])||scalar(entry["form-type"])||
-      /^\s*(4(?:\/A)?)\s*[-:–—]/i.exec(title)?.[1]||"").trim().toUpperCase();
-    if(type!=="4" && type!=="4/A")return [];
+      /^\s*([A-Z0-9][A-Z0-9 \/]*?)\s+[-:–—]\s/i.exec(title)?.[1]||"").trim().replace(/\s+/g," ").toUpperCase();
+    if(!allowed.has(type))return [];
     const links = list(entry.link);
     const href = links.find(x => String(x?.["@_href"] || "").includes("/Archives/edgar/data/"))?.["@_href"];
     if (!href) return [];

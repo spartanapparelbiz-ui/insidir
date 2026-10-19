@@ -89,10 +89,11 @@ test("release gate: nothing the site serves carries invented sample data", async
   } finally { server.close(); }
 });
 
-test("the alerts page offers only what exists: no political-trade or price-move alerts, delivery in the app only", () => {
+test("the alerts page offers only what exists: no political-trade or price-move alerts; in-app delivery, device notifications only by opt-in", () => {
   const html = readFileSync(new URL("alerts.html", WEB), "utf8");
   assert.doesNotMatch(html, /political|Political|Price moves|price-move|members of Congress/);
-  assert.match(html, /In the app only/);
+  assert.match(html, /Alerts appear in the app/);
+  assert.match(html, /opt in to device notifications/i, "push is described as opt-in, never as automatic");
 });
 
 test("admin audit trail: every admin request is logged with a token fingerprint, never the token", async () => {

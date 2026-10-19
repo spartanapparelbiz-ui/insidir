@@ -3,7 +3,7 @@
  * rather than copyrighted news articles or unverified political claims. */
 import {query as queryDb} from "./db.mjs";
 import {secFetch} from "./sec.mjs";
-import {tickerIndex,tickerRecord,secFilingUrl} from "./intelligence.mjs";
+import {tickerIndex,tickerRecord,secFilingUrl,eightKItems} from "./intelligence.mjs";
 import {externalFetch} from "./external.mjs";
 import {XMLParser} from "fast-xml-parser";
 
@@ -77,7 +77,9 @@ export function secAnnouncementEvents(submissions,ticker,cik){
    title:ticker+" filed "+form+" with the SEC",
    source_url:secFilingUrl(cik,accession,doc),
    published_at:filed+"T12:00:00Z",
-   metadata:{ticker,form,accession,source:"SEC EDGAR company submissions",filingDate:filed}});
+   metadata:{ticker,form,accession,source:"SEC EDGAR company submissions",filingDate:filed,
+    ...(/^\d{4}-\d{2}-\d{2}$/.test(String(recent.reportDate?.[i]||""))?{reportDate:recent.reportDate[i]}:{}),
+    ...(form.startsWith("8-K")&&eightKItems(recent.items?.[i]).length?{items:eightKItems(recent.items?.[i]).map(x=>x.code)}:{})}});
  }
  return rows;
 }

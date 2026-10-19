@@ -48,6 +48,8 @@ export async function migrate() {
     await client.query(mediaGifSchema);
     const intelligenceSchema=await readFile(new URL("../sql/013_intelligence_delivery.sql",import.meta.url),"utf8");
     await client.query(intelligenceSchema);
+    const platformSchema=await readFile(new URL("../sql/014_intelligence_platform.sql",import.meta.url),"utf8");
+    await client.query(platformSchema);
     await client.query("COMMIT");
   } catch(e) { await client.query("ROLLBACK");throw e; }
   finally {client.release()}

@@ -36,6 +36,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
 import { serveStatic } from "../src/web.mjs";
@@ -59,7 +60,8 @@ const ALL_PAGES = [
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
   ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
-  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
+  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
+  ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -143,7 +145,21 @@ const insiderPeople = transactionItems.map(t => ({ owner_name: t.owner_name, own
 // answer(status, body) for a status other than 200, or null (answered 404 "not mocked").
 const STATUS = Symbol("status");
 const answer = (status, body) => ({ [STATUS]: status, body });
-function fixture(url, method, from = "") {
+// Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
+const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+function intelligenceFixture(p, method, empty) {
+  if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
+  if (p === "/v1/me/intelligence/investigate" && method === "POST") return INTEL.answer;
+  if (p === "/v1/me/intelligence/preferences") return { frequency: "daily", updatedAt: "2026-10-19T00:00:00Z" };
+  if (p === "/v1/ai/status") return INTEL.aiStatus;
+  if (p === "/v1/intelligence/mirror/managers") return empty ? { available: false, managers: [], reason: "Form 13F ingestion has not run yet on this deployment.", notes: INTEL.managers.notes } : INTEL.managers;
+  if (p.startsWith("/v1/intelligence/mirror/managers/")) return INTEL.manager;
+  if (p === "/v1/intelligence/mirror/simulate") return INTEL.simulate;
+  if (p === "/v1/admin/costs") return answer(401, { error: "Administrator access required" });
+  return undefined;
+}
+function fixture(url, method, from = "", hash = "") {
+  if (from === "/intelligence.html" || from === "/admin-costs.html") { const r = intelligenceFixture(url.pathname, method, hash === "#empty"); if (r !== undefined) return r; }
   const ticker = url.searchParams.get("ticker") || "AAPL";
   const company = ticker === "MSFT" ? "MICROSOFT CORP" : ticker === "NVDA" ? "NVIDIA CORP" : "Apple Inc.";
   const p = url.pathname;
@@ -632,8 +648,8 @@ try {
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
     await context.route("**/v1/**", async route => {
       const request = route.request(), url = new URL(request.url());
-      let from = ""; try { from = new URL(request.frame().url()).pathname; } catch {}
-      const body = fixture(url, request.method(), from);
+      let from = "", hash = ""; try { const f = new URL(request.frame().url()); from = f.pathname; hash = f.hash; } catch {}
+      const body = fixture(url, request.method(), from, hash);
       if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
       else if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       else await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not mocked"}' });

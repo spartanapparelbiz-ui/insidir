@@ -459,7 +459,7 @@
       ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:#c5c1ba;margin:0;max-width:900px}",
       ".insidir-platform-announcement__actions{display:flex;align-items:center;gap:12px}",
       ".insidir-platform-announcement__open{color:#e9e4da;text-decoration:underline;text-underline-offset:3px;font-size:12px}",
-      ".insidir-platform-announcement__close{color:#c5c1ba;background:transparent;border:1px solid #514d46;border-radius:4px;padding:6px 9px;cursor:pointer;font-size:12px}",
+      ".insidir-platform-announcement__close{color:#c5c1ba;background:transparent;border:1px solid #41403d;border-radius:4px;padding:6px 9px;cursor:pointer;font-size:12px}",
       "@media(max-width:650px){.insidir-platform-announcement{padding:14px 18px;gap:12px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
     ].join("");
     document.head.append(css);

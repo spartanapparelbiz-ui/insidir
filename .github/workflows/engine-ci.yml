@@ -8,6 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: insidir
+          POSTGRES_PASSWORD: insidir
+          POSTGRES_DB: insidir_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U insidir" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      INSIDIR_TEST_DATABASE_URL: postgresql://insidir:insidir@localhost:5432/insidir_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +40,8 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright-core@1.58.0
           CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/visual-layout-check.mjs
+      - name: Verify Insidir Intelligence in Chrome (every control, desktop and phone, errors, empty states, reduced motion)
+        run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/intelligence-check.mjs
       - name: Verify the dashboard in Chrome (data, filters, empty and error states, 401/402, links, overflow, nothing orange)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/dashboard-check.mjs
       - name: Verify the V13 halftone identity on every page, personnel files included (strict palette, no orange in any hover/focus/active state or on screen, contrast, fonts, sharp images, overflow)

@@ -9,6 +9,7 @@ import {initPush,pushTick} from "./push.mjs";
 import {aiTick} from "./ai-explain.mjs";
 import {monitorTick} from "./intelligence-monitor.mjs";
 import {pollHouse} from "./house-disclosures.mjs";
+import {form13fTick} from "./form13f.mjs";
 
 async function main() {
   if(!config.databaseUrl)throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -38,6 +39,10 @@ async function main() {
   const monitorPublicSources=async()=>{try{console.log("Public intelligence monitor",JSON.stringify(await monitorTick(query)))}catch(e){console.error("Public monitor failed",e?.message||e)}};
   setTimeout(monitorPublicSources,90*1000).unref();
   setInterval(monitorPublicSources,15*60*1000).unref();
+  // Form 13F holdings are quarterly: check the tracked managers' EDGAR filings twice a day (5 minutes after start).
+  const check13F=async()=>{try{const r=await form13fTick({run:query});if(!r.skipped||r.skipped!=="disabled")console.log("Form 13F ingestion",JSON.stringify({...r,results:undefined}))}catch(e){console.error("Form 13F ingestion failed",e?.message||e)}};
+  setTimeout(check13F,5*60*1000).unref();
+  setInterval(check13F,12*60*60*1000).unref();
   if(process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED==="1"){
     const checkHouse=async()=>{try{console.log("Official House PTR index",JSON.stringify(await pollHouse({run:query})))}catch(e){console.error("House disclosure index failed",e?.message||e)}};
     setTimeout(checkHouse,2*60*1000).unref();
