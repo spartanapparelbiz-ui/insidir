@@ -284,4 +284,40 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - The one-billing-change-per-account lock is per process (rate limits are shared, this lock is not); Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
 - Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
 - Email verification exists but is only enforced once an email provider is configured (or `INSIDIR_REQUIRE_EMAIL_VERIFICATION=1`); until then a complimentary address must be registered by its owner before it is listed.
-- No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. AI explanations are built but off by default. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
+- No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
+
+## Insidir Intelligence
+
+`web/intelligence.html` (the instrument, Tape, Briefing, Capital Structure, Investigate, Mirror) and `web/admin-costs.html`. Every route below is paid product data
+(signed in, active or trialing subscription, or a complimentary account) unless marked otherwise.
+
+| Route | What it does |
+|---|---|
+| `GET /v1/me/intelligence/briefing?days=1..30` | Watchlist + followed-people briefing from the shared SEC index (`src/intelligence-briefing.mjs`). Same-day Form 4s at one company and same-day 8-K/6-K notices are grouped; ordering rules are returned with every story; marks the visit for "new since your last visit". No model call. |
+| `GET/POST /v1/me/intelligence/preferences` | Delivery frequency: `immediate` (default), `daily`, `weekly`. Immediate members get per-filing push; daily/weekly members get one digest push (`queueDigests` in `src/push.mjs`, claimed with compare-and-set so it is queued once). |
+| `GET /v1/me/intelligence/instrument` | The ten layers of the Insidir mark (`src/intelligence-instrument.mjs`, `MARK` = the favicon's circles): counts and up to six linked records per layer over the last 30 days — market layers from a shared query cached for 5 minutes, the member's watchlist, follows and holdings from their own rows. Findings are filled in by the page from the briefing. No model call. |
+| `GET /v1/intelligence/tape?days=1\|7\|30\|90&form=all\|4\|8-K\|13F&ticker=&person=&before=` | The event tape: Form 4, 8-K/6-K and 13F records newest first, each with company, form, person, classification, reported amount, event/filed/retrieved dates, SEC source and `new` (retrieved since the member's last visit). Filters are whitelisted; bad input is a 400. |
+| `GET /v1/intelligence/structure?ticker=` | Capital structure from reporting people's own Form 4s over 12 months: people with their relationship boxes as filed, securities, person→security edges and monthly filing counts, with labels that say what each line does and does not establish. 404 for a ticker with no stored Form 4. |
+| `POST /v1/me/intelligence/investigate` `{question, context?}` | Deterministic parsing, bounded SQL retrieval, a cited answer (summary, evidence sections, relationships, timeline, verification of every citation number), gaps and follow-ups (`src/intelligence-investigate.mjs`). Advice and prompt-injection requests are refused before retrieval. With `?stream=1` the answer arrives as NDJSON: `{stage:"start",stages}`, then one line per completed stage (`understood`, `sources`, `connected`, `verified`, `prepared`) as the server finishes it, then `{stage:"answer",answer}` (or `{stage:"error"}`); validation errors are still plain JSON 400s. |
+| `POST /v1/me/intelligence/synthesize` | Optional AI synthesis of an answer from its cited evidence only; verified and cached by evidence hash. |
+| `GET /v1/intelligence/mirror/managers`, `/managers/<cik>`, `/simulate?cik=&budget=` | Form 13F holdings, history and the illustrative allocation (`src/intelligence-mirror.mjs`). |
+| `GET /v1/ai/explain?accession=` | Shared, cached plain-English explanation of one filing. |
+| `GET /v1/admin/costs` (open route, own auth) | Cost dashboard: `INSIDIR_ADMIN_TOKEN` bearer or an account in `INSIDIR_ADMIN_EMAILS`; every access is written to `admin_audit_log`. |
+| `POST /v1/internal/13f/ingest` (bearer `INGEST_SECRET`) | Runs Form 13F ingestion now (it also runs 5 minutes after start and every 12 hours). |
+
+**AI cost architecture** (`src/ai-gateway.mjs`): one explanation per (source, content SHA-256, explanation type,
+prompt version, model, language), shared by every member; concurrent requests for the same key are coordinated in
+PostgreSQL (one claims the row, the others wait for it); a changed source hashes to a new key. Every provider call
+writes `ai_usage` with the provider's token counts and, when reported, its cost (`usage.include`); list-price
+estimates are stored separately as `estimated`. Global hourly/daily call limits, per-member hourly/daily limits,
+daily and monthly USD budgets, input/output caps, a timeout and one retry are enforced before every call. The
+inexpensive model handles single-source explanations; the stronger model is used only for multi-company or
+multi-person syntheses.
+
+**Form 13F** (`src/form13f.mjs`): EDGAR submissions → `index.json` → `primary_doc.xml` (cover and summary totals) →
+information table. Values are normalised to dollars (filings before 2023-01-03 reported thousands); parsed rows and
+value are compared with the cover page's `tableEntryTotal` / `tableValueTotal` and stored as `completeness`. Each
+filing is stored once by accession with a content hash. Manager names always come from EDGAR.
+
+Tests: `test/intelligence-platform.test.mjs` and `test/intelligence-instrument.test.mjs` (pure), `test/intelligence-db.test.mjs` (PostgreSQL, set
+`INSIDIR_TEST_DATABASE_URL`), `scripts/intelligence-check.mjs` (Chrome).

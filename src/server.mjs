@@ -32,6 +32,7 @@ function every(name, intervalMs, firstMs, fn) {
   setTimeout(run, firstMs).unref();
   setInterval(run, intervalMs).unref();
 }
+import { form13fTick } from "./form13f.mjs";
 
 async function main() {
   if (!config.databaseUrl) throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -73,6 +74,8 @@ async function main() {
   if (workers) {
     every("ai-filing-research", 15 * 60 * 1000, 45 * 1000, () => aiTick(query));
     every("public-monitor", 15 * 60 * 1000, 90 * 1000, () => monitorTick(query));
+    // Form 13F holdings are quarterly: the tracked managers' EDGAR filings twice a day (src/form13f.mjs; off unless enabled there).
+    every("form-13f", 12 * 60 * 60 * 1000, 5 * 60 * 1000, () => form13fTick({ run: query }));
   }
   // Official House PTR index: only after explicit legal approval.
   if (workers && process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED === "1") every("house-disclosures", 6 * 60 * 60 * 1000, 2 * 60 * 1000, () => pollHouse({ run: query }));

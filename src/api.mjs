@@ -31,7 +31,13 @@ import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
-import {intelligenceBriefing,investigateCompany,filingBriefing,mirrorRecord} from "./intelligence-features.mjs";
+import {intelligenceBriefing,savePreferences as saveIntelligencePreferences,FREQUENCIES} from "./intelligence-briefing.mjs";
+import {investigate,synthesize,STAGES} from "./intelligence-investigate.mjs";
+import {instrument,eventTape,parseTapeFilters,capitalStructure} from "./intelligence-instrument.mjs";
+import {listManagers,managerDetail,simulate} from "./intelligence-mirror.mjs";
+import {form13fTick,ingestEnabled as form13fEnabled,managerCiks} from "./form13f.mjs";
+import {aiConfigured,modelFor,aiLimits} from "./ai-gateway.mjs";
+import {costReport,timed} from "./cost-analytics.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -545,27 +551,74 @@ async function route(req,res,ctx){
   if(p==="/v1/ai/explain" && m==="GET"){
     const user=await requireUser(req,ctx);
     if(await limited(ctx,"ai-explain:"+user.id,20,15*60*1000))throw failure(429,"Too many AI explanations requested");
-    return json(res,200,await explainFiling(u.searchParams.get("accession"),{run:ctx.query}));
+    return json(res,200,await explainFiling(u.searchParams.get("accession"),{run:ctx.query,userId:user.id,env:ctx.env}));
   }
+  /* Insidir Intelligence (src/intelligence-*.mjs). Paid product data: the paywall above has already required a
+   * signed-in member with access; every handler still resolves the member itself and reads only their rows. */
   if(p==="/v1/me/intelligence/briefing" && m==="GET"){
     const user=await requireUser(req,ctx);
-    return json(res,200,await intelligenceBriefing(user.id,ctx.query));
+    if(await limited(ctx,"briefing:"+user.id,120,15*60*1000))throw failure(429,"Too many briefing refreshes. Try again shortly.");
+    const days=positive(u.searchParams.get("days"),7,30);
+    return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady()})));
   }
-  if(p==="/v1/me/intelligence/filings" && m==="GET"){
+  if(p==="/v1/me/intelligence/instrument" && m==="GET"){
     const user=await requireUser(req,ctx);
-    return json(res,200,await filingBriefing(user.id,ctx.query));
+    if(await limited(ctx,"instrument:"+user.id,120,15*60*1000))throw failure(429,"Too many refreshes. Try again shortly.");
+    return json(res,200,await timed("instrument",()=>instrument(user.id,{run:ctx.query})));
   }
-  if(p==="/v1/me/intelligence/mirror" && m==="GET"){
+  if(p==="/v1/intelligence/tape" && m==="GET"){
     const user=await requireUser(req,ctx);
-    return json(res,200,await mirrorRecord(user.id,ctx.query));
+    if(await limited(ctx,"tape:"+user.id,180,15*60*1000))throw failure(429,"Too many requests. Try again shortly.");
+    return json(res,200,await timed("tape",()=>eventTape(user.id,parseTapeFilters(u.searchParams),{run:ctx.query})));
   }
+  if(p==="/v1/intelligence/structure" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"structure:"+user.id,120,15*60*1000))throw failure(429,"Too many requests. Try again shortly.");
+    return json(res,200,await timed("structure",()=>capitalStructure(u.searchParams.get("ticker"),{run:ctx.query})));
+  }
+  if(p==="/v1/me/intelligence/preferences" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    const r=await ctx.query("SELECT frequency,updated_at,last_digest_at FROM intelligence_preferences WHERE user_id=$1",[user.id]);
+    return json(res,200,{frequency:r.rows[0]?.frequency||"immediate",options:FREQUENCIES,lastDigestAt:r.rows[0]?.last_digest_at||null,pushConfigured:pushReady()});
+  }
+  // Earlier single-ticker lookup, kept for existing clients: now the same cited investigation as a question about that ticker.
   if(p==="/v1/me/intelligence/investigate" && m==="GET"){
     const user=await requireUser(req,ctx);
     if(await limited(ctx,"investigate:"+user.id,40,15*60*1000))throw failure(429,"Research request limit reached");
-    return json(res,200,await investigateCompany(user.id,ticker(u.searchParams.get("ticker")),ctx.query));
+    const t=ticker(u.searchParams.get("ticker"));
+    return json(res,200,await timed("investigate",()=>investigate(user.id,"$"+t+" insider activity and SEC filings",{run:ctx.query})));
+  }
+  if(p==="/v1/intelligence/status" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,{ai:{configured:aiConfigured(ctx.env),models:{fast:modelFor("fast",ctx.env),deep:modelFor("deep",ctx.env)},mode:"source_backed_explanations_only"},
+      mirror:{ingest:form13fEnabled(ctx.env)?"enabled":"disabled",managers:managerCiks(ctx.env).length},push:pushReady(),sources:monitorSources(),advice:false,trading:false});
+  }
+  if(p==="/v1/intelligence/mirror/managers" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,await timed("mirror.managers",()=>listManagers(ctx.query)));
+  }
+  if(p.startsWith("/v1/intelligence/mirror/managers/") && m==="GET"){
+    await requireUser(req,ctx);
+    const cik=decodeURIComponent(p.slice("/v1/intelligence/mirror/managers/".length));
+    if(!/^\d{1,10}$/.test(cik))throw failure(400,"Invalid manager CIK");
+    return json(res,200,await timed("mirror.manager",()=>managerDetail(cik,ctx.query)));
+  }
+  if(p==="/v1/intelligence/mirror/simulate" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"mirror:"+user.id,90,15*60*1000))throw failure(429,"Too many simulations. Try again shortly.");
+    const acc=u.searchParams.get("accession");
+    if(acc!=null&&!/^\d{18}$/.test(acc))throw failure(400,"Invalid accession");
+    return json(res,200,await timed("mirror.simulate",()=>simulate(u.searchParams.get("cik"),u.searchParams.get("budget"),ctx.query,{accession:acc})));
+  }
+  if(p==="/v1/admin/costs" && m==="GET"){
+    // Same admin authorization as /v1/admin/ops: the token AND a one-time code, or the 30-minute session they open.
+    const auth=await authorizeAdmin(req,{env:ctx.env,query:ctx.query,limiter:ctx.limiter});
+    if(!auth.ok){await adminAudit(ctx.query,req,"admin.denied",p,{status:auth.status});throw failure(auth.status,auth.error)}
+    await adminAudit(ctx.query,req,"admin.costs",p,{via:auth.via},auth.actor);
+    return json(res,200,await costReport({run:ctx.query,env:ctx.env,stripe:ctx.stripe||(billingSettings(ctx.env).enabled?createStripeClient({secretKey:billingSettings(ctx.env).secretKey}):null)}));
   }
   if(p==="/v1/ai/status" && m==="GET"){
-    await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",advice:false});
+    await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});
   }
   if(p==="/v1/me/push" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -607,6 +660,12 @@ async function route(req,res,ctx){
     const result=await ingest();
     return json(res,result.ok?200:409,result);
   }
+  if(p==="/v1/internal/13f/ingest" && m==="POST"){
+    if(!config.ingestSecret || !req.headers.authorization?.startsWith("Bearer "))throw failure(401,"Authorized ingestion token required");
+    const a=Buffer.from(req.headers.authorization.slice(7)),b=Buffer.from(config.ingestSecret);
+    if(a.length!==b.length || !timingSafeEqual(a,b))throw failure(401,"Unauthorized ingestion");
+    return json(res,200,await form13fTick({run:ctx.query,env:ctx.env}));
+  }
   if(m==="POST"||m==="DELETE"){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
     // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
@@ -617,6 +676,34 @@ async function route(req,res,ctx){
       const payload=await body(req);
       return json(res,200,m==="POST"?await subscribePush(user.id,payload,ctx.query)
         :await unsubscribePush(user.id,payload?.endpoint,ctx.query));
+    }
+    if(p==="/v1/me/intelligence/investigate" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"investigate:"+user.id,40,15*60*1000))throw failure(429,"Research request limit reached. Try again in a few minutes.");
+      const x=await body(req);
+      if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
+      const context=x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null;
+      if(u.searchParams.get("stream")!=="1")return json(res,200,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context})));
+      // Streamed: one JSON line per stage as the server actually completes it, then the answer. Nothing is timed for show.
+      let started=false;
+      const line=obj=>{if(!started){started=true;res.writeHead(200,{"Content-Type":"application/x-ndjson; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Accel-Buffering":"no"});res.write(JSON.stringify({stage:"start",stages:STAGES})+"\n")}res.write(JSON.stringify(obj)+"\n")};
+      try{
+        const answer=await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context,onStage:(id,detail)=>line({stage:id,detail})}));
+        line({stage:"answer",answer});
+      }catch(e){if(!started)throw e;line({stage:"error",status:Number(e?.status)||500,error:Number(e?.status)>=500||!e?.status?"Research failed. Try again shortly.":String(e.message)});if(!e?.status||e.status>=500)console.error("Investigation failed",e)}
+      return res.end();
+    }
+    if(p==="/v1/me/intelligence/synthesize" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"synthesize:"+user.id,15,15*60*1000))throw failure(429,"AI summary limit reached. Try again in a few minutes.");
+      const x=await body(req);
+      if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
+      return json(res,200,await timed("synthesize",()=>synthesize(user.id,x.question,{run:ctx.query,env:ctx.env,context:x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null})));
+    }
+    if(p==="/v1/me/intelligence/preferences" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"intel-prefs:"+user.id,30,15*60*1000))throw failure(429,"Too many changes. Try again shortly.");
+      return json(res,200,{...await saveIntelligencePreferences(user.id,await body(req),ctx.query),pushConfigured:pushReady()});
     }
     if(p==="/v1/auth/register" && m==="POST"){
       if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");

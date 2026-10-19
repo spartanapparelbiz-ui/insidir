@@ -31,24 +31,66 @@ export async function pushStatus(userId,run=queryDb){
  const r=await run("SELECT id,created_at,last_success_at FROM push_subscriptions WHERE user_id=$1 ORDER BY created_at DESC",[userId]);
  return {configured:pushReady(),publicKey:pushReady()?process.env.INSIDIR_VAPID_PUBLIC_KEY:null,devices:r.rows,delivery:"user_opt_in"};
 }
+/* Immediate alerts go only to members whose briefing frequency is "immediate" (no preference row = immediate);
+ * daily and weekly members receive one digest instead (queueDigests). */
+const IMMEDIATE="COALESCE((SELECT ip.frequency FROM intelligence_preferences ip WHERE ip.user_id=s.user_id),'immediate')='immediate'";
 export const MATCH_SQL=[
  "SELECT DISTINCT ON (x.subscription_id,x.accession) x.* FROM (",
  "SELECT s.id AS subscription_id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN watchlist w ON w.user_id=s.user_id JOIN sec_filings f ON f.ticker=w.ticker",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours'",
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND "+IMMEDIATE,
  "UNION ALL SELECT s.id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN followed_people p ON p.user_id=s.user_id JOIN sec_filing_owners o ON LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0')",
  "JOIN sec_filings f ON f.accession=o.accession",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours'",
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND "+IMMEDIATE,
  ") x ORDER BY x.subscription_id,x.accession LIMIT 400"
 ].join(" ");
 export const PUBLIC_EVENT_MATCH_SQL=[
  "SELECT DISTINCT s.id AS subscription_id,r.event_key FROM research_events r",
  "JOIN watchlist w ON w.ticker=r.subject JOIN push_subscriptions s ON s.user_id=w.user_id",
  "WHERE r.source_type='sec_notice' AND r.verified=true",
- "AND r.observed_at>=s.created_at AND r.observed_at>=now()-interval '36 hours'",
+ "AND r.observed_at>=s.created_at AND r.observed_at>=now()-interval '36 hours' AND "+IMMEDIATE,
  "LIMIT 200"
 ].join(" ");
+/* Digests: members on daily or weekly delivery whose period has elapsed and who have a device. The baseline
+ * (last_digest_at) is set when they choose the frequency, so switching never replays old records. */
+export const DIGEST_DUE_SQL=`WITH due AS (
+  SELECT ip.user_id,ip.frequency,ip.last_digest_at FROM intelligence_preferences ip
+  WHERE ip.frequency IN ('daily','weekly') AND ip.last_digest_at IS NOT NULL
+    AND ip.last_digest_at<now()-CASE WHEN ip.frequency='daily' THEN interval '24 hours' ELSE interval '7 days' END
+    AND EXISTS(SELECT 1 FROM push_subscriptions s WHERE s.user_id=ip.user_id)
+  ORDER BY ip.last_digest_at LIMIT 200)
+SELECT d.user_id,d.frequency,d.last_digest_at::text AS claim,
+  (SELECT count(DISTINCT f.accession) FROM sec_filings f WHERE f.ingest_status='parsed' AND f.retrieved_at>d.last_digest_at AND (
+     f.ticker IN (SELECT w.ticker FROM watchlist w WHERE w.user_id=d.user_id)
+     OR EXISTS(SELECT 1 FROM sec_filing_owners o JOIN followed_people p ON p.user_id=d.user_id AND LTRIM(p.owner_cik,'0')=LTRIM(o.owner_cik,'0') WHERE o.accession=f.accession)))::integer AS filings,
+  (SELECT count(*) FROM research_events r WHERE r.source_type='sec_notice' AND r.verified=true AND r.observed_at>d.last_digest_at
+     AND r.subject IN (SELECT w.ticker FROM watchlist w WHERE w.user_id=d.user_id))::integer AS notices
+FROM due d`;
+export async function queueDigests(run=queryDb){
+ const due=(await run(DIGEST_DUE_SQL)).rows;
+ let queued=0,claimed=0;
+ for(const d of due){
+  // Claim the period first (compare-and-set on last_digest_at), so two workers can never queue the same digest.
+  // The timestamp travels as text: a JavaScript Date would drop PostgreSQL's microseconds and never match.
+  const claim=await run("UPDATE intelligence_preferences SET last_digest_at=now() WHERE user_id=$1 AND last_digest_at=$2::timestamptz RETURNING last_digest_at",[d.user_id,d.claim]);
+  if(!claim.rowCount)continue;
+  claimed++;
+  const total=(d.filings||0)+(d.notices||0);
+  if(!total)continue;
+  const key="digest:"+d.frequency+":"+new Date().toISOString().slice(0,10)+":"+Math.min(total,9999)+":"+d.user_id;
+  const r=await run("INSERT INTO push_deliveries(subscription_id,event_key) SELECT id,$2 FROM push_subscriptions WHERE user_id=$1 ON CONFLICT DO NOTHING RETURNING id",[d.user_id,key]);
+  queued+=r.rowCount||0;
+ }
+ return {due:due.length,claimed,queued};
+}
+export function digestMessage(eventKey){
+ const [, frequency, date, total]=String(eventKey).split(":");
+ const n=Math.max(0,Number(total)||0);
+ return {title:"Insidir · Your "+(frequency==="weekly"?"weekly":"daily")+" briefing",
+  body:n+" new public "+(n===1?"record":"records")+" for your watchlist and the people you follow. Open your briefing to review the sources.",
+  tag:"insidir-digest-"+String(date||"").slice(0,10),url:"/intelligence.html#briefing"};
+}
 export async function queueNotifications(run=queryDb){
  const r=await run(MATCH_SQL);let queued=0;
  for(const x of r.rows){
@@ -128,6 +170,8 @@ export async function sendNotifications({run=queryDb,send=(...args)=>webpush.sen
    const accession=eventKey.slice(4);
    const filing=(await run("SELECT accession,ticker,form_type FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession])).rows[0];
    if(filing)message=pushMessage(filing);
+  }else if(eventKey.startsWith("digest:")){
+   message=digestMessage(eventKey);
   }else if(eventKey.startsWith("intel:")){
    const event=(await run("SELECT event_key,title,subject,source_type FROM research_events WHERE event_key=$1 AND source_type='sec_notice' AND verified=true",[eventKey.slice(6)])).rows[0];
    if(event)message={title:"Insidir · SEC company announcement",body:String(event.title||"New company report").slice(0,160)+". Review the original filing in Insidir.",tag:"insidir-intel-"+String(event.event_key).slice(0,45),url:"/alerts.html"};
@@ -152,7 +196,8 @@ export async function pushTick(run=queryDb){
  try{
    const broadcast=await queueBroadcast(run);
    const research=await queueNotifications(run);
+   const digests=await queueDigests(run).catch(e=>({error:String(e?.message||e)}));
    const delivery=await sendNotifications({run});
-   return {...research,...delivery,broadcast};
+   return {...research,...delivery,broadcast,digests};
  }finally{busy=false}
 }

@@ -86,7 +86,9 @@ export function classifyApi(pathname, method = "GET") {
   // provider basic auth; src/notifications.mjs, src/email.mjs) authenticate themselves.
   if (p.startsWith("/v1/admin/") || p.startsWith("/v1/email/")) return "open";
   // Server-to-server ingestion has its own bearer secret; it is not product data.
-  if (p === "/v1/internal/ingest") return "open";
+  if (p === "/v1/internal/ingest" || p === "/v1/internal/13f/ingest") return "open";
+  // The internal cost dashboard checks its own administrator token or allow-listed account (src/cost-analytics.mjs).
+  if (p === "/v1/admin/costs") return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).

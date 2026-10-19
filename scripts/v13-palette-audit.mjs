@@ -36,6 +36,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
 import { serveStatic } from "../src/web.mjs";
@@ -60,8 +61,7 @@ const ALL_PAGES = [
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
   ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
-  ["intelligence", "/intelligence.html"], ["intelligence-mirror", "/intelligence.html#mirror"], ["intelligence-investigate", "/intelligence.html?ticker=AAPL#investigate"],
-  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"]
+  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -145,7 +145,27 @@ const insiderPeople = transactionItems.map(t => ({ owner_name: t.owner_name, own
 // answer(status, body) for a status other than 200, or null (answered 404 "not mocked").
 const STATUS = Symbol("status");
 const answer = (status, body) => ({ [STATUS]: status, body });
-function fixture(url, method, from = "") {
+// A streamed (application/x-ndjson) response: one JSON object per line.
+const NDJSON = Symbol("ndjson");
+const ndjson = lines => ({ [NDJSON]: lines.map(l => JSON.stringify(l)).join("\n") + "\n" });
+// Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
+const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+function intelligenceFixture(p, method, empty) {
+  if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
+  if (p === "/v1/me/intelligence/investigate" && method === "POST") return ndjson([...INTEL.stream, { stage: "answer", answer: INTEL.answer }]);
+  if (p === "/v1/me/intelligence/instrument") return INTEL.instrument;
+  if (p === "/v1/intelligence/tape") return empty ? { ...INTEL.tape, events: [], nextBefore: null } : INTEL.tape;
+  if (p === "/v1/intelligence/structure") return INTEL.structure;
+  if (p === "/v1/me/intelligence/preferences") return { frequency: "daily", updatedAt: "2026-10-19T00:00:00Z" };
+  if (p === "/v1/ai/status") return INTEL.aiStatus;
+  if (p === "/v1/intelligence/mirror/managers") return empty ? { available: false, managers: [], reason: "Form 13F ingestion has not run yet on this deployment.", notes: INTEL.managers.notes } : INTEL.managers;
+  if (p.startsWith("/v1/intelligence/mirror/managers/")) return INTEL.manager;
+  if (p === "/v1/intelligence/mirror/simulate") return INTEL.simulate;
+  if (p === "/v1/admin/costs") return answer(401, { error: "Administrator access required" });
+  return undefined;
+}
+function fixture(url, method, from = "", hash = "") {
+  if (from === "/intelligence.html" || from === "/admin-costs.html") { const r = intelligenceFixture(url.pathname, method, hash === "#empty"); if (r !== undefined) return r; }
   const ticker = url.searchParams.get("ticker") || "AAPL";
   const company = ticker === "MSFT" ? "MICROSOFT CORP" : ticker === "NVDA" ? "NVIDIA CORP" : "Apple Inc.";
   const p = url.pathname;
@@ -190,17 +210,8 @@ function fixture(url, method, from = "") {
   if (p === "/v1/research-events") return { items: [reEvent], next: null, lastImportAt: "2026-09-12T21:15:00Z" };
   if (/^\/v1\/research-events\/\d+\/explanation$/.test(p)) return { writer: "rules", facts: [{ text: reEvent.summary, evidence_ids: ["E1"] }], interpretation: [{ text: "A Form 4 is the public report an officer or director files after trading.", evidence_ids: [] }],
     limitations: ["Not a recommendation."], evidence: [{ id: "E1", text: "Form 4 accession 1.", sourceUrl: source, retrievedAt: reEvent.ingested_at }], disclaimer: "Not investment advice." };
-  // Intelligence (SYNTHETIC fixtures, the same event shape src/intelligence-features.mjs answers).
-  const ivEvent = { id: "11", eventType: "insider_purchase", ticker: "AAPL", issuerName: "Apple Inc.", ownerCik: "0001214156", ownerName: "OTHER PUBLIC FILER", transactionDate: "2026-09-10", transactionDateEnd: "2026-09-11",
-    filingDate: "2026-09-12T21:00:00Z", reportingLagDays: 2, totalShares: "1500", totalValue: "42000", valueComplete: true, amended: false, accessions: ["0000320193-26-000001"], sourceUrls: [source], summary: reEvent.summary };
-  const ivSale = { ...ivEvent, id: "10", eventType: "insider_sale", ownerName: "COOK TIMOTHY D", transactionDate: "2026-09-08", transactionDateEnd: "2026-09-08", filingDate: "2026-09-10T20:00:00Z", reportingLagDays: 2, summary: "COOK TIMOTHY D (Chief Executive Officer) reported selling 12,500 shares of AAPL at $26 a share on Sep 8, 2026. Form 4 filed Sep 10, 2026." };
-  const notice = { event_key: "sec:1", source_type: "sec_notice", title: "Apple Inc. 8-K: Results of operations and financial condition", subject: "AAPL", source_url: source, published_at: "2026-09-12T20:00:00Z", observed_at: "2026-09-12T20:05:00Z", verified: true };
-  if (p === "/v1/me/intelligence/filings") return { items: [ivEvent, ivSale], windowDays: 7, advice: false };
-  if (p === "/v1/me/intelligence/briefing") return { items: [notice], windowDays: 7, advice: false, executed: false };
-  if (p === "/v1/me/intelligence/investigate") return { ticker: "AAPL", events: [notice], filings: [{ accession: "0000320193-26-000001", form_type: "4", issuer_name: "Apple Inc.", published_at: "2026-09-12T21:00:00Z", source_url: source }], windowDays: 30, summary: "Found 1 verified public notices and 1 imported SEC filings for AAPL in the past 30 days. Review the original sources below.", advice: false, executed: false };
-  if (p === "/v1/me/intelligence/mirror") return { people: [{ ownerCik: "0001214156", ownerName: "COOK TIMOTHY D", purchases: 0, sales: 1, avgLagDays: 2, lastFiled: "2026-09-10T20:00:00Z" }, { ownerCik: "0001000001", ownerName: "OTHER PUBLIC FILER", purchases: 1, sales: 0, avgLagDays: 2, lastFiled: "2026-09-12T21:00:00Z" }],
-    items: [ivEvent, ivSale], following: 2, windowDays: 180, copyTrading: "not_available", orderPlacement: "not_available", simulatedPortfolio: "not_built", advice: false, executed: false };
-  if (p === "/v1/intelligence/events") return { items: [notice] };
+  // The alerts page's public-source feed (SYNTHETIC fixtures in the shape src/api.mjs answers).
+  if (p === "/v1/intelligence/events") return { items: [{ event_key: "sec:1", source_type: "sec_notice", title: "Apple Inc. 8-K: Results of operations and financial condition", subject: "AAPL", source_url: source, published_at: "2026-09-12T20:00:00Z", observed_at: "2026-09-12T20:05:00Z", verified: true }] };
   if (p === "/v1/intelligence/sources") return { sources: { secCompanyReports: "active", blueskyPublicPosts: "no_accounts_configured", houseFinancialDisclosures: "blocked_pending_legal_approval", senateFinancialDisclosures: "not_built" } };
   if (p === "/v1/me/push") return method === "GET" ? { configured: false, publicKey: null, subscriptions: 0 } : { ok: true };
   if (p === "/v1/me/security-events") return { items: [{ kind: "login_success", created_at: "2026-09-12T08:00:00Z" }] };
@@ -665,9 +676,10 @@ try {
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
     await context.route("**/v1/**", async route => {
       const request = route.request(), url = new URL(request.url());
-      let from = ""; try { from = new URL(request.frame().url()).pathname; } catch {}
-      const body = fixture(url, request.method(), from);
-      if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
+      let from = "", hash = ""; try { const f = new URL(request.frame().url()); from = f.pathname; hash = f.hash; } catch {}
+      const body = fixture(url, request.method(), from, hash);
+      if (body !== null && body[NDJSON]) await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: body[NDJSON] });
+      else if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
       else if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       else await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not mocked"}' });
     });
