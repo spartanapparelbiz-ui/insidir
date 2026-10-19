@@ -41,7 +41,12 @@ body.v13 .ac-prefs{display:grid!important;gap:18px!important;margin:28px 0 0!imp
 body.v13 .ac-prefs fieldset{border:0!important;margin:0!important;padding:0!important;min-width:0!important}
 body.v13 .ac-prefs legend,body.v13 .ac-prefs .ac-label{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-muted)!important;margin:0 0 10px!important;padding:0!important}
 body.v13 .ac-choice{display:flex!important;gap:10px!important;align-items:flex-start!important;margin:0 0 8px!important;color:var(--hf-soft)!important;font:400 14px/1.5 var(--hf-mono)!important;cursor:pointer!important}
-body.v13 .ac-choice input{margin-top:3px!important;accent-color:var(--hf-ink)!important;width:16px!important;height:16px!important;flex:0 0 auto!important}
+body.v13 .ac-choice input{appearance:none!important;-webkit-appearance:none!important;margin:3px 0 0!important;width:16px!important;height:16px!important;flex:0 0 auto!important;
+  background:var(--hf-bg)!important;border:1px solid var(--hf-line-strong)!important;border-radius:0!important;display:grid!important;place-content:center!important;cursor:pointer!important}
+body.v13 .ac-choice input[type="radio"]{border-radius:50%!important}
+body.v13 .ac-choice input:hover{border-color:var(--hf-line-hover)!important}
+body.v13 .ac-choice input:checked{background:var(--hf-ink)!important;border-color:var(--hf-ink)!important;box-shadow:inset 0 0 0 3px var(--hf-bg)!important}
+body.v13 .ac-choice input:disabled{border-color:var(--hf-line)!important;cursor:not-allowed!important}
 body.v13 .ac-choice input:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:2px!important}
 body.v13 .ac-prefs select{height:40px!important;padding:0 10px!important;background:var(--hf-bg)!important;border:1px solid var(--hf-line-strong)!important;border-radius:0!important;color:var(--hf-ink)!important;font:400 14px var(--hf-mono)!important}
 body.v13 .ac-consent{padding:14px!important;border:1px solid var(--hf-line-2)!important;color:var(--hf-soft)!important;font:400 13px/1.6 var(--hf-mono)!important}

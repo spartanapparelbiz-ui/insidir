@@ -80,8 +80,11 @@ layer).
 |---|---|
 | `scripts/journey-check.mjs` — full member journey at 1440 px and 390 px: sign up → checkout waits for a confirmed address → emailed link confirms → $1 trial consent → (simulated) Stripe → billing shows trial → watched company alert → sourced explanation and advice refusal → alert-email consent → company research events → account security and data download → online cancel → deletion cancels in Stripe → password recovery | **26/26 steps passed, no page errors, no horizontal overflow** |
 | `scripts/visual-layout-check.mjs` | Passed (first attempt timed out on a cold server; passed on retry) |
-| `scripts/v13-palette-audit.mjs` (all pages incl. new ones) | See §1.10 |
-| `scripts/motion-check.mjs` | See §1.10 |
+| `scripts/v13-palette-audit.mjs` (all 36 pages × 2 widths, new pages included) | Clean after two fixes found by it: native white checkboxes on the alerts preferences; the ops page lacked the standard footer |
+| `scripts/motion-check.mjs` (changed and new pages: alerts, account, company, signin, subscribe, privacy, forgot, reset, verify, ops) | 283 + 24 passed after one fix (the ops page had no dot field). The unscoped run exceeded this session's 20-minute limit; it runs in CI |
+| `scripts/dashboard-check.mjs` | 321 passed, 0 failed |
+| `scripts/stories-check.mjs` | Passed |
+| `scripts/media-check.mjs` | 518 passed, 3 failed on the first run: **regression found** — the alerts rewrite had dropped the 30-day watchlist activity table with real logos and headshots. Restored as its own section; alerts re-run 103 passed, 0 failed |
 
 ### 1.9 SEC records match their original documents
 In an isolated database, the engine imported **40 live Form 4 filings from EDGAR** (declared User-Agent, normal
@@ -92,8 +95,15 @@ value. After the parser fix and `scripts/reparse-missing-dates.mjs`: **40/40 fil
 matched**. This covers a sample in a test database, not the production database (run the same two scripts there:
 OPERATIONS.md §6).
 
-### 1.10 Final run
-_Filled in below after the last full run on this branch._
+### 1.10 Final run (2026-10-19, after the last change)
+| Run | Result |
+|---|---|
+| `npm run check` and `node --check` on every script | Pass |
+| `npm test` with `INSIDIR_TEST_DATABASE_URL` (PostgreSQL 16) | **444 tests, 444 pass, 0 fail, 0 skipped** |
+| `npm test` without a database (as on a laptop) | 402 tests, 391 pass, 0 fail, 11 skipped (the PostgreSQL suites) |
+| `scripts/journey-check.mjs` | 26/26 steps, run twice after the last UI change |
+| `scripts/visual-layout-check.mjs` | Pass at 375, 390 and 1440 px |
+| `scripts/verify-sec-records.mjs` (live EDGAR, isolated DB) | 40/40 filings, 111 lines, 9 events match |
 
 ## 2. Deployed and operationally verified
 

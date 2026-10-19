@@ -16,6 +16,7 @@
   <script defer src="assets/js/site.js"></script>
   <script defer src="assets/js/app.js?v=18"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
+  <script defer src="assets/js/live-research.js?v=8"></script>
   <script defer src="assets/js/research-explain.js?v=2"></script>
   <script defer src="assets/js/alerts-center.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
@@ -27,7 +28,7 @@
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<link rel="stylesheet" href="assets/css/v27-product.css?v=1">
+<link rel="stylesheet" href="assets/css/v27-product.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 </head>
 <body class="app-body v2-app v3-app v6-app v13">
@@ -52,6 +53,12 @@
       <div class="ac-toolbar"><h2 id="ac-title" class="sr-only">Your alerts</h2><p id="ac-unread" aria-live="polite">Loading…</p><button type="button" class="ac-btn" id="ac-read-all">Mark all read</button></div>
       <ul class="ac-list" id="ac-list"><li class="ac-empty">Loading your alerts…</li></ul>
       <p><button type="button" class="ac-btn" id="ac-more" hidden>Show older alerts</button></p>
+    </section>
+
+    <section class="panel" aria-labelledby="ac-activity-title">
+      <h2 id="ac-activity-title" class="page-sub">Watchlist activity, last 30 days</h2>
+      <p class="ac-status">Every Form 4 line imported for the companies on your watchlist, with the people who filed them.</p>
+      <div id="alerts-activity"></div>
     </section>
 
     <section class="panel alerts-panel" aria-labelledby="ac-prefs-title">

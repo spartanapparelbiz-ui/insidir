@@ -51,8 +51,9 @@ async function company(){
  }catch(ex){document.querySelector("#company-live").innerHTML=status(ex.message)}
 }
 async function alerts(){
- css();document.querySelector(".alerts-sub")?.replaceChildren(document.createTextNode("In-app watchlist matches from imported SEC Form 4 filings. No email or push delivery is active."));
- const panel=document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
+ css();
+ // The alerts page (alerts-center.js) gives this table its own section: the last 30 days of Form 4 lines for the watchlist.
+ const panel=document.querySelector("#alerts-activity")||document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
  document.querySelector("#manage-alerts")?.setAttribute("hidden","");
  document.querySelector(".alert-filters")?.setAttribute("hidden","");
  /* Identity tiles (entity-media.js): the company's logo beside its ticker, the reporting person's headshot
