@@ -8,7 +8,7 @@ self.addEventListener("push",event=>{
   const body=typeof message.body==="string"?message.body.slice(0,240):"New SEC filing activity for your follows.";
   const target=typeof message.url==="string"&&/^\/(?:filing\.html\?accession=\d{18}|alerts\.html)$/.test(message.url)?message.url:"/alerts.html";
   event.waitUntil(self.registration.showNotification(title,{
-    body,icon:"/assets/icons/favicon.svg",badge:"/assets/icons/favicon.svg",
+    body,icon:"/assets/icons/push-192.png",badge:"/assets/icons/push-192.png",
     tag:typeof message.tag==="string"?message.tag.slice(0,96):"insidir-filing",
     data:{url:target},renotify:false
   }));
