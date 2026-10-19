@@ -48,7 +48,7 @@ export const MARKET_SQL = Object.freeze({
   topInsiders: `SELECT o.owner_cik,max(o.owner_name) AS owner_name,count(*)::integer AS n,max(f.ticker) AS ticker,max(f.published_at) AS last,
       bool_or(o.is_director) AS is_director,bool_or(o.is_officer) AS is_officer,max(o.officer_title) AS officer_title,bool_or(o.is_ten_percent_owner) AS is_ten_percent_owner
     FROM sec_filing_owners o JOIN sec_filings f ON f.accession=o.accession WHERE ${WIN} GROUP BY o.owner_cik ORDER BY n DESC,last DESC LIMIT 6`,
-  largest: `SELECT t.accession,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.shares,t.price_per_share,t.estimated_value,f.issuer_name,f.published_at,f.source_url
+  largest: `SELECT t.accession,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.shares,t.price_per_share,t.estimated_value,f.issuer_name,f.issuer_cik,f.published_at,f.source_url
     FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
     WHERE ${WIN} AND t.category=$1 AND NOT t.derivative AND t.estimated_value IS NOT NULL ORDER BY t.estimated_value DESC LIMIT 6`,
   codes: `SELECT upper(t.transaction_code) AS code,count(*)::integer AS n FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
@@ -77,6 +77,8 @@ const href = {
   person: c => c && /^\d{1,10}$/.test(bareCik(c)) ? "person.html?cik=" + bareCik(c).padStart(10, "0") : null
 };
 const rec = (title, meta, link, external = false, extra = {}) => ({ title, meta, href: link || null, external, ...extra });
+/* The reporting person a record is about, for the page's headshot tile (owner CIK without leading zeros). */
+const who = (name, cik) => cik && /^\d{1,10}$/.test(bareCik(cik)) ? { person: name ? displayName(name) : null, personCik: bareCik(cik) } : {};
 
 let shared = { at: 0, value: null, pending: null };
 export const resetInstrumentCache = () => { shared = { at: 0, value: null, pending: null }; };
@@ -99,24 +101,24 @@ async function marketLayer(run, ttlMs) {
 
 const lineRecord = l => rec(displayName(l.owner_name) + " · " + (l.ticker || companyName(l.issuer_name)),
   Number(l.shares).toLocaleString("en-US") + " shares" + (l.price_per_share != null ? " at $" + Number(l.price_per_share).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : "") + " · " + (day(l.transaction_date) || "date not reported"),
-  secSource(l.source_url), true, { value: Number(l.estimated_value), date: iso(l.published_at), ticker: l.ticker || null });
+  secSource(l.source_url), true, { value: Number(l.estimated_value), date: iso(l.published_at), ticker: l.ticker || null, issuerCik: l.issuer_cik ? bareCik(l.issuer_cik) : null, ...who(l.owner_name, l.owner_cik) });
 
 /* The ten categories, each with a count from stored records, a few real records and a place to explore them. */
 export async function instrument(userId, { run = queryDb, ttlMs = 5 * 60_000 } = {}) {
   const [m, watch, people] = await Promise.all([marketLayer(run, ttlMs), run(MEMBER_SQL.watchlist, [userId]), run(MEMBER_SQL.people, [userId])]);
   const L = m.lines, T = m.totals;
   const categories = {
-    companies: { count: T.companies || 0, unit: "issuers with Form 4 filings", records: m.topCompanies.map(c => rec(companyName(c.issuer_name, c.ticker) + " (" + c.ticker + ")", c.n + " filings · last " + day(c.last), href.company(c.ticker), false, { ticker: c.ticker })), explore: { label: "All companies", href: "explore.html" } },
+    companies: { count: T.companies || 0, unit: "issuers with Form 4 filings", records: m.topCompanies.map(c => rec(companyName(c.issuer_name, c.ticker) + " (" + c.ticker + ")", c.n + " filings · last " + day(c.last), href.company(c.ticker), false, { ticker: c.ticker, issuerCik: c.issuer_cik ? bareCik(c.issuer_cik) : null })), explore: { label: "All companies", href: "explore.html" } },
     filings: { count: (T.filings || 0) + m.notices, unit: "Form 4 filings and company reports", detail: (T.filings || 0) + " Form 4 · " + m.notices + " 8-K/6-K",
       records: m.latestFilings.map(f => rec("Form " + f.form_type + " · " + (f.ticker || companyName(f.issuer_name)), (f.owner ? displayName(f.owner) + " · " : "") + "filed " + iso(f.published_at)?.slice(0, 16).replace("T", " ") + " UTC", secSource(f.source_url), true, { ticker: f.ticker })), explore: { label: "All filings", href: "filings.html" } },
-    insiders: { count: m.insiders, unit: "reporting people", records: m.topInsiders.map(p => rec(displayName(p.owner_name), (roleOf(p) || "Reporting person") + " · " + p.n + " filings" + (p.ticker ? " · " + p.ticker : ""), href.person(p.owner_cik), false, { ticker: p.ticker })), explore: { label: "All people", href: "people.html" } },
+    insiders: { count: m.insiders, unit: "reporting people", records: m.topInsiders.map(p => rec(displayName(p.owner_name), (roleOf(p) || "Reporting person") + " · " + p.n + " filings" + (p.ticker ? " · " + p.ticker : ""), href.person(p.owner_cik), false, { ticker: p.ticker, ...who(p.owner_name, p.owner_cik) })), explore: { label: "All people", href: "people.html" } },
     purchases: { count: L.purchases || 0, unit: "purchase lines (code P)", value: L.purchase_value || 0, records: m.buys.map(lineRecord), explore: { label: "All transactions", href: "filings.html" } },
     sales: { count: L.sales || 0, unit: "sale lines (code S)", value: L.sale_value || 0, records: m.sells.map(lineRecord), explore: { label: "All transactions", href: "filings.html" } },
     changes: { count: L.other || 0, unit: "grants, exercises, withholdings and other changes", records: m.codes.map(c => rec(codeLabel(c.code) + " (" + c.code + ")", c.n + " lines", null)), explore: { label: "Read a filing", href: "filings.html" } },
     watchlist: { count: watch.rows.length, unit: "companies you follow", detail: watch.rows.filter(r => r.n > 0).length + " with filings in " + WINDOW_DAYS + " days",
       records: watch.rows.slice(0, 8).map(w => rec(companyName(w.issuer_name, w.ticker) + " (" + w.ticker + ")", w.n ? w.n + " filings in " + WINDOW_DAYS + " days" : "No filings in " + WINDOW_DAYS + " days", href.company(w.ticker), false, { ticker: w.ticker, active: w.n > 0 })), explore: { label: "Your watchlist", href: "watchlist.html" } },
     people: { count: people.rows.length, unit: "people you follow", detail: people.rows.filter(p => p.n > 0).length + " filed in " + WINDOW_DAYS + " days",
-      records: people.rows.slice(0, 8).map(p => rec(p.owner_name ? displayName(p.owner_name) : "CIK " + bareCik(p.owner_cik), p.last ? (p.n || 0) + " filings in " + WINDOW_DAYS + " days · last " + day(p.last) : "No imported filings yet", href.person(p.owner_cik), false, { ticker: p.ticker, active: p.n > 0 })), explore: { label: "People", href: "people.html" } },
+      records: people.rows.slice(0, 8).map(p => rec(p.owner_name ? displayName(p.owner_name) : "CIK " + bareCik(p.owner_cik), p.last ? (p.n || 0) + " filings in " + WINDOW_DAYS + " days · last " + day(p.last) : "No imported filings yet", href.person(p.owner_cik), false, { ticker: p.ticker, active: p.n > 0, ...who(p.owner_name, p.owner_cik) })), explore: { label: "People", href: "people.html" } },
     holdings: { count: m.holdings.length, unit: "managers with imported 13F reports", records: m.holdings.map(h => rec(companyName(h.name), "Quarter ended " + day(h.period_of_report) + " · filed " + day(h.filed_at) + " · " + h.parsed_entries + " rows", "#mirror", false)), explore: { label: "Open Mirror", href: "#mirror" } },
     findings: { count: null, unit: "stories in your briefing", records: [], explore: { label: "Read the briefing", href: "#briefing" }, fromBriefing: true }
   };
@@ -130,7 +132,7 @@ export async function instrument(userId, { run = queryDb, ttlMs = 5 * 60_000 } =
 
 /* ---------- Event tape ---------- */
 export const TAPE_SQL = Object.freeze({
-  form4: `SELECT f.accession,f.ticker,f.issuer_name,f.form_type,f.is_amendment,f.published_at,f.retrieved_at,f.source_url,
+  form4: `SELECT f.accession,f.ticker,f.issuer_name,f.issuer_cik,f.form_type,f.is_amendment,f.published_at,f.retrieved_at,f.source_url,
       o.owners,o.first_cik,t.purchases,t.sales,t.other,t.buy_value,t.sell_value,t.first_date
     FROM sec_filings f
     LEFT JOIN LATERAL (SELECT string_agg(x.owner_name,'; ' ORDER BY x.owner_name) AS owners,min(x.owner_cik) AS first_cik FROM sec_filing_owners x WHERE x.accession=f.accession) o ON true
@@ -192,6 +194,7 @@ export async function eventTape(userId, filters, { run = queryDb, limit = 40 } =
     const value = (r.buy_value || 0) + (r.sell_value || 0);
     events.push({ id: "f4:" + r.accession, kind: "form4", form: "Form " + r.form_type, company: companyName(r.issuer_name, r.ticker), ticker: r.ticker,
       person: r.owners ? r.owners.split("; ").map(displayName).join("; ") : null, personHref: href.person(r.first_cik),
+      personCik: r.first_cik && /^\d{1,10}$/.test(bareCik(r.first_cik)) ? bareCik(r.first_cik) : null, issuerCik: r.issuer_cik ? bareCik(r.issuer_cik) : null,
       classification: classify(r), amount: value > 0 ? Math.round(value * 100) / 100 : null, amountNote: value > 0 ? "Reported value of purchase and sale lines" : null,
       eventDate: day(r.first_date), filedAt: iso(r.published_at), retrievedAt: iso(r.retrieved_at), source: secSource(r.source_url), new: isNew(r.retrieved_at) });
   }
