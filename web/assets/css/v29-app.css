@@ -1,0 +1,57 @@
+/* Insidir V29 product shell: small additions to the header rendered by app.js. Tokens from v29-system.css; no
+   !important and no layer. */
+
+/* "New" beside a section in the navigation (app.js newMark). Inside the header's height: nothing below moves. */
+.app-nav__new{display:inline-flex;align-items:center;height:16px;margin-left:6px;padding:0 5px;border-radius:4px;background:var(--c-ink);color:var(--c-bg);font:600 9.5px/1 var(--font);letter-spacing:.04em;vertical-align:middle}
+
+/* The header search answers the keystroke at once: a thin line sweeps under the field while results load. Only a
+   transform moves, so it costs no layout. */
+.app-search{position:relative}
+.app-search[aria-busy="true"]::after{content:"";position:absolute;left:10%;right:10%;bottom:3px;height:1px;background:linear-gradient(90deg,transparent,var(--c-ink),transparent);animation:v29-search-sweep .9s var(--ease) infinite;pointer-events:none}
+@keyframes v29-search-sweep{from{transform:translateX(-35%) scaleX(.4);opacity:.2}50%{opacity:1}to{transform:translateX(35%) scaleX(.4);opacity:.2}}
+
+/* ---------- Alerts (alerts.html): activity first, then delivery, then announcements ---------- */
+.al-jump{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4);margin-top:var(--s-4);font-size:12.5px}
+.al-jump a{color:var(--c-soft);text-decoration:underline;text-underline-offset:3px;min-height:32px;display:inline-flex;align-items:center}
+.al-h2{margin:var(--s-7) 0 var(--s-3);font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--c-ink)}
+.al-h2 span{color:var(--c-faint);font-weight:400;font-size:14px;letter-spacing:0}
+.al-note{margin:0 0 var(--s-3);font-size:12.5px;line-height:1.6;color:var(--c-muted);max-width:68ch}
+.al-note a{color:var(--c-ink)}
+.al-delivery__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-3)}
+.al-card{padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-md)}
+.al-card h3{margin:0 0 var(--s-2);font-size:16px;font-weight:600;color:var(--c-ink)}
+.al-choice{display:grid;gap:var(--s-2);margin:var(--s-3) 0}
+.al-choice button{display:grid;gap:2px;text-align:left;padding:var(--s-3) var(--s-4);min-height:var(--tap-min);border:1px solid var(--c-line-2);border-radius:var(--r-sm);background:transparent;color:var(--c-soft);font:inherit;cursor:pointer;transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.al-choice button b{font-size:13.5px;color:var(--c-ink);font-weight:600}
+.al-choice button span{font-size:12px;color:var(--c-muted)}
+.al-choice button:hover{border-color:var(--c-line-strong)}
+.al-choice button[aria-checked="true"]{background:var(--c-ink);border-color:var(--c-ink)}
+.al-choice button[aria-checked="true"] b,.al-choice button[aria-checked="true"] span{color:var(--c-bg)}
+.al-choice[aria-busy="true"]{opacity:.7}
+.al-help{margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);border-left:2px solid var(--c-ink);font-size:12.5px;line-height:1.7;color:var(--c-soft)}
+.al-help ol{margin:var(--s-2) 0 0;padding-left:20px}
+.al-actions{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-3)}
+.al-feed{margin-top:var(--s-4)}
+.al-feed [data-source-items]{max-width:900px}
+@media (max-width:800px){.al-delivery__grid{grid-template-columns:1fr}}
+
+/* ---------- Overview: a new member's first steps (dashboard.html #rd-start, onboarding.js) ---------- */
+.rd-start{margin:var(--s-5) 0 var(--s-6);padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-strong);border-radius:var(--r-md)}
+.rd-start[hidden]{display:none}
+.rd-start__head{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s-4)}
+.rd-start__head h2{margin:4px 0 0;font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--c-ink)}
+.rd-start__skip{min-height:36px;padding:0 var(--s-3);border:1px solid var(--c-line-2);border-radius:var(--r-sm);background:transparent;color:var(--c-soft);font:inherit;font-size:12.5px;cursor:pointer;transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.rd-start__skip:hover{border-color:var(--c-line-strong);color:var(--c-ink)}
+.rd-start__steps{list-style:none;margin:var(--s-4) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3)}
+.rd-start__steps li{display:grid;grid-template-columns:18px 1fr;gap:var(--s-3);margin:0;padding:var(--s-3) var(--s-4) var(--s-4);border:1px solid var(--c-line-soft);border-radius:var(--r-sm)}
+.rd-start__steps b{display:block;color:var(--c-ink);font-size:13.5px;font-weight:600;margin-bottom:4px}
+.rd-start__steps span{font-size:12.5px;line-height:1.55;color:var(--c-muted)}
+.rd-start__steps a{color:var(--c-ink);text-decoration:underline;text-underline-offset:3px}
+.rd-start__mark{width:14px;height:14px;margin-top:2px;border-radius:50%;border:1px solid var(--c-faint)}
+.rd-start__steps li.is-done .rd-start__mark{background:var(--c-ink);border-color:var(--c-ink);box-shadow:inset 0 0 0 3px var(--c-surface)}
+.rd-start__steps li.is-done b{color:var(--c-soft)}
+.rd-start__note{margin:var(--s-3) 0 0;font-size:12px;color:var(--c-faint)}
+.rd-intel-link{margin:var(--s-3) 0 var(--s-6)}
+.rd-intel-link a{color:var(--c-ink);text-decoration:underline;text-underline-offset:4px;font-size:13px}
+@media (max-width:1100px){.rd-start__steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.rd-start__steps{grid-template-columns:1fr}.rd-start__head{flex-direction:column}}

@@ -17,7 +17,6 @@
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
-  <script defer src="assets/js/site.js"></script>
   <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
   <script defer src="assets/js/intelligence.js?v=2"></script>
@@ -31,7 +30,7 @@
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
 <link rel="stylesheet" href="assets/css/v13-intelligence.css?v=1">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><script defer src="/assets/js/funnel.js"></script></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v29-intelligence.css"><script defer src="/assets/js/funnel.js"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 ix-page">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="intelligence"></header>
@@ -50,27 +49,44 @@
         <h1 class="ix-hero__title" id="ix-title">Insidir Intelligence</h1>
         <p class="ix-hero__line">Information moves markets. Understand what moves information.</p>
         <p class="ix-hero__lede">An intelligence system that follows public financial activity, connects the records, and brings what matters into focus.</p>
-        <nav class="ix-hero__index" aria-label="Intelligence sections">
-          <a href="#briefing" class="ix-index"><span class="ix-index__no">01</span><span class="ix-index__name">Briefing</span><span class="ix-index__meta" data-hero-brief>Your watchlist, read for you</span></a>
-          <a href="#investigate" class="ix-index"><span class="ix-index__no">02</span><span class="ix-index__name">Investigate</span><span class="ix-index__meta">Questions, answered with sources</span></a>
-          <a href="#mirror" class="ix-index"><span class="ix-index__no">03</span><span class="ix-index__name">Mirror</span><span class="ix-index__meta" data-hero-mirror>Disclosed holdings, simulated</span></a>
-        </nav>
+        <!-- The dotted i: Insidir's mark, and the way in. Each part opens one experience; the labels say which. -->
+        <div class="ix-instrument" data-instrument data-active="briefing">
+          <svg class="ix-i" viewBox="0 0 220 520" aria-hidden="true" focusable="false">
+            <g class="ix-i__part" data-part="briefing"><circle cx="110" cy="58" r="40"/></g>
+            <g class="ix-i__part" data-part="investigate"><circle cx="50" cy="166" r="30"/><circle cx="110" cy="166" r="30"/><circle cx="110" cy="238" r="30"/><circle cx="110" cy="310" r="30"/><circle cx="110" cy="382" r="30"/></g>
+            <g class="ix-i__part" data-part="mirror"><circle cx="50" cy="454" r="30"/><circle cx="110" cy="454" r="30"/><circle cx="170" cy="454" r="30"/></g>
+          </svg>
+          <ol class="ix-keys" aria-label="Open an Intelligence experience">
+            <li><button type="button" class="ix-key" data-open="briefing" aria-controls="briefing" aria-pressed="true"><span class="ix-key__no">The dot · 01 Discover</span><span class="ix-key__name">Briefing</span><span class="ix-key__meta" data-hero-brief>What changed for what you follow</span></button></li>
+            <li><button type="button" class="ix-key" data-open="investigate" aria-controls="investigate" aria-pressed="false"><span class="ix-key__no">The stem · 02 Investigate</span><span class="ix-key__name">Investigate</span><span class="ix-key__meta">Ask a question, see the sources</span></button></li>
+            <li><button type="button" class="ix-key" data-open="mirror" aria-controls="mirror" aria-pressed="false"><span class="ix-key__no">The base · 03 Understand</span><span class="ix-key__name">Mirror</span><span class="ix-key__meta" data-hero-mirror>Disclosed 13F holdings, hypothetically</span></button></li>
+          </ol>
+        </div>
       </div>
       <p class="ix-hero__credit">Research only · No trade recommendations · No order execution</p>
     </section>
 
-    <!-- Section bar: stays under the site header while reading. -->
-    <nav class="ix-bar" aria-label="Jump to section">
+    <!-- The three experiences as tabs: one at a time, kept in the address (#briefing, #investigate, #mirror). -->
+    <div class="ix-bar">
       <div class="ix-bar__inner">
-        <a href="#briefing" data-spy="briefing">Briefing</a>
-        <a href="#investigate" data-spy="investigate">Investigate</a>
-        <a href="#mirror" data-spy="mirror">Mirror</a>
+        <div class="ix-tabs" role="tablist" aria-label="Intelligence">
+          <button type="button" role="tab" id="ix-tab-briefing" aria-controls="briefing" aria-selected="true" data-tab="briefing"><span aria-hidden="true">01</span>Briefing</button>
+          <button type="button" role="tab" id="ix-tab-investigate" aria-controls="investigate" aria-selected="false" tabindex="-1" data-tab="investigate"><span aria-hidden="true">02</span>Investigate</button>
+          <button type="button" role="tab" id="ix-tab-mirror" aria-controls="mirror" aria-selected="false" tabindex="-1" data-tab="mirror"><span aria-hidden="true">03</span>Mirror</button>
+        </div>
         <span class="ix-bar__status" data-ai-status aria-live="polite"></span>
       </div>
-    </nav>
+    </div>
+    <ul class="ix-kinds" aria-label="How Intelligence labels what you read">
+      <li><span class="ix-k ix-k--new">New</span>Received since your last visit</li>
+      <li><span class="ix-k">Filed</span>Historical disclosure, with its dates</li>
+      <li><span class="ix-k ix-k--source">Source</span>Verified fact, linked to the SEC document</li>
+      <li><span class="ix-k ix-k--ai">AI</span>Written by a model from cited records</li>
+      <li><span class="ix-k ix-k--sim">Hypothetical</span>A simulation, never a trade</li>
+    </ul>
 
     <!-- 01 Briefing -->
-    <section class="ix-section" id="briefing" aria-labelledby="briefing-title">
+    <section class="ix-section ix-panel" id="briefing" role="tabpanel" aria-labelledby="ix-tab-briefing briefing-title">
       <header class="ix-head">
         <p class="ix-head__no">01</p>
         <div class="ix-head__text">
@@ -109,19 +125,19 @@
           </section>
           <section class="ix-card">
             <h3 class="ix-card__title">How stories are ordered</h3>
-            <ul class="ix-rules" data-rules><li>Loading…</li></ul>
+            <ul class="ix-rules" data-rules><li>Shown with your briefing.</li></ul>
             <p class="ix-note">Ordering rules only. Insidir does not score, rate or predict securities.</p>
           </section>
           <section class="ix-card">
             <h3 class="ix-card__title">Coverage</h3>
-            <div data-coverage><p class="ix-note">Loading…</p></div>
+            <div data-coverage><p class="ix-note">Shown with your briefing.</p></div>
           </section>
         </aside>
       </div>
     </section>
 
     <!-- 02 Investigate -->
-    <section class="ix-section ix-section--investigate" id="investigate" aria-labelledby="investigate-title">
+    <section class="ix-section ix-section--investigate ix-panel" id="investigate" role="tabpanel" aria-labelledby="ix-tab-investigate investigate-title" hidden>
       <header class="ix-head">
         <p class="ix-head__no">02</p>
         <div class="ix-head__text">
@@ -148,7 +164,7 @@
     </section>
 
     <!-- 03 Mirror -->
-    <section class="ix-section ix-section--mirror" id="mirror" aria-labelledby="mirror-title">
+    <section class="ix-section ix-section--mirror ix-panel" id="mirror" role="tabpanel" aria-labelledby="ix-tab-mirror mirror-title" hidden>
       <header class="ix-head">
         <p class="ix-head__no">03</p>
         <div class="ix-head__text">

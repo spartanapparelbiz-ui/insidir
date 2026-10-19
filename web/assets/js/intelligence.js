@@ -1,4 +1,5 @@
-/* Insidir Intelligence (intelligence.html): Briefing, Investigate and Mirror.
+/* Insidir Intelligence (intelligence.html): Briefing, Investigate and Mirror, shown one at a time as tabs (the
+   address keeps the open one: #briefing, #investigate, #mirror). Each loads its data the first time it is opened.
    Every value on this page comes from the /v1 API and is shown as received; text from the server is escaped before
    it is placed in the page, and only https links to sec.gov (or Insidir's own pages) are rendered as links.
    401/402 responses are handled by app.js (sign in / subscribe). Motion is opacity only and stops under
@@ -48,20 +49,64 @@
     const step = now => { const k = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = format(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); else el.textContent = format(to); };
     requestAnimationFrame(step);
   }
+  const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
   const errorBlock = (title, e, retry) => '<div class="ix-error" role="alert"><strong>' + esc(title) + "</strong>" + esc(e && e.message || "Something went wrong.") + (retry ? ' <button type="button" class="ix-btn" data-retry="' + esc(retry) + '" style="margin-top:12px">Try again</button>' : "") + "</div>";
 
-  /* ---------- section bar: highlight the section being read ---------- */
-  function sectionSpy() {
-    const links = $$(".ix-bar a[data-spy]");
-    if (!("IntersectionObserver" in window)) return;
-    const seen = new Map();
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) seen.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0);
-      let best = null, ratio = 0;
-      for (const [id, r] of seen) if (r > ratio) { best = id; ratio = r; }
-      links.forEach(a => a.setAttribute("aria-current", String(a.dataset.spy === best)));
-    }, { rootMargin: "-120px 0px -45% 0px", threshold: [0, .1, .3, .6] });
-    ["briefing", "investigate", "mirror"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+  /* ---------- three experiences, one at a time ---------- */
+  const TABS = ["briefing", "investigate", "mirror"];
+  const opened = {};
+  function select(name, { scroll = false, focus = false } = {}) {
+    if (!TABS.includes(name)) name = "briefing";
+    for (const t of TABS) {
+      const on = t === name, tab = $("#ix-tab-" + t), panel = document.getElementById(t);
+      if (tab) { tab.setAttribute("aria-selected", String(on)); tab.tabIndex = on ? 0 : -1; }
+      if (panel) panel.hidden = !on;
+    }
+    $$("[data-open]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.open === name)));
+    const inst = $("[data-instrument]");
+    if (inst) inst.dataset.active = name;
+    if (location.hash !== "#" + name) try { history.replaceState(null, "", location.pathname + location.search + "#" + name); } catch { /* keep the URL */ }
+    // Each experience asks for its data the first time it is opened.
+    if (!opened[name]) { opened[name] = true; if (name === "briefing") loadBriefing(); if (name === "mirror") loadMirror(); }
+    if (focus) { const t = $("#ix-tab-" + name); if (t) t.focus(); }
+    if (scroll) { const bar = $(".ix-bar"), panel = document.getElementById(name); if (panel) panel.scrollIntoView({ block: "start", behavior: reduce.matches ? "auto" : "smooth" }); else if (bar) bar.scrollIntoView({ block: "start" }); }
+  }
+  function wireTabs() {
+    const tabs = $$("[role=tab][data-tab]");
+    tabs.forEach(t => t.addEventListener("click", () => {
+      // From under the sticky bar, open the new panel at its top; from the hero, stay put.
+      const stuck = $(".ix-bar").getBoundingClientRect().top < 140;
+      select(t.dataset.tab, { scroll: stuck });
+    }));
+    $(".ix-tabs").addEventListener("keydown", e => {
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      const to = e.key === "ArrowRight" ? (i + 1) % tabs.length : e.key === "ArrowLeft" ? (i - 1 + tabs.length) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1;
+      if (to < 0) return;
+      e.preventDefault();
+      select(tabs[to].dataset.tab, { focus: true });
+    });
+    $$("[data-open]").forEach(b => b.addEventListener("click", () => select(b.dataset.open, { scroll: true })));
+    // In-page links such as "Ask a question instead" (#investigate) open their tab.
+    window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h)) select(h, { scroll: true }); });
+  }
+  /* Radio groups move with the arrow keys, as radio groups do. */
+  function wireRadios() {
+    $$("main.ix [role=radiogroup]").forEach(g => {
+      const items = () => $$("[role=radio]", g);
+      const sync = () => { const list = items(), on = list.find(x => x.getAttribute("aria-checked") === "true") || list[0]; list.forEach(x => { x.tabIndex = x === on ? 0 : -1; }); };
+      sync();
+      new MutationObserver(sync).observe(g, { attributes: true, subtree: true, attributeFilter: ["aria-checked"] });
+      g.addEventListener("keydown", e => {
+        const list = items(), i = list.indexOf(document.activeElement);
+        if (i < 0) return;
+        const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        const next = list[(i + step + list.length) % list.length];
+        next.focus(); next.click();
+      });
+    });
   }
 
   /* ---------- AI availability (decides whether summary buttons are offered at all) ---------- */
@@ -114,8 +159,10 @@
     feed.setAttribute("aria-busy", "false");
     const subj = d.subjects || {};
     const edition = $("[data-edition]");
+    const nT = Number(subj.tickers) || 0, nP = Number(subj.people) || 0;
     if (edition) edition.textContent = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) +
-      " · Edition for " + subj.tickers + " compan" + (subj.tickers === 1 ? "y" : "ies") + " and " + subj.people + " " + (subj.people === 1 ? "person" : "people") + " you follow" + (d.since ? " · new since " + fmtTime(d.since) : "");
+      " · Edition for " + nT + " compan" + (nT === 1 ? "y" : "ies") + " and " + nP + " " + (nP === 1 ? "person" : "people") + " you follow" + (d.since ? " · new since " + fmtTime(d.since) : "");
+    const span = brief.days === 1 ? "in the last 24 hours" : "in the last " + brief.days + " days";
     const heroMeta = $("[data-hero-brief]");
     if (d.needsSetup) {
       if (heroMeta) heroMeta.textContent = "Follow a company to begin";
@@ -127,10 +174,11 @@
       const list = [...(d.stories || [])];
       if (brief.order === "latest") list.sort((a, b) => String(b.disclosedAt).localeCompare(String(a.disclosedAt)));
       const fresh = list.filter(s => s.isNew).length;
-      if (heroMeta) heroMeta.textContent = list.length ? list.length + " " + (list.length === 1 ? "story" : "stories") + (fresh ? " · " + fresh + " new" : "") + " this week" : "Quiet this week";
+      if (heroMeta) heroMeta.textContent = list.length ? list.length + " " + (list.length === 1 ? "story" : "stories") + (fresh ? " · " + fresh + " new" : "") + " " + span : "Quiet " + span;
       feed.innerHTML = list.length ? list.map(storyHtml).join("") :
         '<div class="ix-empty"><h3>Nothing new in the last ' + (brief.days === 1 ? "24 hours" : brief.days + " days") + ".</h3><p>None of the companies or people you follow filed a Form 4 or company report that Insidir has indexed in this window. Disclosures can arrive days after an event, so this can change.</p>" +
         '<div class="ix-empty__actions">' + (brief.days < 30 ? '<button type="button" class="ix-btn" data-widen>Show the last 30 days</button>' : "") + '<a class="ix-btn" href="#investigate">Ask a question instead</a></div></div>';
+      store("insidir:onboard:briefing", "1");
       const widen = $("[data-widen]", feed);
       if (widen) widen.addEventListener("click", () => setWindow(30));
       hydrate(feed);
@@ -165,6 +213,8 @@
       if (e.status === 401 || e.status === 402) return;
       feed.innerHTML = errorBlock("The briefing could not be loaded.", e, "briefing");
       $("[data-delivery]").textContent = "Delivery settings are unavailable until the briefing loads.";
+      $("[data-rules]").innerHTML = "<li>Shown once the briefing loads.</li>";
+      $("[data-coverage]").innerHTML = '<p class="ix-note">Shown once the briefing loads.</p>';
     }
   }
   function setWindow(days) {
@@ -187,7 +237,7 @@
     btn.disabled = true; btn.textContent = "Reading the filing…";
     try {
       const r = await api("/v1/ai/explain?accession=" + encodeURIComponent(btn.dataset.explain));
-      box.innerHTML = '<div class="ix-ai"><p>' + esc(r.explanation) + "</p><small>Written by AI from this filing’s reported lines and checked against its figures" + (r.cached ? " · shared summary" : "") + ". The SEC document above is the authoritative record.</small></div>";
+      box.innerHTML = '<div class="ix-ai"><span class="ix-k ix-k--ai">AI</span><p>' + esc(r.explanation) + "</p><small>Written by AI from this filing’s reported lines and checked against its figures" + (r.cached ? " · shared summary" : "") + ". The SEC document above is the authoritative record.</small></div>";
     } catch (e) {
       box.innerHTML = '<p class="ix-plain">' + esc(e.status === 429 ? e.message : e.status === 422 ? "The summary did not pass Insidir’s source checks, so it is not shown. The filing above is the full record." : "A plain-English summary is not available right now. The filing above is the full record.") + "</p>";
     }
@@ -225,7 +275,6 @@
   /* ======================= INVESTIGATE ======================= */
   const thread = $("[data-thread]"), form = $("[data-ask]"), field = $("#ix-question"), askError = $("[data-ask-error]");
   let lastPlan = null, seq = 0;
-  const STEPS = ["Reading your question", "Finding the companies, people and dates it names", "Retrieving matching SEC records", "Assembling a cited answer"];
 
   function autosize() { field.style.height = "auto"; field.style.height = Math.min(220, field.scrollHeight) + "px"; }
   const cites = (ids, aid) => (ids || []).length ? '<sup class="ix-cites">' + ids.map(n => '<a class="ix-cite" href="#ix-src-' + aid + "-" + Number(n) + '" aria-label="Source ' + Number(n) + '">' + Number(n) + "</a>").join("") + "</sup>" : "";
@@ -268,7 +317,7 @@
       }
     }
     const sources = (a.citations || []).map(c => { const url = secUrl(c.url); return '<li id="ix-src-' + aid + "-" + c.id + '"><b>' + c.id + "</b><span>" + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(c.label) + " ↗</a>" : esc(c.label)) + "<br>" + (c.date ? "Event " + esc(fmtDay(c.date)) + " · " : "") + "Filed " + esc(fmtDay(c.publishedAt)) + "</span></li>"; }).join("");
-    const side = (sources ? '<section class="ix-card"><h4 class="ix-card__title">Sources</h4><ol class="ix-srclist">' + sources + "</ol></section>" : "") +
+    const side = (sources ? '<section class="ix-card"><h4 class="ix-card__title">Sources <span class="ix-k ix-k--source">Source</span></h4><ol class="ix-srclist">' + sources + "</ol></section>" : "") +
       ((a.gaps || []).length ? '<section class="ix-card"><h4 class="ix-card__title">What this answer cannot tell you</h4><ul class="ix-gaps">' + a.gaps.map(g => "<li>" + esc(g) + "</li>").join("") + "</ul></section>" : "") +
       ((a.followUps || []).length ? '<section class="ix-card"><h4 class="ix-card__title">Ask next</h4><ul class="ix-follow">' + a.followUps.map(f => '<li><button type="button" data-follow>' + esc(f) + "</button></li>").join("") + "</ul></section>" : "");
     return '<p class="ix-status">' + esc(status) + " · retrieved " + esc(fmtTime(a.retrievedAt)) + "</p>" + (planBits.length ? '<ul class="ix-plan" aria-label="How Insidir read the question">' + planBits.join("") + "</ul>" : "") +
@@ -285,25 +334,25 @@
     $$(".ix-answer", thread).forEach(el => { if (el.closest(".ix-prev")) return; const d = document.createElement("details"); d.className = "ix-prev"; d.innerHTML = "<summary>" + esc(el.dataset.q) + "</summary>"; el.replaceWith(d); d.appendChild(el); });
     const box = document.createElement("article");
     box.className = "ix-answer"; box.dataset.q = q; box.id = aid;
-    box.innerHTML = '<h3 class="ix-answer__q">' + esc(q) + '</h3><ol class="ix-steps" aria-label="Research status">' + STEPS.map((s, i) => '<li class="' + (i === 0 ? "is-active" : "") + '">' + esc(s) + "</li>").join("") + "</ol>";
+    // What is happening, said once and truthfully: no staged progress that the server does not report.
+    box.innerHTML = '<h3 class="ix-answer__q">' + esc(q) + '</h3><p class="ix-working" role="status">Finding the companies, people and dates in your question, then retrieving the matching SEC records…<i aria-hidden="true"></i></p>';
+    box.setAttribute("aria-busy", "true");
     thread.prepend(box);
     box.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
-    const steps = $$(".ix-steps li", box);
-    let k = 0;
-    const timer = setInterval(() => { if (k < steps.length - 1) { steps[k].className = "is-done"; steps[++k].className = "is-active"; } }, 450);
     const btn = $(".ix-ask__go", form); btn.disabled = true;
     try {
       const a = await api("/v1/me/intelligence/investigate", { method: "POST", body: { question: q, context: followUp && lastPlan ? lastPlan : null } });
-      clearInterval(timer);
       if (a.plan && a.status !== "refused") lastPlan = a.plan;
       box.innerHTML = '<h3 class="ix-answer__q">' + esc(q) + "</h3>" + answerHtml(a, aid);
       box._answer = a;
+      box._followUp = followUp;
       hydrate(box);
+      store("insidir:onboard:investigate", "1");
     } catch (e) {
-      clearInterval(timer);
       if (e.status === 401 || e.status === 402) return;
-      box.innerHTML = '<h3 class="ix-answer__q">' + esc(q) + "</h3>" + errorBlock(e.status === 429 ? "Research limit reached." : "This question could not be researched right now.", e);
-    } finally { btn.disabled = false; }
+      box._followUp = followUp;
+      box.innerHTML = '<h3 class="ix-answer__q">' + esc(q) + "</h3>" + errorBlock(e.status === 429 ? "Research limit reached." : "This question could not be researched right now.", e, e.status === 429 ? null : "ask");
+    } finally { btn.disabled = false; box.removeAttribute("aria-busy"); }
   }
 
   async function synth(btn) {
@@ -315,7 +364,7 @@
       if (r.status === "ready") {
         const aid = article.id;
         const html = esc(r.text).split(/\n{2,}/).map(p => "<p>" + p.replace(/\[(\d{1,3})\]/g, (m, n) => '<a class="ix-cite" href="#ix-src-' + aid + "-" + n + '">' + n + "</a>") + "</p>").join("");
-        box.innerHTML = '<p class="ix-sub">Plain-English synthesis</p><div class="ix-ai">' + html + "<small>Written by AI (" + esc(r.tier === "deep" ? "research model" : "standard model") + ") from the cited records only; figures and citations were checked before display" + (r.cached ? "; shared with other readers who asked about the same records" : "") + ".</small></div>";
+        box.innerHTML = '<p class="ix-sub">Plain-English synthesis</p><div class="ix-ai"><span class="ix-k ix-k--ai">AI</span>' + html + "<small>Written by AI (" + esc(r.tier === "deep" ? "research model" : "standard model") + ") from the cited records only; figures and citations were checked before display" + (r.cached ? "; shared with other readers who asked about the same records" : "") + ".</small></div>";
       } else box.innerHTML = '<p class="ix-sub">Plain-English synthesis</p><p class="ix-plain">' + esc(r.reason || "Not available.") + "</p>";
     } catch (e) { box.innerHTML = '<p class="ix-sub">Plain-English synthesis</p><p class="ix-plain">' + esc(e.message) + "</p>"; }
   }
@@ -329,13 +378,15 @@
       const f = e.target.closest("[data-follow]");
       if (f) { field.value = f.textContent; autosize(); ask(f.textContent, { followUp: true }); return; }
       const s = e.target.closest("[data-synth]");
-      if (s) synth(s);
+      if (s) { synth(s); return; }
+      const again = e.target.closest('[data-retry="ask"]');
+      if (again) { const box = again.closest(".ix-answer"); if (box) { box.remove(); ask(box.dataset.q, { followUp: !!box._followUp }); } }
     });
   }
 
   /* ======================= MIRROR ======================= */
   const mirror = $("[data-mirror]");
-  const mstate = { managers: [], cik: null, detail: null, budget: 500, timer: null };
+  const mstate = { managers: [], cik: null, detail: null, budget: 500, timer: null, simSeq: 0, pickSeq: 0 };
   const SHADES = ["#e9e4da", "#bdb9b1", "#9e9b94", "#8c8983", "#7b7873", "#696762", "#575550", "#47453f", "#3a3935", "#2f2f2c"];
 
   function unavailable(m) {
@@ -353,7 +404,7 @@
       '<p class="ix-profile__meta"><span>Holdings as of ' + esc(fmtDay(c.periodOfReport)) + "</span><span>Filed with the SEC " + esc(fmtDay(c.filedAt)) + "</span>" + (secUrl(c.sourceUrl) ? '<a href="' + esc(secUrl(c.sourceUrl)) + '" target="_blank" rel="noopener noreferrer">Filing ↗</a>' : "") + (secUrl(c.infoTableUrl) ? '<a href="' + esc(secUrl(c.infoTableUrl)) + '" target="_blank" rel="noopener noreferrer">Information table ↗</a>' : "") + "</p>" +
       '<p style="margin:0 0 20px"><span class="ix-badge' + (complete ? "" : " ix-badge--warn") + '">' + (complete ? "Totals match the filing’s cover page" : c.completeness === "totals_missing" ? "No cover-page totals to check against" : "Totals do not match the cover page") + "</span></p>" +
       '<dl class="ix-stats"><div><dt>Reported value</dt><dd>' + esc(compact(d.reportedValue)) + "<small>" + esc(money(d.reportedValue)) + "</small></dd></div><div><dt>Positions</dt><dd>" + d.positionsTotal + "<small>" + c.entries + " table rows</small></dd></div><div><dt>Quarter</dt><dd>" + esc(String(c.periodOfReport || "").slice(0, 7) || "—") + "<small>Quarter end</small></dd></div><div><dt>Disclosed</dt><dd>" + esc(fmtDay(c.filedAt).replace(/, \d{4}$/, "")) + "<small>" + esc(String(c.filedAt || "").slice(0, 4)) + "</small></dd></div></dl>" +
-      '<section class="ix-sim" aria-labelledby="ix-sim-title"><h4 class="ix-card__title" id="ix-sim-title">Illustrative allocation</h4>' +
+      '<section class="ix-sim" aria-labelledby="ix-sim-title"><h4 class="ix-card__title" id="ix-sim-title">Illustrative allocation <span class="ix-k ix-k--sim">Hypothetical</span></h4>' +
       '<div class="ix-sim__row"><div class="ix-budget"><label for="ix-budget">Hypothetical budget</label><div class="ix-budget__field"><span aria-hidden="true">$</span><input id="ix-budget" inputmode="decimal" autocomplete="off" value="' + esc(String(mstate.budget)) + '" aria-describedby="ix-budget-note"></div></div>' +
       '<div class="ix-chips" role="group" aria-label="Quick budgets">' + [100, 500, 1000, 10000].map(v => '<button type="button" data-budget="' + v + '" aria-pressed="' + (mstate.budget === v) + '">' + money(v) + "</button>").join("") + "</div></div>" +
       '<p class="ix-note" id="ix-budget-note" style="margin:0 0 18px">Each eligible holding gets the share of the budget that its reported value is of the eligible total, rounded to cents. Nothing is purchased or sent anywhere.</p>' +
@@ -402,33 +453,39 @@
     if (input) input.removeAttribute("aria-invalid");
     mstate.budget = Number(raw);
     $$("[data-budget]", mirror).forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.budget) === mstate.budget)));
+    // Only the newest budget's answer is drawn: a slower earlier reply never overwrites a later one.
+    const mine = ++mstate.simSeq;
     try {
       const s = await api("/v1/intelligence/mirror/simulate?cik=" + encodeURIComponent(mstate.cik) + "&budget=" + encodeURIComponent(raw));
+      if (mine !== mstate.simSeq) return;
       const prev = $("[data-tw=allocated]", box);
       const was = prev ? Number(prev.dataset.value || 0) : 0;
       box.innerHTML = simHtml(s);
       const el = $("[data-tw=allocated]", box);
       if (el) { el.dataset.value = String(was); tween(el, s.allocated, v => money(v, true)); }
-    } catch (e) { if (e.status !== 401 && e.status !== 402) box.innerHTML = errorBlock("The simulation could not be run.", e); }
+    } catch (e) { if (mine === mstate.simSeq && e.status !== 401 && e.status !== 402) box.innerHTML = errorBlock("The simulation could not be run.", e); }
   }
   async function selectManager(cik) {
     mstate.cik = cik;
     $$("[data-manager]", mirror).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.manager === cik)));
     const pane = $("[data-profile]", mirror);
     pane.innerHTML = '<div class="ix-skel ix-skel--tall" aria-hidden="true"><i></i><i></i><i></i><i></i></div>';
+    const mine = ++mstate.pickSeq;
     try {
-      mstate.detail = await api("/v1/intelligence/mirror/managers/" + encodeURIComponent(cik));
+      const detail = await api("/v1/intelligence/mirror/managers/" + encodeURIComponent(cik));
+      if (mine !== mstate.pickSeq) return;
+      mstate.detail = detail;
       pane.innerHTML = profileHtml(mstate.detail);
       pane.style.animation = "none"; void pane.offsetWidth; pane.style.animation = "";
       runSim();
-    } catch (e) { if (e.status !== 401 && e.status !== 402) pane.innerHTML = errorBlock("This manager’s filings could not be loaded.", e, "mirror"); }
+    } catch (e) { if (mine === mstate.pickSeq && e.status !== 401 && e.status !== 402) pane.innerHTML = errorBlock("This manager’s filings could not be loaded.", e, "mirror"); }
   }
   async function loadMirror() {
     try {
       const m = await api("/v1/intelligence/mirror/managers");
       mirror.setAttribute("aria-busy", "false");
       const heroMeta = $("[data-hero-mirror]");
-      if (!m.available) { if (heroMeta) heroMeta.textContent = "Awaiting first 13F import"; unavailable(m); return; }
+      if (!m.available || !Array.isArray(m.managers) || !m.managers.length) { if (heroMeta) heroMeta.textContent = "Awaiting first 13F import"; unavailable(m); return; }
       mstate.managers = m.managers;
       if (heroMeta) heroMeta.textContent = m.managers.length + (m.managers.length === 1 ? " manager" : " managers") + " · Form 13F";
       mirror.className = "ix-mirror";
@@ -452,13 +509,14 @@
   }
 
   function start() {
-    sectionSpy();
-    wireBriefing(); wireInvestigate(); wireMirror();
-    aiStatus().finally(loadBriefing);
-    loadMirror();
+    wireTabs(); wireBriefing(); wireInvestigate(); wireMirror(); wireRadios();
+    // AI status and the briefing load side by side; explain buttons appear once AI is known to be on.
+    aiStatus().then(() => { if (aiConfigured && brief.data && !brief.data.needsSetup) renderBriefing(); });
     autosize();
-    const q = new URLSearchParams(location.search).get("q");
-    if (q && q.length <= 400) { field.value = q; autosize(); ask(q); }
+    const q = new URLSearchParams(location.search).get("q"), hash = location.hash.slice(1);
+    const ask0 = q && q.length <= 400;
+    select(ask0 ? "investigate" : TABS.includes(hash) ? hash : "briefing");
+    if (ask0) { field.value = q; autosize(); ask(q); }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

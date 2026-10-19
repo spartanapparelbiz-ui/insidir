@@ -50,16 +50,33 @@ async function open({ width, mobile = false, scenario = {}, reduced = false, pat
   return { ctx, page, sent, errors };
 }
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+// Briefing, Investigate and Mirror are tabs: open one before using it.
+const openTab = (page, name) => page.click("#ix-tab-" + name);
 
 for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, true]]) {
   const { ctx, page, sent, errors } = await open({ width, mobile });
   const tap = sel => mobile ? page.tap(sel) : page.click(sel);
-  await check(label + ": hero, section bar and three sections render", async () => {
+  await check(label + ": hero, the dotted-i keys, three tabs and their panels render", async () => {
     assert.match(await page.textContent(".ix-hero__title"), /Insidir Intelligence/i);
     assert.match(await page.textContent(".ix-hero__line"), /Information moves markets\. Understand what moves information\./);
     assert.ok(await page.$eval(".ix-hero__plate img", i => i.naturalWidth) > 0, "hero photograph loaded (its sharpness is checked by v13-palette-audit.mjs)");
-    for (const id of ["briefing", "investigate", "mirror"]) assert.ok(await page.$("#" + id));
+    for (const id of ["briefing", "investigate", "mirror"]) assert.ok(await page.$("#" + id + "[role=tabpanel]"));
+    assert.deepEqual(await page.$$eval("[role=tab]", t => t.map(x => [x.textContent.replace(/\d/g, ""), x.getAttribute("aria-selected")])), [["Briefing", "true"], ["Investigate", "false"], ["Mirror", "false"]]);
+    assert.equal(await page.isVisible("#investigate"), false, "one experience at a time");
+    assert.equal(new URL(page.url()).hash, "#briefing");
+    assert.ok(!sent.some(r => r.p.startsWith("/v1/intelligence/mirror")), "Mirror loads nothing until it is opened");
+    assert.equal(await page.$$eval("[data-open]", b => b.map(x => x.textContent.trim().length > 10).every(Boolean)), true, "every key of the i is labelled");
     assert.equal(await overflow(page), 0, "no horizontal overflow");
+  });
+  await check(label + ": tabs follow the keyboard and the address", async () => {
+    await page.focus("#ix-tab-briefing");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.getAttribute("#ix-tab-investigate", "aria-selected"), "true");
+    assert.equal(await page.evaluate(() => document.activeElement.id), "ix-tab-investigate");
+    assert.equal(new URL(page.url()).hash, "#investigate");
+    await page.keyboard.press("ArrowLeft");
+    assert.equal(await page.getAttribute("#ix-tab-briefing", "aria-selected"), "true");
+    assert.equal(await page.isVisible("[data-feed]"), true);
   });
   await check(label + ": briefing stories with dates, reasons and SEC sources", async () => {
     await page.waitForSelector(".ix-story");
@@ -94,6 +111,7 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     assert.equal(!!(await page.$("[data-explain]")), !!F.aiStatus.configured);
   });
   await check(label + ": an example question produces a cited answer whose citations resolve", async () => {
+    await openTab(page, "investigate");
     await tap("[data-examples] li:first-child button");
     await page.waitForSelector(".ix-answer .ix-summary");
     const cites = await page.$$eval(".ix-answer a.ix-cite", a => a.map(x => x.getAttribute("href")));
@@ -116,7 +134,10 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     assert.equal(await page.isVisible("[data-ask-error]"), true);
   });
   await check(label + ": Mirror shows the manager, the simulator responds to chips and rejects a bad budget", async () => {
+    await page.click("[data-open='mirror']");
+    assert.equal(await page.getAttribute("#ix-tab-mirror", "aria-selected"), "true", "the base of the i opens Mirror");
     await page.waitForSelector("[data-sim] .ix-bar-chart");
+    assert.match(await page.textContent("#ix-sim-title"), /Hypothetical/);
     await tap("[data-budget='1000']");
     await page.waitForTimeout(300);
     assert.ok(sent.some(r => r.p === "/v1/intelligence/mirror/simulate" && /budget=1000/.test(r.q)));
@@ -150,6 +171,7 @@ await check("errors: a failing briefing shows a retry; a failing frequency save 
     "/v1/intelligence/mirror/managers": () => [200, { available: false, managers: [], reason: "Form 13F ingestion has not run yet on this deployment.", notes: F.managers.notes }] } });
   await page.waitForSelector("[data-retry='briefing']");
   assert.match(await page.textContent("[data-feed]"), /could not be loaded/);
+  assert.doesNotMatch(await page.textContent(".ix-rail"), /Loading/, "the rail is never left loading");
   fail = false;
   await page.click("[data-retry='briefing']");
   await page.waitForSelector(".ix-story");
@@ -158,6 +180,8 @@ await check("errors: a failing briefing shows a retry; a failing frequency save 
   await page.waitForTimeout(300);
   assert.equal(await page.$eval("[data-frequency] [aria-checked=true]", b => b.dataset.frequencyValue), before);
   assert.match(await page.textContent("[data-delivery]"), /Not saved/);
+  await openTab(page, "mirror");
+  await page.waitForSelector(".ix-unavailable");
   assert.match(await page.textContent("[data-mirror]"), /Mirror opens when the first Form 13F reports are imported/);
   assert.ok(!sent.some(r => r.p === "/v1/intelligence/mirror/simulate"), "no simulation without data");
   await ctx.close();
@@ -171,6 +195,7 @@ await check("AI on: a filing explanation and a cited synthesis are shown with th
   await page.waitForSelector(".ix-ai");
   assert.match(await page.textContent(".ix-story .ix-ai"), /Written by AI/);
   assert.ok(sent.some(r => r.p === "/v1/ai/explain" && /accession=\d{18}/.test(r.q)));
+  await openTab(page, "investigate");
   await page.fill("#ix-question", "What did Nvidia insiders disclose this month?");
   await page.click(".ix-ask__go");
   await page.waitForSelector("[data-synth]");

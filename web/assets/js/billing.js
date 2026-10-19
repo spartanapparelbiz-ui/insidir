@@ -155,8 +155,10 @@
         box.dataset.state = "active";
         title.textContent = "Your subscription is active.";
         text.textContent = "Thank you for subscribing. The whole research workspace is open to you now.";
+        // A new member's overview opens on a short, optional "Get started" (assets/js/onboarding.js).
+        try { if (!localStorage.getItem("insidir:onboard")) localStorage.setItem("insidir:onboard", "new"); } catch (_) { /* storage unavailable */ }
         open.setAttribute("href", next || "dashboard.html");
-        open.textContent = next ? "Continue where you left off" : "Open dashboard";
+        open.textContent = next ? "Continue where you left off" : "Open your overview";
         open.hidden = false;
         try { history.replaceState(null, "", location.pathname); } catch (_) { /* keep the URL */ }
         render(state.me, state.bill); // the confirmed answer from Stripe, without asking again
