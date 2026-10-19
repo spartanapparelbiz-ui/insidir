@@ -213,13 +213,15 @@ test("headlines link to publishers and only stories naming the company are kept"
 });
 
 test("company search ranks exact tickers, keeps share classes and matches names", () => {
-  const rows = [["NVDA", "NVIDIA CORP", "1045810"], ["GOOGL", "Alphabet Inc.", "1652044"], ["GOOG", "Alphabet Inc.", "1652044"], ["KO", "COCA COLA CO", "21344"], ["COKE", "Coca-Cola Consolidated, Inc.", "317540"], ["F", "FORD MOTOR CO", "37996"]]
+  const rows = [["NVDA", "NVIDIA CORP", "1045810"], ["GOOGL", "Alphabet Inc.", "1652044"], ["GOOG", "Alphabet Inc.", "1652044"], ["KO", "COCA COLA CO", "21344"], ["COKE", "Coca-Cola Consolidated, Inc.", "317540"], ["F", "FORD MOTOR CO", "37996"], ["TSLA", "Tesla, Inc.", "1318605"], ["DJT", "Trump Media & Technology Group Corp.", "1849635"]]
     .map(([ticker, name, cik], rank) => ({ ticker, name, cik: cik.padStart(10, "0"), key: name.toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(), rank }));
   assert.equal(rankCompanies(rows, "nvda")[0].ticker, "NVDA");
   assert.deepEqual(rankCompanies(rows, "goog").map(r => r.ticker), ["GOOG", "GOOGL"]);
   assert.equal(rankCompanies(rows, "alphabet").length, 1, "a name search lists an issuer once");
   assert.equal(rankCompanies(rows, "coca")[0].ticker, "KO");
   assert.equal(rankCompanies(rows, "F")[0].ticker, "F");
+  assert.equal(rankCompanies(rows, "tesla")[0].ticker, "TSLA");
+  assert.equal(rankCompanies(rows, "trump")[0].ticker, "DJT");
   assert.deepEqual(rankCompanies(rows, ""), []);
 });
 
