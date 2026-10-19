@@ -62,7 +62,7 @@ const CLAIM_SQL=[
  "ORDER BY id LIMIT 30 FOR UPDATE SKIP LOCKED) jobs WHERE d.id=jobs.id",
  "RETURNING d.id,d.subscription_id,d.event_key,d.attempts"
 ].join(" ");
-export async function sendNotifications({run=queryDb,send=webpush.sendNotification}={}){
+export async function sendNotifications({run=queryDb,send=(...args)=>webpush.sendNotification(...args)}={}){
  if(!pushReady())return {enabled:false,sent:0};
  const jobs=(await run(CLAIM_SQL)).rows;
  let sent=0,failed=0;
