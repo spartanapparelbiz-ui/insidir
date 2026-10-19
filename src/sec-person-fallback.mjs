@@ -18,6 +18,8 @@ export function normalizeSecOwnerIndex(data, cik, limit = HISTORY_LIMIT) {
   const id = String(cik || "").replace(/^0+/, "");
   if (!/^\d{1,10}$/.test(id) || !id || !data || typeof data !== "object") return null;
   if (data.cik == null || String(data.cik).replace(/^0+/,"") !== id) return null;
+  // A listed company can also submit Form 4 documents, but is not a person.
+  if (Array.isArray(data.tickers) && data.tickers.some(t=>String(t||"").trim())) return null;
   const recent = data.filings?.recent;
   if (!recent || !Array.isArray(recent.form) || !Array.isArray(recent.accessionNumber)) return null;
   const entries = [], seen = new Set();
