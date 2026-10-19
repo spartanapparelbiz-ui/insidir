@@ -8,7 +8,8 @@ const allowedHosts = new Set([
   "query2.finance.yahoo.com",
   "feeds.finance.yahoo.com",
   "query.wikidata.org",
-  "en.wikipedia.org"
+  "en.wikipedia.org",
+  "public.api.bsky.app"
 ]);
 
 export function allowedExternalUrl(input) {
