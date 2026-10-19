@@ -17,6 +17,7 @@ import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabi
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
+import {pushStatus,subscribePush,unsubscribePush} from "./push.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -449,6 +450,10 @@ async function route(req,res,ctx){
     const limit=positive((u.searchParams.get("limit")||"").trim()||null,40,100);
     return json(res,200,await followedPeopleUpdates(user.id,limit,ctx.query));
   }
+  if(p==="/v1/me/push" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await pushStatus(user.id,ctx.query));
+  }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
     const w=await query("SELECT ticker,created_at FROM watchlist WHERE user_id=$1 ORDER BY ticker",[user.id]);
@@ -483,6 +488,13 @@ async function route(req,res,ctx){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
     // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
     const ip=clientAddress(req);
+    if(p==="/v1/me/push" && (m==="POST"||m==="DELETE")){
+      const user=await requireUser(req,ctx);
+      if(isLimited("push-settings:"+user.id,30,15*60*1000))throw failure(429,"Too many notification changes");
+      const payload=await body(req);
+      return json(res,200,m==="POST"?await subscribePush(user.id,payload,ctx.query)
+        :await unsubscribePush(user.id,payload?.endpoint,ctx.query));
+    }
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
