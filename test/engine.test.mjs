@@ -24,6 +24,17 @@ test("SEC Atom listings parse, deduplicate and reject untrusted hostnames",()=>{
   const x=parseAtom(atom);assert.equal(x.length,1);assert.equal(x[0].accession,accession);
   assert.equal(x[0].filerCik,"1234567");assert.equal(x[0].sourceUrl,filing.sourceUrl);
 });
+test("SEC Atom type=4 prefix matches 424B forms: importer must exclude prospectuses",()=>{
+  const xml='<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'+
+   '<entry><title>424B2 - OFFERING</title><filing-type>424B2</filing-type><updated>2026-10-19T10:00:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000043/x-index.htm"/></entry>'+
+   '<entry><title>4 - STOCK TRANSACTION</title><filing-type>4</filing-type><updated>2026-10-19T10:01:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000044/x-index.htm"/></entry>'+
+   '<entry><title>4/A - AMENDMENT</title><updated>2026-10-19T10:02:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000045/x-index.htm"/></entry>'+
+   '<entry><title>UNKNOWN</title><updated>2026-10-19T10:03:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000046/x-index.htm"/></entry></feed>';
+  const filings=parseAtom(xml);
+  assert.deepEqual(filings.map(x=>x.accession),["000123456726000044","000123456726000045"]);
+  assert.deepEqual(filings.map(x=>x.formType),["4","4/A"]);
+});
+
 test("Form 4 parses transactions, not every filing as a purchase",()=>{
   const parsed=parseOwnership(ownership,filing);
   assert.equal(parsed.ticker,"EXMP");assert.equal(parsed.owners[0].name,"JANE SAMPLE");
