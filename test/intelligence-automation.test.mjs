@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {secAnnouncementEvents,publicBlueskyEvents,monitorSources} from "../src/intelligence-monitor.mjs";
+import {secAnnouncementEvents,publicBlueskyEvents,monitorSources,parseOfficial8KFeed} from "../src/intelligence-monitor.mjs";
 import {parseHouseIndex,houseApproved} from "../src/house-disclosures.mjs";
 import {validateSubscription,pushMessage} from "../src/push.mjs";
 import {evidenceFromFiling} from "../src/ai-explain.mjs";
@@ -18,6 +18,18 @@ test("Only verifiable and recent SEC 8-K/6-K entries become monitored events",()
   assert.deepEqual(events.map(e=>e.metadata.form),["8-K","6-K"]);
   assert.ok(events.every(e=>e.source_url?.startsWith("https://www.sec.gov/Archives/edgar/data/")));
   assert.ok(events.every(e=>e.source_type==="sec_notice"));
+});
+test("Market-wide SEC Atom feed keeps only verified 8-K entries with original links",()=>{
+ const a="000032019326000010",b="000032019326000011";
+ const base="https://www.sec.gov/Archives/edgar/data/320193/";
+ const atom='<feed>'+
+  '<entry><title>8-K - APPLE INC.</title><updated>'+new Date().toISOString()+'</updated><link href="'+base+a+'/a-index.html"/></entry>'+
+  '<entry><title>424B2 - OFFERING</title><updated>'+new Date().toISOString()+'</updated><link href="'+base+b+'/b-index.html"/></entry></feed>';
+ const events=parseOfficial8KFeed(atom,{0:{cik_str:320193,ticker:"AAPL"}});
+ assert.equal(events.length,1);
+ assert.equal(events[0].metadata.ticker,"AAPL");
+ assert.equal(events[0].event_key,"notice:"+a);
+ assert.match(events[0].source_url,/sec.gov\/Archives/);
 });
 test("Public Bluesky feed keeps only attributed original authors",()=>{
  const d={feed:[
