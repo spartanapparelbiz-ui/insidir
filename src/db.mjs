@@ -21,8 +21,8 @@ export async function query(sql, params=[]) { return requireDb().query(sql,param
 export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
   "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
   "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_sec_events.sql","016_explanations.sql","017_notifications.sql"]);
-export async function migrate() {
-  const db=requireDb();
+// `db` defaults to the engine's pool; tests that build the schema through their own pool pass it.
+export async function migrate(db=requireDb()) {
   // Every file is idempotent, but even a no-op ALTER TABLE takes an exclusive table lock, so re-running them all on
   // each start deadlocked with another instance's live queries. schema_migrations records each file's SHA-256: a
   // start runs only files that are new or whose text changed, and an unchanged database takes no table lock.

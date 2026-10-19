@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { totpCode, verifyTotp, base32Encode, base32Decode, generateTotpSecret } from "../src/totp.mjs";
 import { renderEmail, postmarkTransport, deliverDue, enqueueEmail, backoffMs, handleEmailWebhook, MAX_ATTEMPTS } from "../src/email.mjs";
 import { memoryLimiter } from "../src/rate-limit.mjs";
-import { MIGRATIONS } from "../src/db.mjs";
+import { MIGRATIONS, migrate } from "../src/db.mjs";
 import { readdirSync } from "node:fs";
 
 test("TOTP matches the RFC 6238 SHA-1 test vectors (6 digits)", () => {
@@ -72,8 +72,9 @@ test("outbox on PostgreSQL: idempotent queueing, retries with backoff, suppressi
   const pool = new pg.Pool({ connectionString: DB });
   t.after(() => pool.end());
   const q = (sql, p) => pool.query(sql, p);
-  // The schema (every migration is idempotent), as the engine applies it at start.
-  for (const f of MIGRATIONS) await q((await import("node:fs")).readFileSync(new URL("../sql/" + f, import.meta.url), "utf8"));
+  // The schema exactly as the engine applies it at start: under the migration lock, recorded in schema_migrations
+  // (running the files directly re-took their table locks while other suites were mid-query and deadlocked).
+  await migrate(pool);
   await q("DELETE FROM email_outbox WHERE kind LIKE 'test_%'");
   const tag = randomUUID();
   const K = ["test_alert", "test_billing"]; // other suites share the database: deliver only this test's messages
