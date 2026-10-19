@@ -19,6 +19,7 @@ import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import {pushStatus,subscribePush,unsubscribePush} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
+import {monitorSources} from "./intelligence-monitor.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -450,6 +451,16 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     const limit=positive((u.searchParams.get("limit")||"").trim()||null,40,100);
     return json(res,200,await followedPeopleUpdates(user.id,limit,ctx.query));
+  }
+  if(p==="/v1/intelligence/sources" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,{sources:monitorSources(),note:"Coverage is source-limited and may be delayed. Financial disclosures are not investment recommendations."});
+  }
+  if(p==="/v1/intelligence/events" && m==="GET"){
+    await requireUser(req,ctx);
+    const limit=positive(u.searchParams.get("limit"),40,100);
+    const rows=await ctx.query("SELECT event_key,source_type,title,source_url,subject,published_at,observed_at,verified,metadata FROM research_events WHERE verified=true ORDER BY observed_at DESC LIMIT $1",[limit]);
+    return json(res,200,{items:rows.rows,source:"Approved public record and public post metadata"});
   }
   if(p==="/v1/ai/explain" && m==="GET"){
     const user=await requireUser(req,ctx);
