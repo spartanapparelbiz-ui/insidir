@@ -510,13 +510,13 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
 test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
   const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
   // Every page that names a person or a company loads the identity helper and its stylesheet.
-  for(const page of ["dashboard","people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company"]){
+  for(const page of ["dashboard","people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company","intelligence"]){
     const html=await readFile(new URL(page+".html",web),"utf8");
     assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
     assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
   }
   // Pages that show headshots carry the credits footnote the helper fills.
-  for(const page of ["people","person","filing","research","alerts","portfolio","company"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  for(const page of ["people","person","filing","research","alerts","portfolio","company","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
   assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");

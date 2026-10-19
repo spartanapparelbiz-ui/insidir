@@ -41,7 +41,13 @@
   const ago = v => { const t = Date.parse(v); if (!Number.isFinite(t)) return ""; const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " d ago"; };
   const daysBetween = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000);
   const media = () => window.InsidirMedia;
-  const logo = (ticker, cik, name, size = 28) => { try { return tickerOk(ticker) && media() ? media().logo(ticker, size, { cik, name, label: name || ticker }) : ""; } catch { return ""; } };
+  /* Identity tiles from entity-media.js (window.InsidirMedia): a company's real logo, a reporting person's real headshot
+     (by owner CIK, with the issuer's logo standing in), resolved in one /v1/media batch per render. Sizes are the
+     helper's named sizes (xs 20px, sm 28px, md 41px, lg 63px). A tile beside the name it pictures is aria-hidden. */
+  const bare = c => String(c || "").replace(/^0+/, "");
+  const logo = (ticker, cik, name, size = "sm") => { try { const m = media(), T = tickerOk(ticker) ? ticker : "", C = cikOk(bare(cik)) ? bare(cik) : undefined; return m && (T || C) ? m.logo(T, size, { cik: C, name }) : ""; } catch { return ""; } };
+  const face = (name, cik, ticker, issuerCik, size = "xs") => { try { const m = media(), C = bare(cik); return m && cikOk(C) ? m.portrait(name || "", tickerOk(ticker) ? ticker : "", size, { cik: C, issuerCik: cikOk(bare(issuerCik)) ? bare(issuerCik) : undefined }) : ""; } catch { return ""; } };
+  const ent = (tile, inner) => tile ? '<span class="ix-ent">' + tile + "<span>" + inner + "</span></span>" : inner;
   const hydrate = root => { try { media() && media().hydrate(root); } catch { /* decoration */ } };
   const companyLink = (t, label) => tickerOk(t) ? '<a class="ix-ticker" href="company.html?ticker=' + encodeURIComponent(t) + '">' + esc(label || t) + "</a>" : '<span class="ix-ticker">' + esc(label || "—") + "</span>";
   const personLink = (cik, name) => cikOk(String(cik || "")) ? '<a href="person.html?cik=' + encodeURIComponent(cik) + '">' + esc(name) + "</a>" : esc(name);
@@ -82,7 +88,7 @@
     if (!b) return { id: "findings", label: "Research findings", count: null, unit: "stories in your briefing", records: [], explore: { label: "Read the briefing", href: "#briefing" }, loading: true };
     const fresh = (b.stories || []).filter(s => s.isNew).length;
     return { id: "findings", label: "Research findings", count: (b.stories || []).length, unit: "stories in your briefing", detail: fresh + " new since your last visit",
-      records: (b.stories || []).slice(0, 6).map(s => ({ title: s.headline, meta: (s.ticker || s.company) + " · " + ago(s.disclosedAt) + (s.isNew ? " · new" : ""), href: "#briefing", story: s.id })),
+      records: (b.stories || []).slice(0, 6).map(s => ({ title: s.headline, meta: (s.ticker || s.company) + " · " + ago(s.disclosedAt) + (s.isNew ? " · new" : ""), href: "#briefing", story: s.id, ticker: s.ticker, issuerCik: s.issuerCik })),
       explore: { label: "Read the briefing", href: "#briefing" }, needsSetup: !!b.needsSetup };
   }
   function panelHtml(id) {
@@ -90,7 +96,8 @@
     if (!c) return loader("Reading records");
     const recs = (c.records || []).map(r => {
       const href = r.external ? secUrl(r.href) : localHref(r.href);
-      const inner = '<span class="ix-rec__title">' + esc(r.title) + '</span><span class="ix-rec__meta">' + esc(r.meta || "") + (r.value ? " · " + esc(money(r.value)) : "") + "</span>";
+      const tile = r.personCik ? face(r.person || r.title, r.personCik, r.ticker, r.issuerCik) : r.ticker ? logo(r.ticker, r.issuerCik, r.title, "xs") : "";
+      const inner = '<span class="ix-rec__media">' + tile + '</span><span class="ix-rec__title">' + esc(r.title) + '</span><span class="ix-rec__meta">' + esc(r.meta || "") + (r.value ? " · " + esc(money(r.value)) : "") + "</span>";
       return "<li>" + (href ? '<a href="' + esc(href) + '"' + (r.external ? ' target="_blank" rel="noopener noreferrer"' : "") + (r.story ? ' data-story-jump="' + esc(r.story) + '"' : "") + ">" + inner + (r.external ? '<span class="ix-rec__go">SEC ↗</span>' : '<span class="ix-rec__go">Open →</span>') + "</a>" : '<span class="ix-rec__plain">' + inner + "</span>") + "</li>";
     }).join("");
     const none = c.loading ? loader("Reading your briefing") : id === "findings" && c.needsSetup ? '<p class="ix-plain">Follow a company or a person and your findings appear here.</p>' : '<p class="ix-plain">No records in this layer for the last 30 days.</p>';
@@ -129,6 +136,7 @@
     inst.selected = id;
     const panel = $("[data-panel]", instEl);
     panel.innerHTML = panelHtml(id);
+    hydrate(panel);
     panel.classList.remove("ix-in"); void panel.offsetWidth; panel.classList.add("ix-in");
     $("[data-caption]", instEl).textContent = (inst.cats[id].label || id) + " · " + categoryCount(inst.cats[id]) + " " + (inst.cats[id].unit || "");
     setState();
@@ -239,8 +247,8 @@
       '<button type="button" class="ix-tape__row" aria-expanded="' + sel + '">' +
         '<span class="ix-tape__time"><b>' + esc(fmtShort(e.filedAt)) + "</b>" + esc(fmtClock(e.filedAt)) + "</span>" +
         '<span class="ix-tape__form">' + esc(e.form) + "</span>" +
-        '<span class="ix-tape__co"><b>' + esc(e.ticker || "—") + "</b>" + esc(e.company || "") + "</span>" +
-        '<span class="ix-tape__who">' + esc(e.person || "—") + "</span>" +
+        '<span class="ix-tape__co">' + ent(logo(e.ticker, e.issuerCik, e.company, "xs"), "<b>" + esc(e.ticker || "—") + "</b>" + esc(e.company || "")) + "</span>" +
+        '<span class="ix-tape__who">' + ent(e.person ? face(String(e.person).split("; ")[0], e.personCik, e.ticker, e.issuerCik) : "", esc(e.person || "—")) + "</span>" +
         '<span class="ix-tape__class">' + esc(e.classification) + "</span>" +
         '<span class="ix-tape__amt">' + (e.amount != null ? esc(compact(e.amount)) : "—") + "</span>" +
         '<span class="ix-tape__state">' + (e.new ? "New" : "Historical") + "</span>" +
@@ -258,6 +266,7 @@
       (tape.events.length ? '<div class="ix-tape__head" aria-hidden="true"><span>Filed</span><span>Form</span><span>Company</span><span>Reporting person</span><span>Classification</span><span>Amount</span><span>Status</span></div><ol class="ix-tape__list">' + tape.events.map(tapeRow).join("") + "</ol>" +
         (tape.nextBefore ? '<button type="button" class="ix-btn ix-tape__more" data-tape-more>Earlier disclosures</button>' : "") :
         empty("Nothing on the tape for these filters.", "No stored disclosure matches this company, person, filing type and period. Widen the period or clear the filters.", '<button type="button" class="ix-btn" data-tape-reset>Clear filters</button>'));
+    hydrate(tapeEl);
     tapeEl.setAttribute("aria-busy", "false");
   }
   async function loadTape({ append = false } = {}) {
@@ -322,7 +331,7 @@
   const brief = { days: 7, order: "priority", data: null };
   const feed = $("[data-feed]");
   const sources = s => (s.sources || []).map(src => { const u = secUrl(src.url); return u ? '<li><a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(src.label) + " ↗</a><small>Filed " + esc(fmtTime(src.filedAt)) + (src.people && src.people.length ? " · " + esc(src.people.join(", ")) : "") + "</small></li>" : ""; }).join("");
-  const peopleList = s => (s.people || []).map(p => { const inner = esc(p.name) + (p.role ? "<small>" + esc(p.role) + "</small>" : ""); return cikOk(p.cik) ? '<li><a href="person.html?cik=' + encodeURIComponent(p.cik) + '">' + inner + "</a></li>" : '<li><span class="ix-person">' + inner + "</span></li>"; }).join("");
+  const peopleList = s => (s.people || []).map(p => { const inner = face(p.name, p.cik, s.ticker, s.issuerCik, "sm") + "<span>" + esc(p.name) + (p.role ? "<small>" + esc(p.role) + "</small>" : "") + "</span>"; return cikOk(p.cik) ? '<li><a href="person.html?cik=' + encodeURIComponent(p.cik) + '">' + inner + "</a></li>" : '<li><span class="ix-person">' + inner + "</span></li>"; }).join("");
   function details(s) {
     const firstAcc = s.kind === "insider_filings" ? (s.sources || []).map(x => x.accession).find(a => /^\d{18}$/.test(String(a || ""))) : null;
     const src = sources(s);
@@ -332,7 +341,7 @@
       (aiConfigured && firstAcc ? '<div data-explain-box><button type="button" class="ix-btn" data-explain="' + esc(firstAcc) + '">Explain this filing in plain English</button></div>' : "") + "</div></details>";
   }
   const dates = s => '<dl class="ix-dates"><div><dt>Event</dt><dd>' + esc(fmtRange(s.eventDate)) + "</dd></div><div><dt>Disclosed</dt><dd>" + esc(fmtTime(s.disclosedAt)) + "</dd></div><div><dt>Retrieved by Insidir</dt><dd>" + esc(fmtTime(s.retrievedAt)) + "</dd></div></dl>";
-  const kicker = s => '<p class="ix-story__kicker">' + logo(s.ticker, s.issuerCik, s.company, 22) + companyLink(s.ticker, s.ticker || s.company) + "<span>" + (s.kind === "company_report" ? "Company report" : "Insider filings") + "</span>" + (s.isNew ? '<span class="ix-new">New</span>' : "") + "<span>" + esc(ago(s.disclosedAt)) + "</span></p>";
+  const kicker = s => '<p class="ix-story__kicker">' + logo(s.ticker, s.issuerCik, s.company, "xs") + companyLink(s.ticker, s.ticker || s.company) + "<span>" + (s.kind === "company_report" ? "Company report" : "Insider filings") + "</span>" + (s.isNew ? '<span class="ix-new">New</span>' : "") + "<span>" + esc(ago(s.disclosedAt)) + "</span></p>";
   const leadHtml = s => '<article class="ix-lead ix-in" data-story="' + esc(s.id) + '"><p class="ix-sub">Main development</p>' + kicker(s) + '<h3 class="ix-lead__head">' + esc(s.headline) + "</h3>" +
     '<ul class="ix-facts">' + (s.facts || []).map(f => "<li>" + esc(f) + "</li>").join("") + "</ul>" +
     ((s.people || []).length ? '<ul class="ix-people">' + peopleList(s) + "</ul>" : "") + dates(s) +
@@ -343,14 +352,14 @@
     const by = new Map();
     for (const s of list) { const k = s.ticker || s.company; if (!by.has(k)) by.set(k, []); by.get(k).push(s); }
     const to = Date.now(), from = to - brief.days * 86400000;
-    return [...by.entries()].map(([k, ss]) => '<section class="ix-desk__co"><header>' + logo(ss[0].ticker, ss[0].issuerCik, ss[0].company, 24) + "<h4>" + companyLink(ss[0].ticker, ss[0].company) + "</h4><span>" + ss.length + " " + (ss.length === 1 ? "item" : "items") + "</span></header>" +
+    return [...by.entries()].map(([k, ss]) => '<section class="ix-desk__co"><header>' + logo(ss[0].ticker, ss[0].issuerCik, ss[0].company, "xs") + "<h4>" + companyLink(ss[0].ticker, ss[0].company) + "</h4><span>" + ss.length + " " + (ss.length === 1 ? "item" : "items") + "</span></header>" +
       (V() ? '<div class="ix-desk__strip">' + V().strip(ss.map(s => ({ id: s.id, t: Date.parse(s.disclosedAt), strong: s.isNew })), { from, to, width: 520, height: 40, ticks: 3, label: "When " + k + "'s items were disclosed" }) + "</div>" : "") +
       "<ul>" + ss.map(s => '<li><a href="#" data-story-jump="' + esc(s.id) + '">' + esc(s.headline) + "</a><small>" + esc(fmtTime(s.disclosedAt)) + "</small></li>").join("") + "</ul></section>").join("");
   }
   function peopleDeskHtml(list) {
     const by = new Map();
-    for (const s of list) for (const p of s.people || []) { const k = p.cik || p.name; if (!by.has(k)) by.set(k, { ...p, items: 0, tickers: new Set() }); const r = by.get(k); r.items++; if (s.ticker) r.tickers.add(s.ticker); }
-    return [...by.values()].sort((a, b) => b.items - a.items).slice(0, 12).map(p => "<li>" + personLink(p.cik, p.name) + "<small>" + esc(p.role || "Role not stated") + " · " + esc([...p.tickers].join(", ")) + "</small></li>").join("") || '<li class="ix-plain">No people named in this edition.</li>';
+    for (const s of list) for (const p of s.people || []) { const k = p.cik || p.name; if (!by.has(k)) by.set(k, { ...p, items: 0, tickers: new Set(), ticker: s.ticker, issuerCik: s.issuerCik }); const r = by.get(k); r.items++; if (s.ticker) r.tickers.add(s.ticker); }
+    return [...by.values()].sort((a, b) => b.items - a.items).slice(0, 12).map(p => "<li>" + ent(face(p.name, p.cik, p.ticker, p.issuerCik, "sm"), personLink(p.cik, p.name) + "<small>" + esc(p.role || "Role not stated") + " · " + esc([...p.tickers].join(", ")) + "</small>") + "</li>").join("") || '<li class="ix-plain">No people named in this edition.</li>';
   }
   function renderBriefing() {
     const d = brief.data;
@@ -464,11 +473,11 @@
   const structEl = $("[data-structure]");
   const struct = { data: null, person: null, seq: 0 };
   function structureHtml(d) {
-    const people = d.people.map(p => '<li><button type="button" class="ix-node ix-node--person" data-person="' + esc(p.cik) + '" aria-pressed="' + (struct.person === p.cik) + '"><b>' + esc(p.name) + "</b><span>" + esc(p.relationships.join(" · ") || "No relationship box recorded") + "</span><small>" + p.filings + " Form 4 · last " + esc(fmtShort(p.last)) + "</small></button></li>").join("");
+    const people = d.people.map(p => '<li><button type="button" class="ix-node ix-node--person ix-node--media" data-person="' + esc(p.cik) + '" aria-pressed="' + (struct.person === p.cik) + '">' + face(p.name, p.cik, d.company.ticker, d.company.cik, "sm") + '<span class="ix-node__text"><b>' + esc(p.name) + "</b><span>" + esc(p.relationships.join(" · ") || "No relationship box recorded") + "</span><small>" + p.filings + " Form 4 · last " + esc(fmtShort(p.last)) + "</small></span></button></li>").join("");
     const secs = d.securities.map(s => '<li><div class="ix-node ix-node--security" data-security="' + esc(s.name) + '"><b>' + esc(s.name) + "</b><span>" + (s.derivative ? "Derivative security" : "Non-derivative security") + "</span><small>" + s.lines + " reported lines · " + s.people + " " + (s.people === 1 ? "person" : "people") + "</small></div></li>").join("");
     return '<div class="ix-cap"><svg class="ix-cap__links" data-cap-links aria-hidden="true"></svg>' +
       '<div class="ix-cap__col"><p class="ix-inst__head">Reporting people <span>' + d.people.length + " in 12 months</span></p><ul>" + (people || '<li class="ix-plain">No reporting people recorded.</li>') + "</ul></div>" +
-      '<div class="ix-cap__core"><div class="ix-node ix-node--company" data-company>' + logo(d.company.ticker, d.company.cik, d.company.name, 40) + "<b>" + esc(d.company.ticker) + "</b><span>" + esc(d.company.name) + "</span><small>CIK " + esc(d.company.cik || "—") + " · last Form 4 " + esc(fmtShort(d.company.lastFiling)) + "</small>" +
+      '<div class="ix-cap__core"><div class="ix-node ix-node--company" data-company>' + logo(d.company.ticker, d.company.cik, d.company.name, "md") + "<b>" + esc(d.company.ticker) + "</b><span>" + esc(d.company.name) + "</span><small>CIK " + esc(d.company.cik || "—") + " · last Form 4 " + esc(fmtShort(d.company.lastFiling)) + "</small>" +
         (localHref(d.company.href) ? '<a href="' + esc(d.company.href) + '">Company report →</a>' : "") + "</div></div>" +
       '<div class="ix-cap__col"><p class="ix-inst__head">Securities <span>as named on Form 4</span></p><ul>' + (secs || '<li class="ix-plain">No reported lines.</li>') + "</ul></div></div>" +
       '<div class="ix-cap__evidence" data-cap-evidence>' + evidenceHtml(d) + "</div>";
@@ -480,7 +489,7 @@
       return '<div class="ix-evidence"><div><p class="ix-sub">Reporting periods</p>' + bars + '<p class="ix-note">Form 4 filings per month, last 12 months.</p></div><div><p class="ix-sub">What the lines mean</p><ul class="ix-gaps"><li>' + esc(d.labels.personCompany) + "</li><li>" + esc(d.labels.personSecurity) + '</li></ul><p class="ix-note">Select a person to inspect the evidence behind their lines.</p></div></div>';
     }
     const edges = d.edges.filter(e => e.person === p.cik);
-    return '<div class="ix-evidence ix-in"><div><p class="ix-sub">Evidence</p><h3>' + personLink(p.cik, p.name) + "</h3>" +
+    return '<div class="ix-evidence ix-in"><div><p class="ix-sub">Evidence</p><h3>' + ent(face(p.name, p.cik, d.company.ticker, d.company.cik, "md"), personLink(p.cik, p.name)) + "</h3>" +
       '<ul class="ix-rules"><li><span>Relationship (as filed)</span><b>' + esc(p.relationships.join(" · ") || "Not stated") + "</b></li><li><span>Form 4 filings, 12 months</span><b>" + p.filings + "</b></li><li><span>First / last in window</span><b>" + esc(fmtShort(p.first)) + " / " + esc(fmtShort(p.last)) + "</b></li></ul>" +
       '<p class="ix-note">' + esc(d.labels.personCompany) + "</p>" + (p.sources.length ? '<p class="ix-tape__links">' + p.sources.map((u, i) => ext(u, i ? "Earlier Form 4" : "Latest Form 4")).join(" ") + "</p>" : "") + "</div>" +
       '<div><p class="ix-sub">Reported transactions by security</p>' + (edges.length ? '<div class="ix-tablewrap"><table class="ix-table ix-table--stack"><thead><tr><th>Security</th><th class="num">Lines</th><th class="num">Purchases</th><th class="num">Sales</th><th class="num">Other</th><th>Last</th><th>Source</th></tr></thead><tbody>' +
@@ -539,6 +548,7 @@
       struct.person = struct.person === p.dataset.person ? null : p.dataset.person;
       $$("[data-person]", structEl).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.person === struct.person)));
       $("[data-cap-evidence]", structEl).innerHTML = evidenceHtml(struct.data);
+      hydrate($("[data-cap-evidence]", structEl));
       drawStructure();
       if (!wide.matches) $("[data-cap-evidence]", structEl).scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "nearest" });
     });
@@ -556,7 +566,7 @@
   function recordsHtml(records, aid) {
     if (!records || !records.length) return "";
     return '<div class="ix-recs"><div class="ix-recs__head" aria-hidden="true"><span>Traded</span><span>Reporting person</span><span>Transaction</span><span>Reported value</span><span>Source</span></div>' + records.map(r =>
-      '<details class="ix-rec"><summary><span>' + esc(fmtShort(r.transactionDate)) + "</span><span><b>" + esc(r.person) + "</b>" + (r.role ? "<small>" + esc(r.role) + "</small>" : "") + "</span><span>" + esc(r.codeLabel) + (r.code ? " (" + esc(r.code) + ")" : "") + "</span><span>" + esc(money(r.value)) + "</span><span>" + cites(r.citation ? [r.citation] : [], aid) + "</span></summary>" +
+      '<details class="ix-rec"><summary><span>' + esc(fmtShort(r.transactionDate)) + "</span><span>" + ent(face(r.person, r.personCik, r.ticker, null), "<b>" + esc(r.person) + "</b>" + (r.role ? "<small>" + esc(r.role) + "</small>" : "")) + "</span><span>" + esc(r.codeLabel) + (r.code ? " (" + esc(r.code) + ")" : "") + "</span><span>" + esc(money(r.value)) + "</span><span>" + cites(r.citation ? [r.citation] : [], aid) + "</span></summary>" +
       '<dl class="ix-rec__body"><div><dt>Company</dt><dd>' + companyLink(r.ticker, (r.ticker || "") + " · " + (r.company || "")) + "</dd></div><div><dt>Person</dt><dd>" + personLink(r.personCik, r.person) + "</dd></div><div><dt>Security</dt><dd>" + esc(r.security || "Not named") + (r.derivative ? " (derivative)" : "") + "</dd></div>" +
       "<div><dt>Shares</dt><dd>" + esc(num(r.shares)) + "</dd></div><div><dt>Price per share</dt><dd>" + esc(price(r.price)) + "</dd></div><div><dt>Reported value</dt><dd>" + esc(money(r.value)) + "</dd></div>" +
       "<div><dt>Transaction date</dt><dd>" + esc(fmtDay(r.transactionDate)) + "</dd></div><div><dt>Disclosed</dt><dd>" + esc(fmtTime(r.disclosedAt)) + "</dd></div><div><dt>Report</dt><dd>" + (r.amendment ? "Amended Form 4" : "Form 4") + "</dd></div></dl></details>").join("") + "</div>";
@@ -584,7 +594,7 @@
           sec.rows.map(r => '<tr><td class="ix-wide">' + companyLink(r.ticker) + "<small>" + esc(r.company) + '</small></td><td class="num" data-label="Filings">' + r.filings + '</td><td class="num" data-label="People">' + r.people + '</td><td class="num" data-label="Sales">' + r.sales + '</td><td class="num" data-label="Sale value">' + esc(money(r.saleValue)) + '</td><td class="num" data-label="Purchases">' + r.purchases + '</td><td class="num" data-label="Purchase value">' + esc(money(r.purchaseValue)) + '</td><td class="num" data-label="Other">' + r.other + '</td><td data-label="Last disclosed">' + esc(fmtDay(r.lastDisclosed)) + cites(r.citation ? [r.citation] : [], aid) + "</td></tr>").join("") + "</tbody></table></div></div>";
         continue;
       }
-      evidence += '<div class="ix-block"><h5 class="ix-block__title">' + (sec.ticker ? logo(sec.ticker, null, sec.company, 24) : "") + esc(sec.title) + (sec.ticker && sec.kind !== "story" ? ' <a class="ix-btn ix-btn--quiet" href="company.html?ticker=' + encodeURIComponent(sec.ticker) + '">Company report</a> <button type="button" class="ix-btn ix-btn--quiet" data-structure-open="' + esc(sec.ticker) + '">Capital structure</button>' : "") + "</h5>" +
+      evidence += '<div class="ix-block"><h5 class="ix-block__title">' + (sec.ticker ? logo(sec.ticker, null, sec.company, "xs") : "") + esc(sec.title) + (sec.ticker && sec.kind !== "story" ? ' <a class="ix-btn ix-btn--quiet" href="company.html?ticker=' + encodeURIComponent(sec.ticker) + '">Company report</a> <button type="button" class="ix-btn ix-btn--quiet" data-structure-open="' + esc(sec.ticker) + '">Capital structure</button>' : "") + "</h5>" +
         (sec.facts && sec.facts.length ? '<ul class="ix-facts">' + sec.facts.map(f => "<li>" + esc(f.text) + cites(f.cites, aid) + "</li>").join("") + "</ul>" : "") +
         (sec.filings && sec.filings.length ? '<p class="ix-sub" style="margin-top:18px">SEC filings in this period</p><ul class="ix-facts">' + sec.filings.map(f => "<li>" + esc(f.text) + cites(f.cites, aid) + "</li>").join("") + "</ul>" : "") +
         recordsHtml(sec.records, aid) + "</div>";
@@ -593,7 +603,7 @@
     const byDate = new Map();
     for (const e of a.timeline || []) { if (!byDate.has(e.date)) byDate.set(e.date, []); byDate.get(e.date).push(e); }
     const timeline = byDate.size ? '<ol class="ix-timeline ix-timeline--report">' + [...byDate.entries()].map(([d, es]) => "<li><strong>" + esc(fmtDay(d)) + "</strong><ul>" + es.map(e => '<li><span class="ix-kind">' + esc(KIND[e.kind] || e.kind) + "</span>" + esc(e.text) + cites(e.cites, aid) + "</li>").join("") + "</ul></li>").join("") + "</ol>" : '<p class="ix-plain">No dated records in this answer.</p>';
-    const rel = (a.relationships || []).length ? '<ul class="ix-rels">' + a.relationships.map(r => '<li><span class="ix-rels__who">' + personLink(r.personCik, r.person) + "<small>" + esc(r.role || "Role not stated") + '</small></span><span class="ix-rels__line" aria-hidden="true"></span><span class="ix-rels__co">' + companyLink(r.ticker, r.ticker || r.company) + "<small>" + esc(r.company || "") + "</small></span>" +
+    const rel = (a.relationships || []).length ? '<ul class="ix-rels">' + a.relationships.map(r => '<li><span class="ix-rels__who">' + ent(face(r.person, r.personCik, r.ticker, null, "sm"), personLink(r.personCik, r.person) + "<small>" + esc(r.role || "Role not stated") + "</small>") + '</span><span class="ix-rels__line" aria-hidden="true"></span><span class="ix-rels__co">' + ent(logo(r.ticker, null, r.company, "sm"), companyLink(r.ticker, r.ticker || r.company) + "<small>" + esc(r.company || "") + "</small>") + "</span>" +
       '<span class="ix-rels__what">Reported ' + [r.sales ? r.sales + " sale" + (r.sales === 1 ? "" : "s") : "", r.purchases ? r.purchases + " purchase" + (r.purchases === 1 ? "" : "s") : "", r.other ? r.other + " other change" + (r.other === 1 ? "" : "s") : ""].filter(Boolean).join(", ") + (r.securities.length ? " in " + esc(r.securities.join(", ")) : "") + " · last " + esc(fmtShort(r.last)) + cites(r.cites, aid) + "<small>" + esc(r.basis) + "</small></span></li>").join("") + "</ul>" : '<p class="ix-plain">No person-to-company relationships appear in these records.</p>';
     const v = a.verification || {};
     const uncertainty = '<ul class="ix-gaps">' + (a.gaps || []).map(g => "<li>" + esc(g) + "</li>").join("") + "</ul>" + '<p class="ix-note">Verification: ' + (v.references || 0) + " citation references checked against " + (v.citations || 0) + " SEC sources" + (v.removed ? "; " + v.removed + " that did not resolve were removed" : "; all resolved") + ".</p>";
