@@ -7,6 +7,10 @@
 .lx-arm--b{display:none}
 [data-exp-headline="record"] .lx-arm--a{display:none}
 [data-exp-headline="record"] .lx-arm--b{display:inline}
+/* The automation headline is longer: set a step smaller, as its own block so its line spacing follows, it keeps to
+   two lines on wide screens and leaves the hero wordmark on the first screen, as the shorter headline does. */
+.lx-arm--a{display:block;font-size:.7em;line-height:1.06}
+@media (max-width:900px){.lx-arm--a{font-size:.85em}}
 
 .ax-panel{background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
 .ax-label{margin:0;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
