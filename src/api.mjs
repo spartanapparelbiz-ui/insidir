@@ -17,7 +17,7 @@ import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabi
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
-import {pushStatus,subscribePush,unsubscribePush} from "./push.mjs";
+import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
@@ -490,11 +490,17 @@ async function route(req,res,ctx){
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req,ctx);
     const results=await ctx.query(`SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
-      FROM sec_transactions t JOIN watchlist w ON w.ticker=t.ticker
-      JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
+      FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+      WHERE f.ingest_status='parsed' AND f.published_at>=now()-interval '30 days'
+      AND (
+        EXISTS(SELECT 1 FROM watchlist w WHERE w.user_id=$1 AND w.ticker=t.ticker)
+        OR EXISTS(SELECT 1 FROM followed_people p WHERE p.user_id=$1 AND t.owner_cik IS NOT NULL AND LTRIM(p.owner_cik,'0')=LTRIM(t.owner_cik,'0'))
+        OR EXISTS(SELECT 1 FROM followed_people p JOIN sec_filing_owners o ON LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0')
+          WHERE p.user_id=$1 AND o.accession=t.accession)
+      )
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
-    return json(res,200,{items:results.rows,delivery:"in_app_on_demand",note:"No email or push notifications are active."});
+    return json(res,200,{items:results.rows,delivery:pushReady()?"in_app_and_opt_in_web_push":"in_app_on_demand",note:"Matched against followed tickers and reporting-owner SEC CIKs. Verify official sources."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
     if(!config.ingestSecret || !req.headers.authorization?.startsWith("Bearer "))throw failure(401,"Authorized ingestion token required");
