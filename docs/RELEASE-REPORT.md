@@ -46,7 +46,7 @@ throwaway cluster; CI now runs them too (a `postgres:16` service in `.github/wor
 | Stripe **test-mode** verifier (refuses live keys): price, Checkout amounts with the engine's own params, trial → $39 conversion on a test clock, card failure, refund, cancellation, webhook events, portal cancellation | `scripts/stripe-test-mode-check.mjs` — **written, not run here (no test key)**; refusal paths verified |
 
 ### 1.4 Research engine (Phase 3)
-`research_events`: purchases and sales per Form 4 (exact decimal sums), Form 4/A line-by-line comparison
+`sec_events`: purchases and sales per Form 4 (exact decimal sums), Form 4/A line-by-line comparison
 (superseding the corrected event, never double counting restatements), multi-insider purchase groups (distinct owners,
 joint filing counts once, re-issued as they grow), watched companies' other SEC filings (baseline on first read);
 trade date, filing time, retrieval time and detection time in separate columns; every accession and source URL;

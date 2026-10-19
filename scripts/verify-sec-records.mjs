@@ -55,7 +55,7 @@ for (const f of filings) {
     for (const [k, a, b] of [["shares", r.shares, t.shares], ["price_per_share", r.price_per_share, t.pricePerShare], ["estimated_value", r.estimated_value, t.estimatedValue]])
       if (!same(num(a), b)) problems.push([k, t.id, a, b]);
   }
-  for (const ev of (await query("SELECT event_key,status,facts FROM research_events WHERE event_key=ANY($1::text[])", [[`form4:${f.accession}:P`, `form4:${f.accession}:S`]])).rows) {
+  for (const ev of (await query("SELECT event_key,status,facts FROM sec_events WHERE event_key=ANY($1::text[])", [[`form4:${f.accession}:P`, `form4:${f.accession}:S`]])).rows) {
     events++;
     if (ev.status !== "active" || ev.facts?.amended) continue; // superseded or amended events are checked against their own filing
     const cat = ev.event_key.endsWith(":P") ? "reported_purchase" : "reported_sale";

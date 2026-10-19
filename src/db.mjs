@@ -19,7 +19,7 @@ export async function query(sql, params=[]) { return requireDb().query(sql,param
 // Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
 export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
   "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
-  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","014_email.sql","015_research_events.sql","016_explanations.sql","017_notifications.sql"]);
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","015_sec_events.sql","016_explanations.sql","017_notifications.sql"]);
 export async function migrate() {
   const db=requireDb();
   const client=await db.connect();

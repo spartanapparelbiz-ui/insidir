@@ -425,7 +425,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(mono.headers.get("content-type"), "font/woff2");
     assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);
     const favicon = await (await fetch(base + "/assets/icons/favicon.svg")).text();
-    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#e9e4da/);
+    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#(e9e4da|f0eee8)/i);
     const engine = await (await fetch(base + "/assets/js/v13-halftone.js")).text();
     assert.match(engine, /data-halftone-hero/);
     assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");

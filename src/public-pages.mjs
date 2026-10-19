@@ -22,6 +22,9 @@ import { TRANSACTION_CODES } from "./insiders.mjs";
 import { personProfile, parsePersonCik, hasFilingOwners, withJointOwners } from "./person-profile.mjs";
 import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPerson } from "./stories.mjs";
 
+/* The installed-app links and the last two stylesheets every page carries (see web/assets/css/v30-cinematic.css and
+ * ultra-hd.css): one string, so the static generators and the hand-written pages cannot drift apart. */
+export const HEAD_FINISH = '<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir"><link rel="stylesheet" href="/assets/css/v30-cinematic.css?v=1"><link rel="stylesheet" href="/assets/css/ultra-hd.css?v=2">';
 export const CACHE_TTL_MS = 10 * 60_000, CACHE_ENTRIES = 3000;
 export const RENDERS_PER_MINUTE = 90;
 export const SITEMAP_PAGE = 40000;
@@ -124,7 +127,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
-${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
+${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}${HEAD_FINISH}</head>
 <body class="v3-static v6-static v13 v14-public">
 <a class="skip-link" href="#Content">Skip to content</a>
 <header class="v6-nav v9-nav">

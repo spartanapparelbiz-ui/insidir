@@ -14,7 +14,7 @@ import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequi
 
 // Paid product pages: signed in AND an active subscription.
 // person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
-export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"]);
+export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.

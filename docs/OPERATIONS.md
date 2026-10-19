@@ -66,7 +66,7 @@ same job at once; each run updates `worker_heartbeats`.
 | Job | Every | What it does |
 |---|---|---|
 | `sec-ingest` | 15 min (`AUTO_INGEST=1`) | EDGAR current Form 4 feed → `sec_filings` / `sec_transactions`; then research events and alert fan-out. |
-| `research-events` | 15 min | Incremental, idempotent build of `research_events` (also covers imports started by `/v1/internal/ingest`). |
+| `research-events` | 15 min | Incremental, idempotent build of `sec_events` (also covers imports started by `/v1/internal/ingest`). |
 | `filing-retry` | 30 min | Failed Form 4 imports retried with backoff (15 min doubling, at most a day, 5 attempts). |
 | `company-disclosures` | 30 min | SEC submissions of watched companies, each at most every 6 hours, at most 20 a run; stops on a 403. |
 | `notifications` | 5 min | New events → `notifications` for members watching them. |

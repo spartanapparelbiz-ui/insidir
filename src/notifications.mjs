@@ -50,7 +50,7 @@ const MATCH = `INSERT INTO notifications(user_id,event_id,reason)
     SELECT DISTINCT ON (user_id) user_id,reason FROM (
       SELECT w.user_id,'watchlist' AS reason,w.created_at FROM watchlist w WHERE w.ticker=$3 AND $3 IS NOT NULL
       UNION ALL
-      SELECT f.user_id,'followed_person',f.created_at FROM research_event_people rp JOIN followed_people f ON LTRIM(f.owner_cik,'0')=LTRIM(rp.owner_cik,'0') WHERE rp.event_id=$1
+      SELECT f.user_id,'followed_person',f.created_at FROM sec_event_people rp JOIN followed_people f ON LTRIM(f.owner_cik,'0')=LTRIM(rp.owner_cik,'0') WHERE rp.event_id=$1
     ) m WHERE m.created_at<=$4::timestamptz+interval '1 day' ORDER BY user_id,reason DESC) x
   WHERE ${PREFS_ALLOW}
   ON CONFLICT (user_id,event_id) DO NOTHING`;
@@ -59,11 +59,11 @@ export async function fanOut({ query, limit = 500, maxAgeDays = 14 }) {
   const cursor = (await query("SELECT last_key FROM research_cursors WHERE name='notifications'")).rows[0];
   // First run: start from now, so a deployment does not alert on the whole history.
   if (!cursor) {
-    const top = (await query("SELECT COALESCE(max(id),0) AS id FROM research_events")).rows[0].id;
+    const top = (await query("SELECT COALESCE(max(id),0) AS id FROM sec_events")).rows[0].id;
     await query("INSERT INTO research_cursors(name,position,last_key) VALUES('notifications',now(),$1) ON CONFLICT (name) DO NOTHING", [String(top)]);
     return { events: 0, notifications: 0, started: true };
   }
-  const events = (await query(`SELECT id,event_type,status,ticker,filing_date,facts FROM research_events WHERE id>$1::bigint ORDER BY id LIMIT $2`, [cursor.last_key || "0", limit])).rows;
+  const events = (await query(`SELECT id,event_type,status,ticker,filing_date,facts FROM sec_events WHERE id>$1::bigint ORDER BY id LIMIT $2`, [cursor.last_key || "0", limit])).rows;
   let created = 0;
   for (const e of events) {
     const stale = !e.filing_date || Date.now() - new Date(e.filing_date).getTime() > maxAgeDays * 86400000;
@@ -117,7 +117,7 @@ async function sendFor(mode, { query, connect, env, limit, extra = "", params = 
       out.members++;
       const status = !user.email_verified_at ? "skipped_unverified" : !hasAccess(user, env) ? "skipped_no_access" : await isSuppressed(run, user.email, "alert") ? "skipped_suppressed" : "queued";
       if (status === "queued") {
-        const events = (await run(`SELECT e.* FROM notifications n JOIN research_events e ON e.id=n.event_id WHERE n.id=ANY($1::bigint[]) ORDER BY e.filing_date DESC,e.id DESC`, [ids])).rows;
+        const events = (await run(`SELECT e.* FROM notifications n JOIN sec_events e ON e.id=n.event_id WHERE n.id=ANY($1::bigint[]) ORDER BY e.filing_date DESC,e.id DESC`, [ids])).rows;
         const mail = alertEmail({ id: user.user_id }, events, { env, digest: mode === "daily" });
         await enqueueEmail(run, { userId: user.user_id, to: user.email, category: mode === "daily" ? "digest" : "alert", kind: mode === "daily" ? "daily_digest" : "alert",
           dedupeKey: mode === "daily" ? `digest:${user.user_id}:${today}` : `alert:${user.user_id}:${ids[0]}-${ids.at(-1)}:${ids.length}`,
@@ -198,7 +198,7 @@ export async function unsubscribe(query, token, { env = process.env, req = null,
 export async function listNotifications(query, userId, { limit = 50, before = null, unread = false } = {}) {
   const rows = (await query(`SELECT n.id,n.reason,n.created_at,n.read_at,e.id AS event_id,e.event_type,e.status,e.ticker,e.issuer_name,e.owner_cik,e.owner_name,e.transaction_date,e.transaction_date_end,
       e.filing_date,e.ingested_at,e.accessions,e.source_urls,e.facts,e.superseded_by
-    FROM notifications n JOIN research_events e ON e.id=n.event_id
+    FROM notifications n JOIN sec_events e ON e.id=n.event_id
     WHERE n.user_id=$1 AND ($2::bigint IS NULL OR n.id<$2) AND (NOT $3::boolean OR n.read_at IS NULL)
     ORDER BY n.id DESC LIMIT $4`, [userId, before, unread, Math.min(100, Math.max(1, limit))])).rows;
   const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL", [userId])).rows[0].n;

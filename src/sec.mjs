@@ -17,11 +17,20 @@ const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !N
  * it. Filers do send these: without this the trade date of such a line was stored as unknown. */
 export const xmlDate = v => { const m = /^(\d{4}-\d{2}-\d{2})(?:Z|[+-]\d{2}:\d{2})?$/.exec(String(v ?? "").trim()); return m && isDate(m[1]) ? m[1] : null; };
 
-export function parseAtom(xml) {
+export function parseAtom(xml, { anyForm = false } = {}) {
   const feed = parser.parse(xml)?.feed;
   if (!feed) throw new Error("Invalid SEC Atom feed");
   const seen = new Set();
   return list(feed.entry).flatMap(entry => {
+    // SEC getcurrent&type=4 is a PREFIX search: it may also return 424B
+    // prospectuses and other 4xx forms. Those do not contain Form 4 XML.
+    // Use the filing type when supplied, or the leading type in the title;
+    // reject unknown types rather than silently treating them as ownership.
+    const title=scalar(entry.title)||"";
+    const type=String(scalar(entry["filing-type"])||scalar(entry["form-type"])||
+      /^\s*(4(?:\/A)?)\s*[-:–—]/i.exec(title)?.[1]||"").trim().toUpperCase();
+    // anyForm: callers reading other feeds (DEF 14A proxies) filter by title themselves.
+    if(!anyForm && type!=="4" && type!=="4/A")return [];
     const links = list(entry.link);
     const href = links.find(x => String(x?.["@_href"] || "").includes("/Archives/edgar/data/"))?.["@_href"];
     if (!href) return [];
@@ -37,7 +46,7 @@ export function parseAtom(xml) {
       accession, filerCik, title: scalar(entry.title) || "Form 4",
       publishedAt: scalar(entry.updated) || scalar(entry.published),
       sourceUrl: url.toString(), indexBase: "https://www.sec.gov/Archives/edgar/data/" + filerCik + "/" + accession + "/",
-      formType: (scalar(entry["filing-type"]) || "4")
+      formType: type || (scalar(entry["filing-type"]) || "4")
     }];
   });
 }

@@ -1,0 +1,22 @@
+/* Insidir high-density and large-display finish. Loaded last on every page, inside the insidir-v13 layer (it used to
+   sit outside it, where its plain rules beat every page rule that was not !important, and its phone rule
+   `img{object-fit:cover}` cropped company logos and contained screenshots).
+   - Retina and 4K: vector marks, antialiased mono text; raster images come with srcset (1x/2x) where they are large.
+   - Wide screens: the content measure grows in steps instead of stretching line lengths; at 3200 CSS px and wider
+     (a 4K monitor at 100% scaling) the whole interface is zoomed so type is not 14 px on a 32-inch screen.
+   - Reduced motion: no animation or smooth scrolling anywhere. */
+@layer insidir-v13{
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body.v13{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body.v13 :is(img,video,canvas){max-width:100%}
+body.v13 svg{shape-rendering:geometricPrecision}
+body.v13 main{min-width:0}
+@media (min-width:1920px){body.v13{--hf-max:1600px!important}}
+@media (min-width:2400px){body.v13{--hf-max:1760px!important}}
+@media (min-width:3200px){html:has(body.v13){zoom:1.4}}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+}
+/* end @layer insidir-v13 */

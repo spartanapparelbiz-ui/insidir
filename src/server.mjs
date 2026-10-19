@@ -16,6 +16,10 @@ import { loadOwnership } from "./sec.mjs";
 import { persistFiling } from "./db.mjs";
 import { secReady } from "./config.mjs";
 import { fanOut, sendImmediate, sendDigests } from "./notifications.mjs";
+import { initPush, pushTick } from "./push.mjs";
+import { aiTick } from "./ai-explain.mjs";
+import { monitorTick } from "./intelligence-monitor.mjs";
+import { pollHouse } from "./house-disclosures.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -62,6 +66,16 @@ async function main() {
     every("filing-retry", 30 * 60 * 1000, 4 * 60 * 1000, () => retryFailedFilings({ query, load: loadOwnership, persist: persistFiling }));
     every("company-disclosures", 30 * 60 * 1000, 6 * 60 * 1000, () => pollCompanyDisclosures({ query }));
   }
+  // Web Push to installed apps and browsers (src/push.mjs), when VAPID keys are configured.
+  if (workers && initPush()) every("web-push", 3 * 60 * 1000, 30 * 1000, () => pushTick(query));
+  else if (workers) console.warn("Insidir Web Push disabled: VAPID settings incomplete");
+  // AI filing summaries (src/ai-explain.mjs; validated, spend-limited) and the public-source monitor (src/intelligence-monitor.mjs).
+  if (workers) {
+    every("ai-filing-research", 15 * 60 * 1000, 45 * 1000, () => aiTick(query));
+    every("public-monitor", 15 * 60 * 1000, 90 * 1000, () => monitorTick(query));
+  }
+  // Official House PTR index: only after explicit legal approval.
+  if (workers && process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED === "1") every("house-disclosures", 6 * 60 * 60 * 1000, 2 * 60 * 1000, () => pollHouse({ run: query }));
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));
   // Trial-ending reminders (a backstop for Stripe's trial_will_end), hourly; each subscription is reminded once.

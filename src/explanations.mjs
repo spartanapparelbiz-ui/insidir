@@ -166,7 +166,7 @@ export async function explainEvent({ query, eventId, user = null, question = nul
     }
   }
   const event = (await query(`SELECT id,event_type,status,superseded_by,issuer_cik,ticker,issuer_name,owner_cik,owner_name,transaction_date,transaction_date_end,filing_date,ingested_at,
-    detected_at,reporting_lag_days,accessions,source_urls,facts FROM research_events WHERE id=$1`, [eventId])).rows[0];
+    detected_at,reporting_lag_days,accessions,source_urls,facts FROM sec_events WHERE id=$1`, [eventId])).rows[0];
   if (!event) throw fail(404, "Research event not found");
   const evidence = evidenceFor(event);
   const retrievedAt = iso(event.ingested_at) || iso(event.detected_at);

@@ -1,4 +1,4 @@
-/* The research engine: factual events derived from imported public records (research_events, sql/015).
+/* The research engine: factual events derived from imported public records (sec_events, sql/015).
  *
  * Built after each SEC import, incrementally (a cursor on sec_filings.retrieved_at), and idempotently (each event has
  * a deterministic event_key; rebuilding writes the same rows):
@@ -137,13 +137,13 @@ export function compareVersions(before, after) {
   return { unchanged, changed, added, removed };
 }
 
-const UPSERT = `INSERT INTO research_events(event_key,event_type,issuer_cik,ticker,issuer_name,owner_cik,owner_name,transaction_date,transaction_date_end,
+const UPSERT = `INSERT INTO sec_events(event_key,event_type,issuer_cik,ticker,issuer_name,owner_cik,owner_name,transaction_date,transaction_date_end,
     filing_date,ingested_at,reporting_lag_days,accessions,source_urls,facts)
   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
   ON CONFLICT (event_key) DO UPDATE SET issuer_cik=EXCLUDED.issuer_cik,ticker=EXCLUDED.ticker,issuer_name=EXCLUDED.issuer_name,owner_cik=EXCLUDED.owner_cik,
     owner_name=EXCLUDED.owner_name,transaction_date=EXCLUDED.transaction_date,transaction_date_end=EXCLUDED.transaction_date_end,filing_date=EXCLUDED.filing_date,
     ingested_at=EXCLUDED.ingested_at,reporting_lag_days=EXCLUDED.reporting_lag_days,accessions=EXCLUDED.accessions,source_urls=EXCLUDED.source_urls,facts=EXCLUDED.facts,
-    updated_at=CASE WHEN research_events.facts IS DISTINCT FROM EXCLUDED.facts THEN now() ELSE research_events.updated_at END
+    updated_at=CASE WHEN sec_events.facts IS DISTINCT FROM EXCLUDED.facts THEN now() ELSE sec_events.updated_at END
   RETURNING id,(xmax=0) AS inserted`;
 
 export async function saveEvent(query, e) {
@@ -152,7 +152,7 @@ export async function saveEvent(query, e) {
     e.accessions, e.source_urls, JSON.stringify(e.facts)]);
   const { id, inserted } = r.rows[0];
   for (const cik of new Set((e.people || []).map(c => String(c).padStart(10, "0")).filter(c => /^\d{10}$/.test(c))))
-    await query("INSERT INTO research_event_people(event_id,owner_cik) VALUES($1,$2) ON CONFLICT DO NOTHING", [id, cik]);
+    await query("INSERT INTO sec_event_people(event_id,owner_cik) VALUES($1,$2) ON CONFLICT DO NOTHING", [id, cik]);
   return { id: Number(id), inserted };
 }
 
@@ -196,7 +196,7 @@ export async function buildForm4Events({ query, limit = 400 }) {
         const corrected = new Set([...diff.changed.map(c => c.before.category), ...diff.removed.map(l => l.category)]);
         for (const category of corrected) {
           if (category !== "reported_purchase" && category !== "reported_sale") continue;
-          const r = await query(`UPDATE research_events SET status='superseded',superseded_by=$2,updated_at=now() WHERE event_key=$1 AND status='active'`,
+          const r = await query(`UPDATE sec_events SET status='superseded',superseded_by=$2,updated_at=now() WHERE event_key=$1 AND status='active'`,
             [`form4:${prior.accession}:${category === "reported_purchase" ? "P" : "S"}`, f.accession]);
           out.superseded += r.rowCount || 0;
         }
@@ -237,7 +237,7 @@ export async function buildPurchaseGroups({ query, issuers }) {
   for (const issuer of new Set(issuers || [])) {
     out.issuers++;
     const events = (await query(`SELECT id,event_key,issuer_cik,ticker,issuer_name,owner_cik,owner_name,transaction_date,transaction_date_end,filing_date,ingested_at,accessions,source_urls,facts
-      FROM research_events WHERE event_type='insider_purchase' AND status='active' AND LTRIM(issuer_cik,'0')=LTRIM($1,'0')
+      FROM sec_events WHERE event_type='insider_purchase' AND status='active' AND LTRIM(issuer_cik,'0')=LTRIM($1,'0')
         AND transaction_date>=current_date-$2::integer ORDER BY transaction_date`, [issuer, CLUSTER_LOOKBACK_DAYS])).rows;
     for (const chain of purchaseChains(events)) {
       const n = chain.reporters.length;
@@ -262,7 +262,7 @@ export async function buildPurchaseGroups({ query, issuers }) {
           caveats: [CAVEATS.cluster, CAVEATS.coverage, CAVEATS.form4] }
       });
       if (r.inserted) out.created++;
-      const s = await query(`UPDATE research_events SET status='superseded',superseded_by=$2,updated_at=now()
+      const s = await query(`UPDATE sec_events SET status='superseded',superseded_by=$2,updated_at=now()
         WHERE event_type='multi_insider_purchase' AND status='active' AND event_key LIKE $1 AND event_key<>$2`, [keyBase + ":%", `${keyBase}:${n}`]);
       out.superseded += s.rowCount || 0;
     }
@@ -352,8 +352,8 @@ export async function listResearchEvents(query, { ticker = null, ownerCik = null
   const params = [ticker, ownerCik ? String(ownerCik).padStart(10, "0") : null, types?.length ? types : null, before, Math.min(200, Math.max(1, limit)), includeSuperseded];
   const r = await query(`SELECT e.id,e.event_type,e.status,e.superseded_by,e.issuer_cik,e.ticker,e.issuer_name,e.owner_cik,e.owner_name,e.transaction_date,e.transaction_date_end,
       e.filing_date,e.ingested_at,e.detected_at,e.reporting_lag_days,e.accessions,e.source_urls,e.facts
-    FROM research_events e
-    WHERE ($1::text IS NULL OR e.ticker=$1) AND ($2::text IS NULL OR EXISTS(SELECT 1 FROM research_event_people p WHERE p.event_id=e.id AND p.owner_cik=$2))
+    FROM sec_events e
+    WHERE ($1::text IS NULL OR e.ticker=$1) AND ($2::text IS NULL OR EXISTS(SELECT 1 FROM sec_event_people p WHERE p.event_id=e.id AND p.owner_cik=$2))
       AND ($3::text[] IS NULL OR e.event_type=ANY($3::text[])) AND ($4::bigint IS NULL OR e.id<$4) AND ($6::boolean OR e.status='active')
     ORDER BY e.filing_date DESC NULLS LAST,e.id DESC LIMIT $5`, params);
   return r.rows.map(e => ({ ...e, summary: eventSummary(e) }));

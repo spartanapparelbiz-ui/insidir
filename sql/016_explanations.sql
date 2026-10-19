@@ -2,7 +2,7 @@
 -- version; every model call is logged with its token use, cost and outcome so spending limits hold across instances.
 CREATE TABLE IF NOT EXISTS explanation_cache (
   cache_key CHAR(64) PRIMARY KEY,
-  event_id BIGINT NOT NULL REFERENCES research_events(id) ON DELETE CASCADE,
+  event_id BIGINT NOT NULL REFERENCES sec_events(id) ON DELETE CASCADE,
   model TEXT NOT NULL,
   prompt_version TEXT NOT NULL,
   explanation JSONB NOT NULL,

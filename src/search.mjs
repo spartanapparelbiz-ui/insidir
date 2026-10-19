@@ -2,7 +2,7 @@
 import { secFetch } from "./sec.mjs";
 import { tickerIndex } from "./intelligence.mjs";
 
-let prepared = { source: null, rows: [] };
+let prepared = { source: null, rows: [], alphabetical: [] };
 const normalize = value => String(value || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 
 function rowsFor(index) {
@@ -16,11 +16,11 @@ function rowsFor(index) {
     // The mapping lists an issuer's primary listing first, so rank order breaks ties.
     rows.push({ ticker, name, cik: cik.padStart(10, "0"), key: normalize(name), rank: rows.length });
   }
-  prepared = { source: index, rows };
+  prepared = { source: index, rows, alphabetical: [...rows].sort((a, b) => a.key.localeCompare(b.key, 'en') || a.ticker.localeCompare(b.ticker, 'en')) };
   return rows;
 }
 
-export function rankCompanies(rows, query, limit = 8) {
+export function rankCompanies(rows, query, limit = 8, offset = 0) {
   const q = normalize(query);
   if (!q) return [];
   const words = q.split(" ");
@@ -41,11 +41,32 @@ export function rankCompanies(rows, query, limit = 8) {
     if (ciks.has(row.cik) && base < 640) continue;
     ciks.add(row.cik);
     out.push({ ticker: row.ticker, name: row.name, cik: row.cik });
-    if (out.length >= limit) break;
+    if (out.length >= limit + offset) break;
   }
-  return out;
+  return out.slice(offset);
 }
 
-export async function searchCompanies(query, { limit = 8, fetcher = secFetch } = {}) {
-  return rankCompanies(rowsFor(await tickerIndex(fetcher)), query, limit);
+export async function searchCompanies(query, { limit = 8, offset = 0, fetcher = secFetch } = {}) {
+  return rankCompanies(rowsFor(await tickerIndex(fetcher)), query, limit, offset);
+}
+
+/* Browse the entire official SEC ticker-index snapshot, not the small imported Form 4 subset.
+ * A ticker mapping is not a list of every U.S. business (unlisted/private issuers are absent).
+ * Pagination is deterministic within the cached 24-hour index snapshot. */
+export async function browseCompanies({ offset = 0, limit = 50, fetcher = secFetch } = {}) {
+  const index = await tickerIndex(fetcher);
+  rowsFor(index);
+  const rows = prepared.alphabetical;
+  const start = Math.max(0, Math.trunc(offset));
+  const take = Math.max(1, Math.min(100, Math.trunc(limit)));
+  const end = Math.min(start + take, rows.length);
+  return {
+    items: rows.slice(start, end).map(({ticker,name,cik}) => ({ticker,name,cik})),
+    total: rows.length,
+    offset: start,
+    limit: take,
+    hasMore: end < rows.length,
+    nextOffset: end < rows.length ? end : null,
+    source: "SEC official company ticker mapping"
+  };
 }

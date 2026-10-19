@@ -7,6 +7,10 @@
   <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, in the app.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Insidir">
   <link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
@@ -14,11 +18,13 @@
   <link rel="stylesheet" href="assets/css/alerts.css">
   
   <script defer src="assets/js/site.js"></script>
-  <script defer src="assets/js/app.js?v=18"></script>
+  <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
-  <script defer src="assets/js/live-research.js?v=8"></script>
+  <script defer src="assets/js/live-research.js?v=10"></script>
   <script defer src="assets/js/research-explain.js?v=2"></script>
-  <script defer src="assets/js/alerts-center.js?v=1"></script>
+  <script defer src="assets/js/alerts-center.js?v=2"></script>
+  <script defer src="assets/js/push-settings.js?v=4"></script>
+  <script defer src="assets/js/intelligence-feed.js?v=2"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
@@ -30,7 +36,7 @@
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
 <link rel="stylesheet" href="assets/css/v27-product.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-</head>
+<link rel="stylesheet" href="/assets/css/v30-cinematic.css?v=1"><link rel="stylesheet" href="/assets/css/ultra-hd.css?v=2"></head>
 <body class="app-body v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="alerts"></header>
@@ -38,11 +44,34 @@
   <main id="main" class="app-main alerts-main">
     <div class="alerts-head desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Your watchlist</span><span class="rd-bit"><span class="rd-sep"> · </span>people you follow</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC filings</span></p></div>
+      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Your watchlist</span><span class="rd-bit"><span class="rd-sep"> · </span>people you follow</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app + optional push</span></p></div>
       <h1 class="page-title alerts-title">Alerts</h1>
       <p class="page-sub alerts-sub desk-lead">New public filings for the companies you watch and the people you follow, each linked to the original SEC record.</p>
     </div>
 
+    <section id="insidir-push-setup" class="cx-card cx-push" aria-labelledby="push-heading">
+      <div class="cx-card__head"><p class="cx-label">This device</p><h2 id="push-heading">Phone and desktop notifications</h2></div>
+      <p class="cx-copy">Opt in to receive source-linked SEC filing updates for the companies and reporting people you follow. On iPhone, add Insidir to your Home Screen first. On Android or desktop, enable notifications directly when supported.</p>
+      <p class="cx-status" data-push-status role="status" aria-live="polite">Checking device support…</p>
+      <div class="cx-help" data-push-ios-help hidden>
+        <strong>Enable notifications on iPhone</strong>
+        <ol>
+          <li>Tap Safari’s Share button.</li>
+          <li>Choose <strong>Add to Home Screen</strong>, then Add.</li>
+          <li>Open Insidir from the new Home Screen icon.</li>
+          <li>Return to Alerts and tap <strong>Enable notifications</strong>.</li>
+        </ol>
+      </div>
+      <div class="cx-help" data-push-android-help hidden>
+        <strong>Android setup</strong>
+        <p>Open Insidir in Chrome, tap the browser menu (⋮), then choose Install app or Add to Home screen. Open Insidir and enable notifications.</p>
+      </div>
+      <div class="cx-actions">
+        <button type="button" class="ac-btn ac-btn--ink" data-push-install hidden>Install Insidir</button>
+        <button type="button" class="ac-btn ac-btn--ink" data-push-enable>Enable notifications</button>
+        <button type="button" class="ac-btn" data-push-disable hidden>Disable notifications</button>
+      </div>
+    </section>
     <div class="alerts-dateline" aria-label="Where alerts come from">
       <div><span>Source</span><strong>Imported SEC filings</strong></div>
       <div><span>Matching</span><strong>Your watchlist and the people you follow</strong></div>
@@ -64,6 +93,14 @@
     <section class="panel alerts-panel" aria-labelledby="ac-prefs-title">
       <h2 id="ac-prefs-title" class="page-sub">Preferences</h2>
       <form class="ac-prefs" id="ac-prefs" novalidate><p class="ac-status">Loading your preferences…</p></form>
+    </section>
+
+    <section id="insidir-intelligence-feed" class="cx-feed" aria-labelledby="feed-heading">
+      <p class="cx-label">Public sources</p>
+      <h2 id="feed-heading">Public intelligence feed</h2>
+      <p class="cx-copy">Source-linked SEC company announcements and posts from configured public social accounts. This is not a comprehensive breaking-news service or a verified feed of every politician's trades.</p>
+      <p class="cx-status" data-source-status role="status" aria-live="polite">Loading source coverage…</p>
+      <div class="cx-feed__items" data-source-items aria-label="Latest public intelligence events"></div>
     </section>
     <p class="alerts-foot">Alerts restate imported public records and may be delayed or incomplete; trade dates and filing dates differ. They are not recommendations. Verify the original filing before acting. <a href="watchlist.html">Edit your watchlist →</a></p>
     <p class="ins-media-credits" data-media-credits></p>

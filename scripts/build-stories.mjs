@@ -14,7 +14,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { STORIES, CREATOR_CONCEPTS, PRODUCT_CLIPS, storyPath, storyBySlug, wordCount, readSeconds } from "../src/stories.mjs";
-import { escapeHtml as esc, upsell, day } from "../src/public-pages.mjs";
+import { escapeHtml as esc, upsell, day, HEAD_FINISH } from "../src/public-pages.mjs";
 
 export const ORIGIN = "https://insidir.com";
 export const PUBLISHED = "2026-10-18";
@@ -63,7 +63,7 @@ ${noindex ? '<meta name="robots" content="noindex,nofollow">\n' : ""}<link rel="
 <script defer src="/assets/js/v13-halftone.js?v=8"></script><script defer src="/assets/js/v13-motion.js?v=5"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
 <script defer src="/assets/js/public-share.js?v=1"></script>
-${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
+${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}${HEAD_FINISH}</head>
 <body class="v3-static v6-static v13 v14-public v26-stories">
 <a class="skip-link" href="#Content">Skip to content</a>
 <header class="v6-nav v9-nav">

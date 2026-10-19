@@ -61,7 +61,18 @@ async function alerts(){
  const M=window.InsidirMedia;
  const co=t=>M?'<div class="ins-company-cell">'+M.logo(cleanTicker(t),"sm")+link(t)+"</div>":link(t);
  const who=x=>{if(!M)return person(x);const l=leadOf(x);return '<div class="ins-person-cell">'+M.portrait(l.name||"",cleanTicker(x.ticker),"sm",{cik:l.cik,issuerCik:x.issuer_cik})+'<span class="ins-person-cell__name">'+person(x)+"</span></div>";};
- try{const r=await get("/v1/me/alerts");const rows=(r.items||[]).map(x=>'<tr>'+cell(d(x.published_at))+cell(co(x.ticker))+cell(who(x))+'<td class="'+(x.category==="reported_purchase"?"buy":x.category==="reported_sale"?"sell":"")+'">'+(x.category==="reported_purchase"?'<span class="desk-glyph is-up" aria-hidden="true"></span>':x.category==="reported_sale"?'<span class="desk-glyph is-down" aria-hidden="true"></span>':"")+E(x.category==="reported_purchase"?"Reported purchase":x.category==="reported_sale"?"Reported sale":"Other transaction")+"</td>"+cell(d(x.transaction_date))+"</tr>");document.querySelector("#alerts-real").innerHTML=rows.length?table(["Filed","Ticker","Reporting person","Category","Transaction date"],rows):status("No matching transactions in the last 30 days. Save a ticker to start monitoring.");M?.hydrate(document.querySelector("#alerts-real"));
+ try{const r=await get("/v1/me/alerts");const rows=(r.items||[]).map(x=>'<tr>'+cell(d(x.published_at))+cell(co(x.ticker))+cell(who(x))+'<td class="'+(x.category==="reported_purchase"?"buy":x.category==="reported_sale"?"sell":"")+'">'+(x.category==="reported_purchase"?'<span class="desk-glyph is-up" aria-hidden="true"></span>':x.category==="reported_sale"?'<span class="desk-glyph is-down" aria-hidden="true"></span>':"")+E(x.category==="reported_purchase"?"Reported purchase":x.category==="reported_sale"?"Reported sale":"Other transaction")+"</td>"+cell(d(x.transaction_date))+"<td>"+(x.accession?'<button class="btn btn--dark" type="button" data-ai-acc="'+E(x.accession)+'">Explain</button>':"")+"</td></tr>");document.querySelector("#alerts-real").innerHTML=rows.length?table(["Filed","Ticker","Reporting person","Category","Transaction date","Research"],rows):status("No matching transactions in the last 30 days. Save a ticker to start monitoring.");M?.hydrate(document.querySelector("#alerts-real"));
+   document.querySelector("#alerts-real")?.addEventListener("click",async event=>{
+    const button=event.target.closest("button[data-ai-acc]");if(!button)return;
+    button.disabled=true;button.textContent="Researching…";
+    try{
+     const report=await get("/v1/ai/explain?accession="+encodeURIComponent(button.dataset.aiAcc));
+     const row=document.createElement("tr"),detail=document.createElement("td");detail.colSpan=6;detail.className="research-source";
+     detail.textContent="Insidir AI research · "+String(report.explanation||"")+" Source: SEC filing "+button.dataset.aiAcc+". Factual description, not investment advice.";
+     row.append(detail);button.closest("tr")?.after(row);button.textContent="Explained";
+    }catch(error){button.textContent=error.message||"AI unavailable";button.disabled=false;}
+   });
+
  }catch(ex){document.querySelector("#alerts-real").innerHTML=status(ex.message+". Sign in to access personalized activity.")}
 }
 async function filing(){

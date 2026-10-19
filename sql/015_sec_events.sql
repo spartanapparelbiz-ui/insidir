@@ -1,7 +1,7 @@
 -- Normalized research events (src/research-events.mjs): one row per factual event derived from imported public
 -- records, deduplicated by a deterministic key, linked to every source accession and document, with the trade
 -- date, the SEC filing time and Insidir's retrieval time kept apart.
-CREATE TABLE IF NOT EXISTS research_events (
+CREATE TABLE IF NOT EXISTS sec_events (
   id BIGSERIAL PRIMARY KEY,
   event_key TEXT NOT NULL UNIQUE,
   event_type TEXT NOT NULL CHECK (event_type IN ('insider_purchase','insider_sale','multi_insider_purchase','form4_amendment','company_disclosure')),
@@ -23,19 +23,19 @@ CREATE TABLE IF NOT EXISTS research_events (
   source_urls TEXT[] NOT NULL,
   facts JSONB NOT NULL
 );
-CREATE INDEX IF NOT EXISTS research_events_ticker_idx ON research_events(ticker, filing_date DESC);
-CREATE INDEX IF NOT EXISTS research_events_issuer_idx ON research_events(issuer_cik, filing_date DESC);
-CREATE INDEX IF NOT EXISTS research_events_owner_idx ON research_events(owner_cik, filing_date DESC) WHERE owner_cik IS NOT NULL;
-CREATE INDEX IF NOT EXISTS research_events_detected_idx ON research_events(detected_at DESC, id DESC);
-CREATE INDEX IF NOT EXISTS research_events_type_idx ON research_events(event_type, filing_date DESC);
-CREATE INDEX IF NOT EXISTS research_events_accessions_idx ON research_events USING GIN (accessions);
+CREATE INDEX IF NOT EXISTS sec_events_ticker_idx ON sec_events(ticker, filing_date DESC);
+CREATE INDEX IF NOT EXISTS sec_events_issuer_idx ON sec_events(issuer_cik, filing_date DESC);
+CREATE INDEX IF NOT EXISTS sec_events_owner_idx ON sec_events(owner_cik, filing_date DESC) WHERE owner_cik IS NOT NULL;
+CREATE INDEX IF NOT EXISTS sec_events_detected_idx ON sec_events(detected_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS sec_events_type_idx ON sec_events(event_type, filing_date DESC);
+CREATE INDEX IF NOT EXISTS sec_events_accessions_idx ON sec_events USING GIN (accessions);
 -- Every person an event is about (joint filings name several), so a follow finds its events by index.
-CREATE TABLE IF NOT EXISTS research_event_people (
-  event_id BIGINT NOT NULL REFERENCES research_events(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS sec_event_people (
+  event_id BIGINT NOT NULL REFERENCES sec_events(id) ON DELETE CASCADE,
   owner_cik TEXT NOT NULL,
   PRIMARY KEY (event_id, owner_cik)
 );
-CREATE INDEX IF NOT EXISTS research_event_people_owner_idx ON research_event_people(owner_cik, event_id DESC);
+CREATE INDEX IF NOT EXISTS sec_event_people_owner_idx ON sec_event_people(owner_cik, event_id DESC);
 
 -- Where each builder stopped: the retrieval time of the last filing it processed.
 CREATE TABLE IF NOT EXISTS research_cursors (

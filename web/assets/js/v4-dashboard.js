@@ -292,7 +292,8 @@ function about(r){
   set("v4-data-state",online?(s.sec==="requires_user_agent"?"Online · SEC import not configured":"Online"):"Degraded");
   set("v4-filing-count",Number.isFinite(Number(s.filings))?D.plural(Number(s.filings),"filing")+" imported":"filings imported: not reported");
   const when=run?(run.status==="running"?run.started_at:(run.finished_at||run.started_at)):s.lastIngestAt||null;
-  set("v4-last-import",when?(run?.status==="running"?"import started ":"last import ")+D.stamp(when)+runNote(run?.status):"no import recorded yet");
+  const changed=Number(run?.parsed);
+   set("v4-last-import",when?(run?.status==="running"?"SEC check started ":"last SEC feed check ")+D.stamp(when)+(Number.isFinite(changed)?" · "+changed+" new Form 4"+(changed===1?"":"s"):"")+runNote(run?.status):"no SEC check recorded yet");
  }
  const first=r.filing.ok?r.filing.value:null,fallback=r.status.ok?r.status.value?.latest_published_at:null;
  set("v4-latest-filing-date",first?.published_at?"newest filing published "+D.filedDate(first.published_at):fallback?"newest filing published "+D.filedDate(fallback):r.filing.ok?"no filings imported yet":"newest filing: unavailable");

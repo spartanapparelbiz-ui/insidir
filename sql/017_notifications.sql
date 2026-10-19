@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS email_consents_user_idx ON email_consents(user_id, cr
 CREATE TABLE IF NOT EXISTS notifications (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  event_id BIGINT NOT NULL REFERENCES research_events(id) ON DELETE CASCADE,
+  event_id BIGINT NOT NULL REFERENCES sec_events(id) ON DELETE CASCADE,
   reason TEXT NOT NULL CHECK (reason IN ('watchlist','followed_person')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   read_at TIMESTAMPTZ,

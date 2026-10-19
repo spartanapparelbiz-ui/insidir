@@ -13,7 +13,7 @@ import { readFile } from "node:fs/promises";
 process.env.SEC_USER_AGENT ||= "Insidir Research hello@aethric.llc";
 const realFetch = globalThis.fetch;
 globalThis.fetch = async url => { throw new Error("Network used in a unit test: " + url); };
-const { createApiServer, INSIDERS_SQL } = await import("../src/api.mjs");
+const { createApiServer, INSIDERS_SQL, normalizePersonQuery } = await import("../src/api.mjs");
 const { OWNERS_TABLE_SQL, JOINT_OWNERS_SQL } = await import("../src/person-profile.mjs");
 
 const PAID = { id: "11111111-1111-4111-8111-111111111111", email: "paid@example.com", subscription_status: "active", current_period_end: null };
@@ -49,23 +49,32 @@ async function withApi(query, fn, user = PAID) {
   try { await fn(`http://127.0.0.1:${server.address().port}`); } finally { server.close(); }
 }
 
+test("natural-order people queries and SEC owner CIKs normalize safely",()=>{
+  assert.equal(normalizePersonQuery("  Tim Cook "),"TIM COOK");
+  assert.equal(normalizePersonQuery("Cook, Timothy D."),"COOK TIMOTHY D");
+  assert.equal(normalizePersonQuery("Jensen Huang"),"JENSEN HUANG");
+  assert.equal(normalizePersonQuery("0001214156"),"0001214156");
+  assert.equal(normalizePersonQuery(""),"");
+  assert.equal(normalizePersonQuery("  O'Neil—Mary  "),"O NEIL MARY");
+});
+
 test("GET /v1/insiders: each person once by CIK without leading zeros; with sec_filing_owners, joint filers too", async () => {
   for (const sql of Object.values(INSIDERS_SQL)) {
     const text = flat(sql);
     assert.match(text, /^SELECT LPAD\(l\.bare,10,'0'\) AS owner_cik,/, "answered in the 10-digit form");
-    assert.match(text, /GROUP BY l\.bare ORDER BY last_transaction_date DESC NULLS LAST,l\.bare LIMIT 100$/);
-    assert.match(text, /t\.owner_cik IS NOT NULL AND \(\$1::text='' OR t\.owner_name ILIKE '%'\|\|\$1\|\|'%'\)/, "q is a bound parameter");
+    assert.match(text, /GROUP BY l\.bare ORDER BY last_transaction_date DESC NULLS LAST,l\.bare LIMIT \$2 OFFSET \$3$/);
+    assert.match(text, /t\.owner_cik IS NOT NULL AND \(\$1::text='' OR CASE WHEN \$1 ~/, "q is parameterized and supports owner CIK");
     assert.ok(!text.includes("${"), "no unexpanded template");
   }
   assert.ok(!flat(INSIDERS_SQL.single).includes("sec_filing_owners"));
-  assert.match(flat(INSIDERS_SQL.joint), /UNION ALL SELECT LTRIM\(o\.owner_cik,'0'\),o\.owner_name,t\.ticker,t\.issuer_cik,t\.accession,t\.transaction_date FROM sec_filing_owners o JOIN sec_transactions t ON t\.accession=o\.accession AND t\.owner_cik IS NULL WHERE \(\$1::text='' OR o\.owner_name ILIKE '%'\|\|\$1\|\|'%'\)/,
-    "a joint owner is matched and named by the name they filed with");
+  assert.match(flat(INSIDERS_SQL.joint), /UNION ALL SELECT LTRIM\(o\.owner_cik,'0'\),o\.owner_name,t\.ticker,t\.issuer_cik,t\.accession,t\.transaction_date FROM sec_filing_owners o JOIN sec_transactions t ON t\.accession=o\.accession AND t\.owner_cik IS NULL WHERE \(\$1::text='' OR CASE WHEN \$1 ~/,
+    "a joint owner is matched using their own filed name and CIK");
   const row = { owner_cik: "0004444444", owner_name: "SMITH BOB", ticker: "EXMP", issuer_cik: "0000099999", filings: 1, last_transaction_date: "2026-10-07" };
   const joint = fakeQuery({ ...PRESENT, [flat(INSIDERS_SQL.joint)]: params => ({ rows: params[0] === "SMITH" ? [row] : [] }) });
   await withApi(joint, async base => {
     const r = await get(base, "/v1/insiders?q=%20SMITH%20");
-    assert.deepEqual([r.status, r.json], [200, { items: [row], source: "SEC Form 4" }]);
-    assert.deepEqual(joint.of(INSIDERS_SQL.joint).map(s => s.params), [["SMITH"]]);
+    assert.deepEqual([r.status, r.json], [200, { items: [row], offset:0, limit:100, hasMore:false, source:"Imported SEC Form 4 reporting owners", coverage:"Only imported reporting owners, not all public officials or SEC filers" }]);
+    assert.deepEqual(joint.of(INSIDERS_SQL.joint).map(s => s.params), [["SMITH",101,0]]);
   });
   const single = fakeQuery();
   await withApi(single, async base => {
@@ -131,6 +140,8 @@ test("on PostgreSQL: a joint-only filer is in /v1/insiders, and joint lines carr
         ["0001111111", "DOE JOHN", "EXMP", "0000099999", 1], ["0004444444", "SMITH BOB", "EXMP", "0000099999", 1], ["0005555555", "FUND LP", "EXMP", "0000099999", 1]]);
       assert.deepEqual((await get(base, "/v1/insiders?q=smith")).json.items.map(x => x.owner_cik), ["0004444444"]);
       assert.deepEqual((await get(base, "/v1/insiders?q=FUND")).json.items.map(x => x.owner_name), ["FUND LP"], "matched by the name filed, not the joined line name");
+      assert.deepEqual((await get(base, "/v1/insiders?q=Bob%20Smith")).json.items.map(x=>x.owner_name), ["SMITH BOB"], "natural first-name order");
+      assert.deepEqual((await get(base, "/v1/insiders?q=0004444444")).json.items.map(x=>x.owner_name), ["SMITH BOB"], "SEC reporting owner CIK");
       const profile = (await get(base, "/v1/people/4444444")).json;
       assert.deepEqual(profile.person, { cik: "0004444444", name: "SMITH BOB", filed_names: ["SMITH BOB"] });
       assert.deepEqual(profile.transactions.map(x => [x.owner_cik, x.owners]), [[null, BOTH]]);

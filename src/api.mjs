@@ -28,6 +28,10 @@ import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { explainEvent } from "./explanations.mjs";
 import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,unsubscribePage } from "./notifications.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
+import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
+import {explainFiling,aiReady} from "./ai-explain.mjs";
+import {monitorSources} from "./intelligence-monitor.mjs";
+import {intelligenceBriefing,investigateCompany,filingBriefing,mirrorRecord} from "./intelligence-features.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -191,24 +195,32 @@ const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amend
 /* The owners of joint lines: JOINT_OWNERS_SQL / withJointOwners live in person-profile.mjs (one helper
  * for the profile and every route here); JOINT_OWNERS_SQL is re-exported for the tests. */
 export { JOINT_OWNERS_SQL };
-/* GET /v1/insiders: reporting people, newest line first, each person once (padded and unpadded owner
- * CIKs merged; owner_cik answered in the 10-digit form). With sec_filing_owners, owners of joint
- * filings are listed too, under the name they filed with there, so a person who only files jointly
- * can be found from the people directory and the header search. ticker and issuer_cik are from the
- * person's newest line; filings counts distinct filings. q matches the name filed (as before). */
+/* A Form 4 owner is identified by the SEC owner CIK, not name spelling.
+ * Filed names often reverse given/surname order or abbreviate given names.
+ * Keep results strictly limited to people present in imported public filings. */
+export function normalizePersonQuery(input) {
+  return String(input||'').normalize('NFKD').toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim().split(/\s+/).filter(Boolean).slice(0,6).join(' ').slice(0,80);
+}
 const INSIDER_PICK="(ARRAY_AGG(l.%s ORDER BY l.transaction_date DESC NULLS LAST,l.accession DESC))[1]";
 const pick=c=>INSIDER_PICK.replace("%s",c)+" AS "+c;
+/* Bound query. Each term can occur in any order. Three-character prefixes match
+ * registered-name abbreviations, e.g. JENSEN HUANG -> HUANG JEN HSUN. */
+const matchesOwner=(name,cik)=>`($1::text='' OR CASE WHEN $1 ~ '^[0-9]{1,10}$'
+ THEN LTRIM(${cik},'0')=LTRIM($1,'0')
+ ELSE NOT EXISTS (SELECT 1 FROM unnest(string_to_array($1::text,' ')) AS term
+   WHERE term<>'' AND UPPER(${name}) NOT LIKE '%'||LEFT(term,CASE WHEN LENGTH(term)>=4 THEN 3 ELSE LENGTH(term) END)||'%')
+ END)`;
 function insidersSql(joint){
   const own=`SELECT LTRIM(t.owner_cik,'0') AS bare,t.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_transactions t
-    WHERE t.owner_cik IS NOT NULL AND ($1::text='' OR t.owner_name ILIKE '%'||$1||'%')`;
+    WHERE t.owner_cik IS NOT NULL AND ${matchesOwner('t.owner_name','t.owner_cik')}`;
   const shared=`SELECT LTRIM(o.owner_cik,'0'),o.owner_name,t.ticker,t.issuer_cik,t.accession,t.transaction_date FROM sec_filing_owners o
     JOIN sec_transactions t ON t.accession=o.accession AND t.owner_cik IS NULL
-    WHERE ($1::text='' OR o.owner_name ILIKE '%'||$1||'%')`;
+    WHERE ${matchesOwner('o.owner_name','o.owner_cik')}`;
   return `SELECT LPAD(l.bare,10,'0') AS owner_cik,${pick("owner_name")},${pick("ticker")},
   LPAD(LTRIM(${INSIDER_PICK.replace("%s","issuer_cik")},'0'),10,'0') AS issuer_cik,
   COUNT(DISTINCT l.accession)::integer AS filings,MAX(l.transaction_date) AS last_transaction_date
   FROM (${own}${joint?"\n  UNION ALL "+shared:""}) l
-  WHERE l.bare<>'' GROUP BY l.bare ORDER BY last_transaction_date DESC NULLS LAST,l.bare LIMIT 100`;
+  WHERE l.bare<>'' GROUP BY l.bare ORDER BY last_transaction_date DESC NULLS LAST,l.bare LIMIT $2 OFFSET $3`;
 }
 export const INSIDERS_SQL=Object.freeze({single:insidersSql(false),joint:insidersSql(true)});
 const toCount=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):0};
@@ -355,8 +367,10 @@ async function route(req,res,ctx){
   if(p==="/v1/sources" && m==="GET")return json(res,200,{sources:sourceRegistry,disclaimer:"Sources marked disabled are not ingested or republished."});
   if(p==="/v1/status" && m==="GET"){
     const last=await query("SELECT started_at,finished_at,status,discovered,parsed,failed,skipped FROM ingest_runs ORDER BY id DESC LIMIT 1");
-    const count=await query("SELECT count(*)::integer AS filings FROM sec_filings WHERE ingest_status='parsed'");
-    return json(res,200,{engine:"online",sec:secReady()?"configured":"requires_user_agent",filings:count.rows[0]?.filings||0,lastIngest:last.rows[0]||null,paid:false});
+    const count=await query("SELECT count(*)::integer AS filings, MAX(published_at) AS latest_published_at FROM sec_filings WHERE ingest_status='parsed'");
+    return json(res,200,{engine:"online",sec:secReady()?"configured":"requires_user_agent",filings:count.rows[0]?.filings||0,
+      lastIngest:last.rows[0]||null,latestFilingPublishedAt:count.rows[0]?.latest_published_at||null,
+      note:"A recent successful import check can find zero new filings, especially on weekends and holidays. Publication date is not ingestion time.",paid:false});
   }
   if(p==="/v1/filings" && m==="GET"){
     const limit=positive(u.searchParams.get("limit"),30,100);
@@ -413,10 +427,13 @@ async function route(req,res,ctx){
       disclaimer:"No forecast or buy/sell recommendation."});
   }
   if(p==="/v1/insiders" && m==="GET"){
-    const q=(u.searchParams.get("q")||"").trim().slice(0,80);
+    const q=normalizePersonQuery(u.searchParams.get("q"));
+    const limit=positive(u.searchParams.get("limit"),100,100);
+    const offset=Math.min(10_000,Math.max(0,Math.trunc(Number(u.searchParams.get("offset"))||0)));
     const sql=(await hasFilingOwners(ctx.query))?INSIDERS_SQL.joint:INSIDERS_SQL.single;
-    const rows=await ctx.query(sql,[q]);
-    return json(res,200,{items:rows.rows,source:"SEC Form 4"});
+    const rows=await ctx.query(sql,[q,limit+1,offset]);
+    return json(res,200,{items:rows.rows.slice(0,limit),offset,limit,hasMore:rows.rows.length>limit,
+      source:"Imported SEC Form 4 reporting owners",coverage:"Only imported reporting owners, not all public officials or SEC filers"});
   }
   if(p==="/v1/me" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -515,6 +532,45 @@ async function route(req,res,ctx){
     const limit=positive((u.searchParams.get("limit")||"").trim()||null,40,100);
     return json(res,200,await followedPeopleUpdates(user.id,limit,ctx.query));
   }
+  if(p==="/v1/intelligence/sources" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,{sources:monitorSources(),note:"Coverage is source-limited and may be delayed. Financial disclosures are not investment recommendations."});
+  }
+  if(p==="/v1/intelligence/events" && m==="GET"){
+    await requireUser(req,ctx);
+    const limit=positive(u.searchParams.get("limit"),40,100);
+    const rows=await ctx.query("SELECT event_key,source_type,title,source_url,subject,published_at,observed_at,verified,metadata FROM research_events WHERE verified=true AND published_at>=now()-interval '45 days' ORDER BY published_at DESC NULLS LAST LIMIT $1",[limit]);
+    return json(res,200,{items:rows.rows,source:"Approved public record and public post metadata"});
+  }
+  if(p==="/v1/ai/explain" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"ai-explain:"+user.id,20,15*60*1000))throw failure(429,"Too many AI explanations requested");
+    return json(res,200,await explainFiling(u.searchParams.get("accession"),{run:ctx.query}));
+  }
+  if(p==="/v1/me/intelligence/briefing" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await intelligenceBriefing(user.id,ctx.query));
+  }
+  if(p==="/v1/me/intelligence/filings" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await filingBriefing(user.id,ctx.query));
+  }
+  if(p==="/v1/me/intelligence/mirror" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await mirrorRecord(user.id,ctx.query));
+  }
+  if(p==="/v1/me/intelligence/investigate" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"investigate:"+user.id,40,15*60*1000))throw failure(429,"Research request limit reached");
+    return json(res,200,await investigateCompany(user.id,ticker(u.searchParams.get("ticker")),ctx.query));
+  }
+  if(p==="/v1/ai/status" && m==="GET"){
+    await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",advice:false});
+  }
+  if(p==="/v1/me/push" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await pushStatus(user.id,ctx.query));
+  }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
     const w=await query("SELECT ticker,created_at FROM watchlist WHERE user_id=$1 ORDER BY ticker",[user.id]);
@@ -531,11 +587,17 @@ async function route(req,res,ctx){
   if(p==="/v1/me/alerts" && m==="GET"){
     const user=await requireUser(req,ctx);
     const results=await ctx.query(`SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.category,t.estimated_value,t.source_url,f.published_at
-      FROM sec_transactions t JOIN watchlist w ON w.ticker=t.ticker
-      JOIN sec_filings f ON f.accession=t.accession WHERE w.user_id=$1 AND f.published_at>=now()-interval '30 days'
+      FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
+      WHERE f.ingest_status='parsed' AND f.published_at>=now()-interval '30 days'
+      AND (
+        EXISTS(SELECT 1 FROM watchlist w WHERE w.user_id=$1 AND w.ticker=t.ticker)
+        OR EXISTS(SELECT 1 FROM followed_people p WHERE p.user_id=$1 AND t.owner_cik IS NOT NULL AND LTRIM(p.owner_cik,'0')=LTRIM(t.owner_cik,'0'))
+        OR EXISTS(SELECT 1 FROM followed_people p JOIN sec_filing_owners o ON LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0')
+          WHERE p.user_id=$1 AND o.accession=t.accession)
+      )
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
-    return json(res,200,{items:results.rows,delivery:"in_app_on_demand",note:"No email or push notifications are active."});
+    return json(res,200,{items:results.rows,delivery:pushReady()?"in_app_and_opt_in_web_push":"in_app_on_demand",note:"Matched against followed tickers and reporting-owner SEC CIKs. Verify official sources."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
     if(!config.ingestSecret || !req.headers.authorization?.startsWith("Bearer "))throw failure(401,"Authorized ingestion token required");
@@ -549,6 +611,13 @@ async function route(req,res,ctx){
     if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
     // Behind the hosting proxy the socket address is the proxy's; clientAddress reads the real client.
     const ip=clientAddress(req);
+    if(p==="/v1/me/push" && (m==="POST"||m==="DELETE")){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"push-settings:"+user.id,30,15*60*1000))throw failure(429,"Too many notification changes");
+      const payload=await body(req);
+      return json(res,200,m==="POST"?await subscribePush(user.id,payload,ctx.query)
+        :await unsubscribePush(user.id,payload?.endpoint,ctx.query));
+    }
     if(p==="/v1/auth/register" && m==="POST"){
       if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);

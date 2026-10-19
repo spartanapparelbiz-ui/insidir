@@ -74,8 +74,8 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   });
   const researchEvents = await safe(async () => {
     const [r] = await rows(query, `SELECT count(*)::integer AS total, max(detected_at) AS newest_detected,
-      count(*) FILTER (WHERE detected_at>now()-interval '24 hours')::integer AS detected_24h FROM research_events`);
-    const byType = await rows(query, "SELECT event_type,count(*)::integer AS n FROM research_events GROUP BY event_type ORDER BY n DESC");
+      count(*) FILTER (WHERE detected_at>now()-interval '24 hours')::integer AS detected_24h FROM sec_events`);
+    const byType = await rows(query, "SELECT event_type,count(*)::integer AS n FROM sec_events GROUP BY event_type ORDER BY n DESC");
     // Builder lag: parsed filings retrieved after the builder's cursor are not yet events.
     const [lag] = await rows(query, `SELECT (SELECT position FROM research_cursors WHERE name='form4') AS cursor,
       (SELECT count(*)::integer FROM sec_filings f WHERE f.ingest_status='parsed' AND f.retrieved_at>COALESCE((SELECT position FROM research_cursors WHERE name='form4'),'epoch')) AS pending_filings`);

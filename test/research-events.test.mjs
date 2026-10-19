@@ -64,7 +64,7 @@ test("research events on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_
   };
   const A = { cik: person(1), name: "Person Alpha", title: "Chief Financial Officer" }, B = { cik: person(2), name: "Person Beta" }, C = { cik: person(3), name: "Person Gamma" },
     D = { cik: person(4), name: "Person Delta" }, J1 = { cik: person(5), name: "Fund Epsilon LP" }, J2 = { cik: person(6), name: "Epsilon GP LLC" };
-  const ev = async key => (await q("SELECT * FROM research_events WHERE event_key=$1", [key])).rows[0];
+  const ev = async key => (await q("SELECT * FROM sec_events WHERE event_key=$1", [key])).rows[0];
   const build = () => RE.buildResearchEvents({ query: q });
   await build(); // catch up on whatever other suites imported
 
@@ -91,26 +91,26 @@ test("research events on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_
 
   await t.test("rebuilding creates nothing new", async () => {
     await q("UPDATE research_cursors SET position='epoch',last_key='' WHERE name='form4'");
-    const before = (await q("SELECT count(*)::int AS n FROM research_events WHERE ticker=$1", [ticker])).rows[0].n;
+    const before = (await q("SELECT count(*)::int AS n FROM sec_events WHERE ticker=$1", [ticker])).rows[0].n;
     const r = await build();
     assert.ok(r.filings >= 2);
-    assert.equal((await q("SELECT count(*)::int AS n FROM research_events WHERE ticker=$1", [ticker])).rows[0].n, before);
+    assert.equal((await q("SELECT count(*)::int AS n FROM sec_events WHERE ticker=$1", [ticker])).rows[0].n, before);
   });
 
   await t.test("distinct owners buying within the window form one group, re-issued as it grows; a joint filing counts once", async () => {
     await file(3, [C], a => [line(a, 0, C, { shares: "40", price: "10", date: day(6) })], { period: day(6), publishedDaysAgo: 4 });
     await build();
-    const two = (await q("SELECT * FROM research_events WHERE event_type='multi_insider_purchase' AND ticker=$1 AND status='active'", [ticker])).rows;
+    const two = (await q("SELECT * FROM sec_events WHERE event_type='multi_insider_purchase' AND ticker=$1 AND status='active'", [ticker])).rows;
     assert.equal(two.length, 1);
     assert.equal(two[0].facts.distinctReportingOwners, 2);
     assert.match(two[0].facts.caveats.join(" "), /does not mean the owners acted together/);
     await file(4, [J1, J2], a => [line(a, 0, null, { shares: "10", price: "10", date: day(5) })], { period: day(5), publishedDaysAgo: 3 });
     await build();
-    const three = (await q("SELECT * FROM research_events WHERE event_type='multi_insider_purchase' AND ticker=$1 AND status='active'", [ticker])).rows;
+    const three = (await q("SELECT * FROM sec_events WHERE event_type='multi_insider_purchase' AND ticker=$1 AND status='active'", [ticker])).rows;
     assert.equal(three.length, 1);
     assert.equal(three[0].facts.distinctReportingOwners, 3, "the joint filing's two owners count as one");
     assert.equal((await ev(two[0].event_key)).status, "superseded");
-    const people = (await q("SELECT owner_cik FROM research_event_people WHERE event_id=$1 ORDER BY 1", [three[0].id])).rows.map(r => r.owner_cik);
+    const people = (await q("SELECT owner_cik FROM sec_event_people WHERE event_id=$1 ORDER BY 1", [three[0].id])).rows.map(r => r.owner_cik);
     for (const o of [A, C, J1, J2]) assert.ok(people.includes(o.cik), o.name);
     assert.equal(three[0].facts.totalValue, decimalSum(three[0].facts.purchases.map(p => p.totalValue)));
   });

@@ -52,7 +52,7 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
     owner_cik: "0000000008", owner_name: "Example Filer", transaction_date: new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10), filing_date: new Date(Date.now() - 86400000).toISOString(),
     ingested_at: new Date().toISOString(), accessions: ["000000000926" + String(Math.floor(Math.random() * 1e6)).padStart(6, "0")], source_urls: ["https://www.sec.gov/Archives/edgar/data/9/x/"],
     facts: { owners: [{ cik: "0000000008", name: "Example Filer", roles: ["Director"] }], totalShares: "100", totalValue: "1000", priceLow: "10", priceHigh: "10", lineCount: 1, lines: [] }, people: ["0000000008"], ...extra });
-  const notes = async userId => (await q("SELECT n.*,e.event_key FROM notifications n JOIN research_events e ON e.id=n.event_id WHERE n.user_id=$1 AND e.event_key LIKE $2 ORDER BY n.id", [userId, `ntest:${tag}:%`])).rows;
+  const notes = async userId => (await q("SELECT n.*,e.event_key FROM notifications n JOIN sec_events e ON e.id=n.event_id WHERE n.user_id=$1 AND e.event_key LIKE $2 ORDER BY n.id", [userId, `ntest:${tag}:%`])).rows;
 
   await t.test("fan-out: watched company and followed person alert once; old, superseded, baseline and unwatched events do not", async () => {
     await q("DELETE FROM research_cursors WHERE name='notifications'");
@@ -61,7 +61,7 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
     await event("followed", { ticker: T2, owner_cik: person, people: [person], facts: { owners: [{ cik: person, name: "Followed Person", roles: [] }], totalShares: "5", totalValue: "50", lineCount: 1, lines: [] } });
     await event("unwatched", { ticker: T3, people: [] });
     await event("old", { filing_date: new Date(Date.now() - 30 * 86400000).toISOString() });
-    await event("superseded", {}).then(r => q("UPDATE research_events SET status='superseded' WHERE id=$1", [r.id]));
+    await event("superseded", {}).then(r => q("UPDATE sec_events SET status='superseded' WHERE id=$1", [r.id]));
     await event("baseline", { event_type: "company_disclosure", facts: { form: "8-K", baseline: true }, people: [] });
     await N.fanOut({ query: q }); await N.fanOut({ query: q });
     const mine = await notes(M.id);
