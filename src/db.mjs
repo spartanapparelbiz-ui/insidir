@@ -22,14 +22,22 @@ export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_
   "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","015_sec_events.sql","016_explanations.sql","017_notifications.sql"]);
 export async function migrate() {
   const db=requireDb();
-  const client=await db.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(813076521)");
-    for(const file of MIGRATIONS)await client.query(await readFile(new URL("../sql/"+file,import.meta.url),"utf8"));
-    await client.query("COMMIT");
-  } catch(e) { await client.query("ROLLBACK");throw e; }
-  finally {client.release()}
+  // The idempotent DDL still takes table locks; when another instance's traffic holds them in the other order
+  // PostgreSQL aborts one side with a deadlock (40P01). The whole transaction rolls back, so retrying is safe.
+  for(let attempt=1;;attempt++){
+    const client=await db.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(813076521)");
+      for(const file of MIGRATIONS)await client.query(await readFile(new URL("../sql/"+file,import.meta.url),"utf8"));
+      await client.query("COMMIT");
+      return;
+    } catch(e) {
+      await client.query("ROLLBACK").catch(()=>{});
+      if(e?.code!=="40P01"||attempt>=4)throw e;
+      await new Promise(r=>setTimeout(r,250*attempt+Math.floor(Math.random()*250)));
+    } finally {client.release()}
+  }
 }
 export async function health() {
   if(!pool) return {ok:false,db:"not_configured"};
