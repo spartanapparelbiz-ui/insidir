@@ -12,8 +12,9 @@
 body.v13{--vf-surface:color-mix(in srgb,var(--hf-bg) 94%,var(--hf-ink));--vf-surface-2:color-mix(in srgb,var(--hf-bg) 90%,var(--hf-ink));
   --vf-hairline:var(--hf-line-soft);--vf-sheen:inset 0 1px 0 color-mix(in srgb,var(--hf-ink) 7%,transparent);
   --vf-ease:cubic-bezier(.2,.7,.2,1);--vf-fade:.42s}
-body.v13 :is(h1,h2,h3,.page-title){text-wrap:balance}
-body.v13 :is(p,li,figcaption){text-wrap:pretty}
+/* Headlines keep their designed line breaks (two-tone titles depend on them); only running text avoids a
+   one-word last line. */
+body.v13 main :is(p,li):not([class*="title"]):not([class*="head"]){text-wrap:pretty}
 body.v13 :is(table,td,th,.iv-row__meta,.ac-item__meta,[data-num],.num,.tabular){font-variant-numeric:tabular-nums}
 /* Responsive screenshots: <picture> lays its <img> out as if it were the container's own child. */
 body.v13 picture{display:contents}
@@ -29,8 +30,8 @@ body.v13 :is(a,button,summary,label,[role="tab"],[role="button"]){touch-action:m
 @media (hover:none) and (pointer:coarse){
   body.v13 :is(button,.ac-btn,.iv-btn,.iv-tab,.btn):active{opacity:.72;transition:opacity 0s}
 }
-/* No layout jump when a page grows a scrollbar; the scrollbar itself in paper and ink. */
-html:has(body.v13){scrollbar-gutter:stable;scrollbar-color:var(--hf-line-strong,#696762) var(--hf-bg,#0c0c0b)}
+/* The page scrollbar in paper and ink (classic scrollbars on Windows and Linux; macOS overlays are unchanged). */
+html:has(body.v13){scrollbar-color:var(--hf-line-strong,#696762) var(--hf-bg,#0c0c0b)}
 /* Page to page: a short cross-fade instead of a white flash (browsers that support cross-document view
    transitions; the header holds still). Off with reduced motion. */
 @media (prefers-reduced-motion:no-preference){
