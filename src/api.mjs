@@ -20,6 +20,7 @@ import { validateManualHolding } from "./manual-holdings.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
+import {intelligenceBriefing,investigateCompany} from "./intelligence-features.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -466,6 +467,15 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     if(isLimited("ai-explain:"+user.id,20,15*60*1000))throw failure(429,"Too many AI explanations requested");
     return json(res,200,await explainFiling(u.searchParams.get("accession"),{run:ctx.query}));
+  }
+  if(p==="/v1/me/intelligence/briefing" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await intelligenceBriefing(user.id,ctx.query));
+  }
+  if(p==="/v1/me/intelligence/investigate" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(isLimited("investigate:"+user.id,40,15*60*1000))throw failure(429,"Research request limit reached");
+    return json(res,200,await investigateCompany(user.id,ticker(u.searchParams.get("ticker")),ctx.query));
   }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",advice:false});
