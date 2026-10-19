@@ -42,3 +42,16 @@ CREATE TABLE IF NOT EXISTS research_events (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX IF NOT EXISTS research_events_latest_idx ON research_events(observed_at DESC);
+
+-- Source-linked AI filing explanations. No user portfolio or brokerage data.
+CREATE TABLE IF NOT EXISTS filing_explanations (
+ accession TEXT PRIMARY KEY REFERENCES sec_filings(accession) ON DELETE CASCADE,
+ explanation TEXT,
+ model TEXT,
+ status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','ready','blocked','failed')),
+ retrieved_at TIMESTAMPTZ,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ error TEXT
+);
+CREATE INDEX IF NOT EXISTS filing_explanations_status_idx ON filing_explanations(status,updated_at DESC);
