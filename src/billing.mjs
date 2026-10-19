@@ -427,7 +427,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
           String(req.headers?.["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",").at(-1).trim().slice(0, 64) || null,
           String(req.headers?.["user-agent"] || "").slice(0, 300) || null]);
       const consentId = String(consentRow.rows?.[0]?.id ?? "");
-      const params = { mode: "subscription", customer, "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
+      const params = { mode: "subscription", customer, "managed_payments[enabled]": "false", "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
         client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
         "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id,
         "metadata[insidir_consent_id]": consentId, "subscription_data[metadata][insidir_consent_id]": consentId,
