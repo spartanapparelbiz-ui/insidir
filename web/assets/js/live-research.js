@@ -51,7 +51,7 @@ async function company(){
  }catch(ex){document.querySelector("#company-live").innerHTML=status(ex.message)}
 }
 async function alerts(){
- css();document.querySelector(".alerts-sub")?.replaceChildren(document.createTextNode("In-app watchlist matches from imported SEC Form 4 filings. No email or push delivery is active."));
+ css();document.querySelector(".alerts-sub")?.replaceChildren(document.createTextNode("SEC Form 4 activity for companies and people you follow. Opt in above for phone and desktop push notifications."));
  const panel=document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
  document.querySelector("#manage-alerts")?.setAttribute("hidden","");
  document.querySelector(".alert-filters")?.setAttribute("hidden","");
