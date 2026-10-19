@@ -66,8 +66,9 @@ async function alerts(){
     button.disabled=true;button.textContent="Researching…";
     try{
      const report=await get("/v1/ai/explain?accession="+encodeURIComponent(button.dataset.aiAcc));
-     const detail=document.createElement("p");detail.className="research-source";detail.textContent="Insidir AI research · "+String(report.explanation||"")+" Source: SEC filing "+button.dataset.aiAcc+". Factual description, not investment advice.";
-     button.closest("tr")?.after(detail);button.textContent="Explained";
+     const row=document.createElement("tr"),detail=document.createElement("td");detail.colSpan=6;detail.className="research-source";
+     detail.textContent="Insidir AI research · "+String(report.explanation||"")+" Source: SEC filing "+button.dataset.aiAcc+". Factual description, not investment advice.";
+     row.append(detail);button.closest("tr")?.after(row);button.textContent="Explained";
     }catch(error){button.textContent=error.message||"AI unavailable";button.disabled=false;}
    });
 
