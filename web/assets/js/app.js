@@ -452,14 +452,14 @@
     if(document.querySelector("[data-insidir-announcement]"))return;
     const css=document.createElement("style");
     css.textContent=[
-      ".insidir-platform-announcement{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:#191918;color:#e9e4da;padding:15px max(18px,calc((100% - 1280px)/2));border-bottom:1px solid #484541;position:relative;z-index:5}",
+      ".insidir-platform-announcement{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;background:var(--hf-surface-2,#1b1a18);color:var(--hf-ink,#e9e4da);padding:15px max(18px,calc((100% - 1280px)/2));border-bottom:1px solid var(--hf-line-2,#41403d);position:relative;z-index:5}",
       ".insidir-platform-announcement__lead{display:flex;align-items:center;gap:12px;flex:1 1 450px;min-width:0}",
-      ".insidir-platform-announcement__logo{width:36px;height:36px;flex:none;border:1px solid #534f49;border-radius:8px}",
+      ".insidir-platform-announcement__logo{width:36px;height:36px;flex:none;border:1px solid var(--hf-line-2,#41403d);border-radius:0}",
       ".insidir-platform-announcement__name{font-weight:650;font-size:13px;letter-spacing:.01em;margin:0 0 4px}",
-      ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:#c5c1ba;margin:0;max-width:900px}",
+      ".insidir-platform-announcement__body{font-size:12px;line-height:1.55;color:var(--hf-soft,#bdb9b1);margin:0;max-width:900px}",
       ".insidir-platform-announcement__actions{display:flex;align-items:center;gap:12px}",
-      ".insidir-platform-announcement__open{color:#e9e4da;text-decoration:underline;text-underline-offset:3px;font-size:12px}",
-      ".insidir-platform-announcement__close{color:#c5c1ba;background:transparent;border:1px solid #514d46;border-radius:4px;padding:6px 9px;cursor:pointer;font-size:12px}",
+      ".insidir-platform-announcement__open{color:var(--hf-ink,#e9e4da);text-decoration:underline;text-underline-offset:3px;font-size:12px}",
+      ".insidir-platform-announcement__close{color:var(--hf-soft,#bdb9b1);background:transparent;border:1px solid var(--hf-line-strong,#696762);border-radius:0;padding:6px 12px;min-height:36px;font-family:inherit;cursor:pointer;font-size:12px}",
       "@media(max-width:650px){.insidir-platform-announcement{padding:14px 18px;gap:12px}.insidir-platform-announcement__actions{width:100%;justify-content:flex-end}}"
     ].join("");
     document.head.append(css);

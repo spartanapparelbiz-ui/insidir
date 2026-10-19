@@ -43,7 +43,7 @@ function noticeRow(x){
   const top=el("div","iv-row__top");
   top.append(el("span","iv-badge",x.source_type==="bluesky_post"?"Public post":x.form_type?"SEC "+x.form_type:"SEC notice"));
   const subject=x.subject||x.ticker;if(subject)top.append(el("span","iv-ticker iv-ticker--plain",subject));
-  li.append(top,el("p","iv-row__text",String(x.title||x.issuer_name||"SEC filing").slice(0,240)));
+  li.append(top,el("p","iv-row__text",String(x.title||(x.form_type?(x.issuer_name||"Issuer")+": Form "+x.form_type+" imported from EDGAR":x.issuer_name)||"SEC filing").slice(0,240)));
   const meta=el("p","iv-row__meta");meta.append(el("span",null,(day(x.published_at||x.observed_at)?"Published "+day(x.published_at||x.observed_at):"Date unavailable")+" "),sourceLink(x.source_url,"Original source ↗"));
   li.append(meta);return li;
 }

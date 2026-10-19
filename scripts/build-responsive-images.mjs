@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-/* Responsive variants of the product screenshots (web/assets/img/product/*.webp): WebP and AVIF at 640, 960, 1280
+/* Responsive variants of the product screenshots (web/assets/img/product/*.webp): WebP and AVIF at 720, 1080, 1440
  * and 1920 px wide (never wider than the original, which stays as the largest WebP). The pages reference them with
- * srcset/sizes, so a phone downloads a 640 or 960 px image and a 4K or Retina screen the full-size original.
+ * srcset/sizes, so a phone downloads a 720 or 1080 px image (2x and 3x screens) and a 4K or Retina screen the full-size original.
  * Idempotent: a variant newer than its original is kept.
  *
  *   node scripts/build-responsive-images.mjs [--force] */
@@ -10,7 +10,7 @@ import { readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const DIR = new URL("../web/assets/img/product/", import.meta.url).pathname;
-const WIDTHS = [640, 960, 1280, 1920];
+const WIDTHS = [720, 1080, 1440, 1920];
 const force = process.argv.includes("--force");
 const originals = readdirSync(DIR).filter(f => /^[a-z-]+\.webp$/.test(f));
 for (const file of originals) {

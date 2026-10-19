@@ -67,7 +67,7 @@ body.v13 .iv-tab[aria-selected="true"] .iv-tab__n{color:var(--hf-soft)!important
 body.v13 .iv-panel{padding:28px 0 8px!important;outline:none!important}
 body.v13 .iv-panel:focus-visible{outline:2px solid var(--hf-ink)!important;outline-offset:6px!important}
 body.v13 .iv-panel[hidden]{display:none!important}
-body.v13 .iv-panel__head h2{font:600 var(--hf-fs-h2-lg)/1.1 var(--hf-mono)!important;letter-spacing:-.03em!important;color:var(--hf-ink)!important;margin:0 0 10px!important}
+body.v13 .iv-panel__head h2{font:600 clamp(24px,2.2vw,32px)/1.15 var(--hf-mono)!important;letter-spacing:-.02em!important;color:var(--hf-ink)!important;margin:0 0 10px!important}
 body.v13 .iv-cols{display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:clamp(20px,3vw,48px)!important;margin-top:18px!important}
 body.v13 .iv-col{min-width:0!important}
 body.v13 .iv-list{border-top:1px solid var(--hf-line)!important}

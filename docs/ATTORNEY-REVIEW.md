@@ -105,6 +105,15 @@ Personalized advice (`ADVISORY_ENABLED`) and order placement (`TRADING_ENABLED`)
 COMPLIANCE.md §7 plus a reviewed code change and a complete authorization record; read-only brokerage needs a
 SnapTrade production agreement and a security review. Nothing in this release changes those locks.
 
+## 11a. Added by the October 19 merge and visual release
+
+| ID | LEGAL QUESTION | What the software does today |
+|---|---|---|
+| K-1 | **Mirror** (Intelligence page): is the name, or a list of a followed insider's reported purchases and sales with reporting delays, likely to be read as a copy-trading or signal service? | Read-only list of public Form 4 events for people the member follows, 180 days, with trade date, filing date and delay. The page and the API (`copyTrading:"not_available"`, `orderPlacement:"not_available"`) state that it does not copy trades, place orders, model a portfolio or estimate returns. Renaming it (e.g. "Reported record") is a one-line change if counsel prefers. |
+| K-2 | **Web push product updates**: the push opt-in says members also receive "occasional important Insidir product updates" (operator broadcasts, `src/push.mjs`). Are these commercial messages needing separate consent or an opt-out other than turning notifications off? | One opt-in covers alerts and broadcasts; disabling notifications on the device stops both. Broadcasts are configured by the operator in environment variables; there is no customer-facing broadcast route. |
+| K-3 | **OpenRouter explanations** (`src/ai-explain.mjs`, from main): same questions as D-1–D-3 for a second AI provider (OpenRouter and the routed model vendor). | Active only when `INSIDIR_OPENROUTER_API_KEY` is set; daily and hourly caps. Production reported `aiGeneratedContent:"none"` on October 19, 2026. |
+| K-4 | **Bluesky public posts and House financial disclosures** (`src/intelligence-monitor.mjs`, `src/house-disclosures.mjs`, from main): social-data and politician-disclosure use (G-4). | Bluesky reads only handles listed in `INSIDIR_BLUESKY_HANDLES` (none by default); House disclosures run only with `INSIDIR_HOUSE_DISCLOSURES_APPROVED=1` and report "blocked pending legal approval" otherwise. Neither was switched on by this release. |
+
 ## 12. Sign-off
 
 | ID(s) | Attorney | Date | Decision / changes required |
