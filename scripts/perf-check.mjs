@@ -106,13 +106,15 @@ const SHOTS = opt("shots", "");
 if (SHOTS) {
   const { mkdirSync } = await import("node:fs");
   mkdirSync(SHOTS, { recursive: true });
-  for (const [label, width, height, dpr, mobile] of [["phone", 390, 844, 2, true], ["tablet", 768, 1024, 2, true], ["desktop", 1440, 900, 1, false], ["4k", 3840, 2160, 1, false]]) {
+  for (const [label, width, height, dpr, mobile] of [["phone", 390, 844, 1, true], ["tablet", 768, 1024, 2, true], ["desktop", 1440, 900, 1, false], ["4k", 3840, 2160, 1, false]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, isMobile: mobile, hasTouch: mobile, reducedMotion: "reduce" });
     for (const path of PAGES) {
       const page = await ctx.newPage();
       await page.goto(base + path, { waitUntil: "load" });
       await page.waitForTimeout(1200);
       await page.evaluate(() => window.InsidirMotion && window.InsidirMotion.revealAll && window.InsidirMotion.revealAll());
+      // Walk down the page so lazy images and content-visibility sections render before the full-page shot.
+      await page.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight * 0.8) { scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); } scrollTo(0, 0); await new Promise(r => setTimeout(r, 300)); });
       const name = (path === "/" ? "index" : path.replace(/^\/|\.html$/g, "").replace(/[^\w-]/g, "_")) + "-" + label + ".png";
       await page.screenshot({ path: SHOTS + "/" + name, fullPage: label !== "4k" });
       await page.close();

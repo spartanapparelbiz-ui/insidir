@@ -59,7 +59,9 @@ async function main() {
   }
   // Expired sign-in sessions are already refused at lookup; this removes their rows (hourly, after a minute).
   const purgeSessions=async()=>{
-    try{const r=await query("DELETE FROM sessions WHERE expires_at<now()");if(r.rowCount)console.log(JSON.stringify({event:"sessions.purged",count:r.rowCount}))}
+    try{const r=await query("DELETE FROM sessions WHERE expires_at<now()");if(r.rowCount)console.log(JSON.stringify({event:"sessions.purged",count:r.rowCount}))
+      // Funnel measurement is kept for 13 months (src/funnel.mjs, privacy.html).
+      await query("DELETE FROM funnel_events WHERE created_at<now()-interval '13 months'").catch(()=>{})}
     catch(e){console.error(JSON.stringify({event:"sessions.purge_failed",error:String(e?.message||e)}))}
   };
   setTimeout(purgeSessions,60*1000).unref();

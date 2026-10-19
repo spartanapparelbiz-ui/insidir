@@ -141,7 +141,10 @@ test("every navigation button has its own page and nothing sends visitors back t
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
   const nav=home.match(/<nav class="v6-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
-  for(const page of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  // The landing navigation is three pages (Platform, Intelligence, Pricing); the others are in the mobile menu and footer.
+  for(const page of ["platform.html","insidir-intelligence.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  const footer=home.match(/<footer[\s\S]*?<\/footer>/)?.[0]||"";
+  for(const page of ["why-insidir.html","data.html","/insider-trading","/stories.html"])assert.ok(footer.includes('href="'+page+'"'),"the landing footer still reaches "+page);
   assert.doesNotMatch(nav,/href="#/,"landing navigation buttons open pages, not anchors on the landing page");
   const fs=await import("node:fs/promises");
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){

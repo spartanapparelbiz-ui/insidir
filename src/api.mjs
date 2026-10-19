@@ -28,6 +28,7 @@ import {listManagers,managerDetail,simulate} from "./intelligence-mirror.mjs";
 import {form13fTick,ingestEnabled as form13fEnabled,managerCiks} from "./form13f.mjs";
 import {aiConfigured,modelFor,aiLimits} from "./ai-gateway.mjs";
 import {costReport,adminIdentity,timed} from "./cost-analytics.mjs";
+import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 const hits=new Map();
@@ -539,6 +540,28 @@ async function route(req,res,ctx){
     if(!who)throw failure(user?403:401,"Administrator access required");
     return json(res,200,await costReport({run:ctx.query,env:ctx.env,stripe:ctx.stripe||(billingSettings(ctx.env).enabled?createStripeClient({secretKey:billingSettings(ctx.env).secretKey}):null)}));
   }
+  if(p==="/v1/admin/funnel" && m==="GET"){
+    if(atLimit("admin-denied:"+clientAddress(req),20))throw failure(429,"Too many attempts. Try again later.");
+    const user=await ctx.currentUser(req).catch(()=>null);
+    const who=adminIdentity(req,user,ctx.env);
+    if(!who)countFailure("admin-denied:"+clientAddress(req));
+    await ctx.query("INSERT INTO admin_audit_log(actor,action,target,ip) VALUES($1,$2,$3,$4)",[who||"denied:"+(user?.id||"anonymous"),who?"admin.funnel":"admin.denied","/v1/admin/funnel",clientAddress(req)]).catch(()=>{});
+    if(!who)throw failure(user?403:401,"Administrator access required");
+    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days")}));
+  }
+  /* POST /v1/events: one first-party funnel event from a page (src/funnel.mjs lists what is accepted). Same
+     origin only; a member's id is attached when the request carries their session. Always 204, so a page
+     learns nothing from it and never waits on it. */
+  if(p==="/v1/events" && m==="POST"){
+    if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    if(isLimited("events:"+clientAddress(req),240,15*60*1000))return json(res,204,{});
+    const row=cleanClientEvent(await body(req));
+    const user=await ctx.currentUser(req).catch(()=>null);
+    await recordEvent(ctx.query,{...row,userId:user?.id||null});
+    // A member's first company report counts as their first research, for the activation measure.
+    if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
+    return json(res,204,{});
+  }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});
   }
@@ -605,6 +628,8 @@ async function route(req,res,ctx){
       const x=await body(req);
       if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
       const context=x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null;
+      serverEvent(ctx.query,"intelligence_first_used",{userId:user.id,once:true});
+      serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
       return json(res,200,rememberInvestigation(user.id,x.question,context,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context}))));
     }
     if(p==="/v1/me/intelligence/synthesize" && m==="POST"){
@@ -624,6 +649,7 @@ async function route(req,res,ctx){
     if(p==="/v1/auth/register" && m==="POST"){
       if(isLimited("signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
+      await serverEvent(ctx.query,"signup_completed",{userId:r.user?.id,visitor:x.visitor});
       return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
@@ -696,6 +722,7 @@ async function route(req,res,ctx){
       if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
       const saved=await ctx.query(FOLLOW_INSERT_SQL,[user.id,cik]);
       if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
+      serverEvent(ctx.query,"first_follow",{userId:user.id,once:true});
       return json(res,200,{saved:true,owner_cik:saved.rows[0]?.owner_cik??cik});
     }
     if(p.startsWith("/v1/me/people/") && m==="DELETE"){
@@ -708,6 +735,7 @@ async function route(req,res,ctx){
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req,ctx),x=await body(req),t=ticker(x.ticker);
       await query("INSERT INTO watchlist(user_id,ticker) VALUES($1,$2) ON CONFLICT DO NOTHING",[user.id,t]);
+      serverEvent(ctx.query,"first_watchlist_item",{userId:user.id,once:true});
       return json(res,200,{saved:true,ticker:t});
     }
     if(p.startsWith("/v1/me/watchlist/") && m==="DELETE"){

@@ -82,6 +82,11 @@
       ? "Then " + money(offer.recurringCents) + " a month in US dollars, first charged on " + firstCharge + " and renewing automatically until you cancel"
       : "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
     $("#pw-subscribe").textContent = trial ? "Start " + offer.trialDays + "-day trial · " + money(offer.todayCents) : "Subscribe · " + money(offer.recurringCents) + "/month";
+    // The headline promises what the button does: an account that has had its trial is offered the monthly plan.
+    if (!trial && body.dataset.pwState === "ready") {
+      title.textContent = "Subscribe to Insidir.";
+      lead.textContent = "This account has already used its 3-day trial, so checkout charges " + money(offer.recurringCents) + " today, then " + money(offer.recurringCents) + " a month through Stripe until you cancel. Cancel online from Billing in one step.";
+    }
     delete $("#pw-subscribe").dataset.idleLabel;
   }
   function syncAgree() {

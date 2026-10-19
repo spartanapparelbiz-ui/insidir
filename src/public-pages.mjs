@@ -96,9 +96,12 @@ export function siteOrigin(env = process.env) {
   try { const u = new URL(raw); if (u.protocol === "https:" || u.protocol === "http:") return u.origin; } catch { /* default */ }
   return "https://insidir.com";
 }
-const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Stories</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
+// The public navigation, as on every static page: three primary links; the mobile menu adds the secondary pages
+// (the insider index is marked current on these pages).
+const NAV = '<a href="/platform.html">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a>';
+const NAV_MORE = '<a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Research stories</a><a href="/why-insidir.html">Why Insidir</a><a href="/data.html">Data &amp; sources</a>';
 function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null, current = false }) {
-  const nav = NAV.replace("%CUR%", current ? ' aria-current="page"' : "");
+  const nav = NAV, more = NAV_MORE.replace("%CUR%", current ? ' aria-current="page"' : "");
   const url = origin + canonical;
   return `<!doctype html>
 <html lang="en">
@@ -126,6 +129,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
+<link rel="stylesheet" href="/assets/css/v29-system.css">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public">
 <a class="skip-link" href="#Content">Skip to content</a>
@@ -135,11 +139,11 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
   <nav class="v6-nav__links" aria-label="Main navigation">${nav}</nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Try 3 days for $1</a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Try 3 days for $1</a></nav>
+ <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}${more}<a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
 </header>
 <main id="Content">
 ${body}
@@ -148,7 +152,7 @@ ${body}
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
@@ -176,7 +180,7 @@ export function upsell(subject) {
  <div class="pp-upsell__offer">
   <p class="pp-offer__price"><strong>$1</strong><span>for 3 days</span></p>
   <p class="pp-offer__then">Then $39 a month. Cancel any time.</p>
-  <a class="v9-btn v9-btn--ink" href="/signup.html">Start the 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
+  <a class="v9-btn v9-btn--ink" href="/signup.html" data-cta="page">Start 3 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
   <a class="pp-offer__more" href="/platform.html">See everything Insidir does</a>
  </div>
 </section>`;
@@ -476,7 +480,7 @@ Disallow: /account
 Sitemap: ${origin}/sitemap.xml
 `;
 }
-const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html", ...PUBLIC_STORY_PATHS];
+const PUBLIC_STATIC = ["/", "/platform.html", "/insidir-intelligence.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html", ...PUBLIC_STORY_PATHS];
 const xmlEsc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 const urlset = urls => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `<url><loc>${xmlEsc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export async function sitemapIndex({ query, origin }) {

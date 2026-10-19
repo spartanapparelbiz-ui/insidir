@@ -162,11 +162,12 @@ test("the insider-trading pages link the stories, and a covered company or perso
   await handlePublicPage({ method: "GET", headers: {} }, res, new URL("http://localhost/insider-trading/EPD"), { query, env: {}, requester: "stories-test" });
   assert.equal(res.status, 200);
   assert.ok(res.body.includes('href="/stories/enterprise-products-insider-purchase.html"'), "the EPD page links its story");
-  assert.match(res.body, /href="\/stories\.html">Stories<\/a>/, "the public pages' navigation reaches the stories");
+  assert.match(res.body, /href="\/stories\.html">Research stories<\/a>/, "the public pages' navigation reaches the stories");
   const hub = { ...res, body: "" };
   clearPublicPageCache();
   await handlePublicPage({ method: "GET", headers: {} }, hub, new URL("http://localhost/insider-trading"), { query: async () => ({ rows: [] }), env: {}, requester: "stories-test-2" });
   for (const s of STORIES) assert.ok(hub.body.includes(`href="${storyPath(s)}"`), "the hub lists " + s.slug);
   const home = readFileSync(new URL("index.html", WEB), "utf8");
-  assert.match(home, /<a class="lp-public" href="\/stories\.html">/, "the landing page links the stories");
+  assert.match(home, /href="\/stories\.html"/, "the landing page links the stories");
+  assert.match(home, /href="\/stories\/[a-z0-9-]+\.html"/, "and opens one as a real example");
 });

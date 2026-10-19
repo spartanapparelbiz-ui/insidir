@@ -122,6 +122,24 @@
     }, overrides || {});
   }
 
+  /* One tile of print grain for the page (65,536 random pixels), made the first time a word asks for it. */
+  let grainShared = null;
+  function grain() {
+    if (grainShared) return grainShared;
+    const tile = document.createElement("canvas");
+    tile.width = 256; tile.height = 256;
+    const g = tile.getContext("2d");
+    if (!g) return null;
+    const id = g.createImageData(256, 256);
+    for (let i = 0; i < id.data.length; i += 4) {
+      const v = Math.random() * 255;
+      id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+      id.data[i + 3] = Math.random() < 0.5 ? 0 : 255;
+    }
+    g.putImageData(id, 0, 0);
+    return (grainShared = tile);
+  }
+
   /* ---------- engine ---------- */
 
   function mount(root, overrides) {
@@ -146,8 +164,22 @@
     let prevN = 0, prevIdx = new Int32Array(0), prevXY = new Float32Array(0), fresh = true;
     let dirs = new Float32Array(0), spread = 0;   // scroll scatter: each dot's drift direction, and how far along it is
     let mdx = 0, mdy = 0, lastCX = NaN, lastCY = NaN; // pointer movement since the last frame
+    let laidOut = "";                                 // the size the dots were last laid out for ("WxH@dpr")
+    // The canvas's box in page coordinates, read at most every 500ms (or after a layout): following the pointer then
+    // costs no forced layout per move.
+    let box = null, boxAt = 0;
+    const canvasBox = () => {
+      const now = performance.now();
+      if (!box || now - boxAt > 500) {
+        const b = canvas.getBoundingClientRect();
+        box = { left: b.left + window.scrollX, top: b.top + window.scrollY, width: b.width, height: b.height };
+        boxAt = now;
+      }
+      return { left: box.left - window.scrollX, top: box.top - window.scrollY, width: box.width, height: box.height };
+    };
 
     const layout = () => {
+      box = null;
       const rect = root.getBoundingClientRect();
       w = Math.max(1, Math.round(rect.width));
       h = Math.max(1, Math.round(rect.height));
@@ -223,22 +255,9 @@
         dirs[i * 2] = Math.cos(a) * len; dirs[i * 2 + 1] = Math.sin(a) * len;
       }
 
-      // A fixed tile of print grain, drawn once and laid over every frame.
-      grainTile = null;
-      if (o.grain > 0) {
-        grainTile = document.createElement("canvas");
-        grainTile.width = 256; grainTile.height = 256;
-        const g = grainTile.getContext("2d");
-        if (g) {
-          const id = g.createImageData(256, 256);
-          for (let i = 0; i < id.data.length; i += 4) {
-            const v = Math.random() * 255;
-            id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
-            id.data[i + 3] = Math.random() < 0.5 ? 0 : 255;
-          }
-          g.putImageData(id, 0, 0);
-        }
-      }
+      // A fixed tile of print grain, drawn once per page and laid over every frame.
+      grainTile = o.grain > 0 ? grain() : null;
+      laidOut = w + "x" + h + "@" + dpr;
       awake = true;
     };
 
@@ -364,7 +383,7 @@
     let cx = NaN, cy = NaN, near = false, finger = false;
     const locate = () => {
       // Only a press reaches further: a pointer passing just outside the plain reach wakes nothing.
-      const b = canvas.getBoundingClientRect(), reach = o.radius * (pressed ? PHYSICS.pressReach : 1) + 8;
+      const b = canvasBox(), reach = o.radius * (pressed ? PHYSICS.pressReach : 1) + 8;
       px = cx - b.left; py = cy - b.top;
       const was = near;
       near = px > -reach && px < b.width + reach && py > -reach && py < b.height + reach;
@@ -388,7 +407,7 @@
     const onScroll = () => { if (!still && cx === cx && !(finger && !pressed) && visible && locate()) { lastInput = performance.now(); wake(); } };
     // A ring at (clientX, clientY), viewport coordinates, through this field if it can reach it before it fades.
     const ringAt = (clientX, clientY) => {
-      const b = canvas.getBoundingClientRect(), x = clientX - b.left, y = clientY - b.top;
+      const b = canvasBox(), x = clientX - b.left, y = clientY - b.top;
       const far = PHYSICS.ringSpeed * PHYSICS.ringLife;
       const ox = Math.max(0, -x, x - b.width), oy = Math.max(0, -y, y - b.height);
       if (ox * ox + oy * oy >= far * far) return;
@@ -465,7 +484,13 @@
     }
     // A layout clears the canvas (it is resized): draw at once, on screen or not, so a field off screen is never left
     // blank until it scrolls into view.
-    const ro = new ResizeObserver(() => { layout(); draw(performance.now()); wake(); });
+    // Its first callback (on observe) and any callback that leaves the size as it was lay nothing out again.
+    const ro = new ResizeObserver(() => {
+      box = null;
+      const r = root.getBoundingClientRect();
+      if (Math.max(1, Math.round(r.width)) + "x" + Math.max(1, Math.round(r.height)) + "@" + Math.min(window.devicePixelRatio || 1, 2) === laidOut) return;
+      layout(); draw(performance.now()); wake();
+    });
     ro.observe(root);
     // Scrolled out of view: put every dot home, so the field is at rest when it comes back.
     const io = new IntersectionObserver(entries => {
@@ -477,8 +502,12 @@
     });
     io.observe(root);
     // The wordmark is set in the page's web font once it has landed.
-    if (document.fonts && document.fonts.load) {
-      document.fonts.load(o.fontWeight + " 100px " + o.fontFamily).catch(() => {}).then(() => { if (alive) { layout(); draw(performance.now()); wake(); } });
+    // A plain field sets no type, and a font already loaded changes nothing: neither lays out again.
+    const font = o.fontWeight + " 100px " + o.fontFamily;
+    let fontReady = true;
+    try { fontReady = !document.fonts || document.fonts.check(font); } catch (e) { fontReady = false; }
+    if (o.mode !== "field" && !fontReady && document.fonts && document.fonts.load) {
+      document.fonts.load(font).catch(() => {}).then(() => { if (alive) { layout(); draw(performance.now()); wake(); } });
     }
 
     const api = {
@@ -512,6 +541,8 @@
       }
     };
     root.__halftone = api;
+    // Pages that tune a field (v9-motion.js fits the landing word to its hero) hear when it is ready.
+    root.dispatchEvent(new CustomEvent("halftone:mount"));
     return api;
   }
 
@@ -528,7 +559,11 @@
       strip.dataset.fieldCoverage = "0.1";
       f.prepend(strip);
     });
-    document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]").forEach(el => mount(el));
+    // Fields are printed once the page has painted and the browser has a moment, so they never hold up its first
+    // paint or the first tap; at the latest 600ms later.
+    const fields = [...document.querySelectorAll("[data-halftone-hero],[data-halftone-footer],[data-halftone-field]")];
+    const later = window.requestIdleCallback ? fn => window.requestIdleCallback(fn, { timeout: 600 }) : fn => setTimeout(fn, 60);
+    if (fields.length) requestAnimationFrame(() => later(() => fields.forEach(el => mount(el))));
     document.querySelectorAll(".hwf-up").forEach(btn => {
       if (btn.__bound) return;
       btn.__bound = true;

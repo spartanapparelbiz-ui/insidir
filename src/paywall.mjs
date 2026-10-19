@@ -18,7 +18,7 @@ export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", 
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
-export const PUBLIC_PAGES = Object.freeze(["index", "platform", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted"]);
+export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted"]);
 // Pages a sign-in or subscribe step may send someone back to afterwards.
 export const NEXT_PAGES = Object.freeze([...PRODUCT_PAGES, ...ACCOUNT_PAGES]);
 
@@ -81,7 +81,9 @@ export function classifyApi(pathname, method = "GET") {
   // Server-to-server ingestion has its own bearer secret; it is not product data.
   if (p === "/v1/internal/ingest" || p === "/v1/internal/13f/ingest") return "open";
   // The internal cost dashboard checks its own administrator token or allow-listed account (src/cost-analytics.mjs).
-  if (p === "/v1/admin/costs") return "open";
+  if (p === "/v1/admin/costs" || p === "/v1/admin/funnel") return "open";
+  // First-party funnel events (src/funnel.mjs): sent by public pages, signed in or not.
+  if (p === "/v1/events" && m === "POST") return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).
@@ -258,11 +260,11 @@ export function unavailablePage(url) {
   <nav class="v6-nav__links" aria-label="Main navigation">${nav}</nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Get started <span class="v13-arrow" aria-hidden="true">↗</span></a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Start for $1 <span class="v13-arrow" aria-hidden="true">↗</span></a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Get started <span class="v13-arrow" aria-hidden="true">↗</span></a></nav>
+ <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Start for $1 <span class="v13-arrow" aria-hidden="true">↗</span></a></nav>
 </header>
 <main id="Content">
 <section class="nf mk-shell" aria-labelledby="nf-title">
@@ -285,7 +287,7 @@ export function unavailablePage(url) {
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="/explore.html">Companies</a></li><li><a href="/people.html">People</a></li><li><a href="/filings.html">SEC filings</a></li><li><a href="/research.html">Research desk</a></li><li><a href="/watchlist.html">Watchlist</a></li><li><a href="/alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/portfolio.html">Portfolio</a></li><li><a href="/pricing.html">Pricing</a></li><li><a href="/billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/portfolio.html">Portfolio</a></li><li><a href="/pricing.html">Pricing</a></li><li><a href="/billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>

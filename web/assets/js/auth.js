@@ -221,6 +221,9 @@
           const r=JSON.parse(localStorage.getItem("insidir:creator-ref")||"null");
           if(r && r.until>Date.now() && /^[a-z0-9][a-z0-9_-]{2,39}$/.test(r.code))body.ref=r.code;
         } catch (_) { /* storage unavailable */ }
+        // The random first-party visitor number (web/assets/js/funnel.js), so a landing experiment can be followed to a paid account.
+        const visitor = window.InsidirFunnel && window.InsidirFunnel.visitor();
+        if (visitor) body.visitor = visitor;
       }
       const path = mode === "register" ? "/v1/auth/register" : "/v1/auth/login";
       setPending(true);
@@ -259,9 +262,12 @@
           message = "Invalid email or password.";
           break;
         case 403:
-          message = mode === "register"
-            ? "New accounts aren't open yet. Email hello@aethric.llc to request access."
-            : "Logging in isn't available right now. Please try again later.";
+          // A refused origin (an old tab, a proxy, a browser extension rewriting the request) is not a closed sign-up.
+          message = /origin/i.test(server || "")
+            ? "Your browser sent this form from an address Insidir doesn't recognise. Reload the page and try again."
+            : mode === "register"
+              ? "New accounts aren't open yet. Email hello@aethric.llc to request access."
+              : "Logging in isn't available right now. Please try again later.";
           break;
         case 409:
           message = "An account with this email already exists. Log in instead.";
