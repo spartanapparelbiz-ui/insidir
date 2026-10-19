@@ -141,12 +141,19 @@ export async function monitorBluesky({run=queryDb,fetcher=externalFetch}={}){
  }
  return {checked,newEvents,failed};
 }
+// Only poll the broad market feed every 15 minutes; refresh individual issuer
+// submissions less frequently, since every ticker is already covered by shared
+// event storage and per-user watches must never cause duplicate SEC requests.
+let lastIssuerPoll=0;
+const issuerIntervalMs=60*60*1000;
 let busy=false;
 export async function monitorTick(run=queryDb){
  if(busy)return {skipped:true};
  busy=true;
  try{
-  const [market,news,social]=await Promise.allSettled([monitorMarketWideSEC({run}),monitorOfficialCompanyNews({run}),monitorBluesky({run})]);
+  const pollIssuers=Date.now()-lastIssuerPoll>=issuerIntervalMs;
+  if(pollIssuers)lastIssuerPoll=Date.now();
+  const [market,news,social]=await Promise.allSettled([monitorMarketWideSEC({run}),pollIssuers?monitorOfficialCompanyNews({run}):Promise.resolve({skipped:"shared_hourly_poll"}),monitorBluesky({run})]);
   return {marketWideSEC:market.status==="fulfilled"?market.value:{error:String(market.reason?.message||market.reason)},
    officialSEC:news.status==="fulfilled"?news.value:{error:String(news.reason?.message||news.reason)},
    social:social.status==="fulfilled"?social.value:{error:String(social.reason?.message||social.reason)}};
