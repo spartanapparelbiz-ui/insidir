@@ -1,0 +1,29 @@
+/* Insidir push experience: ink, warm paper and hairline rules; no generic OS mockups. */
+.ins-push-prompt{position:fixed;bottom:20px;right:20px;z-index:9000;width:min(390px,calc(100vw - 32px));background:#f5f1ea;color:#141413;border:1px solid #cbc4b9;box-shadow:0 18px 65px rgba(0,0,0,.22);padding:23px;font:400 13px/1.55 Arial,Helvetica,sans-serif;letter-spacing:0}
+.ins-push-prompt[hidden],.ins-push-account[hidden]{display:none!important}
+.ins-push-top{display:flex;align-items:center;gap:11px;margin:0 0 17px}
+.ins-push-mark{width:37px;height:37px;border:1px solid #292827;border-radius:3px;background:#0c0c0b;padding:5px;object-fit:contain}
+.ins-push-brand{font-size:12px;font-weight:750;letter-spacing:.045em;text-transform:uppercase}
+.ins-push-tag{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#706b66}
+.ins-push-close{margin-left:auto;align-self:flex-start;border:0;background:none;color:#504b45;cursor:pointer;font-size:22px;line-height:1;padding:2px 4px}
+.ins-push-prompt h2{font:550 27px/1.1 Georgia,"Times New Roman",serif;letter-spacing:-.04em;margin:0 0 10px;color:#171615}
+.ins-push-prompt p{font-size:12px;line-height:1.65;margin:0 0 18px;color:#4d4945}
+.ins-push-actions{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.ins-push-button{appearance:none;border:1px solid #151515;background:#151515;color:#f5f1ea;padding:11px 17px;font:650 11px/1.1 Arial,Helvetica,sans-serif;letter-spacing:.02em;cursor:pointer;transition:background .15s}
+.ins-push-button:hover{background:#37332f}
+.ins-push-button:disabled{opacity:.45;cursor:wait}
+.ins-push-link{appearance:none;border:0;border-bottom:1px solid #857f76;padding:5px 0;background:transparent;color:#312e2b;font:550 11px Arial,Helvetica,sans-serif;cursor:pointer}
+.ins-push-status{margin-top:13px!important;margin-bottom:0!important;font-size:11px!important}
+.ins-push-account{min-height:255px}
+.ins-push-account h2{margin-bottom:12px}
+.ins-push-account .ins-push-status{color:var(--hf-muted,#6c655d)!important;max-width:38ch}
+.ins-push-account .ins-push-actions{margin-top:auto;padding-top:14px}
+.ins-push-account .ins-push-button{font-size:11px}
+.ins-push-pref{display:flex;align-items:center;gap:9px;margin:7px 0;font-size:12px;cursor:pointer;color:var(--hf-ink,#eee)}
+.ins-push-pref input{accent-color:#47413a;width:15px;height:15px}
+.ins-push-account .ins-push-link{color:var(--hf-ink,#eee);border-color:var(--hf-line-strong,#777)}
+.ins-push-account .ins-push-button{background:var(--hf-ink,#151515);color:var(--hf-paper,#f5f1ea)}
+.ins-push-account .ins-push-tag{color:var(--hf-muted,#777)}
+.ins-push-account .ins-push-brand{color:var(--hf-ink,#eee)}
+@media(max-width:600px){.ins-push-prompt{right:12px;bottom:12px;width:calc(100vw - 24px);padding:19px}.ins-push-prompt h2{font-size:24px}}
+@media(prefers-reduced-motion:no-preference){.ins-push-prompt:not([hidden]){animation:ins-push-in .24s ease-out both}@keyframes ins-push-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}}
