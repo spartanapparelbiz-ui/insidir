@@ -20,7 +20,7 @@
   <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
   <script defer src="assets/js/live-research.js?v=9"></script>
-  <script defer src="assets/js/push-settings.js?v=1"></script>
+  <script defer src="assets/js/push-settings.js?v=2"></script>
   <script defer src="assets/js/intelligence-feed.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
@@ -40,7 +40,7 @@
   <main id="main" class="app-main alerts-main">
     <div class="alerts-head desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Watchlist matches</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC Form 4 filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app only</span></p></div>
+      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Watchlist matches</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC Form 4 filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app + optional push</span></p></div>
       <h1 class="page-title alerts-title">Alerts</h1>
       <p class="page-sub alerts-sub desk-lead">See new research activity related to the companies you follow.</p>
       <button class="btn btn--dark alerts-manage" type="button" id="manage-alerts" aria-haspopup="dialog" aria-controls="alerts-drawer"
@@ -51,6 +51,15 @@
       <h2 id="push-heading" style="font-size:18px;margin:0 0 9px">Phone notifications</h2>
       <p style="font-size:12px;line-height:1.6">Opt in to receive source-backed SEC filing updates for companies and reporting people you follow. On iPhone, install Insidir to your Home Screen first.</p>
       <p data-push-status role="status" aria-live="polite" style="font-size:12px;margin:10px 0">Checking device support…</p>
+      <div data-push-ios-help hidden style="margin:12px 0 16px;padding:12px 14px;border-left:2px solid #e9e4da">
+        <strong style="display:block;font-size:12px;margin-bottom:7px">Enable notifications on iPhone</strong>
+        <ol style="margin:0;padding-left:20px;font-size:12px;line-height:1.7">
+          <li>Tap Safari’s Share button.</li>
+          <li>Choose <strong>Add to Home Screen</strong>, then Add.</li>
+          <li>Open Insidir from the new Home Screen icon.</li>
+          <li>Return to Alerts and tap <strong>Enable notifications</strong>.</li>
+        </ol>
+      </div>
       <button type="button" class="btn btn--dark" data-push-enable>Enable notifications</button>
       <button type="button" class="btn btn--dark" data-push-disable hidden>Disable notifications</button>
     </section>
