@@ -5,7 +5,7 @@ import { trailingTwelveMonths, extractTtm, extractBalance, extractShares, extrac
 import { commonsFileUrl, parseProfile, parsePeople, namesMatch, profileQuery } from "../src/company-profile.mjs";
 import { ownershipUrls, recentOwnershipFilings, summarizeOwnershipFiling, ownerRole, summarizePeople } from "../src/insiders.mjs";
 import { parseHeadlines, parseSearchNews, focusHeadlines, relevanceTerms, mergeHeadlines, announcementsFromFilings } from "../src/news.mjs";
-import { rankCompanies } from "../src/search.mjs";
+import { rankCompanies, browseCompanies } from "../src/search.mjs";
 import { handleCompanyRoute, parseTicker, clientAddress, isCompanyRoute } from "../src/company-routes.mjs";
 import { secReady } from "../src/config.mjs";
 import { allowedExternalUrl } from "../src/external.mjs";
@@ -223,6 +223,28 @@ test("company search ranks exact tickers, keeps share classes and matches names"
   assert.equal(rankCompanies(rows, "tesla")[0].ticker, "TSLA");
   assert.equal(rankCompanies(rows, "trump")[0].ticker, "DJT");
   assert.deepEqual(rankCompanies(rows, ""), []);
+  assert.equal(rankCompanies(rows,"a",1,1).length,0, "search offsets apply after ranking");
+});
+
+test("SEC-wide directory pages deterministically through the full ticker mapping, not imported Form 4 records", async () => {
+  const index = {
+    0:{cik_str:1318605,ticker:"TSLA",title:"Tesla, Inc."},
+    1:{cik_str:1849635,ticker:"DJT",title:"Trump Media & Technology Group Corp."},
+    2:{cik_str:320193,ticker:"AAPL",title:"Apple Inc."},
+    3:{cik_str:1652044,ticker:"GOOG",title:"Alphabet Inc."},
+    4:{cik_str:1652044,ticker:"GOOGL",title:"Alphabet Inc."}
+  };
+  const fetcher = async () => index;
+  const first = await browseCompanies({offset:0,limit:2,fetcher});
+  assert.equal(first.total,5);
+  assert.deepEqual(first.items.map(x=>x.ticker),["GOOG","GOOGL"]);
+  assert.equal(first.nextOffset,2);
+  const second = await browseCompanies({offset:first.nextOffset,limit:2,fetcher});
+  assert.deepEqual(second.items.map(x=>x.ticker),["AAPL","TSLA"]);
+  const last = await browseCompanies({offset:4,limit:2,fetcher});
+  assert.deepEqual(last.items.map(x=>x.ticker),["DJT"]);
+  assert.equal(last.hasMore,false);
+  assert.equal(last.nextOffset,null);
 });
 
 test("company routes validate input before any upstream request", async () => {
@@ -238,6 +260,7 @@ test("company routes validate input before any upstream request", async () => {
   assert.equal((await call("/v1/company/profile?ticker=bad!ticker")).status, 400);
   const empty = await call("/v1/search?q=");
   assert.deepEqual(empty.body, { items: [] });
+  assert.equal(isCompanyRoute("/v1/company/directory"), true);
   // The media batch validates its lists before it needs the SEC ticker file.
   assert.equal(isCompanyRoute("/v1/media"), true);
   assert.equal(isCompanyRoute("/v1/media/" + "a".repeat(64) + ".webp"), true);
