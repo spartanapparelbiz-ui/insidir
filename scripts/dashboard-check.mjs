@@ -172,6 +172,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 /* respond: (path, method, url, body) → {status, body} | {status, buffer, type}. */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false, reveal = true, seen = SEEN, latency = null, init = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion, timezoneId: "UTC" });
+  // A member who has already dismissed app.js's dated product announcement; the banner is not what this check covers.
+  await context.addInitScript(() => { try { localStorage.setItem("insidir:announcement:dismissed:features-2026-10-19", "1"); } catch {} });
   if (seen) await context.addInitScript(seenAt => { try { if (!sessionStorage.getItem("check:seeded")) { localStorage.setItem("insidir:overview:last-seen", seenAt); sessionStorage.setItem("check:seeded", "1"); } } catch {} }, seen);
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
   if (reveal) await context.addInitScript(() => {
@@ -309,7 +311,7 @@ try {
     check(H.credits, "a media credits footnote ([data-media-credits]) is on the page");
     check(H.today[0] === "Since your last visit on Sep 1 at 12:00 AM: 2 new trades from 2 of the 3 people you follow. 2 companies on your watchlist have new trades.", "Today says what is new since the last visit, from the people followed and the watchlist", H.today[0]);
     check(H.today[1] === "Across all 5 trades imported from SEC filings (traded Sep 1 – Sep 12, 2026), insiders bought $42,000 and sold $327,000 of their own companies' stock.", "Today sums the latest imported trades with exact figures (the same as 03)", H.today[1]);
-    check(H.today[2] === "Last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026.", "Today says how fresh the import is", H.today[2]);
+    check(H.today[2] === "SEC feed checked Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026.", "Today says how fresh the import is", H.today[2]);
     for (const route of ["/v1/me/people/updates?limit=40", "/v1/transactions?limit=100", "/v1/filings?limit=1", "/v1/me/watchlist", "/v1/me/research-decisions", "/v1/status"]) check(api.includes("GET " + route), "dashboard requests " + route, api);
     check(!api.some(a => /GET \/v1\/me\/people(\?|$)/.test(a)) && !api.some(a => /GET \/v1\/insiders/.test(a)) && !api.some(a => /\/v1\/filings\?limit=12/.test(a)), "no /v1/me/people list, no /v1/insiders (following 3 or more), no 12-filing list", api);
 
@@ -536,7 +538,7 @@ try {
       const pseudo = (e, p) => { const c = getComputedStyle(e, p).content; return c && c !== "none" && c !== "normal" ? c.replace(/^"|"$/g, "") : ""; };
       return { shown: [...document.querySelectorAll("#rd-about > li")].map(d => pseudo(d, "::before") + d.textContent.replace(/\s+/g, " ").trim() + pseudo(d, "::after")).join(""), hidden: document.querySelectorAll("#rd-about .sr-only").length, items: document.querySelectorAll("#rd-about > li").length };
     });
-    check(about.shown === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026." && about.items === 5, "about this data reads as one line with exact figures", about);
+    check(about.shown === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last SEC feed check Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026." && about.items === 5, "about this data reads as one line with exact figures", about);
     check(about.hidden === 0, "about this data says each fact once to a screen reader (no hidden label repeating the words shown)", about);
 
     // Tiles: every name has its logo or headshot.
@@ -846,7 +848,7 @@ try {
       runs[key] = await text(page, "#v4-last-import");
       await context.close();
     }
-    check(runs.partial === "last import Oct 14, 2026, 09:12 UTC · partial import" && runs.running === "import started Oct 14, 2026, 09:00 UTC · in progress" && runs.error === "last import Oct 14, 2026, 09:03 UTC · import failed", "about this data reads partial, running and failed imports in plain words", runs);
+    check(runs.partial === "last SEC feed check Oct 14, 2026, 09:12 UTC · partial import" && runs.running === "SEC check started Oct 14, 2026, 09:00 UTC · in progress" && runs.error === "last SEC feed check Oct 14, 2026, 09:03 UTC · import failed", "about this data reads partial, running and failed imports in plain words", runs);
   }
 
   /* ---------- 3. A first-time member: suggestions to follow, companies to save ---------- */
@@ -918,7 +920,7 @@ try {
     check(/You have not saved any companies yet/.test(e["v3-watchlist"]) && /No notes yet/.test(e["v3-notes"]), "empty watchlist and notes", e);
     check(/No trades have been imported yet/.test(e["v3-trades"]) && /No dated trades to chart yet/.test(e["rd-daily-chart"]) && /No trades have been imported yet/.test(e["rd-kpis"]) && /No companies yet/.test(e["rd-companies"]) && /No trades have been imported yet/.test(e["rd-largest"]), "empty market states", e);
     check(await page.locator("#rd-daily-switch").isHidden(), "no Chart | Table switch without days to show");
-    check(/0 filings imported/.test(e["rd-about"]) && /no import recorded yet/.test(e["rd-about"]) && /no filings imported yet/.test(e["rd-about"]), "about this data with nothing imported", e["rd-about"]);
+    check(/0 filings imported/.test(e["rd-about"]) && /no SEC check recorded yet/.test(e["rd-about"]) && /no filings imported yet/.test(e["rd-about"]), "about this data with nothing imported", e["rd-about"]);
     await page.click('[data-filter="reported_sale"]'); await page.waitForTimeout(200);
     check(/No trades have been imported yet/.test(await text(page, "#v3-trades")), "filters on an empty import do not crash");
     if (SHOTS) await page.screenshot({ path: join(SHOTS, "dashboard-empty-390.png"), fullPage: true });
@@ -1167,14 +1169,14 @@ try {
     const { context, page, errors } = await open(1440, fixture(MANY), { path: "/people.html" });
     await page.waitForFunction(() => document.querySelectorAll("#v10-people-results .v10-person-card").length > 0, null, { timeout: 10000 });
     const count = () => page.locator("#v10-people-results .v10-person-card").count();
-    check(await count() === 24 && await text(page, "#v10-people-count") === "The first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
+    check(await count() === 24 && await text(page, "#v10-people-count") === "the first 100 reporting people · 24 shown", "directory shows 24 of 100 people with an honest count", await text(page, "#v10-people-count"));
     const more = (await text(page, "button[data-people-more]")).replace(/\s+/g, " ");
     check(/Show more people · 76 more/i.test(more), "a Show more button says how many remain", more);
     await page.click("button[data-people-more]");
     const focus = await page.evaluate(() => [...document.querySelectorAll("#v10-people-results .v10-person-card")].indexOf(document.activeElement?.closest(".v10-person-card")));
     check(await count() === 48 && focus === 24, "Show more adds 24 people and moves focus to the first new one", { cards: await count(), focus });
     for (let i = 0; i < 3; i++) if (await page.locator("button[data-people-more]").count()) await page.click("button[data-people-more]");
-    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "The first 100 reporting people", "the button disappears once all 100 are shown");
+    check(await count() === 100 && await page.locator("button[data-people-more]").count() === 0 && await text(page, "#v10-people-count") === "the first 100 reporting people", "the button disappears once all 100 are shown");
     await page.fill("#v10-person-query", "FILER 00");
     await page.press("#v10-person-query", "Enter");
     await page.waitForFunction(() => /results? for/.test(document.getElementById("v10-people-status").textContent), null, { timeout: 10000 });
