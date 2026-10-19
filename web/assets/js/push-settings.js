@@ -17,7 +17,7 @@
    const registration=await navigator.serviceWorker.register("/sw.js",{scope:"/"});
    const sub=await registration.pushManager.getSubscription();
    btn.hidden=Boolean(sub);disable.hidden=!sub;
-   say(sub?"Notifications enabled on this device. New matching SEC Form 4 filings will be sent automatically.":"Notifications are off on this device. Tap Enable to allow notifications.");
+   say(sub?"Notifications enabled on this device. SEC alerts and occasional important Insidir product updates will be sent automatically.":"Notifications are off on this device. Enable SEC activity alerts and occasional Insidir product updates.");
   }catch(err){say("Could not load notification settings: "+err.message);}
  }
  btn?.addEventListener("click",async()=>{
