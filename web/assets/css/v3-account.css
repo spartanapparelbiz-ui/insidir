@@ -1,1 +1,34 @@
 .v3-account{max-width:none;padding-top:42px!important}.v3-account h1{font:480 clamp(49px,5vw,73px)/1.08 var(--serif);letter-spacing:-.044em;margin:14px 0}.v3-account__lead{font:400 13px/1.8 var(--sans);color:#aabbaa;max-width:630px}.v3-account__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:40px 0 35px;max-width:1190px}.v3-account__panel{border:1px solid #344239;border-radius:6px;background:#19201f;padding:30px;display:flex;flex-direction:column;align-items:flex-start;min-height:285px}.v3-account__panel h2,.v3-account__danger h2{font:530 29px var(--serif);margin:12px 0 15px}.v3-account__panel>p:not(.v3-eyebrow),.v3-account__danger p:not(.v3-eyebrow){color:#adbdac;font:400 12px/1.85 var(--sans)}.v3-account__label{color:#94a995!important;margin:0;font-size:10px!important}.v3-account__value{font-weight:600!important;color:#f0f3e8!important;overflow-wrap:anywhere}.v3-account__button{display:inline-block;border-radius:4px;border:1px solid #6a7e6b;background:#e9f0e8;color:#131c15!important;padding:11px 17px;font:600 11px var(--sans);cursor:pointer;margin-top:auto}.v3-account__panel .v3-account__button{margin-top:auto}.v3-account__text{margin-top:12px;text-decoration:underline;text-underline-offset:4px;color:#dfeade!important;font-size:11px}.v3-account__links{display:flex;flex-wrap:wrap;gap:13px;margin-top:auto}.v3-account__links a{color:#dae8da!important;text-decoration:underline;text-underline-offset:4px;font:600 11px var(--sans)}.v3-account__hint{color:#a3b5a6;font-size:11px;line-height:1.6;margin:13px 0}.v3-account__danger{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:29px;border:1px solid #50413d;border-radius:6px;max-width:1190px;margin-bottom:13px}.v3-account__danger>div{max-width:740px}.v3-account__danger h2{margin:10px 0}.v3-account__danger button{border:1px solid #987c74;color:#e9c7be;background:#29211f;border-radius:4px;padding:12px 17px;font:600 11px var(--sans);white-space:nowrap;cursor:pointer}.v3-account__danger button[disabled]{opacity:.4;cursor:not-allowed}@media(max-width:860px){.v3-account__grid{grid-template-columns:1fr}.v3-account__panel{min-height:240px}.v3-account__danger{display:block}.v3-account__danger button{margin-top:21px}}
+
+/* Subscription cancellation is a reversible billing choice, separate from deleting an account.
+   Neutral colors match the V13 monochrome account page; hidden controls never take layout space. */
+body.v13 #main #account-cancel{
+ background:transparent!important;color:var(--hf-ink)!important;border:1px solid var(--hf-line-strong)!important;
+ box-shadow:none!important;
+}
+body.v13 #main #account-cancel:hover{border-color:var(--hf-ink)!important;background:var(--hf-raise)!important}
+body.v13 #main #account-cancel:disabled{opacity:.55;cursor:wait!important}
+body.v13 #main .v3-account__cancel-confirm{
+ width:100%;box-sizing:border-box;margin:18px 0!important;padding:18px 0!important;
+ border-top:1px solid var(--hf-line-strong)!important;border-bottom:1px solid var(--hf-line)!important
+}
+body.v13 #main .v3-account__cancel-confirm[hidden]{display:none!important}
+body.v13 #main .v3-account__cancel-confirm h3{
+ font:600 14px/1.5 var(--hf-mono)!important;color:var(--hf-ink)!important;margin:0 0 8px!important
+}
+body.v13 #main .v3-account__cancel-confirm p{
+ font:400 12px/1.7 var(--hf-mono)!important;color:var(--hf-muted)!important;margin:0 0 16px!important;max-width:55ch!important
+}
+body.v13 #main .v3-account__cancel-actions{display:flex;flex-wrap:wrap;gap:10px!important}
+body.v13 #main .v3-account__cancel-actions button{
+ padding:12px 14px!important;min-height:42px!important;cursor:pointer!important;
+ border:1px solid var(--hf-line-strong)!important;background:transparent!important;
+ color:var(--hf-ink)!important;font:500 11px/1.4 var(--hf-mono)!important;border-radius:0!important
+}
+body.v13 #main #account-cancel-yes{background:var(--hf-ink)!important;color:var(--hf-bg)!important;border-color:var(--hf-ink)!important}
+body.v13 #main .v3-account__cancel-actions button:disabled{opacity:.5;cursor:wait!important}
+body.v13 #main :is(#account-cancel,#account-cancel-yes,#account-cancel-keep):focus-visible{
+ outline:2px solid var(--hf-ink)!important;outline-offset:3px!important
+}
+body.v13 #main #account-cancel-feedback{margin:14px 0 0!important}
+body.v13 #main #account-cancel-feedback:empty{display:none!important}
