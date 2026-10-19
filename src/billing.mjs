@@ -95,6 +95,28 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
  * DISCLOSURE_VERSION changes whenever the wording does. */
 export const DISCLOSURE_VERSION = "2026-10-18";
 export const PLAN_CENTS = 3900;
+
+/* The published offer is $39.00 a month in US dollars, and that is what the customer agrees to before checkout. The
+ * amount Stripe charges comes from the configured Price (INSIDIR_STRIPE_PRICE_ID), so checkout first reads that Price
+ * (read-only) and refuses to start if Stripe reports anything else: a different amount, currency or interval, or an
+ * archived price. When the Price cannot be read, checkout goes ahead as before and Stripe itself validates the Price
+ * when the session is created. A confirmed match is remembered for 10 minutes. */
+const PRICE_OK_MS = 10 * 60_000;
+const pricesVerified = new Map();
+export function priceMatchesOffer(price) {
+  return !!price && price.active !== false && price.unit_amount === PLAN_CENTS && String(price.currency || "").toLowerCase() === "usd" &&
+    price.recurring?.interval === "month" && (price.recurring.interval_count ?? 1) === 1;
+}
+export async function verifyPlanPrice(stripe, priceId, now = Date.now()) {
+  const until = pricesVerified.get(priceId);
+  if (until && until > now) return true;
+  let price;
+  try { price = await stripe.get("/prices/" + encodeURIComponent(priceId)); } catch { return null; }
+  if (!price || typeof price !== "object" || price.object !== "price") return null;
+  if (priceMatchesOffer(price)) { pricesVerified.set(priceId, now + PRICE_OK_MS); return true; }
+  console.error(JSON.stringify({ event: "billing.price_mismatch", priceId, unitAmount: price.unit_amount ?? null, currency: price.currency ?? null, interval: price.recurring?.interval ?? null, active: price.active ?? null }));
+  return false;
+}
 const usd = cents => "$" + (cents / 100).toFixed(2);
 const longDate = d => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 export function currentOffer({ trialUsed = false, trial = trialSettings(), now = Date.now() } = {}) {
@@ -419,6 +441,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       // The customer agreed to one offer; if Stripe's history changes it (a returning customer pays the full price),
       // nothing is charged until they see and accept the terms that apply.
       const offer = currentOffer({ trialUsed: !trial.enabled || trialUsed, trial });
+      if (await verifyPlanPrice(stripe, settings.priceId) === false)
+        throw failure(503, "Checkout is paused because the plan's price in Stripe does not match the published $39.00 a month. Nothing was charged. Email hello@aethric.llc.");
       if (offer.kind !== consent.offer) throw failure(409, offer.kind === "full"
         ? "This account has already used its trial, so checkout would charge $39.00 today. Review the updated terms and agree again to continue."
         : "This account is eligible for the $1 trial. Review the updated terms and agree again to continue.", { offer });
