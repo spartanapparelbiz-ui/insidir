@@ -459,7 +459,7 @@ async function route(req,res,ctx){
   if(p==="/v1/intelligence/events" && m==="GET"){
     await requireUser(req,ctx);
     const limit=positive(u.searchParams.get("limit"),40,100);
-    const rows=await ctx.query("SELECT event_key,source_type,title,source_url,subject,published_at,observed_at,verified,metadata FROM research_events WHERE verified=true ORDER BY observed_at DESC LIMIT $1",[limit]);
+    const rows=await ctx.query("SELECT event_key,source_type,title,source_url,subject,published_at,observed_at,verified,metadata FROM research_events WHERE verified=true AND published_at>=now()-interval '45 days' ORDER BY published_at DESC NULLS LAST LIMIT $1",[limit]);
     return json(res,200,{items:rows.rows,source:"Approved public record and public post metadata"});
   }
   if(p==="/v1/ai/explain" && m==="GET"){
