@@ -1,5 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
-import { brotliCompressSync, gzipSync, constants as zlib } from "node:zlib";
+import { createHash } from "node:crypto";
+import { promisify } from "node:util";
+import { brotliCompress, gzip, constants as zlib } from "node:zlib";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -63,22 +65,60 @@ async function findFile(pathname) {
   return null;
 }
 
-// Text assets are compressed once per file version and kept in memory.
+// Text assets are compressed once per file version and kept in memory. Compression runs off the event loop (zlib's
+// thread pool) and concurrent first requests for one file share a single job.
 const compressible = new Set([".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt", ".xml"]);
 const compressedCache = new Map();
-function negotiate(req, ext, file, mtimeMs, body) {
+const brotliAsync = promisify(brotliCompress), gzipAsync = promisify(gzip);
+export function pickEncoding(acceptEncoding) {
+  const accept = String(acceptEncoding || "");
+  return /\bbr\b/.test(accept) ? "br" : /\bgzip\b/.test(accept) ? "gzip" : null;
+}
+async function negotiate(req, ext, key, version, body) {
   if (!compressible.has(ext) || body.length < 1024) return null;
-  const accept = String(req.headers["accept-encoding"] || "");
-  const encoding = /\bbr\b/.test(accept) ? "br" : /\bgzip\b/.test(accept) ? "gzip" : null;
+  const encoding = pickEncoding(req.headers["accept-encoding"]);
   if (!encoding) return null;
-  const key = encoding + ":" + file;
-  const hit = compressedCache.get(key);
-  if (hit && hit.mtimeMs === mtimeMs) return { encoding, body: hit.body };
-  const out = encoding === "br"
-    ? brotliCompressSync(body, { params: { [zlib.BROTLI_PARAM_QUALITY]: 9, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length } })
-    : gzipSync(body, { level: 9 });
-  compressedCache.set(key, { mtimeMs, body: out });
-  return { encoding, body: out };
+  const k = encoding + ":" + key;
+  const hit = compressedCache.get(k);
+  if (hit && hit.version === version) return { encoding, body: await hit.body };
+  const job = encoding === "br"
+    ? brotliAsync(body, { params: { [zlib.BROTLI_PARAM_QUALITY]: 9, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length } })
+    : gzipAsync(body, { level: 9 });
+  compressedCache.set(k, { version, body: job });
+  job.catch(() => { if (compressedCache.get(k)?.body === job) compressedCache.delete(k); });
+  return { encoding, body: await job };
+}
+
+/* Content fingerprints. Every asset a page references (assets/css, assets/js, fonts, images) is linked with
+   ?v=<first 10 hex of its SHA-256>, rewritten as the HTML is served, so a page always names the exact bytes it was
+   built with and nobody has to bump ?v= by hand. A request whose ?v= matches the file's current fingerprint is
+   cached for a year as immutable; any other version (an old page, a hand-typed URL) gets the short policy and an
+   ETag. Fingerprints are kept per file and re-checked against its mtime at most every 2 seconds. */
+const FINGERPRINT_TTL = 2000;
+const fingerprints = new Map();
+async function fingerprint(file) {
+  const now = Date.now(), hit = fingerprints.get(file);
+  if (hit && now - hit.checked < FINGERPRINT_TTL) return hit.value;
+  try {
+    const info = await stat(file);
+    if (hit && hit.mtimeMs === info.mtimeMs && hit.size === info.size) { hit.checked = now; return hit.value; }
+    const value = createHash("sha256").update(await readFile(file)).digest("hex").slice(0, 10);
+    fingerprints.set(file, { value, mtimeMs: info.mtimeMs, size: info.size, checked: now });
+    return value;
+  } catch {
+    fingerprints.delete(file);
+    return null;
+  }
+}
+const ASSET_REF = /((?:href|src)=")((?:\/|\.\.\/)?assets\/[^"?#]+\.(?:css|js|woff2|webp|png|jpe?g|svg|ico|webmanifest))(?:\?[^"#]*)?(")/g;
+export async function fingerprintHtml(html) {
+  const refs = new Map();
+  for (const m of html.matchAll(ASSET_REF)) refs.set(m[2], null);
+  await Promise.all([...refs.keys()].map(async ref => {
+    const file = resolvePath("/" + ref.replace(/^(\.\.\/)+|^\//, ""));
+    refs.set(ref, file ? await fingerprint(file) : null);
+  }));
+  return html.replace(ASSET_REF, (all, pre, ref, post) => refs.get(ref) ? pre + ref + "?v=" + refs.get(ref) + post : all);
 }
 
 /* A single "bytes=start-end" range (also "start-" and "-suffix"); null for none, false when unsatisfiable. */
@@ -125,20 +165,36 @@ export async function serveStatic(req, res) {
     try { await stat(file); } catch { return false; }
   }
   const ext = extname(file).toLowerCase();
-  const immutable = /\/assets\/(fonts|img|icons|video)\//.test(file.split(sep).join("/"));
+  const longLived = /\/assets\/(fonts|img|icons|video)\//.test(file.split(sep).join("/"));
   // Video is sent whole or by byte range (Safari and iOS only play MP4 that answers Range requests).
   if (ext === ".mp4" || ext === ".webm") return sendVideo(req, res, file, ext, method, status);
-  const [raw, info] = await Promise.all([readFile(file), stat(file)]);
-  const packed = negotiate(req, ext, file, info.mtimeMs, raw);
-  const body = packed ? packed.body : raw;
-  res.writeHead(status, {
+  let [raw, info] = await Promise.all([readFile(file), stat(file)]);
+  let version = info.mtimeMs + ":" + info.size;
+  if (ext === ".html") {
+    raw = Buffer.from(await fingerprintHtml(raw.toString("utf8")));
+    version = createHash("sha256").update(raw).digest("hex").slice(0, 16);
+  }
+  const tag = ext === ".html" ? version : await fingerprint(file);
+  const etag = tag ? '"' + tag + '"' : null;
+  const requestedVersion = url.searchParams.get("v");
+  const immutable = !!tag && ext !== ".html" && requestedVersion === tag;
+  const headers = {
     ...securityHeaders,
     "Content-Type": types[ext] || "application/octet-stream",
-    "Content-Length": body.length,
-    ...(packed ? { "Content-Encoding": packed.encoding } : {}),
     ...(compressible.has(ext) ? { "Vary": "Accept-Encoding" } : {}),
-    "Cache-Control": ext === ".html" ? "no-cache" : immutable ? "public, max-age=604800" : "public, max-age=3600"
-  });
+    ...(etag ? { "ETag": etag } : {}),
+    "Cache-Control": ext === ".html" ? "no-cache" : immutable ? "public, max-age=31536000, immutable" : longLived ? "public, max-age=604800" : "public, max-age=3600"
+  };
+  // A cached copy that is still current is confirmed with an empty 304 instead of being sent again.
+  const ifNoneMatch = String(req.headers["if-none-match"] || "");
+  if (status === 200 && etag && ifNoneMatch.split(/\s*,\s*/).some(t => t.replace(/^W\//, "") === etag || t === "*")) {
+    res.writeHead(304, headers);
+    res.end();
+    return true;
+  }
+  const packed = await negotiate(req, ext, file, version, raw);
+  const body = packed ? packed.body : raw;
+  res.writeHead(status, { ...headers, "Content-Length": body.length, ...(packed ? { "Content-Encoding": packed.encoding } : {}) });
   res.end(method === "HEAD" ? undefined : body);
   return true;
 }

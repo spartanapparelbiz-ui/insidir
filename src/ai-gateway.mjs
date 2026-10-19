@@ -69,9 +69,15 @@ export const BUDGET_SQL = `SELECT
   FROM ai_usage WHERE created_at>=LEAST(date_trunc('month',now()),now()-interval '1 hour')`;
 
 /* Throws 429 (with .budget naming the limit) when a call would exceed a limit. */
+/* Calls this process has started but not yet recorded in ai_usage. They count against the limits too, so a burst
+   of parallel requests cannot all pass a check that only sees finished calls. */
+let callsInFlight = 0;
+const userCallsInFlight = new Map();
 export async function checkBudget(userId, { run = queryDb, env = process.env } = {}) {
   const L = aiLimits(env);
-  const u = (await run(BUDGET_SQL, [userId || null])).rows[0] || {};
+  const row = (await run(BUDGET_SQL, [userId || null])).rows[0] || {};
+  const mine = userId ? userCallsInFlight.get(userId) || 0 : 0;
+  const u = { ...row, hour: (row.hour | 0) + callsInFlight, day: (row.day | 0) + callsInFlight, user_hour: (row.user_hour | 0) + mine, user_day: (row.user_day | 0) + mine };
   const over = [
     [u.hour >= L.globalHourly, "global_hourly", "Insidir's AI research capacity for this hour has been reached."],
     [u.day >= L.globalDaily, "global_daily", "Insidir's AI research capacity for today has been reached."],
@@ -104,49 +110,57 @@ export async function callModel({ messages, tier = "fast", maxTokens, userId = n
   if (!aiConfigured(env)) throw fail(503, "AI summaries are not configured on this deployment.");
   const L = aiLimits(env), model = modelFor(tier, env);
   await checkBudget(userId, { run, env });
-  const bounded = messages.map(m => ({ role: m.role, content: String(m.content).slice(0, L.maxInputChars) }));
-  const outTokens = Math.min(L.maxOutputTokens, Math.max(50, Number(maxTokens) || L.maxOutputTokens));
-  let lastError;
-  for (let attempt = 0; attempt <= L.retries; attempt++) {
-    const started = Date.now();
-    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), L.timeoutMs);
-    try {
-      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST", signal: controller.signal, redirect: "error",
-        headers: { "Authorization": "Bearer " + String(env.INSIDIR_OPENROUTER_API_KEY).trim(), "Content-Type": "application/json",
-          "HTTP-Referer": "https://insidir.com", "X-Title": "Insidir Intelligence" },
-        body: JSON.stringify({ model, temperature: 0, max_tokens: outTokens, messages: bounded, usage: { include: true } })
-      });
-      const data = await response.json().catch(() => ({}));
-      const inputTokens = Number(data?.usage?.prompt_tokens) || 0, outputTokens = Number(data?.usage?.completion_tokens) || 0;
-      const reported = Number(data?.usage?.cost);
-      const estimated = estimateCost(model, inputTokens, outputTokens, env);
-      const cost = Number.isFinite(reported) ? reported : estimated ?? 0;
-      const costSource = Number.isFinite(reported) ? "provider_reported" : estimated != null && (inputTokens || outputTokens) ? "estimated" : "none";
-      if (!response.ok) {
-        await recordUsage(run, { userId, feature, model, tier, cacheKey, status: "failed", inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: "HTTP " + response.status });
-        lastError = fail(503, "The AI provider is unavailable right now.", { providerStatus: response.status });
-        if (response.status === 429 || response.status >= 500) continue;
-        throw lastError;
-      }
-      const text = String(data?.choices?.[0]?.message?.content || "").trim().slice(0, 4000);
-      await recordUsage(run, { userId, feature, model: String(data?.model || model).slice(0, 100), tier, cacheKey, status: text ? "ok" : "failed",
-        inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: text ? null : "empty" });
-      if (!text) throw fail(503, "The AI provider returned no text.");
-      return { text, model, inputTokens, outputTokens, cost, costSource };
-    } catch (e) {
-      if (e?.status && e.status !== 503) throw e;
-      if (e?.name === "AbortError" || e?.name === "TypeError") {
-        await recordUsage(run, { userId, feature, model, tier, cacheKey, status: e.name === "AbortError" ? "timeout" : "failed", latencyMs: Date.now() - started, error: e.name });
-        lastError = fail(503, e.name === "AbortError" ? "The AI provider did not answer in time." : "The AI provider could not be reached.");
-        continue;
-      }
-      lastError = e;
-      if (e?.providerStatus && (e.providerStatus === 429 || e.providerStatus >= 500)) continue;
-      throw e;
-    } finally { clearTimeout(timer); }
+  callsInFlight++;
+  if (userId) userCallsInFlight.set(userId, (userCallsInFlight.get(userId) || 0) + 1);
+  try { return await modelCall(); } finally {
+    callsInFlight--;
+    if (userId) { const n = (userCallsInFlight.get(userId) || 1) - 1; if (n > 0) userCallsInFlight.set(userId, n); else userCallsInFlight.delete(userId); }
   }
-  throw lastError || fail(503, "The AI provider is unavailable right now.");
+  async function modelCall() {
+    const bounded = messages.map(m => ({ role: m.role, content: String(m.content).slice(0, L.maxInputChars) }));
+    const outTokens = Math.min(L.maxOutputTokens, Math.max(50, Number(maxTokens) || L.maxOutputTokens));
+    let lastError;
+    for (let attempt = 0; attempt <= L.retries; attempt++) {
+      const started = Date.now();
+      const controller = new AbortController(), timer = setTimeout(() => controller.abort(), L.timeoutMs);
+      try {
+        const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST", signal: controller.signal, redirect: "error",
+          headers: { "Authorization": "Bearer " + String(env.INSIDIR_OPENROUTER_API_KEY).trim(), "Content-Type": "application/json",
+            "HTTP-Referer": "https://insidir.com", "X-Title": "Insidir Intelligence" },
+          body: JSON.stringify({ model, temperature: 0, max_tokens: outTokens, messages: bounded, usage: { include: true } })
+        });
+        const data = await response.json().catch(() => ({}));
+        const inputTokens = Number(data?.usage?.prompt_tokens) || 0, outputTokens = Number(data?.usage?.completion_tokens) || 0;
+        const reported = Number(data?.usage?.cost);
+        const estimated = estimateCost(model, inputTokens, outputTokens, env);
+        const cost = Number.isFinite(reported) ? reported : estimated ?? 0;
+        const costSource = Number.isFinite(reported) ? "provider_reported" : estimated != null && (inputTokens || outputTokens) ? "estimated" : "none";
+        if (!response.ok) {
+          await recordUsage(run, { userId, feature, model, tier, cacheKey, status: "failed", inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: "HTTP " + response.status });
+          lastError = fail(503, "The AI provider is unavailable right now.", { providerStatus: response.status });
+          if (response.status === 429 || response.status >= 500) continue;
+          throw lastError;
+        }
+        const text = String(data?.choices?.[0]?.message?.content || "").trim().slice(0, 4000);
+        await recordUsage(run, { userId, feature, model: String(data?.model || model).slice(0, 100), tier, cacheKey, status: text ? "ok" : "failed",
+          inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: text ? null : "empty" });
+        if (!text) throw fail(503, "The AI provider returned no text.");
+        return { text, model, inputTokens, outputTokens, cost, costSource };
+      } catch (e) {
+        if (e?.status && e.status !== 503) throw e;
+        if (e?.name === "AbortError" || e?.name === "TypeError") {
+          await recordUsage(run, { userId, feature, model, tier, cacheKey, status: e.name === "AbortError" ? "timeout" : "failed", latencyMs: Date.now() - started, error: e.name });
+          lastError = fail(503, e.name === "AbortError" ? "The AI provider did not answer in time." : "The AI provider could not be reached.");
+          continue;
+        }
+        lastError = e;
+        if (e?.providerStatus && (e.providerStatus === 429 || e.providerStatus >= 500)) continue;
+        throw e;
+      } finally { clearTimeout(timer); }
+    }
+    throw lastError || fail(503, "The AI provider is unavailable right now.");
+  }
 }
 
 export const CLAIM_SQL = `INSERT INTO ai_explanations(cache_key,source_type,source_id,content_hash,explanation_type,prompt_version,model,language,status,lease_until)
@@ -167,7 +181,19 @@ export function explanationKey({ sourceType, sourceId, content, explanationType,
 
 /* A shared, verified explanation. build(model) returns the messages; verify(text) returns {allowed, problems}.
  * Resolves {status:'ready', text, cached} | {status:'pending'} | {status:'blocked'} | {status:'failed', error}. */
-export async function cachedGeneration({ sourceType, sourceId, content, explanationType, promptVersion, language = "en", tier = "fast",
+/* Identical requests on this server share one generation (the database lease below coordinates other servers). */
+const generationsInFlight = new Map();
+export function cachedGeneration(options = {}) {
+  const env = options.env || process.env;
+  const { cacheKey } = explanationKey({ ...options, model: modelFor(options.tier || "fast", env), language: options.language || "en" });
+  const running = generationsInFlight.get(cacheKey);
+  // A request that joins a running generation is a cache hit (counted, so the cost report stays exact).
+  if (running) return running.then(r => { if (r.status !== "ready") return r; countCache(options.run || queryDb, options.feature || options.explanationType, true); return { ...r, cached: true }; });
+  const job = generateOnce(options).finally(() => generationsInFlight.delete(cacheKey));
+  generationsInFlight.set(cacheKey, job);
+  return job;
+}
+async function generateOnce({ sourceType, sourceId, content, explanationType, promptVersion, language = "en", tier = "fast",
   maxTokens, userId = null, feature = explanationType, build, verify, run = queryDb, env = process.env, generate = callModel,
   waitMs = 9000, pollMs = 350, leaseSeconds = 45 } = {}) {
   const model = modelFor(tier, env);

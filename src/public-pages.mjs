@@ -18,6 +18,8 @@
  * cached publicly; uncached renders are limited per client address so a crawler cannot hammer the
  * database. Person pages start no SEC requests (personProfile with starts 0): roles come from
  * sec_filing_owners or the SEC documents already cached. */
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { TRANSACTION_CODES } from "./insiders.mjs";
 import { personProfile, parsePersonCik, hasFilingOwners, withJointOwners } from "./person-profile.mjs";
 import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPerson } from "./stories.mjs";
@@ -514,10 +516,21 @@ function limited(key) {
 }
 export function clearPublicPageCache() { cache.clear(); hits.clear(); }
 
+/* Pages are compressed (gzip, fast level) when the client accepts it, and carry an ETag, so a crawler or reader with
+   a fresh copy gets an empty 304. */
 function send(req, res, status, type, body, maxAge) {
-  const bytes = Buffer.from(body);
-  res.writeHead(status, { ...HEADERS, "Content-Type": type, "Content-Length": bytes.length,
-    "Cache-Control": maxAge ? `public, max-age=${maxAge}, stale-while-revalidate=600` : "no-store" });
+  const raw = Buffer.from(body);
+  const etag = maxAge && status === 200 ? '"' + createHash("sha256").update(raw).digest("hex").slice(0, 16) + '"' : null;
+  const head = { ...HEADERS, "Content-Type": type, "Vary": "Accept-Encoding", ...(etag ? { ETag: etag } : {}),
+    "Cache-Control": maxAge ? `public, max-age=${maxAge}, stale-while-revalidate=600` : "no-store" };
+  if (etag && String(req.headers["if-none-match"] || "").split(/\s*,\s*/).some(t => t.replace(/^W\//, "") === etag)) {
+    res.writeHead(304, head);
+    res.end();
+    return true;
+  }
+  const gzipped = raw.length >= 1024 && /\bgzip\b/.test(String(req.headers["accept-encoding"] || ""));
+  const bytes = gzipped ? gzipSync(raw, { level: 6 }) : raw;
+  res.writeHead(status, { ...head, "Content-Length": bytes.length, ...(gzipped ? { "Content-Encoding": "gzip" } : {}) });
   res.end(req.method === "HEAD" ? undefined : bytes);
   return true;
 }

@@ -478,8 +478,25 @@ export function verifySynthesis(text, answer, evidence) {
   return { allowed: problems.length === 0, problems, citationsUsed: [...new Set(used)].filter(n => n >= 1 && n <= answer.citations.length) };
 }
 export const SYNTHESIS_PROMPT_VERSION = "investigate-v1";
-export async function synthesize(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, env = process.env, generate } = {}) {
-  const answer = await investigate(userId, question, { run, context, loadCompany, directory });
+/* The answer the investigate route just gave a member, kept for two minutes so the AI summary that the page asks for
+   next reuses it instead of running every query again. Server-computed only: the client never supplies evidence. */
+const RECENT_TTL = 120_000, RECENT_MAX = 500;
+const recentAnswers = new Map();
+const recentKey = (userId, question, context) => String(userId) + "\u0000" + String(question).trim() + "\u0000" + JSON.stringify(context || null);
+export function rememberInvestigation(userId, question, context, answer) {
+  const now = Date.now();
+  if (recentAnswers.size >= RECENT_MAX) for (const [k, v] of recentAnswers) if (v.until <= now || recentAnswers.size >= RECENT_MAX) recentAnswers.delete(k); else break;
+  recentAnswers.set(recentKey(userId, question, context), { answer, until: now + RECENT_TTL });
+  return answer;
+}
+export function recallInvestigation(userId, question, context) {
+  const k = recentKey(userId, question, context), hit = recentAnswers.get(k);
+  if (!hit) return null;
+  if (hit.until <= Date.now()) { recentAnswers.delete(k); return null; }
+  return hit.answer;
+}
+export async function synthesize(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, env = process.env, generate, answer: prior = null } = {}) {
+  const answer = prior || await investigate(userId, question, { run, context, loadCompany, directory });
   if (answer.status !== "answered" || !answer.citations.length) return { status: "not_applicable", reason: "There is no cited evidence to summarise.", answer: null };
   if (!aiConfigured(env)) return { status: "unavailable", reason: "AI summaries are not configured on this deployment." };
   const evidence = evidencePack(answer);
