@@ -55,3 +55,8 @@
 .rd-intel-link a{color:var(--c-ink);text-decoration:underline;text-underline-offset:4px;font-size:13px}
 @media (max-width:1100px){.rd-start__steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.rd-start__steps{grid-template-columns:1fr}.rd-start__head{flex-direction:column}}
+
+/* ---------- touch targets: at least 24px tall (WCAG 2.2 target size), without changing how they look ---------- */
+.app-header .logo{display:inline-flex;align-items:center;min-height:44px}
+.ix-ticker,.ix-sources a,.ix-follow button{display:inline-flex;align-items:center;min-height:24px}
+.live-actions a{display:inline-flex;align-items:center;min-height:36px}

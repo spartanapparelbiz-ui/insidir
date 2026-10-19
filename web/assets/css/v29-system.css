@@ -70,3 +70,13 @@ html{scroll-padding-top:88px}
 .auth-focus__link{display:inline-flex;align-items:center;min-height:var(--tap-min);padding:0 var(--s-2);color:var(--c-ink);text-decoration:underline;text-underline-offset:3px}
 .auth-focus__link:hover{color:var(--hf-ink-hover,#d3cec5)}
 @media (max-width:420px){.auth-focus__note{display:none}}
+
+/* Sticky bars: solid paper, no backdrop blur. Their backgrounds were already 90-94% opaque, so the blur showed almost
+   nothing, yet it made the browser re-blur everything under the bar on every scroll frame (costly on phones). These
+   rules sit in the V13 layer, one step more specific than the rules they replace, because that is the only way to
+   change a layered !important declaration. */
+@layer insidir-v13{
+  html body.v13 :is(.v9-nav,.v3-static__nav,.app-header,.pw-header),html body.v13.ix-page .ix-bar{
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--hf-bg)!important}
+}
+html body.cx-page .app-header{-webkit-backdrop-filter:none;backdrop-filter:none}

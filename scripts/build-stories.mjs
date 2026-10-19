@@ -34,6 +34,7 @@ function shell({ title, description, path, body, current = "", noindex = false, 
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0c0c0b">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
