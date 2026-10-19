@@ -172,6 +172,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 /* respond: (path, method, url, body) → {status, body} | {status, buffer, type}. */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false, reveal = true, seen = SEEN, latency = null, init = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion, timezoneId: "UTC" });
+  // A member who has already dismissed app.js's dated product announcement; the banner is not what this check covers.
+  await context.addInitScript(() => { try { localStorage.setItem("insidir:announcement:dismissed:features-2026-10-19", "1"); } catch {} });
   if (seen) await context.addInitScript(seenAt => { try { if (!sessionStorage.getItem("check:seeded")) { localStorage.setItem("insidir:overview:last-seen", seenAt); sessionStorage.setItem("check:seeded", "1"); } } catch {} }, seen);
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
   if (reveal) await context.addInitScript(() => {
