@@ -145,7 +145,9 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     if (!q) return send(res, 200, { items: [] }), true;
     requireSec();
     let items;
-    try { items = await searchCompanies(q, { limit: 8 }); } catch (e) { upstream("Company search", e); }
+    const requested = Number(url.searchParams.get("limit"));
+    const limit = Number.isInteger(requested) && requested > 0 ? Math.min(50, requested) : 8;
+    try { items = await searchCompanies(q, { limit }); } catch (e) { upstream("Company search", e); }
     return send(res, 200, { items, source: "SEC official ticker mapping" }, 300), true;
   }
 
