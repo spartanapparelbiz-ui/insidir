@@ -18,13 +18,12 @@
  * cached publicly; uncached renders are limited per client address so a crawler cannot hammer the
  * database. Person pages start no SEC requests (personProfile with starts 0): roles come from
  * sec_filing_owners or the SEC documents already cached. */
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { TRANSACTION_CODES } from "./insiders.mjs";
 import { personProfile, parsePersonCik, hasFilingOwners, withJointOwners } from "./person-profile.mjs";
 import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPerson } from "./stories.mjs";
 
-/* The installed-app links and the last two stylesheets every page carries (see web/assets/css/v30-cinematic.css and
- * ultra-hd.css): one string, so the static generators and the hand-written pages cannot drift apart. */
-export const HEAD_FINISH = '<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir"><link rel="stylesheet" href="/assets/css/v30-cinematic.css?v=1"><link rel="stylesheet" href="/assets/css/ultra-hd.css?v=2">';
 export const CACHE_TTL_MS = 10 * 60_000, CACHE_ENTRIES = 3000;
 export const RENDERS_PER_MINUTE = 90;
 export const SITEMAP_PAGE = 40000;
@@ -97,14 +96,18 @@ export function siteOrigin(env = process.env) {
   try { const u = new URL(raw); if (u.protocol === "https:" || u.protocol === "http:") return u.origin; } catch { /* default */ }
   return "https://insidir.com";
 }
-const NAV = '<a href="/platform.html">Platform</a><a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Stories</a><a href="/data.html">Data</a><a href="/pricing.html">Pricing</a><a href="/company-info.html">About</a>';
+// The public navigation, as on every static page: three primary links; the mobile menu adds the secondary pages
+// (the insider index is marked current on these pages).
+const NAV = '<a href="/platform.html">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a>';
+const NAV_MORE = '<a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Research stories</a><a href="/why-insidir.html">Why Insidir</a><a href="/data.html">Data &amp; sources</a>';
 function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null, current = false }) {
-  const nav = NAV.replace("%CUR%", current ? ' aria-current="page"' : "");
+  const nav = NAV, more = NAV_MORE.replace("%CUR%", current ? ' aria-current="page"' : "");
   const url = origin + canonical;
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0c0c0b">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
@@ -127,7 +130,8 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
-${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}${HEAD_FINISH}</head>
+<link rel="stylesheet" href="/assets/css/v29-system.css">
+${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public">
 <a class="skip-link" href="#Content">Skip to content</a>
 <header class="v6-nav v9-nav">
@@ -136,11 +140,11 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
   <nav class="v6-nav__links" aria-label="Main navigation">${nav}</nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Try 3 days for $1</a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Try 3 days for $1</a></nav>
+ <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}${more}<a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
 </header>
 <main id="Content">
 ${body}
@@ -149,7 +153,7 @@ ${body}
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
@@ -177,7 +181,7 @@ export function upsell(subject) {
  <div class="pp-upsell__offer">
   <p class="pp-offer__price"><strong>$1</strong><span>for 3 days</span></p>
   <p class="pp-offer__then">Then $39 a month. Cancel any time.</p>
-  <a class="v9-btn v9-btn--ink" href="/signup.html">Start the 3-day trial <span class="v13-arrow" aria-hidden="true">→</span></a>
+  <a class="v9-btn v9-btn--ink" href="/signup.html" data-cta="page">Start 3 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
   <a class="pp-offer__more" href="/platform.html">See everything Insidir does</a>
  </div>
 </section>`;
@@ -481,7 +485,7 @@ Disallow: /verify-email
 Sitemap: ${origin}/sitemap.xml
 `;
 }
-const PUBLIC_STATIC = ["/", "/platform.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html", ...PUBLIC_STORY_PATHS];
+const PUBLIC_STATIC = ["/", "/platform.html", "/insidir-intelligence.html", "/why-insidir.html", "/data.html", "/pricing.html", "/company-info.html", "/insider-trading", "/signup.html", "/terms.html", "/privacy.html", "/disclosures.html", "/subscription-policy.html", ...PUBLIC_STORY_PATHS];
 const xmlEsc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 const urlset = urls => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `<url><loc>${xmlEsc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export async function sitemapIndex({ query, origin }) {
@@ -521,10 +525,21 @@ function limited(key) {
 }
 export function clearPublicPageCache() { cache.clear(); hits.clear(); }
 
+/* Pages are compressed (gzip, fast level) when the client accepts it, and carry an ETag, so a crawler or reader with
+   a fresh copy gets an empty 304. */
 function send(req, res, status, type, body, maxAge) {
-  const bytes = Buffer.from(body);
-  res.writeHead(status, { ...HEADERS, "Content-Type": type, "Content-Length": bytes.length,
-    "Cache-Control": maxAge ? `public, max-age=${maxAge}, stale-while-revalidate=600` : "no-store" });
+  const raw = Buffer.from(body);
+  const etag = maxAge && status === 200 ? '"' + createHash("sha256").update(raw).digest("hex").slice(0, 16) + '"' : null;
+  const head = { ...HEADERS, "Content-Type": type, "Vary": "Accept-Encoding", ...(etag ? { ETag: etag } : {}),
+    "Cache-Control": maxAge ? `public, max-age=${maxAge}, stale-while-revalidate=600` : "no-store" };
+  if (etag && String(req.headers["if-none-match"] || "").split(/\s*,\s*/).some(t => t.replace(/^W\//, "") === etag)) {
+    res.writeHead(304, head);
+    res.end();
+    return true;
+  }
+  const gzipped = raw.length >= 1024 && /\bgzip\b/.test(String(req.headers["accept-encoding"] || ""));
+  const bytes = gzipped ? gzipSync(raw, { level: 6 }) : raw;
+  res.writeHead(status, { ...head, "Content-Length": bytes.length, ...(gzipped ? { "Content-Encoding": "gzip" } : {}) });
   res.end(req.method === "HEAD" ? undefined : bytes);
   return true;
 }

@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/v30-cinematic.css?v=1"><link rel="stylesheet" href="/assets/css/ultra-hd.css?v=2"></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
 <div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
@@ -28,7 +28,20 @@
   </div>
 </section>
 
-<p style="margin:12px 0 28px"><a href="intelligence.html" style="text-decoration:underline;text-underline-offset:4px">Explore Insidir Intelligence →</a></p>
+<!-- A new member's first steps (assets/js/onboarding.js). Shown before first paint only for an account that has just
+     subscribed and has not finished or skipped it, so the page never moves to make room. -->
+<section class="rd-start" id="rd-start" aria-labelledby="rd-start-title" hidden>
+  <div class="rd-start__head"><div><p class="rd-eyebrow">Get started · about two minutes</p><h2 id="rd-start-title">Make Insidir yours.</h2></div><button type="button" class="rd-start__skip" data-start-skip>Skip for now</button></div>
+  <ol class="rd-start__steps">
+    <li data-step="follow"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Follow people or save companies</b><span>Use Follow or Save on the suggestions below, or <a href="people.html">find a person</a> or <a href="explore.html">a company</a>.</span></div></li>
+    <li data-step="records"><span class="rd-start__mark" aria-hidden="true"></span><div><b>See their real records</b><span>Their Form 4 filings appear further down this page, under People you follow and Your watchlist, newest first.</span></div></li>
+    <li data-step="briefing"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Open your briefing</b><span>What changed for what you follow, and why each item is there. <a href="intelligence.html#briefing" data-onboard="briefing">Open the Briefing →</a></span></div></li>
+    <li data-step="investigate"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Ask Intelligence a question</b><span>For example, "What did Nvidia insiders disclose this month?" <a href="intelligence.html#investigate" data-onboard="investigate">Ask a question →</a></span></div></li>
+  </ol>
+  <p class="rd-start__note" data-start-status aria-live="polite"></p>
+</section>
+<script>/* Before first paint: show the panel only to a new member who has not finished or skipped it. */(()=>{try{if(localStorage.getItem("insidir:onboard")==="new")document.getElementById("rd-start").hidden=false;}catch(e){}})();</script>
+<p class="rd-intel-link"><a href="intelligence.html">Open Insidir Intelligence: your briefing, research questions and 13F holdings →</a></p>
 <div class="rd-grid">
   <section class="rd-module rd-module--follow" aria-labelledby="rd-follow-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow →</a></header>
@@ -147,7 +160,7 @@ put("v3-trades",rows?rep(rows,()=>'<tr class="rd-trade is-skeleton"><td class="r
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>

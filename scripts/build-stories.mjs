@@ -14,7 +14,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { STORIES, CREATOR_CONCEPTS, PRODUCT_CLIPS, storyPath, storyBySlug, wordCount, readSeconds } from "../src/stories.mjs";
-import { escapeHtml as esc, upsell, day, HEAD_FINISH } from "../src/public-pages.mjs";
+import { escapeHtml as esc, upsell, day } from "../src/public-pages.mjs";
 
 export const ORIGIN = "https://insidir.com";
 export const PUBLISHED = "2026-10-18";
@@ -23,8 +23,10 @@ const arrow = '<span class="v13-arrow" aria-hidden="true">→</span>', out = '<s
 const ext = (url, label, cls = "") => `<a${cls ? ` class="${cls}"` : ""} href="${esc(url)}" rel="noopener" target="_blank">${label} ${out}</a>`;
 const cardImage = slug => `/assets/img/stories/${slug}.png`;
 
-const NAV_ITEMS = [["/platform.html", "Platform"], ["/insider-trading", "Insider trades"], ["/stories.html", "Stories"], ["/data.html", "Data"], ["/pricing.html", "Pricing"], ["/company-info.html", "About"]];
-const nav = current => NAV_ITEMS.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+// The public navigation (as on every static page): three primary links; the mobile menu adds the secondary pages.
+const NAV_ITEMS = [["/platform.html", "Platform"], ["/insidir-intelligence.html", "Intelligence"], ["/pricing.html", "Pricing"]];
+const NAV_MORE = [["/insider-trading", "Insider filings"], ["/stories.html", "Research stories"], ["/why-insidir.html", "Why Insidir"], ["/data.html", "Data &amp; sources"]];
+const nav = (current, items = NAV_ITEMS) => items.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${label}</a>`).join("");
 
 function shell({ title, description, path, body, current = "", noindex = false, ogType = "website", image = cardImage("stories"), imageAlt = "Insidir research stories", jsonLd = null, scripts = [] }) {
   const url = ORIGIN + path;
@@ -32,6 +34,7 @@ function shell({ title, description, path, body, current = "", noindex = false, 
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0c0c0b">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
@@ -63,7 +66,8 @@ ${noindex ? '<meta name="robots" content="noindex,nofollow">\n' : ""}<link rel="
 <script defer src="/assets/js/v13-halftone.js?v=8"></script><script defer src="/assets/js/v13-motion.js?v=5"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
 <script defer src="/assets/js/public-share.js?v=1"></script>
-${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}${HEAD_FINISH}</head>
+<link rel="stylesheet" href="/assets/css/v29-system.css">
+${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public v26-stories">
 <a class="skip-link" href="#Content">Skip to content</a>
 <header class="v6-nav v9-nav">
@@ -72,11 +76,11 @@ ${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.strin
   <nav class="v6-nav__links" aria-label="Main navigation">${nav(current)}</nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Try 3 days for $1</a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav(current)}<a href="/signin.html">Log in</a><a href="/signup.html">Try 3 days for $1</a></nav>
+ <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav(current, [...NAV_ITEMS, ...NAV_MORE])}<a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
 </header>
 <main id="Content">
 ${body}
@@ -85,7 +89,7 @@ ${body}
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/creator-kit.html">Creator kit</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Historical examples</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>

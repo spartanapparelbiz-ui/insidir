@@ -141,7 +141,10 @@ test("every navigation button has its own page and nothing sends visitors back t
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
   const nav=home.match(/<nav class="v6-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
-  for(const page of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  // The landing navigation is three pages (Platform, Intelligence, Pricing); the others are in the mobile menu and footer.
+  for(const page of ["platform.html","insidir-intelligence.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  const footer=home.match(/<footer[\s\S]*?<\/footer>/)?.[0]||"";
+  for(const page of ["why-insidir.html","data.html","/insider-trading","/stories.html"])assert.ok(footer.includes('href="'+page+'"'),"the landing footer still reaches "+page);
   assert.doesNotMatch(nav,/href="#/,"landing navigation buttons open pages, not anchors on the landing page");
   const fs=await import("node:fs/promises");
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
@@ -425,7 +428,8 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(mono.headers.get("content-type"), "font/woff2");
     assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);
     const favicon = await (await fetch(base + "/assets/icons/favicon.svg")).text();
-    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#f0eee8/);
+    // The dotted "i" mark: ink background, warm-white dots (#f0eee8 since the vector refinement of the mark), never orange.
+    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#(e9e4da|f0eee8)/i);
     const engine = await (await fetch(base + "/assets/js/v13-halftone.js")).text();
     assert.match(engine, /data-halftone-hero/);
     assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");
@@ -653,4 +657,15 @@ test("person tiles carry the owner CIK and the issuer CIK, so the company's logo
   assert.ok((overview.match(/D\.personTile\([^)]*,"md",[\w$.]+\)/g)||[]).length>=2,"followed people and suggestions pass the issuer CIK");
   const people=await read("v10-people.js");
   assert.ok((people.match(/media\?\.portrait\([^)]*\{cik:id,issuerCik:ic\}\)/g)||[]).length>=2,"directory cards and the followed list pass both CIKs");
+});
+
+test("asset versions: src, href and srcset name the same versioned URL; fonts stay unversioned to match their stylesheets", async () => {
+  const { fingerprintHtml } = await import("../src/web.mjs");
+  const out = await fingerprintHtml('<link rel="preload" as="image" href="assets/img/product/company-report.webp"><link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font">' +
+    '<source srcset="assets/img/product/company-report.webp" type="image/webp"><img srcset="assets/img/hero.jpg 1200w, https://example.com/x.jpg 2x" src="assets/img/hero.jpg">');
+  const preload = /href="(assets\/img\/product\/company-report\.webp\?v=[0-9a-f]{10})"/.exec(out);
+  assert.ok(preload, "image preload is versioned");
+  assert.ok(out.includes('<source srcset="' + preload[1] + '" type="image/webp">'), "the <source> asks for the same URL as the preload");
+  assert.match(out, /srcset="assets\/img\/hero\.jpg\?v=[0-9a-f]{10} 1200w, https:\/\/example\.com\/x\.jpg 2x"/);
+  assert.match(out, /href="assets\/fonts\/Inter-normal-latin\.woff2" as="font"/);
 });

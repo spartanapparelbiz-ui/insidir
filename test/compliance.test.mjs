@@ -103,7 +103,7 @@ test("the alerts page offers only what exists: no political-trade or price-move 
   const js = readFileSync(new URL("assets/js/alerts-center.js", WEB), "utf8");
   assert.match(js, /\/v1\/me\/email-preferences/); assert.match(js, /\/v1\/me\/notifications/);
   assert.doesNotMatch(js, /manual-holdings|brokerage/, "alerts never use holdings");
-  assert.match(html, /Opt in to receive/, "push is described as opt-in, never as automatic");
+  assert.match(html, /opt in to device notifications/i, "push is described as opt-in, never as automatic");
 });
 
 test("admin audit trail: every admin request is logged with a token fingerprint, never the token", async () => {

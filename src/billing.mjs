@@ -8,6 +8,7 @@
  * late or out of order can never leave a paying member locked out (or a cancelled one
  * let in). Only subscriptions for the exact configured Price grant access.
  */
+import { serverEvent, userForCustomer } from "./funnel.mjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { query as dbQuery } from "./db.mjs";
 import { currentUser } from "./auth.mjs";
@@ -99,6 +100,28 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
  * DISCLOSURE_VERSION changes whenever the wording does. */
 export const DISCLOSURE_VERSION = "2026-10-18";
 export const PLAN_CENTS = 3900;
+
+/* The published offer is $39.00 a month in US dollars, and that is what the customer agrees to before checkout. The
+ * amount Stripe charges comes from the configured Price (INSIDIR_STRIPE_PRICE_ID), so checkout first reads that Price
+ * (read-only) and refuses to start if Stripe reports anything else: a different amount, currency or interval, or an
+ * archived price. When the Price cannot be read, checkout goes ahead as before and Stripe itself validates the Price
+ * when the session is created. A confirmed match is remembered for 10 minutes. */
+const PRICE_OK_MS = 10 * 60_000;
+const pricesVerified = new Map();
+export function priceMatchesOffer(price) {
+  return !!price && price.active !== false && price.unit_amount === PLAN_CENTS && String(price.currency || "").toLowerCase() === "usd" &&
+    price.recurring?.interval === "month" && (price.recurring.interval_count ?? 1) === 1;
+}
+export async function verifyPlanPrice(stripe, priceId, now = Date.now()) {
+  const until = pricesVerified.get(priceId);
+  if (until && until > now) return true;
+  let price;
+  try { price = await stripe.get("/prices/" + encodeURIComponent(priceId)); } catch { return null; }
+  if (!price || typeof price !== "object" || price.object !== "price") return null;
+  if (priceMatchesOffer(price)) { pricesVerified.set(priceId, now + PRICE_OK_MS); return true; }
+  console.error(JSON.stringify({ event: "billing.price_mismatch", priceId, unitAmount: price.unit_amount ?? null, currency: price.currency ?? null, interval: price.recurring?.interval ?? null, active: price.active ?? null }));
+  return false;
+}
 const usd = cents => "$" + (cents / 100).toFixed(2);
 const longDate = d => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 export function currentOffer({ trialUsed = false, trial = trialSettings(), now = Date.now() } = {}) {
@@ -420,6 +443,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       // The customer agreed to one offer; if Stripe's history changes it (a returning customer pays the full price),
       // nothing is charged until they see and accept the terms that apply.
       const offer = currentOffer({ trialUsed: !trial.enabled || trialUsed, trial });
+      if (await verifyPlanPrice(stripe, settings.priceId) === false)
+        throw failure(503, "Checkout is paused because the plan's price in Stripe does not match the published $39.00 a month. Nothing was charged. Email hello@aethric.llc.");
       if (offer.kind !== consent.offer) throw failure(409, offer.kind === "full"
         ? "This account has already used its trial, so checkout would charge $39.00 today. Review the updated terms and agree again to continue."
         : "This account is eligible for the $1 trial. Review the updated terms and agree again to continue.", { offer });
@@ -438,6 +463,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       const session = await stripe.post("/checkout/sessions", params);
       if (consentId && typeof session.id === "string") await query("UPDATE billing_consents SET stripe_checkout_id=$1 WHERE id=$2", [session.id, consentId]).catch(() => {});
       if (typeof session.url !== "string" || !session.url.startsWith("https://")) throw failure(503, "Stripe did not return a checkout page. Try again shortly.");
+      await serverEvent(query, "checkout_started", { userId: u.id });
       return json(res, 200, { url: session.url });
     });
   }
@@ -465,6 +491,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "cancel_requested", detail: { subscriptions: live.map(s => s.id), accessUntil: stored?.current_period_end ?? null } });
       for (const sub of live) await notices.cancellationConfirmed(query, { customer: row.stripe_customer_id, subscription: sub.id, accessUntil: periodEnd(sub, settings.priceId) || stored?.current_period_end }, { env })
         .catch(e => console.error(JSON.stringify({ event: "billing.notice_failed", kind: "cancel_confirmed", error: String(e?.message || e) })));
+      await serverEvent(query, "subscription_canceled", { userId: u.id, object: live[0]?.id });
       return json(res, 200, { canceled: true, accessUntil: stored?.current_period_end ? new Date(stored.current_period_end).toISOString() : null,
         message: "Your subscription is cancelled. You will not be charged again, and access continues until the end of the current period." });
     });
@@ -486,7 +513,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (!verifyStripeSignature(raw, req.headers["stripe-signature"], settings.webhookSecret)) throw failure(400, "Invalid webhook signature");
     let event;
     try { event = JSON.parse(raw); } catch { throw failure(400, "Invalid webhook payload"); }
-    const supported = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
+    const supported = ["checkout.session.completed", "checkout.session.expired", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
       "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid",
       "charge.refunded", "charge.dispute.created", "invoice.payment_failed", "customer.subscription.trial_will_end"];
     if (!supported.includes(event?.type) || typeof event.id !== "string") return json(res, 200, { received: true });
@@ -499,7 +526,15 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (ref) await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND (stripe_customer_id IS NULL OR stripe_customer_id=$1)", [obj.customer, ref]);
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
         if (!await cancelOrphanCheckout(obj, ref, { stripe, query })) await notices.acknowledgeCheckout(query, obj, { env });
+        // Funnel: a paid checkout, as Stripe's signed webhook reports it (never a browser redirect).
+        await serverEvent(query, "checkout_completed", { userId: ref || await userForCustomer(query, obj.customer), object: obj.id });
       }
+      if (event.type === "checkout.session.expired" && obj.mode === "subscription") {
+        const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
+        await serverEvent(query, "checkout_expired", { userId: ref, object: obj.id });
+      }
+      // A subscription that ended (cancelled in the portal, by Stripe, or at the end of a cancelled period).
+      if (event.type === "customer.subscription.deleted") await serverEvent(query, "subscription_canceled", { userId: await userForCustomer(query, obj.customer), object: obj.id });
       if (event.type.startsWith("customer.subscription.") && event.type !== "customer.subscription.trial_will_end") await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
       // Cancellations made outside Insidir (the Stripe portal, the dashboard) are confirmed too; same key as the in-app cancel.
       if (event.type === "customer.subscription.updated" && hasPrice(obj, settings.priceId) && obj.cancel_at_period_end === true && event.data?.previous_attributes?.cancel_at_period_end === false)
@@ -535,8 +570,12 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
           ? await listCustomerSubscriptions(obj.customer,{stripe}) : [];
         const active = pickSubscription(plans.filter(sub => sub.status === "active"), settings.priceId);
         const invoiceSub = obj.subscription || obj.parent?.subscription_details?.subscription;
-        if (active && (!invoiceSub || invoiceSub === active.id))
+        if (active && (!invoiceSub || invoiceSub === active.id)) {
           await recordFirstPaidInvoice(obj,{query,verifiedPlan:true});
+          // Funnel: a $39 renewal after the trial (a cycle invoice on Insidir's own Price, verified above).
+          if (obj.billing_reason === "subscription_cycle" && Number(obj.amount_paid) > 0)
+            await serverEvent(query, "subscription_renewed", { userId: await userForCustomer(query, obj.customer), object: obj.id });
+        }
       }
     } catch (e) {
       // Let Stripe retry: forget the event so the retry is processed.

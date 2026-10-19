@@ -73,9 +73,9 @@ test("dots are always drawn in ink: pushing them never tints them orange", async
   const src = await readFile(new URL("../web/assets/js/v13-halftone.js", import.meta.url), "utf8");
   assert.doesNotMatch(src, /warm|e9762b|233,\s*118,\s*43/i, "the engine knows no accent colour");
   // Dots are only ever painted in the ink, over the background: nothing a push does can change a dot's colour.
-  // (The word's mask is set in black on a canvas of its own, and the print grain is a pattern laid over a word.)
+  // (The word's mask is set in black on a canvas of its own, and the print grain is a pattern printed once into its own layer over a word.)
   const styles = [...src.matchAll(/(\w+)\.fillStyle = ([^;]+);/g)].map(m => m[1] + ": " + m[2].trim());
-  assert.deepEqual([...new Set(styles)].sort(), ["ctx: o.colors.background", "ctx: o.colors.ink", "ctx: pattern", "g: o.colors.background", "g: o.colors.ink", "m: \"#000\""].sort(), "only ink and background: " + styles.join(", "));
+  assert.deepEqual([...new Set(styles)].sort(), ["ctx: o.colors.background", "ctx: o.colors.ink", "gg: pattern", "g: o.colors.background", "g: o.colors.ink", "m: \"#000\""].sort(), "only ink and background: " + styles.join(", "));
   // Every ink fill follows an ink fillStyle: the resting print (g), a word frame, and the dots away from home.
   for (const m of src.matchAll(/(\w+)\.fill\(\)/g)) {
     const before = src.slice(0, m.index), set = before.lastIndexOf(m[1] + ".fillStyle = ");

@@ -57,7 +57,10 @@ try{
    }));
    assert.equal(landingRules.background,"rgb(12, 12, 11)","Homepage must sit on the V13 night paper");
    assert.ok(!landingRules.dashboardPreview,"The landing page must not show a product dashboard preview or live data feed");
-   for(const target of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.ok(landingRules.navTargets.includes(target),"Landing navigation must open "+target+": "+JSON.stringify(landingRules.navTargets));
+   // The landing navigation is Platform, Intelligence and Pricing; Why Insidir and Data are in the menu and the footer.
+   for(const target of ["platform.html","insidir-intelligence.html","pricing.html"])assert.ok(landingRules.navTargets.includes(target),"Landing navigation must open "+target+": "+JSON.stringify(landingRules.navTargets));
+   const reach=await page.evaluate(()=>[...document.querySelectorAll("#v6-menu a,footer a")].map(a=>a.getAttribute("href")));
+   for(const target of ["why-insidir.html","data.html"])assert.ok(reach.some(h=>h&&h.replace(/^\//,"")===target),"The menu or footer must still open "+target);
    for(const img of landingRules.images)assert.ok(img.scale<=0.5+1e-6,"Landing image is upscaled on high-density screens (needs native ≥ 2× rendered): "+JSON.stringify(img));
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");

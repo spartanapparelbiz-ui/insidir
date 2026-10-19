@@ -94,7 +94,9 @@ async function main() {
   if (workers) every("maintenance", 60 * 60 * 1000, 60 * 1000, async () => ({
     sessions: (await query("DELETE FROM sessions WHERE expires_at<now()")).rowCount || 0,
     rateLimits: await purgeRateLimits(query), tokens: await purgeUserTokens(query), adminAuth: await purgeAdminAuth(query),
-    securityEvents: await purgeSecurityEvents(query), emailBodies: await purgeEmailBodies(query)
+    securityEvents: await purgeSecurityEvents(query), emailBodies: await purgeEmailBodies(query),
+    // Funnel measurement is kept for 13 months (src/funnel.mjs, privacy.html).
+    funnelEvents: (await query("DELETE FROM funnel_events WHERE created_at<now()-interval '13 months'")).rowCount || 0
   }));
   const shutdown = async () => { console.log("Shutting down Insidir API"); server.close(); await pool?.end(); process.exit(0); };
   process.on("SIGTERM", shutdown); process.on("SIGINT", shutdown);

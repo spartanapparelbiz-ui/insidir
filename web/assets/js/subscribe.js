@@ -40,7 +40,9 @@
   /* Headline and lead for every state (the plan card carries the detail and the action). */
   const PLAN = "One plan covers everything below. Start with 3 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing.";
   const COPY = {
-    loading: ["Subscribe to open your workspace.", "Insidir is a paid research workspace. " + PLAN],
+    // While the account loads, the page reads as most visitors will see it (a new account, eligible for the trial), so
+    // the answer usually changes nothing on screen.
+    loading: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
     ready: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
     lapsed: ["Welcome back. Subscribe again to reopen your workspace.", "Your watchlist, research journal and holdings are still here. " + PLAN],
     past_due: ["Update your payment method.", "Your last payment didn't go through, so the workspace is paused. Update your card in Stripe's billing portal; access returns as soon as Stripe confirms the payment. Nothing you saved has been removed."],
@@ -82,6 +84,11 @@
       ? "Then " + money(offer.recurringCents) + " a month in US dollars, first charged on " + firstCharge + " and renewing automatically until you cancel"
       : "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
     $("#pw-subscribe").textContent = trial ? "Start " + offer.trialDays + "-day trial · " + money(offer.todayCents) : "Subscribe · " + money(offer.recurringCents) + "/month";
+    // The headline promises what the button does: an account that has had its trial is offered the monthly plan.
+    if (!trial && body.dataset.pwState === "ready") {
+      title.textContent = "Subscribe to Insidir.";
+      lead.textContent = "This account has already used its 3-day trial, so checkout charges " + money(offer.recurringCents) + " today, then " + money(offer.recurringCents) + " a month through Stripe until you cancel. Cancel online from Billing in one step.";
+    }
     delete $("#pw-subscribe").dataset.idleLabel;
   }
   function syncAgree() {
