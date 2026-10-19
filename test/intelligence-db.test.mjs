@@ -252,6 +252,52 @@ test("Intelligence on PostgreSQL", { skip }, async t => {
       assert.equal(await saveEvents([e], q), 0);
     });
 
+    await t.test("instrument, event tape and capital structure read real records and keep members apart", async () => {
+      const { resetInstrumentCache } = await import("../src/intelligence-instrument.mjs");
+      resetInstrumentCache();
+      for (const path of ["/v1/me/intelligence/instrument", "/v1/intelligence/tape", "/v1/intelligence/structure?ticker=NVDA"]) {
+        assert.equal((await get(path)).status, 401, path); assert.equal((await get(path, "c")).status, 402, path);
+      }
+      const a = await (await get("/v1/me/intelligence/instrument", "a")).json(), b = await (await get("/v1/me/intelligence/instrument", "b")).json();
+      const dot = (r, id) => r.mark.find(d => d.id === id);
+      assert.equal(a.mark.length, 10);
+      assert.equal(dot(a, "sales").count, 4, "NVDA ×2, AAPL, TSLA sale lines in the window");
+      assert.equal(dot(a, "purchases").count, 1);
+      assert.deepEqual(dot(a, "watchlist").records.map(r => r.ticker).sort(), ["MSFT", "NVDA"]);
+      assert.deepEqual(dot(b, "watchlist").records.map(r => r.ticker).sort(), ["AAPL", "TSLA"], "B sees only B's watchlist");
+      assert.equal(dot(b, "people").count, 0); assert.equal(dot(a, "people").count, 1);
+      assert.equal(dot(a, "sales").count, dot(b, "sales").count, "the market layer is shared");
+      for (const d of a.mark) for (const r of d.records) if (r.external) assert.match(r.href, /^https:\/\/www\.sec\.gov\//);
+      const tape = await (await get("/v1/intelligence/tape?days=7", "a")).json();
+      assert.ok(tape.events.length >= 5);
+      const dates = tape.events.map(e => e.filedAt); assert.deepEqual(dates, [...dates].sort().reverse(), "chronological, newest first");
+      assert.ok(tape.events.every(e => typeof e.new === "boolean"));
+      const nv = await (await get("/v1/intelligence/tape?days=7&ticker=NVDA&form=4", "a")).json();
+      assert.ok(nv.events.length >= 2 && nv.events.every(e => e.ticker === "NVDA" && e.kind === "form4"));
+      assert.equal(nv.events.find(e => e.id === "f4:000104581026000001").amount, 180500);
+      const cook = await (await get("/v1/intelligence/tape?days=7&person=cook", "a")).json();
+      assert.deepEqual(cook.events.map(e => e.ticker), ["AAPL"]);
+      assert.equal((await get("/v1/intelligence/tape?ticker=NV%27DA", "a")).status, 400);
+      const st = await (await get("/v1/intelligence/structure?ticker=NVDA", "a")).json();
+      assert.deepEqual(st.people.map(p => p.relationships[0]).sort(), ["Officer: EVP and CFO", "Officer: President and CEO"]);
+      assert.equal(st.securities[0].name, "Common Stock"); assert.ok(st.edges.length >= 2); assert.equal(st.periods.length, 12);
+      assert.match(st.labels.personSecurity, /not a statement of how much they hold/);
+      assert.equal((await get("/v1/intelligence/structure?ticker=ZZZZ", "a")).status, 404);
+    });
+
+    await t.test("streamed investigations report each stage as it completes, in order, then the answer", async () => {
+      const r = await post("/v1/me/intelligence/investigate?stream=1", "a", { question: "Show recent insider transactions at Nvidia" });
+      assert.equal(r.status, 200); assert.match(r.headers.get("content-type"), /ndjson/);
+      const lines = (await r.text()).trim().split("\n").map(l => JSON.parse(l));
+      assert.deepEqual(lines.map(l => l.stage), ["start", "understood", "sources", "connected", "verified", "prepared", "answer"]);
+      assert.equal(lines.find(l => l.stage === "sources").detail.records, 3);
+      const ans = lines.at(-1).answer;
+      assert.ok(ans.relationships.length >= 2 && ans.timeline.length >= 3);
+      assert.equal(ans.verification.removed, 0);
+      const bad = await post("/v1/me/intelligence/investigate?stream=1", "a", { question: "" });
+      assert.equal(bad.status, 400, "validation errors are ordinary responses, not a broken stream");
+    });
+
     await t.test("the cost dashboard is admin-only and separates measured from estimated cost", async () => {
       assert.equal((await get("/v1/admin/costs")).status, 401);
       assert.equal((await get("/v1/admin/costs", "b")).status, 403, "a paying member is not an administrator");

@@ -21,7 +21,8 @@ import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
 import {intelligenceBriefing,savePreferences,FREQUENCIES} from "./intelligence-briefing.mjs";
-import {investigate,synthesize} from "./intelligence-investigate.mjs";
+import {investigate,synthesize,STAGES} from "./intelligence-investigate.mjs";
+import {instrument,eventTape,parseTapeFilters,capitalStructure} from "./intelligence-instrument.mjs";
 import {listManagers,managerDetail,simulate} from "./intelligence-mirror.mjs";
 import {form13fTick,ingestEnabled as form13fEnabled,managerCiks} from "./form13f.mjs";
 import {aiConfigured,modelFor,aiLimits} from "./ai-gateway.mjs";
@@ -481,6 +482,21 @@ async function route(req,res,ctx){
     const days=positive(u.searchParams.get("days"),7,30);
     return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady()})));
   }
+  if(p==="/v1/me/intelligence/instrument" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(isLimited("instrument:"+user.id,120,15*60*1000))throw failure(429,"Too many refreshes. Try again shortly.");
+    return json(res,200,await timed("instrument",()=>instrument(user.id,{run:ctx.query})));
+  }
+  if(p==="/v1/intelligence/tape" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(isLimited("tape:"+user.id,180,15*60*1000))throw failure(429,"Too many requests. Try again shortly.");
+    return json(res,200,await timed("tape",()=>eventTape(user.id,parseTapeFilters(u.searchParams),{run:ctx.query})));
+  }
+  if(p==="/v1/intelligence/structure" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(isLimited("structure:"+user.id,120,15*60*1000))throw failure(429,"Too many requests. Try again shortly.");
+    return json(res,200,await timed("structure",()=>capitalStructure(u.searchParams.get("ticker"),{run:ctx.query})));
+  }
   if(p==="/v1/me/intelligence/preferences" && m==="GET"){
     const user=await requireUser(req,ctx);
     const r=await ctx.query("SELECT frequency,updated_at,last_digest_at FROM intelligence_preferences WHERE user_id=$1",[user.id]);
@@ -589,7 +605,16 @@ async function route(req,res,ctx){
       if(isLimited("investigate:"+user.id,40,15*60*1000))throw failure(429,"Research request limit reached. Try again in a few minutes.");
       const x=await body(req);
       if(typeof x?.question!=="string")throw failure(400,"Ask a research question");
-      return json(res,200,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context:x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null})));
+      const context=x.context&&typeof x.context==="object"&&!Array.isArray(x.context)?x.context:null;
+      if(u.searchParams.get("stream")!=="1")return json(res,200,await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context})));
+      // Streamed: one JSON line per stage as the server actually completes it, then the answer. Nothing is timed for show.
+      let started=false;
+      const line=obj=>{if(!started){started=true;res.writeHead(200,{"Content-Type":"application/x-ndjson; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Accel-Buffering":"no"});res.write(JSON.stringify({stage:"start",stages:STAGES})+"\n")}res.write(JSON.stringify(obj)+"\n")};
+      try{
+        const answer=await timed("investigate",()=>investigate(user.id,x.question,{run:ctx.query,context,onStage:(id,detail)=>line({stage:id,detail})}));
+        line({stage:"answer",answer});
+      }catch(e){if(!started)throw e;line({stage:"error",status:Number(e?.status)||500,error:Number(e?.status)>=500||!e?.status?"Research failed. Try again shortly.":String(e.message)});if(!e?.status||e.status>=500)console.error("Investigation failed",e)}
+      return res.end();
     }
     if(p==="/v1/me/intelligence/synthesize" && m==="POST"){
       const user=await requireUser(req,ctx);

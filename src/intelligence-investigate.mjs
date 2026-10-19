@@ -150,12 +150,16 @@ export function parseQuestion(question, directory, { now = Date.now(), context =
   if (/\b(purchases?|bought|buying|buys?|acquir\w*)\b/.test(t)) categories.push("reported_purchase");
   const wantsInsider = /\b(insiders?|form 4|executives?|directors?|officers?|sales?|sold|purchases?|bought|transactions?|trades?|trading|ownership)\b/.test(t) || categories.length > 0;
   const wantsFilings = /\b(filings?|filed|8-?k|10-?k|10-?q|6-?k|announcements?|reports?|changed?|changes|disclosures?)\b/.test(t) && !/\binsiders? disclos/.test(t);
+  // "What changed at X?" asks about everything on record, not only the filing list.
+  const changeQuestion = /\b(what('s| has)? changed|what changed|any changes)\b/.test(t) && !/\b(filings?|filed|8-?k|10-?k|10-?q|6-?k|reports?)\b/.test(t);
+  const mentionsFilings = /\b(filings?|8-?k|10-?k|10-?q|6-?k)\b/.test(t);
   let scope = companies.length ? "companies" : "none";
   if (/\b(executives?|insiders?|people|persons?|officers?|directors?)\s+(i|we)\s+follow\b|\bfollowed (people|executives|insiders|persons)\b|\bpeople i'?m following\b/.test(t)) scope = "followed_people";
   else if (!companies.length && /\b(my )?watch ?list\b|\bcompanies (i|we) (follow|watch)\b|\bmy companies\b/.test(t)) scope = "watchlist";
   else if (!companies.length && /\b(largest|biggest|top|across the market|market-?wide|all companies|any company)\b/.test(t) && wantsInsider) scope = "market";
   let intent = /\bcompare\b|\bversus\b|\bvs\.?\b|\bcompared (to|with)\b/.test(t) && companies.length >= 2 ? "compare"
     : time.sinceVisit ? "changes_since_visit"
+    : changeQuestion ? "overview"
     : wantsInsider && !wantsFilings ? "insider_activity" : wantsFilings && !wantsInsider ? "filings" : "overview";
   let usedContext = false, contextCompanies = companies;
   // Follow-ups: "What about Microsoft?" keeps the previous question's focus; "Only purchases?" keeps its companies.
@@ -175,7 +179,7 @@ export function parseQuestion(question, directory, { now = Date.now(), context =
   }
   if (intent === "compare" && contextCompanies.length < 2) intent = "overview";
   return { question: text, companies: contextCompanies, extraCompanies: extra, unmatched, ambiguous, scope, intent, categories: [...new Set(categories)],
-    days: time.days ?? null, sinceVisit: !!time.sinceVisit, timeLabel: time.label, usedContext };
+    days: time.days ?? null, sinceVisit: !!time.sinceVisit, timeLabel: time.label, usedContext, mentionsFilings };
 }
 
 /* ---------- Retrieval ---------- */
@@ -269,7 +273,7 @@ function insiderFacts(label, lines, roleMap, cite, { categories, capped }) {
   return { facts, stats: { ...s, filings: filings.length, people: people.size, firstDisclosed: disclosed[0], lastDisclosed: disclosed.at(-1) } };
 }
 
-async function filingFacts(company, days, notices, cite, { loadCompany, gaps }) {
+async function filingFacts(company, days, notices, cite, { loadCompany, gaps, events = [] }) {
   const facts = [], since = Date.now() - days * 86400_000;
   let listed = [];
   try {
@@ -281,15 +285,18 @@ async function filingFacts(company, days, notices, cite, { loadCompany, gaps }) 
   for (const f of listed) {
     seen.add(f.accession);
     const items = f.items?.length ? " — " + eightKLabel(f.items.map(i => i.code)) : "";
-    facts.push({ text: fmtDate(f.filedAt) + ": " + (f.headline || "Filing") + " (" + f.form + ")" + (f.reportDate ? ", report date " + fmtDate(f.reportDate) : "") + items + ".",
-      cites: [cite({ url: f.sourceUrl, accession: f.accession, kind: "filing", label: f.form + " · " + company.ticker + " · filed " + f.filedAt, date: f.reportDate, publishedAt: f.filedAt + "T00:00:00Z", retrievedAt: new Date().toISOString() })].filter(Boolean) });
+    const fc = [cite({ url: f.sourceUrl, accession: f.accession, kind: "filing", label: f.form + " · " + company.ticker + " · filed " + f.filedAt, date: f.reportDate, publishedAt: f.filedAt + "T00:00:00Z", retrievedAt: new Date().toISOString() })].filter(Boolean);
+    facts.push({ text: fmtDate(f.filedAt) + ": " + (f.headline || "Filing") + " (" + f.form + ")" + (f.reportDate ? ", report date " + fmtDate(f.reportDate) : "") + items + ".", cites: fc });
+    events.push({ date: f.filedAt, kind: "filed", ticker: company.ticker, text: company.ticker + " filed " + f.form + (f.headline ? " — " + f.headline : "") + (items ? items : ""), cites: fc });
   }
   for (const n of notices) {
     const acc = n.metadata?.accession;
     if (acc && seen.has(acc)) continue;
     const items = eightKLabel(n.metadata?.items || []);
-    facts.push({ text: fmtDate(day(n.published_at)) + ": Current report (" + (n.metadata?.form || "8-K") + ")" + (items ? " — " + items : "") + ".",
-      cites: [cite({ url: n.source_url, accession: acc, kind: "filing", label: (n.metadata?.form || "8-K") + " · " + company.ticker, date: n.metadata?.reportDate || null, publishedAt: iso(n.published_at), retrievedAt: iso(n.observed_at) })].filter(Boolean) });
+    const nc = [cite({ url: n.source_url, accession: acc, kind: "filing", label: (n.metadata?.form || "8-K") + " · " + company.ticker, date: n.metadata?.reportDate || null, publishedAt: iso(n.published_at), retrievedAt: iso(n.observed_at) })].filter(Boolean);
+    facts.push({ text: fmtDate(day(n.published_at)) + ": Current report (" + (n.metadata?.form || "8-K") + ")" + (items ? " — " + items : "") + ".", cites: nc });
+    events.push({ date: day(n.published_at), kind: "filed", ticker: company.ticker, text: company.ticker + " filed a current report (" + (n.metadata?.form || "8-K") + ")" + (items ? " — " + items : ""), cites: nc });
+    if (n.metadata?.reportDate) events.push({ date: n.metadata.reportDate, kind: "event", ticker: company.ticker, text: "Date of the event reported in that " + (n.metadata?.form || "8-K"), cites: nc });
   }
   if (!facts.length) facts.push({ text: "No 8-K, 10-K, 10-Q or other periodic filings by " + company.ticker + " were found in this window." });
   return { facts: facts.slice(0, 20), listed: listed.length + notices.length };
@@ -312,7 +319,15 @@ function followUps(plan, watch) {
 }
 
 /* The full deterministic answer. deps: run, loadCompany (EDGAR submissions, cached), directory, now. */
-export async function investigate(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, now = Date.now() } = {}) {
+export const STAGES = Object.freeze([
+  { id: "understood", label: "Reading the question" },
+  { id: "sources", label: "Finding sources" },
+  { id: "connected", label: "Connecting records" },
+  { id: "verified", label: "Verifying evidence" },
+  { id: "prepared", label: "Preparing the report" }
+]);
+/* onStage(id, detail) is called as each stage actually completes (it drives the streamed progress view). */
+export async function investigate(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, now = Date.now(), onStage = () => {} } = {}) {
   const text = String(question ?? "").replace(/\s+/g, " ").trim();
   if (!text) throw fail(400, "Ask a research question");
   if (text.length > MAX_QUESTION) throw fail(400, "Questions are limited to " + MAX_QUESTION + " characters");
@@ -321,6 +336,9 @@ export async function investigate(userId, question, { run = queryDb, context = n
   if (!screened.allowed) return { status: "refused", question: text, reason: screened.reason, message: screened.reply, summary: [], sections: [], citations: [], gaps: [], followUps: ["What did Nvidia insiders disclose this month?", "What changed since my last visit?"], retrievedAt, advice: false };
   const dir = directory || await companyDirectory(run);
   const plan = parseQuestion(text, dir, { now, context });
+  onStage("understood", { plan: publicPlan(plan) });
+  const collected = { lines: [], roles: new Map(), events: [] };
+  const keep = (rows, roleMap) => { collected.lines.push(...rows); for (const [k, v] of roleMap) collected.roles.set(k, v); };
   const subjects = (await run(SUBJECTS_SQL, [userId])).rows[0] || { tickers: [], people: [] };
   const watch = subjects.tickers || [];
   const { list: cites, cite } = citations();
@@ -333,6 +351,7 @@ export async function investigate(userId, question, { run = queryDb, context = n
 
   if (plan.intent === "changes_since_visit") {
     const brief = await intelligenceBriefing(userId, { run, days: 30, now, trackVisit: false });
+    onStage("sources", { records: brief.stories.length });
     const since = brief.since;
     const fresh = since ? brief.stories.filter(s => s.isNew) : brief.stories;
     plan.timeLabel = since ? "since your last visit (" + fmtDate(since.slice(0, 10)) + ")" : "the last 30 days (no earlier visit recorded)";
@@ -340,6 +359,7 @@ export async function investigate(userId, question, { run = queryDb, context = n
     for (const s of fresh.slice(0, 12)) sections.push({ kind: "story", title: s.headline, ticker: s.ticker, company: s.company,
       facts: [...s.facts.map(f => ({ text: f })), { text: "Why it's here: " + s.why.map(w => w.text).join("; ") + "." }].map(f => ({ ...f, cites: s.sources.slice(0, 3).map(src => cite({ url: src.url, accession: src.accession, kind: s.kind === "company_report" ? "filing" : "form4", label: src.label + " · " + (s.ticker || s.company), publishedAt: src.filedAt, retrievedAt: s.retrievedAt })).filter(Boolean) })),
       eventDate: s.eventDate, disclosedAt: s.disclosedAt, records: [] });
+    for (const sec of sections) if (sec.kind === "story" && sec.disclosedAt) collected.events.push({ date: day(sec.disclosedAt), kind: "disclosed", ticker: sec.ticker || null, text: sec.title, cites: (sec.facts[0]?.cites || []).slice(0, 2) });
     summary.push({ text: fresh.length ? count(fresh.length, "update") + " for your watchlist and followed people " + plan.timeLabel + "." : "Nothing new has been indexed for your watchlist or followed people " + plan.timeLabel + "." });
     if (fresh.length > 12) gaps.push("Showing the 12 highest-ordered of " + fresh.length + " updates; the briefing lists all of them.");
     if (!fresh.length && !brief.needsSetup) status = "no_data";
@@ -356,7 +376,9 @@ export async function investigate(userId, question, { run = queryDb, context = n
     else {
       const rows = (await run(PEOPLE_LINES_SQL, [cikForms(people), days, cats])).rows;
       const capped = rows.length > PEOPLE_LINES; if (capped) { rows.length = PEOPLE_LINES; gaps.push("More than " + PEOPLE_LINES + " lines matched; the most recent are summarised."); }
+      onStage("sources", { records: rows.length });
       const roleMap = await rolesFor(run, rows);
+      keep(rows, roleMap);
       const byCompany = new Map();
       for (const l of rows) { const k = l.ticker || l.issuer_cik; if (!byCompany.has(k)) byCompany.set(k, []); byCompany.get(k).push(l); }
       const companies = [...byCompany.entries()].sort((a, b) => b[1].length - a[1].length);
@@ -374,7 +396,9 @@ export async function investigate(userId, question, { run = queryDb, context = n
   } else if (plan.intent !== "changes_since_visit" && plan.scope === "market") {
     const want = cats || ["reported_purchase", "reported_sale"];
     const rows = (await run(MARKET_LINES_SQL, [want, days])).rows;
+    onStage("sources", { records: rows.length });
     const roleMap = await rolesFor(run, rows);
+    keep(rows, roleMap);
     summary.push({ text: rows.length ? "The " + count(rows.length, "largest reported " + (want.length === 1 ? (want[0] === "reported_sale" ? "sale" : "purchase") : "open-market transaction")) + " indexed across all companies in " + plan.timeLabel + ", by reported value." : "No priced open-market transactions are indexed in " + plan.timeLabel + ".",
       cites: rows.slice(0, 3).map(l => lineCitation(cite, l)) });
     if (!rows.length) status = "no_data";
@@ -382,11 +406,12 @@ export async function investigate(userId, question, { run = queryDb, context = n
     gaps.push("Ranked by the value the filer reported (shares × reported price); derivative transactions and lines without a price are left out.");
   } else if (plan.intent !== "changes_since_visit" && plan.companies.length) {
     const tickers = plan.companies.map(c => c.ticker);
-    const wantInsider = plan.intent !== "filings", wantFilings = plan.intent === "filings" || plan.intent === "overview";
+    const wantInsider = plan.intent !== "filings", wantFilings = plan.intent === "filings" || plan.intent === "overview" || (plan.intent === "compare" && plan.mentionsFilings);
     const [lineRows, noticeRows] = await Promise.all([
       wantInsider ? run(COMPANY_LINES_SQL, [tickers, days, cats]) : Promise.resolve({ rows: [] }),
       wantFilings ? run(NOTICES_SQL, [tickers, days]) : Promise.resolve({ rows: [] })
     ]);
+    onStage("sources", { records: lineRows.rows.length + noticeRows.rows.length });
     const roleMap = await rolesFor(run, lineRows.rows);
     const compareRows = [];
     for (const c of plan.companies) {
@@ -401,9 +426,10 @@ export async function investigate(userId, question, { run = queryDb, context = n
         compareRows.push({ ticker: c.ticker, company: c.name, filings: f.stats.filings || 0, people: f.stats.people || 0, sales: f.stats.sales, saleValue: f.stats.saleValue, purchases: f.stats.purchases, purchaseValue: f.stats.purchaseValue, other: f.stats.other, lastDisclosed: f.stats.lastDisclosed || null,
           cites: [...new Set(all.map(l => l.accession))].slice(0, 2).map(a => lineCitation(cite, all.find(l => l.accession === a))) });
         if (capped) gaps.push(c.ticker + " has more than " + LINES_PER_COMPANY + " lines in this window; totals cover the most recent " + LINES_PER_COMPANY + ".");
+        keep(all, roleMap);
       }
       if (wantFilings) {
-        const ff = await filingFacts(c, days, noticeRows.rows.filter(n => n.subject === c.ticker), cite, { loadCompany, gaps });
+        const ff = await filingFacts(c, days, noticeRows.rows.filter(n => n.subject === c.ticker), cite, { loadCompany, gaps, events: collected.events });
         section.filings = ff.facts;
       }
       sections.push(section);
@@ -431,12 +457,60 @@ export async function investigate(userId, question, { run = queryDb, context = n
     summary.push({ text: "Insidir could not tell which company or people this question is about. Name a company or ticker (for example “NVDA” or “Microsoft”), or ask about your watchlist or the people you follow." });
   }
   if (status !== "refused" && plan.intent !== "changes_since_visit") gaps.push("Form 4 reports are due within two business days of a transaction, so the last few days may still be filling in. Records Insidir has not indexed do not appear here, and their absence does not prove nothing happened.");
-  const answer = { status, question: text, plan: publicPlan(plan), summary, sections, citations: cites, gaps: [...new Set(gaps)], followUps: followUps(plan, watch), retrievedAt, advice: false, executed: false,
+  const relationships = buildRelationships(collected.lines, collected.roles, cite);
+  const timeline = buildTimeline(collected.lines, collected.events, cite);
+  onStage("connected", { relationships: relationships.length, events: timeline.length });
+  const verification = verifyCitations({ summary, sections, relationships, timeline }, cites);
+  onStage("verified", verification);
+  const answer = { status, question: text, plan: publicPlan(plan), summary, sections, relationships, timeline, verification, citations: cites, gaps: [...new Set(gaps)], followUps: followUps(plan, watch), retrievedAt, advice: false, executed: false,
     method: "Structured retrieval from Insidir's SEC index and EDGAR; sentences are assembled from the records, not written by a model." };
   answer.synthesis = { available: aiConfigured() && cites.length > 0 && status === "answered", tier: synthesisTier(answer) };
+  onStage("prepared", { status });
   return answer;
 }
 
+/* Who is connected to which company, according to the records: the role as filed on Form 4 and what they
+ * reported. Never more than the filings say. */
+export function buildRelationships(lines, roles, cite) {
+  const by = new Map();
+  for (const l of lines) {
+    const pc = bareCik(l.owner_cik);
+    if (!pc && !l.owner_name) continue;
+    const k = (pc || l.owner_name) + "|" + (l.ticker || l.issuer_cik);
+    if (!by.has(k)) by.set(k, { person: displayName(l.owner_name), personCik: pc ? pc.padStart(10, "0") : null, ticker: l.ticker || null, company: companyName(l.issuer_name, l.ticker),
+      role: roles.get(l.accession + "|" + pc) || null, purchases: 0, sales: 0, other: 0, securities: new Set(), last: null, cites: new Set() });
+    const r = by.get(k);
+    if (l.category === "reported_purchase") r.purchases++; else if (l.category === "reported_sale") r.sales++; else r.other++;
+    if (l.security_title) r.securities.add(String(l.security_title).slice(0, 60));
+    const d = day(l.transaction_date); if (d && (!r.last || d > r.last)) r.last = d;
+    if (r.cites.size < 3) { const c = lineCitation(cite, l); if (c) r.cites.add(c); }
+    if (!r.role) r.role = roles.get(l.accession + "|" + pc) || null;
+  }
+  return [...by.values()].map(r => ({ ...r, securities: [...r.securities].slice(0, 4), cites: [...r.cites], lines: r.purchases + r.sales + r.other,
+    basis: r.role ? "Role as checked on the person's Form 4" : "Role not stated in the indexed filing" }))
+    .sort((a, b) => b.lines - a.lines || String(b.last).localeCompare(String(a.last))).slice(0, 20);
+}
+/* Dated events from the records: when each transaction happened, when it was disclosed, and filings listed. */
+export function buildTimeline(lines, events, cite) {
+  const out = [...events], filed = new Set();
+  for (const l of lines.slice(0, 120)) {
+    const c = lineCitation(cite, l), who = displayName(l.owner_name), co = l.ticker || companyName(l.issuer_name);
+    if (day(l.transaction_date)) out.push({ date: day(l.transaction_date), kind: "transaction", ticker: l.ticker || null,
+      text: who + " — " + codeLabel(l.transaction_code) + (l.transaction_code ? " (" + l.transaction_code + ")" : "") + (num(l.shares) != null ? ", " + shares(num(l.shares)) + " shares" : "") + " of " + co, cites: c ? [c] : [] });
+    if (!filed.has(l.accession) && day(l.published_at)) { filed.add(l.accession); out.push({ date: day(l.published_at), kind: "disclosed", ticker: l.ticker || null, text: "Form " + (l.form_type || "4") + " disclosed by " + who + " (" + co + ")", cites: c ? [c] : [] }); }
+  }
+  const order = { event: 0, transaction: 1, disclosed: 2, filed: 3 };
+  return out.filter(e => e.date).sort((a, b) => b.date.localeCompare(a.date) || order[a.kind] - order[b.kind]).slice(0, 40);
+}
+/* The last step before an answer is shown: every citation number must resolve to an SEC document in the list. */
+export function verifyCitations(parts, cites) {
+  const valid = new Set(cites.filter(c => secSource(c.url)).map(c => c.id));
+  let checked = 0, removed = 0;
+  const clean = list => (list || []).forEach(f => { if (!f || !Array.isArray(f.cites)) return; const before = f.cites.length; f.cites = f.cites.filter(id => valid.has(id)); checked += before; removed += before - f.cites.length; });
+  clean(parts.summary); clean(parts.relationships); clean(parts.timeline);
+  for (const s of parts.sections) { clean(s.facts); clean(s.filings); for (const r of s.records || []) { checked++; if (!valid.has(r.citation)) { r.citation = null; removed++; } } }
+  return { citations: valid.size, references: checked, removed };
+}
 async function rolesFor(run, rows) {
   const acc = [...new Set(rows.map(r => r.accession))].slice(0, 400);
   const map = new Map();

@@ -145,11 +145,17 @@ const insiderPeople = transactionItems.map(t => ({ owner_name: t.owner_name, own
 // answer(status, body) for a status other than 200, or null (answered 404 "not mocked").
 const STATUS = Symbol("status");
 const answer = (status, body) => ({ [STATUS]: status, body });
+// A streamed (application/x-ndjson) response: one JSON object per line.
+const NDJSON = Symbol("ndjson");
+const ndjson = lines => ({ [NDJSON]: lines.map(l => JSON.stringify(l)).join("\n") + "\n" });
 // Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
 const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
 function intelligenceFixture(p, method, empty) {
   if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
-  if (p === "/v1/me/intelligence/investigate" && method === "POST") return INTEL.answer;
+  if (p === "/v1/me/intelligence/investigate" && method === "POST") return ndjson([...INTEL.stream, { stage: "answer", answer: INTEL.answer }]);
+  if (p === "/v1/me/intelligence/instrument") return INTEL.instrument;
+  if (p === "/v1/intelligence/tape") return empty ? { ...INTEL.tape, events: [], nextBefore: null } : INTEL.tape;
+  if (p === "/v1/intelligence/structure") return INTEL.structure;
   if (p === "/v1/me/intelligence/preferences") return { frequency: "daily", updatedAt: "2026-10-19T00:00:00Z" };
   if (p === "/v1/ai/status") return INTEL.aiStatus;
   if (p === "/v1/intelligence/mirror/managers") return empty ? { available: false, managers: [], reason: "Form 13F ingestion has not run yet on this deployment.", notes: INTEL.managers.notes } : INTEL.managers;
@@ -650,7 +656,8 @@ try {
       const request = route.request(), url = new URL(request.url());
       let from = "", hash = ""; try { const f = new URL(request.frame().url()); from = f.pathname; hash = f.hash; } catch {}
       const body = fixture(url, request.method(), from, hash);
-      if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
+      if (body !== null && body[NDJSON]) await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: body[NDJSON] });
+      else if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
       else if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       else await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not mocked"}' });
     });
