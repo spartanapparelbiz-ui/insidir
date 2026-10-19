@@ -3,7 +3,7 @@
   "short_name": "Insidir",
   "description": "SEC filing intelligence and watchlist notifications",
   "id": "/",
-  "start_url": "/alerts.html",
+  "start_url": "/dashboard.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0c0c0b",
