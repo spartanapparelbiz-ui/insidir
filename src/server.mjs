@@ -28,7 +28,7 @@ async function main() {
     setInterval(tick,15*60*1000).unref();
   }
   if(initPush()){
-    const send=async()=>{try{const report=await pushTick(query);if(report.sent||report.failed)console.log("Push delivery",JSON.stringify(report));}catch(e){console.error("Push delivery failed",e?.message||e)}};
+    const send=async()=>{try{const report=await pushTick(query);if(report.sent||report.failed||report.broadcast?.queued||report.broadcast?.eligible!==undefined)console.log("Push delivery",JSON.stringify(report));}catch(e){console.error("Push delivery failed",e?.message||e)}};
     setTimeout(send,30*1000).unref();
     setInterval(send,3*60*1000).unref();
   }else console.warn("Insidir Web Push disabled: VAPID settings incomplete");
