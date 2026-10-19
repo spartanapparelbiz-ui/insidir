@@ -1,5 +1,6 @@
-/* Internal conversion report (admin-funnel.html) for GET /v1/admin/funnel. The token, when used, stays in this tab's
-   sessionStorage (shared with the cost report) and is sent only to Insidir's own API. Only measured counts are shown:
+/* Internal conversion report (admin-funnel.html) for GET /v1/admin/funnel. Admin access needs the token AND a one-time
+   code (docs/OPERATIONS.md §2): the form opens the same 30-minute HttpOnly admin session as ops.html and the cost
+   report, and neither value is stored by the page. Only measured counts are shown:
    a stage with nothing before it shows no rate, and an experiment is never called before it has enough data. */
 (() => {
   "use strict";
@@ -7,8 +8,6 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const int = n => n == null ? "—" : Number(n).toLocaleString("en-US");
   const pct = n => n == null ? "—" : (n * 100).toFixed(1) + "%";
-  const KEY = "insidir-admin-token";
-  const token = () => { try { return sessionStorage.getItem(KEY) || ""; } catch { return ""; } };
   const table = (cols, rows) => rows.length ? '<div class="ix-tablewrap"><table class="ix-table"><thead><tr>' + cols.map(c => '<th scope="col">' + esc(c) + "</th>").join("") + "</tr></thead><tbody>" + rows.map(r => "<tr>" + r.map(v => "<td>" + v + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>" : '<p class="ix-note">None recorded.</p>';
 
   function render(r) {
@@ -28,15 +27,22 @@
     const box = $("[data-report]");
     box.innerHTML = '<p class="ix-note">Loading…</p>';
     try {
-      const t = token();
-      const res = await fetch("/v1/admin/funnel?days=" + encodeURIComponent($("[data-days]").value), { credentials: "same-origin", headers: t ? { Authorization: "Bearer " + t, Accept: "application/json" } : { Accept: "application/json" } });
+      const res = await fetch("/v1/admin/funnel?days=" + encodeURIComponent($("[data-days]").value), { credentials: "same-origin", headers: { Accept: "application/json" } });
       const data = await res.json().catch(() => null);
       if (!res.ok) { box.innerHTML = '<div class="ix-error" role="alert"><strong>' + (res.status === 401 || res.status === 403 ? "Administrator access required." : "The report could not be loaded.") + "</strong>" + esc(data && data.error || "HTTP " + res.status) + "</div>"; return; }
       render(data);
     } catch (e) { box.innerHTML = '<div class="ix-error" role="alert"><strong>The report could not be loaded.</strong>' + esc(e.message) + "</div>"; }
   }
   function start() {
-    $("[data-token-form]").addEventListener("submit", e => { e.preventDefault(); try { sessionStorage.setItem(KEY, $("#admin-token").value.trim()); } catch { /* private mode */ } $("#admin-token").value = ""; load(); });
+    $("[data-token-form]").addEventListener("submit", async e => {
+      e.preventDefault();
+      const box = $("[data-report]");
+      try { sessionStorage.removeItem("insidir-admin-token"); } catch { /* an older version kept the token here */ }
+      const res = await fetch("/v1/admin/session", { method: "POST", credentials: "same-origin", headers: { Accept: "application/json", Authorization: "Bearer " + $("#admin-token").value.trim(), "X-Insidir-Admin-OTP": $("#admin-otp").value.trim() } }).catch(() => null);
+      $("#admin-token").value = ""; $("#admin-otp").value = "";
+      if (!res || !res.ok) { const d = res ? await res.json().catch(() => null) : null; box.innerHTML = '<div class="ix-error" role="alert"><strong>Administrator access required.</strong>' + esc(d && d.error || "The session could not be opened.") + "</div>"; return; }
+      load();
+    });
     $("[data-refresh]").addEventListener("click", load);
     $("[data-days]").addEventListener("change", load);
     load();

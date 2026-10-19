@@ -52,7 +52,8 @@ async function company(){
 }
 async function alerts(){
  css();
- const panel=document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
+ // The alerts page (alerts-center.js) gives this table its own section: the last 30 days of Form 4 lines for the watchlist.
+ const panel=document.querySelector("#alerts-activity")||document.querySelector(".alerts-panel");if(!panel)return;panel.innerHTML='<div class="live-panel" id="alerts-real">'+status("Loading saved watchlist activity…")+"</div>";
  document.querySelector("#manage-alerts")?.setAttribute("hidden","");
  document.querySelector(".alert-filters")?.setAttribute("hidden","");
  /* Identity tiles (entity-media.js): the company's logo beside its ticker, the reporting person's headshot

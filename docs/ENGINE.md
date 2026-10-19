@@ -11,7 +11,8 @@ This document covers the backend engine. The website in `web/` is described in [
 - Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
 - **Paywall with a paid trial** (`src/paywall.mjs`, `src/billing.mjs`): no free tier. A new subscription starts with a 3-day trial for $1, then renews at $39/month through Stripe. Every product page and every product API needs a signed-in account with an active or trialing Insidir Pro subscription or a complimentary owner/team email.
 - **Public insider pages** (`src/public-pages.mjs`): server-rendered `/insider-trading`, `/insider-trading/<TICKER>` and `/insiders/<cik>-<name>` from the Form 4 import, plus `/sitemap.xml` and `/robots.txt`, readable without an account. See [Public insider pages](#public-insider-pages). See [Hard paywall and billing](#hard-paywall-and-billing).
-- Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
+- Email/password sessions (salted scrypt), email verification, password recovery and change, sign-out of other devices, a security log, data export, watchlists, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
+- **Research events** (`src/research-events.mjs`): normalized, deduplicated events from the import (purchases and sales per Form 4, Form 4/A comparisons, multi-insider purchase groups, watched companies' other SEC filings) with trade, filing and retrieval times kept apart; **sourced explanations** (`src/explanations.mjs`, AI part off by default); **alerts** in the app and by consented email (`src/notifications.mjs`). Configuration and operations: [OPERATIONS.md](OPERATIONS.md).
 - Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
 - Optional 15-minute automatic poller or secured on-demand/cron ingestion.
@@ -90,7 +91,7 @@ Safety net: if an Insidir checkout (its metadata names the Insidir account) stil
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `INSIDIR_PAYWALL` | on | `0` turns the paywall off (local development only). Anything else keeps it on. |
-| `INSIDIR_COMPLIMENTARY_EMAILS` | empty | Comma-separated owner/team emails with access and no subscription. There is no email verification: register these accounts before listing them. |
+| `INSIDIR_COMPLIMENTARY_EMAILS` | empty | Comma-separated owner/team emails with access and no subscription. Once email verification is enforced (by default when an email provider is configured), a listed address has access only after its owner confirms it. |
 | `INSIDIR_BILLING_ENABLED` | `0` | `1` enables checkout and the portal, together with the three Stripe values below. |
 | `INSIDIR_STRIPE_SECRET_KEY` | empty | Stripe secret key. Also needed on account deletion: any account that ever started a checkout cannot be deleted while Stripe is unreachable or this key is missing, because nothing is deleted until Stripe confirms no subscription can bill. Keep it set while any customer exists. |
 | `INSIDIR_STRIPE_PRICE_ID` | empty | The $39/month recurring Price. Only this exact Price grants access; if it is ever replaced, existing subscribers on the old Price lose access, so migrate them in Stripe first. |
@@ -252,9 +253,16 @@ Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.
 - **Restated lines count once.** The 30-day totals use the personnel file's rule (`SAME_LINE` and `SUPERSEDED` from `src/person-profile.mjs`): a line repeated by a later Form 4/A counts once, on the date it was first filed, so a restated old trade does not enter the window; `filings_30d` counts filings published in the window. `items` lists every line as filed.
 - **Cost.** At most three statements (plus the owners of joint lines in one more), never one per person. Each followed person is read in one pass over their parsed lines; at most the 150 newest follows are read before any per-person work. On PostgreSQL 16 with 200,000 filings and 800,000 lines, 150 follows of about 160 lines each answer in about 0.15 s for `people` and 0.15 s for `items`. The engine's connections run with `jit=off` (`src/db.mjs`): JIT compilation added 0.6–1.4 s to these statements (unless `DATABASE_URL` carries its own `options`).
 - GET /v1/me/research-decisions?ticker=AAPL; POST /v1/me/research-decisions with JSON {"ticker":"AAPL","reviewStatus":"watching","notes":"Read the original filing"}; DELETE /v1/me/research-decisions?ticker=AAPL
-- GET /v1/me/alerts – computed on demand; email/push delivery is **not** implemented
+- GET /v1/me/alerts – watchlist Form 4 matches computed on demand (kept for older clients)
+- GET /v1/me/notifications?unread=1&before= ; POST /v1/me/notifications/read {ids|all} – alerts from research events
+- GET/POST /v1/me/email-preferences – in-app on/off, event types, email off/immediate/daily (turning email on needs `{consent:true, consentVersion}`)
+- GET /v1/research-events?ticker=&owner=&type=&before= ; GET/POST /v1/research-events/{id}/explanation (POST takes `{question}`)
+- POST /v1/auth/verify-email {token}, POST /v1/auth/resend-verification, POST /v1/auth/forgot-password {email} (always 202), POST /v1/auth/reset-password {token,password}
+- POST /v1/me/password {currentPassword,newPassword}, POST /v1/me/sessions/revoke-others, GET /v1/me/security-events, GET /v1/me/export
+- GET/POST /v1/email/unsubscribe?t= (signed link; RFC 8058 one-click), POST /v1/email/webhook/postmark (basic auth)
+- POST/DELETE /v1/admin/session, GET /v1/admin/ops – administrators: token and one-time code
 
-Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use HttpOnly/Secure/SameSite=Lax. Before making public registrations available add distributed rate-limiting, email verification, final privacy/retention policies and a working account-deletion UI.
+Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use HttpOnly/Secure/SameSite=Lax. Rate limits are shared by every instance through PostgreSQL (`src/rate-limit.mjs`, keys stored as digests). Admin routes need a token and a one-time code (`src/admin-auth.mjs`).
 
 ## Compliance gates
 - SEC fair-access guideline: declare user agent; keep requests below its limit; use caching; identify original filing and distinction between trade and publication dates.
@@ -273,9 +281,9 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - SEC company facts and company submissions may be temporarily unavailable, outdated, or lack a particular ticker or metric; the interface states the limitation rather than inventing results.
 - Grouping may double count amended filings. It is not an investment forecast.
 - The paywall trusts Stripe's subscription status as stored by the webhook (or `?refresh=1`, or a checkout attempt). If webhooks are not delivered and nobody refreshes, a cancellation reaches Insidir late; Stripe retries failed webhooks for three days. Account deletion and checkout do not depend on the stored status: they re-read Stripe.
-- The one-billing-change-per-account lock is per process; Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
+- The one-billing-change-per-account lock is per process (rate limits are shared, this lock is not); Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
 - Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
-- There is no email verification, so a complimentary address must be registered by its owner before it is listed.
+- Email verification exists but is only enforced once an email provider is configured (or `INSIDIR_REQUIRE_EMAIL_VERIFICATION=1`); until then a complimentary address must be registered by its owner before it is listed.
 - No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
 
 ## Insidir Intelligence

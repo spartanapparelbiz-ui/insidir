@@ -11,6 +11,14 @@ Same identity (paper and ink, JetBrains Mono, the dotted i, the halftone wordmar
 - **Smoothness and access.** The halftone engine lays out once instead of three times, draws after first paint, and prints its grain once into a still layer instead of over every frame (on a throttled phone the landing page's blocking time fell from 3.8 s to 0.8 s and its slowest interaction from 392 ms to 112 ms); sticky bars dropped their per-frame backdrop blur; the Intelligence hero dims by opacity only. Every page has the Home Screen icon. `scripts/a11y-check.mjs` (axe WCAG 2.1 AA, overflow, 24px touch targets) runs in CI; `scripts/perf-check.mjs` measures LCP, CLS, blocking time, the slowest interaction and transfer under throttling.
 - **Tokens** (`v29-system.css`, see `docs/WEBSITE.md`): colour, type, space, radii, motion, focus and tap size, with no new `!important` layer. 25 stylesheets and scripts that nothing loaded were deleted.
 
+## Insidir V30: account security, research events, sourced explanations and alerts (October 2026)
+
+- **Accounts:** email confirmation, password recovery and change, sign-out of other devices, a security log, a data download; rate limits shared by every instance; admin access needs a token and a one-time code.
+- **Subscription notices:** acknowledgment of the terms after checkout, receipts, trial reminders, failed-payment and cancellation emails, each sent once per Stripe event; the whole lifecycle is tested against PostgreSQL with a Stripe simulator, and `scripts/stripe-test-mode-check.mjs` checks it against Stripe test mode.
+- **Research events** from the SEC import (purchases and sales, amended filings and what changed, purchases by several insiders, watched companies' other filings), with trade, filing and retrieval times kept apart and every source linked; **sourced explanations** with server-side checks (the AI part is off by default); **alerts** in the app and, with recorded consent, by email.
+- **Operations page** (`ops.html`) for ingestion freshness, workers, email, billing webhooks and source health. Removed the retired scripts that held invented data.
+- Runbook: `docs/OPERATIONS.md`. What was verified and what is still blocked: `docs/RELEASE-REPORT.md`. Questions for counsel: `docs/ATTORNEY-REVIEW.md`.
+
 ## Insidir V28: headshots from archived copies of bot-walled company sites (October 2026)
 
 - **Internet Archive fallback** (`src/web-archive.mjs`, `src/leader-pages.mjs`). When a company's own site answers the crawler with a bot wall (PayPal, Ferguson, Qualcomm, Regal Rexnord), its leadership and board pages are read from the Internet Archive's copy instead:

@@ -10,7 +10,7 @@
  * gate() on every request before it serves a page or an API response.
  */
 import { posix } from "node:path";
-import { paywallEnabled, complimentaryEmails, billingSettings } from "./config.mjs";
+import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequired } from "./config.mjs";
 
 // Paid product pages: signed in AND an active subscription.
 // person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
@@ -18,7 +18,7 @@ export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", 
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
-export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted"]);
+export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted", "forgot-password", "reset-password", "verify-email"]);
 // Pages a sign-in or subscribe step may send someone back to afterwards.
 export const NEXT_PAGES = Object.freeze([...PRODUCT_PAGES, ...ACCOUNT_PAGES]);
 
@@ -66,6 +66,10 @@ export function isApiPath(pathname) {
 const MEDIA_FILE = /^\/v1\/media\/[a-f0-9]{64}\.(png|webp|jpeg|svg)$/;
 const OWN_DATA_DELETES = [/^\/v1\/me\/brokerage$/, /^\/v1\/me\/research-decisions$/,
   /^\/v1\/me\/(watchlist|people|manual-holdings)\/[^/]+$/];
+/* Managing the account itself never needs a subscription either: password, sessions, the security log, a copy of
+ * your data, and email preferences (a lapsed member must be able to turn emails off). */
+export const ACCOUNT_ROUTES = Object.freeze([/^\/v1\/me\/password$/, /^\/v1\/me\/sessions\/revoke-others$/, /^\/v1\/me\/security-events$/,
+  /^\/v1\/me\/export$/, /^\/v1\/me\/email-preferences$/]);
 
 /* 'open' | 'account' | 'product' for an API path.
  *   open     no sign-in needed here (the handler checks what it needs)
@@ -78,6 +82,9 @@ export function classifyApi(pathname, method = "GET") {
   if (p === "/healthz" || p === "/v1" || p === "/v1/" || p === "/v1/sources" || p === "/v1/capabilities") return "open";
   if (p === "/v1/me") return m === "GET" || m === "HEAD" || m === "DELETE" ? "open" : "product";
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/") || p.startsWith("/v1/creators/admin/")) return "open";
+  // Administrator routes (own token + one-time code, src/admin-auth.mjs) and email links/webhooks (signed tokens,
+  // provider basic auth; src/notifications.mjs, src/email.mjs) authenticate themselves.
+  if (p.startsWith("/v1/admin/") || p.startsWith("/v1/email/")) return "open";
   // Server-to-server ingestion has its own bearer secret; it is not product data.
   if (p === "/v1/internal/ingest" || p === "/v1/internal/13f/ingest") return "open";
   // The internal cost dashboard checks its own administrator token or allow-listed account (src/cost-analytics.mjs).
@@ -89,6 +96,7 @@ export function classifyApi(pathname, method = "GET") {
   // cached publicly (for a day, so a takedown reaches caches).
   if (MEDIA_FILE.test(p) && (m === "GET" || m === "HEAD")) return "open";
   if (m === "DELETE" && OWN_DATA_DELETES.some(rule => rule.test(p))) return "account";
+  if (ACCOUNT_ROUTES.some(rule => rule.test(p))) return "account";
   return "product";
 }
 
@@ -116,10 +124,17 @@ export function isComplimentary(email, env = process.env) {
   return !!e && complimentaryEmails(env).has(e);
 }
 
-// Access = subscription active or trialing, OR the account email is complimentary.
+/* A complimentary address grants access only once its owner has confirmed it, whenever verification is enforced
+ * (verificationRequired in config.mjs): otherwise whoever registered the address first would get the owner's access. */
+export function complimentaryAccess(row, env = process.env) {
+  if (!row || !isComplimentary(row.email, env)) return false;
+  return !verificationRequired(env) || !!(row.email_verified_at ?? row.emailVerifiedAt);
+}
+
+// Access = subscription active or trialing, OR a complimentary account (verified when verification is enforced).
 export function hasAccess(row, env = process.env) {
   if (!row) return false;
-  return subscriptionActive(row) || isComplimentary(row.email, env);
+  return subscriptionActive(row) || complimentaryAccess(row, env);
 }
 
 function isoOrNull(value) {
@@ -138,7 +153,9 @@ export function accessSummary(row, env = process.env) {
     plan: subscriptionActive(row) ? "pro" : "none",
     status: statusOf(row) || null,
     billingEnabled: billingSettings(env).enabled,
-    complimentary: isComplimentary(row?.email, env),
+    complimentary: complimentaryAccess(row, env),
+    emailVerified: !!(row?.email_verified_at ?? row?.emailVerifiedAt),
+    verificationRequired: verificationRequired(env),
     currentPeriodEnd: isoOrNull(row?.current_period_end ?? row?.currentPeriodEnd)
   };
 }

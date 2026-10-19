@@ -37,6 +37,7 @@ function renderCancellation(billing) {
 function plan(access){
  if(!access)return "Subscription status unavailable";
  if(access.complimentary&&access.active)return "Complimentary access";
+ if(access.active&&access.status==="trialing"){const end=dateText(access.currentPeriodEnd);return "Trial"+(end?" · ends "+end:"")+" · then $39/month unless cancelled";}
  if(access.active){const end=dateText(access.currentPeriodEnd);return "Active"+(end?" · current period ends "+end:"");}
  if(FIX[access.status])return FIX[access.status][0];
  if(access.billingEnabled===false)return "Not subscribed · checkout isn't open yet";
@@ -57,6 +58,55 @@ function actions(access){
  const billing=document.createElement("a");billing.href="billing.html";billing.textContent="Billing";
  note.replaceChildren("Insidir is a paid research workspace. Subscribe to open the dashboard, research desk and company reports"+(access.status?"; everything you saved is still here. ":". ")+"Past invoices and payment details are in ",billing,".");
 }
+/* 05 / Email: confirmation status and a fresh link. */
+function verified(access){
+ const value=$("account-verified"),send=$("account-verify-send"),note=$("account-verify-note");
+ if(access?.emailVerified){value.textContent="Confirmed";send.hidden=true;return;}
+ value.textContent=access?.verificationRequired?"Not confirmed · needed before subscribing":"Not confirmed";
+ send.hidden=false;
+ send.addEventListener("click",async()=>{
+  send.disabled=true;note.classList.remove("is-error");
+  try{const r=await req("/v1/auth/resend-verification","POST",{});note.textContent=r.alreadyVerified?"Your address is already confirmed.":"We sent a confirmation link to your address. It expires in 48 hours.";}
+  catch(e){note.classList.add("is-error");note.textContent=e.message?e.message.replace(/([^.!?])$/,"$1."):"We couldn't send a link just now. Try again in a moment.";send.disabled=false;}
+ },{once:true});
+}
+const KIND={register:"Account created",login_success:"Signed in",logout:"Signed out",login_failure:"Failed sign-in",password_changed:"Password changed",password_reset_requested:"Password reset requested",
+ password_reset_completed:"Password reset",email_verified:"Email confirmed",email_verification_sent:"Confirmation link sent",sessions_revoked:"Other devices signed out",data_exported:"Data downloaded",
+ password_change_failed:"Password change refused",account_delete_failed:"Deletion refused (wrong password)"};
+/* 06 / Security and 07 / Your data. */
+function security(){
+ const out=$("account-security-feedback");
+ const say=(t,bad)=>{out.classList.toggle("is-error",!!bad);out.textContent=t;};
+ const list=$("account-events");
+ const load=()=>req("/v1/me/security-events").then(r=>{
+  list.replaceChildren(...(r.items||[]).slice(0,10).map(e=>{const li=document.createElement("li");const when=new Date(e.created_at);
+   li.textContent=(KIND[e.kind]||e.kind)+" · "+(isNaN(when)?"":when.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"}));return li;}));
+  if(!list.children.length)list.replaceChildren(Object.assign(document.createElement("li"),{textContent:"Nothing recorded yet."}));
+ }).catch(()=>{list.replaceChildren(Object.assign(document.createElement("li"),{textContent:"Activity is unavailable right now."}))});
+ load();
+ $("account-password-form").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const cur=$("account-password-current"),next=$("account-password-new");
+  if(!cur.value){say("Enter your current password.",true);return cur.focus();}
+  if(next.value.length<12||next.value.length>128){say("Use 12 to 128 characters for the new password.",true);return next.focus();}
+  $("account-password-save").disabled=true;
+  try{const r=await req("/v1/me/password","POST",{currentPassword:cur.value,newPassword:next.value});cur.value=next.value="";
+   say("Password changed."+(r.otherSessionsRevoked?" "+r.otherSessionsRevoked+" other session"+(r.otherSessionsRevoked>1?"s were":" was")+" signed out.":""));load();}
+  catch(e){say(e.message?e.message.replace(/([^.!?])$/,"$1."):"Your password was not changed. Try again.",true);}
+  $("account-password-save").disabled=false;
+ });
+ $("account-sessions-revoke").addEventListener("click",async()=>{
+  try{const r=await req("/v1/me/sessions/revoke-others","POST",{});say(r.revoked?r.revoked+" other session"+(r.revoked>1?"s were":" was")+" signed out.":"No other sessions were signed in.");load();}
+  catch(e){say(e.message||"That didn't work. Try again.",true);}
+ });
+ $("account-export").addEventListener("click",async()=>{
+  const fb=$("account-export-feedback");fb.classList.remove("is-error");fb.textContent="Preparing your file…";
+  try{const data=await req("/v1/me/export");const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="insidir-account-export.json";document.body.append(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(a.href),5000);fb.textContent="Downloaded insidir-account-export.json.";load();}
+  catch(e){fb.classList.add("is-error");fb.textContent=e.message||"The download failed. Try again.";}
+ });
+}
 function deleteFailed(text){
  const out=$("account-delete-feedback");
  out.classList.add("is-error");
@@ -69,6 +119,8 @@ document.addEventListener("DOMContentLoaded",async()=>{
    $("account-plan").textContent=plan(r.access);
    actions(r.access);
    $("account-delete").disabled=false;
+   verified(r.access);
+   security();
    // Never show a cancellation button until the server has checked this account's Stripe status.
    try {
     renderCancellation(await req("/v1/billing/status?refresh=1"));

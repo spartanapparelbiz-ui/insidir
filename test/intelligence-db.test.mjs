@@ -69,7 +69,10 @@ test("Intelligence on PostgreSQL", { skip }, async t => {
   const q = (sql, params) => db.query(sql, params);
   await seed(q);
   const { createApiServer } = await import("../src/api.mjs");
-  const env = { ...process.env, INSIDIR_PAYWALL: "1", INSIDIR_ADMIN_EMAILS: "a@insidir.test", INSIDIR_OPENROUTER_API_KEY: "" };
+  // Admin access is the token AND a one-time code (src/admin-auth.mjs); an admin e-mail address alone is not enough.
+  const { generateTotpSecret, totpCode, base32Decode, stepAt } = await import("../src/totp.mjs");
+  const ADMIN_TOKEN = "intelligence-admin-token-".padEnd(40, "x"), TOTP = generateTotpSecret();
+  const env = { ...process.env, INSIDIR_PAYWALL: "1", INSIDIR_ADMIN_TOKEN: ADMIN_TOKEN, INSIDIR_ADMIN_TOTP_SECRET: TOTP, INSIDIR_OPENROUTER_API_KEY: "" };
   server = createApiServer({ quiet: true, env });
   await new Promise(r => server.listen(0, "127.0.0.1", r));
   base = "http://127.0.0.1:" + server.address().port;
@@ -300,9 +303,11 @@ test("Intelligence on PostgreSQL", { skip }, async t => {
 
     await t.test("the cost dashboard is admin-only and separates measured from estimated cost", async () => {
       assert.equal((await get("/v1/admin/costs")).status, 401);
-      assert.equal((await get("/v1/admin/costs", "b")).status, 403, "a paying member is not an administrator");
+      assert.equal((await get("/v1/admin/costs", "b")).status, 401, "a paying member is not an administrator");
+      const tokenOnly = await fetch(base + "/v1/admin/costs", { headers: { authorization: "Bearer " + ADMIN_TOKEN } });
+      assert.equal(tokenOnly.status, 401, "the token without a one-time code is refused");
       await q("INSERT INTO ai_usage(feature,model,status,input_tokens,output_tokens,cost_usd,cost_source) VALUES('filing_summary','openai/gpt-4.1-nano','ok',100,20,0.000018,'provider_reported'),('filing_summary','openai/gpt-4.1-nano','ok',100,20,0.5,'estimated')");
-      const r = await (await get("/v1/admin/costs", "a")).json();
+      const r = await (await fetch(base + "/v1/admin/costs", { headers: { authorization: "Bearer " + ADMIN_TOKEN, "x-insidir-admin-otp": totpCode(base32Decode(TOTP), stepAt()) } })).json();
       assert.ok(Math.abs(r.ai.last30.measuredUsd - 0.000018) < 1e-9, "estimated cost is not added to measured");
       assert.equal(r.ai.last30.estimatedUsd, 0.5);
       assert.equal(r.grossMargin.source, "unavailable", "no Stripe: no invented margin");

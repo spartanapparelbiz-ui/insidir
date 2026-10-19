@@ -13,6 +13,9 @@ const amount = v => {
 };
 const flag = v => /^(1|true)$/i.test(val(v) || "");
 const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+/* An XML Schema date may carry a time zone ("2026-10-14-05:00", "2026-10-14Z"); the calendar date is the part before
+ * it. Filers do send these: without this the trade date of such a line was stored as unknown. */
+export const xmlDate = v => { const m = /^(\d{4}-\d{2}-\d{2})(?:Z|[+-]\d{2}:\d{2})?$/.exec(String(v ?? "").trim()); return m && isDate(m[1]) ? m[1] : null; };
 
 export function parseAtom(xml, { forms = ["4", "4/A"] } = {}) {
   const allowed = new Set(forms.map(f => String(f).toUpperCase()));
@@ -43,7 +46,7 @@ export function parseAtom(xml, { forms = ["4", "4/A"] } = {}) {
       accession, filerCik, title: scalar(entry.title) || "Form 4",
       publishedAt: scalar(entry.updated) || scalar(entry.published),
       sourceUrl: url.toString(), indexBase: "https://www.sec.gov/Archives/edgar/data/" + filerCik + "/" + accession + "/",
-      formType: type
+      formType: type || (scalar(entry["filing-type"]) || "4")
     }];
   });
 }
@@ -72,7 +75,7 @@ export function parseOwnership(xml, filing) {
       const acq = val(t?.transactionAmounts?.transactionAcquiredDisposedCode)?.toUpperCase() || null;
       const shares = amount(t?.transactionAmounts?.transactionShares);
       const price = amount(t?.transactionAmounts?.transactionPricePerShare);
-      const transactionDate = val(t?.transactionDate);
+      const transactionDate = xmlDate(val(t?.transactionDate));
       const owner = owners.length === 1 ? owners[0] : null;
       const category = !derivative && code === "P" && acq === "A" ? "reported_purchase"
         : !derivative && code === "S" && acq === "D" ? "reported_sale"
@@ -82,7 +85,7 @@ export function parseOwnership(xml, filing) {
         accession: filing.accession, issuerCik, ticker,
         ownerCik: owner?.cik || null,
         ownerName: owner?.name || (owners.map(x => x.name).join(", ") || "Unknown"),
-        transactionDate: isDate(transactionDate) ? transactionDate : null,
+        transactionDate,
         securityTitle: val(t?.securityTitle) || null,
         code, acquiredDisposed: acq, category, derivative,
         shares, pricePerShare: price,
@@ -99,12 +102,23 @@ export function parseOwnership(xml, filing) {
     issuerCik, issuerName: scalar(issuer.issuerName) || "Unknown issuer", ticker,
     title: filing.title, formType: val(root.documentType) || filing.formType,
     sourceUrl: filing.sourceUrl, publishedAt: filing.publishedAt,
-    periodOfReport: isDate(val(root.periodOfReport)) ? val(root.periodOfReport) : null,
+    periodOfReport: xmlDate(val(root.periodOfReport)),
     isAmendment: /\/A/i.test(val(root.documentType) || filing.formType || ""),
     owners, transactions
   };
 }
 
+/* Source health for operators (GET /v1/admin/ops): counts and the latest outcome of this process's SEC requests. */
+const stats = { requests: 0, ok: 0, errors: 0, throttled: 0, blocked: 0, lastOkAt: null, lastError: null };
+export const secHealth = () => ({ ...stats, lastError: stats.lastError && { ...stats.lastError }, backlogMs: secBacklogMs() });
+function recordSec(status, message) {
+  stats.requests++;
+  if (status >= 200 && status < 300) { stats.ok++; stats.lastOkAt = new Date().toISOString(); return; }
+  stats.errors++;
+  if (status === 429) stats.throttled++;
+  if (status === 403) stats.blocked++;
+  stats.lastError = { at: new Date().toISOString(), status: status || null, message: String(message || "").slice(0, 160) };
+}
 let nextRequest = 0;
 async function throttle() {
   const wait = Math.max(0, nextRequest - Date.now());
@@ -143,6 +157,7 @@ export async function secFetch(url, { json = false } = {}) {
         headers: { "User-Agent": config.userAgent, "Accept": json ? "application/json" : "application/xml,application/atom+xml,text/xml,*/*;q=0.8", "Accept-Encoding": "gzip, deflate" },
         signal: abort.signal, redirect: "error"
       });
+      recordSec(response.status, response.ok ? "" : "SEC responded " + response.status);
       if ((response.status === 429 || response.status >= 500) && attempt < 2) {
         const retrySeconds = Number(response.headers.get("retry-after"));
         await new Promise(r => setTimeout(r, Number.isFinite(retrySeconds) && retrySeconds > 0 ? Math.min(30000, retrySeconds * 1000) : (attempt + 1) * 1500));
@@ -156,6 +171,9 @@ export async function secFetch(url, { json = false } = {}) {
       const body = await response.text();
       if (body.length > maxLength) throw new Error("SEC response too large");
       return json ? JSON.parse(body) : body;
+    } catch (e) {
+      if (!/^SEC responded/.test(String(e?.message))) recordSec(0, e?.name === "AbortError" ? "timeout" : e?.message);
+      throw e;
     } finally { clearTimeout(timeout); }
   }
   throw new Error("SEC request attempts exhausted");

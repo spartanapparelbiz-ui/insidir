@@ -477,6 +477,10 @@ Disallow: /alerts
 Disallow: /subscribe
 Disallow: /billing
 Disallow: /account
+Disallow: /ops
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
 
 Sitemap: ${origin}/sitemap.xml
 `;

@@ -61,3 +61,27 @@ export function trialSettings(env = process.env) {
     feeCents: Number.isFinite(feeCents) ? Math.min(3900, Math.max(50, feeCents)) : 100
   });
 }
+
+/* Outgoing email (src/email.mjs). INSIDIR_EMAIL_PROVIDER=postmark needs POSTMARK_SERVER_TOKEN and INSIDIR_EMAIL_FROM;
+ * `log` prints messages for local development. Anything else: nothing is sent (messages wait in the outbox). */
+export function emailSettings(env = process.env) {
+  const provider = String(env.INSIDIR_EMAIL_PROVIDER || "").trim().toLowerCase();
+  const from = String(env.INSIDIR_EMAIL_FROM || "").trim();
+  const token = String(env.POSTMARK_SERVER_TOKEN || "").trim();
+  const webhookSecret = String(env.INSIDIR_EMAIL_WEBHOOK_SECRET || "").trim();
+  const publicUrl = String(env.INSIDIR_PUBLIC_URL || "").trim().replace(/\/+$/, "") || "https://insidir.com";
+  const enabled = provider === "log" || (provider === "postmark" && !!token && /@/.test(from));
+  return Object.freeze({ provider: enabled ? provider : "none", requested: provider || null, from: from || "Insidir <no-reply@insidir.com>",
+    replyTo: String(env.INSIDIR_EMAIL_REPLY_TO || "hello@aethric.llc").trim(), token, webhookSecret, publicUrl, enabled,
+    transactionalStream: String(env.POSTMARK_TRANSACTIONAL_STREAM || "outbound"), alertStream: String(env.POSTMARK_ALERT_STREAM || env.POSTMARK_TRANSACTIONAL_STREAM || "outbound") });
+}
+
+
+/* Email verification is enforced with INSIDIR_REQUIRE_EMAIL_VERIFICATION=1, or by default once an email provider is
+ * configured; =0 switches it off. See src/account-security.mjs. */
+export function verificationRequired(env = process.env) {
+  const v = String(env.INSIDIR_REQUIRE_EMAIL_VERIFICATION ?? "").trim();
+  if (v === "1") return true;
+  if (v === "0") return false;
+  return emailSettings(env).enabled;
+}

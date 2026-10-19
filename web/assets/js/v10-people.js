@@ -56,7 +56,7 @@ function card(p){
 const moreButton=()=>{const left=records.length-visible;return left>0?'<div class="v10-people-more"><button type="button" data-people-more data-hf-atom>Show more people <span>· '+left+' more</span></button></div>':moreFromServer?'<div class="v10-people-more"><button type="button" data-people-more data-hf-atom>Load more SEC reporting people →</button></div>':"";};
 function countLabel(){
  if(loadError)return "Unavailable";
- const n=records.length,base=(n>=100?"The first "+n:(moreFromServer?"At least ":"")+n)+" reporting "+(n===1?"person":"people");
+ const n=records.length,base=(n>=100?(moreFromServer?"At least the first ":"The first ")+n:(moreFromServer?"At least ":"")+n)+" reporting "+(n===1?"person":"people");
  return n>visible?base+" · "+visible+" shown":base;
 }
 function draw(){

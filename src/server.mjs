@@ -1,72 +1,104 @@
-import { config } from "./config.mjs";
+import { config, billingSettings, emailSettings } from "./config.mjs";
 import { migrate, pool, query } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { createApiServer } from "./api.mjs";
 import { warmAfterIngest } from "./media-warm.mjs";
 import { reconcileLapsed, createStripeClient } from "./billing.mjs";
-import { billingSettings } from "./config.mjs";
-import {initPush,pushTick} from "./push.mjs";
-import {aiTick} from "./ai-explain.mjs";
-import {monitorTick} from "./intelligence-monitor.mjs";
-import {pollHouse} from "./house-disclosures.mjs";
-import {form13fTick} from "./form13f.mjs";
+import { runWorker } from "./ops.mjs";
+import { deliverDue, transportFor, purgeEmailBodies } from "./email.mjs";
+import { purgeRateLimits } from "./rate-limit.mjs";
+import { purgeSecurityEvents } from "./security-events.mjs";
+import { purgeUserTokens } from "./account-security.mjs";
+import { purgeAdminAuth } from "./admin-auth.mjs";
+import { queueTrialReminders } from "./billing-notices.mjs";
+import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from "./research-events.mjs";
+import { loadOwnership } from "./sec.mjs";
+import { persistFiling } from "./db.mjs";
+import { secReady } from "./config.mjs";
+import { fanOut, sendImmediate, sendDigests } from "./notifications.mjs";
+import { initPush, pushTick } from "./push.mjs";
+import { aiTick } from "./ai-explain.mjs";
+import { monitorTick } from "./intelligence-monitor.mjs";
+import { pollHouse } from "./house-disclosures.mjs";
+
+/* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
+ * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
+ * INSIDIR_BACKGROUND_WORKERS=0 switches them all off (integration tests; a web-only instance). */
+const log = (event, data) => console.log(JSON.stringify({ event, ...data }));
+const connect = () => pool.connect();
+function every(name, intervalMs, firstMs, fn) {
+  const run = () => runWorker(name, fn, { query, connect }).then(r => { if (r && (r.skipped || Object.values(r).some(v => typeof v === "number" && v > 0) || r.ok === false)) log("worker." + name, r); },
+    e => console.error(JSON.stringify({ event: "worker.crashed", worker: name, error: String(e?.message || e) })));
+  setTimeout(run, firstMs).unref();
+  setInterval(run, intervalMs).unref();
+}
+import { form13fTick } from "./form13f.mjs";
 
 async function main() {
-  if(!config.databaseUrl)throw new Error("DATABASE_URL is required for the Insidir engine");
+  if (!config.databaseUrl) throw new Error("DATABASE_URL is required for the Insidir engine");
   await migrate();
-  const server=createApiServer();
-  server.listen(config.port,"0.0.0.0",()=>console.log("Insidir backend listening on",config.port));
-  if(config.autoIngest){
-    async function tick(){
-      try{
-        const result=await ingest();console.log("Ingestion result",JSON.stringify(result));
-        // Logos and roster photos for what was just filed, in the background at low priority.
-        if(result?.ok&&result.parsed)warmAfterIngest(query).then(w=>console.log("Media warm-up",JSON.stringify(w)),e=>console.warn("Media warm-up failed",e?.message||e));
-      }
-      catch(e){console.error("SEC ingestion failed",e?.message||e);}
-    }
-    setTimeout(tick,2000).unref();
-    setInterval(tick,15*60*1000).unref();
+  const server = createApiServer();
+  server.listen(config.port, "0.0.0.0", () => console.log("Insidir backend listening on", config.port));
+  const workers = process.env.INSIDIR_BACKGROUND_WORKERS !== "0";
+  if (workers && config.autoIngest) {
+    every("sec-ingest", 15 * 60 * 1000, 2000, async () => {
+      const result = await ingest();
+      console.log("Ingestion result", JSON.stringify(result));
+      // Logos and roster photos for what was just filed, in the background at low priority.
+      if (result?.ok && result.parsed) warmAfterIngest(query).then(w => console.log("Media warm-up", JSON.stringify(w)), e => console.warn("Media warm-up failed", e?.message || e));
+      // Research events for what was just imported (the research-events job below also catches up on its own).
+      const events = result?.parsed ? await buildResearchEvents({ query }) : null;
+      if (events) await fanOut({ query }).catch(e => console.error("Alert fan-out failed", e?.message || e));
+      return { ok: result?.ok, discovered: result?.discovered, parsed: result?.parsed, failed: result?.failed, deferred: result?.deferred || 0, reason: result?.reason, events };
+    });
   }
-  if(initPush()){
-    const send=async()=>{try{const report=await pushTick(query);if(report.sent||report.failed||report.broadcast?.queued||report.broadcast?.eligible!==undefined)console.log("Push delivery",JSON.stringify(report));}catch(e){console.error("Push delivery failed",e?.message||e)}};
-    setTimeout(send,30*1000).unref();
-    setInterval(send,3*60*1000).unref();
-  }else console.warn("Insidir Web Push disabled: VAPID settings incomplete");
-  const explainNew=async()=>{try{const summary=await aiTick(query);if(summary.created||summary.failed)console.log("AI filing research",JSON.stringify(summary))}catch(e){console.error("AI research job failed",e?.message||e)}};
-  setTimeout(explainNew,45*1000).unref();
-  setInterval(explainNew,15*60*1000).unref();
-  const monitorPublicSources=async()=>{try{console.log("Public intelligence monitor",JSON.stringify(await monitorTick(query)))}catch(e){console.error("Public monitor failed",e?.message||e)}};
-  setTimeout(monitorPublicSources,90*1000).unref();
-  setInterval(monitorPublicSources,15*60*1000).unref();
-  // Form 13F holdings are quarterly: check the tracked managers' EDGAR filings twice a day (5 minutes after start).
-  const check13F=async()=>{try{const r=await form13fTick({run:query});if(!r.skipped||r.skipped!=="disabled")console.log("Form 13F ingestion",JSON.stringify({...r,results:undefined}))}catch(e){console.error("Form 13F ingestion failed",e?.message||e)}};
-  setTimeout(check13F,5*60*1000).unref();
-  setInterval(check13F,12*60*60*1000).unref();
-  if(process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED==="1"){
-    const checkHouse=async()=>{try{console.log("Official House PTR index",JSON.stringify(await pollHouse({run:query})))}catch(e){console.error("House disclosure index failed",e?.message||e)}};
-    setTimeout(checkHouse,2*60*1000).unref();
-    setInterval(checkHouse,6*60*60*1000).unref();
+  // Research events (src/research-events.mjs): incremental, idempotent; also covers imports started by /v1/internal/ingest.
+  if (workers) every("research-events", 15 * 60 * 1000, 90 * 1000, () => buildResearchEvents({ query }));
+  // Alerts (src/notifications.mjs): new events to the members watching them every 5 minutes; immediate emails every
+  // 5 minutes and daily digests hourly (each member at their digest hour). Emails wait in the outbox for delivery.
+  if (workers) {
+    every("notifications", 5 * 60 * 1000, 2 * 60 * 1000, () => fanOut({ query }));
+    every("alert-emails", 5 * 60 * 1000, 3 * 60 * 1000, () => sendImmediate({ query, connect }));
+    every("daily-digests", 60 * 60 * 1000, 7 * 60 * 1000, () => sendDigests({ query, connect }));
   }
+  // Failed Form 4 imports, retried with backoff after they leave EDGAR's current feed; watched companies' other
+  // SEC filings. Both use the shared SEC client (declared User-Agent, throttle) and stop on a 403.
+  if (workers && secReady()) {
+    every("filing-retry", 30 * 60 * 1000, 4 * 60 * 1000, () => retryFailedFilings({ query, load: loadOwnership, persist: persistFiling }));
+    every("company-disclosures", 30 * 60 * 1000, 6 * 60 * 1000, () => pollCompanyDisclosures({ query }));
+  }
+  // Web Push to installed apps and browsers (src/push.mjs), when VAPID keys are configured.
+  if (workers && initPush()) every("web-push", 3 * 60 * 1000, 30 * 1000, () => pushTick(query));
+  else if (workers) console.warn("Insidir Web Push disabled: VAPID settings incomplete");
+  // AI filing summaries (src/ai-explain.mjs; validated, spend-limited) and the public-source monitor (src/intelligence-monitor.mjs).
+  if (workers) {
+    every("ai-filing-research", 15 * 60 * 1000, 45 * 1000, () => aiTick(query));
+    every("public-monitor", 15 * 60 * 1000, 90 * 1000, () => monitorTick(query));
+    // Form 13F holdings are quarterly: the tracked managers' EDGAR filings twice a day (src/form13f.mjs; off unless enabled there).
+    every("form-13f", 12 * 60 * 60 * 1000, 5 * 60 * 1000, () => form13fTick({ run: query }));
+  }
+  // Official House PTR index: only after explicit legal approval.
+  if (workers && process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED === "1") every("house-disclosures", 6 * 60 * 60 * 1000, 2 * 60 * 1000, () => pollHouse({ run: query }));
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
-  if(billingSettings().enabled){
-    const reconcile=async()=>{
-      try{console.log(JSON.stringify({event:"billing.reconcile",...await reconcileLapsed({stripe:createStripeClient()})}))}
-      catch(e){console.error(JSON.stringify({event:"billing.reconcile_error",error:String(e?.message||e)}))}
-    };
-    setTimeout(reconcile,60*1000).unref();
-    setInterval(reconcile,6*60*60*1000).unref();
+  if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));
+  // Trial-ending reminders (a backstop for Stripe's trial_will_end), hourly; each subscription is reminded once.
+  if (workers && billingSettings().enabled) every("trial-reminders", 60 * 60 * 1000, 5 * 60 * 1000, () => queueTrialReminders(query));
+  // Email delivery: every minute when a provider is configured; otherwise messages wait in the outbox.
+  const email = emailSettings();
+  if (workers && email.enabled) {
+    const transport = transportFor(email);
+    every("email-delivery", 60 * 1000, 15 * 1000, () => deliverDue({ query, transport, settings: email }));
   }
-  // Expired sign-in sessions are already refused at lookup; this removes their rows (hourly, after a minute).
-  const purgeSessions=async()=>{
-    try{const r=await query("DELETE FROM sessions WHERE expires_at<now()");if(r.rowCount)console.log(JSON.stringify({event:"sessions.purged",count:r.rowCount}))
-      // Funnel measurement is kept for 13 months (src/funnel.mjs, privacy.html).
-      await query("DELETE FROM funnel_events WHERE created_at<now()-interval '13 months'").catch(()=>{})}
-    catch(e){console.error(JSON.stringify({event:"sessions.purge_failed",error:String(e?.message||e)}))}
-  };
-  setTimeout(purgeSessions,60*1000).unref();
-  setInterval(purgeSessions,60*60*1000).unref();
-  const shutdown=async()=>{console.log("Shutting down Insidir API");server.close();await pool?.end();process.exit(0)};
-  process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);
+  // Hourly maintenance: expired sessions, rate-limit windows, used tokens, admin sessions, old security events and
+  // the bodies of abandoned messages.
+  if (workers) every("maintenance", 60 * 60 * 1000, 60 * 1000, async () => ({
+    sessions: (await query("DELETE FROM sessions WHERE expires_at<now()")).rowCount || 0,
+    rateLimits: await purgeRateLimits(query), tokens: await purgeUserTokens(query), adminAuth: await purgeAdminAuth(query),
+    securityEvents: await purgeSecurityEvents(query), emailBodies: await purgeEmailBodies(query),
+    // Funnel measurement is kept for 13 months (src/funnel.mjs, privacy.html).
+    funnelEvents: (await query("DELETE FROM funnel_events WHERE created_at<now()-interval '13 months'")).rowCount || 0
+  }));
+  const shutdown = async () => { console.log("Shutting down Insidir API"); server.close(); await pool?.end(); process.exit(0); };
+  process.on("SIGTERM", shutdown); process.on("SIGINT", shutdown);
 }
-main().catch(e=>{console.error("Startup failed",e);process.exit(1)});
+main().catch(e => { console.error("Startup failed", e); process.exit(1); });

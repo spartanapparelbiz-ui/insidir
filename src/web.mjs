@@ -157,9 +157,9 @@ async function sendVideo(req, res, file, ext, method, status) {
   return true;
 }
 
-/* Retired prototype scripts that hold illustrative sample data (invented trades, prices and a politician's
- * transactions). No page loads them, and they are never served, so nothing invented can reach a browser.
- * Kept in the repository only until they are deleted; see docs/COMPLIANCE.md. */
+/* Retired prototype scripts that held illustrative sample data (invented trades, prices and a politician's
+ * transactions). They have been deleted from the repository; the paths stay refused so a stale copy restored by
+ * mistake (or cached by a deploy tool) can never be served. See docs/COMPLIANCE.md. */
 export const RETIRED_ASSETS = Object.freeze(["/assets/js/alerts.js", "/assets/js/dashboard.js", "/assets/js/company.js"]);
 
 export async function serveStatic(req, res) {

@@ -12,7 +12,7 @@
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/app.css">
-  <script defer src="assets/js/admin-costs.js?v=1"></script>
+  <script defer src="assets/js/admin-costs.js?v=2"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
@@ -34,8 +34,10 @@
       </header>
       <form class="ix-inline" data-token-form style="margin-bottom:24px">
         <label class="sr-only" for="admin-token">Administrator token</label>
-        <input id="admin-token" type="password" autocomplete="off" style="width:min(420px,100%)" placeholder="Administrator token (or sign in with an admin account)">
-        <button class="ix-btn ix-btn--solid" type="submit">Load</button>
+        <input id="admin-token" type="password" autocomplete="off" style="width:min(420px,100%)" placeholder="Administrator token">
+        <label class="sr-only" for="admin-otp">One-time code</label>
+        <input id="admin-otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" style="width:12ch" placeholder="6-digit code">
+        <button class="ix-btn ix-btn--solid" type="submit">Open session</button>
         <button class="ix-btn" type="button" data-refresh>Refresh</button>
       </form>
       <div data-report aria-live="polite"><p class="ix-note">Loading…</p></div>

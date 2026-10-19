@@ -31,7 +31,8 @@
   btn.disabled=false;
   try{
    const state=await request("/v1/me/push");
-   if(!state.configured){btn.disabled=true;say("Push delivery is not configured on the Insidir server yet.");return;}
+   // No dead control: without server push keys there is nothing to enable, so the button goes and the reason stays.
+   if(!state.configured){btn.hidden=true;disable.hidden=true;say("Push notifications are not available yet: the Insidir server has not been set up to send them. Alerts still appear here in the app.");return;}
    const registration=await navigator.serviceWorker.register("/sw.js",{scope:"/"});
    const sub=await registration.pushManager.getSubscription();
    btn.hidden=Boolean(sub);disable.hidden=!sub;

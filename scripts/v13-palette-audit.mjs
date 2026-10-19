@@ -61,7 +61,7 @@ const ALL_PAGES = [
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
   ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
-  ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
+  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -198,7 +198,23 @@ function fixture(url, method, from = "", hash = "") {
   if (p === "/v1/me") return { user: { email: "reader@example.com", id: 1, created_at: "2026-01-01T00:00:00Z" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00Z" } };
   if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", review_status: "researching", reviewStatus: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
   if (p === "/v1/me/people") return { items: insiderPeople.slice(0, 1) };
+  if (p === "/v1/me/people/updates") return { people: [], items: [], following: 0, source: "SEC Form 4", disclaimer: "Reported purchases and sales are not recommendations or predictive signals." };
   if (p === "/v1/me/alerts") return { items: [] };
+  // Alerts and research events (SYNTHETIC fixtures for the colour audit; the copy mirrors the engine's own summaries).
+  const reEvent = { id: "11", event_type: "insider_purchase", status: "active", ticker: "AAPL", issuer_name: "Apple Inc.", transaction_date: "2026-09-10", transaction_date_end: "2026-09-11",
+    filing_date: "2026-09-12T21:00:00Z", ingested_at: "2026-09-12T21:15:00Z", reporting_lag_days: 1, source_urls: [source], summary: "OTHER PUBLIC FILER (Director) reported buying 1,500 shares of AAPL at $28 a share on Sep 10, 2026 to Sep 11, 2026; reported value $42,000. Form 4 filed Sep 12, 2026." };
+  if (p === "/v1/me/notifications") return { items: [{ id: "5", reason: "watchlist", createdAt: "2026-09-12T21:20:00Z", readAt: null, event: { id: "11", type: "insider_purchase", status: "active", ticker: "AAPL", filingDate: reEvent.filing_date, retrievedAt: reEvent.ingested_at, sourceUrls: [source], summary: reEvent.summary } },
+    { id: "4", reason: "followed_person", createdAt: "2026-09-10T21:20:00Z", readAt: "2026-09-11T08:00:00Z", event: { id: "10", type: "insider_sale", status: "active", ticker: "AAPL", filingDate: "2026-09-10T20:00:00Z", retrievedAt: "2026-09-10T20:10:00Z", sourceUrls: [source], summary: "COOK TIMOTHY D (Chief Executive Officer) reported selling 12,500 shares of AAPL at $26 a share on Sep 8, 2026; reported value $325,000. Form 4 filed Sep 10, 2026." } }], unread: 1, next: null };
+  if (p === "/v1/me/email-preferences") return { inApp: true, emailAlerts: "off", eventTypes: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], digestHourUtc: 13, consentedAt: null, unsubscribedAt: null,
+    emailVerified: true, emailAvailable: true, consent: { version: "2026-10-19", text: "Email me factual alerts about new public filings." }, eventTypesAvailable: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], modes: ["off", "immediate", "daily"] };
+  if (p === "/v1/research-events") return { items: [reEvent], next: null, lastImportAt: "2026-09-12T21:15:00Z" };
+  if (/^\/v1\/research-events\/\d+\/explanation$/.test(p)) return { writer: "rules", facts: [{ text: reEvent.summary, evidence_ids: ["E1"] }], interpretation: [{ text: "A Form 4 is the public report an officer or director files after trading.", evidence_ids: [] }],
+    limitations: ["Not a recommendation."], evidence: [{ id: "E1", text: "Form 4 accession 1.", sourceUrl: source, retrievedAt: reEvent.ingested_at }], disclaimer: "Not investment advice." };
+  // The alerts page's public-source feed (SYNTHETIC fixtures in the shape src/api.mjs answers).
+  if (p === "/v1/intelligence/events") return { items: [{ event_key: "sec:1", source_type: "sec_notice", title: "Apple Inc. 8-K: Results of operations and financial condition", subject: "AAPL", source_url: source, published_at: "2026-09-12T20:00:00Z", observed_at: "2026-09-12T20:05:00Z", verified: true }] };
+  if (p === "/v1/intelligence/sources") return { sources: { secCompanyReports: "active", blueskyPublicPosts: "no_accounts_configured", houseFinancialDisclosures: "blocked_pending_legal_approval", senateFinancialDisclosures: "not_built" } };
+  if (p === "/v1/me/push") return method === "GET" ? { configured: false, publicKey: null, subscriptions: 0 } : { ok: true };
+  if (p === "/v1/me/security-events") return { items: [{ kind: "login_success", created_at: "2026-09-12T08:00:00Z" }] };
   if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", quantity: 12.5, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
   if (p === "/v1/me/brokerage/status") return { enabled: false, connected: false, provider: "snaptrade" };
   if (p === "/v1/me/brokerage/portfolio") return { accounts: [], holdings: [] };
@@ -355,8 +371,14 @@ const scan = ({ palette, tol }) => {
     const r = img.getBoundingClientRect(), cs = getComputedStyle(img);
     if (r.width < 2 || cs.display === "none" || cs.visibility === "hidden" || /\.svg(\?|$)/i.test(img.currentSrc) || !img.naturalWidth) continue;
     if (/^data:image\/svg/.test(img.currentSrc)) continue;
-    const scale = cs.objectFit === "cover" ? Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight) : Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
-    if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop().slice(0, 60), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: img.naturalWidth + "x" + img.naturalHeight, upscaleAt2x: +(scale * 2).toFixed(2), element: path(img) });
+    // With srcset (w descriptors) the page renders at DPR 1 here and the browser picked the 1x candidate; a 2x screen
+    // gets the largest candidate instead, so judge that one (its pixel size, in the loaded image's aspect ratio).
+    const widths = [img, ...(img.parentElement?.tagName === "PICTURE" ? img.parentElement.querySelectorAll("source") : [])]
+      .flatMap(n => String(n.getAttribute("srcset") || "").split(",").map(c => Number(/\s(\d+)w\s*$/.exec(c.trim())?.[1] || 0)));
+    const maxW = Math.max(0, ...widths);
+    const nw = maxW || img.naturalWidth, nh = maxW ? img.naturalHeight * maxW / img.naturalWidth : img.naturalHeight;
+    const scale = cs.objectFit === "cover" ? Math.max(r.width / nw, r.height / nh) : Math.min(r.width / nw, r.height / nh);
+    if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop().slice(0, 60), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: Math.round(nw) + "x" + Math.round(nh) + (maxW ? " (largest srcset candidate)" : ""), upscaleAt2x: +(scale * 2).toFixed(2), element: path(img) });
   }
   for (const el of document.querySelectorAll("body *")) {
     const bgi = getComputedStyle(el).backgroundImage;
@@ -686,7 +708,13 @@ try {
         await page.waitForTimeout(250);
         Object.assign(entry, await inPage(scan, { palette: PALETTE, tol: TOL }));
         if (key === "index") entry.canvasGlow = await wordmarkGlow(page);
-        if (shots) await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        if (shots) {
+          // Walk the page once so lazy images and scroll reveals have loaded before the full-page capture.
+          await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += innerHeight * .8) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0, 0); });
+          await page.evaluate(() => Promise.all([...document.images].filter(i => !i.complete).map(i => new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 3000); }))));
+          await page.waitForTimeout(300);
+          await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        }
         if (!flag("no-pixels")) { await inPage(() => 0); entry.pixels = await orangePixels(page); }
         let cdp = null;
         if (!flag("no-states")) {

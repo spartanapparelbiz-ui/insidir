@@ -12,9 +12,14 @@ import { serverEvent, userForCustomer } from "./funnel.mjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { query as dbQuery } from "./db.mjs";
 import { currentUser } from "./auth.mjs";
-import { billingSettings, trialSettings } from "./config.mjs";
+import { billingSettings, trialSettings, verificationRequired } from "./config.mjs";
 import { accessSummary } from "./paywall.mjs";
 import { recordFirstPaidInvoice } from "./creator-program.mjs";
+import { memoryLimiter } from "./rate-limit.mjs";
+import * as notices from "./billing-notices.mjs";
+
+// Used only when the caller passes no shared limiter (tests); the engine passes its PostgreSQL-backed one.
+const localLimiter = memoryLimiter();
 
 const failure = (status, message, extra = {}) => Object.assign(new Error(message), { status }, extra);
 
@@ -162,6 +167,8 @@ export function trialCheckoutParams({ days, feeCents }) {
 }
 
 const hasPrice = (sub, priceId) => !!priceId && (sub?.items?.data || []).some(item => item?.price?.id === priceId);
+// An invoice for the plan (older API versions name the price on the line, newer ones under pricing.price_details).
+const invoiceForPlan = (invoice, priceId) => !!priceId && (invoice?.lines?.data || []).some(l => l?.price?.id === priceId || l?.pricing?.price_details?.price === priceId || l?.plan?.id === priceId);
 
 // The subscription that decides access: the plan's subscription in the best standing, newest first.
 export function pickSubscription(subscriptions, priceId) {
@@ -341,15 +348,6 @@ export async function cancelOrphanCheckout(session, ref, { stripe, query = dbQue
   return true;
 }
 
-const hits = new Map();
-function limited(key, limit, windowMs) {
-  const now = Date.now();
-  if (hits.size > 10000) for (const [k, v] of hits) if (v.until < now) hits.delete(k);
-  const v = hits.get(key);
-  if (!v || v.until <= now) { hits.set(key, { count: 1, until: now + windowMs }); return false; }
-  return ++v.count > limit;
-}
-
 async function readBody(req, limit = 65536) {
   const chunks = []; let bytes = 0;
   for await (const chunk of req) { bytes += chunk.length; if (bytes > limit) throw failure(413, "Payload too large"); chunks.push(chunk); }
@@ -372,6 +370,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
   const loadUser = deps.currentUser || currentUser;
   const stripe = deps.stripe || createStripeClient({ secretKey: settings.secretKey });
   const method = req.method || "GET";
+  const limiter = deps.limiter || localLimiter;
+  const limited = (key, limit, windowMs) => limiter.hit(key, limit, windowMs);
   const signedIn = async () => { const u = await loadUser(req); if (!u) throw failure(401, "Sign in required"); return u; };
   const sameOrigin = () => { const o = req.headers.origin; return !!o && o === publicOrigin(settings); };
 
@@ -381,7 +381,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (!row) throw failure(401, "Sign in required");
     // ?refresh=1 (e.g. right after checkout) re-reads Stripe in case the webhook has not arrived yet.
     const url = new URL(req.url || "/", "http://localhost");
-    if (url.searchParams.get("refresh") === "1" && settings.secretKey && row.stripe_customer_id && !limited("billing-refresh:" + u.id, 12, 60_000)) {
+    if (url.searchParams.get("refresh") === "1" && settings.secretKey && row.stripe_customer_id && !await limited("billing-refresh:" + u.id, 12, 60_000)) {
       try { const synced = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId }); if (synced) row = { ...row, ...synced }; }
       catch (e) { console.warn("Stripe refresh failed:", e?.message); }
     }
@@ -395,15 +395,17 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (!settings.enabled) throw failure(503, "Checkout is not available yet. Contact hello@aethric.llc.");
     if (!sameOrigin()) throw failure(403, "Untrusted origin");
     const u = await signedIn();
-    if (limited("checkout:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many checkout attempts. Try again shortly.");
+    if (await limited("checkout:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many checkout attempts. Try again shortly.");
     // Express, informed consent to the automatic-renewal terms comes first, separately from the Terms of Service:
     // the customer ticks a box beside the exact terms and the page sends what it showed.
     const consent = await readJson(req);
     if (consent?.consent !== true || !["trial", "full"].includes(consent?.offer) || consent?.disclosureVersion !== DISCLOSURE_VERSION)
       throw failure(400, "Please review the subscription terms and tick the box to agree to them before checkout.");
     return exclusiveBilling(u.id, async () => {
-      const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at FROM users WHERE id=$1", [u.id])).rows[0];
+      const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at,email_verified_at FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
+      // With verification enforced, the receipts, renewal notices and cancellation confirmations must reach an inbox the customer controls.
+      if (verificationRequired(env) && !row.email_verified_at) throw failure(403, "Confirm your email address before subscribing: open the link we sent you, or send a new one from this page.", { verifyEmail: true });
       let customer = row.stripe_customer_id;
       // One trial per account: none after an earlier trial, or once the customer has had any subscription for the plan.
       let trialUsed = !!row.trial_started_at;
@@ -473,7 +475,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (!settings.secretKey) throw failure(503, "Billing is not connected. Email hello@aethric.llc and we will cancel for you.");
     if (!sameOrigin()) throw failure(403, "Untrusted origin");
     const u = await signedIn();
-    if (limited("cancel:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many attempts. Try again shortly.");
+    if (await limited("cancel:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many attempts. Try again shortly.");
     return exclusiveBilling(u.id, async () => {
       const row = (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row?.stripe_customer_id) throw failure(404, "No subscription found for this account");
@@ -487,6 +489,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       }
       const stored = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
       await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "cancel_requested", detail: { subscriptions: live.map(s => s.id), accessUntil: stored?.current_period_end ?? null } });
+      for (const sub of live) await notices.cancellationConfirmed(query, { customer: row.stripe_customer_id, subscription: sub.id, accessUntil: periodEnd(sub, settings.priceId) || stored?.current_period_end }, { env })
+        .catch(e => console.error(JSON.stringify({ event: "billing.notice_failed", kind: "cancel_confirmed", error: String(e?.message || e) })));
       await serverEvent(query, "subscription_canceled", { userId: u.id, object: live[0]?.id });
       return json(res, 200, { canceled: true, accessUntil: stored?.current_period_end ? new Date(stored.current_period_end).toISOString() : null,
         message: "Your subscription is cancelled. You will not be charged again, and access continues until the end of the current period." });
@@ -513,7 +517,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid",
       "charge.refunded", "charge.dispute.created", "invoice.payment_failed", "customer.subscription.trial_will_end"];
     if (!supported.includes(event?.type) || typeof event.id !== "string") return json(res, 200, { received: true });
-    const fresh = await query("INSERT INTO stripe_events(event_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING event_id", [event.id]);
+    const fresh = await query("INSERT INTO stripe_events(event_id,event_type) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING event_id", [event.id, event.type]);
     if (!fresh.rows.length) return json(res, 200, { received: true, duplicate: true });
     const obj = event.data?.object || {};
     try {
@@ -521,7 +525,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
         if (ref) await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND (stripe_customer_id IS NULL OR stripe_customer_id=$1)", [obj.customer, ref]);
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-        await cancelOrphanCheckout(obj, ref, { stripe, query });
+        if (!await cancelOrphanCheckout(obj, ref, { stripe, query })) await notices.acknowledgeCheckout(query, obj, { env });
         // Funnel: a paid checkout, as Stripe's signed webhook reports it (never a browser redirect).
         await serverEvent(query, "checkout_completed", { userId: ref || await userForCustomer(query, obj.customer), object: obj.id });
       }
@@ -532,6 +536,10 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       // A subscription that ended (cancelled in the portal, by Stripe, or at the end of a cancelled period).
       if (event.type === "customer.subscription.deleted") await serverEvent(query, "subscription_canceled", { userId: await userForCustomer(query, obj.customer), object: obj.id });
       if (event.type.startsWith("customer.subscription.") && event.type !== "customer.subscription.trial_will_end") await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+      // Cancellations made outside Insidir (the Stripe portal, the dashboard) are confirmed too; same key as the in-app cancel.
+      if (event.type === "customer.subscription.updated" && hasPrice(obj, settings.priceId) && obj.cancel_at_period_end === true && event.data?.previous_attributes?.cancel_at_period_end === false)
+        await notices.cancellationConfirmed(query, { customer: obj.customer, subscription: obj.id, accessUntil: periodEnd(obj, settings.priceId) }, { env });
+      if (event.type === "customer.subscription.deleted" && hasPrice(obj, settings.priceId)) await notices.subscriptionEnded(query, obj, { env });
       // Refunds and chargebacks: recorded, and any creator commission for that customer goes back to manual review.
       if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
         let customer = CUSTOMER_ID.test(String(obj.customer || "")) ? obj.customer : null;
@@ -539,16 +547,22 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (CUSTOMER_ID.test(String(customer || ""))) {
           await query("UPDATE creator_commissions SET status='needs_review' WHERE stripe_customer_id=$1 AND status IN ('pending','approved')", [customer]);
           await logBillingEvent(query, { customer, kind: event.type === "charge.refunded" ? "refund" : "dispute", detail: { id: obj.id, amount: obj.amount ?? obj.amount_refunded ?? null, reason: obj.reason ?? null } });
+          if (event.type === "charge.refunded") await notices.refundIssued(query, { ...obj, customer }, { env });
         }
       }
       if (event.type === "invoice.payment_failed" && CUSTOMER_ID.test(String(obj.customer || ""))) {
         await logBillingEvent(query, { customer: obj.customer, kind: "payment_failed", detail: { invoice: obj.id, attempt: obj.attempt_count ?? null } });
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
+        if (invoiceForPlan(obj, settings.priceId)) await notices.paymentFailed(query, obj, { env });
       }
       if (event.type === "customer.subscription.trial_will_end" && CUSTOMER_ID.test(String(obj.customer || "")))
+      {
         await logBillingEvent(query, { customer: obj.customer, kind: "trial_will_end", detail: { subscription: obj.id, trialEnd: obj.trial_end ?? null } });
+        if (hasPrice(obj, settings.priceId) && obj.status === "trialing" && obj.cancel_at_period_end !== true) await notices.trialReminder(query, { customer: obj.customer, subscription: obj.id, trialEnd: obj.trial_end }, { env });
+      }
       // The first $39 payment: the plan's first invoice, or after a paid trial its first renewal (the trial
       // invoice carries only the trial fee and is never eligible). One commission per referred account.
+      if (event.type === "invoice.paid" && invoiceForPlan(obj, settings.priceId)) await notices.paymentReceipt(query, obj, { env });
       if (event.type === "invoice.paid" && (obj.billing_reason === "subscription_create" || obj.billing_reason === "subscription_cycle")) {
         // Re-read Stripe to verify that the customer's actual subscription is active
         // on Insidir's exact Price, not just any invoice marked paid.

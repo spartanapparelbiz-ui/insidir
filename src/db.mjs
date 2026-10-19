@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import pg from "pg";
 import { readFile } from "node:fs/promises";
 import { config } from "./config.mjs";
@@ -16,47 +17,37 @@ export function requireDb() {
   return pool;
 }
 export async function query(sql, params=[]) { return requireDb().query(sql,params); }
-export async function migrate() {
-  const db=requireDb();
-  const client=await db.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(813076521)");
-    const schema=await readFile(new URL("../sql/001_initial.sql",import.meta.url),"utf8");
-    await client.query(schema);
-    const billingSchema=await readFile(new URL("../sql/002_billing.sql",import.meta.url),"utf8");
-    await client.query(billingSchema);
-    const researchSchema=await readFile(new URL("../sql/003_research_decisions.sql",import.meta.url),"utf8");
-    await client.query(researchSchema);
-    const brokerageSchema=await readFile(new URL("../sql/004_brokerage_oauth.sql",import.meta.url),"utf8");
-    await client.query(brokerageSchema);
-    const manualSchema=await readFile(new URL("../sql/005_manual_holdings.sql",import.meta.url),"utf8");
-    await client.query(manualSchema);
-    const followsSchema=await readFile(new URL("../sql/006_followed_people.sql",import.meta.url),"utf8");
-    await client.query(followsSchema);
-    const mediaSchema=await readFile(new URL("../sql/007_entity_media.sql",import.meta.url),"utf8");
-    await client.query(mediaSchema);
-    const ownersSchema=await readFile(new URL("../sql/008_filing_owners.sql",import.meta.url),"utf8");
-    await client.query(ownersSchema);
-    const creatorsSchema=await readFile(new URL("../sql/009_creator_referrals.sql",import.meta.url),"utf8");
-    await client.query(creatorsSchema);
-    const trialSchema=await readFile(new URL("../sql/010_paid_trial.sql",import.meta.url),"utf8");
-    await client.query(trialSchema);
-    const complianceSchema=await readFile(new URL("../sql/011_compliance_records.sql",import.meta.url),"utf8");
-    await client.query(complianceSchema);
-    const mediaGifSchema=await readFile(new URL("../sql/012_entity_media_gif.sql",import.meta.url),"utf8");
-    await client.query(mediaGifSchema);
-    const intelligenceSchema=await readFile(new URL("../sql/013_intelligence_delivery.sql",import.meta.url),"utf8");
-    await client.query(intelligenceSchema);
-    const platformSchema=await readFile(new URL("../sql/014_intelligence_platform.sql",import.meta.url),"utf8");
-    await client.query(platformSchema);
-    const indexSchema=await readFile(new URL("../sql/015_query_indexes.sql",import.meta.url),"utf8");
-    await client.query(indexSchema);
-    const funnelSchema=await readFile(new URL("../sql/016_funnel_events.sql",import.meta.url),"utf8");
-    await client.query(funnelSchema);
-    await client.query("COMMIT");
-  } catch(e) { await client.query("ROLLBACK");throw e; }
-  finally {client.release()}
+// Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
+export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
+  "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_query_indexes.sql","015_sec_events.sql","016_explanations.sql","016_funnel_events.sql","017_notifications.sql"]);
+// `db` defaults to the engine's pool; tests that build the schema through their own pool pass it.
+export async function migrate(db=requireDb()) {
+  // Every file is idempotent, but even a no-op ALTER TABLE takes an exclusive table lock, so re-running them all on
+  // each start deadlocked with another instance's live queries. schema_migrations records each file's SHA-256: a
+  // start runs only files that are new or whose text changed, and an unchanged database takes no table lock.
+  // Should a deadlock still happen (a real migration meeting live traffic), the transaction rolls back and is retried.
+  const files=await Promise.all(MIGRATIONS.map(async name=>{const sql=await readFile(new URL("../sql/"+name,import.meta.url),"utf8");return {name,sql,checksum:createHash("sha256").update(sql).digest("hex")};}));
+  for(let attempt=1;;attempt++){
+    const client=await db.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(813076521)");
+      await client.query("CREATE TABLE IF NOT EXISTS schema_migrations(name TEXT PRIMARY KEY, checksum CHAR(64) NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())");
+      const applied=new Map((await client.query("SELECT name,checksum FROM schema_migrations")).rows.map(r=>[r.name,r.checksum]));
+      for(const f of files){
+        if(applied.get(f.name)===f.checksum)continue;
+        await client.query(f.sql);
+        await client.query("INSERT INTO schema_migrations(name,checksum) VALUES($1,$2) ON CONFLICT (name) DO UPDATE SET checksum=EXCLUDED.checksum,applied_at=now()",[f.name,f.checksum]);
+      }
+      await client.query("COMMIT");
+      return;
+    } catch(e) {
+      await client.query("ROLLBACK").catch(()=>{});
+      if(e?.code!=="40P01"||attempt>=4)throw e;
+      await new Promise(r=>setTimeout(r,250*attempt+Math.floor(Math.random()*250)));
+    } finally {client.release()}
+  }
 }
 export async function health() {
   if(!pool) return {ok:false,db:"not_configured"};
@@ -117,6 +108,8 @@ export async function persistFailure(filing,error) {
   const text=String(error?.message||error).slice(0,500);
   await query(`INSERT INTO sec_filings(accession,filer_cik,title,form_type,source_url,published_at,ingest_status,error_message)
     VALUES($1,$2,$3,$4,$5,$6,'error',$7)
-    ON CONFLICT(accession) DO UPDATE SET ingest_status='error',error_message=EXCLUDED.error_message,updated_at=now()`,
+    ON CONFLICT(accession) DO UPDATE SET ingest_status='error',error_message=EXCLUDED.error_message,updated_at=now()`+
+    // Retried with backoff (15 minutes, doubling, at most a day) by the retry worker; see research-events.mjs.
+    `,attempts=sec_filings.attempts+1,next_retry_at=now()+LEAST(interval '1 day',interval '15 minutes'*power(2,sec_filings.attempts))`,
     [filing.accession,filing.filerCik,filing.title,filing.formType,filing.sourceUrl,filing.publishedAt,text]);
 }

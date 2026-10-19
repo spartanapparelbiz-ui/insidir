@@ -29,5 +29,5 @@ test("commission insert requires a separately verified plan and never automatica
 });
 test("admin endpoint fails closed when token missing",async()=>{
   await assert.rejects(()=>creatorAdminRoutes({headers:{authorization:"Bearer fake"},method:"GET"},{},
-    "/v1/creators/admin/commissions",()=>{},{env:{},query:async()=>({rows:[]})}),e=>e.status===401);
+    "/v1/creators/admin/commissions",()=>{},{env:{},query:async()=>({rows:[]})}),e=>e.status===503);
 });

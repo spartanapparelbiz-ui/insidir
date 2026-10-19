@@ -71,7 +71,10 @@ test("funnel events and the report on PostgreSQL", { skip: !PG_URL && "set INSID
       users[name] = { id, cookie: "insidir_sid=" + token };
     }
     const { createApiServer } = await import("../src/api.mjs");
-    server = createApiServer({ quiet: true, env: { ...process.env, INSIDIR_PAYWALL: "1", INSIDIR_ADMIN_EMAILS: "boss@insidir.test" } });
+    // Admin access is the token AND a one-time code (src/admin-auth.mjs); an admin e-mail address alone is not enough.
+    const { generateTotpSecret, totpCode, base32Decode, stepAt } = await import("../src/totp.mjs");
+    const ADMIN_TOKEN = "funnel-admin-token-".padEnd(40, "x"), TOTP = generateTotpSecret();
+    server = createApiServer({ quiet: true, env: { ...process.env, INSIDIR_PAYWALL: "1", INSIDIR_ADMIN_TOKEN: ADMIN_TOKEN, INSIDIR_ADMIN_TOTP_SECRET: TOTP } });
     await new Promise(r => server.listen(0, "127.0.0.1", r));
     const base = "http://127.0.0.1:" + server.address().port;
     const send = (payload, { origin = "https://insidir.test", who } = {}) => fetch(base + "/v1/events", { method: "POST", headers: { "content-type": "application/json", ...(origin ? { origin } : {}), ...(who ? { cookie: users[who].cookie } : {}) }, body: JSON.stringify(payload) });
@@ -91,8 +94,9 @@ test("funnel events and the report on PostgreSQL", { skip: !PG_URL && "set INSID
 
     // The report: admins only, measured counts, no rate over an empty stage, and no verdict without data.
     assert.equal((await fetch(base + "/v1/admin/funnel")).status, 401);
-    assert.equal((await fetch(base + "/v1/admin/funnel", { headers: { cookie: users.member.cookie } })).status, 403);
-    const report = await (await fetch(base + "/v1/admin/funnel?days=30", { headers: { cookie: users.boss.cookie } })).json();
+    assert.equal((await fetch(base + "/v1/admin/funnel", { headers: { cookie: users.member.cookie } })).status, 401, "a member is not an administrator");
+    assert.equal((await fetch(base + "/v1/admin/funnel", { headers: { authorization: "Bearer " + ADMIN_TOKEN } })).status, 401, "the token without a one-time code is refused");
+    const report = await (await fetch(base + "/v1/admin/funnel?days=30", { headers: { authorization: "Bearer " + ADMIN_TOKEN, "x-insidir-admin-otp": totpCode(base32Decode(TOTP), stepAt()) } })).json();
     const stage = k => report.stages.find(s => s.key === k);
     assert.equal(stage("landing").count, 1);
     assert.equal(stage("cta").count, 1, "distinct visitors, not clicks");

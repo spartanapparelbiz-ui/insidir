@@ -7,6 +7,7 @@
   <meta name="description" content="Follow source-linked SEC Form 4 activity at the companies on your watchlist, in the app.">
   <meta name="theme-color" content="#0c0c0b">
   <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3">
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Insidir">
@@ -18,9 +19,11 @@
   
   <script defer src="assets/js/app.js?v=20"></script>
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
-  <script defer src="assets/js/live-research.js?v=9"></script>
-  <script defer src="assets/js/push-settings.js?v=4"></script>
-  <script defer src="assets/js/intelligence-feed.js?v=1"></script>
+  <script defer src="assets/js/live-research.js?v=10"></script>
+  <script defer src="assets/js/research-explain.js?v=2"></script>
+  <script defer src="assets/js/alerts-center.js?v=2"></script>
+  <script defer src="assets/js/push-settings.js?v=5"></script>
+  <script defer src="assets/js/intelligence-feed.js?v=2"></script>
   <script defer src="assets/js/alert-preferences.js"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
@@ -31,6 +34,7 @@
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
+<link rel="stylesheet" href="assets/css/v27-product.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 <link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"></head>
 <body class="app-body v2-app v3-app v6-app v13">
@@ -40,18 +44,26 @@
   <main id="main" class="app-main alerts-main">
     <div class="alerts-head desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Watchlist matches</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC Form 4 filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app + optional push</span></p></div>
+      <div class="desk-topline alerts-topline"><p class="research-eyebrow alerts-eyebrow">INSIDIR / ALERTS</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Your watchlist</span><span class="rd-bit"><span class="rd-sep"> · </span>people you follow</span><span class="rd-bit"><span class="rd-sep"> · </span>imported SEC filings</span><span class="rd-bit"><span class="rd-sep"> · </span>in-app + optional push</span></p></div>
       <h1 class="page-title alerts-title">Alerts</h1>
       <p class="page-sub alerts-sub desk-lead">SEC Form 4 activity at the companies on your watchlist, and how you want to hear about new records.</p>
-      <nav class="al-jump" aria-label="On this page"><a href="#alerts-panel-h">Matched activity</a><a href="#al-delivery-h">Delivery</a><a href="#feed-heading">Company announcements</a></nav>
+      <nav class="al-jump" aria-label="On this page"><a href="#ac-title">Your alerts</a><a href="#alerts-panel-h">Matched activity</a><a href="#al-delivery-h">Delivery</a><a href="#ac-prefs-title">Email</a><a href="#feed-heading">Company announcements</a></nav>
     </div>
+
+    <h2 class="al-h2" id="ac-title">Your alerts</h2>
+    <section class="panel ac-inbox" aria-labelledby="ac-title">
+      <!-- research events for your watchlist and the people you follow, GET /v1/me/notifications (assets/js/alerts-center.js) -->
+      <div class="ac-toolbar"><p id="ac-unread" aria-live="polite">Loading…</p><button type="button" class="ac-btn" id="ac-read-all">Mark all read</button></div>
+      <ul class="ac-list" id="ac-list"><li class="ac-empty">Loading your alerts…</li></ul>
+      <p><button type="button" class="ac-btn" id="ac-more" hidden>Show older alerts</button></p>
+    </section>
 
     <h2 class="al-h2" id="alerts-panel-h">Matched activity <span>· last 30 days</span></h2>
     <section class="panel alerts-panel" id="alerts-panel" aria-labelledby="alerts-panel-h">
       <!-- watchlist matches from GET /v1/me/alerts are rendered by assets/js/live-research.js -->
-      <div class="live-panel"><div class="live-status">Loading saved watchlist activity…</div></div>
+      <div id="alerts-activity"><div class="live-panel"><div class="live-status">Loading saved watchlist activity…</div></div></div>
     </section>
-    <p class="alerts-foot">Alerts are matched against imported public records and may be delayed or incomplete. Verify the original filing before acting. <a href="watchlist.html">Edit your watchlist →</a></p>
+    <p class="alerts-foot">Alerts restate imported public records and may be delayed or incomplete; trade dates and filing dates differ. They are not recommendations. Verify the original filing before acting. <a href="watchlist.html">Edit your watchlist →</a></p>
 
     <section class="al-delivery" aria-labelledby="al-delivery-h">
       <h2 class="al-h2" id="al-delivery-h">Delivery</h2>
@@ -91,6 +103,12 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="al-delivery" aria-labelledby="ac-prefs-title">
+      <h2 class="al-h2" id="ac-prefs-title">Email alerts</h2>
+      <p class="al-note">Off unless you opt in. Your consent is recorded, every alert email has a one-click unsubscribe, and subscription and security notices are sent whatever you choose here.</p>
+      <form class="ac-prefs" id="ac-prefs" novalidate><p class="ac-status">Loading your preferences…</p></form>
     </section>
 
     <section class="al-feed" id="insidir-intelligence-feed" aria-labelledby="feed-heading">
