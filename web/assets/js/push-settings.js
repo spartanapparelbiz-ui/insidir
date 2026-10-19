@@ -1,16 +1,29 @@
 /* Push permission is requested only when the user explicitly presses Enable. */
 (()=>{"use strict";
  const box=document.querySelector("#insidir-push-setup");if(!box)return;
- const status=box.querySelector("[data-push-status]"),btn=box.querySelector("[data-push-enable]"),disable=box.querySelector("[data-push-disable]");
+ const status=box.querySelector("[data-push-status]"),btn=box.querySelector("[data-push-enable]"),disable=box.querySelector("[data-push-disable]"),iosHelp=box.querySelector("[data-push-ios-help]");
  const say=t=>{status.textContent=t;};
  const available=()=>("serviceWorker" in navigator && "PushManager" in window && "Notification" in window && window.isSecureContext);
  const base64=key=>{const s=(key+"=".repeat((4-key.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/");return Uint8Array.from(atob(s),c=>c.charCodeAt(0));};
  const request=async(path,method="GET",body)=>{const res=await fetch(path,{method,credentials:"same-origin",headers:{"Accept":"application/json",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});const data=await res.json();if(!res.ok)throw Error(data.error||"Request failed");return data;};
- const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+ const showIosInstall=()=>{
+  btn.disabled=true;
+  btn.textContent="Install Insidir first";
+  iosHelp?.removeAttribute("hidden");
+  say("On iPhone, notifications work from the Insidir Home Screen app. Install Insidir, open it from your Home Screen, then return here and tap Enable notifications.");
+ };
  async function refresh(){
-  if(!available()){btn.disabled=true;say("This browser does not support Web Push notifications.");return;}
-  if(ios&&!standalone){btn.disabled=true;say("On iPhone: use Share → Add to Home Screen, open Insidir from the Home Screen, then enable notifications here.");return;}
+  // iPhone Safari intentionally does not expose normal-tab Web Push.
+  // Check install state BEFORE generic capability detection so users receive the
+  // actionable Home Screen instructions instead of a false "unsupported" error.
+  if(ios&&!standalone){showIosInstall();return;}
+  iosHelp?.setAttribute("hidden","");
+  btn.textContent="Enable notifications";
+  if(!available()){btn.disabled=true;say("This browser does not support Web Push notifications. Try the latest Safari, Chrome or Edge, or install Insidir as an app.");return;}
+  btn.disabled=false;
   try{
    const state=await request("/v1/me/push");
    if(!state.configured){btn.disabled=true;say("Push delivery is not configured on the Insidir server yet.");return;}
@@ -23,6 +36,7 @@
  btn?.addEventListener("click",async()=>{
   btn.disabled=true;say("Requesting permission…");
   try{
+   if(ios&&!standalone){showIosInstall();return;}
    if(!available())throw Error("This browser does not support push.");
    const state=await request("/v1/me/push");
    if(!state.configured||!state.publicKey)throw Error("Server push configuration is not ready");
