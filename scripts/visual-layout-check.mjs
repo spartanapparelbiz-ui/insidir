@@ -43,7 +43,7 @@ try{
    });
    assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.h1.x-landing.hero.x)<3&&landing.h1.width<=item.width,item.width+"px headline not on the hero grid "+JSON.stringify(landing));
+   assert.ok(Math.abs(landing.h1.mid-landing.hero.mid)<3&&landing.h1.x>=landing.hero.x-1&&landing.h1.width<=item.width,item.width+"px headline not centred in the hero "+JSON.stringify(landing));
    assert.ok(landing.font.includes("JetBrains Mono"),"Landing headline must use the site's one typeface, JetBrains Mono: "+landing.font);
    assert.ok(landing.label.includes("JetBrains Mono"),"Tracked labels should be set in the self-hosted JetBrains Mono: "+landing.label);
    assert.ok(landing.halftone.mounted&&landing.halftone.width>=item.width-2&&landing.halftone.height>300&&landing.halftone.inHero,"Halftone wordmark hero must draw in the landing page's first screen "+JSON.stringify(landing.halftone));
