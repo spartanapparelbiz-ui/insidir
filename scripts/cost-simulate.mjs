@@ -17,7 +17,9 @@
  * cost ledgers are moved back one hour, so the hourly, daily and monthly limits see the activity as it would arrive
  * (1.6 times faster than a 30-day month, which is conservative for the pacing limits; 19 days keeps it inside the
  * calendar month the monthly limits count). Every per-customer limit stays at its default. Two scenarios per scale:
- *   demand        the global daily and monthly dollar budgets raised to $500 / $10,000, to measure what customers ask for
+ *   demand        the global daily and monthly dollar budgets raised to $500 / $10,000; request caps at their defaults
+ *   uncapped      as demand, with the global request caps at their hard maximum (2,000 an hour, 20,000 a day), to
+ *                 measure what customers ask for (the per-customer limits stay at their defaults)
  *   production    every limit at its production default (INSIDIR_AI_* unset), to show where the caps refuse */
 import { performance } from "node:perf_hooks";
 import { writeFileSync } from "node:fs";
@@ -33,7 +35,8 @@ const SCENARIO = arg("scenario", "demand");
 Object.assign(process.env, {
   INSIDIR_OPENROUTER_API_KEY: "simulation-only", INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "simulation-only",
   INSIDIR_AI_MODEL: process.env.INSIDIR_AI_MODEL || "event-explanations-model",
-  ...(SCENARIO === "demand" ? { INSIDIR_AI_DAILY_BUDGET_USD: "500", INSIDIR_AI_MONTHLY_BUDGET_USD: "10000" } : {})
+  ...(SCENARIO !== "production" ? { INSIDIR_AI_DAILY_BUDGET_USD: "500", INSIDIR_AI_MONTHLY_BUDGET_USD: "10000" } : {}),
+  ...(SCENARIO === "uncapped" ? { INSIDIR_AI_HOURLY_LIMIT: "2000", INSIDIR_AI_DAILY_LIMIT: "20000" } : {})
 });
 const SLOTS = 456;
 const { query, pool, migrate } = await import("../src/db.mjs");

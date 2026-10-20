@@ -26,9 +26,18 @@ Nothing in this release switches on a regulated capability. `GET /v1/capabilitie
 | `INSIDIR_REQUIRE_EMAIL_VERIFICATION` | on once email is configured | `1` forces, `0` disables. When on, checkout and complimentary access need a confirmed address. |
 | `INSIDIR_AI_EXPLANATIONS` | off | `1` lets the explanation service call Claude. Leave off until counsel has reviewed it (ATTORNEY-REVIEW.md, D-1). |
 | `ANTHROPIC_API_KEY` | empty | API key for explanations (only read when `INSIDIR_AI_EXPLANATIONS=1`). |
-| `INSIDIR_AI_MODEL` / `INSIDIR_AI_EFFORT` | `claude-opus-5-5` / `medium` | Model and effort. |
-| `INSIDIR_AI_DAILY_BUDGET_USD` / `INSIDIR_AI_PER_USER_DAILY` | `5` / `20` | Daily spend ceiling across all instances; model calls per member per day. |
-| `INSIDIR_AI_INPUT_USD_PER_MTOK` / `INSIDIR_AI_OUTPUT_USD_PER_MTOK` | `4` / `20` | Prices used for the budget (update if the model or its price changes). |
+| `INSIDIR_AI_MODEL` / `INSIDIR_AI_EFFORT` | none / `medium` | Model for research-event explanations; there is no default, and the service stays off until one is named. Choose an inexpensive model. |
+| `INSIDIR_AI_EVENT_MAX_TOKENS` | `3000` | Output cap per research-event explanation (300-8000). |
+| `INSIDIR_AI_PER_USER_DAILY` | `20` | Research-event explanations per member per day (on top of the shared limits below). |
+| `INSIDIR_AI_INPUT_USD_PER_MTOK` / `INSIDIR_AI_OUTPUT_USD_PER_MTOK` | `4` / `20` | Prices used for that service's ledger and budget reservation (set them to the chosen model's list prices). |
+| `INSIDIR_OPENROUTER_API_KEY` | empty | Key for the gateway (filing summaries, investigation synthesis). AI is off without it. |
+| `INSIDIR_AI_MODEL_FAST` / `INSIDIR_AI_MODEL_DEEP` | `openai/gpt-4.1-nano` / `openai/gpt-4.1-mini` | Gateway models. Deep is an escalation for multi-company questions only. |
+| `INSIDIR_AI_DAILY_BUDGET_USD` / `INSIDIR_AI_MONTHLY_BUDGET_USD` | `2` / `25` | Hard global budgets, across both AI paths and every instance (docs/COSTS.md). |
+| `INSIDIR_AI_USER_MONTHLY_BUDGET_USD` / `INSIDIR_AI_USER_MONTHLY_LIMIT` | `0.25` / `300` | Per-customer monthly allowance and request cap. Cached text stays available past it. |
+| `INSIDIR_AI_HOURLY_LIMIT` / `INSIDIR_AI_DAILY_LIMIT` | `40` / `300` | Global model calls per hour and per day. |
+| `INSIDIR_AI_USER_HOURLY_LIMIT` / `INSIDIR_AI_USER_DAILY_LIMIT` | `12` / `40` | Per-customer model calls per hour and per day. |
+| `INSIDIR_AI_ESCALATE_BELOW` | `0.5` | The deep model is used only while every applicable budget is below this share. |
+| `INSIDIR_AI_MAX_INPUT_CHARS` / `INSIDIR_AI_MAX_OUTPUT_TOKENS` / `INSIDIR_AI_TIMEOUT_MS` / `INSIDIR_AI_RETRIES` | `12000` / `450` / `15000` / `1` | Per-request limits for the gateway. |
 | `INSIDIR_BACKGROUND_WORKERS` | on | `0` runs no background job in this instance (a web-only replica). |
 
 ## 2. Admin access with MFA

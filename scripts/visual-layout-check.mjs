@@ -165,7 +165,7 @@ try{
    await page.locator("#tab-overview").click();
    await page.locator("#cx-watch").click();
    await page.waitForFunction(()=>document.querySelector("#cx-watch")?.getAttribute("aria-pressed")==="true",null,{timeout:10000});
-   assert.match(await page.locator("#cx-watch").innerText(),/on watchlist/i,"Watchlist action should persist through the API");
+   assert.match(await page.locator("#cx-watch").innerText(),/^following$/i,"Follow should persist through the API");
    await page.goto(base+"/company.html?ticker=MSFT",{waitUntil:"domcontentloaded",timeout:20000});
    await page.locator("#cx-name").getByText("Microsoft").waitFor({timeout:10000});
    await page.locator("#cx-chart svg path").first().waitFor({timeout:10000});
