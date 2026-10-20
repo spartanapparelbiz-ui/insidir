@@ -421,7 +421,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(css.status, 200);
     const theme = await css.text();
     assert.match(theme, /@layer insidir-v13\{/);
-    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var\(--hf-ink\)!important/);
+    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#f0eee8!important;--hf-warm:var\(--hf-ink\)!important/);
     assert.match(theme, /font-family:"JetBrains Mono"/);
     for (const family of ["home", "app", "desk", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
     const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");

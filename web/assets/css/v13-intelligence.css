@@ -6,7 +6,7 @@
    stage or a selection; all of it stops under prefers-reduced-motion. Colour is paper and ink only. */
 @layer insidir-v13{
 /* Page frame: the instrument and the section bar run edge to edge; every other block sits on the shared measure. */
-body.v13.ix-page{--ix-max:var(--hf-max)!important;--ix-grid:rgba(233,228,218,.045)!important}
+body.v13.ix-page{--ix-max:var(--hf-max)!important;--ix-grid:rgba(240,238,232,.045)!important}
 body.v13.ix-page main.ix{max-width:none!important;padding:0 0 clamp(64px,8vw,112px)!important;width:100%!important;overflow-x:clip!important}
 body.v13.ix-page main.ix>:not(.ix-hero,.ix-bar){max-width:calc(var(--ix-max) + 2 * var(--hf-gutter))!important;margin-inline:auto!important;padding-inline:var(--hf-gutter)!important;box-sizing:border-box!important}
 body.v13.ix-page .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
@@ -95,9 +95,9 @@ body.v13.ix-page .ix-row[aria-pressed=true]{color:var(--hf-ink)!important;box-sh
 body.v13.ix-page .ix-row.is-empty .ix-row__count{color:var(--hf-faint)!important}
 
 /* Drafting lines from the mark to each row */
-body.v13.ix-page .iv-link{fill:none!important;stroke:rgba(233,228,218,.16)!important;stroke-width:1!important;transition:stroke .2s linear!important}
-body.v13.ix-page .iv-link.is-active{stroke:rgba(233,228,218,.8)!important}
-body.v13.ix-page .iv-end{fill:rgba(233,228,218,.3)!important;transition:fill .2s linear!important}
+body.v13.ix-page .iv-link{fill:none!important;stroke:rgba(240,238,232,.16)!important;stroke-width:1!important;transition:stroke .2s linear!important}
+body.v13.ix-page .iv-link.is-active{stroke:rgba(240,238,232,.8)!important}
+body.v13.ix-page .iv-end{fill:rgba(240,238,232,.3)!important;transition:fill .2s linear!important}
 body.v13.ix-page .iv-end.is-active{fill:var(--hf-ink)!important}
 
 /* The records panel */
@@ -187,9 +187,9 @@ body.v13.ix-page .ix-tape__strip{border-top:1px solid var(--hf-line-2)!important
 body.v13.ix-page svg.iv-strip,body.v13.ix-page svg.iv-bars{display:block!important;width:100%!important;height:auto!important;overflow:visible!important}
 body.v13.ix-page svg.iv-bars{max-width:520px!important}
 body.v13.ix-page .iv-axis{stroke:var(--hf-line-strong)!important;stroke-width:1!important}
-body.v13.ix-page .iv-grid{stroke:rgba(233,228,218,.06)!important;stroke-width:1!important}
+body.v13.ix-page .iv-grid{stroke:rgba(240,238,232,.06)!important;stroke-width:1!important}
 body.v13.ix-page .iv-label{fill:var(--hf-faint)!important;font:400 10px var(--hf-mono)!important}
-body.v13.ix-page .iv-tick line{stroke:rgba(233,228,218,.4)!important;stroke-width:1.5!important}
+body.v13.ix-page .iv-tick line{stroke:rgba(240,238,232,.4)!important;stroke-width:1.5!important}
 body.v13.ix-page .iv-tick.is-strong line{stroke:var(--hf-ink)!important;stroke-width:2!important}
 body.v13.ix-page .iv-tick.is-selected line{stroke:var(--hf-ink)!important}
 body.v13.ix-page .iv-tick circle{fill:var(--hf-bg)!important;stroke:var(--hf-ink)!important;stroke-width:1.5!important}
@@ -281,7 +281,7 @@ body.v13.ix-page .ix-ai{border-left:1px solid var(--hf-line-strong)!important;pa
 body.v13.ix-page .ix-ai p{font:400 13.5px/1.7 var(--hf-mono)!important;color:var(--hf-ink)!important;margin:0 0 8px!important}
 body.v13.ix-page .ix-ai small{display:block!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-faint)!important}
 body.v13.ix-page .is-flash{animation:ix-flash 1.6s linear both!important}
-@keyframes ix-flash{0%{background-color:rgba(233,228,218,.1)}100%{background-color:rgba(233,228,218,0)}}
+@keyframes ix-flash{0%{background-color:rgba(240,238,232,.1)}100%{background-color:rgba(240,238,232,0)}}
 
 body.v13.ix-page .ix-desk{display:grid!important;grid-template-columns:minmax(0,2fr) minmax(0,1fr)!important;gap:clamp(24px,3.4vw,52px)!important;padding:26px 0 8px!important;border-bottom:1px solid var(--hf-line)!important}
 body.v13.ix-page .ix-desk__grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))!important;gap:18px 28px!important}
@@ -519,7 +519,7 @@ body.v13.ix-page .ix-tm:hover rect{opacity:.85!important}
 body.v13.ix-page .ix-tm text{font:600 12px var(--hf-mono)!important;pointer-events:none!important}
 body.v13.ix-page .ix-tm text.is-num{font:400 11px var(--hf-mono)!important}
 body.v13.ix-page .ix-tm text.on-light{fill:#0c0c0b!important}
-body.v13.ix-page .ix-tm text.on-dark{fill:#e9e4da!important}
+body.v13.ix-page .ix-tm text.on-dark{fill:#f0eee8!important}
 body.v13.ix-page .ix-mirror__grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:0 clamp(24px,3vw,44px)!important}
 body.v13.ix-page .ix-mirror__grid>.ix-block{min-width:0!important}
 body.v13.ix-page .ix-meter{display:block!important;height:3px!important;background:var(--hf-line)!important;margin-top:6px!important;min-width:60px!important}

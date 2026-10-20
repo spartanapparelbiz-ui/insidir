@@ -20,7 +20,7 @@
 (() => {
   "use strict";
 
-  const PRESET = { background: "#0c0c0b", ink: "#e9e4da" };
+  const PRESET = { background: "#0c0c0b", ink: "#f0eee8" };
   /* A pointer within a field's radius pushes each dot with up to `push` per frame and drags what it passes with
      `drag` of its own movement; held down it pushes `press` times as hard over `pressReach` times the radius; once the pointer has
      been still for 700ms the dots it holds keep only `hold` of their velocity each frame and stop where they are. A spring

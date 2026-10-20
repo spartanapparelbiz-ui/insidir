@@ -7,17 +7,17 @@
 :root{
   /* Colour: the V13 paper-and-ink palette (v13-halftone.css owns the values; these are aliases with fallbacks). */
   --c-bg:var(--hf-bg,#0c0c0b);
-  --c-surface:var(--hf-surface,#151513);
-  --c-surface-2:var(--hf-surface-2,#1b1a18);
-  --c-raise:var(--hf-raise,#222220);
-  --c-ink:var(--hf-ink,#e9e4da);
-  --c-soft:var(--hf-soft,#bdb9b1);
-  --c-muted:var(--hf-muted,#9e9b94);
-  --c-faint:var(--hf-faint,#8c8983);
-  --c-line:var(--hf-line,#2f2f2c);
-  --c-line-2:var(--hf-line-2,#41403d);
-  --c-line-soft:rgba(233,228,218,.09);
-  --c-line-strong:rgba(233,228,218,.16);
+  --c-surface:var(--hf-surface,#171717);
+  --c-surface-2:var(--hf-surface-2,#1b1b1a);
+  --c-raise:var(--hf-raise,#202020);
+  --c-ink:var(--hf-ink,#f0eee8);
+  --c-soft:var(--hf-soft,#c2c1bc);
+  --c-muted:var(--hf-muted,#a4a4a0);
+  --c-faint:var(--hf-faint,#908f8b);
+  --c-line:var(--hf-line,#30302e);
+  --c-line-2:var(--hf-line-2,#434240);
+  --c-line-soft:rgba(240,238,232,.09);
+  --c-line-strong:rgba(240,238,232,.16);
   --c-up:var(--hf-up,#2f996a);       /* purchases and rises only, always beside a word or a sign */
   --c-down:var(--hf-down,#f94144);   /* sales, falls and errors only */
 
@@ -33,9 +33,9 @@
 
   /* Shape and depth (the V17 "smooth" values). */
   --r-xs:7px; --r-sm:10px; --r-md:14px; --r-lg:18px; --r-pill:999px;
-  --panel:linear-gradient(180deg,rgba(233,228,218,.045),rgba(233,228,218,.012) 60%),var(--c-surface);
-  --panel-hover:linear-gradient(180deg,rgba(233,228,218,.07),rgba(233,228,218,.02) 60%),var(--c-surface);
-  --shadow-panel:0 30px 80px -40px rgba(12,12,11,.95),0 1px 0 rgba(233,228,218,.05) inset;
+  --panel:linear-gradient(180deg,rgba(240,238,232,.045),rgba(240,238,232,.012) 60%),var(--c-surface);
+  --panel-hover:linear-gradient(180deg,rgba(240,238,232,.07),rgba(240,238,232,.02) 60%),var(--c-surface);
+  --shadow-panel:0 30px 80px -40px rgba(12,12,11,.95),0 1px 0 rgba(240,238,232,.05) inset;
   --shadow-pop:var(--hf-shadow-pop,0 16px 40px -8px rgba(12,12,11,.9));
 
   /* Motion: short, and only transform, opacity or colour. */
@@ -68,7 +68,7 @@ html{scroll-padding-top:88px}
 /* A focused header (sign-up): the logo and one way out, nothing else to wander to. */
 .auth-focus{display:flex;align-items:center;gap:var(--s-3);font-size:13px;color:var(--c-muted)}
 .auth-focus__link{display:inline-flex;align-items:center;min-height:var(--tap-min);padding:0 var(--s-2);color:var(--c-ink);text-decoration:underline;text-underline-offset:3px}
-.auth-focus__link:hover{color:var(--hf-ink-hover,#d3cec5)}
+.auth-focus__link:hover{color:var(--hf-ink-hover,#d9d7d2)}
 @media (max-width:420px){.auth-focus__note{display:none}}
 
 /* Sticky bars: solid paper, no backdrop blur. Their backgrounds were already 90-94% opaque, so the blur showed almost

@@ -195,7 +195,7 @@ try{
       label:getComputedStyle(document.querySelector(".auth-field .label")).fontFamily,footer:!!document.querySelector("footer.v13-footer--plain .hwf-top"),logoDot:!!document.querySelector(".auth-logo .v13-dot")}));
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
     assert.match(auth.heading,/JetBrains Mono/,route+" auth heading must use JetBrains Mono");
-    assert.equal(auth.headingColor,"rgb(233, 228, 218)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
+    assert.equal(auth.headingColor,"rgb(240, 238, 232)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
     assert.match(auth.label,/JetBrains Mono/,route+" field labels should be tracked mono");
     assert.ok(auth.footer&&auth.logoDot,route+" needs the plain footer and the dotted wordmark logo");
    }

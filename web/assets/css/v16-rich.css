@@ -11,7 +11,7 @@
    Inside the insidir-v13 layer, after v15-home.css. */
 @layer insidir-v13{
 
-body.v13.v12-home.v9-site.v6-site{--rx-tick:rgba(233,228,218,.62)!important;--rx-dot:rgba(233,228,218,.085)!important;--rx-dot-strong:rgba(233,228,218,.16)!important;
+body.v13.v12-home.v9-site.v6-site{--rx-tick:rgba(240,238,232,.62)!important;--rx-dot:rgba(240,238,232,.085)!important;--rx-dot-strong:rgba(240,238,232,.16)!important;
   --rx-t:14px!important;--rx-w:1.5px!important;counter-reset:rx-sec rx-fig rx-q!important}
 
 /* ---------- corner ticks: a bracket in each corner of a panel, drawn over its hairline ---------- */

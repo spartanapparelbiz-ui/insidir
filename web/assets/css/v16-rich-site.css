@@ -6,7 +6,7 @@
    after v15-site.css. */
 @layer insidir-v13{
 
-body.v13.v3-static.v6-static{--rx-tick:rgba(233,228,218,.62)!important;--rx-dot-strong:rgba(233,228,218,.15)!important;--rx-t:14px!important;--rx-w:1.5px!important;counter-reset:rx-sec rx-fig!important}
+body.v13.v3-static.v6-static{--rx-tick:rgba(240,238,232,.62)!important;--rx-dot-strong:rgba(240,238,232,.15)!important;--rx-t:14px!important;--rx-w:1.5px!important;counter-reset:rx-sec rx-fig!important}
 
 /* ---------- corner ticks ---------- */
 body.v13.v3-static.v6-static :is(.mk-screen,.mk-plan,.mk-record,.mk-cell,.mk-demo){

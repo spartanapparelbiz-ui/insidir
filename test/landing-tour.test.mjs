@@ -15,7 +15,7 @@ const CLIPS = ["search", "insiders", "people", "follow"];
 test("the landing page shows the system: four stages, five capabilities, the product in motion, sources and pricing", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    const stages = [...home.matchAll(/<li><b>(Monitor|Process|Interpret|Notify)<\/b>/g)].map(m => m[1]);
+    const stages = [...home.matchAll(/data-stage-go="\d"><b class="sx-stage-label">(Monitor|Process|Interpret|Notify)<\/b>/g)].map(m => m[1]);
     assert.deepEqual(stages, ["Monitor", "Process", "Interpret", "Notify"], "the four stages, in order");
     for (const cap of ["Intelligence", "Monitoring", "Investigations", "Ownership Intelligence", "Alerts"]) assert.match(home, new RegExp("<h3>" + cap + "</h3>"), cap);
     assert.match(home, /data-system/);

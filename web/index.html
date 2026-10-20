@@ -14,7 +14,6 @@
      "organized" and "disclosure" are the two headlines; /admin-funnel.html compares their trial starts. -->
 <script>try{var k="insidir:exp:headline",v=localStorage.getItem(k);if(v!=="organized"&&v!=="disclosure"){v=Math.random()<.5?"organized":"disclosure";localStorage.setItem(k,v)}document.documentElement.setAttribute("data-exp-headline",v)}catch(e){}</script>
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="image" href="assets/img/product/overview.webp" imagesrcset="assets/img/product/overview-1080.webp 1080w, assets/img/product/overview-1440.webp 1440w, assets/img/product/overview-1920.webp 1920w, assets/img/product/overview.webp 2560w" imagesizes="(max-width: 900px) 100vw, 60vw" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/v9-landing.css">
 <link rel="stylesheet" href="assets/css/v13-halftone.css">
@@ -55,23 +54,45 @@
 </header>
 <main id="Content">
 
-<!-- 1. Hero. -->
-<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir" data-fit-to=".v13-hero__inner" data-crop="0.22" data-letter-spacing="-0.02em" aria-labelledby="v6-hero-heading">
+<!-- 1. Hero: centred, with the instrument beneath. -->
+<section class="v9-hero v12-hero v13-hero sx-hero" data-halftone-hero data-wordmark="insidir" data-fit-to=".v13-hero__inner" data-crop="0.22" data-letter-spacing="-0.02em" aria-labelledby="v6-hero-heading">
  <canvas aria-hidden="true"></canvas>
  <div class="v9-width v6-hero__inner v13-hero__inner">
   <p class="v12-eyebrow v9-hero__eyebrow">Financial intelligence platform</p>
   <h1 id="v6-hero-heading"><span class="lx-arm lx-arm--a">Financial intelligence.<br><em>Continuously organized.</em></span><span class="lx-arm lx-arm--b">From disclosure<br><em>to intelligence.</em></span></h1>
-  <p class="v9-hero__description">Automated disclosure monitoring, connected financial data, and source-backed intelligence. One platform.</p>
+  <p class="v9-hero__description">Automated disclosure monitoring, connected financial data, and source-backed intelligence.</p>
   <div class="v9-hero__actions">
    <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="hero">Explore Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
    <a class="v9-btn v12-outline-button" href="platform.html" data-demo="hero-platform">View the platform<span class="v13-arrow" aria-hidden="true">→</span></a>
   </div>
   <p class="v9-hero__caption lp-terms lp-terms--price"><span class="lp-deal"><b>3 days</b> for $1</span><span class="lp-terms__price">Then <b>$39</b>/month</span><span>Cancel online</span></p>
-  <figure class="lp-ledger lp-heroshot">
-   <span class="lp-heroshot__frame"><img src="assets/img/product/overview.webp" srcset="assets/img/product/overview-1080.webp 1080w, assets/img/product/overview-1440.webp 1440w, assets/img/product/overview-1920.webp 1920w, assets/img/product/overview.webp 2560w" sizes="(max-width: 900px) 100vw, 60vw" width="2560" height="1600" decoding="async" fetchpriority="high"
-    alt="The Insidir overview: new Form 4 trades from followed people, the people followed, and the time of the latest SEC import."></span>
-   <figcaption><b>Overview</b><span>Product capture, Oct 18, 2026.</span></figcaption>
-  </figure>
+
+  <!-- The instrument: the dotted i, one dot per layer of the system. Select a dot to read it. -->
+  <div class="sx-inst" data-instrument>
+   <div class="sx-inst__mark" role="group" aria-label="The layers of Insidir, as the dots of the i">
+    <button type="button" class="sx-dot sx-dot--head" data-layer="briefings" aria-pressed="false"><span class="hwf-sr">Intelligence briefings</span></button>
+    <button type="button" class="sx-dot sx-dot--serif" data-layer="disclosures" aria-pressed="true"><span class="hwf-sr">Public disclosures</span></button>
+    <button type="button" class="sx-dot sx-dot--s1" data-layer="insiders" aria-pressed="false"><span class="hwf-sr">Insider transactions</span></button>
+    <button type="button" class="sx-dot sx-dot--s2" data-layer="relationships" aria-pressed="false"><span class="hwf-sr">Company relationships</span></button>
+    <button type="button" class="sx-dot sx-dot--s3" data-layer="holdings" aria-pressed="false"><span class="hwf-sr">Institutional holdings</span></button>
+    <button type="button" class="sx-dot sx-dot--s4" data-layer="watchlist" aria-pressed="false"><span class="hwf-sr">Watchlist events</span></button>
+    <button type="button" class="sx-dot sx-dot--b1" data-layer="investigations" aria-pressed="false"><span class="hwf-sr">Investigations</span></button>
+    <button type="button" class="sx-dot sx-dot--b2" data-layer="notifications" aria-pressed="false"><span class="hwf-sr">Notifications</span></button>
+    <button type="button" class="sx-dot sx-dot--b3" data-layer="sources" aria-pressed="false"><span class="hwf-sr">Source verification</span></button>
+   </div>
+   <div class="sx-inst__read" aria-live="polite">
+    <div class="sx-layer" data-layer-panel="disclosures"><p class="sx-label">Layer · Public disclosures</p><b>SEC filings, read on a schedule.</b><span class="sx-layer__eg">Form 4 · PepsiCo · filed Oct 16, 2026</span></div>
+    <div class="sx-layer" data-layer-panel="insiders" hidden><p class="sx-label">Layer · Insider transactions</p><b>Every Form 4 line, parsed.</b><span class="sx-layer__eg">4 lines · code P · $128.28</span></div>
+    <div class="sx-layer" data-layer-panel="relationships" hidden><p class="sx-label">Layer · Company relationships</p><b>Roles exactly as filed.</b><span class="sx-layer__eg">Robert C. Pohlad · Director · PepsiCo</span></div>
+    <div class="sx-layer" data-layer-panel="holdings" hidden><p class="sx-label">Layer · Institutional holdings</p><b>13F holdings, quarter by quarter.</b><span class="sx-layer__eg">Form 13F-HR · selected managers</span></div>
+    <div class="sx-layer" data-layer-panel="watchlist" hidden><p class="sx-label">Layer · Watchlist events</p><b>New records matched to you.</b><span class="sx-layer__eg">PEP · on your watchlist · New</span></div>
+    <div class="sx-layer" data-layer-panel="briefings" hidden><p class="sx-label">Layer · Intelligence briefings</p><b>Findings, in a published order.</b><span class="sx-layer__eg">Robert C. Pohlad at PepsiCo reported 4 purchases</span></div>
+    <div class="sx-layer" data-layer-panel="investigations" hidden><p class="sx-label">Layer · Investigations</p><b>Questions, answered with citations.</b><span class="sx-layer__eg">"What did PepsiCo insiders disclose this month?"</span></div>
+    <div class="sx-layer" data-layer-panel="notifications" hidden><p class="sx-label">Layer · Notifications</p><b>In app; push and email opt-in.</b><span class="sx-layer__eg">Insidir · New SEC disclosure</span></div>
+    <div class="sx-layer" data-layer-panel="sources" hidden><p class="sx-label">Layer · Source verification</p><b>Every figure links its document.</b><span class="sx-layer__eg">Accession 0001061272-26-000004</span></div>
+    <p class="sx-inst__hint">Select a dot · examples from a real Form 4</p>
+   </div>
+  </div>
  </div>
  <noscript><svg class="lp-word" viewBox="0 0 1000 156" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false"><text x="-17.6" y="200">insidir</text></svg></noscript>
  <span class="hwf-sr">insidir</span>
@@ -81,7 +102,7 @@
 <section class="lp-section sx-system" data-system aria-labelledby="sx-system-h">
  <div class="v9-width">
   <header class="sx-head"><p class="sx-eyebrow">The intelligence system</p><h2 id="sx-system-h">Disclosure in. <span>Intelligence out.</span></h2></header>
-  <figure class="sx-sys" aria-label="Public records enter Insidir, are processed and interpreted, and leave as a Briefing item and an alert.">
+  <div class="sx-sys" role="group" aria-label="Public records enter Insidir, are processed and interpreted, and leave as a Briefing item and an alert.">
    <div class="sx-sys__col">
     <p class="sx-label">Records</p>
     <div class="sx-rec"><b>Form 4 · PEP</b><span>PepsiCo director · filed Oct 16, 2026</span></div>
@@ -89,33 +110,63 @@
     <div class="sx-rec"><b>Form 13F-HR</b><span>Quarterly institutional holdings</span></div>
    </div>
    <span class="sx-wire sx-wire--in" aria-hidden="true"><i></i></span>
-   <div class="sx-sys__core">
-    <svg class="sx-i" viewBox="0 0 220 520" aria-hidden="true" focusable="false">
-     <circle class="sx-i__ring" cx="110" cy="58" r="52"/>
-     <circle class="sx-i__dot" cx="110" cy="58" r="40"/>
-     <g class="sx-i__stem"><circle cx="50" cy="166" r="30"/><circle cx="110" cy="166" r="30"/><circle cx="110" cy="238" r="30"/><circle cx="110" cy="310" r="30"/><circle cx="110" cy="382" r="30"/></g>
-     <g class="sx-i__base"><circle cx="50" cy="454" r="30"/><circle cx="110" cy="454" r="30"/><circle cx="170" cy="454" r="30"/></g>
-    </svg>
-    <p class="sx-sys__caption">Insidir</p>
-   </div>
+   <ol class="sx-sys__core sx-stages" aria-label="The four stages">
+    <li><button type="button" class="sx-stage" data-stage-go="1"><b class="sx-stage-label">Monitor</b><span>SEC disclosures and followed entities.</span></button></li>
+    <li><button type="button" class="sx-stage" data-stage-go="2"><b class="sx-stage-label">Process</b><span>Transactions, filings, and relationships.</span></button></li>
+    <li><button type="button" class="sx-stage" data-stage-go="3"><b class="sx-stage-label">Interpret</b><span>Briefings and cited investigations.</span></button></li>
+    <li><button type="button" class="sx-stage" data-stage-go="4"><b class="sx-stage-label">Notify</b><span>Relevant updates, on your terms.</span></button></li>
+   </ol>
    <span class="sx-wire sx-wire--out" aria-hidden="true"><i></i></span>
    <div class="sx-sys__col">
     <p class="sx-label">Output</p>
     <div class="sx-out"><div class="sx-out__top"><span class="sx-label">Briefing</span><span class="sx-chip sx-chip--ink">New</span></div><b>Robert C. Pohlad at PepsiCo reported 4 purchases</b><span>Matched to your watchlist · SEC source linked</span></div>
     <div class="sx-out"><div class="sx-out__top"><span class="sx-label">Alert</span><span class="sx-chip sx-chip--line">In app</span></div><b>Insidir · New SEC disclosure</b><span>A new Form 4 was imported for PEP.</span></div>
    </div>
-  </figure>
-  <ol class="sx-stages">
-   <li><b>Monitor</b><span>SEC disclosures and followed entities.</span></li>
-   <li><b>Process</b><span>Transactions, filings, and relationships.</span></li>
-   <li><b>Interpret</b><span>Briefings and cited investigations.</span></li>
-   <li><b>Notify</b><span>Relevant updates, on your terms.</span></li>
-  </ol>
+  </div>
   <p class="sx-note">Illustrative sequence built from real SEC filings. Sources are checked on a schedule; data and notifications can be delayed.</p>
  </div>
 </section>
 
-<!-- 3. The platform: five capabilities, each shown, not described. -->
+<!-- 3. Product in motion: one real Form 4, from EDGAR to the evidence (assets/js/v31-flow.js). -->
+<section class="lp-section ax-flow sx-motion" data-flow aria-labelledby="sx-motion-h">
+ <div class="v9-width">
+  <header class="sx-head"><p class="sx-eyebrow">Product in motion</p><h2 id="sx-motion-h">From filing <span>to finding.</span></h2></header>
+  <ol class="ax-flow__rail" role="tablist" aria-label="One filing through Insidir">
+   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-1" aria-selected="true" aria-controls="ax-step-1"><span class="ax-flow__node" aria-hidden="true">01</span><span class="ax-flow__verb">Filed</span></button></li>
+   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-2" aria-selected="false" aria-controls="ax-step-2" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">02</span><span class="ax-flow__verb">Indexed</span></button></li>
+   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-3" aria-selected="false" aria-controls="ax-step-3" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">03</span><span class="ax-flow__verb">Matched</span></button></li>
+   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-4" aria-selected="false" aria-controls="ax-step-4" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">04</span><span class="ax-flow__verb">Evidence</span></button></li>
+  </ol>
+  <div class="ax-flow__stage">
+   <article class="ax-flow__panel ax-panel" id="ax-step-1" role="tabpanel" aria-labelledby="ax-tab-1">
+    <div class="ax-flow__copy"><p class="ax-label">01 · Filed</p><h3>A Form 4 reaches EDGAR.</h3><p>PepsiCo director, trade Oct 14, filed Oct 16, 2026.</p></div>
+    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">SEC EDGAR · Form 4</p><em>Real filing</em></div>
+     <div class="ax-card__body"><div class="ax-row"><div><b>PEPSICO INC · POHLAD ROBERT C</b><span>Accession 0001061272-26-000004</span></div><span class="ax-state ax-state--new">New</span></div></div></div>
+   </article>
+   <article class="ax-flow__panel ax-panel" id="ax-step-2" role="tabpanel" aria-labelledby="ax-tab-2" hidden>
+    <div class="ax-flow__copy"><p class="ax-label">02 · Indexed</p><h3>Four lines, parsed.</h3><p>Read from the filed XML. Codes kept.</p></div>
+    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Indexed record</p><em>From the XML</em></div>
+     <div class="ax-card__body"><table class="ax-lines"><caption class="hwf-sr">The four reported lines</caption><thead><tr><th scope="col">Trade date</th><th scope="col">Code</th><th scope="col">Shares</th><th scope="col">Price</th></tr></thead>
+      <tbody><tr><td>Oct 14, 2026</td><td>P</td><td>84,507</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>9,989</td><td>$128.28</td></tr></tbody></table></div></div>
+   </article>
+   <article class="ax-flow__panel ax-panel" id="ax-step-3" role="tabpanel" aria-labelledby="ax-tab-3" hidden>
+    <div class="ax-flow__copy"><p class="ax-label">03 · Matched</p><h3>Your watchlist updates.</h3><p>One finding, with the reason it is there.</p></div>
+    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Briefing · watchlist</p><em>Format as in the product</em></div>
+     <div class="ax-card__body"><div class="ax-row"><div><b>Robert C. Pohlad at PepsiCo reported 4 purchases</b><span>184,646 shares at $128.28 · about $23.7M · held indirectly</span></div><span class="ax-state ax-state--new">New</span></div>
+      <ul class="ax-reasons" aria-label="Why it is here"><li><span>Company is on your watchlist</span><span>+2</span></li><li><span>Includes an open-market purchase or sale (code P or S)</span><span>+1</span></li></ul></div></div>
+   </article>
+   <article class="ax-flow__panel ax-panel" id="ax-step-4" role="tabpanel" aria-labelledby="ax-tab-4" hidden>
+    <div class="ax-flow__copy"><p class="ax-label">04 · Evidence</p><h3>The source, one click away.</h3><p>Footnote 1 changes the reading. Read it yourself.</p></div>
+    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Evidence · SEC EDGAR</p><em>Real filing</em></div>
+     <div class="ax-card__body"><blockquote class="ax-quote">"…shares of PepsiCo Common Stock acquired from irrevocable trusts established by the reporting person…"<cite>Footnote 1, Form 4 filed Oct 16, 2026</cite></blockquote>
+      <div class="ax-row ax-row--quiet"><div><b>Original filing</b><span><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener" data-demo="flow-filing">0001061272-26-000004 on EDGAR ↗</a></span></div><span class="ax-state ax-state--on">Source</span></div></div></div>
+   </article>
+  </div>
+  <div class="ax-flow__foot"><p class="sx-note" style="margin:0">A real filing; not live data. <a href="/insider-trading/PEP" data-demo="example-transaction">PepsiCo's public Form 4 record</a> · <a href="/stories/enterprise-products-insider-purchase.html" data-demo="example-filing">A filing, line by line</a></p><button type="button" class="ax-flow__toggle" data-flow-toggle aria-pressed="false" hidden>Pause</button></div>
+ </div>
+</section>
+
+<!-- 4. The platform: five capabilities, each shown, not described. -->
 <section class="lp-section cp-section" aria-labelledby="cp-h">
  <div class="v9-width">
   <header class="sx-head"><p class="sx-eyebrow">The platform</p><h2 id="cp-h">One system. <span>Five capabilities.</span></h2></header>
@@ -165,47 +216,8 @@
  </div>
 </section>
 
-<!-- 4. Product in motion: one real Form 4, from EDGAR to the evidence (assets/js/v31-flow.js). -->
-<section class="lp-section ax-flow sx-motion" data-flow aria-labelledby="sx-motion-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">Product in motion</p><h2 id="sx-motion-h">From filing <span>to finding.</span></h2></header>
-  <ol class="ax-flow__rail" role="tablist" aria-label="One filing through Insidir">
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-1" aria-selected="true" aria-controls="ax-step-1"><span class="ax-flow__node" aria-hidden="true">01</span><span class="ax-flow__verb">Filed</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-2" aria-selected="false" aria-controls="ax-step-2" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">02</span><span class="ax-flow__verb">Indexed</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-3" aria-selected="false" aria-controls="ax-step-3" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">03</span><span class="ax-flow__verb">Matched</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-4" aria-selected="false" aria-controls="ax-step-4" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">04</span><span class="ax-flow__verb">Evidence</span></button></li>
-  </ol>
-  <div class="ax-flow__stage">
-   <article class="ax-flow__panel ax-panel" id="ax-step-1" role="tabpanel" aria-labelledby="ax-tab-1">
-    <div class="ax-flow__copy"><p class="ax-label">01 · Filed</p><h3>A Form 4 reaches EDGAR.</h3><p>PepsiCo director, trade Oct 14, filed Oct 16, 2026.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">SEC EDGAR · Form 4</p><em>Real filing</em></div>
-     <div class="ax-card__body"><div class="ax-row"><div><b>PEPSICO INC · POHLAD ROBERT C</b><span>Accession 0001061272-26-000004</span></div><span class="ax-state ax-state--new">New</span></div></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-2" role="tabpanel" aria-labelledby="ax-tab-2" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">02 · Indexed</p><h3>Four lines, parsed.</h3><p>Read from the filed XML. Codes kept.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Indexed record</p><em>From the XML</em></div>
-     <div class="ax-card__body"><table class="ax-lines"><caption class="hwf-sr">The four reported lines</caption><thead><tr><th scope="col">Trade date</th><th scope="col">Code</th><th scope="col">Shares</th><th scope="col">Price</th></tr></thead>
-      <tbody><tr><td>Oct 14, 2026</td><td>P</td><td>84,507</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>9,989</td><td>$128.28</td></tr></tbody></table></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-3" role="tabpanel" aria-labelledby="ax-tab-3" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">03 · Matched</p><h3>Your watchlist updates.</h3><p>One finding, with the reason it is there.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Briefing · watchlist</p><em>Format as in the product</em></div>
-     <div class="ax-card__body"><div class="ax-row"><div><b>Robert C. Pohlad at PepsiCo reported 4 purchases</b><span>184,646 shares at $128.28 · about $23.7M · held indirectly</span></div><span class="ax-state ax-state--new">New</span></div>
-      <ul class="ax-reasons" aria-label="Why it is here"><li><span>Company is on your watchlist</span><span>+2</span></li><li><span>Includes an open-market purchase or sale (code P or S)</span><span>+1</span></li></ul></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-4" role="tabpanel" aria-labelledby="ax-tab-4" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">04 · Evidence</p><h3>The source, one click away.</h3><p>Footnote 1 changes the reading. Read it yourself.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Evidence · SEC EDGAR</p><em>Real filing</em></div>
-     <div class="ax-card__body"><blockquote class="ax-quote">"…shares of PepsiCo Common Stock acquired from irrevocable trusts established by the reporting person…"<cite>Footnote 1, Form 4 filed Oct 16, 2026</cite></blockquote>
-      <div class="ax-row ax-row--quiet"><div><b>Original filing</b><span><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener" data-demo="flow-filing">0001061272-26-000004 on EDGAR ↗</a></span></div><span class="ax-state ax-state--on">Source</span></div></div></div>
-   </article>
-  </div>
-  <div class="ax-flow__foot"><p class="sx-note" style="margin:0">A real filing; not live data. <a href="/insider-trading/PEP" data-demo="example-transaction">PepsiCo's public Form 4 record</a> · <a href="/stories/enterprise-products-insider-purchase.html" data-demo="example-filing">A filing, line by line</a></p><button type="button" class="ax-flow__toggle" data-flow-toggle aria-pressed="false" hidden>Pause</button></div>
- </div>
-</section>
-
 <!-- 5. Financial data infrastructure. -->
-<section class="lp-section di-section" aria-labelledby="di-h">
+<section class="lp-section di-section sx-paper" aria-labelledby="di-h">
  <div class="v9-width">
   <header class="sx-head"><p class="sx-eyebrow">Financial data infrastructure</p><h2 id="di-h">Original sources. <span>Every record linked.</span></h2></header>
   <table class="di-table">

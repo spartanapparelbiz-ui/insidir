@@ -1,5 +1,5 @@
 /* Insidir V13 palette audit: open every page in headless Chromium and report any computed
-   colour that is not a blend of the two identity colours (#0c0c0b paper, #e9e4da ink) or one of
+   colour that is not a blend of the two identity colours (#0c0c0b paper, #f0eee8 ink) or one of
    the two direction colours over the paper (#2f996a up, #f94144 down). Orange is retired: a colour
    that needs any of the old warm accent (#e9762b) beyond --warm-tolerance (default 0.025 of the
    way from paper to orange) to be explained is an off-palette leak, and leaks that read as orange
@@ -46,7 +46,7 @@ const args = process.argv.slice(2);
 const flag = name => args.includes("--" + name);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
 // `warm` is not part of the palette any more: it is the direction the audit hunts for (the retired orange accent).
-const PALETTE = { bg: [12, 12, 11], ink: [233, 228, 218], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
+const PALETTE = { bg: [12, 12, 11], ink: [240, 238, 232], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
 const TOL = Number(opt("tolerance", 5));
 const WARM_TOL = Number(opt("warm-tolerance", 0.025)); // paper/ink tokens need at most 0.006 of it
 const STATE_CAP = Number(opt("state-cap", 200));
@@ -318,7 +318,7 @@ const scan = ({ palette, tol }) => {
   };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, orange: isOrange(parse(value)), count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
-  const allowedFonts = /^"?JetBrains Mono"?/i;
+  const allowedFonts = /^"?(JetBrains Mono|system-ui)"?/i; // V32: JetBrains Mono (brand and figures) or the interface sans
   for (const el of document.querySelectorAll("body *")) {
     if (SKIP.has(el.tagName)) continue;
     if (el.closest("canvas,[hidden],template")) continue;

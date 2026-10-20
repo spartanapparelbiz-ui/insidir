@@ -19,10 +19,10 @@ const plain = v => JSON.parse(JSON.stringify(v));
 
 test("engine exposes the halftone helpers and the night palette shared with the stylesheet", async () => {
   const h = load();
-  assert.deepEqual(plain(h.PRESET), { background: "#0c0c0b", ink: "#e9e4da" });
+  assert.deepEqual(plain(h.PRESET), { background: "#0c0c0b", ink: "#f0eee8" });
   const css = await readFile(new URL("../web/assets/css/v13-halftone.css", import.meta.url), "utf8");
   assert.match(css, /--hf-bg:#0c0c0b!important/);
-  assert.match(css, /--hf-ink:#e9e4da!important/);
+  assert.match(css, /--hf-ink:#f0eee8!important/);
   // Orange is retired: the old token survives only as an alias of ink, and no rule in any V13 stylesheet names it.
   assert.match(css, /--hf-warm:var\(--hf-ink\)!important/);
   assert.match(css, /@layer insidir-v13/);

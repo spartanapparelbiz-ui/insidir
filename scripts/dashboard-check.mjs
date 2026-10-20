@@ -530,7 +530,7 @@ try {
     });
     check(orange.length === 0, "nothing on the dashboard is orange (the logo's full stop included)", orange);
     const badges = await page.evaluate(() => ({ sale: getComputedStyle(document.querySelector("#v3-trades .rd-type--sell")).color, buy: getComputedStyle(document.querySelector("#v3-trades .rd-type--buy")).color, newMark: getComputedStyle(document.querySelector(".rd-new")).color }));
-    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(233, 228, 218)", "sold is red, bought green, New is ink (not a colour)", badges);
+    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(240, 238, 232)", "sold is red, bought green, New is ink (not a colour)", badges);
 
     // 05: about this data.
     // The line as drawn: visible labels, values, and the " · " separators and full stop CSS puts between them.
