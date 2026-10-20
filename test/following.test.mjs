@@ -24,7 +24,7 @@ const S = Object.fromEntries(Object.entries(FOLLOW_SQL.single).map(([k, v]) => [
 const J = Object.fromEntries(Object.entries(FOLLOW_SQL.joint).map(([k, v]) => [k, flat(v)]));
 // The follow set every follow query starts from: at most the 150 newest follows, each person once.
 const FOLLOW_SET = "fp AS MATERIALIZED (SELECT n.bare,LPAD(n.bare,10,'0') AS owner_cik,MIN(n.created_at) AS created_at FROM (SELECT LTRIM(owner_cik,'0') AS bare,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT 150) n WHERE n.bare<>'' GROUP BY n.bare)";
-const BY_ID_SQL = "SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession WHERE t.id=ANY($1::text[])";
+const BY_ID_SQL = "SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession WHERE t.id=ANY($1::text[])";
 const TABLE = flat(OWNERS_TABLE_SQL);
 const PRESENT = { [TABLE]: { rows: [{ present: true }], rowCount: 1 } };
 const DISCLAIMER = "Reported purchases and sales are not recommendations or predictive signals.";
@@ -159,7 +159,7 @@ test("SQL is parameterised, scoped to the signed-in user, keyed without leading 
     assert.doesNotMatch(s.sql, /sec_filing_owners/, "no joint table without sec_filing_owners");
   }
   for (const s of [itemsA, itemsB]) {
-    assert.ok(s.sql.startsWith("WITH " + FOLLOW_SET + " SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM (SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik IN (fp.bare,fp.owner_cik)) t JOIN sec_filings f ON f.accession=t.accession"));
+    assert.ok(s.sql.startsWith("WITH " + FOLLOW_SET + " SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM (SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik IN (fp.bare,fp.owner_cik)) t JOIN sec_filings f ON f.accession=t.accession"));
     assert.match(s.sql, /WHERE f\.ingest_status='parsed' ORDER BY f\.published_at DESC NULLS LAST,t\.transaction_date DESC NULLS LAST,t\.id DESC LIMIT \$2$/);
   }
   assert.deepEqual(peopleA.params, [USERS.paid.id]);
@@ -203,7 +203,8 @@ test("one canonical owner CIK: POST stores the 10-digit form, and padded, unpadd
     for (const sent of ["1214156", "0001214156", " 000001214156 "]) {
       const r = await follow(base, "paid", sent);
       assert.deepEqual([r.status, r.json()], [200, { saved: true, owner_cik: "0001214156" }], sent);
-      const [known, insert] = query.statements.slice(-2);
+      // (Funnel measurement records a first follow too; it is not part of the follow itself.)
+      const [known, insert] = query.statements.filter(x => !/funnel_events/.test(x.sql)).slice(-2);
       assert.deepEqual(known.params, [["1214156", "0001214156"]], "the person is looked up in both forms");
       assert.equal(insert.sql, flat(FOLLOW_INSERT_SQL));
       assert.deepEqual(insert.params, [USERS.paid.id, "0001214156"], "always stored as the 10-digit form");
@@ -244,7 +245,7 @@ test("POST /v1/me/people caps the follow set at 150 like manual holdings cap the
   const missing = fakeQuery();
   await withApi(missing, async base => {
     const r = await follow(base, "paid", "999");
-    assert.deepEqual([r.status, r.json()], [404, { error: "Reporting person not found in imported SEC records" }]);
+    assert.deepEqual([r.status, r.json()], [404, { error: "No SEC reporting owner with this CIK, in imported filings or in EDGAR" }]);
   });
   assert.equal(missing.of(FOLLOW_INSERT_SQL).length, 0, "an unknown CIK is never inserted");
 });
@@ -384,7 +385,8 @@ test("the updates route does not shadow the existing people routes", async () =>
     assert.deepEqual(r.json(), { items: [{ owner_cik: "0000000100", created_at: "2026-09-01T12:00:00.000Z", owner_name: "Owner 100", ticker: "AAPL",
       last_transaction_date: "2026-10-01T00:00:00.000Z", last_published_at: "2026-10-12T15:00:00.000Z" }], source: "SEC Form 4" });
     assert.equal(query.statements.at(-1).sql, S.list);
-    assert.match(S.list, /^WITH fp AS MATERIALIZED .* SELECT fp\.owner_cik,fp\.created_at,s\.owner_name,s\.ticker,s\.last_transaction_date,s\.last_published_at FROM fp /);
+    // The name falls back to the SEC entity directory for a person followed before any of their filings is imported.
+    assert.match(S.list, /^WITH fp AS MATERIALIZED .* SELECT fp\.owner_cik,fp\.created_at,COALESCE\(s\.owner_name,\(SELECT e\.name FROM sec_entities e WHERE e\.cik=LPAD\(LTRIM\(fp\.owner_cik,'0'\),10,'0'\)\)\) AS owner_name,s\.ticker,s\.last_transaction_date,s\.last_published_at FROM fp /);
     assert.match(S.list, /ORDER BY fp\.created_at DESC,fp\.owner_cik LIMIT 150$/);
     assert.deepEqual(query.statements.at(-1).params, [USERS.paid.id]);
     const origin = { origin: base.replace("http:", "https:") };
@@ -425,7 +427,7 @@ test("on PostgreSQL: canonical follows, joint filers, and a restated line counte
   const sql = file => readFile(new URL("../sql/" + file, import.meta.url), "utf8");
   try {
     await query(`CREATE SCHEMA ${schema}`);
-    for (const file of ["001_initial.sql", "006_followed_people.sql", "008_filing_owners.sql"]) await query(await sql(file));
+    for (const file of ["001_initial.sql", "006_followed_people.sql", "008_filing_owners.sql", "018_coverage.sql", "019_form4_detail.sql"]) await query(await sql(file));
     const day = n => new Date(Date.now() - n * 86400000).toISOString();
     const filing = (acc, days, form, owners) => query(`INSERT INTO sec_filings(accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,is_amendment,source_url,owner_names,ingest_status)
       VALUES($1,'1111111','0000099999','Example Corp','EXMP','4',$2,$3,$4,$5,$6,'parsed')`, [acc, form, day(days), form === "4/A", "https://www.sec.gov/Archives/edgar/data/1111111/" + acc + "/", owners]);

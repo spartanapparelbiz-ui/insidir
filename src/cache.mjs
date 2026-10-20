@@ -17,3 +17,16 @@ export function createCache(max = 200) {
   remember.size = () => store.size;
   return remember;
 }
+
+/* Market-wide answers every member shares (the import's status, the newest trades and filings, the reporting-owner
+ * directory) are kept for seconds, so a burst of dashboards costs one query instead of one each. Each API server
+ * registers its cache here; a finished SEC import clears them all, so new filings appear at once. */
+const marketCaches = new Set();
+export function createMarketCache(max = 300) {
+  const cache = createCache(max);
+  marketCaches.add(cache);
+  return cache;
+}
+export function marketDataChanged() {
+  for (const cache of marketCaches) cache.clear();
+}

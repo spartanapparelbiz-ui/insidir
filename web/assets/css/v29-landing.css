@@ -1,0 +1,137 @@
+/* Insidir V29 landing: the components the decision-ordered landing page adds (why, examples, the three benefits,
+   the Intelligence instrument, trust and limits). Same paper and ink, same mono face, the V17 soft panels; plain
+   CSS with the V29 tokens (v29-system.css), no !important and no layer. Section headings reuse .v13-head. */
+
+/* ---------- shared bits ---------- */
+.lx-tag{display:inline-block;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.lx-tag--ink{color:var(--c-ink);text-transform:none;letter-spacing:0;font-size:13px;font-weight:700}
+.lx-panel,.lx-merge__sources>li,.lx-merge__result,.lx-examples__list a,.lx-trio__col,.lx-i__item,.lx-sources>a,.lx-limits__col,.lx-codes{
+  background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
+:is(.lx-examples__list a,.lx-sources>a,.lx-tools a){transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+:is(.lx-examples__list a,.lx-sources>a):hover{border-color:var(--c-line-strong);background:var(--panel-hover)}
+:is(.lx-examples__list a,.lx-sources>a,.lx-tools a):focus-visible{outline:2px solid var(--c-ink);outline-offset:3px}
+
+/* ---------- 2. why Insidir exists ---------- */
+.lx-merge{display:grid;grid-template-columns:minmax(0,1.6fr) 72px minmax(0,1fr);align-items:center;gap:var(--s-4);margin-top:var(--s-6)}
+.lx-merge__sources{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-3)}
+.lx-merge__sources>li,.lx-merge__result{display:grid;gap:6px;padding:var(--s-4) var(--s-5);margin:0}
+.lx-merge__sources b,.lx-merge__result b{font-size:var(--fs-h3);color:var(--c-ink);font-weight:600}
+.lx-merge__sources li>span:last-child,.lx-merge__result>span:last-child{color:var(--c-muted);font-size:13px;line-height:1.55}
+.lx-merge__result{padding:var(--s-6) var(--s-5);border-color:var(--c-line-strong)}
+/* Three dotted lines converge on the workspace: print, not animation. */
+.lx-merge__into{display:grid;gap:42px;align-self:stretch;align-content:center}
+.lx-merge__into i{display:block;height:2px;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.5px) 0 50%/8px 2px repeat-x}
+.lx-merge__into i:nth-child(1){transform:rotate(14deg)}
+.lx-merge__into i:nth-child(3){transform:rotate(-14deg)}
+.lx-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);margin:var(--s-6) 0 0;padding:0}
+.lx-facts>div{display:flex;flex-direction:column;padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
+.lx-facts dt{font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.lx-facts dd{margin:0}
+.lx-facts dd:not(.lx-facts__note){display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:var(--s-4);font:800 clamp(48px,6vw,88px)/.9 var(--font);letter-spacing:-.06em;color:var(--c-ink)}
+.lx-facts dd small{font:500 12px/1.3 var(--font);letter-spacing:0;color:var(--c-muted)}
+.lx-facts__note{margin:auto 0 0;padding-top:var(--s-3);max-width:34ch;font-size:12.5px;line-height:1.6;color:var(--c-muted)}
+@media (max-width:760px){.lx-facts{grid-template-columns:1fr}}
+@media (max-width:900px){
+  .lx-merge{grid-template-columns:1fr}
+  .lx-merge__into{grid-auto-flow:column;justify-content:center;gap:var(--s-3);height:28px}
+  .lx-merge__into i:nth-child(n){width:2px;height:28px;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.5px) 50% 0/2px 8px repeat-y;transform:none}
+}
+
+/* ---------- 3. the product ---------- */
+.lx-show__head{grid-column:1/-1;margin-bottom:var(--s-6)}
+.lx-examples{margin-top:var(--s-7)}
+.lx-examples__title{font-size:var(--fs-h3);font-weight:600;color:var(--c-ink);margin:0 0 var(--s-4)}
+.lx-examples__list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3)}
+.lx-examples__list li{margin:0;display:flex}
+.lx-examples__list a{display:grid;align-content:start;gap:6px;width:100%;padding:var(--s-4) var(--s-5) var(--s-5);color:var(--c-soft);text-decoration:none;min-height:var(--tap-min)}
+.lx-examples__list b{color:var(--c-ink);font-size:15px;font-weight:600}
+.lx-examples__list a>span:last-child{font-size:13px;line-height:1.55;color:var(--c-muted)}
+.lx-examples__list a::after{content:"Open →";margin-top:var(--s-2);font-size:12px;color:var(--c-ink)}
+@media (max-width:1100px){.lx-examples__list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.lx-examples__list{grid-template-columns:1fr}}
+
+/* ---------- 4. discover, investigate, follow ---------- */
+.lx-trio{list-style:none;margin:var(--s-6) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-4)}
+.lx-trio__col{margin:0;padding:var(--s-5);display:flex;flex-direction:column;gap:var(--s-3);overflow:hidden}
+.lx-trio__num{margin:0;font-size:var(--fs-label);letter-spacing:var(--track-label);color:var(--c-faint)}
+.lx-trio__col h3{margin:0;font-size:clamp(24px,2.4vw,32px);line-height:var(--lh-tight);font-weight:700;color:var(--c-ink)}
+.lx-trio__lead{margin:0;color:var(--c-soft);font-size:var(--fs-body);line-height:1.55}
+.lx-tools{list-style:none;margin:var(--s-2) 0 0;padding:0;display:grid}
+.lx-tools li{margin:0;border-top:1px solid var(--c-line-soft)}
+.lx-tools a{display:grid;gap:3px;padding:var(--s-3) 0;color:var(--c-muted);text-decoration:none;min-height:var(--tap-min)}
+.lx-tools b{color:var(--c-ink);font-size:14px;font-weight:600}
+.lx-tools a>span{font-size:12.5px;line-height:1.5}
+.lx-tools a:hover b{text-decoration:underline;text-underline-offset:3px}
+.lx-trio__shot{display:block;margin:auto calc(-1 * var(--s-5)) calc(-1 * var(--s-5));padding-top:var(--s-3);border-top:1px solid var(--c-line-soft);aspect-ratio:16/10;overflow:hidden}
+.lx-trio__shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:left top}
+@media (max-width:1000px){.lx-trio{grid-template-columns:1fr}.lx-trio__shot{aspect-ratio:16/8}}
+
+/* ---------- 5. Intelligence: the dotted i ---------- */
+.lx-instrument{display:grid;grid-template-columns:minmax(160px,240px) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;margin-top:var(--s-6)}
+.lx-i{width:100%;height:auto;max-height:440px;overflow:visible}
+.lx-i__part{fill:var(--c-ink)}
+.lx-i__part--stem{fill:var(--c-soft)}
+.lx-i__part--base{fill:var(--c-muted)}
+.lx-i__key{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-3)}
+.lx-i__item{position:relative;margin:0;padding:var(--s-4) var(--s-5) var(--s-4) calc(var(--s-5) + 22px)}
+.lx-i__swatch{position:absolute;left:var(--s-5);top:22px;width:12px;height:12px;border-radius:50%;background:var(--c-ink)}
+.lx-i__item--stem .lx-i__swatch{background:var(--c-soft)}
+.lx-i__item--base .lx-i__swatch{background:var(--c-muted)}
+.lx-i__item .lx-tag{margin:0}
+.lx-i__item h3{margin:4px 0 6px;font-size:var(--fs-h3);font-weight:600;color:var(--c-ink)}
+.lx-i__item p:last-child{margin:0;color:var(--c-muted);font-size:13.5px;line-height:1.6}
+.lx-legend{list-style:none;margin:var(--s-6) 0 0;padding:0;display:flex;flex-wrap:wrap;gap:var(--s-3) var(--s-5);color:var(--c-muted);font-size:12.5px}
+.lx-legend li{display:flex;align-items:center;gap:var(--s-2);margin:0}
+.lx-badge{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-xs);border:1px solid var(--c-line-2);color:var(--c-soft);font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.lx-badge--new{background:var(--c-ink);color:var(--c-bg);border-color:var(--c-ink)}
+.lx-badge--source{border-color:var(--c-line-strong);color:var(--c-ink)}
+.lx-badge--ai{border-style:dashed}
+.lx-badge--sim{border-style:dotted;color:var(--c-muted)}
+@media (max-width:760px){
+  .lx-instrument{grid-template-columns:1fr}
+  .lx-i{max-height:220px;justify-self:center;width:auto}
+}
+
+/* ---------- 6. trust ---------- */
+.lx-sources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);margin-top:var(--s-6)}
+.lx-sources>a{display:grid;align-content:start;gap:5px;padding:var(--s-4) var(--s-5);color:var(--c-muted);text-decoration:none;min-height:var(--tap-min)}
+.lx-sources b{color:var(--c-ink);font-size:15px;font-weight:600}
+.lx-sources b::after{content:" ↗";color:var(--c-faint);font-weight:400}
+.lx-sources>a>span:last-child{font-size:13px;line-height:1.55}
+.lx-limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);margin-top:var(--s-4)}
+.lx-limits__col{padding:var(--s-5)}
+.lx-limits__col h3{margin:0 0 var(--s-3);font-size:var(--fs-h3);font-weight:600;color:var(--c-ink)}
+.lx-limits__col ul{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-3)}
+.lx-limits__col li{position:relative;margin:0;padding-left:18px;color:var(--c-soft);font-size:13.5px;line-height:1.55}
+.lx-limits__col li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--c-ink)}
+.lx-limits__col--not li::before{background:transparent;border:1px solid var(--c-faint)}
+.lx-limits__col--note li::before{background:var(--c-faint)}
+.lx-limits__col b{color:var(--c-ink);font-weight:600}
+.lx-codes{margin-top:var(--s-4);padding:0 var(--s-5)}
+.lx-codes summary{cursor:pointer;padding:var(--s-4) 0;color:var(--c-ink);font-size:14px;list-style:none;min-height:var(--tap-min);display:flex;align-items:center;justify-content:space-between}
+.lx-codes summary::-webkit-details-marker{display:none}
+.lx-codes summary::after{content:"+";color:var(--c-faint);font-size:18px}
+.lx-codes[open] summary::after{content:"−"}
+.lx-codes table{width:100%;margin:0 0 var(--s-5)}
+@media (max-width:1000px){.lx-sources,.lx-limits{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.lx-sources,.lx-limits{grid-template-columns:1fr}}
+
+/* ---------- 7. pricing ---------- */
+.lx-cancel{margin:var(--s-5) 0 0;padding-top:var(--s-4);border-top:1px solid var(--c-line-soft);color:var(--c-muted);font-size:13px;line-height:1.6}
+.lx-cancel b{color:var(--c-ink)}
+
+/* ---------- phones: the same story, shorter ---------- */
+@media (max-width:600px){
+  /* Screenshots this small cannot be read; hidden lazy images are never downloaded. */
+  .lx-trio__shot{display:none}
+  .lx-trio__col{padding:var(--s-4) var(--s-4) var(--s-2)}
+  /* Each fact on one row: the number beside its explanation. */
+  .lx-facts>div{display:grid;grid-template-columns:auto 1fr;column-gap:var(--s-4);padding:var(--s-4)}
+  .lx-facts>div>dt{grid-column:1/-1}
+  .lx-facts>div>dd:not(.lx-facts__note){margin-top:6px;font-size:44px}
+  .lx-facts>div>.lx-facts__note{margin:6px 0 0;padding:0;align-self:end}
+  .lx-merge__sources>li,.lx-merge__result{padding:var(--s-3) var(--s-4)}
+  .lx-i__item{padding:var(--s-3) var(--s-4) var(--s-3) calc(var(--s-4) + 20px)}
+  .lx-i__swatch{left:var(--s-4);top:18px}
+}
+.lp-tour__caption a{display:inline-flex;align-items:center;min-height:32px}

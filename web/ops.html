@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0c0c0b">
+<title>Operations — insidir.</title>
+<meta name="description" content="Insidir operations: ingestion, research events, email, alerts, billing webhooks and source health. Administrators only.">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/v13-halftone.css?v=10">
+<link rel="stylesheet" href="/assets/css/v13-static.css?v=9">
+<link rel="stylesheet" href="/assets/css/v27-product.css?v=2">
+<script defer src="/assets/js/v6-site.js?v=2"></script>
+<script defer src="/assets/js/ops.js?v=1"></script>
+<script defer src="/assets/js/v13-halftone.js?v=8"></script><script defer src="/assets/js/v13-motion.js?v=5"></script>
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir"><link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"></head>
+<body class="v3-static v6-static v13">
+<a class="skip-link" href="#Content">Skip to content</a>
+<main id="Content" class="ops">
+ <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true" style="position:relative;height:72px;margin:0 0 18px"></div>
+ <p class="mk-eyebrow">Insidir / Operations</p>
+ <h1>Operations.</h1>
+ <p>Ingestion, research events, alerts, email, billing webhooks and source health, read live from the engine. Administrators only: the admin token and a one-time code from your authenticator app open a 30-minute session. Nothing here shows member emails, passwords or tokens.</p>
+ <form class="ops-login" id="ops-login" autocomplete="off" novalidate>
+  <label for="ops-token">Admin token</label><input id="ops-token" type="password" autocomplete="off" required>
+  <label for="ops-otp">One-time code</label><input id="ops-otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+  <button class="ac-btn ac-btn--ink" type="submit">Open operations</button>
+  <p class="ac-status" id="ops-login-status" role="status" aria-live="polite"></p>
+ </form>
+ <div id="ops-view" hidden>
+  <p><button type="button" class="ac-btn" id="ops-refresh">Refresh</button> <button type="button" class="ac-btn" id="ops-signout">Close session</button> <span id="ops-generated"></span></p>
+  <div id="ops-alerts"></div>
+  <div class="ops-grid" id="ops-grid"></div>
+  <h2>Data quality</h2><div id="ops-quality"></div>
+  <h2>Workers</h2><div class="ops-grid" id="ops-workers"></div>
+  <h2>Raw snapshot</h2><details><summary>Show JSON</summary><pre id="ops-raw"></pre></details>
+ </div>
+</main>
+<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
+<div class="hwf-top">
+<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
+<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+</div>
+<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
+</footer>
+</body>
+</html>

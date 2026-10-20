@@ -4,7 +4,7 @@
 
    Palette (the reference footer's night preset, without its orange):
      night paper  #0c0c0b   background
-     ink          #e9e4da   text, dots, rules, hovers
+     ink          #f0eee8   text, dots, rules, hovers
    Every other value is a blend of those two (see the --hf-* tokens: the number after each is the share of ink over
    paper). Market direction alone has colour: green #2f996a for purchases and rises, red #f94144 for sales and falls;
    the same red marks errors and destructive actions (--hf-alert). Their 14% tints (--hf-up-tint, --hf-down-tint) are
@@ -54,27 +54,27 @@
   --hf-spring:cubic-bezier(.22,.61,.36,1);
   --hf-spring-dur:.28s!important;
   /* Paper and ink. Every grey below is an exact paper→ink blend (the number is the share of ink). */
-  --hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var(--hf-ink)!important;
+  --hf-bg:#0c0c0b!important;--hf-ink:#f0eee8!important;--hf-warm:var(--hf-ink)!important;
   /* surfaces */
-  --hf-surface:#151513!important;       /*  4  panel */
-  --hf-surface-2:#1b1a18!important;     /*  7  skeleton bars, chart day highlight */
-  --hf-raise:#222220!important;         /* 10  popover, neutral badge, :active */
-  --hf-raise-2:#2b2a28!important;       /* 14  item hover inside a popover */
+  --hf-surface:#171717!important;       /*  5  panel (secondary background) */
+  --hf-surface-2:#1b1b1a!important;     /*  7  skeleton bars, chart day highlight */
+  --hf-raise:#202020!important;         /*  9  elevated surface: popover, neutral badge, :active */
+  --hf-raise-2:#2c2c2a!important;       /* 14  item hover inside a popover */
   /* lines */
-  --hf-line-faint:#222220!important;    /* 10  row dividers inside panels and tables */
-  --hf-line:#2f2f2c!important;          /* 16  panel borders, header/footer rules, table-head rule */
-  --hf-line-2:#41403d!important;        /* 24  section and module rules, secondary buttons, chips */
-  --hf-line-strong:#696762!important;   /* 42  input borders (3.46:1, WCAG 1.4.11), control hover border, prose-link underline */
-  --hf-line-hover:#7b7873!important;    /* 50  input hover border */
-  --hf-line-soft:rgba(233,228,218,.16)!important;
+  --hf-line-faint:#202020!important;    /* 10  row dividers inside panels and tables */
+  --hf-line:#30302e!important;          /* 16  panel borders, header/footer rules, table-head rule */
+  --hf-line-2:#434240!important;        /* 24  section and module rules, secondary buttons, chips */
+  --hf-line-strong:#6c6b68!important;   /* 42  input borders (3.46:1, WCAG 1.4.11), control hover border, prose-link underline */
+  --hf-line-hover:#7e7d79!important;    /* 50  input hover border */
+  --hf-line-soft:rgba(240,238,232,.16)!important;
   /* text */
-  --hf-disabled:#64625e!important;      /* 40  disabled text only */
-  --hf-faint:#8c8983!important;         /* 58  labels, column heads, folios, notes, timestamps: 5.61:1 on paper */
-  --hf-muted:#9e9b94!important;         /* 66  body copy, descriptions, meta, nav at rest: 7.05:1 */
-  --hf-soft:#bdb9b1!important;          /* 80  ledes, asides, list items, secondary values: 10.01:1 */
-  --hf-ink-hover:#d3cec5!important;     /* 90  primary button hover */
-  --hf-ink-press:#c1bdb5!important;     /* 82  primary button active */
-  --hf-on-ink-muted:#5c5a56!important;  /* 36  count inside a selected (ink) chip: 5.43:1 */
+  --hf-disabled:#676663!important;      /* 40  disabled text only */
+  --hf-faint:#908f8b!important;         /* 58  labels, column heads, folios, notes, timestamps: 5.9:1 on paper */
+  --hf-muted:#a4a4a0!important;         /* 67  secondary text: body copy, descriptions, meta, nav at rest: 7.6:1 */
+  --hf-soft:#c2c1bc!important;          /* 80  ledes, asides, list items, secondary values: 10.6:1 */
+  --hf-ink-hover:#d9d7d2!important;     /* 90  primary button hover */
+  --hf-ink-press:#c7c5c0!important;     /* 82  primary button active */
+  --hf-on-ink-muted:#5e5d5b!important;  /* 36  count inside a selected (ink) chip: 5.43:1 */
   /* Market direction, for data only: purchases and rises in green, sales and falls in red. Validated as a pair on
      paper, surface and surface-2 (OKLab ΔE 9.6 under deuteranopia, 31.9 normal; ≥4.86:1 contrast), always shown with
      a ▲/▼ glyph or a label so colour never carries the meaning alone. Not for the surface or the chrome. */
@@ -85,6 +85,9 @@
   /* type */
   --hf-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace!important;
   --hf-sans:var(--hf-mono)!important;   /* one typeface: --hf-sans is kept as an alias so family files need no change */
+  /* Interface typography (V32): a readable sans for running text, navigation and buttons. Headlines, labels and
+     every financial figure stay in JetBrains Mono. System faces only: nothing extra to download. */
+  --hf-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif!important;
   --hf-fs-display:clamp(40px,6.4vw,96px)!important;   /* landing h1 only */
   --hf-fs-display-2:clamp(36px,5vw,72px)!important;   /* landing closing statement, marketing sub-page h1 */
   --hf-fs-h2-lg:clamp(32px,3.6vw,52px)!important;     /* marketing section h2, legal page h1 */
@@ -97,7 +100,7 @@
   /* layout */
   --hf-max:1320px!important;--hf-gutter:clamp(20px,4.2vw,60px)!important;
   --hf-shadow-pop:0 16px 40px -8px rgba(12,12,11,.9)!important;   /* paper-coloured: popovers lift without a glow */
-  --hf-hl:inset 0 1px 0 rgba(233,228,218,.04)!important;          /* a panel's top highlight */
+  --hf-hl:inset 0 1px 0 rgba(240,238,232,.04)!important;          /* a panel's top highlight */
   --hf-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")!important;
 }
 @media (min-width:1600px){:root{--hf-max:1440px!important}}
@@ -692,5 +695,33 @@ body.v13 .ins-media--company>img{filter:grayscale(1) contrast(1.05)!important}
 body.v13 :is(.ins-media--company[data-real-source*="Apple_logo_black"],.ins-media--company[data-real-source*="Amazon_logo"],.ins-media--company[data-real-source*="IBM_logo"])>img{filter:invert(1) grayscale(1) brightness(.92)!important}
 /* Wide tables scroll inside their frame with a thin hairline scrollbar as the affordance. */
 body.v13 :is(.cl-scroll,.v3-table-scroll,.table-scroll,.cx-scroll,.cx-table-wrap,.live-scroll,.research-table-wrap,.portfolio-table-wrap){overflow-x:auto!important;scrollbar-width:thin!important;scrollbar-color:var(--hf-line-2) transparent!important}
+/* ---------- Three type roles (V32) ----------
+   Brand: headlines in JetBrains Mono (above). Financial: figures, dates, filings, tickers, labels in JetBrains Mono.
+   Interface: running text, navigation and buttons in the system sans (--hf-ui).
+   The doubled :not(#…) lifts these one step above the family files' own font rules (which reach (0,3,3)) without
+   touching them; elements whose class says they are data or a label are excluded and keep the mono face. */
+html body.v13:not(#\#):not(#\#) :is(.v6-nav__links a,.v6-mobile a,.v6-signin,.v9-btn,.btn,.button,.hwf-col a,.hwf-note,.hwf-brand span,.app-nav a,.app-header nav a,.auth-switch,.auth-legal){font-family:var(--hf-ui)!important;letter-spacing:0!important}
+html body.v13:not(:has(.app-header)):not(#\#):not(#\#) main :is(p,li,summary,blockquote,figcaption,.v9-hero__description,.di-table td:not(:last-child)):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])),
+html body.v13:not(:has(.app-header)):not(#\#):not(#\#) main :is(p,li,summary,blockquote,figcaption,.v9-hero__description,.di-table td:not(:last-child)):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])) :is(a,em,i,strong,b,small,abbr,q,span):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])){font-family:var(--hf-ui)!important;letter-spacing:0!important}
+/* Product pages: running text only (descriptions, introductions, empty and error states). Rows and tables stay mono. */
+html body.v13:has(.app-header):not(#\#):not(#\#) :is(.rd-today__line,.rd-module__head p:not(.rd-index),.rd-empty,.rd-rows__msg,.rd-start__steps span,.rd-start__note,.ix-hero__lede,.ix-head__dek,.ix-masthead__line,.ix-plain,.ix-note,.al-intro,.al-foot,.page-intro,.account-intro,.billing-intro,.rd-intel-link a,.rd-desk__s){font-family:var(--hf-ui)!important;letter-spacing:0!important}
 }
 /* end @layer insidir-v13 */
+
+/* ---------- V32 microinteractions, on every page ----------
+   Same-origin page changes cross-fade briefly instead of flashing to black; the header holds still across them.
+   Table rows answer the pointer, and keyboard focus is one visible ring everywhere. All of it is off under reduced
+   motion (the ring stays: it is not motion). */
+@view-transition{navigation:auto}
+.app-header,.v6-nav{view-transition-name:site-header}
+::view-transition-old(root),::view-transition-new(root){animation-duration:160ms;animation-timing-function:cubic-bezier(.2,0,0,1)}
+::view-transition-group(site-header){animation-duration:0s}
+@media (prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+@media (hover:hover){
+  :is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr{transition:background-color 120ms ease}
+  :is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr:hover{background-color:rgba(240,238,232,.035)}
+}
+@media (prefers-reduced-motion:reduce){:is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr{transition:none}}

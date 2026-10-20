@@ -43,7 +43,7 @@ try{
    });
    assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.h1.x-landing.hero.x)<3&&landing.h1.width<=item.width,item.width+"px headline not on the hero grid "+JSON.stringify(landing));
+   assert.ok(Math.abs(landing.h1.mid-landing.hero.mid)<3&&landing.h1.x>=landing.hero.x-1&&landing.h1.width<=item.width,item.width+"px headline not centred in the hero "+JSON.stringify(landing));
    assert.ok(landing.font.includes("JetBrains Mono"),"Landing headline must use the site's one typeface, JetBrains Mono: "+landing.font);
    assert.ok(landing.label.includes("JetBrains Mono"),"Tracked labels should be set in the self-hosted JetBrains Mono: "+landing.label);
    assert.ok(landing.halftone.mounted&&landing.halftone.width>=item.width-2&&landing.halftone.height>300&&landing.halftone.inHero,"Halftone wordmark hero must draw in the landing page's first screen "+JSON.stringify(landing.halftone));
@@ -53,11 +53,14 @@ try{
     background:getComputedStyle(document.body).backgroundColor,
     dashboardPreview:!!document.querySelector(".v12-terminal,#v12-demo-chart,[data-v12-ticker],#v6-live-records"),
     navTargets:[...document.querySelectorAll(".v6-nav__links a")].map(a=>a.getAttribute("href")),
-    images:[...document.images].filter(i=>i.getBoundingClientRect().width>2&&!/\.svg/.test(i.currentSrc)).map(i=>{const r=i.getBoundingClientRect();const fit=getComputedStyle(i).objectFit==="cover"?Math.max(r.width/(i.naturalWidth||1),r.height/(i.naturalHeight||1)):Math.min(r.width/(i.naturalWidth||1),r.height/(i.naturalHeight||1));return {src:i.currentSrc,scale:fit,natural:i.naturalWidth}}).filter(x=>x.natural>0&&/\/assets\//.test(x.src))
+    images:[...document.images].filter(i=>i.getBoundingClientRect().width>2&&!/\.svg/.test(i.currentSrc)).map(i=>{const r=i.getBoundingClientRect();/* With srcset (w descriptors) this 1x page loaded the 1x candidate; a 2x screen gets the largest, so judge that one. */const ws=[i,...(i.parentElement?.tagName==="PICTURE"?i.parentElement.querySelectorAll("source"):[])].flatMap(n=>String(n.getAttribute("srcset")||"").split(",").map(c=>Number(/\s(\d+)w\s*$/.exec(c.trim())?.[1]||0)));const maxW=Math.max(0,...ws),nw=maxW||i.naturalWidth||1,nh=maxW?(i.naturalHeight||1)*maxW/(i.naturalWidth||1):(i.naturalHeight||1);const fit=getComputedStyle(i).objectFit==="cover"?Math.max(r.width/nw,r.height/nh):Math.min(r.width/nw,r.height/nh);return {src:i.currentSrc,scale:fit,natural:Math.round(nw)}}).filter(x=>x.natural>0&&/\/assets\//.test(x.src))
    }));
    assert.equal(landingRules.background,"rgb(12, 12, 11)","Homepage must sit on the V13 night paper");
    assert.ok(!landingRules.dashboardPreview,"The landing page must not show a product dashboard preview or live data feed");
-   for(const target of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.ok(landingRules.navTargets.includes(target),"Landing navigation must open "+target+": "+JSON.stringify(landingRules.navTargets));
+   // The landing navigation is Platform, Intelligence and Pricing; Why Insidir and Data are in the menu and the footer.
+   for(const target of ["platform.html","insidir-intelligence.html","pricing.html"])assert.ok(landingRules.navTargets.includes(target),"Landing navigation must open "+target+": "+JSON.stringify(landingRules.navTargets));
+   const reach=await page.evaluate(()=>[...document.querySelectorAll("#v6-menu a,footer a")].map(a=>a.getAttribute("href")));
+   for(const target of ["why-insidir.html","data.html"])assert.ok(reach.some(h=>h&&h.replace(/^\//,"")===target),"The menu or footer must still open "+target);
    for(const img of landingRules.images)assert.ok(img.scale<=0.5+1e-6,"Landing image is upscaled on high-density screens (needs native ≥ 2× rendered): "+JSON.stringify(img));
    if(item.width<720){
      const toggle=page.locator("#v6-menu-button");
@@ -162,7 +165,7 @@ try{
    await page.locator("#tab-overview").click();
    await page.locator("#cx-watch").click();
    await page.waitForFunction(()=>document.querySelector("#cx-watch")?.getAttribute("aria-pressed")==="true",null,{timeout:10000});
-   assert.match(await page.locator("#cx-watch").innerText(),/on watchlist/i,"Watchlist action should persist through the API");
+   assert.match(await page.locator("#cx-watch").innerText(),/^following$/i,"Follow should persist through the API");
    await page.goto(base+"/company.html?ticker=MSFT",{waitUntil:"domcontentloaded",timeout:20000});
    await page.locator("#cx-name").getByText("Microsoft").waitFor({timeout:10000});
    await page.locator("#cx-chart svg path").first().waitFor({timeout:10000});
@@ -192,7 +195,7 @@ try{
       label:getComputedStyle(document.querySelector(".auth-field .label")).fontFamily,footer:!!document.querySelector("footer.v13-footer--plain .hwf-top"),logoDot:!!document.querySelector(".auth-logo .v13-dot")}));
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
     assert.match(auth.heading,/JetBrains Mono/,route+" auth heading must use JetBrains Mono");
-    assert.equal(auth.headingColor,"rgb(233, 228, 218)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
+    assert.equal(auth.headingColor,"rgb(240, 238, 232)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
     assert.match(auth.label,/JetBrains Mono/,route+" field labels should be tracked mono");
     assert.ok(auth.footer&&auth.logoDot,route+" needs the plain footer and the dotted wordmark logo");
    }

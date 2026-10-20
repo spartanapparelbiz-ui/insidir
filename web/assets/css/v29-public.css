@@ -1,0 +1,18 @@
+/* Insidir V29 public pages: small components for the Intelligence page (insidir-intelligence.html). Tokens from
+   v29-system.css; panels as on the landing (v29-landing.css). No !important and no layer. */
+.iq-examples{margin-top:var(--s-5);padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
+.iq-examples ul{list-style:none;margin:var(--s-3) 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-2) var(--s-5)}
+.iq-examples li{margin:0;padding:var(--s-2) 0 var(--s-2) 18px;position:relative;color:var(--c-soft);font-size:14px;line-height:1.5;border-top:1px solid var(--c-line-soft)}
+.iq-examples li::before{content:"?";position:absolute;left:0;top:var(--s-2);color:var(--c-faint)}
+.iq-labels{list-style:none;margin:var(--s-5) 0 0;padding:0;display:grid;gap:var(--s-3)}
+.iq-labels li{display:grid;grid-template-columns:120px 1fr;gap:var(--s-4);align-items:start;margin:0;padding:var(--s-4) var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg)}
+.iq-labels .lx-badge{justify-self:start;margin-top:2px}
+.iq-labels b{display:block;color:var(--c-ink);font-size:15px;font-weight:600}
+.iq-labels p{margin:4px 0 0;color:var(--c-muted);font-size:13.5px;line-height:1.6}
+.lx-i__item h3 a{color:inherit;text-decoration:none}
+.lx-i__item h3 a:hover{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:700px){
+  .iq-examples ul{grid-template-columns:1fr}
+  .iq-labels li{grid-template-columns:1fr;gap:var(--s-2)}
+}
+.lx-i__item h3 a{display:inline-flex;align-items:center;min-height:28px}

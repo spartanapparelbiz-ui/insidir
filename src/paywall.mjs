@@ -2,22 +2,24 @@
  *
  * The product (dashboard, research desk, companies, company reports, filings, people,
  * person files, watchlist, portfolio, alerts and every API that feeds them) is only usable with an
- * active paid subscription. There is no free tier and no free trial.
+ * active paid subscription, which starts with a paid trial ($1 for 3 days, then $39 a month; see
+ * billing.mjs). There is no free tier. A trialing subscription grants access like an active one.
  *
  * Everything here is a pure function of its inputs (the request path, the user row and
  * the environment) so it can be tested without PostgreSQL or Stripe. src/api.mjs runs
  * gate() on every request before it serves a page or an API response.
  */
 import { posix } from "node:path";
-import { paywallEnabled, complimentaryEmails, billingSettings } from "./config.mjs";
+import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequired } from "./config.mjs";
 
 // Paid product pages: signed in AND an active subscription.
 // person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
-export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"]);
+// entity: any SEC filer by CIK (entity.html?cik=1067983, fed by GET /v1/entities/<cik>).
+export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence", "entity"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
-export const PUBLIC_PAGES = Object.freeze(["index", "platform", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "signin", "signup", "404", "account-deleted"]);
+export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted", "forgot-password", "reset-password", "verify-email"]);
 // Pages a sign-in or subscribe step may send someone back to afterwards.
 export const NEXT_PAGES = Object.freeze([...PRODUCT_PAGES, ...ACCOUNT_PAGES]);
 
@@ -65,6 +67,10 @@ export function isApiPath(pathname) {
 const MEDIA_FILE = /^\/v1\/media\/[a-f0-9]{64}\.(png|webp|jpeg|svg)$/;
 const OWN_DATA_DELETES = [/^\/v1\/me\/brokerage$/, /^\/v1\/me\/research-decisions$/,
   /^\/v1\/me\/(watchlist|people|manual-holdings)\/[^/]+$/];
+/* Managing the account itself never needs a subscription either: password, sessions, the security log, a copy of
+ * your data, and email preferences (a lapsed member must be able to turn emails off). */
+export const ACCOUNT_ROUTES = Object.freeze([/^\/v1\/me\/password$/, /^\/v1\/me\/sessions\/revoke-others$/, /^\/v1\/me\/security-events$/,
+  /^\/v1\/me\/export$/, /^\/v1\/me\/email-preferences$/]);
 
 /* 'open' | 'account' | 'product' for an API path.
  *   open     no sign-in needed here (the handler checks what it needs)
@@ -74,16 +80,26 @@ const OWN_DATA_DELETES = [/^\/v1\/me\/brokerage$/, /^\/v1\/me\/research-decision
 export function classifyApi(pathname, method = "GET") {
   const p = String(pathname ?? ""), m = String(method || "GET").toUpperCase();
   if (!isApiPath(p)) return "open"; // website paths are classified by classifyPage
-  if (p === "/healthz" || p === "/v1" || p === "/v1/" || p === "/v1/sources") return "open";
+  if (p === "/healthz" || p === "/v1" || p === "/v1/" || p === "/v1/sources" || p === "/v1/capabilities") return "open";
+  // Aggregate coverage counts of public SEC data (src/coverage-ingest.mjs): no member data, shown on data.html.
+  if (p === "/v1/coverage" && (m === "GET" || m === "HEAD")) return "open";
   if (p === "/v1/me") return m === "GET" || m === "HEAD" || m === "DELETE" ? "open" : "product";
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/") || p.startsWith("/v1/creators/admin/")) return "open";
+  // Administrator routes (own token + one-time code, src/admin-auth.mjs) and email links/webhooks (signed tokens,
+  // provider basic auth; src/notifications.mjs, src/email.mjs) authenticate themselves.
+  if (p.startsWith("/v1/admin/") || p.startsWith("/v1/email/")) return "open";
   // Server-to-server ingestion has its own bearer secret; it is not product data.
-  if (p === "/v1/internal/ingest") return "open";
+  if (p === "/v1/internal/ingest" || p === "/v1/internal/13f/ingest") return "open";
+  // The internal cost dashboard checks its own administrator token or allow-listed account (src/cost-analytics.mjs).
+  if (p === "/v1/admin/costs" || p === "/v1/admin/funnel") return "open";
+  // First-party funnel events (src/funnel.mjs): sent by public pages, signed in or not.
+  if (p === "/v1/events" && m === "POST") return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).
   if (MEDIA_FILE.test(p) && (m === "GET" || m === "HEAD")) return "open";
   if (m === "DELETE" && OWN_DATA_DELETES.some(rule => rule.test(p))) return "account";
+  if (ACCOUNT_ROUTES.some(rule => rule.test(p))) return "account";
   return "product";
 }
 
@@ -111,10 +127,17 @@ export function isComplimentary(email, env = process.env) {
   return !!e && complimentaryEmails(env).has(e);
 }
 
-// Access = subscription active or trialing, OR the account email is complimentary.
+/* A complimentary address grants access only once its owner has confirmed it, whenever verification is enforced
+ * (verificationRequired in config.mjs): otherwise whoever registered the address first would get the owner's access. */
+export function complimentaryAccess(row, env = process.env) {
+  if (!row || !isComplimentary(row.email, env)) return false;
+  return !verificationRequired(env) || !!(row.email_verified_at ?? row.emailVerifiedAt);
+}
+
+// Access = subscription active or trialing, OR a complimentary account (verified when verification is enforced).
 export function hasAccess(row, env = process.env) {
   if (!row) return false;
-  return subscriptionActive(row) || isComplimentary(row.email, env);
+  return subscriptionActive(row) || complimentaryAccess(row, env);
 }
 
 function isoOrNull(value) {
@@ -133,7 +156,9 @@ export function accessSummary(row, env = process.env) {
     plan: subscriptionActive(row) ? "pro" : "none",
     status: statusOf(row) || null,
     billingEnabled: billingSettings(env).enabled,
-    complimentary: isComplimentary(row?.email, env),
+    complimentary: complimentaryAccess(row, env),
+    emailVerified: !!(row?.email_verified_at ?? row?.emailVerifiedAt),
+    verificationRequired: verificationRequired(env),
     currentPeriodEnd: isoOrNull(row?.current_period_end ?? row?.currentPeriodEnd)
   };
 }
@@ -255,11 +280,11 @@ export function unavailablePage(url) {
   <nav class="v6-nav__links" aria-label="Main navigation">${nav}</nav>
   <div class="v6-nav__actions">
    <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Get started <span class="v13-arrow" aria-hidden="true">↗</span></a>
+   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html">Start for $1 <span class="v13-arrow" aria-hidden="true">↗</span></a>
    <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
   </div>
  </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Get started <span class="v13-arrow" aria-hidden="true">↗</span></a></nav>
+ <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}<a href="/signin.html">Log in</a><a href="/signup.html">Start for $1 <span class="v13-arrow" aria-hidden="true">↗</span></a></nav>
 </header>
 <main id="Content">
 <section class="nf mk-shell" aria-labelledby="nf-title">
@@ -282,7 +307,7 @@ export function unavailablePage(url) {
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="/explore.html">Companies</a></li><li><a href="/people.html">People</a></li><li><a href="/filings.html">SEC filings</a></li><li><a href="/research.html">Research desk</a></li><li><a href="/watchlist.html">Watchlist</a></li><li><a href="/alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Get started</a></li><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/portfolio.html">Portfolio</a></li><li><a href="/pricing.html">Pricing</a></li><li><a href="/billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/portfolio.html">Portfolio</a></li><li><a href="/pricing.html">Pricing</a></li><li><a href="/billing.html">Billing</a></li></ul></nav>
 <nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note">Public records · Data may be delayed · Not investment advice</span><button type="button" class="hwf-up">Back to top ↑</button></div>

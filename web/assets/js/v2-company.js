@@ -38,7 +38,8 @@ async function load(raw){
   text("cv-filing-count",String(data.filings?.length||0));
   text("cv-fact-count",String(data.facts?.length||0));
   const facts=Array.isArray(data.facts)?data.facts:[];
-  $("cv-facts-grid").innerHTML=facts.length?facts.map(f=>'<div class="cv-fact"><span>'+esc(f.label||f.id)+'</span><strong>'+esc(money(f.value))+'</strong><small>Period '+esc(f.start?date(f.start)+" – ":"")+esc(date(f.periodEnd))+' · '+esc(f.form||"SEC filing")+'</small><small>Filed '+esc(date(f.filedAt))+'</small>'+link(f.sourceUrl,"Verify original")+'</div>').join(""):'<p class="cv-empty">Financial facts were not returned for this ticker.</p>';
+  const periodText=(f,fmt)=>{const end=fmt(f.periodEnd),n=Number(f.durationDays);return f.periodType==="instant"?"As of "+end:f.periodType==="quarter"?"3 months ended "+end:f.periodType==="fiscal-year"?"Fiscal year ended "+end:f.periodType==="year-to-date"&&n?Math.round(n/30.4)+" months (year to date) ended "+end:(f.start?fmt(f.start)+" – ":"")+end;};
+  $("cv-facts-grid").innerHTML=facts.length?facts.map(f=>'<div class="cv-fact"><span>'+esc(f.label||f.id)+'</span><strong>'+esc(money(f.value))+'</strong><small>'+esc(periodText(f,date))+' · '+esc(f.form||"SEC filing")+'</small><small>Filed '+esc(date(f.filedAt))+'</small>'+link(f.sourceUrl,"Verify original")+'</div>').join(""):'<p class="cv-empty">Financial facts were not returned for this ticker.</p>';
   const fs=Array.isArray(data.filings)?data.filings:[];
   $("cv-filings-list").innerHTML=fs.length?fs.map(f=>'<tr><td><strong>'+esc(f.form||"—")+'</strong></td><td>'+esc(f.headline||"SEC disclosure")+'</td><td>'+esc(date(f.filedAt))+'</td><td>'+link(f.sourceUrl,"SEC filing")+'</td></tr>').join(""):'<tr><td class="cv-empty" colspan="4">No selected official company filings were returned.</td></tr>';
   text("cv-status","Official SEC research loaded. Sources and reporting periods are shown for independent review.");

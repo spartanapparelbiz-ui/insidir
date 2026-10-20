@@ -204,7 +204,7 @@ export async function filingDomains({ cik, name, submissions }, deps = {}) {
       if (!/too large/i.test(String(e?.message))) throw e;
       picks = [];
       for (const form of ["10-K", "20-F", "10-Q"]) {
-        const atom = parseAtom(await sec("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + padded + "&type=" + encodeURIComponent(form) + "&dateb=&owner=include&count=5&output=atom"));
+        const atom = parseAtom(await sec("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + padded + "&type=" + encodeURIComponent(form) + "&dateb=&owner=include&count=5&output=atom"), { forms: [form] });
         const entry = atom.find(x => String(x.title || "").toUpperCase().startsWith(form + " "));
         if (!entry) continue;
         const idx = await sec(archive(cik, entry.accession, "index.json"), { json: true });

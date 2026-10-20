@@ -1,0 +1,14 @@
+{
+  "mode": "ADVISORY_ENABLED",
+  "legalEntity": "Exact legal name of the registered adviser, or of Aethric LLC plus the arrangement",
+  "registrationType": "SEC RIA | State RIA (state) | Sub-adviser / solicitor arrangement with <registered adviser>",
+  "registrationNumber": "SEC file number / CRD number",
+  "attorneyName": "Name, firm and bar admission of the reviewing securities attorney",
+  "attorneyReviewDate": "YYYY-MM-DD",
+  "chiefComplianceOfficer": "Name of the CCO responsible for the advisory program",
+  "supervisoryPrincipal": "Name of the person who supervises recommendations and the model",
+  "advisoryAgreementVersion": "Version id of the client advisory agreement customers sign",
+  "formAdvOrDisclosureUrl": "Public URL of Form ADV Part 2 / Form CRS or equivalent disclosures",
+  "modelValidationReportUrl": "Internal URL of the documented model testing, monitoring and human-oversight report",
+  "effectiveDate": "YYYY-MM-DD"
+}

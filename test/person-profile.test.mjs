@@ -118,6 +118,24 @@ test("route matching: only /v1/people/<segment>, GET or HEAD", async () => {
   assert.equal(classifyApi("/v1/insiders"), "product");
 });
 
+test("When recent imports are empty, a person with real SEC submissions receives an official historical filing index", async () => {
+ const query=fakeQuery();
+ const calls=[];
+ const payload={cik:1214156,name:"COOK TIMOTHY D",filings:{recent:{
+   form:["4","4/A","10-K"],accessionNumber:["0001214156-25-000011","0001214156-25-000009","0001214156-25-000008"],
+   filingDate:["2025-10-03","2025-09-30","2025-09-28"],reportDate:["2025-10-01","2025-09-28","2025-09-28"]
+ }}};
+ const response=await call("/v1/people/1214156",{query,allowSecFallback:true,
+    fetcher:async(url)=>{calls.push(url);return payload;}});
+ assert.equal(response.status,200);
+ assert.equal(response.json.person.name,"COOK TIMOTHY D");
+ assert.equal(response.json.coverage,"sec_submissions_history_only");
+ assert.equal(response.json.sec_filing_index.length,2);
+ assert.ok(!("transactions" in response.json),"historical index is not counterfeit trade data");
+ assert.deepEqual(calls,["https://data.sec.gov/submissions/CIK0001214156.json"]);
+ assert.deepEqual(query.statements.map(s=>s.sql),[OWNERS_TABLE_SQL,COMPANIES_SQL]);
+});
+
 test("validation: a bad CIK is 400 before any query; an unknown CIK is 404 after the first statement", async () => {
   const query = fakeQuery();
   for (const bad of ["abc", "12a", "9876543890123", "0", "000000000000", "-1", "1.5", "%20", "%E0%A4%A", "", "1%2F2"]) {
@@ -199,7 +217,7 @@ test("SQL: parameterised, scoped by owner CIK on parsed filings, filings probed 
   }
   // Joint lines: owner_cik NULL on a filing that lists the person in sec_filing_owners.
   assert.match(flat(SQL.joint.companies), /UNION ALL SELECT [a-z_.,]+ FROM sec_transactions t WHERE t\.owner_cik IS NULL AND t\.accession IN \(SELECT o\.accession FROM sec_filing_owners o WHERE o\.owner_cik=ANY\(\$1::text\[\]\)\)/);
-  assert.match(flat(TRANSACTIONS_SQL), /LIMIT \$2\) SELECT t\.\*,n\.issuer_name,n\.published_at,n\.is_amendment,\(a\.amended_at IS NOT NULL AND \(n\.published_at IS NULL OR a\.amended_at>n\.published_at\)\) AS superseded FROM newest n JOIN sec_transactions t ON t\.id=n\.id/);
+  assert.match(flat(TRANSACTIONS_SQL), /LIMIT \$2\) SELECT t\.\*,n\.issuer_name,n\.published_at,n\.is_amendment,n\.rule_10b5_1,\(a\.amended_at IS NOT NULL AND \(n\.published_at IS NULL OR a\.amended_at>n\.published_at\)\) AS superseded FROM newest n JOIN sec_transactions t ON t\.id=n\.id/);
   assert.match(flat(TRANSACTIONS_SQL), /ORDER BY n\.transaction_date DESC NULLS LAST,n\.published_at DESC NULLS LAST,n\.id DESC$/);
   assert.match(flat(FILINGS_SQL), /ORDER BY f\.published_at DESC NULLS LAST,f\.accession DESC LIMIT 100$/);
   assert.match(flat(NAMES_SQL), /GROUP BY t\.owner_cik,t\.owner_name ORDER BY last_published_at DESC NULLS LAST/);
@@ -624,7 +642,7 @@ test("on PostgreSQL: an original Form 4 line and the identical 4/A line count on
   const query = (sql, params = []) => pool.query(sql, params);
   try {
     await query(`CREATE SCHEMA ${schema}`);
-    await query(await readFile(new URL("../sql/001_initial.sql", import.meta.url), "utf8"));
+    for (const f of ["001_initial.sql", "019_form4_detail.sql"]) await query(await readFile(new URL("../sql/" + f, import.meta.url), "utf8"));
     const day = n => new Date(Date.now() - n * 86400000).toISOString();
     const filing = (acc, issuer, days, form) => query(`INSERT INTO sec_filings(accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,is_amendment,source_url,ingest_status)
       VALUES($1,'1111111',$2,'Example Corp','EXMP','4',$3,$4,$5,$6,'parsed')`, [acc, issuer, form, day(days), form === "4/A", "https://www.sec.gov/Archives/edgar/data/1111111/" + acc + "/"]);

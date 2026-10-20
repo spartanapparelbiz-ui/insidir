@@ -9,7 +9,7 @@ const $ = id => document.getElementById(id);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const finite = v => typeof v === "number" && Number.isFinite(v);
 const RANGES = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
-const TABS = ["overview", "financials", "filings", "insiders", "people", "news"];
+const TABS = ["overview", "changes", "connections", "financials", "filings", "insiders", "people", "news"];
 /* Market direction is drawn in green (rises, purchases) and red (falls, sales) from the --hf-up / --hf-down
  * tokens in CSS; markup only says which way, and always with a sign, a ▲/▼ glyph or a word beside the colour. */
 const trendOf = n => !finite(n) ? "" : n > 0 ? "up" : n < 0 ? "down" : "flat";
@@ -89,12 +89,15 @@ const safeUrl = (url, hosts) => {
 };
 const secUrl = url => safeUrl(url, ["sec.gov"]);
 const titleCase = s => String(s || "").toLowerCase().replace(/(^|[\s\-'(/&.])([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(/\bMc([a-z])/g, (m, c) => "Mc" + c.toUpperCase());
-const ENTITY = /\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|CO|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|N\.?V|S\.?A|PLC|AG|SE|LIMITED|VENTURES|ESTATE)\b|&/i;
+const ENTITY = /\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|PLC|LIMITED|VENTURES|ESTATE)\b|&/i;
+/* Short suffixes that are also surnames (Sá, Co, Ag, Se) mark a company only when dotted (S.A.) or after the first word:
+   SEC files people surname first ("Sa Neto Francisco" is Francisco Sá Neto). Same rule as isEntityName in src/person-match.mjs. */
+const isEntity=s=>ENTITY.test(String(s||""))||String(s||"").split(/[\s,]+/).filter(Boolean).some((w,i)=>/^(S\.?A|A\.?G|N\.?V|S\.?E|CO)\.?$/i.test(w)&&(i>0||/\./.test(w)));
 /* SEC owner names are "LAST FIRST MIDDLE"; show "First Middle Last". */
 function displayName(raw, { short = false } = {}) {
   const name = String(raw || "").replace(/\s+/g, " ").trim();
   if (!name) return "Reporting person";
-  if (ENTITY.test(name)) return /[a-z]/.test(name) ? name : titleCase(name);
+  if (isEntity(name)) return /[a-z]/.test(name) ? name : titleCase(name);
   const parts = name.replace(/,/g, " ").split(" ").filter(Boolean);
   if (parts.length < 2) return /[a-z]/.test(name) ? name : titleCase(name);
   const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";
@@ -839,6 +842,8 @@ function activateTab(id, { focus = false, push = true } = {}) {
   if (!TABS.includes(id)) id = "overview";
   showTab(id, focus);
   if (id === "news") loadNews();
+  // Changes and Connections are drawn by v33-platform.js when their tab is shown.
+  document.dispatchEvent(new CustomEvent("insidir:tab", { detail: { id } }));
   if (push && state.ticker) history.replaceState(null, "", "company.html?ticker=" + encodeURIComponent(state.ticker) + (id === "overview" ? "" : "#" + id));
 }
 
@@ -846,7 +851,7 @@ function activateTab(id, { focus = false, push = true } = {}) {
 function renderWatch() {
   const b = $("cx-watch"), label = b.querySelector("span");
   b.setAttribute("aria-pressed", String(state.watch === true));
-  label.textContent = state.watch === true ? "On watchlist" : state.watch === "signed_out" ? "Sign in to save" : "Add to watchlist";
+  label.textContent = state.watch === true ? "Following" : state.watch === "signed_out" ? "Sign in to follow" : "Follow";
   b.querySelector("svg").innerHTML = state.watch === true ? '<path d="m5 12.5 4.5 4.5L19 7.5"/>' : '<path d="M12 5v14M5 12h14"/>';
 }
 async function loadWatch(seq) {
@@ -857,9 +862,12 @@ async function loadWatch(seq) {
   } catch (e) { if (seq === state.seq) state.watch = e.status === 401 ? "signed_out" : null; }
   if (seq === state.seq) renderWatch();
 }
+/* Follow (Autopilot): saved to the watchlist on "Important updates"; the mode and pause are set beside the button
+   (v33-platform.js). */
 async function addToWatchlist() {
-  await getJSON("/v1/me/watchlist", { method: "POST", body: JSON.stringify({ ticker: state.ticker }) });
+  await getJSON("/v1/me/watchlist", { method: "POST", body: JSON.stringify({ ticker: state.ticker, mode: "important" }) });
   state.watch = true;
+  document.dispatchEvent(new CustomEvent("insidir:followed", { detail: { kind: "company", id: state.ticker } }));
 }
 const signIn = () => { location.href = "signin.html?next=" + encodeURIComponent(location.pathname + location.search); };
 
@@ -924,7 +932,8 @@ async function load(ticker) {
   history.replaceState(null, "", "company.html?ticker=" + encodeURIComponent(ticker) + (TABS.includes(initialTab) && initialTab !== "overview" ? "#" + initialTab : ""));
   const enc = encodeURIComponent(ticker);
   loadMarket(state.range, seq);
-  getJSON("/v1/intelligence?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.intel = d; note("intel", (d.warnings || []).join(" ")); })
+  getJSON("/v1/intelligence?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.intel = d; note("intel", (d.warnings || []).join(" "));
+    if (d?.company?.cik) document.dispatchEvent(new CustomEvent("insidir:company", { detail: { cik: d.company.cik, ticker: state.ticker, name: d.company.name } })); })
     .catch(e => { if (seq !== state.seq) return; state.intelError = e.status === 404 ? "This ticker is not in the SEC's official company list." : "SEC data is temporarily unavailable: " + e.message; note("intel", state.intelError); })
     .finally(() => { if (seq !== state.seq) return; renderAll(); });
   getJSON("/v1/company/profile?ticker=" + enc).then(d => { if (seq !== state.seq) return; state.profile = d?.matched ? d : null; })
@@ -1005,7 +1014,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = $("cx-watch");
     b.disabled = true;
     try {
-      if (state.watch === true) { await getJSON("/v1/me/watchlist/" + encodeURIComponent(state.ticker), { method: "DELETE" }); state.watch = false; }
+      if (state.watch === true) { await getJSON("/v1/me/watchlist/" + encodeURIComponent(state.ticker), { method: "DELETE" }); state.watch = false; document.dispatchEvent(new CustomEvent("insidir:unfollowed", { detail: { kind: "company", id: state.ticker } })); }
       else await addToWatchlist();
     } catch (e) {
       if (e.status === 401) { state.watch = "signed_out"; return signIn(); }

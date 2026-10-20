@@ -9,8 +9,10 @@ This document covers the backend engine. The website in `web/` is described in [
 - Subscriber API for recent filings, complete filing transactions, issuers, insiders, transaction filters, and descriptive distinct-owner purchase grouping.
 - **Personnel files**: one reporting person's public SEC record by owner CIK (`GET /v1/people/<cik>`, `src/person-profile.mjs`), behind `person.html?cik=…`. Joint filings (several reporting owners on one Form 4) are attributed to every owner through `sec_filing_owners`, so people who only file jointly have a file, can be followed and show up in the followed feed.
 - Read-only SEC intelligence: official company ticker-to-CIK lookup, filings by company via Submissions API, and financial measures from XBRL Company Facts API. Each observation links to the originating document; no predictive advice is computed.
-- **Hard paywall** (`src/paywall.mjs`): no free tier and no free trial. Every product page and every product API needs a signed-in account with an active Insidir Pro subscription ($39/month through Stripe) or a complimentary owner/team email. See [Hard paywall and billing](#hard-paywall-and-billing).
-- Email/password sessions (salted scrypt), watchlists, on-demand activity alerts, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
+- **Paywall with a paid trial** (`src/paywall.mjs`, `src/billing.mjs`): no free tier. A new subscription starts with a 3-day trial for $1, then renews at $39/month through Stripe. Every product page and every product API needs a signed-in account with an active or trialing Insidir Pro subscription or a complimentary owner/team email.
+- **Public insider pages** (`src/public-pages.mjs`): server-rendered `/insider-trading`, `/insider-trading/<TICKER>` and `/insiders/<cik>-<name>` from the Form 4 import, plus `/sitemap.xml` and `/robots.txt`, readable without an account. See [Public insider pages](#public-insider-pages). See [Hard paywall and billing](#hard-paywall-and-billing).
+- Email/password sessions (salted scrypt), email verification, password recovery and change, sign-out of other devices, a security log, data export, watchlists, and account deletion that cancels the Stripe subscription first. **Signup is disabled by default.**
+- **Research events** (`src/research-events.mjs`): normalized, deduplicated events from the import (purchases and sales per Form 4, Form 4/A comparisons, multi-insider purchase groups, watched companies' other SEC filings) with trade, filing and retrieval times kept apart; **sourced explanations** (`src/explanations.mjs`, AI part off by default); **alerts** in the app and by consented email (`src/notifications.mjs`). Configuration and operations: [OPERATIONS.md](OPERATIONS.md).
 - Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
 - Optional 15-minute automatic poller or secured on-demand/cron ingestion.
@@ -36,7 +38,7 @@ The public-company intelligence brief uses `GET /v1/intelligence?ticker=AAPL`, r
 There is **no brokerage integration, trade execution, trade recommendation engine, live quote feed or automatic strategy** in this release. Reviews are user-authored notes; they never place orders. Future brokerage workflows require a trading-capable partner, explicit consent, guardrails and financial-regulatory review.
 
 ## Hard paywall and billing
-Insidir is a paid product with **no free tier and no free trial**. `src/paywall.mjs` holds the rules as pure functions (`classifyPage`, `classifyApi`, `hasAccess`, `accessSummary`, `safeNext`, `gate`); `src/api.mjs` runs `gate()` on every request, before it serves a page, a company report endpoint, billing or any other API. `test/paywall.test.mjs` covers the rules end to end without a database.
+Insidir is a paid product with **no free tier**; a subscription starts with a **3-day trial for $1** (see [Paid trial](#paid-trial)). `src/paywall.mjs` holds the rules as pure functions (`classifyPage`, `classifyApi`, `hasAccess`, `accessSummary`, `safeNext`, `gate`); `src/api.mjs` runs `gate()` on every request, before it serves a page, a company report endpoint, billing or any other API. `test/paywall.test.mjs` covers the rules end to end without a database.
 
 **Access** means the account's `users.subscription_status` is `active` or `trialing`, **or** its email is listed in `INSIDIR_COMPLIMENTARY_EMAILS` (comma-separated, case and spaces ignored; for the owner and team). `past_due`, `unpaid`, `incomplete`, `paused`, `canceled` and no subscription do not have access. **With the paywall on and billing not configured, nobody but complimentary accounts can use the product, and nobody can subscribe.**
 
@@ -68,7 +70,7 @@ Insidir is a paid product with **no free tier and no free trial**. `src/paywall.
 
 ### Billing endpoints (signed in; no subscription needed)
 - `GET /v1/billing/status` → `{billingEnabled, plan:"pro"|"none", active, complimentary, subscriptionStatus, currentPeriodEnd, hasCustomer}`. `?refresh=1` re-reads the customer's subscriptions from Stripe first (rate-limited); call it on `/billing.html?checkout=success` in case the webhook has not arrived yet.
-- `POST /v1/billing/checkout` → `{url}` of a Stripe Checkout page for the configured Price. Success returns to `/billing.html?checkout=success`, cancel to `/subscribe.html?checkout=cancel`. No trial is configured. Requests must come from `INSIDIR_PUBLIC_URL`'s origin. To prevent double billing:
+- `POST /v1/billing/checkout` → `{url}` of a Stripe Checkout page for the configured Price. Success returns to `/billing.html?checkout=success`, cancel to `/subscribe.html?checkout=cancel`. An account's first checkout carries the paid trial (below). Requests must come from `INSIDIR_PUBLIC_URL`'s origin. To prevent double billing:
   - For an account that already has a Stripe customer, the engine **re-reads the customer's subscriptions from Stripe first** (and stores the result), so a checkout that completed before its webhook arrived counts. It refuses with 409 while any subscription for the configured Price can still bill: `active`/`trialing` (manage it instead), `past_due`/`unpaid` (update the payment method in the portal), `incomplete` (first payment still being confirmed) or `paused`. If Stripe cannot be read, it answers 503 and starts nothing. A customer that no longer exists in this Stripe account (e.g. test data after switching to live keys) is replaced by a new one.
   - Any earlier **open** Checkout page of the customer is expired before a new one is created, so only the newest can be paid.
   - One billing change per account at a time: a second checkout (or an account deletion) while one is being prepared answers 409.
@@ -89,18 +91,42 @@ Safety net: if an Insidir checkout (its metadata names the Insidir account) stil
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `INSIDIR_PAYWALL` | on | `0` turns the paywall off (local development only). Anything else keeps it on. |
-| `INSIDIR_COMPLIMENTARY_EMAILS` | empty | Comma-separated owner/team emails with access and no subscription. There is no email verification: register these accounts before listing them. |
+| `INSIDIR_COMPLIMENTARY_EMAILS` | empty | Comma-separated owner/team emails with access and no subscription. Once email verification is enforced (by default when an email provider is configured), a listed address has access only after its owner confirms it. |
 | `INSIDIR_BILLING_ENABLED` | `0` | `1` enables checkout and the portal, together with the three Stripe values below. |
 | `INSIDIR_STRIPE_SECRET_KEY` | empty | Stripe secret key. Also needed on account deletion: any account that ever started a checkout cannot be deleted while Stripe is unreachable or this key is missing, because nothing is deleted until Stripe confirms no subscription can bill. Keep it set while any customer exists. |
 | `INSIDIR_STRIPE_PRICE_ID` | empty | The $39/month recurring Price. Only this exact Price grants access; if it is ever replaced, existing subscribers on the old Price lose access, so migrate them in Stripe first. |
 | `INSIDIR_STRIPE_WEBHOOK_SECRET` | empty | Signing secret of the `https://YOUR_DOMAIN/v1/billing/webhook` endpoint. |
 | `INSIDIR_PUBLIC_URL` | empty | Public HTTPS origin of the site, used for Checkout return URLs and the billing origin check. |
 
+### Paid trial
+An account's first checkout starts with a trial: Stripe Checkout charges a one-time **$1** line item (`price_data`, no extra Stripe product needed) and sets `subscription_data[trial_period_days]=3`; a card is always collected (`payment_method_collection=always`) and, if none is on file when the trial ends, the subscription is cancelled. Stripe's own submit text states the terms: "$1 today for 3 days of Insidir. Unless you cancel before the trial ends, Insidir Pro then renews at $39 a month." A trialing subscription has full access (`ACCESS_STATUSES`), and `current_period_end` is the trial's end.
+
+One trial per account: no trial when `users.trial_started_at` is set (stamped the first time a subscription is seen `trialing`, never reset; `sql/010_paid_trial.sql`) or when the Stripe customer has ever had a subscription for the configured Price. Those checkouts charge $39 at once.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `INSIDIR_TRIAL` | on | `0` switches the trial off (every checkout charges $39 at once). |
+| `INSIDIR_TRIAL_DAYS` | `3` | Trial length, clamped to 1–14 days. |
+| `INSIDIR_TRIAL_FEE_CENTS` | `100` | The one-time trial fee in US cents, clamped to 50–3900. |
+
+Creator commissions (`CREATORS.md`) are earned on the first $39 payment: after a trial that is the first renewal (`billing_reason=subscription_cycle`); the $1 trial invoice never qualifies, and the unique `referred_user_id` keeps later renewals out.
+
 ### Stripe setup
-1. In Stripe create the product "Insidir Pro" with one recurring Price of $39.00 USD per month and no trial; copy its `price_…` ID.
-2. Add a webhook endpoint `https://YOUR_DOMAIN/v1/billing/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused` and `customer.subscription.resumed`; copy its signing secret.
+1. In Stripe create the product "Insidir Pro" with one recurring Price of $39.00 USD per month; copy its `price_…` ID. Do not put a trial on the Price: the engine adds the paid trial at checkout.
+2. Add a webhook endpoint `https://YOUR_DOMAIN/v1/billing/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed` and `invoice.paid` (creator commissions); copy its signing secret.
 3. Configure the customer portal (cancellation, payment method updates, invoice history).
 4. Set the variables above, `INSIDIR_BILLING_ENABLED=1`, then `ALLOW_SIGNUP=1`. Test a full signup → checkout → dashboard → cancel → deletion cycle in Stripe test mode before switching to live keys.
+
+## Public insider pages
+`src/public-pages.mjs` renders plain HTML (no script needed) from the engine's Form 4 import, so search engines and signed-out visitors can read it; the product stays behind the paywall and every page ends with the trial offer.
+
+- `GET /insider-trading`: the biggest open-market purchases and sales of the last 30 days (codes P and S, non-derivative, original filings), the newest filings and the most active companies.
+- `GET /insider-trading/<TICKER>`: one company's 40 newest Form 4 lines, 90-day totals from original filings (Form 4/A restatements are listed, not added up again) and its reporting people. `nvda` and `BRK.B` redirect to `NVDA` and `BRK-B`; a ticker with no imported lines is a `noindex` 404.
+- `GET /insiders/<cik>-<name-slug>`: one reporting person from `personProfile()` (companies and roles, totals, 30 newest lines), with no new SEC requests. A bare or stale slug redirects (301) to the canonical one.
+- `GET /sitemap.xml` (index) → `/sitemaps/pages.xml`, `/sitemaps/companies-N.xml`, `/sitemaps/insiders-N.xml` (40,000 URLs each), absolute URLs on `INSIDIR_PUBLIC_URL` (default `https://insidir.com`).
+- `GET /robots.txt`: everything allowed except `/v1/` and the product and account pages; names the sitemap.
+
+Pages do not depend on who is asking: they are cached in memory for 10 minutes (3,000 entries) and sent with `Cache-Control: public, max-age=600`. Uncached renders are limited to 90 a minute per client address. `src/paywall.mjs` classifies all of these paths as public. Values are shares × the price the filer reported; nothing is estimated.
 
 ## Manual portfolio (no brokerage or vendor account)
 Manually entered stock tickers and share counts work with existing user accounts and PostgreSQL. No paid market-data API or brokerage permissions are needed. The portfolio page shows these entries **above** the optional SnapTrade section. Each ticker links to its SEC Research Desk, and the page displays the most recent imported ownership transaction in the past 30 days when available. This is a ticker-only matching aid, not proof of security identity or a recommendation.
@@ -179,7 +205,7 @@ Filings imported before the table existed are filled by `npm run backfill-owners
 - **Wikidata (CC0) and Wikipedia (CC BY-SA 4.0)**: profile facts, leadership and descriptions. The page attributes Wikipedia text and links to the source. Profiles are cached for 24 hours.
 
 ### Logos (`src/logo-resolver.mjs`)
-Every SEC-listed company gets its real logo shown on the page background with no tile or box, or no logo at all. Candidates come from stock-logo libraries (stockanalysis light/dark, companiesmarketcap), the company's Wikipedia infobox and Wikidata logo (matched by CIK), then the company's own website (JSON-LD, header logo, touch icon; domain verified from SEC filings) and FMP, EODHD and nvstly. Those three key images by ticker alone, so their logo is shown only when another source shows the same mark. `LOGO_OVERRIDES` in the resolver holds corrections found by auditing a 120-company sample (the company's own file, or no logo when every source shows another company); operator overrides in the store take precedence. A candidate is used only when the identity is safe: recycled tickers and recent rebrands (SEC former names, new 8-A12B/424B4 filers) need shape agreement (IoU ≥ 0.5 on 48×48 ink masks) between independent sources. The chosen file is prepared server-side with sharp (`src/image-analysis.mjs`): a uniform tile around the mark is keyed out, ink that would vanish on the dark page is lifted (near-black becomes off-white, dark brand colours keep their hue), and the result is trimmed. Logos that are a badge by design stay as drawn. Results are cached 30 days (1 day when a better source was unreachable, 7 days for "no logo").
+Every SEC-listed company gets its real logo shown on the page background with no tile or box, or no logo at all. Candidates come from stock-logo libraries (stockanalysis light/dark, companiesmarketcap), the company's Wikipedia infobox and Wikidata logo (matched by CIK), then the company's own website (JSON-LD, header logo, touch icon; domain verified from SEC filings) and FMP, EODHD and nvstly. Those three key images by ticker alone, so their logo is shown only when another source shows the same mark. A Wikipedia or Wikidata logo whose file is named for one of the company's SEC former names and not its current one is the old identity and is not used (`staleNameFile`: Wikipedia kept Skillz's mark on the article for Firy Inc. after the June 2026 rename). `LOGO_OVERRIDES` in the resolver holds corrections found by auditing a 120-company sample (and WGO, whose stock-logo file is the bare ticker letters) (the company's own file, or no logo when every source shows another company); operator overrides in the store take precedence. A candidate is used only when the identity is safe: recycled tickers and recent rebrands (SEC former names, new 8-A12B/424B4 filers) need shape agreement (IoU ≥ 0.5 on 48×48 ink masks) between independent sources. The chosen file is prepared server-side with sharp (`src/image-analysis.mjs`): a uniform tile around the mark is keyed out, ink that would vanish on the dark page is lifted (near-black becomes off-white, dark brand colours keep their hue), and the result is trimmed. Logos that are a badge by design stay as drawn. Results are cached 30 days (1 day when a better source was unreachable, 7 days for "no logo").
 
 ### People photos (`src/people-photos.mjs`)
 Each person shown on the report gets a real photo or keeps initials; faces are never generated or guessed. Sources, strongest first:
@@ -188,6 +214,10 @@ Each person shown on the report gets a real photo or keeps initials; faces are n
 3. Headshots printed in the company's latest SEC proxy statement (DEF 14A), paired by alt text and caption layout.
 4. The same person's captioned headshot in another company's proxy where they also file as an insider (tied by SEC owner CIK).
 Commons answers first; when the company's page or proxy also has the person, that official headshot replaces the Commons picture. Every match uses one strict name matcher (`src/person-match.mjs`: surname plus given name, nickname or 3+ letter prefix, no conflicting middle initial) and must be tied to the company; a name alone never attaches a photo. A verified photo is reused wherever the same owner CIK files. Portraits are cropped to 256 px WebP. Company results are cached 7 days, person photos 90 days.
+
+Sources audited as not being photographs are listed in `src/photo-exclusions.mjs` (Reddit's 2026 proxy prints illustrated avatars of its directors; one passed every automated check). Nothing from them is used, and records stored before an entry was added stop being served (`GET /v1/media`, `GET /v1/company/photos`). Owners whose filed name is a company or fund never get a face; the short suffixes S.A., AG, N.V. and Co count only when dotted or after the first word, because SEC files people surname first ("Sa Neto Francisco" is Francisco Sá Neto).
+
+`node scripts/audit-media.mjs --sec` writes a contact sheet of every stored photo and logo against the SEC names, flagging the same image on two people, a caption that is not the filer, a face on a company or fund, an excluded source and a Wikipedia logo named for a former company name. Run it against the production database after large imports and check every card by eye: no rule can tell a well-drawn illustration from a photo, or a ticker-letter placeholder from a real wordmark.
 
 ### Logos and headshots for a page (`GET /v1/media`)
 `src/media-batch.mjs`. One request answers every company and person on a page from what the resolvers above have already decided, and never waits on an upstream source. Anything not decided yet is listed as pending and resolved in the background, so a page shows the issuer's logo (or a placeholder) and swaps the headshot in when it lands.
@@ -223,9 +253,16 @@ Mutations require a trusted Origin header. Registration requires ALLOW_SIGNUP=1.
 - **Restated lines count once.** The 30-day totals use the personnel file's rule (`SAME_LINE` and `SUPERSEDED` from `src/person-profile.mjs`): a line repeated by a later Form 4/A counts once, on the date it was first filed, so a restated old trade does not enter the window; `filings_30d` counts filings published in the window. `items` lists every line as filed.
 - **Cost.** At most three statements (plus the owners of joint lines in one more), never one per person. Each followed person is read in one pass over their parsed lines; at most the 150 newest follows are read before any per-person work. On PostgreSQL 16 with 200,000 filings and 800,000 lines, 150 follows of about 160 lines each answer in about 0.15 s for `people` and 0.15 s for `items`. The engine's connections run with `jit=off` (`src/db.mjs`): JIT compilation added 0.6–1.4 s to these statements (unless `DATABASE_URL` carries its own `options`).
 - GET /v1/me/research-decisions?ticker=AAPL; POST /v1/me/research-decisions with JSON {"ticker":"AAPL","reviewStatus":"watching","notes":"Read the original filing"}; DELETE /v1/me/research-decisions?ticker=AAPL
-- GET /v1/me/alerts – computed on demand; email/push delivery is **not** implemented
+- GET /v1/me/alerts – watchlist Form 4 matches computed on demand (kept for older clients)
+- GET /v1/me/notifications?unread=1&before= ; POST /v1/me/notifications/read {ids|all} – alerts from research events
+- GET/POST /v1/me/email-preferences – in-app on/off, event types, email off/immediate/daily (turning email on needs `{consent:true, consentVersion}`)
+- GET /v1/research-events?ticker=&owner=&type=&before= ; GET/POST /v1/research-events/{id}/explanation (POST takes `{question}`)
+- POST /v1/auth/verify-email {token}, POST /v1/auth/resend-verification, POST /v1/auth/forgot-password {email} (always 202), POST /v1/auth/reset-password {token,password}
+- POST /v1/me/password {currentPassword,newPassword}, POST /v1/me/sessions/revoke-others, GET /v1/me/security-events, GET /v1/me/export
+- GET/POST /v1/email/unsubscribe?t= (signed link; RFC 8058 one-click), POST /v1/email/webhook/postmark (basic auth)
+- POST/DELETE /v1/admin/session, GET /v1/admin/ops – administrators: token and one-time code
 
-Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use HttpOnly/Secure/SameSite=Lax. Before making public registrations available add distributed rate-limiting, email verification, final privacy/retention policies and a working account-deletion UI.
+Session tokens are random; their SHA-256 digests live in PostgreSQL. Cookies use HttpOnly/Secure/SameSite=Lax. Rate limits are shared by every instance through PostgreSQL (`src/rate-limit.mjs`, keys stored as digests). Admin routes need a token and a one-time code (`src/admin-auth.mjs`).
 
 ## Compliance gates
 - SEC fair-access guideline: declare user agent; keep requests below its limit; use caching; identify original filing and distinction between trade and publication dates.
@@ -244,7 +281,43 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - SEC company facts and company submissions may be temporarily unavailable, outdated, or lack a particular ticker or metric; the interface states the limitation rather than inventing results.
 - Grouping may double count amended filings. It is not an investment forecast.
 - The paywall trusts Stripe's subscription status as stored by the webhook (or `?refresh=1`, or a checkout attempt). If webhooks are not delivered and nobody refreshes, a cancellation reaches Insidir late; Stripe retries failed webhooks for three days. Account deletion and checkout do not depend on the stored status: they re-read Stripe.
-- The one-billing-change-per-account lock is per process; Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
+- The one-billing-change-per-account lock is per process (rate limits are shared, this lock is not); Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
 - Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
-- There is no email verification, so a complimentary address must be registered by its owner before it is listed.
+- Email verification exists but is only enforced once an email provider is configured (or `INSIDIR_REQUIRE_EMAIL_VERIFICATION=1`); until then a complimentary address must be registered by its owner before it is listed.
 - No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
+
+## Insidir Intelligence
+
+`web/intelligence.html` (the instrument, Tape, Briefing, Capital Structure, Investigate, Mirror) and `web/admin-costs.html`. Every route below is paid product data
+(signed in, active or trialing subscription, or a complimentary account) unless marked otherwise.
+
+| Route | What it does |
+|---|---|
+| `GET /v1/me/intelligence/briefing?days=1..30` | Watchlist + followed-people briefing from the shared SEC index (`src/intelligence-briefing.mjs`). Same-day Form 4s at one company and same-day 8-K/6-K notices are grouped; ordering rules are returned with every story; marks the visit for "new since your last visit". No model call. |
+| `GET/POST /v1/me/intelligence/preferences` | Delivery frequency: `immediate` (default), `daily`, `weekly`. Immediate members get per-filing push; daily/weekly members get one digest push (`queueDigests` in `src/push.mjs`, claimed with compare-and-set so it is queued once). |
+| `GET /v1/me/intelligence/instrument` | The ten layers of the Insidir mark (`src/intelligence-instrument.mjs`, `MARK` = the favicon's circles): counts and up to six linked records per layer over the last 30 days — market layers from a shared query cached for 5 minutes, the member's watchlist, follows and holdings from their own rows. Findings are filled in by the page from the briefing. No model call. |
+| `GET /v1/intelligence/tape?days=1\|7\|30\|90&form=all\|4\|8-K\|13F&ticker=&person=&before=` | The event tape: Form 4, 8-K/6-K and 13F records newest first, each with company, form, person, classification, reported amount, event/filed/retrieved dates, SEC source and `new` (retrieved since the member's last visit). Filters are whitelisted; bad input is a 400. |
+| `GET /v1/intelligence/structure?ticker=` | Capital structure from reporting people's own Form 4s over 12 months: people with their relationship boxes as filed, securities, person→security edges and monthly filing counts, with labels that say what each line does and does not establish. 404 for a ticker with no stored Form 4. |
+| `POST /v1/me/intelligence/investigate` `{question, context?}` | Deterministic parsing, bounded SQL retrieval, a cited answer (summary, evidence sections, relationships, timeline, verification of every citation number), gaps and follow-ups (`src/intelligence-investigate.mjs`). Advice and prompt-injection requests are refused before retrieval. With `?stream=1` the answer arrives as NDJSON: `{stage:"start",stages}`, then one line per completed stage (`understood`, `sources`, `connected`, `verified`, `prepared`) as the server finishes it, then `{stage:"answer",answer}` (or `{stage:"error"}`); validation errors are still plain JSON 400s. |
+| `POST /v1/me/intelligence/synthesize` | Optional AI synthesis of an answer from its cited evidence only; verified and cached by evidence hash. |
+| `GET /v1/intelligence/mirror/managers`, `/managers/<cik>`, `/simulate?cik=&budget=` | Form 13F holdings, history and the illustrative allocation (`src/intelligence-mirror.mjs`). |
+| `GET /v1/ai/explain?accession=` | Shared, cached plain-English explanation of one filing. |
+| `GET /v1/admin/costs` (open route, own auth) | Cost dashboard: `INSIDIR_ADMIN_TOKEN` bearer or an account in `INSIDIR_ADMIN_EMAILS`; every access is written to `admin_audit_log`. |
+| `POST /v1/internal/13f/ingest` (bearer `INGEST_SECRET`) | Runs Form 13F ingestion now (it also runs 5 minutes after start and every 12 hours). |
+
+**AI cost architecture** (`src/ai-gateway.mjs`): one explanation per (source, content SHA-256, explanation type,
+prompt version, model, language), shared by every member; concurrent requests for the same key are coordinated in
+PostgreSQL (one claims the row, the others wait for it); a changed source hashes to a new key. Every provider call
+writes `ai_usage` with the provider's token counts and, when reported, its cost (`usage.include`); list-price
+estimates are stored separately as `estimated`. Global hourly/daily call limits, per-member hourly/daily limits,
+daily and monthly USD budgets, input/output caps, a timeout and one retry are enforced before every call. The
+inexpensive model handles single-source explanations; the stronger model is used only for multi-company or
+multi-person syntheses.
+
+**Form 13F** (`src/form13f.mjs`): EDGAR submissions → `index.json` → `primary_doc.xml` (cover and summary totals) →
+information table. Values are normalised to dollars (filings before 2023-01-03 reported thousands); parsed rows and
+value are compared with the cover page's `tableEntryTotal` / `tableValueTotal` and stored as `completeness`. Each
+filing is stored once by accession with a content hash. Manager names always come from EDGAR.
+
+Tests: `test/intelligence-platform.test.mjs` and `test/intelligence-instrument.test.mjs` (pure), `test/intelligence-db.test.mjs` (PostgreSQL, set
+`INSIDIR_TEST_DATABASE_URL`), `scripts/intelligence-check.mjs` (Chrome).

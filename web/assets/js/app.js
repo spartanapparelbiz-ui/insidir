@@ -14,7 +14,7 @@
   const NS = "http://www.w3.org/2000/svg";
 
   /* ---------- paywall: 401 → sign in, 402 → subscribe ---------- */
-  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts"];
+  const GATED_PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence"];
   const ACCOUNT_PAGES = ["billing", "account"];
   const OPEN_API = /^\/v1(\/?$|\/auth\/|\/billing\/|\/sources$)/;
   const pageKey = () => (/^\/([a-z]+)(?:\.html)?$/.exec(location.pathname) || [])[1] || "";
@@ -53,26 +53,20 @@
     window.fetch = gatedFetch;
   }
 
+  /* Three sections: Home (what changed for what you follow), Explore (companies, people, filings, research) and
+     Intelligence (questions answered from the records). Each page names its own key in data-active; GROUP maps it
+     to its section, and SUBNAV lists the pages inside Home and Explore. */
   const NAV = [
-    ["dashboard","Overview","dashboard.html"],
-    ["research","Research","research.html"],
-    ["insiders","People","people.html"],
-    ["companies","Companies","explore.html"],
-    ["filings","Filings","filings.html"],
-    ["watchlist","Watchlist","watchlist.html"],
-    ["alerts","Alerts","alerts.html"]
+    ["home","Home","dashboard.html"],
+    ["explore","Explore","explore.html"],
+    ["intelligence","Intelligence","intelligence.html"]
   ];
-  const NAV_PATHS = {
-    dashboard:'<path d="M3 10 12 3l9 7v10h-6v-6H9v6H3z"/>',
-    research:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
-    companies:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h8M8 11h8M8 15h8"/>',
-    portfolio:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18m-11 4 3-3 3 3"/>',
-    watchlist:'<path d="m12 3 2.8 5.7L21 9.6l-4.5 4.4 1.1 6.2L12 17.2l-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/>',
-    filings:'<path d="M6 2h8l5 5v15H6zM14 2v6h5M9 12h7M9 16h7"/>',
-    insiders:'<path d="M4 19h16M6 16l4-5 3 3 5-7M17 7h2v3"/>',
-    alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 8-3 9-3 9h18s-3-1-3-9M10 21h4"/>'
+  const GROUP = {dashboard:"home",watchlist:"home",alerts:"home",portfolio:"home",companies:"explore",insiders:"explore",filings:"explore",research:"explore",explore:"explore",intelligence:"intelligence"};
+  const SUBNAV = {
+    home: [["dashboard","Overview","dashboard.html"],["watchlist","Following","watchlist.html"],["alerts","Alerts","alerts.html"],["portfolio","Portfolio","portfolio.html"]],
+    explore: [["companies","Companies","explore.html"],["insiders","People","people.html"],["filings","Filings","filings.html"],["research","Research","research.html"]]
   };
-  const NAV_ICONS = {dashboard:"layers",research:"search",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"activity",alerts:"clock"};
+  const NAV_ICONS = {home:"layers",explore:"search",intelligence:"activity"};
   const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons/interface.svg#'+(NAV_ICONS[key]||"file-text")+'"></use></svg></span>';
 
   const icons = {
@@ -92,7 +86,7 @@
 
   /* ---------- monogram avatars ---------- */
   /* Neutral blends of paper and ink only (the V13 theme also paints every monogram on --hf-raise): no warm tints. */
-  const TONES = ["#2f2f2c", "#363633", "#3c3b38", "#41403d", "#474643", "#4d4c48", "#53524e", "#595854"];
+  const TONES = ["#30302e", "#363633", "#3c3b38", "#434240", "#474643", "#4d4c48", "#53524e", "#595854"];
   function monogram(name, cls = "") {
     const parts = String(name).trim().split(/\s+/);
     const initials = ((parts[0] || "")[0] || "") + ((parts.length > 1 ? parts[parts.length - 1] : "")[0] || "");
@@ -176,9 +170,9 @@
   }
 
   /* ---------- API (same-origin engine, optional) ---------- */
-  async function api(path, { method = "GET", body } = {}) {
+  async function api(path, { method = "GET", body, signal } = {}) {
     const res = await fetch(path, {
-      method, credentials: "same-origin",
+      method, credentials: "same-origin", signal,
       headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -193,7 +187,7 @@
   function renderHeader() {
     const host = document.querySelector("[data-app-header]");
     if (!host) return;
-    const active = host.dataset.active || "";
+    const page = host.dataset.active || "", active = GROUP[page] || page;
     host.classList.add("app-header");
     host.innerHTML = `<div class="app-header__inner">
       <button class="icon-btn app-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
@@ -201,7 +195,7 @@
       </button>
       <a class="logo" href="dashboard.html" aria-label="insidir. dashboard">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
       <nav class="app-nav" aria-label="Product">
-        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
+        ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>`).join("")}
         <span class="app-nav__indicator" aria-hidden="true"></span>
       </nav>
       <form class="app-search" role="search" action="company.html">
@@ -220,7 +214,7 @@
           <a href="account.html">Account center</a>
           <a href="portfolio.html">Portfolio</a>
           <a href="billing.html">Plan &amp; billing</a>
-          <a href="signin.html" data-account-signin>Sign in</a>
+          <a href="signin.html" data-account-signin hidden>Sign in</a>
           <a href="alerts.html">Alert settings</a>
           <a href="privacy.html">Privacy</a>
           <button type="button" data-signout>Sign out</button>
@@ -228,8 +222,12 @@
       </div>
     </div>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Product">
-      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}</a>`).join("")}
+      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active && !SUBNAV[key] ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>` +
+        (SUBNAV[key] || []).map(([k, l, h]) => `<a class="app-mobile-nav__sub" href="${h}"${k === page ? ' aria-current="page"' : ""}>${l}</a>`).join("")).join("")}
     </nav>`;
+    const sub = SUBNAV[active];
+    if (sub && !document.querySelector(".app-subnav")) host.insertAdjacentHTML("afterend", `<nav class="app-subnav" aria-label="${active === "home" ? "Home" : "Explore"}"><div class="app-subnav__row">
+      ${sub.map(([key, label, href]) => `<a href="${href}"${key === page ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></nav>`);
 
     api("/v1/me").then(data => {
       if (!data.user || !data.user.email) return;
@@ -239,9 +237,11 @@
       const initial = email.trim().charAt(0).toUpperCase();
       const avatar = host.querySelector(".user-menu__btn");
       if (avatar && /[A-Z0-9]/.test(initial)) { avatar.innerHTML = `<span class="user-menu__initial" aria-hidden="true">${initial}</span>`; avatar.setAttribute("aria-label", "Account menu for " + email); }
+    }).catch(error => {
+      // Only a visitor the engine does not recognise is offered "Sign in" (a member never sees it flash).
       const signin = host.querySelector("[data-account-signin]");
-      if (signin) signin.hidden = true;
-    }).catch(() => {});
+      if (signin && error && error.status === 401) signin.hidden = false;
+    });
     const menuBtn = host.querySelector(".app-menu-btn"), menu = host.querySelector(".app-mobile-nav");
     const setMenu = open => {
       menu.classList.toggle("is-open", open);
@@ -252,7 +252,10 @@
     menu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
     document.addEventListener("click", e => { if (!menu.contains(e.target)) setMenu(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && menu.classList.contains("is-open")) { setMenu(false); menuBtn.focus(); } });
-    window.addEventListener("resize", () => { if (innerWidth > 860) setMenu(false); });
+    // Close the menu only when the page grows wide enough to show the navigation again (v29-app.css: 1200px). A plain
+    // resize is not enough: iOS fires one whenever the address bar hides while scrolling.
+    const wide = window.matchMedia("(min-width: 1200px)");
+    (wide.addEventListener ? wide.addEventListener("change", e => { if (e.matches) setMenu(false); }) : wide.addListener(e => { if (e.matches) setMenu(false); }));
 
     const nav = host.querySelector(".app-nav"), ind = host.querySelector(".app-nav__indicator");
     const current = nav.querySelector('[aria-current="page"]');
@@ -304,12 +307,12 @@
     };
     const renderList = q => {
       if (!suggestions.length) {
-        list.innerHTML = `<p class="app-search__empty">${tickerPattern.test(q.toUpperCase()) ? "Press Enter to open " + escapeHTML(q.toUpperCase()) : "No matching companies or people"}</p>`;
+        list.innerHTML = `<p class="app-search__empty">No SEC filer matches this search. Try a ticker, a CIK, or part of the name as the SEC lists it.</p>`;
       } else {
         list.innerHTML = suggestions.map((s, i) => {
           const tile = tileFor(s);
-          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>`;
-          const meta = tile && s.kind === "company" ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
+          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker || "SEC")}</span>`;
+          const meta = tile && s.kind === "company" && s.ticker ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
           return `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option${tile ? " app-search__option--tile" : ""}">${lead}
           <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(meta)}</span></a>`;
         }).join("");
@@ -318,13 +321,22 @@
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
     };
+    // Each keystroke cancels the requests of the one before it, so only the latest query costs the server anything.
+    let searchAbort = null;
     const lookup = async q => {
       const seq = ++searchSeq;
-      const [companies, people] = await Promise.allSettled([
-        api("/v1/search?q=" + encodeURIComponent(q)),
-        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q)) : Promise.resolve({ items: [] })
+      if (searchAbort) searchAbort.abort();
+      const ctrl = searchAbort = "AbortController" in window ? new AbortController() : null;
+      const signal = ctrl ? ctrl.signal : undefined;
+      const [companies, people, filers] = await Promise.allSettled([
+        api("/v1/search?q=" + encodeURIComponent(q), { signal }),
+        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] }),
+        // Every SEC filer: companies without a ticker, former names, CIKs, reporting owners not yet imported.
+        q.length >= 2 ? api("/v1/entities/search?limit=8&q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] })
       ]);
       if (seq !== searchSeq || input.value.trim() !== q) return;
+      form.removeAttribute("aria-busy");
+      if (companies.status === "rejected" && people.status === "rejected" && filers.status === "rejected") { suggestions=[]; list.innerHTML = '<p class="app-search__empty">Search services are unavailable. Try again shortly.</p>'; list.hidden=false; input.setAttribute("aria-expanded","true"); return; }
       if (companies.status === "rejected" && companies.reason && companies.reason.status === 402) {
         suggestions = [];
         list.innerHTML = '<p class="app-search__empty">Search needs an active subscription. <a href="subscribe.html">Subscribe</a></p>';
@@ -342,13 +354,28 @@
             href: cik ? "person.html?cik=" + cik.replace(/^0+/, "") : "people.html?q=" + encodeURIComponent(String(p.owner_name || "").slice(0, 80)) + "#v10-directory" };
         })
       ];
+      // EDGAR filers the two lists above do not already show (matched by ticker or CIK), up to ten results in all.
+      const shownTickers = new Set(suggestions.filter(s => s.kind === "company").map(s => s.ticker));
+      const shownCiks = new Set(suggestions.filter(s => s.cik).map(s => String(Number(s.cik))));
+      for (const e of filers.status === "fulfilled" ? filers.value.items || [] : []) {
+        if (suggestions.length >= 10) break;
+        if ((e.tickers || []).some(t => shownTickers.has(t)) || shownCiks.has(String(Number(e.cik)))) continue;
+        const what = e.kind === "company" ? (e.listed ? "Company" : e.delistedAt ? "Company · no longer on the SEC ticker list" : "Company · no listed ticker")
+          : e.kind === "person" ? "Reporting person" : e.kind === "organization" ? "Reporting entity" : "SEC filer";
+        const why = e.matched ? " · " + e.matched.as + ": " + e.matched.name : "";
+        suggestions.push({ kind: e.kind === "company" ? "company" : "person", ticker: (e.tickers || [])[0] || "", cik: e.cik, name: e.name, label: e.name,
+          meta: what + " · CIK " + e.cik + why, href: e.url });
+        shownCiks.add(String(Number(e.cik)));
+      }
       renderList(q);
     };
     input.addEventListener("input", () => {
       input.setCustomValidity("");
       const q = input.value.trim();
       clearTimeout(searchTimer);
-      if (!q) { suggestions = []; closeList(); return; }
+      if (!q) { suggestions = []; form.removeAttribute("aria-busy"); if (searchAbort) searchAbort.abort(); closeList(); return; }
+      // Feedback on the keystroke itself; the request waits for a 140ms pause in typing.
+      form.setAttribute("aria-busy", "true");
       searchTimer = setTimeout(() => lookup(q).catch(() => {}), 140);
     });
     input.addEventListener("keydown", e => {
@@ -370,9 +397,7 @@
       const exact = suggestions.find(s => s.kind === "company" && s.ticker === upper);
       if (exact) { location.href = exact.href; return; }
       if (suggestions[0]) { location.href = suggestions[0].href; return; }
-      if (tickerPattern.test(upper)) { location.href = "company.html?ticker=" + encodeURIComponent(upper); return; }
-      input.setCustomValidity("Choose a company or person from the suggestions");
-      input.reportValidity();
+      location.href = "people.html?q=" + encodeURIComponent(q.slice(0,80)) + "#v10-directory";
     });
     document.addEventListener("keydown", e => {
       const typing = /input|textarea|select/i.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
@@ -435,6 +460,15 @@
     });
   }
 
+  /* What's new: a small "New" mark on the Intelligence link until the member has opened Intelligence (or until the
+     notice expires). It sits inside the header's own height, so the page never moves to make room for it. */
+  const WHATS_NEW = Object.freeze({ key: "insidir:new:intelligence-2026-10", nav: "intelligence", until: Date.parse("2026-10-27T00:00:00Z") });
+  function newMark(key) {
+    if (key !== WHATS_NEW.nav || Date.now() >= WHATS_NEW.until) return "";
+    if (document.querySelector('[data-app-header][data-active="' + WHATS_NEW.nav + '"]')) { try { localStorage.setItem(WHATS_NEW.key, "1"); } catch {} return ""; }
+    try { if (localStorage.getItem(WHATS_NEW.key) === "1") return ""; } catch {}
+    return '<span class="app-nav__new" aria-hidden="true" title="New: briefings, research questions and 13F holdings"></span><span class="sr-only"> (new)</span>';
+  }
   function init() {
     renderHeader();
     segmented(document);

@@ -1,0 +1,105 @@
+/* Insidir V29 system: one set of tokens for every page, and the few interaction rules every page shares.
+   It adds names for what the V13-V17 sheets already use, so new components (and refactors) can stop repeating
+   raw values. No !important and no cascade layer: these rules only fill gaps; the brand sheets still decide.
+
+   Breakpoints (media queries cannot read custom properties, so they are listed here and used literally):
+     phone   <= 600px     tablet  <= 900px     desktop <= 1440px     wide >= 1920px (4K renders at 1x or 2x of this) */
+:root{
+  /* Colour: the V13 paper-and-ink palette (v13-halftone.css owns the values; these are aliases with fallbacks). */
+  --c-bg:var(--hf-bg,#0c0c0b);
+  --c-surface:var(--hf-surface,#171717);
+  --c-surface-2:var(--hf-surface-2,#1b1b1a);
+  --c-raise:var(--hf-raise,#202020);
+  --c-ink:var(--hf-ink,#f0eee8);
+  --c-soft:var(--hf-soft,#c2c1bc);
+  --c-muted:var(--hf-muted,#a4a4a0);
+  --c-faint:var(--hf-faint,#908f8b);
+  --c-line:var(--hf-line,#30302e);
+  --c-line-2:var(--hf-line-2,#434240);
+  --c-line-soft:rgba(240,238,232,.09);
+  --c-line-strong:rgba(240,238,232,.16);
+  --c-up:var(--hf-up,#2f996a);       /* purchases and rises only, always beside a word or a sign */
+  --c-down:var(--hf-down,#f94144);   /* sales, falls and errors only */
+
+  /* Type: one face, a short scale. */
+  --font:var(--hf-mono,"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace);
+  --fs-label:11px; --fs-small:12px; --fs-body:14px; --fs-lead:16px; --fs-h3:18px; --fs-h2:clamp(26px,3.2vw,44px); --fs-display:var(--hf-fs-display,clamp(40px,6.4vw,96px));
+  --lh-tight:1.15; --lh-body:1.6; --track-label:.12em;
+
+  /* Space: a 4px rhythm. */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px; --s-9:112px;
+  --gutter:var(--hf-gutter,clamp(20px,4.2vw,60px));
+  --page-max:var(--hf-max,1440px);
+
+  /* Shape and depth (the V17 "smooth" values). */
+  --r-xs:7px; --r-sm:10px; --r-md:14px; --r-lg:18px; --r-pill:999px;
+  --panel:linear-gradient(180deg,rgba(240,238,232,.045),rgba(240,238,232,.012) 60%),var(--c-surface);
+  --panel-hover:linear-gradient(180deg,rgba(240,238,232,.07),rgba(240,238,232,.02) 60%),var(--c-surface);
+  --shadow-panel:0 30px 80px -40px rgba(12,12,11,.95),0 1px 0 rgba(240,238,232,.05) inset;
+  --shadow-pop:var(--hf-shadow-pop,0 16px 40px -8px rgba(12,12,11,.9));
+
+  /* Motion: short, and only transform, opacity or colour. */
+  --dur-fast:120ms; --dur:180ms; --dur-slow:280ms;
+  --ease:var(--hf-spring,cubic-bezier(.22,.61,.36,1));
+
+  /* Interactive states. */
+  --focus-ring:0 0 0 2px var(--c-bg),0 0 0 4px var(--c-ink);
+  --tap-min:44px;
+}
+
+/* Text never inflates on rotation (iOS), and the page never scrolls sideways: overflow-x:clip contains a stray wide
+   element without making the body a scroll container (sticky headers keep working). */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-x:clip}
+/* Anchored sections land below the sticky header. */
+html{scroll-padding-top:88px}
+
+/* Taps answer at once: no double-tap zoom wait on controls. */
+:where(a,button,summary,label,[role=button],[role=tab],input[type=checkbox],input[type=radio],select){touch-action:manipulation}
+
+/* One visible focus for keyboard users wherever a sheet has not set its own. */
+:where(a,button,summary,select,input,textarea,[tabindex]):focus-visible{outline:2px solid var(--c-ink);outline-offset:2px}
+
+/* Respect a reduced-motion preference everywhere: nothing slides, fades or spins for longer than a frame. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* A focused header (sign-up): the logo and one way out, nothing else to wander to. */
+.auth-focus{display:flex;align-items:center;gap:var(--s-3);font-size:13px;color:var(--c-muted)}
+.auth-focus__link{display:inline-flex;align-items:center;min-height:var(--tap-min);padding:0 var(--s-2);color:var(--c-ink);text-decoration:underline;text-underline-offset:3px}
+.auth-focus__link:hover{color:var(--hf-ink-hover,#d9d7d2)}
+@media (max-width:420px){.auth-focus__note{display:none}}
+
+/* Sticky bars: solid paper, no backdrop blur. Their backgrounds were already 90-94% opaque, so the blur showed almost
+   nothing, yet it made the browser re-blur everything under the bar on every scroll frame (costly on phones). These
+   rules sit in the V13 layer, one step more specific than the rules they replace, because that is the only way to
+   change a layered !important declaration. */
+@layer insidir-v13{
+  html body.v13 :is(.v9-nav,.v3-static__nav,.app-header,.pw-header),html body.v13.ix-page .ix-bar{
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--hf-bg)!important}
+  /* Subscribe: the account links fill in from the right without moving the header, and the plan card keeps the room
+     its terms and button take while the account is checked, so nothing below it jumps. */
+  html body.v13 .pw-header__nav{flex:1 1 auto!important;justify-content:flex-end!important}
+  html body.v13[data-pw-state="loading"] .pw-plan__state{min-height:330px!important}
+}
+html body.cx-page .app-header{-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* data.html: coverage, measured (assets/js/coverage.js) */
+.mk-coverage{margin-top:var(--s-6);padding-top:var(--s-5);border-top:1px solid var(--c-line)}
+.mk-coverage h3{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em;color:var(--c-ink)}
+.mk-coverage__lede,.mk-coverage__wait,.mk-coverage__sync{margin:var(--s-2) 0 0;font-size:13px;line-height:1.55;color:var(--c-muted)}
+.mk-coverage__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin:var(--s-4) 0 0;border-top:1px solid var(--c-line-soft)}
+.mk-coverage__grid>div{padding:var(--s-4) var(--s-4) var(--s-4) 0;border-bottom:1px solid var(--c-line-soft)}
+.mk-coverage__grid dt{font-family:var(--font);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted)}
+.mk-coverage__grid dd{margin:6px 0 0;font-family:var(--font);font-size:26px;font-variant-numeric:tabular-nums;color:var(--c-ink)}
+.mk-coverage__grid small{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:var(--c-muted)}
+.mk-coverage details{margin-top:var(--s-3);font-size:13px;color:var(--c-soft)}
+.mk-coverage summary{cursor:pointer;color:var(--c-ink)}
+.mk-coverage ul{margin:var(--s-2) 0 0;padding-left:1.2em;line-height:1.6}
+
+/* ops.html data-quality table */
+.ops-table{width:100%;border-collapse:collapse;margin:var(--s-3) 0 var(--s-5);font-size:12.5px}
+.ops-table th,.ops-table td{padding:6px 10px 6px 0;border-bottom:1px solid var(--c-line-soft);text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.ops-table th{font-family:var(--font);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted);font-weight:500}
+.ops-table tr.is-flag td:nth-child(2){color:var(--c-ink);font-weight:600}

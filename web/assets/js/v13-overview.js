@@ -113,7 +113,8 @@ function todayFresh(r){
  const parts=[];
  if(r.status.ok){
   const s=r.status.value||{},run=s.lastIngest||null,when=run?(run.status==="running"?run.started_at:(run.finished_at||run.started_at)):s.lastIngestAt||null;
-  parts.push(when?(run?.status==="running"?"Import running since ":"Last import ")+D.stamp(when):"No import recorded yet");
+  const changed=Number(run?.parsed),failed=Number(run?.failed);
+   parts.push(when?(run?.status==="running"?"SEC check running since ":"SEC feed checked ")+D.stamp(when)+(Number.isFinite(changed)?" · "+changed+" new Form 4"+(changed===1?"":"s"):"")+(failed>0?" · "+failed+" failed":""):"No SEC check recorded yet");
  }else parts.push("Import status unavailable");
  const first=r.filing.ok?r.filing.value:null,fallback=r.status.ok?r.status.value?.latest_published_at:null,pub=first?.published_at||fallback;
  parts.push(pub?"newest filing published "+D.filedDate(pub):r.filing.ok?"no filings imported yet":"newest filing unavailable");

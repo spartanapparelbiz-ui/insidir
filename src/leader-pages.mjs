@@ -22,6 +22,7 @@ import { fetchImage, imageSize } from "./media.mjs";
 import { getRecord, putRecord } from "./media-store.mjs";
 import { samePerson, isEntityName, nameTokens } from "./person-match.mjs";
 import { companyDomain, fetchHomepage } from "./company-domain.mjs";
+import { archivedPage, isArchiveUrl, fetchArchivedImage } from "./web-archive.mjs";
 import {
   publicFetcher, PUBLIC_UA, registrableDomain, parseHtml, elements, ancestors, classList, textStrings, pageMeta, jsonLd, ldTypes, ldUrl, absoluteUrl
 } from "./public-fetch.mjs";
@@ -30,6 +31,7 @@ const DAY = 86400000;
 const PAGES_TTL = 90 * DAY;
 export const MAX_DISCOVERED = 25;
 export const MAX_PAGES = 45;
+const ARCHIVE_TRIES = 8;
 const MIN_SHORT_SIDE = 120;
 const ASPECT_MIN = 0.6, ASPECT_MAX = 1.7;
 
@@ -284,7 +286,29 @@ function linkCandidates(root, pageUrl, domain) {
 const GOOD_SHORT_SIDE = 200;
 export async function leadershipPhotos({ cik, name, ticker, insiders = [], extraPeople = [], need = null } = {}, deps = {}) {
   const fetcher = deps.fetcher || publicFetcher();
-  const page = deps.page || (url => fetcher.page(url));
+  const livePage = deps.page || (url => fetcher.page(url));
+  // A host that answered with a bot wall is read from the Internet Archive's copies of its pages instead
+  // (web-archive.mjs); a path robots.txt disallows is never read either way.
+  const archive = deps.archive === false ? null : (deps.archivePage || archivedPage);
+  // Each page of a walled host is looked up in the archive on its own (the home page may have no copy while the
+  // board page has one); a host whose first ARCHIVE_TRIES lookups all miss is given up like any bot wall.
+  const walled = new Map(), archivedPages = new Map();
+  const fromArchive = async (url, host, live) => {
+    const tally = walled.get(host);
+    const copy = await archive(url, deps).catch(() => null);
+    if (copy) { tally.hits++; return copy; }
+    tally.misses++;
+    if (!tally.hits && tally.misses >= ARCHIVE_TRIES) return live || { status: "blocked", url, archiveMiss: true };
+    return { status: "http", url, code: 404, archiveMiss: true, ...(live ? { walled: true } : {}) };
+  };
+  const page = async url => {
+    const host = new URL(url).hostname;
+    if (archive && walled.has(host)) return fromArchive(url, host, null);
+    const r = await livePage(url);
+    if (r.status !== "blocked" || !archive) return r;
+    walled.set(host, { hits: 0, misses: 0 });
+    return fromArchive(url, host, r);
+  };
   const store = deps.store || { getRecord, putRecord };
   const people = [
     ...insiders.filter(p => p?.name && !isEntityName(p.name)).map(p => ({ ...p, key: keyFor(p) })),
@@ -365,11 +389,12 @@ export async function leadershipPhotos({ cik, name, ticker, insiders = [], extra
     let r;
     if (item.why === "home" && home?.status === "ok") r = { status: "ok", url: home.url, html: home.html, root: home.root };
     else { r = await page(item.url); requests++; }
-    statusLog.push({ url: item.url, status: r.status, code: r.code || null });
+    statusLog.push({ url: item.url, status: r.status, code: r.code || null, ...(r.archived ? { archived: r.archived.timestamp } : {}) });
+    if (r.status === "ok" && r.archived) archivedPages.set(r.url, r.archived);
     if (r.status !== "ok") {
       // A bot wall, rate limit or dead host ends that host; a 404 or robots rule ends only that page.
       if (r.status === "blocked" || r.status === "rate-limited" || r.status === "unreachable") deadHosts.add(host);
-      if (host === wwwHost && (r.status === "blocked" || r.status === "rate-limited")) wwwBlocked = true;
+      if (host === wwwHost && (r.status === "blocked" || r.status === "rate-limited" || r.walled)) wwwBlocked = true;
       if (item.why === "ir-root" && r.status === "http" && r.code === 404) IR_PATHS.forEach(p => enqueue(new URL(item.url).origin + p, 2.6, "ir-path"));
       continue;
     }
@@ -414,7 +439,8 @@ export async function leadershipPhotos({ cik, name, ticker, insiders = [], extra
     matches.push({
       ownerCik: b.person.extra ? null : (b.person.cik ? String(b.person.cik).replace(/^0+/, "") : null), key,
       personName: b.person.name, cardName: b.card.name, cardTitle: b.card.title || "",
-      imageUrl: b.url, pageUrl: b.card.pageUrl, rule: m.rule + (b.card.how === "card" ? "" : ":" + b.card.how), confidence: m.confidence,
+      imageUrl: b.url, pageUrl: b.card.pageUrl, ...(archivedPages.get(b.card.pageUrl) ? { archived: archivedPages.get(b.card.pageUrl) } : {}),
+      rule: m.rule + (b.card.how === "card" ? "" : ":" + b.card.how), confidence: m.confidence,
       width: b.check.width, height: b.check.height
     });
   }
@@ -429,10 +455,11 @@ export async function leadershipPhotos({ cik, name, ticker, insiders = [], extra
 export async function checkImage(url, pageUrl, deps = {}) {
   let target = url.replace(/^http:\/\//, "https://");
   const fetcher = deps.fetcher || publicFetcher();
-  if (!deps.fetchImage && !(await fetcher.gate(target))) return { ok: false, reason: "robots-or-blocked" };
+  const fromArchive = isArchiveUrl(target);
+  if (!deps.fetchImage && !fromArchive && !(await fetcher.gate(target))) return { ok: false, reason: "robots-or-blocked" };
   let image;
   try {
-    const get = deps.fetchImage || ((u, o) => fetcher.paced(u, () => fetchImage(u, o)));
+    const get = deps.fetchImage || (fromArchive ? fetchArchivedImage : (u, o) => fetcher.paced(u, () => fetchImage(u, o)));
     image = await get(target, { maxBytes: 4_000_000, timeoutMs: 15000, userAgent: PUBLIC_UA, headers: { Referer: pageUrl } });
   } catch (e) { return { ok: false, reason: String(e?.message || e).slice(0, 60) }; }
   if (!["png", "jpeg", "webp", "gif", "avif"].includes(image.type)) return { ok: false, reason: "not raster" };

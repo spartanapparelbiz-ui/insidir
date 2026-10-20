@@ -1,5 +1,5 @@
 /* Insidir V13 palette audit: open every page in headless Chromium and report any computed
-   colour that is not a blend of the two identity colours (#0c0c0b paper, #e9e4da ink) or one of
+   colour that is not a blend of the two identity colours (#0c0c0b paper, #f0eee8 ink) or one of
    the two direction colours over the paper (#2f996a up, #f94144 down). Orange is retired: a colour
    that needs any of the old warm accent (#e9762b) beyond --warm-tolerance (default 0.025 of the
    way from paper to orange) to be explained is an off-palette leak, and leaks that read as orange
@@ -36,6 +36,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
 import { serveStatic } from "../src/web.mjs";
@@ -45,7 +46,7 @@ const args = process.argv.slice(2);
 const flag = name => args.includes("--" + name);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
 // `warm` is not part of the palette any more: it is the direction the audit hunts for (the retired orange accent).
-const PALETTE = { bg: [12, 12, 11], ink: [233, 228, 218], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
+const PALETTE = { bg: [12, 12, 11], ink: [240, 238, 232], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
 const TOL = Number(opt("tolerance", 5));
 const WARM_TOL = Number(opt("warm-tolerance", 0.025)); // paper/ink tokens need at most 0.006 of it
 const STATE_CAP = Number(opt("state-cap", 200));
@@ -58,7 +59,9 @@ const ALL_PAGES = [
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
-  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"]
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"], ["entity", "/entity.html?cik=1081316"],
+  ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
+  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
 const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
@@ -142,7 +145,29 @@ const insiderPeople = transactionItems.map(t => ({ owner_name: t.owner_name, own
 // answer(status, body) for a status other than 200, or null (answered 404 "not mocked").
 const STATUS = Symbol("status");
 const answer = (status, body) => ({ [STATUS]: status, body });
-function fixture(url, method, from = "") {
+// A streamed (application/x-ndjson) response: one JSON object per line.
+const NDJSON = Symbol("ndjson");
+const ndjson = lines => ({ [NDJSON]: lines.map(l => JSON.stringify(l)).join("\n") + "\n" });
+// Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
+const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+// Entity record, entity search and coverage captured from a local engine over real SEC EDGAR data.
+const COVERAGE = JSON.parse(readFileSync(new URL("./fixtures/coverage-api.json", import.meta.url), "utf8"));
+function intelligenceFixture(p, method, empty) {
+  if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
+  if (p === "/v1/me/intelligence/investigate" && method === "POST") return ndjson([...INTEL.stream, { stage: "answer", answer: INTEL.answer }]);
+  if (p === "/v1/me/intelligence/instrument") return INTEL.instrument;
+  if (p === "/v1/intelligence/tape") return empty ? { ...INTEL.tape, events: [], nextBefore: null } : INTEL.tape;
+  if (p === "/v1/intelligence/structure") return INTEL.structure;
+  if (p === "/v1/me/intelligence/preferences") return { frequency: "daily", updatedAt: "2026-10-19T00:00:00Z" };
+  if (p === "/v1/ai/status") return INTEL.aiStatus;
+  if (p === "/v1/intelligence/mirror/managers") return empty ? { available: false, managers: [], reason: "Form 13F ingestion has not run yet on this deployment.", notes: INTEL.managers.notes } : INTEL.managers;
+  if (p.startsWith("/v1/intelligence/mirror/managers/")) return INTEL.manager;
+  if (p === "/v1/intelligence/mirror/simulate") return INTEL.simulate;
+  if (p === "/v1/admin/costs") return answer(401, { error: "Administrator access required" });
+  return undefined;
+}
+function fixture(url, method, from = "", hash = "") {
+  if (from === "/intelligence.html" || from === "/admin-costs.html") { const r = intelligenceFixture(url.pathname, method, hash === "#empty"); if (r !== undefined) return r; }
   const ticker = url.searchParams.get("ticker") || "AAPL";
   const company = ticker === "MSFT" ? "MICROSOFT CORP" : ticker === "NVDA" ? "NVIDIA CORP" : "Apple Inc.";
   const p = url.pathname;
@@ -175,7 +200,23 @@ function fixture(url, method, from = "") {
   if (p === "/v1/me") return { user: { email: "reader@example.com", id: 1, created_at: "2026-01-01T00:00:00Z" }, access: { active: true, plan: "pro", status: "active", billingEnabled: true, complimentary: false, currentPeriodEnd: "2026-11-14T00:00:00Z" } };
   if (p === "/v1/me/research-decisions") return method === "POST" ? { saved: true } : { items: [{ ticker: "AAPL", review_status: "researching", reviewStatus: "researching", notes: "Reading the latest 10-K before deciding.", created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z" }] };
   if (p === "/v1/me/people") return { items: insiderPeople.slice(0, 1) };
+  if (p === "/v1/me/people/updates") return { people: [], items: [], following: 0, source: "SEC Form 4", disclaimer: "Reported purchases and sales are not recommendations or predictive signals." };
   if (p === "/v1/me/alerts") return { items: [] };
+  // Alerts and research events (SYNTHETIC fixtures for the colour audit; the copy mirrors the engine's own summaries).
+  const reEvent = { id: "11", event_type: "insider_purchase", status: "active", ticker: "AAPL", issuer_name: "Apple Inc.", transaction_date: "2026-09-10", transaction_date_end: "2026-09-11",
+    filing_date: "2026-09-12T21:00:00Z", ingested_at: "2026-09-12T21:15:00Z", reporting_lag_days: 1, source_urls: [source], summary: "OTHER PUBLIC FILER (Director) reported buying 1,500 shares of AAPL at $28 a share on Sep 10, 2026 to Sep 11, 2026; reported value $42,000. Form 4 filed Sep 12, 2026." };
+  if (p === "/v1/me/notifications") return { items: [{ id: "5", reason: "watchlist", createdAt: "2026-09-12T21:20:00Z", readAt: null, event: { id: "11", type: "insider_purchase", status: "active", ticker: "AAPL", filingDate: reEvent.filing_date, retrievedAt: reEvent.ingested_at, sourceUrls: [source], summary: reEvent.summary } },
+    { id: "4", reason: "followed_person", createdAt: "2026-09-10T21:20:00Z", readAt: "2026-09-11T08:00:00Z", event: { id: "10", type: "insider_sale", status: "active", ticker: "AAPL", filingDate: "2026-09-10T20:00:00Z", retrievedAt: "2026-09-10T20:10:00Z", sourceUrls: [source], summary: "COOK TIMOTHY D (Chief Executive Officer) reported selling 12,500 shares of AAPL at $26 a share on Sep 8, 2026; reported value $325,000. Form 4 filed Sep 10, 2026." } }], unread: 1, next: null };
+  if (p === "/v1/me/email-preferences") return { inApp: true, emailAlerts: "off", eventTypes: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], digestHourUtc: 13, consentedAt: null, unsubscribedAt: null,
+    emailVerified: true, emailAvailable: true, consent: { version: "2026-10-19", text: "Email me factual alerts about new public filings." }, eventTypesAvailable: ["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"], modes: ["off", "immediate", "daily"] };
+  if (p === "/v1/research-events") return { items: [reEvent], next: null, lastImportAt: "2026-09-12T21:15:00Z" };
+  if (/^\/v1\/research-events\/\d+\/explanation$/.test(p)) return { writer: "rules", facts: [{ text: reEvent.summary, evidence_ids: ["E1"] }], interpretation: [{ text: "A Form 4 is the public report an officer or director files after trading.", evidence_ids: [] }],
+    limitations: ["Not a recommendation."], evidence: [{ id: "E1", text: "Form 4 accession 1.", sourceUrl: source, retrievedAt: reEvent.ingested_at }], disclaimer: "Not investment advice." };
+  // The alerts page's public-source feed (SYNTHETIC fixtures in the shape src/api.mjs answers).
+  if (p === "/v1/intelligence/events") return { items: [{ event_key: "sec:1", source_type: "sec_notice", title: "Apple Inc. 8-K: Results of operations and financial condition", subject: "AAPL", source_url: source, published_at: "2026-09-12T20:00:00Z", observed_at: "2026-09-12T20:05:00Z", verified: true }] };
+  if (p === "/v1/intelligence/sources") return { sources: { secCompanyReports: "active", blueskyPublicPosts: "no_accounts_configured", houseFinancialDisclosures: "blocked_pending_legal_approval", senateFinancialDisclosures: "not_built" } };
+  if (p === "/v1/me/push") return method === "GET" ? { configured: false, publicKey: null, subscriptions: 0 } : { ok: true };
+  if (p === "/v1/me/security-events") return { items: [{ kind: "login_success", created_at: "2026-09-12T08:00:00Z" }] };
   if (p === "/v1/me/manual-holdings") return { items: [{ id: 1, ticker: "AAPL", quantity: 12.5, created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" }] };
   if (p === "/v1/me/brokerage/status") return { enabled: false, connected: false, provider: "snaptrade" };
   if (p === "/v1/me/brokerage/portfolio") return { accounts: [], holdings: [] };
@@ -187,6 +228,9 @@ function fixture(url, method, from = "") {
   if (p === "/v1/companies") return { items: filingItems.map(f => ({ ticker: f.ticker, issuer_name: f.issuer_name, name: f.issuer_name, last_filing_at: f.published_at, filings: 2 })), total: 3 };
   if (p === "/v1/insiders") return { items: insiderPeople, total: insiderPeople.length };
   if (p === "/v1/search") return { items: [{ ticker: "AAPL", name: "Apple Inc." }] };
+  if (p === "/v1/entities/1081316") return COVERAGE.entity;
+  if (p === "/v1/entities/search") return COVERAGE.search;
+  if (p === "/v1/coverage") return COVERAGE.coverage;
   if (p === "/v1/purchases" || p === "/v1/sales") return { items: transactionItems };
   return null;
 }
@@ -279,7 +323,7 @@ const scan = ({ palette, tol }) => {
   };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, orange: isOrange(parse(value)), count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
-  const allowedFonts = /^"?JetBrains Mono"?/i;
+  const allowedFonts = /^"?(JetBrains Mono|system-ui)"?/i; // V32: JetBrains Mono (brand and figures) or the interface sans
   for (const el of document.querySelectorAll("body *")) {
     if (SKIP.has(el.tagName)) continue;
     if (el.closest("canvas,[hidden],template")) continue;
@@ -332,8 +376,14 @@ const scan = ({ palette, tol }) => {
     const r = img.getBoundingClientRect(), cs = getComputedStyle(img);
     if (r.width < 2 || cs.display === "none" || cs.visibility === "hidden" || /\.svg(\?|$)/i.test(img.currentSrc) || !img.naturalWidth) continue;
     if (/^data:image\/svg/.test(img.currentSrc)) continue;
-    const scale = cs.objectFit === "cover" ? Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight) : Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
-    if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop().slice(0, 60), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: img.naturalWidth + "x" + img.naturalHeight, upscaleAt2x: +(scale * 2).toFixed(2), element: path(img) });
+    // With srcset (w descriptors) the page renders at DPR 1 here and the browser picked the 1x candidate; a 2x screen
+    // gets the largest candidate instead, so judge that one (its pixel size, in the loaded image's aspect ratio).
+    const widths = [img, ...(img.parentElement?.tagName === "PICTURE" ? img.parentElement.querySelectorAll("source") : [])]
+      .flatMap(n => String(n.getAttribute("srcset") || "").split(",").map(c => Number(/\s(\d+)w\s*$/.exec(c.trim())?.[1] || 0)));
+    const maxW = Math.max(0, ...widths);
+    const nw = maxW || img.naturalWidth, nh = maxW ? img.naturalHeight * maxW / img.naturalWidth : img.naturalHeight;
+    const scale = cs.objectFit === "cover" ? Math.max(r.width / nw, r.height / nh) : Math.min(r.width / nw, r.height / nh);
+    if (scale * 2 > 1.0001) blurry.push({ src: img.currentSrc.split("/").pop().slice(0, 60), rendered: Math.round(r.width) + "x" + Math.round(r.height), natural: Math.round(nw) + "x" + Math.round(nh) + (maxW ? " (largest srcset candidate)" : ""), upscaleAt2x: +(scale * 2).toFixed(2), element: path(img) });
   }
   for (const el of document.querySelectorAll("body *")) {
     const bgi = getComputedStyle(el).backgroundImage;
@@ -627,13 +677,17 @@ try {
       addEventListener("load", go);
     });
     // Self-test hooks: prove the audit fails when something orange is added (see the header).
+    // intelligence.html plays a short one-time introduction (headings fade in over ~2 s). Colours and contrast are
+    // judged on the settled page, as every returning visitor sees it, so the audit starts with the intro already seen.
+    await context.addInitScript(() => { try { sessionStorage.setItem("ix-intro", "1"); } catch {} });
     if (INJECT_JS) await context.addInitScript({ content: INJECT_JS });
     if (INJECT_CSS) await context.addInitScript(css => addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "@layer insidir-v13{" + css + "}"; document.head.appendChild(s); }), INJECT_CSS);
     await context.route("**/v1/**", async route => {
       const request = route.request(), url = new URL(request.url());
-      let from = ""; try { from = new URL(request.frame().url()).pathname; } catch {}
-      const body = fixture(url, request.method(), from);
-      if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
+      let from = "", hash = ""; try { const f = new URL(request.frame().url()); from = f.pathname; hash = f.hash; } catch {}
+      const body = fixture(url, request.method(), from, hash);
+      if (body !== null && body[NDJSON]) await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: body[NDJSON] });
+      else if (body !== null && body[STATUS]) await route.fulfill({ status: body[STATUS], contentType: "application/json", body: JSON.stringify(body.body) });
       else if (body !== null) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       else await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not mocked"}' });
     });
@@ -659,7 +713,13 @@ try {
         await page.waitForTimeout(250);
         Object.assign(entry, await inPage(scan, { palette: PALETTE, tol: TOL }));
         if (key === "index") entry.canvasGlow = await wordmarkGlow(page);
-        if (shots) await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        if (shots) {
+          // Walk the page once so lazy images and scroll reveals have loaded before the full-page capture.
+          await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += innerHeight * .8) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0, 0); });
+          await page.evaluate(() => Promise.all([...document.images].filter(i => !i.complete).map(i => new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 3000); }))));
+          await page.waitForTimeout(300);
+          await page.screenshot({ path: join(shots, `${key}-${width}.png`), fullPage: true });
+        }
         if (!flag("no-pixels")) { await inPage(() => 0); entry.pixels = await orangePixels(page); }
         let cdp = null;
         if (!flag("no-states")) {

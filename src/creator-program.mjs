@@ -1,7 +1,10 @@
 /* One-time $10 Insidir creator referrals. No automatic payouts.
+ * The commission is earned on the referred account's first $39 payment: the plan's first invoice, or after
+ * the $1 trial (whose invoice is below $39) the first renewal. creator_commissions.referred_user_id is unique,
+ * so every later renewal is ignored.
  * Only approved partners have active links. No paid customer access is granted here.
  * Commission candidates require verified initial Stripe invoices and a 30-day review hold. */
-import { timingSafeEqual } from "node:crypto";
+import { authorizeAdmin, tokenFingerprint } from "./admin-auth.mjs";
 
 export const REF_CODE = /^[a-z0-9][a-z0-9_-]{2,39}$/;
 const HANDLE = /^[a-z0-9_.]{1,30}$/;
@@ -19,7 +22,7 @@ export function normalizeHandle(value) {
 }
 export function commissionEligibleInvoice(invoice) {
   return !!invoice && invoice.status==="paid" &&
-    invoice.billing_reason==="subscription_create" && invoice.currency==="usd" &&
+    (invoice.billing_reason==="subscription_create"||invoice.billing_reason==="subscription_cycle") && invoice.currency==="usd" &&
     Number.isSafeInteger(invoice.amount_paid) && invoice.amount_paid>=3900 &&
     /^cus_[A-Za-z0-9]+$/.test(String(invoice.customer||"")) &&
     /^in_[A-Za-z0-9]+$/.test(String(invoice.id||""));
@@ -41,21 +44,26 @@ export async function recordFirstPaidInvoice(invoice,{query,verifiedPlan}) {
     [invoice.customer,invoice.id]);
   return !!res.rows.length;
 }
-const authorized=(req,env)=>{
-  const configured=String(env.INSIDIR_CREATOR_ADMIN_TOKEN||"");
-  const supplied=String(req.headers.authorization||"").replace(/^Bearer /i,"");
-  if(configured.length<32||supplied.length!==configured.length)return false;
-  return timingSafeEqual(Buffer.from(configured),Buffer.from(supplied));
-};
 async function readJson(req) {
   const chunks=[];let size=0;
   for await(const chunk of req){size+=chunk.length;if(size>4096)throw fail(413,"Request too large");chunks.push(chunk);}
   try{return JSON.parse(Buffer.concat(chunks).toString("utf8"));}catch{throw fail(400,"Invalid JSON");}
 }
-export async function creatorAdminRoutes(req,res,path,json,{query,env=process.env}) {
+/* Every administrative request, allowed or refused, goes into admin_audit_log (sql/011): who (a token fingerprint,
+ * never the token), what, the target and the client address. The log is append-only from the application.
+ * Access needs the admin token AND a one-time code, or an admin session opened with both (src/admin-auth.mjs). */
+const fingerprint=req=>tokenFingerprint(String(req.headers.authorization||"").replace(/^Bearer /i,""));
+const clientIp=req=>String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"").split(",").at(-1).trim().slice(0,64)||null;
+export async function audit(query,req,action,target=null,detail={},actor=null){
+  try{await query("INSERT INTO admin_audit_log(actor,action,target,detail,ip) VALUES($1,$2,$3,$4,$5)",[actor||fingerprint(req),action,target,JSON.stringify(detail),clientIp(req)]);}
+  catch(e){console.error(JSON.stringify({event:"admin.audit_failed",action,error:String(e?.message||e)}));}
+}
+export async function creatorAdminRoutes(req,res,path,json,{query,env=process.env,limiter=null}) {
   if(!path.startsWith("/v1/creators/admin/"))return false;
-  if(!authorized(req,env))throw fail(401,"Unauthorized");
+  const auth=await authorizeAdmin(req,{env,query,limiter});
+  if(!auth.ok){await audit(query,req,"admin.denied",path,{method:req.method,status:auth.status});throw fail(auth.status,auth.error);}
   res.setHeader("Cache-Control","no-store");
+  await audit(query,req,"admin."+String(req.method||"GET").toLowerCase(),path,{via:auth.via},auth.actor);
   if(path==="/v1/creators/admin/partners" && req.method==="GET"){
     const rows=await query("SELECT code,instagram_handle,display_name,contact_email,status,created_at FROM creator_partners ORDER BY created_at DESC LIMIT 300");
     return json(res,200,{partners:rows.rows});
@@ -73,6 +81,7 @@ export async function creatorAdminRoutes(req,res,path,json,{query,env=process.en
       "INSERT INTO creator_partners(code,instagram_handle,display_name,contact_email,status) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING code,status",
       [code,handle,name,email,status]);
     if(!result.rows.length)throw fail(409,"Creator handle or code already exists");
+    await audit(query,req,"creator.partner_created",code,{handle,status},auth.actor);
     return json(res,201,{...result.rows[0],referralUrl:"https://insidir.com/signup.html?ref="+code});
   }
   // Existing creators stay pending until they have explicitly agreed to partner.

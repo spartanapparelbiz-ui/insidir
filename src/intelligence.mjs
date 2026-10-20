@@ -139,23 +139,75 @@ const metrics = [
   {id:"liabilities",label:"Reported total liabilities",tags:["Liabilities"]},
   {id:"operatingCashFlow",label:"Reported operating cash flow",tags:["NetCashProvidedByUsedInOperatingActivities"]}
 ];
+/* What period a reported value covers: a balance at one date, one quarter, a year to date, or a fiscal year. A 10-Q
+ * reports both the quarter and the year to date with the same end date; they must never be shown as one figure. */
+export function periodTypeOf(row){
+  if(!isDate(row?.start))return {periodType:"instant",durationDays:null};
+  const length=days(row.start,row.end)+1;
+  const periodType=length>=80&&length<=100?"quarter":length>=350&&length<=380?"fiscal-year":length>100&&length<350?"year-to-date":"other";
+  return {periodType,durationDays:length};
+}
+// For one end date: the quarter first (the period a 10-Q is about), then the fiscal year, then a year to date.
+const PERIOD_RANK={quarter:0,"fiscal-year":1,"year-to-date":2,other:3,instant:0};
 export function extractFinancialFacts(companyFacts,cik) {
   const unit=reportingCurrency(companyFacts);
   return metrics.flatMap(metric=>{
     // Compare candidates across SEC taxonomy alternatives. A stale legacy tag
     // must not override a more recent company filing.
-    const options=conceptRows(companyFacts,metric.tags,IFRS[metric.id],unit).flatMap(x=>x.rows);
+    const options=conceptRows(companyFacts,metric.tags,IFRS[metric.id],unit).flatMap(x=>x.rows).map(row=>({...row,...periodTypeOf(row)}))
+      .filter(row=>row.periodType!=="other");
     if(!options.length)return [];
-    options.sort((a,b)=>b.end.localeCompare(a.end)||b.filed.localeCompare(a.filed));
+    options.sort((a,b)=>b.end.localeCompare(a.end)||PERIOD_RANK[a.periodType]-PERIOD_RANK[b.periodType]||b.filed.localeCompare(a.filed)||String(b.accn).localeCompare(String(a.accn)));
     const value=options[0];
     return [{
       id:metric.id,label:metric.label,value:value.val,unit,start:isDate(value.start)?value.start:null,
-      periodEnd:value.end,filedAt:value.filed,form:value.form,
+      periodEnd:value.end,periodType:value.periodType,durationDays:value.durationDays,filedAt:value.filed,form:value.form,
       fiscalYear:Number.isInteger(value.fy)?value.fy:null,
       fiscalPeriod:typeof value.fp==="string"?value.fp:null,
+      accession:value.accn,concept:conceptOf(companyFacts,metric,value),
       sourceUrl:secFilingUrl(cik,value.accn),source:"SEC XBRL company facts"
     }];
   });
+}
+/* The taxonomy concept a chosen row came from: the first concept with a row of the same accession, period and value. */
+function conceptOf(companyFacts,metric,row){
+  for(const [taxonomy,tags] of [["us-gaap",metric.tags||[]],["ifrs-full",IFRS[metric.id]||[]]])
+    for(const tag of tags)for(const rows of Object.values(companyFacts?.facts?.[taxonomy]?.[tag]?.units||{}))
+      if(Array.isArray(rows)&&rows.some(r=>r.accn===row.accn&&r.end===row.end&&r.val===row.val&&r.start===row.start))return taxonomy+":"+tag;
+  return null;
+}
+
+/* Insidir Changes, financial facts: the latest reported value of each metric against the same period one year
+ * earlier (a quarter against the quarter ending about 365 days before it, a fiscal year against the prior fiscal
+ * year, a balance against the balance a year earlier), both taken from the latest filing that reports them. No
+ * change is computed between periods of different types or lengths. Deterministic; no model. */
+const CHANGE_METRICS=["revenue","netIncome","operatingIncome","cash","assets"];
+export function extractFactChanges(companyFacts,cik){
+  const unit=reportingCurrency(companyFacts),out=[];
+  for(const metric of metrics.filter(m=>CHANGE_METRICS.includes(m.id))){
+    const rows=conceptRows(companyFacts,metric.tags,IFRS[metric.id],unit).flatMap(x=>x.rows).map(row=>({...row,...periodTypeOf(row)}))
+      .filter(row=>row.periodType==="quarter"||row.periodType==="fiscal-year"||row.periodType==="instant");
+    if(!rows.length)continue;
+    // The latest filing wins for each period (a restated value replaces the original).
+    const byPeriod=new Map();
+    for(const r of rows){const k=r.periodType+"|"+(r.start||"")+"|"+r.end;const cur=byPeriod.get(k);if(!cur||r.filed>cur.filed||(r.filed===cur.filed&&String(r.accn)>String(cur.accn)))byPeriod.set(k,r)}
+    const periods=[...byPeriod.values()].sort((a,b)=>b.end.localeCompare(a.end)||PERIOD_RANK[a.periodType]-PERIOD_RANK[b.periodType]);
+    const current=periods[0];
+    const prior=periods.find(r=>r.periodType===current.periodType&&Math.abs(days(r.end,current.end)-365)<=10&&
+      (current.durationDays==null||Math.abs(r.durationDays-current.durationDays)<=10));
+    if(!prior)continue;
+    const view=r=>({value:r.val,start:isDate(r.start)?r.start:null,end:r.end,periodType:r.periodType,durationDays:r.durationDays,form:r.form,filedAt:r.filed,accession:r.accn,sourceUrl:secFilingUrl(cik,r.accn)});
+    const change=current.val-prior.val;
+    out.push({id:metric.id,label:metric.label.replace(/^Reported (.)/,(m,c)=>c.toUpperCase()),unit,concept:conceptOf(companyFacts,metric,current),current:view(current),prior:view(prior),
+      change,changePct:prior.val!==0?change/Math.abs(prior.val):null,
+      methodology:"Latest reported "+current.periodType+" against the same "+current.periodType+" one year earlier; change = current − prior, as filed."});
+  }
+  return out;
+}
+/* The fact changes for a CIK, from SEC company facts (cached like the company page). */
+export async function companyFactChanges(cik,fetcher=secFetch){
+  const c=String(Number(cik)).padStart(10,"0");
+  return cached("factchanges:"+c,TTL,async()=>extractFactChanges(await fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+c+".json",{json:true}),c));
 }
 
 const CAPEX_TAGS=["PaymentsToAcquirePropertyPlantAndEquipment","PaymentsToAcquireProductiveAssets","PaymentsToAcquirePropertyPlantAndEquipmentAndIntangibleAssets"];
@@ -210,7 +262,7 @@ export function extractAnnualSeries(companyFacts,cik){
 
 /* Trailing twelve months for a flow measure: latest fiscal year + current year-to-date − prior
  * year-to-date, using only matched reported periods. Falls back to the fiscal year itself. */
-export function trailingTwelveMonths(rows){
+export function trailingTwelveMonths(rows,{fiscalYearOnly=false}={}){
  const unique=new Map();
  for(const row of rows){
   if(!isDate(row.start)||!isDate(row.end)||row.end<=row.start)continue;
@@ -225,7 +277,7 @@ export function trailingTwelveMonths(rows){
   .sort((a,b)=>b.end.localeCompare(a.end)||b.filed.localeCompare(a.filed))[0];
  const prior=ytd&&periods.filter(row=>Math.abs(days(annual.start,row.start))<=7&&Math.abs(row.length-ytd.length)<=7&&row.end<annual.end)
   .sort((a,b)=>b.filed.localeCompare(a.filed))[0];
- if(!ytd||!prior)return {value:annual.val,periodStart:annual.start,periodEnd:annual.end,basis:"fiscal-year",rows:[annual]};
+ if(fiscalYearOnly||!ytd||!prior)return {value:annual.val,periodStart:annual.start,periodEnd:annual.end,basis:"fiscal-year",rows:[annual]};
  const start=new Date(Date.parse(prior.end)+86400000).toISOString().slice(0,10);
  return {value:annual.val+ytd.val-prior.val,periodStart:start,periodEnd:ytd.end,basis:"ttm",rows:[annual,ytd,prior]};
 }
@@ -243,7 +295,8 @@ export function extractTtm(companyFacts,cik){
  for(const metric of ttmMetrics){
   let best=null;
   for(const {tag,rows} of conceptRows(companyFacts,metric.tags,IFRS[metric.id],metric.perShare?currency+"/shares":currency)){
-   const result=trailingTwelveMonths(rows);
+   // Per-share amounts do not add across periods (the share count changes), so EPS is the fiscal year's as reported.
+   const result=trailingTwelveMonths(rows,{fiscalYearOnly:!!metric.perShare});
    if(result&&(!best||result.periodEnd>best.periodEnd))best={...result,tag};
   }
   if(!best)continue;

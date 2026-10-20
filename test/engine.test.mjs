@@ -24,6 +24,17 @@ test("SEC Atom listings parse, deduplicate and reject untrusted hostnames",()=>{
   const x=parseAtom(atom);assert.equal(x.length,1);assert.equal(x[0].accession,accession);
   assert.equal(x[0].filerCik,"1234567");assert.equal(x[0].sourceUrl,filing.sourceUrl);
 });
+test("SEC Atom type=4 prefix matches 424B forms: importer must exclude prospectuses",()=>{
+  const xml='<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'+
+   '<entry><title>424B2 - OFFERING</title><filing-type>424B2</filing-type><updated>2026-10-19T10:00:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000043/x-index.htm"/></entry>'+
+   '<entry><title>4 - STOCK TRANSACTION</title><filing-type>4</filing-type><updated>2026-10-19T10:01:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000044/x-index.htm"/></entry>'+
+   '<entry><title>4/A - AMENDMENT</title><updated>2026-10-19T10:02:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000045/x-index.htm"/></entry>'+
+   '<entry><title>UNKNOWN</title><updated>2026-10-19T10:03:00Z</updated><link href="https://www.sec.gov/Archives/edgar/data/1234567/000123456726000046/x-index.htm"/></entry></feed>';
+  const filings=parseAtom(xml);
+  assert.deepEqual(filings.map(x=>x.accession),["000123456726000044","000123456726000045"]);
+  assert.deepEqual(filings.map(x=>x.formType),["4","4/A"]);
+});
+
 test("Form 4 parses transactions, not every filing as a purchase",()=>{
   const parsed=parseOwnership(ownership,filing);
   assert.equal(parsed.ticker,"EXMP");assert.equal(parsed.owners[0].name,"JANE SAMPLE");
@@ -49,11 +60,25 @@ test("SEC URL scope blocks look-alike hosts, protocols and unrelated paths",()=>
   assert.equal(allowedSecUrl("https://www.sec.gov/robots.txt"),false);
 });
 test("Politician, social and crypto sources remain disabled until cleared",()=>{
-  assert.deepEqual(sourceRegistry.filter(s=>s.status==="enabled").map(s=>s.id),["sec-form4"]);
+  assert.deepEqual(sourceRegistry.filter(s=>s.status==="enabled").map(s=>s.id),["sec-form4","wikimedia"]);
+  assert.deepEqual(sourceRegistry.filter(s=>/^disabled/.test(s.status)).map(s=>s.id),["house-financial","senate-financial","political-social","digital-assets"],"restricted sources stay off");
 });
 test("Passwords use salted scrypt, not plaintext",async()=>{
   const a=await hashPassword("correct horse battery stable"),b=await hashPassword("correct horse battery stable");
   assert.notEqual(a,b);assert.equal(await verifyPassword("correct horse battery stable",a),true);
   assert.equal(await verifyPassword("incorrect password",a),false);
   await assert.rejects(()=>hashPassword("short"),/12/);
+});
+
+test("XML Schema dates with a time zone keep their calendar date (seen in a real Form 4: 2026-10-14-05:00)", async () => {
+  const { parseOwnership, xmlDate } = await import("../src/sec.mjs");
+  assert.equal(xmlDate("2026-10-14-05:00"), "2026-10-14"); assert.equal(xmlDate("2026-10-14Z"), "2026-10-14"); assert.equal(xmlDate("2026-10-14+09:00"), "2026-10-14");
+  assert.equal(xmlDate("2026-10-14"), "2026-10-14"); assert.equal(xmlDate("2026-13-40"), null); assert.equal(xmlDate("14/10/2026"), null); assert.equal(xmlDate(null), null);
+  const xml = `<ownershipDocument><documentType>4</documentType><periodOfReport>2026-10-14-05:00</periodOfReport><issuer><issuerCik>0000000001</issuerCik><issuerName>Synthetic</issuerName><issuerTradingSymbol>SYN</issuerTradingSymbol></issuer>
+    <reportingOwner><reportingOwnerId><rptOwnerCik>0000000002</rptOwnerCik><rptOwnerName>Example Filer</rptOwnerName></reportingOwnerId><reportingOwnerRelationship><isDirector>1</isDirector></reportingOwnerRelationship></reportingOwner>
+    <nonDerivativeTable><nonDerivativeTransaction><securityTitle><value>Common Stock</value></securityTitle><transactionDate><value>2026-10-14-05:00</value></transactionDate>
+    <transactionCoding><transactionCode>S</transactionCode></transactionCoding><transactionAmounts><transactionShares><value>22500</value></transactionShares><transactionPricePerShare><value>2.114</value></transactionPricePerShare><transactionAcquiredDisposedCode><value>D</value></transactionAcquiredDisposedCode></transactionAmounts></nonDerivativeTransaction></nonDerivativeTable></ownershipDocument>`;
+  const doc = parseOwnership(xml, { accession: "000000000126000001", filerCik: "2", sourceUrl: "https://www.sec.gov/x", title: "4", formType: "4" });
+  assert.equal(doc.periodOfReport, "2026-10-14");
+  assert.equal(doc.transactions[0].transactionDate, "2026-10-14");
 });

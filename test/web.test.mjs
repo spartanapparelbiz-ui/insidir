@@ -141,7 +141,10 @@ test("every navigation button has its own page and nothing sends visitors back t
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
   const nav=home.match(/<nav class="v6-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
-  for(const page of ["platform.html","why-insidir.html","data.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  // The landing navigation is three pages (Platform, Intelligence, Pricing); the others are in the mobile menu and footer.
+  for(const page of ["platform.html","insidir-intelligence.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
+  const footer=home.match(/<footer[\s\S]*?<\/footer>/)?.[0]||"";
+  for(const page of ["why-insidir.html","data.html","/insider-trading","/stories.html"])assert.ok(footer.includes('href="'+page+'"'),"the landing footer still reaches "+page);
   assert.doesNotMatch(nav,/href="#/,"landing navigation buttons open pages, not anchors on the landing page");
   const fs=await import("node:fs/promises");
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
@@ -242,7 +245,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
 
 test("the landing page shows no product dashboard, no live data feed and no links into paid pages",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
- assert.match(home,/Know what moves/);
+ assert.match(home,/Financial intelligence\.<br><em>Connected\./);
  assert.match(home,/data-halftone-hero/);
  for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
  const main=home.split(/<footer/)[0];
@@ -296,7 +299,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/Know what moves/);
+  assert.match(home,/Financial intelligence\.<br><em>Connected\./);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
   const pricing=await(await fetch(base+"/pricing.html")).text();
@@ -410,7 +413,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
       else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
-      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
+      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero(?: sx-hero)?" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
       else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }
     assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
@@ -418,14 +421,15 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(css.status, 200);
     const theme = await css.text();
     assert.match(theme, /@layer insidir-v13\{/);
-    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var\(--hf-ink\)!important/);
+    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#f0eee8!important;--hf-warm:var\(--hf-ink\)!important/);
     assert.match(theme, /font-family:"JetBrains Mono"/);
     for (const family of ["home", "app", "desk", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
     const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");
     assert.equal(mono.headers.get("content-type"), "font/woff2");
     assert.match(await (await fetch(base + "/assets/fonts/OFL.txt")).text(), /JetBrains Mono: Copyright 2020/);
     const favicon = await (await fetch(base + "/assets/icons/favicon.svg")).text();
-    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#e9e4da/);
+    // The dotted "i" mark: ink background, warm-white dots (#f0eee8 since the vector refinement of the mark), never orange.
+    assert.match(favicon, /#0c0c0b/); assert.doesNotMatch(favicon, /#e9762b/i); assert.match(favicon, /#(e9e4da|f0eee8)/i);
     const engine = await (await fetch(base + "/assets/js/v13-halftone.js")).text();
     assert.match(engine, /data-halftone-hero/);
     assert.doesNotMatch(engine, /fonts\.googleapis|https?:\/\//, "the engine fetches nothing");
@@ -506,13 +510,13 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
 test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
   const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
   // Every page that names a person or a company loads the identity helper and its stylesheet.
-  for(const page of ["dashboard","people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company"]){
+  for(const page of ["dashboard","people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company","intelligence"]){
     const html=await readFile(new URL(page+".html",web),"utf8");
     assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
     assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
   }
   // Pages that show headshots carry the credits footnote the helper fills.
-  for(const page of ["people","person","filing","research","alerts","portfolio","company"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  for(const page of ["people","person","filing","research","alerts","portfolio","company","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
   assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");
@@ -653,4 +657,15 @@ test("person tiles carry the owner CIK and the issuer CIK, so the company's logo
   assert.ok((overview.match(/D\.personTile\([^)]*,"md",[\w$.]+\)/g)||[]).length>=2,"followed people and suggestions pass the issuer CIK");
   const people=await read("v10-people.js");
   assert.ok((people.match(/media\?\.portrait\([^)]*\{cik:id,issuerCik:ic\}\)/g)||[]).length>=2,"directory cards and the followed list pass both CIKs");
+});
+
+test("asset versions: src, href and srcset name the same versioned URL; fonts stay unversioned to match their stylesheets", async () => {
+  const { fingerprintHtml } = await import("../src/web.mjs");
+  const out = await fingerprintHtml('<link rel="preload" as="image" href="assets/img/product/company-report.webp"><link rel="preload" href="assets/fonts/Inter-normal-latin.woff2" as="font">' +
+    '<source srcset="assets/img/product/company-report.webp" type="image/webp"><img srcset="assets/img/hero.jpg 1200w, https://example.com/x.jpg 2x" src="assets/img/hero.jpg">');
+  const preload = /href="(assets\/img\/product\/company-report\.webp\?v=[0-9a-f]{10})"/.exec(out);
+  assert.ok(preload, "image preload is versioned");
+  assert.ok(out.includes('<source srcset="' + preload[1] + '" type="image/webp">'), "the <source> asks for the same URL as the preload");
+  assert.match(out, /srcset="assets\/img\/hero\.jpg\?v=[0-9a-f]{10} 1200w, https:\/\/example\.com\/x\.jpg 2x"/);
+  assert.match(out, /href="assets\/fonts\/Inter-normal-latin\.woff2" as="font"/);
 });

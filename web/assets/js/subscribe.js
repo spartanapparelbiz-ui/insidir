@@ -38,16 +38,18 @@
   };
 
   /* Headline and lead for every state (the plan card carries the detail and the action). */
-  const PLAN = "One plan covers everything below: $39 a month, billed through Stripe, and you can cancel any time from Billing.";
+  const PLAN = "One plan covers everything below. Start with 3 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing.";
   const COPY = {
-    loading: ["Subscribe to open your workspace.", "Insidir is a paid research workspace. " + PLAN],
-    ready: ["Subscribe to open your workspace.", "Insidir is a paid research workspace. " + PLAN],
+    // While the account loads, the page reads as most visitors will see it (a new account, eligible for the trial), so
+    // the answer usually changes nothing on screen.
+    loading: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
+    ready: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
     lapsed: ["Welcome back. Subscribe again to reopen your workspace.", "Your watchlist, research journal and holdings are still here. " + PLAN],
     past_due: ["Update your payment method.", "Your last payment didn't go through, so the workspace is paused. Update your card in Stripe's billing portal; access returns as soon as Stripe confirms the payment. Nothing you saved has been removed."],
     unpaid: ["Update your payment method.", "Your subscription has an unpaid invoice, so the workspace is paused. Pay it from Stripe's billing portal; access returns as soon as Stripe confirms the payment. Nothing you saved has been removed."],
     incomplete: ["Finish your first payment.", "Stripe is still waiting for the first payment of your subscription. Complete it in Stripe's billing portal. If you've only just paid, give it a minute and reload this page."],
     paused: ["Resume your subscription.", "Your subscription is paused, so the workspace is closed for now. Resume it in Stripe's billing portal; nothing you saved has been removed."],
-    disabled: ["Checkout isn't open yet.", "Insidir is a paid research workspace: one plan, $39 a month. Stripe checkout hasn't been switched on yet, so no payment can be taken today."],
+    disabled: ["Checkout isn't open yet.", "Insidir is one plan: a 3-day trial for $1, then $39 a month. Stripe checkout hasn't been switched on yet, so no payment can be taken today."],
     active: ["Your subscription is active.", "Everything below is already open to you. Your plan, renewal date and payment method live in Billing."],
     signedout: ["Log in to subscribe.", "A subscription belongs to an Insidir account, so log in first. " + PLAN],
     error: ["We couldn't check your account.", "Insidir didn't answer just now, so we can't tell whether your subscription is active. Try again in a moment."]
@@ -60,9 +62,49 @@
     paused: ["Subscription paused. Access returns when you resume it.", "Resume subscription"]
   };
 
+  /* The offer and its automatic-renewal terms come from the engine (GET /v1/billing/status), worded exactly as they
+     are recorded when the customer agrees; checkout stays disabled until the box beside them is ticked. */
+  let offer = null;
+  const agree = $("[data-pw-agree]");
+  const money = cents => "$" + (cents / 100).toFixed(cents % 100 ? 2 : 0);
+  function renderOffer(o) {
+    offer = o && (o.kind === "trial" || o.kind === "full") ? o : null;
+    agree.checked = false;
+    syncAgree();
+    if (!offer) { $("[data-pw-terms]").textContent = "The subscription terms could not be loaded. Reload the page to continue."; return; }
+    $("[data-pw-terms]").textContent = offer.disclosure;
+    const trial = offer.kind === "trial";
+    // The monthly price leads; the trial charge and the date of the first full charge sit right under it.
+    const firstCharge = trial ? new Date(Date.now() + offer.trialDays * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+    $("[data-pw-price]").innerHTML = trial
+      ? "<strong>" + money(offer.recurringCents) + "</strong><span>/ month after a " + offer.trialDays + "-day trial · " + money(offer.todayCents) + " today</span>"
+      : "<strong>" + money(offer.recurringCents) + "</strong><span>/ month</span>";
+    $("[data-pw-term-1]").textContent = trial ? money(offer.todayCents) + " today for a " + offer.trialDays + "-day trial, once per account" : money(offer.recurringCents) + " today for your first month";
+    $("[data-pw-term-2]").textContent = trial
+      ? "Then " + money(offer.recurringCents) + " a month in US dollars, first charged on " + firstCharge + " and renewing automatically until you cancel"
+      : "Then " + money(offer.recurringCents) + " a month in US dollars, renewing automatically until you cancel";
+    $("#pw-subscribe").textContent = trial ? "Start " + offer.trialDays + "-day trial · " + money(offer.todayCents) : "Subscribe · " + money(offer.recurringCents) + "/month";
+    // The headline promises what the button does: an account that has had its trial is offered the monthly plan.
+    if (!trial && body.dataset.pwState === "ready") {
+      title.textContent = "Subscribe to Insidir.";
+      lead.textContent = "This account has already used its 3-day trial, so checkout charges " + money(offer.recurringCents) + " today, then " + money(offer.recurringCents) + " a month through Stripe until you cancel. Cancel online from Billing in one step.";
+    }
+    delete $("#pw-subscribe").dataset.idleLabel;
+  }
+  function syncAgree() {
+    const ok = !!offer && agree.checked;
+    for (const id of ["#pw-subscribe", "#pw-resubscribe"]) { const b = $(id); if (b && b.getAttribute("aria-busy") !== "true") b.disabled = !ok; }
+  }
+  agree.addEventListener("change", syncAgree);
+  async function loadOffer() {
+    try { const r = await call("/v1/billing/status"); renderOffer(r.ok && r.data ? r.data.offer : null); } catch (_) { renderOffer(null); }
+  }
   function show(state, copyKey) {
     body.dataset.pwState = state;
     all("[data-pw-when]").forEach(el => { el.hidden = el.dataset.pwWhen !== state; });
+    const consent = state === "ready" || state === "lapsed";
+    $("[data-pw-consent]").hidden = !consent;
+    if (consent) loadOffer();
     const copy = COPY[copyKey || state];
     if (copy) { title.textContent = copy[0]; lead.textContent = copy[1]; }
   }
@@ -77,12 +119,12 @@
     if (who && email) { who.textContent = email; who.hidden = false; }
   }
 
-  async function call(path, method = "GET") {
+  async function call(path, method = "GET", payload = {}) {
     const res = await fetch(path, {
       method,
       credentials: "same-origin",
       headers: method === "GET" ? { Accept: "application/json" } : { Accept: "application/json", "Content-Type": "application/json" },
-      body: method === "GET" ? undefined : "{}"
+      body: method === "GET" ? undefined : JSON.stringify(payload)
     });
     let data = null;
     try { data = await res.json(); } catch (_) { data = null; }
@@ -169,7 +211,9 @@
     say("");
     busy(button, true);
     let res;
-    try { res = await call(route, "POST"); } catch (_) { res = null; }
+    const payload = portal ? {} : offer && agree.checked ? { consent: true, offer: offer.kind, disclosureVersion: offer.disclosureVersion } : null;
+    if (!payload) { busy(button, false); syncAgree(); return say("Tick the box to agree to the automatic renewal terms first."); }
+    try { res = await call(route, "POST", payload); } catch (_) { res = null; }
     const url = res && res.ok && typeof res.data.url === "string" ? res.data.url : "";
     if (/^https:\/\/[^/\\\s]+\//.test(url)) {
       if (!portal) {
@@ -179,13 +223,29 @@
       return;
     }
     busy(button, false);
+    syncAgree();
     if (!res) return say("We couldn't reach Insidir. Check your connection and try again.");
+    if (res.status === 400) return say(serverText(res) || "Tick the box to agree to the automatic renewal terms first.");
     switch (res.status) {
       case 401: show("signedout"); return say("Your session has ended. Log in again to continue.");
       // The engine refuses a second subscription and says why (already active, unpaid invoice, payment pending, paused…).
       case 409: { const why = serverText(res); await load(); return say(why || "You already have an Insidir subscription. Manage it from Billing."); }
       case 429: return say(serverText(res) || "Too many attempts. Please wait a few minutes and try again.");
-      case 403: return say("Your browser sent this request from an unexpected address. Reload the page and try again.");
+      case 403: {
+        // With email verification enforced, checkout waits for a confirmed address: offer a new link right here.
+        const why = serverText(res);
+        if (!/confirm your email/i.test(why)) return say("Your browser sent this request from an unexpected address. Reload the page and try again.");
+        say(why + " ");
+        const resend = document.createElement("button");
+        resend.type = "button"; resend.className = "pw-link"; resend.textContent = "Send a new confirmation link";
+        resend.addEventListener("click", async () => {
+          resend.disabled = true;
+          let r; try { r = await call("/v1/auth/resend-verification", "POST", {}); } catch (_) { r = null; }
+          say(r && r.ok ? (r.data.alreadyVerified ? "Your address is already confirmed. Try subscribing again." : "We sent a confirmation link. Open it, then come back to subscribe.") : (serverText(r) || "We couldn't send a link just now. Try again in a moment."));
+        });
+        feedback.append(resend);
+        return;
+      }
       case 404: return say(portal ? "There's no Stripe billing account for you yet. Subscribe first, or " + CONTACT + "." : NOT_STARTED);
       case 503: {
         // Either checkout isn't switched on, or Stripe didn't answer: the reloaded state tells which.

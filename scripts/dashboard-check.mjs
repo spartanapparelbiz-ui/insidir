@@ -29,7 +29,7 @@
        said once;
      - the header search: every company and person in its results carries a tile;
      - a logo or headshot tile beside every person and company the page names, identified by SEC CIK;
-     - layout: no load shift (the header shell holds its 70px; skeletons hold the content's space) with staggered
+     - layout: no load shift (the header shell holds its 70px and the section row its 45px; skeletons hold the content's space) with staggered
        latency, also on a return visit whose Today sentence is longer than the last one's; no horizontal overflow and
        no text cut off mid-word at 360–1440px, touch targets, sharp images, no orange anywhere;
      - motion: atoms written per frame during a scroll never exceed the atoms on screen (plus a few settling);
@@ -172,6 +172,8 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 /* respond: (path, method, url, body) → {status, body} | {status, buffer, type}. */
 async function open(width, respond, { path = "/dashboard.html", reducedMotion = "no-preference", blockImages = false, reveal = true, seen = SEEN, latency = null, init = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600, reducedMotion, timezoneId: "UTC" });
+  // A member who has already dismissed app.js's dated product announcement; the banner is not what this check covers.
+  await context.addInitScript(() => { try { localStorage.setItem("insidir:announcement:dismissed:features-2026-10-19", "1"); } catch {} });
   if (seen) await context.addInitScript(seenAt => { try { if (!sessionStorage.getItem("check:seeded")) { localStorage.setItem("insidir:overview:last-seen", seenAt); sessionStorage.setItem("check:seeded", "1"); } } catch {} }, seen);
   // Tools that measure the page see every scroll-reveal block in place (v13-motion.js holds blocks below the fold back until they scroll in).
   if (reveal) await context.addInitScript(() => {
@@ -229,6 +231,16 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     if (method === "DELETE" && path.startsWith("/v1/me/people/")) { const cik = decodeURIComponent(path.split("/").pop()); state.posts.push("unfollow " + cik); state.follows = state.follows.filter(c => c !== cik); return { status: 200, body: { deleted: true, owner_cik: cik } }; }
     if (method === "POST" && path === "/v1/me/watchlist") { const t = JSON.parse(body || "{}").ticker; state.posts.push("save " + t); state.saved.push(t); return { status: 200, body: { saved: true, ticker: t } }; }
     if (method !== "GET") return { status: 200, body: { saved: true } };
+    // The overview strip (v32-overview.js) reads the briefing in peek mode and the unread count.
+    if (path === "/v1/me/intelligence/briefing") return { status: 200, body: { stories: state.saved.length ? [{ ticker: state.saved[0], isNew: true }, { ticker: state.saved[0], isNew: false }] : [], needsSetup: !state.saved.length && !state.follows.length, subjects: { tickers: state.saved.length, people: state.follows.length } } };
+    if (path === "/v1/me/notifications") return { status: 200, body: { items: [], unread: state.saved.length ? 3 : 0 } };
+    // EDGAR filers beyond the import (header search, people directory): none in these fixtures.
+    if (path === "/v1/entities/search") return { status: 200, body: { items: [], total: 0, offset: 0, limit: 20, hasMore: false, state: "no_match", lookups: [] } };
+    // Autopilot follows and the Changes / Connections panels (v33-platform.js): empty answers, as for a filer with none.
+    if (path === "/v1/ai/status") return { status: 200, body: { configured: false, advice: false } };
+    if (path === "/v1/me/follows") return { status: 200, body: { items: [...state.saved.map(t => ({ kind: "company", id: t, ticker: t, mode: "important", paused: false })), ...state.follows.map(c => ({ kind: "person", id: c, cik: String(c).padStart(10, "0"), mode: "important", paused: false }))], modes: ["important", "all", "daily", "weekly", "off"] } };
+    if (/^\/v1\/entities\/\d+\/changes$/.test(path)) return { status: 200, body: { subject: { cik: path.split("/")[3] }, window: { days: 90 }, items: [], counts: {}, gaps: [], method: "Detected by rules." } };
+    if (/^\/v1\/entities\/\d+\/connections$/.test(path)) return { status: 200, body: { subject: { id: path.split("/")[3], name: "Fixture", kind: "person", url: "#" }, nodes: [{ id: path.split("/")[3], name: "Fixture", kind: "person", url: "#" }], edges: [], gaps: [], method: "Built from Form 4." } };
     if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
     if (path.startsWith("/v1/people/")) { const f = personFile(decodeURIComponent(path.split("/").pop()), [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]); return f ? { status: 200, body: f } : { status: 404, body: { error: "Reporting person not found in imported SEC records" } }; }
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
@@ -288,6 +300,11 @@ try {
     const fx = fixture(FULL);
     const { context, page, errors, api } = await open(1440, fx);
     await settle(page);
+    const desk = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll("#rd-desk [data-desk]")].map(t => [t.dataset.desk, { v: t.querySelector("[data-v]").textContent, s: t.querySelector("[data-s]").textContent, href: t.getAttribute("href"), loading: t.classList.contains("is-loading") }])));
+    check(desk.briefing?.v === "1" && /1 new item since your last visit/.test(desk.briefing.s) && desk.briefing.href === "intelligence.html#briefing", "overview: the briefing tile counts the stories marked New", desk.briefing);
+    check(desk.alerts?.v === "3" && /3 unread alerts/.test(desk.alerts.s) && desk.watch?.v === "7" && /4 companies · 3 people/.test(desk.watch.s), "overview: unread alerts, and the companies and people the member follows", [desk.alerts, desk.watch]);
+    check(/Last import/.test(desk.data?.s || "") && !Object.values(desk).some(t => t.loading), "overview: the data tile says when the last import finished, and no tile is left loading", desk.data);
+    check(api.includes("GET /v1/me/intelligence/briefing?peek=1") && !api.some(r => r === "GET /v1/me/intelligence/briefing"), "overview: reads the briefing in peek mode, so the Briefing keeps its own New marks", api.filter(r => /briefing|notifications/.test(r)));
     const H = await page.evaluate(() => ({
       greeting: document.querySelector("[data-greeting]")?.textContent || "",
       date: document.getElementById("rd-today-date")?.textContent || "",
@@ -309,7 +326,7 @@ try {
     check(H.credits, "a media credits footnote ([data-media-credits]) is on the page");
     check(H.today[0] === "Since your last visit on Sep 1 at 12:00 AM: 2 new trades from 2 of the 3 people you follow. 2 companies on your watchlist have new trades.", "Today says what is new since the last visit, from the people followed and the watchlist", H.today[0]);
     check(H.today[1] === "Across all 5 trades imported from SEC filings (traded Sep 1 – Sep 12, 2026), insiders bought $42,000 and sold $327,000 of their own companies' stock.", "Today sums the latest imported trades with exact figures (the same as 03)", H.today[1]);
-    check(H.today[2] === "Last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026.", "Today says how fresh the import is", H.today[2]);
+    check(H.today[2] === "SEC feed checked Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026.", "Today says how fresh the import is", H.today[2]);
     for (const route of ["/v1/me/people/updates?limit=40", "/v1/transactions?limit=100", "/v1/filings?limit=1", "/v1/me/watchlist", "/v1/me/research-decisions", "/v1/status"]) check(api.includes("GET " + route), "dashboard requests " + route, api);
     check(!api.some(a => /GET \/v1\/me\/people(\?|$)/.test(a)) && !api.some(a => /GET \/v1\/insiders/.test(a)) && !api.some(a => /\/v1\/filings\?limit=12/.test(a)), "no /v1/me/people list, no /v1/insiders (following 3 or more), no 12-filing list", api);
 
@@ -528,7 +545,7 @@ try {
     });
     check(orange.length === 0, "nothing on the dashboard is orange (the logo's full stop included)", orange);
     const badges = await page.evaluate(() => ({ sale: getComputedStyle(document.querySelector("#v3-trades .rd-type--sell")).color, buy: getComputedStyle(document.querySelector("#v3-trades .rd-type--buy")).color, newMark: getComputedStyle(document.querySelector(".rd-new")).color }));
-    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(233, 228, 218)", "sold is red, bought green, New is ink (not a colour)", badges);
+    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(240, 238, 232)", "sold is red, bought green, New is ink (not a colour)", badges);
 
     // 05: about this data.
     // The line as drawn: visible labels, values, and the " · " separators and full stop CSS puts between them.
@@ -536,7 +553,7 @@ try {
       const pseudo = (e, p) => { const c = getComputedStyle(e, p).content; return c && c !== "none" && c !== "normal" ? c.replace(/^"|"$/g, "") : ""; };
       return { shown: [...document.querySelectorAll("#rd-about > li")].map(d => pseudo(d, "::before") + d.textContent.replace(/\s+/g, " ").trim() + pseudo(d, "::after")).join(""), hidden: document.querySelectorAll("#rd-about .sr-only").length, items: document.querySelectorAll("#rd-about > li").length };
     });
-    check(about.shown === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last import Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026." && about.items === 5, "about this data reads as one line with exact figures", about);
+    check(about.shown === "Source: SEC EDGAR, Form 4 · Status: Online · 1,234 filings imported · last SEC feed check Oct 14, 2026, 09:12 UTC · newest filing published Sep 14, 2026." && about.items === 5, "about this data reads as one line with exact figures", about);
     check(about.hidden === 0, "about this data says each fact once to a screen reader (no hidden label repeating the words shown)", about);
 
     // Tiles: every name has its logo or headshot.
@@ -846,7 +863,7 @@ try {
       runs[key] = await text(page, "#v4-last-import");
       await context.close();
     }
-    check(runs.partial === "last import Oct 14, 2026, 09:12 UTC · partial import" && runs.running === "import started Oct 14, 2026, 09:00 UTC · in progress" && runs.error === "last import Oct 14, 2026, 09:03 UTC · import failed", "about this data reads partial, running and failed imports in plain words", runs);
+    check(runs.partial === "last SEC feed check Oct 14, 2026, 09:12 UTC · partial import" && runs.running === "SEC check started Oct 14, 2026, 09:00 UTC · in progress" && runs.error === "last SEC feed check Oct 14, 2026, 09:03 UTC · import failed", "about this data reads partial, running and failed imports in plain words", runs);
   }
 
   /* ---------- 3. A first-time member: suggestions to follow, companies to save ---------- */
@@ -918,7 +935,7 @@ try {
     check(/You have not saved any companies yet/.test(e["v3-watchlist"]) && /No notes yet/.test(e["v3-notes"]), "empty watchlist and notes", e);
     check(/No trades have been imported yet/.test(e["v3-trades"]) && /No dated trades to chart yet/.test(e["rd-daily-chart"]) && /No trades have been imported yet/.test(e["rd-kpis"]) && /No companies yet/.test(e["rd-companies"]) && /No trades have been imported yet/.test(e["rd-largest"]), "empty market states", e);
     check(await page.locator("#rd-daily-switch").isHidden(), "no Chart | Table switch without days to show");
-    check(/0 filings imported/.test(e["rd-about"]) && /no import recorded yet/.test(e["rd-about"]) && /no filings imported yet/.test(e["rd-about"]), "about this data with nothing imported", e["rd-about"]);
+    check(/0 filings imported/.test(e["rd-about"]) && /no SEC check recorded yet/.test(e["rd-about"]) && /no filings imported yet/.test(e["rd-about"]), "about this data with nothing imported", e["rd-about"]);
     await page.click('[data-filter="reported_sale"]'); await page.waitForTimeout(200);
     check(/No trades have been imported yet/.test(await text(page, "#v3-trades")), "filters on an empty import do not crash");
     if (SHOTS) await page.screenshot({ path: join(SHOTS, "dashboard-empty-390.png"), fullPage: true });
@@ -982,7 +999,8 @@ try {
       await settle(page);
       await page.waitForTimeout(400);
       const again = await page.evaluate(() => ({ sum: window.__shifts.reduce((a, s) => a + s.v, 0), list: window.__shifts, main: Math.round(document.getElementById("Content").getBoundingClientRect().top + scrollY), doc: document.documentElement.scrollHeight }));
-      check(sk.header === 70 && sk.main === 70 && again.main === 70, width + "px: the header shell holds 70px from the first paint, so main never moves", { sk, again: again.main });
+      // The 70px header and the 45px section row under it (Overview · Following · Alerts · Portfolio), both from the first paint.
+      check(sk.header === 70 && sk.main === 115 && again.main === 115, width + "px: the header shell (70px) and section row (45px) hold their space from the first paint, so main never moves", { sk, again: again.main });
       check(first.sum <= 0.01, width + "px: loading with staggered latency shifts nothing (first visit, emulator-flagged shifts included: " + first.sum.toFixed(4) + ")", first.list);
       check(again.sum <= 0.01, width + "px: a returning visit shifts nothing (" + again.sum.toFixed(4) + ")", again.list);
       check(Math.abs(again.doc - sk.doc) <= 24, width + "px: a returning visit's skeleton is as tall as the page it becomes (" + sk.doc + " → " + again.doc + ")", { skeleton: sk.doc, loaded: again.doc });

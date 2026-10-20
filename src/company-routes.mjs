@@ -6,7 +6,7 @@ import { getMarketChart, MARKET_RANGES } from "./market.mjs";
 import { getCompanyProfile } from "./company-profile.mjs";
 import { getCompanyInsiders } from "./insiders.mjs";
 import { getHeadlines, announcementsFromFilings, focusHeadlines, relevanceTerms } from "./news.mjs";
-import { searchCompanies } from "./search.mjs";
+import { searchCompanies, browseCompanies } from "./search.mjs";
 import { getMedia, hasMedia } from "./media-store.mjs";
 import { sendImage } from "./media.mjs";
 import { parseMediaQuery, mediaBatch, mediaPending } from "./media-batch.mjs";
@@ -72,7 +72,7 @@ const upstream = (label, error) => {
 };
 const notListed = () => failure(404, "Ticker not found in the SEC's official company mapping. This does not establish that a company does not exist.");
 
-const ROUTES = new Set(["/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news", "/v1/company/logo", "/v1/company/photos", "/v1/media"]);
+const ROUTES = new Set(["/v1/search", "/v1/company/directory", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news", "/v1/company/logo", "/v1/company/photos", "/v1/media"]);
 const MEDIA_PATH = /^\/v1\/media\/([a-f0-9]{64})\.(png|webp|jpeg|svg)$/;
 export function isCompanyRoute(pathname) { return ROUTES.has(pathname) || MEDIA_PATH.test(pathname); }
 const optional = async path => { try { return await import(path); } catch { return null; } };
@@ -139,14 +139,30 @@ export async function handleCompanyRoute(req, res, url, { loadTransactions = asy
     return res.end(JSON.stringify(body)), true;
   }
 
+  if (p === "/v1/company/directory") {
+    if (limited("directory:" + ip, 120)) throw failure(429, "Too many directory requests. Try again shortly.");
+    requireSec();
+    const askedOffset = Number(url.searchParams.get("offset") || 0);
+    const askedLimit = Number(url.searchParams.get("limit") || 50);
+    const offset = Number.isSafeInteger(askedOffset) ? Math.max(0, Math.min(100_000, askedOffset)) : 0;
+    const limit = Number.isSafeInteger(askedLimit) && askedLimit > 0 ? Math.min(100, askedLimit) : 50;
+    let page;
+    try { page = await browseCompanies({offset,limit}); } catch(e) { upstream("Company directory",e); }
+    return send(res, 200, page, 300), true;
+  }
   if (p === "/v1/search") {
     const q = String(url.searchParams.get("q") || "").trim().slice(0, 60);
     if (limited("search:" + ip, 120)) throw failure(429, "Too many searches. Try again shortly.");
     if (!q) return send(res, 200, { items: [] }), true;
     requireSec();
-    let items;
-    try { items = await searchCompanies(q, { limit: 8 }); } catch (e) { upstream("Company search", e); }
-    return send(res, 200, { items, source: "SEC official ticker mapping" }, 300), true;
+    const requested = Number(url.searchParams.get("limit"));
+    const limit = Number.isInteger(requested) && requested > 0 ? Math.min(50, requested) : 8;
+    const askedOffset = Number(url.searchParams.get("offset") || 0);
+    const offset = Number.isSafeInteger(askedOffset) ? Math.max(0, Math.min(100_000,askedOffset)) : 0;
+    let matches;
+    try { matches = await searchCompanies(q, { limit: limit + 1, offset }); } catch (e) { upstream("Company search", e); }
+    const items = matches.slice(0,limit);
+    return send(res, 200, { items, offset, limit, hasMore: matches.length > limit, source: "SEC official ticker mapping" }, 300), true;
   }
 
   const t = parseTicker(url.searchParams.get("ticker"));

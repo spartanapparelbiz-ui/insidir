@@ -1,0 +1,251 @@
+/* Insidir V31 landing: the automation story. What Insidir automates, the follow → investigate workflow, the five
+   capabilities, a real filing becoming a briefing and an alert, and what the subscription replaces.
+   Same paper and ink, same mono face, the V29 tokens (v29-system.css); plain CSS, no !important and no layer.
+   Section headings reuse .v13-head; panels reuse the V29 soft panel. Motion is opacity and transform only. */
+
+/* The headline experiment's rules live in v32-home.css with the current landing. */
+
+.ax-panel{background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
+.ax-label{margin:0;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.ax-note{margin:var(--s-5) 0 0;max-width:86ch;color:var(--c-muted);font-size:12.5px;line-height:1.65}
+.ax-note b{color:var(--c-soft);font-weight:600}
+/* A dotted rule: the halftone print of the logo's dot, used for every connector on this page. */
+.ax-dots{display:block;height:2px;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.4px) 0 50%/8px 2px repeat-x}
+
+/* ---------- hero: what is being monitored ---------- */
+.ax-watching{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:var(--s-4) 0 0;padding:0;list-style:none;color:var(--c-muted);font-size:12px}
+.ax-watching li{display:inline-flex;align-items:center;gap:6px;height:26px;margin:0;padding:0 10px;border:1px solid var(--c-line-soft);border-radius:var(--r-pill);white-space:nowrap}
+.ax-watching li:first-child{padding:0;border:0;color:var(--c-faint);letter-spacing:var(--track-label);text-transform:uppercase;font-size:var(--fs-label)}
+.ax-watching li:not(:first-child)::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--c-ink)}
+
+/* ---------- 2. what Insidir automates ---------- */
+.ax-auto__grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:var(--s-6) 0 0;padding:0;list-style:none;border-top:1px solid var(--c-line-soft)}
+.ax-auto__grid li{position:relative;margin:0;padding:var(--s-5) var(--s-4) var(--s-5) 0;display:grid;align-content:start;gap:var(--s-2)}
+.ax-auto__grid li+li{padding-left:var(--s-4);border-left:1px solid var(--c-line-soft)}
+.ax-auto__grid b{color:var(--c-ink);font-size:15px;font-weight:600;line-height:1.3}
+.ax-auto__grid span{color:var(--c-muted);font-size:13px;line-height:1.55}
+.ax-auto__grid li:last-child b{color:var(--c-soft)}
+.ax-auto__grid .ax-label{color:var(--c-faint)}
+.ax-auto__grid li:last-child .ax-label{color:var(--c-ink)}
+@media (max-width:1100px){
+  .ax-auto__grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ax-auto__grid li:nth-child(4){padding-left:0;border-left:0}
+  .ax-auto__grid li:nth-child(n+4){border-top:1px solid var(--c-line-soft)}
+}
+@media (max-width:600px){
+  .ax-auto__grid{grid-template-columns:1fr}
+  .ax-auto__grid li,.ax-auto__grid li+li{grid-template-columns:96px 1fr;column-gap:var(--s-4);padding:var(--s-4) 0;border-left:0}
+  .ax-auto__grid li+li{border-top:1px solid var(--c-line-soft)}
+  .ax-auto__grid .ax-label{grid-row:span 2;padding-top:3px}
+}
+
+/* ---------- 3. the workflow ---------- */
+.ax-flow__rail{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin:var(--s-6) 0 0;padding:0;list-style:none}
+.ax-flow__rail::before{content:"";position:absolute;left:calc(100% / 14);right:calc(100% / 14);top:21px;height:2px;
+  background:radial-gradient(circle,var(--c-line-2) 1px,transparent 1.4px) 0 50%/8px 2px repeat-x}
+.ax-flow__rail li{margin:0;display:flex}
+.ax-flow__step{position:relative;display:grid;justify-items:center;align-content:start;gap:10px;width:100%;min-height:var(--tap-min);padding:0 4px var(--s-3);
+  border:0;background:none;color:var(--c-muted);font:inherit;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ax-flow__node{position:relative;z-index:1;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--c-line-2);background:var(--c-bg);
+  font:600 11px/1 var(--font);letter-spacing:.04em;color:var(--c-faint);transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur-slow) var(--ease)}
+.ax-flow__verb{font:700 12px/1.2 var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-soft)}
+.ax-flow__hint{font-size:12px;line-height:1.45;color:var(--c-faint);max-width:18ch}
+.ax-flow__step:hover .ax-flow__node{border-color:var(--c-faint);color:var(--c-ink)}
+.ax-flow__step:focus-visible{outline:none}
+.ax-flow__step:focus-visible .ax-flow__node{box-shadow:var(--focus-ring)}
+.ax-flow__step[aria-selected="true"] .ax-flow__node{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-bg);transform:scale(1.06)}
+.ax-flow__step[aria-selected="true"] .ax-flow__verb{color:var(--c-ink)}
+.ax-flow__step.is-done .ax-flow__node{border-color:var(--c-soft);color:var(--c-soft)}
+/* Autoplay progress: a hairline under the selected step, drawn by transform (no layout). */
+.ax-flow__step::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:2px;background:var(--c-ink);transform:scaleX(0);transform-origin:left center;opacity:0}
+.ax-flow.is-playing .ax-flow__step[aria-selected="true"]::after{opacity:1;animation:ax-progress var(--ax-step,6.5s) linear forwards}
+@keyframes ax-progress{to{transform:scaleX(1)}}
+
+.ax-flow__stage{margin-top:var(--s-5);display:grid}
+.ax-flow__panel{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(20px,4vw,56px);align-items:start;padding:clamp(20px,3vw,40px)}
+/* Before the script runs (or without it) every step is shown in order; with it, one at a time. */
+.ax-flow__panel+.ax-flow__panel{margin-top:var(--s-3)}
+.ax-flow.is-ready .ax-flow__stage{grid-template-areas:"stack"}
+.ax-flow.is-ready .ax-flow__panel{grid-area:stack;margin:0}
+.ax-flow.is-ready .ax-flow__panel[hidden]{display:grid;visibility:hidden;opacity:0;pointer-events:none}
+.ax-flow.is-ready .ax-flow__panel:not([hidden]){animation:ax-in var(--dur-slow) var(--ease)}
+@keyframes ax-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ax-flow__copy h3{margin:6px 0 var(--s-3);font-size:clamp(26px,2.6vw,38px);line-height:1.08;letter-spacing:-.035em;font-weight:700;color:var(--c-ink)}
+.ax-flow__copy>p{margin:0;color:var(--c-soft);font-size:15px;line-height:1.6}
+.ax-flow__copy ul{list-style:none;margin:var(--s-4) 0 0;padding:0;display:grid}
+.ax-flow__copy li{margin:0;padding:var(--s-3) 0;border-top:1px solid var(--c-line-soft);color:var(--c-muted);font-size:13px;line-height:1.55}
+.ax-flow__copy li b{color:var(--c-ink);font-weight:600}
+.ax-flow__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s-3);margin-top:var(--s-4)}
+.ax-flow__toggle{display:inline-flex;align-items:center;gap:8px;min-height:var(--tap-min);padding:0 14px;border:1px solid var(--c-line-2);border-radius:var(--r-pill);
+  background:transparent;color:var(--c-soft);font:500 12px/1 var(--font);cursor:pointer;transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.ax-flow__toggle:hover{border-color:var(--c-faint);color:var(--c-ink)}
+.ax-flow__toggle[hidden]{display:none}
+
+/* The product-state card each step shows (a labelled example built from one real filing). */
+.ax-card{position:relative;padding:0;overflow:hidden;background:var(--c-bg);border:1px solid var(--c-line);border-radius:var(--r-md)}
+.ax-card__bar{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:10px var(--s-4);border-bottom:1px solid var(--c-line);background:var(--c-surface)}
+.ax-card__bar .ax-label{font-size:10.5px}
+.ax-card__bar em{font-style:normal;font-size:11px;color:var(--c-faint);white-space:nowrap}
+.ax-card__body{padding:var(--s-4);display:grid;gap:var(--s-3)}
+.ax-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--s-3);padding:10px 12px;border:1px solid var(--c-line-soft);border-radius:var(--r-sm);background:var(--c-surface)}
+.ax-row b{display:block;color:var(--c-ink);font-size:13.5px;font-weight:600;line-height:1.35}
+.ax-row span{display:block;color:var(--c-muted);font-size:12px;line-height:1.5}
+.ax-row--quiet{background:transparent}
+.ax-state{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:var(--r-xs);border:1px solid var(--c-line-2);color:var(--c-soft);font-size:11px;letter-spacing:.03em;white-space:nowrap}
+.ax-state::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ax-state--on{border-color:var(--c-ink);color:var(--c-ink)}
+.ax-state--new{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-bg)}
+.ax-state--new::before{background:var(--c-bg)}
+.ax-row span.ax-state--new{color:var(--c-bg)}
+.ax-state--wait{border-style:dashed;color:var(--c-muted)}
+.ax-state--wait::before{background:transparent;border:1px solid currentColor;width:5px;height:5px}
+.ax-state--off{color:var(--c-faint)}
+.ax-state--off::before{background:transparent;border:1px solid currentColor;width:5px;height:5px}
+.ax-lines{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.ax-lines th{padding:0 0 6px;text-align:left;font-weight:500;font-size:10.5px;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.ax-lines td{padding:7px 0;border-top:1px solid var(--c-line-soft);color:var(--c-soft)}
+.ax-lines :is(th,td):not(:first-child){text-align:right;padding-left:var(--s-3)}
+.ax-lines td:first-child{color:var(--c-ink)}
+.ax-reasons{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ax-reasons li{display:flex;justify-content:space-between;gap:var(--s-3);margin:0;color:var(--c-muted);font-size:12px;line-height:1.45}
+.ax-reasons li span:last-child{color:var(--c-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ax-push{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--c-line-2);border-radius:var(--r-md);background:var(--c-surface-2);box-shadow:var(--shadow-pop)}
+.ax-push__icon{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--c-ink);color:var(--c-bg);font:800 15px/1 var(--font)}
+.ax-push div b{display:block;color:var(--c-ink);font-size:12.5px;font-weight:600}
+.ax-push div span{display:block;color:var(--c-soft);font-size:12px;line-height:1.45}
+.ax-quote{margin:0;padding:12px 14px;border-left:2px solid var(--c-ink);background:var(--c-surface);color:var(--c-soft);font-size:12.5px;line-height:1.6}
+.ax-quote cite{display:block;margin-top:6px;font-style:normal;color:var(--c-faint);font-size:11px}
+.ax-card a{color:var(--c-ink);text-underline-offset:3px}
+
+@media (max-width:1000px){
+  .ax-flow__panel{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  /* Seven steps do not fit a phone: the rail scrolls sideways with snap, the selected step kept in view. */
+  .ax-flow__rail{display:flex;gap:0;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;margin-left:calc(-1 * var(--gutter));margin-right:calc(-1 * var(--gutter));padding:0 var(--gutter)}
+  .ax-flow__rail::-webkit-scrollbar{display:none}
+  .ax-flow__rail::before{left:var(--gutter);right:auto;width:calc(7 * 112px - 112px);margin-left:56px}
+  .ax-flow__rail li{flex:0 0 112px;scroll-snap-align:center}
+  .ax-flow__hint{display:none}
+}
+@media (max-width:600px){
+  /* Phones get each step's sentence and its card; the detail list stays on larger screens. */
+  .ax-flow__copy ul{display:none}
+  .ax-flow__panel{padding:var(--s-4)}
+  .ax-card__body{padding:var(--s-3)}
+  .ax-lines{font-size:11.5px}
+}
+
+/* ---------- 5. Intelligence: the dotted i answers the item you point at ---------- */
+.lx-i__part{transition:opacity var(--dur-slow) var(--ease),fill var(--dur-slow) var(--ease)}
+.lx-instrument:has(.lx-i__item:is(:hover,:focus-within)) .lx-i__part{opacity:.28}
+.lx-instrument:has(.lx-i__item--dot:is(:hover,:focus-within)) .lx-i__part--dot,
+.lx-instrument:has(.lx-i__item--stem:is(:hover,:focus-within)) .lx-i__part--stem,
+.lx-instrument:has(.lx-i__item--base:is(:hover,:focus-within)) .lx-i__part--base{opacity:1;fill:var(--c-ink)}
+.lx-i__item{transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+.lx-i__item:hover,.lx-i__item:focus-within{border-color:var(--c-line-strong)}
+.lx-i__item a{color:var(--c-ink);text-underline-offset:3px}
+.ax-states{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3);margin:var(--s-6) 0 0;padding:0;list-style:none}
+.ax-states li{display:grid;align-content:start;justify-items:start;gap:8px;margin:0;padding:var(--s-4)}
+.ax-states b{color:var(--c-ink);font-size:13.5px;font-weight:600}
+.ax-states span:last-child{color:var(--c-muted);font-size:12.5px;line-height:1.55}
+@media (max-width:1000px){.ax-states{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.ax-states{grid-template-columns:1fr}}
+
+/* ---------- 6. five capabilities ---------- */
+.ax-caps__grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--s-4);margin:var(--s-6) 0 0;padding:0;list-style:none}
+.ax-cap{grid-column:span 6;margin:0;display:flex;flex-direction:column;padding:clamp(20px,2.4vw,32px);overflow:hidden}
+.ax-cap--wide{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(20px,4vw,56px);align-items:center}
+.ax-cap__head{display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-4)}
+.ax-cap__letter{display:grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--c-line-strong);color:var(--c-ink);font:700 13px/1 var(--font)}
+.ax-cap h3{margin:0 0 var(--s-3);font-size:clamp(22px,2.1vw,30px);line-height:1.12;letter-spacing:-.03em;font-weight:700;color:var(--c-ink)}
+.ax-cap__lead{margin:0;color:var(--c-soft);font-size:14.5px;line-height:1.6;max-width:62ch}
+.ax-cap .lx-tools{margin-top:var(--s-4)}
+.ax-cap__shot{display:block;margin:var(--s-5) calc(-1 * clamp(20px,2.4vw,32px)) calc(-1 * clamp(20px,2.4vw,32px));border-top:1px solid var(--c-line-soft);aspect-ratio:16/9;overflow:hidden;background:var(--c-bg)}
+.ax-cap--wide .ax-cap__shot{margin:0;border:1px solid var(--c-line);border-radius:var(--r-md);aspect-ratio:16/8.6}
+.ax-cap__shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:left top}
+.ax-cap__status{margin:auto 0 0;padding-top:var(--s-4);color:var(--c-faint);font-size:12px;line-height:1.55}
+.ax-cap__status b{color:var(--c-soft);font-weight:600}
+@media (max-width:1000px){
+  .ax-cap,.ax-cap--wide{grid-column:1/-1}
+  .ax-cap--wide{grid-template-columns:1fr}
+}
+@media (max-width:600px){.ax-cap__shot{display:none}}
+
+/* The Briefing's published ordering rules (src/intelligence-briefing.mjs RANKING_RULES). */
+.ax-rules{margin-top:var(--s-5)}
+.ax-rules .ax-reasons{gap:0;padding:var(--s-2) var(--s-4)}
+.ax-rules .ax-reasons li{padding:8px 0;border-top:1px solid var(--c-line-soft)}
+.ax-rules .ax-reasons li:first-child{border-top:0}
+
+/* The 13F reporting timeline (historical holdings). */
+.ax-lag{margin:var(--s-5) 0 0;padding:var(--s-4);display:grid;gap:var(--s-3)}
+.ax-lag ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:relative}
+.ax-lag ol::before{content:"";position:absolute;left:6px;right:12.5%;top:6px;height:2px;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.4px) 0 50%/8px 2px repeat-x}
+.ax-lag li{position:relative;margin:0;padding:22px var(--s-2) 0 0;display:grid;gap:3px}
+.ax-lag li::before{content:"";position:absolute;left:0;top:0;width:12px;height:12px;border-radius:50%;background:var(--c-bg);border:1px solid var(--c-soft)}
+.ax-lag li:first-child::before{background:var(--c-ink);border-color:var(--c-ink)}
+.ax-lag b{color:var(--c-ink);font-size:12.5px;font-weight:600}
+.ax-lag span{color:var(--c-muted);font-size:11.5px;line-height:1.45}
+@media (max-width:600px){
+  .ax-lag ol{grid-template-columns:1fr;gap:var(--s-3)}
+  .ax-lag ol::before{left:5px;right:auto;top:6px;bottom:6px;width:2px;height:auto;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.4px) 50% 0/2px 8px repeat-y}
+  .ax-lag li{padding:0 0 0 24px}
+}
+
+/* ---------- 7. one filing, three forms ---------- */
+.ax-filing__flow{display:grid;grid-template-columns:minmax(0,1fr) 40px minmax(0,1.15fr) 40px minmax(0,1fr);align-items:stretch;margin:var(--s-6) 0 0}
+.ax-filing__col{display:flex;flex-direction:column;gap:var(--s-3);min-width:0}
+.ax-filing__col>.ax-label{padding-left:2px}
+.ax-filing__col .ax-card{flex:1}
+.ax-filing__arrow{display:grid;place-items:center;color:var(--c-faint)}
+.ax-filing__arrow i{display:block;width:100%;height:2px;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.4px) 0 50%/8px 2px repeat-x;position:relative}
+.ax-filing__arrow i::after{content:"";position:absolute;right:0;top:-4px;border:5px solid transparent;border-left-color:var(--c-faint);border-right:0}
+.ax-xml{margin:0;padding:var(--s-4);overflow-x:auto;color:var(--c-muted);font:12px/1.75 var(--font);white-space:pre}
+.ax-xml b{color:var(--c-ink);font-weight:500}
+.ax-story h4{margin:0;color:var(--c-ink);font-size:15px;font-weight:600;line-height:1.35}
+.ax-story__meta{margin:0;color:var(--c-muted);font-size:12px;line-height:1.55}
+.ax-filing__why{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:var(--s-4);margin-top:var(--s-4);padding:var(--s-5)}
+.ax-filing__why h3{margin:6px 0 0;font-size:var(--fs-h3);font-weight:600;color:var(--c-ink);line-height:1.35}
+@media (max-width:1100px){
+  .ax-filing__flow{grid-template-columns:1fr}
+  .ax-filing__arrow{height:36px}
+  .ax-filing__arrow i{width:2px;height:100%;background:radial-gradient(circle,var(--c-faint) 1px,transparent 1.4px) 50% 0/2px 8px repeat-y}
+  .ax-filing__arrow i::after{right:-4px;top:auto;bottom:0;border:5px solid transparent;border-top-color:var(--c-faint);border-bottom:0}
+  .ax-filing__why{grid-template-columns:1fr}
+}
+
+/* ---------- 9. what the subscription replaces ---------- */
+.ax-value__table{width:100%;margin:var(--s-6) 0 0;border-collapse:separate;border-spacing:0;font-size:13.5px}
+.ax-value__table th,.ax-value__table td{padding:var(--s-4) var(--s-4) var(--s-4) 0;text-align:left;vertical-align:top;border-top:1px solid var(--c-line-soft);line-height:1.55}
+.ax-value__table thead th{padding-top:0;border-top:0;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.ax-value .ax-value__table tbody th{width:24%;color:var(--c-ink);font:600 13.5px/1.55 var(--font);letter-spacing:0;text-transform:none}
+.ax-value__table td{color:var(--c-muted)}
+.ax-value__table td:last-child{color:var(--c-soft)}
+.ax-value__table td:last-child::before{content:"";display:inline-block;width:6px;height:6px;margin:0 10px 1px 0;border-radius:50%;background:var(--c-ink)}
+.ax-value__sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);margin:var(--s-6) 0 0;padding:0;list-style:none}
+.ax-value__sum li{margin:0;padding:var(--s-5);display:grid;gap:6px}
+.ax-value__sum b{color:var(--c-ink);font-size:var(--fs-h3);font-weight:600}
+.ax-value__sum span{color:var(--c-muted);font-size:13px;line-height:1.55}
+@media (max-width:760px){
+  .ax-value__table thead{display:none}
+  .ax-value__table,.ax-value__table tbody,.ax-value__table tr,.ax-value__table th,.ax-value__table td{display:block;width:auto}
+  .ax-value__table tr{padding:var(--s-4) 0;border-top:1px solid var(--c-line-soft)}
+  .ax-value__table th,.ax-value__table td{padding:0;border:0}
+  .ax-value__table td{margin-top:6px}
+  .ax-value__table td:first-of-type::before{content:"By hand: ";color:var(--c-faint)}
+  .ax-value__sum{grid-template-columns:1fr}
+}
+
+/* ---------- 4K: the same composition, more air, never stretched lines ---------- */
+@media (min-width:2400px){
+  .ax-flow__copy>p,.ax-cap__lead{font-size:16px}
+  .ax-flow__hint{font-size:13px}
+}
+
+/* Scroll-in for the new sections reuses the V13 reveal ([data-hf-reveal-group]); nothing here moves by itself
+   when reduced motion is requested. */
+@media (prefers-reduced-motion:reduce){
+  .ax-flow.is-ready .ax-flow__panel:not([hidden]){animation:none}
+  .ax-flow.is-playing .ax-flow__step[aria-selected="true"]::after{animation:none;opacity:0}
+}

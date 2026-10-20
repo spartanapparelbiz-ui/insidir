@@ -15,6 +15,7 @@ import { isEntityName, samePerson, nameTokens, givenVariants } from "./person-ma
 import { resolveCompany, tickerIndex } from "./intelligence.mjs";
 import { getCompanyInsiders, ownerIssuers } from "./insiders.mjs";
 import { PUBLIC_UA } from "./public-fetch.mjs";
+import { excludedPhoto } from "./photo-exclusions.mjs";
 
 const DAY = 86400000;
 
@@ -63,7 +64,7 @@ async function fromUrl(url, { referer, userAgent = PUBLIC_UA } = {}) {
  * Retry-After (bounded) before retrying. A failure that may be temporary is marked so the
  * company's result expires soon and is tried again. */
 const imageLanes = new Map();
-const IMAGE_GAP = { "upload.wikimedia.org": 400 };
+const IMAGE_GAP = { "upload.wikimedia.org": 400, "web.archive.org": 500 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const transientImageError = e => [429, 500, 502, 503, 504].includes(e?.upstreamStatus) || /abort|timeout|fetch failed|ECONNRESET|ETIMEDOUT/i.test(String(e?.name) + " " + String(e?.message));
 async function politeImage(url, options) {
@@ -134,11 +135,24 @@ function publish(state) {
  * photo off every page (initials or the company logo instead). */
 const photoBlocked = async cik => Boolean(cik && (await getRecord("person-photo-override", String(cik).replace(/^0+/, "")).catch(() => null))?.none);
 
+/* A company record without photos from sources audited as not being photographs (photo-exclusions.mjs). */
+function withoutExcluded(state) {
+  const photos = state.photos || {}, leaders = Array.isArray(state.leaders) ? state.leaders : [];
+  const bad = Object.keys(photos).filter(k => excludedPhoto(photos[k]));
+  if (!bad.length && !leaders.some(excludedPhoto)) return state;
+  const kept = { ...photos }, names = { ...(state.names || {}) };
+  for (const k of bad) { delete kept[k]; if (photos[k]?.personName || photos[k]?.caption) delete names[k]; }
+  const out = { ...state, photos: kept, names, leaders: leaders.map(l => excludedPhoto(l) ? { ...l, src: null, source: null, sourceUrl: null, credit: null } : l) };
+  if (state.coverage && typeof state.coverage.withPhoto === "number") out.coverage = { ...state.coverage, withPhoto: Math.max(0, state.coverage.withPhoto - bad.length) };
+  return out;
+}
+
 /* A company record as the page may see it: every person with a takedown loses the photo and the
  * display name taken from it, here and in the leadership list, even while an older record (kept
  * up to 7 days) still names them. One record lookup for the whole company. */
 export async function withoutTakedowns(state, { lookup = getRecords } = {}) {
   if (!state || typeof state !== "object") return state;
+  state = withoutExcluded(state);
   const leaders = Array.isArray(state.leaders) ? state.leaders : [];
   const keys = [...new Set([...Object.keys(state.photos || {}), ...leaders.map(l => l?.insiderKey)].filter(k => /^cik:\d{1,10}$/.test(String(k || ""))))];
   if (!keys.length) return state;
@@ -251,7 +265,7 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
   let leaders = [];
   if (wikidata?.wikidataPhotos) {
     try {
-      const result = await wikidata.wikidataPhotos({ cik: company.cik, companyName: company.name, insiders: people });
+      const result = await wikidata.wikidataPhotos({ cik: company.cik, companyName: company.name, ticker: state.ticker || company.ticker || null, insiders: people });
       state.sources.wikidata = { status: result.complete === false ? "partial" : "ok", matched: result.matches?.length || 0 };
       if (result.complete === false) state.transient = true;
       for (const m of result.matches || []) {
@@ -322,8 +336,11 @@ async function runJob(ticker, company, { extras = [], previous = null } = {}) {
       const person = personFor(m), leader = person ? null : leaderFor(m);
       if (person ? !replaceable(state.photos[person.key]) : !leader || !replaceable(leader.src ? leader : null)) continue;
       try {
-        const { saved } = await fromUrl(m.imageUrl, { referer: m.pageUrl, userAgent: PUBLIC_UA });
-        const photo = { src: saved.url, source: "company-site", sourceUrl: m.pageUrl, credit: "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : ""), personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high" };
+        const { saved } = await fromUrl(m.imageUrl, { referer: m.archived ? m.archived.snapshot : m.pageUrl, userAgent: PUBLIC_UA });
+        const site = "Company website" + (siteHost(m.pageUrl) ? " (" + siteHost(m.pageUrl) + ")" : "");
+        const photo = { src: saved.url, source: "company-site", sourceUrl: m.archived ? m.archived.snapshot : m.pageUrl,
+          credit: m.archived ? site + ", Internet Archive copy of " + m.archived.date : site, personName: m.cardName || m.personName, rule: m.rule, confidence: m.confidence || "high",
+          ...(m.archived ? { archived: m.archived.date } : {}) };
         if (person) await assign(person, photo, { replace: true });
         else leaderPhoto(leader, photo);
       } catch (e) { if (transientImageError(e)) state.transient = true; /* try the next source */ }

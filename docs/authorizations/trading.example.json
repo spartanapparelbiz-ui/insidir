@@ -1,0 +1,14 @@
+{
+  "mode": "TRADING_ENABLED",
+  "legalEntity": "Exact legal name of the contracting entity",
+  "brokerPartner": "Name of the licensed broker-dealer partner (for example an Alpaca or DriveWealth entity)",
+  "brokerPartnerAgreementDate": "YYYY-MM-DD",
+  "brokerDealerCrd": "The partner's FINRA CRD number",
+  "attorneyName": "Name, firm and bar admission of the reviewing securities attorney",
+  "attorneyReviewDate": "YYYY-MM-DD",
+  "chiefComplianceOfficer": "Name of the CCO responsible for the trading program",
+  "supervisoryPrincipal": "Name of the registered principal supervising order flow",
+  "customerAuthorizationVersion": "Version id of the customer trading authorization / account agreement",
+  "riskControlsReviewUrl": "Internal URL of the reviewed risk controls (duplicate-order prevention, limits, reconciliation, kill switch)",
+  "effectiveDate": "YYYY-MM-DD"
+}

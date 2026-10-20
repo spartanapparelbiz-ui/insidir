@@ -89,7 +89,8 @@
       : waiting && !status ? "Waiting for Stripe's confirmation"
       : status ? (STATUS[status] || status.replace(/_/g, " ")) : "No subscription";
     const ended = status === "canceled" || status === "incomplete_expired";
-    $("[data-bl-period-label]").textContent = ended ? "Ended" : "Current period ends";
+    const stopping = !!(bill && bill.cancelAtPeriodEnd) && !ended;
+    $("[data-bl-period-label]").textContent = ended ? "Ended" : stopping ? "Access ends (will not renew)" : status === "trialing" ? "Trial ends, then $39/month" : "Renews on";
     $("[data-bl-period]").textContent = dateText(period) || "—";
     $("[data-bl-method]").textContent = status ? "Held by Stripe. Update it in Manage billing." : waiting ? "With Stripe, being confirmed" : "None on file";
     if (me && me.user && me.user.email) $("[data-bl-email]").textContent = String(me.user.email);
@@ -99,6 +100,9 @@
     // Never a second checkout while a payment is being confirmed or a live subscription needs fixing.
     $("[data-bl-subscribe]").hidden = active || !enabled || waiting || !!fix;
     $("[data-bl-dashboard]").hidden = !active;
+    // Cancel online in one step, wherever the subscription can still bill and is not already set to stop.
+    $("[data-bl-cancel]").hidden = !(enabled && customer && ["active", "trialing", "past_due", "unpaid"].includes(status) && !stopping);
+    if (stopping && active) { say("Your subscription is cancelled and will not renew. Access continues until " + (dateText(period) || "the end of the current period") + "."); return; }
     if (waiting) say("Waiting for Stripe to confirm your payment. This page updates as soon as it does; there's no need to pay again.");
     else if (!active && !enabled) say("Checkout isn't open yet, so no payment can be taken right now. To request access, email hello@aethric.llc.");
     else if (fix) say(fix.text + (manage.hidden ? NO_PORTAL : ""), true);
@@ -150,9 +154,11 @@
         polling = false;
         box.dataset.state = "active";
         title.textContent = "Your subscription is active.";
-        text.textContent = "Thank you for subscribing. The whole research workspace is open to you now.";
+        text.textContent = "Thank you for subscribing. Every tool is open to you now. Start by following a few companies and people: Insidir checks for their new filings from then on.";
+        // A new member's overview opens on a short, optional "Get started" (assets/js/onboarding.js).
+        try { if (!localStorage.getItem("insidir:onboard")) localStorage.setItem("insidir:onboard", "new"); } catch (_) { /* storage unavailable */ }
         open.setAttribute("href", next || "dashboard.html");
-        open.textContent = next ? "Continue where you left off" : "Open dashboard";
+        open.textContent = next ? "Continue where you left off" : "Follow your first companies";
         open.hidden = false;
         try { history.replaceState(null, "", location.pathname); } catch (_) { /* keep the URL */ }
         render(state.me, state.bill); // the confirmed answer from Stripe, without asking again
@@ -191,6 +197,27 @@
     }
   });
   $("[data-bl-recheck]").addEventListener("click", () => confirmCheckout(null));
+
+  /* ---------- cancel online (POST /v1/billing/cancel) ---------- */
+  const cancelBtn = $("[data-bl-cancel]"), confirmBox = $("[data-bl-cancel-confirm]");
+  cancelBtn.addEventListener("click", () => { confirmBox.hidden = false; $("[data-bl-cancel-yes]").focus(); });
+  $("[data-bl-cancel-no]").addEventListener("click", () => { confirmBox.hidden = true; cancelBtn.focus(); });
+  $("[data-bl-cancel-yes]").addEventListener("click", async e => {
+    const yes = e.currentTarget;
+    yes.disabled = true;
+    say("");
+    try {
+      const res = await fetch("/v1/billing/cancel", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: "{}" });
+      let data = {};
+      try { data = await res.json(); } catch (_) { data = {}; }
+      if (!res.ok) throw Error(data.error ? String(data.error) : "The cancellation didn't go through. Please try again, or email hello@aethric.llc and we will cancel for you.");
+      confirmBox.hidden = true;
+      await load(true);
+      say(data.canceled ? (data.message || "Your subscription is cancelled.") : "Your subscription was already cancelled; nothing more will be charged.");
+    } catch (err) {
+      say(err instanceof TypeError ? "We couldn't reach Insidir. Check your connection and try again." : err.message, true);
+    } finally { yes.disabled = false; }
+  });
 
   load(returning).then(state => { if (returning) confirmCheckout(state); });
 })();

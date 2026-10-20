@@ -1,17 +1,18 @@
-<!doctype html><html lang="en"><head>
+<!doctype html><html lang="en"><head><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir">
 <meta name="description" content="Your Insidir overview: what the people you follow and the companies you watch filed since your last visit, then the latest SEC Form 4 purchases and sales across the market, with exact shares, prices and values, each linked to its original record.">
-<title>Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
+<title>Dashboard · Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
 <link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/JetBrainsMono-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=2">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/entity-media.js?v=media-5"></script><script defer src="assets/js/app.js?v=18"></script><script defer src="assets/js/form4-words.js?v=1"></script><script defer src="assets/js/v3-dashboard.js?v=22"></script><script defer src="assets/js/v4-dashboard.js?v=22"></script><script defer src="assets/js/v13-overview.js?v=3"></script>
+<script defer src="assets/js/entity-media.js?v=media-6"></script><script defer src="assets/js/app.js?v=23"></script><script defer src="assets/js/form4-words.js?v=1"></script><script defer src="assets/js/v3-dashboard.js?v=23"></script><script defer src="assets/js/v4-dashboard.js?v=23"></script><script defer src="assets/js/v13-overview.js?v=4"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-</head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script><script defer src="assets/js/v32-overview.js"></script><script defer src="assets/js/v33-platform.js?v=5"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
 <div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
@@ -27,6 +28,28 @@
   </div>
 </section>
 
+<!-- Overview strip (assets/js/v32-overview.js): each tile reads one existing route and links to where the work is. -->
+<nav class="rd-desk" id="rd-desk" aria-label="What is waiting" aria-busy="true">
+  <a class="rd-desk__tile is-loading" href="intelligence.html#briefing" data-desk="briefing"><span class="rd-desk__k">Briefing</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking your briefing…</span></a>
+  <a class="rd-desk__tile is-loading" href="alerts.html" data-desk="alerts"><span class="rd-desk__k">Alerts</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking alerts…</span></a>
+  <a class="rd-desk__tile is-loading" href="watchlist.html" data-desk="watch"><span class="rd-desk__k">Watching</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking what you follow…</span></a>
+  <a class="rd-desk__tile is-loading" href="data.html" data-desk="data"><span class="rd-desk__k">Data</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking the latest import…</span></a>
+</nav>
+
+<!-- A new member's first steps (assets/js/onboarding.js). Shown before first paint only for an account that has just
+     subscribed and has not finished or skipped it, so the page never moves to make room. -->
+<section class="rd-start" id="rd-start" aria-labelledby="rd-start-title" hidden>
+  <div class="rd-start__head"><div><p class="rd-eyebrow">Get started · about two minutes</p><h2 id="rd-start-title">What would you like to follow?</h2></div><button type="button" class="rd-start__skip" data-start-skip>Skip for now</button></div>
+  <ol class="rd-start__steps">
+    <li data-step="follow"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Follow a company or a person</b><span>Search any SEC filer below, or use Follow on the suggestions further down. Insidir then watches their filings and brings you the research leads, risks and changes in them, each with its evidence.</span></div></li>
+    <li data-step="records"><span class="rd-start__mark" aria-hidden="true"></span><div><b>See their latest records</b><span>Their recent Form 4 filings appear further down this page, under People you follow and Your watchlist, newest first. From now on, Insidir checks for new ones for you.</span></div></li>
+    <li data-step="briefing"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Open your briefing</b><span>What changed for what you follow, and why each item is there. <a href="intelligence.html#briefing" data-onboard="briefing">Open the Briefing →</a></span></div></li>
+    <li data-step="alerts"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Choose how you hear about it</b><span>Alerts arrive in the app already. Turn on device push or alert emails if you want them. <a href="alerts.html#al-delivery-h" data-onboard="alerts">Notification settings →</a></span></div></li>
+  </ol>
+  <p class="rd-start__note" data-start-status aria-live="polite"></p>
+</section>
+<script>/* Before first paint: show the panel only to a new member who has not finished or skipped it. */(()=>{try{if(localStorage.getItem("insidir:onboard")==="new")document.getElementById("rd-start").hidden=false;}catch(e){}})();</script>
+<p class="rd-intel-link">Ask Insidir Intelligence: <a href="intelligence.html?q=What%20changed%20since%20my%20last%20visit%3F">What changed since my last visit?</a> · <a href="intelligence.html?q=What%20did%20the%20people%20I%20follow%20report%20this%20month%3F">What did the people I follow report?</a> · <a href="intelligence.html#mirror">What are institutional investors reporting?</a></p>
 <div class="rd-grid">
   <section class="rd-module rd-module--follow" aria-labelledby="rd-follow-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow →</a></header>
@@ -145,8 +168,8 @@ put("v3-trades",rows?rep(rows,()=>'<tr class="rd-trade is-skeleton"><td class="r
 <div class="hwf-top">
 <div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
 <nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Get started</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
+<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
 </div>
 <div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
 </footer>

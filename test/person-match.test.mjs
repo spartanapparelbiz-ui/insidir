@@ -20,6 +20,11 @@ test("samePerson rejects different people and entities", () => {
   ]) assert.equal(samePerson(sec, natural), false, sec + " / " + natural);
   assert.equal(isEntityName("VANGUARD GROUP INC"), true);
   assert.equal(isEntityName("HUANG JEN HSUN"), false);
+  // Short suffixes that are also surnames: Francisco Sá Neto is a person; S.A., AG and N.V. companies are not.
+  assert.equal(isEntityName("Sa Neto Francisco"), false);
+  assert.equal(isEntityName("Co Thomas"), false);
+  for (const n of ["AXIA Energia SA", "Control Empresarial de Capitales S.A. de C.V.", "Siemens AG", "Royal Philips N.V.", "NIPPON LIFE INSURANCE CO", "Medtronic plc", "EEME Energy SPV I, LLC"])
+    assert.equal(isEntityName(n), true, n);
 });
 
 test("natural readings treat a leading initial as a middle name", () => {

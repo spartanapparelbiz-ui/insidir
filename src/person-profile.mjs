@@ -102,6 +102,7 @@ import { secFetch, parseOwnership } from "./sec.mjs";
 import { secReady } from "./config.mjs";
 import { ownerIssuers as edgarOwnerIssuers, ownerRoles } from "./insiders.mjs";
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
+import { fetchSecOwnerHistory } from "./sec-person-fallback.mjs";
 
 export const DEFAULT_LIMIT = 100, MAX_LIMIT = 500;
 export const MAX_COMPANIES = 100, MAX_ROLE_ISSUERS = 8, MAX_FILINGS = 100, MAX_NAMES = 20, MAX_OTHER_ISSUERS = 40;
@@ -178,7 +179,7 @@ const linesCte = (joint, columns) => {
     ? `\n  UNION ALL SELECT ${pick} FROM sec_transactions t WHERE t.owner_cik IS NULL\n  AND t.accession IN (SELECT o.accession FROM sec_filing_owners o WHERE o.owner_cik=ANY($1::text[])))`
     : ")");
 };
-const FILES_CTE = `files AS MATERIALIZED (SELECT f.accession,f.form_type,f.ticker,f.issuer_cik,f.issuer_name,f.published_at,f.is_amendment,f.source_url,f.xml_url
+const FILES_CTE = `files AS MATERIALIZED (SELECT f.accession,f.form_type,f.ticker,f.issuer_cik,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1,f.source_url,f.xml_url
   FROM sec_filings f WHERE f.accession IN (SELECT DISTINCT l.accession FROM lines l) AND f.ingest_status='parsed')`;
 // The dashboard's derive() key: issuer (padded or not), trade date, code, acquired/disposed, derivative, shares.
 export const SAME_LINE = "LTRIM(t.issuer_cik,'0')||'|'||COALESCE(t.transaction_date::text,'')||'|'||COALESCE(t.transaction_code,'')||'|'||COALESCE(t.acquired_disposed,'')||'|'||t.derivative::text||'|'||COALESCE(t.shares::text,'')";
@@ -269,9 +270,9 @@ SELECT t.owner_cik,t.owner_name,MAX(f.published_at) AS last_published_at,MAX(t.t
   // chosen from the CTE (top-N), then read whole by primary key.
   const transactions = `${base(["id", "accession", ...KEY_COLUMNS])},
 ${AMENDED_CTE},
-newest AS (SELECT t.id,${SAME_LINE} AS same,f.issuer_name,f.published_at,f.is_amendment,t.transaction_date FROM lines t JOIN files f ON f.accession=t.accession
+newest AS (SELECT t.id,${SAME_LINE} AS same,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1,t.transaction_date FROM lines t JOIN files f ON f.accession=t.accession
   ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC NULLS LAST,t.id DESC LIMIT $2)
-SELECT t.*,n.issuer_name,n.published_at,n.is_amendment,${SUPERSEDED("a.amended_at", "n.published_at")} AS superseded
+SELECT t.*,n.issuer_name,n.published_at,n.is_amendment,n.rule_10b5_1,${SUPERSEDED("a.amended_at", "n.published_at")} AS superseded
   FROM newest n JOIN sec_transactions t ON t.id=n.id LEFT JOIN amended a ON a.same=n.same
   ORDER BY n.transaction_date DESC NULLS LAST,n.published_at DESC NULLS LAST,n.id DESC`;
   const filings = `${base(["accession"])}
@@ -623,6 +624,24 @@ export async function handlePersonRoute(req, res, url, deps = {}) {
   let body;
   try {
     body = await personProfile(segment, { ...deps, jointOwners: joint, limit: parseLimit(url.searchParams.get("limit")), starts: reservation.grant, usage });
+    // Imported data may omit historical Form 4 reporters. On demand, use the SEC's
+    // published submissions INDEX without inventing any transaction records.
+    // Unit tests with injected fetchers remain offline unless explicitly enabled.
+    const allowHistory = deps.allowSecFallback === true ||
+      (deps.allowSecFallback !== false && !deps.fetcher && secReady());
+    if (!body && allowHistory && reservation.grant.ownerPages > 0 &&
+        secQueueMs(deps, true) <= SEC_QUEUE_LIMIT_MS) {
+      usage.ownerPages++;
+      try {
+        body = await fetchSecOwnerHistory(segment, {
+          fetcher: deps.fetcher || secFetch,
+          limit: parseLimit(url.searchParams.get("limit"))
+        });
+      } catch(error) {
+        console.warn("SEC owner archive lookup unavailable:", error?.message);
+        throw failure(503,"SEC historical reporting-person filings are temporarily unavailable. Try again shortly.");
+      }
+    }
   } finally { reservation.release(usage); }
   if (!body) throw failure(404, joint ? NOT_FOUND : NOT_FOUND_SINGLE);
   res.writeHead(200, {
