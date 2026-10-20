@@ -3,14 +3,7 @@
    Same paper and ink, same mono face, the V29 tokens (v29-system.css); plain CSS, no !important and no layer.
    Section headings reuse .v13-head; panels reuse the V29 soft panel. Motion is opacity and transform only. */
 
-/* ---------- headline experiment (assigned in <head>; src/funnel.mjs) ---------- */
-.lx-arm--b{display:none}
-[data-exp-headline="record"] .lx-arm--a{display:none}
-[data-exp-headline="record"] .lx-arm--b{display:inline}
-/* The automation headline is longer: set a step smaller, as its own block so its line spacing follows, it keeps to
-   two lines on wide screens and leaves the hero wordmark on the first screen, as the shorter headline does. */
-.lx-arm--a{display:block;font-size:.7em;line-height:1.06}
-@media (max-width:900px){.lx-arm--a{font-size:.85em}}
+/* The headline experiment's rules live in v32-home.css with the current landing. */
 
 .ax-panel{background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel)}
 .ax-label{margin:0;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
@@ -103,6 +96,7 @@
 .ax-state--on{border-color:var(--c-ink);color:var(--c-ink)}
 .ax-state--new{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-bg)}
 .ax-state--new::before{background:var(--c-bg)}
+.ax-row span.ax-state--new{color:var(--c-bg)}
 .ax-state--wait{border-style:dashed;color:var(--c-muted)}
 .ax-state--wait::before{background:transparent;border:1px solid currentColor;width:5px;height:5px}
 .ax-state--off{color:var(--c-faint)}

@@ -55,7 +55,9 @@ const MATCH = `INSERT INTO notifications(user_id,event_id,reason)
   WHERE ${PREFS_ALLOW}
   ON CONFLICT (user_id,event_id) DO NOTHING`;
 
-export async function fanOut({ query, limit = 500, maxAgeDays = 14 }) {
+// maxAgeDays: an event about a filing older than this is history (the coverage backfill imports such filings
+// today) and never becomes an alert.
+export async function fanOut({ query, limit = 500, maxAgeDays = 3 }) {
   const cursor = (await query("SELECT last_key FROM research_cursors WHERE name='notifications'")).rows[0];
   // First run: start from now, so a deployment does not alert on the whole history.
   if (!cursor) {

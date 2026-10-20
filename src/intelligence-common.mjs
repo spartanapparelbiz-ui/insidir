@@ -4,6 +4,10 @@ import { EIGHT_K_ITEMS } from "./intelligence.mjs";
 
 export const iso = v => { if (v == null || v === "") return null; const d = v instanceof Date ? v : new Date(v); return Number.isFinite(d.getTime()) ? d.toISOString() : null; };
 export const day = v => iso(v)?.slice(0, 10) ?? null;
+/* The SEC's calendar day for a filing timestamp: EDGAR dates filings in Eastern time, so a Form 4 accepted at 9 pm ET
+ * belongs to that day although it is already the next day in UTC. Date-only values (trade dates) use day(). */
+const ET_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
+export const secDay = v => { const i = iso(v); return i ? ET_DAY.format(new Date(i)) : null; };
 export const num = v => { if (v == null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
 
 /* SEC CIKs are stored both bare and 10-digit; indexed lookups need both forms. */

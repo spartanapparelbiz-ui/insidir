@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="assets/css/v15-site.css?v=1">
 <link rel="stylesheet" href="assets/css/v16-rich-site.css?v=1">
 <link rel="stylesheet" href="assets/css/v17-smooth.css?v=3">
-<script defer src="assets/js/v6-site.js?v=2"></script>
+<script defer src="assets/js/v6-site.js?v=2"></script><script defer src="assets/js/coverage.js"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 <link rel="stylesheet" href="assets/css/v29-system.css"></head>
 <body class="v3-static v6-static v13">
@@ -43,7 +43,7 @@
   <div>
    <p class="mk-eyebrow">Insidir / Data &amp; sources</p>
    <h1 id="mk-title">Where every number <span>comes from.</span></h1>
-   <p class="mk-lede">Insidir reads public records from the SEC and a short list of named public sources. This page lists each one: what Insidir uses it for, how fresh it is, how it is licensed and what it cannot tell you.</p>
+   <p class="mk-lede">Each source Insidir uses: what for, how fresh, how licensed, and its limits.</p>
    <div class="mk-actions">
     <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Start 3 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
     <a class="v9-btn v12-outline-button" href="platform.html">See the platform <span class="v13-arrow" aria-hidden="true">→</span></a>
@@ -126,10 +126,15 @@
    <li><b data-hf-atom>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
    <li><b data-hf-atom>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
    <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li><span class="hf-nw">8-K</span> announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
-   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li></ul></li>
+   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li><li>EDGAR daily Form 4 index, checked against the import</li></ul></li>
    <li><b data-hf-atom>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
   </ol>
   <p class="mk-note" data-hf-reveal>Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
+  <div class="mk-coverage" id="mk-coverage" aria-labelledby="mk-coverage-h">
+   <h3 id="mk-coverage-h">Coverage, measured now.</h3>
+   <p class="mk-coverage__lede">Counted from Insidir’s database when this page loads, and checked against EDGAR’s own daily index of Form 4 filings.</p>
+   <div id="mk-coverage-body" aria-live="polite"><p class="mk-coverage__wait">Counting…</p></div>
+  </div>
  </div>
 </section>
 
@@ -196,8 +201,8 @@
  <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="180" aria-hidden="true"></div>
  <div class="mk-shell mk-final__inner" data-hf-reveal-group>
   <p class="mk-eyebrow">Insidir · 3 days for $1, then $39 a month</p>
-  <h2 id="mk-final-heading">The record, <span>with its sources.</span></h2>
-  <p class="mk-final__copy">Every source on this page, organized into one research workspace for $39 a month.</p>
+  <h2 id="mk-final-heading">Explore <span>Insidir.</span></h2>
+  <p class="mk-final__copy">3 days for $1. Then $39/month. Cancel online.</p>
   <div class="mk-actions">
    <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Start 3 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
    <a class="v9-btn v12-outline-button" href="platform.html">See the platform <span class="v13-arrow" aria-hidden="true">→</span></a>

@@ -245,7 +245,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
 
 test("the landing page shows no product dashboard, no live data feed and no links into paid pages",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
- assert.match(home,/Know what moves/);
+ assert.match(home,/Follow the market\./);
  assert.match(home,/data-halftone-hero/);
  for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
  const main=home.split(/<footer/)[0];
@@ -299,7 +299,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/Know what moves/);
+  assert.match(home,/Follow the market\./);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
   const pricing=await(await fetch(base+"/pricing.html")).text();
@@ -413,7 +413,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
       else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
-      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
+      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero(?: sx-hero)?" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
       else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }
     assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
@@ -421,7 +421,7 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     assert.equal(css.status, 200);
     const theme = await css.text();
     assert.match(theme, /@layer insidir-v13\{/);
-    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#e9e4da!important;--hf-warm:var\(--hf-ink\)!important/);
+    assert.match(theme, /--hf-bg:#0c0c0b!important;--hf-ink:#f0eee8!important;--hf-warm:var\(--hf-ink\)!important/);
     assert.match(theme, /font-family:"JetBrains Mono"/);
     for (const family of ["home", "app", "desk", "auth", "static", "company", "notfound"]) assert.equal((await fetch(base + "/assets/css/v13-" + family + ".css")).status, 200, family);
     const mono = await fetch(base + "/assets/fonts/JetBrainsMono-normal-latin.woff2");

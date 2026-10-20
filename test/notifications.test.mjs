@@ -71,7 +71,7 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
 
   await t.test("an event filed before someone started watching does not alert them", async () => {
     await q("UPDATE watchlist SET created_at=now() WHERE user_id=$1", [O.id]);
-    await event("before-watch", { filing_date: new Date(Date.now() - 5 * 86400000).toISOString() });
+    await event("before-watch", { filing_date: new Date(Date.now() - 2 * 86400000).toISOString() });
     await N.fanOut({ query: q });
     assert.ok(!(await notes(O.id)).some(n => n.event_key.endsWith("before-watch")));
     assert.ok((await notes(M.id)).some(n => n.event_key.endsWith("before-watch")));

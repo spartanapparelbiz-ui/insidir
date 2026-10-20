@@ -85,7 +85,7 @@
 
   /* ---------- monogram avatars ---------- */
   /* Neutral blends of paper and ink only (the V13 theme also paints every monogram on --hf-raise): no warm tints. */
-  const TONES = ["#2f2f2c", "#363633", "#3c3b38", "#41403d", "#474643", "#4d4c48", "#53524e", "#595854"];
+  const TONES = ["#30302e", "#363633", "#3c3b38", "#434240", "#474643", "#4d4c48", "#53524e", "#595854"];
   function monogram(name, cls = "") {
     const parts = String(name).trim().split(/\s+/);
     const initials = ((parts[0] || "")[0] || "") + ((parts.length > 1 ? parts[parts.length - 1] : "")[0] || "");
@@ -302,12 +302,12 @@
     };
     const renderList = q => {
       if (!suggestions.length) {
-        list.innerHTML = `<p class="app-search__empty">No matching imported companies or reporting people. Press Enter to search the people directory.</p>`;
+        list.innerHTML = `<p class="app-search__empty">No SEC filer matches this search. Try a ticker, a CIK, or part of the name as the SEC lists it.</p>`;
       } else {
         list.innerHTML = suggestions.map((s, i) => {
           const tile = tileFor(s);
-          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker)}</span>`;
-          const meta = tile && s.kind === "company" ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
+          const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker || "SEC")}</span>`;
+          const meta = tile && s.kind === "company" && s.ticker ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
           return `<a id="app-search-option-${i}" role="option" aria-selected="false" href="${escapeHTML(s.href)}" class="app-search__option${tile ? " app-search__option--tile" : ""}">${lead}
           <span class="app-search__label">${escapeHTML(s.label)}</span><span class="app-search__meta">${escapeHTML(meta)}</span></a>`;
         }).join("");
@@ -323,13 +323,15 @@
       if (searchAbort) searchAbort.abort();
       const ctrl = searchAbort = "AbortController" in window ? new AbortController() : null;
       const signal = ctrl ? ctrl.signal : undefined;
-      const [companies, people] = await Promise.allSettled([
+      const [companies, people, filers] = await Promise.allSettled([
         api("/v1/search?q=" + encodeURIComponent(q), { signal }),
-        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] })
+        q.length >= 3 ? api("/v1/insiders?q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] }),
+        // Every SEC filer: companies without a ticker, former names, CIKs, reporting owners not yet imported.
+        q.length >= 2 ? api("/v1/entities/search?limit=8&q=" + encodeURIComponent(q), { signal }) : Promise.resolve({ items: [] })
       ]);
       if (seq !== searchSeq || input.value.trim() !== q) return;
       form.removeAttribute("aria-busy");
-      if (companies.status === "rejected" && people.status === "rejected") { suggestions=[]; list.innerHTML = '<p class="app-search__empty">Search services are unavailable. Try again shortly.</p>'; list.hidden=false; input.setAttribute("aria-expanded","true"); return; }
+      if (companies.status === "rejected" && people.status === "rejected" && filers.status === "rejected") { suggestions=[]; list.innerHTML = '<p class="app-search__empty">Search services are unavailable. Try again shortly.</p>'; list.hidden=false; input.setAttribute("aria-expanded","true"); return; }
       if (companies.status === "rejected" && companies.reason && companies.reason.status === 402) {
         suggestions = [];
         list.innerHTML = '<p class="app-search__empty">Search needs an active subscription. <a href="subscribe.html">Subscribe</a></p>';
@@ -347,6 +349,19 @@
             href: cik ? "person.html?cik=" + cik.replace(/^0+/, "") : "people.html?q=" + encodeURIComponent(String(p.owner_name || "").slice(0, 80)) + "#v10-directory" };
         })
       ];
+      // EDGAR filers the two lists above do not already show (matched by ticker or CIK), up to ten results in all.
+      const shownTickers = new Set(suggestions.filter(s => s.kind === "company").map(s => s.ticker));
+      const shownCiks = new Set(suggestions.filter(s => s.cik).map(s => String(Number(s.cik))));
+      for (const e of filers.status === "fulfilled" ? filers.value.items || [] : []) {
+        if (suggestions.length >= 10) break;
+        if ((e.tickers || []).some(t => shownTickers.has(t)) || shownCiks.has(String(Number(e.cik)))) continue;
+        const what = e.kind === "company" ? (e.listed ? "Company" : e.delistedAt ? "Company · no longer on the SEC ticker list" : "Company · no listed ticker")
+          : e.kind === "person" ? "Reporting person" : e.kind === "organization" ? "Reporting entity" : "SEC filer";
+        const why = e.matched ? " · " + e.matched.as + ": " + e.matched.name : "";
+        suggestions.push({ kind: e.kind === "company" ? "company" : "person", ticker: (e.tickers || [])[0] || "", cik: e.cik, name: e.name, label: e.name,
+          meta: what + " · CIK " + e.cik + why, href: e.url });
+        shownCiks.add(String(Number(e.cik)));
+      }
       renderList(q);
     };
     input.addEventListener("input", () => {

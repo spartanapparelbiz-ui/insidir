@@ -1,0 +1,219 @@
+/* Insidir V32 landing: a centred hero over the instrument (the dotted i, one dot per layer), the intelligence engine
+   (Monitor → Process → Interpret → Notify), the product in motion, the platform's five capabilities, the data
+   infrastructure on paper, pricing and a closing line. V29 tokens (v29-system.css), plain CSS; the few overrides of
+   the V13 hero and section frame sit in the insidir-v13 layer, as the rules they replace do. Section heads are
+   .sx-head (no running numbers). Motion is opacity, colour and transform only, and stops with reduced motion. */
+
+/* ---------- headline experiment (assigned in <head>; src/funnel.mjs) ---------- */
+.lx-arm--b{display:none}
+[data-exp-headline="disclosure"] .lx-arm--a{display:none}
+[data-exp-headline="disclosure"] .lx-arm--b{display:inline}
+/* Both headlines keep to two lines on wide screens, so the hero wordmark stays on the first screen. */
+@media (min-width:900px){.lx-arm{font-size:.86em}}
+
+/* ---------- shared ---------- */
+.sx-head{display:grid;gap:var(--s-3);max-width:760px;margin:0 0 clamp(32px,4vw,56px)}
+.sx-eyebrow{margin:0;font:500 var(--fs-label)/16px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.sx-head h2{margin:0;font:700 clamp(34px,4.6vw,68px)/1 var(--font);letter-spacing:-.045em;color:var(--c-ink)}
+.sx-head h2 span{color:var(--c-faint)}
+.sx-label{margin:0;font:500 10.5px/14px var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-faint)}
+.sx-note{margin:var(--s-5) 0 0;color:var(--c-faint);font-size:12px;line-height:1.6}
+.sx-note a{color:var(--c-soft);text-underline-offset:3px}
+.sx-bar{display:block;height:6px;border-radius:3px;background:var(--c-line-2)}
+.sx-bar--soft{background:var(--c-line)}
+.sx-chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border:1px solid var(--c-line-2);border-radius:var(--r-xs);color:var(--c-soft);font-size:11px;letter-spacing:.03em;white-space:nowrap}
+.sx-chip--ink{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-bg)}
+.sx-chip--line{border-color:var(--c-ink);color:var(--c-ink)}
+.sx-chip--dash{border-style:dashed;color:var(--c-muted)}
+
+/* ---------- 1. hero ---------- */
+.sx-offer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:var(--s-4) 0 0;color:var(--c-muted);font-size:13px}
+.sx-offer b{color:var(--c-ink);font-weight:700}
+
+/* ---------- 1b. the centred hero and its instrument ----------
+   The V13 hero places its parts on a twelve-column grid across many breakpoints; as a centred column every one of
+   those placements stops applying. Inside the V13 layer, one step more specific, as the hero rules are. */
+@layer insidir-v13{
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .v13-hero__inner{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero h1{max-width:none!important;margin-inline:auto!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .v9-hero__description{max-width:52ch!important;margin-inline:auto!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .v9-hero__actions{justify-content:center!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .lp-terms{justify-content:center!important;margin-inline:auto!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .lp-terms .lp-deal{margin-left:0!important}
+  /* The V13 offer line clips its first 28px (a leading separator); centred, nothing leads it. */
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero .lp-terms{clip-path:none!important}
+  html body.v13.v12-home.v9-site.v6-site .v13-hero.sx-hero::before{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(80vw,1100px)!important;
+    -webkit-mask-image:radial-gradient(ellipse 60% 70% at 50% 40%,#000 0,rgba(0,0,0,.4) 45%,transparent 75%)!important;mask-image:radial-gradient(ellipse 60% 70% at 50% 40%,#000 0,rgba(0,0,0,.4) 45%,transparent 75%)!important}
+}
+.sx-inst{display:grid;grid-template-columns:auto minmax(0,340px);align-items:center;gap:clamp(24px,4vw,56px);margin:clamp(36px,5vh,56px) auto 0;text-align:left}
+.sx-inst__mark{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:56px repeat(4,40px) 40px;gap:8px;justify-content:center}
+.sx-dot{width:40px;height:40px;padding:0;border:0;border-radius:50%;background:var(--c-line-2);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.sx-dot:hover{background:var(--c-faint)}
+.sx-dot:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.sx-dot[aria-pressed="true"]{background:var(--c-ink)}
+.sx-dot.is-pass{background:var(--c-muted)}
+.sx-dot--head{grid-column:2;grid-row:1;width:52px;height:52px;justify-self:center;align-self:start;margin-top:-6px;box-shadow:0 0 0 6px var(--c-bg),0 0 0 7px var(--c-line-2)}
+.sx-dot--head[aria-pressed="true"]{box-shadow:0 0 0 6px var(--c-bg),0 0 0 7px var(--c-ink)}
+.sx-dot--serif{grid-column:1;grid-row:2}.sx-dot--s1{grid-column:2;grid-row:2}.sx-dot--s2{grid-column:2;grid-row:3}.sx-dot--s3{grid-column:2;grid-row:4}.sx-dot--s4{grid-column:2;grid-row:5}
+.sx-dot--b1{grid-column:1;grid-row:6}.sx-dot--b2{grid-column:2;grid-row:6}.sx-dot--b3{grid-column:3;grid-row:6}
+.sx-inst__read{position:relative;min-height:150px;padding:var(--s-5);border-left:1px solid var(--c-line-2)}
+.sx-layer{display:grid;gap:8px}
+.sx-layer[hidden]{display:none}
+.sx-layer b{color:var(--c-ink);font:700 clamp(18px,1.6vw,22px)/1.25 var(--font);letter-spacing:-.02em}
+.sx-layer__eg{display:inline-block;justify-self:start;padding:6px 10px;border:1px solid var(--c-line);border-radius:var(--r-xs);background:var(--c-surface);color:var(--c-soft);font-size:12px}
+.sx-inst__hint{margin:var(--s-4) 0 0;color:var(--c-faint);font-size:11px;letter-spacing:.04em}
+@media (max-width:700px){
+  .sx-inst{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .sx-inst__read{border-left:0;border-top:1px solid var(--c-line-2);padding:var(--s-4) 0 0;min-height:120px}
+  .sx-layer{justify-items:center}.sx-layer__eg{justify-self:center}
+  .sx-inst__mark{grid-template-columns:repeat(3,34px);grid-template-rows:46px repeat(4,34px) 34px;gap:7px}
+  .sx-dot{width:34px;height:34px}.sx-dot--head{width:44px;height:44px}
+}
+
+/* ---------- the off-white section: paper and ink reversed, for contrast ---------- */
+.sx-paper{background:var(--c-ink);color:var(--c-bg);padding-bottom:clamp(56px,7vw,104px)}
+@layer insidir-v13{
+  html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper{background:var(--hf-ink)!important;color:var(--hf-bg)!important;padding-bottom:clamp(56px,7vw,104px)!important;margin-top:var(--lp-sec)!important}
+  html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper::before{display:none!important}
+  html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper>.v9-width::after,html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper>.v9-width::before{display:none!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(h2,th,td,p,a,span,caption){color:var(--hf-bg)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(.sx-eyebrow,.sx-note,td:last-child){color:var(--hf-on-ink-muted)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper h2 span{color:var(--hf-on-ink-muted)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(th,td){border-color:rgba(12,12,11,.14)!important}
+}
+
+/* ---------- 2. the intelligence system ---------- */
+.sx-sys{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px) minmax(0,1fr);align-items:center;gap:clamp(16px,3vw,48px);
+  padding:clamp(24px,3.4vw,48px);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel);overflow:hidden}
+.sx-sys__col{display:grid;gap:var(--s-3);min-width:0;position:relative;z-index:1}
+.sx-sys__col>.sx-label{margin-bottom:2px}
+.sx-rec,.sx-out{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-bg);min-width:0}
+.sx-rec b,.sx-out b{color:var(--c-ink);font-size:13px;font-weight:600;line-height:1.35}
+.sx-rec>span,.sx-out>span{color:var(--c-muted);font-size:11.5px;line-height:1.45}
+.sx-out__top{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2)}
+.sx-sys__core{position:relative;z-index:1;display:grid;justify-items:center;gap:var(--s-3)}
+.sx-sys__caption{margin:0;color:var(--c-faint);font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+/* Dotted connectors between the columns, behind the cards. */
+.sx-wire{position:absolute;top:50%;height:2px;background:radial-gradient(circle,var(--c-line-2) 1px,transparent 1.4px) 0 50%/8px 2px repeat-x;z-index:0}
+.sx-wire--in{left:calc(33% - 8px);width:12%}
+.sx-wire--out{right:calc(33% - 8px);width:12%}
+.sx-wire i{position:absolute;top:-3px;left:0;width:8px;height:8px;border-radius:50%;background:var(--c-ink);opacity:0}
+
+/* The four stages, the middle column of the system: a dotted spine with a node per stage. */
+.sx-stages{position:relative;display:grid;gap:0;margin:0;padding:0;list-style:none;align-self:stretch;align-content:center}
+.sx-stages.sx-sys__core{justify-items:stretch;gap:0}
+.sx-stages::before{content:"";position:absolute;left:9px;top:22px;bottom:22px;width:2px;background:radial-gradient(circle,var(--c-line-2) 1px,transparent 1.4px) 50% 0/2px 8px repeat-y}
+.sx-stages li{position:relative;margin:0}
+.sx-stage{position:relative;display:grid;gap:4px;width:100%;padding:12px 0 12px 34px;border:0;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:var(--tap-min)}
+.sx-stage::before{content:"";position:absolute;left:2px;top:15px;width:16px;height:16px;border-radius:50%;background:var(--c-bg);border:1px solid var(--c-line-2);transition:background-color var(--dur-slow) var(--ease),border-color var(--dur-slow) var(--ease)}
+.sx-stage b{font:700 13px/1.2 var(--font);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--c-soft);transition:color var(--dur) var(--ease)}
+.sx-stage span{color:var(--c-muted);font-size:12.5px;line-height:1.45}
+.sx-stage:hover b{color:var(--c-ink)}
+.sx-stage:focus-visible{outline:2px solid var(--c-ink);outline-offset:2px}
+/* At rest (no script, reduced motion): every stage lit. */
+.sx-sys .sx-stage::before{background:var(--c-ink);border-color:var(--c-ink)}
+.sx-live .sx-sys .sx-stage::before{background:var(--c-bg);border-color:var(--c-line-2)}
+.sx-live[data-stage="1"] .sx-stages li:nth-child(-n+1) .sx-stage::before,.sx-live[data-stage="2"] .sx-stages li:nth-child(-n+2) .sx-stage::before,
+.sx-live[data-stage="3"] .sx-stages li:nth-child(-n+3) .sx-stage::before,.sx-live[data-stage="4"] .sx-stages li .sx-stage::before{background:var(--c-soft);border-color:var(--c-soft)}
+.sx-live[data-stage="1"] .sx-stages li:nth-child(1) .sx-stage::before,.sx-live[data-stage="2"] .sx-stages li:nth-child(2) .sx-stage::before,
+.sx-live[data-stage="3"] .sx-stages li:nth-child(3) .sx-stage::before,.sx-live[data-stage="4"] .sx-stages li:nth-child(4) .sx-stage::before{background:var(--c-ink);border-color:var(--c-ink)}
+.sx-live[data-stage="1"] .sx-stages li:nth-child(1) b,.sx-live[data-stage="2"] .sx-stages li:nth-child(2) b,
+.sx-live[data-stage="3"] .sx-stages li:nth-child(3) b,.sx-live[data-stage="4"] .sx-stages li:nth-child(4) b{color:var(--c-ink)}
+
+/* Default (no script, reduced motion, or a finished cycle): the whole system shown at rest, everything lit. */
+/* With the script, each stage lights its part in turn (data-stage on the section). */
+.sx-live .sx-rec,.sx-live .sx-out{opacity:.28;transform:translateY(4px);transition:opacity var(--dur-slow) var(--ease),transform var(--dur-slow) var(--ease),border-color var(--dur-slow) var(--ease)}
+.sx-live[data-stage="1"] .sx-rec,.sx-live[data-stage="2"] .sx-rec,.sx-live[data-stage="3"] .sx-rec,.sx-live[data-stage="4"] .sx-rec{opacity:1;transform:none}
+.sx-live[data-stage="4"] .sx-out{opacity:1;transform:none;border-color:var(--c-line-2)}
+.sx-live[data-stage="1"] .sx-wire--in i{animation:sx-travel 1.6s var(--ease) forwards}
+.sx-live[data-stage="4"] .sx-wire--out i{animation:sx-travel 1.6s var(--ease) forwards}
+@keyframes sx-travel{0%{opacity:0;left:0}15%{opacity:1}85%{opacity:1}100%{opacity:0;left:calc(100% - 8px)}}
+@media (max-width:900px){
+  .sx-sys{grid-template-columns:1fr;justify-items:stretch}
+  .sx-sys__core{order:0}
+  .sx-wire{display:none}
+}
+
+/* ---------- 3. the platform: five capabilities, each with its own figure ---------- */
+.cp-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s-3);margin:0;padding:0;list-style:none}
+.cp{grid-column:span 2;margin:0;display:flex;flex-direction:column;min-height:300px;padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel);
+  transition:border-color var(--dur) var(--ease)}
+.cp:hover{border-color:var(--c-line-strong)}
+.cp--wide{grid-column:span 3}
+/* Asymmetric: the first row is two panels (7 + 5), the second three open columns on a rule, not cards. */
+.cp-grid{grid-template-columns:repeat(12,minmax(0,1fr));row-gap:var(--s-6)}
+.cp{grid-column:span 4}
+.cp--wide:first-child{grid-column:span 7}
+.cp--wide:nth-child(2){grid-column:span 5}
+.cp:not(.cp--wide){background:none;border:0;border-top:1px solid var(--c-line-2);border-radius:0;box-shadow:none;padding:var(--s-5) var(--s-4) 0 0;min-height:240px}
+.cp:not(.cp--wide):hover{border-color:var(--c-ink)}
+.cp h3{margin:0;font:700 clamp(19px,1.6vw,24px)/1.15 var(--font);letter-spacing:-.025em;color:var(--c-ink)}
+.cp p{margin:6px 0 0;color:var(--c-muted);font-size:13px;line-height:1.5}
+.cp__fig{margin:auto 0 0;padding-top:var(--s-5);display:grid;gap:8px}
+.cp__fig .sx-label{margin-bottom:2px}
+.cp-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:9px 11px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-bg);min-width:0}
+.cp-row>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--c-soft);font-size:12px}
+.cp-row b{color:var(--c-ink);font-weight:600}
+.cp-row--ghost{border-style:dashed;background:transparent}
+.cp-row .sx-bar{flex:1}
+.cp-q{padding:9px 11px;border:1px solid var(--c-line-2);border-radius:var(--r-sm);color:var(--c-ink);font-size:12px}
+.cp-a{display:grid;gap:7px;padding:4px 2px 0}
+.cp-a div{display:flex;align-items:center;gap:8px}
+.cp-cite{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border:1px solid var(--c-line-2);border-radius:4px;color:var(--c-soft);font-size:10px}
+/* Ownership: two quarters of reported weights (shape only). */
+.cp-q2{display:grid;grid-template-columns:30px 1fr;gap:6px 10px;align-items:center}
+.cp-q2>span{color:var(--c-faint);font-size:10.5px;letter-spacing:.06em}
+.cp-q2 i{display:flex;gap:2px;height:14px}
+.cp-q2 i b{display:block;height:100%;border-radius:2px;background:var(--c-soft)}
+.cp-q2 i b:nth-child(2){background:var(--c-muted)}
+.cp-q2 i b:nth-child(3){background:var(--c-line-2)}
+.cp-q2 i b:nth-child(4){background:var(--c-line)}
+.cp-seg{display:inline-flex;border:1px solid var(--c-line-2);border-radius:var(--r-sm);overflow:hidden;font-size:11px}
+.cp-seg span{padding:5px 9px;color:var(--c-muted)}
+.cp-seg span+span{border-left:1px solid var(--c-line-2)}
+.cp-seg .is-on{background:var(--c-ink);color:var(--c-bg)}
+@media (max-width:1100px){.cp,.cp--wide{grid-column:span 3}
+/* Asymmetric: the first row is two panels (7 + 5), the second three open columns on a rule, not cards. */
+.cp-grid{grid-template-columns:repeat(12,minmax(0,1fr));row-gap:var(--s-6)}
+.cp{grid-column:span 4}
+.cp--wide:first-child{grid-column:span 7}
+.cp--wide:nth-child(2){grid-column:span 5}
+.cp:not(.cp--wide){background:none;border:0;border-top:1px solid var(--c-line-2);border-radius:0;box-shadow:none;padding:var(--s-5) var(--s-4) 0 0;min-height:240px}
+.cp:not(.cp--wide):hover{border-color:var(--c-ink)}.cp:last-child{grid-column:1/-1}}
+@media (max-width:700px){.cp,.cp--wide,.cp:last-child{grid-column:1/-1;min-height:0}}
+
+/* ---------- 4. product in motion (reuses the V31 flow: v31-flow.js, .ax-flow) ---------- */
+.sx-motion .ax-flow__rail{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:0}
+.sx-motion .ax-flow__rail::before{left:12.5%;right:12.5%}
+.sx-motion .ax-flow__copy h3{font-size:clamp(24px,2.4vw,34px)}
+@media (max-width:900px){
+  .sx-motion .ax-flow__rail{display:grid;overflow:visible;margin:0;padding:0}
+  .sx-motion .ax-flow__rail::before{left:12.5%;right:12.5%;width:auto;margin:0}
+  .sx-motion .ax-flow__rail li{flex:none}
+}
+
+/* ---------- 5. financial data infrastructure ---------- */
+.di-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.di-table th,.di-table td{padding:16px var(--s-4) 16px 0;text-align:left;vertical-align:baseline;border-top:1px solid var(--c-line-soft)}
+.di-table tr:last-child>*{border-bottom:1px solid var(--c-line-soft)}
+.lp-section .di-table th{width:34%;font:700 clamp(15px,1.3vw,19px)/1.3 var(--font);letter-spacing:-.01em;color:var(--c-ink);text-transform:none}
+.di-table td{color:var(--c-muted)}
+.di-table td:last-child{color:var(--c-faint);font-size:12px;text-align:right;white-space:nowrap;padding-right:0}
+@media (max-width:700px){
+  .di-table td:last-child{display:none}
+  .lp-section .di-table th{width:44%}
+}
+
+/* ---------- 6. pricing (the V13/V17 plan card, trimmed) ---------- */
+.sx-legal{margin:var(--s-4) 0 0;color:var(--c-faint);font-size:12px;line-height:1.6}
+.sx-legal a{color:var(--c-soft);text-underline-offset:3px}
+
+@media (prefers-reduced-motion:reduce){
+  .sx-live .sx-rec,.sx-live .sx-out{opacity:1;transform:none}
+  .sx-wire i{animation:none!important;opacity:0}
+}
+
+/* The instrument sits in its own band under the hero, so the hero keeps its first-screen height and its wordmark. */
+.sx-instrument{padding:clamp(8px,2vh,24px) 0 clamp(48px,7vh,88px)}
+.sx-instrument .sx-inst{margin-top:0}

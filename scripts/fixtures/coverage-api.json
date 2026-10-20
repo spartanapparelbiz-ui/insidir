@@ -1,0 +1,1338 @@
+{
+ "capturedAt": "2026-10-20T05:07:44.009Z",
+ "note": "Responses of GET /v1/entities/0001081316, /v1/entities/0001214156, /v1/entities/search?q=berkshire%20hathaway and /v1/coverage, captured from a local engine over real SEC EDGAR data (scripts/coverage-validate.mjs setup).",
+ "entity": {
+  "state": "ok",
+  "entity": {
+   "cik": "0001081316",
+   "name": "BERKSHIRE HATHAWAY ENERGY CO",
+   "kind": "company",
+   "kindBasis": "edgar_submissions",
+   "tickers": [],
+   "exchanges": [],
+   "listed": false,
+   "isIssuer": false,
+   "isReportingOwner": false,
+   "importedFilings": {
+    "asIssuer": 0,
+    "asOwner": 0
+   },
+   "lastFilingAt": null,
+   "latestRole": null,
+   "delistedAt": null,
+   "matched": null,
+   "sources": [
+    "edgar_entity_lookup",
+    "edgar_submissions"
+   ],
+   "url": "entity.html?cik=0001081316",
+   "sic": "4900",
+   "sicDescription": "Electric, Gas & Sanitary Services",
+   "entityType": "operating",
+   "stateOfIncorporation": "IA",
+   "profileRefreshedAt": "2026-10-20T05:02:27.455Z"
+  },
+  "names": [
+   {
+    "name": "MIDAMERICAN ENERGY HOLDINGS CO /NEW/",
+    "as": "former",
+    "source": "edgar_submissions",
+    "from": "1999-12-27",
+    "to": "2014-04-10"
+   },
+   {
+    "name": "MID AMERICAN ENERGY HOLDINGS CO /NEW/",
+    "as": "former",
+    "source": "edgar_submissions",
+    "from": "1999-03-12",
+    "to": "1999-03-12"
+   },
+   {
+    "name": "BERKSHIRE HATHAWAY ENERGY CO",
+    "as": "name",
+    "source": "edgar_entity_lookup",
+    "from": null,
+    "to": null
+   }
+  ],
+  "tickerHistory": [],
+  "imported": {
+   "asIssuer": {
+    "filings": 0,
+    "lastFiledAt": null
+   },
+   "asReportingOwner": []
+  },
+  "edgar": {
+   "recentFilings": [
+    {
+     "form": "SD",
+     "filedAt": "2026-09-25",
+     "reportDate": null,
+     "accession": "0001081316-26-000021",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000021/0001081316-26-000021-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2026-08-10",
+     "reportDate": "2026-06-30",
+     "accession": "0001081316-26-000017",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000017/0001081316-26-000017-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2026-05-04",
+     "reportDate": "2026-03-31",
+     "accession": "0001081316-26-000013",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000013/0001081316-26-000013-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2026-04-10",
+     "reportDate": "2026-04-08",
+     "accession": "0001081316-26-000009",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000009/0001081316-26-000009-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2026-03-26",
+     "reportDate": "2026-03-26",
+     "accession": "0001081316-26-000005",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000005/0001081316-26-000005-index.htm"
+    },
+    {
+     "form": "10-K",
+     "filedAt": "2026-03-02",
+     "reportDate": "2025-12-31",
+     "accession": "0001081316-26-000003",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131626000003/0001081316-26-000003-index.htm"
+    },
+    {
+     "form": "S-8",
+     "filedAt": "2026-01-09",
+     "reportDate": null,
+     "accession": "0001193125-26-008974",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312526008974/0001193125-26-008974-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2025-11-07",
+     "reportDate": "2025-11-07",
+     "accession": "0001081316-25-000024",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000024/0001081316-25-000024-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2025-11-03",
+     "reportDate": "2025-09-30",
+     "accession": "0001081316-25-000022",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000022/0001081316-25-000022-index.htm"
+    },
+    {
+     "form": "SD",
+     "filedAt": "2025-09-29",
+     "reportDate": null,
+     "accession": "0001081316-25-000018",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000018/0001081316-25-000018-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2025-08-04",
+     "reportDate": "2025-06-30",
+     "accession": "0001081316-25-000013",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000013/0001081316-25-000013-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2025-05-05",
+     "reportDate": "2025-03-31",
+     "accession": "0001081316-25-000010",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000010/0001081316-25-000010-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2025-03-27",
+     "reportDate": "2025-03-27",
+     "accession": "0001628280-25-015227",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000162828025015227/0001628280-25-015227-index.htm"
+    },
+    {
+     "form": "10-K",
+     "filedAt": "2025-02-24",
+     "reportDate": "2024-12-31",
+     "accession": "0001081316-25-000004",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131625000004/0001081316-25-000004-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2024-12-31",
+     "reportDate": "2024-12-24",
+     "accession": "0001081316-24-000029",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000029/0001081316-24-000029-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2024-11-08",
+     "reportDate": "2024-11-08",
+     "accession": "0001081316-24-000026",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000026/0001081316-24-000026-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2024-11-04",
+     "reportDate": "2024-09-30",
+     "accession": "0001081316-24-000022",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000022/0001081316-24-000022-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2024-10-01",
+     "reportDate": "2024-09-30",
+     "accession": "0001081316-24-000019",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000019/0001081316-24-000019-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2024-08-05",
+     "reportDate": "2024-06-30",
+     "accession": "0001081316-24-000016",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000016/0001081316-24-000016-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2024-05-06",
+     "reportDate": "2024-03-31",
+     "accession": "0001081316-24-000010",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000010/0001081316-24-000010-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2024-03-26",
+     "reportDate": "2024-03-26",
+     "accession": "0001081316-24-000006",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000006/0001081316-24-000006-index.htm"
+    },
+    {
+     "form": "10-K",
+     "filedAt": "2024-02-26",
+     "reportDate": "2023-12-31",
+     "accession": "0001081316-24-000003",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131624000003/0001081316-24-000003-index.htm"
+    },
+    {
+     "form": "S-8",
+     "filedAt": "2023-12-29",
+     "reportDate": null,
+     "accession": "0001193125-23-305958",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523305958/0001193125-23-305958-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-11-13",
+     "reportDate": "2023-11-13",
+     "accession": "0001081316-23-000035",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000035/0001081316-23-000035-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2023-11-06",
+     "reportDate": "2023-09-30",
+     "accession": "0001081316-23-000032",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000032/0001081316-23-000032-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-09-01",
+     "reportDate": "2023-09-01",
+     "accession": "0001193125-23-227676",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523227676/0001193125-23-227676-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2023-08-07",
+     "reportDate": "2023-06-30",
+     "accession": "0001081316-23-000028",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000028/0001081316-23-000028-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-07-10",
+     "reportDate": "2023-07-09",
+     "accession": "0001193125-23-184709",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523184709/0001193125-23-184709-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-06-16",
+     "reportDate": "2023-06-12",
+     "accession": "0001081316-23-000024",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000024/0001081316-23-000024-index.htm"
+    },
+    {
+     "form": "10-Q",
+     "filedAt": "2023-05-08",
+     "reportDate": "2023-03-31",
+     "accession": "0001081316-23-000020",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000020/0001081316-23-000020-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-04-25",
+     "reportDate": "2023-04-25",
+     "accession": "0001081316-23-000014",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000014/0001081316-23-000014-index.htm"
+    },
+    {
+     "form": "8-K",
+     "filedAt": "2023-03-30",
+     "reportDate": "2023-03-30",
+     "accession": "0001081316-23-000012",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000012/0001081316-23-000012-index.htm"
+    },
+    {
+     "form": "10-K",
+     "filedAt": "2023-02-27",
+     "reportDate": "2022-12-31",
+     "accession": "0001081316-23-000005",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131623000005/0001081316-23-000005-index.htm"
+    },
+    {
+     "form": "EFFECT",
+     "filedAt": "2023-01-10",
+     "reportDate": null,
+     "accession": "9999999995-23-000078",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/999999999523000078/9999999995-23-000078-index.htm"
+    },
+    {
+     "form": "424B3",
+     "filedAt": "2023-01-10",
+     "reportDate": null,
+     "accession": "0001193125-23-005446",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523005446/0001193125-23-005446-index.htm"
+    },
+    {
+     "form": "CORRESP",
+     "filedAt": "2023-01-05",
+     "reportDate": null,
+     "accession": "0001193125-23-002037",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523002037/0001193125-23-002037-index.htm"
+    },
+    {
+     "form": "S-4/A",
+     "filedAt": "2023-01-04",
+     "reportDate": null,
+     "accession": "0001193125-23-001491",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523001491/0001193125-23-001491-index.htm"
+    },
+    {
+     "form": "S-4/A",
+     "filedAt": "2023-01-03",
+     "reportDate": null,
+     "accession": "0001193125-23-000176",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312523000176/0001193125-23-000176-index.htm"
+    },
+    {
+     "form": "UPLOAD",
+     "filedAt": "2022-12-30",
+     "reportDate": null,
+     "accession": "0000000000-22-014024",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000000000022014024/0000000000-22-014024-index.htm"
+    },
+    {
+     "form": "CORRESP",
+     "filedAt": "2022-12-22",
+     "reportDate": null,
+     "accession": "0001193125-22-311025",
+     "url": "https://www.sec.gov/Archives/edgar/data/1081316/000119312522311025/0001193125-22-311025-index.htm"
+    }
+   ],
+   "olderFilingFiles": 0,
+   "sourceUrl": "https://data.sec.gov/submissions/CIK0001081316.json",
+   "browseUrl": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001081316&owner=include&count=40"
+  },
+  "edgarState": "ok"
+ },
+ "owner": {
+  "state": "ok",
+  "entity": {
+   "cik": "0001214156",
+   "name": "COOK TIMOTHY D",
+   "kind": "person",
+   "kindBasis": "filed_name_pattern",
+   "tickers": [],
+   "exchanges": [],
+   "listed": false,
+   "isIssuer": false,
+   "isReportingOwner": true,
+   "importedFilings": {
+    "asIssuer": 0,
+    "asOwner": 0
+   },
+   "lastFilingAt": null,
+   "latestRole": null,
+   "delistedAt": null,
+   "matched": null,
+   "sources": [
+    "edgar_entity_lookup",
+    "edgar_submissions"
+   ],
+   "url": "person.html?cik=0001214156",
+   "sic": null,
+   "sicDescription": null,
+   "entityType": "other",
+   "stateOfIncorporation": null,
+   "profileRefreshedAt": "2026-10-20T05:02:29.445Z"
+  },
+  "names": [
+   {
+    "name": "COOK TIMOTHY D",
+    "as": "name",
+    "source": "edgar_entity_lookup",
+    "from": null,
+    "to": null
+   }
+  ],
+  "tickerHistory": [],
+  "imported": {
+   "asIssuer": {
+    "filings": 0,
+    "lastFiledAt": null
+   },
+   "asReportingOwner": []
+  },
+  "edgar": {
+   "recentFilings": [
+    {
+     "form": "4",
+     "filedAt": "2026-10-05",
+     "reportDate": "2026-10-01",
+     "accession": "0001140361-26-038674",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000114036126038674/0001140361-26-038674-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2026-10-02",
+     "reportDate": null,
+     "accession": "0001959173-26-007235",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917326007235/0001959173-26-007235-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2026-09-29",
+     "reportDate": "2026-09-27",
+     "accession": "0001140361-26-038021",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000114036126038021/0001140361-26-038021-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2026-09-10",
+     "reportDate": "2026-09-08",
+     "accession": "0000320187-26-000147",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032018726000147/0000320187-26-000147-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2026-04-14",
+     "reportDate": "2026-04-10",
+     "accession": "0000320187-26-000049",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032018726000049/0000320187-26-000049-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2026-04-03",
+     "reportDate": "2026-04-01",
+     "accession": "0001140361-26-013190",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000114036126013190/0001140361-26-013190-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2026-04-02",
+     "reportDate": null,
+     "accession": "0001959173-26-002757",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917326002757/0001959173-26-002757-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2025-12-23",
+     "reportDate": "2025-12-22",
+     "accession": "0000320187-25-000146",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032018725000146/0000320187-25-000146-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2025-10-03",
+     "reportDate": "2025-10-01",
+     "accession": "0001214156-25-000011",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000121415625000011/0001214156-25-000011-index.htm"
+    },
+    {
+     "form": "144/A",
+     "filedAt": "2025-10-02",
+     "reportDate": null,
+     "accession": "0001959173-25-006313",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917325006313/0001959173-25-006313-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2025-10-02",
+     "reportDate": null,
+     "accession": "0001959173-25-006307",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917325006307/0001959173-25-006307-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2025-09-30",
+     "reportDate": "2025-09-28",
+     "accession": "0001214156-25-000009",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000121415625000009/0001214156-25-000009-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2025-09-11",
+     "reportDate": "2025-09-09",
+     "accession": "0000320187-25-000076",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032018725000076/0000320187-25-000076-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2025-04-03",
+     "reportDate": "2025-04-01",
+     "accession": "0000320193-25-000043",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019325000043/0000320193-25-000043-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2025-04-02",
+     "reportDate": null,
+     "accession": "0001959173-25-002460",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917325002460/0001959173-25-002460-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2024-10-03",
+     "reportDate": "2024-10-01",
+     "accession": "0000320193-24-000109",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019324000109/0000320193-24-000109-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2024-10-02",
+     "reportDate": null,
+     "accession": "0001959173-24-006827",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917324006827/0001959173-24-006827-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2024-10-01",
+     "reportDate": "2024-09-29",
+     "accession": "0000320193-24-000101",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019324000101/0000320193-24-000101-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2024-09-11",
+     "reportDate": "2024-09-10",
+     "accession": "0001127602-24-023796",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760224023796/0001127602-24-023796-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2024-04-03",
+     "reportDate": "2024-04-01",
+     "accession": "0000320193-24-000049",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019324000049/0000320193-24-000049-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2024-04-02",
+     "reportDate": null,
+     "accession": "0001959173-24-002769",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917324002769/0001959173-24-002769-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2023-10-03",
+     "reportDate": "2023-10-01",
+     "accession": "0000320193-23-000089",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019323000089/0000320193-23-000089-index.htm"
+    },
+    {
+     "form": "144",
+     "filedAt": "2023-10-03",
+     "reportDate": null,
+     "accession": "0001959173-23-004170",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000195917323004170/0001959173-23-004170-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2023-09-14",
+     "reportDate": "2023-09-12",
+     "accession": "0001127602-23-024189",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760223024189/0001127602-23-024189-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2023-08-22",
+     "reportDate": "2023-08-21",
+     "accession": "0001127602-23-023087",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760223023087/0001127602-23-023087-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2023-04-04",
+     "reportDate": "2023-04-01",
+     "accession": "0000320193-23-000048",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019323000048/0000320193-23-000048-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2022-09-27",
+     "reportDate": "2022-09-25",
+     "accession": "0000320193-22-000089",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019322000089/0000320193-22-000089-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2022-09-13",
+     "reportDate": "2022-09-09",
+     "accession": "0001127602-22-022378",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760222022378/0001127602-22-022378-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2021-10-08",
+     "reportDate": "2021-10-06",
+     "accession": "0001127602-21-026859",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760221026859/0001127602-21-026859-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2021-09-28",
+     "reportDate": "2021-09-26",
+     "accession": "0000320193-21-000081",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019321000081/0000320193-21-000081-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2021-08-26",
+     "reportDate": "2021-08-24",
+     "accession": "0000320193-21-000073",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019321000073/0000320193-21-000073-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2021-08-24",
+     "reportDate": "2021-08-20",
+     "accession": "0000320193-21-000071",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019321000071/0000320193-21-000071-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-12-01",
+     "reportDate": "2020-11-30",
+     "accession": "0001127602-20-030206",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760220030206/0001127602-20-030206-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-09-29",
+     "reportDate": "2020-09-27",
+     "accession": "0000320193-20-000074",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019320000074/0000320193-20-000074-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-09-18",
+     "reportDate": "2020-09-17",
+     "accession": "0001127602-20-025463",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760220025463/0001127602-20-025463-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-08-25",
+     "reportDate": "2020-08-24",
+     "accession": "0000320193-20-000066",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019320000066/0000320193-20-000066-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-08-24",
+     "reportDate": "2020-08-20",
+     "accession": "0000320193-20-000064",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019320000064/0000320193-20-000064-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-01-03",
+     "reportDate": "2020-01-02",
+     "accession": "0001127602-20-000714",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760220000714/0001127602-20-000714-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2020-01-02",
+     "reportDate": "2019-12-27",
+     "accession": "0000320193-20-000002",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000032019320000002/0000320193-20-000002-index.htm"
+    },
+    {
+     "form": "4",
+     "filedAt": "2019-09-23",
+     "reportDate": "2019-09-19",
+     "accession": "0001127602-19-028946",
+     "url": "https://www.sec.gov/Archives/edgar/data/1214156/000112760219028946/0001127602-19-028946-index.htm"
+    }
+   ],
+   "olderFilingFiles": 0,
+   "sourceUrl": "https://data.sec.gov/submissions/CIK0001214156.json",
+   "browseUrl": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001214156&owner=include&count=40"
+  },
+  "edgarState": "ok"
+ },
+ "search": {
+  "items": [
+   {
+    "cik": "0001067983",
+    "name": "BERKSHIRE HATHAWAY INC",
+    "kind": "company",
+    "kindBasis": "sec_ticker_list",
+    "tickers": [
+     "BRK-B",
+     "BRK-A"
+    ],
+    "exchanges": [
+     "NYSE",
+     "NYSE"
+    ],
+    "listed": true,
+    "isIssuer": true,
+    "isReportingOwner": true,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": null,
+    "sources": [
+     "edgar_entity_lookup",
+     "edgar_submissions",
+     "sec_ticker_list"
+    ],
+    "url": "company.html?ticker=BRK-B"
+   },
+   {
+    "cik": "0001081316",
+    "name": "BERKSHIRE HATHAWAY ENERGY CO",
+    "kind": "company",
+    "kindBasis": "edgar_submissions",
+    "tickers": [],
+    "exchanges": [],
+    "listed": false,
+    "isIssuer": false,
+    "isReportingOwner": false,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": null,
+    "sources": [
+     "edgar_entity_lookup",
+     "edgar_submissions"
+    ],
+    "url": "entity.html?cik=0001081316"
+   },
+   {
+    "cik": "0001274791",
+    "name": "BERKSHIRE HATHAWAY FINANCE CORP",
+    "kind": "company",
+    "kindBasis": "edgar_submissions",
+    "tickers": [],
+    "exchanges": [],
+    "listed": false,
+    "isIssuer": false,
+    "isReportingOwner": false,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": null,
+    "sources": [
+     "edgar_entity_lookup",
+     "edgar_submissions"
+    ],
+    "url": "entity.html?cik=0001274791"
+   },
+   {
+    "cik": "0001015867",
+    "name": "BERKSHIRE HATHAWAY LIFE INSURANCE CO OF NEBRASKA",
+    "kind": "unknown",
+    "kindBasis": "edgar_entity_lookup",
+    "tickers": [],
+    "exchanges": [],
+    "listed": false,
+    "isIssuer": false,
+    "isReportingOwner": false,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": null,
+    "sources": [
+     "edgar_entity_lookup"
+    ],
+    "url": "entity.html?cik=0001015867"
+   },
+   {
+    "cik": "0000829771",
+    "name": "Berkshire Hathaway Homestate Insurance Co.",
+    "kind": "unknown",
+    "kindBasis": "edgar_entity_lookup",
+    "tickers": [],
+    "exchanges": [],
+    "listed": false,
+    "isIssuer": false,
+    "isReportingOwner": false,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": null,
+    "sources": [
+     "edgar_entity_lookup"
+    ],
+    "url": "entity.html?cik=0000829771"
+   },
+   {
+    "cik": "0000046129",
+    "name": "ALLIENT INC",
+    "kind": "company",
+    "kindBasis": "sec_ticker_list",
+    "tickers": [
+     "ALNT"
+    ],
+    "exchanges": [
+     "Nasdaq"
+    ],
+    "listed": true,
+    "isIssuer": true,
+    "isReportingOwner": false,
+    "importedFilings": {
+     "asIssuer": 0,
+     "asOwner": 0
+    },
+    "lastFilingAt": null,
+    "latestRole": null,
+    "delistedAt": null,
+    "matched": {
+     "name": "HATHAWAY CORP",
+     "as": "former name"
+    },
+    "sources": [
+     "edgar_submissions",
+     "sec_ticker_list"
+    ],
+    "url": "company.html?ticker=ALNT"
+   }
+  ],
+  "total": 6,
+  "strong": 5,
+  "offset": 0,
+  "limit": 8,
+  "hasMore": false,
+  "state": "ok",
+  "lookups": [
+   {
+    "source": "edgar_entity_lookup",
+    "state": "ok",
+    "hits": 5
+   }
+  ]
+ },
+ "coverage": {
+  "generatedAt": "2026-10-20T05:07:43.312Z",
+  "universe": {
+   "companies": "CIKs on the SEC company ticker list (company_tickers_exchange.json), every issuer on an imported Form 4, and any EDGAR filer looked up by CIK or name.",
+   "reportingPersons": "Every reporting owner (CIK) named on an imported Form 4 or 4/A, joint filers included, and any EDGAR filer resolved on demand.",
+   "filings": "SEC Form 4 and 4/A filed on EDGAR in the last 90 calendar days, reconciled against EDGAR's daily form indexes.",
+   "notCovered": [
+    "Forms 3 and 5 (initial statements and annual statements) are not imported",
+    "Form 4 filings older than 90 days are not backfilled",
+    "Paper filings and filings without ownership XML cannot be parsed",
+    "Companies not registered with the SEC, and people who have never filed with the SEC, are outside EDGAR",
+    "Person vs organization is decided from the filed name for reporting owners, not from an SEC field"
+   ]
+  },
+  "entities": {
+   "total": 9278,
+   "companies": 8037,
+   "listedCompanies": 8029,
+   "unlistedCompanies": 8,
+   "leftTickerList": 0,
+   "issuersWithImportedFilings": 479,
+   "persons": 1142,
+   "organizations": 87,
+   "reportingOwners": 1730,
+   "reportingOwnersWithImportedFilings": 1230,
+   "unresolved": 12,
+   "resolvedFromEdgar": 2067,
+   "searchableNames": 22300,
+   "formerNames": 2096,
+   "tickers": 10448
+  },
+  "filings": {
+   "parsed": 1225,
+   "failed": 0,
+   "pending": 0,
+   "transactions": 2972,
+   "distinctOwnerCiks": 1230,
+   "newestPublishedAt": "2026-10-20T01:40:12.000Z",
+   "oldestPublishedAt": "2026-10-15T10:01:35.000Z"
+  },
+  "queue": {
+   "pending": 31176,
+   "retry": 0,
+   "running": 0,
+   "done": 1225,
+   "failed": 0
+  },
+  "backfill": {
+   "windowDays": 90,
+   "businessDays": 65,
+   "indexDaysRead": 62,
+   "indexDaysMissing": 3,
+   "indexDayErrors": 0,
+   "earliestDay": "2026-07-22",
+   "latestDay": "2026-10-19",
+   "listedByEdgar": 32401,
+   "imported": 1225,
+   "percentImported": 3.8
+  },
+  "reconciliation": [
+   {
+    "day": "2026-10-19",
+    "listedByEdgar": 480,
+    "imported": 480,
+    "failed": 0,
+    "waiting": 0,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-16",
+    "listedByEdgar": 455,
+    "imported": 455,
+    "failed": 0,
+    "waiting": 0,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-15",
+    "listedByEdgar": 303,
+    "imported": 290,
+    "failed": 0,
+    "waiting": 13,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-14",
+    "listedByEdgar": 298,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 298,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-13",
+    "listedByEdgar": 522,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 522,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-09",
+    "listedByEdgar": 292,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 292,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-08",
+    "listedByEdgar": 323,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 323,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-07",
+    "listedByEdgar": 325,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 325,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-06",
+    "listedByEdgar": 414,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 414,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-05",
+    "listedByEdgar": 1200,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 1200,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-02",
+    "listedByEdgar": 1502,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 1502,
+    "missing": 0
+   },
+   {
+    "day": "2026-10-01",
+    "listedByEdgar": 758,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 758,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-30",
+    "listedByEdgar": 300,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 300,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-29",
+    "listedByEdgar": 408,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 408,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-28",
+    "listedByEdgar": 372,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 372,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-25",
+    "listedByEdgar": 349,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 349,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-24",
+    "listedByEdgar": 318,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 318,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-23",
+    "listedByEdgar": 297,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 297,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-22",
+    "listedByEdgar": 411,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 411,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-21",
+    "listedByEdgar": 391,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 391,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-18",
+    "listedByEdgar": 435,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 435,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-17",
+    "listedByEdgar": 707,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 707,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-16",
+    "listedByEdgar": 623,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 623,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-15",
+    "listedByEdgar": 511,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 511,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-14",
+    "listedByEdgar": 600,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 600,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-11",
+    "listedByEdgar": 435,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 435,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-10",
+    "listedByEdgar": 511,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 511,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-09",
+    "listedByEdgar": 502,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 502,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-08",
+    "listedByEdgar": 500,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 500,
+    "missing": 0
+   },
+   {
+    "day": "2026-09-04",
+    "listedByEdgar": 458,
+    "imported": 0,
+    "failed": 0,
+    "waiting": 458,
+    "missing": 0
+   }
+  ],
+  "lastSuccessfulSync": {
+   "company-directory": "2026-10-20T04:50:45.886Z",
+   "daily-index": "2026-10-20T04:51:40.665Z",
+   "entity-profiles": "2026-10-20T05:03:29.465Z",
+   "filing-participants": "2026-10-20T05:01:41.356Z",
+   "ingest-queue": "2026-10-20T04:57:19.412Z"
+  },
+  "jobs": [
+   {
+    "job": "company-directory",
+    "status": "success",
+    "startedAt": "2026-10-20T04:50:45.011Z",
+    "finishedAt": "2026-10-20T04:50:45.886Z",
+    "stats": {
+     "listings": 10443,
+     "companies": 8029,
+     "rejectedRows": 0,
+     "noLongerListed": 0
+    },
+    "error": null
+   },
+   {
+    "job": "daily-index",
+    "status": "success",
+    "startedAt": "2026-10-20T04:51:23.233Z",
+    "finishedAt": "2026-10-20T04:51:40.665Z",
+    "stats": {
+     "errors": 0,
+     "listed": 31163,
+     "queued": 31163,
+     "noIndex": 2,
+     "daysRead": 59,
+     "alreadyImported": 0
+    },
+    "error": null
+   },
+   {
+    "job": "entity-profiles",
+    "status": "running",
+    "startedAt": "2026-10-20T05:03:37.100Z",
+    "finishedAt": null,
+    "stats": {},
+    "error": null
+   },
+   {
+    "job": "filing-participants",
+    "status": "success",
+    "startedAt": "2026-10-20T05:01:41.343Z",
+    "finishedAt": "2026-10-20T05:01:41.356Z",
+    "stats": {
+     "owners": 1,
+     "filings": 1,
+     "issuers": 1
+    },
+    "error": null
+   },
+   {
+    "job": "ingest-queue",
+    "status": "success",
+    "startedAt": "2026-10-20T04:56:41.117Z",
+    "finishedAt": "2026-10-20T04:57:19.412Z",
+    "stats": {
+     "failed": 0,
+     "claimed": 150,
+     "retried": 0,
+     "yielded": false,
+     "imported": 150,
+     "released": 0,
+     "recovered": 0
+    },
+    "error": null
+   }
+  ],
+  "quality": [
+   {
+    "key": "transaction_after_filing",
+    "label": "Transaction dated after its filing was published",
+    "count": 0
+   },
+   {
+    "key": "implausible_transaction_date",
+    "label": "Transaction date before 1990 or in the future",
+    "count": 0
+   },
+   {
+    "key": "missing_transaction_date",
+    "label": "Transaction without a date",
+    "count": 0
+   },
+   {
+    "key": "broken_source_link",
+    "label": "Source link not an SEC EDGAR archive URL for its accession",
+    "count": 0
+   },
+   {
+    "key": "purchase_misclassified",
+    "label": "Line classed as a purchase that is not a non-derivative P/A",
+    "count": 0
+   },
+   {
+    "key": "sale_misclassified",
+    "label": "Line classed as a sale that is not a non-derivative S/D",
+    "count": 0
+   },
+   {
+    "key": "unclassified_open_market",
+    "label": "Non-derivative P/A or S/D line not classed as a purchase or sale",
+    "count": 0
+   },
+   {
+    "key": "value_mismatch",
+    "label": "Estimated value not equal to shares × price",
+    "count": 0
+   },
+   {
+    "key": "filing_without_owner",
+    "label": "Parsed filing with no reporting owner row",
+    "count": 0
+   },
+   {
+    "key": "owner_without_role",
+    "label": "Reporting owner with no relationship stated (director, officer, 10% owner or other)",
+    "count": 0
+   },
+   {
+    "key": "issuer_not_in_directory",
+    "label": "Issuer CIK on a filing that is not in the entity directory",
+    "count": 0
+   },
+   {
+    "key": "filing_without_ticker_mapping",
+    "label": "Filing whose issuer has no ticker on the filing and none in the directory",
+    "count": 0
+   },
+   {
+    "key": "ticker_on_several_ciks",
+    "label": "Ticker currently listed for more than one CIK",
+    "count": 0
+   },
+   {
+    "key": "possible_duplicate_people",
+    "label": "Same filed person name under more than one CIK (may be different people)",
+    "count": 0
+   },
+   {
+    "key": "unparsed_filings",
+    "label": "Filings that failed to parse (stored with their error)",
+    "count": 0
+   },
+   {
+    "key": "queue_failed",
+    "label": "Queued accessions that failed every attempt",
+    "count": 0
+   },
+   {
+    "key": "queue_overdue",
+    "label": "Queued accessions waiting more than a day",
+    "count": 0
+   },
+   {
+    "key": "holdings_negative",
+    "label": "13F holding with a negative value or share count",
+    "count": 0
+   },
+   {
+    "key": "stale_filings",
+    "label": "Hours since the newest imported filing was published",
+    "count": 3,
+    "stale": false
+   }
+  ]
+ }
+}

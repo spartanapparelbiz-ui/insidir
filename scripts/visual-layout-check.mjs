@@ -43,7 +43,7 @@ try{
    });
    assert.ok(landing.overflow<=4,item.width+"px landing horizontal overflow "+JSON.stringify(landing));
    assert.ok(Math.abs(landing.hero.mid-item.width/2)<6,item.width+"px hero off-center "+JSON.stringify(landing));
-   assert.ok(Math.abs(landing.h1.x-landing.hero.x)<3&&landing.h1.width<=item.width,item.width+"px headline not on the hero grid "+JSON.stringify(landing));
+   assert.ok(Math.abs(landing.h1.mid-landing.hero.mid)<3&&landing.h1.x>=landing.hero.x-1&&landing.h1.width<=item.width,item.width+"px headline not centred in the hero "+JSON.stringify(landing));
    assert.ok(landing.font.includes("JetBrains Mono"),"Landing headline must use the site's one typeface, JetBrains Mono: "+landing.font);
    assert.ok(landing.label.includes("JetBrains Mono"),"Tracked labels should be set in the self-hosted JetBrains Mono: "+landing.label);
    assert.ok(landing.halftone.mounted&&landing.halftone.width>=item.width-2&&landing.halftone.height>300&&landing.halftone.inHero,"Halftone wordmark hero must draw in the landing page's first screen "+JSON.stringify(landing.halftone));
@@ -195,7 +195,7 @@ try{
       label:getComputedStyle(document.querySelector(".auth-field .label")).fontFamily,footer:!!document.querySelector("footer.v13-footer--plain .hwf-top"),logoDot:!!document.querySelector(".auth-logo .v13-dot")}));
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
     assert.match(auth.heading,/JetBrains Mono/,route+" auth heading must use JetBrains Mono");
-    assert.equal(auth.headingColor,"rgb(233, 228, 218)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
+    assert.equal(auth.headingColor,"rgb(240, 238, 232)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
     assert.match(auth.label,/JetBrains Mono/,route+" field labels should be tracked mono");
     assert.ok(auth.footer&&auth.logoDot,route+" needs the plain footer and the dotted wordmark logo");
    }

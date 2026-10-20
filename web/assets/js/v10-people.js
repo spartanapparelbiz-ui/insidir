@@ -106,6 +106,47 @@ async function getFollowing(pending){
  try{const x=await (pending||request("/v1/me/people"));const list=Array.isArray(x.items)?x.items:[];followState="ready";following=new Set(list.map(p=>cik(p.owner_cik)).filter(Boolean));drawFollowing(list);}
  catch(e){followState="error";following=new Set();if(followingHost)followingHost.innerHTML='<p class="v10-people-empty" role="alert">Your followed people could not be loaded: '+esc(e.message)+'. Reload the page to try again.</p>';}
  draw();
+ if(edgarItems.length)drawEdgar();
+}
+/* Beyond the import: SEC reporting owners from the entity directory and EDGAR (GET /v1/entities/search?kind=owner),
+   minus the people already listed above. Each is identified by its SEC CIK and labelled as a person or an entity from
+   the name as filed; nothing here adds a role or a company the filings do not state. */
+const edgarHost=$("v10-edgar-results"),edgarBox=$("v10-edgar"),edgarStatus=$("v10-edgar-status");
+let edgarItems=[],edgarOffset=0,edgarTotal=0,edgarQuery="";
+function edgarCard(e){
+ const id=String(e.cik||"").replace(/^0+/,""),role=e.latestRole;
+ const what=e.kind==="organization"?"Reporting entity":e.kind==="person"?"Reporting person":e.kind==="company"?"Company that also files as an owner":"SEC filer";
+ const where=role?esc(role.role||"Reporting owner")+(role.issuerName?" · "+esc(companyName(role.issuerName)):""):esc(what);
+ const imported=(e.importedFilings?.asOwner||0);
+ const facts=['<div><dt>SEC CIK</dt><dd>'+esc(e.cik)+'</dd></div>','<div><dt>Form 4 imported</dt><dd>'+(imported?esc(imported)+" filing"+(imported===1?"":"s"):"None yet")+'</dd></div>'];
+ if(e.matched)facts.push('<div><dt>Matched</dt><dd>'+esc(e.matched.as)+': '+esc(e.matched.name)+'</dd></div>');
+ return '<article class="v10-person-card v10-person-card--edgar">'+
+  '<div class="v10-person-card__head">'+(media?.portrait(e.name,"","md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong><a class="v10-person-link" href="person.html?cik='+esc(id)+'">'+esc(shown(e.name))+'</a></strong><small>'+where+'</small></div></div>'+
+  '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
+  '<div class="v10-person-card__actions"><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&amp;CIK='+esc(e.cik)+'&amp;type=4&amp;owner=include&amp;count=40" target="_blank" rel="noopener noreferrer">EDGAR filings ↗</a>'+(e.isReportingOwner?followButton(e.cik,false):"")+'</div></article>';
+}
+function drawEdgar(state){
+ if(!edgarHost||!edgarBox)return;
+ edgarBox.hidden=!edgarQuery;
+ if(!edgarQuery)return;
+ const more=edgarItems.length&&edgarOffset<edgarTotal?'<div class="v10-people-more"><button type="button" data-edgar-more data-hf-atom>Show more SEC reporting owners <span>· '+(edgarTotal-edgarOffset)+' more</span></button></div>':"";
+ edgarHost.innerHTML=edgarItems.length?edgarItems.map(edgarCard).join("")+more:'<p class="v10-people-empty">'+(state==="source_unavailable"?"SEC EDGAR could not be reached just now, so only Insidir’s stored records were searched. Try again shortly.":state==="error"?"The SEC filer search is unavailable right now.":"No other SEC reporting owner matches “"+esc(edgarQuery)+"”.")+'</p>';
+ media?.hydrate(edgarHost);
+}
+async function loadEdgar(query,mine,append=false){
+ if(!edgarHost)return;
+ edgarQuery=query;
+ if(!query){edgarItems=[];drawEdgar();return;}
+ if(!append){edgarItems=[];edgarOffset=0;if(edgarStatus)edgarStatus.textContent="Searching SEC EDGAR for other reporting owners…";}
+ try{
+  const x=await request("/v1/entities/search?kind=owner&limit=24&offset="+edgarOffset+"&q="+encodeURIComponent(query));
+  if(mine!==seq)return;
+  const listed=new Set(records.map(p=>String(Number(p.owner_cik))));
+  const fresh=(x.items||[]).filter(e=>!listed.has(String(Number(e.cik))));
+  edgarItems.push(...fresh);edgarOffset+=(x.items||[]).length;edgarTotal=Number(x.total)||edgarOffset;
+  drawEdgar(x.state);
+  if(edgarStatus)edgarStatus.textContent=edgarTotal?edgarTotal+" SEC reporting owner"+(edgarTotal===1?"":"s")+" match “"+query+"”"+(fresh.length<(x.items||[]).length?" (those already listed above are not repeated)":"")+".":"";
+ }catch(e){if(mine!==seq)return;drawEdgar("error");if(edgarStatus)edgarStatus.textContent="";}
 }
 const directoryPath=(query,offset=0)=>"/v1/insiders?limit=100&offset="+Math.max(0,offset)+(query?"&q="+encodeURIComponent(query):"");
 async function load(query="",pending){
@@ -116,6 +157,7 @@ async function load(query="",pending){
   if(mine!==seq)return;
   loadError=null;records=(Array.isArray(x.items)?x.items:[]).filter(p=>cik(p.owner_cik));serverOffset=records.length;moreFromServer=Boolean(x.hasMore);draw();
   say(query?records.length+(moreFromServer?"+":"")+" result"+(records.length===1?"":"s")+" for “"+query+"” among imported SEC Form 4 owners.":"Search by first name, last name, or SEC owner CIK. Showing the latest imported reporting people.");
+  void loadEdgar(query,mine);
  }catch(e){
   if(mine!==seq)return;
   records=[];loadError=e.message;draw();say("The reporting-person directory is unavailable: "+e.message+".");
@@ -143,6 +185,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.querySelector("[data-focus-search]")?.addEventListener("click",()=>{if(!input)return;input.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});input.focus({preventScroll:true});});
  document.addEventListener("click",async e=>{
   if(e.target.closest?.("button[data-people-more]")){void showMore();return;}
+  if(e.target.closest?.("button[data-edgar-more]")){void loadEdgar(edgarQuery,seq,true);return;}
   const again=e.target.closest?.("button[data-people-retry]");
   if(again){again.disabled=true;again.textContent="Loading…";void load(current);return;}
   const btn=e.target.closest?.("button[data-person-follow]");if(!btn)return;

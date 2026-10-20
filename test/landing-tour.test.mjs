@@ -12,45 +12,36 @@ async function withServer(fn) {
 }
 const CLIPS = ["search", "insiders", "people", "follow"];
 
-test("the landing page tours the product in four clips, each shipped as MP4, WebM and a poster", async () => {
+test("the landing page shows the system: four stages, five capabilities, the product in motion, sources and pricing", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    assert.match(home, /data-tour/);
-    assert.match(home, /v14-home\.css/);
-    assert.match(home, /v14-tour\.js/);
-    const steps = [...home.matchAll(/class="lp-tour__step" role="tab"[^>]*data-video="([^"]+)"[^>]*data-poster="([^"]+)"/g)];
-    assert.equal(steps.length, 4, "four steps");
-    const tour = home.match(/<ol class="lp-tour__list"[\s\S]*?<\/ol>/)?.[0] || "";
-    assert.equal((tour.match(/aria-selected="true"/g) || []).length, 1, "one step selected");
-    for (const [i, name] of CLIPS.entries()) {
-      assert.equal(steps[i][1], "assets/video/insidir-" + name);
-      for (const ext of [".mp4", ".webm", ".jpg"]) {
-        const r = await fetch(base + "/assets/video/insidir-" + name + ext, { method: "HEAD" });
-        assert.equal(r.status, 200, name + ext);
-        assert.match(r.headers.get("content-type"), ext === ".jpg" ? /image\/jpeg/ : ext === ".mp4" ? /video\/mp4/ : /video\/webm/);
-        if (ext !== ".jpg") assert.ok(Number(r.headers.get("content-length")) < 1_500_000, name + ext + " stays small");
-      }
-    }
-    // Without the script the first clip still plays: a plain <video controls> with both formats.
-    assert.match(home, /<video class="lp-tour__video"[^>]*muted playsinline[^>]*controls[^>]*><source src="assets\/video\/insidir-search\.mp4" type="video\/mp4"><source src="assets\/video\/insidir-search\.webm" type="video\/webm"><\/video>/);
-    const js = await (await fetch(base + "/assets/js/v14-tour.js")).text();
-    assert.match(js, /prefers-reduced-motion: reduce/, "nothing plays by itself with reduced motion");
-    assert.match(js, /IntersectionObserver/, "plays only while on screen");
-    assert.doesNotMatch(js, /fetch\(/, "the tour fetches no data");
+    const stages = [...home.matchAll(/data-stage-go="\d"><b class="sx-stage-label">(Monitor|Process|Interpret|Notify)<\/b>/g)].map(m => m[1]);
+    assert.deepEqual(stages, ["Monitor", "Process", "Interpret", "Notify"], "the four stages, in order");
+    for (const cap of ["Intelligence", "Monitoring", "Investigations", "Ownership Intelligence", "Alerts"]) assert.match(home, new RegExp("<h3>" + cap + "</h3>"), cap);
+    assert.match(home, /data-system/);
+    assert.match(home, /Illustrative sequence built from real SEC filings/, "the system figure says what it is");
+    for (const src of ["SEC EDGAR", "Form 4", "Form 13F"]) assert.match(home, new RegExp('<th scope="row">' + src + "</th>"), src);
+    assert.match(home, /not affiliated with the SEC/i);
+    const js = await (await fetch(base + "/assets/js/v32-system.js")).text();
+    assert.match(js, /prefers-reduced-motion: reduce/, "nothing moves with reduced motion");
+    assert.match(js, /IntersectionObserver/, "moves only while on screen");
+    assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|sendBeacon/, "the system figure reads nothing from the network");
+    // The product clips are still served (the creator kit links them).
+    for (const name of CLIPS) assert.equal((await fetch(base + "/assets/video/insidir-" + name + ".mp4", { method: "HEAD" })).status, 200, name);
   });
 });
 
 test("the landing page offers the paid trial and links the free public insider pages", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    assert.match(home, /<span class="lp-deal"><b>\$1<\/b> for the first 3 days<\/span><span class="lp-terms__price">then <b>\$39<\/b>\/month<\/span><span>Cancel online<\/span>/, "the $1 offer is highlighted with the monthly price and online cancellation right beside it");
+    assert.match(home, /<span class="lp-deal"><b>3 days<\/b> for \$1<\/span><span class="lp-terms__price">Then <b>\$39<\/b>\/month<\/span><span>Cancel online<\/span>/, "the offer sits under the first button with the monthly price and online cancellation beside it");
     assert.match(home, /After the 3-day trial, \$39 is charged every month/);
     assert.match(home, /Start 3 days for \$1/);
     assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
-    assert.match(home, /Know what moves/);
-    assert.match(home, /The market doesn't stop\./);
+    assert.match(home, /Follow the market\.<br><em>We do the watching\.<\/em>/);
+    assert.match(home, /The filings change\.<br><em>Stay informed\.<\/em>/);
     const pricing = await (await fetch(base + "/pricing.html")).text();
     assert.match(pricing, /3 days for \$1/);
     assert.doesNotMatch(pricing, /no free trial/i);
@@ -85,15 +76,15 @@ test("video is served by byte range", async () => {
   });
 });
 
-test("the workflow section is a static, labelled example: seven steps, no data fetched, nothing plays under reduced motion", async () => {
+test("the product-in-motion section is a static, labelled example: four steps, no data fetched, nothing plays under reduced motion", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
     const tabs = [...home.matchAll(/class="ax-flow__step" role="tab" id="ax-tab-(\d)"[^>]*aria-controls="ax-step-\1"/g)];
-    assert.equal(tabs.length, 7, "seven steps");
-    for (const verb of ["Follow", "Monitor", "Detect", "Organize", "Brief", "Alert", "Investigate"]) assert.match(home, new RegExp('<span class="ax-flow__verb">' + verb + "</span>"));
-    for (let i = 1; i <= 7; i++) assert.match(home, new RegExp('id="ax-step-' + i + '" role="tabpanel" aria-labelledby="ax-tab-' + i + '"'));
-    assert.match(home, /they are not live data/, "the example says it is not live");
-    assert.match(home, /nothing here is instant or exhaustive/);
+    assert.equal(tabs.length, 4, "four steps");
+    for (const verb of ["Filed", "Indexed", "Matched", "Evidence"]) assert.match(home, new RegExp('<span class="ax-flow__verb">' + verb + "</span>"));
+    for (let i = 1; i <= 4; i++) assert.match(home, new RegExp('id="ax-step-' + i + '" role="tabpanel" aria-labelledby="ax-tab-' + i + '"'));
+    assert.match(home, /A real filing; not live data/, "the example says it is not live");
+    assert.match(home, /data and notifications can be delayed/);
     assert.match(home, /0001061272-26-000004/, "the example names the real SEC filing it is built from");
     const js = await (await fetch(base + "/assets/js/v31-flow.js")).text();
     assert.match(js, /prefers-reduced-motion: reduce/);
@@ -103,5 +94,6 @@ test("the workflow section is a static, labelled example: seven steps, no data f
     assert.match(home, /insidir:exp:headline/);
     assert.match(home, /data-exp-headline/);
     assert.doesNotMatch(home, /insidir:exp:hero"/);
+    assert.match(home, /"organized"&&v!=="disclosure"/, "the two headline arms");
   });
 });

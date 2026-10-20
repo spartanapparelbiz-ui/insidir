@@ -18,17 +18,17 @@ const outDir = fileURLToPath(new URL("../web/assets/img/stories/", import.meta.u
 const page = ({ label, title, sub, figures, foot }) => `<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:M;src:url(${font}) format("woff2");font-weight:100 800}
 *{box-sizing:border-box;margin:0}
-body{width:1200px;height:630px;background:#0c0c0b;color:#e9e4da;font-family:M,monospace;padding:56px 64px;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.top{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#8c8983;font-weight:500}
-.logo{font-size:30px;font-weight:800;letter-spacing:-.04em;text-transform:none;color:#e9e4da}
+body{width:1200px;height:630px;background:#0c0c0b;color:#f0eee8;font-family:M,monospace;padding:56px 64px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#908f8b;font-weight:500}
+.logo{font-size:30px;font-weight:800;letter-spacing:-.04em;text-transform:none;color:#f0eee8}
 h1{margin-top:44px;font-size:${title.length > 70 ? 46 : 54}px;line-height:1.1;font-weight:800;letter-spacing:-.035em;max-width:1000px}
-h1 span{color:#8c8983}
-.figs{margin-top:auto;display:flex;border:1px solid #2f2f2c;background:#151513}
-.fig{flex:1;padding:18px 22px;border-right:1px solid #2f2f2c}.fig:last-child{border-right:0}
-.fig b{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#8c8983;font-weight:500}
+h1 span{color:#908f8b}
+.figs{margin-top:auto;display:flex;border:1px solid #30302e;background:#171717}
+.fig{flex:1;padding:18px 22px;border-right:1px solid #30302e}.fig:last-child{border-right:0}
+.fig b{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#908f8b;font-weight:500}
 .fig i{display:block;margin-top:8px;font-style:normal;font-size:30px;font-weight:700;letter-spacing:-.02em}
-.foot{margin-top:22px;display:flex;justify-content:space-between;font-size:15px;color:#9e9b94}
-.dots{position:absolute;right:64px;top:330px;width:240px;height:60px;background-image:radial-gradient(#41403d 1.6px,transparent 1.7px);background-size:12px 12px;opacity:.9}
+.foot{margin-top:22px;display:flex;justify-content:space-between;font-size:15px;color:#a4a4a0}
+.dots{position:absolute;right:64px;top:330px;width:240px;height:60px;background-image:radial-gradient(#434240 1.6px,transparent 1.7px);background-size:12px 12px;opacity:.9}
 </style></head><body><div class="dots"></div>
 <div class="top"><span class="logo">insidir.</span><span>${esc(label)}</span></div>
 <h1>${title}${sub ? ` <span>${esc(sub)}</span>` : ""}</h1>

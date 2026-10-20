@@ -231,6 +231,11 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     if (method === "DELETE" && path.startsWith("/v1/me/people/")) { const cik = decodeURIComponent(path.split("/").pop()); state.posts.push("unfollow " + cik); state.follows = state.follows.filter(c => c !== cik); return { status: 200, body: { deleted: true, owner_cik: cik } }; }
     if (method === "POST" && path === "/v1/me/watchlist") { const t = JSON.parse(body || "{}").ticker; state.posts.push("save " + t); state.saved.push(t); return { status: 200, body: { saved: true, ticker: t } }; }
     if (method !== "GET") return { status: 200, body: { saved: true } };
+    // The overview strip (v32-overview.js) reads the briefing in peek mode and the unread count.
+    if (path === "/v1/me/intelligence/briefing") return { status: 200, body: { stories: state.saved.length ? [{ ticker: state.saved[0], isNew: true }, { ticker: state.saved[0], isNew: false }] : [], needsSetup: !state.saved.length && !state.follows.length, subjects: { tickers: state.saved.length, people: state.follows.length } } };
+    if (path === "/v1/me/notifications") return { status: 200, body: { items: [], unread: state.saved.length ? 3 : 0 } };
+    // EDGAR filers beyond the import (header search, people directory): none in these fixtures.
+    if (path === "/v1/entities/search") return { status: 200, body: { items: [], total: 0, offset: 0, limit: 20, hasMore: false, state: "no_match", lookups: [] } };
     if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
     if (path.startsWith("/v1/people/")) { const f = personFile(decodeURIComponent(path.split("/").pop()), [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]); return f ? { status: 200, body: f } : { status: 404, body: { error: "Reporting person not found in imported SEC records" } }; }
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
@@ -290,6 +295,11 @@ try {
     const fx = fixture(FULL);
     const { context, page, errors, api } = await open(1440, fx);
     await settle(page);
+    const desk = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll("#rd-desk [data-desk]")].map(t => [t.dataset.desk, { v: t.querySelector("[data-v]").textContent, s: t.querySelector("[data-s]").textContent, href: t.getAttribute("href"), loading: t.classList.contains("is-loading") }])));
+    check(desk.briefing?.v === "1" && /1 new item since your last visit/.test(desk.briefing.s) && desk.briefing.href === "intelligence.html#briefing", "overview: the briefing tile counts the stories marked New", desk.briefing);
+    check(desk.alerts?.v === "3" && /3 unread alerts/.test(desk.alerts.s) && desk.watch?.v === "7" && /4 companies · 3 people/.test(desk.watch.s), "overview: unread alerts, and the companies and people the member follows", [desk.alerts, desk.watch]);
+    check(/Last import/.test(desk.data?.s || "") && !Object.values(desk).some(t => t.loading), "overview: the data tile says when the last import finished, and no tile is left loading", desk.data);
+    check(api.includes("GET /v1/me/intelligence/briefing?peek=1") && !api.some(r => r === "GET /v1/me/intelligence/briefing"), "overview: reads the briefing in peek mode, so the Briefing keeps its own New marks", api.filter(r => /briefing|notifications/.test(r)));
     const H = await page.evaluate(() => ({
       greeting: document.querySelector("[data-greeting]")?.textContent || "",
       date: document.getElementById("rd-today-date")?.textContent || "",
@@ -530,7 +540,7 @@ try {
     });
     check(orange.length === 0, "nothing on the dashboard is orange (the logo's full stop included)", orange);
     const badges = await page.evaluate(() => ({ sale: getComputedStyle(document.querySelector("#v3-trades .rd-type--sell")).color, buy: getComputedStyle(document.querySelector("#v3-trades .rd-type--buy")).color, newMark: getComputedStyle(document.querySelector(".rd-new")).color }));
-    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(233, 228, 218)", "sold is red, bought green, New is ink (not a colour)", badges);
+    check(badges.sale === "rgb(249, 65, 68)" && badges.buy === "rgb(47, 153, 106)" && badges.newMark === "rgb(240, 238, 232)", "sold is red, bought green, New is ink (not a colour)", badges);
 
     // 05: about this data.
     // The line as drawn: visible labels, values, and the " · " separators and full stop CSS puts between them.

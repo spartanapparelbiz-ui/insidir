@@ -1,5 +1,5 @@
 /* Insidir V13 palette audit: open every page in headless Chromium and report any computed
-   colour that is not a blend of the two identity colours (#0c0c0b paper, #e9e4da ink) or one of
+   colour that is not a blend of the two identity colours (#0c0c0b paper, #f0eee8 ink) or one of
    the two direction colours over the paper (#2f996a up, #f94144 down). Orange is retired: a colour
    that needs any of the old warm accent (#e9762b) beyond --warm-tolerance (default 0.025 of the
    way from paper to orange) to be explained is an off-palette leak, and leaks that read as orange
@@ -46,7 +46,7 @@ const args = process.argv.slice(2);
 const flag = name => args.includes("--" + name);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
 // `warm` is not part of the palette any more: it is the direction the audit hunts for (the retired orange accent).
-const PALETTE = { bg: [12, 12, 11], ink: [233, 228, 218], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
+const PALETTE = { bg: [12, 12, 11], ink: [240, 238, 232], warm: [233, 118, 43], up: [47, 153, 106], down: [249, 65, 68] };
 const TOL = Number(opt("tolerance", 5));
 const WARM_TOL = Number(opt("warm-tolerance", 0.025)); // paper/ink tokens need at most 0.006 of it
 const STATE_CAP = Number(opt("state-cap", 200));
@@ -59,7 +59,7 @@ const ALL_PAGES = [
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
-  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"], ["entity", "/entity.html?cik=1081316"],
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
   ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
@@ -150,6 +150,8 @@ const NDJSON = Symbol("ndjson");
 const ndjson = lines => ({ [NDJSON]: lines.map(l => JSON.stringify(l)).join("\n") + "\n" });
 // Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
 const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+// Entity record, entity search and coverage captured from a local engine over real SEC EDGAR data.
+const COVERAGE = JSON.parse(readFileSync(new URL("./fixtures/coverage-api.json", import.meta.url), "utf8"));
 function intelligenceFixture(p, method, empty) {
   if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
   if (p === "/v1/me/intelligence/investigate" && method === "POST") return ndjson([...INTEL.stream, { stage: "answer", answer: INTEL.answer }]);
@@ -226,6 +228,9 @@ function fixture(url, method, from = "", hash = "") {
   if (p === "/v1/companies") return { items: filingItems.map(f => ({ ticker: f.ticker, issuer_name: f.issuer_name, name: f.issuer_name, last_filing_at: f.published_at, filings: 2 })), total: 3 };
   if (p === "/v1/insiders") return { items: insiderPeople, total: insiderPeople.length };
   if (p === "/v1/search") return { items: [{ ticker: "AAPL", name: "Apple Inc." }] };
+  if (p === "/v1/entities/1081316") return COVERAGE.entity;
+  if (p === "/v1/entities/search") return COVERAGE.search;
+  if (p === "/v1/coverage") return COVERAGE.coverage;
   if (p === "/v1/purchases" || p === "/v1/sales") return { items: transactionItems };
   return null;
 }
@@ -318,7 +323,7 @@ const scan = ({ palette, tol }) => {
   };
   const add = (prop, value, el) => { const key = prop + " = " + value; const e = leaks.get(key) || { prop, value, orange: isOrange(parse(value)), count: 0, examples: [] }; e.count++; if (e.examples.length < 3) e.examples.push(path(el)); leaks.set(key, e); };
   const SKIP = new Set(["CANVAS", "IMG", "VIDEO", "IFRAME", "SCRIPT", "STYLE", "NOSCRIPT", "LINK", "META", "HEAD", "TITLE", "BR", "WBR", "SOURCE", "PICTURE", "TEMPLATE"]);
-  const allowedFonts = /^"?JetBrains Mono"?/i;
+  const allowedFonts = /^"?(JetBrains Mono|system-ui)"?/i; // V32: JetBrains Mono (brand and figures) or the interface sans
   for (const el of document.querySelectorAll("body *")) {
     if (SKIP.has(el.tagName)) continue;
     if (el.closest("canvas,[hidden],template")) continue;

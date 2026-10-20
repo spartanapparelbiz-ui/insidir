@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script><script defer src="assets/js/v32-overview.js"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
 <div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
@@ -27,6 +27,14 @@
     <p id="rd-today-fresh" class="rd-today__line rd-today__line--fresh is-skeleton" aria-busy="true"><span class="sr-only">Checking the latest import…</span></p></div>
   </div>
 </section>
+
+<!-- Overview strip (assets/js/v32-overview.js): each tile reads one existing route and links to where the work is. -->
+<nav class="rd-desk" id="rd-desk" aria-label="What is waiting" aria-busy="true">
+  <a class="rd-desk__tile is-loading" href="intelligence.html#briefing" data-desk="briefing"><span class="rd-desk__k">Briefing</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking your briefing…</span></a>
+  <a class="rd-desk__tile is-loading" href="alerts.html" data-desk="alerts"><span class="rd-desk__k">Alerts</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking alerts…</span></a>
+  <a class="rd-desk__tile is-loading" href="watchlist.html" data-desk="watch"><span class="rd-desk__k">Watching</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking what you follow…</span></a>
+  <a class="rd-desk__tile is-loading" href="data.html" data-desk="data"><span class="rd-desk__k">Data</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking the latest import…</span></a>
+</nav>
 
 <!-- A new member's first steps (assets/js/onboarding.js). Shown before first paint only for an account that has just
      subscribed and has not finished or skipped it, so the page never moves to make room. -->

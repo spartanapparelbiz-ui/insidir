@@ -96,7 +96,7 @@
     }
     const end = pts.length - 1;
     return '<svg class="mk-demo__svg mk-demo__svg--' + dir + '" viewBox="0 0 ' + w + " " + h + '" width="' + w + '" height="' + h + '" aria-hidden="true" focusable="false">' +
-      '<defs><linearGradient id="mk-demo-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e4da" stop-opacity=".14"/><stop offset="1" stop-color="#e9e4da" stop-opacity="0"/></linearGradient></defs>' +
+      '<defs><linearGradient id="mk-demo-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0eee8" stop-opacity=".14"/><stop offset="1" stop-color="#f0eee8" stop-opacity="0"/></linearGradient></defs>' +
       grid + ref + '<path class="mk-demo__area" d="' + area + '" fill="url(#mk-demo-fill)"/>' +
       '<path class="mk-demo__line" d="' + line + '"/>' +
       '<circle class="mk-demo__end" cx="' + g.x(end).toFixed(1) + '" cy="' + g.y(pts[end][1]).toFixed(1) + '" r="3.5"/>' + xl +

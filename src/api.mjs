@@ -41,6 +41,8 @@ import {form13fTick,ingestEnabled as form13fEnabled,managerCiks} from "./form13f
 import {aiConfigured,modelFor,aiLimits} from "./ai-gateway.mjs";
 import {costReport,timed} from "./cost-analytics.mjs";
 import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mjs";
+import {searchEntities,entityRecord,resolveEntity,padCik,KINDS} from "./sec-directory.mjs";
+import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -182,7 +184,7 @@ SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
   LIMIT $2`;
   // GET /v1/me/people: the follow list, newest follow first; name and ticker from the latest trade.
   const list=`WITH ${FOLLOW_SET}
-SELECT fp.owner_cik,fp.created_at,s.owner_name,s.ticker,s.last_transaction_date,s.last_published_at
+SELECT fp.owner_cik,fp.created_at,COALESCE(s.owner_name,(SELECT e.name FROM sec_entities e WHERE e.cik=LPAD(LTRIM(fp.owner_cik,'0'),10,'0'))) AS owner_name,s.ticker,s.last_transaction_date,s.last_published_at
   FROM fp
   LEFT JOIN LATERAL (WITH lines AS MATERIALIZED (SELECT x.owner_name,x.ticker,x.transaction_date,f.published_at,f.ingest_status
       FROM ${personLines(joint,["accession","owner_name","ticker","transaction_date"])} x JOIN sec_filings f ON f.accession=x.accession)
@@ -457,6 +459,38 @@ async function route(req,res,ctx){
     return json(res,200,{items:rows.rows.slice(0,limit),offset,limit,hasMore:rows.rows.length>limit,
       source:"Imported SEC Form 4 reporting owners",coverage:"Only imported reporting owners, not all public officials or SEC filers"});
   }
+  /* Coverage, measured (src/coverage-ingest.mjs): counts over stored rows, the coverage universe and its gaps, the
+   * reconciliation against EDGAR's daily indexes and the data-quality counts. Aggregates of public SEC data only. */
+  if(p==="/v1/coverage" && m==="GET"){
+    const body=await ctx.market("coverage",120_000,async()=>{
+      const [report,quality]=await Promise.all([coverageReport({run:ctx.query}),qualityChecks({run:ctx.query})]);
+      return {...report,reconciliation:report.reconciliation.slice(0,30),quality:quality.map(({key,label,count,stale})=>({key,label,count,...(stale!==undefined?{stale}:{})}))};
+    });
+    return json(res,200,body,{"Cache-Control":"public, max-age=120"});
+  }
+  /* Every SEC filer Insidir can find: stored companies, issuers and reporting owners, plus EDGAR lookups on demand
+   * (src/sec-directory.mjs). Product data, like every other search. */
+  if(p==="/v1/entities/search" && m==="GET"){
+    const q=String(u.searchParams.get("q")||"").trim().slice(0,80);
+    const kind=KINDS.has(u.searchParams.get("kind"))?u.searchParams.get("kind"):"all";
+    const limit=positive(u.searchParams.get("limit"),20,50);
+    const offset=Math.min(10_000,Math.max(0,Math.trunc(Number(u.searchParams.get("offset"))||0)));
+    if(!q)return json(res,200,{items:[],total:0,offset,limit,hasMore:false,state:"empty_query"});
+    // On-demand EDGAR lookups are budgeted per member; past the budget, search answers from what is stored.
+    const who=decision.user?.id!=null?"user:"+decision.user.id:"ip:"+clientAddress(req);
+    const edgar=secReady()&&!(await limited(ctx,"entity-lookup:"+who,150,10*60*1000));
+    const r=await ctx.market("entities:"+JSON.stringify([q.toUpperCase(),kind,limit,offset,edgar]),30_000,()=>searchEntities(q,{run:ctx.query,fetcher:ctx.secFetch,kind,limit,offset,edgar}));
+    return json(res,200,{...r,source:"SEC EDGAR: company ticker list, imported Form 4 filings, EDGAR submissions and entity lookup",
+      coverage:"Entities registered with the SEC (EDGAR filers). Companies and people that have never filed with the SEC are not in EDGAR."});
+  }
+  if(p.startsWith("/v1/entities/") && m==="GET"){
+    const cik=padCik(decodeURIComponent(p.slice("/v1/entities/".length)));
+    if(!cik)throw failure(400,"A CIK is up to 10 digits");
+    const r=await ctx.market("entity:"+cik,60_000,()=>entityRecord(cik,{run:ctx.query,fetcher:ctx.secFetch,refresh:secReady()}));
+    if(r.state==="not_found")return json(res,404,{error:"EDGAR has no filer with CIK "+cik,state:"not_found",cik});
+    if(r.state!=="ok")return json(res,503,{error:"SEC EDGAR could not be reached for CIK "+cik+" just now, and Insidir has nothing stored for it yet. Try again shortly.",state:r.state,cik},{"Retry-After":"60"});
+    return json(res,200,r);
+  }
   if(p==="/v1/me" && m==="GET"){
     const user=await requireUser(req,ctx);
     return json(res,200,{user:publicUser(user),access:accessSummary(user,ctx.env)});
@@ -575,7 +609,9 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     if(await limited(ctx,"briefing:"+user.id,120,15*60*1000))throw failure(429,"Too many briefing refreshes. Try again shortly.");
     const days=positive(u.searchParams.get("days"),7,30);
-    return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady()})));
+    // peek=1 (the overview's summary) reads the briefing without recording a visit, so "New" keeps its baseline.
+    const trackVisit=u.searchParams.get("peek")!=="1";
+    return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady(),trackVisit})));
   }
   if(p==="/v1/me/intelligence/instrument" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -907,7 +943,9 @@ async function route(req,res,ctx){
       if(!cik)throw failure(400,"Valid reporting-person SEC CIK required");
       const sql=(await hasFilingOwners(ctx.query))?FOLLOW_SQL.joint:FOLLOW_SQL.single;
       const person=await ctx.query(sql.known,[[cik.replace(/^0+/,""),cik]]);
-      if(!person.rowCount)throw failure(404,"Reporting person not found in imported SEC records");
+      // Not in the import yet: a CIK EDGAR lists as a reporting owner (its submissions say it files ownership reports)
+      // can be followed too; its trades appear as soon as they are imported.
+      if(!person.rowCount&&!(await knownReportingOwner(ctx,cik)))throw failure(404,"No SEC reporting owner with this CIK, in imported filings or in EDGAR");
       const saved=await ctx.query(FOLLOW_INSERT_SQL,[user.id,cik]);
       if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
       serverEvent(ctx.query,"first_follow",{userId:user.id,once:true});
@@ -937,8 +975,18 @@ async function route(req,res,ctx){
 /* options (for tests): currentUser(req) → account row or null, env (paywall/billing
  * settings, default process.env), stripe (a createStripeClient()-shaped client),
  * query(sql, params) (default the PostgreSQL pool; used by the followed-people routes), quiet. */
+/* A reporting owner in the entity directory (src/sec-directory.mjs), resolved from EDGAR on demand when absent. */
+async function knownReportingOwner(ctx,cik){
+  const row=(await ctx.query("SELECT is_reporting_owner,profile_refreshed_at FROM sec_entities WHERE cik=$1",[padCik(cik)])).rows[0];
+  if(row?.is_reporting_owner)return true;
+  if(row?.profile_refreshed_at||!secReady())return false;
+  const r=await resolveEntity(cik,{run:ctx.query,fetcher:ctx.secFetch});
+  return r.state==="ok"&&r.profile.isReportingOwner;
+}
 export function createApiServer(options={}){
   const ctx={currentUser:options.currentUser||currentUser,env:options.env||process.env,stripe:options.stripe||null,query:options.query||query};
+  // The SEC client for on-demand entity lookups; tests pass an in-process fake.
+  ctx.secFetch=options.secFetch||undefined;
   ctx.explanationWriter=options.explanationWriter||null;
   ctx.limiter=options.limiter||(pool&&!options.query?pgLimiter({query}):memoryLimiter());
   // Shared market-wide answers (see createMarketCache); options.marketCache:false turns it off for a test.

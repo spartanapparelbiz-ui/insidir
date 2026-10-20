@@ -703,7 +703,7 @@
   /* ======================= MIRROR: OWNERSHIP INTELLIGENCE ======================= */
   const mirror = $("[data-mirror]");
   const mstate = { managers: [], cik: null, detail: null, budget: 500, timer: null, sim: null };
-  const SHADES = ["#e9e4da", "#d3cec5", "#bdb9b1", "#a8a49d", "#9e9b94", "#8c8983", "#7b7873", "#696762", "#5c5a56", "#4f4d49", "#41403d", "#363532"];
+  const SHADES = ["#f0eee8", "#d9d7d2", "#c2c1bc", "#a8a7a2", "#a4a4a0", "#908f8b", "#7b7873", "#696762", "#5c5a56", "#4f4d49", "#434240", "#363532"];
   function unavailable(m) {
     mirror.className = "ix-mirror ix-mirror--single";
     mirror.innerHTML = '<div class="ix-unavailable"><div class="ix-unavailable__mark" aria-hidden="true">' + mark(150, { lit: ["holdings"] }) + '</div><div><p class="ix-kicker">Not yet available</p><h3>Mirror opens when the first Form 13F reports are imported.</h3><p>' + esc(m.reason || "Form 13F filings have not been imported yet.") + "</p><p>Mirror only ever shows holdings read from managers’ own SEC filings. Until they are imported and checked, there is nothing to show, so nothing is shown.</p>" +

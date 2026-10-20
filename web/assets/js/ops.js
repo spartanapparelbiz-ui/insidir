@@ -27,7 +27,16 @@
       card("Billing", { ...s.billing, events7d: (s.billing?.events7d || []).map(e => e.kind + " " + e.n).join(", ") || null, accounts: (s.billing?.accountsByStatus || []).map(e => e.status + " " + e.n).join(", ") || null }),
       card("AI explanations", { ...s.ai, today: (s.ai?.todayByOutcome || []).map(e => e.outcome + " " + e.n).join(", ") || null }),
       card("Security (24 hours)", Array.isArray(s.security) ? Object.fromEntries(s.security.map(r => [r.kind, r.n])) : s.security),
+      card("Coverage: entities", s.coverage?.report?.entities || s.coverage), card("Coverage: filings and queue", { ...(s.coverage?.report?.filings || {}), ...(s.coverage?.report?.queue || {}) }),
+      card("Coverage: backfill", s.coverage?.report?.backfill),
       card("Capabilities", s.capabilities)].join("");
+    // Data quality (src/coverage-ingest.mjs qualityChecks): each check's count and up to five example rows to open.
+    const quality = Array.isArray(s.coverage?.quality) ? s.coverage.quality : [];
+    $("ops-quality").innerHTML = quality.length ? '<table class="ops-table"><thead><tr><th>Check</th><th>Count</th><th>Examples</th></tr></thead><tbody>' +
+      quality.map(c => `<tr class="${c.count ? "is-flag" : ""}"><td>${E(c.label)}</td><td>${E(c.count ?? c.error ?? "—")}</td><td>${E((c.examples || []).join(", "))}</td></tr>`).join("") + "</tbody></table>"
+      + '<h3>Reconciliation with EDGAR daily indexes</h3><table class="ops-table"><thead><tr><th>Day</th><th>EDGAR listed</th><th>Imported</th><th>Failed</th><th>Waiting</th><th>Missing</th></tr></thead><tbody>'
+      + (s.coverage?.report?.reconciliation || []).slice(0, 30).map(r => `<tr class="${r.missing || r.failed ? "is-flag" : ""}"><td>${E(r.day)}</td><td>${E(r.listedByEdgar)}</td><td>${E(r.imported)}</td><td>${E(r.failed)}</td><td>${E(r.waiting)}</td><td>${E(r.missing)}</td></tr>`).join("") + "</tbody></table>"
+      : "<p>Data-quality checks are unavailable.</p>";
     $("ops-workers").innerHTML = (Array.isArray(s.workers) ? s.workers : []).map(w => card(w.name, { last_started_at: w.last_started_at, last_ok_at: w.last_ok_at, last_error_at: w.last_error_at, last_error: w.last_error, runs: w.runs, failures: w.failures })).join("") || "<p>No worker has reported yet.</p>";
     $("ops-raw").textContent = JSON.stringify(s, null, 2);
     return true;
