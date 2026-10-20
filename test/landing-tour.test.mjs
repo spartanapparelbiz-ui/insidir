@@ -41,7 +41,7 @@ test("the landing page offers the paid trial and links the free public insider p
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
     assert.match(home, /See what others<br><em>overlook\.<\/em>/);
-    assert.match(home, /Financial intelligence\.<br><em>Connected\.<\/em>/);
+    assert.doesNotMatch(home, /Financial intelligence\.<br><em>Connected\.<\/em>/, "both headline arms carry the primary headline");
     assert.match(home, /Uncover investment opportunities, track influential market participants, and understand what changes—backed by real financial disclosures\./);
     assert.match(home, /research leads, not recommendations/);
     const pricing = await (await fetch(base + "/pricing.html")).text();

@@ -228,3 +228,18 @@
 /* The instrument sits in its own band under the hero, so the hero keeps its first-screen height and its wordmark. */
 .sx-instrument{padding:clamp(8px,2vh,24px) 0 clamp(48px,7vh,88px)}
 .sx-instrument .sx-inst{margin-top:0}
+
+/* ---------- Hero headline: a slight glitch (index.html #v6-hero-heading only) ----------
+   A short burst about every 7 seconds: a two-pixel jitter and a grey ghost offset. Monochrome
+   (ink and the palette's greys), transform and paint only, so nothing around it moves; off under reduced motion. */
+.sx-hero #v6-hero-heading{animation:sx-glitch 7s steps(1,end) 1.2s infinite}
+@keyframes sx-glitch{
+  0%,88%,100%{transform:none;text-shadow:none}
+  89%{transform:translate3d(-2px,0,0) skewX(-3deg);text-shadow:2px 0 rgba(240,238,232,.26),-2px 0 rgba(144,143,139,.42)}
+  90%{transform:translate3d(2px,0,0);text-shadow:-2px 0 rgba(240,238,232,.26),2px 0 rgba(144,143,139,.42)}
+  91%{transform:translate3d(-1px,0,0);text-shadow:1px 0 rgba(144,143,139,.4)}
+  92%{transform:none;text-shadow:none}
+  95%{transform:translate3d(1px,0,0) skewX(1.5deg);text-shadow:-1px 0 rgba(240,238,232,.22)}
+  96%{transform:none;text-shadow:none}
+}
+@media (prefers-reduced-motion:reduce){.sx-hero #v6-hero-heading{animation:none}}
