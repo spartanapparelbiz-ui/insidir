@@ -39,6 +39,8 @@
   }
 
   /* ---------- Changes ---------- */
+  // "Original Form 4", "Original 8-K", "Original 13F": the first linked record, named by its form.
+  const sourceLabel = e => { const m = /Form\s+([0-9A-Z][0-9A-Z/-]*)/i.exec(String(e.source || "") + " " + String(e.title || "")); return m ? "Original " + (/^\d/.test(m[1]) ? "Form " + m[1] : m[1]) : "Original filing"; };
   const KIND = { form4: "Form 4", form4_amendment: "Amendment", role_change: "Role change", first_seen: "First filing", financial_fact: "Financials", sec_filing: "SEC filing", holdings_13f: "13F holdings" };
   let aiStatus = null;
   const aiOn = () => aiStatus || (aiStatus = api("/v1/ai/status").then(d => !!d.configured).catch(() => false));
@@ -57,10 +59,12 @@
       let last = "";
       list.innerHTML = items.map((it, n) => {
         const head = it.date !== last ? `<h3 class="ip-day">${E(it.date)}</h3>` : ""; last = it.date; it.evidence = it.evidence || [];
-        return head + `<article class="ip-change"><p class="ip-kind">${E(KIND[it.kind] || it.kind)}</p><h4>${E(it.title)}</h4><p>${E(it.detail)}</p>
-          <div class="ip-actions"><button type="button" class="ip-btn" aria-expanded="false" aria-controls="ip-ev-${cik}-${n}" data-ev="${n}">Evidence (${it.evidence.length})</button>
+        // Progressive disclosure: the plain headline and sentence first; the filing's own terms and the evidence on request.
+        const src = it.evidence.find(e => e && e.url);
+        return head + `<article class="ip-change"><p class="ip-kind">${E(KIND[it.kind] || it.kind)}</p><h4>${E(it.headline || it.title)}</h4><p>${E(it.summary || it.detail)}</p>
+          <div class="ip-actions">${src ? `<a class="ip-btn ip-btn--link" href="${E(src.url)}" target="_blank" rel="noopener noreferrer">${E(sourceLabel(src))} <span aria-hidden="true">↗</span></a>` : ""}<button type="button" class="ip-btn" aria-expanded="false" aria-controls="ip-ev-${cik}-${n}" data-ev="${n}">Filing detail and evidence (${it.evidence.length})</button>
           ${explain && it.explainable && it.accession ? `<button type="button" class="ip-btn" data-explain="${E(it.accession)}">Explain this filing</button>` : ""}</div>
-          <div class="ip-explain" hidden></div><div class="ip-evbox" id="ip-ev-${cik}-${n}" hidden>${evidenceHTML(it.evidence)}</div></article>`;
+          <div class="ip-explain" hidden></div><div class="ip-evbox" id="ip-ev-${cik}-${n}" hidden>${it.headline ? `<div class="ip-record"><p class="ip-label">As filed</p><p><b>${E(it.title)}</b></p>${it.detail ? `<p>${E(it.detail)}</p>` : ""}${Array.isArray(it.footnotes) && it.footnotes.length ? `<p class="ip-label">Footnotes</p><ol class="ip-notes">${it.footnotes.map(f => `<li><b>${E(f.id)}</b> ${E(f.text)}</li>`).join("")}</ol>` : ""}</div>` : ""}${evidenceHTML(it.evidence)}</div></article>`;
       }).join("");
       list.querySelectorAll("[data-ev]").forEach(b => b.addEventListener("click", () => {
         const box = document.getElementById(b.getAttribute("aria-controls")), open = b.getAttribute("aria-expanded") !== "true";
@@ -84,6 +88,24 @@
     };
     host.querySelector("[data-days]").addEventListener("change", e => load(e.target.value));
     load(90);
+  }
+
+  /* ---------- Latest developments (company Overview): the newest changes, headline and sentence only ---------- */
+  const longDay = v => { const d = String(v || "").slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }) : "—"; };
+  async function mountRecent(section, cik, limit = 4) {
+    const list = section && section.querySelector("ol");
+    if (!list || section.dataset.ipMounted === cik) return;
+    section.dataset.ipMounted = cik;
+    let items;
+    try { const d = await api("/v1/entities/" + cik + "/changes?days=90"); items = Array.isArray(d && d.items) ? d.items : []; }
+    catch (e) { if (e.status === 404) return; items = null; }
+    section.hidden = false;
+    if (!items) { list.innerHTML = '<li class="ip-muted">Recent developments could not be loaded just now.</li>'; return; }
+    if (!items.length) { list.innerHTML = '<li class="ip-muted">No new developments in the last 90 days in the records Insidir holds.</li>'; return; }
+    list.innerHTML = items.slice(0, limit).map(it => {
+      const src = (it.evidence || []).find(e => e && e.url);
+      return `<li><time datetime="${E(it.date)}">${E(longDay(it.date))}</time><div><b>${E(it.headline || it.title)}</b><span>${E(it.summary || it.detail)}</span></div>${src ? `<a href="${E(src.url)}" target="_blank" rel="noopener noreferrer" aria-label="${E(sourceLabel(src))} for: ${E(it.headline || it.title)}">${E(sourceLabel(src))} <span aria-hidden="true">↗</span></a>` : "<span></span>"}</li>`;
+    }).join("");
   }
 
   /* ---------- Connections ---------- */
@@ -276,7 +298,7 @@
     if (document.getElementById("cx-tabs")) {
       let cik = null, tab = location.hash.slice(1) || null, ticker = null, name = null;
       const mount = () => { if (!cik) return; if (tab === "changes") mountChanges(document.getElementById("cx-changes-host"), cik); if (tab === "connections") mountConnections(document.getElementById("cx-connections-host"), cik); };
-      document.addEventListener("insidir:company", e => { cik = cik10(e.detail.cik); ticker = e.detail.ticker; name = e.detail.name; mount(); if (ticker) mountFollowSettings(document.getElementById("cx-follow-settings"), "company", ticker); });
+      document.addEventListener("insidir:company", e => { cik = cik10(e.detail.cik); ticker = e.detail.ticker; name = e.detail.name; mount(); if (cik) mountRecent(document.getElementById("cx-recent"), cik); if (ticker) mountFollowSettings(document.getElementById("cx-follow-settings"), "company", ticker); });
       document.addEventListener("insidir:tab", e => { tab = e.detail.id; mount(); });
       document.addEventListener("insidir:followed", e => { if (e.detail.kind === "company") { confirmFollow(document.getElementById("cx-follow-note"), name || e.detail.id); mountFollowSettings(document.getElementById("cx-follow-settings"), "company", e.detail.id); } });
       document.addEventListener("insidir:unfollowed", () => { const s = document.getElementById("cx-follow-settings"); if (s) { s.hidden = true; s.innerHTML = ""; } const n = document.getElementById("cx-follow-note"); if (n) n.textContent = ""; });
@@ -303,6 +325,6 @@
     const start = document.getElementById("rd-start");
     if (start && !start.hidden) mountOnboardingSearch(start);
   }
-  window.InsidirPanels = { evidenceHTML, mountChanges, mountConnections, mountFollowSettings, fmtValue };
+  window.InsidirPanels = { evidenceHTML, mountChanges, mountConnections, mountFollowSettings, mountRecent, fmtValue };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

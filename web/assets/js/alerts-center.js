@@ -34,7 +34,7 @@
         const li = document.createElement("li");
         li.className = "ac-item" + (n.readAt ? "" : " is-unread");
         const source = safe(n.event.sourceUrls && n.event.sourceUrls[0]);
-        li.innerHTML = `<p class="ac-item__summary"><span class="ac-badge ${tone}">${E(label)}</span>${E(n.event.summary)}</p>
+        li.innerHTML = `${n.event.headline ? `<p class="ac-item__headline">${E(n.event.headline)}</p>` : ""}<p class="ac-item__summary"><span class="ac-badge ${tone}">${E(label)}</span>${E(n.event.summary)}</p>
           <p class="ac-item__meta">${n.event.ticker ? `<a href="company.html?ticker=${encodeURIComponent(n.event.ticker)}">${E(n.event.ticker)}</a> · ` : ""}Filed ${E(day(n.event.filingDate))} · retrieved ${E(day(n.event.retrievedAt))} · ${n.reason === "watchlist" ? "on your watchlist" : "a person you follow"}${n.event.status === "superseded" ? " · replaced by a later amendment" : ""}${source ? ` · <a href="${E(source)}" rel="noopener noreferrer" target="_blank">Original filing</a>` : ""}</p>
           <div class="ac-item__actions"><button type="button" class="ac-btn" data-explain>Explain</button>${n.readAt ? "" : `<button type="button" class="ac-btn" data-read>Mark read</button>`}</div>
           <div class="re-explain" hidden></div>`;

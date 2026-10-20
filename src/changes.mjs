@@ -17,24 +17,27 @@ import { padCik, roleOf } from "./sec-directory.mjs";
 import { evidence, form4LineEvidence } from "./evidence.mjs";
 import { companyFactChanges, resolveCompany, extractFilings } from "./intelligence.mjs";
 import { managerDetail } from "./intelligence-mirror.mjs";
-import { codeLabel } from "./intelligence-common.mjs";
+import { codeLabel, displayName, companyName } from "./intelligence-common.mjs";
+import { form4Headline, form4Summary, filingHeadline, factHeadline, longDay, periodPhrase, scaled } from "./plain-language.mjs";
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const day = v => v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error("timeout")), ms))]);
 export const MAX_CHANGES = 80, FIRST_SEEN_DAYS = 60;
+// Roles compared as words: a filer's spacing or capitals differing between two filings is not a role change.
+const sameRole = v => String(v || "").replace(/\s+/g, " ").trim().toLowerCase();
 // Figures exactly as filed: whole numbers without decimals, others to the cent (dollars) or up to four places.
 const count = n => Number(n).toLocaleString("en-US", { maximumFractionDigits: 4 });
 const money = n => (n < 0 ? "−$" : "$") + Math.abs(Number(n)).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 });
 
-const FILINGS_SQL = `SELECT f.accession,f.form_type,f.issuer_cik,f.issuer_name,f.ticker,f.published_at,f.period_of_report,f.source_url,f.is_amendment,f.original_filed_on,f.rule_10b5_1,f.validation_status,
+const FILINGS_SQL = `SELECT f.accession,f.form_type,f.issuer_cik,f.issuer_name,f.ticker,f.published_at,f.period_of_report,f.source_url,f.is_amendment,f.original_filed_on,f.rule_10b5_1,f.validation_status,f.footnotes,
     (SELECT json_agg(json_build_object('owner_cik',o.owner_cik,'owner_name',o.owner_name,'is_director',o.is_director,'is_officer',o.is_officer,'officer_title',o.officer_title,
       'is_ten_percent_owner',o.is_ten_percent_owner,'other_text',o.other_text) ORDER BY o.owner_cik) FROM sec_filing_owners o WHERE o.accession=f.accession) AS owners
   FROM sec_filings f
   WHERE f.ingest_status='parsed' AND f.published_at>=now()-make_interval(days=>$2)
     AND (($3='issuer' AND f.issuer_cik=$1) OR ($3='owner' AND EXISTS(SELECT 1 FROM sec_filing_owners o WHERE o.accession=f.accession AND o.owner_cik=$1)))
   ORDER BY f.published_at DESC, f.accession LIMIT 200`;
-const LINES_SQL = `SELECT accession,owner_cik,owner_name,transaction_date,security_title,transaction_code,acquired_disposed,category,derivative,shares,price_per_share,estimated_value,shares_after,source_url
+const LINES_SQL = `SELECT accession,owner_cik,owner_name,transaction_date,security_title,transaction_code,acquired_disposed,category,derivative,shares,price_per_share,estimated_value,shares_after,direct_ownership,nature_of_ownership,footnote_ids,source_url
   FROM sec_transactions WHERE accession=ANY($1::text[]) ORDER BY accession,id`;
 // Each owner's filings at one issuer in date order, with the role filed on each: role changes and first appearances.
 const HISTORY_SQL = `SELECT o.owner_cik,o.owner_name,f.issuer_cik,f.issuer_name,f.accession,f.published_at,f.source_url,f.form_type,
@@ -86,8 +89,13 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
       filedOn: f.published_at, period: f.period_of_report ? { start: f.period_of_report, end: f.period_of_report, type: "period of report" } : null, url: f.source_url });
     items.push({ kind: f.is_amendment ? "form4_amendment" : "form4", date: day(f.published_at), accession: f.accession,
       subject: { name: f.issuer_name, cik: f.issuer_cik, ticker: f.ticker },
+      headline: form4Headline(ls, { amended: f.is_amendment }),
+      summary: form4Summary(ls, { owners: owners.map(o => ({ owner_name: o.owner_name && displayName(o.owner_name), role: roleOf(o) })), issuer: companyName(f.issuer_name, f.ticker), filedOn: f.published_at,
+        plan: f.rule_10b5_1, amended: f.is_amendment, originalFiledOn: f.original_filed_on }),
       title: (who || "A reporting owner") + (f.is_amendment ? " amended a Form 4" + (f.original_filed_on ? " first filed on " + day(f.original_filed_on) : "") : " filed a Form 4") + " for " + (f.issuer_name || "the issuer"),
       detail: (ls.length ? describeForm4(ls) + "." : "No transaction lines (holdings only).") + (f.rule_10b5_1 ? " Marked as made under a Rule 10b5-1 trading plan." : ""),
+      // The footnotes these lines cite, as filed: they can change how a line reads.
+      footnotes: (() => { const cited = new Set(ls.flatMap(l => l.footnote_ids || [])); return (Array.isArray(f.footnotes) ? f.footnotes : []).filter(n => cited.has(n.id)).slice(0, 6).map(n => ({ id: n.id, text: String(n.text).slice(0, 600) })); })(),
       explainable: true, evidence: [filingEvidence, ...ls.slice(0, 4).map(l => form4LineEvidence(l, f))].filter(Boolean) });
   }
 
@@ -98,12 +106,16 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
     if (day(r.published_at) < since) continue;
     const ev = (row, label) => evidence({ source: "SEC Form " + row.form_type, title: label + ": " + (row.issuer_name || "issuer"), entity: { name: row.owner_name, cik: row.owner_cik },
       filedOn: row.published_at, field: "reportingOwner/reportingOwnerRelationship", value: roleOf(row) || "not stated", url: row.source_url });
-    if (prev && (roleOf(prev) || "") !== (roleOf(r) || "")) {
+    if (prev && sameRole(roleOf(prev)) !== sameRole(roleOf(r))) {
       items.push({ kind: "role_change", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
+        headline: "Insider role changed",
+        summary: displayName(r.owner_name) + " now files as " + (roleOf(r) || "a reporting person with no role stated") + " at " + companyName(r.issuer_name) + "; their previous filing there said " + (roleOf(prev) || "no role") + ". Filed " + longDay(r.published_at) + ".",
         title: r.owner_name + "'s filed role at " + (r.issuer_name || "the issuer") + " changed", detail: "From " + (roleOf(prev) || "not stated") + " to " + (roleOf(r) || "not stated") + ", as filed.",
         evidence: [ev(prev, "Previous filing"), ev(r, "This filing")].filter(Boolean) });
     } else if (!prev && r.issuer_first_at && (new Date(r.published_at) - new Date(r.issuer_first_at)) >= FIRST_SEEN_DAYS * 86400_000) {
       items.push({ kind: "first_seen", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
+        headline: "New reporting insider",
+        summary: displayName(r.owner_name) + " filed as " + (roleOf(r) || "a reporting person") + " at " + companyName(r.issuer_name) + " for the first time in Insidir's records (from " + longDay(r.issuer_first_at) + "). Filed " + longDay(r.published_at) + ".",
         title: "First Form 4 from " + r.owner_name + " at " + (r.issuer_name || "the issuer") + " in Insidir's records",
         detail: "Filed as " + (roleOf(r) || "role not stated") + ". Insidir holds this issuer's Form 4s from " + day(r.issuer_first_at) + "; earlier filings outside that period are not checked.",
         evidence: [ev(r, "First filing")].filter(Boolean) });
@@ -118,9 +130,12 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
       for (const c of facts) {
         const sign = c.change > 0 ? "up" : c.change < 0 ? "down" : "unchanged";
         const fmt = v => c.unit === "USD" ? money(v) : count(v) + " " + c.unit;
+        const plainFmt = v => c.unit === "USD" && scaled(v) ? scaled(v) + " (" + money(v) + ")" : fmt(v);
         items.push({ kind: "financial_fact", date: c.current.filedAt, accession: c.current.accession, subject: { name: ent?.name, cik, ticker },
-          title: c.label + " for the " + c.current.periodType.replace("-", " ") + " ended " + c.current.end + ": " + fmt(c.current.value),
-          detail: sign === "unchanged" ? "Unchanged from a year earlier." : "Against " + fmt(c.prior.value) + " for the " + c.prior.periodType.replace("-", " ") + " ended " + c.prior.end + " (" + sign + " " + fmt(Math.abs(c.change)) + (c.changePct != null ? ", " + (Math.abs(c.changePct) * 100).toFixed(1) + "%" : "") + ").",
+          headline: factHeadline(c),
+          summary: c.label + ": " + plainFmt(c.current.value) + " " + periodPhrase(c.current.periodType, c.current.end) + ", against " + plainFmt(c.prior.value) + " a year earlier, as reported in the company's " + c.current.form + " filed " + longDay(c.current.filedAt) + ".",
+          title: c.label + " " + periodPhrase(c.current.periodType, c.current.end) + ": " + fmt(c.current.value),
+          detail: sign === "unchanged" ? "Unchanged from a year earlier." : "Against " + fmt(c.prior.value) + " " + periodPhrase(c.prior.periodType, c.prior.end) + " (" + sign + " " + fmt(Math.abs(c.change)) + (c.changePct != null ? ", " + (Math.abs(c.changePct) * 100).toFixed(1) + "%" : "") + ").",
           evidence: [evidence({ source: "SEC XBRL company facts", title: c.label + " (" + c.current.form + ")", entity: { name: ent?.name, cik }, filedOn: c.current.filedAt,
             period: { start: c.current.start, end: c.current.end, type: c.current.periodType }, field: c.concept, value: c.current.value, units: c.unit, methodology: c.methodology, url: c.current.sourceUrl }),
           evidence({ source: "SEC XBRL company facts", title: c.label + " a year earlier (" + c.prior.form + ")", entity: { name: ent?.name, cik }, filedOn: c.prior.filedAt,
@@ -133,6 +148,8 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
         for (const x of resolved ? extractFilings(resolved.submissions, cik, 40) : []) {
           if (x.filedAt < since || /^4/.test(x.form)) continue;
           items.push({ kind: "sec_filing", date: x.filedAt, accession: x.accession, subject: { name: ent?.name || resolved.company?.name, cik, ticker },
+            headline: filingHeadline(x.form, x.items),
+            summary: (ent?.name || resolved.company?.name || "The company") + " filed a Form " + x.form + " on " + longDay(x.filedAt) + (x.reportDate ? " for " + longDay(x.reportDate) : "") + (x.items?.filter(i => i.code !== "9.01").length ? ": " + x.items.filter(i => i.code !== "9.01").map(i => i.label.toLowerCase()).join("; ") : "") + ".",
             title: "Form " + x.form + " filed" + (x.reportDate ? " for " + x.reportDate : ""), detail: x.items?.length ? x.items.map(i => "Item " + i.code + ": " + i.label).join("; ") : x.headline || "",
             evidence: [evidence({ source: "SEC EDGAR submissions", title: "Form " + x.form, entity: { name: ent?.name, cik }, filedOn: x.filedAt, url: x.sourceUrl })].filter(Boolean) });
         }
@@ -152,6 +169,8 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
           period: { start: null, end: c.comparedTo.periodOfReport, type: "quarter end" }, url: c.comparedTo.sourceUrl });
         const list = (arr, f) => arr.slice(0, 5).map(f).join("; ") || "none";
         items.push({ kind: "holdings_13f", date: d.current.filedAt, accession: d.current.accession, subject: { name: d.manager.name, cik },
+          headline: "Institutional holdings updated",
+          summary: d.manager.name + " reported its holdings at the quarter ended " + longDay(d.current.periodOfReport) + ": " + c.new.length + " new position" + (c.new.length === 1 ? "" : "s") + ", " + c.exited.length + " exited, " + c.increased.length + " larger and " + c.decreased.length + " smaller than the quarter before. A quarter-end snapshot filed up to 45 days later, not a record of trades.",
           title: d.manager.name + ": positions at " + d.current.periodOfReport + " against " + c.comparedTo.periodOfReport,
           detail: `New ${c.new.length} (${list(c.new, p => p.issuer)}), exited ${c.exited.length} (${list(c.exited, p => p.issuer)}), more shares ${c.increased.length}, fewer shares ${c.decreased.length}.` +
             (c.comparable ? "" : " One of the two filings does not match its own totals, so the comparison may be incomplete.") + " Form 13F is a quarter-end snapshot filed up to 45 days later, not a record of trades.",

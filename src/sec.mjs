@@ -5,6 +5,15 @@ const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_
 const list = value => value == null ? [] : Array.isArray(value) ? value : [value];
 const scalar = v => v == null ? null : typeof v === "object" ? scalar(v["#text"] ?? v.value) : String(v).trim() || null;
 const val = v => scalar(v?.value ?? v);
+// Every <footnoteId id="F1"/> anywhere inside one element (a transaction line), in document order, once each.
+const footnoteIds = (node, out = new Set()) => {
+  if (Array.isArray(node)) node.forEach(n => footnoteIds(n, out));
+  else if (node && typeof node === "object") for (const [k, v] of Object.entries(node)) {
+    if (k === "footnoteId") for (const f of list(v)) { const id = f?.["@_id"]; if (typeof id === "string" && /^[A-Za-z0-9_-]{1,12}$/.test(id)) out.add(id); }
+    else footnoteIds(v, out);
+  }
+  return [...out];
+};
 const amount = v => {
   const s = val(v);
   if (!s || !/^-?\d+(\.\d+)?$/.test(s)) return null;
@@ -68,7 +77,7 @@ export function parseAtom(xml, { forms = ["4", "4/A"] } = {}) {
 }
 
 /* Bump when parseOwnership starts reading something it did not: filings read by an older version are re-read. */
-export const PARSER_VERSION = 2;
+export const PARSER_VERSION = 3;
 export function parseOwnership(xml, filing) {
   const root = parser.parse(xml)?.ownershipDocument;
   if (!root || !root.issuer) throw new Error("Not a valid ownershipDocument");
@@ -122,6 +131,7 @@ export function parseOwnership(xml, filing) {
         underlyingShares: derivative ? amount(t?.underlyingSecurity?.underlyingSecurityShares) : null,
         exerciseDate: derivative ? xmlDate(val(t?.exerciseDate)) : null,
         expirationDate: derivative ? xmlDate(val(t?.expirationDate)) : null,
+        footnoteIds: footnoteIds(t),
         sourceUrl: filing.sourceUrl
       });
     }
@@ -138,6 +148,9 @@ export function parseOwnership(xml, filing) {
     originalFiledOn: xmlDate(val(root.dateOfOriginalSubmission)),
     // Checked by the filer when a reported transaction was made under a Rule 10b5-1 trading plan (schema X0609 on).
     rule10b51: root.aff10b5One == null ? null : flag(root.aff10b5One),
+    // Footnote text as filed (whitespace collapsed), for the lines that cite it.
+    footnotes: list(root.footnotes?.footnote).map(f => ({ id: f?.["@_id"], text: scalar(f)?.replace(/\s+/g, " ").slice(0, 1200) || null }))
+      .filter(f => typeof f.id === "string" && /^[A-Za-z0-9_-]{1,12}$/.test(f.id) && f.text),
     owners, transactions
   };
 }
