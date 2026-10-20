@@ -9,7 +9,11 @@ const { Pool } = pg;
  * because the planner's cost estimate crosses jit_above_cost. So it is off for the engine's
  * connections, unless DATABASE_URL carries its own `options`, which then apply exactly as given. */
 export const poolOptions = url => /[?&]options=/.test(String(url || "")) ? {} : { options: "-c jit=off" };
-export const pool = config.databaseUrl ? new Pool({ connectionString: config.databaseUrl, max: 6, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000, ...poolOptions(config.databaseUrl) }) : null;
+/* Each background job holds one connection for its advisory lock while its queries use others, and about a dozen jobs
+ * start within minutes of each other after a deploy: six connections ran out (a job then waited 10 s and failed before
+ * recording anything). PGPOOL_MAX overrides; PostgreSQL's default limit is 100 connections. */
+const poolMax = Math.max(4, Math.min(50, Math.trunc(Number(process.env.PGPOOL_MAX)) || 20));
+export const pool = config.databaseUrl ? new Pool({ connectionString: config.databaseUrl, max: poolMax, connectionTimeoutMillis: 15000, idleTimeoutMillis: 30000, ...poolOptions(config.databaseUrl) }) : null;
 // An idle client that loses its connection (database restart, failover) emits "error" on the pool;
 // without a listener Node treats it as uncaught and the whole engine exits. Log it and let the pool reconnect.
 pool?.on("error", err => console.error("Postgres idle client error", err?.code || "", err?.message || err));

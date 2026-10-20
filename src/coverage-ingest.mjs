@@ -194,7 +194,8 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
   const want = windowDays(days, now);
   // Why imports fail, grouped: the stored error text with numbers, accessions and URLs collapsed (SEC errors only).
   const reasonSql = col => `SELECT left(regexp_replace(regexp_replace(COALESCE(${col},'unknown'),'https?://\\S+','<url>','g'),'[0-9]+','#','g'),90) AS reason,count(*)::int AS n`;
-  const [ent, names, filings, queue, idx, runs, oldest, perDay, failReasons, queueReasons] = await Promise.all([
+  const COVERAGE_JOBS = ["company-directory", "daily-index", "ingest-queue", "entity-profiles", "filing-participants", "sec-ingest", "filing-retry"];
+  const [ent, names, filings, queue, idx, runs, oldest, perDay, failReasons, queueReasons, beats] = await Promise.all([
     run(`SELECT count(*)::int AS entities,
         count(*) FILTER (WHERE kind='company')::int AS companies, count(*) FILTER (WHERE kind='company' AND listed)::int AS listed,
         count(*) FILTER (WHERE kind='company' AND NOT listed)::int AS unlisted_companies,
@@ -225,7 +226,9 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
       FROM sec_index_days d LEFT JOIN sec_ingest_queue q ON q.index_day=d.day
       WHERE d.status='complete' AND d.day=ANY($1::date[]) GROUP BY d.day,d.form4_count ORDER BY d.day DESC LIMIT 120`, [want]),
     run(`${reasonSql("error_message")} FROM sec_filings WHERE ingest_status='error' GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
-    run(`${reasonSql("last_error")} FROM sec_ingest_queue WHERE status IN ('failed','retry') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`)
+    run(`${reasonSql("last_error")} FROM sec_ingest_queue WHERE status IN ('failed','retry') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+    // The background jobs behind these numbers, from the worker heartbeats (src/ops.mjs runWorker).
+    run(`SELECT name,last_started_at,last_ok_at,last_error_at,left(last_error,140) AS last_error,runs,failures FROM worker_heartbeats WHERE name=ANY($1::text[]) ORDER BY name`, [COVERAGE_JOBS]).catch(() => ({ rows: [] }))
   ]);
   const q = Object.fromEntries(queue.rows.map(r => [r.status, r.n]));
   const e = ent.rows[0], f = filings.rows[0], ix = idx.rows[0];
@@ -254,7 +257,9 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
     reconciliation: perDay.rows.map(r => ({ day: dayKey(new Date(r.day)), listedByEdgar: r.form4_count, imported: r.done, failed: r.failed, waiting: r.waiting,
       missing: Math.max(0, r.form4_count - r.done - r.failed - r.waiting) })),
     lastSuccessfulSync: lastOk,
-    jobs: runs.rows.map(r => ({ job: r.job, status: r.status, startedAt: iso(r.started_at), finishedAt: iso(r.finished_at), stats: r.stats, error: r.error_message }))
+    jobs: runs.rows.map(r => ({ job: r.job, status: r.status, startedAt: iso(r.started_at), finishedAt: iso(r.finished_at), stats: r.stats, error: r.error_message })),
+    workers: beats.rows.map(w => ({ name: w.name, lastStartedAt: iso(w.last_started_at), lastOkAt: iso(w.last_ok_at), lastErrorAt: iso(w.last_error_at),
+      lastError: w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at)) ? w.last_error : null, runs: w.runs, failures: w.failures }))
   };
 }
 
