@@ -6,7 +6,7 @@ import { buildDirectory, parseQuestion, parseTimeRange, resolveCompanies, verify
 import { simulateAllocation, aggregateHoldings, compareHoldings, parseBudget, periodsFrom } from "../src/intelligence-mirror.mjs";
 import { parsePrimaryDoc, parseInfoTable, completenessOf, thirteenFFilings, valueUnitFor, pickDocuments, managerCiks, cik10 } from "../src/form13f.mjs";
 import { buildStories, rankStory, RANKING_RULES } from "../src/intelligence-briefing.mjs";
-import { aiLimits, modelFor, estimateCost, callModel, sanitizeEvidence, explanationKey, checkBudget } from "../src/ai-gateway.mjs";
+import { aiLimits, modelFor, estimateCost, callModel, sanitizeEvidence, explanationKey, checkBudget, affordableTier, worstCaseCost } from "../src/ai-gateway.mjs";
 import { capabilityDecision, capabilitySummary } from "../src/capabilities.mjs";
 import { classifyApi } from "../src/paywall.mjs";
 import { summarizeLines, displayName } from "../src/intelligence-common.mjs";
@@ -233,6 +233,25 @@ test("model calls: limits enforced, inputs truncated, tokens and provider cost r
   budget.user_hour = 0; budget.month_cost = 25;
   await assert.rejects(checkBudget(null, { run, env }), e => e.budget === "monthly_budget");
   await assert.rejects(callModel({ messages: [], run, fetchImpl: ok, env: {} }), e => e.status === 503, "no key, no call");
+  budget.month_cost = 0;
+  // A customer's monthly allowance: refused with the most the call could cost reserved, and counted as a refusal.
+  const refusals = [];
+  const run2 = async (sql, params) => { if (/INSERT INTO ai_budget_refusals/.test(sql)) refusals.push(params[0]); return run(sql, params); };
+  budget.user_month_cost = 0.24995; // under the $0.25 allowance by less than this call could cost
+  await assert.rejects(callModel({ messages: [{ role: "user", content: "x".repeat(900) }], userId: "u", run: run2, fetchImpl: ok, env }), e => e.status === 429 && e.budget === "user_monthly_budget");
+  assert.deepEqual(refusals, ["user_monthly_budget"]);
+  budget.user_month_cost = 0;
+  // A retry is checked against the budgets again: spend recorded by the first attempt stops the second.
+  calls = 0;
+  const failThenSpend = async () => { calls++; budget.day_cost = 2; return { ok: false, status: 502, json: async () => ({}) }; };
+  await assert.rejects(callModel({ messages: [{ role: "user", content: "x" }], run, fetchImpl: failThenSpend, env }), e => e.status === 429 && e.budget === "daily_budget");
+  assert.equal(calls, 1, "no retry past the daily budget");
+  // Escalation to the deep model only while spend is under half of every budget that applies.
+  assert.equal(await affordableTier("deep", "u", { run, env }), "fast", "daily budget spent: the inexpensive model");
+  budget.day_cost = 0.2; assert.equal(await affordableTier("deep", "u", { run, env }), "deep");
+  budget.user_month_cost = 0.2; assert.equal(await affordableTier("deep", "u", { run, env }), "fast", "this customer's allowance is mostly used");
+  assert.equal(await affordableTier("fast", null, { run, env }), "fast");
+  assert.ok(worstCaseCost("openai/gpt-4.1-nano", 3000, 450) > 0 && worstCaseCost("unknown/model", 3000, 450) === 0);
 });
 
 test("no brokerage execution: order and advice routes are refused, Mirror routes are research data", () => {

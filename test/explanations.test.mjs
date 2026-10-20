@@ -69,11 +69,12 @@ test("model output is rejected for invented citations, uncited or altered figure
 test("the Claude request: structured output, refusal fallbacks, effort, evidence only", async () => {
   let sent;
   const client = { beta: { messages: { create: async params => { sent = params; return { model: "claude-opus-5-5", stop_reason: "end_turn", usage: { input_tokens: 900, output_tokens: 300 }, content: [{ type: "text", text: JSON.stringify({ facts: [], interpretation: [], limitations: [] }) }] }; } } } };
-  const settings = aiSettings({ INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "sk-ant-test" });
-  assert.equal(settings.enabled, true); assert.equal(settings.model, "claude-opus-5-5"); assert.equal(settings.effort, "medium");
+  const settings = aiSettings({ INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "sk-ant-test", INSIDIR_AI_MODEL: "claude-opus-5-5" });
+  assert.equal(settings.enabled, true); assert.equal(settings.maxTokens, 3000, "output capped per request");
+  assert.equal(aiSettings({ INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "sk-ant-test" }).enabled, false, "no model named: off (there is no default model)"); assert.equal(settings.model, "claude-opus-5-5"); assert.equal(settings.effort, "medium");
   const r = await anthropicWriter({ settings, client })({ evidence, question: null });
   assert.deepEqual(r.usage, { input: 900, output: 300 });
-  assert.equal(sent.model, "claude-opus-5-5");
+  assert.equal(sent.model, "claude-opus-5-5"); assert.equal(sent.max_tokens, 3000);
   assert.deepEqual(sent.output_config, { effort: "medium", format: { type: "json_schema", schema: SCHEMA } });
   assert.equal(sent.fallbacks, "default"); assert.deepEqual(sent.betas, ["server-side-fallback-2026-07-01"]);
   assert.equal(sent.thinking, undefined, "thinking stays at the model's default (adaptive)");
@@ -95,7 +96,8 @@ test("explanations on PostgreSQL: screening, rules fallback, validation, cache, 
   const { id } = await saveEvent(q, { ...purchase, event_key: "test-explain:" + randomUUID(), people: ["0000000002"] });
   const user = (await q("INSERT INTO users(email,password_hash) VALUES($1,'x') RETURNING id", [`ai-${randomUUID()}@example.com`])).rows[0];
   t.after(async () => { await q("DELETE FROM users WHERE id=$1", [user.id]); await pool.end(); });
-  const ON = { INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "sk-ant-test", INSIDIR_AI_DAILY_BUDGET_USD: "1000" };
+  const ON = { INSIDIR_AI_EXPLANATIONS: "1", ANTHROPIC_API_KEY: "sk-ant-test", INSIDIR_AI_MODEL: "claude-opus-5-5", INSIDIR_AI_DAILY_BUDGET_USD: "500",
+    INSIDIR_AI_MONTHLY_BUDGET_USD: "10000", INSIDIR_AI_USER_MONTHLY_BUDGET_USD: "50", INSIDIR_AI_USER_HOURLY_LIMIT: "200", INSIDIR_AI_USER_DAILY_LIMIT: "1000", INSIDIR_AI_HOURLY_LIMIT: "2000", INSIDIR_AI_DAILY_LIMIT: "20000" };
   let calls = 0;
   const writer = output => async () => { calls++; return { json: output, usage: { input: 1000, output: 500 }, model: "claude-opus-5-5" }; };
   const good = { facts: [{ text: "Example Person reported buying 1,250.5 shares of SYNT.", evidence_ids: ["E4"] }], interpretation: [{ text: "Form 4 does not record why someone traded.", evidence_ids: [] }], limitations: ["Values are as reported."] };
@@ -127,6 +129,10 @@ test("explanations on PostgreSQL: screening, rules fallback, validation, cache, 
   assert.deepEqual([broke.writer, broke.ai], ["rules", "daily_budget"]); assert.equal(calls, before, "no call once the day's budget is spent");
   const capped = await explainEvent({ query: q, eventId: id, user, env: { ...ON, INSIDIR_AI_PER_USER_DAILY: "1" }, question: "Which line was larger?", writer: writer(good) });
   assert.equal(capped.ai, "member_allowance");
+  // The member's monthly allowance is shared with every other AI path (src/ai-gateway.mjs reads both ledgers).
+  const allowanceSpent = await explainEvent({ query: q, eventId: id, user, env: { ...ON, INSIDIR_AI_USER_MONTHLY_BUDGET_USD: "0.01" }, question: "Which code is it?", writer: writer(good) });
+  assert.equal(allowanceSpent.ai, "user_monthly_budget"); assert.equal(calls, before, "no call past the member's monthly allowance");
+  assert.equal((await explainEvent({ query: q, eventId: id, user, env: { ...ON, INSIDIR_AI_USER_MONTHLY_BUDGET_USD: "0.01" }, writer: writer(good) })).cached, true, "what is already written stays available");
   const failing = await explainEvent({ query: q, eventId: id, user, env: ON, question: "When was it filed?", writer: async () => { throw Object.assign(new Error("overloaded"), { status: 529 }); } });
   assert.deepEqual([failing.writer, failing.ai], ["rules", "error"]);
   await assert.rejects(explainEvent({ query: q, eventId: 987654321987, user, env: {} }), e => e.status === 404);

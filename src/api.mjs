@@ -28,6 +28,8 @@ import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
 import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { explainEvent } from "./explanations.mjs";
+import { connections } from "./connections.mjs";
+import { changes } from "./changes.mjs";
 import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,unsubscribePage } from "./notifications.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
@@ -118,6 +120,17 @@ function keepPrivate(res){
  * own rule (SAME_LINE / SUPERSEDED from person-profile.mjs): a line repeated by a later 4/A counts once,
  * on the date it was first filed, so a restated old trade does not enter the window. */
 const MAX_FOLLOWS=150;
+/* Autopilot alert modes for a follow (sql/021_autopilot.sql, src/notifications.mjs). */
+export const FOLLOW_MODES=Object.freeze(["important","all","daily","weekly","off"]);
+export const FOLLOWS_SQL=`SELECT x.* FROM (
+  SELECT 'company' AS kind,w.ticker AS id,w.ticker,w.alert_mode,w.paused_at,w.created_at,
+    e.name,e.cik FROM watchlist w LEFT JOIN LATERAL (SELECT name,cik FROM sec_entities WHERE w.ticker=ANY(tickers) ORDER BY listed DESC,cik LIMIT 1) e ON true
+  WHERE w.user_id=$1
+  UNION ALL
+  SELECT 'person',p.owner_cik,NULL,p.alert_mode,p.paused_at,p.created_at,
+    COALESCE((SELECT e.name FROM sec_entities e WHERE e.cik=LPAD(LTRIM(p.owner_cik,'0'),10,'0')),(SELECT o.owner_name FROM sec_filing_owners o WHERE LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0') LIMIT 1)),
+    LPAD(LTRIM(p.owner_cik,'0'),10,'0')
+  FROM followed_people p WHERE p.user_id=$1) x ORDER BY x.created_at DESC LIMIT 400`;
 const RECENT_DAYS="now()-interval '30 days'";
 // "0001214156" | "1214156" -> "0001214156"; null when it is not an SEC CIK.
 export function canonicalOwnerCik(value){
@@ -483,6 +496,21 @@ async function route(req,res,ctx){
     return json(res,200,{...r,source:"SEC EDGAR: company ticker list, imported Form 4 filings, EDGAR submissions and entity lookup",
       coverage:"Entities registered with the SEC (EDGAR filers). Companies and people that have never filed with the SEC are not in EDGAR."});
   }
+  /* Insidir Connections and Changes for one SEC CIK (src/connections.mjs, src/changes.mjs): deterministic, built from
+   * structured SEC records, every item with its evidence. Product data, signed-in members with access only. */
+  const relation=p.match(/^\/v1\/entities\/(\d{1,10})\/(connections|changes)$/);
+  if(relation && m==="GET"){
+    const user=await requireUser(req,ctx);
+    if(await limited(ctx,"relations:"+user.id,240,15*60*1000))throw failure(429,"Too many requests. Try again shortly.");
+    const cik=padCik(relation[1]);
+    if(relation[2]==="connections"){
+      const asOf=u.searchParams.get("asOf")||null,limit=positive(u.searchParams.get("limit"),40,60);
+      return json(res,200,await ctx.market("connections:"+cik+":"+asOf+":"+limit,60_000,()=>timed("connections",()=>connections(cik,{run:ctx.query,asOf,limit}))));
+    }
+    const days=positive(u.searchParams.get("days"),90,365);
+    const fetcher=secReady()?(ctx.secFetch||undefined):async()=>{throw new Error("SEC requests are not configured")};
+    return json(res,200,await ctx.market("changes:"+cik+":"+days,60_000,()=>timed("changes",()=>changes(cik,{run:ctx.query,days,fetcher}))));
+  }
   if(p.startsWith("/v1/entities/") && m==="GET"){
     const cik=padCik(decodeURIComponent(p.slice("/v1/entities/".length)));
     if(!cik)throw failure(400,"A CIK is up to 10 digits");
@@ -695,6 +723,14 @@ async function route(req,res,ctx){
   if(p==="/v1/me/push" && m==="GET"){
     const user=await requireUser(req,ctx);
     return json(res,200,await pushStatus(user.id,ctx.query));
+  }
+  /* Everything the member follows, companies and reporting people, with each follow's alert mode and pause. */
+  if(p==="/v1/me/follows" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    const rows=(await ctx.query(FOLLOWS_SQL,[user.id])).rows;
+    return json(res,200,{items:rows.map(r=>({kind:r.kind,id:r.id,ticker:r.ticker,cik:r.cik,name:r.name||r.ticker||null,mode:r.alert_mode,paused:!!r.paused_at,pausedAt:r.paused_at,followedAt:r.created_at,
+      url:r.kind==="company"?"company.html?ticker="+encodeURIComponent(r.ticker):"person.html?cik="+r.cik})),modes:FOLLOW_MODES,
+      note:"Important updates: purchases, clustered purchases, sales of $1,000,000 or more as filed, and company disclosures. Daily and weekly collect updates and deliver them together."});
   }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -936,6 +972,22 @@ async function route(req,res,ctx){
       const deleted=await query("DELETE FROM manual_holdings WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
       return json(res,200,{deleted:deleted.rowCount>0,ticker:t,executed:false});
     }
+    if(p==="/v1/me/follows/settings" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
+      const x=await body(req);
+      if(x?.mode!=null&&!FOLLOW_MODES.includes(x.mode))throw failure(400,"mode must be one of "+FOLLOW_MODES.join(", "));
+      if(x?.paused!=null&&typeof x.paused!=="boolean")throw failure(400,"paused must be true or false");
+      if(x?.mode==null&&x?.paused==null)throw failure(400,"Nothing to change");
+      const params=[user.id,null,x.mode??null,x.paused??null];
+      let r;
+      if(x?.kind==="company"){params[1]=ticker(x.id);r=await ctx.query("UPDATE watchlist SET alert_mode=COALESCE($3,alert_mode),paused_at=CASE WHEN $4::boolean IS NULL THEN paused_at WHEN $4 THEN COALESCE(paused_at,now()) ELSE NULL END WHERE user_id=$1 AND ticker=$2 RETURNING alert_mode,paused_at",params)}
+      else if(x?.kind==="person"){const c=canonicalOwnerCik(x.id);if(!c)throw failure(400,"Valid SEC CIK required");params[1]=c;
+        r=await ctx.query("UPDATE followed_people SET alert_mode=COALESCE($3,alert_mode),paused_at=CASE WHEN $4::boolean IS NULL THEN paused_at WHEN $4 THEN COALESCE(paused_at,now()) ELSE NULL END WHERE user_id=$1 AND LTRIM(owner_cik,'0')=LTRIM($2,'0') RETURNING alert_mode,paused_at",params)}
+      else throw failure(400,"kind must be company or person");
+      if(!r.rowCount)throw failure(404,"You do not follow this yet");
+      return json(res,200,{saved:true,kind:x.kind,id:params[1],mode:r.rows[0].alert_mode,paused:!!r.rows[0].paused_at});
+    }
     if(p==="/v1/me/people" && m==="POST"){
       const user=await requireUser(req,ctx);
       if(await limited(ctx,"follow-write:"+user.id,60,15*60*1000))throw failure(429,"Too many follow updates");
@@ -946,8 +998,11 @@ async function route(req,res,ctx){
       // Not in the import yet: a CIK EDGAR lists as a reporting owner (its submissions say it files ownership reports)
       // can be followed too; its trades appear as soon as they are imported.
       if(!person.rowCount&&!(await knownReportingOwner(ctx,cik)))throw failure(404,"No SEC reporting owner with this CIK, in imported filings or in EDGAR");
+      if(x?.mode!=null&&!FOLLOW_MODES.includes(x.mode))throw failure(400,"mode must be one of "+FOLLOW_MODES.join(", "));
       const saved=await ctx.query(FOLLOW_INSERT_SQL,[user.id,cik]);
       if(!saved.rowCount)throw failure(409,`${MAX_FOLLOWS} people maximum; unfollow someone first`);
+      // The Follow button sends a mode (Autopilot); older clients do not, and keep the column default.
+      if(x?.mode)await ctx.query("UPDATE followed_people SET alert_mode=$3,paused_at=NULL WHERE user_id=$1 AND owner_cik=$2",[user.id,saved.rows[0].owner_cik,x.mode]);
       serverEvent(ctx.query,"first_follow",{userId:user.id,once:true});
       return json(res,200,{saved:true,owner_cik:saved.rows[0]?.owner_cik??cik});
     }
@@ -960,7 +1015,9 @@ async function route(req,res,ctx){
     }
     if(p==="/v1/me/watchlist" && m==="POST"){
       const user=await requireUser(req,ctx),x=await body(req),t=ticker(x.ticker);
+      if(x?.mode!=null&&!FOLLOW_MODES.includes(x.mode))throw failure(400,"mode must be one of "+FOLLOW_MODES.join(", "));
       await query("INSERT INTO watchlist(user_id,ticker) VALUES($1,$2) ON CONFLICT DO NOTHING",[user.id,t]);
+      if(x?.mode)await query("UPDATE watchlist SET alert_mode=$3,paused_at=NULL WHERE user_id=$1 AND ticker=$2",[user.id,t,x.mode]);
       serverEvent(ctx.query,"first_watchlist_item",{userId:user.id,once:true});
       return json(res,200,{saved:true,ticker:t});
     }

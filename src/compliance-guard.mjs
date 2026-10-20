@@ -99,14 +99,16 @@ export function figureValue(raw) {
   int = int.replace(/^0+(?=\d)/, ""); frac = frac.replace(/0+$/, "");
   return (int || "0") + (frac ? "." + frac : "") + (m[3] === "%" ? "%" : "");
 }
+/* "10% owner" is the name of a Form 4 relationship box, not a figure. */
+const TERMS = s => s.replace(/\b10\s?%(\s+beneficial)?\s+owner/gi, "ten-percent owner");
 export function unsupportedFigures(text, sources = []) {
   const known = new Set();
-  for (const s of sources) for (const m of norm(s).matchAll(FIGURE)) {
+  for (const s of sources) for (const m of TERMS(norm(s)).matchAll(FIGURE)) {
     const v = figureValue(m[0]);
     if (v != null) { known.add(v); known.add(v.replace(/%$/, "")); }
   }
   const out = [];
-  for (const m of norm(text).matchAll(FIGURE)) {
+  for (const m of TERMS(norm(text)).matchAll(FIGURE)) {
     const raw = m[0].trim();
     const digits = raw.replace(/[^\d]/g, "");
     const isYear = /^(19|20)\d{2}$/.test(raw);

@@ -25,7 +25,7 @@
       card("Research events", { ...s.researchEvents, ...(s.researchEvents?.builder || {}), ...(s.researchEvents?.failedImports || {}), disclosureCompanies: s.researchEvents?.disclosureSources?.companies, disclosureFailing: s.researchEvents?.disclosureSources?.failing }),
       card("Alerts", { ...s.notifications, ...(s.notifications?.preferences || {}) }), card("Email", s.email),
       card("Billing", { ...s.billing, events7d: (s.billing?.events7d || []).map(e => e.kind + " " + e.n).join(", ") || null, accounts: (s.billing?.accountsByStatus || []).map(e => e.status + " " + e.n).join(", ") || null }),
-      card("AI explanations", { ...s.ai, today: (s.ai?.todayByOutcome || []).map(e => e.outcome + " " + e.n).join(", ") || null }),
+      card("AI spend and limits", { ...s.ai, refusalsToday: (s.ai?.refusalsToday || []).map(e => e.budget + " " + e.n).join(", ") || null }),
       card("Security (24 hours)", Array.isArray(s.security) ? Object.fromEntries(s.security.map(r => [r.kind, r.n])) : s.security),
       card("Coverage: entities", s.coverage?.report?.entities || s.coverage), card("Coverage: filings and queue", { ...(s.coverage?.report?.filings || {}), ...(s.coverage?.report?.queue || {}) }),
       card("Coverage: backfill", s.coverage?.report?.backfill),

@@ -177,6 +177,39 @@ function conceptOf(companyFacts,metric,row){
   return null;
 }
 
+/* Insidir Changes, financial facts: the latest reported value of each metric against the same period one year
+ * earlier (a quarter against the quarter ending about 365 days before it, a fiscal year against the prior fiscal
+ * year, a balance against the balance a year earlier), both taken from the latest filing that reports them. No
+ * change is computed between periods of different types or lengths. Deterministic; no model. */
+const CHANGE_METRICS=["revenue","netIncome","operatingIncome","cash","assets"];
+export function extractFactChanges(companyFacts,cik){
+  const unit=reportingCurrency(companyFacts),out=[];
+  for(const metric of metrics.filter(m=>CHANGE_METRICS.includes(m.id))){
+    const rows=conceptRows(companyFacts,metric.tags,IFRS[metric.id],unit).flatMap(x=>x.rows).map(row=>({...row,...periodTypeOf(row)}))
+      .filter(row=>row.periodType==="quarter"||row.periodType==="fiscal-year"||row.periodType==="instant");
+    if(!rows.length)continue;
+    // The latest filing wins for each period (a restated value replaces the original).
+    const byPeriod=new Map();
+    for(const r of rows){const k=r.periodType+"|"+(r.start||"")+"|"+r.end;const cur=byPeriod.get(k);if(!cur||r.filed>cur.filed||(r.filed===cur.filed&&String(r.accn)>String(cur.accn)))byPeriod.set(k,r)}
+    const periods=[...byPeriod.values()].sort((a,b)=>b.end.localeCompare(a.end)||PERIOD_RANK[a.periodType]-PERIOD_RANK[b.periodType]);
+    const current=periods[0];
+    const prior=periods.find(r=>r.periodType===current.periodType&&Math.abs(days(r.end,current.end)-365)<=10&&
+      (current.durationDays==null||Math.abs(r.durationDays-current.durationDays)<=10));
+    if(!prior)continue;
+    const view=r=>({value:r.val,start:isDate(r.start)?r.start:null,end:r.end,periodType:r.periodType,durationDays:r.durationDays,form:r.form,filedAt:r.filed,accession:r.accn,sourceUrl:secFilingUrl(cik,r.accn)});
+    const change=current.val-prior.val;
+    out.push({id:metric.id,label:metric.label.replace(/^Reported /,""),unit,concept:conceptOf(companyFacts,metric,current),current:view(current),prior:view(prior),
+      change,changePct:prior.val!==0?change/Math.abs(prior.val):null,
+      methodology:"Latest reported "+current.periodType+" against the same "+current.periodType+" one year earlier; change = current − prior, as filed."});
+  }
+  return out;
+}
+/* The fact changes for a CIK, from SEC company facts (cached like the company page). */
+export async function companyFactChanges(cik,fetcher=secFetch){
+  const c=String(Number(cik)).padStart(10,"0");
+  return cached("factchanges:"+c,TTL,async()=>extractFactChanges(await fetcher("https://data.sec.gov/api/xbrl/companyfacts/CIK"+c+".json",{json:true}),c));
+}
+
 const CAPEX_TAGS=["PaymentsToAcquirePropertyPlantAndEquipment","PaymentsToAcquireProductiveAssets","PaymentsToAcquirePropertyPlantAndEquipmentAndIntangibleAssets"];
 /* Annual SEC XBRL history. Strictly comparable full-year periods, no synthetic price or return values.
  * Latest filing for the same period wins, and each chart point retains its own SEC accession. */

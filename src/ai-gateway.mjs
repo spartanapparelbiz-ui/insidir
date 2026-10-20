@@ -23,15 +23,22 @@ export const sha256 = s => createHash("sha256").update(String(s)).digest("hex");
 
 export const aiConfigured = (env = process.env) => Boolean(String(env.INSIDIR_OPENROUTER_API_KEY || "").trim());
 
-/* Limits. Every one has a conservative default and a hard clamp, so a typo cannot open the spend. */
+/* Limits. Every one has a conservative default and a hard clamp, so a typo cannot open the spend.
+ * The per-customer monthly budget is the engineering target for a typical paying customer ($0.25 by default): a
+ * customer who reaches it keeps every cached explanation and every deterministic answer, and gets no new model text
+ * until the month turns. The deep (more expensive) model is used only while spend is under escalateBelow of every
+ * budget that applies; above that a request is answered by the inexpensive model instead. */
 export function aiLimits(env = process.env) {
   return Object.freeze({
     globalHourly: int(env.INSIDIR_AI_HOURLY_LIMIT, 40, 1, 2000),
     globalDaily: int(env.INSIDIR_AI_DAILY_LIMIT, 300, 1, 20000),
     userHourly: int(env.INSIDIR_AI_USER_HOURLY_LIMIT, 12, 1, 200),
     userDaily: int(env.INSIDIR_AI_USER_DAILY_LIMIT, 40, 1, 1000),
+    userMonthly: int(env.INSIDIR_AI_USER_MONTHLY_LIMIT, 300, 1, 10000),
     dailyBudgetUsd: num(env.INSIDIR_AI_DAILY_BUDGET_USD, 2, 0.01, 500),
     monthlyBudgetUsd: num(env.INSIDIR_AI_MONTHLY_BUDGET_USD, 25, 0.01, 10000),
+    userMonthlyBudgetUsd: num(env.INSIDIR_AI_USER_MONTHLY_BUDGET_USD, 0.25, 0.01, 50),
+    escalateBelow: num(env.INSIDIR_AI_ESCALATE_BELOW, 0.5, 0, 1),
     maxInputChars: int(env.INSIDIR_AI_MAX_INPUT_CHARS, 12000, 1000, 60000),
     maxOutputTokens: int(env.INSIDIR_AI_MAX_OUTPUT_TOKENS, 450, 50, 2000),
     timeoutMs: int(env.INSIDIR_AI_TIMEOUT_MS, 15000, 2000, 60000),
@@ -59,35 +66,86 @@ export function estimateCost(model, inputTokens, outputTokens, env = process.env
   return (Number(inputTokens) * Number(p[0]) + Number(outputTokens) * Number(p[1])) / 1e6;
 }
 
-export const BUDGET_SQL = `SELECT
+/* One ledger for every model call Insidir makes: ai_usage (this gateway) and ai_usage_log (the research-event
+ * explanations in src/explanations.mjs), so no path has a budget of its own that the other cannot see. */
+export const BUDGET_SQL = `WITH spend AS (
+    SELECT created_at,user_id,cost_usd::float8 AS cost FROM ai_usage WHERE created_at>=LEAST(date_trunc('month',now()),now()-interval '1 hour')
+    UNION ALL
+    SELECT created_at,user_id,cost_micros/1e6 FROM ai_usage_log WHERE created_at>=LEAST(date_trunc('month',now()),now()-interval '1 hour') AND outcome<>'question_refused')
+  SELECT
   count(*) FILTER (WHERE created_at>now()-interval '1 hour')::integer AS hour,
   count(*) FILTER (WHERE created_at>=date_trunc('day',now()))::integer AS day,
   count(*) FILTER (WHERE user_id=$1 AND created_at>now()-interval '1 hour')::integer AS user_hour,
   count(*) FILTER (WHERE user_id=$1 AND created_at>=date_trunc('day',now()))::integer AS user_day,
-  COALESCE(sum(cost_usd) FILTER (WHERE created_at>=date_trunc('day',now())),0)::float8 AS day_cost,
-  COALESCE(sum(cost_usd),0)::float8 AS month_cost
-  FROM ai_usage WHERE created_at>=LEAST(date_trunc('month',now()),now()-interval '1 hour')`;
+  count(*) FILTER (WHERE user_id=$1 AND created_at>=date_trunc('month',now()))::integer AS user_month,
+  COALESCE(sum(cost) FILTER (WHERE created_at>=date_trunc('day',now())),0)::float8 AS day_cost,
+  COALESCE(sum(cost) FILTER (WHERE created_at>=date_trunc('month',now())),0)::float8 AS month_cost,
+  COALESCE(sum(cost) FILTER (WHERE user_id=$1 AND created_at>=date_trunc('month',now())),0)::float8 AS user_month_cost
+  FROM spend`;
 
-/* Throws 429 (with .budget naming the limit) when a call would exceed a limit. */
-/* Calls this process has started but not yet recorded in ai_usage. They count against the limits too, so a burst
-   of parallel requests cannot all pass a check that only sees finished calls. */
-let callsInFlight = 0;
-const userCallsInFlight = new Map();
-export async function checkBudget(userId, { run = queryDb, env = process.env } = {}) {
+/* Calls this process has started but not yet recorded. They count against the limits too, with the most each could
+   cost (its input and its output cap at list prices), so a burst of parallel requests or a retry cannot carry spend
+   past a budget that only finished calls would show as open. */
+let callsInFlight = 0, costInFlight = 0;
+const userCallsInFlight = new Map(), userCostInFlight = new Map();
+const add = (map, k, v) => { const n = (map.get(k) || 0) + v; if (n > 1e-12) map.set(k, n); else map.delete(k); };
+export const worstCaseCost = (model, inputChars, outputTokens, env = process.env) => estimateCost(model, Math.ceil(Number(inputChars) / 3), outputTokens, env) ?? 0;
+
+/* Runs fn() with its call counted as in flight (and its worst-case cost reserved) for every budget check made
+   meanwhile: for model calls made outside callModel (src/explanations.mjs). */
+export async function withReservation(userId, reserveUsd, fn) {
+  const r = Number(reserveUsd) || 0;
+  callsInFlight++; costInFlight += r;
+  if (userId) { add(userCallsInFlight, userId, 1); add(userCostInFlight, userId, r); }
+  try { return await fn(); } finally {
+    callsInFlight--; costInFlight = Math.max(0, costInFlight - r);
+    if (userId) { add(userCallsInFlight, userId, -1); add(userCostInFlight, userId, -r); }
+  }
+}
+
+/* Refusals are counted per day and limit (ai_budget_refusals), so the cost report and ops page show when customers
+   were turned away and why, without a ledger row that would itself count against the request limits. */
+const REFUSAL_SQL = `INSERT INTO ai_budget_refusals(day,budget,n) VALUES(current_date,$1,1)
+  ON CONFLICT(day,budget) DO UPDATE SET n=ai_budget_refusals.n+1`;
+
+/* Throws 429 (with .budget naming the limit) when a call would exceed a limit. reserveUsd is the most the call about
+   to be made could cost. */
+export async function checkBudget(userId, { run = queryDb, env = process.env, reserveUsd = 0 } = {}) {
   const L = aiLimits(env);
   const row = (await run(BUDGET_SQL, [userId || null])).rows[0] || {};
-  const mine = userId ? userCallsInFlight.get(userId) || 0 : 0;
-  const u = { ...row, hour: (row.hour | 0) + callsInFlight, day: (row.day | 0) + callsInFlight, user_hour: (row.user_hour | 0) + mine, user_day: (row.user_day | 0) + mine };
+  const mine = userId ? userCallsInFlight.get(userId) || 0 : 0, mineCost = userId ? userCostInFlight.get(userId) || 0 : 0;
+  const u = { ...row, hour: (row.hour | 0) + callsInFlight, day: (row.day | 0) + callsInFlight, user_hour: (row.user_hour | 0) + mine, user_day: (row.user_day | 0) + mine,
+    user_month: (row.user_month | 0) + mine, day_cost: Number(row.day_cost || 0) + costInFlight, month_cost: Number(row.month_cost || 0) + costInFlight,
+    user_month_cost: Number(row.user_month_cost || 0) + mineCost };
+  const r = Number(reserveUsd) || 0;
   const over = [
     [u.hour >= L.globalHourly, "global_hourly", "Insidir's AI research capacity for this hour has been reached."],
     [u.day >= L.globalDaily, "global_daily", "Insidir's AI research capacity for today has been reached."],
-    [Number(u.day_cost) >= L.dailyBudgetUsd, "daily_budget", "Insidir's AI research budget for today has been reached."],
-    [Number(u.month_cost) >= L.monthlyBudgetUsd, "monthly_budget", "Insidir's AI research budget for this month has been reached."],
+    [u.day_cost + r >= L.dailyBudgetUsd, "daily_budget", "Insidir's AI research budget for today has been reached."],
+    [u.month_cost + r >= L.monthlyBudgetUsd, "monthly_budget", "Insidir's AI research budget for this month has been reached."],
     [userId && u.user_hour >= L.userHourly, "user_hourly", "You have reached this hour's limit for AI-written summaries."],
-    [userId && u.user_day >= L.userDaily, "user_daily", "You have reached today's limit for AI-written summaries."]
+    [userId && u.user_day >= L.userDaily, "user_daily", "You have reached today's limit for AI-written summaries."],
+    [userId && u.user_month >= L.userMonthly, "user_monthly", "You have reached this month's limit for AI-written summaries. Everything already written stays available."],
+    [userId && u.user_month_cost + r >= L.userMonthlyBudgetUsd, "user_monthly_budget", "You have reached this month's allowance for AI-written summaries. Everything already written stays available."]
   ].find(x => x[0]);
-  if (over) throw fail(429, over[2], { budget: over[1] });
+  if (over) {
+    await Promise.resolve(run(REFUSAL_SQL, [over[1]])).catch(() => {});
+    throw fail(429, over[2], { budget: over[1] });
+  }
   return { ok: true, usage: u, limits: L };
+}
+
+/* The tier a request may use now. 'deep' is an escalation: it is granted only while every budget that applies is
+   under escalateBelow of its limit; otherwise the request is answered by the inexpensive model. */
+export async function affordableTier(tier, userId, { run = queryDb, env = process.env } = {}) {
+  if (tier !== "deep") return "fast";
+  const L = aiLimits(env);
+  try {
+    const row = (await run(BUDGET_SQL, [userId || null])).rows[0] || {};
+    const share = Math.max(Number(row.day_cost || 0) / L.dailyBudgetUsd, Number(row.month_cost || 0) / L.monthlyBudgetUsd,
+      userId ? Number(row.user_month_cost || 0) / L.userMonthlyBudgetUsd : 0);
+    return share < L.escalateBelow ? "deep" : "fast";
+  } catch { return "fast"; }
 }
 
 export const USAGE_SQL = `INSERT INTO ai_usage(user_id,feature,model,tier,cache_key,status,input_tokens,output_tokens,cost_usd,cost_source,latency_ms,error)
@@ -109,57 +167,63 @@ export async function callModel({ messages, tier = "fast", maxTokens, userId = n
   run = queryDb, fetchImpl = globalThis.fetch, env = process.env } = {}) {
   if (!aiConfigured(env)) throw fail(503, "AI summaries are not configured on this deployment.");
   const L = aiLimits(env), model = modelFor(tier, env);
-  await checkBudget(userId, { run, env });
-  callsInFlight++;
-  if (userId) userCallsInFlight.set(userId, (userCallsInFlight.get(userId) || 0) + 1);
-  try { return await modelCall(); } finally {
-    callsInFlight--;
-    if (userId) { const n = (userCallsInFlight.get(userId) || 1) - 1; if (n > 0) userCallsInFlight.set(userId, n); else userCallsInFlight.delete(userId); }
-  }
-  async function modelCall() {
-    const bounded = messages.map(m => ({ role: m.role, content: String(m.content).slice(0, L.maxInputChars) }));
-    const outTokens = Math.min(L.maxOutputTokens, Math.max(50, Number(maxTokens) || L.maxOutputTokens));
-    let lastError;
-    for (let attempt = 0; attempt <= L.retries; attempt++) {
-      const started = Date.now();
-      const controller = new AbortController(), timer = setTimeout(() => controller.abort(), L.timeoutMs);
-      try {
-        const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST", signal: controller.signal, redirect: "error",
-          headers: { "Authorization": "Bearer " + String(env.INSIDIR_OPENROUTER_API_KEY).trim(), "Content-Type": "application/json",
-            "HTTP-Referer": "https://insidir.com", "X-Title": "Insidir Intelligence" },
-          body: JSON.stringify({ model, temperature: 0, max_tokens: outTokens, messages: bounded, usage: { include: true } })
-        });
-        const data = await response.json().catch(() => ({}));
-        const inputTokens = Number(data?.usage?.prompt_tokens) || 0, outputTokens = Number(data?.usage?.completion_tokens) || 0;
-        const reported = Number(data?.usage?.cost);
-        const estimated = estimateCost(model, inputTokens, outputTokens, env);
-        const cost = Number.isFinite(reported) ? reported : estimated ?? 0;
-        const costSource = Number.isFinite(reported) ? "provider_reported" : estimated != null && (inputTokens || outputTokens) ? "estimated" : "none";
-        if (!response.ok) {
-          await recordUsage(run, { userId, feature, model, tier, cacheKey, status: "failed", inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: "HTTP " + response.status });
-          lastError = fail(503, "The AI provider is unavailable right now.", { providerStatus: response.status });
-          if (response.status === 429 || response.status >= 500) continue;
-          throw lastError;
-        }
-        const text = String(data?.choices?.[0]?.message?.content || "").trim().slice(0, 4000);
-        await recordUsage(run, { userId, feature, model: String(data?.model || model).slice(0, 100), tier, cacheKey, status: text ? "ok" : "failed",
-          inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: text ? null : "empty" });
-        if (!text) throw fail(503, "The AI provider returned no text.");
-        return { text, model, inputTokens, outputTokens, cost, costSource };
-      } catch (e) {
-        if (e?.status && e.status !== 503) throw e;
-        if (e?.name === "AbortError" || e?.name === "TypeError") {
-          await recordUsage(run, { userId, feature, model, tier, cacheKey, status: e.name === "AbortError" ? "timeout" : "failed", latencyMs: Date.now() - started, error: e.name });
-          lastError = fail(503, e.name === "AbortError" ? "The AI provider did not answer in time." : "The AI provider could not be reached.");
-          continue;
-        }
-        lastError = e;
-        if (e?.providerStatus && (e.providerStatus === 429 || e.providerStatus >= 500)) continue;
-        throw e;
-      } finally { clearTimeout(timer); }
+  const bounded = messages.map(m => ({ role: m.role, content: String(m.content).slice(0, L.maxInputChars) }));
+  const outTokens = Math.min(L.maxOutputTokens, Math.max(50, Number(maxTokens) || L.maxOutputTokens));
+  const reserve = worstCaseCost(model, bounded.reduce((a, m) => a + m.content.length, 0), outTokens, env);
+  let lastError;
+  for (let attempt = 0; attempt <= L.retries; attempt++) {
+    // Every attempt, a retry included, is checked against the budgets first: a retry never spends past a limit.
+    await checkBudget(userId, { run, env, reserveUsd: reserve });
+    callsInFlight++; costInFlight += reserve;
+    if (userId) { add(userCallsInFlight, userId, 1); add(userCostInFlight, userId, reserve); }
+    try {
+      const out = await attemptOnce();
+      if (out.done) return out.value;
+    } finally {
+      callsInFlight--; costInFlight = Math.max(0, costInFlight - reserve);
+      if (userId) { add(userCallsInFlight, userId, -1); add(userCostInFlight, userId, -reserve); }
     }
-    throw lastError || fail(503, "The AI provider is unavailable right now.");
+  }
+  throw lastError || fail(503, "The AI provider is unavailable right now.");
+  /* One request to the provider. {done:true,value} on success; {done:false} when the failure may be retried. */
+  async function attemptOnce() {
+    const started = Date.now();
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), L.timeoutMs);
+    try {
+      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST", signal: controller.signal, redirect: "error",
+        headers: { "Authorization": "Bearer " + String(env.INSIDIR_OPENROUTER_API_KEY).trim(), "Content-Type": "application/json",
+          "HTTP-Referer": "https://insidir.com", "X-Title": "Insidir Intelligence" },
+        body: JSON.stringify({ model, temperature: 0, max_tokens: outTokens, messages: bounded, usage: { include: true } })
+      });
+      const data = await response.json().catch(() => ({}));
+      const inputTokens = Number(data?.usage?.prompt_tokens) || 0, outputTokens = Number(data?.usage?.completion_tokens) || 0;
+      const reported = Number(data?.usage?.cost);
+      const estimated = estimateCost(model, inputTokens, outputTokens, env);
+      const cost = Number.isFinite(reported) ? reported : estimated ?? 0;
+      const costSource = Number.isFinite(reported) ? "provider_reported" : estimated != null && (inputTokens || outputTokens) ? "estimated" : "none";
+      if (!response.ok) {
+        await recordUsage(run, { userId, feature, model, tier, cacheKey, status: "failed", inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: "HTTP " + response.status });
+        lastError = fail(503, "The AI provider is unavailable right now.", { providerStatus: response.status });
+        if (response.status === 429 || response.status >= 500) return { done: false };
+        throw lastError;
+      }
+      const text = String(data?.choices?.[0]?.message?.content || "").trim().slice(0, 4000);
+      await recordUsage(run, { userId, feature, model: String(data?.model || model).slice(0, 100), tier, cacheKey, status: text ? "ok" : "failed",
+        inputTokens, outputTokens, cost, costSource, latencyMs: Date.now() - started, error: text ? null : "empty" });
+      if (!text) throw fail(503, "The AI provider returned no text.");
+      return { done: true, value: { text, model, inputTokens, outputTokens, cost, costSource } };
+    } catch (e) {
+      if (e?.status && e.status !== 503) throw e;
+      if (e?.name === "AbortError" || e?.name === "TypeError") {
+        await recordUsage(run, { userId, feature, model, tier, cacheKey, status: e.name === "AbortError" ? "timeout" : "failed", latencyMs: Date.now() - started, error: e.name });
+        lastError = fail(503, e.name === "AbortError" ? "The AI provider did not answer in time." : "The AI provider could not be reached.");
+        return { done: false };
+      }
+      lastError = e;
+      if (e?.providerStatus && (e.providerStatus === 429 || e.providerStatus >= 500)) return { done: false };
+      throw e;
+    } finally { clearTimeout(timer); }
   }
 }
 
