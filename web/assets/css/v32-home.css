@@ -48,10 +48,10 @@
 .sx-inst{display:grid;grid-template-columns:auto minmax(0,340px);align-items:center;gap:clamp(24px,4vw,56px);margin:clamp(36px,5vh,56px) auto 0;text-align:left}
 .sx-inst__mark{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:56px repeat(4,40px) 40px;gap:8px;justify-content:center}
 .sx-dot{width:40px;height:40px;padding:0;border:0;border-radius:50%;background:var(--c-line-2);cursor:pointer;-webkit-tap-highlight-color:transparent;
-  transition:background-color var(--dur) var(--ease),transform var(--dur-slow) var(--ease),box-shadow var(--dur) var(--ease)}
+  transition:background-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
 .sx-dot:hover{background:var(--c-faint)}
 .sx-dot:focus-visible{outline:none;box-shadow:var(--focus-ring)}
-.sx-dot[aria-pressed="true"]{background:var(--c-ink);transform:scale(1.08)}
+.sx-dot[aria-pressed="true"]{background:var(--c-ink)}
 .sx-dot.is-pass{background:var(--c-muted)}
 .sx-dot--head{grid-column:2;grid-row:1;width:52px;height:52px;justify-self:center;align-self:start;margin-top:-6px;box-shadow:0 0 0 6px var(--c-bg),0 0 0 7px var(--c-line-2)}
 .sx-dot--head[aria-pressed="true"]{box-shadow:0 0 0 6px var(--c-bg),0 0 0 7px var(--c-ink)}
@@ -213,3 +213,7 @@
   .sx-live .sx-rec,.sx-live .sx-out{opacity:1;transform:none}
   .sx-wire i{animation:none!important;opacity:0}
 }
+
+/* The instrument sits in its own band under the hero, so the hero keeps its first-screen height and its wordmark. */
+.sx-instrument{padding:clamp(8px,2vh,24px) 0 clamp(48px,7vh,88px)}
+.sx-instrument .sx-inst{margin-top:0}

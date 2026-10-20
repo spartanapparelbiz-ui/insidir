@@ -195,7 +195,7 @@ const DATA = {
   "/v1/me/watchlist": { items: ["NVDA", "AAPL", "PLTR", "F", "XOM", "ZZZZ"].map((t, i) => ({ ticker: t, created_at: "2026-09-0" + (i + 1) + "T00:00:00Z" })) },
   "/v1/me/research-decisions": { items: [{ ticker: "NVDA", review_status: "researching", notes: "Reading the 10-Q.", updated_at: "2026-10-12T00:00:00Z" }, { ticker: "F", review_status: "watching", notes: "CEO bought.", updated_at: "2026-10-09T00:00:00Z" }] },
   "/v1/insiders": { items: people }, "/v1/me/people": { items: updates.people.map(p => ({ owner_cik: p.owner_cik, created_at: p.followed_at, owner_name: p.owner_name, ticker: p.ticker, last_transaction_date: p.last_transaction_date })) },
-  "/v1/me/people/updates": updates, "/v1/search": { items: [] },
+  "/v1/me/people/updates": updates, "/v1/search": { items: [] }, "/v1/entities/search": { items: [], total: 0, state: "no_match" },
   "/v1/me/alerts": { items: [...pick("0001214156", "0001580197", "0001408356", "0001067983", "0009999991", "0001494730").map(x => feedRow(x)),
     feedRow(firstOf("AAPL"), { ...JOINT_OWNERS, id: 9301 }), feedRow(firstOf("KO"), { ...JOINT_NAMES, id: 9302 })] },
   "/v1/me/brokerage/status": { available: true, connected: true },

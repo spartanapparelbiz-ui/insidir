@@ -234,6 +234,8 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     // The overview strip (v32-overview.js) reads the briefing in peek mode and the unread count.
     if (path === "/v1/me/intelligence/briefing") return { status: 200, body: { stories: state.saved.length ? [{ ticker: state.saved[0], isNew: true }, { ticker: state.saved[0], isNew: false }] : [], needsSetup: !state.saved.length && !state.follows.length, subjects: { tickers: state.saved.length, people: state.follows.length } } };
     if (path === "/v1/me/notifications") return { status: 200, body: { items: [], unread: state.saved.length ? 3 : 0 } };
+    // EDGAR filers beyond the import (header search, people directory): none in these fixtures.
+    if (path === "/v1/entities/search") return { status: 200, body: { items: [], total: 0, offset: 0, limit: 20, hasMore: false, state: "no_match", lookups: [] } };
     if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
     if (path.startsWith("/v1/people/")) { const f = personFile(decodeURIComponent(path.split("/").pop()), [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]); return f ? { status: 200, body: f } : { status: 404, body: { error: "Reporting person not found in imported SEC records" } }; }
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
