@@ -8,6 +8,8 @@
 .lx-arm--b{display:none}
 [data-exp-headline="disclosure"] .lx-arm--a{display:none}
 [data-exp-headline="disclosure"] .lx-arm--b{display:inline}
+/* Both headlines keep to two lines on wide screens, so the hero wordmark stays on the first screen. */
+@media (min-width:900px){.lx-arm{font-size:.86em}}
 
 /* ---------- shared ---------- */
 .sx-head{display:grid;gap:var(--s-3);max-width:760px;margin:0 0 clamp(32px,4vw,56px)}
