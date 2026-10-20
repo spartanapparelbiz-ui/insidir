@@ -218,7 +218,8 @@
     if (!f) { host.hidden = true; host.innerHTML = ""; return; }
     host.hidden = false;
     host.innerHTML = `<label class="ip-field">Autopilot <select data-mode>${MODES.map(([v, l]) => `<option value="${v}"${v === f.mode ? " selected" : ""}>${l}</option>`).join("")}</select></label>
-      <button type="button" class="ip-btn" data-pause aria-pressed="${f.paused}">${f.paused ? "Resume" : "Pause"}</button><span class="ip-muted" data-saved role="status"></span>`;
+      <button type="button" class="ip-btn" data-pause aria-pressed="${f.paused}">${f.paused ? "Resume" : "Pause"}</button><span class="ip-muted" data-saved role="status"></span>
+      <p class="ip-muted ip-follow__why">Autopilot keeps you informed about developments affecting this ${kind === "company" ? "company" : "person"}: Important updates are purchases, clustered purchases, sales of $1,000,000 or more as filed, and company disclosures.</p>`;
     const saved = host.querySelector("[data-saved]");
     const save = async change => {
       try { const r = await api("/v1/me/follows/settings", { method: "POST", body: JSON.stringify({ kind, id, ...change }) }); f.mode = r.mode; f.paused = r.paused; saved.textContent = r.paused ? "Paused" : "Saved"; host.querySelector("[data-pause]").textContent = r.paused ? "Resume" : "Pause"; host.querySelector("[data-pause]").setAttribute("aria-pressed", String(r.paused)); }
@@ -265,7 +266,7 @@
     anchor.insertAdjacentHTML(where, `<section class="ip-section" aria-labelledby="ip-changes-h"><p class="ip-eyebrow">Insidir Changes</p><h2 id="ip-changes-h">What changed.</h2>
       <p class="ip-lede">Important shifts in ownership, insider activity and disclosures, detected by rules from structured SEC records, newest first. Open any item to verify its evidence.</p><div id="ip-changes"></div></section>
       <section class="ip-section" aria-labelledby="ip-connections-h"><p class="ip-eyebrow">Insidir Connections</p><h2 id="ip-connections-h">Who is connected.</h2>
-      <p class="ip-lede">Relationships with companies, executives and investors that may deserve further research, from Form 4 records. Select a node for its filings; expand to load its own connections.</p><div id="ip-connections"></div></section>`);
+      <p class="ip-lede">Relationships between companies, executives and institutional investors that may deserve further research, from Form 4 records. Select a node for its filings; expand to load its own connections.</p><div id="ip-connections"></div></section>`);
     mountChanges(document.getElementById("ip-changes"), cik);
     mountConnections(document.getElementById("ip-connections"), cik);
   }

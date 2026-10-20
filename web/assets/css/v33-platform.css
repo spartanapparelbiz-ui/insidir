@@ -93,6 +93,7 @@
 /* ---------- Autopilot follow settings ---------- */
 .ip-follow{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-3);align-items:center;margin-top:var(--s-3)}
 .ip-follow[hidden]{display:none}
+.ip-follow__why{flex-basis:100%;margin:0;max-width:70ch}
 .ip-follow-note{margin:var(--s-2) 0 0;font-size:12.5px;color:var(--c-soft);min-height:1em}
 .ip-follow-note:empty{display:none}
 .ip-onboard{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-3);max-width:100%}
