@@ -96,6 +96,7 @@
 .ax-state--on{border-color:var(--c-ink);color:var(--c-ink)}
 .ax-state--new{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-bg)}
 .ax-state--new::before{background:var(--c-bg)}
+.ax-row span.ax-state--new{color:var(--c-bg)}
 .ax-state--wait{border-style:dashed;color:var(--c-muted)}
 .ax-state--wait::before{background:transparent;border:1px solid currentColor;width:5px;height:5px}
 .ax-state--off{color:var(--c-faint)}

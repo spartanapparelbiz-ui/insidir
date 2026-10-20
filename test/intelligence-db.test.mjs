@@ -35,11 +35,14 @@ async function seed(q) {
   const line = (acc, i, ticker, cik, ownerCik, owner, date, code, cat, shares, price) => q(`INSERT INTO sec_transactions(id,accession,issuer_cik,ticker,owner_cik,owner_name,transaction_date,transaction_code,acquired_disposed,category,derivative,shares,price_per_share,estimated_value,source_url,security_title)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false,$11,$12,$13,$14,'Common Stock')`, [acc + ":N:" + i, acc, cik, ticker, ownerCik, owner, date, code, cat === "reported_purchase" ? "A" : "D", cat, shares, price, price == null ? null : shares * price, "https://www.sec.gov/Archives/edgar/data/" + cik + "/" + acc + "/form4.xml"]);
   const owner = (acc, cik, name, title) => q("INSERT INTO sec_filing_owners(accession,owner_cik,owner_name,is_officer,officer_title) VALUES($1,$2,$3,$4,$5)", [acc, cik, name, !!title, title]);
-  await filing("000104581026000001", "NVDA", "NVIDIA CORP", "1045810", hoursAgo(5));
+  // The two NVDA filings are an hour apart on one SEC (Eastern) day whatever the time the test runs: 16:00 and
+  // 15:00 UTC are mid-morning to noon in New York (EST or EDT), so same-day grouping never depends on the clock.
+  const sameSecDay = h => { const d = new Date(Date.now() - 86400_000); d.setUTCHours(h, 0, 0, 0); return d.toISOString(); };
+  await filing("000104581026000001", "NVDA", "NVIDIA CORP", "1045810", sameSecDay(16));
   await line("000104581026000001", 0, "NVDA", "1045810", "0001197649", "HUANG JEN HSUN", "2026-10-15", "S", "reported_sale", 1000, 180.5);
   await line("000104581026000001", 1, "NVDA", "1045810", "0001197649", "HUANG JEN HSUN", "2026-10-15", "F", "other", 50, null);
   await owner("000104581026000001", "0001197649", "HUANG JEN HSUN", "President and CEO");
-  await filing("000104581026000002", "NVDA", "NVIDIA CORP", "1045810", hoursAgo(6));
+  await filing("000104581026000002", "NVDA", "NVIDIA CORP", "1045810", sameSecDay(15));
   await line("000104581026000002", 0, "NVDA", "1045810", "0001234567", "KRESS COLETTE", "2026-10-16", "S", "reported_sale", 200, 181);
   await owner("000104581026000002", "0001234567", "KRESS COLETTE", "EVP and CFO");
   await filing("000078901926000003", "MSFT", "MICROSOFT CORP", "789019", hoursAgo(30));

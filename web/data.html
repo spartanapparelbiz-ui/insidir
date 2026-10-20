@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="assets/css/v15-site.css?v=1">
 <link rel="stylesheet" href="assets/css/v16-rich-site.css?v=1">
 <link rel="stylesheet" href="assets/css/v17-smooth.css?v=3">
-<script defer src="assets/js/v6-site.js?v=2"></script>
+<script defer src="assets/js/v6-site.js?v=2"></script><script defer src="assets/js/coverage.js"></script>
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
 <link rel="stylesheet" href="assets/css/v29-system.css"></head>
 <body class="v3-static v6-static v13">
@@ -126,10 +126,15 @@
    <li><b data-hf-atom>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
    <li><b data-hf-atom>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
    <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li><span class="hf-nw">8-K</span> announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
-   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li></ul></li>
+   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li><li>EDGAR daily Form 4 index, checked against the import</li></ul></li>
    <li><b data-hf-atom>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
   </ol>
   <p class="mk-note" data-hf-reveal>Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
+  <div class="mk-coverage" id="mk-coverage" aria-labelledby="mk-coverage-h">
+   <h3 id="mk-coverage-h">Coverage, measured now.</h3>
+   <p class="mk-coverage__lede">Counted from Insidir’s database when this page loads, and checked against EDGAR’s own daily index of Form 4 filings.</p>
+   <div id="mk-coverage-body" aria-live="polite"><p class="mk-coverage__wait">Counting…</p></div>
+  </div>
  </div>
 </section>
 

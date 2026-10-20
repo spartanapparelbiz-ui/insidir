@@ -20,6 +20,9 @@ import { initPush, pushTick } from "./push.mjs";
 import { aiTick } from "./ai-explain.mjs";
 import { monitorTick } from "./intelligence-monitor.mjs";
 import { pollHouse } from "./house-disclosures.mjs";
+import { syncCompanyDirectory, indexFilingParticipants, recountParticipation, refreshProfiles } from "./sec-directory.mjs";
+import { secBacklogMs } from "./sec.mjs";
+import { syncDailyIndexes, drainIngestQueue, markImported } from "./coverage-ingest.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -67,6 +70,23 @@ async function main() {
     every("filing-retry", 30 * 60 * 1000, 4 * 60 * 1000, () => retryFailedFilings({ query, load: loadOwnership, persist: persistFiling }));
     every("company-disclosures", 30 * 60 * 1000, 6 * 60 * 1000, () => pollCompanyDisclosures({ query }));
   }
+  // Coverage (src/sec-directory.mjs, src/coverage-ingest.mjs). The SEC company ticker list daily; EDGAR's daily form
+  // indexes hourly, a few days per run, until the coverage window is read (then the last three days are re-read);
+  // queued Form 4 accessions every five minutes, a bounded batch that yields to people waiting on the SEC throttle;
+  // issuers and reporting owners of everything imported into the entity directory every ten minutes.
+  if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") {
+    every("company-directory", 24 * 60 * 60 * 1000, 3 * 60 * 1000, async () => { const r = await syncCompanyDirectory({ run: query }); await recountParticipation(query); return r; });
+    every("daily-index", 60 * 60 * 1000, 5 * 60 * 1000, () => syncDailyIndexes({ run: query, maxDays: 8 }));
+    every("ingest-queue", 5 * 60 * 1000, 8 * 60 * 1000, async () => {
+      const marked = await markImported(query);
+      const r = await drainIngestQueue({ run: query, budget: 150, deadlineMs: 4 * 60 * 1000 });
+      if (r.imported) await buildResearchEvents({ query }).catch(e => console.error("Research events after queue import failed", e?.message || e));
+      return { ...r, marked };
+    });
+  }
+  // EDGAR submissions (former names, SIC, entity type) for every indexed company and owner, 200 per ten minutes.
+  if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") every("entity-profiles", 10 * 60 * 1000, 12 * 60 * 1000, () => refreshProfiles({ run: query, budget: 200, backlog: secBacklogMs }));
+  if (workers) every("filing-participants", 10 * 60 * 1000, 4 * 60 * 1000, () => indexFilingParticipants({ run: query }));
   // Web Push to installed apps and browsers (src/push.mjs), when VAPID keys are configured.
   if (workers && initPush()) every("web-push", 3 * 60 * 1000, 30 * 1000, () => pushTick(query));
   else if (workers) console.warn("Insidir Web Push disabled: VAPID settings incomplete");

@@ -14,7 +14,8 @@ import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequi
 
 // Paid product pages: signed in AND an active subscription.
 // person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
-export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence"]);
+// entity: any SEC filer by CIK (entity.html?cik=1067983, fed by GET /v1/entities/<cik>).
+export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence", "entity"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
 export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
@@ -80,6 +81,8 @@ export function classifyApi(pathname, method = "GET") {
   const p = String(pathname ?? ""), m = String(method || "GET").toUpperCase();
   if (!isApiPath(p)) return "open"; // website paths are classified by classifyPage
   if (p === "/healthz" || p === "/v1" || p === "/v1/" || p === "/v1/sources" || p === "/v1/capabilities") return "open";
+  // Aggregate coverage counts of public SEC data (src/coverage-ingest.mjs): no member data, shown on data.html.
+  if (p === "/v1/coverage" && (m === "GET" || m === "HEAD")) return "open";
   if (p === "/v1/me") return m === "GET" || m === "HEAD" || m === "DELETE" ? "open" : "product";
   if (p.startsWith("/v1/auth/") || p.startsWith("/v1/billing/") || p.startsWith("/v1/creators/admin/")) return "open";
   // Administrator routes (own token + one-time code, src/admin-auth.mjs) and email links/webhooks (signed tokens,

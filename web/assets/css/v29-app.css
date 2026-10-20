@@ -110,3 +110,17 @@
 @layer insidir-v13{
   html body.v13.ix-page :is(.ix-desk__co,.ix-desk__people) li a{display:flex!important;align-items:center!important;min-height:24px!important}
 }
+
+/* ---------- entity.html: one SEC filer ---------- */
+.en-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--s-3) var(--s-5);margin:var(--s-4) 0}
+.en-meta dt{font-family:var(--font);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted)}
+.en-meta dd{margin:4px 0 0;color:var(--c-ink);font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.en-meta small{color:var(--c-muted)}
+.en-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-3)}
+.en-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 var(--s-4);border:1px solid var(--c-line-strong);border-radius:var(--r-sm);background:transparent;color:var(--c-ink);font:inherit;font-size:13px;text-decoration:none;cursor:pointer;transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+.en-btn:hover{border-color:var(--c-ink);background:rgba(240,238,232,.04)}
+.en-btn:disabled{opacity:.6;cursor:default}
+.en-note{font-size:12.5px;line-height:1.5;color:var(--c-muted)}
+.v10-edgar{margin-top:var(--s-6)}
+@layer insidir-v13{html body.v13.en-page .cl-top .cl-eyebrow a{text-decoration:underline 1px currentColor!important;text-underline-offset:4px!important}}
+.en-actions a{display:inline-flex;align-items:center;min-height:40px}

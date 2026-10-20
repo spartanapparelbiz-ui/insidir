@@ -139,10 +139,16 @@ export function allowedSecUrl(input) {
         (/^\/submissions\/CIK\d{10}\.json$/.test(u.pathname) ||
          /^\/api\/xbrl\/companyfacts\/CIK\d{10}\.json$/.test(u.pathname));
     }
+    // EDGAR's entity name lookup (every EDGAR filer, companies and people): one keysTyped parameter, nothing else.
+    if (u.hostname === "efts.sec.gov") {
+      return u.pathname === "/LATEST/search-index" && !u.hash && [...u.searchParams.keys()].join() === "keysTyped" &&
+        u.searchParams.get("keysTyped").length >= 2 && u.searchParams.get("keysTyped").length <= 80;
+    }
     return u.hostname === "www.sec.gov" &&
       ((/^\/Archives\/edgar\/data\/\d+\/\d{18}\//.test(u.pathname) ||
         u.pathname === "/cgi-bin/browse-edgar" || u.pathname === "/cgi-bin/own-disp") ||
-        (!u.search && !u.hash && u.pathname === "/files/company_tickers.json"));
+        (!u.search && !u.hash && (u.pathname === "/files/company_tickers.json" || u.pathname === "/files/company_tickers_exchange.json" ||
+          /^\/Archives\/edgar\/daily-index\/\d{4}\/QTR[1-4]\/form\.\d{8}\.idx$/.test(u.pathname))));
   } catch { return false; }
 }
 export async function secFetch(url, { json = false } = {}) {
@@ -227,10 +233,26 @@ export async function recentForm4Backlog({ isKnown, maxPages = 8, fetchPage = re
   }
   return out;
 }
+/* EDGAR writes archive timestamps in Eastern time ("2026-10-15 15:22:00"); as an ISO instant, or null. */
+export function easternToIso(text) {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(text || "").trim());
+  if (!m) return null;
+  const [, y, mo, d, h, mi, se] = m.map(Number);
+  const guess = Date.UTC(y, mo - 1, d, h, mi, se);
+  // The offset New York had at that moment (EST -5, EDT -4), read from Intl rather than a hard-coded DST rule.
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    .formatToParts(new Date(guess)).map(p => [p.type, p.value]));
+  const asNy = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  const at = new Date(guess + (guess - asNy));
+  return Number.isNaN(at.getTime()) ? null : at.toISOString();
+}
 export async function loadOwnership(filing) {
   const path = filing.indexBase + "index.json";
   const idx = await secFetch(path, { json: true });
   const items = list(idx?.directory?.item);
+  // When the filing reached EDGAR's archive: the index page's timestamp (minute precision, from the SEC).
+  const stamp = items.find(x => /-index\.html?$/i.test(String(x?.name || "")))?.["last-modified"] || items[0]?.["last-modified"];
+  const edgarTimestamp = easternToIso(stamp);
   const candidates = items.filter(x => {
     const name = x?.name;
     return typeof name === "string" && /^[a-zA-Z0-9_.-]+\.xml$/i.test(name) &&
@@ -244,7 +266,7 @@ export async function loadOwnership(filing) {
     try {
       const xml = await secFetch(candidate);
       if (!xml.includes("ownershipDocument")) continue;
-      return { ...parseOwnership(xml, filing), xmlUrl: candidate };
+      return { ...parseOwnership(xml, { ...filing, publishedAt: filing.publishedAt || edgarTimestamp }), xmlUrl: candidate, edgarTimestamp };
     } catch (e) {
       if (e.message?.includes("Missing issuer CIK")) continue;
       if (e.message?.includes("valid ownershipDocument")) continue;

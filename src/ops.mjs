@@ -114,7 +114,21 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   });
   const security = await safe(async () => (await rows(query, `SELECT kind,count(*)::integer AS n FROM security_events WHERE created_at>now()-interval '24 hours' GROUP BY kind ORDER BY kind`)));
   const workers = await safe(async () => rows(query, "SELECT name,last_started_at,last_finished_at,last_ok_at,last_error,last_error_at,last_result,runs,failures FROM worker_heartbeats ORDER BY name"));
+  // Coverage (src/coverage-ingest.mjs): the measured report and the data-quality counts with example rows.
+  const coverage = await safe(async () => {
+    const { coverageReport, qualityChecks } = await import("./coverage-ingest.mjs");
+    return { report: await coverageReport({ run: query }), quality: await qualityChecks({ run: query }) };
+  });
   const alerts = [];
+  if (coverage && !coverage.unavailable) {
+    const q = coverage.report.queue, b = coverage.report.backfill;
+    if (q.failed > 0) alerts.push({ area: "coverage", level: "warning", detail: `${q.failed} Form 4 accession(s) failed every import attempt (kept in sec_ingest_queue with their errors)` });
+    if (b.indexDayErrors > 0) alerts.push({ area: "coverage", level: "warning", detail: `${b.indexDayErrors} EDGAR daily index(es) could not be read` });
+    const lastDir = coverage.report.lastSuccessfulSync["company-directory"];
+    if (!lastDir || Date.now() - new Date(lastDir).getTime() > 3 * 86400_000) alerts.push({ area: "coverage", level: "warning", detail: "SEC company ticker list not synced in the last 3 days" });
+    const stale = coverage.quality.find(c => c.key === "stale_filings");
+    if (stale?.stale) alerts.push({ area: "coverage", level: "stale", detail: "No new Form 4 imported for more than 4 days" });
+  }
   if (ingestion?.staleness && ingestion.staleness.status !== "ok") alerts.push({ area: "ingestion", level: ingestion.staleness.status, detail: ingestion.staleness.reasons.join("; ") });
   if (researchEvents?.builder?.pending_filings > 500) alerts.push({ area: "research-events", level: "warning", detail: `${researchEvents.builder.pending_filings} parsed filings not yet turned into events` });
   if (researchEvents?.failedImports?.gave_up) alerts.push({ area: "ingestion", level: "warning", detail: `${researchEvents.failedImports.gave_up} filing(s) failed to import after 5 attempts` });
@@ -127,6 +141,6 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   if (billing?.enabled && billing.webhookMinutesAgo == null) alerts.push({ area: "billing", level: "warning", detail: "billing enabled but no Stripe webhook has ever been processed" });
   for (const w of Array.isArray(workers) ? workers : []) if (w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at))) alerts.push({ area: "worker:" + w.name, level: "warning", detail: String(w.last_error || "").slice(0, 160) });
   return { generatedAt: new Date().toISOString(), status: alerts.some(a => a.level === "stale") ? "degraded" : alerts.length ? "warning" : "ok", alerts,
-    ingestion, sec, researchEvents, notifications, email, billing, ai, security, workers,
+    ingestion, sec, researchEvents, notifications, email, billing, ai, security, workers, coverage,
     capabilities: capabilitySummary({ env }), sources: sourceRegistry.map(s => ({ id: s.id, status: s.status })) };
 }

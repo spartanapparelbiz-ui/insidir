@@ -22,7 +22,7 @@ const companyLogo=(t,x={})=>window.InsidirMedia?.company({ticker:t,cik:x.issuer_
 const companyName=n=>window.InsidirMedia?.companyName?window.InsidirMedia.companyName(n):String(n||"");
 const formLabel=f=>{const t=String(f||"4").trim();return /^form\b/i.test(t)?t:"Form "+t;};
 const tbody=$("collection-rows"),more=$("collection-more");
-let all=[],offset=0,busy=false,moreAvailable=false,companyDirectoryMode="sec";
+let all=[],offset=0,busy=false,moreAvailable=false,companyDirectoryMode="sec",edgarDown=false;
 /* A new search supersedes the one in flight (its requests are cancelled and its answer ignored); "load more" waits. */
 let generation=0,inflight=null;
 const status=s=>{$("collection-status").textContent=s};
@@ -34,11 +34,16 @@ async function request(path,options={}){
 function render(){
  const html=all.map(x=>{
   const t=clean(x.ticker);
-  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(companyName(x.issuer_name||x.name)||"SEC-listed issuer")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+(x.published_at?E(filed(x.published_at)):'<span class="cl-muted">View SEC records</span>')+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
+  if(kind==="companies"&&x.entity&&!t){
+   // An SEC filer with no ticker on the SEC list: its own record page (entity.html), and why there is no ticker.
+   const e=x.entity,why=e.delistedAt?"Left the SEC ticker list":(e.tickers||[]).length?"Formerly "+e.tickers.join(", "):"No listed ticker",url="entity.html?cik="+encodeURIComponent(e.cik);
+   return '<tr><td><div class="ins-company-cell">'+companyLogo("",x)+'<span class="ins-company-cell__name">'+E(companyName(e.name))+'<span class="cl-muted"> · CIK '+E(e.cik)+(e.matched?" · "+E(e.matched.as)+": "+E(e.matched.name):"")+'</span></span></div></td><td>'+E(why)+'</td><td>'+(x.published_at?E(filed(x.published_at)):'<span class="cl-muted">No Form 4 imported</span>')+'</td><td>'+a(url,"SEC record ↗")+'</td></tr>';
+  }
+  if(kind==="companies")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<span class="ins-company-cell__name">'+E(companyName(x.issuer_name||x.name)||"SEC-listed issuer")+(x.entity?.matched?'<span class="cl-muted"> · '+E(x.entity.matched.as)+": "+E(x.entity.matched.name)+'</span>':"")+'</span></div></td><td>'+ (t?a(detail(t),t):"Ticker not reported")+'</td><td>'+(x.published_at?E(filed(x.published_at)):'<span class="cl-muted">View SEC records</span>')+'</td><td>'+ (t?a(detail(t),"View research ↗"):"—")+'</td></tr>';
   if(kind==="filings")return '<tr><td><div class="ins-company-cell">'+companyLogo(t,x)+'<div>'+ (t?a(detail(t),t):E(companyName(x.issuer_name)||"Reporting issuer"))+'<span class="cl-muted">'+E(companyName(x.issuer_name))+'</span></div></div></td><td>'+E(formLabel(x.form_type))+(x.is_amendment&&!/\/A$/i.test(String(x.form_type||""))?" · amended":"")+'</td><td>'+E(filed(x.published_at))+'</td><td>'+src(x.source_url,"Original SEC")+'</td></tr>';
   return '<tr><td><div class="ins-company-cell">'+companyLogo(t)+(t?a(detail(t),t):"—")+'</div></td><td>'+E(filed(x.created_at))+'</td><td>'+ (t?a(detail(t),"Research ↗"):"—")+'</td><td><button type="button" class="cl-remove" data-remove="'+E(t)+'" aria-label="Remove '+E(t)+'">Remove</button></td></tr>';
  }).join("");
- const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.":companyDirectoryMode==="sec"?'No matching ticker in the SEC index. This does not mean the company does not exist. <a href="people.html">Search reporting people →</a>':"No matching company in Insidir’s imported SEC records.";
+ const empty=kind==="watchlist"?"No saved tickers yet. Add a symbol above to begin.":kind==="filings"?"No imported filings match this search.":companyDirectoryMode==="sec"&&edgarDown?'Nothing on the SEC ticker list or in imported filings matches, and SEC EDGAR could not be searched just now. Try again shortly.':companyDirectoryMode==="sec"?'No SEC filer matches this search: not on the SEC ticker list, not in imported filings, and not found in EDGAR. Try the ticker, the CIK, or the name as the SEC lists it. <a href="people.html">Search reporting people →</a>':"No matching company in Insidir’s imported SEC records.";
  tbody.innerHTML=html||'<tr><td class="cl-empty" colspan="4">'+empty+'</td></tr>';
  window.InsidirMedia?.hydrate(tbody);
  $("collection-count").textContent=all.length+" "+(kind==="companies"?(all.length===1?"company":"companies"):(all.length===1?"record":"records"));
@@ -59,9 +64,11 @@ async function load(reset=true){
     data=await request("/v1/company/directory?limit=50&offset="+offset);
    }else{
     // Search the SEC issuer list, not only the Form 4 filings already imported.
-    const [official,imported]=await Promise.allSettled([
+    const [official,imported,filers]=await Promise.allSettled([
       request("/v1/search?q="+encodeURIComponent(q)+"&limit=50&offset="+offset),
-      request("/v1/companies?q="+encodeURIComponent(q))
+      request("/v1/companies?q="+encodeURIComponent(q)),
+      // CIKs, former names and SEC filers without a listed ticker (first page only; the ticker list pages on its own).
+      offset?Promise.resolve({items:[]}):request("/v1/entities/search?kind=company&limit=30&q="+encodeURIComponent(q))
     ]);
     if(official.status==="fulfilled"){
       companyDirectoryMode="sec";
@@ -71,6 +78,13 @@ async function load(reset=true){
         const match=local.find(x=>clean(x.ticker)===clean(c.ticker)||sameCik(x.issuer_cik,c.cik));
         return {ticker:c.ticker,issuer_name:c.name,issuer_cik:c.cik,published_at:match?.published_at||null};
       })};
+      edgarDown=filers.status==='rejected'||filers.value?.state==='source_unavailable';
+      const shown=new Set(data.items.map(x=>String(Number(x.issuer_cik))));
+      for(const e of filers.status==="fulfilled"?filers.value.items||[]:[]){
+        if(shown.has(String(Number(e.cik))))continue;
+        shown.add(String(Number(e.cik)));
+        data.items.push({ticker:e.listed?(e.tickers||[])[0]||"":"",issuer_name:e.name,issuer_cik:e.cik,published_at:e.lastFilingAt,entity:e});
+      }
     }else if(imported.status==="fulfilled"){
       companyDirectoryMode="imported-fallback";
       data={...imported.value,hasMore:false};

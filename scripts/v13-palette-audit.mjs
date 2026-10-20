@@ -59,7 +59,7 @@ const ALL_PAGES = [
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
-  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
+  ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"], ["entity", "/entity.html?cik=1081316"],
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"],
   ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
@@ -150,6 +150,8 @@ const NDJSON = Symbol("ndjson");
 const ndjson = lines => ({ [NDJSON]: lines.map(l => JSON.stringify(l)).join("\n") + "\n" });
 // Intelligence responses captured from a local server over synthetic QA records (scripts/fixtures).
 const INTEL = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+// Entity record, entity search and coverage captured from a local engine over real SEC EDGAR data.
+const COVERAGE = JSON.parse(readFileSync(new URL("./fixtures/coverage-api.json", import.meta.url), "utf8"));
 function intelligenceFixture(p, method, empty) {
   if (p === "/v1/me/intelligence/briefing") return empty ? { ...INTEL.briefing, stories: [], needsSetup: true, subjects: { tickers: 0, people: 0 } } : INTEL.briefing;
   if (p === "/v1/me/intelligence/investigate" && method === "POST") return ndjson([...INTEL.stream, { stage: "answer", answer: INTEL.answer }]);
@@ -226,6 +228,9 @@ function fixture(url, method, from = "", hash = "") {
   if (p === "/v1/companies") return { items: filingItems.map(f => ({ ticker: f.ticker, issuer_name: f.issuer_name, name: f.issuer_name, last_filing_at: f.published_at, filings: 2 })), total: 3 };
   if (p === "/v1/insiders") return { items: insiderPeople, total: insiderPeople.length };
   if (p === "/v1/search") return { items: [{ ticker: "AAPL", name: "Apple Inc." }] };
+  if (p === "/v1/entities/1081316") return COVERAGE.entity;
+  if (p === "/v1/entities/search") return COVERAGE.search;
+  if (p === "/v1/coverage") return COVERAGE.coverage;
   if (p === "/v1/purchases" || p === "/v1/sales") return { items: transactionItems };
   return null;
 }

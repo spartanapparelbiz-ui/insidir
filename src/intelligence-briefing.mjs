@@ -9,7 +9,7 @@
  * story, and every 8-K/6-K notice from one company on one day is one story. Ordering follows published,
  * transparent rules (rankStory) and each story carries the reasons; there is no investment score. */
 import { query as queryDb } from "./db.mjs";
-import { iso, day, cikForms, bareCik, displayName, companyName, roleOf, money, count, codeLabel, eightKLabel, secSource, summarizeLines } from "./intelligence-common.mjs";
+import { iso, day, secDay, cikForms, bareCik, displayName, companyName, roleOf, money, count, codeLabel, eightKLabel, secSource, summarizeLines } from "./intelligence-common.mjs";
 
 export const FREQUENCIES = Object.freeze(["immediate", "daily", "weekly"]);
 const MAX_TICKERS = 200, MAX_PEOPLE = 150, MAX_FILINGS = 160, MAX_LINES = 2000, MAX_NOTICES = 120;
@@ -92,7 +92,7 @@ export function buildStories({ lines = [], owners = [], notices = [], tickers = 
   for (const o of owners) { if (!ownersBy.has(o.accession)) ownersBy.set(o.accession, []); ownersBy.get(o.accession).push(o); }
   const groups = new Map();
   for (const r of lines) {
-    const k = "f4:" + (r.ticker || r.issuer_cik || r.accession) + ":" + day(r.published_at);
+    const k = "f4:" + (r.ticker || r.issuer_cik || r.accession) + ":" + secDay(r.published_at);
     if (!groups.has(k)) groups.set(k, { key: k, filings: new Map(), lines: [] });
     const g = groups.get(k);
     if (!g.filings.has(r.accession)) g.filings.set(r.accession, r);
@@ -141,7 +141,7 @@ export function buildStories({ lines = [], owners = [], notices = [], tickers = 
   }
   const noticeGroups = new Map();
   for (const n of notices) {
-    const k = "8k:" + n.subject + ":" + day(n.published_at || n.observed_at);
+    const k = "8k:" + n.subject + ":" + secDay(n.published_at || n.observed_at);
     if (!noticeGroups.has(k)) noticeGroups.set(k, []);
     noticeGroups.get(k).push(n);
   }
