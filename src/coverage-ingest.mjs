@@ -192,7 +192,9 @@ const n = v => Number(v) || 0;
 /* Every number is a COUNT over stored rows at the moment of the call. */
 export async function coverageReport({ run = queryDb, days = coverageDays(), now = new Date() } = {}) {
   const want = windowDays(days, now);
-  const [ent, names, filings, queue, idx, runs, oldest, perDay] = await Promise.all([
+  // Why imports fail, grouped: the stored error text with numbers, accessions and URLs collapsed (SEC errors only).
+  const reasonSql = col => `SELECT left(regexp_replace(regexp_replace(COALESCE(${col},'unknown'),'https?://\\S+','<url>','g'),'[0-9]+','#','g'),90) AS reason,count(*)::int AS n`;
+  const [ent, names, filings, queue, idx, runs, oldest, perDay, failReasons, queueReasons] = await Promise.all([
     run(`SELECT count(*)::int AS entities,
         count(*) FILTER (WHERE kind='company')::int AS companies, count(*) FILTER (WHERE kind='company' AND listed)::int AS listed,
         count(*) FILTER (WHERE kind='company' AND NOT listed)::int AS unlisted_companies,
@@ -221,7 +223,9 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
     run(`SELECT d.day,d.form4_count,count(q.accession) FILTER (WHERE q.status='done')::int AS done,
         count(q.accession) FILTER (WHERE q.status='failed')::int AS failed, count(q.accession) FILTER (WHERE q.status IN ('pending','retry','running'))::int AS waiting
       FROM sec_index_days d LEFT JOIN sec_ingest_queue q ON q.index_day=d.day
-      WHERE d.status='complete' AND d.day=ANY($1::date[]) GROUP BY d.day,d.form4_count ORDER BY d.day DESC LIMIT 120`, [want])
+      WHERE d.status='complete' AND d.day=ANY($1::date[]) GROUP BY d.day,d.form4_count ORDER BY d.day DESC LIMIT 120`, [want]),
+    run(`${reasonSql("error_message")} FROM sec_filings WHERE ingest_status='error' GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+    run(`${reasonSql("last_error")} FROM sec_ingest_queue WHERE status IN ('failed','retry') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`)
   ]);
   const q = Object.fromEntries(queue.rows.map(r => [r.status, r.n]));
   const e = ent.rows[0], f = filings.rows[0], ix = idx.rows[0];
@@ -242,8 +246,8 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
       reportingOwnersWithImportedFilings: e.owners_with_filings, unresolved: e.unresolved, resolvedFromEdgar: e.resolved_from_edgar,
       searchableNames: names.rows[0].names, formerNames: names.rows[0].former, tickers: names.rows[0].tickers },
     filings: { parsed: f.parsed, failed: f.errors, pending: f.pending, transactions: f.transactions, distinctOwnerCiks: f.distinct_owner_ciks,
-      newestPublishedAt: iso(f.newest), oldestPublishedAt: iso(f.oldest) },
-    queue: { pending: n(q.pending), retry: n(q.retry), running: n(q.running), done: n(q.done), failed: n(q.failed) },
+      newestPublishedAt: iso(f.newest), oldestPublishedAt: iso(f.oldest), failedByReason: failReasons.rows },
+    queue: { pending: n(q.pending), retry: n(q.retry), running: n(q.running), done: n(q.done), failed: n(q.failed), problemsByReason: queueReasons.rows },
     backfill: { windowDays: days, businessDays: want.length, indexDaysRead: n(ix.complete), indexDaysMissing: n(ix.no_index), indexDayErrors: n(ix.errors),
       earliestDay: ix.earliest ? dayKey(new Date(ix.earliest)) : null, latestDay: ix.latest ? dayKey(new Date(ix.latest)) : null,
       listedByEdgar: listedInIndex, imported: importedFromIndex, percentImported: listedInIndex ? Math.round(importedFromIndex / listedInIndex * 1000) / 10 : null },

@@ -22,6 +22,7 @@
       cell("Imported of those", b.percentImported == null ? "—" : num(b.imported) + " (" + b.percentImported + "%)", num(q.pending + q.retry + q.running) + " waiting · " + num(q.failed) + " failed every attempt") +
       '</dl>' +
       '<p class="mk-coverage__sync">Last successful runs · ticker list: ' + esc(when(s["company-directory"])) + ' · daily index: ' + esc(when(s["daily-index"])) + ' · import queue: ' + esc(when(s["ingest-queue"])) + ' · newest filing imported: ' + esc(when(f.newestPublishedAt)) + '</p>' +
+      ((f.failedByReason || []).length ? '<details class="mk-coverage__quality"><summary>Why filings failed to import (' + num(f.failed) + ')</summary><ul>' + f.failedByReason.map(r => '<li>' + esc(r.reason) + ': <b>' + num(r.n) + '</b></li>').join("") + '</ul></details>' : "") +
       (quality.length ? '<details class="mk-coverage__quality"><summary>Data checks with findings (' + quality.length + ')</summary><ul>' + quality.map(x => '<li>' + esc(x.label) + ': <b>' + num(x.count) + '</b></li>').join("") + '</ul></details>' : "") +
       '<details class="mk-coverage__gaps"><summary>What is not covered</summary><ul>' + (c.universe?.notCovered || []).map(x => '<li>' + esc(x) + '</li>').join("") + '</ul></details>';
   }).catch(err => { host.innerHTML = '<p class="mk-coverage__wait">The coverage report is unavailable right now (' + esc(err.message) + '). Nothing is shown rather than an old or estimated figure.</p>'; });
