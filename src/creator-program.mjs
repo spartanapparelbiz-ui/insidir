@@ -84,6 +84,30 @@ export async function creatorAdminRoutes(req,res,path,json,{query,env=process.en
     await audit(query,req,"creator.partner_created",code,{handle,status},auth.actor);
     return json(res,201,{...result.rows[0],referralUrl:"https://insidir.com/signup.html?ref="+code});
   }
+  // Existing creators stay pending until they have explicitly agreed to partner.
+  // Disabled partners cannot be reactivated by this endpoint.
+  if(path==="/v1/creators/admin/partners/approve" && req.method==="POST"){
+    const data=await readJson(req);
+    const code=normalizeReferralCode(data?.code);
+    if(!code || data?.confirmedAgreement!==true)throw fail(400,"Creator code and confirmed agreement required");
+    const result=await query(
+      "UPDATE creator_partners SET status='approved' WHERE code=$1 AND status IN ('pending','approved') RETURNING code,status",
+      [code]);
+    if(!result.rows.length)throw fail(404,"Pending or approved creator not found");
+    return json(res,200,{...result.rows[0],referralUrl:"https://insidir.com/signup.html?ref="+code});
+  }
+  // Shows attributable signups separately from first paid invoices. A recorded
+  // invoice is not proof the subscription is still active or that a payout is due.
+  if(path==="/v1/creators/admin/metrics" && req.method==="GET"){
+    const result=await query(`
+      SELECT p.code,p.instagram_handle,p.display_name,p.status,
+        (SELECT COUNT(*)::int FROM creator_referrals r WHERE r.creator_id=p.id) AS signups,
+        (SELECT COUNT(*)::int FROM creator_commissions c WHERE c.creator_id=p.id AND c.status<>'void') AS first_paid_invoices,
+        (SELECT COALESCE(SUM(c.amount_cents),0)::int FROM creator_commissions c
+         WHERE c.creator_id=p.id AND c.status<>'void') AS commission_candidates_cents
+      FROM creator_partners p ORDER BY p.created_at DESC LIMIT 300`);
+    return json(res,200,{partners:result.rows,note:"Signups are not paid customers; paid invoices may later be refunded or disputed. Review Stripe and the 30-day hold before payment."});
+  }
   if(path==="/v1/creators/admin/commissions" && req.method==="GET"){
     const rows=await query(
       `SELECT c.id,p.instagram_handle,p.display_name,c.amount_cents,c.status,
