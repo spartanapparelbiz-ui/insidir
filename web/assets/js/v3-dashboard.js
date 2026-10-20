@@ -496,7 +496,7 @@ function tradeRow(x,i){
  const t=tick(x.ticker),k=kind(x),v=valueCents(x),p=F.rawPrice(x),lag=lagOf(x),d=describe(x);
  // A line a later 4/A repeats stays listed, and says it is not counted in 03's totals (derive()).
  const restated=table.rows?derive(table.rows).superseded.has(x):false;
- const notes=[security(x),ownership(x)==="Indirect"?"held indirectly":"",x.is_amendment?"amended (4/A)":"",restated?"restated by a later 4/A, not counted":""].filter(Boolean).join(" · ");
+ const notes=[security(x),ownership(x)==="Indirect"?"held indirectly":"",x.rule_10b5_1===true?"Rule 10b5-1 plan marked on the filing":"",x.is_amendment?"amended (4/A)":"",restated?"restated by a later 4/A, not counted":""].filter(Boolean).join(" · ");
  return '<tr class="rd-trade rd-trade--'+k+'" style="--i:'+Math.min(i,8)+'" aria-label="'+E(sentence(x))+'">'+
   '<td data-label="Person" class="rd-td-who"><span class="rd-ent">'+whoTile(x,"sm")+personName(x)+'</span></td>'+
   '<td data-label="Company" class="rd-td-co">'+(t?'<span class="rd-ent">'+coTile(x,"sm")+'<a data-ent="company" href="'+E(companyHref(t))+'">'+E(t)+'</a></span>'+(x.issuer_name?'<span class="rd-sub">'+E(companyName(x.issuer_name))+'</span>':''):

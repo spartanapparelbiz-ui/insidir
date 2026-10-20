@@ -22,7 +22,7 @@ import { monitorTick } from "./intelligence-monitor.mjs";
 import { pollHouse } from "./house-disclosures.mjs";
 import { syncCompanyDirectory, indexFilingParticipants, recountParticipation, refreshProfiles } from "./sec-directory.mjs";
 import { secBacklogMs } from "./sec.mjs";
-import { syncDailyIndexes, drainIngestQueue, markImported } from "./coverage-ingest.mjs";
+import { syncDailyIndexes, drainIngestQueue, markImported, queueReparse } from "./coverage-ingest.mjs";
 
 /* Background work. Every job runs through runWorker (src/ops.mjs): a PostgreSQL advisory lock per job, so several
  * instances never run the same job at once, and a heartbeat row operators can read on the ops page.
@@ -76,7 +76,7 @@ async function main() {
   // issuers and reporting owners of everything imported into the entity directory every ten minutes.
   if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") {
     every("company-directory", 24 * 60 * 60 * 1000, 3 * 60 * 1000, async () => { const r = await syncCompanyDirectory({ run: query }); await recountParticipation(query); return r; });
-    every("daily-index", 60 * 60 * 1000, 5 * 60 * 1000, () => syncDailyIndexes({ run: query, maxDays: 8 }));
+    every("daily-index", 60 * 60 * 1000, 5 * 60 * 1000, async () => ({ ...await syncDailyIndexes({ run: query, maxDays: 8 }), reparseQueued: await queueReparse({ run: query }) }));
     every("ingest-queue", 5 * 60 * 1000, 8 * 60 * 1000, async () => {
       const marked = await markImported(query);
       const r = await drainIngestQueue({ run: query, budget: 150, deadlineMs: 4 * 60 * 1000 });

@@ -12,6 +12,22 @@ const amount = v => {
   return Number.isFinite(n) && Math.abs(n) < 1e15 ? n : null;
 };
 const flag = v => /^(1|true)$/i.test(val(v) || "");
+/* The decimal text of a number as filed ("23.725"), or null; kept so money is multiplied exactly. */
+const decimalText = v => { const s = val(v); return s && /^-?\d+(\.\d+)?$/.test(s) ? s : null; };
+/* shares × price, exact (BigInt over the filed decimal strings), rounded half-up to the cent. A float product can land
+ * a cent off at a .005 boundary; filings carry prices to four or more decimals. Null when either side is missing,
+ * negative, or the price is zero (gifts, awards and grants carry no price: their value is not reported, not $0). */
+export function filedValue(sharesText, priceText) {
+  if (sharesText == null || priceText == null) return null;
+  const parse = t => { const [i, f = ""] = String(t).split("."); return { n: BigInt(i + f), d: f.length }; };
+  const a = parse(sharesText), b = parse(priceText);
+  if (a.n < 0n || b.n <= 0n) return null;
+  const scale = a.d + b.d, product = a.n * b.n;
+  // To cents: divide by 10^(scale-2), rounding half up.
+  if (scale <= 2) return Number(product * 10n ** BigInt(2 - scale)) / 100;
+  const div = 10n ** BigInt(scale - 2), cents = (product + div / 2n) / div;
+  return Number(cents) / 100;
+}
 const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 /* An XML Schema date may carry a time zone ("2026-10-14-05:00", "2026-10-14Z"); the calendar date is the part before
  * it. Filers do send these: without this the trade date of such a line was stored as unknown. */
@@ -51,6 +67,8 @@ export function parseAtom(xml, { forms = ["4", "4/A"] } = {}) {
   });
 }
 
+/* Bump when parseOwnership starts reading something it did not: filings read by an older version are re-read. */
+export const PARSER_VERSION = 2;
 export function parseOwnership(xml, filing) {
   const root = parser.parse(xml)?.ownershipDocument;
   if (!root || !root.issuer) throw new Error("Not a valid ownershipDocument");
@@ -75,6 +93,8 @@ export function parseOwnership(xml, filing) {
       const acq = val(t?.transactionAmounts?.transactionAcquiredDisposedCode)?.toUpperCase() || null;
       const shares = amount(t?.transactionAmounts?.transactionShares);
       const price = amount(t?.transactionAmounts?.transactionPricePerShare);
+      const sharesText = decimalText(t?.transactionAmounts?.transactionShares), priceText = decimalText(t?.transactionAmounts?.transactionPricePerShare);
+      const timeliness = val(t?.transactionTimeliness)?.toUpperCase() || null;
       const transactionDate = xmlDate(val(t?.transactionDate));
       const owner = owners.length === 1 ? owners[0] : null;
       const category = !derivative && code === "P" && acq === "A" ? "reported_purchase"
@@ -89,9 +109,19 @@ export function parseOwnership(xml, filing) {
         securityTitle: val(t?.securityTitle) || null,
         code, acquiredDisposed: acq, category, derivative,
         shares, pricePerShare: price,
-        estimatedValue: shares != null && price != null && shares >= 0 && price >= 0 ? Math.round(shares * price * 100) / 100 : null,
+        estimatedValue: filedValue(sharesText, priceText),
         directOwnership: val(t?.ownershipNature?.directOrIndirectOwnership) || null,
+        natureOfOwnership: val(t?.ownershipNature?.natureOfOwnership)?.slice(0, 300) || null,
         sharesAfter: amount(t?.postTransactionAmounts?.sharesOwnedFollowingTransaction),
+        // E: reported early (voluntarily), L: reported late, as the filer marked it.
+        timeliness: timeliness === "E" || timeliness === "L" ? timeliness : null,
+        // Derivative lines count derivative securities (options, rights, units); the shares they convert into are
+        // the underlying amount, at the conversion or exercise price.
+        exercisePrice: derivative ? amount(t?.conversionOrExercisePrice) : null,
+        underlyingTitle: derivative ? val(t?.underlyingSecurity?.underlyingSecurityTitle)?.slice(0, 200) || null : null,
+        underlyingShares: derivative ? amount(t?.underlyingSecurity?.underlyingSecurityShares) : null,
+        exerciseDate: derivative ? xmlDate(val(t?.exerciseDate)) : null,
+        expirationDate: derivative ? xmlDate(val(t?.expirationDate)) : null,
         sourceUrl: filing.sourceUrl
       });
     }
@@ -104,8 +134,47 @@ export function parseOwnership(xml, filing) {
     sourceUrl: filing.sourceUrl, publishedAt: filing.publishedAt,
     periodOfReport: xmlDate(val(root.periodOfReport)),
     isAmendment: /\/A/i.test(val(root.documentType) || filing.formType || ""),
+    // An amendment names the date of the filing it amends.
+    originalFiledOn: xmlDate(val(root.dateOfOriginalSubmission)),
+    // Checked by the filer when a reported transaction was made under a Rule 10b5-1 trading plan (schema X0609 on).
+    rule10b51: root.aff10b5One == null ? null : flag(root.aff10b5One),
     owners, transactions
   };
+}
+
+/* Checks run on every parsed filing before it is stored (src/db.mjs persistFiling). An error flags the filing: it is
+ * kept, shown with its issues, and never becomes an alert (src/research-events.mjs, src/push.mjs); a warning is
+ * information only. Nothing is corrected or filled in here. */
+export function validateOwnership(f) {
+  const issues = [], add = (severity, code, detail) => issues.push({ severity, code, detail: String(detail).slice(0, 200) });
+  if (!/^\d{18}$/.test(String(f?.accession || ""))) add("error", "accession", "Accession number is not 18 digits");
+  if (!/^\d{1,10}$/.test(String(f?.issuerCik || "")) || !/[1-9]/.test(String(f?.issuerCik || ""))) add("error", "issuer_cik", "Issuer CIK missing or invalid");
+  try {
+    const u = new URL(String(f?.sourceUrl || ""));
+    if (u.hostname !== "www.sec.gov" || !u.pathname.includes("/" + f.accession + "/")) add("error", "source_url", "Source link is not this accession's EDGAR folder");
+  } catch { add("error", "source_url", "Source link missing"); }
+  const owners = Array.isArray(f?.owners) ? f.owners : [];
+  if (!owners.length) add("error", "no_owner", "No reporting owner on the filing");
+  for (const o of owners) if (!/^\d{1,10}$/.test(String(o?.cik || "")) || !/[1-9]/.test(String(o?.cik || ""))) add("warning", "owner_cik", "Reporting owner without a CIK: " + (o?.name || "unnamed"));
+  const filedDay = f?.publishedAt ? new Date(Date.parse(f.publishedAt) - 5 * 3600_000).toISOString().slice(0, 10) : null;
+  const lines = Array.isArray(f?.transactions) ? f.transactions : [];
+  for (const t of lines) {
+    const id = t.id || "line";
+    if (!t.transactionDate) add("warning", "no_date", id + ": no transaction date");
+    else {
+      if (t.transactionDate < "1990-01-01") add("error", "date_range", id + ": transaction dated " + t.transactionDate);
+      // One day of slack for the Eastern/UTC boundary of the filing timestamp.
+      if (filedDay && t.transactionDate > filedDay && Date.parse(t.transactionDate) - Date.parse(filedDay) > 86400_000) add("error", "date_after_filing", id + ": transaction " + t.transactionDate + " after the filing " + filedDay);
+    }
+    if (t.shares != null && t.shares < 0) add("error", "negative_shares", id + ": negative share count");
+    if (t.pricePerShare != null && t.pricePerShare < 0) add("error", "negative_price", id + ": negative price");
+    if (t.code && !/^[A-Z]$/.test(t.code)) add("warning", "code", id + ": transaction code " + t.code);
+    if (t.acquiredDisposed && !/^[AD]$/.test(t.acquiredDisposed)) add("error", "acquired_disposed", id + ": acquired/disposed code " + t.acquiredDisposed);
+    if ((t.code === "P" && t.acquiredDisposed === "D") || (t.code === "S" && t.acquiredDisposed === "A")) add("warning", "code_direction", id + ": code " + t.code + " with " + t.acquiredDisposed);
+  }
+  if (f?.isAmendment && f?.originalFiledOn && filedDay && f.originalFiledOn > filedDay) add("error", "amendment_date", "Amends a filing dated after this one");
+  if (f?.periodOfReport && filedDay && f.periodOfReport > filedDay && Date.parse(f.periodOfReport) - Date.parse(filedDay) > 86400_000) add("error", "period_after_filing", "Period of report after the filing date");
+  return { status: issues.some(i => i.severity === "error") ? "flagged" : issues.length ? "warnings" : "valid", issues };
 }
 
 /* Source health for operators (GET /v1/admin/ops): counts and the latest outcome of this process's SEC requests. */

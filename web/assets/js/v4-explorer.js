@@ -58,10 +58,11 @@ function render(data,ticker){
    const u=src(f.sourceUrl);
    return '<div class="is4-explorer__entry"><span class="is4-explorer__form">'+esc(f.form||"SEC")+'</span><div><strong>'+esc(f.headline||"Company disclosure")+'</strong><small>Filed '+esc(date(f.filedAt))+'</small></div>'+(u?'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" aria-label="Verify '+esc(f.form||"filing")+' with the SEC">'+ico("external")+'</a>':'<span>—</span>')+'</div>';
  }).join(""):'<p class="is4-explorer__empty">No selected SEC filings were returned. The complete filing may still be found at SEC EDGAR.</p>';
+ const periodText=(f,fmt)=>{const end=fmt(f.periodEnd),n=Number(f.durationDays);return f.periodType==="instant"?"As of "+end:f.periodType==="quarter"?"3 months ended "+end:f.periodType==="fiscal-year"?"Fiscal year ended "+end:f.periodType==="year-to-date"&&n?Math.round(n/30.4)+" months (year to date) ended "+end:(f.start?fmt(f.start)+" – ":"")+end;};
  const metrics=Array.isArray(data?.facts)?data.facts.slice(0,4):[];
  facts.innerHTML=metrics.length?metrics.map(m=>{
    const u=src(m.sourceUrl);
-   return '<div class="is4-explorer__entry is4-explorer__fact"><div><span>'+esc(m.label||"Reported financial measure")+'</span><strong>'+esc(cash(m.value))+'</strong><small>Period end: '+esc(date(m.periodEnd))+' · '+esc(m.form||"SEC report")+'</small></div>'+(u?'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" aria-label="Verify '+esc(m.label||"financial fact")+' with the SEC">'+ico("external")+'</a>':'<span>—</span>')+'</div>';
+   return '<div class="is4-explorer__entry is4-explorer__fact"><div><span>'+esc(m.label||"Reported financial measure")+'</span><strong>'+esc(cash(m.value))+'</strong><small>'+esc(periodText(m,date))+' · '+esc(m.form||"SEC report")+'</small></div>'+(u?'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" aria-label="Verify '+esc(m.label||"financial fact")+' with the SEC">'+ico("external")+'</a>':'<span>—</span>')+'</div>';
  }).join(""):'<p class="is4-explorer__empty">SEC XBRL facts are not available for this company right now. Company filings may still be accessible.</p>';
  const hasWarnings=Array.isArray(data?.warnings)&&data.warnings.length>0;
  setStatus(hasWarnings?"Research loaded · some data unavailable":"SEC evidence loaded","loaded");

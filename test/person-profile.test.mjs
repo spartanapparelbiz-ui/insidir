@@ -217,7 +217,7 @@ test("SQL: parameterised, scoped by owner CIK on parsed filings, filings probed 
   }
   // Joint lines: owner_cik NULL on a filing that lists the person in sec_filing_owners.
   assert.match(flat(SQL.joint.companies), /UNION ALL SELECT [a-z_.,]+ FROM sec_transactions t WHERE t\.owner_cik IS NULL AND t\.accession IN \(SELECT o\.accession FROM sec_filing_owners o WHERE o\.owner_cik=ANY\(\$1::text\[\]\)\)/);
-  assert.match(flat(TRANSACTIONS_SQL), /LIMIT \$2\) SELECT t\.\*,n\.issuer_name,n\.published_at,n\.is_amendment,\(a\.amended_at IS NOT NULL AND \(n\.published_at IS NULL OR a\.amended_at>n\.published_at\)\) AS superseded FROM newest n JOIN sec_transactions t ON t\.id=n\.id/);
+  assert.match(flat(TRANSACTIONS_SQL), /LIMIT \$2\) SELECT t\.\*,n\.issuer_name,n\.published_at,n\.is_amendment,n\.rule_10b5_1,\(a\.amended_at IS NOT NULL AND \(n\.published_at IS NULL OR a\.amended_at>n\.published_at\)\) AS superseded FROM newest n JOIN sec_transactions t ON t\.id=n\.id/);
   assert.match(flat(TRANSACTIONS_SQL), /ORDER BY n\.transaction_date DESC NULLS LAST,n\.published_at DESC NULLS LAST,n\.id DESC$/);
   assert.match(flat(FILINGS_SQL), /ORDER BY f\.published_at DESC NULLS LAST,f\.accession DESC LIMIT 100$/);
   assert.match(flat(NAMES_SQL), /GROUP BY t\.owner_cik,t\.owner_name ORDER BY last_published_at DESC NULLS LAST/);
@@ -642,7 +642,7 @@ test("on PostgreSQL: an original Form 4 line and the identical 4/A line count on
   const query = (sql, params = []) => pool.query(sql, params);
   try {
     await query(`CREATE SCHEMA ${schema}`);
-    await query(await readFile(new URL("../sql/001_initial.sql", import.meta.url), "utf8"));
+    for (const f of ["001_initial.sql", "019_form4_detail.sql"]) await query(await readFile(new URL("../sql/" + f, import.meta.url), "utf8"));
     const day = n => new Date(Date.now() - n * 86400000).toISOString();
     const filing = (acc, issuer, days, form) => query(`INSERT INTO sec_filings(accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,is_amendment,source_url,ingest_status)
       VALUES($1,'1111111',$2,'Example Corp','EXMP','4',$3,$4,$5,$6,'parsed')`, [acc, issuer, form, day(days), form === "4/A", "https://www.sec.gov/Archives/edgar/data/1111111/" + acc + "/"]);

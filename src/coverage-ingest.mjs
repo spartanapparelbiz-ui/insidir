@@ -13,7 +13,7 @@
  * Coverage universe: SEC Form 4 and 4/A statements of changes in beneficial ownership filed on EDGAR within the
  * window (INSIDIR_COVERAGE_DAYS calendar days, default 90). Forms 3 and 5, older filings and paper filings are
  * outside it, and every report says so. */
-import { secFetch, loadOwnership, secBacklogMs } from "./sec.mjs";
+import { secFetch, loadOwnership, secBacklogMs, PARSER_VERSION } from "./sec.mjs";
 import { query as queryDb, persistFiling } from "./db.mjs";
 
 export const COVERED_FORMS = ["4", "4/A"];
@@ -117,7 +117,19 @@ export async function syncDailyIndexes({ run = queryDb, fetcher = secFetch, days
 /* Accessions the live feed imported are marked done in the queue too, so reconciliation sees them. */
 export async function markImported(run = queryDb) {
   return (await run(`UPDATE sec_ingest_queue q SET status='done',done_at=COALESCE(q.done_at,now()),last_error=NULL,updated_at=now()
-    FROM sec_filings f WHERE f.accession=q.accession AND f.ingest_status='parsed' AND q.status<>'done'`)).rowCount || 0;
+    FROM sec_filings f WHERE f.accession=q.accession AND f.ingest_status='parsed' AND f.parser_version>=$1 AND q.status<>'done'`, [PARSER_VERSION])).rowCount || 0;
+}
+/* Filings read by an older parser (before PARSER_VERSION) go back into the queue, newest first and a bounded number
+ * per run, so the fields that version added are read from EDGAR for them too. Idempotent. */
+export async function queueReparse({ run = queryDb, limit = 3000 } = {}) {
+  const r = await run(`INSERT INTO sec_ingest_queue(accession,filer_cik,form_type,filed_date,source,status)
+    SELECT f.accession,f.filer_cik,f.form_type,(f.published_at AT TIME ZONE 'America/New_York')::date,'reparse','pending' FROM sec_filings f
+    WHERE f.ingest_status='parsed' AND COALESCE(f.parser_version,0)<$1 AND f.accession ~ '^[0-9]{18}$'
+      AND NOT EXISTS (SELECT 1 FROM sec_ingest_queue q WHERE q.accession=f.accession AND q.status IN ('pending','retry','running','failed'))
+    ORDER BY f.published_at DESC NULLS LAST LIMIT $2
+    ON CONFLICT (accession) DO UPDATE SET status='pending',next_attempt_at=now(),attempts=0,last_error=NULL,updated_at=now()
+      WHERE sec_ingest_queue.status='done'`, [PARSER_VERSION, limit]);
+  return r.rowCount || 0;
 }
 
 export function filingFromQueue(row) {
@@ -274,6 +286,8 @@ export async function qualityChecks({ run = queryDb, now = new Date() } = {}) {
       WHERE e.kind='person' AND n.name_kind IN ('name','filed') GROUP BY n.norm HAVING count(DISTINCT n.cik)>1`],
     ["unparsed_filings", "Filings that failed to parse (stored with their error)", `SELECT accession AS example FROM sec_filings WHERE ingest_status='error'`],
     ["queue_failed", "Queued accessions that failed every attempt", `SELECT accession AS example FROM sec_ingest_queue WHERE status='failed'`],
+    ["validation_flagged", "Filings that failed validation (kept, shown with their issues, never alerted)", `SELECT accession||': '||COALESCE((SELECT string_agg(i->>'code',',') FROM jsonb_array_elements(validation_issues) i WHERE i->>'severity'='error'),'') AS example FROM sec_filings WHERE validation_status='flagged'`],
+    ["older_parser", "Filings read by an older parser version, waiting to be re-read", `SELECT accession AS example FROM sec_filings WHERE ingest_status='parsed' AND COALESCE(parser_version,0)<${PARSER_VERSION}`],
     ["queue_overdue", "Queued accessions waiting more than a day", `SELECT accession AS example FROM sec_ingest_queue WHERE status IN ('pending','retry') AND created_at<now()-interval '1 day'`],
     ["holdings_negative", "13F holding with a negative value or share count", `SELECT accession||':'||row_no AS example FROM form13f_holdings WHERE value_usd<0 OR shares_or_principal<0`]
   ];

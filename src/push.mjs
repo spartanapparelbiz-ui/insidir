@@ -40,11 +40,11 @@ export const MATCH_SQL=[
  "SELECT DISTINCT ON (x.subscription_id,x.accession) x.* FROM (",
  "SELECT s.id AS subscription_id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN watchlist w ON w.user_id=s.user_id JOIN sec_filings f ON f.ticker=w.ticker",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND "+IMMEDIATE,
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+IMMEDIATE,
  "UNION ALL SELECT s.id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN followed_people p ON p.user_id=s.user_id JOIN sec_filing_owners o ON LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0')",
  "JOIN sec_filings f ON f.accession=o.accession",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND "+IMMEDIATE,
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+IMMEDIATE,
  ") x ORDER BY x.subscription_id,x.accession LIMIT 400"
 ].join(" ");
 export const PUBLIC_EVENT_MATCH_SQL=[

@@ -209,10 +209,11 @@
       '<h4>'+esc(item.title)+'</h4><p>'+esc(item.explanation)+'</p>'+
       sourceLink(item.sourceUrl,"Verify at SEC")+'</div></article>').join("");
   }
+  const periodText=(f,fmt)=>{const end=fmt(f.periodEnd),n=Number(f.durationDays);return f.periodType==="instant"?"As of "+end:f.periodType==="quarter"?"3 months ended "+end:f.periodType==="fiscal-year"?"Fiscal year ended "+end:f.periodType==="year-to-date"&&n?Math.round(n/30.4)+" months (year to date) ended "+end:(f.start?fmt(f.start)+" – ":"")+end;};
   function renderIntelFacts(facts) {
     byId("intel-facts").innerHTML = facts.length ? facts.map(f=>
       '<div class="intel-fact"><span>'+esc(f.label)+'</span><strong>'+esc(usd(f.value))+
-      '</strong><small>Period '+esc(f.start?displayDate(f.start)+" – ":"")+esc(displayDate(f.periodEnd))+
+      '</strong><small>'+esc(periodText(f,displayDate))+
       ' · '+esc(f.form)+' · filed '+esc(displayDate(f.filedAt))+'</small>'+
       '<small>'+sourceLink(f.sourceUrl,"Source filing")+'</small></div>').join("") :
       '<p class="research-empty">No comparable XBRL facts were available from the SEC for this company.</p>';

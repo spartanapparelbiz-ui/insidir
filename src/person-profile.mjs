@@ -179,7 +179,7 @@ const linesCte = (joint, columns) => {
     ? `\n  UNION ALL SELECT ${pick} FROM sec_transactions t WHERE t.owner_cik IS NULL\n  AND t.accession IN (SELECT o.accession FROM sec_filing_owners o WHERE o.owner_cik=ANY($1::text[])))`
     : ")");
 };
-const FILES_CTE = `files AS MATERIALIZED (SELECT f.accession,f.form_type,f.ticker,f.issuer_cik,f.issuer_name,f.published_at,f.is_amendment,f.source_url,f.xml_url
+const FILES_CTE = `files AS MATERIALIZED (SELECT f.accession,f.form_type,f.ticker,f.issuer_cik,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1,f.source_url,f.xml_url
   FROM sec_filings f WHERE f.accession IN (SELECT DISTINCT l.accession FROM lines l) AND f.ingest_status='parsed')`;
 // The dashboard's derive() key: issuer (padded or not), trade date, code, acquired/disposed, derivative, shares.
 export const SAME_LINE = "LTRIM(t.issuer_cik,'0')||'|'||COALESCE(t.transaction_date::text,'')||'|'||COALESCE(t.transaction_code,'')||'|'||COALESCE(t.acquired_disposed,'')||'|'||t.derivative::text||'|'||COALESCE(t.shares::text,'')";
@@ -270,9 +270,9 @@ SELECT t.owner_cik,t.owner_name,MAX(f.published_at) AS last_published_at,MAX(t.t
   // chosen from the CTE (top-N), then read whole by primary key.
   const transactions = `${base(["id", "accession", ...KEY_COLUMNS])},
 ${AMENDED_CTE},
-newest AS (SELECT t.id,${SAME_LINE} AS same,f.issuer_name,f.published_at,f.is_amendment,t.transaction_date FROM lines t JOIN files f ON f.accession=t.accession
+newest AS (SELECT t.id,${SAME_LINE} AS same,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1,t.transaction_date FROM lines t JOIN files f ON f.accession=t.accession
   ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC NULLS LAST,t.id DESC LIMIT $2)
-SELECT t.*,n.issuer_name,n.published_at,n.is_amendment,${SUPERSEDED("a.amended_at", "n.published_at")} AS superseded
+SELECT t.*,n.issuer_name,n.published_at,n.is_amendment,n.rule_10b5_1,${SUPERSEDED("a.amended_at", "n.published_at")} AS superseded
   FROM newest n JOIN sec_transactions t ON t.id=n.id LEFT JOIN amended a ON a.same=n.same
   ORDER BY n.transaction_date DESC NULLS LAST,n.published_at DESC NULLS LAST,n.id DESC`;
   const filings = `${base(["accession"])}
