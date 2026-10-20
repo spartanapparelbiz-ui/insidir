@@ -71,16 +71,16 @@
   .sx-dot{width:34px;height:34px}.sx-dot--head{width:44px;height:44px}
 }
 
-/* ---------- the off-white section: paper and ink reversed, for contrast ---------- */
-.sx-paper{background:var(--c-ink);color:var(--c-bg);padding-bottom:clamp(56px,7vw,104px)}
+/* ---------- the data-sources section: on the page's black like every other section, set off by a rule ---------- */
+.sx-paper{background:var(--c-bg);color:var(--c-ink);padding-bottom:clamp(56px,7vw,104px)}
 @layer insidir-v13{
-  html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper{background:var(--hf-ink)!important;color:var(--hf-bg)!important;padding-bottom:clamp(56px,7vw,104px)!important;margin-top:var(--lp-sec)!important}
+  html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper{background:var(--hf-bg)!important;color:var(--hf-ink)!important;padding-bottom:clamp(56px,7vw,104px)!important;margin-top:var(--lp-sec)!important;border-top:1px solid var(--hf-line)!important}
   html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper::before{display:none!important}
   html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper>.v9-width::after,html body.v13.v12-home.v9-site.v6-site .lp-section.sx-paper>.v9-width::before{display:none!important}
-  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(h2,th,td,p,a,span,caption){color:var(--hf-bg)!important}
-  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(.sx-eyebrow,.sx-note,td:last-child){color:var(--hf-on-ink-muted)!important}
-  html body.v13.v12-home.v9-site.v6-site .sx-paper h2 span{color:var(--hf-on-ink-muted)!important}
-  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(th,td){border-color:rgba(12,12,11,.14)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(h2,th,td,p,a,span,caption){color:var(--hf-ink)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(.sx-eyebrow,.sx-note,td:last-child){color:var(--hf-muted)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper h2 span{color:var(--hf-soft)!important}
+  html body.v13.v12-home.v9-site.v6-site .sx-paper :is(th,td){border-color:var(--hf-line)!important}
 }
 
 /* ---------- 2. the intelligence system ---------- */
