@@ -13,7 +13,7 @@
  * Coverage universe: SEC Form 4 and 4/A statements of changes in beneficial ownership filed on EDGAR within the
  * window (INSIDIR_COVERAGE_DAYS calendar days, default 90). Forms 3 and 5, older filings and paper filings are
  * outside it, and every report says so. */
-import { secFetch, loadOwnership, secBacklogMs } from "./sec.mjs";
+import { secFetch, loadOwnership, secBacklogMs, PARSER_VERSION } from "./sec.mjs";
 import { query as queryDb, persistFiling } from "./db.mjs";
 
 export const COVERED_FORMS = ["4", "4/A"];
@@ -117,7 +117,19 @@ export async function syncDailyIndexes({ run = queryDb, fetcher = secFetch, days
 /* Accessions the live feed imported are marked done in the queue too, so reconciliation sees them. */
 export async function markImported(run = queryDb) {
   return (await run(`UPDATE sec_ingest_queue q SET status='done',done_at=COALESCE(q.done_at,now()),last_error=NULL,updated_at=now()
-    FROM sec_filings f WHERE f.accession=q.accession AND f.ingest_status='parsed' AND q.status<>'done'`)).rowCount || 0;
+    FROM sec_filings f WHERE f.accession=q.accession AND f.ingest_status='parsed' AND f.parser_version>=$1 AND q.status<>'done'`, [PARSER_VERSION])).rowCount || 0;
+}
+/* Filings read by an older parser (before PARSER_VERSION) go back into the queue, newest first and a bounded number
+ * per run, so the fields that version added are read from EDGAR for them too. Idempotent. */
+export async function queueReparse({ run = queryDb, limit = 3000 } = {}) {
+  const r = await run(`INSERT INTO sec_ingest_queue(accession,filer_cik,form_type,filed_date,source,status)
+    SELECT f.accession,f.filer_cik,f.form_type,(f.published_at AT TIME ZONE 'America/New_York')::date,'reparse','pending' FROM sec_filings f
+    WHERE f.ingest_status='parsed' AND COALESCE(f.parser_version,0)<$1 AND f.accession ~ '^[0-9]{18}$'
+      AND NOT EXISTS (SELECT 1 FROM sec_ingest_queue q WHERE q.accession=f.accession AND q.status IN ('pending','retry','running','failed'))
+    ORDER BY f.published_at DESC NULLS LAST LIMIT $2
+    ON CONFLICT (accession) DO UPDATE SET status='pending',next_attempt_at=now(),attempts=0,last_error=NULL,updated_at=now()
+      WHERE sec_ingest_queue.status='done'`, [PARSER_VERSION, limit]);
+  return r.rowCount || 0;
 }
 
 export function filingFromQueue(row) {
@@ -180,7 +192,10 @@ const n = v => Number(v) || 0;
 /* Every number is a COUNT over stored rows at the moment of the call. */
 export async function coverageReport({ run = queryDb, days = coverageDays(), now = new Date() } = {}) {
   const want = windowDays(days, now);
-  const [ent, names, filings, queue, idx, runs, oldest, perDay] = await Promise.all([
+  // Why imports fail, grouped: the stored error text with numbers, accessions and URLs collapsed (SEC errors only).
+  const reasonSql = col => `SELECT left(regexp_replace(regexp_replace(COALESCE(${col},'unknown'),'https?://\\S+','<url>','g'),'[0-9]+','#','g'),90) AS reason,count(*)::int AS n`;
+  const COVERAGE_JOBS = ["company-directory", "daily-index", "ingest-queue", "entity-profiles", "filing-participants", "sec-ingest", "filing-retry"];
+  const [ent, names, filings, queue, idx, runs, oldest, perDay, failReasons, queueReasons, beats] = await Promise.all([
     run(`SELECT count(*)::int AS entities,
         count(*) FILTER (WHERE kind='company')::int AS companies, count(*) FILTER (WHERE kind='company' AND listed)::int AS listed,
         count(*) FILTER (WHERE kind='company' AND NOT listed)::int AS unlisted_companies,
@@ -209,7 +224,11 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
     run(`SELECT d.day,d.form4_count,count(q.accession) FILTER (WHERE q.status='done')::int AS done,
         count(q.accession) FILTER (WHERE q.status='failed')::int AS failed, count(q.accession) FILTER (WHERE q.status IN ('pending','retry','running'))::int AS waiting
       FROM sec_index_days d LEFT JOIN sec_ingest_queue q ON q.index_day=d.day
-      WHERE d.status='complete' AND d.day=ANY($1::date[]) GROUP BY d.day,d.form4_count ORDER BY d.day DESC LIMIT 120`, [want])
+      WHERE d.status='complete' AND d.day=ANY($1::date[]) GROUP BY d.day,d.form4_count ORDER BY d.day DESC LIMIT 120`, [want]),
+    run(`${reasonSql("error_message")} FROM sec_filings WHERE ingest_status='error' GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+    run(`${reasonSql("last_error")} FROM sec_ingest_queue WHERE status IN ('failed','retry') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+    // The background jobs behind these numbers, from the worker heartbeats (src/ops.mjs runWorker).
+    run(`SELECT name,last_started_at,last_ok_at,last_error_at,left(last_error,140) AS last_error,runs,failures FROM worker_heartbeats WHERE name=ANY($1::text[]) ORDER BY name`, [COVERAGE_JOBS]).catch(() => ({ rows: [] }))
   ]);
   const q = Object.fromEntries(queue.rows.map(r => [r.status, r.n]));
   const e = ent.rows[0], f = filings.rows[0], ix = idx.rows[0];
@@ -230,15 +249,17 @@ export async function coverageReport({ run = queryDb, days = coverageDays(), now
       reportingOwnersWithImportedFilings: e.owners_with_filings, unresolved: e.unresolved, resolvedFromEdgar: e.resolved_from_edgar,
       searchableNames: names.rows[0].names, formerNames: names.rows[0].former, tickers: names.rows[0].tickers },
     filings: { parsed: f.parsed, failed: f.errors, pending: f.pending, transactions: f.transactions, distinctOwnerCiks: f.distinct_owner_ciks,
-      newestPublishedAt: iso(f.newest), oldestPublishedAt: iso(f.oldest) },
-    queue: { pending: n(q.pending), retry: n(q.retry), running: n(q.running), done: n(q.done), failed: n(q.failed) },
+      newestPublishedAt: iso(f.newest), oldestPublishedAt: iso(f.oldest), failedByReason: failReasons.rows },
+    queue: { pending: n(q.pending), retry: n(q.retry), running: n(q.running), done: n(q.done), failed: n(q.failed), problemsByReason: queueReasons.rows },
     backfill: { windowDays: days, businessDays: want.length, indexDaysRead: n(ix.complete), indexDaysMissing: n(ix.no_index), indexDayErrors: n(ix.errors),
       earliestDay: ix.earliest ? dayKey(new Date(ix.earliest)) : null, latestDay: ix.latest ? dayKey(new Date(ix.latest)) : null,
       listedByEdgar: listedInIndex, imported: importedFromIndex, percentImported: listedInIndex ? Math.round(importedFromIndex / listedInIndex * 1000) / 10 : null },
     reconciliation: perDay.rows.map(r => ({ day: dayKey(new Date(r.day)), listedByEdgar: r.form4_count, imported: r.done, failed: r.failed, waiting: r.waiting,
       missing: Math.max(0, r.form4_count - r.done - r.failed - r.waiting) })),
     lastSuccessfulSync: lastOk,
-    jobs: runs.rows.map(r => ({ job: r.job, status: r.status, startedAt: iso(r.started_at), finishedAt: iso(r.finished_at), stats: r.stats, error: r.error_message }))
+    jobs: runs.rows.map(r => ({ job: r.job, status: r.status, startedAt: iso(r.started_at), finishedAt: iso(r.finished_at), stats: r.stats, error: r.error_message })),
+    workers: beats.rows.map(w => ({ name: w.name, lastStartedAt: iso(w.last_started_at), lastOkAt: iso(w.last_ok_at), lastErrorAt: iso(w.last_error_at),
+      lastError: w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at)) ? w.last_error : null, runs: w.runs, failures: w.failures }))
   };
 }
 
@@ -274,6 +295,8 @@ export async function qualityChecks({ run = queryDb, now = new Date() } = {}) {
       WHERE e.kind='person' AND n.name_kind IN ('name','filed') GROUP BY n.norm HAVING count(DISTINCT n.cik)>1`],
     ["unparsed_filings", "Filings that failed to parse (stored with their error)", `SELECT accession AS example FROM sec_filings WHERE ingest_status='error'`],
     ["queue_failed", "Queued accessions that failed every attempt", `SELECT accession AS example FROM sec_ingest_queue WHERE status='failed'`],
+    ["validation_flagged", "Filings that failed validation (kept, shown with their issues, never alerted)", `SELECT accession||': '||COALESCE((SELECT string_agg(i->>'code',',') FROM jsonb_array_elements(validation_issues) i WHERE i->>'severity'='error'),'') AS example FROM sec_filings WHERE validation_status='flagged'`],
+    ["older_parser", "Filings read by an older parser version, waiting to be re-read", `SELECT accession AS example FROM sec_filings WHERE ingest_status='parsed' AND COALESCE(parser_version,0)<${PARSER_VERSION}`],
     ["queue_overdue", "Queued accessions waiting more than a day", `SELECT accession AS example FROM sec_ingest_queue WHERE status IN ('pending','retry') AND created_at<now()-interval '1 day'`],
     ["holdings_negative", "13F holding with a negative value or share count", `SELECT accession||':'||row_no AS example FROM form13f_holdings WHERE value_usd<0 OR shares_or_principal<0`]
   ];

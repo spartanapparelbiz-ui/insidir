@@ -24,7 +24,7 @@ const S = Object.fromEntries(Object.entries(FOLLOW_SQL.single).map(([k, v]) => [
 const J = Object.fromEntries(Object.entries(FOLLOW_SQL.joint).map(([k, v]) => [k, flat(v)]));
 // The follow set every follow query starts from: at most the 150 newest follows, each person once.
 const FOLLOW_SET = "fp AS MATERIALIZED (SELECT n.bare,LPAD(n.bare,10,'0') AS owner_cik,MIN(n.created_at) AS created_at FROM (SELECT LTRIM(owner_cik,'0') AS bare,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT 150) n WHERE n.bare<>'' GROUP BY n.bare)";
-const BY_ID_SQL = "SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession WHERE t.id=ANY($1::text[])";
+const BY_ID_SQL = "SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession WHERE t.id=ANY($1::text[])";
 const TABLE = flat(OWNERS_TABLE_SQL);
 const PRESENT = { [TABLE]: { rows: [{ present: true }], rowCount: 1 } };
 const DISCLAIMER = "Reported purchases and sales are not recommendations or predictive signals.";
@@ -159,7 +159,7 @@ test("SQL is parameterised, scoped to the signed-in user, keyed without leading 
     assert.doesNotMatch(s.sql, /sec_filing_owners/, "no joint table without sec_filing_owners");
   }
   for (const s of [itemsA, itemsB]) {
-    assert.ok(s.sql.startsWith("WITH " + FOLLOW_SET + " SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM (SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik IN (fp.bare,fp.owner_cik)) t JOIN sec_filings f ON f.accession=t.accession"));
+    assert.ok(s.sql.startsWith("WITH " + FOLLOW_SET + " SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM (SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik IN (fp.bare,fp.owner_cik)) t JOIN sec_filings f ON f.accession=t.accession"));
     assert.match(s.sql, /WHERE f\.ingest_status='parsed' ORDER BY f\.published_at DESC NULLS LAST,t\.transaction_date DESC NULLS LAST,t\.id DESC LIMIT \$2$/);
   }
   assert.deepEqual(peopleA.params, [USERS.paid.id]);
@@ -427,7 +427,7 @@ test("on PostgreSQL: canonical follows, joint filers, and a restated line counte
   const sql = file => readFile(new URL("../sql/" + file, import.meta.url), "utf8");
   try {
     await query(`CREATE SCHEMA ${schema}`);
-    for (const file of ["001_initial.sql", "006_followed_people.sql", "008_filing_owners.sql", "018_coverage.sql"]) await query(await sql(file));
+    for (const file of ["001_initial.sql", "006_followed_people.sql", "008_filing_owners.sql", "018_coverage.sql", "019_form4_detail.sql"]) await query(await sql(file));
     const day = n => new Date(Date.now() - n * 86400000).toISOString();
     const filing = (acc, days, form, owners) => query(`INSERT INTO sec_filings(accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,is_amendment,source_url,owner_names,ingest_status)
       VALUES($1,'1111111','0000099999','Example Corp','EXMP','4',$2,$3,$4,$5,$6,'parsed')`, [acc, form, day(days), form === "4/A", "https://www.sec.gov/Archives/edgar/data/1111111/" + acc + "/", owners]);

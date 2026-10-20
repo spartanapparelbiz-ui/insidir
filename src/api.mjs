@@ -177,7 +177,7 @@ SELECT fp.owner_cik,fp.created_at AS followed_at,${FOLLOW_COUNT} AS following,
     UNION ALL SELECT t.* FROM sec_transactions t WHERE t.owner_cik IS NULL AND t.accession IN (SELECT o.accession FROM fp JOIN sec_filing_owners o ON o.owner_cik ${SAME_PERSON})`
     :`SELECT t.* FROM fp JOIN sec_transactions t ON t.owner_cik ${SAME_PERSON}`;
   const items=`WITH ${FOLLOW_SET}
-SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
+SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1
   FROM (${lines}) t JOIN sec_filings f ON f.accession=t.accession
   WHERE f.ingest_status='parsed'
   ORDER BY f.published_at DESC NULLS LAST,t.transaction_date DESC NULLS LAST,t.id DESC
@@ -208,7 +208,7 @@ export const FOLLOW_INSERT_SQL=`WITH existing AS (SELECT owner_cik FROM followed
     ON CONFLICT(user_id,owner_cik) DO UPDATE SET created_at=followed_people.created_at RETURNING owner_cik)
 SELECT owner_cik FROM existing UNION ALL SELECT owner_cik FROM inserted`;
 export const FOLLOW_DELETE_SQL="DELETE FROM followed_people WHERE user_id=$1 AND LTRIM(owner_cik,'0')=LTRIM($2,'0')";
-const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment
+const TRANSACTIONS_BY_ID_SQL=`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1
   FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
   WHERE t.id=ANY($1::text[])`;
 /* The owners of joint lines: JOINT_OWNERS_SQL / withJointOwners live in person-profile.mjs (one helper
@@ -420,7 +420,7 @@ async function route(req,res,ctx){
     const category=u.searchParams.get("category")||null;
     if(category && !["reported_purchase","reported_sale","other"].includes(category))throw failure(400,"Invalid category");
     const rows=await ctx.market("transactions:"+JSON.stringify([t,category,limit,offset]),30_000,async()=>{
-      const r=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment FROM sec_transactions t
+      const r=await query(`SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM sec_transactions t
       JOIN sec_filings f ON f.accession=t.accession
       WHERE f.ingest_status='parsed' AND ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);

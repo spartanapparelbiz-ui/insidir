@@ -120,7 +120,7 @@ test("on PostgreSQL: a joint-only filer is in /v1/insiders, and joint lines carr
   const file = f => readFile(new URL("../sql/" + f, import.meta.url), "utf8");
   try {
     await query(`CREATE SCHEMA ${schema}`);
-    for (const f of ["001_initial.sql", "002_billing.sql", "005_manual_holdings.sql", "006_followed_people.sql", "008_filing_owners.sql"]) await query(await file(f));
+    for (const f of ["001_initial.sql", "002_billing.sql", "005_manual_holdings.sql", "006_followed_people.sql", "008_filing_owners.sql", "019_form4_detail.sql"]) await query(await file(f));
     const day = n => new Date(Date.now() - n * 86400000).toISOString();
     const filing = (acc, days, owners) => query(`INSERT INTO sec_filings(accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,is_amendment,source_url,owner_names,ingest_status)
       VALUES($1,'1111111','0000099999','Example Corp','EXMP','4','4',$2,false,'https://www.sec.gov/x',$3,'parsed')`, [acc, day(days), owners]);

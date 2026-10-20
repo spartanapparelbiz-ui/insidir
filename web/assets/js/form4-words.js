@@ -222,7 +222,10 @@ function valueText(x){
 const qualifiers=x=>[code(x)==="V"?["reported early","Reported early, voluntarily"]:null,
  x?.is_amendment?["amended filing (4/A)","An amended filing (Form 4/A) restating an earlier one"]:null,
  x?.superseded===true?["restated by a later 4/A, not counted","A later Form 4/A repeats this line; totals count it once, from the latest filing"]:null,
- ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null].filter(Boolean);
+ ownership(x)==="Indirect"?["held indirectly","Held indirectly (by a trust or family member, for example)"]:null,
+ // As the filer marked them on the form: a Rule 10b5-1 trading plan (filings since April 2023), a late report.
+ x?.rule_10b5_1===true?["10b5-1 plan","The filer marked this filing as made under a Rule 10b5-1 trading plan, set up in advance"]:null,
+ x?.timeliness==="L"?["marked late","The filer marked this transaction as reported late"]:null].filter(Boolean);
 
 /* ---------- amendments ---------- */
 const plainCik=x=>{const s=String(x??"").trim();return /^\d{1,12}$/.test(s)?s.replace(/^0+(?=\d)/,""):"";};

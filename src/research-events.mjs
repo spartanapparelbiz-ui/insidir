@@ -63,8 +63,10 @@ const bare = cik => String(cik ?? "").replace(/^0+/, "");
 const dayDiff = (a, b) => Math.round((Date.parse(isoDate(a)) - Date.parse(isoDate(b))) / 86400000);
 
 /* ---------- Form 4 events ---------- */
-const FILINGS_AFTER = `SELECT accession,issuer_cik,issuer_name,ticker,published_at,retrieved_at,is_amendment,period_of_report,source_url,xml_url,form_type,owner_names
+const FILINGS_AFTER = `SELECT accession,issuer_cik,issuer_name,ticker,published_at,retrieved_at,is_amendment,period_of_report,source_url,xml_url,form_type,owner_names,validation_status
   FROM sec_filings WHERE ingest_status='parsed' AND (retrieved_at,accession)>($1::timestamptz,$2::text) ORDER BY retrieved_at,accession LIMIT $3`;
+// A filing that failed validation (sec_filings.validation_status='flagged') becomes no event, so it can never be an alert.
+const flagged = f => f.validation_status === "flagged";
 const LINES_OF = `SELECT accession,id,owner_cik,owner_name,transaction_date,security_title,transaction_code,acquired_disposed,category,derivative,shares,price_per_share,estimated_value,direct_ownership
   FROM sec_transactions WHERE accession=ANY($1::text[]) ORDER BY accession,id`;
 const OWNERS_OF = `SELECT accession,owner_cik,owner_name,is_director,is_officer,officer_title,is_ten_percent_owner,other_text
@@ -170,6 +172,7 @@ export async function buildForm4Events({ query, limit = 400 }) {
   const count = r => { if (r.inserted) out.created++; else out.updated++; };
 
   for (const f of filings) {
+    if (flagged(f)) { out.flagged = (out.flagged || 0) + 1; continue; }
     const own = byFiling.get(f.accession) || [];
     const owners = ownersFor(f, own, ownerRows);
     let tradeLines = own.filter(isTrade), amends = null, amendedSet = null;
