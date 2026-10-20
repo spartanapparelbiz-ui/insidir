@@ -22,7 +22,8 @@
 .ip-muted{color:var(--c-muted);font-size:var(--fs-small)}
 .ip-host{margin-top:var(--s-4)}
 .ip-bar{display:flex;flex-wrap:wrap;gap:var(--s-3) var(--s-5);align-items:center;justify-content:space-between;margin-bottom:var(--s-4)}
-.ip-filters,.ip-tools{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
+.ip-filters,.ip-tools{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center;min-width:0;max-width:100%}
+.ip-bar,.ip-section,.ip-host,.ip-list,.ip-graph,.ip-table{min-width:0;max-width:100%}
 .ip-chip,.ip-btn{font:inherit;font-size:12.5px;min-height:36px;padding:0 var(--s-3);border-radius:var(--r-pill);border:1px solid var(--c-line-2);background:transparent;color:var(--c-soft);cursor:pointer;
   transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
 .ip-chip b{font-weight:600;color:var(--c-ink);margin-left:4px}
@@ -32,7 +33,7 @@
 .ip-chip[aria-pressed="true"]:hover,.ip-btn[aria-pressed="true"]:hover{color:var(--c-bg)}
 .ip-btn:disabled{opacity:.55;cursor:default}
 .ip-btn:focus-visible,.ip-chip:focus-visible,.ip-node:focus-visible{outline:2px solid var(--c-ink);outline-offset:2px}
-.ip-field{display:inline-flex;align-items:center;gap:var(--s-2);font-size:12.5px;color:var(--c-muted)}
+.ip-field{display:inline-flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);font-size:12.5px;color:var(--c-muted);max-width:100%}
 .ip-field select,.ip-field input{font:inherit;font-size:12.5px;min-height:36px;padding:0 var(--s-2);border-radius:var(--r-xs);border:1px solid var(--c-line-2);background:var(--c-surface);color:var(--c-ink);color-scheme:dark}
 .ip-seg{display:inline-flex;gap:4px}
 .ip-gaps{margin:var(--s-5) 0 0;padding-left:18px;color:var(--c-muted);font-size:var(--fs-small);line-height:var(--lh-body)}
