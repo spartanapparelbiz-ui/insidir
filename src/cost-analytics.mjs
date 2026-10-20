@@ -154,7 +154,7 @@ export async function costReport({ run = queryDb, env = process.env, stripe = nu
       last30: { requests: n(t.d30_requests), ok: n(t.d30_ok), inputTokens: n(t.d30_input), outputTokens: n(t.d30_output), measuredUsd: aiMeasured30, estimatedUsd: aiEstimated30,
         customersUsingAi: n(t.d30_users), requestsPerActiveCustomer: n(t.d30_users) ? n(t.d30_requests) / n(t.d30_users) : null,
         averageMeasuredCostPerExplanation: n(t.d30_ok) && aiMeasured30 ? aiMeasured30 / n(t.d30_ok) : null,
-        measuredCostPerPayingSubscriber: paying ? aiMeasured30 / paying : null, targetPerSubscriberUsd: 0.05 },
+        measuredCostPerPayingSubscriber: paying ? aiMeasured30 / paying : null, targetPerSubscriberUsd: L.userMonthlyBudgetUsd },
       topCustomerRequests: perUser.map(r => r.requests),
       byFeature, byModel, daily: daily.map(d => ({ ...d, day: d.day instanceof Date ? d.day.toISOString().slice(0, 10) : d.day }))
     },

@@ -14,7 +14,7 @@
 import { query as queryDb } from "./db.mjs";
 import { screenQuestion, reviewGeneratedText } from "./compliance-guard.mjs";
 import { tickerIndex, resolveCompany, extractFilings } from "./intelligence.mjs";
-import { cachedGeneration, sanitizeEvidence, sha256, SYSTEM_RULES, aiConfigured } from "./ai-gateway.mjs";
+import { cachedGeneration, sanitizeEvidence, sha256, SYSTEM_RULES, aiConfigured, affordableTier } from "./ai-gateway.mjs";
 import { intelligenceBriefing } from "./intelligence-briefing.mjs";
 import { iso, day, num, cikForms, bareCik, displayName, companyName, roleOf, money, count, codeLabel, eightKLabel, secSource, summarizeLines } from "./intelligence-common.mjs";
 
@@ -574,7 +574,8 @@ export async function synthesize(userId, question, { run = queryDb, context = nu
   if (answer.status !== "answered" || !answer.citations.length) return { status: "not_applicable", reason: "There is no cited evidence to summarise.", answer: null };
   if (!aiConfigured(env)) return { status: "unavailable", reason: "AI summaries are not configured on this deployment." };
   const evidence = evidencePack(answer);
-  const tier = synthesisTier(answer);
+  // The deep model is an escalation for multi-company or many-source questions, granted only while spend is low.
+  const tier = await affordableTier(synthesisTier(answer), userId, { run, env });
   const result = await cachedGeneration({ sourceType: "investigation", sourceId: sha256(JSON.stringify(answer.plan)), content: evidence, explanationType: "investigation_synthesis",
     promptVersion: SYNTHESIS_PROMPT_VERSION, tier, maxTokens: tier === "deep" ? 420 : 300, userId, feature: "investigation_synthesis", run, env, ...(generate ? { generate } : {}),
     build: () => [{ role: "system", content: SYSTEM_RULES + " Write 2-4 short paragraphs answering the question. After every sentence that states a fact, cite its sources as [n] using only the source numbers given. Do not repeat the limitations verbatim; mention the most important one in one sentence." },

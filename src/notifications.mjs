@@ -45,13 +45,29 @@ export function verifyUnsubscribeToken(token, env = process.env) {
 
 /* ---------- fan-out ---------- */
 const PREFS_ALLOW = `COALESCE((SELECT p.in_app AND $2=ANY(p.event_types) FROM notification_preferences p WHERE p.user_id=x.user_id),TRUE)`;
-const MATCH = `INSERT INTO notifications(user_id,event_id,reason)
-  SELECT x.user_id,$1,x.reason FROM (
-    SELECT DISTINCT ON (user_id) user_id,reason FROM (
-      SELECT w.user_id,'watchlist' AS reason,w.created_at FROM watchlist w WHERE w.ticker=$3 AND $3 IS NOT NULL
-      UNION ALL
-      SELECT f.user_id,'followed_person',f.created_at FROM sec_event_people rp JOIN followed_people f ON LTRIM(f.owner_cik,'0')=LTRIM(rp.owner_cik,'0') WHERE rp.event_id=$1
-    ) m WHERE m.created_at<=$4::timestamptz+interval '1 day' ORDER BY user_id,reason DESC) x
+/* Autopilot (sql/021_autopilot.sql): each follow has an alert mode and can be paused. "Important" is a fixed rule
+   on the event as filed, so it is the same for every member and never decided by a model. */
+export const IMPORTANT_SALE_USD = 1_000_000;
+export function isImportant(event) {
+  const t = event?.event_type;
+  if (t === "insider_purchase" || t === "multi_insider_purchase" || t === "company_disclosure") return true;
+  return t === "insider_sale" && Number(event?.facts?.totalValue) >= IMPORTANT_SALE_USD;
+}
+/* When a batched alert becomes visible: the next 13:00 UTC (daily) or the next Monday 13:00 UTC (weekly). */
+const AVAILABLE_AT = `CASE x.delivery
+    WHEN 'daily' THEN date_trunc('day',now())+interval '13 hours'+CASE WHEN now()>=date_trunc('day',now())+interval '13 hours' THEN interval '1 day' ELSE interval '0' END
+    WHEN 'weekly' THEN date_trunc('week',now())+interval '13 hours'+CASE WHEN now()>=date_trunc('week',now())+interval '13 hours' THEN interval '7 days' ELSE interval '0' END
+    ELSE now() END`;
+const MATCH = `INSERT INTO notifications(user_id,event_id,reason,delivery,available_at)
+  SELECT x.user_id,$1,x.reason,x.delivery,${AVAILABLE_AT} FROM (
+    SELECT DISTINCT ON (user_id) user_id,reason,delivery FROM (
+      SELECT m.*,CASE WHEN m.mode IN ('daily','weekly') THEN m.mode ELSE 'immediate' END AS delivery FROM (
+        SELECT w.user_id,'watchlist' AS reason,w.created_at,w.alert_mode AS mode FROM watchlist w WHERE w.ticker=$3 AND $3 IS NOT NULL AND w.paused_at IS NULL
+        UNION ALL
+        SELECT f.user_id,'followed_person',f.created_at,f.alert_mode FROM sec_event_people rp JOIN followed_people f ON LTRIM(f.owner_cik,'0')=LTRIM(rp.owner_cik,'0')
+          WHERE rp.event_id=$1 AND f.paused_at IS NULL
+      ) m WHERE m.created_at<=$4::timestamptz+interval '1 day' AND m.mode<>'off' AND (m.mode<>'important' OR $5::boolean)
+    ) d ORDER BY user_id,(delivery='immediate') DESC,(delivery='daily') DESC,reason DESC) x
   WHERE ${PREFS_ALLOW}
   ON CONFLICT (user_id,event_id) DO NOTHING`;
 
@@ -70,7 +86,7 @@ export async function fanOut({ query, limit = 500, maxAgeDays = 3 }) {
   for (const e of events) {
     const stale = !e.filing_date || Date.now() - new Date(e.filing_date).getTime() > maxAgeDays * 86400000;
     if (e.status !== "active" || stale || e.facts?.baseline === true) continue;
-    created += (await query(MATCH, [e.id, e.event_type, e.ticker, e.filing_date])).rowCount || 0;
+    created += (await query(MATCH, [e.id, e.event_type, e.ticker, e.filing_date, isImportant(e)])).rowCount || 0;
   }
   if (events.length) await query("UPDATE research_cursors SET last_key=$1,position=now(),updated_at=now() WHERE name='notifications'", [String(events.at(-1).id)]);
   return { events: events.length, notifications: created };
@@ -104,7 +120,8 @@ function alertEmail(user, events, { env, digest }) {
 
 const CANDIDATES = `SELECT n.id,n.user_id,u.email,u.email_verified_at,u.subscription_status,u.current_period_end
   FROM notifications n JOIN users u ON u.id=n.user_id JOIN notification_preferences p ON p.user_id=n.user_id
-  WHERE n.emailed_at IS NULL AND p.email_alerts=$1 AND n.created_at>now()-interval '3 days' %EXTRA%
+  WHERE n.emailed_at IS NULL AND p.email_alerts=$1 AND n.available_at<=now() AND n.available_at>now()-interval '3 days'
+    AND ($1='daily' OR n.delivery='immediate') %EXTRA%
   ORDER BY n.user_id,n.id LIMIT $2 FOR UPDATE OF n SKIP LOCKED`;
 
 async function sendFor(mode, { query, connect, env, limit, extra = "", params = [] }) {
@@ -198,19 +215,19 @@ export async function unsubscribe(query, token, { env = process.env, req = null,
 
 /* ---------- reading ---------- */
 export async function listNotifications(query, userId, { limit = 50, before = null, unread = false } = {}) {
-  const rows = (await query(`SELECT n.id,n.reason,n.created_at,n.read_at,e.id AS event_id,e.event_type,e.status,e.ticker,e.issuer_name,e.owner_cik,e.owner_name,e.transaction_date,e.transaction_date_end,
+  const rows = (await query(`SELECT n.id,n.reason,n.delivery,n.created_at,n.read_at,e.id AS event_id,e.event_type,e.status,e.ticker,e.issuer_name,e.owner_cik,e.owner_name,e.transaction_date,e.transaction_date_end,
       e.filing_date,e.ingested_at,e.accessions,e.source_urls,e.facts,e.superseded_by
     FROM notifications n JOIN sec_events e ON e.id=n.event_id
-    WHERE n.user_id=$1 AND ($2::bigint IS NULL OR n.id<$2) AND (NOT $3::boolean OR n.read_at IS NULL)
+    WHERE n.user_id=$1 AND n.available_at<=now() AND ($2::bigint IS NULL OR n.id<$2) AND (NOT $3::boolean OR n.read_at IS NULL)
     ORDER BY n.id DESC LIMIT $4`, [userId, before, unread, Math.min(100, Math.max(1, limit))])).rows;
-  const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL", [userId])).rows[0].n;
-  return { items: rows.map(r => ({ id: String(r.id), reason: r.reason, createdAt: r.created_at, readAt: r.read_at, event: { id: String(r.event_id), type: r.event_type, status: r.status,
+  const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL AND available_at<=now()", [userId])).rows[0].n;
+  return { items: rows.map(r => ({ id: String(r.id), reason: r.reason, delivery: r.delivery, createdAt: r.created_at, readAt: r.read_at, event: { id: String(r.event_id), type: r.event_type, status: r.status,
     supersededBy: r.superseded_by, ticker: r.ticker, issuerName: r.issuer_name, transactionDate: r.transaction_date, transactionDateEnd: r.transaction_date_end,
     filingDate: r.filing_date, retrievedAt: r.ingested_at, accessions: r.accessions, sourceUrls: r.source_urls, summary: eventSummary({ ...r, id: r.event_id }) } })),
     unread: unreadCount, next: rows.length ? String(rows.at(-1).id) : null };
 }
 export async function markRead(query, userId, { ids = null, all = false } = {}) {
-  if (all) return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL", [userId])).rowCount };
+  if (all) return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL AND available_at<=now()", [userId])).rowCount };
   if (!Array.isArray(ids) || !ids.length || ids.length > 200 || ids.some(i => !/^\d{1,18}$/.test(String(i)))) throw fail(400, "ids must be 1-200 notification ids");
   return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND id=ANY($2::bigint[]) AND read_at IS NULL", [userId, ids.map(String)])).rowCount };
 }

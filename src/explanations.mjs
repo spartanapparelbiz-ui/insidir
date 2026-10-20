@@ -10,8 +10,11 @@
  *          (validateExplanation in compliance-guard.mjs): every citation must exist, every fact must cite evidence,
  *          every figure must appear in what it cites, and nothing may direct the reader, promise an outcome or
  *          present a motive or prediction as fact. Anything that fails is discarded and the rules version is served,
- *          with the reasons logged. Accepted answers are cached per event and evidence; every call is logged with its
- *          cost, and a daily budget and per-member allowance stop calls before they are made.
+ *          with the reasons logged. Accepted answers are cached per event, evidence and (normalised) question; every
+ *          call is logged with its cost in ai_usage_log, which the gateway's budget check reads together with its own
+ *          ledger (src/ai-gateway.mjs checkBudget): the same global daily and monthly budgets, per-member hourly,
+ *          daily and monthly limits and per-member monthly allowance stop a call here before it is made, with the
+ *          most it could cost reserved against them. There is no default model: INSIDIR_AI_MODEL names one.
  *
  * Questions from members are screened first (screenQuestion): requests for personalized advice or attempts to
  * bypass the rules are answered with a refusal and never reach a model. No member data (holdings, watchlist, notes)
@@ -20,6 +23,7 @@ import { createHash } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { validateExplanation, screenQuestion } from "./compliance-guard.mjs";
 import { eventSummary, CAVEATS } from "./research-events.mjs";
+import { checkBudget, withReservation } from "./ai-gateway.mjs";
 
 export const PROMPT_VERSION = "2026-10-19.1";
 const sha = s => createHash("sha256").update(s).digest("hex");
@@ -29,13 +33,15 @@ export function aiSettings(env = process.env) {
   const n = (v, d, lo, hi) => { const x = Number(v); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d; };
   const requested = String(env.INSIDIR_AI_EXPLANATIONS || "").trim() === "1";
   const credentials = !!String(env.ANTHROPIC_API_KEY || env.ANTHROPIC_AUTH_TOKEN || "").trim();
+  const model = String(env.INSIDIR_AI_MODEL || "").trim().slice(0, 100);
   return Object.freeze({
-    requested, enabled: requested && credentials,
-    model: String(env.INSIDIR_AI_MODEL || "claude-opus-5-5").trim(),
+    requested, enabled: requested && credentials && !!model, model,
     effort: ["low", "medium", "high"].includes(env.INSIDIR_AI_EFFORT) ? env.INSIDIR_AI_EFFORT : "medium",
-    dailyBudgetUsd: n(env.INSIDIR_AI_DAILY_BUDGET_USD, 5, 0, 1000),
     perUserDaily: Math.trunc(n(env.INSIDIR_AI_PER_USER_DAILY, 20, 0, 500)),
-    // US dollars per million tokens, for the budget (defaults: Claude Opus 5.5 list prices).
+    // Output cap per request (thinking included). A response that reaches it is discarded for the rules version.
+    maxTokens: Math.trunc(n(env.INSIDIR_AI_EVENT_MAX_TOKENS, 3000, 300, 8000)),
+    // US dollars per million tokens for the budget and the cost ledger. Conservative defaults: set them to the
+    // configured model's list prices.
     inputUsdPerMTok: n(env.INSIDIR_AI_INPUT_USD_PER_MTOK, 4, 0, 1000), outputUsdPerMTok: n(env.INSIDIR_AI_OUTPUT_USD_PER_MTOK, 20, 0, 1000),
     cacheDays: Math.trunc(n(env.INSIDIR_AI_CACHE_DAYS, 30, 1, 365))
   });
@@ -121,7 +127,7 @@ export function anthropicWriter({ settings, client = null }) {
       (question ? `Reader's question: ${question}` : "Explain this record.");
     // Refusals on the primary model are retried server-side on the fallback chain ("default").
     const response = await api.beta.messages.create({
-      model: settings.model, max_tokens: 8000, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
+      model: settings.model, max_tokens: settings.maxTokens, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
       system: SYSTEM_PROMPT, output_config: { effort: settings.effort, format: { type: "json_schema", schema: SCHEMA } },
       messages: [{ role: "user", content }]
     });
@@ -140,13 +146,17 @@ async function logUsage(query, row) {
   await query("INSERT INTO ai_usage_log(user_id,event_id,model,input_tokens,output_tokens,cost_micros,outcome,reasons) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
     [row.userId ?? null, row.eventId ?? null, row.model, row.input || 0, row.output || 0, row.cost || 0, row.outcome, JSON.stringify(row.reasons || [])]).catch(e => console.error("ai_usage_log write failed", e?.message));
 }
-// Today's spend across every instance, and this member's requests today.
-async function allowance(query, userId, s) {
-  const r = (await query(`SELECT COALESCE(SUM(cost_micros),0)::bigint AS spent, COUNT(*) FILTER (WHERE user_id=$1)::integer AS mine FROM ai_usage_log WHERE created_at>=date_trunc('day',now())`, [userId])).rows[0];
-  if (Number(r.spent) >= s.dailyBudgetUsd * 1_000_000) return "daily_budget";
-  if (r.mine >= s.perUserDaily) return "member_allowance";
+/* The shared budgets first (src/ai-gateway.mjs, both ledgers), with the most this call could cost reserved; then
+   this service's own per-member daily allowance. Returns the name of the limit reached, or null. */
+async function allowance(query, userId, s, env, reserveUsd) {
+  try { await checkBudget(userId, { run: query, env, reserveUsd }); }
+  catch (e) { if (e?.status === 429) return e.budget; throw e; }
+  const r = (await query(`SELECT COUNT(*)::integer AS mine FROM ai_usage_log WHERE created_at>=date_trunc('day',now()) AND user_id=$1 AND outcome<>'question_refused'`, [userId])).rows[0];
+  if (userId && r.mine >= s.perUserDaily) return "member_allowance";
   return null;
 }
+// The same question asked twice, in different case or spacing, is one cached answer.
+export const normalizeQuestion = q => q ? String(q).toLowerCase().replace(/[\s?.!]+/g, " ").trim() : "";
 
 function sourcesOf(event, evidence) {
   const seen = new Map();
@@ -178,13 +188,14 @@ export async function explainEvent({ query, eventId, user = null, question = nul
   const s = aiSettings(env);
   if (!s.enabled && !writer) return { ...rules, ai: s.requested ? "unavailable" : "off" };
 
-  const key = sha([event.id, sha(JSON.stringify(evidence)), s.model, PROMPT_VERSION, q || ""].join("|"));
+  const key = sha([event.id, sha(JSON.stringify(evidence)), s.model, PROMPT_VERSION, normalizeQuestion(q)].join("|"));
   const cached = (await query("SELECT explanation FROM explanation_cache WHERE cache_key=$1 AND expires_at>now()", [key])).rows[0];
   if (cached) return { ...cached.explanation, cached: true };
-  const blocked = await allowance(query, user?.id ?? null, s);
+  const reserve = (JSON.stringify(evidence).length / 3 * s.inputUsdPerMTok + s.maxTokens * s.outputUsdPerMTok) / 1e6;
+  const blocked = await allowance(query, user?.id ?? null, s, env, reserve);
   if (blocked) return { ...rules, ai: blocked };
   let result;
-  try { result = await (writer || anthropicWriter({ settings: s }))({ evidence, question: q }); }
+  try { result = await withReservation(user?.id ?? null, reserve, () => (writer || anthropicWriter({ settings: s }))({ evidence, question: q })); }
   catch (e) {
     await logUsage(query, { userId: user?.id, eventId, model: s.model, outcome: "error", reasons: [String(e?.status || e?.name || "error")] });
     return { ...rules, ai: "error" };

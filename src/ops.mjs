@@ -39,6 +39,20 @@ export async function runWorker(name, fn, { query, connect = null, log = console
   }
 }
 
+/* Spend alerts: 80% of a budget is a warning, the whole budget is a stop (new model text is refused until it resets;
+   cached explanations and every deterministic answer keep working). Refusals are reported as they happen. */
+export function spendAlerts(ai) {
+  if (!ai || ai.unavailable || ai.dailyBudgetUsd == null) return [];
+  const out = [], usd = v => "$" + Number(v).toFixed(2);
+  for (const [spent, budget, label] of [[ai.spentTodayUsd, ai.dailyBudgetUsd, "today"], [ai.spentMonthUsd, ai.monthlyBudgetUsd, "this month"]]) {
+    if (spent >= budget) out.push({ area: "ai-spend", level: "warning", detail: `AI budget for ${label} reached: ${usd(spent)} of ${usd(budget)}; new model text is refused until it resets` });
+    else if (spent >= 0.8 * budget) out.push({ area: "ai-spend", level: "warning", detail: `AI spend ${label} at ${Math.round(spent / budget * 100)}% of budget (${usd(spent)} of ${usd(budget)})` });
+  }
+  const refused = (ai.refusalsToday || []).reduce((a, r) => a + Number(r.n || 0), 0);
+  if (refused) out.push({ area: "ai-spend", level: "warning", detail: `${refused} AI request(s) refused by spending limits today (${ai.refusalsToday.map(r => r.budget + " " + r.n).join(", ")})` });
+  return out;
+}
+
 const minutesSince = d => d ? Math.round((Date.now() - new Date(d).getTime()) / 60000) : null;
 
 /* Ingestion freshness. EDGAR publishes Form 4s on business days, so a quiet weekend is not a failure: the newest
@@ -102,9 +116,15 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const [p] = await rows(query, `SELECT count(*) FILTER (WHERE email_alerts<>'off')::integer AS email_on, count(*)::integer AS total FROM notification_preferences`);
     return { ...r, preferences: p };
   });
+  // AI spend against the budgets, from both ledgers (src/ai-gateway.mjs BUDGET_SQL), and today's refusals by limit.
   const ai = await safe(async () => {
-    const outcomes = await rows(query, "SELECT outcome,count(*)::integer AS n,COALESCE(sum(cost_micros),0)::bigint AS cost_micros FROM ai_usage_log WHERE created_at>=date_trunc('day',now()) GROUP BY outcome ORDER BY outcome");
-    return { enabled: String(env.INSIDIR_AI_EXPLANATIONS || "") === "1", todayByOutcome: outcomes, spentTodayUsd: outcomes.reduce((a, r) => a + Number(r.cost_micros), 0) / 1e6 };
+    const { BUDGET_SQL, aiLimits, aiConfigured } = await import("./ai-gateway.mjs");
+    const [b] = await rows(query, BUDGET_SQL, [null]);
+    const refusals = await rows(query, "SELECT budget,n FROM ai_budget_refusals WHERE day=current_date ORDER BY n DESC");
+    const L = aiLimits(env);
+    return { configured: aiConfigured(env), eventExplanations: String(env.INSIDIR_AI_EXPLANATIONS || "") === "1", requestsToday: b?.day ?? 0,
+      spentTodayUsd: Number(b?.day_cost || 0), spentMonthUsd: Number(b?.month_cost || 0), dailyBudgetUsd: L.dailyBudgetUsd, monthlyBudgetUsd: L.monthlyBudgetUsd,
+      userMonthlyBudgetUsd: L.userMonthlyBudgetUsd, refusalsToday: refusals };
   });
   const billing = await safe(async () => {
     const [w] = await rows(query, "SELECT max(processed_at) AS last_webhook_at, count(*) FILTER (WHERE processed_at>now()-interval '24 hours')::integer AS webhooks_24h FROM stripe_events");
@@ -129,6 +149,7 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const stale = coverage.quality.find(c => c.key === "stale_filings");
     if (stale?.stale) alerts.push({ area: "coverage", level: "stale", detail: "No new Form 4 imported for more than 4 days" });
   }
+  for (const alert of spendAlerts(ai)) alerts.push(alert);
   if (ingestion?.staleness && ingestion.staleness.status !== "ok") alerts.push({ area: "ingestion", level: ingestion.staleness.status, detail: ingestion.staleness.reasons.join("; ") });
   if (researchEvents?.builder?.pending_filings > 500) alerts.push({ area: "research-events", level: "warning", detail: `${researchEvents.builder.pending_filings} parsed filings not yet turned into events` });
   if (researchEvents?.failedImports?.gave_up) alerts.push({ area: "ingestion", level: "warning", detail: `${researchEvents.failedImports.gave_up} filing(s) failed to import after 5 attempts` });

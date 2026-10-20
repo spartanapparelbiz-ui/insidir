@@ -17,7 +17,7 @@ test("the landing page shows the system: four stages, five capabilities, the pro
     const home = await (await fetch(base + "/")).text();
     const stages = [...home.matchAll(/data-stage-go="\d"><b class="sx-stage-label">(Monitor|Process|Interpret|Notify)<\/b>/g)].map(m => m[1]);
     assert.deepEqual(stages, ["Monitor", "Process", "Interpret", "Notify"], "the four stages, in order");
-    for (const cap of ["Intelligence", "Monitoring", "Investigations", "Ownership Intelligence", "Alerts"]) assert.match(home, new RegExp("<h3>" + cap + "</h3>"), cap);
+    for (const cap of ["Intelligence", "Connections", "Changes", "Autopilot", "Evidence"]) assert.match(home, new RegExp("<h3>" + cap + "</h3>"), cap);
     assert.match(home, /data-system/);
     assert.match(home, /Illustrative sequence built from real SEC filings/, "the system figure says what it is");
     for (const src of ["SEC EDGAR", "Form 4", "Form 13F"]) assert.match(home, new RegExp('<th scope="row">' + src + "</th>"), src);
@@ -40,8 +40,10 @@ test("the landing page offers the paid trial and links the free public insider p
     assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
-    assert.match(home, /Follow the market\.<br><em>We do the watching\.<\/em>/);
-    assert.match(home, /The filings change\.<br><em>Stay informed\.<\/em>/);
+    assert.match(home, /See what others<br><em>overlook\.<\/em>/);
+    assert.doesNotMatch(home, /Financial intelligence\.<br><em>Connected\.<\/em>/, "both headline arms carry the primary headline");
+    assert.match(home, /Uncover investment opportunities, track influential market participants, and understand what changes—backed by real financial disclosures\./);
+    assert.match(home, /research leads, not recommendations/);
     const pricing = await (await fetch(base + "/pricing.html")).text();
     assert.match(pricing, /3 days for \$1/);
     assert.doesNotMatch(pricing, /no free trial/i);

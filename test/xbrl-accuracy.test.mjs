@@ -62,3 +62,20 @@ test("period types", () => {
   const rows = [{ start: "2024-09-29", end: "2025-09-27", val: 10, form: "10-K", filed: "2025-10-31", accn: "a" }];
   assert.equal(trailingTwelveMonths(rows).basis, "fiscal-year");
 });
+
+test("changes: latest quarter against the same quarter a year earlier, both as filed (Apple Q3 FY2026 vs Q3 FY2025)", async () => {
+  const { extractFactChanges } = await import("../src/intelligence.mjs");
+  const by = Object.fromEntries(extractFactChanges(AAPL_FACTS, "0000320193").map(c => [c.id, c]));
+  // The prior-year column of the 10-Q for the quarter ended Jun 27, 2026 (0000320193-26-000020): three months ended
+  // Jun 28, 2025: net sales $94,036M, operating income $28,202M, net income $23,434M.
+  assert.deepEqual([by.revenue.current.value, by.revenue.prior.value], [109_417 * M, 94_036 * M]);
+  assert.deepEqual([by.revenue.current.periodType, by.revenue.prior.periodType], ["quarter", "quarter"]);
+  assert.deepEqual([by.revenue.current.end, by.revenue.prior.end], ["2026-06-27", "2025-06-28"]);
+  assert.equal(by.revenue.change, (109_417 - 94_036) * M);
+  assert.equal(by.operatingIncome.prior.value, 28_202 * M); assert.equal(by.netIncome.prior.value, 23_434 * M);
+  assert.equal(by.revenue.concept, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax");
+  assert.match(by.revenue.current.sourceUrl, /^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/320193\/000032019326000020\//);
+  // A balance is compared with the balance a year earlier, never with a flow.
+  assert.equal(by.assets.current.periodType, "instant"); assert.equal(by.assets.prior.periodType, "instant");
+  assert.ok(Object.values(by).every(c => c.current.periodType === c.prior.periodType), "never a quarter against a year to date");
+});

@@ -36,21 +36,25 @@ export async function pushStatus(userId,run=queryDb){
 const IMMEDIATE="COALESCE((SELECT ip.frequency FROM intelligence_preferences ip WHERE ip.user_id=s.user_id),'immediate')='immediate'";
 /* A filing is pushed as new only when the SEC published it in the last three days: the coverage backfill
  * (src/coverage-ingest.mjs) retrieves older filings today, and those are history, not news. */
+/* Autopilot (sql/021_autopilot.sql): a paused follow, or one on daily, weekly or off, is never pushed as it happens;
+ * one on 'important' only for a filing behind an important event (src/notifications.mjs isImportant, same rule). */
+const IMPORTANT_FILING="EXISTS(SELECT 1 FROM sec_events e WHERE f.accession=ANY(e.accessions) AND e.status='active' AND (e.event_type IN ('insider_purchase','multi_insider_purchase','company_disclosure') OR (e.event_type='insider_sale' AND COALESCE(NULLIF(e.facts->>'totalValue','')::numeric,0)>=1000000)))";
+const FOLLOW_ALLOWS=a=>"("+a+".paused_at IS NULL AND ("+a+".alert_mode='all' OR ("+a+".alert_mode='important' AND "+IMPORTANT_FILING+")))";
 export const MATCH_SQL=[
  "SELECT DISTINCT ON (x.subscription_id,x.accession) x.* FROM (",
  "SELECT s.id AS subscription_id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN watchlist w ON w.user_id=s.user_id JOIN sec_filings f ON f.ticker=w.ticker",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+IMMEDIATE,
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+FOLLOW_ALLOWS("w")+" AND "+IMMEDIATE,
  "UNION ALL SELECT s.id,f.accession,f.ticker,f.form_type FROM push_subscriptions s",
  "JOIN followed_people p ON p.user_id=s.user_id JOIN sec_filing_owners o ON LTRIM(o.owner_cik,'0')=LTRIM(p.owner_cik,'0')",
  "JOIN sec_filings f ON f.accession=o.accession",
- "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+IMMEDIATE,
+ "WHERE f.ingest_status='parsed' AND f.retrieved_at>=s.created_at AND f.retrieved_at>=now()-interval '36 hours' AND f.published_at>=now()-interval '3 days' AND f.validation_status IS DISTINCT FROM 'flagged' AND "+FOLLOW_ALLOWS("p")+" AND "+IMMEDIATE,
  ") x ORDER BY x.subscription_id,x.accession LIMIT 400"
 ].join(" ");
 export const PUBLIC_EVENT_MATCH_SQL=[
  "SELECT DISTINCT s.id AS subscription_id,r.event_key FROM research_events r",
  "JOIN watchlist w ON w.ticker=r.subject JOIN push_subscriptions s ON s.user_id=w.user_id",
- "WHERE r.source_type='sec_notice' AND r.verified=true",
+ "WHERE r.source_type='sec_notice' AND r.verified=true AND w.paused_at IS NULL AND w.alert_mode IN ('important','all')",
  "AND r.observed_at>=s.created_at AND r.observed_at>=now()-interval '36 hours' AND "+IMMEDIATE,
  "LIMIT 200"
 ].join(" ");

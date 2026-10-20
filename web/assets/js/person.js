@@ -429,9 +429,11 @@ async function follow({undo=false}={}){
  followBusy=true;const was=following;following=true;setFollow(true);
  const cik=followCik();
  try{
-  await api("/v1/me/people",{method:"POST",body:{owner_cik:cik}});
+  // Autopilot: a new follow starts on "Important updates"; the mode and pause are set below the button (v33-platform.js).
+  await api("/v1/me/people",{method:"POST",body:{owner_cik:cik,mode:"important"}});
   if(!followedAs.includes(cik))followedAs.push(cik);
-  toast(E(undo?"Following "+personName+" again.":"Following "+personName+". Their new filings now appear under People you follow on your overview."));
+  toast(E(undo?"Following "+personName+" again.":"Following "+personName+". Updates will appear in your briefing."));
+  document.dispatchEvent(new CustomEvent("insidir:followed",{detail:{kind:"person",id:cik}}));
  }catch(e){
   following=was;
   if(e.status!==401&&e.status!==402)toast(E("Could not follow "+personName+": "+String(e.message||"").replace(/\.$/,"")+". Nothing was changed."),{error:true});
@@ -445,6 +447,7 @@ async function unfollow(){
  try{
   // Every stored form goes, so the person is really off the list; a failure leaves them followed.
   for(const cik of forms){await api("/v1/me/people/"+encodeURIComponent(cik),{method:"DELETE"});followedAs=followedAs.filter(c=>c!==cik);removed++;}
+  document.dispatchEvent(new CustomEvent("insidir:unfollowed",{detail:{kind:"person"}}));
   toast('Unfollowed '+E(personName)+'. <button type="button" class="pf-undo" data-pf-undo aria-label="'+E("Undo: follow "+personName+" again")+'">Undo</button>',{ms:UNDO_MS});
  }catch(e){
   following=removed<forms.length;
@@ -464,7 +467,9 @@ async function loadFollowing(){
 /* ---------- load ---------- */
 async function load(){
  main.classList.add("is-loading");main.setAttribute("aria-busy","true");
- try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);if(file?.coverage==="sec_submissions_history_only")renderSecHistory(file);else render(file);}
+ try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);if(file?.coverage==="sec_submissions_history_only")renderSecHistory(file);else render(file);
+  // Changes, Connections and the follow settings (v33-platform.js) are drawn once the file exists.
+  document.dispatchEvent(new CustomEvent("insidir:person",{detail:{cik:personCik}}));}
  catch(e){
   if(e.status===401||e.status===402)return;
   if(e.status===404)showState("missing",e.message);
