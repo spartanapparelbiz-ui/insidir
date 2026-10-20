@@ -56,7 +56,7 @@
       if (!items.length) { list.innerHTML = '<p class="ip-muted">No changes in this window in the records Insidir holds.</p>'; return; }
       let last = "";
       list.innerHTML = items.map((it, n) => {
-        const head = it.date !== last ? `<h3 class="ip-day">${E(it.date)}</h3>` : ""; last = it.date;
+        const head = it.date !== last ? `<h3 class="ip-day">${E(it.date)}</h3>` : ""; last = it.date; it.evidence = it.evidence || [];
         return head + `<article class="ip-change"><p class="ip-kind">${E(KIND[it.kind] || it.kind)}</p><h4>${E(it.title)}</h4><p>${E(it.detail)}</p>
           <div class="ip-actions"><button type="button" class="ip-btn" aria-expanded="false" aria-controls="ip-ev-${cik}-${n}" data-ev="${n}">Evidence (${it.evidence.length})</button>
           ${explain && it.explainable && it.accession ? `<button type="button" class="ip-btn" data-explain="${E(it.accession)}">Explain this filing</button>` : ""}</div>
@@ -75,11 +75,11 @@
     };
     const load = async days => {
       list.innerHTML = '<p class="ip-muted">Loading changes…</p>';
-      try { data = await api("/v1/entities/" + cik + "/changes?days=" + days); }
+      try { const d = await api("/v1/entities/" + cik + "/changes?days=" + days); data = { items: Array.isArray(d && d.items) ? d.items : [], counts: (d && d.counts) || {}, gaps: (d && d.gaps) || [], method: (d && d.method) || "" }; }
       catch (e) { list.innerHTML = `<p class="ip-muted">${E(e.status === 404 ? "Insidir has no imported SEC records for this filer yet." : e.message)}</p>`; return; }
       filters.innerHTML = Object.entries(data.counts).map(([k, n]) => `<button type="button" class="ip-chip" aria-pressed="${!hide.has(k)}" data-kind="${E(k)}">${E(KIND[k] || k)} <b>${n}</b></button>`).join("");
       filters.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.kind; hide.has(k) ? hide.delete(k) : hide.add(k); b.setAttribute("aria-pressed", String(!hide.has(k))); paint(); }));
-      gaps.innerHTML = data.gaps.map(g => `<li>${E(g)}</li>`).join("") + `<li>${E(data.method)}</li>`;
+      gaps.innerHTML = data.gaps.map(g => `<li>${E(g)}</li>`).join("") + (data.method ? `<li>${E(data.method)}</li>` : "");
       paint();
     };
     host.querySelector("[data-days]").addEventListener("change", e => load(e.target.value));
@@ -178,14 +178,17 @@
     }
     async function load(target, parent) {
       try {
-        const d = await api("/v1/entities/" + target + "/connections?limit=40" + (asOf ? "&asOf=" + asOf : ""));
+        const r = await api("/v1/entities/" + target + "/connections?limit=40" + (asOf ? "&asOf=" + asOf : ""));
+        if (!r || !r.subject || !r.subject.id) throw Object.assign(new Error("No relationships are available for this filer."), { status: 404 });
+        const d = { ...r, nodes: Array.isArray(r.nodes) ? r.nodes : [r.subject], edges: (Array.isArray(r.edges) ? r.edges : []).map(e => ({ ...e, evidence: e.evidence || [] })), gaps: r.gaps || [] };
+        if (!d.nodes.some(n => n.id === d.subject.id)) d.nodes.push(d.subject);
         if (parent === null) { pos.set(d.subject.id, { x: 0, y: 0 }); }
         for (const n of d.nodes) if (!nodes.has(n.id)) nodes.set(n.id, n);
         if (parent === null) nodes.get(d.subject.id).role = "subject";
         for (const e of d.edges) edges.set(edgeKey(e), e);
         place(parent === null ? d.subject.id : parent, d.nodes.map(n => n.id).filter(id => id !== (parent || d.subject.id)));
         expanded.add(target);
-        if (parent === null) gaps.innerHTML = d.gaps.map(g => `<li>${E(g)}</li>`).join("") + `<li>${E(d.method)}</li>`;
+        if (parent === null) gaps.innerHTML = d.gaps.map(g => `<li>${E(g)}</li>`).join("") + (d.method ? `<li>${E(d.method)}</li>` : "");
         fit(); draw(); if (parent) select(parent);
       } catch (e) { detail.innerHTML = `<p class="ip-muted">${E(e.status === 404 ? "No Form 4 relationships are in Insidir's imported filings for this filer." : e.message)}</p>`; }
     }
@@ -211,7 +214,7 @@
   async function mountFollowSettings(host, kind, id) {
     if (!host) return;
     let f;
-    try { f = (await api("/v1/me/follows")).items.find(x => x.kind === kind && (kind === "company" ? x.ticker === id : cik10(x.cik) === cik10(id))); } catch (_) { host.hidden = true; return; }
+    try { f = (((await api("/v1/me/follows")) || {}).items || []).find(x => x.kind === kind && (kind === "company" ? x.ticker === id : cik10(x.cik) === cik10(id))); } catch (_) { host.hidden = true; return; }
     if (!f) { host.hidden = true; host.innerHTML = ""; return; }
     host.hidden = false;
     host.innerHTML = `<label class="ip-field">Autopilot <select data-mode>${MODES.map(([v, l]) => `<option value="${v}"${v === f.mode ? " selected" : ""}>${l}</option>`).join("")}</select></label>
