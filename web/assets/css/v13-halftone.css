@@ -704,6 +704,24 @@ html body.v13:not(#\#):not(#\#) :is(.v6-nav__links a,.v6-mobile a,.v6-signin,.v9
 html body.v13:not(:has(.app-header)):not(#\#):not(#\#) main :is(p,li,summary,blockquote,figcaption,.v9-hero__description,.di-table td:not(:last-child)):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])),
 html body.v13:not(:has(.app-header)):not(#\#):not(#\#) main :is(p,li,summary,blockquote,figcaption,.v9-hero__description,.di-table td:not(:last-child)):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])) :is(a,em,i,strong,b,small,abbr,q,span):not(:is([class*="eyebrow"],[class*="label"],[class*="kicker"],[class*="tag"],[class*="caption"],[class*="folio"],[class*="num"],[class*="code"],[class*="badge"],[class*="chip"],[class*="state"],[class*="date"],[class*="price"],[class*="amount"],[class*="value"],[class*="ticker"],[class*="topline"],[class*="index"],[class*="rule"],[class*="lp-terms"],[class*="trial"],[class*="cite"],[class*="dir"],[class*="mono"])){font-family:var(--hf-ui)!important;letter-spacing:0!important}
 /* Product pages: running text only (descriptions, introductions, empty and error states). Rows and tables stay mono. */
-html body.v13:has(.app-header):not(#\#):not(#\#) :is(.rd-today__line,.rd-module__head p:not(.rd-index),.rd-empty,.rd-rows__msg,.rd-start__steps span,.rd-start__note,.ix-hero__lede,.ix-head__dek,.ix-masthead__line,.ix-plain,.ix-note,.al-intro,.al-foot,.page-intro,.account-intro,.billing-intro,.rd-intel-link a){font-family:var(--hf-ui)!important;letter-spacing:0!important}
+html body.v13:has(.app-header):not(#\#):not(#\#) :is(.rd-today__line,.rd-module__head p:not(.rd-index),.rd-empty,.rd-rows__msg,.rd-start__steps span,.rd-start__note,.ix-hero__lede,.ix-head__dek,.ix-masthead__line,.ix-plain,.ix-note,.al-intro,.al-foot,.page-intro,.account-intro,.billing-intro,.rd-intel-link a,.rd-desk__s){font-family:var(--hf-ui)!important;letter-spacing:0!important}
 }
 /* end @layer insidir-v13 */
+
+/* ---------- V32 microinteractions, on every page ----------
+   Same-origin page changes cross-fade briefly instead of flashing to black; the header holds still across them.
+   Table rows answer the pointer, and keyboard focus is one visible ring everywhere. All of it is off under reduced
+   motion (the ring stays: it is not motion). */
+@view-transition{navigation:auto}
+.app-header,.v6-nav{view-transition-name:site-header}
+::view-transition-old(root),::view-transition-new(root){animation-duration:160ms;animation-timing-function:cubic-bezier(.2,0,0,1)}
+::view-transition-group(site-header){animation-duration:0s}
+@media (prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+@media (hover:hover){
+  :is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr{transition:background-color 120ms ease}
+  :is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr:hover{background-color:rgba(240,238,232,.035)}
+}
+@media (prefers-reduced-motion:reduce){:is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr{transition:none}}

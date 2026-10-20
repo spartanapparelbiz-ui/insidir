@@ -109,6 +109,13 @@ test("Intelligence on PostgreSQL", { skip }, async t => {
       assert.ok(a.stories.some(s => s.kind === "company_report" && /Results of operations/.test(s.facts[0])));
       for (const s of a.stories) for (const src of s.sources) assert.match(src.url, /^https:\/\/www\.sec\.gov\//);
       assert.equal(a.preferences.frequency, "immediate");
+      const visit = async () => (await q("SELECT last_visit_at FROM intelligence_preferences WHERE user_id=$1", [users.a.id])).rows[0]?.last_visit_at?.toISOString();
+      const before = await visit();
+      assert.ok(before, "opening the briefing records a visit");
+      await q("UPDATE intelligence_preferences SET last_visit_at=last_visit_at-interval '1 hour' WHERE user_id=$1", [users.a.id]);
+      const moved = await visit();
+      assert.equal((await get("/v1/me/intelligence/briefing?peek=1", "a")).status, 200);
+      assert.equal(await visit(), moved, "the dashboard's peek leaves the New baseline alone");
       const b = await (await get("/v1/me/intelligence/briefing", "b")).json();
       assert.deepEqual([...new Set(b.stories.map(s => s.ticker))].sort(), ["AAPL", "TSLA"]);
       assert.ok(!JSON.stringify(b).includes("NVIDIA") && !JSON.stringify(b).includes("Nadella"), "nothing of A's leaks to B");

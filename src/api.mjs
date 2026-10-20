@@ -575,7 +575,9 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     if(await limited(ctx,"briefing:"+user.id,120,15*60*1000))throw failure(429,"Too many briefing refreshes. Try again shortly.");
     const days=positive(u.searchParams.get("days"),7,30);
-    return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady()})));
+    // peek=1 (the overview's summary) reads the briefing without recording a visit, so "New" keeps its baseline.
+    const trackVisit=u.searchParams.get("peek")!=="1";
+    return json(res,200,await timed("briefing",()=>intelligenceBriefing(user.id,{run:ctx.query,days,pushConfigured:pushReady(),trackVisit})));
   }
   if(p==="/v1/me/intelligence/instrument" && m==="GET"){
     const user=await requireUser(req,ctx);
