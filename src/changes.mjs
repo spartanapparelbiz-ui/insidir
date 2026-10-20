@@ -7,7 +7,7 @@
  *   form4_amendment  a 4/A, with the date of the filing it amends
  *   role_change      the role filed for a reporting owner differs from the role on their previous filing there
  *   first_seen       a reporting owner's first Form 4 at an issuer in Insidir's records, only where Insidir holds that
- *                    issuer's filings from at least 30 days earlier (so it is not just the start of the import)
+ *                    issuer's filings from at least 60 days earlier (so it is not just the start of the import)
  *   financial_fact   the latest reported value of a metric against the same period a year earlier (XBRL)
  *   sec_filing       an 8-K (with its items), 10-K, 10-Q or other listed filing in EDGAR submissions
  *   holdings_13f     a 13F manager's new, exited, increased and decreased positions against the previous quarter
@@ -22,7 +22,7 @@ import { codeLabel } from "./intelligence-common.mjs";
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const day = v => v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error("timeout")), ms))]);
-export const MAX_CHANGES = 80;
+export const MAX_CHANGES = 80, FIRST_SEEN_DAYS = 60;
 // Figures exactly as filed: whole numbers without decimals, others to the cent (dollars) or up to four places.
 const count = n => Number(n).toLocaleString("en-US", { maximumFractionDigits: 4 });
 const money = n => (n < 0 ? "−$" : "$") + Math.abs(Number(n)).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 });
@@ -87,7 +87,7 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
     items.push({ kind: f.is_amendment ? "form4_amendment" : "form4", date: day(f.published_at), accession: f.accession,
       subject: { name: f.issuer_name, cik: f.issuer_cik, ticker: f.ticker },
       title: (who || "A reporting owner") + (f.is_amendment ? " amended a Form 4" + (f.original_filed_on ? " first filed on " + day(f.original_filed_on) : "") : " filed a Form 4") + " for " + (f.issuer_name || "the issuer"),
-      detail: (ls.length ? describeForm4(ls) : "No transaction lines (holdings only).") + (f.rule_10b5_1 ? " Marked as made under a Rule 10b5-1 trading plan." : ""),
+      detail: (ls.length ? describeForm4(ls) + "." : "No transaction lines (holdings only).") + (f.rule_10b5_1 ? " Marked as made under a Rule 10b5-1 trading plan." : ""),
       explainable: true, evidence: [filingEvidence, ...ls.slice(0, 4).map(l => form4LineEvidence(l, f))].filter(Boolean) });
   }
 
@@ -102,7 +102,7 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
       items.push({ kind: "role_change", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
         title: r.owner_name + "'s filed role at " + (r.issuer_name || "the issuer") + " changed", detail: "From " + (roleOf(prev) || "not stated") + " to " + (roleOf(r) || "not stated") + ", as filed.",
         evidence: [ev(prev, "Previous filing"), ev(r, "This filing")].filter(Boolean) });
-    } else if (!prev && r.issuer_first_at && (new Date(r.published_at) - new Date(r.issuer_first_at)) >= 30 * 86400_000) {
+    } else if (!prev && r.issuer_first_at && (new Date(r.published_at) - new Date(r.issuer_first_at)) >= FIRST_SEEN_DAYS * 86400_000) {
       items.push({ kind: "first_seen", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
         title: "First Form 4 from " + r.owner_name + " at " + (r.issuer_name || "the issuer") + " in Insidir's records",
         detail: "Filed as " + (roleOf(r) || "role not stated") + ". Insidir holds this issuer's Form 4s from " + day(r.issuer_first_at) + "; earlier filings outside that period are not checked.",

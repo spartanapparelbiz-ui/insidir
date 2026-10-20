@@ -9,17 +9,18 @@
 <link rel="stylesheet" href="assets/css/base.css?v=12">
 <link rel="stylesheet" href="assets/css/v12-company.css?v=3">
 <script defer src="assets/js/entity-media.js?v=media-6"></script>
-<script defer src="assets/js/app.js?v=22"></script>
+<script defer src="assets/js/app.js?v=23"></script>
 <script defer src="assets/js/brand-mark.js?v=2"></script>
-<script defer src="assets/js/v12-company.js?v=9"></script>
+<script defer src="assets/js/v12-company.js?v=10"></script>
 <script defer src="assets/js/research-explain.js?v=2"></script>
 <script defer src="assets/js/research-events.js?v=1"></script>
+<script defer src="assets/js/v33-platform.js?v=1"></script>
 <link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
 <link rel="stylesheet" href="assets/css/v13-company.css?v=11">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
 <link rel="stylesheet" href="assets/css/v27-product.css?v=2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><script defer src="/assets/js/funnel.js"></script></head>
+<link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=1"><script defer src="/assets/js/funnel.js"></script></head>
 <body class="app-body cx-page v13">
 <a class="skip-link" href="#main">Skip to content</a>
 <header data-app-header data-active="companies"></header>
@@ -54,10 +55,12 @@
    </div>
    <p class="cx-description" id="cx-description"><span class="cx-skel"></span><span class="cx-skel"></span><span class="cx-skel cx-skel--short"></span></p>
    <div class="cx-actions">
-    <button type="button" class="cx-btn cx-btn--primary" id="cx-watch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add to watchlist</span></button>
+    <button type="button" class="cx-btn cx-btn--primary" id="cx-watch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Follow</span></button>
     <button type="button" class="cx-btn" id="cx-alert" title="Alerts cover new SEC Form 4 filings for companies on your watchlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Track new filings</span></button>
     <button type="button" class="cx-btn" id="cx-share"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span>Share</span></button>
    </div>
+   <p class="ip-follow-note" id="cx-follow-note" role="status"></p>
+   <div class="ip-follow" id="cx-follow-settings" hidden></div>
   </div>
 
   <section class="cx-card cx-quote" aria-labelledby="cx-quote-symbol">
@@ -96,6 +99,8 @@
 
  <nav class="cx-tabs" role="tablist" aria-label="Company report sections" id="cx-tabs">
   <button type="button" role="tab" id="tab-overview" data-hf-atom aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button>
+  <button type="button" role="tab" id="tab-changes" data-hf-atom aria-controls="changes" aria-selected="false" data-tab="changes" tabindex="-1">Changes</button>
+  <button type="button" role="tab" id="tab-connections" data-hf-atom aria-controls="connections" aria-selected="false" data-tab="connections" tabindex="-1">Connections</button>
   <button type="button" role="tab" id="tab-financials" data-hf-atom aria-controls="financials" aria-selected="false" data-tab="financials" tabindex="-1">Financials</button>
   <button type="button" role="tab" id="tab-filings" data-hf-atom aria-controls="filings" aria-selected="false" data-tab="filings" tabindex="-1">SEC filings</button>
   <button type="button" role="tab" id="tab-insiders" data-hf-atom aria-controls="insiders" aria-selected="false" data-tab="insiders" tabindex="-1">Insider activity</button>
@@ -189,6 +194,14 @@
   <div class="cx-people" id="cx-people-wiki" data-cx-reveal-group></div>
  </section>
 
+ <section class="cx-panel" role="tabpanel" id="changes" aria-labelledby="tab-changes" hidden>
+  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Changes · SEC records</p><h2>What changed</h2><p>New Form 4 filings, amendments, role changes, financial facts against a year earlier and other SEC filings, detected by rules. Every item opens its evidence.</p></div></div>
+  <div id="cx-changes-host" class="ip-host"></div>
+ </section>
+ <section class="cx-panel" role="tabpanel" id="connections" aria-labelledby="tab-connections" hidden>
+  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Connections · Form 4 records</p><h2>Who is connected</h2><p>Reporting owners and who filed jointly with whom, from filed Form 4 records. Select a node for its filings; expand it to load its own connections; set a date to see the records as of then.</p></div></div>
+  <div id="cx-connections-host" class="ip-host"></div>
+ </section>
  <section class="cx-panel" role="tabpanel" id="news" aria-labelledby="tab-news" hidden>
   <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">06 / 8-K current reports · publishers</p><h2>News</h2><p>Official announcements from SEC current reports, and recent headlines that link to their publishers.</p></div></div>
   <div class="cx-news" data-cx-reveal-group>

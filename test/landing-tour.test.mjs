@@ -40,8 +40,9 @@ test("the landing page offers the paid trial and links the free public insider p
     assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
-    assert.match(home, /Follow the market\.<br><em>We do the watching\.<\/em>/);
-    assert.match(home, /The filings change\.<br><em>Stay informed\.<\/em>/);
+    assert.match(home, /Financial intelligence\.<br><em>Connected\.<\/em>/);
+    assert.match(home, /Financial intelligence\.<br><em>Without the complexity\.<\/em>/);
+    assert.match(home, /Understand companies, uncover relationships, and track what changes\. Automatically\./);
     const pricing = await (await fetch(base + "/pricing.html")).text();
     assert.match(pricing, /3 days for \$1/);
     assert.doesNotMatch(pricing, /no free trial/i);

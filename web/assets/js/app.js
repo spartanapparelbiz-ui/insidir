@@ -53,19 +53,20 @@
     window.fetch = gatedFetch;
   }
 
-  /* The product's sections, in order of use: what changed (Overview), what to look at (Intelligence), the records
-     (Research, Companies, People, Filings), what you follow (Watchlist) and what you are told about (Alerts). */
+  /* Three sections: Home (what changed for what you follow), Explore (companies, people, filings, research) and
+     Intelligence (questions answered from the records). Each page names its own key in data-active; GROUP maps it
+     to its section, and SUBNAV lists the pages inside Home and Explore. */
   const NAV = [
-    ["dashboard","Overview","dashboard.html"],
-    ["intelligence","Intelligence","intelligence.html"],
-    ["research","Research","research.html"],
-    ["companies","Companies","explore.html"],
-    ["insiders","People","people.html"],
-    ["filings","Filings","filings.html"],
-    ["watchlist","Watchlist","watchlist.html"],
-    ["alerts","Alerts","alerts.html"]
+    ["home","Home","dashboard.html"],
+    ["explore","Explore","explore.html"],
+    ["intelligence","Intelligence","intelligence.html"]
   ];
-  const NAV_ICONS = {dashboard:"layers",research:"search",intelligence:"activity",companies:"building",portfolio:"wallet",watchlist:"bookmark",filings:"file-text",insiders:"user-round",alerts:"clock"};
+  const GROUP = {dashboard:"home",watchlist:"home",alerts:"home",portfolio:"home",companies:"explore",insiders:"explore",filings:"explore",research:"explore",explore:"explore",intelligence:"intelligence"};
+  const SUBNAV = {
+    home: [["dashboard","Overview","dashboard.html"],["watchlist","Following","watchlist.html"],["alerts","Alerts","alerts.html"],["portfolio","Portfolio","portfolio.html"]],
+    explore: [["companies","Companies","explore.html"],["insiders","People","people.html"],["filings","Filings","filings.html"],["research","Research","research.html"]]
+  };
+  const NAV_ICONS = {home:"layers",explore:"search",intelligence:"activity"};
   const navIcon = key => '<span class="v2-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons/interface.svg#'+(NAV_ICONS[key]||"file-text")+'"></use></svg></span>';
 
   const icons = {
@@ -186,7 +187,7 @@
   function renderHeader() {
     const host = document.querySelector("[data-app-header]");
     if (!host) return;
-    const active = host.dataset.active || "";
+    const page = host.dataset.active || "", active = GROUP[page] || page;
     host.classList.add("app-header");
     host.innerHTML = `<div class="app-header__inner">
       <button class="icon-btn app-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="app-mobile-nav">
@@ -221,8 +222,12 @@
       </div>
     </div>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Product">
-      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>`).join("")}
+      ${NAV.map(([key, label, href]) => `<a href="${href}"${key === active && !SUBNAV[key] ? ' aria-current="page"' : ""}>${navIcon(key)}${label}${newMark(key)}</a>` +
+        (SUBNAV[key] || []).map(([k, l, h]) => `<a class="app-mobile-nav__sub" href="${h}"${k === page ? ' aria-current="page"' : ""}>${l}</a>`).join("")).join("")}
     </nav>`;
+    const sub = SUBNAV[active];
+    if (sub && !document.querySelector(".app-subnav")) host.insertAdjacentHTML("afterend", `<nav class="app-subnav" aria-label="${active === "home" ? "Home" : "Explore"}"><div class="app-subnav__row">
+      ${sub.map(([key, label, href]) => `<a href="${href}"${key === page ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></nav>`);
 
     api("/v1/me").then(data => {
       if (!data.user || !data.user.email) return;

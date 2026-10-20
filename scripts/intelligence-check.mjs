@@ -194,7 +194,7 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     const req = sent.filter(r => r.p === "/v1/me/intelligence/investigate").at(-1);
     assert.equal(req.q, "?stream=1"); assert.match(req.accept, /ndjson/);
     assert.equal(req.body.question, "Show recent insider transactions at Tesla.");
-    assert.deepEqual(await page.$$eval(".ix-answer .ix-part__title", h => h.map(x => x.textContent)), ["§1Finding", "§2Evidence", "§3Timeline", "§4Relationships", "§5Uncertainty"]);
+    assert.deepEqual(await page.$$eval(".ix-answer .ix-part__title", h => h.map(x => x.textContent)), ["§1What happened", "§2Evidence", "§3Timeline", "§4Connections", "§5What is uncertain"]);
     const cites = await page.$$eval(".ix-answer a.ix-cite", a => a.map(x => x.getAttribute("href")));
     assert.ok(cites.length > 0, "the report has citations");
     for (const h of new Set(cites)) assert.ok(await page.$(h), "citation target exists: " + h);

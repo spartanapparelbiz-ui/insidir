@@ -198,7 +198,7 @@ export function extractFactChanges(companyFacts,cik){
     if(!prior)continue;
     const view=r=>({value:r.val,start:isDate(r.start)?r.start:null,end:r.end,periodType:r.periodType,durationDays:r.durationDays,form:r.form,filedAt:r.filed,accession:r.accn,sourceUrl:secFilingUrl(cik,r.accn)});
     const change=current.val-prior.val;
-    out.push({id:metric.id,label:metric.label.replace(/^Reported /,""),unit,concept:conceptOf(companyFacts,metric,current),current:view(current),prior:view(prior),
+    out.push({id:metric.id,label:metric.label.replace(/^Reported (.)/,(m,c)=>c.toUpperCase()),unit,concept:conceptOf(companyFacts,metric,current),current:view(current),prior:view(prior),
       change,changePct:prior.val!==0?change/Math.abs(prior.val):null,
       methodology:"Latest reported "+current.periodType+" against the same "+current.periodType+" one year earlier; change = current − prior, as filed."});
   }
