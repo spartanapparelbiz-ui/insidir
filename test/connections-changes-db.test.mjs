@@ -83,22 +83,30 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
     const original = f4.find(i => i.accession === "000070686326000085");
     // 418 shares × $23.725 = $9,917.05 (test/form4-accuracy.test.mjs, read by hand from the XML).
     assert.match(original.detail, /purchase: 418 shares, \$9,917\.05 as filed/);
+    // The plain layer first: a headline and a sentence with the same figures, the filing's terms kept in detail.
+    assert.equal(original.headline, "Insider share purchase disclosed");
+    assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed Oct 19, 2026\./, "the price as filed, not rounded to the cent");
+    assert.ok(Array.isArray(original.footnotes));
     assert.ok(original.evidence.some(e => e.field === "nonDerivativeTransaction/transactionShares" && e.value === 418 && e.units === "shares" && e.period.end === "2026-09-17"));
     const role = c.items.find(i => i.kind === "role_change");
     assert.ok(role, "role change found"); assert.match(role.detail, /From Director to Officer: Chief Executive Officer/);
+    assert.equal(role.headline, "Insider role changed"); assert.match(role.summary, /now files as Officer: Chief Executive Officer .+ previous filing there said Director/);
     assert.equal(role.evidence.length, 2);
     const ter = await changes("97210", { run: q, days: 30, factChanges: async () => [], loadCompany: offline });
     assert.deepEqual(ter.items.filter(i => i.kind === "form4").map(i => i.accession), ["000090445426000519"], "the flagged copy is not a change");
     assert.ok(ter.gaps.some(g => /1 filing\(s\) in this window failed/.test(g)));
     const dbx = await changes("1467623", { run: q, days: 30, factChanges: async () => [], loadCompany: offline });
     assert.equal(dbx.items[0].kind, "form4_amendment"); assert.match(dbx.items[0].title, /amended a Form 4 first filed on 2026-09-17/);
+    assert.match(dbx.items[0].headline, /\(amended filing\)$/); assert.match(dbx.items[0].summary, /This amends an earlier filing made Sep 17, 2026\./);
     // Financial facts come from the stub here; the comparison itself is tested on Apple's facts (xbrl-accuracy).
     const withFacts = await changes("706863", { run: q, days: 30, loadCompany: offline, factChanges: async () => [{ id: "revenue", label: "Revenue", unit: "USD", concept: "us-gaap:Revenues",
       current: { value: 10, start: "2026-04-01", end: "2026-06-30", periodType: "quarter", form: "10-Q", filedAt: "2026-08-01", accession: "a", sourceUrl: "https://www.sec.gov/Archives/edgar/data/706863/a/" },
       prior: { value: 8, start: "2025-04-01", end: "2025-06-30", periodType: "quarter", form: "10-Q", filedAt: "2025-08-01", accession: "b", sourceUrl: "https://www.sec.gov/Archives/edgar/data/706863/b/" },
       change: 2, changePct: 0.25, methodology: "m" }] });
     const fact = withFacts.items.find(i => i.kind === "financial_fact");
-    assert.match(fact.title, /Revenue for the quarter ended 2026-06-30: \$10/); assert.match(fact.detail, /up \$2, 25\.0%/);
+    assert.match(fact.title, /Revenue for the quarter ended Jun 30, 2026: \$10/); assert.match(fact.detail, /up \$2, 25\.0%/);
+    assert.equal(fact.headline, "Revenue 25.0% higher than a year earlier");
+    assert.match(fact.summary, /^Revenue: \$10 for the quarter ended Jun 30, 2026, against \$8 a year earlier, as reported in the company's 10-Q filed Aug 1, 2026\.$/);
     assert.equal(fact.evidence[0].units, "USD"); assert.equal(fact.evidence[0].period.type, "quarter");
   });
 

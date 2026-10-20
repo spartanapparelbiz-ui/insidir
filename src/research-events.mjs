@@ -20,6 +20,7 @@
  * Every event keeps the transaction date(s), the SEC filing time and Insidir's retrieval time apart, links every
  * accession and source document, and states what it is not (facts.caveats). Nothing here scores, ranks, predicts or
  * recommends; the words used for each event (eventSummary) state what was filed. */
+import { eventHeadline } from "./plain-language.mjs";
 import { secFetch } from "./sec.mjs";
 import { secReady } from "./config.mjs";
 import { tickerIndex, tickerRecord, extractFilings } from "./intelligence.mjs";
@@ -359,7 +360,7 @@ export async function listResearchEvents(query, { ticker = null, ownerCik = null
     WHERE ($1::text IS NULL OR e.ticker=$1) AND ($2::text IS NULL OR EXISTS(SELECT 1 FROM sec_event_people p WHERE p.event_id=e.id AND p.owner_cik=$2))
       AND ($3::text[] IS NULL OR e.event_type=ANY($3::text[])) AND ($4::bigint IS NULL OR e.id<$4) AND ($6::boolean OR e.status='active')
     ORDER BY e.filing_date DESC NULLS LAST,e.id DESC LIMIT $5`, params);
-  return r.rows.map(e => ({ ...e, summary: eventSummary(e) }));
+  return r.rows.map(e => ({ ...e, headline: eventHeadline(e), summary: eventSummary(e) }));
 }
 
 /* ---------- words: what was filed, never why or what to do ---------- */

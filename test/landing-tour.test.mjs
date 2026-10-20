@@ -40,9 +40,15 @@ test("the landing page offers the paid trial and links the free public insider p
     assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
-    assert.match(home, /See what others<br><em>overlook\.<\/em>/);
-    assert.doesNotMatch(home, /Financial intelligence\.<br><em>Connected\.<\/em>/, "both headline arms carry the primary headline");
-    assert.match(home, /Uncover investment opportunities, track influential market participants, and understand what changes—backed by real financial disclosures\./);
+    assert.equal([...home.matchAll(/Financial intelligence\.<br><em>Connected\.<\/em>/g)].length, 2, "both headline arms carry the primary headline");
+    assert.doesNotMatch(home, /See what others<br>|Invest with less guesswork|beginner/i, "the headline leads with intelligence, not investing education");
+    assert.match(home, /Discover relationships, understand market developments, and uncover opportunities through connected financial intelligence\./);
+    // One record read three ways: the plain sentence, the filing detail and the source, with the footnote kept.
+    assert.match(home, /<h3 class="dx-card__head">Insider share purchase disclosed<\/h3>/);
+    assert.match(home, /<details class="dx-more">\s*<summary>Filing detail<\/summary>/);
+    assert.match(home, /Footnote F1, as filed/);
+    assert.match(home, /0001061272-26-000004-index\.htm/);
+    assert.doesNotMatch(home, /AI agent|chatbot|virtual (financial )?adviser/i, "Insidir is not presented as an AI conversation product");
     assert.match(home, /research leads, not recommendations/);
     const pricing = await (await fetch(base + "/pricing.html")).text();
     assert.match(pricing, /3 days for \$1/);

@@ -25,7 +25,7 @@ export async function query(sql, params=[]) { return requireDb().query(sql,param
 // Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
 export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
   "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
-  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_query_indexes.sql","015_sec_events.sql","016_explanations.sql","016_funnel_events.sql","017_notifications.sql","018_coverage.sql","019_form4_detail.sql","020_cost_controls.sql","021_autopilot.sql"]);
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_query_indexes.sql","015_sec_events.sql","016_explanations.sql","016_funnel_events.sql","017_notifications.sql","018_coverage.sql","019_form4_detail.sql","020_cost_controls.sql","021_autopilot.sql","022_form4_footnotes.sql"]);
 // `db` defaults to the engine's pool; tests that build the schema through their own pool pass it.
 export async function migrate(db=requireDb()) {
   // Every file is idempotent, but even a no-op ALTER TABLE takes an exclusive table lock, so re-running them all on
@@ -86,26 +86,26 @@ export async function persistFiling(filing) {
   try {
     await client.query("BEGIN");
     await client.query(`INSERT INTO sec_filings
-      (accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,is_amendment,source_url,xml_url,owner_names,rule_10b5_1,original_filed_on,parser_version,validation_status,validation_issues,ingest_status,retrieved_at,updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,'parsed',now(),now())
+      (accession,filer_cik,issuer_cik,issuer_name,ticker,title,form_type,published_at,period_of_report,is_amendment,source_url,xml_url,owner_names,rule_10b5_1,original_filed_on,parser_version,validation_status,validation_issues,footnotes,ingest_status,retrieved_at,updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,'parsed',now(),now())
       ON CONFLICT (accession) DO UPDATE SET
       issuer_cik=EXCLUDED.issuer_cik,issuer_name=EXCLUDED.issuer_name,ticker=EXCLUDED.ticker,title=EXCLUDED.title,
       form_type=EXCLUDED.form_type,published_at=COALESCE(sec_filings.published_at,EXCLUDED.published_at),period_of_report=EXCLUDED.period_of_report,
       is_amendment=EXCLUDED.is_amendment,source_url=EXCLUDED.source_url,xml_url=EXCLUDED.xml_url,
-      owner_names=EXCLUDED.owner_names,rule_10b5_1=EXCLUDED.rule_10b5_1,original_filed_on=EXCLUDED.original_filed_on,parser_version=EXCLUDED.parser_version,validation_status=EXCLUDED.validation_status,validation_issues=EXCLUDED.validation_issues,
+      owner_names=EXCLUDED.owner_names,rule_10b5_1=EXCLUDED.rule_10b5_1,original_filed_on=EXCLUDED.original_filed_on,parser_version=EXCLUDED.parser_version,validation_status=EXCLUDED.validation_status,validation_issues=EXCLUDED.validation_issues,footnotes=EXCLUDED.footnotes,
       ingest_status='parsed',error_message=NULL,retrieved_at=now(),updated_at=now()`,
       [filing.accession,filing.filerCik,filing.issuerCik,filing.issuerName,filing.ticker,filing.title,filing.formType,
        filing.publishedAt,filing.periodOfReport,filing.isAmendment,filing.sourceUrl,filing.xmlUrl,filing.owners.map(o=>o.name),
-       filing.rule10b51??null,filing.originalFiledOn??null,PARSER_VERSION,check.status,JSON.stringify(check.issues)]);
+       filing.rule10b51??null,filing.originalFiledOn??null,PARSER_VERSION,check.status,JSON.stringify(check.issues),filing.footnotes?.length?JSON.stringify(filing.footnotes):null]);
     await client.query("DELETE FROM sec_transactions WHERE accession=$1",[filing.accession]);
     for(const t of filing.transactions) {
       await client.query(`INSERT INTO sec_transactions
         (id,accession,issuer_cik,ticker,owner_cik,owner_name,transaction_date,security_title,transaction_code,acquired_disposed,category,derivative,shares,price_per_share,estimated_value,direct_ownership,source_url,
-         timeliness,nature_of_ownership,exercise_price,underlying_title,underlying_shares,exercise_date,expiration_date,shares_after)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+         timeliness,nature_of_ownership,exercise_price,underlying_title,underlying_shares,exercise_date,expiration_date,shares_after,footnote_ids)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)`,
         [t.id,t.accession,t.issuerCik,t.ticker,t.ownerCik,t.ownerName,t.transactionDate,t.securityTitle,t.code,t.acquiredDisposed,
          t.category,t.derivative,t.shares,t.pricePerShare,t.estimatedValue,t.directOwnership,t.sourceUrl,
-         t.timeliness??null,t.natureOfOwnership??null,t.exercisePrice??null,t.underlyingTitle??null,t.underlyingShares??null,t.exerciseDate??null,t.expirationDate??null,t.sharesAfter??null]);
+         t.timeliness??null,t.natureOfOwnership??null,t.exercisePrice??null,t.underlyingTitle??null,t.underlyingShares??null,t.exerciseDate??null,t.expirationDate??null,t.sharesAfter??null,t.footnoteIds?.length?t.footnoteIds:null]);
     }
     // One row per reporting owner. A joint filing's lines above keep owner_cik NULL (counted once in
     // market totals); these rows attribute them to each owner (profiles, follows, the followed feed).

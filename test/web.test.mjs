@@ -245,7 +245,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
 
 test("the landing page shows no product dashboard, no live data feed and no links into paid pages",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
- assert.match(home,/See what others<br><em>overlook\./);
+ assert.match(home,/Financial intelligence\.<br><em>Connected\./);
  assert.match(home,/data-halftone-hero/);
  for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
  const main=home.split(/<footer/)[0];
@@ -299,7 +299,7 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/See what others<br><em>overlook\./);
+  assert.match(home,/Financial intelligence\.<br><em>Connected\./);
   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
   const pricing=await(await fetch(base+"/pricing.html")).text();

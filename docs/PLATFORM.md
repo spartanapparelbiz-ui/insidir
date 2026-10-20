@@ -41,6 +41,26 @@ Pause stops alerts and keeps the mode. Fan-out runs once per event for all follo
 makes it idempotent across restarts and replays, and push uses the same rules. `GET /v1/me/follows`,
 `POST /v1/me/follows/settings {kind, id, mode?, paused?}`.
 
+## Plain language and progressive disclosure (src/plain-language.mjs)
+
+One product for every investor: each change and research event carries a `headline` ("Insider share sale
+disclosed", "Executive or director change reported", "Revenue 16.4% higher than a year earlier") and a `summary`
+sentence (who, what, how much as filed, when traded and filed), above the filing's own terms (`title`, `detail`) and
+its evidence. The sentence never drops a qualification to be shorter: a Rule 10b5-1 mark, indirect holdings in the
+filer's words ("By Revocable Trust"), an amendment and the date it amends, derivative securities priced per unit, and
+a pointer to the footnotes the lines cite. Figures are as filed (prices to four places, values to the cent); a reading
+aid such as "$109.4 billion" only ever sits beside the exact figure. Code M is called an option exercise only for
+options; restricted and performance stock units "convert into shares". Where they appear:
+
+- company Overview: Latest developments (the four newest changes; Changes holds the rest);
+- Changes on company, person and SEC filer pages: headline, sentence, the original filing link, then "Filing detail
+  and evidence" with the record as filed, its footnotes and the evidence;
+- research events and Alerts: the headline above the event's sentence; alert emails lead each line with it.
+
+Form 4 footnotes (sql/022, PARSER_VERSION 3): each line keeps the ids of the footnotes it cites and the filing keeps
+their text. Filings read before version 3 are re-read from EDGAR by the existing queue (src/coverage-ingest.mjs
+queueReparse, bounded per run); until then their footnotes are not shown.
+
 ## Evidence (src/evidence.mjs)
 
 One shape for every source behind a figure, connection or change: source, record title, entity (name and CIK), filed

@@ -26,7 +26,7 @@
       const [label, tone] = LABEL[ev.event_type] || ["Filing", ""];
       const li = document.createElement("li"); li.className = "ac-item";
       const trade = tradeDay(ev.transaction_date), tradeEnd = tradeDay(ev.transaction_date_end), source = safe(ev.source_urls && ev.source_urls[0]);
-      li.innerHTML = `<p class="ac-item__summary"><span class="ac-badge ${tone}">${E(label)}</span>${E(ev.summary)}</p>
+      li.innerHTML = `${ev.headline ? `<p class="ac-item__headline">${E(ev.headline)}</p>` : ""}<p class="ac-item__summary"><span class="ac-badge ${tone}">${E(label)}</span>${E(ev.summary)}</p>
         <p class="ac-item__meta">${trade ? `Traded ${E(trade)}${tradeEnd && tradeEnd !== trade ? " to " + E(tradeEnd) : ""} · ` : ""}Filed ${E(day(ev.filing_date))} · retrieved ${E(day(ev.ingested_at))}${ev.reporting_lag_days != null ? ` · reported ${E(ev.reporting_lag_days)} day(s) after the trade` : ""}${source ? ` · <a href="${E(source)}" rel="noopener noreferrer" target="_blank">Original filing</a>` : ""}</p>
         <div class="ac-item__actions"><button type="button" class="ac-btn" data-explain>Explain</button></div><div class="re-explain" hidden></div>`;
       X.toggle(li.querySelector("[data-explain]"), li.querySelector(".re-explain"), ev.id);

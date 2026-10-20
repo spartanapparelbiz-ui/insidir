@@ -20,6 +20,7 @@ import { emailSettings } from "./config.mjs";
 import { emailDigest, requestAddress } from "./security-events.mjs";
 import { hasAccess } from "./paywall.mjs";
 import { eventSummary } from "./research-events.mjs";
+import { eventHeadline } from "./plain-language.mjs";
 
 export const EVENT_TYPES = Object.freeze(["insider_purchase", "insider_sale", "multi_insider_purchase", "form4_amendment", "company_disclosure"]);
 export const EMAIL_MODES = Object.freeze(["off", "immediate", "daily"]);
@@ -105,7 +106,7 @@ function alertEmail(user, events, { env, digest }) {
   const unsubscribe = `${site}/v1/email/unsubscribe?t=${encodeURIComponent(unsubscribeToken(user.id, env))}`;
   const lines = events.slice(0, MAX_PER_EMAIL).map(e => {
     const source = e.source_urls?.[0] ? ` Source: ${e.source_urls[0]}` : "";
-    return `• ${eventSummary(e)}${source}`;
+    return `• ${eventHeadline(e)}. ${eventSummary(e)}${source}`;
   });
   const more = events.length > MAX_PER_EMAIL ? [`And ${events.length - MAX_PER_EMAIL} more in Alerts.`] : [];
   const { text, html } = renderEmail({
@@ -223,7 +224,7 @@ export async function listNotifications(query, userId, { limit = 50, before = nu
   const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL AND available_at<=now()", [userId])).rows[0].n;
   return { items: rows.map(r => ({ id: String(r.id), reason: r.reason, delivery: r.delivery, createdAt: r.created_at, readAt: r.read_at, event: { id: String(r.event_id), type: r.event_type, status: r.status,
     supersededBy: r.superseded_by, ticker: r.ticker, issuerName: r.issuer_name, transactionDate: r.transaction_date, transactionDateEnd: r.transaction_date_end,
-    filingDate: r.filing_date, retrievedAt: r.ingested_at, accessions: r.accessions, sourceUrls: r.source_urls, summary: eventSummary({ ...r, id: r.event_id }) } })),
+    filingDate: r.filing_date, retrievedAt: r.ingested_at, accessions: r.accessions, sourceUrls: r.source_urls, headline: eventHeadline(r), summary: eventSummary({ ...r, id: r.event_id }) } })),
     unread: unreadCount, next: rows.length ? String(rows.at(-1).id) : null };
 }
 export async function markRead(query, userId, { ids = null, all = false } = {}) {
