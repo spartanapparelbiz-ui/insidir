@@ -29,7 +29,7 @@
        said once;
      - the header search: every company and person in its results carries a tile;
      - a logo or headshot tile beside every person and company the page names, identified by SEC CIK;
-     - layout: no load shift (the header shell holds its 70px; skeletons hold the content's space) with staggered
+     - layout: no load shift (the header shell holds its 70px and the section row its 45px; skeletons hold the content's space) with staggered
        latency, also on a return visit whose Today sentence is longer than the last one's; no horizontal overflow and
        no text cut off mid-word at 360–1440px, touch targets, sharp images, no orange anywhere;
      - motion: atoms written per frame during a scroll never exceed the atoms on screen (plus a few settling);
@@ -236,6 +236,11 @@ function fixture(data, { blockMedia = false, followFails = null } = {}) {
     if (path === "/v1/me/notifications") return { status: 200, body: { items: [], unread: state.saved.length ? 3 : 0 } };
     // EDGAR filers beyond the import (header search, people directory): none in these fixtures.
     if (path === "/v1/entities/search") return { status: 200, body: { items: [], total: 0, offset: 0, limit: 20, hasMore: false, state: "no_match", lookups: [] } };
+    // Autopilot follows and the Changes / Connections panels (v33-platform.js): empty answers, as for a filer with none.
+    if (path === "/v1/ai/status") return { status: 200, body: { configured: false, advice: false } };
+    if (path === "/v1/me/follows") return { status: 200, body: { items: [...state.saved.map(t => ({ kind: "company", id: t, ticker: t, mode: "important", paused: false })), ...state.follows.map(c => ({ kind: "person", id: c, cik: String(c).padStart(10, "0"), mode: "important", paused: false }))], modes: ["important", "all", "daily", "weekly", "off"] } };
+    if (/^\/v1\/entities\/\d+\/changes$/.test(path)) return { status: 200, body: { subject: { cik: path.split("/")[3] }, window: { days: 90 }, items: [], counts: {}, gaps: [], method: "Detected by rules." } };
+    if (/^\/v1\/entities\/\d+\/connections$/.test(path)) return { status: 200, body: { subject: { id: path.split("/")[3], name: "Fixture", kind: "person", url: "#" }, nodes: [{ id: path.split("/")[3], name: "Fixture", kind: "person", url: "#" }], edges: [], gaps: [], method: "Built from Form 4." } };
     if (path === "/v1/me/people/updates") return { status: 200, body: updatesFor(state.follows, [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]) };
     if (path.startsWith("/v1/people/")) { const f = personFile(decodeURIComponent(path.split("/").pop()), [...(data["/v1/transactions"]?.items || []), ...(data.older || [])]); return f ? { status: 200, body: f } : { status: 404, body: { error: "Reporting person not found in imported SEC records" } }; }
     if (path === "/v1/me/people") return { status: 200, body: { items: state.follows.map(cik => ({ owner_cik: cik, owner_name: PERSON[cik]?.[0] || "FIXTURE FILER", ticker: PERSON[cik]?.[1] || null, last_transaction_date: "2026-09-12", created_at: "2026-09-01T00:00:00Z" })) } };
@@ -994,7 +999,8 @@ try {
       await settle(page);
       await page.waitForTimeout(400);
       const again = await page.evaluate(() => ({ sum: window.__shifts.reduce((a, s) => a + s.v, 0), list: window.__shifts, main: Math.round(document.getElementById("Content").getBoundingClientRect().top + scrollY), doc: document.documentElement.scrollHeight }));
-      check(sk.header === 70 && sk.main === 70 && again.main === 70, width + "px: the header shell holds 70px from the first paint, so main never moves", { sk, again: again.main });
+      // The 70px header and the 45px section row under it (Overview · Following · Alerts · Portfolio), both from the first paint.
+      check(sk.header === 70 && sk.main === 115 && again.main === 115, width + "px: the header shell (70px) and section row (45px) hold their space from the first paint, so main never moves", { sk, again: again.main });
       check(first.sum <= 0.01, width + "px: loading with staggered latency shifts nothing (first visit, emulator-flagged shifts included: " + first.sum.toFixed(4) + ")", first.list);
       check(again.sum <= 0.01, width + "px: a returning visit shifts nothing (" + again.sum.toFixed(4) + ")", again.list);
       check(Math.abs(again.doc - sk.doc) <= 24, width + "px: a returning visit's skeleton is as tall as the page it becomes (" + sk.doc + " → " + again.doc + ")", { skeleton: sk.doc, loaded: again.doc });

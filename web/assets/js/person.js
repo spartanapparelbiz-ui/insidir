@@ -467,7 +467,9 @@ async function loadFollowing(){
 /* ---------- load ---------- */
 async function load(){
  main.classList.add("is-loading");main.setAttribute("aria-busy","true");
- try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);if(file?.coverage==="sec_submissions_history_only")renderSecHistory(file);else render(file);}
+ try{file=await api("/v1/people/"+encodeURIComponent(askedCik)+"?limit="+LIMIT);if(file?.coverage==="sec_submissions_history_only")renderSecHistory(file);else render(file);
+  // Changes, Connections and the follow settings (v33-platform.js) are drawn once the file exists.
+  document.dispatchEvent(new CustomEvent("insidir:person",{detail:{cik:personCik}}));}
  catch(e){
   if(e.status===401||e.status===402)return;
   if(e.status===404)showState("missing",e.message);

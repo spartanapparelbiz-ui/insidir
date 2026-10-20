@@ -279,15 +279,17 @@
     }
     // Person page.
     if (document.body.classList.contains("pf-page")) {
-      const cik = cik10(params.get("cik"));
-      if (cik) {
+      const asked = cik10(params.get("cik"));
+      // Only for a file that loaded (person.js announces it), so a CIK with no record asks for nothing more.
+      if (asked) document.addEventListener("insidir:person", e => {
+        const cik = cik10(e.detail && e.detail.cik) || asked;
         sections(document.getElementById("pf-file"), cik);
         const actions = document.getElementById("pf-actions");
         if (actions && !document.getElementById("pf-follow-settings")) actions.insertAdjacentHTML("afterend", '<div class="ip-follow" id="pf-follow-settings" hidden></div>');
         mountFollowSettings(document.getElementById("pf-follow-settings"), "person", cik);
         document.addEventListener("insidir:followed", () => mountFollowSettings(document.getElementById("pf-follow-settings"), "person", cik));
         document.addEventListener("insidir:unfollowed", () => mountFollowSettings(document.getElementById("pf-follow-settings"), "person", cik));
-      }
+      }, { once: true });
     }
     // SEC filer page.
     if (document.body.classList.contains("en-page")) {
