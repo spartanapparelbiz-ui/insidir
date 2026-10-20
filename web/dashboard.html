@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="assets/css/v13-app.css?v=26">
 <link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=3"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script><script defer src="assets/js/v32-overview.js"></script><script defer src="assets/js/v33-platform.js?v=2"></script></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=3"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script><script defer src="assets/js/v32-overview.js"></script><script defer src="assets/js/v33-platform.js?v=3"></script></head>
 <body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
 <main class="app-main v3-main rd" id="Content">
 <div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
@@ -41,7 +41,7 @@
 <section class="rd-start" id="rd-start" aria-labelledby="rd-start-title" hidden>
   <div class="rd-start__head"><div><p class="rd-eyebrow">Get started · about two minutes</p><h2 id="rd-start-title">What would you like to follow?</h2></div><button type="button" class="rd-start__skip" data-start-skip>Skip for now</button></div>
   <ol class="rd-start__steps">
-    <li data-step="follow"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Follow a company or a person</b><span>Search any SEC filer below, or use Follow on the suggestions further down. Insidir then watches their filings, notes what changed and tells you about important updates.</span></div></li>
+    <li data-step="follow"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Follow a company or a person</b><span>Search any SEC filer below, or use Follow on the suggestions further down. Insidir then watches their filings and brings you the research leads, risks and changes in them, each with its evidence.</span></div></li>
     <li data-step="records"><span class="rd-start__mark" aria-hidden="true"></span><div><b>See their latest records</b><span>Their recent Form 4 filings appear further down this page, under People you follow and Your watchlist, newest first. From now on, Insidir checks for new ones for you.</span></div></li>
     <li data-step="briefing"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Open your briefing</b><span>What changed for what you follow, and why each item is there. <a href="intelligence.html#briefing" data-onboard="briefing">Open the Briefing →</a></span></div></li>
     <li data-step="alerts"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Choose how you hear about it</b><span>Alerts arrive in the app already. Turn on device push or alert emails if you want them. <a href="alerts.html#al-delivery-h" data-onboard="alerts">Notification settings →</a></span></div></li>
@@ -49,7 +49,7 @@
   <p class="rd-start__note" data-start-status aria-live="polite"></p>
 </section>
 <script>/* Before first paint: show the panel only to a new member who has not finished or skipped it. */(()=>{try{if(localStorage.getItem("insidir:onboard")==="new")document.getElementById("rd-start").hidden=false;}catch(e){}})();</script>
-<p class="rd-intel-link"><a href="intelligence.html">Open Insidir Intelligence: your briefing, research questions and 13F holdings →</a></p>
+<p class="rd-intel-link">Ask Insidir Intelligence: <a href="intelligence.html?q=What%20changed%20since%20my%20last%20visit%3F">What changed since my last visit?</a> · <a href="intelligence.html?q=What%20did%20the%20people%20I%20follow%20report%20this%20month%3F">What did the people I follow report?</a> · <a href="intelligence.html#mirror">What are institutional investors reporting?</a></p>
 <div class="rd-grid">
   <section class="rd-module rd-module--follow" aria-labelledby="rd-follow-title">
     <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow →</a></header>

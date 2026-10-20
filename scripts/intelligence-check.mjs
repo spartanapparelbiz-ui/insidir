@@ -76,7 +76,7 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
   await check(label + ": hero copy, and the instrument is the favicon's ten circles at their own coordinates", async () => {
     assert.equal((await page.textContent(".ix-hero__title")).trim(), "See what others overlook.");
     assert.match(await page.textContent(".ix-hero .ix-kicker"), /Insidir \/ Intelligence/i);
-    assert.match(await page.textContent(".ix-hero__lede"), /follows the public record, connects the information/);
+    assert.match(await page.textContent(".ix-hero__lede"), /actionable research insights.*follows the public record, connects the information/);
     await page.waitForSelector("[data-mark] .im-dot[role=button]");
     const drawn = await page.$$eval("[data-mark] .im-core", cs => cs.map(c => ["cx", "cy", "r"].map(a => Number(c.getAttribute(a)))));
     assert.deepEqual(drawn, FAVICON);

@@ -135,6 +135,17 @@
   .sx-wire{display:none}
 }
 
+/* ---------- 3b. the questions a member brings (index.html .qx-section): a numbered ledger on rules ---------- */
+.qx-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 var(--s-5);counter-reset:qx}
+.qx-list li{counter-increment:qx;position:relative;padding:var(--s-5) 0 var(--s-6);border-top:1px solid var(--c-line-2);display:flex;flex-direction:column;gap:6px;min-width:0}
+.qx-list li::before{content:counter(qx,decimal-leading-zero);font-size:11px;letter-spacing:.12em;color:var(--c-faint)}
+.qx-list h3{margin:0;font:700 clamp(17px,1.4vw,21px)/1.2 var(--font);letter-spacing:-.02em;color:var(--c-ink)}
+.qx-list p{margin:0;color:var(--c-muted);font-size:13px;line-height:1.55}
+.qx-where{margin-top:auto;padding-top:var(--s-2);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-soft)}
+.lp-final__lede{max-width:60ch;margin:var(--s-4) auto 0;color:var(--c-soft);font-size:var(--fs-lead);line-height:var(--lh-body);text-align:center}
+@media (max-width:900px){.qx-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.qx-list{grid-template-columns:1fr}.lp-final__lede{text-align:left}}
+
 /* ---------- 3. the platform: five capabilities, each with its own figure ---------- */
 .cp-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s-3);margin:0;padding:0;list-style:none}
 .cp{grid-column:span 2;margin:0;display:flex;flex-direction:column;min-height:300px;padding:var(--s-5);background:var(--panel);border:1px solid var(--c-line-soft);border-radius:var(--r-lg);box-shadow:var(--shadow-panel);

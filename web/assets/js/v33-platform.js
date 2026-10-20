@@ -30,7 +30,7 @@
   function evidenceHTML(list) {
     const items = (list || []).filter(Boolean);
     if (!items.length) return '<p class="ip-muted">No source record is attached to this item.</p>';
-    return '<ol class="ip-ev">' + items.map(e => {
+    return '<p class="ip-muted">Verify the facts before making financial decisions: each record below opens the SEC filing it came from.</p><ol class="ip-ev">' + items.map(e => {
       const rows = [["Source", e.source], ["Record", e.title], ["Entity", e.entity ? (e.entity.name || "") + (e.entity.cik ? " · CIK " + e.entity.cik : "") : null],
         ["Filed", e.filedOn], ["Period", e.period ? (e.period.start && e.period.start !== e.period.end ? e.period.start + " to " : "") + (e.period.end || "") + (e.period.type ? " (" + e.period.type + ")" : "") : null],
         ["Field", e.field], ["Value", fmtValue(e.value, e.units)], ["Method", e.methodology]].filter(r => r[1]);
@@ -214,7 +214,7 @@
     try { f = (await api("/v1/me/follows")).items.find(x => x.kind === kind && (kind === "company" ? x.ticker === id : cik10(x.cik) === cik10(id))); } catch (_) { host.hidden = true; return; }
     if (!f) { host.hidden = true; host.innerHTML = ""; return; }
     host.hidden = false;
-    host.innerHTML = `<label class="ip-field">Alerts <select data-mode>${MODES.map(([v, l]) => `<option value="${v}"${v === f.mode ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+    host.innerHTML = `<label class="ip-field">Autopilot <select data-mode>${MODES.map(([v, l]) => `<option value="${v}"${v === f.mode ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <button type="button" class="ip-btn" data-pause aria-pressed="${f.paused}">${f.paused ? "Resume" : "Pause"}</button><span class="ip-muted" data-saved role="status"></span>`;
     const saved = host.querySelector("[data-saved]");
     const save = async change => {
@@ -260,9 +260,9 @@
   function sections(anchor, cik, where = "beforeend") {
     if (!anchor || document.getElementById("ip-changes")) return;
     anchor.insertAdjacentHTML(where, `<section class="ip-section" aria-labelledby="ip-changes-h"><p class="ip-eyebrow">Insidir Changes</p><h2 id="ip-changes-h">What changed.</h2>
-      <p class="ip-lede">Detected by rules from structured SEC records, newest first. Every item opens its evidence.</p><div id="ip-changes"></div></section>
+      <p class="ip-lede">Important shifts in ownership, insider activity and disclosures, detected by rules from structured SEC records, newest first. Open any item to verify its evidence.</p><div id="ip-changes"></div></section>
       <section class="ip-section" aria-labelledby="ip-connections-h"><p class="ip-eyebrow">Insidir Connections</p><h2 id="ip-connections-h">Who is connected.</h2>
-      <p class="ip-lede">Reporting relationships and joint filings from Form 4 records. Select a node for its filings; expand to load its own connections.</p><div id="ip-connections"></div></section>`);
+      <p class="ip-lede">Relationships with companies, executives and investors that may deserve further research, from Form 4 records. Select a node for its filings; expand to load its own connections.</p><div id="ip-connections"></div></section>`);
     mountChanges(document.getElementById("ip-changes"), cik);
     mountConnections(document.getElementById("ip-connections"), cik);
   }
