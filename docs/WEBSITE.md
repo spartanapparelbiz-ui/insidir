@@ -33,7 +33,7 @@ Every page shares one print-grain dark identity, taken from the reference footer
 
 Type is one face, JetBrains Mono (`--hf-mono`; `--hf-sans` is an alias), at one scale: the landing headline `--hf-fs-display` (about 92px at 1440, 40px on a phone), marketing section heads `--hf-fs-h2-lg` (52px), product page titles `--hf-fs-h1` (40px), product module heads `--hf-fs-h2` (22px), card and step titles `--hf-fs-h3` (18px), body 13–16px; headings at 700 with negative tracking, weight 800 only for the logo, the wordmark and the footer brand. Capitals are for labels only, at `--hf-label` (500 11px/16px) and `--hf-track` (.12em): eyebrows and running heads, table column heads, panel and KPI labels, badges and the New mark, footer column heads. Everything you press or follow (navigation, buttons, action links, chips, tabs, footer links) is sentence case. Figures use tabular numerals; coding ligatures are off.
 
-One container sets every edge: `min(--hf-max, 100% − 2 × --hf-gutter)` (1320px wide, 1440px from 1600px screens; the gutter runs from 20px on a phone to 60px), so the logo, the first character of the content and the footer brand line up on every page (x = 60 at 1440, x = 20 at 390). Corners are square (the avatar and dots excepted), rules are 1px hairlines, panels carry a 1px top highlight and popovers a paper-coloured shadow, focus is a 2px ink ring, photographs are grayscale, and a fine grain sits over the whole page. Hover changes colour and underlines only: no row or card fills, nothing moves.
+One container sets every edge: `min(--hf-max, 100% − 2 × --hf-gutter)` (1320px wide, 1440px from 1600px screens; the gutter runs from 20px on a phone to 60px), so the logo, the first character of the content and the footer brand line up on every page (x = 60 at 1440, x = 20 at 390). Corners were square under V13 (V34 rounds them, see [V34](#v34-soft-surfaces)), rules are 1px hairlines, panels carry a 1px top highlight and popovers a paper-coloured shadow, focus is a 2px ink ring, photographs are grayscale, and a fine grain sits over the whole page. Hover changes colour and underlines only: no row or card fills, nothing moves.
 
 `assets/css/v13-halftone.css` holds the tokens and the shared primitives (navigation, product header, buttons, inputs, tables, panels, signals, charts, the footer). It lives in the `insidir-v13` cascade layer and every declaration is `!important`: important declarations in a layer beat the unlayered `!important` rules of the older v2–v12 stylesheets regardless of specificity, so the identity is applied without editing them. The per-family files (`v13-home.css`, `v13-app.css`, `v13-desk.css`, `v13-auth.css`, `v13-static.css`, `v13-company.css`, `v13-notfound.css`) follow the same rule. Keep it when adding styles: new rules go inside the family file's `@layer insidir-v13{}` block, prefixed with `body.v13`, every declaration `!important`, colours only through the tokens.
 
@@ -71,6 +71,30 @@ Asset URLs need no `?v=`: `src/web.mjs` rewrites every `assets/…` reference in
 serves it, and a request whose `?v=` matches is cached for a year as immutable. `srcset` candidates are versioned the same way, so a
 `<picture>` source and its preload name one URL. Fonts are the exception: stylesheets load them through `url()` without a
 version, so a font preload stays unversioned too (otherwise the font downloads twice); fonts are cached for a week.
+
+### V34: soft surfaces
+
+`assets/css/v34-soft.css` is loaded last on every V13 page and supersedes the square-corner and one-typeface rules
+above. Its rules live in the `insidir-v13` layer behind `html body.v13:not(#\#)`, one ID step above every family file,
+so it decides without editing them; colours still come only from the tokens.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--v34-r-xl` / `--v34-r-lg` / `--v34-r-md` / `--v34-r-sm` / `--v34-r-xs` / `--v34-r-pill` | 24 / 20 / 16 / 12 / 8 / 999px | the sign-in card and plans / panels / cards inside a section, menus / fields / logo tiles / every button, chip, badge and segmented control |
+| `--v34-edge` / `--v34-edge-2` | ink 7.5 % / 12 % | a card's hairline / controls and menus at rest |
+| `--v34-card` / `--v34-card-flat` | ink 4.2 %→1.4 % over the surface / ink 2.8 % | a card's top-lit fill / a nested group or a control track |
+| `--v34-lift` | an inset top highlight and a paper-coloured drop | every card |
+| `--v34-gap` | 12–16px | the space that separates cards (no shared borders) |
+
+Rules of thumb: a strip of cells is a row of separate cards; a card inside a card has no frame of its own; people are
+circles and company logos soft squares; on phones cards stay inset (never bled to the edges) so their corners show.
+`--hf-line` and `--hf-line-faint` are a step softer (#272725, #1b1b1a).
+
+Product pages (`body.app-body`, the research desk and the portfolio) point `--hf-mono` and `--hf-sans` at the
+interface sans (`--hf-ui`) with tabular figures, so every family rule that named the mono face now reads in the sans.
+JetBrains Mono (`--v34-figure`) is restored for `h1`/`h2`, caps labels (`*eyebrow*`, `*__label`, `*-label`, `*kicker*`,
+`*index*`, `*__k`), tickers, codes, badges and the large figures (`.rd-kpi__value`, `.rd-desk__v`, `.cx-tile strong`,
+the plan price and the research and portfolio figures). Public pages, the auth pages and the landing keep their type.
 
 ### Motion: still content, live dots
 

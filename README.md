@@ -1,3 +1,14 @@
+## Insidir V34: soft surfaces instead of boxes (October 2026)
+
+Same palette, same brand face; the boxes are gone. One new sheet, `web/assets/css/v34-soft.css`, loaded last on every page.
+
+- **Rounded, separated surfaces.** Panels are 20px cards on a faint top-lit gradient inside a softer hairline (16px for cards inside a section, 24px for the sign-in card and the plan). Strips of ruled cells became rows of separate cards: the overview's desk and market figures, the company report's hero (identity, quote, key facts), its overview columns and stat tiles, the research desk's figures and the marketing pages' hairline grids. A card inside a card loses its own frame.
+- **Pills for everything you press.** Buttons, filter chips, segmented controls (a soft track with a raised selection), badges and the header search are pills; fields are 12px; menus and tooltips 16px; company logos are soft squares and people are circles. The personnel file's photo loses its corner ticks and its rotated stamp becomes a small label.
+- **Type that reads.** Product pages (overview, explore, filings, people, personnel files, company reports, research desk, watchlist, alerts, portfolio, account, billing, Intelligence) set running text, names, rows and controls in the system interface sans with tabular figures. JetBrains Mono stays the brand voice: page and module titles, caps labels, tickers and codes, and the large figures.
+- **Phones.** Cards stay inset with their rounded corners instead of bleeding to the screen edges; the suggestions stay a swipeable row of cards.
+
+The palette audit, layout, accessibility, dashboard, motion and Intelligence checks pass unchanged. See `docs/WEBSITE.md`, "V34: soft surfaces".
+
 ## Insidir V29: faster, clearer to buy, organised around what people do (October 2026)
 
 Same identity (paper and ink, JetBrains Mono, the dotted i, the halftone wordmark); a different engine room.
