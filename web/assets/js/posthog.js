@@ -6,7 +6,7 @@
    A random PostHog id is kept in localStorage, never in a cookie, and is not linked to the account. */
 (() => {
   "use strict";
-  const TOKEN = "";
+  const TOKEN = "phc_nSznyqripwegsZFp5fVvusojJPXwJKeSWUQij2zrP27L";
   const API_HOST = "https://us.i.posthog.com";
   const LOADER = "https://us-assets.i.posthog.com/static/array.js";
   const PRIVATE = /^\/(signin|forgot-password|reset-password|verify-email|account|account-deleted|billing|portfolio|ops|admin-[a-z-]+)(\.html)?$/;
