@@ -66,6 +66,7 @@ ${noindex ? '<meta name="robots" content="noindex,nofollow">\n' : ""}<link rel="
 <script defer src="/assets/js/v13-halftone.js?v=8"></script><script defer src="/assets/js/v13-motion.js?v=5"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
 <script defer src="/assets/js/public-share.js?v=1"></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
 <link rel="stylesheet" href="/assets/css/v29-system.css">
 ${scripts.join("\n")}${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public v26-stories">

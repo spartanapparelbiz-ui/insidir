@@ -40,12 +40,15 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
   const { connections } = await import("../src/connections.mjs");
   const { changes } = await import("../src/changes.mjs");
   const { buildResearchEvents } = await import("../src/research-events.mjs");
+  const { longDay, filedDay } = await import("../src/plain-language.mjs");
   const { fanOut, isImportant } = await import("../src/notifications.mjs");
 
   const parse = (acc, published, overrides = {}) => ({ ...parseOwnership(readFileSync(new URL("./fixtures/form4/" + acc + ".xml", import.meta.url), "utf8"),
     { accession: acc, filerCik: "1", sourceUrl: "https://www.sec.gov/Archives/edgar/data/1/" + acc + "/x-index.htm", title: "4", formType: "4", publishedAt: published }), ...overrides });
   // Published within the alert window (fan-out only alerts on filings from the last three days).
-  for (const [acc, h] of [["000007085826000486", 30], ["000070686326000085", 26], ["000090445426000519", 20], ["000207570426000038", 18]]) await db.persistFiling(parse(acc, hoursAgo(h)));
+  // Publication times are relative to now, so a date shown for one is derived from the same time, not written in.
+  const publishedAt = {};
+  for (const [acc, h] of [["000007085826000486", 30], ["000070686326000085", 26], ["000090445426000519", 20], ["000207570426000038", 18]]) await db.persistFiling(parse(acc, publishedAt[acc] = hoursAgo(h)));
   // Derived: a later Form 4 by the same UNB owner, filed as an officer instead of a director.
   const unb = parse("000070686326000085", hoursAgo(10));
   await db.persistFiling({ ...unb, accession: "000070686326000999", sourceUrl: "https://www.sec.gov/Archives/edgar/data/1/000070686326000999/x-index.htm",
@@ -85,7 +88,8 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
     assert.match(original.detail, /purchase: 418 shares, \$9,917\.05 as filed/);
     // The plain layer first: a headline and a sentence with the same figures, the filing's terms kept in detail.
     assert.equal(original.headline, "Insider share purchase disclosed");
-    assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed [A-Z][a-z]{2} \d{1,2}, 20\d\d\./, "the price as filed, not rounded to the cent");
+    assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed /, "the price as filed, not rounded to the cent");
+    assert.ok(original.summary.endsWith(", filed " + longDay(filedDay(publishedAt["000070686326000085"])) + "."), original.summary);
     assert.ok(Array.isArray(original.footnotes));
     assert.ok(original.evidence.some(e => e.field === "nonDerivativeTransaction/transactionShares" && e.value === 418 && e.units === "shares" && e.period.end === "2026-09-17"));
     const role = c.items.find(i => i.kind === "role_change");
