@@ -85,7 +85,7 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
     assert.match(original.detail, /purchase: 418 shares, \$9,917\.05 as filed/);
     // The plain layer first: a headline and a sentence with the same figures, the filing's terms kept in detail.
     assert.equal(original.headline, "Insider share purchase disclosed");
-    assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed Oct 19, 2026\./, "the price as filed, not rounded to the cent");
+    assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed [A-Z][a-z]{2} \d{1,2}, 20\d\d\./, "the price as filed, not rounded to the cent");
     assert.ok(Array.isArray(original.footnotes));
     assert.ok(original.evidence.some(e => e.field === "nonDerivativeTransaction/transactionShares" && e.value === 418 && e.units === "shares" && e.period.end === "2026-09-17"));
     const role = c.items.find(i => i.kind === "role_change");

@@ -22,6 +22,9 @@ const money = n => (n < 0 ? "−$" : "$") + Math.abs(Number(n)).toLocaleString("
 // A price per share as filed: cents at least, up to four places, never rounded ($23.725 stays $23.725).
 const price4 = n => "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 const isoDay = v => v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
+// The SEC dates a filing in US Eastern time: a filing at 9 pm New York time on the 19th is filed on the 19th.
+export const filedDay = v => { if (v == null) return null; const s = v instanceof Date ? v.toISOString() : String(v);
+  if (!/T\d/.test(s)) return s.slice(0, 10); const d = new Date(s); return isNaN(d) ? null : d.toLocaleDateString("en-CA", { timeZone: "America/New_York" }); };
 export const longDay = v => { const d = isoDay(v); return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }) : null; };
 
 /* Code M (and X, O) covers options and also restricted or performance stock units converting into shares, so the
@@ -90,7 +93,7 @@ export function form4Summary(lines, { owners = [], issuer, filedOn, plan = false
   });
   const traded = [...new Set((lines || []).map(l => isoDay(l.transaction_date)).filter(Boolean))].sort();
   const when = [traded.length ? "Traded " + longDay(traded[0]) + (traded.length > 1 ? " to " + longDay(traded[traded.length - 1]) : "") : null,
-    filedOn ? (traded.length ? "filed " : "Filed ") + longDay(filedOn) : null].filter(Boolean).join(", ");
+    filedOn ? (traded.length ? "filed " : "Filed ") + longDay(filedDay(filedOn)) : null].filter(Boolean).join(", ");
   const notes = [
     plan ? "The filing marks transactions made under a pre-arranged trading plan (Rule 10b5-1)." : null,
     indirect(lines),
@@ -100,6 +103,29 @@ export function form4Summary(lines, { owners = [], issuer, filedOn, plan = false
   const body = parts.length ? who + " " + (parts.length === 1 ? parts[0] : parts.slice(0, -1).join("; ") + "; and " + parts[parts.length - 1]) + (issuer && !namedIssuer ? " (" + issuer + ")" : "")
     : who + " filed a holdings report" + (issuer ? " for " + issuer : "") + " with no transactions";
   return body + "." + (when ? " " + when + "." : "") + (notes.length ? " " + notes.join(" ") : "");
+}
+
+/* A person's name as people write it. SEC filings list people surname first ("COOK TIMOTHY D", "Al-Nahyan Tahnoon Bin
+ * Zayed S."); this puts the given names first ("Timothy D. Cook", "Tahnoon bin Zayed S. Al-Nahyan"), keeps a suffix last
+ * and leaves organizations as filed. Use it for people only; the name as filed stays in the record. */
+const ORGISH = /\b(INC|INCORPORATED|CORP|CORPORATION|LLC|L\.?L\.?C|LP|L\.?P|LLP|LTD|LIMITED|PLC|TRUST|FUND|FUNDS|PARTNERS|PARTNERSHIP|CAPITAL|HOLDINGS?|GROUP|MANAGEMENT|BANK|BANCORP|FOUNDATION|COMPANY|CO|ADVISORS|ADVISERS|ASSOCIATES|VENTURES|INVESTMENTS?|SECURITIES|ESTATE|AUTHORITY|S\.?A|AG|N\.?V|GMBH|SPV)\b\.?/i;
+const PARTICLES = new Set(["BIN", "BINT", "IBN", "AL", "EL", "DE", "DA", "DI", "DEL", "DER", "DEN", "VAN", "VON", "LA", "LE", "DU", "DOS", "DAS"]);
+const capWord = w => /^[A-Z]\.?$/.test(w) ? w.charAt(0) + "." : /^([A-Z]\.){2,}$/.test(w) ? w : PARTICLES.has(w.replace(/\.$/, "")) ? w.toLowerCase()
+  : w.toLowerCase().replace(/(^|[-'’])(\p{L})/gu, (m, a, c) => a + c.toUpperCase()).replace(/^Mc(\p{L})/u, (m, c) => "Mc" + c.toUpperCase());
+export function readableName(raw) {
+  const name = String(raw ?? "").replace(/\s+/g, " ").trim();
+  if (!name) return "A reporting person";
+  if (ORGISH.test(name) || name.includes(",") || !/\s/.test(name)) return /[a-z]/.test(name) ? name : name.split(" ").map(capWord).join(" ");
+  const caps = !/[a-z]/.test(name), parts = name.split(" ");
+  const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";
+  // A surname can start with a particle: "AL SAUD ...", "VAN DER BERG ...".
+  let n = 1; while (n < parts.length - 1 && PARTICLES.has(parts[n - 1].toUpperCase().replace(/\.$/, ""))) n++;
+  // "bin Jassim Al-Thani Sheikh Sultan": a family name ("Al-Thani") right after a patronymic belongs to the surname.
+  if (n > 1 && n < parts.length - 1 && /^(al|el)-/i.test(parts[n])) n++;
+  const last = parts.slice(0, n).join(" "), given = parts.slice(n);
+  const fix = w => caps ? capWord(w) : /^[A-Za-z]$/.test(w) ? w + "." : w;
+  const sfx = !suffix ? "" : /^(II|III|IV|V)$/i.test(suffix) ? suffix.toUpperCase() : suffix.charAt(0).toUpperCase() + suffix.slice(1).toLowerCase().replace(/\.?$/, ".");
+  return [...given.map(fix), last.split(" ").map(fix).join(" ").replace(/^(al|el)\b/, x => x.charAt(0).toUpperCase() + x.slice(1)), sfx].filter(Boolean).join(" ").replace(/\bH\.? R\.? H\.?(?= )/, "HRH");
 }
 
 // 8-K items in the order they matter to a reader, each as a headline.

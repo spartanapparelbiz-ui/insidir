@@ -115,13 +115,14 @@ const edgarHost=$("v10-edgar-results"),edgarBox=$("v10-edgar"),edgarStatus=$("v1
 let edgarItems=[],edgarOffset=0,edgarTotal=0,edgarQuery="";
 function edgarCard(e){
  const id=String(e.cik||"").replace(/^0+/,""),role=e.latestRole;
- const what=e.kind==="organization"?"Reporting entity":e.kind==="person"?"Reporting person":e.kind==="company"?"Company that also files as an owner":"SEC filer";
- const where=role?esc(role.role||"Reporting owner")+(role.issuerName?" · "+esc(companyName(role.issuerName)):""):esc(what);
+ const what=e.kind==="organization"?"Fund or firm":e.kind==="person"?"Person":e.kind==="company"?"Company that also owns shares in others":"Files with the SEC";
+ const where=role?esc(role.role||"Shareholder")+(role.issuerName?" · "+esc(companyName(role.issuerName)):""):esc(what);
  const imported=(e.importedFilings?.asOwner||0);
- const facts=['<div><dt>SEC CIK</dt><dd>'+esc(e.cik)+'</dd></div>','<div><dt>Form 4 imported</dt><dd>'+(imported?esc(imported)+" filing"+(imported===1?"":"s"):"None yet")+'</dd></div>'];
- if(e.matched)facts.push('<div><dt>Matched</dt><dd>'+esc(e.matched.as)+': '+esc(e.matched.name)+'</dd></div>');
+ const facts=['<div><dt>Insider trades on record</dt><dd>'+(imported?esc(imported)+" filing"+(imported===1?"":"s"):"None yet")+'</dd></div>','<div><dt>SEC ID</dt><dd>'+esc(String(e.cik).replace(/^0+/,""))+'</dd></div>'];
+ if(e.displayName&&e.displayName!==e.name)facts.push('<div><dt>Listed by the SEC as</dt><dd>'+esc(e.name)+'</dd></div>');
+ if(e.matched)facts.push('<div><dt>'+(e.matched.as==="former name"?"Formerly":"Also listed as")+'</dt><dd>'+esc(e.matched.name)+'</dd></div>');
  return '<article class="v10-person-card v10-person-card--edgar">'+
-  '<div class="v10-person-card__head">'+(media?.portrait(e.name,"","md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong><a class="v10-person-link" href="person.html?cik='+esc(id)+'">'+esc(shown(e.name))+'</a></strong><small>'+where+'</small></div></div>'+
+  '<div class="v10-person-card__head">'+(media?.portrait(e.name,"","md",{cik:id})||"")+'<div class="v10-person-card__identity"><strong><a class="v10-person-link" href="person.html?cik='+esc(id)+'">'+esc(e.displayName||shown(e.name))+'</a></strong><small>'+where+'</small></div></div>'+
   '<dl class="v10-person-card__facts">'+facts.join("")+'</dl>'+
   '<div class="v10-person-card__actions"><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&amp;CIK='+esc(e.cik)+'&amp;type=4&amp;owner=include&amp;count=40" target="_blank" rel="noopener noreferrer">EDGAR filings ↗</a>'+(e.isReportingOwner?followButton(e.cik,false):"")+'</div></article>';
 }

@@ -31,7 +31,7 @@
  <nav class="cx-crumbs" aria-label="Breadcrumb"><a href="explore.html" data-hf-atom><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Companies</a></nav>
  <p class="cx-kicker">Company reports · SEC ticker index</p>
  <h1 id="cx-picker-title">Research any<br>public company.</h1>
- <p>Explore available SEC financials, company disclosures and reported insider activity. Market history, news and profile coverage vary by issuer; unavailable data is never invented.</p>
+ <p>See a company's finances, announcements and insider trades, straight from its SEC filings. Some companies have less data than others; Insidir never fills the gaps with guesses.</p>
  <form class="cx-picker__form" id="cx-picker-form" role="search">
   <label class="sr-only" for="cx-picker-input">Ticker or company name</label>
   <input id="cx-picker-input" type="search" placeholder="Ticker or company name, e.g. NVDA or Coca-Cola" autocomplete="off" spellcheck="false" required>
@@ -139,7 +139,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="financials" aria-labelledby="tab-financials" hidden>
-  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">02 / SEC XBRL · 10-K, 10-Q, 20-F</p><h2>Financials</h2><p id="cx-fin-caption">Reported in SEC XBRL filings. Trailing twelve months combine the latest annual report with year-to-date quarterly reports.</p></div><a class="cx-link" id="cx-research-link" href="research.html" data-hf-atom>Open in Research Desk <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">02 / Reported results · annual and quarterly reports</p><h2>Financials</h2><p id="cx-fin-caption">From the company's own annual and quarterly reports to the SEC. The last 12 months add the latest annual report to this year's quarters so far.</p></div><a class="cx-link" id="cx-research-link" href="research.html" data-hf-atom>Open in Research Desk <span aria-hidden="true">→</span></a></div>
   <div class="cx-tiles" id="cx-ttm-tiles" data-cx-reveal-group></div>
   <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3>Annual history</h3>
@@ -160,7 +160,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="filings" aria-labelledby="tab-filings" hidden>
-  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">03 / EDGAR submissions</p><h2>SEC filings</h2><p>Original EDGAR submissions with reporting periods and 8-K item descriptions.</p></div><a class="cx-link" id="cx-edgar-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">03 / Company filings</p><h2>SEC filings</h2><p>Every report the company has filed with the SEC, what each one covers, and a link to the original.</p></div><a class="cx-link" id="cx-edgar-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">Open on SEC EDGAR <span aria-hidden="true">↗</span></a></div>
   <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3><span id="cx-filing-count">—</span> filings</h3>
     <div class="cx-chips" data-hf-still role="group" aria-label="Filter filings" id="cx-filing-filters">
@@ -172,7 +172,7 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="insiders" aria-labelledby="tab-insiders" hidden>
-  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">04 / Form 4 · Section 16 filers</p><h2>Insider activity</h2><p>Form 4 filings reported by officers, directors and 10% owners. Grants, option exercises, tax withholding and gifts are not open-market trades.</p></div><a class="cx-link" id="cx-form4-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All Form 4 filings <span aria-hidden="true">↗</span></a></div>
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">04 / Insider trades · Form 4</p><h2>Insider activity</h2><p>Buying and selling reported by the company's executives, directors and biggest shareholders. Stock awards, option exercises, shares kept for taxes and gifts are not trades on the market.</p></div><a class="cx-link" id="cx-form4-link" data-hf-atom href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">All insider filings <span aria-hidden="true">↗</span></a></div>
   <div class="cx-tiles cx-tiles--compact" id="cx-insider-summary" data-cx-reveal-group></div>
   <article class="cx-card cx-block" data-cx-reveal>
    <header class="cx-block__head"><h3>Reported transactions</h3>
@@ -184,14 +184,14 @@
   </article>
   <article class="cx-card cx-block re-panel" id="cx-research-events" data-research-events aria-labelledby="cx-re-title" data-cx-reveal>
    <h2 id="cx-re-title">Research events</h2>
-   <p>Insidir's record of this company's imported filings: open-market purchases and sales per Form 4, purchases by several insiders within 14 days, amended filings and what changed, and (when you watch the company) its other SEC filings. Each has a sourced explanation. Trade date, filing date and Insidir's retrieval time are shown apart.</p>
+   <p>What Insidir has picked up from this company's filings: insider buys and sells, several insiders buying within 14 days, corrected filings and what changed, and (when you follow the company) its other SEC filings. Each comes with an explanation and its source. The trade date and the date it was reported are shown separately.</p>
    <ul class="ac-list" id="cx-re-list"><li class="ac-empty">Loading research events…</li></ul>
    <p><button type="button" class="ac-btn" id="cx-re-more" hidden>Show older events</button></p>
   </article>
  </section>
 
  <section class="cx-panel" role="tabpanel" id="people" aria-labelledby="tab-people" hidden>
-  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">05 / Reporting owners · Wikidata</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html" data-hf-atom>People directory <span aria-hidden="true">→</span></a></div>
+  <div class="cx-section-head" data-cx-reveal><div><p class="cx-kicker">05 / People · executives and big shareholders</p><h2>People</h2><p>Officers and directors who filed ownership reports, plus leadership and founders listed on Wikidata.</p></div><a class="cx-link" href="people.html" data-hf-atom>People directory <span aria-hidden="true">→</span></a></div>
   <h3 class="cx-subhead" data-cx-reveal>Officers &amp; directors <small>from recent SEC Form 4 filings</small></h3>
   <div class="cx-people" id="cx-people-sec" data-cx-reveal-group></div>
   <h3 class="cx-subhead" id="cx-leaders-head" data-cx-reveal hidden>Leadership &amp; founders <small>from Wikidata</small></h3>
@@ -199,11 +199,11 @@
  </section>
 
  <section class="cx-panel" role="tabpanel" id="changes" aria-labelledby="tab-changes" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Changes · SEC records</p><h2>What changed</h2><p>Identify important shifts in ownership, insider activity and company disclosures: new Form 4 filings, amendments, role changes, financial results against a year earlier and other SEC filings, detected by rules. Open any item to verify its evidence.</p></div></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Changes · SEC records</p><h2>What changed</h2><p>What changed, newest first: insider trades, corrected filings, role changes, results against a year earlier and company announcements. Tap any item to see the filing behind it.</p></div></div>
   <div id="cx-changes-host" class="ip-host"></div>
  </section>
  <section class="cx-panel" role="tabpanel" id="connections" aria-labelledby="tab-connections" hidden>
-  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Connections · Form 4 records</p><h2>Who is connected</h2><p>Discover relationships between companies, executives and institutional investors that may deserve further research, from filed Form 4 records (major holders file as 10% owners). Select a node for its filings; expand it to load its own connections; set a date to see the records as of then.</p></div></div>
+  <div class="cx-section-head"><div><p class="cx-kicker">Insidir Connections · from insider filings</p><h2>Who is connected</h2><p>Who is linked to this company, from its insider filings: executives, directors and big shareholders, funds included. Tap a name to see the filings behind the link, expand it to see who they are linked to, or pick a date to see the picture back then.</p></div></div>
   <div id="cx-connections-host" class="ip-host"></div>
  </section>
  <section class="cx-panel" role="tabpanel" id="news" aria-labelledby="tab-news" hidden>

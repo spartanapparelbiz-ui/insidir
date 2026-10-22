@@ -18,7 +18,7 @@ import { evidence, form4LineEvidence } from "./evidence.mjs";
 import { companyFactChanges, resolveCompany, extractFilings } from "./intelligence.mjs";
 import { managerDetail } from "./intelligence-mirror.mjs";
 import { codeLabel, displayName, companyName } from "./intelligence-common.mjs";
-import { form4Headline, form4Summary, filingHeadline, factHeadline, longDay, periodPhrase, scaled } from "./plain-language.mjs";
+import { form4Headline, form4Summary, filingHeadline, factHeadline, longDay, filedDay, periodPhrase, scaled, readableName } from "./plain-language.mjs";
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const day = v => v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
@@ -90,7 +90,7 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
     items.push({ kind: f.is_amendment ? "form4_amendment" : "form4", date: day(f.published_at), accession: f.accession,
       subject: { name: f.issuer_name, cik: f.issuer_cik, ticker: f.ticker },
       headline: form4Headline(ls, { amended: f.is_amendment }),
-      summary: form4Summary(ls, { owners: owners.map(o => ({ owner_name: o.owner_name && displayName(o.owner_name), role: roleOf(o) })), issuer: companyName(f.issuer_name, f.ticker), filedOn: f.published_at,
+      summary: form4Summary(ls, { owners: owners.map(o => ({ owner_name: o.owner_name && readableName(o.owner_name), role: roleOf(o) })), issuer: companyName(f.issuer_name, f.ticker), filedOn: f.published_at,
         plan: f.rule_10b5_1, amended: f.is_amendment, originalFiledOn: f.original_filed_on }),
       title: (who || "A reporting owner") + (f.is_amendment ? " amended a Form 4" + (f.original_filed_on ? " first filed on " + day(f.original_filed_on) : "") : " filed a Form 4") + " for " + (f.issuer_name || "the issuer"),
       detail: (ls.length ? describeForm4(ls) + "." : "No transaction lines (holdings only).") + (f.rule_10b5_1 ? " Marked as made under a Rule 10b5-1 trading plan." : ""),
@@ -109,13 +109,13 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
     if (prev && sameRole(roleOf(prev)) !== sameRole(roleOf(r))) {
       items.push({ kind: "role_change", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
         headline: "Insider role changed",
-        summary: displayName(r.owner_name) + " now files as " + (roleOf(r) || "a reporting person with no role stated") + " at " + companyName(r.issuer_name) + "; their previous filing there said " + (roleOf(prev) || "no role") + ". Filed " + longDay(r.published_at) + ".",
+        summary: readableName(r.owner_name) + " now files as " + (roleOf(r) || "a reporting person with no role stated") + " at " + companyName(r.issuer_name) + "; their previous filing there said " + (roleOf(prev) || "no role") + ". Filed " + longDay(filedDay(r.published_at)) + ".",
         title: r.owner_name + "'s filed role at " + (r.issuer_name || "the issuer") + " changed", detail: "From " + (roleOf(prev) || "not stated") + " to " + (roleOf(r) || "not stated") + ", as filed.",
         evidence: [ev(prev, "Previous filing"), ev(r, "This filing")].filter(Boolean) });
     } else if (!prev && r.issuer_first_at && (new Date(r.published_at) - new Date(r.issuer_first_at)) >= FIRST_SEEN_DAYS * 86400_000) {
       items.push({ kind: "first_seen", date: day(r.published_at), accession: r.accession, subject: { name: r.issuer_name, cik: r.issuer_cik },
         headline: "New reporting insider",
-        summary: displayName(r.owner_name) + " filed as " + (roleOf(r) || "a reporting person") + " at " + companyName(r.issuer_name) + " for the first time in Insidir's records (from " + longDay(r.issuer_first_at) + "). Filed " + longDay(r.published_at) + ".",
+        summary: readableName(r.owner_name) + " filed as " + (roleOf(r) || "a reporting person") + " at " + companyName(r.issuer_name) + " for the first time in Insidir's records (from " + longDay(filedDay(r.issuer_first_at)) + "). Filed " + longDay(filedDay(r.published_at)) + ".",
         title: "First Form 4 from " + r.owner_name + " at " + (r.issuer_name || "the issuer") + " in Insidir's records",
         detail: "Filed as " + (roleOf(r) || "role not stated") + ". Insidir holds this issuer's Form 4s from " + day(r.issuer_first_at) + "; earlier filings outside that period are not checked.",
         evidence: [ev(r, "First filing")].filter(Boolean) });

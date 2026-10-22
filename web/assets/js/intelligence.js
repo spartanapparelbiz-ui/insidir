@@ -575,13 +575,14 @@
     const plan = a.plan || {};
     const chips = [];
     if (plan.companies && plan.companies.length) chips.push("<li><b>Companies</b>" + plan.companies.map(c => esc(c.ticker)).join(", ") + "</li>");
+    if (plan.person && plan.person.name) chips.push("<li><b>" + (plan.person.kind === "organization" ? "Filer" : "Person") + "</b>" + esc(plan.person.displayName || plan.person.name) + "</li>");
     if (plan.scope === "followed_people") chips.push("<li><b>People</b>You follow</li>");
     if (plan.scope === "watchlist") chips.push("<li><b>Scope</b>Your watchlist</li>");
     if (plan.scope === "market") chips.push("<li><b>Scope</b>All indexed companies</li>");
     if (plan.timeLabel) chips.push("<li><b>Period</b>" + esc(plan.timeLabel) + "</li>");
     if (plan.categories && plan.categories.length) chips.push("<li><b>Records</b>" + plan.categories.map(c => c === "reported_sale" ? "Sales" : "Purchases").join(", ") + "</li>");
     if (plan.usedContext) chips.push("<li><b>Follow-up</b>Kept your previous focus</li>");
-    const status = { answered: "Answer from indexed records", no_data: "No matching records", unresolved: "Needs a company or scope", refused: "Outside Insidir’s scope" }[a.status] || "";
+    const status = { answered: "Answer from indexed records", no_data: "No matching records", unresolved: "Needs a company or a person", refused: "Outside Insidir’s scope" }[a.status] || "";
     const head = '<header class="ix-report__head"><span class="ix-report__mark">' + mark(40) + '</span><div><p class="ix-sub">Insidir research report · ' + esc(status) + " · retrieved " + esc(fmtTime(a.retrievedAt)) + '</p><h3 class="ix-answer__q">' + esc(a.question) + "</h3>" + (chips.length ? '<ul class="ix-plan" aria-label="How Insidir read the question">' + chips.join("") + "</ul>" : "") + "</div></header>";
     if (a.status === "refused") return head + '<section class="ix-part"><h4 class="ix-part__title"><span>§1</span>What happened</h4><div class="ix-summary"><p>' + esc(a.message) + "</p></div></section>";
     const nav = '<nav class="ix-report__nav" aria-label="Report sections"><a href="#' + aid + '-finding">What happened</a><a href="#' + aid + '-evidence">Evidence</a><a href="#' + aid + '-timeline">Timeline</a><a href="#' + aid + '-relationships">Connections</a><a href="#' + aid + '-uncertainty">What is uncertain</a></nav>';
@@ -594,9 +595,10 @@
           sec.rows.map(r => '<tr><td class="ix-wide">' + companyLink(r.ticker) + "<small>" + esc(r.company) + '</small></td><td class="num" data-label="Filings">' + r.filings + '</td><td class="num" data-label="People">' + r.people + '</td><td class="num" data-label="Sales">' + r.sales + '</td><td class="num" data-label="Sale value">' + esc(money(r.saleValue)) + '</td><td class="num" data-label="Purchases">' + r.purchases + '</td><td class="num" data-label="Purchase value">' + esc(money(r.purchaseValue)) + '</td><td class="num" data-label="Other">' + r.other + '</td><td data-label="Last disclosed">' + esc(fmtDay(r.lastDisclosed)) + cites(r.citation ? [r.citation] : [], aid) + "</td></tr>").join("") + "</tbody></table></div></div>";
         continue;
       }
-      evidence += '<div class="ix-block"><h5 class="ix-block__title">' + (sec.ticker ? logo(sec.ticker, null, sec.company, "xs") : "") + esc(sec.title) + (sec.ticker && sec.kind !== "story" ? ' <a class="ix-btn ix-btn--quiet" href="company.html?ticker=' + encodeURIComponent(sec.ticker) + '">Company report</a> <button type="button" class="ix-btn ix-btn--quiet" data-structure-open="' + esc(sec.ticker) + '">Capital structure</button>' : "") + "</h5>" +
+      const personBtn = sec.person && /^\/?[a-z]+\.html\?cik=\d+$/.test(String(sec.person.url || "").replace(/^\//, "")) ? ' <a class="ix-btn ix-btn--quiet" href="' + esc(sec.person.url) + '">Open their page</a>' : "";
+      evidence += '<div class="ix-block"><h5 class="ix-block__title">' + (sec.ticker ? logo(sec.ticker, null, sec.company, "xs") : "") + esc(sec.title) + personBtn + (sec.ticker && sec.kind !== "story" ? ' <a class="ix-btn ix-btn--quiet" href="company.html?ticker=' + encodeURIComponent(sec.ticker) + '">Company report</a> <button type="button" class="ix-btn ix-btn--quiet" data-structure-open="' + esc(sec.ticker) + '">Capital structure</button>' : "") + "</h5>" +
         (sec.facts && sec.facts.length ? '<ul class="ix-facts">' + sec.facts.map(f => "<li>" + esc(f.text) + cites(f.cites, aid) + "</li>").join("") + "</ul>" : "") +
-        (sec.filings && sec.filings.length ? '<p class="ix-sub" style="margin-top:18px">SEC filings in this period</p><ul class="ix-facts">' + sec.filings.map(f => "<li>" + esc(f.text) + cites(f.cites, aid) + "</li>").join("") + "</ul>" : "") +
+        (sec.filings && sec.filings.length ? '<p class="ix-sub" style="margin-top:18px">' + (sec.kind === "person" ? "Their filings with the SEC" : "SEC filings in this period") + '</p><ul class="ix-facts">' + sec.filings.map(f => "<li>" + esc(f.text) + cites(f.cites, aid) + "</li>").join("") + "</ul>" : "") +
         recordsHtml(sec.records, aid) + "</div>";
     }
     const KIND = { event: "Event", transaction: "Transaction", disclosed: "Disclosed", filed: "Filed" };

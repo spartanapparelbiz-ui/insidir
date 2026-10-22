@@ -307,9 +307,9 @@
     };
     const renderList = q => {
       if (!suggestions.length) {
-        list.innerHTML = `<p class="app-search__empty">No SEC filer matches this search. Try a ticker, a CIK, or part of the name as the SEC lists it.</p>`;
+        list.innerHTML = `<p class="app-search__empty">No company or person by that name files with the SEC. Insidir covers companies and the executives, big shareholders and funds that report to the SEC. Try a ticker, a company name, or the fund they own.</p>`;
       } else {
-        list.innerHTML = suggestions.map((s, i) => {
+        list.innerHTML = (searchNote ? `<p class="app-search__note">${escapeHTML(searchNote)}</p>` : "") + suggestions.map((s, i) => {
           const tile = tileFor(s);
           const lead = tile || `<span class="app-search__badge app-search__badge--${s.kind}">${escapeHTML(s.kind === "person" ? "Person" : s.ticker || "SEC")}</span>`;
           const meta = tile && s.kind === "company" && s.ticker ? s.ticker + " · " + (s.meta || "Company") : s.meta || "";
@@ -322,7 +322,7 @@
       input.setAttribute("aria-expanded", "true");
     };
     // Each keystroke cancels the requests of the one before it, so only the latest query costs the server anything.
-    let searchAbort = null;
+    let searchAbort = null, searchNote = "";
     const lookup = async q => {
       const seq = ++searchSeq;
       if (searchAbort) searchAbort.abort();
@@ -360,13 +360,17 @@
       for (const e of filers.status === "fulfilled" ? filers.value.items || [] : []) {
         if (suggestions.length >= 10) break;
         if ((e.tickers || []).some(t => shownTickers.has(t)) || shownCiks.has(String(Number(e.cik)))) continue;
-        const what = e.kind === "company" ? (e.listed ? "Company" : e.delistedAt ? "Company · no longer on the SEC ticker list" : "Company · no listed ticker")
-          : e.kind === "person" ? "Reporting person" : e.kind === "organization" ? "Reporting entity" : "SEC filer";
-        const why = e.matched ? " · " + e.matched.as + ": " + e.matched.name : "";
-        suggestions.push({ kind: e.kind === "company" ? "company" : "person", ticker: (e.tickers || [])[0] || "", cik: e.cik, name: e.name, label: e.name,
-          meta: what + " · CIK " + e.cik + why, href: e.url });
+        const what = e.kind === "company" ? (e.listed ? "Company" : e.delistedAt ? "Company · no longer listed" : "Company · not listed on an exchange")
+          : e.kind === "person" ? "Person" : e.kind === "organization" ? "Fund or firm" : "Files with the SEC";
+        const shown = e.displayName || e.name;
+        const why = e.matched ? " · " + (e.matched.as === "former name" ? "formerly " : "also listed as ") + e.matched.name : shown !== e.name ? " · listed by the SEC as " + e.name : "";
+        suggestions.push({ kind: e.kind === "company" ? "company" : "person", ticker: (e.tickers || [])[0] || "", cik: e.cik, name: e.name, label: shown,
+          meta: what + why, href: e.url });
         shownCiks.add(String(Number(e.cik)));
       }
+      // Say when the list is the closest names rather than an exact match, or was found under other wording.
+      const f = filers.status === "fulfilled" ? filers.value : null;
+      searchNote = f && f.searchedAs ? "Showing results for “" + f.searchedAs + "”" : f && f.exact === false && suggestions.length && suggestions.every(s => s.cik && !s.ticker) ? "No exact match. Closest names in SEC records:" : "";
       renderList(q);
     };
     input.addEventListener("input", () => {

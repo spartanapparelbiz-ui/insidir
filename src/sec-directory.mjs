@@ -17,6 +17,7 @@
 import { secFetch } from "./sec.mjs";
 import { query as queryDb } from "./db.mjs";
 import { createCache } from "./cache.mjs";
+import { readableName } from "./plain-language.mjs";
 
 export const TICKER_LIST_URL = "https://www.sec.gov/files/company_tickers_exchange.json";
 export const padCik = value => {
@@ -376,7 +377,7 @@ export async function searchLocal(qInput, { run = queryDb, kind = "all", limit =
         count(*) OVER () AS total, count(*) FILTER (WHERE b.score>=600) OVER () AS strong
       FROM best b JOIN sec_entities e ON e.cik=b.cik WHERE ${kindFilter(kind)}
     )
-    SELECT * FROM ranked ORDER BY score DESC, listed DESC, (issuer_filings+owner_filings) DESC, name LIMIT $2 OFFSET $3`;
+    SELECT * FROM ranked ORDER BY score DESC, listed DESC, (issuer_filings+owner_filings) DESC, length(matched), name LIMIT $2 OFFSET $3`;
   const rows = (await run(sql, params)).rows;
   // strong: matches by CIK, ticker, whole name or every word; typo-tolerant matches are counted in total only.
   return { items: rows.map(itemOf), total: rows.length ? Math.min(10000, Number(rows[0].total)) : (offset ? null : 0), strong: rows.length ? Number(rows[0].strong) : 0 };
@@ -384,7 +385,7 @@ export async function searchLocal(qInput, { run = queryDb, kind = "all", limit =
 function itemOf(r) {
   const matchedOther = r.name_kind !== "ticker" && normalizeName(r.matched) !== normalizeName(r.name);
   return {
-    cik: r.cik, name: r.name, kind: r.kind, kindBasis: r.kind_basis, tickers: r.tickers || [], exchanges: r.exchanges || [], listed: !!r.listed,
+    cik: r.cik, name: r.name, displayName: r.kind === "person" ? readableName(r.name) : null, kind: r.kind, kindBasis: r.kind_basis, tickers: r.tickers || [], exchanges: r.exchanges || [], listed: !!r.listed,
     isIssuer: !!r.is_issuer, isReportingOwner: !!r.is_reporting_owner, importedFilings: { asIssuer: r.issuer_filings || 0, asOwner: r.owner_filings || 0 },
     lastFilingAt: r.last_filing_at ? new Date(r.last_filing_at).toISOString() : null,
     latestRole: r.last_role ? { role: r.last_role, issuerCik: r.last_issuer_cik, issuerName: r.last_issuer_name } : null,
@@ -403,7 +404,31 @@ export function entityUrl(r) {
 /* Search with on-demand lookup: a CIK that is not stored is resolved from EDGAR submissions, and a name that
  * finds fewer than `lookupBelow` stored entities is looked up in EDGAR's entity index, whose hits are stored and
  * searched again. state says why a list is empty: no_match (looked everywhere it could) or source_unavailable. */
+/* Titles the SEC rarely files names with ("Sheikh Tahnoon" is filed as "Al-Nahyan Tahnoon Bin Zayed S."), and common
+ * spellings of one name. A search with no exact match is tried again without the titles, then with the other spellings,
+ * and says which wording found the results. */
+const TITLES = /\b(his|her)\s+(royal\s+)?(highness|excellency)\b|\bh\s?r\s?h\b|\b(prince|princess|king|queen|sheikh|shaikh|sheik|sheikha|emir|amir|sultan|crown|president|senator|sen|representative|rep|congressman|congresswoman|governor|gov|mr|mrs|ms|dr|sir|lord|lady|dame|hon|honorable|the)\b/gi;
+const SPELLINGS = [["MOHAMMED", "MOHAMMAD", "MUHAMMAD", "MOHAMED", "MOHAMAD", "MUHAMMED"], ["ABDULLAH", "ABDALLAH"], ["ABDULAZIZ", "ABDUL AZIZ", "ABDELAZIZ"],
+  ["KHALID", "KHALED"], ["HAMAD", "HAMED"], ["YOUSEF", "YOUSSEF", "YUSUF", "YOUSUF"], ["AHMED", "AHMAD"], ["HUSSEIN", "HUSSAIN", "HUSAIN"], ["ALWALEED", "AL WALEED"]];
+export function searchVariants(q) {
+  const out = [], norm = normalizeName(q), add = v => { v = normalizeName(v); if (v && v.length >= 3 && v !== norm && !out.includes(v)) out.push(v); };
+  const bare = normalizeName(String(q ?? "").replace(TITLES, " "));
+  add(bare);
+  for (const base of [bare || norm]) for (const group of SPELLINGS) for (const w of group) if ((" " + base + " ").includes(" " + w + " "))
+    for (const alt of group) if (alt !== w) add((" " + base + " ").replace(" " + w + " ", " " + alt + " "));
+  return out.slice(0, 4);
+}
+
 export async function searchEntities(q, { run = queryDb, fetcher = secFetch, kind = "all", limit = 20, offset = 0, lookupBelow = 5, edgar = true } = {}) {
+  const first = await searchOnce(q, { run, fetcher, kind, limit, offset, lookupBelow, edgar });
+  if (first.strong || offset || first.state === "source_unavailable") return first;
+  for (const v of searchVariants(q)) {
+    const r = await searchOnce(v, { run, fetcher, kind, limit, offset, lookupBelow, edgar });
+    if (r.strong) return { ...r, searchedAs: v.toLowerCase(), lookups: [...first.lookups, ...r.lookups] };
+  }
+  return first;
+}
+async function searchOnce(q, { run, fetcher, kind, limit, offset, lookupBelow, edgar }) {
   let local = await searchLocal(q, { run, kind, limit, offset });
   const lookups = [];
   const norm = normalizeName(q), digits = /^\d{1,10}$/.test(norm.replace(/ /g, "")) ? norm.replace(/ /g, "") : null;
@@ -423,7 +448,7 @@ export async function searchEntities(q, { run = queryDb, fetcher = secFetch, kin
   }
   const unavailable = lookups.some(l => l.state === "source_unavailable");
   const state = local.items.length ? "ok" : unavailable ? "source_unavailable" : "no_match";
-  return { ...local, offset, limit, hasMore: local.total != null && offset + local.items.length < local.total, state, lookups };
+  return { ...local, offset, limit, hasMore: local.total != null && offset + local.items.length < local.total, state, lookups, exact: local.strong > 0 };
 }
 
 /* One entity with everything stored about it (names, tickers, imported participation). */
