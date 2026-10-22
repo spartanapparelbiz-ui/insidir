@@ -31,7 +31,8 @@ export async function ingest({maxFilings=config.maxPerRun}={}) {
     }
     await query("UPDATE ingest_runs SET finished_at=now(),status=$2,discovered=$3,parsed=$4,skipped=$5,failed=$6 WHERE id=$1",
       [runId,stats.failed?"partial":"success",stats.discovered,stats.parsed,stats.skipped,stats.failed]);
-    marketDataChanged();
+    // Cached market answers are dropped only when something new arrived, so frequent checks keep the caches warm.
+    if (stats.parsed) marketDataChanged();
     return stats;
   }catch(err){
     if(runId)await query("UPDATE ingest_runs SET finished_at=now(),status='error',error_message=$2 WHERE id=$1",[runId,String(err?.message||err).slice(0,500)]).catch(()=>{});

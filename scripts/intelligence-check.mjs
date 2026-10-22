@@ -17,6 +17,8 @@ import { serveStatic } from "../src/web.mjs";
 import { chromium } from "playwright-core";
 
 const F = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+// When the fixture was captured: the page clock is set to it (the newest generatedAt in the capture).
+const FIXTURE_NOW = Date.parse("2026-10-19T16:37:03.447Z");
 const FAVICON = [...readFileSync(new URL("../web/assets/icons/favicon.svg", import.meta.url), "utf8").matchAll(/<circle cx="(\d+)" cy="(\d+)" r="(\d+)"\/>/g)].map(m => m.slice(1).map(Number));
 const server = createServer((req, res) => serveStatic(req, res).then(done => { if (!done) { res.writeHead(404); res.end(); } }));
 await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -53,6 +55,9 @@ async function open({ width, mobile = false, scenario = {}, reduced = false, int
     return reply(200, { items: [] });
   });
   const page = await ctx.newPage();
+  // The fixture was captured at a fixed moment; the page's "last 7 days" windows are read from that moment, so the
+  // check does not start failing as the calendar moves past the fixture's dates.
+  await page.clock.setSystemTime(new Date(FIXTURE_NOW));
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   await page.goto(base + "/intelligence.html", { waitUntil: "load" });

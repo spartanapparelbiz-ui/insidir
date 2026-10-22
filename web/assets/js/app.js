@@ -409,6 +409,39 @@
       if (e.key === "/" && !typing) { e.preventDefault(); input.focus(); }
     });
 
+    /* Live updates: while the page is visible, the unread alert count every 45 seconds (one small request), shown on
+       the bell; a new alert since the last look also gets a short notice that links to it. Paused in a hidden tab;
+       a session that ended stops it. */
+    (() => {
+      const bell = host.querySelector(".app-header__bell");
+      if (!bell) return;
+      let last = null, timer = null, stopped = false;
+      const notice = document.createElement("a");
+      notice.className = "app-live"; notice.href = "alerts.html"; notice.setAttribute("role", "status"); notice.hidden = true;
+      document.body.append(notice);
+      const show = n => {
+        const ev = n && n.event;
+        notice.innerHTML = '<span class="app-live__dot" aria-hidden="true"></span><span><b>' + escapeHTML((ev && ev.headline) || "New alert") + "</b>" +
+          escapeHTML(ev && ev.ticker ? " · " + ev.ticker : "") + "</span>";
+        notice.hidden = false; notice.classList.add("is-on");
+        clearTimeout(notice._t); notice._t = setTimeout(() => { notice.classList.remove("is-on"); setTimeout(() => { notice.hidden = true; }, 300); }, 8000);
+      };
+      const check = async () => {
+        if (stopped || document.visibilityState === "hidden") return;
+        let d;
+        try { d = await api("/v1/me/notifications?limit=1&unread=1"); } catch (e) { if (e.status === 401 || e.status === 402 || e.status === 403) stopped = true; return; }
+        const count = Number(d && d.unread) || 0;
+        bell.dataset.count = count > 99 ? "99+" : String(count);
+        bell.classList.toggle("has-unread", count > 0);
+        bell.setAttribute("aria-label", count ? "Alerts, " + count + " unread" : "Alerts");
+        if (last !== null && count > last && d.items && d.items[0]) show(d.items[0]);
+        last = count;
+      };
+      const start = () => { clearInterval(timer); timer = setInterval(check, 45000); };
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { check(); start(); } });
+      setTimeout(() => { check(); start(); }, 1200);
+    })();
+
     const btn = host.querySelector(".user-menu__btn"), panel = host.querySelector(".user-menu__panel");
     const setOpen = open => { panel.classList.toggle("is-open", open); btn.setAttribute("aria-expanded", String(open)); };
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!panel.classList.contains("is-open")); });

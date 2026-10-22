@@ -125,8 +125,12 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
   // Financial facts and listed SEC filings, for a company with a ticker (EDGAR, cached like the company page).
   const ticker = ent?.tickers?.[0] || filings.find(f => f.ticker)?.ticker || null;
   if (scope === "issuer") {
+    // Financial facts and the EDGAR filing list are read at the same time (each is cached upstream).
+    const factsP = withTimeout(factChanges(cik, ...(fetcher ? [fetcher] : [])), 6000);
+    const resolvedP = ticker ? withTimeout(loadCompany(ticker, ...(fetcher ? [fetcher] : [])), 6000) : null;
+    factsP.catch(() => {}); resolvedP?.catch(() => {});
     try {
-      const facts = await withTimeout(factChanges(cik, ...(fetcher ? [fetcher] : [])), 6000);
+      const facts = await factsP;
       for (const c of facts) {
         const sign = c.change > 0 ? "up" : c.change < 0 ? "down" : "unchanged";
         const fmt = v => c.unit === "USD" ? money(v) : count(v) + " " + c.unit;
@@ -144,7 +148,7 @@ export async function changes(cikInput, { run = queryDb, days = 90, fetcher, loa
     } catch { gaps.push("Financial facts could not be read from SEC company facts just now."); }
     if (ticker) {
       try {
-        const resolved = await withTimeout(loadCompany(ticker, ...(fetcher ? [fetcher] : [])), 6000);
+        const resolved = await resolvedP;
         for (const x of resolved ? extractFilings(resolved.submissions, cik, 40) : []) {
           if (x.filedAt < since || /^4/.test(x.form)) continue;
           items.push({ kind: "sec_filing", date: x.filedAt, accession: x.accession, subject: { name: ent?.name || resolved.company?.name, cik, ticker },

@@ -10,8 +10,8 @@ fixed figure. `scripts/coverage-validate.mjs` checks discovery of real entities 
 | --- | --- | --- | --- |
 | SEC company ticker list, `https://www.sec.gov/files/company_tickers_exchange.json` | Listed companies: CIK, name, every ticker and exchange | Daily (`company-directory` worker) | `src/sec-directory.mjs` `syncCompanyDirectory` |
 | EDGAR daily form index, `https://www.sec.gov/Archives/edgar/daily-index/YYYY/QTRn/form.YYYYMMDD.idx` | The SEC's own list of every Form 4 and 4/A disseminated each business day | Hourly, a few days per run, until the window is read; the last three days are re-read | `src/coverage-ingest.mjs` `syncDailyIndexes` |
-| EDGAR current filings feed (Atom) | Newest Form 4 filings | Every 15 minutes (`sec-ingest`) | `src/ingest.mjs` |
-| Form 4 / 4/A ownership XML in EDGAR archives | Issuer, every reporting owner (joint filers included), relationships, transactions | Live feed every 15 minutes; backfill queue every 5 minutes | `src/sec.mjs` `loadOwnership`, `src/coverage-ingest.mjs` `drainIngestQueue` |
+| EDGAR current filings feed (Atom) | Newest Form 4 filings | About every 2 minutes (`sec-ingest`, `INSIDIR_INGEST_EVERY_MIN`) | `src/ingest.mjs` |
+| Form 4 / 4/A ownership XML in EDGAR archives | Issuer, every reporting owner (joint filers included), relationships, transactions | Live feed about every 2 minutes; backfill queue every 5 minutes | `src/sec.mjs` `loadOwnership`, `src/coverage-ingest.mjs` `drainIngestQueue` |
 | EDGAR submissions, `https://data.sec.gov/submissions/CIK##########.json` | SEC name, former names with dates, tickers, SIC, state, entity type, whether the CIK files ownership reports, recent filings | On demand (search by CIK, entity pages, follows) and a monthly re-read of every indexed CIK, 200 per ten minutes (`entity-profiles`) | `resolveEntity`, `refreshProfiles` |
 | EDGAR entity lookup, `https://efts.sec.gov/LATEST/search-index?keysTyped=` | Names and CIKs of any EDGAR filer, companies and individuals | On demand, when a name search finds fewer than five strong local matches | `edgarEntityLookup` |
 

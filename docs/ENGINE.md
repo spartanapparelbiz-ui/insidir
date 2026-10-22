@@ -15,14 +15,14 @@ This document covers the backend engine. The website in `web/` is described in [
 - **Research events** (`src/research-events.mjs`): normalized, deduplicated events from the import (purchases and sales per Form 4, Form 4/A comparisons, multi-insider purchase groups, watched companies' other SEC filings) with trade, filing and retrieval times kept apart; **sourced explanations** (`src/explanations.mjs`, AI part off by default); **alerts** in the app and by consented email (`src/notifications.mjs`). Configuration and operations: [OPERATIONS.md](OPERATIONS.md).
 - Optional read-only SnapTrade OAuth (scope exactly `read`) with PKCE S256, random user-bound and expiring state, encrypted tokens, rotated refresh tokens, on-demand brokerage positions, user-initiated revocation and privacy-preserving instrument normalization. Requires an approved SnapTrade OAuth app.
 - Explicit source registry; House/Senate, social, crypto ingestion are blocked pending licensing/legal review.
-- Optional 15-minute automatic poller or secured on-demand/cron ingestion.
+- Optional automatic poller (every 2 minutes by default, `INSIDIR_INGEST_EVERY_MIN`) or secured on-demand/cron ingestion.
 
 ## Setup
 1. Provision PostgreSQL and provide DATABASE_URL.
 2. Set SEC_USER_AGENT to a **real organization name and monitored contact email**; do not use the example address.
 3. Set ALLOWED_ORIGINS to the HTTPS origins of the Insidir website. Keep COOKIE_SECURE=1 in production.
 4. Run npm install, npm run migrate, npm test. After upgrading an existing database to `sql/008_filing_owners.sql`, run `npm run backfill-owners` once (see [Joint filings](#joint-filings-sec_filing_owners)).
-5. Run npm start. AUTO_INGEST=1 enables 15-minute ingestion inside a single always-on service; alternatively use an external scheduled task with INGEST_SECRET and POST /v1/internal/ingest.
+5. Run npm start. AUTO_INGEST=1 enables ingestion every 2 minutes (INSIDIR_INGEST_EVERY_MIN) inside a single always-on service; alternatively use an external scheduled task with INGEST_SECRET and POST /v1/internal/ingest.
 6. Configure the paywall and Stripe billing (next section). The paywall is on by default: until billing is configured, nobody except the accounts in `INSIDIR_COMPLIMENTARY_EMAILS` can use the product.
 7. Set ALLOW_SIGNUP=1 once billing works end to end; people create an account first and subscribe on `/subscribe.html`.
 

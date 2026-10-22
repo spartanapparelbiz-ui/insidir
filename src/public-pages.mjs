@@ -308,7 +308,7 @@ export async function hubPage({ query, origin }) {
   const companyList = companies.length ? `<ul class="pp-companies">${companies.filter(c => tickerOk(c.ticker)).map(c => `<li><a href="${esc(companyUrl(c.ticker))}"><b>${esc(c.ticker)}</b><span>${esc(displayName(c.issuer_name))}</span><em>${c.filings} filing${c.filings === 1 ? "" : "s"}${c.buys ? ` · ${c.buys} bought` : ""}${c.sells ? ` · ${c.sells} sold` : ""}</em></a></li>`).join("")}</ul>` : `<p class="pp-empty">No filings in the last 30 days are imported yet.</p>`;
   const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
  ${crumbs([["Insidir", "/"], ["Insider filings", null]])}
- <p class="pp-label">SEC Form 4 · updated every 15 minutes</p>
+ <p class="pp-label">SEC Form 4 · checked about every 2 minutes</p>
  <h1 id="pp-title">Insider trading, <span>from the filings.</span></h1>
  <p class="pp-lede">What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing. These are legally required public reports, published by the SEC: not nonpublic information, and not a recommendation.</p>
  <dl class="pp-stats">
@@ -452,7 +452,7 @@ function notFoundPage(origin, what) {
  ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], ["Not found", null]])}
  <p class="pp-label">404</p>
  <h1 id="pp-title">No Form 4s <span>imported yet.</span></h1>
- <p class="pp-lede">Insidir has no imported Form 4 lines for ${esc(what)}. That does not mean none exist: the import covers recent filings and grows every 15 minutes.</p>
+ <p class="pp-lede">Insidir has no imported Form 4 lines for ${esc(what)}. That does not mean none exist: the import covers recent filings and grows about every 2 minutes.</p>
  <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/insider-trading">Latest insider filings <span class="v13-arrow" aria-hidden="true">→</span></a></p>
 </section>`;
   return shell({ origin, canonical: "/insider-trading", title: "Not found — Insidir", description: "No imported Form 4 lines.", body, noindex: true });

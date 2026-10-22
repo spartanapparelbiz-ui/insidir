@@ -36,6 +36,7 @@ function every(name, intervalMs, firstMs, fn) {
   setInterval(run, intervalMs).unref();
 }
 import { form13fTick } from "./form13f.mjs";
+import { warmCompanies } from "./warm.mjs";
 
 async function main() {
   if (!config.databaseUrl) throw new Error("DATABASE_URL is required for the Insidir engine");
@@ -43,8 +44,11 @@ async function main() {
   const server = createApiServer();
   server.listen(config.port, "0.0.0.0", () => console.log("Insidir backend listening on", config.port));
   const workers = process.env.INSIDIR_BACKGROUND_WORKERS !== "0";
+  const pushOn = workers && initPush();
   if (workers && config.autoIngest) {
-    every("sec-ingest", 15 * 60 * 1000, 2000, async () => {
+    // New Form 4s every 2 minutes by default (INSIDIR_INGEST_EVERY_MIN, 1 to 60): one SEC request when nothing is new.
+    const ingestEvery = Math.min(60, Math.max(1, Number(process.env.INSIDIR_INGEST_EVERY_MIN) || 2));
+    every("sec-ingest", ingestEvery * 60 * 1000, 2000, async () => {
       const result = await ingest();
       console.log("Ingestion result", JSON.stringify(result));
       // Logos and roster photos for what was just filed, in the background at low priority.
@@ -52,6 +56,8 @@ async function main() {
       // Research events for what was just imported (the research-events job below also catches up on its own).
       const events = result?.parsed ? await buildResearchEvents({ query }) : null;
       if (events) await fanOut({ query }).catch(e => console.error("Alert fan-out failed", e?.message || e));
+      // Phone notifications for those alerts now, not at the next push run.
+      if (events && pushOn) await pushTick(query).catch(e => console.error("Push after ingest failed", e?.message || e));
       return { ok: result?.ok, discovered: result?.discovered, parsed: result?.parsed, failed: result?.failed, deferred: result?.deferred || 0, reason: result?.reason, events };
     });
   }
@@ -86,9 +92,11 @@ async function main() {
   }
   // EDGAR submissions (former names, SIC, entity type) for every indexed company and owner, 200 per ten minutes.
   if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") every("entity-profiles", 10 * 60 * 1000, 12 * 60 * 1000, () => refreshProfiles({ run: query, budget: 200, backlog: secBacklogMs }));
+  // Company pages for followed and popular companies, read ahead so the first visitor does not wait (src/warm.mjs).
+  if (workers && secReady() && process.env.INSIDIR_WARM_COMPANIES !== "0") every("warm-companies", 10 * 60 * 1000, 3 * 60 * 1000, () => warmCompanies({ run: query }));
   if (workers) every("filing-participants", 10 * 60 * 1000, 4 * 60 * 1000, () => indexFilingParticipants({ run: query }));
   // Web Push to installed apps and browsers (src/push.mjs), when VAPID keys are configured.
-  if (workers && initPush()) every("web-push", 3 * 60 * 1000, 30 * 1000, () => pushTick(query));
+  if (workers && pushOn) every("web-push", 3 * 60 * 1000, 30 * 1000, () => pushTick(query));
   else if (workers) console.warn("Insidir Web Push disabled: VAPID settings incomplete");
   // AI filing summaries (src/ai-explain.mjs; validated, spend-limited) and the public-source monitor (src/intelligence-monitor.mjs).
   if (workers) {
