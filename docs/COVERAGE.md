@@ -13,6 +13,7 @@ fixed figure. `scripts/coverage-validate.mjs` checks discovery of real entities 
 | EDGAR current filings feed (Atom) | Newest Form 4 filings | About every 2 minutes (`sec-ingest`, `INSIDIR_INGEST_EVERY_MIN`) | `src/ingest.mjs` |
 | Form 4 / 4/A ownership XML in EDGAR archives | Issuer, every reporting owner (joint filers included), relationships, transactions | Live feed about every 2 minutes; backfill queue every 5 minutes | `src/sec.mjs` `loadOwnership`, `src/coverage-ingest.mjs` `drainIngestQueue` |
 | EDGAR submissions, `https://data.sec.gov/submissions/CIK##########.json` | SEC name, former names with dates, tickers, SIC, state, entity type, whether the CIK files ownership reports, recent filings | On demand (search by CIK, entity pages, follows) and a monthly re-read of every indexed CIK, 200 per ten minutes (`entity-profiles`) | `resolveEntity`, `refreshProfiles` |
+| SEC filer list, `https://www.sec.gov/Archives/edgar/cik-lookup-data.txt` | Every name and CIK EDGAR has ever had a filing under (about a million: companies, people, funds, trusts), kept in `sec_filer_names` for search | Checked daily, re-read weekly (`filer-list`); read and inserted in batches of 5,000, never held whole; a list under 100,000 names is refused | `syncFilerList` |
 | EDGAR entity lookup, `https://efts.sec.gov/LATEST/search-index?keysTyped=` | Names and CIKs of any EDGAR filer, companies and individuals | On demand, when a name search finds fewer than five strong local matches | `edgarEntityLookup` |
 
 All requests go through the shared SEC client (`src/sec.mjs`): a declared User-Agent with a monitored email, an
@@ -41,6 +42,9 @@ accession in it is queued once (`sec_ingest_queue`, keyed by accession). The que
 minutes, doubling, at most a day, six attempts); filings with no ownership XML fail after two attempts and stay in the
 queue with the error; a worker that dies mid-row has the row recovered after 20 minutes. Reconciliation per day:
 EDGAR listed = imported + failed + waiting + missing.
+
+A person opened in Insidir whose insider filings predate the window has their own Form 4 and 4/A accessions (up to
+100) queued as `on_demand`; the drain claims those before the backfill, so their trades appear within a run or two.
 
 Backfilled filings are history: alerts and pushes go out only for filings the SEC published in the last three days.
 

@@ -386,7 +386,7 @@ function renderSecHistory(d){
  box.innerHTML='<p class="pf-state__label">Files with the SEC · SEC ID '+E(String(personCik).replace(/^0+/,""))+'</p>'+
   '<h1>'+E(shown(name))+'</h1>'+
   '<p>'+E(entries.length)+' filing'+(entries.length===1?"":"s")+' on record at the SEC, listed below with links to the originals.</p>'+
-  '<p>Insidir has not read the trades inside these filings yet, so it shows no totals or holdings rather than guess.</p>'+
+  '<p>'+(d.queued_for_import?'Insidir is reading '+E(d.queued_for_import)+' of their insider filings now. Their trades appear here within minutes; until then it shows no totals rather than guess.':'Insidir has not read the trades inside these filings yet, so it shows no totals or holdings rather than guess.')+'</p>'+
   '<div class="pf-state__links">'+(official?'<a href="'+E(official)+'" target="_blank" rel="noopener noreferrer">All their filings on the SEC website ↗</a>':"")+
   (source?'<a href="'+E(source)+'" target="_blank" rel="noopener noreferrer">The SEC\'s raw data ↗</a>':"")+
   '<a href="people.html">Back to people directory ↗</a></div>'+

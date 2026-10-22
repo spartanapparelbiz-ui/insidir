@@ -229,10 +229,11 @@ export function allowedSecUrl(input) {
     return u.hostname === "www.sec.gov" &&
       ((/^\/Archives\/edgar\/data\/\d+\/\d{18}\//.test(u.pathname) ||
         u.pathname === "/cgi-bin/browse-edgar" || u.pathname === "/cgi-bin/own-disp") ||
-        (!u.search && !u.hash && (u.pathname === "/files/company_tickers.json" || u.pathname === "/files/company_tickers_exchange.json" ||
+        (!u.search && !u.hash && (u.pathname === "/files/company_tickers.json" || u.pathname === "/files/company_tickers_exchange.json" || u.pathname === "/Archives/edgar/cik-lookup-data.txt" ||
           /^\/Archives\/edgar\/daily-index\/\d{4}\/QTR[1-4]\/form\.\d{8}\.idx$/.test(u.pathname))));
   } catch { return false; }
 }
+export const FILER_LIST_URL = "https://www.sec.gov/Archives/edgar/cik-lookup-data.txt";
 export async function secFetch(url, { json = false } = {}) {
   if (!secReady()) throw new Error("SEC_USER_AGENT must identify the operator and a monitored email");
   if (!allowedSecUrl(url)) throw new Error("Disallowed SEC URL");
@@ -253,7 +254,8 @@ export async function secFetch(url, { json = false } = {}) {
       }
       if (!response.ok) throw new Error("SEC responded " + response.status);
       // Company facts and the submissions of very active filers (JPM, GS) run past 3MB.
-      const maxLength = json && /^https:\/\/data\.sec\.gov\/(api\/xbrl\/companyfacts|submissions)\//.test(url) ? 12_000_000 : json ? 3_000_000 : 5_000_000;
+      // The full list of EDGAR filer names (src/sec-directory.mjs syncFilerList) is about 40MB.
+      const maxLength = url === FILER_LIST_URL ? 80_000_000 : json && /^https:\/\/data\.sec\.gov\/(api\/xbrl\/companyfacts|submissions)\//.test(url) ? 12_000_000 : json ? 3_000_000 : 5_000_000;
       const size = Number(response.headers.get("content-length") || 0);
       if (size > maxLength) throw new Error("SEC response too large");
       const body = await response.text();

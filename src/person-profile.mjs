@@ -103,6 +103,7 @@ import { secReady } from "./config.mjs";
 import { ownerIssuers as edgarOwnerIssuers, ownerRoles } from "./insiders.mjs";
 import { tickerIndex as secTickerIndex } from "./intelligence.mjs";
 import { fetchSecOwnerHistory } from "./sec-person-fallback.mjs";
+import { queueOwnerHistory } from "./coverage-ingest.mjs";
 
 export const DEFAULT_LIMIT = 100, MAX_LIMIT = 500;
 export const MAX_COMPANIES = 100, MAX_ROLE_ISSUERS = 8, MAX_FILINGS = 100, MAX_NAMES = 20, MAX_OTHER_ISSUERS = 40;
@@ -637,6 +638,11 @@ export async function handlePersonRoute(req, res, url, deps = {}) {
           fetcher: deps.fetcher || secFetch,
           limit: parseLimit(url.searchParams.get("limit"))
         });
+        // Their insider filings are read in by the import queue, so the next visit shows the trades themselves.
+        if (body?.sec_filing_index?.length) {
+          const queued = await queueOwnerHistory(deps.query, segment, body.sec_filing_index).catch(() => 0);
+          if (queued) body = { ...body, queued_for_import: queued };
+        }
       } catch(error) {
         console.warn("SEC owner archive lookup unavailable:", error?.message);
         throw failure(503,"SEC historical reporting-person filings are temporarily unavailable. Try again shortly.");

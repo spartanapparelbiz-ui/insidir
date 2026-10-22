@@ -132,6 +132,23 @@ export async function queueReparse({ run = queryDb, limit = 3000 } = {}) {
   return r.rowCount || 0;
 }
 
+/* A person's own insider filings, queued when someone opens their page: Insidir's import covers recent filings, so
+ * an older Form 4 (before the import began) is read in by the same queue (drained every 5 minutes, bounded per run)
+ * and appears in their page, Changes and Intelligence once read. Only Form 4 and 4/A; already-read filings and
+ * queued ones are skipped. */
+export async function queueOwnerHistory(run, cik, entries, { limit = 100 } = {}) {
+  const owner = String(cik || "").replace(/^0+/, "");
+  if (!/^\d{1,10}$/.test(owner) || !owner) return 0;
+  const want = (entries || []).filter(e => /^4(\/A)?$/.test(String(e.form_type || e.form || "").toUpperCase()) && /^\d{10}-\d{2}-\d{6}$/.test(String(e.accession || "")))
+    .slice(0, limit).map(e => ({ acc: e.accession.replace(/-/g, ""), form: String(e.form_type || e.form).toUpperCase(), day: /^\d{4}-\d{2}-\d{2}$/.test(e.filed_at || e.filedAt || "") ? (e.filed_at || e.filedAt) : null }));
+  if (!want.length) return 0;
+  const r = await run(`INSERT INTO sec_ingest_queue(accession,filer_cik,form_type,filed_date,source,status)
+    SELECT a,$2,f,d::date,'on_demand','pending' FROM unnest($1::text[],$3::text[],$4::text[]) AS x(a,f,d)
+    WHERE NOT EXISTS (SELECT 1 FROM sec_filings s WHERE s.accession=x.a AND s.ingest_status='parsed')
+    ON CONFLICT (accession) DO NOTHING`, [want.map(w => w.acc), owner, want.map(w => w.form), want.map(w => w.day)]);
+  return r.rowCount || 0;
+}
+
 export function filingFromQueue(row) {
   const cik = String(Number(row.filer_cik)), acc = row.accession;
   const dashed = acc.slice(0, 10) + "-" + acc.slice(10, 12) + "-" + acc.slice(12);
@@ -150,7 +167,7 @@ export async function drainIngestQueue({ run = queryDb, load = loadOwnership, pe
       last_error=COALESCE(last_error,'worker stopped before finishing'),updated_at=now() WHERE status='running' AND locked_at<now()-interval '20 minutes'`)).rowCount || 0;
     const claimed = (await run(`UPDATE sec_ingest_queue q SET status='running',locked_at=now(),locked_by=$2,attempts=q.attempts+1,updated_at=now()
       WHERE q.accession IN (SELECT accession FROM sec_ingest_queue WHERE status IN ('pending','retry') AND next_attempt_at<=now()
-        ORDER BY filed_date DESC NULLS LAST,accession DESC LIMIT $1 FOR UPDATE SKIP LOCKED) RETURNING q.*`, [Math.max(1, Math.min(500, budget)), workerId])).rows;
+        ORDER BY (source='on_demand') DESC,filed_date DESC NULLS LAST,accession DESC LIMIT $1 FOR UPDATE SKIP LOCKED) RETURNING q.*`, [Math.max(1, Math.min(500, budget)), workerId])).rows;
     stats.claimed = claimed.length;
     let stop = null;
     for (const row of claimed) {

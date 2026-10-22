@@ -20,7 +20,7 @@ import { initPush, pushTick } from "./push.mjs";
 import { aiTick } from "./ai-explain.mjs";
 import { monitorTick } from "./intelligence-monitor.mjs";
 import { pollHouse } from "./house-disclosures.mjs";
-import { syncCompanyDirectory, indexFilingParticipants, recountParticipation, refreshProfiles } from "./sec-directory.mjs";
+import { syncCompanyDirectory, indexFilingParticipants, recountParticipation, refreshProfiles, syncFilerList } from "./sec-directory.mjs";
 import { secBacklogMs } from "./sec.mjs";
 import { syncDailyIndexes, drainIngestQueue, markImported, queueReparse } from "./coverage-ingest.mjs";
 
@@ -92,6 +92,8 @@ async function main() {
   }
   // EDGAR submissions (former names, SIC, entity type) for every indexed company and owner, 200 per ten minutes.
   if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") every("entity-profiles", 10 * 60 * 1000, 12 * 60 * 1000, () => refreshProfiles({ run: query, budget: 200, backlog: secBacklogMs }));
+  // Every EDGAR filer's name for search (sec_filer_names), checked daily and refreshed weekly.
+  if (workers && secReady() && process.env.INSIDIR_COVERAGE !== "0") every("filer-list", 24 * 60 * 60 * 1000, 4 * 60 * 1000, () => syncFilerList({ run: query }));
   // Company pages for followed and popular companies, read ahead so the first visitor does not wait (src/warm.mjs).
   if (workers && secReady() && process.env.INSIDIR_WARM_COMPANIES !== "0") every("warm-companies", 10 * 60 * 1000, 3 * 60 * 1000, () => warmCompanies({ run: query }));
   if (workers) every("filing-participants", 10 * 60 * 1000, 4 * 60 * 1000, () => indexFilingParticipants({ run: query }));
