@@ -1,13 +1,22 @@
-## Insidir V34: soft surfaces instead of boxes (October 2026)
+## Insidir V35: one shape, flat panels, a console layout (October 2026)
 
-Same palette, same brand face; the boxes are gone. One new sheet, `web/assets/css/v34-soft.css`, loaded last on every page.
+Same palette, same brand face; one geometry everywhere. One sheet, `web/assets/css/v35-precision.css`, loaded last on
+every page (it replaces the short-lived V34 "soft" sheet, whose mix of pills, circles and 12-24px corners read as
+inconsistent).
 
-- **Rounded, separated surfaces.** Panels are 20px cards on a faint top-lit gradient inside a softer hairline (16px for cards inside a section, 24px for the sign-in card and the plan). Strips of ruled cells became rows of separate cards: the overview's desk and market figures, the company report's hero (identity, quote, key facts), its overview columns and stat tiles, the research desk's figures and the marketing pages' hairline grids. A card inside a card loses its own frame.
-- **Pills for everything you press.** Buttons, filter chips, segmented controls (a soft track with a raised selection), badges and the header search are pills; fields are 12px; menus and tooltips 16px; company logos are soft squares and people are circles. The personnel file's photo loses its corner ticks and its rotated stamp becomes a small label.
-- **Type that reads.** Product pages (overview, explore, filings, people, personnel files, company reports, research desk, watchlist, alerts, portfolio, account, billing, Intelligence) set running text, names, rows and controls in the system interface sans with tabular figures. JetBrains Mono stays the brand voice: page and module titles, caps labels, tickers and codes, and the large figures.
-- **Phones.** Cards stay inset with their rounded corners instead of bleeding to the screen edges; the suggestions stay a swipeable row of cards.
+- **One corner.** Every panel, card, button, field, chip, menu, segmented control and picture tile has the same 4px
+  corner; the small marks inside a control (badges, keys, the selected segment) have 2px. Nothing is a pill or a
+  circle (status dots aside): people and companies share the same square tile. The older V17/V29 shape tokens
+  (landing, public pages, platform panels) are collapsed onto the same value.
+- **Flat panels on one grid.** Panels are a flat surface inside a crisp 1px hairline, with no gradients or drop
+  shadows, separated by a 12px gap. Strips of ruled cells are rows of equal tiles: the overview's desk and market
+  figures, the company report's hero, overview columns and stat tiles, the research desk's figures and the marketing
+  grids. Panel titles sit on a darker header strip ruled off from the contents; table heads use the same band.
+- **Type that reads.** Product pages set running text, names, rows and controls in the system interface sans with
+  tabular figures; JetBrains Mono stays for titles, caps labels, tickers, codes and the large figures.
+- **Phones.** Panels stay inset on the gutter, framed on all four sides; the suggestions stay a swipeable row.
 
-The palette audit, layout, accessibility, dashboard, motion and Intelligence checks pass unchanged. See `docs/WEBSITE.md`, "V34: soft surfaces".
+See `docs/WEBSITE.md`, "V35: precision".
 
 ## Insidir V29: faster, clearer to buy, organised around what people do (October 2026)
 

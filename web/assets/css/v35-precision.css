@@ -1,0 +1,192 @@
+/* Insidir V35 "Precision": one shape, one grid, flat panels.
+   Every surface and control shares one geometry: a 4px corner (2px for the small marks inside a control: badges,
+   keys, the selected segment), a 1px hairline, a flat fill, and a 12px gap between neighbours. Nothing is a pill or
+   a circle, nothing glows or floats: panels are separated by the gap, grouped by a header strip, and read like
+   instruments on one console. People and companies share the same square tile.
+   - Product pages read in the interface sans (--hf-ui) with tabular figures; JetBrains Mono is kept for titles, caps
+     labels, tickers, codes and the large figures.
+   - Colours only through the V13 tokens (blends of paper and ink, green and red for direction), so the palette audit
+     still holds.
+   Every rule sits in the insidir-v13 layer (the only way to change a layered !important declaration) behind
+   `html body.v13:not(#\#)`, one ID step above the family files, so this sheet decides without editing them. It is
+   loaded last on every V13 page. */
+@layer insidir-v13{
+
+/* ---------- Tokens ---------- */
+html body.v13:not(#\#){
+  --px-r:4px;                                 /* the one corner: panels, cards, buttons, fields, menus, tiles */
+  --px-r-in:2px;                              /* marks inside a control: badges, keys, the selected segment */
+  --px-edge:#2a2a28;                          /* a panel's hairline (ink 12 % over paper) */
+  --px-edge-hi:#3a3a37;                       /* controls at rest, hover on a panel (ink 18 %) */
+  --px-fill:var(--hf-surface);                /* every panel: flat */
+  --px-head:#141413;                          /* a panel's header strip (ink 2.5 % over paper, darker than the panel) */
+  --px-well:rgba(240,238,232,.03);            /* a group inside a panel, a control track */
+  --px-gap:12px;                              /* between panels, tiles and cards */
+  --px-pad:20px;                              /* inside a panel */
+  --hf-line:#2a2a28!important;--hf-line-faint:#1d1d1c!important;
+  --radius:var(--px-r)!important;--radius-lg:var(--px-r)!important;--cx-radius:var(--px-r)!important;
+  /* The V29 and V17 shape tokens (landing, public pages, the platform panels) collapse onto the same corner, and
+     their gradient panels and drop shadows go flat. */
+  --r-xs:var(--px-r)!important;--r-sm:var(--px-r)!important;--r-md:var(--px-r)!important;--r-lg:var(--px-r)!important;--r-pill:var(--px-r)!important;
+  --sm-r:var(--px-r)!important;--sm-r-md:var(--px-r)!important;--sm-r-sm:var(--px-r)!important;--sm-r-xs:var(--px-r)!important;
+  --panel:var(--px-fill)!important;--panel-hover:var(--px-fill)!important;--shadow-panel:none!important;
+  --sm-panel:none!important;--sm-shadow:none!important;
+}
+
+/* ---------- Type: product pages read in the interface sans ---------- */
+html body.v13:not(#\#):is(.app-body,.portfolio-page,.research-page){
+  --px-figure:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --hf-mono:var(--hf-ui)!important;--hf-sans:var(--hf-ui)!important;
+  --hwf-mono:var(--px-figure)!important;--hwf-font:var(--px-figure)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+/* The brand voice stays mono: titles, caps labels, tickers and codes, and the large figures. The photo credits stay
+   mono too: entity-media.js holds their space at the height they take in that face, so the footer never moves. */
+html body.v13:not(#\#):not(#\#):not(#\#):is(.app-body,.portfolio-page,.research-page) :is(
+  h1,h2,.app-logo,.brand,.logo,kbd,code,pre,
+  [class*="eyebrow"],[class*="__label"],[class*="-label"],[class*="kicker"],[class*="ticker"],[class*="__k"],[class*="index"],
+  .rd-kpi__value,.rd-desk__v,.cx-tile strong,.cx-price,.cx-quote__price,.bl-plan__price strong,.intel-fact strong,.portfolio-value strong,.research-metric strong,
+  .ix-stats dd,.rd-type,.app-search__key,.v3-category,.badge,.tag,.status,.pill,
+  .ins-media-credits){
+  font-family:var(--px-figure)!important}
+html body.v13:not(#\#):is(.app-body,.portfolio-page,.research-page) :is(h3,h4){letter-spacing:-.01em!important}
+
+/* ---------- Controls: one shape ---------- */
+html body.v13:not(#\#) :is(.btn,.v9-btn,.cx-btn,.v3-price__button,.v3-static__cta,.v3-account__button,.auth-btn,.cl-form button,.v3-searchbox button,.v3-intro>a,.v4-inspector__cta,.cl-more,.cx-picker__form button,.research-search button,:where(#manual-form) button,.v12-outline-button,
+  .v10-follow-btn,.rd-save-btn,.pf-btn,.ix-btn,.st-btn,.ac-btn,.cl-remove,.manual-remove,.pw-action,.auth-action,.research-save,.cx-arrow,.rd-start__skip,
+  .rd-filters button,.v3-filters button,.cx-filters button,.alert-filters button,.cx-chips button,.ip-chip,.ip-btn){
+  border-radius:var(--px-r)!important}
+/* Segmented controls: a recessed track, the selection a flat block inside it. */
+html body.v13:not(#\#) :is(.rd-seg,.segmented,.cx-ranges,.v12-graph-controls,.ix-seg,.mk-ana__ranges):not([hidden]){
+  border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;background:var(--px-well)!important;padding:2px!important}
+html body.v13:not(#\#) :is(.rd-seg,.segmented,.cx-ranges,.v12-graph-controls,.ix-seg,.mk-ana__ranges) :is(button,a){border-radius:var(--px-r-in)!important}
+/* Badges and tags. */
+html body.v13:not(#\#) :is(.v3-category,.v6-live__form,.pill,.status,.tag,.badge,.rd-type,.ac-badge,.ix-badge,.ix-tape__form,.app-search__badge,.rd-new){border-radius:var(--px-r-in)!important}
+/* Fields and search forms. */
+html body.v13:not(#\#) :is(input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=range]),textarea,select,.input,
+  .v3-searchbox,.research-search,.cl-form,.cx-picker__form,.ix-ask,.ix-followup){border-radius:var(--px-r)!important}
+@media (min-width:760px){
+  html body.v13:not(#\#) :is(.v3-searchbox,.research-search,.cl-form,.cx-picker__form,.ix-ask,.ix-followup){overflow:hidden!important}
+  html body.v13:not(#\#) :is(.v3-searchbox,.research-search,.cl-form,.cx-picker__form,.ix-ask,.ix-followup) :is(input,textarea){border-radius:0!important}
+  html body.v13:not(#\#) :is(.cl-form,.research-search,.cx-picker__form,.v3-searchbox) button{margin:4px!important;height:auto!important;min-height:0!important;align-self:stretch!important;border-radius:var(--px-r-in)!important}
+}
+html body.v13:not(#\#) :is(kbd,code){border-radius:var(--px-r-in)!important}
+html body.v13:not(#\#) pre{border-radius:var(--px-r)!important}
+html body.v13:not(#\#) :focus-visible:not(.user-menu__btn){border-radius:inherit!important}
+
+/* ---------- Header ---------- */
+html body.v13:not(#\#) .app-search input{border-radius:var(--px-r)!important;border-color:var(--px-edge-hi)!important;background:var(--px-well)!important}
+html body.v13:not(#\#) .app-search__key{border-radius:var(--px-r-in)!important;border-color:var(--px-edge)!important}
+html body.v13:not(#\#) :is(.app-header .icon-btn,.user-menu__btn){border-radius:var(--px-r)!important}
+html body.v13:not(#\#) :is(.app-search__results,.user-menu__panel,.toast,.rd-toast,.chart-tip,.rd-tip){border-radius:var(--px-r)!important;border-color:var(--px-edge-hi)!important}
+html body.v13:not(#\#) :is(.app-search__option,.user-menu__panel a,.user-menu__panel button){border-radius:var(--px-r-in)!important}
+html body.v13:not(#\#) :is(.app-search__results,.user-menu__panel){padding:4px!important}
+
+/* ---------- Pictures: one square tile for people and companies ---------- */
+html body.v13:not(#\#) :is(.ins-media,.ins-media--missing,.ins-media--company,.ins-media--person,.cv-symbol,.cx-avatar,.v10-known__photo,.v12-feature-icon,.v4-quick-icon){
+  border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;overflow:hidden!important}
+html body.v13:not(#\#) :is(.ins-media,.cx-avatar,.v10-known__photo) img{border-radius:0!important}
+
+/* ---------- Panels ---------- */
+html body.v13:not(#\#) :is(.panel,.card,.v3-module,.cx-card,.v3-quicklinks a,.v4-data-strip,.research-panel,.cv-panel,.cl-result,.cl-search-panel,.cv-fact,.research-metric,.portfolio-connection,.portfolio-account,.portfolio-activity,.portfolio-next,
+  .v3-account__panel,.v3-account__danger,.v3-price__card,.v3-company__box,.v12-price-grid article,.v12-feature,.v12-terminal,.v12-logo-links a,.intel-fact,.intel-finding,.research-next,.v3-method,.v3-callout,.v12-report-aside,.cx-stat,.cv-stat,.v6-auth-story,.cv-brief,
+  .rd-follow__feed,.rd-follow__side,.rd-suggest,.rd-rows,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief,.rd-about-line,.rd-start,
+  .auth-card,.pw-plan,.bl-plan,.ac-inbox,.ac-list,.ac-prefs,.re-panel,.ix-panel,.ix-card,.ix-sim,.ix-unavailable,.ix-error,.ix-treemap__wrap,.ix-budget__field,
+  .mk-anatomy__frame,.mk-ana,.mk-notebox,.st-panel,.st-clip,.st-aside,.st-figure,.st-script,.st-hook,.pp-upsell,.nf-print,.v10-anatomy,.ip-change,.ip-ev>li){
+  border-radius:var(--px-r)!important;border:1px solid var(--px-edge)!important;background:var(--px-fill)!important;box-shadow:none!important}
+/* A panel inside a panel has no frame of its own: a flat well. */
+html body.v13:not(#\#) :is(.panel,.card,.research-panel,.v3-account__panel,.rd-suggest,.ix-panel,.mk-anatomy__frame,.st-panel) :is(.panel,.card,.cv-fact,.research-metric,.mk-ana,.ix-card){
+  border-color:transparent!important;background:var(--px-well)!important;border-radius:var(--px-r)!important}
+/* Rows stay inside the frame. */
+html body.v13:not(#\#) :is(.rd-table-wrap--trades,.rd-rows,.ac-list,.rd-follow__feed,.rd-follow__side,.rd-suggest,.rd-panel--largest){overflow:hidden!important}
+html body.v13:not(#\#) :is(.cx-table,.rd-table,table) :is(th,td){border-color:var(--hf-line-faint)!important}
+html body.v13:not(#\#) :is(.cx-table,.rd-table) thead th{background:var(--px-head)!important}
+/* Header strips: a panel's title sits on a darker band ruled off from its contents. */
+html body.v13:not(#\#) :is(.rd-follow__feed,.rd-follow__side,.rd-suggest)>.rd-label,
+html body.v13:not(#\#) .rd-panel--largest>.rd-panel__head{background:var(--px-head)!important;border-bottom:1px solid var(--px-edge)!important}
+html body.v13:not(#\#) .rd-suggest>.rd-label{min-height:44px!important;padding:12px var(--rd-px,20px)!important}
+
+/* ---------- Overview (dashboard) ---------- */
+/* Desk and figures: one row of equal tiles on the shared gap. */
+html body.v13:not(#\#) :is(.rd-desk,.rd-kpis){gap:var(--px-gap)!important;border:0!important;background:transparent!important;box-shadow:none!important;min-height:0!important}
+html body.v13:not(#\#) .rd-desk__tile,html body.v13:not(#\#) .rd-desk__tile+.rd-desk__tile,
+html body.v13:not(#\#) .rd-kpis>.rd-kpi,html body.v13:not(#\#) .rd-kpis>.rd-kpi:first-child{
+  padding:16px 18px 18px!important;border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important;grid-column:auto!important}
+html body.v13:not(#\#) .rd-desk__tile{min-height:112px!important;transition:border-color var(--dur,180ms) var(--ease,ease)!important}
+html body.v13:not(#\#) .rd-desk__tile:hover{border-color:var(--px-edge-hi)!important;background:var(--px-fill)!important}
+html body.v13:not(#\#) .rd-desk__tile::after{top:16px!important;right:18px!important}
+html body.v13:not(#\#) .rd-kpis>.rd-empty{border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important}
+html body.v13:not(#\#) .rd-today__brief{overflow:hidden!important}
+/* A joint line ("Elon Musk and 1 other") sets two sizes side by side; baseline-aligned in the sans they need 23px, so
+   they centre on the row's 22px line instead and every feed row stays the same height. */
+html body.v13:not(#\#) .rd-feed__l1>.rd-who{align-items:center!important}
+
+/* ---------- Company report ---------- */
+html body.v13:not(#\#) .cx-top{gap:var(--px-gap)!important;border:0!important;margin-top:8px!important}
+html body.v13:not(#\#) .cx-top>*{border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important}
+html body.v13:not(#\#) .cx-identity{padding:24px!important;overflow:hidden!important}
+html body.v13:not(#\#).cx-page .cx-report :is(.cx-quote,.cx-facts){border-left:1px solid var(--px-edge)!important;padding:24px!important}
+html body.v13:not(#\#) .cx-facts dl>div{border-color:var(--hf-line-faint)!important}
+html body.v13:not(#\#).cx-page .cx-report .cx-overview{gap:var(--px-gap)!important}
+html body.v13:not(#\#).cx-page .cx-report .cx-overview>*{padding:var(--px-pad)!important;border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important}
+html body.v13:not(#\#) .cx-tiles{gap:var(--px-gap)!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+html body.v13:not(#\#) .cx-tile{margin:0!important;border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important}
+html body.v13:not(#\#) :is(.cx-people,.cx-person,.cx-picker__grid a,.cx-bars){border-radius:var(--px-r)!important;border-color:var(--px-edge)!important}
+html body.v13:not(#\#) .cx-picker__grid{gap:var(--px-gap)!important;border:0!important}
+html body.v13:not(#\#) .cx-picker__grid a{border:1px solid var(--px-edge)!important;background:var(--px-fill)!important}
+html body.v13:not(#\#) .cx-sources{border-radius:var(--px-r)!important;border:1px solid var(--px-edge)!important;background:transparent!important;padding:16px var(--px-pad)!important}
+
+/* ---------- Personnel file ---------- */
+/* The photo is the same square tile as everywhere else; no corner ticks; the stamp is a plain label. */
+html body.v13:not(#\#) .pf-photo__frame{border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;background:var(--px-fill)!important;overflow:hidden!important}
+html body.v13:not(#\#) .pf-photo__frame::before,html body.v13:not(#\#) .pf-photo__frame::after{display:none!important}
+html body.v13:not(#\#) .pf-photo__frame :is(img,.ins-media){border-radius:var(--px-r-in)!important;border:0!important}
+html body.v13:not(#\#) .pf-aff{padding:var(--px-pad) var(--px-pad) 8px!important;border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important}
+html body.v13:not(#\#) .pf-stamp{transform:none!important;rotate:none!important;border-radius:var(--px-r-in)!important;border:1px solid var(--px-edge-hi)!important;outline:0!important;box-shadow:none!important;
+  flex-direction:row!important;gap:8px!important;padding:5px 10px!important;background:var(--px-fill)!important}
+html body.v13:not(#\#) .pf-stamp::before,html body.v13:not(#\#) .pf-stamp::after{display:none!important}
+html body.v13:not(#\#) .pf-stamp>span:first-child{font-size:10.5px!important;letter-spacing:.14em!important;margin-right:0!important}
+html body.v13:not(#\#) .pf-stamp>span:last-child{margin:0!important;padding:0 0 0 8px!important;border-top:0!important;border-left:1px solid var(--px-edge-hi)!important;font-size:9.5px!important;letter-spacing:.14em!important;margin-right:0!important;color:var(--hf-muted)!important}
+
+/* ---------- Marketing pages: hairline grids become tiles on the gap ---------- */
+html body.v13:not(#\#) :is(.mk-cells,.mk-codes,.mk-statuses){gap:var(--px-gap)!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+html body.v13:not(#\#) :is(.mk-cells,.mk-codes,.mk-statuses)>*{border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important}
+@media (min-width:1000px){html body.v13:not(#\#) .mk-cells:has(>:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+
+/* ---------- Research desk ---------- */
+html body.v13:not(#\#) #main .research-metrics{gap:var(--px-gap)!important;border:0!important;background:transparent!important;box-shadow:none!important}
+html body.v13:not(#\#) #main .research-metrics>div{border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important;box-shadow:none!important}
+
+/* ---------- Phones ----------
+   The family files bleed panels to the screen edges on phones; panels stay inset on the gutter instead, framed on
+   all four sides, and strips of tiles keep two to a row. */
+@media (max-width:759px){
+  html body.v13:not(#\#) :is(.rd-follow__feed,.rd-rows,.rd-kpis,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){margin-inline:0!important}
+  html body.v13:not(#\#) :is(.rd-follow__feed,.rd-rows,.rd-panel--daily,.rd-panel--companies,.rd-panel--largest,.rd-table-wrap--trades,.rd-today__brief){border:1px solid var(--px-edge)!important}
+  html body.v13:not(#\#) .rd-follow__feed{--rd-px:16px;padding:0 16px 4px!important}
+  /* The suggestions and the following list are open lists on a phone (a swipeable row of people, a short note). */
+  html body.v13:not(#\#) .rd-follow :is(.rd-follow__side,.rd-suggest){border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:visible!important}
+  html body.v13:not(#\#) .rd-follow :is(.rd-follow__side,.rd-suggest)>.rd-label{background:transparent!important;border:0!important;min-height:0!important;padding:0!important}
+  html body.v13:not(#\#) .rd-flist>.rd-fl__msg{border-radius:var(--px-r)!important;border-color:var(--px-edge)!important}
+  html body.v13:not(#\#) .rd-sglist>.rd-sg:nth-child(n){border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important;background:var(--px-fill)!important}
+  html body.v13:not(#\#) .rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html body.v13:not(#\#) .rd-kpis>.rd-kpi,html body.v13:not(#\#) .rd-kpis>.rd-kpi:first-child,html body.v13:not(#\#) .rd-kpis>.rd-kpi:nth-child(odd),
+  html body.v13:not(#\#) .rd-desk__tile,html body.v13:not(#\#) .rd-desk__tile+.rd-desk__tile{padding:14px!important}
+  html body.v13:not(#\#) .rd-kpis>.rd-kpi:nth-child(5){grid-column:1/-1!important}
+  html body.v13:not(#\#) .rd-desk__tile{min-height:100px!important}
+  html body.v13:not(#\#) .rd-desk__tile::after{top:14px!important;right:14px!important}
+  html body.v13:not(#\#).cx-page .cx-report :is(.cx-quote,.cx-facts),html body.v13:not(#\#).cx-page .cx-report .cx-overview>*,html body.v13:not(#\#) .cx-identity{padding:18px!important}
+  html body.v13:not(#\#).cx-page .cx-report :is(.cx-quote,.cx-facts){border-left:1px solid var(--px-edge)!important}
+  html body.v13:not(#\#).v3-auth .auth-card{border:1px solid var(--px-edge)!important}
+  html body.v13:not(#\#) #main :is(.research-panel,.portfolio-connection,.portfolio-activity,.portfolio-next,.portfolio-account,.research-metrics>div,.v3-account__panel,.v3-account__danger,.bl-plan){
+    margin-inline:0!important;border:1px solid var(--px-edge)!important;border-radius:var(--px-r)!important}
+  html body.v13:not(#\#) #main .research-metrics{margin-inline:0!important}
+}
+@media (max-width:900px){
+  html body.v13:not(#\#) .rd-desk__tile:nth-child(3),html body.v13:not(#\#) .rd-desk__tile:nth-child(n+3){border:1px solid var(--px-edge)!important}
+}
+@media (forced-colors:active){
+  html body.v13:not(#\#) :is(.rd-desk__tile,.rd-kpi,.cx-top>*,.cx-tile,.cx-overview>*){border:1px solid CanvasText!important}
+}
+}
+/* end @layer insidir-v13 */

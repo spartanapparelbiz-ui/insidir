@@ -131,7 +131,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
 <link rel="stylesheet" href="/assets/css/v29-system.css">
-<link rel="stylesheet" href="/assets/css/v34-soft.css">
+<link rel="stylesheet" href="/assets/css/v35-precision.css">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public">
 <a class="skip-link" href="#Content">Skip to content</a>
