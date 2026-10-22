@@ -448,13 +448,17 @@ function drawChart() {
   const x = i => padL + (i / (pts.length - 1)) * w;
   const y = v => padT + (1 - (v - lo) / (hi - lo)) * h;
   // The line is green when the range closed at or above where it started (the previous close on 1D) and red
-  // when below. The svg carries data-trend; CSS paints it from --hf-up / --hf-down. No fill under the line.
+  // when below. The svg carries data-trend; CSS paints it from --hf-up / --hf-down. Under it a faint ink area;
+  // the last close is marked and tagged on the axis, and (off 1D) a dashed line holds the range's first close.
   const change = finite(data.rangeChange) ? data.rangeChange : closes.at(-1) - (base ?? closes[0]);
   const trend = change < 0 ? "down" : "up";
   const line = pts.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
+  const area = line + "L" + x(pts.length - 1).toFixed(1) + " " + (padT + h) + "L" + x(0).toFixed(1) + " " + (padT + h) + "Z";
+  const lastY = y(closes.at(-1)), lastX = x(pts.length - 1);
+  const lastText = closes.at(-1).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const tz = data.timezone || "America/New_York";
   const decimals = Number.isInteger(+tickStep.toFixed(6)) ? 0 : Number.isInteger(+(tickStep * 10).toFixed(6)) ? 1 : 2;
-  const yLabels = ticks.map(v => `<line class="grid" x1="${padL}" x2="${padL + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis" x="${padL + w + 12}" y="${(y(v) + 4).toFixed(1)}">${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</text>`).join("");
+  const yLabels = ticks.map(v => `<line class="grid" x1="${padL}" x2="${padL + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="axis${Math.abs(y(v) - lastY) < 14 ? " is-covered" : ""}" x="${padL + w + 12}" y="${(y(v) + 4).toFixed(1)}">${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</text>`).join("");
   let lastRight = -Infinity;
   const xLabels = xTicks(pts, state.range, tz, W < 520 ? 3 : 6).map(i => {
     const text = labelFor(pts[i][0], state.range, tz), width = text.length * 7.2;
@@ -470,7 +474,13 @@ function drawChart() {
   host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-trend="${trend}" role="img" tabindex="0" aria-label="${esc(state.ticker + " price, " + state.range + ": " + money(closes[0], data.currency, { precise: true }) + " on " + new Date(first).toLocaleDateString("en-US", { timeZone: tz }) + " to " + money(closes.at(-1), data.currency, { precise: true }) + " on " + new Date(last).toLocaleDateString("en-US", { timeZone: tz }) + moved)}. Use arrow keys to inspect prices.">
     ${yLabels}${xLabels}
     ${base != null ? `<line class="baseline" x1="${padL}" x2="${padL + w}" y1="${y(base).toFixed(1)}" y2="${y(base).toFixed(1)}"><title>Previous close ${money(base, data.currency, { precise: true })}</title></line>` : ""}
+    <defs><linearGradient id="cx-area-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0eee8" stop-opacity=".13"/><stop offset="1" stop-color="#f0eee8" stop-opacity="0"/></linearGradient></defs>
+    ${base == null ? `<line class="cx-ref" x1="${padL}" x2="${padL + w}" y1="${y(closes[0]).toFixed(1)}" y2="${y(closes[0]).toFixed(1)}"/>` : ""}
+    <path class="cx-area" d="${area}"/>
     <path class="cx-line" d="${line}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <line class="cx-last-rule" x1="${lastX.toFixed(1)}" x2="${(padL + w + 4).toFixed(1)}" y1="${lastY.toFixed(1)}" y2="${lastY.toFixed(1)}"/>
+    <circle class="cx-end-ring" cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="7"/><circle class="cx-end" cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.5"/>
+    <rect class="cx-last-tag" x="${(padL + w + 4).toFixed(1)}" y="${(lastY - 10).toFixed(1)}" width="${padR - 6}" height="20" rx="2"/><text class="cx-last-t" x="${(padL + w + 4 + (padR - 6) / 2).toFixed(1)}" y="${(lastY + 4).toFixed(1)}" text-anchor="middle"${lastText.length > 7 ? ` textLength="${padR - 10}" lengthAdjust="spacingAndGlyphs"` : ""}>${esc(lastText)}</text>
     <g class="cx-hover" opacity="0"><line class="cross" y1="${padT}" y2="${padT + h}"/><circle class="dot" r="5" fill="currentColor"/></g>
   </svg>`;
   const svg = host.querySelector("svg"), hover = svg.querySelector(".cx-hover"), cross = hover.querySelector("line"), dot = hover.querySelector("circle");

@@ -104,8 +104,11 @@ Identity tiles are never absent: the company header (`#cx-logo`) and the company
 `InsidirMedia.logo()` tiles until the engine's own logo arrives, and keep the tile when the answer is a curated mark
 or nothing (initials). The landing page adds `v35-landing.css`: the hero light and grid (`.sx-hero::after`, above the
 halftone canvas and under the copy), and the "Real records. Charted." section (`.px-proof`, `.px-chart`, `.px-bars`,
-`.px-spark`, `.px-steps`, `.px-cta`). Its Reddit chart is the platform snapshot rendered by
-`scripts/build-demo-chart.mjs`; rerun it after changing the snapshot.
+`.px-price`, `.px-stats`, `.px-plot`, `.px-bars`, `.px-mix`, `.px-cal`, `.px-cta`). Its Reddit chart is the platform
+snapshot rendered by `scripts/build-demo-chart.mjs` (rerun it after changing the snapshot), which also writes the
+points (`script.px-price__data`) that `assets/js/v35-charts.js` reads for the crosshair readout (pointer, arrow keys,
+Shift for 20 days, Home/End, Escape). Chart colour carries direction only: green for a purchase or a rise, red for a
+fall, always beside a sign or a word; areas and gauges are ink.
 
 ### Motion: still content, live dots
 

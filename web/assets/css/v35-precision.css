@@ -145,6 +145,30 @@ html body.v13:not(#\#) .ip-detail__head .ip-kind{margin:0 0 2px!important}
 html body.v13:not(#\#) .ip-detail__head h4{margin:0!important}
 html body.v13:not(#\#) .ip-who{display:inline-flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
 
+/* The company price chart as an instrument: a faint ink area, the range's first close dashed, the last close marked
+   and tagged on the axis in the trend's colour (the tick label it covers is left out). */
+html body.v13:not(#\#) .cx-chart .cx-area{fill:url(#cx-area-fill)!important;stroke:none!important}
+html body.v13:not(#\#) .cx-chart .cx-ref{stroke:var(--hf-line-strong)!important;stroke-width:1!important;stroke-dasharray:3 4!important}
+html body.v13:not(#\#) .cx-chart .axis.is-covered{display:none!important}
+html body.v13:not(#\#) .cx-chart .grid{stroke:var(--hf-line-faint)!important}
+html body.v13:not(#\#) .cx-chart .cx-last-rule{stroke-width:1!important;stroke-dasharray:2 3!important;opacity:.7}
+html body.v13:not(#\#) .cx-chart svg[data-trend=up] :is(.cx-last-rule,.cx-end-ring){stroke:var(--hf-up)!important}
+html body.v13:not(#\#) .cx-chart svg[data-trend=down] :is(.cx-last-rule,.cx-end-ring){stroke:var(--hf-down)!important}
+html body.v13:not(#\#) .cx-chart .cx-end-ring{fill:none!important;stroke-width:1!important;opacity:.55}
+html body.v13:not(#\#) .cx-chart svg[data-trend=up] :is(.cx-end,.cx-last-tag){fill:var(--hf-up)!important}
+html body.v13:not(#\#) .cx-chart svg[data-trend=down] :is(.cx-end,.cx-last-tag){fill:var(--hf-down)!important}
+html body.v13:not(#\#) .cx-chart .cx-last-t{fill:var(--hf-bg)!important;font:700 10.5px var(--px-figure,var(--hf-ui))!important;font-variant-numeric:tabular-nums!important}
+
+/* The overview's bar charts: data ends rounded away from the baseline (the end that carries the value), wider day
+   columns, a lit top edge; the grid recedes. */
+html body.v13:not(#\#) .rd-day__bar{width:min(28px,56%)!important;box-shadow:inset 0 1px 0 rgba(240,238,232,.22)!important}
+html body.v13:not(#\#) .rd-day__bar--up{border-radius:var(--px-r-in) var(--px-r-in) 0 0!important}
+html body.v13:not(#\#) .rd-day__bar--down{border-radius:0 0 var(--px-r-in) var(--px-r-in)!important}
+html body.v13:not(#\#) .rd-co__bar{height:10px!important;box-shadow:inset 0 1px 0 rgba(240,238,232,.18)!important}
+html body.v13:not(#\#) .rd-co__bar--up{border-radius:0 var(--px-r-in) var(--px-r-in) 0!important}
+html body.v13:not(#\#) .rd-co__bar--down{border-radius:var(--px-r-in) 0 0 var(--px-r-in)!important}
+html body.v13:not(#\#) .rd-dchart__grid:not(.rd-dchart__grid--zero){opacity:.6}
+
 /* ---------- Personnel file ---------- */
 /* The photo is the same square tile as everywhere else; no corner ticks; the stamp is a plain label. */
 html body.v13:not(#\#) .pf-photo__frame{border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;background:var(--px-fill)!important;overflow:hidden!important}

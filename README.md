@@ -21,10 +21,16 @@ inconsistent).
   instead of drawing black on black. The Connections panel shows each person's and company's tile beside their name.
 - **Landing page** (`web/assets/css/v35-landing.css`, index only): a light from above and a fine grid behind the hero,
   48px calls to action with the primary one lit, the eyebrow as a status tag, ruled section heads, and a new
-  "Real records. Charted." section with three charts from records the page already cites: the four lines of Robert
-  C. Pohlad's PepsiCo Form 4 by value ($23,686,388.88 as filed), Reddit's delayed one-year price from the platform
-  page's snapshot (drawn at build time by `scripts/build-demo-chart.mjs` between `<!-- landing-chart -->` markers),
-  and the trade-to-filing delay. A call to start follows the charts and the four capabilities (`data-cta="proof"`,
+  "Real records. Charted." section of three instruments from records the page already cites: Reddit's delayed
+  one-year price from the platform page's snapshot as a full chart (axis, grid, the price a year ago, the year's
+  high $258.93 on Jan 13 and low $121.84 on Mar 27, the last price tagged on the axis, a 1Y-range gauge, and a
+  crosshair readout by pointer or arrow keys from `web/assets/js/v35-charts.js`; drawn at build time by
+  `scripts/build-demo-chart.mjs` between `<!-- landing-chart -->` markers), the four lines of Robert C. Pohlad's
+  PepsiCo Form 4 as a composition bar and bars on a $0-$12M axis ($23,686,388.88 as filed), and its filing deadline
+  as a week (traded Wed Oct 14, filed Fri Oct 16, day 2 of 2, the weekend hatched).
+- **Product charts.** The company report's price chart gains a faint ink area, a dashed line at the range's first
+  close and the last close marked and tagged on the axis in the trend's colour; the overview's day and company bars
+  get rounded data ends (away from the baseline) and wider day columns. A call to start follows the charts and the four capabilities (`data-cta="proof"`,
   `"capabilities"`).
 
 See `docs/WEBSITE.md`, "V35: precision".
