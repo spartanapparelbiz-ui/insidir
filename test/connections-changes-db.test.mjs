@@ -40,7 +40,7 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
   const { connections } = await import("../src/connections.mjs");
   const { changes } = await import("../src/changes.mjs");
   const { buildResearchEvents } = await import("../src/research-events.mjs");
-  const { longDay } = await import("../src/plain-language.mjs");
+  const { longDay, filedDay } = await import("../src/plain-language.mjs");
   const { fanOut, isImportant } = await import("../src/notifications.mjs");
 
   const parse = (acc, published, overrides = {}) => ({ ...parseOwnership(readFileSync(new URL("./fixtures/form4/" + acc + ".xml", import.meta.url), "utf8"),
@@ -89,7 +89,7 @@ test("Connections, Changes and Autopilot on PostgreSQL", { skip }, async t => {
     // The plain layer first: a headline and a sentence with the same figures, the filing's terms kept in detail.
     assert.equal(original.headline, "Insider share purchase disclosed");
     assert.match(original.summary, /bought 418 shares of .+ at \$23\.725 a share, \$9,917\.05 as filed\. Traded Sep 17, 2026, filed /, "the price as filed, not rounded to the cent");
-    assert.ok(original.summary.endsWith(", filed " + longDay(publishedAt["000070686326000085"]) + "."), original.summary);
+    assert.ok(original.summary.endsWith(", filed " + longDay(filedDay(publishedAt["000070686326000085"])) + "."), original.summary);
     assert.ok(Array.isArray(original.footnotes));
     assert.ok(original.evidence.some(e => e.field === "nonDerivativeTransaction/transactionShares" && e.value === 418 && e.units === "shares" && e.period.end === "2026-09-17"));
     const role = c.items.find(i => i.kind === "role_change");

@@ -509,7 +509,7 @@ async function route(req,res,ctx){
     }
     const days=positive(u.searchParams.get("days"),90,365);
     const fetcher=secReady()?(ctx.secFetch||undefined):async()=>{throw new Error("SEC requests are not configured")};
-    return json(res,200,await ctx.market("changes:"+cik+":"+days,60_000,()=>timed("changes",()=>changes(cik,{run:ctx.query,days,fetcher}))));
+    return json(res,200,await ctx.market("changes:"+cik+":"+days,10*60_000,()=>timed("changes",()=>changes(cik,{run:ctx.query,days,fetcher}))));
   }
   if(p.startsWith("/v1/entities/") && m==="GET"){
     const cik=padCik(decodeURIComponent(p.slice("/v1/entities/".length)));

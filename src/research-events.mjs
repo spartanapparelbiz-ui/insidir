@@ -20,7 +20,7 @@
  * Every event keeps the transaction date(s), the SEC filing time and Insidir's retrieval time apart, links every
  * accession and source document, and states what it is not (facts.caveats). Nothing here scores, ranks, predicts or
  * recommends; the words used for each event (eventSummary) state what was filed. */
-import { eventHeadline } from "./plain-language.mjs";
+import { eventHeadline, readableName } from "./plain-language.mjs";
 import { secFetch } from "./sec.mjs";
 import { secReady } from "./config.mjs";
 import { tickerIndex, tickerRecord, extractFilings } from "./intelligence.mjs";
@@ -370,7 +370,7 @@ const money = v => { const g = group(v); return g == null ? null : "$" + (/\.\d$
 const num = v => group(v);
 const dayOf = (v, read) => v ? new Date(read(v) + "T00:00:00Z").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }) : null;
 const day = v => dayOf(v, isoDate), stamp = v => dayOf(v, utcDay);
-const who = e => { const o = e.facts?.owners || []; const first = o[0]; if (!first) return e.owner_name || "A reporting owner"; const role = first.roles?.length ? ` (${first.roles.join(", ")})` : ""; return first.name + role + (o.length > 1 ? ` and ${o.length - 1} other reporting owner${o.length > 2 ? "s" : ""}` : ""); };
+const who = e => { const o = e.facts?.owners || []; const first = o[0]; if (!first) return e.owner_name ? readableName(e.owner_name) : "A reporting owner"; const role = first.roles?.length ? ` (${first.roles.join(", ")})` : ""; return readableName(first.name) + role + (o.length > 1 ? ` and ${o.length - 1} other reporting owner${o.length > 2 ? "s" : ""}` : ""); };
 
 export function eventSummary(e) {
   const company = e.ticker || e.issuer_name || "the issuer", f = e.facts || {};

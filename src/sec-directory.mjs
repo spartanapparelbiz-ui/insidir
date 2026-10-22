@@ -14,9 +14,10 @@
  * A reporting owner that is not a company is a person or an organization, told apart only by the name as filed
  * (kind_basis 'filed_name_pattern'); nothing here invents a biography, position or relationship. A CIK seen only in
  * EDGAR's name lookup is 'unknown' until its submissions are read. */
-import { secFetch } from "./sec.mjs";
+import { secFetch, FILER_LIST_URL } from "./sec.mjs";
 import { query as queryDb } from "./db.mjs";
 import { createCache } from "./cache.mjs";
+import { readableName } from "./plain-language.mjs";
 
 export const TICKER_LIST_URL = "https://www.sec.gov/files/company_tickers_exchange.json";
 export const padCik = value => {
@@ -333,6 +334,49 @@ export async function edgarEntityLookup(q, { run = queryDb, fetcher = secFetch }
   return { state: "ok", hits };
 }
 
+/* ---------- 5. every EDGAR filer's name (cik-lookup-data.txt), weekly ---------- */
+// "NAME:0001234567:" per line; a name can itself contain colons, so the CIK is read from the end.
+// One row per line of the SEC list, read in place: the whole list (about a million names) is never held as rows.
+function* filerRows(text) {
+  const src = String(text || "");
+  for (let at = 0; at < src.length;) {
+    let end = src.indexOf("\n", at); if (end < 0) end = src.length;
+    const m = /^(.*):(\d{10}):\s*$/.exec(src.slice(at, end)); at = end + 1;
+    if (!m) continue;
+    const name = m[1].trim().replace(/\s+/g, " ").slice(0, 200), norm = normalizeName(name);
+    if (name && norm) yield [m[2], name, norm];
+  }
+}
+export function parseFilerList(text) {
+  const out = [], seen = new Set();
+  for (const r of filerRows(text)) if (!seen.has(r[0] + "|" + r[2])) { seen.add(r[0] + "|" + r[2]); out.push(r); }
+  return out;
+}
+export async function syncFilerList({ run = queryDb, fetcher = secFetch, maxAgeDays = 6, batch = 5000 } = {}) {
+  const fresh = (await run(`SELECT 1 FROM sec_sync_runs WHERE job='filer-list' AND status='success' AND finished_at>now()-make_interval(days=>$1) LIMIT 1`, [maxAgeDays])).rows.length;
+  const have = (await run("SELECT EXISTS(SELECT 1 FROM sec_filer_names) AS e")).rows[0].e;
+  if (fresh && have) return { skipped: true, reason: "refreshed within " + maxAgeDays + " days" };
+  const id = await startRun(run, "filer-list");
+  try {
+    const text = await fetcher(FILER_LIST_URL);
+    let names = 0;
+    for (const _ of filerRows(text)) names++;
+    if (names < 100_000) throw new Error("The SEC filer list looks incomplete (" + names + " names); keeping the previous one");
+    let added = 0, part = [];
+    const flush = async () => {
+      if (!part.length) return;
+      added += (await run(`INSERT INTO sec_filer_names(cik,name,norm) SELECT * FROM unnest($1::text[],$2::text[],$3::text[]) ON CONFLICT DO NOTHING`,
+        [part.map(r => r[0]), part.map(r => r[1]), part.map(r => r[2])])).rowCount || 0;
+      part = [];
+    };
+    for (const r of filerRows(text)) { part.push(r); if (part.length >= batch) await flush(); }
+    await flush();
+    const stats = { names, added };
+    await finishRun(run, id, "success", stats);
+    return stats;
+  } catch (e) { await finishRun(run, id, "error", {}, e?.message || e).catch(() => {}); throw e; }
+}
+
 /* ---------- search ---------- */
 let trgm = null;
 export async function hasTrigram(run = queryDb) {
@@ -376,15 +420,49 @@ export async function searchLocal(qInput, { run = queryDb, kind = "all", limit =
         count(*) OVER () AS total, count(*) FILTER (WHERE b.score>=600) OVER () AS strong
       FROM best b JOIN sec_entities e ON e.cik=b.cik WHERE ${kindFilter(kind)}
     )
-    SELECT * FROM ranked ORDER BY score DESC, listed DESC, (issuer_filings+owner_filings) DESC, name LIMIT $2 OFFSET $3`;
+    SELECT * FROM ranked ORDER BY score DESC, listed DESC, (issuer_filings+owner_filings) DESC, length(matched), name LIMIT $2 OFFSET $3`;
   const rows = (await run(sql, params)).rows;
   // strong: matches by CIK, ticker, whole name or every word; typo-tolerant matches are counted in total only.
-  return { items: rows.map(itemOf), total: rows.length ? Math.min(10000, Number(rows[0].total)) : (offset ? null : 0), strong: rows.length ? Number(rows[0].strong) : 0 };
+  const rank = new WeakMap();
+  const found = { items: rows.map(r => { const it = itemOf(r); rank.set(it, [r.score, r.listed ? 1 : 0, (r.issuer_filings || 0) + (r.owner_filings || 0), String(r.matched || r.name).length]); return it; }),
+    total: rows.length ? Math.min(10000, Number(rows[0].total)) : (offset ? null : 0), strong: rows.length ? Number(rows[0].strong) : 0 };
+  // Every other EDGAR filer whose name has every word (sec_filer_names), after the directory's own matches.
+  if (kind !== "company" && !offset && found.items.length < limit && words.some(w => w.length >= 3)) {
+    const extra = await searchFilerNames(q, words, { run, limit: limit - found.items.length, exclude: found.items.map(i => i.cik), cik: digits ? digits.padStart(10, "0") : null, kind });
+    for (const it of extra) rank.set(it, [it._score, 0, 0, it.name.length]);
+    found.items.push(...extra); found.strong += extra.length; found.total = (found.total || 0) + extra.length; found.fromList = extra.length;
+  }
+  // With an exact match on file, near-misses are left out; then closest first (whole name, listed, filings, shortest).
+  if (found.strong) found.items = found.items.filter(it => (rank.get(it)?.[0] ?? 600) >= 600);
+  // A name that is the words asked for and nothing more than an initial or a suffix ("THIEL PETER", "ICAHN CARL C")
+  // is the person asked for: it ranks above longer names that merely contain them (a trust, a fund).
+  for (const it of found.items) {
+    const r = rank.get(it); if (!r || r[0] < 600 || r[0] >= 900) continue;
+    const rest = normalizeName(it.name).split(" ").filter(w => !words.some(q => w.startsWith(q)));
+    if (rest.every(w => w.length <= 2 || /^(JR|SR|II|III|IV)$/.test(w)) && rest.length <= 2) r[0] = 850;
+  }
+  found.items.sort((a, b) => { const x = rank.get(a) || [600, 0, 0, 99], y = rank.get(b) || [600, 0, 0, 99]; return y[0] - x[0] || y[1] - x[1] || y[2] - x[2] || x[3] - y[3]; });
+  for (const it of found.items) delete it._score;
+  return found;
+}
+async function searchFilerNames(q, words, { run, limit, exclude, cik, kind }) {
+  const params = [q, exclude, Math.max(1, limit)];
+  const conds = words.map(w => { params.push(w); const n = "$" + params.length; return `(f.norm LIKE ${n}||'%' OR f.norm LIKE '% '||${n}||'%')`; }).join(" AND ");
+  if (cik) params.push(cik);
+  const r = await run(`SELECT * FROM (SELECT DISTINCT ON (f.cik) f.cik,f.name,f.norm,CASE WHEN f.norm=$1 THEN 900 WHEN f.norm LIKE $1||'%' THEN 700 ELSE 600 END AS score
+      FROM sec_filer_names f WHERE (${cik ? "f.cik=$" + params.length + " OR " : ""}(${conds})) AND NOT (f.cik=ANY($2::text[]))
+      ORDER BY f.cik, score DESC, length(f.norm)) best ORDER BY score DESC, length(norm), name LIMIT $3`, params).catch(() => ({ rows: [] }));
+  return r.rows.map(f => {
+    const k = classifyOwnerName(f.name);
+    return { _score: f.score, cik: f.cik, name: f.name, displayName: k === "person" ? readableName(f.name) : null, kind: k, kindBasis: "filed_name_pattern", tickers: [], exchanges: [], listed: false,
+      isIssuer: false, isReportingOwner: false, importedFilings: { asIssuer: 0, asOwner: 0 }, lastFilingAt: null, latestRole: null, delistedAt: null, matched: null,
+      sources: ["edgar_filer_list"], url: "entity.html?cik=" + f.cik };
+  }).filter(i => kind === "all" || kind === "owner" || i.kind === kind).slice(0, limit);
 }
 function itemOf(r) {
   const matchedOther = r.name_kind !== "ticker" && normalizeName(r.matched) !== normalizeName(r.name);
   return {
-    cik: r.cik, name: r.name, kind: r.kind, kindBasis: r.kind_basis, tickers: r.tickers || [], exchanges: r.exchanges || [], listed: !!r.listed,
+    cik: r.cik, name: r.name, displayName: r.kind === "person" || (r.kind === "unknown" && classifyOwnerName(r.name) === "person") ? readableName(r.name) : null, kind: r.kind, kindBasis: r.kind_basis, tickers: r.tickers || [], exchanges: r.exchanges || [], listed: !!r.listed,
     isIssuer: !!r.is_issuer, isReportingOwner: !!r.is_reporting_owner, importedFilings: { asIssuer: r.issuer_filings || 0, asOwner: r.owner_filings || 0 },
     lastFilingAt: r.last_filing_at ? new Date(r.last_filing_at).toISOString() : null,
     latestRole: r.last_role ? { role: r.last_role, issuerCik: r.last_issuer_cik, issuerName: r.last_issuer_name } : null,
@@ -403,7 +481,42 @@ export function entityUrl(r) {
 /* Search with on-demand lookup: a CIK that is not stored is resolved from EDGAR submissions, and a name that
  * finds fewer than `lookupBelow` stored entities is looked up in EDGAR's entity index, whose hits are stored and
  * searched again. state says why a list is empty: no_match (looked everywhere it could) or source_unavailable. */
+/* Titles the SEC rarely files names with ("Sheikh Tahnoon" is filed as "Al-Nahyan Tahnoon Bin Zayed S."), and common
+ * spellings of one name. A search with no exact match is tried again without the titles, then with the other spellings,
+ * and says which wording found the results. */
+const TITLES = /\b(his|her)\s+(royal\s+)?(highness|excellency)\b|\bh\s?r\s?h\b|\b(prince|princess|king|queen|sheikh|shaikh|sheik|sheikha|emir|amir|sultan|crown|president|senator|sen|representative|rep|congressman|congresswoman|governor|gov|mr|mrs|ms|dr|sir|lord|lady|dame|hon|honorable|the)\b/gi;
+const SPELLINGS = [["MOHAMMED", "MOHAMMAD", "MUHAMMAD", "MOHAMED", "MOHAMAD", "MUHAMMED"], ["ABDULLAH", "ABDALLAH"], ["ABDULAZIZ", "ABDUL AZIZ", "ABDELAZIZ"],
+  ["KHALID", "KHALED"], ["HAMAD", "HAMED"], ["YOUSEF", "YOUSSEF", "YUSUF", "YOUSUF"], ["AHMED", "AHMAD"], ["HUSSEIN", "HUSSAIN", "HUSAIN"], ["ALWALEED", "AL WALEED"]];
+// Everyday first names the SEC files under their full form ("Cathie Wood" is "Wood Catherine D.").
+const NICKNAMES = { CATHIE: "CATHERINE", CATHY: "CATHERINE", KATIE: "KATHERINE", KATE: "KATHERINE", BILL: "WILLIAM", WILL: "WILLIAM", BOB: "ROBERT", BOBBY: "ROBERT",
+  ROB: "ROBERT", JIM: "JAMES", JIMMY: "JAMES", MIKE: "MICHAEL", TOM: "THOMAS", DICK: "RICHARD", RICH: "RICHARD", RICK: "RICHARD", STEVE: "STEVEN", DAVE: "DAVID",
+  DAN: "DANIEL", JOE: "JOSEPH", CHUCK: "CHARLES", CHARLIE: "CHARLES", LARRY: "LAWRENCE", TED: "EDWARD", ED: "EDWARD", NICK: "NICHOLAS", CHRIS: "CHRISTOPHER",
+  LIZ: "ELIZABETH", BETH: "ELIZABETH", PEGGY: "MARGARET", MAGGIE: "MARGARET", SAM: "SAMUEL", ALEX: "ALEXANDER", TONY: "ANTHONY", BEN: "BENJAMIN",
+  MATT: "MATTHEW", ANDY: "ANDREW", PAT: "PATRICK", GREG: "GREGORY", DOUG: "DOUGLAS", KEN: "KENNETH", RON: "RONALD", DON: "DONALD", TIM: "TIMOTHY",
+  JACK: "JOHN", JON: "JONATHAN", FRED: "FREDERICK", HANK: "HENRY", HARRY: "HENRY", SUE: "SUSAN", JENNY: "JENNIFER", JEN: "JENNIFER" };
+export function searchVariants(q) {
+  const out = [], norm = normalizeName(q), add = v => { v = normalizeName(v); if (v && v.length >= 3 && v !== norm && !out.includes(v)) out.push(v); };
+  const bare = normalizeName(String(q ?? "").replace(TITLES, " "));
+  add(bare);
+  for (const base of [bare || norm]) for (const group of SPELLINGS) for (const w of group) if ((" " + base + " ").includes(" " + w + " "))
+    for (const alt of group) if (alt !== w) add((" " + base + " ").replace(" " + w + " ", " " + alt + " "));
+  const base = bare || norm, first = base.split(" ")[0];
+  if (NICKNAMES[first] && base.includes(" ")) add(NICKNAMES[first] + base.slice(first.length));
+  return out.slice(0, 4);
+}
+
 export async function searchEntities(q, { run = queryDb, fetcher = secFetch, kind = "all", limit = 20, offset = 0, lookupBelow = 5, edgar = true } = {}) {
+  const first = await searchOnce(q, { run, fetcher, kind, limit, offset, lookupBelow, edgar });
+  if (first.strong || offset || first.state === "source_unavailable") return first;
+  const asked = normalizeName(q).split(" ").length;
+  for (const v of searchVariants(q)) {
+    const r = await searchOnce(v, { run, fetcher, kind, limit, offset, lookupBelow, edgar });
+    // "Sheikh Tahnoon" may stand for the one Tahnoon on file; "Sheikh Mansour" does not stand for every Mansour.
+    if (r.strong && (v.split(" ").length >= 2 || asked < 2 || r.strong <= 3)) return { ...r, searchedAs: v.toLowerCase(), lookups: [...first.lookups, ...r.lookups] };
+  }
+  return first;
+}
+async function searchOnce(q, { run, fetcher, kind, limit, offset, lookupBelow, edgar }) {
   let local = await searchLocal(q, { run, kind, limit, offset });
   const lookups = [];
   const norm = normalizeName(q), digits = /^\d{1,10}$/.test(norm.replace(/ /g, "")) ? norm.replace(/ /g, "") : null;
@@ -411,7 +524,7 @@ export async function searchEntities(q, { run = queryDb, fetcher = secFetch, kin
     const r = await resolveEntity(digits, { run, fetcher });
     lookups.push({ source: "edgar_submissions", state: r.state });
     if (r.state === "ok") local = await searchLocal(q, { run, kind, limit, offset });
-  } else if (edgar && !offset && !digits && norm.length >= 3 && local.strong < lookupBelow) {
+  } else if (edgar && !offset && !digits && norm.length >= 3 && local.strong < lookupBelow && !local.fromList) {
     const r = await edgarEntityLookup(q, { run, fetcher });
     lookups.push({ source: "edgar_entity_lookup", state: r.state, hits: r.hits.length });
     // An EDGAR hit only says a name and a CIK exist; read its submissions so it has a kind (bounded, ranked first).
@@ -423,7 +536,7 @@ export async function searchEntities(q, { run = queryDb, fetcher = secFetch, kin
   }
   const unavailable = lookups.some(l => l.state === "source_unavailable");
   const state = local.items.length ? "ok" : unavailable ? "source_unavailable" : "no_match";
-  return { ...local, offset, limit, hasMore: local.total != null && offset + local.items.length < local.total, state, lookups };
+  return { ...local, offset, limit, hasMore: local.total != null && offset + local.items.length < local.total, state, lookups, exact: local.strong > 0 };
 }
 
 /* One entity with everything stored about it (names, tickers, imported participation). */

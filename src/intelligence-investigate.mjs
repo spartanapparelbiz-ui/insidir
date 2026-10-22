@@ -16,6 +16,8 @@ import { screenQuestion, reviewGeneratedText } from "./compliance-guard.mjs";
 import { tickerIndex, resolveCompany, extractFilings } from "./intelligence.mjs";
 import { cachedGeneration, sanitizeEvidence, sha256, SYSTEM_RULES, aiConfigured, affordableTier } from "./ai-gateway.mjs";
 import { intelligenceBriefing } from "./intelligence-briefing.mjs";
+import { searchEntities, entityRecord } from "./sec-directory.mjs";
+import { readableName, filingHeadline } from "./plain-language.mjs";
 import { iso, day, num, cikForms, bareCik, displayName, companyName, roleOf, money, count, codeLabel, eightKLabel, secSource, summarizeLines } from "./intelligence-common.mjs";
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -179,7 +181,7 @@ export function parseQuestion(question, directory, { now = Date.now(), context =
   }
   if (intent === "compare" && contextCompanies.length < 2) intent = "overview";
   return { question: text, companies: contextCompanies, extraCompanies: extra, unmatched, ambiguous, scope, intent, categories: [...new Set(categories)],
-    days: time.days ?? null, sinceVisit: !!time.sinceVisit, timeLabel: time.label, usedContext, mentionsFilings };
+    days: time.days ?? null, daysDefaulted: !!time.defaulted, sinceVisit: !!time.sinceVisit, timeLabel: time.label, usedContext, mentionsFilings };
 }
 
 /* ---------- Retrieval ---------- */
@@ -318,6 +320,29 @@ function followUps(plan, watch) {
   return out.slice(0, 4);
 }
 
+/* The name a question asks about, once the question words are taken out: "What has Donald Trump disclosed?" asks
+ * about "Donald Trump". Titles stay in (the directory search tries again without them). */
+const NAME_STOP_WORDS = new Set(("what whats what's has have had did does do is are was were will show me tell give list find about the a an of at by for on in to from with " +
+  "any all recent recently latest new newest last this past month months year years week weeks day days today lately ever insider insiders filing filings form " +
+  "forms sec edgar transactions transaction trades trade trading disclosed disclose discloses disclosures disclosure report reports reported buying buy buys bought " +
+  "selling sell sells sold sales sale purchases purchase purchased stock stocks shares share holdings holding hold holds own owns owned ownership position positions " +
+  "doing done been up and or how much many who whom whose where when which why invest invested investing investments portfolio companies company " +
+  "please can could would you i we my our their his her its").split(" "));
+export function personPhrase(question) {
+  const words = String(question || "").replace(/[’']s\b/g, "").replace(/[^\p{L}\p{N}\s.-]/gu, " ").split(/\s+/).filter(Boolean);
+  const kept = words.filter(w => !NAME_STOP_WORDS.has(w.toLowerCase().replace(/\.$/, "")) && !/^\d+$/.test(w));
+  return kept.join(" ").trim().slice(0, 80);
+}
+// A named person or organization in the SEC directory: only a match on every word counts (no near-miss guesses).
+async function findFiler(question, { run, findPeople }) {
+  const phrase = personPhrase(question);
+  if (phrase.replace(/\s/g, "").length < 3) return null;
+  const r = await findPeople(phrase, { run }).catch(() => null);
+  if (!r || !r.exact) return { phrase, match: null, searchedAs: r?.searchedAs || null };
+  const hit = (r.items || []).find(i => i.kind === "person" || i.kind === "organization" || i.isReportingOwner) || null;
+  return { phrase, match: hit, searchedAs: r.searchedAs || null, others: (r.items || []).filter(i => i !== hit).slice(0, 3) };
+}
+
 /* The full deterministic answer. deps: run, loadCompany (EDGAR submissions, cached), directory, now. */
 export const STAGES = Object.freeze([
   { id: "understood", label: "Reading the question" },
@@ -327,7 +352,8 @@ export const STAGES = Object.freeze([
   { id: "prepared", label: "Preparing the report" }
 ]);
 /* onStage(id, detail) is called as each stage actually completes (it drives the streamed progress view). */
-export async function investigate(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, now = Date.now(), onStage = () => {} } = {}) {
+export async function investigate(userId, question, { run = queryDb, context = null, loadCompany = resolveCompany, directory, now = Date.now(), onStage = () => {},
+  findPeople = (q, o) => searchEntities(q, { run: o.run, kind: "owner", limit: 5 }), loadFiler = (cik, o) => entityRecord(cik, { run: o.run }) } = {}) {
   const text = String(question ?? "").replace(/\s+/g, " ").trim();
   if (!text) throw fail(400, "Ask a research question");
   if (text.length > MAX_QUESTION) throw fail(400, "Questions are limited to " + MAX_QUESTION + " characters");
@@ -453,8 +479,56 @@ export async function investigate(userId, question, { run = queryDb, context = n
     if (!sections.some(s => (s.stats && s.stats.lines) || (s.filings && s.filings.some(f => f.cites?.length)))) status = "no_data";
     if (wantFilings) gaps.push("Insidir lists SEC filings and the 8-K items each one reports; it does not compare the full text of 10-K or 10-Q reports. Open the linked documents to read what changed.");
   } else if (plan.intent !== "changes_since_visit" && plan.scope !== "watchlist") {
-    status = "unresolved";
-    summary.push({ text: "Insidir could not tell which company or people this question is about. Name a company or ticker (for example “NVDA” or “Microsoft”), or ask about your watchlist or the people you follow." });
+    // A person or an organization by name: their Form 4s in Insidir's index and their own filing list on EDGAR.
+    const found = await findFiler(text, { run, findPeople });
+    if (found?.match) {
+      const m = found.match, cik = String(m.cik).padStart(10, "0");
+      plan.person = { cik, name: m.name, displayName: m.kind === "person" ? readableName(m.name) : displayName(m.name), kind: m.kind, url: m.url };
+      const pdays = plan.daysDefaulted || !plan.days ? 365 : plan.days;
+      if (plan.daysDefaulted || !plan.days) { plan.days = pdays; plan.timeLabel = "the last 12 months"; }
+      plan.unmatched = [];
+      for (let i = gaps.length - 1; i >= 0; i--) if (/did not match a company/.test(gaps[i])) gaps.splice(i, 1);
+      const [lineRes, record] = await Promise.all([run(PEOPLE_LINES_SQL, [cikForms([cik]), pdays, cats]), Promise.resolve(loadFiler(cik, { run })).catch(() => null)]);
+      const rows = lineRes.rows;
+      const capped = rows.length > PEOPLE_LINES; if (capped) { rows.length = PEOPLE_LINES; gaps.push("More than " + PEOPLE_LINES + " lines matched; the most recent are summarised."); }
+      const listed = (record?.edgar?.recentFilings || []).filter(f => f.filedAt && Date.parse(f.filedAt + "T23:59:59Z") >= now - pdays * 86400_000);
+      onStage("sources", { records: rows.length + listed.length });
+      const roleMap = await rolesFor(run, rows);
+      keep(rows, roleMap);
+      const who = m.kind === "person" ? readableName(m.name) : displayName(m.name);
+      if (found.searchedAs) gaps.push("No one files with the SEC under exactly “" + found.phrase + "”; Insidir searched for “" + found.searchedAs + "” and found " + who + ".");
+      const byCompany = new Map();
+      for (const l of rows) { const k = l.ticker || l.issuer_cik; if (!byCompany.has(k)) byCompany.set(k, []); byCompany.get(k).push(l); }
+      const companies = [...byCompany.entries()].sort((a, b) => b[1].length - a[1].length);
+      const filingCites = listed.slice(0, 20).map(f => cite({ url: f.url, accession: f.accession, kind: "filing", label: f.form + " · " + who + " · filed " + f.filedAt, date: f.reportDate, publishedAt: f.filedAt + "T00:00:00Z", retrievedAt: new Date(now).toISOString() }));
+      const formName = form => /^\d/.test(form) ? "Form " + form : String(form).replace(/^SCHEDULE\b/i, "Schedule");
+      const what = f => filingHeadline(f.form).replace(/ (filed|reported|disclosed)(?= \(|$)/, "").toLowerCase() + " (" + formName(f.form) + ")";
+      summary.push({ text: who + " files with the SEC" + (m.latestRole?.role ? ", most recently as " + m.latestRole.role + (m.latestRole.issuerName ? " at " + companyName(m.latestRole.issuerName) : "") : "") + ". " +
+        (listed.length ? "In " + plan.timeLabel + " they filed " + count(listed.length, "report") + (listed.length >= 40 ? " (the 40 most recent are read)" : "") + "; the latest is " + (/^[aeiou]/i.test(what(listed[0])) ? "an " : "a ") + what(listed[0]) + ", filed " + fmtDate(listed[0].filedAt) + "." : "They filed nothing with the SEC in " + plan.timeLabel + "."),
+        cites: filingCites.filter(Boolean).slice(0, 3) });
+      summary.push({ text: companies.length
+        ? "Insider trades on record for " + who + " in " + plan.timeLabel + ": " + count(rows.length, "transaction") + " at " + companies.slice(0, 6).map(([, ls]) => (ls[0].ticker || companyName(ls[0].issuer_name))).join(", ") + "."
+        : "Insidir has no insider trades (Form 4) on record for " + who + " in " + plan.timeLabel + ".", cites: companies.slice(0, 6).map(([, ls]) => lineCitation(cite, ls[0])) });
+      for (const [, ls] of companies.slice(0, 6)) {
+        const label = companyName(ls[0].issuer_name, ls[0].ticker) + (ls[0].ticker ? " (" + ls[0].ticker + ")" : "");
+        const f = insiderFacts(label, ls, roleMap, cite, { categories: plan.categories, capped: false });
+        sections.push({ kind: "company", title: who + " at " + label, ticker: ls[0].ticker, company: companyName(ls[0].issuer_name, ls[0].ticker), facts: f.facts, stats: f.stats, records: ls.slice(0, 15).map(l => recordRow(l, roleMap, cite)) });
+      }
+      sections.push({ kind: "person", title: who + "'s SEC filings", person: { cik, name: who, url: m.url }, facts: m.kind === "person" && readableName(m.name) !== m.name ? [{ text: "Listed by the SEC as " + m.name + " (SEC ID " + Number(cik) + ")." }] : [{ text: "SEC ID " + Number(cik) + "." }],
+        filings: listed.length ? listed.slice(0, 20).map((f, i) => ({ text: fmtDate(f.filedAt) + ": " + filingHeadline(f.form) + " (" + formName(f.form) + ")" + (f.reportDate ? ", for " + fmtDate(f.reportDate) : "") + ".", cites: [filingCites[i]].filter(Boolean) }))
+          : [{ text: "No filings with the SEC in " + plan.timeLabel + "." }], records: [] });
+      for (const f of listed.slice(0, 20)) collected.events.push({ date: f.filedAt, kind: "filed", ticker: null, text: who + " filed " + (/^\d/.test(f.form) ? "a Form " + f.form : "a " + formName(f.form)), cites: [filingCites[listed.indexOf(f)]].filter(Boolean) });
+      if (!record?.edgar) gaps.push("EDGAR's filing list for " + who + " could not be read just now; only filings Insidir has indexed are shown.");
+      gaps.push("SEC records only show what a person files themselves, for example as a company executive, a director, a major shareholder or a fund manager. Anything they own through other people or companies, or never had to report, is not here.");
+      if (found.others?.length) gaps.push("Others with a similar name: " + found.others.map(o => (o.kind === "person" ? readableName(o.name) : displayName(o.name))).join("; ") + ".");
+      if (!rows.length && !listed.length) status = "no_data";
+    } else {
+      status = "unresolved";
+      const asked = found?.phrase;
+      summary.push({ text: asked
+        ? "No company or person named “" + asked + "” files with the SEC, so Insidir has nothing on them. Insidir covers companies, and the executives, big shareholders and funds that report to the SEC. Some well-known people never file in their own name; try the company or fund they own instead."
+        : "Insidir could not tell which company or person this question is about. Name a company, a ticker (for example “NVDA”) or a person, or ask about your watchlist or the people you follow." });
+    }
   }
   if (status !== "refused" && plan.intent !== "changes_since_visit") gaps.push("Form 4 reports are due within two business days of a transaction, so the last few days may still be filling in. Records Insidir has not indexed do not appear here, and their absence does not prove nothing happened.");
   const relationships = buildRelationships(collected.lines, collected.roles, cite);
@@ -519,7 +593,7 @@ async function rolesFor(run, rows) {
   return map;
 }
 export function publicPlan(plan) {
-  return { tickers: plan.companies.map(c => c.ticker), companies: plan.companies.map(c => ({ ticker: c.ticker, name: c.name, matchedBy: c.matchedBy })), scope: plan.scope, intent: plan.intent,
+  return { tickers: plan.companies.map(c => c.ticker), companies: plan.companies.map(c => ({ ticker: c.ticker, name: c.name, matchedBy: c.matchedBy })), person: plan.person || null, scope: plan.scope, intent: plan.intent,
     categories: plan.categories, days: plan.days, timeLabel: plan.timeLabel, sinceVisit: plan.sinceVisit, usedContext: plan.usedContext };
 }
 /* Deep model only for multi-document research; everything else uses the inexpensive model. */

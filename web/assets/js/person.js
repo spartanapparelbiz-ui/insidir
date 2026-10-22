@@ -22,6 +22,9 @@
    Figures and the Form 4 wording come from form4-words.js (window.InsidirForm4), the module the overview
    (v3-dashboard.js) uses, so the file and the dashboard read the same sentences and figures. */
 (()=>{"use strict";
+/* SEC form numbers in words, for the filing list. */
+const FORM_WORDS={"3":"First ownership report","3/A":"First ownership report (corrected)","4":"Insider trade","4/A":"Insider trade (corrected)","5":"Yearly insider report","5/A":"Yearly insider report (corrected)","144":"Notice of a planned sale"};
+const plainForm=f=>{const u=String(f||"").toUpperCase();return FORM_WORDS[u]||(/^(SC|SCHEDULE) 13D/.test(u)?"Stake of more than 5%":/^(SC|SCHEDULE) 13G/.test(u)?"Passive stake of more than 5%":/^13F/.test(u)?"Fund holdings":"");};
 const $=id=>document.getElementById(id);
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const media=window.InsidirMedia;
@@ -377,22 +380,23 @@ function renderSecHistory(d){
    if(!acc)return "";
    const issued=validDate(x.filed_at)?date(x.filed_at):"Filing date unavailable";
    const report=validDate(x.report_date)?" · Report period "+date(x.report_date):"";
-   return '<li class="pf-history-row"><span>'+E(issued)+'</span><strong>Form '+E(form)+'</strong><span>'+E(dashed(acc))+'</span><small>'+E(report)+'</small></li>';
+   const what=plainForm(form);
+   return '<li class="pf-history-row"><span>'+E(issued)+'</span><strong>'+E(what?what+" · ":"")+(/^\d/.test(form)?"Form ":"")+E(form)+'</strong><span>Filing no. '+E(dashed(acc))+'</span><small>'+E(report)+'</small></li>';
  }).join("");
- box.innerHTML='<p class="pf-state__label">SEC ARCHIVE / SOURCE-VERIFIED</p>'+
+ box.innerHTML='<p class="pf-state__label">Files with the SEC · SEC ID '+E(String(personCik).replace(/^0+/,""))+'</p>'+
   '<h1>'+E(shown(name))+'</h1>'+
-  '<p>SEC reporting CIK '+E(pad10(personCik))+' · '+E(entries.length)+' ownership filing'+(entries.length===1?"":"s")+' listed in the latest SEC submissions index.</p>'+
-  '<p><strong>Historical filing index found.</strong> These are original SEC record references. The Form 4 transactions have not yet been imported into Insidir, so we are not showing invented trade totals or holdings.</p>'+
-  '<div class="pf-state__links">'+(official?'<a href="'+E(official)+'" target="_blank" rel="noopener noreferrer">Open all filings on SEC EDGAR ↗</a>':"")+
-  (source?'<a href="'+E(source)+'" target="_blank" rel="noopener noreferrer">Official SEC source data ↗</a>':"")+
+  '<p>'+E(entries.length)+' filing'+(entries.length===1?"":"s")+' on record at the SEC, listed below with links to the originals.</p>'+
+  '<p>'+(d.queued_for_import?'Insidir is reading '+E(d.queued_for_import)+' of their insider filings now. Their trades appear here within minutes; until then it shows no totals rather than guess.':'Insidir has not read the trades inside these filings yet, so it shows no totals or holdings rather than guess.')+'</p>'+
+  '<div class="pf-state__links">'+(official?'<a href="'+E(official)+'" target="_blank" rel="noopener noreferrer">All their filings on the SEC website ↗</a>':"")+
+  (source?'<a href="'+E(source)+'" target="_blank" rel="noopener noreferrer">The SEC\'s raw data ↗</a>':"")+
   '<a href="people.html">Back to people directory ↗</a></div>'+
-  '<section aria-labelledby="pf-historical-heading"><h2 id="pf-historical-heading">SEC filing history</h2>'+
-  '<p>'+E(d.history_partial?"This list is partial; additional historical filings may exist in the SEC archive.":"These are the qualifying ownership reports returned by the latest SEC submissions index.")+'</p>'+
+  '<section aria-labelledby="pf-historical-heading"><h2 id="pf-historical-heading">Their SEC filings</h2>'+
+  '<p>'+E(d.history_partial?"Their most recent filings. Older ones are on the SEC website.":"Every ownership report the SEC lists for them.")+'</p>'+
   '<ol class="pf-history-list">'+rows+'</ol></section>';
  box.hidden=false;box.classList.remove("is-error");
  main.classList.add("is-state");main.classList.remove("is-loading");main.removeAttribute("aria-busy");
  $("pf-file").hidden=true;head.hidden=true;
- document.title=shown(name)+" · SEC filing index — insidir.";
+ document.title=shown(name)+" · SEC filings — insidir.";
 }
 /* ---------- Follow / Unfollow, live, with Undo ---------- */
 /* The notice (#pf-toast, role=status) sits right after the Follow button in the page order, so Undo is the next

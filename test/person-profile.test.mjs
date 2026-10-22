@@ -133,7 +133,11 @@ test("When recent imports are empty, a person with real SEC submissions receives
  assert.equal(response.json.sec_filing_index.length,2);
  assert.ok(!("transactions" in response.json),"historical index is not counterfeit trade data");
  assert.deepEqual(calls,["https://data.sec.gov/submissions/CIK0001214156.json"]);
- assert.deepEqual(query.statements.map(s=>s.sql),[OWNERS_TABLE_SQL,COMPANIES_SQL]);
+ assert.deepEqual(query.statements.slice(0,2).map(s=>s.sql),[OWNERS_TABLE_SQL,COMPANIES_SQL]);
+ // Their Form 4s (not the 10-K) are queued for import, so the next visit shows the trades themselves.
+ assert.equal(query.statements.length,3);
+ assert.match(query.statements[2].sql,/INSERT INTO sec_ingest_queue[\s\S]*'on_demand'/);
+ assert.deepEqual(query.statements[2].params.slice(0,3),[["000121415625000011","000121415625000009"],"1214156",["4","4/A"]]);
 });
 
 test("validation: a bad CIK is 400 before any query; an unknown CIK is 404 after the first statement", async () => {

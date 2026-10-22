@@ -405,5 +405,17 @@ table{border-collapse:collapse;width:100%}
 .app-search__label{grid-area:label;font-size:13.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-search__meta{grid-area:meta;font-size:11.5px;color:var(--muted-2)}
 .app-search__empty{margin:0;padding:12px 10px;font-size:13px;color:var(--muted)}
+.app-search__note{margin:0;padding:10px 10px 6px;font-size:12px;color:var(--muted)}
 .user-menu__initial{display:grid;place-items:center;width:100%;height:100%;font:650 15px/1 var(--sans)}
 @media (max-width:1380px){.app-search__key{display:none}}
+
+/* Live updates: the unread count on the bell, and a short notice for a new alert. */
+.app-header__bell{position:relative}
+.app-header__bell.has-unread::after{content:attr(data-count);position:absolute;top:2px;right:0;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#f0eee8;color:#0c0c0b;font:700 10px/16px ui-monospace,monospace;text-align:center;box-sizing:border-box}
+.app-live{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:10px;max-width:min(420px,calc(100vw - 32px));padding:12px 14px;border:1px solid rgba(240,238,232,.22);border-radius:12px;background:#0c0c0b;color:#f0eee8;text-decoration:none;font-size:13px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
+.app-live.is-on{opacity:1;transform:none}
+.app-live[hidden]{display:none}
+.app-live b{font-weight:600}
+.app-live__dot{flex:none;width:8px;height:8px;border-radius:50%;background:#f0eee8;animation:app-live-pulse 1.6s ease-in-out infinite}
+@keyframes app-live-pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.app-live{transition:none}.app-live__dot{animation:none}}

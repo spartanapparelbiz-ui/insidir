@@ -31,7 +31,7 @@ test("version comparison: unchanged, changed (before and after), added, removed"
 
 test("summaries state what was filed: figures and dates, no directive or promise", () => {
   const s = eventSummary({ event_type: "insider_purchase", ticker: "TSTA", transaction_date: "2026-10-01", transaction_date_end: "2026-10-02", filing_date: "2026-10-03T21:05:00Z",
-    facts: { owners: [{ name: "Example Person", roles: ["Chief Executive Officer"] }], totalShares: "1250.5", totalValue: "12505", priceLow: "10", priceHigh: "10", valueComplete: true } });
+    facts: { owners: [{ name: "PERSON EXAMPLE", roles: ["Chief Executive Officer"] }], totalShares: "1250.5", totalValue: "12505", priceLow: "10", priceHigh: "10", valueComplete: true } });
   assert.equal(s, "Example Person (Chief Executive Officer) reported buying 1,250.5 shares of TSTA at $10 a share on Oct 1, 2026 to Oct 2, 2026; reported value $12,505. Form 4 filed Oct 3, 2026.");
   assert.deepEqual(directiveFindings(s), []); assert.deepEqual(guaranteeFindings(s), []);
 });

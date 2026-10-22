@@ -41,7 +41,9 @@
   /* ---------- Changes ---------- */
   // "Original Form 4", "Original 8-K", "Original 13F": the first linked record, named by its form.
   const sourceLabel = e => { const m = /Form\s+([0-9A-Z][0-9A-Z/-]*)/i.exec(String(e.source || "") + " " + String(e.title || "")); return m ? "Original " + (/^\d/.test(m[1]) ? "Form " + m[1] : m[1]) : "Original filing"; };
-  const KIND = { form4: "Form 4", form4_amendment: "Amendment", role_change: "Role change", first_seen: "First filing", financial_fact: "Financials", sec_filing: "SEC filing", holdings_13f: "13F holdings" };
+  // Item labels, and the plural for the filter chips.
+  const KIND = { form4: "Insider trade", form4_amendment: "Correction", role_change: "Role change", first_seen: "New insider", financial_fact: "Results", sec_filing: "Company filing", holdings_13f: "Fund holdings" };
+  const KINDS = { form4: "Insider trades", form4_amendment: "Corrections", role_change: "Role changes", first_seen: "New insiders", financial_fact: "Results", sec_filing: "Company filings", holdings_13f: "Fund holdings" };
   let aiStatus = null;
   const aiOn = () => aiStatus || (aiStatus = api("/v1/ai/status").then(d => !!d.configured).catch(() => false));
   async function mountChanges(host, cik) {
@@ -81,7 +83,7 @@
       list.innerHTML = '<p class="ip-muted">Loading changes…</p>';
       try { const d = await api("/v1/entities/" + cik + "/changes?days=" + days); data = { items: Array.isArray(d && d.items) ? d.items : [], counts: (d && d.counts) || {}, gaps: (d && d.gaps) || [], method: (d && d.method) || "" }; }
       catch (e) { list.innerHTML = `<p class="ip-muted">${E(e.status === 404 ? "Insidir has no imported SEC records for this filer yet." : e.message)}</p>`; return; }
-      filters.innerHTML = Object.entries(data.counts).map(([k, n]) => `<button type="button" class="ip-chip" aria-pressed="${!hide.has(k)}" data-kind="${E(k)}">${E(KIND[k] || k)} <b>${n}</b></button>`).join("");
+      filters.innerHTML = Object.entries(data.counts).map(([k, n]) => `<button type="button" class="ip-chip" aria-pressed="${!hide.has(k)}" data-kind="${E(k)}">${E(KINDS[k] || k)} <b>${n}</b></button>`).join("");
       filters.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.kind; hide.has(k) ? hide.delete(k) : hide.add(k); b.setAttribute("aria-pressed", String(!hide.has(k))); paint(); }));
       gaps.innerHTML = data.gaps.map(g => `<li>${E(g)}</li>`).join("") + (data.method ? `<li>${E(data.method)}</li>` : "");
       paint();
@@ -268,13 +270,14 @@
         const d = await api("/v1/entities/search?limit=6&q=" + encodeURIComponent(q));
         const items = (d.items || []).filter(i => (i.kind === "company" && i.tickers && i.tickers[0]) || i.kind === "person" || i.kind === "organization");
         status.textContent = items.length ? "" : "No SEC filer matched. Try a ticker or the name as filed.";
-        hits.innerHTML = items.map((i, n) => `<li><span>${E(i.name)}${i.tickers && i.tickers[0] ? " · " + E(i.tickers[0]) : ""} <span class="ip-muted">${E(i.kind)}</span></span><button type="button" class="ip-btn" data-hit="${n}">Follow</button></li>`).join("");
+        const KINDS = { company: "Company", person: "Person", organization: "Fund or firm" };
+        hits.innerHTML = items.map((i, n) => `<li><span>${E(i.displayName || i.name)}${i.tickers && i.tickers[0] ? " · " + E(i.tickers[0]) : ""} <span class="ip-muted">${E(KINDS[i.kind] || "")}</span></span><button type="button" class="ip-btn" data-hit="${n}">Follow</button></li>`).join("");
         hits.querySelectorAll("[data-hit]").forEach(b => b.addEventListener("click", async () => {
           const i = items[+b.dataset.hit]; b.disabled = true;
           try {
             if (i.kind === "company") await api("/v1/me/watchlist", { method: "POST", body: JSON.stringify({ ticker: i.tickers[0], mode: "important" }) });
             else await api("/v1/me/people", { method: "POST", body: JSON.stringify({ owner_cik: i.cik, mode: "important" }) });
-            b.textContent = "Following"; confirmFollow(status, i.name);
+            b.textContent = "Following"; confirmFollow(status, i.displayName || i.name);
             document.dispatchEvent(new CustomEvent("insidir:followed", { detail: { kind: i.kind === "company" ? "company" : "person", id: i.kind === "company" ? i.tickers[0] : i.cik, name: i.name } }));
           } catch (err) { b.disabled = false; status.textContent = err.status === 401 ? "Sign in to follow." : err.message; }
         }));
@@ -286,9 +289,9 @@
   function sections(anchor, cik, where = "beforeend") {
     if (!anchor || document.getElementById("ip-changes")) return;
     anchor.insertAdjacentHTML(where, `<section class="ip-section" aria-labelledby="ip-changes-h"><p class="ip-eyebrow">Insidir Changes</p><h2 id="ip-changes-h">What changed.</h2>
-      <p class="ip-lede">Important shifts in ownership, insider activity and disclosures, detected by rules from structured SEC records, newest first. Open any item to verify its evidence.</p><div id="ip-changes"></div></section>
+      <p class="ip-lede">What changed, newest first, straight from SEC filings. Tap any item to see the filing behind it.</p><div id="ip-changes"></div></section>
       <section class="ip-section" aria-labelledby="ip-connections-h"><p class="ip-eyebrow">Insidir Connections</p><h2 id="ip-connections-h">Who is connected.</h2>
-      <p class="ip-lede">Relationships between companies, executives and institutional investors that may deserve further research, from Form 4 records. Select a node for its filings; expand to load its own connections.</p><div id="ip-connections"></div></section>`);
+      <p class="ip-lede">Who is linked to whom, from insider filings: companies, executives, directors and funds. Tap a name to see the filings behind the link; expand it to see who they are linked to.</p><div id="ip-connections"></div></section>`);
     mountChanges(document.getElementById("ip-changes"), cik);
     mountConnections(document.getElementById("ip-connections"), cik);
   }
