@@ -15,6 +15,17 @@ inconsistent).
 - **Type that reads.** Product pages set running text, names, rows and controls in the system interface sans with
   tabular figures; JetBrains Mono stays for titles, caps labels, tickers, codes and the large figures.
 - **Phones.** Panels stay inset on the gutter, framed on all four sides; the suggestions stay a swipeable row.
+- **Every person and company has a picture.** The company report's header and the company picker now use the same
+  identity tile as every other page (the engine's logo, else a curated mark, else the ticker's initial) instead of
+  hiding the slot when the engine had no logo; curated dark marks (Apple, Amazon, IBM) are lifted for the dark page
+  instead of drawing black on black. The Connections panel shows each person's and company's tile beside their name.
+- **Landing page** (`web/assets/css/v35-landing.css`, index only): a light from above and a fine grid behind the hero,
+  48px calls to action with the primary one lit, the eyebrow as a status tag, ruled section heads, and a new
+  "Real records. Charted." section with three charts from records the page already cites: the four lines of Robert
+  C. Pohlad's PepsiCo Form 4 by value ($23,686,388.88 as filed), Reddit's delayed one-year price from the platform
+  page's snapshot (drawn at build time by `scripts/build-demo-chart.mjs` between `<!-- landing-chart -->` markers),
+  and the trade-to-filing delay. A call to start follows the charts and the four capabilities (`data-cta="proof"`,
+  `"capabilities"`).
 
 See `docs/WEBSITE.md`, "V35: precision".
 

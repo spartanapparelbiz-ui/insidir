@@ -110,6 +110,12 @@
 
   /* ---------- Connections ---------- */
   const SHAPE = { company: "square", organization: "diamond", person: "circle" };
+  // Every person and company named here gets its identity tile (entity-media.js: headshot or logo, else initials).
+  const tileFor = (n, size) => {
+    const M = window.InsidirMedia;
+    if (!M || !n) return "";
+    return n.kind === "person" ? M.person({ name: n.name, cik: n.id, size }) : M.company({ ticker: n.ticker || "", cik: n.id, name: n.name, size });
+  };
   function mountConnections(host, cik) {
     if (!host || host.dataset.ipMounted === cik) return;
     host.dataset.ipMounted = cik;
@@ -185,13 +191,13 @@
       });
       table.innerHTML = `<table class="ip-tbl"><thead><tr><th>From</th><th>Connection</th><th>To</th><th>Filings</th><th>First</th><th>Latest</th><th>Evidence</th></tr></thead><tbody>${[...edges.values()].filter(vis).map(e => {
         const a = nodes.get(e.from), b = nodes.get(e.to);
-        return `<tr><td><a href="${E(a.url)}">${E(a.name)}</a></td><td>${E(e.type === "reports_at" ? e.role || "Reporting owner" : "Filed jointly")}</td><td><a href="${E(b.url)}">${E(b.name)}</a></td><td>${e.filings}</td><td>${E(e.firstFiledOn)}</td><td>${E(e.lastFiledOn)}</td><td>${e.evidence.map(x => `<a href="${E(x.url)}" target="_blank" rel="noopener noreferrer">${E(day(x.filedOn))} ↗</a>`).join(" ")}</td></tr>`;
+        return `<tr><td><span class="ip-who">${tileFor(a, "sm")}<a href="${E(a.url)}">${E(a.name)}</a></span></td><td>${E(e.type === "reports_at" ? e.role || "Reporting owner" : "Filed jointly")}</td><td><span class="ip-who">${tileFor(b, "sm")}<a href="${E(b.url)}">${E(b.name)}</a></span></td><td>${e.filings}</td><td>${E(e.firstFiledOn)}</td><td>${E(e.lastFiledOn)}</td><td>${e.evidence.map(x => `<a href="${E(x.url)}" target="_blank" rel="noopener noreferrer">${E(day(x.filedOn))} ↗</a>`).join(" ")}</td></tr>`;
       }).join("")}</tbody></table>`;
     }
     function select(id) {
       selected = id; const n = nodes.get(id); draw();
       const mine = [...edges.values()].filter(e => e.from === id || e.to === id);
-      detail.innerHTML = `<p class="ip-kind">${E(n.kind)}</p><h4><a href="${E(n.url)}">${E(n.name)}</a></h4>
+      detail.innerHTML = `<div class="ip-detail__head">${tileFor(n, "md")}<div><p class="ip-kind">${E(n.kind)}</p><h4><a href="${E(n.url)}">${E(n.name)}</a></h4></div></div>
         ${n.role !== "subject" && !expanded.has(id) ? `<button type="button" class="ip-btn" data-expand>Show their connections</button>` : ""}
         <ul class="ip-rel">${mine.map(e => { const other = nodes.get(e.from === id ? e.to : e.from);
           return `<li><b>${E(e.type === "reports_at" ? e.role || "Reporting owner" : "Filed jointly")}</b> · ${E(other?.name)}<br><span class="ip-muted">${e.filings} filing${e.filings === 1 ? "" : "s"}, ${E(e.firstFiledOn)}${e.lastFiledOn !== e.firstFiledOn ? " to " + E(e.lastFiledOn) : ""}</span>${evidenceHTML(e.evidence)}</li>`; }).join("")}</ul>`;

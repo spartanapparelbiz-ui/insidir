@@ -100,6 +100,13 @@ JetBrains Mono (`--px-figure`) is restored for `h1`/`h2`, caps labels (`*eyebrow
 large figures (`.rd-kpi__value`, `.rd-desk__v`, `.cx-tile strong`, the plan price and the research and portfolio
 figures). Public pages, the auth pages and the landing keep their type.
 
+Identity tiles are never absent: the company header (`#cx-logo`) and the company picker render
+`InsidirMedia.logo()` tiles until the engine's own logo arrives, and keep the tile when the answer is a curated mark
+or nothing (initials). The landing page adds `v35-landing.css`: the hero light and grid (`.sx-hero::after`, above the
+halftone canvas and under the copy), and the "Real records. Charted." section (`.px-proof`, `.px-chart`, `.px-bars`,
+`.px-spark`, `.px-steps`, `.px-cta`). Its Reddit chart is the platform snapshot rendered by
+`scripts/build-demo-chart.mjs`; rerun it after changing the snapshot.
+
 ### Motion: still content, live dots
 
 The page's content holds still. Nothing a reader aims at, reads or compares moves under the pointer, on a click or with a scroll. The dots are the exception, and they answer everything: every halftone dot field on the site (the landing wordmark, the person file's header band, the marketing heroes and closing panels, the sign-in panel, the plan card, the 404's numerals, the overview's brief corner and the footer strip on every page) blows apart around the pointer, sweeps after it, opens wider under a press and rings out on every click or tap, then springs home and settles by itself. Only canvas dots move.

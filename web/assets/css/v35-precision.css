@@ -136,6 +136,15 @@ html body.v13:not(#\#) .cx-picker__grid{gap:var(--px-gap)!important;border:0!imp
 html body.v13:not(#\#) .cx-picker__grid a{border:1px solid var(--px-edge)!important;background:var(--px-fill)!important}
 html body.v13:not(#\#) .cx-sources{border-radius:var(--px-r)!important;border:1px solid var(--px-edge)!important;background:transparent!important;padding:16px var(--px-pad)!important}
 
+/* The company header's logo slot holds the identity tile until (and unless) the engine's own logo arrives. */
+html body.v13:not(#\#) .cx-logo.is-tile>.ins-media{--ins-size:64px!important}
+html body.v13:not(#\#) .cx-picker__grid .cx-mark>.ins-media{--ins-size:40px!important}
+/* Connections: every person and company named carries its tile. */
+html body.v13:not(#\#) .ip-detail__head{display:flex!important;align-items:center!important;gap:12px!important}
+html body.v13:not(#\#) .ip-detail__head .ip-kind{margin:0 0 2px!important}
+html body.v13:not(#\#) .ip-detail__head h4{margin:0!important}
+html body.v13:not(#\#) .ip-who{display:inline-flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+
 /* ---------- Personnel file ---------- */
 /* The photo is the same square tile as everywhere else; no corner ticks; the stamp is a plain label. */
 html body.v13:not(#\#) .pf-photo__frame{border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;background:var(--px-fill)!important;overflow:hidden!important}

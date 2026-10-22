@@ -305,8 +305,9 @@ function renderIdentity() {
   renderAbout();
 }
 /* Logos come from /v1/company/logo (server-resolved, same origin) and are prepared by
- * brand-mark.js for this dark page: baked-in boxes removed, dark marks lifted. No tile, no
- * stand-in letter: without a real logo the slot is hidden. */
+ * brand-mark.js for this dark page: baked-in boxes removed, dark marks lifted. The slot is never
+ * empty: until the engine's logo is known (and when it has none) it holds the same identity tile as
+ * every other page (entity-media.js: a curated mark, else the ticker's initial). */
 function renderLogo() {
   const host = $("cx-logo"), brand = host.closest(".cx-brand");
   const src = "/v1/company/logo?ticker=" + encodeURIComponent(state.ticker);
@@ -317,7 +318,7 @@ function renderLogo() {
   const show = mark => {
     if (seq !== state.seq || host.dataset.src !== src) return;
     brand.classList.toggle("is-wide-logo", Boolean(mark && mark.ratio > 1.8));
-    if (!mark) { host.hidden = true; host.replaceChildren(); return; }
+    if (!mark) { standIn(); return; }
     const img = new Image();
     img.alt = "";
     img.src = mark.url;
@@ -336,11 +337,25 @@ function renderLogo() {
   // One /v1/media batch (entity-media.js) answers the header logo; the same logo then stands in for people
   // without a published photo. Without the helper, the logo route and brand-mark.js answer as before.
   const media = window.InsidirMedia;
+  // The identity tile: a curated mark or the ticker's initial, resolved by entity-media.js like every other tile.
+  const standIn = () => {
+    if (seq !== state.seq || host.dataset.src !== src) return;
+    brand.classList.remove("is-wide-logo");
+    host.className = "cx-logo is-tile";
+    host.hidden = false;
+    if (!media?.logo) { host.replaceChildren(); return; }
+    if (host.querySelector(":scope>.ins-media")) return;
+    host.innerHTML = media.logo(state.ticker, "lg", { name: companyName() });
+    media.hydrate?.(host);
+  };
   if (media?.logoFor) {
+    standIn();
     media.logoFor(state.ticker).then(entry => {
       if (seq !== state.seq) return;
       state.logo = entry?.src ? entry : null;
       if (state.logo) { renderOverviewInsiders(); renderInsiders(); renderPeople(); }
+      // A curated mark (the engine has none) stays in its tile, which lifts dark marks for this page.
+      if (state.logo?.hard) { standIn(); return; }
       show(state.logo ? { url: state.logo.src, ratio: state.logo.w && state.logo.h ? state.logo.w / state.logo.h : 0, w: state.logo.w, h: state.logo.h } : null);
     });
     return;
@@ -958,11 +973,14 @@ function showPicker() {
   $("cx-picker-grid").innerHTML = POPULAR.map(([t, n]) => {
     return `<a href="company.html?ticker=${encodeURIComponent(t)}"><span class="cx-mark" data-hf-atom data-logo="${esc(t)}"></span><div><b>${esc(t)}</b><span>${esc(n)}</span></div></a>`;
   }).join("");
-  // All twelve logos come from one /v1/media batch (entity-media.js coalesces the calls into one request).
+  // Every company gets its identity tile (entity-media.js: the engine's logo, a curated mark, else the ticker's
+  // initial); all twelve come from one /v1/media batch.
   const media = window.InsidirMedia;
+  const names = new Map(POPULAR);
   for (const slot of document.querySelectorAll("#cx-picker-grid [data-logo]")) {
     const place = url => { if (url) slot.innerHTML = `<img src="${esc(url)}" alt="">`; else slot.remove(); };
-    if (media?.logoFor) media.logoFor(slot.dataset.logo).then(entry => place(entry?.src));
+    if (media?.logo) { slot.innerHTML = media.logo(slot.dataset.logo, "md", { name: names.get(slot.dataset.logo) || "" }); media.hydrate?.(slot); }
+    else if (media?.logoFor) media.logoFor(slot.dataset.logo).then(entry => place(entry?.src));
     else window.InsidirBrand?.prepare("/v1/company/logo?ticker=" + encodeURIComponent(slot.dataset.logo), { prepared: true }).then(mark => place(mark?.url));
   }
 }
