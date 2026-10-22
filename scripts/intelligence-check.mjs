@@ -17,6 +17,9 @@ import { serveStatic } from "../src/web.mjs";
 import { chromium } from "playwright-core";
 
 const F = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
+/* The page reads "now" to place records in their window (the tape's last F.tape.filters.days days), so the browser's
+   clock is held at the moment the fixtures were captured; the latest time they carry is the instrument's. */
+const CAPTURED = Date.parse(F.instrument.computedAt);
 const FAVICON = [...readFileSync(new URL("../web/assets/icons/favicon.svg", import.meta.url), "utf8").matchAll(/<circle cx="(\d+)" cy="(\d+)" r="(\d+)"\/>/g)].map(m => m.slice(1).map(Number));
 const server = createServer((req, res) => serveStatic(req, res).then(done => { if (!done) { res.writeHead(404); res.end(); } }));
 await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -53,6 +56,7 @@ async function open({ width, mobile = false, scenario = {}, reduced = false, int
     return reply(200, { items: [] });
   });
   const page = await ctx.newPage();
+  await page.clock.setFixedTime(CAPTURED);
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   await page.goto(base + "/intelligence.html", { waitUntil: "load" });

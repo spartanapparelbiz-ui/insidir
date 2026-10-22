@@ -130,6 +130,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
 <script defer src="/assets/js/v6-site.js?v=2"></script>
 <script defer src="/assets/js/referral.js?v=1"></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
 <link rel="stylesheet" href="/assets/css/v29-system.css">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
 <body class="v3-static v6-static v13 v14-public">
@@ -512,7 +513,7 @@ export async function sitemapFile(kind, page, { query, origin }) {
 const HEADERS = {
   "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com; font-src 'self'; connect-src 'self' https://us.i.posthog.com https://us-assets.i.posthog.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 };
 const cache = new Map();
 const hits = new Map();

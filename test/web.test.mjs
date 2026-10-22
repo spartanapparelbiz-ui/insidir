@@ -216,7 +216,8 @@ test("real logos and carefully matched free-license portraits are available with
     const csp=(await fetch(base+"/")).headers.get("content-security-policy");
     assert.match(csp,/img-src[^;]*https:\/\/upload\.wikimedia\.org/);
     assert.match(csp,/img-src[^;]*https:\/\/thumb\.wikimedia\.org/);
-    assert.match(csp,/connect-src 'self';/);
+    assert.match(csp,/connect-src 'self' https:\/\/us\.i\.posthog\.com https:\/\/us-assets\.i\.posthog\.com;/);
+    assert.match(csp,/script-src 'self' 'unsafe-inline' https:\/\/us-assets\.i\.posthog\.com;/);
     assert.doesNotMatch(csp,/img-src[^;]*\*/);
     const privacy=await(await fetch(base+"/privacy.html")).text();
     assert.match(privacy,/Public logos and portraits/);
