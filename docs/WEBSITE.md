@@ -110,6 +110,15 @@ points (`script.px-price__data`) that `assets/js/v35-charts.js` reads for the cr
 Shift for 20 days, Home/End, Escape). Chart colour carries direction only: green for a purchase or a rise, red for a
 fall, always beside a sign or a word; areas and gauges are ink.
 
+### Explain it simply (filing page)
+
+`filing.html` shows `#filing-simple` above the filing's metadata when `GET /v1/filings/<accession>` answers `simple`
+(Form 4 and 4/A; `src/plain-language.mjs` `form4Simple`). `assets/js/v2-filing.js` dispatches the answer as an
+`insidir:filing` event and `assets/js/filing-simple.js` renders the headline, the labelled points and the terms. The
+mode switch (`[data-mode]`, "simple" or "filed") is stored in `localStorage["insidir:filing-mode"]`; "As filed" hides
+the explanation and leaves the transaction lines. The AI summary button appears only when `GET /v1/ai/status` says
+`configured`. Styles live in `v35-precision.css` (`.fl-simple`, `.fl-mode`, `.fl-points`, `.fl-terms`, `.fl-ai`).
+
 ### Motion: still content, live dots
 
 The page's content holds still. Nothing a reader aims at, reads or compares moves under the pointer, on a click or with a scroll. The dots are the exception, and they answer everything: every halftone dot field on the site (the landing wordmark, the person file's header band, the marketing heroes and closing panels, the sign-in panel, the plan card, the 404's numerals, the overview's brief corner and the footer strip on every page) blows apart around the pointer, sweeps after it, opens wider under a press and rings out on every click or tap, then springs home and settles by itself. Only canvas dots move.

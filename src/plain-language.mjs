@@ -158,3 +158,110 @@ export function eventHeadline(e) {
     default: return "New SEC record";
   }
 }
+
+/* ---------- "Explain it simply": a Form 4 for someone who has never read one ----------
+   form4Simple(lines, opts) -> { headline, points: [{ label, text }], terms: [{ term, meaning }] }
+   Short sentences in everyday words, every figure as filed (the exact dollar value beside a rounded "about"), and no
+   judgement: what each kind of transaction is, never what it means for the stock. The last point always says what a
+   Form 4 cannot tell you. opts: owners [{ owner_name, role }], issuer, ticker, filedOn, plan, amended, originalFiledOn. */
+const ABOUT = n => { const s = scaled(n); return s ? "about " + s.replace(/(\.\d)\d? /, "$1 ") : money(Math.round(Number(n))); };
+const SIMPLE = {
+  P: { did: "Bought", means: "A purchase means the insider paid for these shares with their own money." },
+  S: { did: "Sold", means: "Insiders sell for many reasons: taxes, paying for a house, spreading their money around, or a sale scheduled long ago. The filing does not say which." },
+  A: { did: "Was given", how: " as part of their pay (an award)", means: "An award is part of how the company pays this person. No shares were bought on the market." },
+  F: { did: "Had", how: " held back to pay taxes", means: "Holding shares back for taxes is a routine step when stock pay vests. It is not a decision to sell on the market." },
+  G: { did: "Gave away", how: " as a gift", means: "A gift moves shares to someone else, often family or a charity. No money is paid." },
+  M: { did: "Turned", how: " into company shares (an exercise or conversion)", means: "Exercising options or converting stock units turns a promise of shares, usually part of their pay, into actual shares." },
+  D: { did: "Returned", how: " to the company", means: "The shares went back to the company itself, not to a buyer on the market." },
+  C: { did: "Converted", means: "A conversion swaps one kind of security for another, for example preferred stock into common shares." },
+  W: { did: "Inherited", means: "These shares came to the person by will or inheritance." }
+};
+SIMPLE.X = SIMPLE.O = SIMPLE.M;
+const GLOSSARY = {
+  form4: ["Form 4", "The report a company insider (a director, a top officer or an owner of more than 10%) must file with the SEC within two business days of trading their company's shares."],
+  P: ["Code P", "A purchase on the open market or in a private deal."], S: ["Code S", "A sale on the open market or in a private deal."],
+  A: ["Code A", "A grant or award, usually part of pay."], F: ["Code F", "Shares withheld to pay taxes or an exercise price."],
+  M: ["Code M", "Options or stock units exercised or converted into shares."], G: ["Code G", "A gift."],
+  indirect: ["Held indirectly", "The shares are owned through something else, such as a trust, a fund or a family member, not in the person's own name."],
+  derivative: ["Derivative", "Something whose value comes from the shares, such as stock options or restricted stock units."],
+  plan: ["Rule 10b5-1 plan", "A trading schedule an insider sets up in advance, so later trades happen automatically on that schedule."],
+  amended: ["Form 4/A", "A correction or update to an earlier Form 4."]
+};
+const days = (a, b) => Math.round((Date.parse(isoDay(b) + "T00:00:00Z") - Date.parse(isoDay(a) + "T00:00:00Z")) / 86400000);
+export function form4Simple(lines, { owners = [], issuer = "", ticker = "", filedOn = null, plan = false, amended = false, originalFiledOn = null } = {}) {
+  const rows = (lines || []).filter(Boolean), co = issuer || ticker || "the company";
+  const named = owners.filter(o => o && o.owner_name);
+  const points = [];
+  const stop = t => t.replace(/\.+$/, "") + ".";
+  points.push({ label: "Who", text: !named.length ? stop("A company insider at " + co)
+    : named[0].owner_name + (named[0].role ? ", " + named[0].role + " at " + co : ", an insider at " + co)
+      + (named.length > 1 ? ", filing together with " + (named.length - 1) + " other " + (named.length > 2 ? "people" : "person") : "") + (named.length > 1 ? "." : "").replace(/^/, "") });
+  points[0].text = stop(points[0].text);
+  // What: one plain line per kind of transaction (the shares received on an exercise are the same event).
+  const by = new Map();
+  for (const l of rows) {
+    const code = String(l.transaction_code || "").toUpperCase();
+    if (EXERCISE.has(code) && !l.derivative) continue;
+    const key = code + (l.derivative ? "d" : "");
+    if (!by.has(key)) by.set(key, { l, code, shares: 0, value: 0, valued: 0, prices: [] });
+    const g = by.get(key); g.shares += Number(l.shares) || 0;
+    if (l.estimated_value != null) { g.value += Number(l.estimated_value); g.valued++; }
+    if (Number(l.price_per_share) > 0) g.prices.push(Number(l.price_per_share));
+  }
+  const groups = [...by.values()].sort((a, b) => rankOf(a.l) - rankOf(b.l));
+  const means = [];
+  for (const g of groups) {
+    const s = SIMPLE[g.code], unit = g.l.derivative ? (isUnits(g.l.security_title) ? " stock units" : " options") : " shares";
+    const lo = Math.min(...g.prices), hi = Math.max(...g.prices);
+    const each = g.prices.length ? (lo === hi ? " at " + price4(lo) + " each" : " at " + price4(lo) + " to " + price4(hi) + " each") : "";
+    const total = g.valued && g.value > 0 ? ": " + ABOUT(g.value) + " in total (" + money(g.value) + " as filed)" : "";
+    points.push({ label: "What", text: s ? s.did + " " + group(g.shares) + unit + (s.how || "") + each + total + "."
+      : "Reported a transaction in " + group(g.shares) + unit + " (code " + (g.code || "not given") + ")" + each + total + "." });
+    if (s && !means.includes(s.means)) means.push(s.means);
+  }
+  if (!groups.length) points.push({ label: "What", text: "No trades: this filing only reports what the person holds." });
+  const traded = [...new Set(rows.map(l => isoDay(l.transaction_date)).filter(Boolean))].sort();
+  if (traded.length || filedOn) {
+    const lag = traded.length && filedOn ? days(traded.at(-1), filedOn) : null;
+    points.push({ label: "When", text: (traded.length ? "Traded " + longDay(traded[0]) + (traded.length > 1 ? " to " + longDay(traded.at(-1)) : "") + ". " : "")
+      + (filedOn ? "Told the SEC " + longDay(filedOn) + (lag != null && lag >= 0 ? ", " + (lag === 0 ? "the same day" : lag + (lag === 1 ? " day" : " days") + " later") : "") + ". " : "")
+      + "Insiders have two business days to report a trade." });
+  }
+  if (means.length) points.push({ label: "What it means", text: means.join(" ") });
+  const notes = [];
+  if (plan) notes.push("These trades were made under a pre-set trading plan (Rule 10b5-1), scheduled in advance.");
+  const ind = rows.filter(l => l.direct_ownership === "I");
+  if (ind.length) { const nature = ind.map(l => String(l.nature_of_ownership || "").trim()).find(n => n.length > 2 && !NOT_A_NATURE.test(n));
+    notes.push("Some shares are held indirectly, not in the person's own name" + (nature ? " (as filed: \u201c" + nature.replace(/\.$/, "") + "\u201d)" : ", for example in a trust") + "."); }
+  if (amended) notes.push("This corrects or updates an earlier filing" + (originalFiledOn ? " made " + longDay(originalFiledOn) : "") + ".");
+  if (notes.length) points.push({ label: "Good to know", text: notes.join(" ") });
+  points.push({ label: "What it doesn't tell you", text: "Why they traded, or what happens next. A Form 4 reports what was done, not the reason, and it is not a recommendation." });
+  const codes = [...new Set(rows.map(l => String(l.transaction_code || "").toUpperCase()))];
+  const keys = ["form4", ...codes.map(c => EXERCISE.has(c) ? "M" : c), ind.length ? "indirect" : null, rows.some(l => l.derivative) ? "derivative" : null, plan ? "plan" : null, amended ? "amended" : null];
+  const terms = [...new Set(keys)].filter(k => k && GLOSSARY[k]).map(k => ({ term: GLOSSARY[k][0], meaning: GLOSSARY[k][1] }));
+  // The headline in everyday words: who did the largest kind of trade, and how much it came to.
+  const lead = groups[0], s0 = lead && SIMPLE[lead.code], who0 = named[0]?.owner_name || "An insider";
+  const headline = !lead ? who0 + " reported their " + co + " holdings"
+    : who0 + " " + (s0 ? s0.did.toLowerCase() : "reported") + " " + (lead.valued && lead.value > 0 ? ABOUT(lead.value) + " of " : group(lead.shares) + " ") + co + (lead.l.derivative ? (isUnits(lead.l.security_title) ? " stock units" : " options") : " shares")
+      + (s0?.how && !(lead.valued && lead.value > 0) ? s0.how : "") + (groups.length > 1 ? ", plus " + (groups.length - 1) + " other " + (groups.length > 2 ? "transactions" : "transaction") : "");
+  return { headline, formal: form4Headline(rows, { amended }), points, terms };
+}
+
+/* A reporting person's name as people write it: SEC filings put the surname first in capitals ("POHLAD ROBERT C"),
+   read here as "Robert C. Pohlad", the same rule the pages' identity tiles use (web/assets/js/entity-media.js
+   displayName). A name with lower case is left as written; a company, trust or fund keeps its order, in title case. */
+const ENTITY_NAME = /\b(INC|LLC|L\.?L\.?C|LP|L\.P|LTD|CORP|CORPORATION|COMPANY|TRUST|FUND|FUNDS|CAPITAL|PARTNERS|HOLDINGS|GROUP|FOUNDATION|BANK|ASSOCIATES|MANAGEMENT|ADVISORS|INVESTMENTS|PLC|LIMITED|VENTURES|ESTATE)\b|&/i;
+const ACRONYM = /^(LLC|LP|LLP|PLC|AG|SE|NV|SA|II|III|IV|USA|US|UK|L\.P\.?|N\.A\.?)[.,]?$/;
+const titleCase = s => String(s).toLowerCase().replace(/(^|[\s\-'’(])([a-z])/g, (m, a, b) => a + b.toUpperCase()).split(" ").map(w => ACRONYM.test(w.toUpperCase()) ? w.toUpperCase() : w).join(" ");
+export function readableName(raw) {
+  const name = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!name) return "";
+  if (/[a-z]/.test(name)) return name;
+  if (ENTITY_NAME.test(name)) return titleCase(name);
+  const parts = name.replace(/,/g, " ").split(" ").filter(Boolean);
+  if (parts.length < 2) return titleCase(name);
+  const suffix = /^(JR|SR|II|III|IV|V)\.?$/i.test(parts.at(-1)) ? parts.pop() : "";
+  const [last, ...given] = parts;
+  const fix = t => /^[A-Z]\.?$/.test(t) ? t.charAt(0) + "." : titleCase(t);
+  return [...given.map(fix), fix(last), suffix ? (/^(II|III|IV|V)$/i.test(suffix) ? suffix.toUpperCase() : titleCase(suffix.replace(/\.$/, "")) + ".") : ""].filter(Boolean).join(" ");
+}

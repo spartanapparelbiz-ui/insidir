@@ -73,3 +73,43 @@ test("Form 4 footnotes are read with the lines that cite them", () => {
   assert.ok(cited.size >= 1, "at least one line cites a footnote");
   for (const id of cited) assert.ok(f.footnotes.some(n => n.id === id), "every cited footnote has its text: " + id);
 });
+
+test("form4Simple: a purchase in everyday words, every figure as filed, and what the form cannot say", async () => {
+  const { form4Simple } = await import("../src/plain-language.mjs");
+  const lines = [84507, 45075, 45075, 9989].map(s => ({ transaction_code: "P", shares: String(s), price_per_share: "128.28", estimated_value: (s * 128.28).toFixed(2),
+    derivative: false, direct_ownership: "I", nature_of_ownership: "By Revocable Trust", transaction_date: "2026-10-14" }));
+  const r = form4Simple(lines, { owners: [{ owner_name: "Robert C. Pohlad", role: "Director" }], issuer: "PepsiCo", filedOn: "2026-10-16" });
+  assert.equal(r.headline, "Robert C. Pohlad bought about $23.7 million of PepsiCo shares");
+  const say = Object.fromEntries(r.points.map(p => [p.label, p.text]));
+  assert.equal(say.Who, "Robert C. Pohlad, Director at PepsiCo.");
+  assert.equal(say.What, "Bought 184,646 shares at $128.28 each: about $23.7 million in total ($23,686,388.88 as filed).");
+  assert.match(say.When, /^Traded Oct 14, 2026\. Told the SEC Oct 16, 2026, 2 days later\./);
+  assert.match(say["Good to know"], /as filed: “By Revocable Trust”/);
+  assert.match(r.points.at(-1).text, /not the reason, and it is not a recommendation/);
+  assert.deepEqual(r.terms.map(t => t.term), ["Form 4", "Code P", "Held indirectly"]);
+});
+
+test("form4Simple: tax withholding, awards and exercises are explained as what they are, never as market sales", async () => {
+  const { form4Simple } = await import("../src/plain-language.mjs");
+  const r = form4Simple([
+    { transaction_code: "M", derivative: true, security_title: "Restricted Stock Unit", shares: "196410", transaction_date: "2026-09-10" },
+    { transaction_code: "M", derivative: false, shares: "196410", transaction_date: "2026-09-10" },
+    { transaction_code: "F", derivative: false, shares: "100348", price_per_share: "223.19", estimated_value: "22396670.12", transaction_date: "2026-09-10" }
+  ], { owners: [{ owner_name: "Tim Cook", role: "CEO" }], issuer: "Apple Inc.", filedOn: "2026-09-14", plan: true });
+  const text = r.points.map(p => p.text).join(" ");
+  assert.match(text, /Turned 196,410 stock units into company shares/);
+  assert.match(text, /Had 100,348 shares held back to pay taxes/);
+  assert.match(text, /not a decision to sell on the market/);
+  assert.match(text, /pre-set trading plan \(Rule 10b5-1\)/);
+  assert.equal(r.points[0].text, "Tim Cook, CEO at Apple Inc.");
+  assert.doesNotMatch(text, /\b(should|buy now|bullish|bearish|signal)\b/i, "no advice or judgement");
+});
+
+test("readableName: SEC surname-first capitals read as people write names; companies keep their order", async () => {
+  const { readableName } = await import("../src/plain-language.mjs");
+  assert.equal(readableName("POHLAD ROBERT C"), "Robert C. Pohlad");
+  assert.equal(readableName("COOK TIMOTHY D"), "Timothy D. Cook");
+  assert.equal(readableName("SMITH JOHN A JR"), "John A. Smith Jr.");
+  assert.equal(readableName("BERKSHIRE HATHAWAY INC"), "Berkshire Hathaway Inc");
+  assert.equal(readableName("Elon Musk"), "Elon Musk");
+});

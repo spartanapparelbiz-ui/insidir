@@ -595,11 +595,31 @@ function renderOverviewFinancials() {
   }).join("");
   host.innerHTML = html || '<p class="cx-empty">This company has not reported comparable XBRL financial statements to the SEC.</p>';
 }
+/* What each kind of filing is, in everyday words, for readers who have never opened one. [pattern, short name, one line]. */
+const FORM_PLAIN = [
+  [/^10-K/, "Annual report", "The yearly report: audited financial statements, the main risks, and how the business works."],
+  [/^10-Q/, "Quarterly report", "The quarterly report: results for the last three months, not yet audited."],
+  [/^8-K/, "News update", "A news update: something important happened between the regular reports."],
+  [/^20-F|^40-F/, "Annual report", "A foreign company's yearly report, like a 10-K."],
+  [/^6-K/, "News update", "A foreign company's news update, like an 8-K."],
+  [/^DEF ?14A|^DEFA14A|^PRE ?14A/, "Proxy statement", "The packet sent before the shareholder vote: what is up for a vote and what the top executives are paid."],
+  [/^S-1|^F-1/, "Share sale paperwork", "The paperwork a company files to sell new shares to the public."],
+  [/^S-8/, "Employee stock plan", "Registers shares the company can give employees through its stock plan."],
+  [/^424B/, "Prospectus", "The final details of securities being sold."],
+  [/^(SC|SCHEDULE) 13D/, "Large stake (active)", "Someone owns more than 5% of the company and is not just a passive investor."],
+  [/^(SC|SCHEDULE) 13G/, "Large stake (passive)", "A passive investor owns more than 5% of the company."],
+  [/^144/, "Planned insider sale", "Notice that an insider plans to sell shares."],
+  [/^4(\/A)?$/, "Insider trade", "An insider reported buying, selling or receiving company shares."],
+  [/^3(\/A)?$/, "New insider", "Someone just became an insider and listed what they own."],
+  [/^11-K/, "Employee plan report", "The yearly report on the employees' stock or savings plan."]
+];
+const formPlain = form => { const f = String(form || "").toUpperCase().trim(), hit = FORM_PLAIN.find(([re]) => re.test(f)); return hit ? { name: hit[1], line: hit[2] } : null; };
 function renderOverviewFilings() {
   const host = $("cx-filing-rows");
   if (!state.intel) { if (state.intelError) host.innerHTML = `<p class="cx-empty">${esc(state.intelError)}</p>`; return; }
   const rows = (state.intel.filings || []).slice(0, 5);
-  host.innerHTML = rows.length ? rows.map(f => `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(f.headline)}"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><b data-hf-atom>${esc(f.form)}</b>${EXT}</a>`).join("")
+  host.innerHTML = rows.length ? rows.map(f => { const plain = formPlain(f.form);
+    return `<a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="${esc(plain ? plain.line : f.headline)}"><span class="cx-fr"><time datetime="${esc(f.filedAt)}">${esc(day(f.filedAt))}</time><i>${esc(/^8-K/i.test(f.form) && f.headline ? f.headline : plain ? plain.name : f.headline || "")}</i></span><b data-hf-atom>${esc(f.form)}</b>${EXT}</a>`; }).join("")
     : '<p class="cx-empty">No recent annual, quarterly or current reports were found on EDGAR.</p>';
 }
 function activity() { return state.insiders?.activity || []; }
@@ -735,7 +755,8 @@ function renderFilings() {
   if (cik) $("cx-edgar-link").href = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=" + encodeURIComponent(cik) + "&type=&dateb=&owner=include&count=40";
   $("cx-filings-table").innerHTML = rows.length ? rows.map(f => {
     const items = (f.items || []).filter(i => i.code !== "9.01").map(i => i.label);
-    return `<tr><td><span class="cx-form">${esc(f.form)}</span></td><td>${esc(f.headline)}${items.length ? `<small>${esc(items.join(" · "))}</small>` : ""}</td><td>${esc(day(f.reportDate))}</td><td>${esc(day(f.filedAt))}</td><td class="num"><a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer">View ${EXT}</a></td></tr>`;
+    const plain = formPlain(f.form);
+    return `<tr><td><span class="cx-form">${esc(f.form)}</span></td><td>${esc(f.headline)}${items.length ? `<small>${esc(items.join(" · "))}</small>` : ""}${plain ? `<small class="cx-plain"><b>In plain English:</b> ${esc(plain.line)}</small>` : ""}</td><td>${esc(day(f.reportDate))}</td><td>${esc(day(f.filedAt))}</td><td class="num"><a href="${esc(secUrl(f.sourceUrl))}" target="_blank" rel="noopener noreferrer">View ${EXT}</a></td></tr>`;
   }).join("") : `<tr><td colspan="5"><p class="cx-empty">${state.intel ? "No filings match this filter." : esc(state.intelError || "Loading SEC filings…")}</p></td></tr>`;
 }
 

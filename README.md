@@ -1,3 +1,20 @@
+## Insidir V36: every SEC filing, explained simply (October 2026)
+
+- **"Explain it simply" on every Form 4** (`filing.html`, `web/assets/js/filing-simple.js`). The filing opens with a
+  plain-English panel: a headline anyone can read ("Robert C. Pohlad bought about $23.7 million of PepsiCo shares"),
+  then short labelled points (Who, What, When, What it means, Good to know, What it doesn't tell you) and the form's
+  terms explained (Form 4, each transaction code, held indirectly, derivative, Rule 10b5-1, Form 4/A). Every figure is
+  the one filed, with the exact dollar value beside the rounded "about"; tax withholding, awards and option exercises
+  are explained as what they are, never as market sales; nothing judges the trade or recommends anything. A switch
+  ("Explain it simply" / "As filed", remembered per browser) folds the explanation away to leave the filing's own lines.
+  Where AI explanations are configured, "Summarize with AI" asks the existing cited summary (`/v1/ai/explain`).
+- **Written on the server** (`src/plain-language.mjs` `form4Simple`, `readableName`): `GET /v1/filings/<accession>`
+  now answers `simple` alongside the filing, with each reporting person's role from `sec_filing_owners` and names read
+  as people write them ("POHLAD ROBERT C" becomes "Robert C. Pohlad"). Tested in `test/plain-language.test.mjs`.
+- **Company filings in plain words.** The company report's SEC filings card names each filing ("Annual report",
+  "Quarterly report", the 8-K's own headline) and the full filings table adds a one-line "In plain English"
+  explanation of each form (10-K, 10-Q, 8-K, proxy, S-1, S-8, 13D/13G, 144, Forms 3 and 4 and others).
+
 ## Insidir V35: one shape, flat panels, a console layout (October 2026)
 
 Same palette, same brand face; one geometry everywhere. One sheet, `web/assets/css/v35-precision.css`, loaded last on

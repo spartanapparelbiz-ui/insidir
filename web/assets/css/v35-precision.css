@@ -169,6 +169,50 @@ html body.v13:not(#\#) .rd-co__bar--up{border-radius:0 var(--px-r-in) var(--px-r
 html body.v13:not(#\#) .rd-co__bar--down{border-radius:var(--px-r-in) 0 0 var(--px-r-in)!important}
 html body.v13:not(#\#) .rd-dchart__grid:not(.rd-dchart__grid--zero){opacity:.6}
 
+/* The filing page's "Explain it simply" panel (filing-simple.js): a headline in everyday words, labelled points, the
+   form's terms, and a switch to the filing as filed. */
+html body.v13:not(#\#) .fl-simple{margin:0 0 var(--px-gap);border:1px solid var(--px-edge);border-radius:var(--px-r);background:var(--px-fill);overflow:hidden}
+html body.v13:not(#\#) .fl-simple[hidden]{display:none!important}
+html body.v13:not(#\#) .fl-simple__bar{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px 24px;padding:20px var(--px-pad);background:var(--px-head);border-bottom:1px solid var(--px-edge)}
+html body.v13:not(#\#) .fl-simple.is-filed .fl-simple__bar{border-bottom:0}
+html body.v13:not(#\#):not(#\#):not(#\#):not(#\#) .fl-simple__bar h2{margin:6px 0 0!important;font:700 clamp(19px,1.8vw,24px)/1.3 var(--hf-ui)!important;letter-spacing:-.015em!important;color:var(--hf-ink)!important;text-wrap:balance}
+html body.v13:not(#\#) .fl-simple__formal{margin:6px 0 0!important;font:400 12.5px/1.5 var(--hf-ui)!important;color:var(--hf-muted)!important}
+html body.v13:not(#\#) .fl-mode{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--px-edge);border-radius:var(--px-r);background:var(--px-well)}
+html body.v13:not(#\#) .fl-mode button{min-height:34px!important;height:34px!important;padding:0 14px!important;border:0!important;border-radius:var(--px-r-in)!important;background:transparent!important;color:var(--hf-soft)!important;font:500 13px/1 var(--hf-ui)!important;cursor:pointer;transition:background-color .12s linear,color .12s linear!important}
+html body.v13:not(#\#) .fl-mode button:hover{color:var(--hf-ink)!important}
+html body.v13:not(#\#) .fl-mode button[aria-pressed="true"]{background:var(--hf-ink)!important;color:var(--hf-bg)!important}
+html body.v13:not(#\#) .fl-mode button:focus-visible{outline:2px solid var(--hf-ink);outline-offset:2px}
+html body.v13:not(#\#) .fl-simple__body{padding:8px var(--px-pad) 18px}
+html body.v13:not(#\#) .fl-simple__body[hidden]{display:none!important}
+html body.v13:not(#\#) .fl-points{display:grid;margin:0}
+html body.v13:not(#\#) .fl-points>div{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:6px 20px;padding:14px 0;border-bottom:1px solid var(--hf-line-faint)}
+html body.v13:not(#\#) .fl-points dt{padding-top:3px;font:500 11px/16px var(--px-figure,var(--hf-ui))!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+html body.v13:not(#\#) .fl-points dd{margin:0;max-width:72ch;font:400 15.5px/1.6 var(--hf-ui)!important;color:var(--hf-ink)!important}
+html body.v13:not(#\#) .fl-terms{margin:14px 0 0;border:1px solid var(--px-edge);border-radius:var(--px-r)}
+html body.v13:not(#\#) .fl-terms[hidden]{display:none!important}
+html body.v13:not(#\#) .fl-terms summary{min-height:44px;display:flex;align-items:center;padding:0 14px;cursor:pointer;font:500 13px/1 var(--hf-ui);color:var(--hf-soft)}
+html body.v13:not(#\#) .fl-terms summary:hover{color:var(--hf-ink)}
+html body.v13:not(#\#) .fl-terms dl{display:grid;gap:10px;margin:0;padding:4px 14px 14px}
+html body.v13:not(#\#) .fl-terms dl>div{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:4px 20px}
+html body.v13:not(#\#) .fl-terms dt{font:600 13px/1.5 var(--px-figure,var(--hf-ui))!important;color:var(--hf-ink)!important}
+html body.v13:not(#\#) .fl-terms dd{margin:0;font:400 13.5px/1.55 var(--hf-ui)!important;color:var(--hf-soft)!important}
+html body.v13:not(#\#) .fl-ai{display:grid;justify-items:start;gap:10px;margin-top:14px}
+html body.v13:not(#\#) .fl-ai[hidden]{display:none!important}
+html body.v13:not(#\#) .fl-ai__out{margin:0;max-width:72ch;font:400 14px/1.6 var(--hf-ui)!important;color:var(--hf-soft)!important}
+html body.v13:not(#\#) .fl-simple__note{margin:14px 0 0!important;font:400 12px/1.5 var(--hf-ui)!important;color:var(--hf-muted)!important}
+@media (max-width:759px){
+  html body.v13:not(#\#) .fl-points>div,html body.v13:not(#\#) .fl-terms dl>div{grid-template-columns:minmax(0,1fr)}
+  html body.v13:not(#\#) .fl-mode{width:100%}
+  html body.v13:not(#\#) .fl-mode button{flex:1}
+  html body.v13:not(#\#) .fl-simple__bar,html body.v13:not(#\#) .fl-simple__body{padding-inline:16px}
+}
+
+/* Company filings in plain words: each row says what kind of filing it is. */
+html body.v13:not(#\#) .cx-filing-rows .cx-fr{display:grid;gap:2px;min-width:0}
+html body.v13:not(#\#) .cx-filing-rows .cx-fr i{font:500 13px/1.35 var(--hf-ui);font-style:normal;color:var(--hf-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body.v13:not(#\#) .cx-table small.cx-plain{display:block;margin-top:4px;color:var(--hf-muted)!important;font:400 12.5px/1.5 var(--hf-ui)!important}
+html body.v13:not(#\#) .cx-table small.cx-plain b{color:var(--hf-soft)!important;font-weight:600!important}
+
 /* ---------- Personnel file ---------- */
 /* The photo is the same square tile as everywhere else; no corner ticks; the stamp is a plain label. */
 html body.v13:not(#\#) .pf-photo__frame{border-radius:var(--px-r)!important;border-color:var(--px-edge)!important;background:var(--px-fill)!important;overflow:hidden!important}

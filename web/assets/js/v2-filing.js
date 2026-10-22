@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded",async()=>{
     const data=await resp.json();
     if(!resp.ok)throw Error(data.error||"Could not load filing");
     const f=data.filing,items=Array.isArray(data.transactions)?data.transactions:[];
+    // The plain-English panel (filing-simple.js) reads the same answer.
+    document.dispatchEvent(new CustomEvent("insidir:filing",{detail:data}));
     const heading=$("filing-heading"),title=String(f.issuer_name||f.ticker||"Ownership filing").slice(0,150);
     heading.innerHTML=(media&&(f.ticker||f.issuer_cik)?media.company({ticker:f.ticker,cik:f.issuer_cik,name:f.issuer_name,size:"lg"}):"")+"<span>"+E(title)+"</span>";
     $("filing-subtitle").textContent=(f.form_type||"Form 4")+" · "+(f.ticker||"No ticker")+" · Published "+filed(f.published_at);

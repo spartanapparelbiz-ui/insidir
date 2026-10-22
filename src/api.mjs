@@ -34,6 +34,8 @@ import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,u
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
+import { form4Simple, readableName } from "./plain-language.mjs";
+import { companyName, roleOf } from "./intelligence-common.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
 import {intelligenceBriefing,savePreferences as saveIntelligencePreferences,FREQUENCIES} from "./intelligence-briefing.mjs";
 import {investigate,synthesize,STAGES,rememberInvestigation,recallInvestigation} from "./intelligence-investigate.mjs";
@@ -424,8 +426,15 @@ async function route(req,res,ctx){
     const f=await query("SELECT * FROM sec_filings WHERE accession=$1 AND ingest_status='parsed'",[accession]);
     if(!f.rows.length)throw failure(404,"Filing not found");
     const transactions=await query("SELECT * FROM sec_transactions WHERE accession=$1 ORDER BY id",[accession]);
-    await withJointOwners(transactions.rows,query,await hasFilingOwners(query));
-    return json(res,200,{filing:f.rows[0],transactions:transactions.rows,note:"A Form 4 may include sales, grants, option exercises, and amendments; inspect transaction codes."});
+    const ownersTable=await hasFilingOwners(query);
+    await withJointOwners(transactions.rows,query,ownersTable);
+    // "Explain it simply" (src/plain-language.mjs form4Simple): the filing in everyday words, from the same rows.
+    const fl=f.rows[0],owners=ownersTable?(await query("SELECT * FROM sec_filing_owners WHERE accession=$1 ORDER BY owner_cik NULLS LAST",[accession])).rows:[];
+    const named=owners.length?owners.map(o=>({owner_name:readableName(o.owner_name),role:roleOf(o)})):[...new Set(transactions.rows.map(t=>t.owner_name).filter(Boolean))].map(n=>({owner_name:readableName(n),role:null}));
+    const simple=/^4(\/A)?$/i.test(String(fl.form_type||"4").trim())?form4Simple(transactions.rows,{owners:named,issuer:companyName(fl.issuer_name,fl.ticker),ticker:fl.ticker,filedOn:fl.published_at?new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date(fl.published_at)):null, // the SEC's calendar day
+      
+      plan:fl.rule_10b5_1===true,amended:Boolean(fl.is_amendment),originalFiledOn:fl.original_filed_on||null}):null;
+    return json(res,200,{filing:fl,transactions:transactions.rows,simple,note:"A Form 4 may include sales, grants, option exercises, and amendments; inspect transaction codes."});
   }
   if(p==="/v1/transactions" && m==="GET"){
     const limit=positive(u.searchParams.get("limit"),30,100), offset=Math.min(1000,Math.max(0,Number(u.searchParams.get("offset"))||0));
