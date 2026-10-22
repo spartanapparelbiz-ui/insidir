@@ -31,12 +31,14 @@ html body.v13:not(#\#):is(.app-body,.portfolio-page,.research-page){
   --hwf-mono:var(--v34-figure)!important;--hwf-font:var(--v34-figure)!important;
   font-variant-numeric:tabular-nums!important;
 }
-/* The brand voice stays mono: titles, caps labels, tickers and codes, and the large figures. */
+/* The brand voice stays mono: titles, caps labels, tickers and codes, and the large figures. The photo credits stay
+   mono too: entity-media.js holds their space at the height they take in that face, so the footer never moves. */
 html body.v13:not(#\#):not(#\#):not(#\#):is(.app-body,.portfolio-page,.research-page) :is(
   h1,h2,.app-logo,.brand,.logo,kbd,code,pre,
   [class*="eyebrow"],[class*="__label"],[class*="-label"],[class*="kicker"],[class*="ticker"],[class*="__k"],[class*="index"],
   .rd-kpi__value,.rd-desk__v,.cx-tile strong,.cx-price,.cx-quote__price,.bl-plan__price strong,.intel-fact strong,.portfolio-value strong,.research-metric strong,
-  .ix-stats dd,.rd-type,.app-search__key,.v3-category,.badge,.tag,.status,.pill){
+  .ix-stats dd,.rd-type,.app-search__key,.v3-category,.badge,.tag,.status,.pill,
+  .ins-media-credits){
   font-family:var(--v34-figure)!important}
 html body.v13:not(#\#):is(.app-body,.portfolio-page,.research-page) :is(h3,h4){letter-spacing:-.01em!important}
 
