@@ -791,7 +791,8 @@ try {
         return route.fulfill({ status: body ? 200 : 404, contentType: "application/json", body: JSON.stringify(body || {}) });
       });
       await page.goto(base + path, { waitUntil: "load" });
-      await page.waitForFunction(() => document.querySelectorAll("[data-logo]").length >= 3, null, { timeout: 20000 });
+      // The ticker page has one company (its own logo in the header); its people are initials.
+      await page.waitForFunction(min => document.querySelectorAll("[data-logo]").length >= min, path.startsWith("/company") ? 1 : 3, { timeout: 20000 });
       await page.waitForTimeout(1200);
       const r = await page.evaluate(() => ({
         tiles: [...document.querySelectorAll("[data-logo]")].map(t => ({ t: t.dataset.logo, img: t.querySelector("img")?.getAttribute("src") || null, loaded: t.classList.contains("has-img"), mono: (t.querySelector(".logo__mono")?.textContent || "").trim() })),
