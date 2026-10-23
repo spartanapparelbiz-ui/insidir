@@ -725,3 +725,8 @@ html body.v13:has(.app-header):not(#\#):not(#\#) :is(.rd-today__line,.rd-module_
   :is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr:hover{background-color:rgba(240,238,232,.035)}
 }
 @media (prefers-reduced-motion:reduce){:is(.rd-table,.di-table,.ix-table,.al-table,table.data) tbody tr{transition:none}}
+
+/* The wordmark: one SVG logo everywhere (web/assets/brand/insidir-wordmark.svg), drawn in the text colour and sized
+   to the logo's font size, so it matches the rebuilt pages (ui.css) exactly. */
+.wordmark-svg{display:inline-block;height:.8em;width:auto;vertical-align:-.04em;fill:currentColor}
+a:has(> .wordmark-svg){display:inline-flex;align-items:center;min-height:24px}

@@ -81,11 +81,5 @@ export function emailSettings(env = process.env) {
 }
 
 
-/* Email verification is enforced with INSIDIR_REQUIRE_EMAIL_VERIFICATION=1, or by default once an email provider is
- * configured; =0 switches it off. See src/account-security.mjs. */
-export function verificationRequired(env = process.env) {
-  const v = String(env.INSIDIR_REQUIRE_EMAIL_VERIFICATION ?? "").trim();
-  if (v === "1") return true;
-  if (v === "0") return false;
-  return emailSettings(env).enabled;
-}
+/* There is no email-verification step: nobody is asked to confirm their address before subscribing or turning on
+ * alert emails. Only a complimentary address, once email is configured, needs its owner to prove it (src/paywall.mjs). */

@@ -112,17 +112,17 @@ try{
    assert.deepEqual(issues,[],"Browser errors on the rebuilt pages: "+issues.join("; "));
    await page.unrouteAll();
 
-   for(const route of ["/signin.html","/signup.html"]){
+   for(const route of ["/signin.html","/signup.html","/start.html"]){
     await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:20000});
-    assert.ok(await page.locator("[data-auth-form]").isVisible(),route+" auth form unavailable");
-    const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,heading:getComputedStyle(document.querySelector(".auth-title")).fontFamily,
-      headingColor:getComputedStyle(document.querySelector(".auth-title .split-word>span")||document.querySelector(".auth-title")).color,
-      label:getComputedStyle(document.querySelector(".auth-field .label")).fontFamily,footer:!!document.querySelector("footer.v13-footer--plain .hwf-top"),logoDot:!!document.querySelector(".auth-logo .v13-dot")}));
+    assert.ok(await page.locator(route==="/start.html"?"[data-st-email-form]":"[data-auth-form]").isVisible(),route+" form unavailable");
+    const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,heading:getComputedStyle(document.querySelector("h1")).fontFamily,
+      headingColor:getComputedStyle(document.querySelector("h1")).color,bg:getComputedStyle(document.body).backgroundColor,
+      logo:!!document.querySelector(".au-top .wordmark svg[viewBox=\"70 -793 4531 803\"]"),advice:/Research, not investment advice/.test(document.body.textContent)}));
     assert.ok(auth.overflow<=4,route+" horizontal overflow "+JSON.stringify(auth));
-    assert.match(auth.heading,/JetBrains Mono/,route+" auth heading must use JetBrains Mono");
-    assert.equal(auth.headingColor,"rgb(240, 238, 232)",route+" auth heading must be full ink, not greyed by its split-word wrappers");
-    assert.match(auth.label,/JetBrains Mono/,route+" field labels should be tracked mono");
-    assert.ok(auth.footer&&auth.logoDot,route+" needs the plain footer and the dotted wordmark logo");
+    assert.match(auth.heading,/^"?Geist"?,/,route+" uses Geist, like the rest of the app");
+    assert.equal(auth.headingColor,"rgb(240, 238, 232)",route+" heading is full ink");
+    assert.equal(auth.bg,"rgb(12, 12, 11)",route+" sits on the night background");
+    assert.ok(auth.logo&&auth.advice,route+" has the SVG wordmark and the research-not-advice line");
    }
    console.log("Browser verified:",item.width+"px","landing","Today","ticker page","Alerts","working auth","no overflow");
    assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));

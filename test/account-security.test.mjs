@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { generateTotpSecret, totpCode, base32Decode, stepAt } from "../src/totp.mjs";
 import { emailDigest } from "../src/security-events.mjs";
+import { sendVerificationEmail } from "../src/account-security.mjs";
 
 /* Account security end to end: the real engine (src/server.mjs, two instances on one database) against PostgreSQL.
  * Runs only when INSIDIR_TEST_DATABASE_URL points at a throwaway database. Email uses the outbox with no delivery
@@ -49,16 +50,18 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
   t.after(async () => { for (const e of engines) e.kill(); await db.end(); });
   const latest = async (email, kind) => (await db.query("SELECT * FROM email_outbox WHERE recipient_hash=$1 AND kind=$2 ORDER BY id DESC LIMIT 1", [emailDigest(email), kind])).rows[0];
 
-  await t.test("registration queues a confirmation link that works once, for that account only", async () => {
+  // A confirmation link as one sent before email verification was removed (it is no longer sent on registration).
+  const oldLink = async (id, email) => { await sendVerificationEmail((sql, p) => db.query(sql, p), { id, email }); return tokenFrom((await latest(email, "verify_email")).text_body); };
+
+  await t.test("registration sends no confirmation email; a link sent before still works once, for that account only", async () => {
     const email = `verify-${randomUUID()}@example.com`;
     const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD } });
     assert.equal(reg.status, 201);
-    assert.deepEqual(reg.json.verification, { sent: true });
-    assert.equal(reg.json.access.emailVerified, false);
-    const mail = await latest(email, "verify_email");
-    assert.equal(mail.category, "security");
-    assert.equal(mail.retain_body, false, "one-time links are never retained");
-    const token = tokenFrom(mail.text_body);
+    assert.equal(reg.json.verification, undefined, "nothing to confirm");
+    assert.equal(await latest(email, "verify_email"), undefined, "no confirmation email is queued");
+    assert.equal((await A.call("/v1/auth/resend-verification", { method: "POST", cookie: reg.cookie, body: {} })).status, 404, "no resend route");
+    const me = (await A.call("/v1/me", { cookie: reg.cookie })).json;
+    const token = await oldLink(me.user.id, email);
     assert.ok(token);
     assert.equal((await db.query("SELECT count(*)::int AS n FROM user_tokens WHERE token_hash=$1", [token])).rows[0].n, 0, "only the digest is stored");
     assert.equal((await B.call("/v1/auth/verify-email", { method: "POST", body: { token } })).status, 200, "another instance accepts it");
@@ -146,7 +149,7 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     const reg = await A.call("/v1/auth/register", { method: "POST", body: { email: OWNER, password: PASSWORD }, client: NET + ".90" });
     assert.equal(reg.json.access.active, false);
     assert.equal((await A.call("/v1/filings", { cookie: reg.cookie })).status, 402);
-    const token = tokenFrom((await latest(OWNER, "verify_email")).text_body);
+    const token = await oldLink(reg.json.user.id, OWNER);
     await A.call("/v1/auth/verify-email", { method: "POST", body: { token } });
     assert.equal((await A.call("/v1/me", { cookie: reg.cookie })).json.access.active, true);
   });
@@ -177,8 +180,6 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     assert.equal((await db.query("SELECT count(*)::int AS n FROM users WHERE email=$1", [email])).rows[0].n, 0);
     const ev = (await db.query("SELECT user_id FROM security_events WHERE kind='account_deleted' AND email_hash=$1", [emailDigest(email)])).rows;
     assert.equal(ev.length, 1); assert.equal(ev[0].user_id, null);
-    const verify = await latest(email, "verify_email");
-    assert.equal(verify.status, "cancelled"); assert.equal(verify.text_body, null, "the unsent link is erased");
     const confirmation = await latest(email, "account_deleted");
     assert.equal(confirmation.category, "billing"); assert.equal(confirmation.retain_body, true);
   });

@@ -30,7 +30,7 @@ const escapeHtml = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;"
 
 /* A plain, accessible message in Insidir's voice: a heading, paragraphs, an optional button, a footer. Every
  * message has a text part; the HTML part is the same words. `lines` may hold {label, value} rows (receipts). */
-export function renderEmail({ heading, paragraphs = [], lines = [], action = null, footer = [] }) {
+export function renderEmail({ heading, paragraphs = [], lines = [], action = null, footer = [], publicUrl = emailSettings(process.env).publicUrl }) {
   const text = [heading, "", ...paragraphs.flatMap(p => [p, ""]),
     ...(lines.length ? [...lines.map(l => `${l.label}: ${l.value}`), ""] : []),
     ...(action ? [`${action.label}: ${action.url}`, ""] : []),
@@ -38,7 +38,7 @@ export function renderEmail({ heading, paragraphs = [], lines = [], action = nul
   const html = `<!doctype html><html lang="en"><body style="margin:0;background:#f3f1ea;color:#0c0c0b;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:32px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fbfaf6;border:1px solid #0c0c0b">
-<tr><td style="padding:24px 28px;border-bottom:1px solid #0c0c0b;font-size:18px;font-weight:700">insidir.</td></tr>
+<tr><td style="padding:24px 28px;border-bottom:1px solid #0c0c0b"><img src="${escapeHtml(publicUrl)}/assets/brand/insidir-wordmark-ink.png" width="102" height="18" alt="insidir." style="display:block;border:0"></td></tr>
 <tr><td style="padding:28px">
 <h1 style="font-size:20px;line-height:1.3;margin:0 0 16px">${escapeHtml(heading)}</h1>
 ${paragraphs.map(p => `<p style="font-size:14px;line-height:1.6;margin:0 0 14px">${escapeHtml(p)}</p>`).join("")}

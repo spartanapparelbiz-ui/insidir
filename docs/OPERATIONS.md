@@ -23,7 +23,6 @@ Nothing in this release switches on a regulated capability. `GET /v1/capabilitie
 | `INSIDIR_EMAIL_WEBHOOK_SECRET` | empty | 24+ characters. Postmark webhook basic-auth password (section 3). |
 | `INSIDIR_APP_SECRET` | empty | 32+ random characters. Signs one-click unsubscribe links. **Alert emails are not sent without it.** Changing it invalidates links already sent. |
 | `INSIDIR_POSTAL_ADDRESS` | empty | Business postal address printed in alert-email footers (CAN-SPAM; ATTORNEY-REVIEW.md C-1). |
-| `INSIDIR_REQUIRE_EMAIL_VERIFICATION` | on once email is configured | `1` forces, `0` disables. When on, checkout and complimentary access need a confirmed address. |
 | `INSIDIR_AI_EXPLANATIONS` | off | `1` lets the explanation service call Claude. Leave off until counsel has reviewed it (ATTORNEY-REVIEW.md, D-1). |
 | `ANTHROPIC_API_KEY` | empty | API key for explanations (only read when `INSIDIR_AI_EXPLANATIONS=1`). |
 | `INSIDIR_AI_MODEL` / `INSIDIR_AI_EFFORT` | none / `medium` | Model for research-event explanations; there is no default, and the service stays off until one is named. Choose an inexpensive model. |

@@ -58,18 +58,8 @@ function actions(access){
  const billing=document.createElement("a");billing.href="billing.html";billing.textContent="Billing";
  note.replaceChildren("Insidir is a paid research workspace. Subscribe to open the dashboard, research desk and company reports"+(access.status?"; everything you saved is still here. ":". ")+"Past invoices and payment details are in ",billing,".");
 }
-/* 05 / Email: confirmation status and a fresh link. */
-function verified(access){
- const value=$("account-verified"),send=$("account-verify-send"),note=$("account-verify-note");
- if(access?.emailVerified){value.textContent="Confirmed";send.hidden=true;return;}
- value.textContent=access?.verificationRequired?"Not confirmed · needed before subscribing":"Not confirmed";
- send.hidden=false;
- send.addEventListener("click",async()=>{
-  send.disabled=true;note.classList.remove("is-error");
-  try{const r=await req("/v1/auth/resend-verification","POST",{});note.textContent=r.alreadyVerified?"Your address is already confirmed.":"We sent a confirmation link to your address. It expires in 48 hours.";}
-  catch(e){note.classList.add("is-error");note.textContent=e.message?e.message.replace(/([^.!?])$/,"$1."):"We couldn't send a link just now. Try again in a moment.";send.disabled=false;}
- },{once:true});
-}
+/* 05 / Email: the address everything is sent to. */
+function verified(me){$("account-verified").textContent=me?.user?.email||"";}
 const KIND={register:"Account created",login_success:"Signed in",logout:"Signed out",login_failure:"Failed sign-in",password_changed:"Password changed",password_reset_requested:"Password reset requested",
  password_reset_completed:"Password reset",email_verified:"Email confirmed",email_verification_sent:"Confirmation link sent",sessions_revoked:"Other devices signed out",data_exported:"Data downloaded",
  password_change_failed:"Password change refused",account_delete_failed:"Deletion refused (wrong password)"};
@@ -119,7 +109,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
    $("account-plan").textContent=plan(r.access);
    actions(r.access);
    $("account-delete").disabled=false;
-   verified(r.access);
+   verified(r);
    security();
    // Never show a cancellation button until the server has checked this account's Stripe status.
    try {

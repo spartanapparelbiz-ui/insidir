@@ -101,7 +101,7 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
     assert.equal((await call("/v1/me/notifications", { cookie: L.cookie })).status, 402, "no subscription: no product data");
   });
 
-  await t.test("alert email consent: needs the box ticked; recorded with the words shown", async () => {
+  await t.test("alert email consent: needs the box ticked; recorded with the words shown; no confirmation step", async () => {
     const prefs = await call("/v1/me/email-preferences", { cookie: M.cookie });
     assert.deepEqual([prefs.json.emailAlerts, prefs.json.emailAvailable, prefs.json.emailVerified], ["off", true, true]);
     assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: M.cookie, body: { emailAlerts: "immediate" } })).status, 400);
@@ -111,7 +111,7 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
     assert.deepEqual([c.length, c[0].action, c[0].setting, c[0].consent_text], [1, "opt_in", "immediate", N.ALERT_CONSENT_TEXT]);
     assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: L.cookie, body: { emailAlerts: "bogus" } })).status, 400);
     await q("UPDATE users SET email_verified_at=NULL WHERE id=$1", [L.id]);
-    assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: L.cookie, body: { emailAlerts: "daily", consent: true, consentVersion: N.ALERT_CONSENT_VERSION } })).status, 403, "unconfirmed address");
+    assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: L.cookie, body: { emailAlerts: "daily", consent: true, consentVersion: N.ALERT_CONSENT_VERSION } })).status, 200, "no email verification: an unconfirmed address can turn alert emails on");
   });
 
   await t.test("immediate emails: one per member per run, each alert in exactly one email, even with two workers", async () => {
