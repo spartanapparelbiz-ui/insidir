@@ -131,6 +131,9 @@ test("every page carries the engine, then the motion layer", async () => {
   assert.ok(pages.length >= 25);
   for (const f of pages) {
     const html = await readFile(new URL(f, web), "utf8");
+    // Pages on the v2 design system (web/assets/css/ds.css, <body class="ds">) use its own restrained motion (ds.js:
+    // an 8px fade-up, count-up once, no loops) and not the v13 halftone layer.
+    if (/<body class="ds\b/.test(html)) { assert.match(html, /assets\/js\/ds\.js/, f + " loads the design-system script"); continue; }
     const e = html.search(/v13-halftone\.js/), m = html.search(/v13-motion\.js/);
     assert.ok(e > 0 && m > e, f + " loads v13-halftone.js and then v13-motion.js");
     assert.doesNotMatch(html, /src="assets\/js\/motion\.js/, f + " does not load the old scroll-animation engine");

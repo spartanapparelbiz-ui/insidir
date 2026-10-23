@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Design system | Insidir</title>
+<meta name="description" content="The Insidir design system: colour, type, spacing and every component with its states.">
+<meta name="theme-color" content="#0c0c0b">
+<link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ds.css?v=1">
+<style>
+  /* Page-only layout for the specimen sheet (not part of the system). */
+  .sg-head{padding:var(--s10) 0 var(--s8)}
+  .sg-head .ds-body{margin-top:var(--s2)}
+  .sg-block{padding:var(--s10) 0;border-top:1px solid var(--line)}
+  .sg-title{margin:0 0 var(--s1);font:600 30px/36px var(--sans);letter-spacing:-.025em}
+  .sg-rule{margin:0 0 var(--s5);color:var(--muted);font:400 14px/20px var(--sans);max-width:var(--text-max)}
+  .sg-grid{display:grid;gap:var(--s2)}
+  .sg-grid>*,.sg-states>*,.sg-two>*{min-width:0}
+  .sg-grid>.ds-tabs{justify-self:start}
+  .sg-states{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s3);align-items:start}
+  .sg-state{display:grid;gap:12px;justify-items:start}
+  .sg-state>span:first-child{font:400 14px/20px var(--sans);color:var(--muted)}
+  .sg-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--s2)}
+  .sg-swatch{border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;background:var(--raised)}
+  .sg-swatch i{display:block;height:88px;border-bottom:1px solid var(--line)}
+  .sg-swatch div{padding:12px var(--s2);display:grid;gap:2px;font:400 14px/20px var(--sans)}
+  .sg-swatch div span{color:var(--muted)}
+  .sg-type{display:grid;gap:var(--s4)}
+  .sg-type>div{display:grid;grid-template-columns:200px 1fr;gap:var(--s3);align-items:baseline;padding-bottom:var(--s4);border-bottom:1px solid var(--line)}
+  .sg-type>div>span{font:400 14px/20px var(--sans);color:var(--muted)}
+  .sg-space{display:grid;gap:12px}
+  .sg-space div{display:flex;align-items:center;gap:var(--s2);font:400 14px/20px var(--sans);color:var(--muted)}
+  .sg-space i{display:block;height:16px;background:var(--text);border-radius:2px}
+  .sg-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);align-items:start}
+  .sg-panel{padding:var(--s4);border:1px dashed var(--line-strong);border-radius:var(--r-card)}
+  .sg-demo{padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-card)}
+  .sg-demo .ds-h2+.ds-body{margin-top:var(--s2)}
+  .sg-demo .ds-body+.sg-visual{margin-top:var(--s6)}
+  .sg-visual{height:120px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--raised)}
+  @media (max-width:600px){.sg-states{grid-template-columns:1fr!important}}
+  @media (max-width:900px){.sg-states{grid-template-columns:repeat(2,minmax(0,1fr))}.sg-two{grid-template-columns:1fr}.sg-type>div{grid-template-columns:1fr;gap:var(--s1)}}
+</style>
+</head>
+<body class="ds">
+
+<header class="ds-nav" data-ds-nav>
+  <div class="ds-nav__in">
+    <a class="ds-mark" href="/" aria-label="Insidir home">insidir.</a>
+    <nav class="ds-nav__links" aria-label="Main"><a href="#components">Platform</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+    <div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/signup.html">Start for $1</a></div>
+  </div>
+</header>
+
+<main class="ds-wrap">
+  <section class="sg-head">
+    <h1 class="ds-h1">Design system</h1>
+    <p class="ds-body">Every component on insidir.com comes from this page. Data samples are one real filing: PepsiCo director Robert C. Pohlad's Form 4, filed Oct 16, 2026.</p>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-colour">
+    <h2 class="sg-title" id="sg-colour">Colour</h2>
+    <p class="sg-rule">Black, off-white, one muted grey and hairlines. Green and red appear only on trade data. No gradients, glows or coloured shadows.</p>
+    <div class="sg-swatches">
+      <div class="sg-swatch"><i style="background:#0c0c0b"></i><div>Background<span class="ds-num">#0c0c0b</span></div></div>
+      <div class="sg-swatch"><i style="background:#141413"></i><div>Raised surface<span class="ds-num">#141413</span></div></div>
+      <div class="sg-swatch"><i style="background:rgba(255,255,255,.08)"></i><div>Hairline<span class="ds-num">rgba(255,255,255,0.08)</span></div></div>
+      <div class="sg-swatch"><i style="background:#f0eee8"></i><div>Text<span class="ds-num">#f0eee8 · 16.9:1</span></div></div>
+      <div class="sg-swatch"><i style="background:#8f8d87"></i><div>Muted text<span class="ds-num">#8f8d87 · 5.9:1, 5.6:1 raised</span></div></div>
+      <div class="sg-swatch"><i style="background:#2f996a"></i><div>Buy (data only)<span class="ds-num">#2f996a · 5.5:1</span></div></div>
+      <div class="sg-swatch"><i style="background:#f94144"></i><div>Sell (data only)<span class="ds-num">#f94144 · 5.5:1</span></div></div>
+    </div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-type">
+    <h2 class="sg-title" id="sg-type">Type</h2>
+    <p class="sg-rule">Geist for all text. Geist Mono only for numbers, tickers, dates and dollar amounts, always tabular. The wordmark is the only JetBrains Mono on the site. Four sizes, nothing else.</p>
+    <div class="sg-type">
+      <div><span>H1 · 72/76 · 42/46 phone · 600 · −0.035em</span><p class="ds-h1">See when CEOs buy and sell their own stock.</p></div>
+      <div><span>H2 · 44/50 · 30/36 phone · 600</span><p class="ds-h2">This week's biggest insider buys.</p></div>
+      <div><span>Body · 18/28 · 16/26 phone</span><p class="ds-body">Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts.</p></div>
+      <div><span>Small · 14/20</span><p class="ds-small">$1 for 7 days. Cancel online anytime.</p></div>
+      <div><span>Data · Geist Mono, tabular</span><p class="ds-body" style="color:var(--text)"><span class="ds-num">PEP</span> · <span class="ds-num">184,646</span> shares at <span class="ds-num">$128.28</span> · <span class="ds-num ds-buy">$23.7M</span> · <span class="ds-num">Oct 16, 2026</span></p></div>
+      <div><span>Wordmark · JetBrains Mono ExtraBold</span><p><span class="ds-mark" style="font-size:40px">insidir.</span></p></div>
+    </div>
+    <p class="sg-rule" style="margin-top:var(--s4)">Formats: dates "Oct 16, 2026"; money "$1.2M", "$840K", "$128.28" per share; tickers upper case in Geist Mono, never with a dollar sign.</p>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-space">
+    <h2 class="sg-title" id="sg-space">Space and shape</h2>
+    <p class="sg-rule">8px grid. Sections 128px (88px on phones). Content 1160px wide, text 640px. Cards 14px radius, buttons 10px. Hairlines instead of shadows. Headline to sentence 16px, sentence to visual 48px, in every section.</p>
+    <div class="sg-two">
+      <div class="sg-space">
+        <div><i style="width:8px"></i><span class="ds-num">8</span></div><div><i style="width:16px"></i><span class="ds-num">16</span></div>
+        <div><i style="width:24px"></i><span class="ds-num">24</span></div><div><i style="width:32px"></i><span class="ds-num">32</span></div>
+        <div><i style="width:48px"></i><span class="ds-num">48</span></div><div><i style="width:64px"></i><span class="ds-num">64</span></div>
+        <div><i style="width:88px"></i><span class="ds-num">88</span> section, phone</div><div><i style="width:128px"></i><span class="ds-num">128</span> section</div>
+      </div>
+      <div class="sg-demo" aria-label="Section anatomy">
+        <p class="ds-h2">One headline.</p>
+        <p class="ds-body">One sentence, 16px under the headline, 48px over the visual.</p>
+        <div class="sg-visual" role="img" aria-label="The section's one visual"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-block" id="components" aria-labelledby="sg-btn">
+    <h2 class="sg-title" id="sg-btn">Buttons</h2>
+    <p class="sg-rule">One primary action per screen. Secondary actions are text with an arrow. 44px minimum touch target.</p>
+    <div class="sg-grid">
+      <div class="sg-states">
+        <div class="sg-state"><span>Primary</span><a class="ds-btn" href="/signup.html">Start for $1</a></div>
+        <div class="sg-state"><span>Hover</span><span class="ds-btn is-hover">Start for $1</span></div>
+        <div class="sg-state"><span>Focus</span><span class="ds-btn is-focus">Start for $1</span></div>
+        <div class="sg-state"><span>Pressed</span><span class="ds-btn is-pressed">Start for $1</span></div>
+      </div>
+      <div class="sg-states" style="margin-top:var(--s3)">
+        <div class="sg-state"><span>Secondary</span><a class="ds-link" href="#pricing">See pricing <span class="ds-arrow" aria-hidden="true">→</span></a></div>
+        <div class="sg-state"><span>Hover</span><span class="ds-link is-hover">See pricing <span class="ds-arrow" aria-hidden="true">→</span></span></div>
+        <div class="sg-state"><span>Focus</span><span class="ds-link is-focus">See pricing <span class="ds-arrow" aria-hidden="true">→</span></span></div>
+        <div class="sg-state"><span>Pressed</span><span class="ds-link is-pressed">See pricing <span class="ds-arrow" aria-hidden="true">→</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-badge">
+    <h2 class="sg-title" id="sg-badge">Badges</h2>
+    <p class="sg-rule">Short labels in Geist Mono. Colour only for a buy or a sale.</p>
+    <div style="display:flex;gap:var(--s1);flex-wrap:wrap"><span class="ds-badge ds-badge--buy">Buy</span><span class="ds-badge ds-badge--sell">Sell</span><span class="ds-badge">Form 4</span><span class="ds-badge">Pre-scheduled</span><span class="ds-badge">Director</span></div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-search">
+    <h2 class="sg-title" id="sg-search">Search</h2>
+    <p class="sg-rule">The site's main action. Opens the stock's page, no account needed.</p>
+    <div class="sg-grid">
+      <form class="ds-search" action="/insider-trading/" role="search" data-ds-search><label class="sr-only" for="sg-q">Stock ticker</label>
+        <input id="sg-q" name="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP"><button class="ds-btn" type="submit">See insiders</button></form>
+      <div class="sg-states" style="margin-top:var(--s2)">
+        <div class="sg-state"><span>Hover</span><div class="ds-search is-hover" style="max-width:100%"><input tabindex="-1" aria-hidden="true" placeholder="Type a stock" readonly></div></div>
+        <div class="sg-state"><span>Focus</span><div class="ds-search is-focus" style="max-width:100%"><input tabindex="-1" aria-hidden="true" value="PEP" readonly></div></div>
+        <div class="sg-state"><span>Pressed (button)</span><div class="ds-search" style="max-width:100%"><input tabindex="-1" aria-hidden="true" value="PEP" readonly><span class="ds-btn is-pressed">See</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-card">
+    <h2 class="sg-title" id="sg-card">Trade card</h2>
+    <p class="sg-rule">One trade: the ticker, who, how much, when, and the filing. The whole card is the link to the stock's page.</p>
+    <div class="sg-states">
+      <div class="sg-state" style="justify-items:stretch"><span>Default</span>
+        <a class="ds-card ds-trade" href="/insider-trading/PEP"><span class="ds-trade__tick">PEP</span><span class="ds-badge ds-badge--buy">Buy</span>
+          <p class="ds-trade__who">Robert C. Pohlad <span>· Director</span></p><span class="ds-trade__amt ds-buy">$23.7M</span>
+          <span class="ds-trade__meta"><span class="ds-num">Oct 14, 2026</span><span>Form 4 ↗</span></span></a></div>
+      <div class="sg-state" style="justify-items:stretch"><span>Hover</span>
+        <div class="ds-card ds-card--link ds-trade is-hover"><span class="ds-trade__tick">PEP</span><span class="ds-badge ds-badge--buy">Buy</span>
+          <p class="ds-trade__who">Robert C. Pohlad <span>· Director</span></p><span class="ds-trade__amt ds-buy">$23.7M</span>
+          <span class="ds-trade__meta"><span class="ds-num">Oct 14, 2026</span><span>Form 4 ↗</span></span></div></div>
+      <div class="sg-state" style="justify-items:stretch"><span>Focus</span>
+        <div class="ds-card ds-card--link ds-trade" style="box-shadow:var(--focus)"><span class="ds-trade__tick">PEP</span><span class="ds-badge ds-badge--buy">Buy</span>
+          <p class="ds-trade__who">Robert C. Pohlad <span>· Director</span></p><span class="ds-trade__amt ds-buy">$23.7M</span>
+          <span class="ds-trade__meta"><span class="ds-num">Oct 14, 2026</span><span>Form 4 ↗</span></span></div></div>
+      <div class="sg-state" style="justify-items:stretch"><span>Pressed</span>
+        <div class="ds-card ds-card--link ds-trade is-pressed"><span class="ds-trade__tick">PEP</span><span class="ds-badge ds-badge--buy">Buy</span>
+          <p class="ds-trade__who">Robert C. Pohlad <span>· Director</span></p><span class="ds-trade__amt ds-buy">$23.7M</span>
+          <span class="ds-trade__meta"><span class="ds-num">Oct 14, 2026</span><span>Form 4 ↗</span></span></div></div>
+    </div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-table">
+    <h2 class="sg-title" id="sg-table">Data table</h2>
+    <p class="sg-rule">Numbers right-aligned in Geist Mono. Every row links to its filing. Rows highlight on hover.</p>
+    <div class="ds-table-wrap"><table class="ds-table"><caption class="sr-only">The four lines of PepsiCo's Form 4 filed Oct 16, 2026</caption>
+      <thead><tr><th scope="col">Stock</th><th scope="col">Trade</th><th scope="col">Date</th><th scope="col" class="r">Shares</th><th scope="col" class="r">Price</th><th scope="col">Filing</th></tr></thead>
+      <tbody>
+        <tr><td class="ds-num">PEP</td><td><span class="ds-badge ds-badge--buy">Buy</span></td><td class="ds-num">Oct 14, 2026</td><td class="ds-num r">84,507</td><td class="ds-num r">$128.28</td><td><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener">Form 4 ↗</a></td></tr>
+        <tr class="is-hover"><td class="ds-num">PEP</td><td><span class="ds-badge ds-badge--buy">Buy</span></td><td class="ds-num">Oct 14, 2026</td><td class="ds-num r">45,075</td><td class="ds-num r">$128.28</td><td><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener">Form 4 ↗</a></td></tr>
+        <tr><td class="ds-num">PEP</td><td><span class="ds-badge ds-badge--buy">Buy</span></td><td class="ds-num">Oct 14, 2026</td><td class="ds-num r">45,075</td><td class="ds-num r">$128.28</td><td><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener">Form 4 ↗</a></td></tr>
+        <tr><td class="ds-num">PEP</td><td><span class="ds-badge ds-badge--buy">Buy</span></td><td class="ds-num">Oct 14, 2026</td><td class="ds-num r">9,989</td><td class="ds-num r">$128.28</td><td><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener">Form 4 ↗</a></td></tr>
+      </tbody></table></div>
+    <p class="ds-small" style="margin-top:12px">Second row shows the hover state.</p>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-tabs">
+    <h2 class="sg-title" id="sg-tabs">Tabs</h2>
+    <p class="sg-rule">For the product section. Arrow keys move between tabs.</p>
+    <div class="sg-grid">
+      <div class="ds-tabs" role="tablist" aria-label="How it works" data-ds-tabs>
+        <button class="ds-tab" role="tab" aria-selected="true" id="sg-t1" aria-controls="sg-p1">Pick your stocks</button>
+        <button class="ds-tab" role="tab" aria-selected="false" id="sg-t2" aria-controls="sg-p2" tabindex="-1">We read every filing</button>
+        <button class="ds-tab" role="tab" aria-selected="false" id="sg-t3" aria-controls="sg-p3" tabindex="-1">You get one sentence</button>
+      </div>
+      <div class="ds-card" style="padding:var(--s3);margin-top:var(--s2)">
+        <p role="tabpanel" id="sg-p1" aria-labelledby="sg-t1" class="ds-body" style="color:var(--text)">Type a ticker or paste a list. Follow a CEO by name.</p>
+        <p role="tabpanel" id="sg-p2" aria-labelledby="sg-t2" class="ds-body" style="color:var(--text)" hidden>Robert C. Pohlad, a director, bought <span class="ds-num ds-buy">$23.7M</span> of PepsiCo stock. Every number links to the filing.</p>
+        <p role="tabpanel" id="sg-p3" aria-labelledby="sg-t3" class="ds-body" style="color:var(--text)" hidden>Push or email, minutes after the filing posts.</p>
+      </div>
+      <div class="sg-states" style="margin-top:var(--s3)">
+        <div class="sg-state"><span>Hover</span><div class="ds-tabs"><span class="ds-tab is-hover" style="display:inline-flex;align-items:center">Tab</span></div></div>
+        <div class="sg-state"><span>Focus</span><div class="ds-tabs"><span class="ds-tab is-focus" style="display:inline-flex;align-items:center">Tab</span></div></div>
+        <div class="sg-state"><span>Pressed</span><div class="ds-tabs"><span class="ds-tab is-pressed" style="display:inline-flex;align-items:center">Tab</span></div></div>
+        <div class="sg-state"><span>Selected</span><div class="ds-tabs"><span class="ds-tab is-selected" style="display:inline-flex;align-items:center">Tab</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-block" id="pricing" aria-labelledby="sg-price">
+    <h2 class="sg-title" id="sg-price">Pricing card</h2>
+    <p class="sg-rule">One card. The price in Geist Mono, what you get, one button, and the trial terms right under it. (Proposed founding price: waiting on your decision.)</p>
+    <div class="ds-price">
+      <p class="ds-price__name">Founding price</p>
+      <p class="ds-price__amt"><b class="ds-num">$29</b><span>/ month, locked for life</span></p>
+      <p class="ds-price__seats">For the first 100 subscribers. Then $39 a month.</p>
+      <ul class="ds-price__list"><li>Every insider trade in plain English</li><li>Alerts minutes after a filing</li><li>Track record for every insider</li><li>Every number linked to the SEC filing</li></ul>
+      <a class="ds-btn ds-btn--lg" href="/signup.html">Start for $1</a>
+      <p class="ds-price__note">$1 today. We email you before you're charged. Cancel in 2 clicks.</p>
+    </div>
+  </section>
+
+  <section class="sg-block" id="faq" aria-labelledby="sg-faq">
+    <h2 class="sg-title" id="sg-faq">FAQ accordion</h2>
+    <p class="sg-rule">Native details and summary: works with no script, keyboard and screen readers included.</p>
+    <div class="ds-faq">
+      <details open><summary>What is an insider?</summary><p>CEOs, CFOs, directors and anyone who owns more than 10% of a company. The law makes them report their trades to the SEC within two business days.</p></details>
+      <details><summary>How do I cancel?</summary><p>Billing, then Cancel. Two clicks, online, any time.</p></details>
+      <details><summary class="is-hover">Hover state</summary><p>Shown for review.</p></details>
+      <details><summary class="is-focus">Focus state</summary><p>Shown for review.</p></details>
+    </div>
+  </section>
+
+  <section class="sg-block" aria-labelledby="sg-motion">
+    <h2 class="sg-title" id="sg-motion">Motion</h2>
+    <p class="sg-rule">Sections fade up 8px over 250ms as they enter. Numbers count up once. New feed rows slide in. Nothing loops, nothing bounces, no parallax. Reduced motion turns all of it off.</p>
+    <div class="ds-card ds-reveal" data-ds-reveal style="padding:var(--s3)"><p class="ds-small">This card faded up as you scrolled to it. Shares Robert C. Pohlad bought: <span class="ds-num" style="color:var(--text)" data-ds-count="184646">184,646</span> (counts up once).</p></div>
+  </section>
+</main>
+
+<footer class="ds-wrap" style="padding:var(--s8) var(--s3);border-top:1px solid var(--line);margin-top:var(--s8)">
+  <p class="ds-small"><span class="ds-mark" style="font-size:16px">insidir.</span> © 2026 Aethric LLC · Research, not advice.</p>
+</footer>
+<script src="/assets/js/ds.js?v=1" defer></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
+</body>
+</html>
