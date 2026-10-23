@@ -11,7 +11,7 @@ import { brotliCompressSync,gzipSync,constants as zlibConstants } from "node:zli
 import { billingRoutes,createStripeClient,deleteAccount } from "./billing.mjs";
 import { creatorAdminRoutes } from "./creator-program.mjs";
 import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavailablePage } from "./paywall.mjs";
-import { billingSettings } from "./config.mjs";
+import { billingSettings, trialSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute,clientAddress } from "./company-routes.mjs";
 import { handlePublicPage } from "./public-pages.mjs";
@@ -702,7 +702,7 @@ async function route(req,res,ctx){
     const auth=await authorizeAdmin(req,{env:ctx.env,query:ctx.query,limiter:ctx.limiter});
     if(!auth.ok){await adminAudit(ctx.query,req,"admin.denied",p,{status:auth.status});throw failure(auth.status,auth.error)}
     await adminAudit(ctx.query,req,"admin.funnel",p,{via:auth.via},auth.actor);
-    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days")}));
+    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days"),trialDays:trialSettings().days}));
   }
   /* POST /v1/events: one first-party funnel event from a page (src/funnel.mjs lists what is accepted). Same
      origin only; a member's id is attached when the request carries their session. Always 204, so a page

@@ -11,6 +11,7 @@ import { purgeSecurityEvents } from "./security-events.mjs";
 import { purgeUserTokens } from "./account-security.mjs";
 import { purgeAdminAuth } from "./admin-auth.mjs";
 import { queueTrialReminders } from "./billing-notices.mjs";
+import { queueTrialEmails } from "./trial-emails.mjs";
 import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from "./research-events.mjs";
 import { loadOwnership } from "./sec.mjs";
 import { persistFiling } from "./db.mjs";
@@ -111,8 +112,9 @@ async function main() {
   if (workers && process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED === "1") every("house-disclosures", 6 * 60 * 60 * 1000, 2 * 60 * 1000, () => pollHouse({ run: query }));
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));
-  // Trial-ending reminders (a backstop for Stripe's trial_will_end), hourly; each subscription is reminded once.
-  if (workers && billingSettings().enabled) every("trial-reminders", 60 * 60 * 1000, 5 * 60 * 1000, () => queueTrialReminders(query));
+  // The trial's emails, hourly: day 1 (set up), day 5 (this week's insider moves) and, 24 hours before the $39 charge,
+  // the charge reminder (src/trial-emails.mjs, src/billing-notices.mjs). Each is queued once per subscription.
+  if (workers && billingSettings().enabled) every("trial-reminders", 60 * 60 * 1000, 5 * 60 * 1000, async () => ({ reminders: await queueTrialReminders(query), emails: await queueTrialEmails(query) }));
   // Email delivery: every minute when a provider is configured; otherwise messages wait in the outbox.
   const email = emailSettings();
   if (workers && email.enabled) {

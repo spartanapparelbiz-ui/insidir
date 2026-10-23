@@ -81,7 +81,7 @@ same job at once; each run updates `worker_heartbeats`.
 | `notifications` | 5 min | New events → `notifications` for members watching them. |
 | `alert-emails` / `daily-digests` | 5 min / hourly | Immediate alert emails; daily digests at each member's chosen hour. |
 | `email-delivery` | 1 min | Outbox delivery (only when a provider is configured). |
-| `billing-reconcile` / `trial-reminders` | 6 h / hourly | Stripe re-reads for lapsed periods; trial-ending reminders. |
+| `billing-reconcile` / `trial-reminders` | 6 h / hourly | Stripe re-reads for lapsed periods; the trial emails: day 1, day 5 and the charge reminder 24 hours before the $39 (`src/trial-emails.mjs`, `src/billing-notices.mjs`). |
 | `maintenance` | hourly | Expired sessions, rate-limit windows, used tokens, admin sessions, security events older than 180 days, abandoned email bodies. |
 
 ## 5. Monitoring

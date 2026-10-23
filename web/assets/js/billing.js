@@ -102,6 +102,8 @@
     $("[data-bl-dashboard]").hidden = !active;
     // Cancel online in one step, wherever the subscription can still bill and is not already set to stop.
     $("[data-bl-cancel]").hidden = !(enabled && customer && ["active", "trialing", "past_due", "unpaid"].includes(status) && !stopping);
+    // The trial's charge reminder links to billing.html#cancel: open the one-step cancel confirmation straight away.
+    if (location.hash === "#cancel" && !$("[data-bl-cancel]").hidden) { $("[data-bl-cancel-confirm]").hidden = false; history.replaceState(null, "", location.pathname + location.search); }
     if (stopping && active) { say("Your subscription is cancelled and will not renew. Access continues until " + (dateText(period) || "the end of the current period") + "."); return; }
     if (waiting) say("Waiting for Stripe to confirm your payment. This page updates as soon as it does; there's no need to pay again.");
     else if (!active && !enabled) say("Checkout isn't open yet, so no payment can be taken right now. To request access, email hello@aethric.llc.");

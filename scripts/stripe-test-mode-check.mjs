@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Stripe TEST-MODE verification of Insidir's offer: $1 today for 3 days, then $39 a month until cancelled.
+/* Stripe TEST-MODE verification of Insidir's offer: $1 today for 7 days, then $39 a month until cancelled.
  *
  *   STRIPE_TEST_SECRET_KEY=sk_test_... INSIDIR_STRIPE_PRICE_ID=price_... node scripts/stripe-test-mode-check.mjs
  *
@@ -12,6 +12,8 @@
  *   checkout-trial   a Checkout Session built with the engine's own parameters charges $1.00 today (amount_total 100)
  *   checkout-full    the same for a returning customer charges $39.00 today and carries no trial
  *   trial-start      a subscription with the same terms starts trialing with a paid $1.00 invoice
+ *   trial-length     its trial ends exactly 7 days after it starts (prints both dates)
+ *   first-invoice-scheduled  Stripe's preview of the next invoice: $39.00, due when the trial ends
  *   conversion       advancing the test clock past the trial: active, first $39.00 renewal invoice paid
  *   card-failure     with a declining card, the next renewal fails and the subscription becomes past_due
  *   refund           the $39.00 charge can be refunded
@@ -80,6 +82,14 @@ try {
     "trial_settings[end_behavior][missing_payment_method]": "cancel" });
   const first = await latestInvoice(sub.id);
   report("trial-start", sub.status === "trialing" && first?.amount_paid === trial.feeCents && first?.status === "paid", { status: sub.status, first_invoice_paid: first?.amount_paid, invoice_status: first?.status });
+  const day = t => new Date(Number(t) * 1000).toISOString();
+  report("trial-length", Number(sub.trial_end) - Number(sub.trial_start) === trial.days * 86400 && trial.days === 7,
+    { trial_start: day(sub.trial_start), trial_end: day(sub.trial_end), days: (Number(sub.trial_end) - Number(sub.trial_start)) / 86400 });
+  // The first $39 invoice Stripe has scheduled for the trial's end (create_preview; older API versions: invoices/upcoming).
+  const upcoming = await stripe.post("/invoices/create_preview", { subscription: sub.id }).catch(() => stripe.get("/invoices/upcoming", { subscription: sub.id }));
+  const nextAt = Number(upcoming?.next_payment_attempt || upcoming?.period_end || upcoming?.created || 0);
+  report("first-invoice-scheduled", upcoming?.amount_due === 3900 && upcoming?.currency === "usd" && Math.abs(nextAt - Number(sub.trial_end)) <= 3600,
+    { amount_due: upcoming?.amount_due ?? null, currency: upcoming?.currency ?? null, scheduled_for: nextAt ? day(nextAt) : null, trial_end: day(sub.trial_end) });
 
   await advance(clock, Number(sub.trial_end) + 3600);
   const converted = await stripe.get("/subscriptions/" + sub.id);

@@ -125,9 +125,9 @@ export const REPORT_SQL = `WITH w AS (SELECT * FROM funnel_events WHERE created_
     count(DISTINCT user_id) FILTER (WHERE event='checkout_expired')::int AS checkout_expired,
     count(DISTINCT user_id) FILTER (WHERE event IN ('first_research_completed','intelligence_first_used','first_watchlist_item','first_follow')
       AND user_id IN (SELECT user_id FROM w WHERE event='checkout_completed'))::int AS activated,
-    count(DISTINCT user_id) FILTER (WHERE event='checkout_completed' AND created_at < now() - interval '4 days')::int AS renewal_cohort,
+    count(DISTINCT user_id) FILTER (WHERE event='checkout_completed' AND created_at < now() - make_interval(days => $2))::int AS renewal_cohort,
     count(DISTINCT user_id) FILTER (WHERE event='subscription_renewed'
-      AND user_id IN (SELECT user_id FROM w WHERE event='checkout_completed' AND created_at < now() - interval '4 days'))::int AS renewed,
+      AND user_id IN (SELECT user_id FROM w WHERE event='checkout_completed' AND created_at < now() - make_interval(days => $2)))::int AS renewed,
     count(DISTINCT user_id) FILTER (WHERE event='subscription_canceled'
       AND user_id IN (SELECT user_id FROM w WHERE event='checkout_completed'))::int AS canceled,
     min(created_at) AS first_event
@@ -147,9 +147,11 @@ export const VARIANT_SQL = `WITH w AS (SELECT * FROM funnel_events WHERE created
   LEFT JOIN w p ON p.user_id=m.user_id AND p.event='checkout_completed'
   GROUP BY e.variant ORDER BY e.variant`;
 
-export async function funnelReport(run, { days = 30 } = {}) {
+// The renewal cohort is checkouts older than the trial (trialSettings().days, passed by the API) plus a day, so every member counted has reached their first $39.
+export async function funnelReport(run, { days = 30, trialDays = 7 } = {}) {
   const d = Math.max(1, Math.min(400, Number(days) || 30));
-  const t = (await run(REPORT_SQL, [d])).rows[0] || {};
+  const renewalAfterDays = trialDays + 1;
+  const t = (await run(REPORT_SQL, [d, renewalAfterDays])).rows[0] || {};
   const n = k => Number(t[k]) || 0;
   const stages = [
     { key: "landing", label: "Landing visitors", count: n("landing"), unit: "visitors" },
@@ -159,7 +161,7 @@ export async function funnelReport(run, { days = 30 } = {}) {
     { key: "checkout_started", label: "Started Stripe checkout", count: n("checkout_started"), unit: "accounts", rate: rate(n("checkout_started"), n("signup_completed")), of: "signup_completed" },
     { key: "paid", label: "Paid (verified by Stripe webhook)", count: n("paid"), unit: "accounts", rate: rate(n("paid"), n("checkout_started")), of: "checkout_started" },
     { key: "activated", label: "Reached first value after paying", count: n("activated"), unit: "accounts", rate: rate(n("activated"), n("paid")), of: "paid" },
-    { key: "renewed", label: "Renewed at $39 after the trial", count: n("renewed"), unit: "accounts", rate: rate(n("renewed"), n("renewal_cohort")), of: "paid more than 4 days ago (" + n("renewal_cohort") + ")" },
+    { key: "renewed", label: "Renewed at $39 after the trial", count: n("renewed"), unit: "accounts", rate: rate(n("renewed"), n("renewal_cohort")), of: "paid more than " + renewalAfterDays + " days ago (" + n("renewal_cohort") + ")" },
     { key: "canceled", label: "Cancelled", count: n("canceled"), unit: "accounts", rate: rate(n("canceled"), n("paid")), of: "paid" }
   ];
   const variants = (await run(VARIANT_SQL, [d])).rows.map(r => ({ variant: r.variant, exposed: Number(r.exposed) || 0, cta: Number(r.cta) || 0, signups: Number(r.signups) || 0, paid: Number(r.paid) || 0 }));

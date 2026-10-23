@@ -6,7 +6,7 @@ it has been reviewed by a lawyer.** Every item below is a question engineering c
 be treated as resolved until a qualified attorney signs it off (record the name and date in the last column of
 section 12).
 
-Product facts that apply throughout: Insidir (operated by Aethric LLC) is a $1-for-3-days, then $39/month research
+Product facts that apply throughout: Insidir (operated by Aethric LLC) is a $1-for-7-days, then $39/month research
 subscription built on public SEC filings. It runs in `RESEARCH_ONLY` mode: personalized advice and trading endpoints
 are refused by the server (`src/capabilities.mjs`); politician trades, social data, crypto attribution and read-only
 brokerage links are off. See [COMPLIANCE.md](COMPLIANCE.md) for the earlier audit.
@@ -29,7 +29,7 @@ brokerage links are off. See [COMPLIANCE.md](COMPLIANCE.md) for the earlier audi
 |---|---|---|
 | B-1 | Does the checkout flow satisfy ROSCA (15 U.S.C. §8403), FTC Act §5 and each targeted state's automatic-renewal law (California B&P §17600 et seq. as amended by AB 2863; New York, Illinois, Colorado, Virginia, others)? | Terms for the account's exact offer shown before checkout; separate unticked consent box; consent recorded with text, version, time, IP, user agent; Stripe's page repeats the terms. |
 | B-2 | Is the **acknowledgment email** content sufficient where the law requires one (California requires the terms, cancellation policy and how to cancel, in a form the consumer can retain)? | Sent after checkout with the consented text, amounts, renewal, "How to cancel" and a Billing link; body retained as a record. Draft wording in `src/billing-notices.mjs`. |
-| B-3 | Is a **trial-ending reminder** required for a paid 3-day trial, and is "about 24-48 hours before, plus Stripe's trial_will_end" adequate in timing and content? | One reminder per subscription, from Stripe's event or an hourly backstop when the trial ends within 48 hours. |
+| B-3 | Is a **trial-ending reminder** required for a paid 7-day trial, and is "24 hours before the charge" adequate in timing and content? | One reminder per subscription, queued by the hourly worker when the trial ends within 24 hours (six days into a 7-day trial); Stripe's trial_will_end queues it only for a trial ending within 48 hours. It states the date and time of the $39 charge, what the member keeps and links to the one-step cancel. Trial emails on day 1 and day 5 are optional mail (src/trial-emails.mjs). |
 | B-4 | Is **online one-step cancellation** compliant everywhere targeted (including "click to cancel" state laws), and is "access until the end of the paid period, no partial refunds unless the law requires" acceptable? | Cancel button with one confirmation; cancellation email; account deletion cancels first. |
 | B-5 | Must monthly renewals have **pre-renewal notices** in any targeted state, and is the 30-days-before-price-change promise in the Subscription policy sufficient? | Receipts after each payment; no pre-renewal notice for monthly renewals; no price-change mailing tool exists (no price change is planned). |
 | B-6 | How long must consent and billing records be kept, and may they be kept after account deletion (with the email address, unlinked)? | Kept indefinitely today; deletion job not built pending this answer. |

@@ -7,8 +7,9 @@
  *
  *   acknowledgment     after checkout: the offer as consented (from billing_consents), the amount today, the
  *                      recurring price, the first renewal date and how to cancel online
- *   trial_reminder     before a trial converts (Stripe's trial_will_end, and the renewal-notice worker ~24-48 h
- *                      before the trial's end as a backstop): the date and the $39 that follows unless cancelled
+ *   trial_reminder     24 hours before a trial converts (the hourly worker; Stripe's trial_will_end only for trials
+ *                      ending within 48 hours): the date, the $39 that follows, what the member keeps, a cancel link
+ *   (the trial's day-1 and day-5 emails are in src/trial-emails.mjs)
  *   payment_receipt    each paid invoice with an amount: what was charged, for which period, how to cancel
  *   payment_failed     a failed charge: access is paused until the card is updated; no new charge is made by us
  *   cancel_confirmed   cancellation: no further charges; access until the end of the paid period
@@ -17,7 +18,7 @@
  * Wording that applies the law (California's acknowledgment rules and others) needs counsel's sign-off; see
  * docs/ATTORNEY-REVIEW.md. */
 import { enqueueEmail, renderEmail } from "./email.mjs";
-import { emailSettings } from "./config.mjs";
+import { emailSettings, trialSettings } from "./config.mjs";
 import { PLAN_CENTS } from "./billing.mjs";
 
 const usd = cents => "$" + (Number(cents || 0) / 100).toFixed(2);
@@ -50,7 +51,7 @@ export async function acknowledgeCheckout(query, session, { env = process.env } 
   const today = Number.isFinite(Number(session.amount_total)) ? Number(session.amount_total) : consent?.amount_today_cents;
   const trial = consent ? consent.offer === "trial" : today < PLAN_CENTS;
   const paragraphs = [
-    trial ? `Thank you for starting Insidir Pro. You were charged ${usd(today)} today for a ${consent?.trial_days || 3}-day trial with full access.`
+    trial ? `Thank you for starting Insidir Pro. You were charged ${usd(today)} today for a ${consent?.trial_days || trialSettings(env).days}-day trial with full access.`
       : `Thank you for subscribing to Insidir Pro. You were charged ${usd(today)} today for your first month.`,
     trial ? `Unless you cancel before the trial ends, your subscription renews automatically at ${usd(consent?.recurring_cents || PLAN_CENTS)} per month, charged to the payment method you provided when the trial ends and then every month, until you cancel.`
       : `Your subscription renews automatically at ${usd(consent?.recurring_cents || PLAN_CENTS)} per month, charged to the payment method you provided, until you cancel.`,
@@ -63,15 +64,25 @@ export async function acknowledgeCheckout(query, session, { env = process.env } 
       ...(consent?.created_at ? [{ label: "Terms agreed", value: new Date(consent.created_at).toISOString().replace("T", " ").slice(0, 16) + " UTC" }] : [])] });
 }
 
-export async function trialReminder(query, { customer, subscription, trialEnd }, { env = process.env } = {}) {
+/* The charge reminder (the trial's "day 6" email): sent 24 hours before the trial converts, so nobody is surprised by
+ * the $39. It says when the charge happens, what the member keeps by staying, and links straight to cancelling. */
+export async function trialReminder(query, { customer, subscription, trialEnd }, { env = process.env, now = Date.now() } = {}) {
   const account = await accountFor(query, customer);
-  const end = trialEnd instanceof Date ? trialEnd : fromUnix(trialEnd);
-  if (!account || !subscription || !end) return { queued: false };
+  const end = trialEnd instanceof Date ? trialEnd : typeof trialEnd === "string" ? new Date(trialEnd) : fromUnix(trialEnd);
+  if (!account || !subscription || !end || Number.isNaN(end.getTime())) return { queued: false };
+  const site = emailSettings(env).publicUrl;
+  const kept = (await query(`SELECT (SELECT count(*) FROM watchlist WHERE user_id=$1)::int AS companies,
+    (SELECT count(*) FROM followed_people WHERE user_id=$1)::int AS people`, [account.id]).catch(() => ({ rows: [] }))).rows[0] || {};
+  const tomorrow = end.getTime() - now <= 36 * 3600_000;
+  const when = `${tomorrow ? "tomorrow, " : ""}${longDate(end)} at ${end.toISOString().slice(11, 16)} UTC`;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   return queue(query, account, { env, kind: "trial_reminder", key: subscription, // a subscription has one trial: one reminder, whichever source asks first
-    subject: `Your Insidir trial ends ${longDate(end)}`, heading: "Your trial is ending",
-    paragraphs: [`Your Insidir trial ends on ${longDate(end)}. Unless you cancel before then, your subscription renews automatically and your payment method is charged ${usd(PLAN_CENTS)}, then ${usd(PLAN_CENTS)} every month until you cancel.`,
-      "To avoid the charge, cancel from Billing before the trial ends. Nothing else is needed."],
-    lines: [{ label: "Trial ends", value: longDate(end) }, { label: "Then", value: usd(PLAN_CENTS) + " / month" }] });
+    subject: tomorrow ? `Tomorrow your Insidir trial ends and ${usd(PLAN_CENTS)} is charged` : `Your Insidir trial ends ${longDate(end)}`,
+    heading: tomorrow ? `Tomorrow you'll be charged ${usd(PLAN_CENTS)}` : "Your trial is ending",
+    paragraphs: [`Your Insidir trial ends ${when}. Unless you cancel before then, your subscription renews automatically and your payment method is charged ${usd(PLAN_CENTS)}, then ${usd(PLAN_CENTS)} every month until you cancel.`,
+      `What you keep: your watchlist (${plural(Number(kept.companies) || 0, "company", "companies")}) and the ${plural(Number(kept.people) || 0, "person", "people")} you follow, alerts within minutes of each new Form 4, every insider's track record and signal score, and your saved research. Every figure links to its SEC filing.`,
+      `Don't want to continue? Cancel in one step before the trial ends and you are not charged: ${site}/billing.html#cancel . Nothing else is needed.`],
+    lines: [{ label: "Trial ends", value: longDate(end) }, { label: "Then", value: usd(PLAN_CENTS) + " / month" }, { label: "Cancel", value: site + "/billing.html#cancel" }] });
 }
 
 export async function paymentReceipt(query, invoice, { env = process.env } = {}) {
@@ -120,12 +131,14 @@ export async function refundIssued(query, charge, { env = process.env } = {}) {
     lines: [{ label: "Refunded", value: usd(charge.amount_refunded) }] });
 }
 
-/* The renewal-notice worker: a trial reminder for every trial ending in the next 48 hours that has not had one
- * (the dedupe key makes a second pass a no-op). Stripe's own trial_will_end may already have queued it. */
+/* The charge-reminder worker (hourly): a reminder for every trial ending in the next 24 hours that has not had one
+ * (the dedupe key makes a second pass a no-op), so on a 7-day trial it goes out six days in. Stripe's own
+ * trial_will_end (three days before the end) queues it only for trials ending within 48 hours (billing.mjs). */
+export const REMINDER_HOURS_BEFORE_END = 24;
 export async function queueTrialReminders(query, { env = process.env, limit = 200 } = {}) {
   const due = await query(`SELECT stripe_customer_id,stripe_subscription_id,current_period_end FROM users
-    WHERE subscription_status='trialing' AND NOT cancel_at_period_end AND current_period_end BETWEEN now() AND now()+interval '48 hours'
-    AND stripe_customer_id IS NOT NULL AND stripe_subscription_id IS NOT NULL ORDER BY current_period_end LIMIT $1`, [limit]);
+    WHERE subscription_status='trialing' AND NOT cancel_at_period_end AND current_period_end BETWEEN now() AND now()+make_interval(hours => $2)
+    AND stripe_customer_id IS NOT NULL AND stripe_subscription_id IS NOT NULL ORDER BY current_period_end LIMIT $1`, [limit, REMINDER_HOURS_BEFORE_END]);
   let queued = 0;
   for (const r of due.rows) if ((await trialReminder(query, { customer: r.stripe_customer_id, subscription: r.stripe_subscription_id, trialEnd: r.current_period_end }, { env })).queued) queued++;
   return { checked: due.rows.length, queued };

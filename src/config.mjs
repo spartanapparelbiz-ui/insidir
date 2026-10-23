@@ -48,16 +48,20 @@ export function billingSettings(env = process.env) {
 }
 
 /* The paid trial: a new subscriber pays a one-time fee (default $1) at checkout, uses the whole product
- * for the trial days (default 3), and the subscription then renews at the plan's price unless it is
- * cancelled first. One trial per account and per Stripe customer (see billing.mjs). INSIDIR_TRIAL=0
+ * for the trial days (default 7), and the subscription then renews at the plan's price unless it is
+ * cancelled first. The length is fixed on each subscription when its checkout is created (Stripe's trial_end), so
+ * changing it affects new checkouts only; trials already running keep the end date they started with. One trial per account and per Stripe customer (see billing.mjs). INSIDIR_TRIAL=0
  * switches it off; days and fee are clamped so a typo cannot give the product away or overcharge. */
+// The trial length the public pages, terms and emails state ("7 days for $1"). INSIDIR_TRIAL_DAYS can override it for
+// checkout, but then the published copy is wrong: ops.mjs raises an alert when the two differ.
+export const TRIAL_DAYS = 7;
 export function trialSettings(env = process.env) {
-  const days = Math.trunc(Number(env.INSIDIR_TRIAL_DAYS ?? 3));
+  const days = Math.trunc(Number(env.INSIDIR_TRIAL_DAYS ?? TRIAL_DAYS));
   const feeCents = Math.trunc(Number(env.INSIDIR_TRIAL_FEE_CENTS ?? 100));
   const enabled = String(env.INSIDIR_TRIAL ?? "").trim() !== "0";
   return Object.freeze({
     enabled,
-    days: Number.isFinite(days) ? Math.min(14, Math.max(1, days)) : 3,
+    days: Number.isFinite(days) ? Math.min(14, Math.max(1, days)) : TRIAL_DAYS,
     feeCents: Number.isFinite(feeCents) ? Math.min(3900, Math.max(50, feeCents)) : 100
   });
 }

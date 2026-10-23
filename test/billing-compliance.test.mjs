@@ -34,10 +34,10 @@ const post = (url, origin = "https://insidir.example") => Object.assign([], { me
 
 test("the offer: the trial for new accounts, the full price after a trial or a past subscription, terms written out", () => {
   const now = Date.parse("2026-10-18T12:00:00Z");
-  const trial = currentOffer({ trialUsed: false, trial: { enabled: true, days: 3, feeCents: 100 }, now });
-  assert.deepEqual([trial.kind, trial.todayCents, trial.recurringCents, trial.trialDays, trial.disclosureVersion], ["trial", 100, PLAN_CENTS, 3, DISCLOSURE_VERSION]);
-  assert.equal(trial.firstRenewalAt, "2026-10-21T12:00:00.000Z");
-  assert.match(trial.disclosure, /^You agree to pay \$1\.00 today for a 3-day trial of Insidir Pro\. Unless you cancel before your trial ends \(on or about October 21, 2026\), your subscription renews automatically and your payment method is charged \$39\.00 per month/);
+  const trial = currentOffer({ trialUsed: false, trial: { enabled: true, days: 7, feeCents: 100 }, now });
+  assert.deepEqual([trial.kind, trial.todayCents, trial.recurringCents, trial.trialDays, trial.disclosureVersion], ["trial", 100, PLAN_CENTS, 7, DISCLOSURE_VERSION]);
+  assert.equal(trial.firstRenewalAt, "2026-10-25T12:00:00.000Z");
+  assert.match(trial.disclosure, /^You agree to pay \$1\.00 today for a 7-day trial of Insidir Pro\. Unless you cancel before your trial ends \(on or about October 25, 2026\), your subscription renews automatically and your payment method is charged \$39\.00 per month/);
   assert.match(trial.disclosure, /You can cancel any time online from Billing/);
   const full = currentOffer({ trialUsed: true, trial: { enabled: true, days: 3, feeCents: 100 }, now });
   assert.deepEqual([full.kind, full.todayCents, full.trialDays], ["full", 3900, 0]);

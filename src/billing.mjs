@@ -1,5 +1,5 @@
 /* Insidir billing: one plan, Insidir Pro at $39/month (the configured Stripe Price), started with a
- * paid trial: $1 at checkout for 3 days of full access, then $39 a month until cancelled (trialSettings
+ * paid trial: $1 at checkout for 7 days of full access, then $39 a month until cancelled (trialSettings
  * in config.mjs). One trial per account: an account that has trialled before, or whose Stripe customer
  * has ever had a subscription for the plan, checks out at the full price.
  *
@@ -98,7 +98,7 @@ export function verifyStripeSignature(raw, signature, secret, now = Date.now()) 
  * One function decides what a checkout will charge (the trial or the full price) and words the automatic-renewal
  * terms the customer must accept, so the subscribe page, the consent record and Stripe all say the same thing.
  * DISCLOSURE_VERSION changes whenever the wording does. */
-export const DISCLOSURE_VERSION = "2026-10-18";
+export const DISCLOSURE_VERSION = "2026-10-23"; // 2026-10-23: the trial is 7 days (was 3)
 export const PLAN_CENTS = 3900;
 
 /* The published offer is $39.00 a month in US dollars, and that is what the customer agrees to before checkout. The
@@ -558,7 +558,9 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       if (event.type === "customer.subscription.trial_will_end" && CUSTOMER_ID.test(String(obj.customer || "")))
       {
         await logBillingEvent(query, { customer: obj.customer, kind: "trial_will_end", detail: { subscription: obj.id, trialEnd: obj.trial_end ?? null } });
-        if (hasPrice(obj, settings.priceId) && obj.status === "trialing" && obj.cancel_at_period_end !== true) await notices.trialReminder(query, { customer: obj.customer, subscription: obj.id, trialEnd: obj.trial_end }, { env });
+        // Stripe sends this three days before a trial ends. On a 7-day trial that is too early for "tomorrow you'll be
+        // charged": the hourly worker sends that 24 hours before the end. Short trials (and one ended early) get it now.
+        if (hasPrice(obj, settings.priceId) && obj.status === "trialing" && obj.cancel_at_period_end !== true && Number(obj.trial_end) * 1000 - Date.now() <= 48 * 3600_000) await notices.trialReminder(query, { customer: obj.customer, subscription: obj.id, trialEnd: obj.trial_end }, { env });
       }
       // The first $39 payment: the plan's first invoice, or after a paid trial its first renewal (the trial
       // invoice carries only the trial fee and is never eligible). One commission per referred account.

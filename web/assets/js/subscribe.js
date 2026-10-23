@@ -38,18 +38,18 @@
   };
 
   /* Headline and lead for every state (the plan card carries the detail and the action). */
-  const PLAN = "One plan covers everything below. Start with 3 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing.";
+  const PLAN = "One plan covers everything below. Start with 7 days for $1; after that it is $39 a month, billed through Stripe, and you can cancel any time from Billing.";
   const COPY = {
     // While the account loads, the page reads as most visitors will see it (a new account, eligible for the trial), so
     // the answer usually changes nothing on screen.
-    loading: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
-    ready: ["Start your 3-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
+    loading: ["Start your 7-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
+    ready: ["Start your 7-day trial for $1.", PLAN + " One trial per account: if you have had Insidir before, checkout shows $39."],
     lapsed: ["Welcome back. Subscribe again to reopen your workspace.", "Your watchlist, research journal and holdings are still here. " + PLAN],
     past_due: ["Update your payment method.", "Your last payment didn't go through, so the workspace is paused. Update your card in Stripe's billing portal; access returns as soon as Stripe confirms the payment. Nothing you saved has been removed."],
     unpaid: ["Update your payment method.", "Your subscription has an unpaid invoice, so the workspace is paused. Pay it from Stripe's billing portal; access returns as soon as Stripe confirms the payment. Nothing you saved has been removed."],
     incomplete: ["Finish your first payment.", "Stripe is still waiting for the first payment of your subscription. Complete it in Stripe's billing portal. If you've only just paid, give it a minute and reload this page."],
     paused: ["Resume your subscription.", "Your subscription is paused, so the workspace is closed for now. Resume it in Stripe's billing portal; nothing you saved has been removed."],
-    disabled: ["Checkout isn't open yet.", "Insidir is one plan: a 3-day trial for $1, then $39 a month. Stripe checkout hasn't been switched on yet, so no payment can be taken today."],
+    disabled: ["Checkout isn't open yet.", "Insidir is one plan: a 7-day trial for $1, then $39 a month. Stripe checkout hasn't been switched on yet, so no payment can be taken today."],
     active: ["Your subscription is active.", "Everything below is already open to you. Your plan, renewal date and payment method live in Billing."],
     signedout: ["Log in to subscribe.", "A subscription belongs to an Insidir account, so log in first. " + PLAN],
     error: ["We couldn't check your account.", "Insidir didn't answer just now, so we can't tell whether your subscription is active. Try again in a moment."]
@@ -87,7 +87,7 @@
     // The headline promises what the button does: an account that has had its trial is offered the monthly plan.
     if (!trial && body.dataset.pwState === "ready") {
       title.textContent = "Subscribe to Insidir.";
-      lead.textContent = "This account has already used its 3-day trial, so checkout charges " + money(offer.recurringCents) + " today, then " + money(offer.recurringCents) + " a month through Stripe until you cancel. Cancel online from Billing in one step.";
+      lead.textContent = "This account has already used its 7-day trial, so checkout charges " + money(offer.recurringCents) + " today, then " + money(offer.recurringCents) + " a month through Stripe until you cancel. Cancel online from Billing in one step.";
     }
     delete $("#pw-subscribe").dataset.idleLabel;
   }

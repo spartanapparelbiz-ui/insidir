@@ -2,7 +2,7 @@
  *
  * The product (dashboard, research desk, companies, company reports, filings, people,
  * person files, watchlist, portfolio, alerts and every API that feeds them) is only usable with an
- * active paid subscription, which starts with a paid trial ($1 for 3 days, then $39 a month; see
+ * active paid subscription, which starts with a paid trial ($1 for 7 days, then $39 a month; see
  * billing.mjs). There is no free tier. A trialing subscription grants access like an active one.
  *
  * Everything here is a pure function of its inputs (the request path, the user row and

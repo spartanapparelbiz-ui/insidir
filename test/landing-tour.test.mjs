@@ -34,10 +34,10 @@ test("the landing page shows the system: four stages, five capabilities, the pro
 test("the landing page offers the paid trial and links the free public insider pages", async () => {
   await withServer(async base => {
     const home = await (await fetch(base + "/")).text();
-    assert.match(home, /<span class="lp-deal"><b>3 days<\/b> for \$1<\/span><span class="lp-terms__price">Then <b>\$39<\/b>\/month<\/span><span>Cancel online<\/span>/, "the offer sits under the first button with the monthly price and online cancellation beside it");
-    assert.match(home, /After the 3-day trial, \$39 is charged every month/);
-    assert.match(home, /Start 3 days for \$1/);
-    assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 3 days<\/p>/);
+    assert.match(home, /<span class="lp-deal"><b>7 days<\/b> for \$1<\/span><span class="lp-terms__price">Then <b>\$39<\/b>\/month<\/span><span>Cancel online<\/span>/, "the offer sits under the first button with the monthly price and online cancellation beside it");
+    assert.match(home, /After the 7-day trial, \$39 is charged every month/);
+    assert.match(home, /Start 7 days for \$1/);
+    assert.match(home, /<p class="lp-plan__amount">\$39<span>\/ month<\/span><\/p>\s*<p class="lp-plan__trial"><span>Offer<\/span><b>\$1<\/b> for your first 7 days<\/p>/);
     assert.doesNotMatch(home, /no free trial/i);
     assert.match(home, /href="\/insider-trading"/);
     assert.equal([...home.matchAll(/Financial intelligence\.<br><em>Connected\.<\/em>/g)].length, 2, "both headline arms carry the primary headline");
@@ -51,10 +51,10 @@ test("the landing page offers the paid trial and links the free public insider p
     assert.doesNotMatch(home, /AI agent|chatbot|virtual (financial )?adviser/i, "Insidir is not presented as an AI conversation product");
     assert.match(home, /research leads, not recommendations/);
     const pricing = await (await fetch(base + "/pricing.html")).text();
-    assert.match(pricing, /3 days for \$1/);
+    assert.match(pricing, /7 days for \$1/);
     assert.doesNotMatch(pricing, /no free trial/i);
     const terms = await (await fetch(base + "/terms.html")).text();
-    assert.match(terms, /3-day trial for \$1/);
+    assert.match(terms, /7-day trial for \$1/);
     assert.match(terms, /If you cancel before the trial ends, you are not charged again/);
   });
 });

@@ -100,7 +100,7 @@ test("company page: real lines, escaped, totals from original filings, insiders 
   assert.match(r.body, /Open-market purchase <span class="pp-code">P<\/span>/);
   assert.match(r.body, /\$42K/);
   assert.match(r.body, /−\$1\.21M/, "net is purchases minus sales");
-  assert.match(r.body, /<strong>\$1<\/strong><span>for 3 days<\/span>/);
+  assert.match(r.body, /<strong>\$1<\/strong><span>for 7 days<\/span>/);
   assert.match(r.body, /Then \$39 a month/);
   assert.match(r.body, /href="https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/99999\//);
   assert.match(r.body, /"@type":"Corporation","name":"Example Corp","tickerSymbol":"EXMP"/);

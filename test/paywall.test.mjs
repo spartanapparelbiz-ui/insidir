@@ -296,7 +296,7 @@ function fakeQuery(rows = {}, log = []) {
   return fn;
 }
 // A checkout request as the subscribe page sends it: JSON consent to the offer it showed.
-const consentBody = (offer = "trial") => Buffer.from(JSON.stringify({ consent: true, offer, disclosureVersion: "2026-10-18" }));
+const consentBody = (offer = "trial") => Buffer.from(JSON.stringify({ consent: true, offer, disclosureVersion: "2026-10-23" }));
 const checkoutReq = (origin = "https://insidir.example", offer = "trial") =>
   Object.assign([consentBody(offer)], { method: "POST", url: "/v1/billing/checkout", headers: { origin, "content-type": "application/json" } });
 const stripeError = (stripeStatus, message = "Stripe failed") => Object.assign(new Error(message), { status: 400, stripeStatus });
@@ -598,8 +598,8 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.deepEqual({ ...replies.at(-1), body: status }, { status: 200, body: { billingEnabled: true, plan: "none", active: false, complimentary: false, subscriptionStatus: null, currentPeriodEnd: null, hasCustomer: false, cancelAtPeriodEnd: false } });
   // The offer the subscribe page shows: the trial for a new account, with the renewal terms written out.
   assert.equal(offer.kind, "trial");
-  assert.deepEqual([offer.todayCents, offer.recurringCents, offer.trialDays, offer.disclosureVersion], [100, 3900, 3, "2026-10-18"]);
-  assert.match(offer.disclosure, /\$1\.00 today for a 3-day trial.*renews automatically.*\$39\.00 per month.*until you cancel.*cancel any time online/);
+  assert.deepEqual([offer.todayCents, offer.recurringCents, offer.trialDays, offer.disclosureVersion], [100, 3900, 7, "2026-10-23"]);
+  assert.match(offer.disclosure, /\$1\.00 today for a 7-day trial.*renews automatically.*\$39\.00 per month.*until you cancel.*cancel any time online/);
   assert.ok(Date.parse(offer.firstRenewalAt) > Date.now());
   await billingRoutes(req("GET", "/v1/billing/status"), {}, "/v1/billing/status", json,
     deps(USERS.paid, { "SELECT email": { rows: [{ ...USERS.paid, stripe_customer_id: "cus_1" }] } }));
@@ -619,7 +619,7 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   const posted = [];
   const stripe = fakeStripe({ "POST /customers": { id: "cus_new" }, "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/x" }; } });
   // Without ticking the consent box (or with stale terms) nothing reaches Stripe.
-  for (const body of [{}, { consent: false, offer: "trial", disclosureVersion: "2026-10-18" }, { consent: true, offer: "trial", disclosureVersion: "2020-01-01" }, { consent: true, offer: "cheap", disclosureVersion: "2026-10-18" }])
+  for (const body of [{}, { consent: false, offer: "trial", disclosureVersion: "2026-10-23" }, { consent: true, offer: "trial", disclosureVersion: "2020-01-01" }, { consent: true, offer: "cheap", disclosureVersion: "2026-10-23" }])
     await assert.rejects(billingRoutes(Object.assign([Buffer.from(JSON.stringify(body))], { method: "POST", url: "/v1/billing/checkout", headers: { origin: "https://insidir.example", "content-type": "application/json" } }), {}, "/v1/billing/checkout", json,
       deps({ ...USERS.none, id: randomUUID() }, {}, stripe)), e => e.status === 400 && /tick the box/.test(e.message), JSON.stringify(body));
   assert.equal(posted.length, 0);
@@ -627,7 +627,7 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   await billingRoutes(checkoutReq(), {}, "/v1/billing/checkout", json, { env: BILLING, currentUser: async () => USERS.none, stripe, query: consentQuery });
   // The consent is recorded (offer, amounts, the exact terms shown) before Stripe is asked, and tied to the checkout.
   const recorded = consentQuery.statements.find(x => x.sql.startsWith("INSERT INTO billing_consents"));
-  assert.deepEqual(recorded.params.slice(0, 7), [USERS.none.id, USERS.none.email, "trial", 100, 3900, 3, "2026-10-18"]);
+  assert.deepEqual(recorded.params.slice(0, 7), [USERS.none.id, USERS.none.email, "trial", 100, 3900, 7, "2026-10-23"]);
   assert.match(recorded.params[7], /renews automatically/);
   assert.equal(posted[0]["metadata[insidir_consent_id]"], "41");
   assert.deepEqual(replies.at(-1), { status: 200, body: { url: "https://checkout.stripe.com/c/pay/x" } });
@@ -636,14 +636,14 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.equal(posted[0]["line_items[0][price]"], "price_pro");
   assert.equal(posted[0].customer, "cus_new");
   assert.equal(posted[0].mode, "subscription");
-  // A first subscription starts with the paid trial: $1 today, 3 days, then the plan's $39 a month.
-  assert.equal(posted[0]["subscription_data[trial_period_days]"], "3");
+  // A first subscription starts with the paid trial: $1 today, 7 days, then the plan's $39 a month.
+  assert.equal(posted[0]["subscription_data[trial_period_days]"], "7");
   assert.equal(posted[0]["line_items[1][price_data][unit_amount]"], "100");
   assert.equal(posted[0]["line_items[1][price_data][currency]"], "usd");
   assert.equal(posted[0]["line_items[1][quantity]"], "1");
   assert.equal(posted[0].payment_method_collection, "always", "a card is collected so the plan can renew");
   assert.equal(posted[0]["subscription_data[trial_settings][end_behavior][missing_payment_method]"], "cancel");
-  assert.match(posted[0]["custom_text[submit][message]"], /\$1 today for 3 days.*\$39 a month/);
+  assert.match(posted[0]["custom_text[submit][message]"], /\$1 today for 7 days.*\$39 a month/);
 
   // One trial per account: an account that has trialled before checks out at the full price.
   // ...and agreeing to the trial is not agreeing to $39 today: a changed offer is refused until the customer agrees again.
@@ -1079,5 +1079,5 @@ test("paid trial: a returning customer whose Stripe history has the plan checks 
     "POST /checkout/sessions": (path, params) => { posted.push(params); return { url: "https://checkout.stripe.com/c/pay/z" }; } });
   await billingRoutes(checkoutReq(undefined, "trial"), {}, "/v1/billing/checkout", json,
     { env: BILLING, currentUser: async () => ({ ...user, id: randomUUID() }), stripe: other, query });
-  assert.equal(posted[1]["subscription_data[trial_period_days]"], "3");
+  assert.equal(posted[1]["subscription_data[trial_period_days]"], "7");
 });

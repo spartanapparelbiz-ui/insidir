@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { secHealth } from "./sec.mjs";
 import { capabilitySummary } from "./capabilities.mjs";
 import { sourceRegistry } from "./analysis.mjs";
-import { billingSettings, emailSettings, verificationRequired } from "./config.mjs";
+import { billingSettings, emailSettings, verificationRequired, trialSettings, TRIAL_DAYS } from "./config.mjs";
 
 const lockId = name => Number.parseInt(createHash("sha256").update("insidir-worker:" + name).digest("hex").slice(0, 8), 16) | 0;
 
@@ -149,6 +149,8 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const stale = coverage.quality.find(c => c.key === "stale_filings");
     if (stale?.stale) alerts.push({ area: "coverage", level: "stale", detail: "No new Form 4 imported for more than 4 days" });
   }
+  const trial = trialSettings(env);
+  if (trial.enabled && trial.days !== TRIAL_DAYS) alerts.push({ area: "billing", level: "warning", detail: `INSIDIR_TRIAL_DAYS gives new checkouts a ${trial.days}-day trial, but the site, terms and emails promise ${TRIAL_DAYS} days` });
   for (const alert of spendAlerts(ai)) alerts.push(alert);
   if (ingestion?.staleness && ingestion.staleness.status !== "ok") alerts.push({ area: "ingestion", level: ingestion.staleness.status, detail: ingestion.staleness.reasons.join("; ") });
   if (researchEvents?.builder?.pending_filings > 500) alerts.push({ area: "research-events", level: "warning", detail: `${researchEvents.builder.pending_filings} parsed filings not yet turned into events` });
