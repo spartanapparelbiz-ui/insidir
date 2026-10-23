@@ -284,7 +284,7 @@ Deploy this repository as **insidir-engine** on Railway, connected to Railway Po
 - The paywall trusts Stripe's subscription status as stored by the webhook (or `?refresh=1`, or a checkout attempt). If webhooks are not delivered and nobody refreshes, a cancellation reaches Insidir late; Stripe retries failed webhooks for three days. Account deletion and checkout do not depend on the stored status: they re-read Stripe.
 - The one-billing-change-per-account lock is per process (rate limits are shared, this lock is not); Insidir runs as a single service. With several instances, the Stripe re-reads, the expiry of earlier open Checkout pages and the orphaned-checkout safety net still apply.
 - Account deletion treats a customer that does not exist in the configured Stripe account as unable to bill. If the secret key belongs to a different Stripe account than the one that billed the customer, cancel that subscription in the right Stripe dashboard.
-- Email verification exists but is only enforced once an email provider is configured (or `INSIDIR_REQUIRE_EMAIL_VERIFICATION=1`); until then a complimentary address must be registered by its owner before it is listed.
+- There is no email-verification step. A complimentary address grants access only after its owner signs in with an emailed code (which proves the address).
 - No personalized trading advice, autonomous strategies, licensed political feed, crypto watcher, social scan, or push notifications have been activated. Read-only brokerage access requires configuration and real integration tests; it is not live by default.
 
 ## Insidir Intelligence

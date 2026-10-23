@@ -14,14 +14,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import { hashPassword, passwordMatches } from "./auth.mjs";
 import { enqueueEmail, renderEmail } from "./email.mjs";
-import { emailSettings, verificationRequired } from "./config.mjs";
+import { emailSettings } from "./config.mjs";
 import { logSecurityEvent } from "./security-events.mjs";
 
 const sha = s => createHash("sha256").update(s).digest("hex");
 const fail = (status, message) => Object.assign(new Error(message), { status });
 export const VERIFY_HOURS = 48, RESET_MINUTES = 60;
 
-export { verificationRequired };
 
 async function issueToken(query, userId, email, purpose) {
   const token = randomBytes(32).toString("hex");

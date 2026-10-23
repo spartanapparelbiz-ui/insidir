@@ -41,11 +41,7 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
   const access = async cookie => (await call("/v1/me", { cookie })).json.access;
   const product = async cookie => (await call("/v1/filings", { cookie })).status;
   const mails = async (userId, kind) => (await q("SELECT * FROM email_outbox WHERE user_id=$1 AND kind=$2 ORDER BY id", [userId, kind])).rows;
-  const verify = async (email, cookie) => {
-    const mail = (await q("SELECT text_body FROM email_outbox WHERE kind='verify_email' AND to_email=$1 ORDER BY id DESC LIMIT 1", [email])).rows[0];
-    const token = mail.text_body.match(/#token=([a-f0-9]{64})/)[1];
-    assert.equal((await call("/v1/auth/verify-email", { method: "POST", body: { token }, cookie })).status, 200);
-  };
+
   const signup = async (tag, ref) => {
     const email = `${tag}-${randomUUID()}@example.com`;
     const r = await call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD, ...(ref ? { ref } : {}) } });
@@ -60,13 +56,13 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
   const A = await signup("member", code);
   let subA, firstInvoice;
 
-  await t.test("a new account: no access, eligible for the $1 trial, terms shown, verification first", async () => {
+  await t.test("a new account: no access, eligible for the $1 trial, terms shown, no verification step", async () => {
     assert.equal((await access(A.cookie)).active, false);
     assert.equal(await product(A.cookie), 402);
     const status = (await call("/v1/billing/status", { cookie: A.cookie })).json;
     assert.deepEqual([status.offer.kind, status.offer.todayCents, status.offer.recurringCents, status.offer.trialDays], ["trial", 100, 3900, 7]);
-    assert.equal((await checkout(A.cookie, "trial")).status, 403, "unverified address: checkout waits for confirmation");
-    await verify(A.email, A.cookie);
+    // No email verification: nothing is sent to confirm, and checkout is open at once (the next test checks it).
+    assert.equal((await q("SELECT count(*)::int AS n FROM email_outbox WHERE kind='verify_email' AND to_email=$1", [A.email])).rows[0].n, 0, "no confirmation email");
   });
 
   await t.test("checkout needs recorded consent to the exact offer and creates the $1 trial checkout", async () => {
@@ -172,7 +168,6 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
 
   await t.test("cancellation online: no further charges, access to the period end, one confirmation", async () => {
     const B = await signup("canceller");
-    await verify(B.email, B.cookie);
     assert.equal((await checkout(B.cookie, "trial")).status, 200);
     const { subscription, events } = sim.completeCheckout([...sim.sessions.values()].at(-1).id);
     await deliver(events);
@@ -202,7 +197,6 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
 
   await t.test("account deletion cancels with Stripe first; a checkout completing afterwards is cancelled too", async () => {
     const C = await signup("deleter");
-    await verify(C.email, C.cookie);
     assert.equal((await checkout(C.cookie, "trial")).status, 200);
     const paidSession = [...sim.sessions.values()].at(-1);
     const { subscription, events } = sim.completeCheckout(paidSession.id);
@@ -216,7 +210,6 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal((await call("/v1/me", { cookie: C.cookie })).status, 401, "signed out with the account gone");
     // The orphan safety net: an Insidir checkout that completes for a deleted account is cancelled on its webhook.
     const D = await signup("orphan");
-    await verify(D.email, D.cookie);
     await checkout(D.cookie, "trial");
     const late = [...sim.sessions.values()].at(-1);
     await q("DELETE FROM users WHERE id=$1", [D.id]); // the account disappears before the payment completes

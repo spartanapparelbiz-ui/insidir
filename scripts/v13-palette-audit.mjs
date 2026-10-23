@@ -66,7 +66,7 @@ const ALL_PAGES = [
 const wanted = opt("pages", "").split(",").filter(Boolean);
 // Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
 // scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
-const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker"]);
+const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker", "signin", "signup"]);
 const pages = (wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES).filter(([k]) => !REBUILT.has(k));
 
 /* ---------- API fixtures (mock only; production reads the real routes) ---------- */

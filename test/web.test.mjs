@@ -124,7 +124,11 @@ test("sign-in and public landing use the same working identity",async()=>{
   for(const path of ["/signup.html","/signin.html"]){
     const html=await(await fetch(base+path)).text();
     assert.match(html,/data-auth-form/);
-    assert.match(html,/v13-halftone\.css/);
+    // Log in and sign up are on the rebuilt design system, like the app they open.
+    assert.match(html,/<body class="ui auth-body--/);
+    assert.match(html,/\/assets\/css\/auth-ui\.css/);
+    assert.match(html,/<svg class="wordmark-svg"|<svg viewBox="70 -793 4531 803"/);
+    assert.doesNotMatch(html,/v13-halftone|JetBrainsMono/);
     assert.doesNotMatch(html,/Continue with Google|data-auth-toast=/);
   }
   const homepage=await(await fetch(base+"/index.html")).text();
@@ -399,8 +403,10 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       assert.match(html, /<body[^>]*class="[^"]*\bv13\b/, page + " body carries the v13 class");
       assert.match(html, /<meta name="theme-color" content="#0c0c0b">/, page + " theme colour is the night paper");
       assert.match(html, /<footer class="v13-footer v13-footer--plain"[\s\S]*hello@aethric\.llc[\s\S]*Back to top/, page + " ends with the plain tracked footer");
-      if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
-      else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
+      // One logo everywhere: the SVG wordmark (web/assets/brand/insidir-wordmark.svg), never the old text-and-dot one.
+      if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /<svg class="wordmark-svg" viewBox="70 -793 4531 803"/, page + " product header logo is the SVG wordmark");
+      else assert.match(html, /<svg class="wordmark-svg" viewBox="70 -793 4531 803"/, page + " logo is the SVG wordmark");
+      assert.doesNotMatch(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " has no text logo left");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
       assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }

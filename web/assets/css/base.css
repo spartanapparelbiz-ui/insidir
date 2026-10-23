@@ -419,3 +419,8 @@ table{border-collapse:collapse;width:100%}
 .app-live__dot{flex:none;width:8px;height:8px;border-radius:50%;background:#f0eee8;animation:app-live-pulse 1.6s ease-in-out infinite}
 @keyframes app-live-pulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.app-live{transition:none}.app-live__dot{animation:none}}
+
+/* The wordmark: one SVG logo everywhere (web/assets/brand/insidir-wordmark.svg), drawn in the text colour and sized
+   to the logo's font size, so it matches the rebuilt pages (ui.css) exactly. */
+.wordmark-svg{display:inline-block;height:.8em;width:auto;vertical-align:-.04em;fill:currentColor}
+a:has(> .wordmark-svg){display:inline-flex;align-items:center;min-height:24px}

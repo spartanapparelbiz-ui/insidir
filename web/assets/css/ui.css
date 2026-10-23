@@ -227,7 +227,7 @@ a.gn:hover .gn__l{color:var(--text)}
 .tabs button[aria-selected=true]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:1px;background:var(--text)}
 
 /* ---------- the wordmark ---------- */
-.wordmark{display:inline-flex;align-items:center;color:var(--text)}
+.wordmark{display:inline-flex;align-items:center;min-height:24px;color:var(--text)}
 .wordmark svg{display:block;height:15px;width:auto}
 
 /* ---------- app shell ---------- */

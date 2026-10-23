@@ -187,7 +187,6 @@ export async function savePreferences(query, user, input, { env = process.env, r
   const turningOn = emailAlerts !== "off" && current.emailAlerts === "off";
   if (emailAlerts !== "off") {
     if (!current.emailAvailable) throw fail(503, "Alert emails are not available yet.");
-    if (!current.emailVerified) throw fail(403, "Confirm your email address before turning on alert emails.");
     if (turningOn && (input.consent !== true || input.consentVersion !== ALERT_CONSENT_VERSION)) throw fail(400, "Tick the box to agree to receive alert emails.");
   }
   await query(`INSERT INTO notification_preferences(user_id,in_app,email_alerts,event_types,digest_hour_utc,consent_version,consented_at,unsubscribed_at,updated_at)

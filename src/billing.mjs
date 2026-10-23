@@ -12,7 +12,7 @@ import { serverEvent, userForCustomer } from "./funnel.mjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { query as dbQuery } from "./db.mjs";
 import { currentUser } from "./auth.mjs";
-import { billingSettings, trialSettings, verificationRequired } from "./config.mjs";
+import { billingSettings, trialSettings } from "./config.mjs";
 import { accessSummary } from "./paywall.mjs";
 import { recordFirstPaidInvoice } from "./creator-program.mjs";
 import { memoryLimiter } from "./rate-limit.mjs";
@@ -416,8 +416,6 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     return exclusiveBilling(u.id, async () => {
       const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at,email_verified_at,signup_ref FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
-      // With verification enforced, the receipts, renewal notices and cancellation confirmations must reach an inbox the customer controls.
-      if (verificationRequired(env) && !row.email_verified_at) throw failure(403, "Confirm your email address before subscribing: open the link we sent you, or send a new one from this page.", { verifyEmail: true });
       let customer = row.stripe_customer_id;
       // One trial per account: none after an earlier trial, or once the customer has had any subscription for the plan.
       let trialUsed = !!row.trial_started_at;

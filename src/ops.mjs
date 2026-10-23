@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { secHealth } from "./sec.mjs";
 import { capabilitySummary } from "./capabilities.mjs";
 import { sourceRegistry } from "./analysis.mjs";
-import { billingSettings, emailSettings, verificationRequired, trialSettings, TRIAL_DAYS } from "./config.mjs";
+import { billingSettings, emailSettings, trialSettings, TRIAL_DAYS } from "./config.mjs";
 
 const lockId = name => Number.parseInt(createHash("sha256").update("insidir-worker:" + name).digest("hex").slice(0, 8), 16) | 0;
 
@@ -107,7 +107,7 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     const [s] = await rows(query, "SELECT count(*)::integer AS n FROM email_suppressions");
     const lastErrors = await rows(query, "SELECT kind,category,last_error,attempts,created_at FROM email_outbox WHERE last_error IS NOT NULL ORDER BY id DESC LIMIT 5");
     const settings = emailSettings(env);
-    return { provider: settings.provider, requested: settings.requested, verificationRequired: verificationRequired(env), ...r,
+    return { provider: settings.provider, requested: settings.requested, ...r,
       oldestQueuedMinutes: minutesSince(r?.oldest_queued), suppressions: s?.n ?? 0, lastErrors };
   });
   const notifications = await safe(async () => {

@@ -21,7 +21,7 @@ import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import { memoryLimiter,pgLimiter } from "./rate-limit.mjs";
 import { logSecurityEvent,recentSecurityEvents,emailDigest } from "./security-events.mjs";
-import { sendVerificationEmail,verifyEmail,requestPasswordReset,resetPassword,changePassword,revokeOtherSessions,exportAccount,FORGOT_REPLY } from "./account-security.mjs";
+import { verifyEmail,requestPasswordReset,resetPassword,changePassword,revokeOtherSessions,exportAccount,FORGOT_REPLY } from "./account-security.mjs";
 import { emailSettings } from "./config.mjs";
 import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdminCookie,adminSettings } from "./admin-auth.mjs";
 import { audit as adminAudit } from "./creator-program.mjs";
@@ -897,11 +897,9 @@ async function route(req,res,ctx){
       const signupRef=refFromCookie(req,ctx.env);
       if(signupRef)await ctx.query("UPDATE users SET signup_ref=$2 WHERE id=$1 AND signup_ref IS NULL",[r.user.id,signupRef]);
       await logSecurityEvent(ctx.query,{req,userId:r.user.id,kind:"register"});
-      // A confirmation link goes out whenever email is configured; checkout and complimentary access wait for it when enforced.
-      let sent=false;
-      if(emailSettings(ctx.env).enabled){try{await sendVerificationEmail(ctx.query,r.user,{env:ctx.env,req});sent=true}catch(e){console.error("Verification email not queued",e?.message)}}
+      // No confirmation email: the account is ready to subscribe at once.
       await serverEvent(ctx.query,"signup_completed",{userId:r.user?.id,visitor:x.visitor});
-      return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env),verification:{sent}}, {"Set-Cookie":sessionCookie(r.token)});
+      return json(res,201,{user:r.user,access:accessSummary(r.account,ctx.env)}, {"Set-Cookie":sessionCookie(r.token)});
     }
     if(p==="/v1/auth/login" && m==="POST"){
       const x=await body(req),who=typeof x?.email==="string"?x.email.trim().toLowerCase().slice(0,320):"";
@@ -926,21 +924,12 @@ async function route(req,res,ctx){
       if(who)await logSecurityEvent(ctx.query,{req,userId:who.id,kind:"logout"});
       return json(res,200,{ok:true},{"Set-Cookie":clearCookie()});
     }
-    /* Email verification and password recovery (src/account-security.mjs). Tokens arrive in the request body (the
-     * pages read them from the link's #fragment), never in a URL the server logs. */
+    /* Password recovery (src/account-security.mjs), and confirmation links sent before email verification was removed
+     * (they still confirm, harmlessly). Tokens arrive in the request body, never in a URL the server logs. */
     if(p==="/v1/auth/verify-email" && m==="POST"){
       if(await limited(ctx,"verify-ip:"+ip,30))throw failure(429,"Too many attempts. Try again shortly.");
       const x=await body(req);
       return json(res,200,await verifyEmail(ctx.query,x?.token,{req}));
-    }
-    if(p==="/v1/auth/resend-verification" && m==="POST"){
-      const user=await requireUser(req,ctx);
-      if(!emailSettings(ctx.env).enabled)throw failure(503,"Email is not available yet. Contact hello@aethric.llc.");
-      const row=(await ctx.query("SELECT email,email_verified_at FROM users WHERE id=$1",[user.id])).rows[0];
-      if(row?.email_verified_at)return json(res,200,{sent:false,alreadyVerified:true});
-      if(await limited(ctx,"resend-verify:"+user.id,5,60*60*1000))throw failure(429,"We have sent several links already. Check your inbox and spam folder, or try again in an hour.");
-      await sendVerificationEmail(ctx.query,{id:user.id,email:row?.email||user.email},{env:ctx.env,req});
-      return json(res,200,{sent:true});
     }
     if(p==="/v1/auth/forgot-password" && m==="POST"){
       if(await limited(ctx,"forgot-ip:"+ip,10))throw failure(429,"Too many requests. Wait 15 minutes and try again.");
