@@ -1,178 +1,94 @@
-<!doctype html><html lang="en"><head><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Today — Insidir</title>
+<meta name="description" content="Today on Insidir: the biggest insider move at the companies you watch, your watchlist, and the latest SEC Form 4 buys and sales.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir">
-<meta name="description" content="Your Insidir overview: what the people you follow and the companies you watch filed since your last visit, then the latest SEC Form 4 purchases and sales across the market, with exact shares, prices and values, each linked to its original record.">
-<title>Dashboard · Overview — insidir.</title><link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
-<link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/JetBrainsMono-symbols.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v6-app.css?v=2">
-<link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
-<script defer src="assets/js/entity-media.js?v=media-6"></script><script defer src="assets/js/app.js?v=23"></script><script defer src="assets/js/form4-words.js?v=1"></script><script defer src="assets/js/v3-dashboard.js?v=24"></script><script defer src="assets/js/v4-dashboard.js?v=23"></script><script defer src="assets/js/v13-overview.js?v=4"></script>
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=26">
-<link rel="stylesheet" href="assets/css/v13-dashboard.css?v=9">
-<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"><link rel="stylesheet" href="assets/css/track-record.css?v=1"><script defer src="/assets/js/funnel.js"></script><script defer src="assets/js/onboarding.js"></script><script defer src="assets/js/v32-overview.js"></script><script defer src="assets/js/v33-platform.js?v=5"></script>
+<link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=1">
+<link rel="stylesheet" href="/assets/css/today.css?v=1">
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/vendor/lightweight-charts-5.0.8.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=1"></script>
+<script defer src="/assets/js/chart.js?v=1"></script>
+<script defer src="/assets/js/today.js?v=1"></script>
+<script defer src="/assets/js/funnel.js"></script>
 <script defer src="/assets/js/posthog.js?v=1"></script>
 </head>
-<body class="app-body v2-app v3-app v6-app v13 rd-page"><a class="skip-link" href="#Content">Skip to content</a><header class="app-header" data-app-header data-active="dashboard"></header>
-<main class="app-main v3-main rd" id="Content">
-<div class="rd-topline"><span>Insidir / Overview</span><span id="v3-current-date"><span class="rd-topline__note">SEC records · original sources</span></span></div>
+<body class="ui">
+<a class="sr-only" href="#main">Skip to content</a>
+<div data-ui-shell data-page="dashboard">
 
-<section id="rd-today" class="rd-today" aria-labelledby="rd-heading">
-  <p class="rd-eyebrow" id="rd-today-date">Overview</p>
-  <h1 id="rd-heading" data-greeting>Welcome back.</h1>
-  <script>/* Greeting and date before the first paint (plain arrays: building an Intl formatter here would cost more than the page's first paint). */(()=>{const d=new Date(),h=d.getHours(),g=document.querySelector("[data-greeting]"),t=document.getElementById("rd-today-date");if(g)g.textContent=h>=5&&h<12?"Good morning.":h>=12&&h<18?"Good afternoon.":"Good evening.";if(t)t.textContent="Overview · "+"Sun Mon Tue Wed Thu Fri Sat".split(" ")[d.getDay()]+", "+"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();})();</script>
-  <div class="rd-today__lines">
-    <p id="rd-today-you" class="rd-today__line rd-today__line--you is-skeleton" aria-busy="true"><span class="sr-only">Loading what changed since your last visit…</span></p>
-    <div class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field data-dot-gap="7" data-field-coverage="0.12" data-radius="40" aria-hidden="true"></div><p id="rd-today-market" class="rd-today__line rd-today__line--market is-skeleton" aria-busy="true"><span class="sr-only">Loading the latest imported trades…</span></p>
-    <p id="rd-today-fresh" class="rd-today__line rd-today__line--fresh is-skeleton" aria-busy="true"><span class="sr-only">Checking the latest import…</span></p></div>
+<header class="page-head">
+  <div><h1 class="t-title">Today</h1><p class="t-small num" data-today-date>&nbsp;</p></div>
+  <div class="page-head__end" data-today-fresh></div>
+</header>
+
+<!-- The hero: the biggest insider move at the member's watchlist companies (GET /v1/me/today). The skeleton has the
+     final layout's exact boxes, so nothing moves when the data lands. -->
+<section class="card hero" data-hero aria-labelledby="hero-label" aria-busy="true">
+  <div class="hero__info">
+    <p class="t-label" id="hero-label">Biggest insider move in your watchlist</p>
+    <div class="hero__co"><span class="skel" style="width:40px;height:40px;border-radius:11px"></span><span class="skel" style="width:160px;height:18px"></span></div>
+    <div class="skel hero__skel-num"></div>
+    <div class="skel" style="width:88%;height:16px;margin-top:20px"></div><div class="skel" style="width:64%;height:16px;margin-top:10px"></div>
+    <div class="hero__score"><span class="skel" style="width:56px;height:56px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></div>
+  </div>
+  <div class="hero__chart"><div class="hero__chart-head"><span class="skel" style="width:140px;height:28px"></span></div><div class="skel hero__plot"></div></div>
+</section>
+
+<section class="strip" aria-labelledby="strip-h">
+  <div class="sec-head"><h2 class="t-h2" id="strip-h">Watchlist</h2><a class="btn btn--ghost" href="/watchlist.html">Manage</a></div>
+  <div class="strip__row" data-strip>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
   </div>
 </section>
 
-<!-- Overview strip (assets/js/v32-overview.js): each tile reads one existing route and links to where the work is. -->
-<nav class="rd-desk" id="rd-desk" aria-label="What is waiting" aria-busy="true">
-  <a class="rd-desk__tile is-loading" href="intelligence.html#briefing" data-desk="briefing"><span class="rd-desk__k">Briefing</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking your briefing…</span></a>
-  <a class="rd-desk__tile is-loading" href="alerts.html" data-desk="alerts"><span class="rd-desk__k">Alerts</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking alerts…</span></a>
-  <a class="rd-desk__tile is-loading" href="watchlist.html" data-desk="watch"><span class="rd-desk__k">Watching</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking what you follow…</span></a>
-  <a class="rd-desk__tile is-loading" href="data.html" data-desk="data"><span class="rd-desk__k">Data</span><b class="rd-desk__v" data-v></b><span class="rd-desk__s" data-s>Checking the latest import…</span></a>
-</nav>
-
-<!-- A new member's first steps (assets/js/onboarding.js). Shown before first paint only for an account that has just
-     subscribed and has not finished or skipped it, so the page never moves to make room. -->
-<section class="rd-start" id="rd-start" aria-labelledby="rd-start-title" hidden>
-  <div class="rd-start__head"><div><p class="rd-eyebrow">Get started · about two minutes</p><h2 id="rd-start-title">What would you like to follow?</h2></div><button type="button" class="rd-start__skip" data-start-skip>Skip for now</button></div>
-  <ol class="rd-start__steps">
-    <li data-step="follow"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Follow a company or a person</b><span>Search any company or person below, or tap Follow on a suggestion. Insidir then watches their filings and tells you what changed, with the filing to back it up.</span></div></li>
-    <li data-step="records"><span class="rd-start__mark" aria-hidden="true"></span><div><b>See their latest records</b><span>Their recent insider trades appear further down this page, under People you follow and Your watchlist, newest first. From now on, Insidir checks for new ones for you.</span></div></li>
-    <li data-step="briefing"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Open your briefing</b><span>What changed for what you follow, and why each item is there. <a href="intelligence.html#briefing" data-onboard="briefing">Open the Briefing →</a></span></div></li>
-    <li data-step="alerts"><span class="rd-start__mark" aria-hidden="true"></span><div><b>Choose how you hear about it</b><span>Alerts arrive in the app already. Turn on device push or alert emails if you want them. <a href="alerts.html#al-delivery-h" data-onboard="alerts">Notification settings →</a></span></div></li>
-  </ol>
-  <p class="rd-start__note" data-start-status aria-live="polite"></p>
-</section>
-<script>/* Before first paint: show the panel only to a new member who has not finished or skipped it. */(()=>{try{if(localStorage.getItem("insidir:onboard")==="new")document.getElementById("rd-start").hidden=false;}catch(e){}})();</script>
-<p class="rd-intel-link">Ask Insidir Intelligence: <a href="intelligence.html?q=What%20changed%20since%20my%20last%20visit%3F">What changed since my last visit?</a> · <a href="intelligence.html?q=What%20did%20the%20people%20I%20follow%20report%20this%20month%3F">What did the people I follow report?</a> · <a href="intelligence.html#mirror">What are institutional investors reporting?</a></p>
-<div class="rd-grid">
-  <section class="rd-module rd-module--follow" aria-labelledby="rd-follow-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">01</p><h2 id="rd-follow-title">People you follow</h2><p>Every trade they report on SEC Form 4, the form an insider must file within two business days of buying or selling. Newest filing first.</p></div><a class="rd-link" href="people.html">Find people to follow →</a></header>
-    <p id="v10-follow-live" class="sr-only" aria-live="polite">Loading updates from the people you follow…</p>
-    <div class="rd-follow" id="rd-follow">
-      <div class="rd-follow__side">
-        <p class="rd-label" id="rd-list-label">Following</p>
-        <ul id="v10-follow-list" class="rd-flist" aria-labelledby="rd-list-label" data-hf-reveal></ul>
-        <p id="v10-follow-list-more" class="rd-more rd-more--list"></p>
-      </div>
-      <div class="rd-follow__feed">
-        <p class="rd-label" id="rd-feed-label">Latest trades</p>
-        <ol id="v10-follow-feed" class="rd-feed" aria-labelledby="rd-feed-label" data-hf-reveal></ol>
-        <p id="v10-follow-more" class="rd-more rd-more--feed"></p>
-      </div>
-      <p id="v10-follow-empty" class="rd-follow__empty">You are not following anyone yet. Follow an insider and every trade they file appears here, marked New until you have seen it.</p>
-      <div id="v10-follow-suggest" class="rd-suggest">
-        <p class="rd-label" id="v10-follow-suggest-title">Most active in the latest imports</p>
-        <ul id="v10-follow-suggest-list" class="rd-sglist" aria-labelledby="v10-follow-suggest-title" data-hf-reveal></ul>
-        <p id="v10-follow-suggest-foot" class="rd-module__foot">Following is private to your account. <a href="people.html">Find anyone by name →</a></p>
-      </div>
-    </div>
-    <p id="rd-toast" class="rd-toast" role="status"></p>
+<div class="today-grid">
+  <section class="card feed" aria-labelledby="feed-h">
+    <div class="card__head"><h2 class="t-h2" id="feed-h">Latest filings</h2>
+      <div class="seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-feed-filter="all">All</button><button type="button" aria-pressed="false" data-feed-filter="buy">Buys</button><button type="button" aria-pressed="false" data-feed-filter="sell">Sells</button><button type="button" aria-pressed="false" data-feed-filter="watch">Watchlist</button></div></div>
+    <ul class="rows feed__rows" data-feed aria-live="polite" aria-busy="true">
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:66%;height:14px"></span><span class="skel" style="width:52%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:58%;height:14px"></span><span class="skel" style="width:64%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
+    </ul>
   </section>
 
-  <section class="rd-module rd-module--watch" aria-labelledby="rd-watch-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">02</p><h2 id="rd-watch-title">Your watchlist</h2><p>The latest purchase or sale at each company you saved.</p></div><a class="rd-link" href="watchlist.html">Manage watchlist →</a></header>
-    <ul id="v3-watchlist" class="rd-rows" aria-labelledby="rd-watch-title" data-hf-reveal></ul>
-    <p id="v3-watchlist-foot" class="rd-module__foot"></p>
-  </section>
-
-  <section class="rd-module rd-module--notes" aria-labelledby="rd-notes-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">03</p><h2 id="rd-notes-title">Your notes</h2><p>Private to you, most recent first.</p></div><a class="rd-link" href="research.html">Write a note →</a></header>
-    <ul id="v3-notes" class="rd-rows" aria-labelledby="rd-notes-title" data-hf-reveal></ul>
-  </section>
-
-  <section class="rd-module rd-module--flow" aria-labelledby="rd-flow-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">04</p><h2 id="rd-flow-title">Across the market</h2><p id="rd-flow-scope">The latest insider buys and sells reported to the SEC.</p></div><a class="rd-link" href="filings.html">All filings →</a></header>
-    <div id="rd-kpis" class="rd-kpis" data-hf-reveal-group></div>
-    <div class="rd-flow" data-hf-reveal-group>
-      <figure class="rd-panel rd-panel--daily" aria-labelledby="rd-daily-title">
-        <figcaption class="rd-panel__head">
-          <div><h3 id="rd-daily-title">Bought and sold, by trade date</h3><p>Bought above the line, sold below. Only purchases and sales with a reported price.</p></div>
-          <div class="rd-seg" id="rd-daily-switch" role="group" aria-label="Show the days as"><button type="button" data-view="chart" aria-pressed="true" data-hf-atom>Chart</button><button type="button" data-view="table" aria-pressed="false" data-hf-atom>Table</button></div>
-        </figcaption>
-        <div class="rd-dframe" id="rd-daily-frame" aria-busy="true">
-          <div id="rd-daily-chart" class="rd-dchart rd-dview is-active"></div>
-          <div id="rd-daily-table" class="rd-dtable rd-dview" tabindex="0" role="region" aria-label="Bought and sold by trade date, as a table" inert></div>
-        </div>
-      </figure>
-      <figure class="rd-panel rd-panel--companies" aria-labelledby="rd-companies-title">
-        <figcaption class="rd-panel__head"><div><h3 id="rd-companies-title">By company</h3><p>Sold to the left, bought to the right; largest total first.</p></div></figcaption>
-        <div id="rd-companies" class="rd-co"></div>
-      </figure>
-    </div>
-    <div class="rd-panel rd-panel--largest">
-      <div class="rd-panel__head" data-hf-reveal><div><h3 id="rd-largest-title">Biggest trades</h3><p>Ranked by value: shares × price per share, as filed.</p></div></div>
-      <ol id="rd-largest" class="rd-largest" aria-labelledby="rd-largest-title" data-hf-reveal></ol>
-    </div>
-  </section>
-
-  <section class="rd-module rd-module--trades" aria-labelledby="rd-trades-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">05</p><h2 id="rd-trades-title">All recent trades</h2><p>Each line of each filing, newest trade first. Value is shares × price per share as reported.</p></div><a class="rd-link" href="research.html">Research a company →</a></header>
-    <div class="rd-filters" role="group" aria-label="Show" data-hf-reveal><button type="button" data-filter="all" aria-pressed="true" disabled>All <span data-count="all"></span></button><button type="button" data-filter="reported_purchase" aria-pressed="false" disabled><i class="rd-tri rd-tri--up" aria-hidden="true"></i>Purchases <span data-count="reported_purchase"></span></button><button type="button" data-filter="reported_sale" aria-pressed="false" disabled><i class="rd-tri rd-tri--down" aria-hidden="true"></i>Sales <span data-count="reported_sale"></span></button><button type="button" data-filter="other" aria-pressed="false" disabled>Grants, exercises &amp; gifts <span data-count="other"></span></button></div>
-    <p id="v3-trades-status" class="sr-only" aria-live="polite"></p>
-    <div class="rd-table-wrap rd-table-wrap--trades" data-hf-reveal><table class="rd-table rd-table--trades"><thead><tr><th scope="col">Person</th><th scope="col">Company</th><th scope="col">What happened</th><th scope="col" class="rd-num">Shares</th><th scope="col" class="rd-num">Price</th><th scope="col" class="rd-num">Value</th><th scope="col">Traded</th><th scope="col">Filed</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead><tbody id="v3-trades"></tbody></table></div>
-    <p class="rd-module__foot" id="v3-trades-foot" data-hf-reveal></p>
-  </section>
-
-  <section class="rd-module rd-module--status" aria-labelledby="rd-status-title">
-    <header class="rd-module__head" data-hf-reveal><div><p class="rd-index">06</p><h2 id="rd-status-title">About this data</h2></div></header>
-    <div class="rd-about-line" data-hf-reveal>
-      <ul class="rd-about" id="rd-about" aria-busy="true">
-        <li><span class="rd-about__k">Source:</span> SEC EDGAR, Form 4</li>
-        <li><span class="rd-about__k">Status:</span> <span id="v4-data-state">checking…</span></li>
-        <li id="v4-filing-count">checking the import…</li>
-        <li id="v4-last-import">last import: checking…</li>
-        <li id="v4-latest-filing-date">newest filing: checking…</li>
-      </ul>
-      <a class="rd-link" href="data.html">How the data works →</a>
-    </div>
-  </section>
+  <aside class="today-side" aria-label="More">
+    <section class="card mkt" aria-labelledby="mkt-h" data-market>
+      <div class="card__head"><h2 class="t-h2" id="mkt-h">This week across the market</h2></div>
+      <div class="card__body"><span class="skel" style="display:block;width:100%;height:44px"></span><span class="skel" style="display:block;width:100%;height:6px;margin-top:16px"></span></div>
+    </section>
+    <section class="card" aria-labelledby="people-h">
+      <div class="card__head"><h2 class="t-h2" id="people-h">People you follow</h2><a class="btn btn--ghost" href="/people.html">Find people</a></div>
+      <ul class="rows" data-people aria-busy="true"><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></li><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:60%;height:14px"></span></li></ul>
+    </section>
+    <section class="card" aria-labelledby="notes-h">
+      <div class="card__head"><h2 class="t-h2" id="notes-h">Your notes</h2></div>
+      <ul class="rows" data-notes aria-busy="true"><li class="row side-row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:64%;height:14px"></span></li></ul>
+    </section>
+  </aside>
 </div>
 
-<div id="rd-tip" class="rd-tip" role="tooltip" hidden></div>
-<p class="rd-disclosure" data-hf-reveal>Insidir organizes public SEC records for independent research. Records can be delayed, partial or amended; always confirm details in the original filing. Insidir is not a broker and nothing here is investment advice. <a href="company-info.html">About Insidir →</a></p>
-<p class="rd-credits" id="rd-credits" data-media-credits></p>
-<script>/* Skeletons sized like the content they stand for, from the counts this browser saved at the last visit, so nothing moves when the data arrives. */
-(()=>{let c={};try{c=JSON.parse(localStorage.getItem("insidir:overview:counts")||"{}")||{};}catch(e){}
-const n=(k,d,lo,hi)=>{const v=Number(c[k]);return Math.max(lo,Math.min(hi,Number.isFinite(v)&&c[k]!==null&&c[k]!==undefined?v:d));};
-const b=w=>'<i class="rd-skel" style="--w:'+w+'%"></i>',t='<span class="rd-skel rd-skel--tile"></span>',rep=(k,f)=>Array.from({length:k},(_,i)=>f(i)).join("");
-const td=c.today;if(td&&typeof td==="object"&&Math.abs(Number(td.w)-innerWidth)<24)for(const [k,id] of [["you","rd-today-you"],["market","rd-today-market"],["fresh","rd-today-fresh"]]){const v=Number(td[k]),e=document.getElementById(id);if(e&&v>0&&v<400)e.style.setProperty("min-height","max("+v+"px, var(--line-min))","important");}
-const hs=c.heights;if(hs&&typeof hs==="object"&&Math.abs(Number(hs.w)-innerWidth)<24)for(const id in hs){if(id==="w")continue;const v=Number(hs[id]),e=id==="trades"?document.querySelector(".rd-table-wrap--trades"):document.getElementById(id);if(e&&v>0&&v<6000){e.style.setProperty("min-height",v+"px","important");if(id==="rd-credits")e.classList.add("is-held");}}
-const put=(id,html,vars)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=html;e.setAttribute("aria-busy","true");for(const k in vars||{})e.style.setProperty(k,String(vars[k]));};
-const follows=n("follows",0,0,1e4),feed=n("feed",5,1,8),list=follows?6:3,watch=n("watch",0,0,8),notes=n("notes",0,0,6),sg=follows?n("suggest",4,0,4):n("suggest",6,0,6),co=n("co",6,0,6),coMore=n("coMore",1,0,1),big=n("big",6,0,6),rows=n("rows",12,0,12);
-/* Following nobody: the message and the suggestions come first, and the feed (empty until a follow) below them.
-   No saved counts at all: five feed rows are kept (enough to hold everything after them below the first screen) and the
-   suggestions wait (is-unknown), so either answer moves nothing on screen. */
-const known=c.follows!==undefined&&c.follows!==null,box=document.getElementById("rd-follow");
-if(!known)box?.classList.add("is-unknown");else if(!follows)box?.classList.add("is-empty");
-put("v10-follow-feed",follows||!known?rep(feed,i=>'<li class="rd-feed__row is-skeleton">'+t+'<div class="rd-feed__body"><p class="rd-feed__l1">'+b(64-i%3*8)+'</p><p class="rd-feed__l2">'+b(46)+'</p></div></li>'):'',{"--rows":follows?feed:0});
-put("v10-follow-list",follows?rep(Math.min(list,follows),()=>'<li class="rd-fl is-skeleton">'+t+'<div class="rd-fl__body"><p class="rd-fl__name">'+b(60)+'</p><p class="rd-fl__meta">'+b(30)+'</p><p class="rd-fl__sum">'+b(86)+'</p></div></li>'):'<li class="rd-fl__msg is-skeleton"><p class="rd-empty">'+b(90)+b(60)+'</p></li>',{"--slots":list,"--slot-rows":Math.ceil(list/3)});
-const sgEl=document.getElementById("v10-follow-suggest"),sgT=document.getElementById("v10-follow-suggest-title");if(sgEl&&follows){sgEl.classList.add("is-compact");if(sgT)sgT.textContent="More people to follow · most active in the latest imports";}
-
-put("v10-follow-suggest-list",rep(sg,()=>'<li class="rd-sg is-skeleton">'+t+'<div class="rd-sg__body"><p class="rd-sg__name">'+b(64)+'</p><p class="rd-sg__co">'+b(80)+'</p><p class="rd-sg__sum">'+b(70)+'</p></div></li>'));
-const wrow=()=>'<li class="rd-row rd-row--watch is-skeleton">'+t+'<span class="rd-row__id">'+b(50)+b(80)+'</span><span class="rd-row__detail">'+b(90)+b(60)+'</span></li>';
-put("v3-watchlist",watch?rep(watch,wrow):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+'</p></li>'+rep(4,wrow));
-put("v3-notes",notes?rep(notes,()=>'<li class="rd-row-wrap is-skeleton"><span class="rd-row rd-row--note"><span class="rd-row__id">'+b(60)+b(70)+'</span><span class="rd-row__detail">'+b(92)+b(40)+'</span></span></li>'):'<li class="rd-rows__msg is-skeleton"><p class="rd-empty">'+b(92)+b(40)+'</p></li>');
-put("rd-kpis",rep(5,()=>'<div class="rd-kpi is-skeleton"><p class="rd-kpi__label">'+b(50)+'</p><p class="rd-kpi__value">'+b(76)+'</p><p class="rd-kpi__note">'+b(90)+b(56)+'</p></div>'));
-put("rd-companies",co?'<div class="rd-co__head" aria-hidden="true">'+b(30)+'</div><ul class="rd-co__list">'+rep(co,()=>'<li class="rd-co__row is-skeleton"><span class="rd-co__id">'+t+b(60)+'</span><span class="rd-co__track">'+b(70)+'</span><span class="rd-co__track">'+b(40)+'</span><span class="rd-co__net">'+b(80)+'</span><span class="rd-co__detail">'+b(50)+'</span></li>')+'</ul>'+(coMore?'<p class="rd-more">'+b(50)+'</p>':''):'<p class="rd-empty">'+b(80)+'</p>');
-put("rd-largest",big?rep(big,i=>'<li class="rd-big is-skeleton"><span class="rd-big__rank">'+b(70)+'</span><span class="rd-big__value">'+b(80)+'</span><span class="rd-big__bar"></span><span class="rd-big__what">'+t+b(60)+'</span><span class="rd-big__terms">'+b(70)+'</span></li>'):'<li class="rd-empty">'+b(80)+'</li>');
-put("v3-trades",rows?rep(rows,()=>'<tr class="rd-trade is-skeleton"><td class="rd-td-who"><span class="rd-ent">'+t+b(70)+'</span></td><td class="rd-td-co"><span class="rd-ent">'+t+b(40)+'</span><span class="rd-sub">'+b(70)+'</span></td><td class="rd-td-what">'+b(70)+'</td><td class="rd-num rd-td-shares">'+b(80)+'</td><td class="rd-num rd-td-price">'+b(70)+'</td><td class="rd-num rd-td-value">'+b(80)+'</td><td class="rd-td-traded">'+b(80)+'</td><td class="rd-td-filed">'+b(80)+'<span class="rd-sub">'+b(50)+'</span></td><td class="rd-links">'+b(60)+'</td></tr>'):'<tr class="is-skeleton"><td colspan="9" class="rd-empty">'+b(80)+'</td></tr>');
-})();</script>
-</main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
-</div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
+<footer class="data-foot">
+  <p class="t-small" data-status>SEC Form 4 filings from EDGAR. Prices are daily closes, not live quotes.</p>
+  <p class="t-small">Research, not investment advice. Charts by <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a> Lightweight Charts.</p>
 </footer>
-</body></html>
+</div>
+</body>
+</html>

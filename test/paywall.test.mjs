@@ -844,7 +844,7 @@ test("router: product pages redirect with no-store before any page is served", a
     for (const sid of ["paid", "owner"]) {
       r = await send(base, "/dashboard.html", as(sid));
       assert.equal(r.status, 200, sid);
-      assert.match(r.text, /id="v3-trades"/);
+      assert.match(r.text, /data-ui-shell data-page="dashboard"/);
     }
     // Account pages: sign-in required, subscription not.
     r = await send(base, "/billing.html");

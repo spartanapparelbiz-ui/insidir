@@ -50,6 +50,7 @@ import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY
 import {refCookieFor,refFromCookie} from "./attribution.mjs";
 import {handleTickerRoute} from "./ticker-page.mjs";
 import {handleLanding} from "./landing.mjs";
+import {chartData,todayData,feedData} from "./today.mjs";
 import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -757,6 +758,21 @@ async function route(req,res,ctx){
     return json(res,200,{items:rows.map(r=>({kind:r.kind,id:r.id,ticker:r.ticker,cik:r.cik,name:r.name||r.ticker||null,mode:r.alert_mode,paused:!!r.paused_at,pausedAt:r.paused_at,followedAt:r.created_at,
       url:r.kind==="company"?"company.html?ticker="+encodeURIComponent(r.ticker):"person.html?cik="+r.cik})),modes:FOLLOW_MODES,
       note:"Important updates: purchases, clustered purchases, sales of $1,000,000 or more as filed, and company disclosures. Daily and weekly collect updates and deliver them together."});
+  }
+  /* The signature chart and the Today screen (src/today.mjs). */
+  if(p==="/v1/chart" && m==="GET"){
+    await requireUser(req,ctx);
+    const d=await ctx.market("chart:"+u.searchParams.get("ticker")+":"+u.searchParams.get("days"),60_000,()=>chartData(ctx.query,u.searchParams.get("ticker"),{days:u.searchParams.get("days")}));
+    if(!d)throw failure(400,"Unknown ticker");
+    return json(res,200,d);
+  }
+  if(p==="/v1/feed" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,await ctx.market("feed:"+u.searchParams.get("limit"),20_000,()=>feedData(ctx.query,{limit:u.searchParams.get("limit")})));
+  }
+  if(p==="/v1/me/today" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await todayData(ctx.query,user.id));
   }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
