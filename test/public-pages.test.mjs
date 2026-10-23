@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   handlePublicPage, isPublicPagePath, slugify, displayName, personUrl, companyUrl, money, robotsTxt, siteOrigin, clearPublicPageCache,
-  COMPANY_SQL, HUB_SQL, SITEMAP_SQL, SITEMAP_PAGE, RENDERS_PER_MINUTE
+  HUB_SQL, SITEMAP_SQL, SITEMAP_PAGE, RENDERS_PER_MINUTE
 } from "../src/public-pages.mjs";
 import { SQL as PROFILE_SQL, OWNERS_TABLE_SQL } from "../src/person-profile.mjs";
 import { gate, classifyPage } from "../src/paywall.mjs";
@@ -50,7 +50,7 @@ test("public page paths, slugs, names and money", () => {
   assert.equal(slugify("Müller-Lüdenscheidt, Hans & Co."), "muller-ludenscheidt-hans-co");
   assert.equal(personUrl("0001214156", "COOK TIMOTHY D"), "/insiders/1214156-cook-timothy-d");
   assert.equal(personUrl("0001214156", ""), "/insiders/1214156");
-  assert.equal(companyUrl("nvda"), "/insider-trading/NVDA");
+  assert.equal(companyUrl("nvda"), "/NVDA");
   assert.equal(money("42000.00"), "$42K");
   assert.equal(money(1_250_000), "$1.25M");
   assert.equal(money(31_000_000), "$31M");
@@ -81,51 +81,17 @@ test("robots.txt allows public pages, keeps the product and the API out, and nam
   assert.equal(robotsTxt("https://a.b").trim().split("\n").at(-1), "Sitemap: https://a.b/sitemap.xml");
 });
 
-test("company page: real lines, escaped, totals from original filings, insiders linked, the trial offer, cached", async () => {
-  clearPublicPageCache();
-  const query = fakeQuery({
-    [COMPANY_SQL.lines]: { rows: [line("a:1"), line("a:2", { owner_cik: "0001111111", owner_name: "<SCRIPT>ROE</SCRIPT>", category: "reported_sale", transaction_code: "S", estimated_value: "1250000.00" })] },
-    [COMPANY_SQL.totals]: { rows: [{ buys: 1, buy_value: "42000.00", sells: 1, sell_value: "1250000.00", other: 0, filings: 2, last_published_at: new Date("2026-10-03T21:15:00Z") }] },
-    [COMPANY_SQL.insiders(false)]: { rows: [{ owner_cik: "0009876543", owner_name: "DOE JANE", last_transaction_date: new Date("2026-10-01T00:00:00Z"), lines: 1, buy_value: "42000.00", sell_value: "0" }] }
-  });
-  const r = await get("/insider-trading/EXMP", query);
-  assert.equal(r.status, 200);
-  assert.match(r.headers["cache-control"], /^public, max-age=600/);
-  assert.match(r.body, /<title>Example Corp \(EXMP\) insider trading/);
-  assert.match(r.body, /<link rel="canonical" href="https:\/\/insidir\.example\/insider-trading\/EXMP">/);
-  assert.match(r.body, /<h1 id="pp-title">Example Corp <span>insider trading\.<\/span><\/h1>/);
-  assert.ok(!r.body.includes("<SCRIPT>ROE"), "names are escaped");
-  assert.match(r.body, /&lt;script&gt;roe&lt;\/script&gt;/i);
-  assert.match(r.body, /href="\/insiders\/9876543-doe-jane"/);
-  assert.match(r.body, /Open-market purchase <span class="pp-code">P<\/span>/);
-  assert.match(r.body, /\$42K/);
-  assert.match(r.body, /−\$1\.21M/, "net is purchases minus sales");
-  assert.match(r.body, /<strong>\$1<\/strong><span>for 7 days<\/span>/);
-  assert.match(r.body, /Then \$39 a month/);
-  assert.match(r.body, /href="https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/99999\//);
-  assert.match(r.body, /"@type":"Corporation","name":"Example Corp","tickerSymbol":"EXMP"/);
-  // Original filings only in the totals; the ticker is a bound parameter.
-  assert.match(COMPANY_SQL.totals, /NOT f\.is_amendment/);
-  assert.deepEqual(query.statements.find(s => s.sql === COMPANY_SQL.lines).params, ["EXMP", 40]);
-  const before = query.statements.length;
-  const again = await get("/insider-trading/EXMP", query);
-  assert.equal(again.status, 200);
-  assert.equal(query.statements.length, before, "served from the page cache");
-});
-
-test("company page: canonical ticker, 404 for unknown and invalid tickers, noindex", async () => {
+test("the old company pages redirect to the public stock page; invalid tickers 404 without touching the database", async () => {
   clearPublicPageCache();
   const query = fakeQuery();
-  const lower = await get("/insider-trading/exmp", query);
-  assert.deepEqual([lower.status, lower.headers.location], [301, "/insider-trading/EXMP"]);
-  const dotted = await get("/insider-trading/BRK.B", query);
-  assert.deepEqual([dotted.status, dotted.headers.location], [301, "/insider-trading/BRK-B"]);
-  const none = await get("/insider-trading/NOPE", query);
-  assert.equal(none.status, 404);
-  assert.match(none.body, /<meta name="robots" content="noindex">/);
+  for (const [path, to] of [["/insider-trading/EXMP", "/EXMP"], ["/insider-trading/exmp", "/EXMP"], ["/insider-trading/BRK.B", "/BRK-B"]]) {
+    const r = await get(path, query);
+    assert.deepEqual([r.status, r.headers.location], [301, to], path);
+  }
   const bad = await get("/insider-trading/%3Cx%3E", query);
   assert.equal(bad.status, 404);
-  assert.equal(query.statements.filter(s => s.params?.[0] === "<X>").length, 0, "an invalid ticker never reaches the database");
+  assert.match(bad.body, /<meta name="robots" content="noindex">/);
+  assert.equal(query.statements.length, 0, "redirects and refusals never reach the database");
 });
 
 test("person page: built from the profile, redirected to its canonical name slug", async () => {
@@ -154,7 +120,7 @@ test("person page: built from the profile, redirected to its canonical name slug
   assert.equal(page.status, 200);
   assert.match(page.body, /<h1 id="pp-title">Doe Jane <span>insider trades\.<\/span><\/h1>/);
   assert.match(page.body, /filed under the name DOE JANE/);
-  assert.match(page.body, /href="\/insider-trading\/EXMP"/);
+  assert.match(page.body, /href="\/EXMP"/);
   assert.match(page.body, /Follow Doe in Insidir/);
   assert.match(page.body, /"@type":"ProfilePage"/);
   assert.ok(!query.statements.some(s => /sec\.gov/.test(String(s.sql))), "no SEC work");
@@ -179,7 +145,7 @@ test("hub page lists the biggest purchases and sales, the newest filings and the
   assert.match(r.body, /Biggest open-market sales/);
   assert.match(r.body, /1,200/);
   assert.match(r.body, /\$910M/);
-  assert.match(r.body, /<a href="\/insider-trading\/EXMP"><b>EXMP<\/b><span>Example Corp<\/span><em>3 filings · 1 bought · 2 sold<\/em><\/a>/);
+  assert.match(r.body, /<a href="\/EXMP"><b>EXMP<\/b><span>Example Corp<\/span><em>3 filings · 1 bought · 2 sold<\/em><\/a>/);
   assert.match(r.body, /Fund A Fund B/, "a joint line without an owners list reads as filed");
   assert.match(r.body, /aria-current="page">Insider filings/);
   assert.match(HUB_SQL.biggest("reported_purchase"), /NOT t\.derivative/);
@@ -205,7 +171,7 @@ test("sitemaps: an index over pages, companies and insiders, absolute canonical 
   assert.ok(pages.body.includes("<loc>https://insidir.example/insider-trading</loc>"));
   assert.ok(!pages.body.includes("dashboard"));
   const companies = await get("/sitemaps/companies-2.xml", query);
-  assert.ok(companies.body.includes("<url><loc>https://insidir.example/insider-trading/EXMP</loc><lastmod>2026-10-03</lastmod></url>"));
+  assert.ok(companies.body.includes("<url><loc>https://insidir.example/EXMP</loc><lastmod>2026-10-03</lastmod></url>"));
   assert.ok(companies.body.includes("A%26B"), "URLs are encoded and escaped");
   assert.deepEqual(query.statements.find(s => s.sql === SITEMAP_SQL.companies).params, [SITEMAP_PAGE, SITEMAP_PAGE]);
   const people = await get("/sitemaps/insiders-1.xml", query);
@@ -218,7 +184,7 @@ test("uncached renders are limited per client; non-GET and unknown paths fall th
   let last;
   for (let i = 0; i <= RENDERS_PER_MINUTE; i++) {
     const res = fakeRes();
-    await handlePublicPage({ method: "GET", headers: {} }, res, new URL("/insider-trading/T" + i, "http://x"), { query, requester: "one-crawler" });
+    await handlePublicPage({ method: "GET", headers: {} }, res, new URL("/insiders/" + (1000 + i), "http://x"), { query, requester: "one-crawler" });
     last = res;
   }
   assert.equal(last.status, 429);

@@ -1,0 +1,55 @@
+/* The v2 public pages (landing, /<TICKER>, built from src/site-v2.mjs). Layout only: every colour, size and radius
+   comes from ds.css. Centered hero, everything after it left-aligned. */
+
+/* ---------- shared ---------- */
+.v2 main{display:block}
+.v2-foot{border-top:1px solid var(--line);padding:var(--s8) 0}
+.v2-foot__in{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:var(--s4)}
+.v2-foot__brand .ds-small{margin-top:var(--s1)}
+.v2-foot nav{display:grid;gap:4px;align-content:start}
+.v2-foot h2{margin:0 0 var(--s1);font:500 14px/20px var(--sans);color:var(--text)}
+.v2-foot nav a{display:inline-flex;align-items:center;min-height:32px;font:400 14px/20px var(--sans);color:var(--muted);text-decoration:none}
+.v2-foot nav a:hover{color:var(--text)}
+@media (max-width:767px){.v2-foot__in{grid-template-columns:1fr 1fr}.v2-foot__brand{grid-column:1/-1}.v2-foot nav a{min-height:44px}}
+
+/* the free weekly email */
+.v2-mail{display:grid;gap:12px;max-width:560px}
+.v2-mail__h{margin:0;font:500 18px/26px var(--sans)}
+.v2-mail__row{display:flex;gap:var(--s1)}
+.v2-mail input{flex:1;min-width:0;height:48px;padding:0 var(--s2);border:1px solid var(--line-strong);border-radius:var(--r-btn);background:var(--raised);color:var(--text);font:400 16px/20px var(--sans);outline:none}
+.v2-mail input:focus{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}
+.v2-mail .ds-btn{min-height:48px}
+@media (max-width:479px){.v2-mail__row{flex-direction:column}.v2-mail .ds-btn{width:100%}}
+
+/* ---------- /<TICKER> ---------- */
+.v2-tk{padding:var(--s10) var(--s3) var(--s6)}
+.v2-tk__tick{margin:0 0 var(--s2);font:500 16px/20px var(--mono);color:var(--muted)}
+.v2-tk__h{max-width:900px;font-size:56px;line-height:60px}
+.v2-tk .ds-body{margin-top:var(--s2)}
+@media (max-width:767px){.v2-tk{padding-top:var(--s6)}.v2-tk__h{font-size:36px;line-height:40px}}
+.v2-trades{margin:var(--s5) 0 0;padding:0;list-style:none;display:grid;gap:12px;max-width:760px}
+.v2-trade{display:grid;grid-template-columns:auto 1fr;gap:6px var(--s2);align-items:start;padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-card);background:var(--raised)}
+.v2-trade p{margin:0;font:400 17px/26px var(--sans)}
+.v2-trade .ds-link{grid-column:2;min-height:32px;font-size:14px;color:var(--muted)}
+.v2-trade .ds-link:hover{color:var(--text)}
+.v2-trade .ds-badge{margin-top:1px}
+.v2-tk__story{margin:var(--s2) 0 0}
+.v2-quiet{padding:var(--s3);max-width:760px;margin-top:var(--s5)}
+.v2-quiet p{margin:0 0 var(--s1)}
+.v2-quiet .v2-trades{margin-top:var(--s2)}
+
+.v2-lock{padding:0 var(--s3) var(--s6)}
+.v2-lock__card{position:relative;overflow:hidden;max-width:760px;padding:var(--s4)}
+.v2-lock__blur{display:grid;gap:12px;filter:blur(6px);opacity:.55;pointer-events:none;user-select:none}
+.v2-lock__blur i{display:flex;gap:12px;height:20px}
+.v2-lock__blur b{display:block;border-radius:6px;background:rgba(240,238,232,.18)}
+.v2-lock__blur b:nth-child(1){flex:0 0 16%}.v2-lock__blur b:nth-child(2){flex:1;background:rgba(240,238,232,.1)}.v2-lock__blur b:nth-child(3){flex:0 0 18%;background:rgba(47,153,106,.45)}
+.v2-lock__blur i:nth-child(2n) b:nth-child(3){background:rgba(249,65,68,.45)}
+.v2-lock__copy{position:relative;display:grid;gap:12px;justify-items:start;margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--line)}
+.v2-lock__h{margin:0;font:600 24px/30px var(--sans);letter-spacing:-.02em;text-wrap:balance}
+.v2-lock .ds-btn{margin-top:var(--s1)}
+@media (max-width:479px){.v2-lock .ds-btn{width:100%}}
+
+.v2-tk__more{display:grid;gap:var(--s6);padding:var(--s4) var(--s3) var(--s10)}
+.v2-tk__search{display:grid;gap:var(--s1)}
+.v2-tk__legal{max-width:var(--text-max)}

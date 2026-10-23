@@ -94,6 +94,8 @@ export function classifyApi(pathname, method = "GET") {
   if (p === "/v1/admin/costs" || p === "/v1/admin/funnel") return "open";
   // First-party funnel events (src/funnel.mjs): sent by public pages, signed in or not.
   if (p === "/v1/events" && m === "POST") return "open";
+  // The free weekly email (src/newsletter.mjs) and the landing page's live filing strip (src/landing.mjs): public.
+  if (p === "/v1/newsletter" || p.startsWith("/v1/newsletter/") || (p === "/v1/live" && (m === "GET" || m === "HEAD"))) return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).

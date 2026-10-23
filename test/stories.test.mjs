@@ -158,15 +158,17 @@ test("the insider-trading pages link the stories, and a covered company or perso
     transaction_date: new Date("2026-03-20T00:00:00Z"), transaction_code: "P", category: "reported_purchase", derivative: false, shares: "2665", price_per_share: "37.5494",
     estimated_value: "100069.15", source_url: "https://www.sec.gov/Archives/edgar/data/1183251/000118325126000006/form4.xml", issuer_name: "ENTERPRISE PRODUCTS PARTNERS L.P.",
     published_at: new Date("2026-03-23T20:42:31Z"), is_amendment: false };
-  const query = async sql => /FROM sec_transactions t JOIN sec_filings f/.test(sql) && /t\.ticker=\$1/.test(sql) && /LIMIT \$2/.test(sql) ? { rows: [line] } : { rows: [] };
-  await handlePublicPage({ method: "GET", headers: {} }, res, new URL("http://localhost/insider-trading/EPD"), { query, env: {}, requester: "stories-test" });
+  // The stock page (/EPD, src/ticker-page.mjs) links the story; the hub's navigation reaches the stories.
+  const { handleTickerRoute, TRADES_SQL } = await import("../src/ticker-page.mjs");
+  const query = async sql => sql === TRADES_SQL ? { rows: [line] } : { rows: [] };
+  await handleTickerRoute({ method: "GET", headers: {} }, res, new URL("http://localhost/EPD"), { query, env: {} });
   assert.equal(res.status, 200);
-  assert.ok(res.body.includes('href="/stories/enterprise-products-insider-purchase.html"'), "the EPD page links its story");
-  assert.match(res.body, /href="\/stories\.html">Research stories<\/a>/, "the public pages' navigation reaches the stories");
+  assert.ok(String(res.body).includes('href="/stories/enterprise-products-insider-purchase.html"'), "the EPD page links its story");
   const hub = { ...res, body: "" };
   clearPublicPageCache();
   await handlePublicPage({ method: "GET", headers: {} }, hub, new URL("http://localhost/insider-trading"), { query: async () => ({ rows: [] }), env: {}, requester: "stories-test-2" });
   for (const s of STORIES) assert.ok(hub.body.includes(`href="${storyPath(s)}"`), "the hub lists " + s.slug);
+  assert.match(hub.body, /href="\/stories\.html">Research stories<\/a>/, "the public pages' navigation reaches the stories");
   const home = readFileSync(new URL("index.html", WEB), "utf8");
   assert.match(home, /href="\/stories\.html"/, "the landing page links the stories");
   assert.match(home, /href="\/stories\/[a-z0-9-]+\.html"/, "and opens one as a real example");

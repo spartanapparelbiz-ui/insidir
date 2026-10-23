@@ -48,6 +48,8 @@ import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
 import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
 import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY} from "./email-code.mjs";
 import {refCookieFor,refFromCookie} from "./attribution.mjs";
+import {handleTickerRoute} from "./ticker-page.mjs";
+import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -343,6 +345,8 @@ async function route(req,res,ctx){
   if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
   // First-visit attribution (src/attribution.mjs): a page opened with an allowed ?ref= sets insidir_ref once.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && u.searchParams.has("ref")){const c=refCookieFor(req,u,{env:ctx.env,secure:config.cookieSecure});if(c)res.setHeader("Set-Cookie",c);}
+  // Public stock pages at /<TICKER>, /search and the per-stock share images (src/ticker-page.mjs).
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handleTickerRoute(req,res,u,{query:ctx.query,env:ctx.env}))return;
   // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handlePublicPage(req,res,u,{query:ctx.query,env:ctx.env,requester:clientAddress(req)}))return;
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
@@ -726,6 +730,14 @@ async function route(req,res,ctx){
     // A member's first company report counts as their first research, for the activation measure.
     if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
     return json(res,204,{});
+  }
+  // The free weekly email (src/newsletter.mjs). The sign-up checks its origin; the unsubscribe POST comes from mail
+  // providers (RFC 8058 one-click) and is authorised by its signed link instead.
+  if(p==="/v1/newsletter"||p.startsWith("/v1/newsletter/")){
+    if(p==="/v1/newsletter"&&m==="POST"&&!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    const done=await newsletterRoutes(req,res,u,{query:ctx.query,env:ctx.env,json,readJson:()=>body(req),ref:refFromCookie(req,ctx.env),
+      limited:()=>limited(ctx,"newsletter:"+clientAddress(req),10,60*60*1000)});
+    if(done!==false)return;
   }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});

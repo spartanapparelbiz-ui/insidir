@@ -22,8 +22,16 @@ const seen=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting
  for(const n of e.target.matches("[data-ds-count]")?[e.target]:e.target.querySelectorAll("[data-ds-count]"))count(n);seen.unobserve(e.target);}},{rootMargin:"0px 0px -10% 0px"});
 for(const el of document.querySelectorAll("[data-ds-reveal],[data-ds-count]"))reduce?el.classList.add("is-in"):seen.observe(el);
 
-// Search: a ticker opens its page (no account needed).
-for(const f of document.querySelectorAll("[data-ds-search]"))f.addEventListener("submit",e=>{
- const v=String(f.querySelector("input")?.value||"").trim().toUpperCase().replace(/^\$/,"");
- if(/^[A-Z][A-Z0-9.-]{0,9}$/.test(v)){e.preventDefault();location.href="/insider-trading/"+encodeURIComponent(v);}});
+// Search: a ticker opens its page (no account needed). The page is prefetched while the symbol is typed, so it opens
+// at once; the symbol is remembered for the first screen after paying.
+const TICK=/^[A-Z][A-Z0-9.-]{0,9}$/,prefetched=new Set();
+const clean=v=>String(v||"").trim().toUpperCase().replace(/^\$/,"");
+const prefetch=t=>{if(!TICK.test(t)||prefetched.has(t)||prefetched.size>8)return;prefetched.add(t);const l=document.createElement("link");l.rel="prefetch";l.href="/"+encodeURIComponent(t);l.as="document";document.head.appendChild(l);};
+for(const f of document.querySelectorAll("[data-ds-search]")){
+ const input=f.querySelector("input");let timer=0;
+ input?.addEventListener("input",()=>{clearTimeout(timer);const t=clean(input.value);if(t.length>=1&&t.length<=5)timer=setTimeout(()=>prefetch(t),250);});
+ f.addEventListener("submit",e=>{const t=clean(input?.value);if(!TICK.test(t)){e.preventDefault();input?.focus();return;}
+  e.preventDefault();try{localStorage.setItem("insidir:first-ticker",t)}catch{}try{window.posthog?.capture?.("ticker_searched",{ticker:t})}catch{}
+  location.href="/"+encodeURIComponent(t);});
+}
 })();

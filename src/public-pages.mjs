@@ -5,7 +5,7 @@
  * the research journal) stays behind the paywall; every page here ends with the way in.
  *
  *   GET /insider-trading                  the latest open-market purchases and sales, most active companies
- *   GET /insider-trading/<TICKER>         one company's recent Form 4 lines, 90-day totals and its insiders
+ *   GET /insider-trading/<TICKER>         301 to /<TICKER>, the public stock page (src/ticker-page.mjs)
  *   GET /insiders/<cik>[-<name-slug>]     one reporting person: companies and roles, totals, recent lines
  *   GET /sitemap.xml                      a sitemap index; /sitemaps/pages.xml, companies-N.xml, insiders-N.xml
  *   GET /robots.txt                       public pages allowed, the product and the API disallowed
@@ -27,7 +27,7 @@ import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPer
 export const CACHE_TTL_MS = 10 * 60_000, CACHE_ENTRIES = 3000;
 export const RENDERS_PER_MINUTE = 90;
 export const SITEMAP_PAGE = 40000;
-export const COMPANY_LINES = 40, PERSON_LINES = 30, HUB_ROWS = 15;
+export const PERSON_LINES = 30, HUB_ROWS = 15;
 const DAY_WINDOW = 90;
 
 const failure = (status, message) => Object.assign(new Error(message), { status });
@@ -63,7 +63,7 @@ export const personUrl = (cik, name) => {
 };
 // Some filers type an exchange or a space into the symbol ("NYSE: KRC"); only clean symbols get a page.
 export const tickerOk = ticker => /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(String(ticker || ""));
-export const companyUrl = ticker => "/insider-trading/" + encodeURIComponent(String(ticker || "").toUpperCase());
+export const companyUrl = ticker => "/" + encodeURIComponent(String(ticker || "").toUpperCase()); // the public stock page (src/ticker-page.mjs)
 const num = v => { if (v == null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
 export function money(value, { compact = true } = {}) {
   const n = num(value);
@@ -232,33 +232,6 @@ const stat = (label, value, note, tone = "") => `<div class="pp-stat${tone ? " p
 const PARSED_LINE_COLUMNS = `t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.security_title,t.transaction_code,
   t.acquired_disposed,t.category,t.derivative,t.shares,t.price_per_share,t.estimated_value,t.source_url,f.issuer_name,f.published_at,f.is_amendment`;
 
-export const COMPANY_SQL = Object.freeze({
-  lines: `SELECT ${PARSED_LINE_COLUMNS} FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-    WHERE t.ticker=$1 AND f.ingest_status='parsed'
-    ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC NULLS LAST,t.id DESC LIMIT $2`,
-  // Original filings only: a Form 4/A restates lines already counted, so amendments are listed but not added up.
-  totals: `SELECT
-    (COUNT(*) FILTER (WHERE t.category='reported_purchase'))::integer AS buys,
-    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_purchase'),0) AS buy_value,
-    (COUNT(*) FILTER (WHERE t.category='reported_sale'))::integer AS sells,
-    COALESCE(SUM(t.estimated_value) FILTER (WHERE t.category='reported_sale'),0) AS sell_value,
-    (COUNT(*) FILTER (WHERE t.category='other'))::integer AS other,
-    (COUNT(DISTINCT t.accession))::integer AS filings,
-    MAX(f.published_at) AS last_published_at
-    FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-    WHERE t.ticker=$1 AND f.ingest_status='parsed' AND NOT f.is_amendment AND t.transaction_date>=current_date-${DAY_WINDOW}`,
-  insiders: joint => `SELECT LPAD(l.bare,10,'0') AS owner_cik,(ARRAY_AGG(l.owner_name ORDER BY l.transaction_date DESC NULLS LAST))[1] AS owner_name,
-    MAX(l.transaction_date) AS last_transaction_date,COUNT(*)::integer AS lines,
-    COALESCE(SUM(l.estimated_value) FILTER (WHERE l.category='reported_purchase'),0) AS buy_value,
-    COALESCE(SUM(l.estimated_value) FILTER (WHERE l.category='reported_sale'),0) AS sell_value
-    FROM (SELECT LTRIM(t.owner_cik,'0') AS bare,t.owner_name,t.transaction_date,t.category,t.estimated_value FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
-      WHERE t.ticker=$1 AND t.owner_cik IS NOT NULL AND f.ingest_status='parsed' AND NOT f.is_amendment${joint ? `
-      UNION ALL SELECT LTRIM(o.owner_cik,'0'),o.owner_name,t.transaction_date,t.category,t.estimated_value FROM sec_filing_owners o
-      JOIN sec_transactions t ON t.accession=o.accession AND t.owner_cik IS NULL JOIN sec_filings f ON f.accession=t.accession
-      WHERE t.ticker=$1 AND f.ingest_status='parsed' AND NOT f.is_amendment` : ""}) l
-    WHERE l.bare<>'' GROUP BY l.bare ORDER BY MAX(l.transaction_date) DESC NULLS LAST,l.bare LIMIT 24`
-});
-
 export const HUB_SQL = Object.freeze({
   // Open-market trades only (codes P and S, non-derivative) from original filings, biggest first.
   biggest: category => `SELECT ${PARSED_LINE_COLUMNS} FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
@@ -346,56 +319,6 @@ ${storiesSection(STORIES, "Research stories", "Historical filings explained line
       title: "Insider trading today: latest Form 4 buys and sells — Insidir",
       description: "The latest insider purchases and sales at US public companies, read from SEC Form 4 filings: biggest open-market buys and sells of the last 30 days, the newest filings and the most active companies.",
       body, jsonLd: { "@context": "https://schema.org", "@type": "CollectionPage", name: "Insider trading from SEC Form 4 filings", url: origin + "/insider-trading" } })
-  };
-}
-
-export async function companyPage(ticker, { query, origin }) {
-  const joint = await hasFilingOwners(query);
-  const [lines, totals, insiders] = await Promise.all([
-    query(COMPANY_SQL.lines, [ticker, COMPANY_LINES]), query(COMPANY_SQL.totals, [ticker]), query(COMPANY_SQL.insiders(joint), [ticker])
-  ]).then(r => r.map(x => x.rows || []));
-  if (!lines.length) return null;
-  await withJointOwners(lines, query, joint);
-  const name = displayName(lines.find(r => r.issuer_name)?.issuer_name) || ticker;
-  const t = totals[0] || {};
-  const net = (num(t.buy_value) || 0) - (num(t.sell_value) || 0);
-  const people = insiders.length ? `<ul class="pp-people">${insiders.map(p => `<li><a href="${esc(personUrl(p.owner_cik, p.owner_name))}"><b>${esc(displayName(p.owner_name))}</b><span>${p.lines} line${p.lines === 1 ? "" : "s"} · last ${esc(day(p.last_transaction_date))}</span>${num(p.buy_value) ? `<em class="pp-val--buy">Bought ${esc(money(p.buy_value))}</em>` : ""}${num(p.sell_value) ? `<em class="pp-val--sell">Sold ${esc(money(p.sell_value))}</em>` : ""}</a></li>`).join("")}</ul>` : `<p class="pp-empty">No reporting people are imported for ${esc(ticker)} yet.</p>`;
-  const cik = String(lines[0].issuer_cik || "").replace(/^0+/, "");
-  const edgar = cik ? `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik.padStart(10, "0")}&type=4&dateb=&owner=include&count=40` : null;
-  const latest = lines[0];
-  const description = `${name} (${ticker}) insider trading: recent SEC Form 4 purchases and sales by its officers, directors and 10% owners` +
-    (t.buys || t.sells ? `. Last ${DAY_WINDOW} days: ${t.buys} purchase${t.buys === 1 ? "" : "s"} (${money(t.buy_value)}) and ${t.sells} sale${t.sells === 1 ? "" : "s"} (${money(t.sell_value)}).` : ".");
-  const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], [ticker, null]])}
- <p class="pp-label">${esc(ticker)} · SEC Form 4</p>
- <h1 id="pp-title">${esc(name)} <span>insider trading.</span></h1>
- <p class="pp-lede">Purchases, sales and other Form 4 transactions reported by ${esc(name)}'s officers, directors and 10% owners. Latest filing ${esc(day(latest.published_at))}. Form 4s are public reports insiders must file with the SEC, not nonpublic information.</p>
- <dl class="pp-stats">
-  ${stat(`Purchases, ${DAY_WINDOW} days`, `${esc(money(t.buy_value))} <small>${t.buys ?? 0} line${t.buys === 1 ? "" : "s"}</small>`, "open-market and other reported purchases", num(t.buy_value) ? "buy" : "")}
-  ${stat(`Sales, ${DAY_WINDOW} days`, `${esc(money(t.sell_value))} <small>${t.sells ?? 0} line${t.sells === 1 ? "" : "s"}</small>`, "reported sales", num(t.sell_value) ? "sell" : "")}
-  ${stat("Net", esc((net > 0 ? "+" : net < 0 ? "−" : "") + money(Math.abs(net))), "purchases minus sales, reported values", net > 0 ? "buy" : net < 0 ? "sell" : "")}
-  ${stat("Filings", esc(String(t.filings ?? 0)), `original Form 4s, ${DAY_WINDOW} days`)}
- </dl>
- <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/signup.html">Open the full ${esc(ticker)} report <span class="v13-arrow" aria-hidden="true">→</span></a>${edgar ? `<a class="v9-btn v12-outline-button" href="${esc(edgar)}" rel="nofollow noopener" target="_blank">Form 4s on EDGAR <span class="v13-arrow" aria-hidden="true">↗</span></a>` : ""}</p>
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-lines">
- <div class="pp-head"><h2 id="pp-lines">Recent Form 4 transactions</h2><p>The ${lines.length} newest lines by trade date. Each filing date links to the document on SEC EDGAR.</p></div>
- ${linesTable(lines, { caption: `Recent ${ticker} insider transactions` })}
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-people">
- <div class="pp-head"><h2 id="pp-people">Insiders at ${esc(name)}</h2><p>People who reported transactions in ${esc(ticker)}, most recent first.</p></div>
- ${people}
-</section>
-${storiesSection(storiesForTicker(ticker), `Research on ${ticker}`, "A historical filing from this company, explained line by line.")}
-<div class="mk-shell">${upsell(`Everything on ${ticker}, in one report.`)}</div>
-<section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
- <h2 id="pp-about">About these numbers</h2>
- <p>Values are shares × the price per share the filer reported; a line without a price is not valued. Totals cover original Form 4 filings with a trade date in the last ${DAY_WINDOW} days; Form 4/A amendments are listed in the table but not added up again. Purchases include every line the filer reported as acquired by purchase. A public record, not a recommendation or a prediction.</p>
-</section>`;
-  return {
-    html: shell({ origin, canonical: companyUrl(ticker), title: `${name} (${ticker}) insider trading — Form 4 buys and sells — Insidir`, description, body,
-      jsonLd: { "@context": "https://schema.org", "@type": "WebPage", name: `${name} insider trading`, url: origin + companyUrl(ticker),
-        about: { "@type": "Corporation", name, tickerSymbol: ticker } } })
   };
 }
 
@@ -570,7 +493,8 @@ export async function handlePublicPage(req, res, url, { query, env = process.env
     try { raw = decodeURIComponent(tickerMatch[1]); } catch { return send(req, res, 404, "text/html; charset=utf-8", notFoundPage(origin, "this company"), 0); }
     ticker = raw.trim().toUpperCase().replace(/\./g, "-");
     if (!/^[A-Z0-9][A-Z0-9-]{0,14}$/.test(ticker)) return send(req, res, 404, "text/html; charset=utf-8", notFoundPage(origin, "this company"), 0);
-    if (companyUrl(ticker) !== p) return redirect(res, companyUrl(ticker));
+    // The stock's page is /<TICKER> now (src/ticker-page.mjs, which also answers this path in the engine).
+    return redirect(res, companyUrl(ticker));
   }
   if (p === "/insider-trading/") return redirect(res, "/insider-trading");
   if (/^\/insiders\//.test(p) && !PERSON_PATH.test(p)) return send(req, res, 404, "text/html; charset=utf-8", notFoundPage(origin, "this person"), 0);
@@ -593,10 +517,7 @@ export async function handlePublicPage(req, res, url, { query, env = process.env
     if (page < 1) return send(req, res, 404, "text/plain; charset=utf-8", "Not found\n", 0);
     out = { status: 200, type: xml, body: await sitemapFile(kind, page, { query, origin }) };
   } else if (p === "/insider-trading") out = { status: 200, type: html, body: (await hubPage({ query, origin })).html };
-  else if (ticker) {
-    const page = await companyPage(ticker, { query, origin });
-    out = page ? { status: 200, type: html, body: page.html } : { status: 404, type: html, body: notFoundPage(origin, ticker) };
-  } else {
+  else {
     const m = PERSON_PATH.exec(p);
     try { parsePersonCik(m[1]); } catch { return send(req, res, 404, html, notFoundPage(origin, "this person"), 0); }
     const page = await personPage(m[1], { query, origin });
