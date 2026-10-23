@@ -631,7 +631,9 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.match(recorded.params[7], /renews automatically/);
   assert.equal(posted[0]["metadata[insidir_consent_id]"], "41");
   assert.deepEqual(replies.at(-1), { status: 200, body: { url: "https://checkout.stripe.com/c/pay/x" } });
-  assert.equal(posted[0].success_url, "https://insidir.example/billing.html?checkout=success");
+  assert.equal(posted[0].success_url, "https://insidir.example/welcome.html?checkout=success", "paying lands on the first-minute setup");
+  assert.equal(posted[0]["after_expiration[recovery][enabled]"], "true", "an abandoned checkout can be recovered");
+  assert.ok(Math.abs(Number(posted[0].expires_at) - (Date.now() / 1000 + 3600)) < 60, "the checkout page closes after an hour");
   assert.equal(posted[0].cancel_url, "https://insidir.example/subscribe.html?checkout=cancel");
   assert.equal(posted[0]["line_items[0][price]"], "price_pro");
   assert.equal(posted[0].customer, "cus_new");

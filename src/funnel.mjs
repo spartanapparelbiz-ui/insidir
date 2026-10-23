@@ -19,6 +19,8 @@
 
 export const CLIENT_EVENTS = Object.freeze({
   landing_viewed: "page",          // the landing page was shown
+  ticker_searched: "click",        // a stock was searched; label: which box (hero, end, ticker). The symbol itself is never sent
+  ticker_viewed: "page",           // a public stock page was shown; funnel.js sends the path as "/stock", not the symbol
   pricing_viewed: "page",          // the pricing section (landing) or pricing page came into view
   cta_clicked: "click",            // a trial button; label: where it was (hero, nav, pricing, final, ...)
   demo_opened: "click",            // a product example or clip was opened; label: which
@@ -114,6 +116,8 @@ const rate = (num, den) => den > 0 ? num / den : null;
 export const REPORT_SQL = `WITH w AS (SELECT * FROM funnel_events WHERE created_at >= now() - make_interval(days => $1))
   SELECT
     count(DISTINCT visitor) FILTER (WHERE event='landing_viewed')::int AS landing,
+    count(DISTINCT visitor) FILTER (WHERE event='ticker_searched')::int AS searched,
+    count(DISTINCT visitor) FILTER (WHERE event='ticker_viewed')::int AS stock_page,
     count(DISTINCT visitor) FILTER (WHERE event='cta_clicked')::int AS cta,
     count(DISTINCT visitor) FILTER (WHERE event='demo_opened')::int AS demo,
     count(DISTINCT visitor) FILTER (WHERE event='pricing_viewed')::int AS pricing,
@@ -147,6 +151,19 @@ export const VARIANT_SQL = `WITH w AS (SELECT * FROM funnel_events WHERE created
   LEFT JOIN w p ON p.user_id=m.user_id AND p.event='checkout_completed'
   GROUP BY e.variant ORDER BY e.variant`;
 
+/* By source: the ?ref= a visitor first arrived with (src/attribution.mjs). Visits are distinct visitors who saw the
+   landing page or a stock page; accounts, trials ($1 checkout confirmed by Stripe) and paid (first $39 renewal) are
+   members whose account carries that ref. "(none)" is direct or unlabelled traffic. */
+export const REF_SQL = `WITH w AS (SELECT * FROM funnel_events WHERE created_at >= now() - make_interval(days => $1)),
+  v AS (SELECT coalesce(ref,'(none)') AS ref, count(DISTINCT visitor)::int AS visits FROM w WHERE event IN ('landing_viewed','ticker_viewed') GROUP BY 1),
+  m AS (SELECT coalesce(u.signup_ref,'(none)') AS ref,
+      count(DISTINCT w.user_id) FILTER (WHERE w.event='signup_completed')::int AS signups,
+      count(DISTINCT w.user_id) FILTER (WHERE w.event='checkout_completed')::int AS trials,
+      count(DISTINCT w.user_id) FILTER (WHERE w.event='subscription_renewed')::int AS paid
+    FROM w JOIN users u ON u.id=w.user_id GROUP BY 1)
+  SELECT coalesce(v.ref,m.ref) AS ref, coalesce(v.visits,0) AS visits, coalesce(m.signups,0) AS signups, coalesce(m.trials,0) AS trials, coalesce(m.paid,0) AS paid
+  FROM v FULL JOIN m ON m.ref=v.ref ORDER BY 2 DESC, 1`;
+
 // The renewal cohort is checkouts older than the trial (trialSettings().days, passed by the API) plus a day, so every member counted has reached their first $39.
 export async function funnelReport(run, { days = 30, trialDays = 7 } = {}) {
   const d = Math.max(1, Math.min(400, Number(days) || 30));
@@ -155,6 +172,8 @@ export async function funnelReport(run, { days = 30, trialDays = 7 } = {}) {
   const n = k => Number(t[k]) || 0;
   const stages = [
     { key: "landing", label: "Landing visitors", count: n("landing"), unit: "visitors" },
+    { key: "searched", label: "Searched a stock", count: n("searched"), unit: "visitors", rate: rate(n("searched"), n("landing")), of: "landing" },
+    { key: "stock_page", label: "Opened a stock page", count: n("stock_page"), unit: "visitors" },
     { key: "cta", label: "Clicked a trial button", count: n("cta"), unit: "visitors", rate: rate(n("cta"), n("landing")), of: "landing" },
     { key: "signup_started", label: "Opened sign-up", count: n("signup_started"), unit: "visitors", rate: rate(n("signup_started"), n("landing")), of: "landing" },
     { key: "signup_completed", label: "Created an account", count: n("signup_completed"), unit: "accounts", rate: rate(n("signup_completed"), n("signup_started")), of: "signup_started" },
@@ -177,8 +196,12 @@ export async function funnelReport(run, { days = 30, trialDays = 7 } = {}) {
     return { name, arms, pValue: p, decision: !enough ? "Not enough data: keep running (needs " + MIN_VISITORS + " visitors per arm and " + MIN_CONVERSIONS + " paid conversions)"
       : p != null && p < 0.05 ? "Arm " + leader.arm + " converts to paid better (p = " + p.toFixed(3) + ")" : "No significant difference in paid conversion yet (p = " + (p == null ? "n/a" : p.toFixed(3)) + ")" };
   });
+  const sources = (await run(REF_SQL, [d])).rows.map(r => {
+    const x = { ref: r.ref, visits: Number(r.visits) || 0, signups: Number(r.signups) || 0, trials: Number(r.trials) || 0, paid: Number(r.paid) || 0 };
+    return { ...x, trialRate: rate(x.trials, x.visits), paidRate: rate(x.paid, x.trials) };
+  });
   const sufficient = n("landing") >= MIN_VISITORS && n("paid") >= MIN_CONVERSIONS;
-  return { days: d, measuredSince: t.first_event || null, stages, experiments: verdicts, sufficient,
+  return { days: d, measuredSince: t.first_event || null, stages, sources, experiments: verdicts, sufficient,
     note: sufficient ? "Rates are measured, not estimated." : "Too little data has been collected for these rates to mean much yet. They are shown as measured; no benchmark is implied.",
     method: "Distinct visitors (a random first-party id) for page and click stages, distinct accounts from the engine's own records and Stripe's signed webhooks for account and payment stages. Visitors with Global Privacy Control or Do Not Track are not measured." };
 }

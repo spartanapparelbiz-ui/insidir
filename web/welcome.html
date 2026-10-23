@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Welcome to Insidir</title>
+<meta name="description" content="Set up Insidir in a minute: pick three stocks, see their latest insider trade, turn on alerts.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ds.css?v=2">
+<style>
+  .wl{min-height:100svh;display:grid;grid-template-rows:auto 1fr auto}
+  .wl-main{display:grid;align-content:start;justify-items:center;padding:var(--s8) var(--s3) var(--s10)}
+  .wl-card{width:100%;max-width:480px}
+  .wl-card .ds-h2{font-size:30px;line-height:36px}
+  .wl-card .ds-body{margin-top:12px}
+  .wl-steps{display:flex;gap:6px;justify-content:center;margin:0 0 var(--s4);padding:0;list-style:none}
+  .wl-steps li{width:28px;height:3px;border-radius:2px;background:var(--line-strong)}
+  .wl-steps li.is-on{background:var(--text)}
+  .wl-form{display:grid;gap:12px;margin-top:var(--s4)}
+  .wl-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .wl-input{width:100%;height:56px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-btn);background:var(--raised);color:var(--text);font:500 18px/20px var(--mono);text-transform:uppercase;text-align:center;outline:none;min-width:0}
+  .wl-input:focus{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}
+  .wl-input::placeholder{color:var(--muted);text-transform:none;font:400 15px/20px var(--sans)}
+  .wl-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .wl-chip{min-height:44px;padding:0 14px;border:1px solid var(--line-strong);border-radius:999px;background:none;color:var(--text);font:500 14px/20px var(--mono);cursor:pointer}
+  .wl-chip:hover{background:var(--raised)}
+  .wl-chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+  .wl-form .ds-btn{width:100%}
+  .wl-msg{min-height:20px;margin:0;font:400 14px/20px var(--sans);color:var(--muted)}
+  .wl-msg.is-error{color:var(--text)}
+  .wl-msg.is-error::before{content:"";display:inline-block;width:6px;height:6px;margin:0 8px 2px 0;border-radius:50%;background:var(--sell)}
+  .wl-trade{margin-top:var(--s4);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-card);background:var(--raised)}
+  .wl-trade p{margin:0;font:400 17px/26px var(--sans)}
+  .wl-trade a{display:inline-flex;align-items:center;min-height:44px;margin-top:4px;color:var(--muted);font:400 14px/20px var(--sans)}
+  .wl-opt{display:grid;gap:8px;margin-top:var(--s3);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-card)}
+  .wl-opt h2{margin:0;font:600 17px/24px var(--sans)}
+  .wl-opt p{margin:0;font:400 14px/22px var(--sans);color:var(--muted)}
+  .wl-agree{display:flex;gap:12px;align-items:flex-start;font:400 14px/22px var(--sans);color:var(--muted);cursor:pointer;min-height:44px}
+  .wl-agree input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:#f0eee8}
+  .wl-skip{justify-self:center;min-height:44px}
+  .wl-foot{padding:var(--s3);text-align:center}
+</style>
+</head>
+<body class="ds">
+<div class="wl">
+  <header class="ds-nav"><div class="ds-nav__in" style="grid-template-columns:1fr auto">
+    <a class="ds-mark" href="/dashboard.html" aria-label="Insidir dashboard">insidir.</a>
+  </div></header>
+
+  <main class="wl-main" id="main">
+    <div class="wl-card">
+      <ol class="wl-steps" aria-hidden="true"><li data-wl-dot="stocks" class="is-on"></li><li data-wl-dot="trade"></li><li data-wl-dot="alerts"></li></ol>
+
+      <section data-wl-step="confirm" aria-labelledby="wl-confirm-h">
+        <h1 class="ds-h2" id="wl-confirm-h">You're in.</h1>
+        <p class="ds-body" data-wl-confirm-text>Confirming your $1 payment with Stripe. This takes a few seconds.</p>
+        <p class="wl-msg" data-wl-msg role="status" aria-live="polite"></p>
+      </section>
+
+      <section data-wl-step="stocks" aria-labelledby="wl-stocks-h" hidden>
+        <h1 class="ds-h2" id="wl-stocks-h">Pick 3 stocks to watch.</h1>
+        <p class="ds-body">We'll tell you the minute an insider at any of them buys or sells.</p>
+        <form class="wl-form" data-wl-stocks-form novalidate>
+          <div class="wl-picks">
+            <label class="sr-only" for="wl-t1">First stock</label><input class="wl-input" id="wl-t1" name="t" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="NVDA">
+            <label class="sr-only" for="wl-t2">Second stock</label><input class="wl-input" id="wl-t2" name="t" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Stock">
+            <label class="sr-only" for="wl-t3">Third stock</label><input class="wl-input" id="wl-t3" name="t" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Stock">
+          </div>
+          <div class="wl-chips" aria-label="Popular picks"><button class="wl-chip" type="button" data-wl-chip>NVDA</button><button class="wl-chip" type="button" data-wl-chip>TSLA</button><button class="wl-chip" type="button" data-wl-chip>AAPL</button><button class="wl-chip" type="button" data-wl-chip>PEP</button><button class="wl-chip" type="button" data-wl-chip>MSFT</button><button class="wl-chip" type="button" data-wl-chip>AMZN</button></div>
+          <button class="ds-btn ds-btn--lg" type="submit">Watch these</button>
+          <p class="wl-msg" data-wl-msg role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section data-wl-step="trade" aria-labelledby="wl-trade-h" hidden>
+        <h1 class="ds-h2" id="wl-trade-h">The latest insider trade at <span class="ds-num" data-wl-ticker></span>.</h1>
+        <div class="wl-trade" data-wl-trade><p>Loading…</p></div>
+        <div class="wl-form"><button class="ds-btn ds-btn--lg" type="button" data-wl-next>Next: turn on alerts</button></div>
+      </section>
+
+      <section data-wl-step="alerts" aria-labelledby="wl-alerts-h" hidden>
+        <h1 class="ds-h2" id="wl-alerts-h">Turn on alerts.</h1>
+        <p class="ds-body">Get the next filing the minute it posts, not the next morning.</p>
+        <div class="wl-opt">
+          <h2>On this phone</h2>
+          <p data-wl-push-text>A notification when an insider at your stocks files.</p>
+          <button class="ds-btn" type="button" data-wl-push>Turn on notifications</button>
+        </div>
+        <div class="wl-opt">
+          <h2>By email</h2>
+          <label class="wl-agree"><input type="checkbox" data-wl-consent> <span data-wl-consent-text>Email me alerts about new filings for my stocks.</span></label>
+          <button class="ds-btn" type="button" data-wl-email disabled>Turn on email alerts</button>
+        </div>
+        <div class="wl-form">
+          <p class="wl-msg" data-wl-msg role="status" aria-live="polite"></p>
+          <a class="ds-btn ds-btn--lg" href="/dashboard.html" data-wl-done>Open my dashboard</a>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="wl-foot"><p class="ds-small"><span class="ds-mark" style="font-size:14px;min-height:0">insidir.</span> Research, not investment advice.</p></footer>
+</div>
+<script src="/assets/js/welcome.js?v=1" defer></script>
+<script src="/assets/js/ds.js?v=1" defer></script>
+<script defer src="/assets/js/funnel.js"></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
+</body>
+</html>

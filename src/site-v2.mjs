@@ -136,4 +136,4 @@ export const emailForm = (where = "page") => `<form class="v2-mail" action="/v1/
 export const searchBox = (id = "q", { large = true } = {}) => `<form class="ds-search${large ? " v2-search--hero" : ""}" action="/search" method="get" role="search" data-ds-search>
 <label class="sr-only" for="${esc(id)}">Stock ticker</label>
 <input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
-<button class="ds-btn" type="submit" data-cta="search">See insiders</button></form>`;
+<button class="ds-btn" type="submit">See insiders</button></form>`;

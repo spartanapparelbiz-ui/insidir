@@ -349,6 +349,7 @@ async function route(req,res,ctx){
   // The landing page, server-rendered with live data, and its live filing strip (src/landing.mjs).
   if((m==="GET"||m==="HEAD") && (p==="/"||p==="/index.html"||p==="/v1/live") && await handleLanding(req,res,u,{query:ctx.query,env:ctx.env,secure:config.cookieSecure}))return;
   // Public stock pages at /<TICKER>, /search and the per-stock share images (src/ticker-page.mjs).
+  if((m==="GET"||m==="HEAD") && (p==="/admin"||p==="/admin/")){res.writeHead(302,{Location:"/admin-funnel.html","Cache-Control":"no-store"});return res.end()}
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handleTickerRoute(req,res,u,{query:ctx.query,env:ctx.env}))return;
   // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handlePublicPage(req,res,u,{query:ctx.query,env:ctx.env,requester:clientAddress(req)}))return;

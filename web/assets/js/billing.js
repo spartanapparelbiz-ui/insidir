@@ -25,7 +25,7 @@
     past_due: { badge: "Payment due", text: "Your last payment didn't go through, so access is paused. Open Manage billing to update your payment method." },
     unpaid: { badge: "Payment due", text: "Your subscription has an unpaid invoice, so access is paused. Open Manage billing to update your payment method." },
     incomplete: { badge: "Payment pending", text: "Your first payment hasn't been completed yet. Open Manage billing to finish it. If you've only just paid, give Stripe a minute." },
-    paused: { badge: "Paused", text: "Your subscription is paused, so access is paused too. Open Manage billing to resume it." }
+    paused: { badge: "Paused", text: "Your subscription is paused, so access is paused too. It resumes on its own, or press Resume now." }
   };
   const NO_PORTAL = " If Manage billing isn't shown, email hello@aethric.llc and we'll sort it out.";
   const message = $("#bill-status"), manage = $("#manage");
@@ -103,6 +103,16 @@
     // Cancel online in one step, wherever the subscription can still bill and is not already set to stop.
     $("[data-bl-cancel]").hidden = !(enabled && customer && ["active", "trialing", "past_due", "unpaid"].includes(status) && !stopping);
     // The trial's charge reminder links to billing.html#cancel: open the one-step cancel confirmation straight away.
+    // The cancel confirmation also offers one month's pause (once per subscription; the server checks).
+    const canPause = enabled && customer && ["active", "trialing"].includes(status) && !stopping;
+    $("[data-bl-pause]").hidden = !canPause;
+    const pauseText = $("[data-bl-pause-text]");
+    pauseText.hidden = !canPause;
+    if (canPause && period) {
+      const from = new Date(period), back = new Date(from.getTime() + 30 * 864e5);
+      pauseText.textContent = "Or pause for a month: no charge on " + dateText(from) + ", access pauses until " + dateText(back) + ", then $39 a month resumes. You can still cancel anytime.";
+    }
+    $("[data-bl-resume-row]").hidden = status !== "paused";
     if (location.hash === "#cancel" && !$("[data-bl-cancel]").hidden) { $("[data-bl-cancel-confirm]").hidden = false; history.replaceState(null, "", location.pathname + location.search); }
     if (stopping && active) { say("Your subscription is cancelled and will not renew. Access continues until " + (dateText(period) || "the end of the current period") + "."); return; }
     if (waiting) say("Waiting for Stripe to confirm your payment. This page updates as soon as it does; there's no need to pay again.");
@@ -220,6 +230,25 @@
       say(err instanceof TypeError ? "We couldn't reach Insidir. Check your connection and try again." : err.message, true);
     } finally { yes.disabled = false; }
   });
+
+  /* ---------- pause one month instead (POST /v1/billing/pause), and resume early ---------- */
+  async function post(path, button, fallback) {
+    button.disabled = true;
+    say("");
+    try {
+      const res = await fetch(path, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: "{}" });
+      let data = {};
+      try { data = await res.json(); } catch (_) { data = {}; }
+      if (!res.ok) throw Error(data.error ? String(data.error) : fallback);
+      confirmBox.hidden = true;
+      await load(true);
+      say(data.message || "Done.");
+    } catch (err) {
+      say(err instanceof TypeError ? "We couldn't reach Insidir. Check your connection and try again." : err.message, true);
+    } finally { button.disabled = false; }
+  }
+  $("[data-bl-pause]").addEventListener("click", e => post("/v1/billing/pause", e.currentTarget, "The pause didn't go through. Please try again, or cancel instead."));
+  $("[data-bl-resume]").addEventListener("click", e => post("/v1/billing/resume", e.currentTarget, "We couldn't resume your subscription. Please try again."));
 
   load(returning).then(state => { if (returning) confirmCheckout(state); });
 })();

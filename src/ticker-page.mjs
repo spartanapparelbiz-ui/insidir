@@ -103,7 +103,7 @@ ${scripts()}
 </body></html>`;
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: `${who} insider trading`, url: origin + "/" + t, about: { "@type": "Corporation", name: who, tickerSymbol: t } };
   return head({ title, description, canonical: "/" + encodeURIComponent(t), origin, image: "/og/" + encodeURIComponent(t) + ".png",
-    extra: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` }) + `\n<body class="ds v2">\n` + body;
+    extra: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` }) + `\n<body class="ds v2" data-funnel-stock>\n` + body;
 }
 
 /* ---------- the share image ---------- */

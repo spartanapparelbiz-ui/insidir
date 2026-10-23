@@ -17,7 +17,7 @@ import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequi
 // entity: any SEC filer by CIK (entity.html?cik=1067983, fed by GET /v1/entities/<cik>).
 export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence", "entity"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
-export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
+export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account", "welcome"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
 export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted", "forgot-password", "reset-password", "verify-email"]);
 // Pages a sign-in or subscribe step may send someone back to afterwards.

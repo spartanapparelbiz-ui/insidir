@@ -62,7 +62,7 @@ try {
   // Checkout Sessions with the engine's exact parameters (billing.mjs): one for a new account, one for a returning one.
   const probe = await stripe.post("/customers", { email: "stripe-test-mode-check@example.com", "metadata[purpose]": "insidir-test-mode-check" });
   const base = { mode: "subscription", customer: probe.id, "line_items[0][price]": priceId, "line_items[0][quantity]": "1",
-    success_url: "https://example.com/billing.html?checkout=success", cancel_url: "https://example.com/subscribe.html?checkout=cancel",
+    success_url: "https://example.com/welcome.html?checkout=success", cancel_url: "https://example.com/subscribe.html?checkout=cancel",
     "custom_text[submit][message]": "By subscribing you authorize Insidir to charge $39.00 per month until you cancel. Cancel any time from Billing." };
   const offerTrial = currentOffer({ trialUsed: false, trial }), offerFull = currentOffer({ trialUsed: true, trial });
   const trialSession = await stripe.post("/checkout/sessions", { ...base, ...trialCheckoutParams(trial) });

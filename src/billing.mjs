@@ -16,6 +16,7 @@ import { billingSettings, trialSettings, verificationRequired } from "./config.m
 import { accessSummary } from "./paywall.mjs";
 import { recordFirstPaidInvoice } from "./creator-program.mjs";
 import { memoryLimiter } from "./rate-limit.mjs";
+import { recoveryParams, queueCheckoutRecovery } from "./checkout-recovery.mjs";
 import * as notices from "./billing-notices.mjs";
 
 // Used only when the caller passes no shared limiter (tests); the engine passes its PostgreSQL-backed one.
@@ -38,6 +39,8 @@ const BLOCKS_CHECKOUT_OTHER = "You already have an Insidir subscription. Manage 
 // Preference when a customer has several subscriptions for the plan.
 const RANK = { active: 0, trialing: 0, past_due: 1, unpaid: 2, incomplete: 3, paused: 4 };
 
+export const PAUSE_DAYS = 30;
+const shortDate = d => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 const SUBSCRIPTION_ID = /^sub_[A-Za-z0-9]{1,250}$/;
 const CUSTOMER_ID = /^cus_[A-Za-z0-9]{1,250}$/;
 const CHECKOUT_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
@@ -206,6 +209,15 @@ export async function listCustomerSubscriptions(customerId, { stripe }) {
   return listAll(stripe, "/subscriptions", { customer: customerId, status: "all" });
 }
 
+/* A one-month pause (POST /v1/billing/pause) is Stripe's pause_collection with behavior "void": no invoice is
+ * collected until resumes_at. Access pauses from the end of the period already paid for (insidir_pause_from), so a
+ * member never loses days they paid for; until then, and after resumes_at, Stripe's own status applies. */
+export function pausedNow(sub, now = Date.now()) {
+  if (!sub?.pause_collection || !["active", "trialing"].includes(statusOf(sub))) return false;
+  const from = Number(sub.metadata?.insidir_pause_from) || 0, until = Number(sub.pause_collection.resumes_at) || 0;
+  return now / 1000 >= from && (!until || now / 1000 < until);
+}
+
 /* Stores the subscription that decides access, from a list just read from Stripe.
  * Returns the stored fields, or null when the customer has no subscription for the plan. */
 export async function storeSubscriptions(customerId, subscriptions, { query = dbQuery, priceId = billingSettings().priceId } = {}) {
@@ -215,7 +227,7 @@ export async function storeSubscriptions(customerId, subscriptions, { query = db
     await query("UPDATE users SET subscription_status='inactive' WHERE stripe_customer_id=$1 AND subscription_status IS NOT NULL AND subscription_status<>'inactive'", [customerId]);
     return null;
   }
-  const fields = { stripe_subscription_id: best.id, subscription_status: String(best.status || "inactive"), current_period_end: periodEnd(best, priceId),
+  const fields = { stripe_subscription_id: best.id, subscription_status: pausedNow(best) ? "paused" : String(best.status || "inactive"), current_period_end: periodEnd(best, priceId),
     cancel_at_period_end: best.cancel_at_period_end === true || (Number(best.cancel_at) > 0 && !ENDED_STATUSES.includes(statusOf(best))) };
   // trial_started_at is set once, the first time a subscription is seen trialing; it never resets.
   await query(`UPDATE users SET stripe_subscription_id=$1,subscription_status=$2,current_period_end=$3,
@@ -456,7 +468,9 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
           String(req.headers?.["user-agent"] || "").slice(0, 300) || null]);
       const consentId = String(consentRow.rows?.[0]?.id ?? "");
       const params = { mode: "subscription", customer, "managed_payments[enabled]": "false", "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
-        client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
+        client_reference_id: u.id, success_url: site + "/welcome.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
+        // Closes after an hour and can be recovered: the expiry webhook sends the one reminder (src/checkout-recovery.mjs).
+        ...recoveryParams(), "metadata[insidir_offer]": offer.kind,
         "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id,
         "metadata[insidir_consent_id]": consentId, "subscription_data[metadata][insidir_consent_id]": consentId,
         ...(row.signup_ref ? { "metadata[insidir_ref]": row.signup_ref, "subscription_data[metadata][insidir_ref]": row.signup_ref } : {}),
@@ -499,6 +513,52 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     });
   }
 
+  /* POST /v1/billing/pause: the cancel flow's alternative. One month with no charge and no access, starting when
+   * the period already paid for ends (for a trial: the $39 due at its end is not charged), then billing resumes on
+   * its own. Once per subscription. Cancelling stays available at every step. */
+  if (p === "/v1/billing/pause" && method === "POST") {
+    if (!settings.secretKey) throw failure(503, "Billing is not connected. Email hello@aethric.llc.");
+    if (!sameOrigin()) throw failure(403, "Untrusted origin");
+    const u = await signedIn();
+    if (await limited("pause:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many attempts. Try again shortly.");
+    return exclusiveBilling(u.id, async () => {
+      const row = (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0];
+      if (!row?.stripe_customer_id) throw failure(404, "No subscription found for this account");
+      const subscriptions = await listCustomerSubscriptions(row.stripe_customer_id, { stripe });
+      const sub = pickSubscription(subscriptions.filter(x => ["active", "trialing"].includes(statusOf(x))), settings.priceId);
+      if (!sub || !SUBSCRIPTION_ID.test(String(sub.id || ""))) throw failure(409, "There is no active subscription to pause.");
+      if (sub.cancel_at_period_end === true) throw failure(409, "This subscription is already cancelled.");
+      if (sub.pause_collection || sub.metadata?.insidir_paused_once) throw failure(409, "This subscription has already been paused once. You can still cancel it.");
+      const from = periodEnd(sub, settings.priceId);
+      if (!from) throw failure(503, "Stripe did not return the current period. Try again shortly.");
+      const resumes = new Date(from.getTime() + PAUSE_DAYS * 864e5);
+      await stripe.post("/subscriptions/" + sub.id, { "pause_collection[behavior]": "void", "pause_collection[resumes_at]": String(Math.floor(resumes / 1000)),
+        "metadata[insidir_pause_from]": String(Math.floor(from / 1000)), "metadata[insidir_paused_once]": "1" });
+      await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
+      await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "pause_requested", detail: { subscription: sub.id, from: from.toISOString(), resumes: resumes.toISOString() } });
+      return json(res, 200, { paused: true, from: from.toISOString(), resumes: resumes.toISOString(),
+        message: `Paused. You won't be charged on ${shortDate(from)}. Insidir pauses from ${shortDate(from)} and billing resumes at $39 a month on ${shortDate(resumes)}. You can still cancel anytime.` });
+    });
+  }
+  /* POST /v1/billing/resume: ends a pause early. Billing returns to its normal schedule. */
+  if (p === "/v1/billing/resume" && method === "POST") {
+    if (!settings.secretKey) throw failure(503, "Billing is not connected. Email hello@aethric.llc.");
+    if (!sameOrigin()) throw failure(403, "Untrusted origin");
+    const u = await signedIn();
+    if (await limited("pause:" + u.id, 10, 15 * 60_000)) throw failure(429, "Too many attempts. Try again shortly.");
+    return exclusiveBilling(u.id, async () => {
+      const row = (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0];
+      if (!row?.stripe_customer_id) throw failure(404, "No subscription found for this account");
+      const subscriptions = await listCustomerSubscriptions(row.stripe_customer_id, { stripe });
+      const sub = subscriptions.find(x => x?.pause_collection && SUBSCRIPTION_ID.test(String(x.id || "")) && hasPrice(x, settings.priceId));
+      if (!sub) return json(res, 200, { resumed: false, message: "Your subscription isn't paused." });
+      await stripe.post("/subscriptions/" + sub.id, { pause_collection: "" });
+      await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
+      await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "pause_ended", detail: { subscription: sub.id } });
+      return json(res, 200, { resumed: true, message: "Welcome back. Your subscription is active again." });
+    });
+  }
+
   if (p === "/v1/billing/portal" && method === "POST") {
     if (!settings.enabled) throw failure(503, "The billing portal is not available yet. Contact hello@aethric.llc.");
     if (!sameOrigin()) throw failure(403, "Untrusted origin");
@@ -534,6 +594,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       if (event.type === "checkout.session.expired" && obj.mode === "subscription") {
         const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
         await serverEvent(query, "checkout_expired", { userId: ref, object: obj.id });
+        // Only a page that ran out its hour gets a reminder; one Insidir closed because a newer checkout opened does not.
+        if (Number(obj.expires_at) > 0 && Number(obj.expires_at) <= Number(event.created || 0) + 300) await queueCheckoutRecovery(query, obj, { env });
       }
       // A subscription that ended (cancelled in the portal, by Stripe, or at the end of a cancelled period).
       if (event.type === "customer.subscription.deleted") await serverEvent(query, "subscription_canceled", { userId: await userForCustomer(query, obj.customer), object: obj.id });
