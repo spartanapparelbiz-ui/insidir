@@ -202,3 +202,20 @@
   .v2-compare th,.v2-compare td{padding:12px;font-size:14px;line-height:20px;white-space:normal}
   .v2-compare th[scope="row"]{min-width:0;font-size:14px}
 }
+
+/* ---------- hero: the live headline and the printer (src/landing.mjs hero, web/assets/js/hero.js) ---------- */
+.hx{padding:var(--s4) 0 var(--s10)}
+.hx__in{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;grid-template-areas:"h prn" "copy prn";column-gap:var(--s8);row-gap:var(--s4)}
+.hx__h1{grid-area:h;display:grid;margin:0;font:700 100px/.94 var(--sans);letter-spacing:-.05em}
+.hx__line{grid-area:1/1;text-wrap:balance}
+.hx__line[aria-hidden=true]{visibility:hidden}
+.hx__ch{opacity:0}
+.hx__ch.is-on{opacity:1}
+.hx__copy{grid-area:copy;align-self:start;min-width:0}
+.hx__fixed{margin:0 0 var(--s4);font:600 30px/36px var(--sans);letter-spacing:-.02em;text-wrap:balance}
+.hx__terms{margin-top:12px}
+.prn{grid-area:prn;margin-top:var(--s1)}
+.prn:not(.is-on) .rc--print,.prn:not(.is-on) .rc--print .rc__stamp{animation-play-state:paused}
+@media (max-width:1199px){.hx__h1{font-size:80px}}
+@media (max-width:1023px){.hx__in{grid-template-columns:minmax(0,1fr);grid-template-areas:"h" "copy" "prn"}.prn{justify-self:center}}
+@media (max-width:767px){.hx{padding:var(--s4) 0 var(--s6)}.hx__h1{font-size:56px;line-height:.98;letter-spacing:-.045em}.hx__fixed{font-size:21px;line-height:28px;margin-bottom:var(--s3)}.hx .prn{margin-top:var(--s2)}}

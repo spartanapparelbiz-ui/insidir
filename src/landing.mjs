@@ -5,19 +5,18 @@
  * section is one headline, one sentence and one visual (docs/LANDING-COPY.md has the copy). No mock data: every trade
  * is a row from the import with its SEC filing link; a part with no data is left out, never faked.
  *
- *   GET /, /index.html     the page (cached per headline variant for CACHE_MS)
- *   GET /v1/live           the newest filings for the live strip (site-v2.js slides new rows in)
+ *   GET /, /index.html     the page (cached for CACHE_MS)
+ *   GET /v1/live           the newest filings, each with its receipt (hero.js prints new ones)
  *
- * Headline A/B test: insidir_h1 = a | b, assigned on the first visit (50/50) and reported by funnel.js as
- * experiment_exposed "h1:a" / "h1:b"; the funnel report compares sign-ups and paid members by arm. */
+ * The headline A/B test (insidir_h1) ended on Oct 23, 2026: the H1 is now the live headline, the newest notable trade. */
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { createHash, randomInt } from "node:crypto";
+import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { esc, money, day, ago, pct, sentence, tradeCard, withRole, LINE_SQL, head, nav, footer, scripts, emailForm, searchBox, kindOf, personName } from "./site-v2.mjs";
 import { siteOrigin } from "./public-pages.mjs";
+import { renderReceipt, renderTape, liveHeadlines } from "./receipt.mjs";
 import { weekBuys } from "./newsletter.mjs";
-import { tickerData, FREE_TRADES } from "./ticker-page.mjs";
 import { closesFor } from "./prices.mjs";
 import { addDays, closeOnOrAfter, closeOnOrBefore } from "./track-record.mjs";
 import { COMPETITORS, CHECKED_ON } from "./landing-competitors.mjs";
@@ -94,7 +93,7 @@ export const clearLandingCache = () => cache.clear();
 export async function landingData(query, { now = new Date() } = {}) {
   const today = now.toISOString().slice(0, 10);
   const [live, counters, buys, receiptLines, testimonials] = await Promise.all([
-    query(LIVE_SQL, [8]).then(r => withRole(r.rows || [])),
+    query(LIVE_SQL, [24]).then(r => withRole(r.rows || [])),
     query(COUNTERS_SQL).then(r => r.rows?.[0] || null).catch(() => null),
     weekBuys(query, 5),
     query(RECEIPT_LINES_SQL).then(r => r.rows || []),
@@ -106,9 +105,7 @@ export async function landingData(query, { now = new Date() } = {}) {
     const series = await closesFor(query, c.ticker, { download: false }).catch(() => []);
     receipts.push({ ...c, ...receiptReturns(c, series, today) });
   }
-  const featured = buys[0]?.ticker || live[0]?.ticker || null;
-  const phone = featured ? await tickerData(query, String(featured).toUpperCase()).catch(() => null) : null;
-  return { live, counters, buys, receipts, testimonials, phone, today };
+  return { live, counters, buys, receipts, testimonials, today };
 }
 
 /* ---------- pieces ---------- */
@@ -118,16 +115,6 @@ const liveRow = (r, now) => {
 };
 export const liveItems = (rows, now = Date.now()) => rows.filter(r => r.published_at).map(r => ({ id: String(r.id), html: liveRow(r, now) }));
 
-function phoneFrame(d) {
-  if (!d || !d.trades.length) return "";
-  const rows = d.trades.slice(0, FREE_TRADES).map(r => `<li class="v2-trade v2-trade--${kindOf(r)}"><span class="ds-badge ds-badge--${kindOf(r)}">${kindOf(r) === "buy" ? "Buy" : "Sell"}</span><p>${esc(sentence(r))}</p></li>`).join("");
-  return `<figure class="v2-phone" aria-label="${esc(d.ticker)} on Insidir, as it looks on a phone">
-<div class="v2-phone__screen"><div class="v2-phone__bar"><span class="ds-mark">insidir.</span><span class="ds-btn">Start for $1</span></div>
-<p class="v2-tk__tick ds-num">${esc(d.ticker)}</p><p class="v2-phone__h">${esc(d.name || d.ticker)} insiders: who's buying and selling.</p>
-<ol class="v2-trades">${rows}</ol>
-<div class="v2-phone__lock"><b>${(n => n > 0 ? n + " more trade" + (n === 1 ? "" : "s") : "Get the next one first")(d.trades.length - FREE_TRADES)}</b><span class="ds-btn">Unlock for $1</span></div></div>
-<figcaption class="sr-only">The free view of ${esc(d.ticker)}: its last ${FREE_TRADES} insider trades.</figcaption></figure>`;
-}
 
 const fmtInt = n => Number(n || 0).toLocaleString("en-US");
 // A result in 0.1% steps: the colour follows the shown value, so "0.0%" is never green or red.
@@ -162,10 +149,31 @@ const FAQ = [
   ["Where does the data come from?", "SEC EDGAR, the government's filing system. Every number links to its filing."]
 ];
 
+/* ---------- the hero ----------
+ * The H1 is the newest notable trade in one plain sentence (src/receipt.mjs headlineOf), and hero.js types the next one
+ * every 6 seconds. All of them are in the page, stacked in one grid cell, so the tallest sets the height and nothing
+ * moves when they change. On the right, the printer: the three newest filings as receipts, the top one printing. */
+export const FIXED_LINE = "They have to tell the SEC. We tell you first.";
+function hero(d, now) {
+  const rows = (d?.live || []).filter(r => ["buy", "sell"].includes(kindOf(r)));
+  const lines = liveHeadlines(rows, now);
+  if (!lines.length) lines.push(H1.a);
+  const slips = rows.slice(0, 3).map((r, i) => renderReceipt(r, { now, print: i === 0, id: String(r.id) })).join("");
+  return `<section class="hx" data-v2-hero aria-labelledby="hero-h">
+ <div class="ds-wrap hx__in">
+  <h1 class="hx__h1" id="hero-h" data-hx-live>${lines.map((l, i) => `<span class="hx__line"${i ? ' aria-hidden="true"' : ""}>${esc(l)}</span>`).join("")}</h1>
+  <div class="hx__copy">
+   <p class="hx__fixed">${esc(FIXED_LINE)}</p>
+   ${searchBox("hero-q")}
+   <p class="ds-small hx__terms">$1 for 7 days. Cancel online anytime.</p>
+  </div>
+  ${slips ? `<div class="prn" aria-label="The newest filings, printed as receipts"><div class="prn__slot" aria-hidden="true"></div><div class="prn__feed" data-prn>${slips}</div></div><noscript><style>.rc--print,.rc--print .rc__stamp{animation:none}</style></noscript>` : ""}
+ </div>
+</section>`;
+}
+
 /* ---------- the page ---------- */
-export function renderLanding(d, { origin, variant = "a", now = Date.now() } = {}) {
-  const h1 = H1[variant] || H1.a;
-  const live = d ? liveItems(d.live, now) : [];
+export function renderLanding(d, { origin, now = Date.now() } = {}) {
   const counters = d?.counters;
   const top = d?.buys || [];
   const example = top[0] || d?.live?.[0];
@@ -184,18 +192,11 @@ ${/^https:\/\/(www\.)?sec\.gov\//.test(String(example.source_url || "")) ? `<a c
 <div role="tabpanel" id="how-p3" aria-labelledby="how-t3" class="v2-how__panel" hidden><p class="v2-how__cap">Push or email, minutes after the filing posts.</p>
 <div class="ds-card v2-alert"><div class="v2-alert__top"><span class="ds-mark">insidir.</span><span class="ds-small">now</span></div><p><b class="ds-num">${esc(String(example.ticker || "").toUpperCase())}</b> ${esc(sentence(example))}</p></div></div>
 </div>` : "";
-  const body = `<body class="ds v2" data-exp-h1="${esc(variant)}">
+  const body = `<body class="ds v2">
+${renderTape(d?.live || [])}
 ${nav({ cta: "nav", home: true })}
 <main id="main">
-<section class="v2-hero" data-v2-hero aria-labelledby="hero-h">
- <div class="ds-wrap v2-hero__in">
-  <h1 class="ds-h1" id="hero-h">${esc(h1)}</h1>
-  <p class="ds-body v2-hero__sub">${esc(SUB)}</p>
-  ${searchBox("hero-q")}
-  <p class="ds-small v2-hero__terms">$1 for 7 days. Cancel online anytime.</p>
-  ${live.length ? `<div class="v2-hero__visual">${phoneFrame(d.phone)}<div class="v2-live"><p class="v2-live__h"><span class="v2-dot" aria-hidden="true"></span>Latest filings</p><ul class="v2-live__list" data-v2-live aria-live="off">${live.map(x => `<li class="v2-live__row" data-id="${esc(x.id)}">${x.html}</li>`).join("")}</ul></div></div>` : ""}
- </div>
-</section>
+${hero(d, now)}
 
 ${top.length ? `<section class="ds-section" aria-labelledby="live-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
  <h2 class="ds-h2" id="live-h">This week's biggest insider buys.</h2>
@@ -262,32 +263,30 @@ ${d ? `<section class="ds-section" id="receipts" aria-labelledby="rc-h"><div cla
 <div class="v2-sticky" data-v2-sticky><a class="ds-btn" href="/start" data-cta="sticky">Start for $1</a><span class="ds-small">7 days, cancel anytime</span></div>
 ${footer({ home: true })}
 ${scripts()}
+<script src="/assets/js/hero.js?v=1" defer></script>
 </body></html>`;
   const title = "Insidir: see when CEOs buy and sell their own stock";
   return head({ title, description: SUB, canonical: "/", origin, extra: `<meta name="color-scheme" content="dark">\n` }) + "\n" + body;
 }
 
 /* ---------- routing ---------- */
-const VARIANT_COOKIE = "insidir_h1";
-const variantOf = req => { const m = /(?:^|;\s*)insidir_h1=([ab])\b/.exec(String(req.headers?.cookie || "")); return m ? m[1] : null; };
 
 export async function handleLanding(req, res, url, { query, env = process.env, secure = true }) {
   const p = url.pathname;
   if (p === "/v1/live" && (req.method === "GET" || req.method === "HEAD")) {
-    const rows = await once("live", 30_000, () => query(LIVE_SQL, [8]).then(r => withRole(r.rows || [])));
+    const rows = await once("live", 30_000, () => query(LIVE_SQL, [24]).then(r => withRole(r.rows || [])));
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30" });
-    res.end(JSON.stringify({ items: liveItems(rows) }));
+    const now = Date.now();
+    res.end(JSON.stringify({ items: liveItems(rows, now).map((x, i) => ({ ...x, receipt: renderReceipt(rows.filter(r => r.published_at)[i], { now, print: true, id: x.id }) })) }));
     return true;
   }
   if (!(p === "/" || p === "/index.html") || (req.method !== "GET" && req.method !== "HEAD")) return false;
   if (p === "/index.html") { res.writeHead(301, { Location: "/" + url.search }); res.end(); return true; }
-  let variant = variantOf(req);
   const headers = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, max-age=60", Vary: "Cookie, Accept-Encoding", "X-Content-Type-Options": "nosniff" };
-  if (!variant) { variant = randomInt(2) ? "b" : "a"; headers["Set-Cookie"] = `${VARIANT_COOKIE}=${variant}; Path=/; Max-Age=${90 * 86400}; SameSite=Lax${secure ? "; Secure" : ""}`; }
   let html;
   try {
     const data = await once("data", CACHE_MS, () => landingData(query));
-    html = await once("html:" + variant, CACHE_MS, async () => Buffer.from(renderLanding(data, { origin: siteOrigin(env), variant })));
+    html = await once("html", CACHE_MS, async () => Buffer.from(renderLanding(data, { origin: siteOrigin(env) })));
   } catch (e) {
     console.error("Landing data unavailable", e?.message || e);
     return false; // the static web/index.html answers instead

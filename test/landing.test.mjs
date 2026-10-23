@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { renderLanding, clusterBuys, receiptReturns, landingData, handleLanding, clearLandingCache, H1, LIVE_SQL, RECEIPT_LINES_SQL, COUNTERS_SQL, RECEIPT_RULE } from "../src/landing.mjs";
+import { renderLanding, clusterBuys, receiptReturns, landingData, handleLanding, clearLandingCache, H1, FIXED_LINE, LIVE_SQL, RECEIPT_LINES_SQL, COUNTERS_SQL, RECEIPT_RULE } from "../src/landing.mjs";
 import { WEEK_BUYS_SQL } from "../src/newsletter.mjs";
 import { TRADES_SQL } from "../src/ticker-page.mjs";
 import { COMPETITORS } from "../src/landing-competitors.mjs";
@@ -17,11 +17,18 @@ const DATA = { live: [row(0), row(1, { transaction_code: "S", ticker: "SMPL" })]
     { ticker: "SMPL", insiders: 3, total: 1_500_000, start: "2026-10-01", filing: null, d30: { pending: true, on: "2026-10-31" }, d90: { pending: true, on: "2026-12-30" } }] };
 
 test("eight sections in order, one headline + one sentence each, one action, real filings only", () => {
-  const html = renderLanding(DATA, { origin: "https://insidir.example", variant: "a", now: Date.now() });
-  const sections = [...html.matchAll(/<section class="(?:v2-hero|ds-section[^"]*)"[^>]*aria-labelledby="([a-z-]+)"/g)].map(m => m[1]);
+  const html = renderLanding(DATA, { origin: "https://insidir.example", now: Date.now() });
+  const sections = [...html.matchAll(/<section class="(?:hx|ds-section[^"]*)"[^>]*aria-labelledby="([a-z-]+)"/g)].map(m => m[1]);
   assert.deepEqual(sections, ["hero-h", "live-h", "how-h", "rc-h", "cmp-h", "pr-h", "faq-h", "end-h"]);
-  assert.match(html, /<h1 class="ds-h1" id="hero-h">See when CEOs buy and sell their own stock\.<\/h1>/);
-  assert.match(html, /Insiders have to report every trade to the SEC\. Insidir reads every filing and tells you what it means in plain English, minutes after it posts\./);
+  // The H1 is the newest notable trade, in words; the next ones wait in the same cell (hero.js types them in).
+  assert.match(html, /<h1 class="hx__h1" id="hero-h" data-hx-live><span class="hx__line">A director at Example just bought \$1\.2M of EXMP\.<\/span><span class="hx__line" aria-hidden="true">A director at Example just sold \$1\.2M of SMPL\.<\/span><\/h1>/);
+  assert.ok(html.includes(FIXED_LINE));
+  // The tape and the printer: the newest filings, each a receipt with its stamp and filing link.
+  assert.match(html, /<div class="tape" role="region" aria-label="Latest insider filings">/);
+  assert.match(html, /<a href="\/EXMP"><b>EXMP<\/b><span class="tape__arrow tape__arrow--buy" aria-label="bought">▲<\/span>DIR BOUGHT \$1\.2M<\/a>/);
+  assert.equal((html.match(/<article class="rc /g) || []).length, 2);
+  assert.match(html, /<article class="rc rc--bought rc--print"/);
+  assert.match(html, /rc__stamp rc__stamp--sold" aria-hidden="true">SOLD</);
   assert.match(html, /placeholder="Type a stock: NVDA, TSLA, PEP"/);
   assert.match(html, />See insiders<\/button>/);
   assert.match(html, /\$1 for 7 days\. Cancel online anytime\./);
@@ -33,8 +40,6 @@ test("eight sections in order, one headline + one sentence each, one action, rea
     assert.equal((part.match(/<p class="ds-body">/g) || []).length, 1, id);
   }
   // The live strip and the week's buys are rows from the import, each linked to its stock page or filing.
-  assert.match(html, /<a class="v2-live__item" href="\/EXMP"><b class="ds-num">EXMP<\/b><span>Director bought <span class="ds-num ds-buy">\$1\.2M<\/span><\/span><time class="ds-num" datetime="[^"]+">14 min ago<\/time><\/a>/);
-  assert.match(html, /Director sold <span class="ds-num ds-sell">/);
   assert.match(html, /data-ds-count="1284">1,284</);
   assert.equal((html.match(/<article class="ds-card ds-trade">/g) || []).length, 3);
   assert.match(html, /See a real filing ↗/);
@@ -57,8 +62,7 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   assert.match(html, /Not affiliated with the SEC\./);
   assert.match(html, /data-v2-sticky/, "the sticky Start for $1 bar on phones");
   assert.match(html, /data-v2-mail data-where="receipts"/, "the free weekly email after the receipts");
-  assert.match(html, /<body class="ds v2" data-exp-h1="a">/);
-  assert.match(renderLanding(DATA, { origin: "x", variant: "b" }), new RegExp(H1.b.replace(/\./g, "\\.")));
+  assert.match(html, /<body class="ds v2">/, "the headline A/B test has ended");
 });
 
 test("receipts: one fixed rule (2+ insiders, over $1M, within 10 days, last 6 months), every match kept", () => {
@@ -77,7 +81,7 @@ test("receipts: one fixed rule (2+ insiders, over $1M, within 10 days, last 6 mo
   assert.equal(r.d90.pending, true);
 });
 
-test("routing: / is server-rendered with an A/B headline cookie; /index.html redirects; /v1/live feeds the strip", async () => {
+test("routing: / is server-rendered; /index.html redirects; /v1/live feeds the printer", async () => {
   clearLandingCache();
   const answers = { [LIVE_SQL]: { rows: [row(0)] }, [COUNTERS_SQL]: { rows: [{ filings_today: 12, trades_month: 340 }] }, [WEEK_BUYS_SQL]: { rows: [row(0)] }, [RECEIPT_LINES_SQL]: { rows: [] }, [TRADES_SQL]: { rows: [row(0)] } };
   const query = async sql => answers[sql] || { rows: [] };
@@ -85,14 +89,12 @@ test("routing: / is server-rendered with an A/B headline cookie; /index.html red
   const go = async (path, cookie = "") => { const r = res(); const done = await handleLanding({ method: "GET", headers: { cookie } }, r, new URL(path, "http://x"), { query, secure: false }); return { done, ...r }; };
   const first = await go("/");
   assert.equal(first.status, 200);
-  assert.match(first.headers["Set-Cookie"], /^insidir_h1=[ab]; Path=\/; Max-Age=7776000; SameSite=Lax$/);
-  const b = await go("/", "insidir_h1=b");
-  assert.equal(b.headers["Set-Cookie"], undefined, "an assigned visitor keeps their arm");
-  assert.match(b.body, /data-exp-h1="b"/);
-  assert.match(b.body, /No company had two or more insiders buy over \$1M within 10 days in the last 6 months\./, "an empty rule says so, in words");
+  assert.equal(first.headers["Set-Cookie"], undefined, "no experiment cookie any more");
+  assert.match(first.body, /No company had two or more insiders buy over \$1M within 10 days in the last 6 months\./, "an empty rule says so, in words");
   assert.deepEqual([(await go("/index.html")).status, (await go("/index.html")).headers.Location], [301, "/"]);
   const live = await go("/v1/live");
   assert.equal(JSON.parse(live.body).items[0].id, "r0");
+  assert.match(JSON.parse(live.body).items[0].receipt, /^<article class="rc rc--bought rc--print" data-id="r0"/);
   const down = res();
   assert.equal(await handleLanding({ method: "GET", headers: {} }, down, new URL("/", "http://x"), { query: async () => { throw new Error("db down"); } }).then(x => (clearLandingCache(), x)), true, "a cached page still serves");
 });

@@ -82,7 +82,7 @@ export function tradeCard(r, { href = null } = {}) {
 
 /* Lines with the reporting owner's role, as filed (sec_filing_owners). */
 export const LINE_SQL = `SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.transaction_code,t.category,t.derivative,
-    t.shares,t.price_per_share,t.estimated_value,t.source_url,f.issuer_name,f.published_at,f.rule_10b5_1,f.is_amendment,
+    t.shares,t.shares_after,t.price_per_share,t.estimated_value,t.source_url,f.issuer_name,f.published_at,f.rule_10b5_1,f.is_amendment,
     o.is_director,o.is_officer,o.officer_title,o.is_ten_percent_owner
   FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession
   LEFT JOIN sec_filing_owners o ON o.accession=t.accession AND t.owner_cik IS NOT NULL AND LTRIM(o.owner_cik,'0')=LTRIM(t.owner_cik,'0')`;
@@ -93,7 +93,7 @@ export const withRole = rows => rows.map(r => ({ ...r, role: role(r) }));
    without waiting for two more round trips. Read once at start-up; font URLs become absolute. */
 const css = name => readFileSync(new URL("../web/assets/css/" + name, import.meta.url), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s*\n\s*/g, " ").replace(/url\(\.\.\/fonts\//g, "url(/assets/fonts/");
-const INLINE_CSS = css("ds.css") + css("site-v2.css");
+const INLINE_CSS = css("ds.css") + css("site-v2.css") + css("receipt.css");
 
 export function head({ title, description, canonical, origin, image = null, noindex = false, extra = "" }) {
   const url = origin + canonical;
