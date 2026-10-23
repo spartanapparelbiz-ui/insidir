@@ -49,7 +49,8 @@ export async function chartData(query, ticker, { days = 365, now = Date.now() } 
   const since = new Date(now - d * 864e5).toISOString().slice(0, 10);
   const [series, rows] = await Promise.all([closes(query, t), query(MARKERS_SQL, [t, since]).then(r => withRole(r.rows || []))]);
   const window = series.filter(p => p[0] >= since);
-  return { ticker: t, name: rows.at(-1)?.issuer_name || null, closes: window, last: lastChange(window), markers: rows.map(marker),
+  const ent = rows.length ? null : (await query("SELECT issuer_name,issuer_cik FROM sec_filings WHERE ticker=$1 AND issuer_name IS NOT NULL ORDER BY published_at DESC NULLS LAST LIMIT 1", [t])).rows[0];
+  return { ticker: t, name: rows.at(-1)?.issuer_name || ent?.issuer_name || null, cik: rows.at(-1)?.issuer_cik || ent?.issuer_cik || null, closes: window, last: lastChange(window), markers: rows.map(marker),
     source: "Daily closes; insider trades from SEC Form 4", delayed: true };
 }
 

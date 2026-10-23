@@ -25,7 +25,7 @@ export async function query(sql, params=[]) { return requireDb().query(sql,param
 // Applied in order on every start, inside one transaction under an advisory lock; each file is idempotent.
 export const MIGRATIONS=Object.freeze(["001_initial.sql","002_billing.sql","003_research_decisions.sql","004_brokerage_oauth.sql",
   "005_manual_holdings.sql","006_followed_people.sql","007_entity_media.sql","008_filing_owners.sql","009_creator_referrals.sql",
-  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_query_indexes.sql","015_sec_events.sql","016_explanations.sql","016_funnel_events.sql","017_notifications.sql","018_coverage.sql","019_form4_detail.sql","020_cost_controls.sql","021_autopilot.sql","022_form4_footnotes.sql","023_sec_filer_names.sql","024_track_record.sql","025_email_code_and_refs.sql","026_growth.sql"]);
+  "010_paid_trial.sql","011_compliance_records.sql","012_entity_media_gif.sql","013_account_security.sql","013_intelligence_delivery.sql","014_email.sql","014_intelligence_platform.sql","015_query_indexes.sql","015_sec_events.sql","016_explanations.sql","016_funnel_events.sql","017_notifications.sql","018_coverage.sql","019_form4_detail.sql","020_cost_controls.sql","021_autopilot.sql","022_form4_footnotes.sql","023_sec_filer_names.sql","024_track_record.sql","025_email_code_and_refs.sql","026_growth.sql","027_alert_archive.sql"]);
 // `db` defaults to the engine's pool; tests that build the schema through their own pool pass it.
 export async function migrate(db=requireDb()) {
   // Every file is idempotent, but even a no-op ALTER TABLE takes an exclusive table lock, so re-running them all on

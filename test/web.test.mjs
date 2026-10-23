@@ -180,7 +180,6 @@ test("real research data and original document icons remain available",async()=>
 
 test("real logos and carefully matched free-license portraits are available without synthetic faces",async()=>{
   await withServer(async base=>{
-    assert.match(await(await fetch(base+"/company.html")).text(),/assets\/js\/entity-media\.js/,"Company report keeps curated portraits");
     // Pages on the rebuilt app (ui.css) ask /v1/media through ui.js instead (see "the rebuilt app" test).
     for(const page of ["/explore.html","/filings.html","/watchlist.html","/research.html"]){
       const res=await fetch(base+page);
@@ -227,7 +226,7 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
   assert.match(appCSS,/position:sticky!important/);
   assert.match(appCSS,/flex-direction:row!important/);
   assert.match(appCSS,/\.app-mobile-nav\.is-open/);
-  for(const p of ["/research.html","/explore.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/account.html"]){
+  for(const p of ["/research.html","/explore.html","/filings.html","/watchlist.html","/portfolio.html","/billing.html","/account.html"]){
    const html=await(await fetch(base+p)).text();
    assert.match(html,/v6-app\.css/,p);
   }
@@ -351,28 +350,20 @@ test("V10 SEC people directory and verified identity assets are available", asyn
  });
 });
 
-test("Company report ships the market-terminal design for every ticker without embedded prices",async()=>{
+test("the ticker page (company.html) is on the rebuilt app: price hero, full-width chart, quiet tabs, no embedded prices",async()=>{
  await withServer(async base=>{
   const html=await(await fetch(base+"/company.html?ticker=MSFT")).text();
-  assert.match(html,/v12-company\.css/);
-  assert.match(html,/v12-company\.js/);
-  assert.match(html,/data-app-header data-active="companies"/);
-  for(const id of ["cx-name","cx-logo","cx-price","cx-change","cx-chart","cx-facts","cx-tabs","cx-fin-rows","cx-filing-rows","cx-insider-rows","cx-statements","cx-filings-table","cx-insiders-table","cx-people-sec","cx-announcements","cx-headlines","cx-watch","cx-alert","cx-share"]){
-    assert.match(html,new RegExp('id="'+id+'"'),"Expected company report section "+id);
-  }
-  for(const label of ["Market cap","Enterprise value","P/E ratio","Revenue (TTM)","Net income (TTM)","Employees","Headquarters","Founded","Website"])assert.ok(html.includes(label),"Key fact "+label);
-  for(const tab of ["Overview","Financials","SEC filings","Insider activity","People","News"])assert.match(html,new RegExp('role="tab"[^>]*>'+tab+'<'),"Tab "+tab);
-  for(const range of ["1D","1W","1M","3M","1Y","5Y"])assert.match(html,new RegExp('data-range="'+range+'"'));
+  assert.match(html,/<body class="ui">/);
+  assert.match(html,/data-ui-shell data-page="company"/);
+  assert.match(html,/\/assets\/css\/ticker\.css/);
+  assert.match(html,/\/assets\/js\/ticker\.js/);
+  assert.match(html,/Research, not investment advice\./);
+  assert.doesNotMatch(html,/Dot size follows the amount<\/span>/,"the legend stays a few words");
   assert.doesNotMatch(html,/\$\d{2,}\.\d{2}|\$\d+(\.\d+)?[TBM]\b/,"No hard-coded prices or valuations in the page");
-  const code=await(await fetch(base+"/assets/js/v12-company.js")).text();
-  for(const route of ["/v1/intelligence?ticker=","/v1/market/chart?ticker=","/v1/company/profile?ticker=","/v1/company/insiders?ticker=","/v1/company/news?ticker=","/v1/me/watchlist","/v1/search?q="])assert.ok(code.includes(route),route);
-  assert.doesNotMatch(code,/Math\.random|mockPrice|syntheticPrice/);
-  const css=await fetch(base+"/assets/css/v12-company.css");
-  assert.equal(css.status,200);
-  const header=await(await fetch(base+"/assets/js/app.js")).text();
-  assert.match(header,/Search tickers, companies, or people/);
-  assert.match(header,/\/v1\/search\?q=/);
-  assert.match(header,/company\.html\?ticker=/);
+  const code=await(await fetch(base+"/assets/js/ticker.js")).text();
+  for(const route of ["/v1/chart?ticker=","/v1/me/watchlist"])assert.ok(code.includes(route),route);
+  assert.match(code,/\/insiders/);assert.match(code,/\/funds/);
+  assert.doesNotMatch(code,/Math\.random|mockPrice|syntheticPrice|__tkChart/);
  });
 });
 
@@ -393,7 +384,8 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
     // The landing page is on the v2 design system (ds.css: no halftone, no dotted wordmark); every other page keeps V13.
     const v2 = await (await fetch(base + "/index.html")).text();
     assert.match(v2, /assets\/css\/ds\.css/);
-    assert.match(v2, /<a class="ds-mark" href="\/" aria-label="Insidir home">insidir\.<\/a>/, "the wordmark is the plain JetBrains Mono one");
+    assert.match(v2, /<a class="ds-mark" href="\/" aria-label="Insidir home"><svg aria-hidden="true"/, "the wordmark is the SVG logo (web/assets/brand/insidir-wordmark.svg)");
+    assert.doesNotMatch(v2, /GeistMono|Geist Mono/, "one font: Geist only");
     assert.doesNotMatch(v2, /data-halftone-(hero|footer)/);
     const pages = ["signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html", "person.html"];
     let wordmarks = 0;
@@ -506,13 +498,13 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
 test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
   const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
   // Every page that names a person or a company loads the identity helper and its stylesheet.
-  for(const page of ["people","person","explore","filings","watchlist","filing","research","alerts","portfolio","company","intelligence"]){
+  for(const page of ["people","person","explore","filings","watchlist","filing","research","portfolio","intelligence"]){
     const html=await readFile(new URL(page+".html",web),"utf8");
     assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
     assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
   }
   // Pages that show headshots carry the credits footnote the helper fills.
-  for(const page of ["people","person","filing","research","alerts","portfolio","company","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  for(const page of ["people","person","filing","research","portfolio","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
   assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");
@@ -675,7 +667,7 @@ test("the rebuilt app (ui.css): real logos or monograms, never faces; prices onl
   assert.match(ui, /const monogram=/, "insiders get initials");
   assert.match(ui, /"\/signin\.html\?next="/, "401 sends to sign in");
   assert.match(ui, /"\/subscribe\.html"/, "402 sends to subscribe");
-  for (const page of ["dashboard.html", "design.html"]) {
+  for (const page of ["dashboard.html", "design.html", "company.html", "alerts.html"]) {
     const html = await readFile(new URL(page, web), "utf8");
     assert.match(html, /<body class="ui">/, page);
     assert.match(html, /\/assets\/css\/ui\.css/, page);

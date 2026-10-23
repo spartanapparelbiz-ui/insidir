@@ -17,6 +17,8 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const TICK=/^[A-Z][A-Z0-9.-]{0,9}$/;
+// The wordmark is a logo, not a font: web/assets/brand/insidir-wordmark.svg, inlined so it never waits on a request.
+const WORDMARK=`<svg viewBox="70 -793 4531 803" aria-hidden="true"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg>`;
 
 /* ---------- data ---------- */
 async function api(path,{method="GET",body}={}){
@@ -48,6 +50,16 @@ const fmt={
   return t.replace(/\b(Inc|Corp|Corporation|Co|Ltd|Plc|Llc|Lp|N\.?V|S\.?A)\.?$/i,"").replace(/[,\s]+$/,"")||t;},
  role(r){return r?(/^(CEO|CFO|COO)$/.test(r)?r:r.charAt(0).toUpperCase()+r.slice(1)):"Insider";}
 };
+/* A big number: the figure at full size, and "$", the unit and decimals at 60% in muted.
+   money: $2.1M → $ | 2.1 | M ; price: $75.34 → $ | 75 | .34 */
+function big(v,kind="money"){
+ const t=kind==="price"?fmt.price(v):fmt.money(v);if(t==="—")return t;
+ const m=kind==="price"?/^(−?\$)([\d,]+)(\.\d+)?$/.exec(t):/^(−?\$)([\d,.]+)([KMB]?)$/.exec(t);
+ if(!m)return esc(t);
+ return `<span class="u">${esc(m[1])}</span>${esc(m[2])}${m[3]?`<span class="u">${esc(m[3])}</span>`:""}`;
+}
+/* What an insider did, as coloured text with a 6px dot: Bought, Sold, or Plan sale (10b5-1). */
+const trade=m=>m.planned?`<span class="trade trade--plan" title="Sale under a pre-scheduled 10b5-1 plan">Plan sale</span>`:`<span class="trade trade--${m.kind==="buy"?"buy":"sell"}">${m.kind==="buy"?"Bought":"Sold"}</span>`;
 const initials=name=>{const w=fmt.person(name).replace(/[^A-Za-z .-]/g,"").split(/\s+/).filter(Boolean);return ((w[0]?.[0]||"")+(w.length>1?w.at(-1)[0]:"")).toUpperCase()||"·";};
 
 /* ---------- logos ---------- */
@@ -80,15 +92,17 @@ function spark(values,{w=96,h=28}={}){const v=(values||[]).map(Number).filter(Nu
  const d=v.map((x,i)=>(i?"L":"M")+(i*step).toFixed(1)+" "+(h-2-(x-lo)/span*(h-4)).toFixed(1)).join("");
  const cls=v.at(-1)>=v[0]?"var(--up)":"var(--down)";
  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" stroke="${cls}"/></svg>`;}
-function ring(score,{size=56,label}={}){const s=Math.max(0,Math.min(100,Number(score)||0)),r=size/2-3,c=2*Math.PI*r;
+function ring(score,{size=48,label}={}){const s=Math.max(0,Math.min(100,Number(score)||0)),r=size/2-2,c=2*Math.PI*r;
  return `<span class="ring" style="width:${size}px;height:${size}px" role="img" aria-label="${esc(label||"Signal score "+s+" of 100")}"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="ring__track" cx="${size/2}" cy="${size/2}" r="${r}"/><circle class="ring__val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${c.toFixed(2)}" data-ring="${(c*(1-s/100)).toFixed(2)}"/></svg><b data-roll="${s}">${reduce?s:0}</b></span>`;}
 function settle(root=document){
  for(const c of $$("[data-ring]",root)){requestAnimationFrame(()=>{c.style.strokeDashoffset=c.dataset.ring;});}
  for(const el of $$("[data-roll]",root))roll(el,Number(el.dataset.roll),x=>String(Math.round(x)));
 }
-function roll(el,to,format=String){
- if(reduce||!M?.animate||!Number.isFinite(to)){el.textContent=format(to);return;}
- M.animate(0,to,{type:"spring",stiffness:180,damping:26,duration:.4,onUpdate:v=>{el.textContent=format(v);}});
+// numbers roll to their value; format may return HTML (html:true) for the split big numbers
+function roll(el,to,format=String,{html=false}={}){
+ const put=v=>{if(html)el.innerHTML=format(v);else el.textContent=format(v);};
+ if(reduce||!M?.animate||!Number.isFinite(to)){put(to);return;}
+ M.animate(0,to,{type:"spring",stiffness:180,damping:26,duration:.4,onUpdate:put,onComplete:()=>put(to)});
 }
 function enter(nodes){if(reduce)return;const list=[...nodes];list.forEach((el,i)=>{
  if(M?.animate)M.animate(el,{opacity:[0,1],transform:["translateY(6px)","translateY(0)"]},{type:"spring",stiffness:260,damping:30,delay:Math.min(i,8)*0.03});
@@ -102,11 +116,11 @@ function mountShell(){
  const host=$("[data-ui-shell]");if(!host)return;
  const here=host.dataset.page||"";
  const side=`<aside class="side" aria-label="Main">
- <div class="side__top"><a class="wordmark" href="/dashboard.html" aria-label="Insidir, Today">insidir.</a><button class="btn btn--ghost btn--icon" type="button" data-ui-collapse aria-label="Collapse sidebar">${I.svg("panel-left")}</button></div>
+ <div class="side__top"><a class="wordmark" href="/dashboard.html" aria-label="Insidir, Today">${WORDMARK}</a><button class="btn btn--ghost btn--icon" type="button" data-ui-collapse aria-label="Collapse sidebar">${I.svg("panel-left")}</button></div>
  <nav class="side__nav">${NAV.slice(0,5).map(([k,l,i,h])=>`<a class="nav-i" href="${h}"${k===here?' aria-current="page"':""} title="${l}">${I.svg(i)}<span>${l}</span>${k==="alerts"?'<b class="badge" data-ui-unread hidden></b>':""}</a>`).join("")}</nav>
  <div class="side__foot">${NAV.slice(5).map(([k,l,i,h])=>`<a class="nav-i" href="${h}"${k===here?' aria-current="page"':""} title="${l}">${I.svg(i)}<span>${l}</span></a>`).join("")}</div></aside>`;
  const top=`<header class="top" data-ui-top>
- <a class="top__mark wordmark" href="/dashboard.html" aria-label="Insidir, Today">insidir.</a>
+ <a class="top__mark wordmark" href="/dashboard.html" aria-label="Insidir, Today">${WORDMARK}</a>
  <button class="top__search" type="button" data-ui-cmdk>${I.svg("search")}<span class="lbl-long">Search a stock, insider or fund</span><span class="lbl-short">Search</span><span class="kbd">⌘K</span></button>
  <div class="top__end"><a class="btn btn--ghost btn--icon top__bell" href="/alerts.html" aria-label="Alerts">${I.svg("bell")}<span class="dot dot--new" data-ui-unread-dot hidden></span></a>
  <button class="btn btn--ghost btn--icon" type="button" data-ui-account aria-label="Account" aria-haspopup="menu" aria-expanded="false"><span class="mono" data-ui-me>·</span></button></div></header>`;
@@ -176,6 +190,6 @@ function palette(){
  addEventListener("keydown",keys,true);start();input.focus();
 }
 
-window.InsidirUI=Object.freeze({api,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,palette,initials,reduce,icon:(n,s,c)=>I.svg(n,s,c)});
+window.InsidirUI=Object.freeze({api,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,palette,initials,reduce,big,trade,WORDMARK,icon:(n,s,c)=>I.svg(n,s,c)});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mountShell);else mountShell();
 })();

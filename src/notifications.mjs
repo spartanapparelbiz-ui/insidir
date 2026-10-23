@@ -219,16 +219,23 @@ export async function listNotifications(query, userId, { limit = 50, before = nu
   const rows = (await query(`SELECT n.id,n.reason,n.delivery,n.created_at,n.read_at,e.id AS event_id,e.event_type,e.status,e.ticker,e.issuer_name,e.owner_cik,e.owner_name,e.transaction_date,e.transaction_date_end,
       e.filing_date,e.ingested_at,e.accessions,e.source_urls,e.facts,e.superseded_by
     FROM notifications n JOIN sec_events e ON e.id=n.event_id
-    WHERE n.user_id=$1 AND n.available_at<=now() AND ($2::bigint IS NULL OR n.id<$2) AND (NOT $3::boolean OR n.read_at IS NULL)
+    WHERE n.user_id=$1 AND n.available_at<=now() AND n.archived_at IS NULL AND ($2::bigint IS NULL OR n.id<$2) AND (NOT $3::boolean OR n.read_at IS NULL)
     ORDER BY n.id DESC LIMIT $4`, [userId, before, unread, Math.min(100, Math.max(1, limit))])).rows;
-  const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL AND available_at<=now()", [userId])).rows[0].n;
+  const unreadCount = (await query("SELECT count(*)::integer AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL AND archived_at IS NULL AND available_at<=now()", [userId])).rows[0].n;
   return { items: rows.map(r => ({ id: String(r.id), reason: r.reason, delivery: r.delivery, createdAt: r.created_at, readAt: r.read_at, event: { id: String(r.event_id), type: r.event_type, status: r.status,
     supersededBy: r.superseded_by, ticker: r.ticker, issuerName: r.issuer_name, transactionDate: r.transaction_date, transactionDateEnd: r.transaction_date_end,
-    filingDate: r.filing_date, retrievedAt: r.ingested_at, accessions: r.accessions, sourceUrls: r.source_urls, headline: eventHeadline(r), summary: eventSummary({ ...r, id: r.event_id }) } })),
+    filingDate: r.filing_date, retrievedAt: r.ingested_at, accessions: r.accessions, sourceUrls: r.source_urls, facts: r.facts || {}, headline: eventHeadline(r), summary: eventSummary({ ...r, id: r.event_id }) } })),
     unread: unreadCount, next: rows.length ? String(rows.at(-1).id) : null };
 }
+/* Archive (or bring back) alerts: hidden from the inbox, kept for the record. Archiving also marks them read. */
+export async function archive(query, userId, { ids, undo = false } = {}) {
+  if (!Array.isArray(ids) || !ids.length || ids.length > 200 || ids.some(i => !/^\d{1,18}$/.test(String(i)))) throw fail(400, "ids must be 1-200 notification ids");
+  const sql = undo ? "UPDATE notifications SET archived_at=NULL WHERE user_id=$1 AND id=ANY($2::bigint[]) AND archived_at IS NOT NULL"
+    : "UPDATE notifications SET archived_at=now(),read_at=COALESCE(read_at,now()) WHERE user_id=$1 AND id=ANY($2::bigint[]) AND archived_at IS NULL";
+  return { [undo ? "restored" : "archived"]: (await query(sql, [userId, ids.map(String)])).rowCount };
+}
 export async function markRead(query, userId, { ids = null, all = false } = {}) {
-  if (all) return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL AND available_at<=now()", [userId])).rowCount };
+  if (all) return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL AND archived_at IS NULL AND available_at<=now()", [userId])).rowCount };
   if (!Array.isArray(ids) || !ids.length || ids.length > 200 || ids.some(i => !/^\d{1,18}$/.test(String(i)))) throw fail(400, "ids must be 1-200 notification ids");
   return { marked: (await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND id=ANY($2::bigint[]) AND read_at IS NULL", [userId, ids.map(String)])).rowCount };
 }

@@ -1,21 +1,20 @@
 /* The landing page (insidir.com/), server-rendered with live data so the first paint is real: built for a phone in
  * Instagram's in-app browser, a visitor who has never heard of a Form 4, and five seconds.
  *
- * Eight sections: Hero → Live this week → How it works → Receipts → Comparison → Pricing → FAQ → Final CTA. Every
+ * On the one design system (web/assets/css/ui.css + site.css, src/site-ui.mjs): a centered hero with the search box and
+ * a tilted shot of the product, drawn from the app's own components and this week's real filings, then seven calm
+ * sections 160px apart: Live this week → How it works → Receipts → Comparison → Pricing → FAQ → Final CTA. Every
  * section is one headline, one sentence and one visual (docs/LANDING-COPY.md has the copy). No mock data: every trade
  * is a row from the import with its SEC filing link; a part with no data is left out, never faked.
  *
  *   GET /, /index.html     the page (cached for CACHE_MS)
- *   GET /v1/live           the newest filings, each with its receipt (hero.js prints new ones)
- *
- * The headline A/B test (insidir_h1) ended on Oct 23, 2026: the H1 is now the live headline, the newest notable trade. */
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+ *   GET /v1/live           the newest filings, as rows for the live list (site-v2.js adds new ones) */
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { esc, money, day, ago, pct, sentence, tradeCard, withRole, LINE_SQL, head, nav, footer, scripts, emailForm, searchBox, kindOf, personName } from "./site-v2.mjs";
+import { esc, money, day, ago, pct, sentence, withRole, LINE_SQL, scripts, kindOf, personName, companyName } from "./site-v2.mjs";
+import { uiHead, uiNav, uiFooter, uiSearch, uiEmailForm, uiLogo, uiBig, uiTrade, uiInitials, WORDMARK } from "./site-ui.mjs";
+import { scoreRow } from "./signal-score.mjs";
 import { siteOrigin } from "./public-pages.mjs";
-import { renderReceipt, renderTape, liveHeadlines } from "./receipt.mjs";
 import { weekBuys } from "./newsletter.mjs";
 import { closesFor } from "./prices.mjs";
 import { addDays, closeOnOrAfter, closeOnOrBefore } from "./track-record.mjs";
@@ -27,7 +26,6 @@ export const H1 = Object.freeze({
   b: "The people running your stocks have to tell on themselves. We tell you first."
 });
 export const SUB = "Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts.";
-const FOUNDER_PHOTO = fileURLToPath(new URL("../web/assets/img/founder.jpg", import.meta.url));
 
 /* ---------- data ---------- */
 export const LIVE_SQL = LINE_SQL + `
@@ -105,39 +103,54 @@ export async function landingData(query, { now = new Date() } = {}) {
     const series = await closesFor(query, c.ticker, { download: false }).catch(() => []);
     receipts.push({ ...c, ...receiptReturns(c, series, today) });
   }
-  return { live, counters, buys, receipts, testimonials, today };
+  // The product shot: this week's biggest buy (else the newest trade), its stock's last year and its signal score.
+  let shot = null;
+  const top = buys[0] || live.find(r => kindOf(r) === "buy") || live[0];
+  if (top) {
+    const series = (await closesFor(query, top.ticker, { download: false }).catch(() => [])).filter(p => p[0] >= addDays(today, -365));
+    const score = await scoreRow(query, { ...top, code: top.transaction_code }).catch(() => null);
+    shot = { top, series, score: score ? { score: score.score, band: score.band } : null };
+  }
+  return { live, counters, buys, receipts, testimonials, today, shot };
 }
 
 /* ---------- pieces ---------- */
+const T = r => String(r.ticker || "").toUpperCase();
+const secUrl = u => /^https:\/\/(www\.)?sec\.gov\//.test(String(u || "")) ? String(u) : null;
+const roleCap = r => r.role ? r.role.charAt(0).toUpperCase() + r.role.slice(1) : null;
+const amountCls = k => k === "buy" ? "chg chg--up" : k === "sell" ? "chg chg--down" : "chg chg--flat";
+
+/* One filing as a row of the live list (and of /v1/live): logo, ticker, who, what, how much, when. */
 const liveRow = (r, now) => {
-  const k = kindOf(r), t = String(r.ticker).toUpperCase();
-  return `<a class="v2-live__item" href="/${esc(encodeURIComponent(t))}"><b class="ds-num">${esc(t)}</b><span>${esc(r.role ? r.role.charAt(0).toUpperCase() + r.role.slice(1) : personName(r.owner_name))} ${k === "buy" ? "bought" : "sold"} <span class="ds-num ${k === "buy" ? "ds-buy" : "ds-sell"}">${esc(money(r.estimated_value))}</span></span><time class="ds-num" datetime="${esc(new Date(r.published_at).toISOString())}">${esc(ago(r.published_at, now) || "")}</time></a>`;
+  const k = kindOf(r), t = T(r);
+  return `<a class="hit" href="/${esc(encodeURIComponent(t))}" aria-label="${esc(t)}: ${esc(sentence(r))}"></a>${uiLogo(t, 32)}
+<span class="lrow__who"><span class="tick">${esc(t)}</span><span class="t-label muted">${esc(personName(r.owner_name))}${r.role ? ", " + esc(r.role) : ""}</span></span>
+${uiTrade(k, k === "sell" && r.rule_10b5_1 === true)}<span class="${amountCls(k)} lrow__amt">${esc(money(r.estimated_value) || "—")}</span>
+<time class="t-label muted lrow__ago" datetime="${esc(new Date(r.published_at).toISOString())}">${esc(ago(r.published_at, now) || "")}</time>`;
 };
 export const liveItems = (rows, now = Date.now()) => rows.filter(r => r.published_at).map(r => ({ id: String(r.id), html: liveRow(r, now) }));
 
-
 const fmtInt = n => Number(n || 0).toLocaleString("en-US");
 // A result in 0.1% steps: the colour follows the shown value, so "0.0%" is never green or red.
-const receiptCell = x => { if (x.pending) return `<span class="v2-pending" title="${esc("Measured on " + day(x.on))}"><span class="v2-long">Pending until ${esc(day(x.on))}</span><span class="v2-short">Pending</span></span>`; if (x.r == null) return `<span class="v2-pending">No price</span>`;
-  const r = Math.round(x.r * 1000) / 1000; return `<span class="ds-num ${r > 0 ? "ds-buy" : r < 0 ? "ds-sell" : "v2-flat"}">${esc(r === 0 ? "0.0%" : pct(r))}</span>`; };
+const receiptCell = x => { if (x.pending) return `<span class="muted" title="${esc("Measured on " + day(x.on))}"><span class="slong">Pending until ${esc(day(x.on))}</span><span class="sshort">Pending</span></span>`; if (x.r == null) return `<span class="muted">No price</span>`;
+  const r = Math.round(x.r * 1000) / 1000; return `<span class="${r > 0 ? "chg chg--up" : r < 0 ? "chg chg--down" : "chg chg--flat"}">${esc(r === 0 ? "0.0%" : pct(r))}</span>`; };
 function receiptsTable(rows) {
-  if (!rows.length) return `<div class="ds-card v2-quiet"><p>No company had two or more insiders buy over $1M within 10 days in the last 6 months.</p></div>`;
+  if (!rows.length) return `<div class="card scard"><p class="muted">No company had two or more insiders buy over $1M within 10 days in the last 6 months.</p></div>`;
   const shown = rows.slice(0, 12);
-  const body = shown.map(r => `<tr><td class="ds-num"><a href="/${esc(encodeURIComponent(r.ticker))}">${esc(r.ticker)}</a></td><td>${r.insiders} insiders</td><td class="ds-num r">${esc(money(r.total))}</td>
-<td class="ds-num">${esc(day(r.start))}</td><td class="r">${receiptCell(r.d30)}</td><td class="r">${receiptCell(r.d90)}</td><td>${r.filing ? `<a href="${esc(r.filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</td></tr>`).join("");
-  return `<div class="ds-table-wrap"><table class="ds-table v2-receipts"><caption class="sr-only">${esc(RECEIPT_RULE)}</caption>
+  const body = shown.map(r => `<tr><td><a class="scell" href="/${esc(encodeURIComponent(r.ticker))}">${uiLogo(r.ticker, 24)}<span class="tick">${esc(r.ticker)}</span></a></td><td>${r.insiders} insiders</td><td class="r">${esc(money(r.total))}</td>
+<td class="muted">${esc(day(r.start))}</td><td class="r">${receiptCell(r.d30)}</td><td class="r">${receiptCell(r.d90)}</td><td class="r">${r.filing ? `<a class="muted slink" href="${esc(r.filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</td></tr>`).join("");
+  return `<div class="card scard stable"><table class="table"><caption class="sr-only">${esc(RECEIPT_RULE)}</caption>
 <thead><tr><th scope="col">Stock</th><th scope="col">Who bought</th><th scope="col" class="r">Amount</th><th scope="col">First buy</th><th scope="col" class="r">30 days later</th><th scope="col" class="r">90 days later</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead>
-<tbody>${body}</tbody></table></div>${rows.length > shown.length ? `<p class="ds-small v2-note">${rows.length - shown.length} more match the rule; the 12 newest are shown.</p>` : ""}`;
+<tbody>${body}</tbody></table></div>${rows.length > shown.length ? `<p class="t-label muted snote">${rows.length - shown.length} more match the rule; the 12 newest are shown.</p>` : ""}`;
 }
 
 function comparison() {
   const cols = [{ name: "Insidir", cells: COMPETITORS.insidir }, ...COMPETITORS.others.filter(c => c.verified), { name: "SEC EDGAR yourself", cells: COMPETITORS.edgar }];
-  const rows = COMPETITORS.rows;
-  const cell = v => v === true ? `<span class="v2-yes">Yes</span>` : v === false ? `<span class="v2-no">No</span>` : esc(v);
-  return `<div class="ds-table-wrap"><table class="ds-table v2-compare"><caption class="sr-only">Insidir compared with other ways to follow insider trades, as of ${esc(day(CHECKED_ON))}</caption>
-<thead><tr><th scope="col"><span class="sr-only">Feature</span></th>${cols.map((c, i) => `<th scope="col"${i === 0 ? ' class="v2-us"' : ""}>${esc(c.name)}</th>`).join("")}</tr></thead>
-<tbody>${rows.map(([key, label]) => `<tr><th scope="row">${esc(label)}</th>${cols.map((c, i) => `<td${i === 0 ? ' class="v2-us"' : ""}>${cell(c.cells[key])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
-<p class="ds-small v2-note">As of ${esc(day(CHECKED_ON))}, from each product's public pages. Tell us if something changed: hello@aethric.llc</p>`;
+  const cell = v => v === true ? `<span class="syes">Yes</span>` : v === false ? `<span class="muted">No</span>` : esc(v);
+  return `<div class="card scard stable"><table class="table scompare"><caption class="sr-only">Insidir compared with other ways to follow insider trades, as of ${esc(day(CHECKED_ON))}</caption>
+<thead><tr><th scope="col"><span class="sr-only">Feature</span></th>${cols.map(c => `<th scope="col">${esc(c.name)}</th>`).join("")}</tr></thead>
+<tbody>${COMPETITORS.rows.map(([key, label]) => `<tr><th scope="row">${esc(label)}</th>${cols.map((c, i) => `<td${i === 0 ? ' class="sus"' : ""}>${cell(c.cells[key])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+<p class="t-label muted snote">As of ${esc(day(CHECKED_ON))}, from each product's public pages. Tell us if something changed: hello@aethric.llc</p>`;
 }
 
 const FAQ = [
@@ -149,124 +162,119 @@ const FAQ = [
   ["Where does the data come from?", "SEC EDGAR, the government's filing system. Every number links to its filing."]
 ];
 
-/* ---------- the hero ----------
- * The H1 is the newest notable trade in one plain sentence (src/receipt.mjs headlineOf), and hero.js types the next one
- * every 6 seconds. All of them are in the page, stacked in one grid cell, so the tallest sets the height and nothing
- * moves when they change. On the right, the printer: the three newest filings as receipts, the top one printing. */
-export const FIXED_LINE = "They have to tell the SEC. We tell you first.";
-function hero(d, now) {
-  const rows = (d?.live || []).filter(r => ["buy", "sell"].includes(kindOf(r)));
-  const lines = liveHeadlines(rows, now);
-  if (!lines.length) lines.push(H1.a);
-  const slips = rows.slice(0, 3).map((r, i) => renderReceipt(r, { now, print: i === 0, id: String(r.id) })).join("");
-  return `<section class="hx" data-v2-hero aria-labelledby="hero-h">
- <div class="ds-wrap hx__in">
-  <h1 class="hx__h1" id="hero-h" data-hx-live>${lines.map((l, i) => `<span class="hx__line"${i ? ' aria-hidden="true"' : ""}>${esc(l)}</span>`).join("")}</h1>
-  <div class="hx__copy">
-   <p class="hx__fixed">${esc(FIXED_LINE)}</p>
-   ${searchBox("hero-q")}
-   <p class="ds-small hx__terms">$1 for 7 days. Cancel online anytime.</p>
+/* ---------- the product shot ----------
+ * The Today screen, drawn on the server from the app's own components: the biggest buy this week with its big number,
+ * its sentence, its signal score and the stock's last year (area chart, the trade as a marker, the latest close as a
+ * dot), then the newest filings. Every figure is real; with no prices the chart is left out. */
+function shotChart(series, trades) {
+  if (series.length < 20) return "";
+  const W = 1000, H = 220, lo = Math.min(...series.map(p => p[1])), hi = Math.max(...series.map(p => p[1])), pad = (hi - lo) * .12 || 1;
+  const y = v => H - ((v - lo + pad) / (hi - lo + 2 * pad)) * H, x = i => (i / (series.length - 1)) * W;
+  const line = series.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[1]).toFixed(1)}`).join("");
+  const marks = trades.map(t => { const d = String(t.transaction_date instanceof Date ? t.transaction_date.toISOString() : t.transaction_date || "").slice(0, 10);
+    const i = series.findIndex(p => p[0] >= d); if (i < 0) return "";
+    const k = kindOf(t), sz = Math.max(8, Math.min(18, 6 + Math.log10(Math.max(1, Number(t.estimated_value) || 1)) * 1.6));
+    return `<span class="mk mk--${k === "buy" ? "buy" : "sell"}" style="left:${(x(i) / W * 100).toFixed(2)}%;top:${(y(series[i][1]) / H * 100).toFixed(2)}%;--d:${sz.toFixed(0)}px"></span>`; }).join("");
+  const last = series.at(-1), labels = [0, Math.floor(series.length / 3), Math.floor(series.length * 2 / 3)].map(i => `<span style="left:${(x(i) / W * 100).toFixed(1)}%">${esc(new Date(series[i][0] + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }))}</span>`).join("");
+  return `<div class="shot__chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="shot-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".16"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+<path d="${line}L${W} ${H}L0 ${H}Z" fill="url(#shot-fill)"/><path d="${line}" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+${marks}${trades.some(t => String(t.transaction_date instanceof Date ? t.transaction_date.toISOString() : t.transaction_date || "").slice(0, 10) >= series[Math.floor(series.length * .96)][0]) ? "" : `<span class="chart__now" style="left:100%;top:${(y(last[1]) / H * 100).toFixed(2)}%"></span>`}<div class="shot__x t-micro muted" aria-hidden="true">${labels}</div></div>`;
+}
+function productShot(d, now) {
+  const s = d?.shot; if (!s) return "";
+  const t = s.top, k = kindOf(t), feed = (d.live || []).filter(r => r.published_at).slice(0, 4);
+  const marks = [t, ...(d.live || []).filter(r => T(r) === T(t) && r.id !== t.id && ["buy", "sell"].includes(kindOf(r)))].slice(0, 6);
+  const ring = s.score ? `<span class="ring" aria-label="Signal score ${s.score.score} of 100"><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="ring__track" cx="24" cy="24" r="21"/><circle class="ring__val" cx="24" cy="24" r="21" stroke-dasharray="131.95" stroke-dashoffset="${(131.95 * (1 - s.score.score / 100)).toFixed(2)}"/></svg><b>${s.score.score}</b></span>` : "";
+  return `<figure class="shot" aria-label="The Insidir app, showing this week's biggest insider buy">
+<div class="shot__frame" aria-hidden="true">
+ <aside class="shot__side"><span class="wordmark">${WORDMARK}</span><span class="is-on">Today</span><span>Watchlist</span><span>Alerts</span><span>Intelligence</span><span>Connections</span></aside>
+ <div class="shot__main">
+  <p class="t-title">Today</p>
+  <div class="card shot__hero">
+   <div class="shot__hero-head"><span class="shot__co">${uiLogo(T(t), 40)}<span><span class="tick">${esc(T(t))}</span><span class="t-label muted">${esc(companyName(t.issuer_name) || T(t))}</span></span></span>${ring}</div>
+   <p class="t-label muted">Biggest insider ${k === "sell" ? "sale" : "buy"} this week</p>
+   <p class="t-hero big">${uiBig(t.estimated_value)}</p>
+   <p class="t-body shot__sentence">${esc(sentence(t))}</p>
+   ${shotChart(s.series, marks)}
   </div>
-  ${slips ? `<div class="prn" aria-label="The newest filings, printed as receipts"><div class="prn__slot" aria-hidden="true"></div><div class="prn__feed" data-prn>${slips}</div></div><noscript><style>.rc--print,.rc--print .rc__stamp{animation:none}</style></noscript>` : ""}
+  ${feed.length ? `<div class="card shot__feed"><p class="t-label muted">Latest filings</p><ul class="rows">${feed.map(r => `<li class="row lrow">${liveRow(r, now)}</li>`).join("")}</ul></div>` : ""}
  </div>
+</div></figure>`;
+}
+
+/* ---------- the hero ---------- */
+export const HERO_H1 = "They have to tell on themselves. We tell you first.";
+export const FIXED_LINE = HERO_H1;
+function hero(d, now) {
+  return `<section class="shero" data-v2-hero aria-labelledby="hero-h">
+ <div class="swrap shero__in">
+  <h1 class="t-display shero__h1" id="hero-h">${esc(HERO_H1)}</h1>
+  <p class="shero__sub">${esc(SUB)}</p>
+  ${uiSearch("hero-q")}
+  <p class="t-label muted shero__terms">$1 for 7 days. Cancel online anytime.</p>
+ </div>
+ ${productShot(d, now)}
 </section>`;
 }
 
 /* ---------- the page ---------- */
+const section = (id, h, p, inner, attrs = "") => `<section class="ssec"${attrs} aria-labelledby="${id}"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="${id}">${h}</h2><p class="ssec__p">${p}</p></header>
+ ${inner}
+</div></section>`;
+
 export function renderLanding(d, { origin, now = Date.now() } = {}) {
-  const counters = d?.counters;
-  const top = d?.buys || [];
-  const example = top[0] || d?.live?.[0];
-  const founderPhoto = existsSync(FOUNDER_PHOTO);
-  const how = example ? `
-<div class="ds-tabs" role="tablist" aria-label="How Insidir works" data-ds-tabs>
-<button class="ds-tab" role="tab" id="how-t1" aria-controls="how-p1" aria-selected="true">1. Pick your stocks</button>
-<button class="ds-tab" role="tab" id="how-t2" aria-controls="how-p2" aria-selected="false" tabindex="-1">2. We read every filing</button>
-<button class="ds-tab" role="tab" id="how-t3" aria-controls="how-p3" aria-selected="false" tabindex="-1">3. You get one sentence</button></div>
-<div class="v2-how">
-<div role="tabpanel" id="how-p1" aria-labelledby="how-t1" class="v2-how__panel"><p class="v2-how__cap">Type a ticker or paste a list. Follow a CEO by name.</p>
-<div class="ds-card v2-watch">${top.slice(0, 3).map(r => `<div class="v2-watch__row"><b class="ds-num">${esc(String(r.ticker).toUpperCase())}</b><span>${esc(personName(r.owner_name))}${r.role ? ", " + esc(r.role) : ""}</span><span class="ds-num ds-buy">${esc(money(r.estimated_value))}</span></div>`).join("")}</div></div>
-<div role="tabpanel" id="how-p2" aria-labelledby="how-t2" class="v2-how__panel" hidden><p class="v2-how__cap">Every Form 4, in one plain sentence. Every number links to the filing.</p>
-<div class="ds-card v2-read"><p class="v2-read__s">${esc(sentence(example))}</p><dl class="v2-read__ev"><div><dt>Source</dt><dd>SEC Form 4</dd></div><div><dt>Filed</dt><dd class="ds-num">${esc(day(example.published_at) || "")}</dd></div><div><dt>Price per share</dt><dd class="ds-num">${esc(example.price_per_share ? "$" + Number(example.price_per_share).toFixed(2) : "Not reported")}</dd></div></dl>
-${/^https:\/\/(www\.)?sec\.gov\//.test(String(example.source_url || "")) ? `<a class="ds-link" href="${esc(example.source_url)}" rel="nofollow noopener" target="_blank">Open the filing <span class="ds-arrow" aria-hidden="true">↗</span></a>` : ""}</div></div>
-<div role="tabpanel" id="how-p3" aria-labelledby="how-t3" class="v2-how__panel" hidden><p class="v2-how__cap">Push or email, minutes after the filing posts.</p>
-<div class="ds-card v2-alert"><div class="v2-alert__top"><span class="ds-mark">insidir.</span><span class="ds-small">now</span></div><p><b class="ds-num">${esc(String(example.ticker || "").toUpperCase())}</b> ${esc(sentence(example))}</p></div></div>
-</div>` : "";
-  const body = `<body class="ds v2">
-${renderTape(d?.live || [])}
-${nav({ cta: "nav", home: true })}
+  const counters = d?.counters, top = d?.buys || [], example = top[0] || d?.live?.[0];
+  const week = top.length ? `${counters ? `<dl class="scount"><div><dt class="t-label muted">Filings read today</dt><dd class="t-hero" data-ds-count="${counters.filings_today}">${fmtInt(counters.filings_today)}</dd></div><div><dt class="t-label muted">Insider trades tracked this month</dt><dd class="t-hero" data-ds-count="${counters.trades_month}">${fmtInt(counters.trades_month)}</dd></div></dl>` : ""}
+ <div class="card scard"><ul class="rows">${top.map(r => { const f = secUrl(r.source_url); return `<li class="row wrow"><a class="hit" href="/${esc(encodeURIComponent(T(r)))}" aria-label="${esc(T(r))}: ${esc(sentence(r))}"></a>${uiLogo(T(r), 32)}
+<span class="lrow__who"><span class="tick">${esc(T(r))}</span><span class="t-label muted">${esc(companyName(r.issuer_name) || "")}</span></span>
+<span class="wrow__person"><span class="mono" aria-hidden="true">${esc(uiInitials(personName(r.owner_name)))}</span><span>${esc(personName(r.owner_name))}${r.role ? `<span class="t-label muted"> · ${esc(roleCap(r))}</span>` : ""}</span></span>
+${f ? `<a class="chg chg--up lrow__amt row__link" href="${esc(f)}" rel="nofollow noopener" target="_blank" title="Open the SEC Form 4">${esc(money(r.estimated_value) || "—")}</a>` : `<span class="chg chg--up lrow__amt">${esc(money(r.estimated_value) || "—")}</span>`}<span class="t-label muted wrow__day">${esc(day(r.transaction_date) || "")}</span></li>`; }).join("")}</ul></div>
+ ${secUrl(top[0]?.source_url) ? `<p class="t-label muted snote">Data straight from SEC EDGAR. <a class="slink" href="${esc(top[0].source_url)}" rel="nofollow noopener" target="_blank">See a real filing ↗</a></p>` : ""}` : "";
+  const how = example ? `<ol class="show">
+ <li class="card show__step"><p class="t-label muted">1</p><h3 class="t-section">Pick your stocks</h3><p class="muted">Type a ticker or paste a list. Follow a CEO by name.</p>
+  <ul class="rows show__vis">${top.slice(0, 3).map(r => `<li class="row srow">${uiLogo(T(r), 28)}<span class="tick">${esc(T(r))}</span><span class="t-label muted">${esc(personName(r.owner_name))}</span></li>`).join("")}</ul></li>
+ <li class="card show__step"><p class="t-label muted">2</p><h3 class="t-section">We read every filing</h3><p class="muted">Every Form 4, in one plain sentence. Every number links to the filing.</p>
+  <div class="show__vis show__read"><p>${esc(sentence(example))}</p><p class="t-label muted">SEC Form 4 · Filed ${esc(day(example.published_at) || "")}${example.price_per_share ? ` · $${esc(Number(example.price_per_share).toFixed(2))} a share` : ""}</p>
+  ${secUrl(example.source_url) ? `<a class="t-label slink" href="${esc(example.source_url)}" rel="nofollow noopener" target="_blank">Open the filing ↗</a>` : ""}</div></li>
+ <li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">You get one sentence</h3><p class="muted">Push or email, minutes after the filing posts.</p>
+  <div class="show__vis show__note"><span class="show__app" aria-hidden="true">i.</span><span><span class="show__note-top"><span class="strong">Insidir</span><span class="t-micro muted">now</span></span><span class="t-label">${esc(sentence(example))}</span></span></div></li>
+</ol>` : "";
+  const body = `<body class="ui site">
+<a class="sr-only" href="#main">Skip to content</a>
+${uiNav({ cta: "nav", home: true })}
 <main id="main">
 ${hero(d, now)}
-
-${top.length ? `<section class="ds-section" aria-labelledby="live-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="live-h">This week's biggest insider buys.</h2>
- <p class="ds-body">Insiders are CEOs, CFOs, directors and big shareholders, and these are the largest buys they reported this week, straight from SEC EDGAR.</p>
- <div class="v2-week">
-  ${counters ? `<dl class="v2-counters"><div><dt>Filings read today</dt><dd class="ds-num" data-ds-count="${counters.filings_today}">${fmtInt(counters.filings_today)}</dd></div><div><dt>Insider trades tracked this month</dt><dd class="ds-num" data-ds-count="${counters.trades_month}">${fmtInt(counters.trades_month)}</dd></div></dl>` : ""}
-  <div class="v2-cards">${top.map(r => tradeCard(r)).join("")}</div>
-  ${top[0]?.source_url ? `<p class="ds-small v2-note">Data straight from SEC EDGAR. <a href="${esc(top[0].source_url)}" rel="nofollow noopener" target="_blank">See a real filing ↗</a></p>` : ""}
- </div>
-</div></section>` : ""}
-
-${how ? `<section class="ds-section" id="how" aria-labelledby="how-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="how-h">Three steps. No finance degree needed.</h2>
- <p class="ds-body">Pick your stocks, we read every filing, and you get one sentence when an insider trades.</p>
- <div>${how}</div>
-</div></section>` : ""}
-
-${d ? `<section class="ds-section" id="receipts" aria-labelledby="rc-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="rc-h">What happened after they bought.</h2>
- <p class="ds-body">${esc(RECEIPT_RULE)}</p>
- <div class="v2-receipts-wrap">${receiptsTable(d.receipts)}
-  <p class="ds-small v2-note">Measured from the close on the day of the first buy. Past results don't predict future ones. Research, not investment advice.</p>
-  ${emailForm("receipts")}</div>
-</div></section>` : ""}
-
-<section class="ds-section" id="compare" aria-labelledby="cmp-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="cmp-h">Built for one job: following insiders.</h2>
- <p class="ds-body">Here is how Insidir compares with reading the SEC's own website, checked on public pages.</p>
- ${comparison()}
-</div></section>
-
-<section class="ds-section" id="pricing" aria-labelledby="pr-h" data-funnel-view="pricing"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="pr-h">$1 for 7 days. Then $39 a month.</h2>
- <p class="ds-body">One plan with everything in it, and you can cancel online in two clicks.</p>
- <div class="ds-price">
-  <p class="ds-price__name">Insidir Pro</p>
-  <p class="ds-price__amt"><b class="ds-num">$39</b><span>/ month</span></p>
-  <p class="ds-price__seats">$1 for your first 7 days.</p>
-  <ul class="ds-price__list"><li>Every insider trade in plain English</li><li>Alerts minutes after a filing</li><li>Track record for every insider</li><li>Unlimited watchlist and follows</li><li>Every number linked to the SEC filing</li></ul>
-  <a class="ds-btn ds-btn--lg" href="/start" data-cta="pricing">Start for $1</a>
-  <p class="ds-price__note">$1 today. We email you before you're charged. Cancel in 2 clicks.</p>
-  ${COMPETITORS.anchor ? `<p class="ds-price__note">${esc(COMPETITORS.anchor)}</p>` : ""}
- </div>
-</div></section>
-
-<section class="ds-section" id="faq" aria-labelledby="faq-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="faq-h">Questions people ask first.</h2>
- <p class="ds-body">Short answers, with the <a href="/subscription-policy.html">full terms</a> one tap away.</p>
- <div class="ds-faq">${FAQ.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</div>
-</div></section>
-
-<section class="ds-section v2-final" aria-labelledby="end-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
- <h2 class="ds-h2" id="end-h">Search any stock. See who's buying.</h2>
- <p class="ds-body">It takes ten seconds and you don't need an account.</p>
- <div class="v2-final__grid">
-  ${searchBox("end-q")}
-  <figure class="v2-founder">${founderPhoto ? `<img src="/assets/img/founder.jpg" width="56" height="56" alt="Nicholas, founder of Insidir" loading="lazy" decoding="async">` : ""}
-   <blockquote><p>I kept missing the one signal that is actually public: the people who run a company buying its stock with their own money. The filings were there, written for lawyers. I built Insidir to read them for me, and now for you.</p></blockquote>
-   <figcaption><b>Nicholas</b>, founder</figcaption></figure>
-  ${d?.testimonials?.length ? `<div class="v2-quotes">${d.testimonials.map(t => `<figure class="ds-card v2-quote"><blockquote><p>${esc(t.quote)}</p></blockquote><figcaption><b>${esc(t.name)}</b>${t.detail ? `, ${esc(t.detail)}` : ""}</figcaption></figure>`).join("")}</div>` : ""}
- </div>
-</div></section>
+${top.length ? section("live-h", "This week's biggest insider buys.", "Insiders are CEOs, CFOs, directors and big shareholders, and these are the largest buys they reported this week, straight from SEC EDGAR.", week) : ""}
+${how ? section("how-h", "Three steps. No finance degree needed.", "Pick your stocks, we read every filing, and you get one sentence when an insider trades.", how, ' id="how"') : ""}
+${d ? section("rc-h", "What happened after they bought.", esc(RECEIPT_RULE), `${receiptsTable(d.receipts)}
+ <p class="t-label muted snote">Measured from the close on the day of the first buy. Past results don't predict future ones. Research, not investment advice.</p>
+ <div class="card scard smail-card">${uiEmailForm("receipts")}</div>`, ' id="receipts"') : ""}
+${section("cmp-h", "Built for one job: following insiders.", "Here is how Insidir compares with reading the SEC's own website, checked on public pages.", comparison(), ' id="compare"')}
+${section("pr-h", "$1 for 7 days. Then $39 a month.", "One plan with everything in it, and you can cancel online in two clicks.", `<div class="card sprice">
+  <p class="t-label muted">Insidir Pro</p>
+  <p class="t-hero big"><span class="u">$</span>39<span class="u"> / month</span></p>
+  <p class="muted">$1 for your first 7 days.</p>
+  <ul class="sprice__list"><li>Every insider trade in plain English</li><li>Alerts minutes after a filing</li><li>Track record for every insider</li><li>Unlimited watchlist and follows</li><li>Every number linked to the SEC filing</li></ul>
+  <a class="btn btn--primary btn--lg" href="/start" data-cta="pricing">Start for $1</a>
+  <p class="t-label muted">$1 today. We email you before you're charged. Cancel in 2 clicks.</p>
+  ${COMPETITORS.anchor ? `<p class="t-label muted">${esc(COMPETITORS.anchor)}</p>` : ""}
+ </div>`, ' id="pricing" data-funnel-view="pricing"')}
+${section("faq-h", "Questions people ask first.", `Short answers, with the <a class="slink" href="/subscription-policy.html">full terms</a> one tap away.`, `<div class="sfaq">${FAQ.map(([q, a], i) => `<details class="card"${i === 0 ? " open" : ""}><summary>${esc(q)}</summary><p class="muted">${esc(a)}</p></details>`).join("")}</div>`, ' id="faq"')}
+${section("end-h", "Search any stock. See who's buying.", "It takes ten seconds and you don't need an account.", `<div class="send">
+  ${uiSearch("end-q")}
+  <figure class="sfounder"><span class="mono mono--32" aria-hidden="true">N</span>
+   <div><blockquote><p>I kept missing the one signal that is actually public: the people who run a company buying its stock with their own money. The filings were there, written for lawyers. I built Insidir to read them for me, and now for you.</p></blockquote>
+   <figcaption class="t-label muted"><b>Nicholas</b>, founder</figcaption></div></figure>
+  ${d?.testimonials?.length ? `<div class="squotes">${d.testimonials.map(t => `<figure class="card scard"><blockquote><p>${esc(t.quote)}</p></blockquote><figcaption class="t-label muted"><b>${esc(t.name)}</b>${t.detail ? `, ${esc(t.detail)}` : ""}</figcaption></figure>`).join("")}</div>` : ""}
+ </div>`)}
 </main>
-<div class="v2-sticky" data-v2-sticky><a class="ds-btn" href="/start" data-cta="sticky">Start for $1</a><span class="ds-small">7 days, cancel anytime</span></div>
-${footer({ home: true })}
+<div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/start" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
+${uiFooter({ home: true })}
 ${scripts()}
-<script src="/assets/js/hero.js?v=1" defer></script>
 </body></html>`;
   const title = "Insidir: see when CEOs buy and sell their own stock";
-  return head({ title, description: SUB, canonical: "/", origin, extra: `<meta name="color-scheme" content="dark">\n` }) + "\n" + body;
+  return uiHead({ title, description: SUB, canonical: "/", origin }) + "\n" + body;
 }
 
 /* ---------- routing ---------- */
@@ -276,8 +284,7 @@ export async function handleLanding(req, res, url, { query, env = process.env, s
   if (p === "/v1/live" && (req.method === "GET" || req.method === "HEAD")) {
     const rows = await once("live", 30_000, () => query(LIVE_SQL, [24]).then(r => withRole(r.rows || [])));
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30" });
-    const now = Date.now();
-    res.end(JSON.stringify({ items: liveItems(rows, now).map((x, i) => ({ ...x, receipt: renderReceipt(rows.filter(r => r.published_at)[i], { now, print: true, id: x.id }) })) }));
+    res.end(JSON.stringify({ items: liveItems(rows) }));
     return true;
   }
   if (!(p === "/" || p === "/index.html") || (req.method !== "GET" && req.method !== "HEAD")) return false;

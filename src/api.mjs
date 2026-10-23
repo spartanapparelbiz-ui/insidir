@@ -30,7 +30,8 @@ import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { explainEvent } from "./explanations.mjs";
 import { connections } from "./connections.mjs";
 import { changes } from "./changes.mjs";
-import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,unsubscribePage } from "./notifications.mjs";
+import { getPreferences,savePreferences,listNotifications,markRead,archive,unsubscribe,unsubscribePage } from "./notifications.mjs";
+import { withScores } from "./alerts-app.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
@@ -51,6 +52,7 @@ import {refCookieFor,refFromCookie} from "./attribution.mjs";
 import {handleTickerRoute} from "./ticker-page.mjs";
 import {handleLanding} from "./landing.mjs";
 import {chartData,todayData,feedData} from "./today.mjs";
+import {tickerInsiders,tickerFunds} from "./ticker-app.mjs";
 import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -600,7 +602,9 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     const before=u.searchParams.get("before");
     if(before!=null&&!/^\d{1,18}$/.test(before))throw failure(400,"Invalid cursor");
-    return json(res,200,{...await listNotifications(ctx.query,user.id,{limit:positive(u.searchParams.get("limit"),50,100),before,unread:u.searchParams.get("unread")==="1"}),
+    const list=await listNotifications(ctx.query,user.id,{limit:positive(u.searchParams.get("limit"),50,100),before,unread:u.searchParams.get("unread")==="1"});
+    if(u.searchParams.get("scores")==="1")await withScores(ctx.query,list);
+    return json(res,200,{...list,
       note:"Factual alerts about public filings for your watchlist and the people you follow. Not investment advice."});
   }
   // Provider webhooks are server-to-server (no Origin); they authenticate with their own secret.
@@ -765,6 +769,15 @@ async function route(req,res,ctx){
     const d=await ctx.market("chart:"+u.searchParams.get("ticker")+":"+u.searchParams.get("days"),60_000,()=>chartData(ctx.query,u.searchParams.get("ticker"),{days:u.searchParams.get("days")}));
     if(!d)throw failure(400,"Unknown ticker");
     return json(res,200,d);
+  }
+  /* The ticker page's Insiders and Funds tabs (src/ticker-app.mjs). */
+  const tk=p.match(/^\/v1\/ticker\/([A-Za-z0-9.-]{1,10})\/(insiders|funds)$/);
+  if(tk && m==="GET"){
+    await requireUser(req,ctx);
+    const T=tk[1].toUpperCase();
+    if(tk[2]==="insiders"){const d=await ctx.market("tk-ins:"+T,60_000,()=>tickerInsiders(ctx.query,T));if(!d)throw failure(400,"Unknown ticker");return json(res,200,d);}
+    const name=(await ctx.query("SELECT issuer_name FROM sec_filings WHERE ticker=$1 AND issuer_name IS NOT NULL ORDER BY published_at DESC NULLS LAST LIMIT 1",[T])).rows[0]?.issuer_name;
+    return json(res,200,await ctx.market("tk-funds:"+T,300_000,()=>tickerFunds(ctx.query,T,name)));
   }
   if(p==="/v1/feed" && m==="GET"){
     await requireUser(req,ctx);
@@ -956,6 +969,10 @@ async function route(req,res,ctx){
       const user=await requireUser(req,ctx);
       if(await limited(ctx,"prefs:"+user.id,30))throw failure(429,"Too many changes. Try again shortly.");
       return json(res,200,await savePreferences(ctx.query,user,await body(req),{env:ctx.env,req}));
+    }
+    if(p==="/v1/me/notifications/archive" && m==="POST"){
+      const user=await requireUser(req,ctx),x=await body(req);
+      return json(res,200,await archive(ctx.query,user.id,{ids:x?.ids,undo:x?.undo===true}));
     }
     if(p==="/v1/me/notifications/read" && m==="POST"){
       const user=await requireUser(req,ctx),x=await body(req);

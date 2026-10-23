@@ -11,10 +11,8 @@
 <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/ui.css?v=1">
-<link rel="stylesheet" href="/assets/css/today.css?v=1">
+<link rel="stylesheet" href="/assets/css/ui.css?v=2">
+<link rel="stylesheet" href="/assets/css/today.css?v=2">
 <script defer src="/assets/vendor/motion-12.23.12.js"></script>
 <script defer src="/assets/vendor/lightweight-charts-5.0.8.js"></script>
 <script defer src="/assets/js/icons.js?v=1"></script>
@@ -29,65 +27,60 @@
 <div data-ui-shell data-page="dashboard">
 
 <header class="page-head">
-  <div><h1 class="t-title">Today</h1><p class="t-small num" data-today-date>&nbsp;</p></div>
-  <div class="page-head__end" data-today-fresh></div>
+  <div><h1 class="t-title">Today</h1><p class="t-label muted" data-today-date>&nbsp;</p></div>
 </header>
 
+<div class="stack">
 <!-- The hero: the biggest insider move at the member's watchlist companies (GET /v1/me/today). The skeleton has the
-     final layout's exact boxes, so nothing moves when the data lands. -->
+     final layout's boxes, so nothing moves when the data lands. -->
 <section class="card hero" data-hero aria-labelledby="hero-label" aria-busy="true">
   <div class="hero__info">
-    <p class="t-label" id="hero-label">Biggest insider move in your watchlist</p>
-    <div class="hero__co"><span class="skel" style="width:40px;height:40px;border-radius:11px"></span><span class="skel" style="width:160px;height:18px"></span></div>
+    <p class="t-label muted" id="hero-label">Biggest insider move in your watchlist</p>
+    <div class="hero__co"><span class="skel" style="width:32px;height:32px;border-radius:9px"></span><span class="skel" style="width:140px;height:16px"></span></div>
     <div class="skel hero__skel-num"></div>
-    <div class="skel" style="width:88%;height:16px;margin-top:20px"></div><div class="skel" style="width:64%;height:16px;margin-top:10px"></div>
-    <div class="hero__score"><span class="skel" style="width:56px;height:56px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></div>
+    <div class="skel" style="width:88%;height:16px;margin-top:24px"></div><div class="skel" style="width:64%;height:16px;margin-top:8px"></div>
+    <div class="hero__score"><span class="skel" style="width:48px;height:48px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></div>
   </div>
-  <div class="hero__chart"><div class="hero__chart-head"><span class="skel" style="width:140px;height:28px"></span></div><div class="skel hero__plot"></div></div>
+  <div class="hero__chart"><div class="hero__chart-head"><span class="skel" style="width:120px;height:24px"></span></div><div class="skel hero__plot"></div></div>
 </section>
 
-<section class="strip" aria-labelledby="strip-h">
-  <div class="sec-head"><h2 class="t-h2" id="strip-h">Watchlist</h2><a class="btn btn--ghost" href="/watchlist.html">Manage</a></div>
+<section class="sec" aria-labelledby="strip-h">
+  <div class="sec__head"><h2 class="t-section" id="strip-h">Watchlist</h2><a class="btn btn--ghost" href="/watchlist.html">Manage</a></div>
   <div class="strip__row" data-strip>
-    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
-    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
-    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
-    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
-    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:22px"></span><span class="skel" style="width:100%;height:28px;margin-top:14px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:20px"></span><span class="skel" style="width:100%;height:28px;margin-top:12px"></span><span class="skel" style="width:70%;height:12px;margin-top:12px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:20px"></span><span class="skel" style="width:100%;height:28px;margin-top:12px"></span><span class="skel" style="width:70%;height:12px;margin-top:12px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:20px"></span><span class="skel" style="width:100%;height:28px;margin-top:12px"></span><span class="skel" style="width:70%;height:12px;margin-top:12px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:20px"></span><span class="skel" style="width:100%;height:28px;margin-top:12px"></span><span class="skel" style="width:70%;height:12px;margin-top:12px"></span></div>
+    <div class="card wcard"><span class="skel" style="width:60%;height:28px"></span><span class="skel" style="width:50%;height:20px;margin-top:20px"></span><span class="skel" style="width:100%;height:28px;margin-top:12px"></span><span class="skel" style="width:70%;height:12px;margin-top:12px"></span></div>
   </div>
 </section>
 
 <div class="today-grid">
-  <section class="card feed" aria-labelledby="feed-h">
-    <div class="card__head"><h2 class="t-h2" id="feed-h">Latest filings</h2>
+  <section class="sec" aria-labelledby="feed-h">
+    <div class="sec__head"><h2 class="t-section" id="feed-h">Latest filings</h2>
       <div class="seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-feed-filter="all">All</button><button type="button" aria-pressed="false" data-feed-filter="buy">Buys</button><button type="button" aria-pressed="false" data-feed-filter="sell">Sells</button><button type="button" aria-pressed="false" data-feed-filter="watch">Watchlist</button></div></div>
-    <ul class="rows feed__rows" data-feed aria-live="polite" aria-busy="true">
-      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
-      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
-      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:66%;height:14px"></span><span class="skel" style="width:52%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
-      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:58%;height:14px"></span><span class="skel" style="width:64%;height:14px"></span><span class="skel" style="width:60px;height:22px;border-radius:11px"></span><span class="skel" style="width:56px;height:14px"></span><span class="skel" style="width:28px;height:14px"></span></li>
-    </ul>
+    <div class="card feed"><ul class="rows" data-feed aria-live="polite" aria-busy="true">
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:64px;height:14px"></span><span class="skel" style="width:52px;height:14px"></span><span class="skel" style="width:28px;height:12px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:60%;height:14px"></span><span class="skel" style="width:70%;height:14px"></span><span class="skel" style="width:64px;height:14px"></span><span class="skel" style="width:52px;height:14px"></span><span class="skel" style="width:28px;height:12px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:66%;height:14px"></span><span class="skel" style="width:52%;height:14px"></span><span class="skel" style="width:64px;height:14px"></span><span class="skel" style="width:52px;height:14px"></span><span class="skel" style="width:28px;height:12px"></span></li>
+      <li class="row feed__row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:58%;height:14px"></span><span class="skel" style="width:64%;height:14px"></span><span class="skel" style="width:64px;height:14px"></span><span class="skel" style="width:52px;height:14px"></span><span class="skel" style="width:28px;height:12px"></span></li>
+    </ul></div>
   </section>
 
   <aside class="today-side" aria-label="More">
-    <section class="card mkt" aria-labelledby="mkt-h" data-market>
-      <div class="card__head"><h2 class="t-h2" id="mkt-h">This week across the market</h2></div>
-      <div class="card__body"><span class="skel" style="display:block;width:100%;height:44px"></span><span class="skel" style="display:block;width:100%;height:6px;margin-top:16px"></span></div>
-    </section>
-    <section class="card" aria-labelledby="people-h">
-      <div class="card__head"><h2 class="t-h2" id="people-h">People you follow</h2><a class="btn btn--ghost" href="/people.html">Find people</a></div>
-      <ul class="rows" data-people aria-busy="true"><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></li><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:60%;height:14px"></span></li></ul>
-    </section>
-    <section class="card" aria-labelledby="notes-h">
-      <div class="card__head"><h2 class="t-h2" id="notes-h">Your notes</h2></div>
-      <ul class="rows" data-notes aria-busy="true"><li class="row side-row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:64%;height:14px"></span></li></ul>
-    </section>
+    <section class="sec" aria-labelledby="mkt-h"><div class="sec__head"><h2 class="t-section" id="mkt-h">This week</h2></div>
+      <div class="card mkt" data-market><span class="skel" style="display:block;width:100%;height:46px"></span><span class="skel" style="display:block;width:100%;height:4px;margin-top:20px"></span></div></section>
+    <section class="sec" aria-labelledby="people-h"><div class="sec__head"><h2 class="t-section" id="people-h">People you follow</h2><a class="btn btn--ghost" href="/people.html">Find people</a></div>
+      <div class="card side-card"><ul class="rows" data-people aria-busy="true"><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:70%;height:14px"></span></li><li class="row side-row"><span class="skel" style="width:32px;height:32px;border-radius:50%"></span><span class="skel" style="width:60%;height:14px"></span></li></ul></div></section>
+    <section class="sec" aria-labelledby="notes-h"><div class="sec__head"><h2 class="t-section" id="notes-h">Your notes</h2></div>
+      <div class="card side-card"><ul class="rows" data-notes aria-busy="true"><li class="row side-row"><span class="skel" style="width:28px;height:28px;border-radius:8px"></span><span class="skel" style="width:64%;height:14px"></span></li></ul></div></section>
   </aside>
+</div>
 </div>
 
 <footer class="data-foot">
-  <p class="t-small" data-status>SEC Form 4 filings from EDGAR. Prices are daily closes, not live quotes.</p>
-  <p class="t-small">Research, not investment advice. Charts by <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a> Lightweight Charts.</p>
+  <p class="t-micro" data-status>SEC Form 4 filings from EDGAR. Prices are daily closes, not live quotes.</p>
+  <p class="t-micro">Research, not investment advice. Charts by <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a> Lightweight Charts.</p>
 </footer>
 </div>
 </body>

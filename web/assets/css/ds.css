@@ -1,11 +1,9 @@
 /* Insidir design system (v2). Every component on the new landing page comes from this file; /design shows each one
-   with its hover, focus and pressed states. Rules: Geist for all text, Geist Mono only for numbers, tickers, dates
-   and dollar amounts (tabular), JetBrains Mono ExtraBold only for the "insidir." wordmark. One accent pair (buy
+   with its hover, focus and pressed states. Rules: Geist for everything, tabular numerals for numbers, tickers, dates
+   and dollar amounts; the "insidir." wordmark is an SVG logo (web/assets/brand/insidir-wordmark.svg). One accent pair (buy
    green, sell red) used only on trade data. Hairlines, not shadows. 8px grid. */
 
 @font-face{font-family:"Geist";font-style:normal;font-weight:100 900;font-display:swap;src:url(../fonts/Geist-Variable.woff2) format("woff2")}
-@font-face{font-family:"Geist Mono";font-style:normal;font-weight:100 900;font-display:swap;src:url(../fonts/GeistMono-Variable.woff2) format("woff2")}
-@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;src:url(../fonts/JetBrainsMono-mark.woff2) format("woff2");unicode-range:U+0020,U+002E,U+0064,U+0069,U+006E,U+0072,U+0073}
 
 :root{
   /* colour */
@@ -15,8 +13,7 @@
   --press:rgba(255,255,255,.04); --hover:rgba(255,255,255,.03);
   /* type */
   --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
-  --mark:"JetBrains Mono",ui-monospace,monospace;
+  --mono:"Geist",ui-sans-serif,system-ui,sans-serif; /* one font: figures are Geist with tabular numerals */
   /* space: 8px grid */
   --s1:8px;--s2:16px;--s3:24px;--s4:32px;--s5:40px;--s6:48px;--s8:64px;--s10:80px;--s11:88px;--s16:128px;
   --section:128px; --max:1160px; --text-max:640px;
@@ -48,7 +45,7 @@ body.ds{margin:0;background:var(--bg);color:var(--text);font:400 18px/28px var(-
   .ds-h2{font-size:30px;line-height:36px}
   .ds-body{font-size:16px;line-height:26px}
 }
-.ds-num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:0}
+.ds-num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:0}
 .ds-buy{color:var(--buy)} .ds-sell{color:var(--sell)}
 
 /* ---------- layout ---------- */
@@ -59,7 +56,8 @@ body.ds{margin:0;background:var(--bg);color:var(--text);font:400 18px/28px var(-
 .ds-center{text-align:center}.ds-center .ds-body{margin-left:auto;margin-right:auto}
 
 /* ---------- wordmark ---------- */
-.ds-mark{display:inline-flex;align-items:center;min-height:44px;font:800 22px/1 var(--mark);letter-spacing:-.02em;color:var(--text);text-decoration:none}
+.ds-mark{display:inline-flex;align-items:center;min-height:44px;color:var(--text);text-decoration:none}
+.ds-mark svg{display:block;height:17px;width:auto}
 
 /* ---------- buttons ---------- */
 .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);min-height:44px;padding:0 var(--s3);border:1px solid var(--text);

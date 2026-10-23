@@ -1,5 +1,5 @@
 /* Shared server-rendered pieces for the v2 public pages (the landing page, /<TICKER>), on the design system in
- * web/assets/css/ds.css. One date format ("Oct 16, 2026"), one money format ("$1.2M"), tickers in Geist Mono upper
+ * web/assets/css/ds.css. One date format ("Oct 16, 2026"), one money format ("$1.2M"), tickers in Geist upper
  * case, buy green and sell red only on trade data. Every trade carries its SEC filing link. */
 import { readFileSync } from "node:fs";
 import { roleWord } from "./track-record.mjs";
@@ -93,7 +93,9 @@ export const withRole = rows => rows.map(r => ({ ...r, role: role(r) }));
    without waiting for two more round trips. Read once at start-up; font URLs become absolute. */
 const css = name => readFileSync(new URL("../web/assets/css/" + name, import.meta.url), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s*\n\s*/g, " ").replace(/url\(\.\.\/fonts\//g, "url(/assets/fonts/");
-const INLINE_CSS = css("ds.css") + css("site-v2.css") + css("receipt.css");
+const INLINE_CSS = css("ds.css") + css("site-v2.css");
+const WORDMARK = readFileSync(new URL("../web/assets/brand/insidir-wordmark.svg", import.meta.url), "utf8").trim()
+  .replace(/<\?xml[^>]*>\s*/, "").replace(/\s(role|aria-label)="[^"]*"/g, "").replace(/<title>[^<]*<\/title>/, "").replace("<svg ", '<svg aria-hidden="true" ');
 
 export function head({ title, description, canonical, origin, image = null, noindex = false, extra = "" }) {
   const url = origin + canonical;
@@ -111,18 +113,17 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(origin + (image || "/assets/og/insidir-og.png"))}">
 <link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <style>${INLINE_CSS}</style>
 ${extra}</head>`;
 }
 // On the landing page the section links are same-page anchors (#how); elsewhere they lead to it (/#how).
 export const nav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
-<a class="ds-mark" href="/" aria-label="Insidir home">insidir.</a>
+<a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a>
 <nav class="ds-nav__links" aria-label="Main"><a href="${h}#how">Platform</a><a href="${h}#pricing">Pricing</a><a href="${h}#faq">FAQ</a></nav>
 <div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/start" data-cta="${esc(cta)}">Start for $1</a></div>
 </div></header>`; };
 export const footer = ({ home = false } = {}) => { const h = home ? "" : "/"; return `<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
-<div class="v2-foot__brand"><a class="ds-mark" href="/">insidir.</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
+<div class="v2-foot__brand"><a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
 <nav aria-label="Product"><h2>Product</h2><a href="/insider-trading">Insider trades today</a><a href="${h}#how">How it works</a><a href="${h}#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
 <nav aria-label="Company"><h2>Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
 <nav aria-label="Account"><h2>Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
