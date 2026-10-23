@@ -39,6 +39,8 @@ body.ds{margin:0;background:var(--bg);color:var(--text);font:400 18px/28px var(-
 .ds-h1{margin:0;font:600 72px/76px var(--sans);letter-spacing:-.035em;text-wrap:balance}
 .ds-h2{margin:0;font:600 44px/50px var(--sans);letter-spacing:-.03em;text-wrap:balance}
 .ds-body{margin:0;font:400 18px/28px var(--sans);color:var(--muted);max-width:var(--text-max);text-wrap:pretty}
+/* hidden always wins over a component's display (a .ds-btn that a script hides stays hidden) */
+[hidden]{display:none!important}
 .ds-small{margin:0;font:400 14px/20px var(--sans);color:var(--muted);text-wrap:pretty}
 .ds p{text-wrap:pretty}
 @media (max-width:767px){
