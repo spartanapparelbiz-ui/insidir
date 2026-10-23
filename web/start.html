@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Start for $1 | Insidir</title>
+<meta name="description" content="Start Insidir for $1: 7 days of every insider trade in plain English, then $39 a month. Sign in with a code sent to your email. Cancel online anytime.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ds.css?v=2">
+<style>
+  .st{min-height:100svh;display:grid;grid-template-rows:auto 1fr auto}
+  .st-main{display:grid;align-content:start;justify-items:center;padding:var(--s8) var(--s3) var(--s10)}
+  .st-card{width:100%;max-width:440px}
+  .st-card .ds-h2{font-size:30px;line-height:36px}
+  .st-card .ds-body{margin-top:12px}
+  .st-form{display:grid;gap:12px;margin-top:var(--s4)}
+  .st-label{font:500 14px/20px var(--sans)}
+  .st-input{width:100%;height:56px;padding:0 var(--s2);border:1px solid var(--line-strong);border-radius:var(--r-btn);background:var(--raised);color:var(--text);font:400 17px/20px var(--sans);outline:none}
+  .st-input:focus{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}
+  .st-input--code{font:500 28px/1 var(--mono);letter-spacing:.3em;text-align:center}
+  .st-form .ds-btn{width:100%}
+  .st-msg{min-height:20px;margin:0;font:400 14px/20px var(--sans);color:var(--muted)}
+  .st-msg.is-error{color:var(--text)}
+  .st-msg.is-error::before{content:"";display:inline-block;width:6px;height:6px;margin:0 8px 2px 0;border-radius:50%;background:var(--sell)}
+  .st-row{display:flex;justify-content:space-between;align-items:center;gap:var(--s2)}
+  .st-row .ds-link{font-size:14px}
+  .st-terms{margin-top:var(--s3);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-card);background:var(--raised)}
+  .st-terms p{margin:0;font:400 14px/22px var(--sans);color:var(--muted)}
+  .st-agree{display:flex;gap:12px;align-items:flex-start;margin-top:var(--s2);font:400 14px/22px var(--sans);cursor:pointer;min-height:44px}
+  .st-agree input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:#f0eee8}
+  .st-sum{display:grid;gap:4px;margin:var(--s3) 0 0;padding:0;list-style:none}
+  .st-sum li{display:flex;justify-content:space-between;font:400 15px/24px var(--sans)}
+  .st-sum li b{font:500 15px/24px var(--mono)}
+  .st-note{margin:12px 0 0;text-align:center;font:400 14px/20px var(--sans);color:var(--muted)}
+  .st-iab{margin:0 0 var(--s3);padding:12px var(--s2);border:1px solid var(--line);border-radius:var(--r-btn);font:400 14px/20px var(--sans);color:var(--muted)}
+  .st-iab a{color:var(--text)}
+  .st-foot{padding:var(--s3);text-align:center}
+  .st-steps{display:flex;gap:6px;justify-content:center;margin:0 0 var(--s4);padding:0;list-style:none}
+  .st-steps li{width:28px;height:3px;border-radius:2px;background:var(--line-strong)}
+  .st-steps li.is-on{background:var(--text)}
+</style>
+</head>
+<body class="ds">
+<div class="st">
+  <header class="ds-nav"><div class="ds-nav__in" style="grid-template-columns:1fr auto">
+    <a class="ds-mark" href="/" aria-label="Insidir home">insidir.</a>
+    <a class="ds-login" href="/signin.html" style="color:var(--muted);font:500 14px/20px var(--sans);text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Log in with a password</a>
+  </div></header>
+
+  <main class="st-main" id="main">
+    <div class="st-card">
+      <p class="st-iab" data-st-iab hidden>You're in an app's built-in browser. Everything works here. To use your saved cards and Apple Pay, tap <b>•••</b> and choose <b>Open in browser</b><span data-st-android hidden>, or <a href="#" data-st-chrome>open in Chrome</a></span>.</p>
+      <ol class="st-steps" aria-hidden="true"><li data-st-dot="email" class="is-on"></li><li data-st-dot="code"></li><li data-st-dot="terms"></li></ol>
+
+      <section data-st-step="email" aria-labelledby="st-email-h">
+        <h1 class="ds-h2" id="st-email-h">Start for $1.</h1>
+        <p class="ds-body">Enter your email. We'll send a 6-digit code. No password.</p>
+        <form class="st-form" data-st-email-form novalidate>
+          <label class="st-label" for="st-email">Email</label>
+          <input class="st-input" id="st-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required placeholder="you@example.com">
+          <button class="ds-btn ds-btn--lg" type="submit">Email me a code</button>
+          <p class="st-msg" data-st-msg role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section data-st-step="code" aria-labelledby="st-code-h" hidden>
+        <h1 class="ds-h2" id="st-code-h">Check your email.</h1>
+        <p class="ds-body">We sent a 6-digit code to <b data-st-addr></b>. It expires in 10 minutes.</p>
+        <form class="st-form" data-st-code-form novalidate>
+          <label class="st-label" for="st-code">Code</label>
+          <input class="st-input st-input--code" id="st-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required>
+          <button class="ds-btn ds-btn--lg" type="submit">Continue</button>
+          <p class="st-msg" data-st-msg role="status" aria-live="polite"></p>
+          <div class="st-row"><button class="ds-link" type="button" data-st-resend>Send a new code</button><button class="ds-link" type="button" data-st-back>Use another email</button></div>
+        </form>
+      </section>
+
+      <section data-st-step="terms" aria-labelledby="st-terms-h" hidden>
+        <h1 class="ds-h2" id="st-terms-h">One last step.</h1>
+        <p class="ds-body">Pay $1 on Stripe's secure page with Apple Pay, Google Pay or a card.</p>
+        <ul class="st-sum"><li>Today, 7-day trial <b data-st-today>$1.00</b></li><li>Then every month <b data-st-then>$39.00</b></li></ul>
+        <div class="st-terms"><p data-st-disclosure></p>
+          <label class="st-agree"><input type="checkbox" data-st-agree> <span>I agree to these subscription terms and the <a href="/terms.html" target="_blank" rel="noopener">Terms</a>.</span></label></div>
+        <div class="st-form">
+          <button class="ds-btn ds-btn--lg" type="button" data-st-pay disabled>Continue to secure checkout</button>
+          <p class="st-msg" data-st-msg role="status" aria-live="polite"></p>
+        </div>
+        <p class="st-note">We email you before you're charged. Cancel in 2 clicks.</p>
+      </section>
+    </div>
+  </main>
+  <footer class="st-foot"><p class="ds-small"><span class="ds-mark" style="font-size:14px;min-height:0">insidir.</span> Research, not investment advice.</p></footer>
+</div>
+<script src="/assets/js/start.js?v=1" defer></script>
+<script src="/assets/js/ds.js?v=1" defer></script>
+<script defer src="/assets/js/funnel.js"></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
+</body>
+</html>

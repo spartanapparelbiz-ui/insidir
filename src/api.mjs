@@ -11,7 +11,7 @@ import { brotliCompressSync,gzipSync,constants as zlibConstants } from "node:zli
 import { billingRoutes,createStripeClient,deleteAccount } from "./billing.mjs";
 import { creatorAdminRoutes } from "./creator-program.mjs";
 import { gate,accessSummary,paywallNotices,privateCacheControl,mergeVary,unavailablePage } from "./paywall.mjs";
-import { billingSettings } from "./config.mjs";
+import { billingSettings, trialSettings } from "./config.mjs";
 import { validateResearchDecision } from "./research.mjs";
 import { handleCompanyRoute,clientAddress } from "./company-routes.mjs";
 import { handlePublicPage } from "./public-pages.mjs";
@@ -30,7 +30,8 @@ import { listResearchEvents,CAVEATS } from "./research-events.mjs";
 import { explainEvent } from "./explanations.mjs";
 import { connections } from "./connections.mjs";
 import { changes } from "./changes.mjs";
-import { getPreferences,savePreferences,listNotifications,markRead,unsubscribe,unsubscribePage } from "./notifications.mjs";
+import { getPreferences,savePreferences,listNotifications,markRead,archive,unsubscribe,unsubscribePage } from "./notifications.mjs";
+import { withScores } from "./alerts-app.mjs";
 import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
@@ -45,6 +46,14 @@ import {costReport,timed} from "./cost-analytics.mjs";
 import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mjs";
 import {searchEntities,entityRecord,resolveEntity,padCik,KINDS} from "./sec-directory.mjs";
 import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
+import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
+import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY} from "./email-code.mjs";
+import {refCookieFor,refFromCookie} from "./attribution.mjs";
+import {handleTickerRoute} from "./ticker-page.mjs";
+import {handleLanding} from "./landing.mjs";
+import {chartData,todayData,feedData} from "./today.mjs";
+import {tickerInsiders,tickerFunds} from "./ticker-app.mjs";
+import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -268,6 +277,7 @@ async function followedPeopleUpdates(userId,limit,run=query){
   const missing=[...new Set(people.map(row=>row.last_id).filter(id=>id!=null&&!byId.has(id)))];
   if(missing.length)for(const row of (await run(TRANSACTIONS_BY_ID_SQL,[missing])).rows)byId.set(row.id,row);
   await withJointOwners([...byId.values()],run,joint);
+  await withTrackRecords([...byId.values()],run);
   return {
     people:people.map(row=>({owner_cik:row.owner_cik,owner_name:row.owner_name??null,followed_at:row.followed_at,
       ticker:row.ticker??null,issuer_name:row.issuer_name??null,
@@ -337,6 +347,13 @@ async function route(req,res,ctx){
   if(decision.action==="deny")return json(res,decision.status,decision.body);
   if(decision.kind==="product"||decision.kind==="account")keepPrivate(res);
   if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
+  // First-visit attribution (src/attribution.mjs): a page opened with an allowed ?ref= sets insidir_ref once.
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && u.searchParams.has("ref")){const c=refCookieFor(req,u,{env:ctx.env,secure:config.cookieSecure});if(c)res.setHeader("Set-Cookie",c);}
+  // The landing page, server-rendered with live data, and its live filing strip (src/landing.mjs).
+  if((m==="GET"||m==="HEAD") && (p==="/"||p==="/index.html"||p==="/v1/live") && await handleLanding(req,res,u,{query:ctx.query,env:ctx.env,secure:config.cookieSecure}))return;
+  // Public stock pages at /<TICKER>, /search and the per-stock share images (src/ticker-page.mjs).
+  if((m==="GET"||m==="HEAD") && (p==="/admin"||p==="/admin/")){res.writeHead(302,{Location:"/admin-funnel.html","Cache-Control":"no-store"});return res.end()}
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handleTickerRoute(req,res,u,{query:ctx.query,env:ctx.env}))return;
   // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handlePublicPage(req,res,u,{query:ctx.query,env:ctx.env,requester:clientAddress(req)}))return;
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
@@ -355,6 +372,8 @@ async function route(req,res,ctx){
     if(handled!==false)return;
   }
   // GET /v1/people/<cik>: one reporting person's profile (src/person-profile.mjs); product data.
+  // An insider's track record (src/track-record.mjs): before /v1/people/<cik>, which it extends.
+  if(await handleTrackRecordRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
   if(await handlePersonRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe,query:ctx.query,limiter:ctx.limiter}); if(result!==false) return result; }
   if(p.startsWith("/v1/creators/admin/")) { const result=await creatorAdminRoutes(req,res,p,json,{query:ctx.query,env:ctx.env,limiter:ctx.limiter}); if(result!==false) return result; }
@@ -425,6 +444,7 @@ async function route(req,res,ctx){
     if(!f.rows.length)throw failure(404,"Filing not found");
     const transactions=await query("SELECT * FROM sec_transactions WHERE accession=$1 ORDER BY id",[accession]);
     await withJointOwners(transactions.rows,query,await hasFilingOwners(query));
+    await withTrackRecords(transactions.rows,query);
     return json(res,200,{filing:f.rows[0],transactions:transactions.rows,note:"A Form 4 may include sales, grants, option exercises, and amendments; inspect transaction codes."});
   }
   if(p==="/v1/transactions" && m==="GET"){
@@ -438,6 +458,7 @@ async function route(req,res,ctx){
       WHERE f.ingest_status='parsed' AND ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
       await withJointOwners(r.rows,query,await hasFilingOwners(query));
+      await withTrackRecords(r.rows,query);
       return r;
     });
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
@@ -581,7 +602,9 @@ async function route(req,res,ctx){
     const user=await requireUser(req,ctx);
     const before=u.searchParams.get("before");
     if(before!=null&&!/^\d{1,18}$/.test(before))throw failure(400,"Invalid cursor");
-    return json(res,200,{...await listNotifications(ctx.query,user.id,{limit:positive(u.searchParams.get("limit"),50,100),before,unread:u.searchParams.get("unread")==="1"}),
+    const list=await listNotifications(ctx.query,user.id,{limit:positive(u.searchParams.get("limit"),50,100),before,unread:u.searchParams.get("unread")==="1"});
+    if(u.searchParams.get("scores")==="1")await withScores(ctx.query,list);
+    return json(res,200,{...list,
       note:"Factual alerts about public filings for your watchlist and the people you follow. Not investment advice."});
   }
   // Provider webhooks are server-to-server (no Origin); they authenticate with their own secret.
@@ -702,7 +725,7 @@ async function route(req,res,ctx){
     const auth=await authorizeAdmin(req,{env:ctx.env,query:ctx.query,limiter:ctx.limiter});
     if(!auth.ok){await adminAudit(ctx.query,req,"admin.denied",p,{status:auth.status});throw failure(auth.status,auth.error)}
     await adminAudit(ctx.query,req,"admin.funnel",p,{via:auth.via},auth.actor);
-    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days")}));
+    return json(res,200,await funnelReport(ctx.query,{days:u.searchParams.get("days"),trialDays:trialSettings().days}));
   }
   /* POST /v1/events: one first-party funnel event from a page (src/funnel.mjs lists what is accepted). Same
      origin only; a member's id is attached when the request carries their session. Always 204, so a page
@@ -712,10 +735,18 @@ async function route(req,res,ctx){
     if(await limited(ctx,"events:"+clientAddress(req),240,15*60*1000))return json(res,204,{});
     const row=cleanClientEvent(await body(req));
     const user=await ctx.currentUser(req).catch(()=>null);
-    await recordEvent(ctx.query,{...row,userId:user?.id||null});
+    await recordEvent(ctx.query,{...row,userId:user?.id||null,ref:refFromCookie(req,ctx.env)});
     // A member's first company report counts as their first research, for the activation measure.
     if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
     return json(res,204,{});
+  }
+  // The free weekly email (src/newsletter.mjs). The sign-up checks its origin; the unsubscribe POST comes from mail
+  // providers (RFC 8058 one-click) and is authorised by its signed link instead.
+  if(p==="/v1/newsletter"||p.startsWith("/v1/newsletter/")){
+    if(p==="/v1/newsletter"&&m==="POST"&&!checkOrigin(req))throw failure(403,"Untrusted Origin");
+    const done=await newsletterRoutes(req,res,u,{query:ctx.query,env:ctx.env,json,readJson:()=>body(req),ref:refFromCookie(req,ctx.env),
+      limited:()=>limited(ctx,"newsletter:"+clientAddress(req),10,60*60*1000)});
+    if(done!==false)return;
   }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});
@@ -731,6 +762,30 @@ async function route(req,res,ctx){
     return json(res,200,{items:rows.map(r=>({kind:r.kind,id:r.id,ticker:r.ticker,cik:r.cik,name:r.name||r.ticker||null,mode:r.alert_mode,paused:!!r.paused_at,pausedAt:r.paused_at,followedAt:r.created_at,
       url:r.kind==="company"?"company.html?ticker="+encodeURIComponent(r.ticker):"person.html?cik="+r.cik})),modes:FOLLOW_MODES,
       note:"Important updates: purchases, clustered purchases, sales of $1,000,000 or more as filed, and company disclosures. Daily and weekly collect updates and deliver them together."});
+  }
+  /* The signature chart and the Today screen (src/today.mjs). */
+  if(p==="/v1/chart" && m==="GET"){
+    await requireUser(req,ctx);
+    const d=await ctx.market("chart:"+u.searchParams.get("ticker")+":"+u.searchParams.get("days"),60_000,()=>chartData(ctx.query,u.searchParams.get("ticker"),{days:u.searchParams.get("days")}));
+    if(!d)throw failure(400,"Unknown ticker");
+    return json(res,200,d);
+  }
+  /* The ticker page's Insiders and Funds tabs (src/ticker-app.mjs). */
+  const tk=p.match(/^\/v1\/ticker\/([A-Za-z0-9.-]{1,10})\/(insiders|funds)$/);
+  if(tk && m==="GET"){
+    await requireUser(req,ctx);
+    const T=tk[1].toUpperCase();
+    if(tk[2]==="insiders"){const d=await ctx.market("tk-ins:"+T,60_000,()=>tickerInsiders(ctx.query,T));if(!d)throw failure(400,"Unknown ticker");return json(res,200,d);}
+    const name=(await ctx.query("SELECT issuer_name FROM sec_filings WHERE ticker=$1 AND issuer_name IS NOT NULL ORDER BY published_at DESC NULLS LAST LIMIT 1",[T])).rows[0]?.issuer_name;
+    return json(res,200,await ctx.market("tk-funds:"+T,300_000,()=>tickerFunds(ctx.query,T,name)));
+  }
+  if(p==="/v1/feed" && m==="GET"){
+    await requireUser(req,ctx);
+    return json(res,200,await ctx.market("feed:"+u.searchParams.get("limit"),20_000,()=>feedData(ctx.query,{limit:u.searchParams.get("limit")})));
+  }
+  if(p==="/v1/me/today" && m==="GET"){
+    const user=await requireUser(req,ctx);
+    return json(res,200,await todayData(ctx.query,user.id));
   }
   if(p==="/v1/me/watchlist" && m==="GET"){
     const user=await requireUser(req,ctx);
@@ -758,6 +813,7 @@ async function route(req,res,ctx){
       )
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
+    await withTrackRecords(results.rows,ctx.query);
     return json(res,200,{items:results.rows,delivery:pushReady()?"in_app_and_opt_in_web_push":"in_app_on_demand",note:"Matched against followed tickers and reporting-owner SEC CIKs. Verify official sources."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){
@@ -818,9 +874,28 @@ async function route(req,res,ctx){
       if(await limited(ctx,"intel-prefs:"+user.id,30,15*60*1000))throw failure(429,"Too many changes. Try again shortly.");
       return json(res,200,{...await saveIntelligencePreferences(user.id,await body(req),ctx.query),pushConfigured:pushReady()});
     }
+    // Email-code sign-in (src/email-code.mjs): no passwords; a new account on the first code.
+    if(p==="/v1/auth/email-code" && m==="POST"){
+      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+      const x=await body(req),email=normalizeEmail(x?.email);
+      if(!email)throw failure(400,"Enter a valid email address.");
+      if(await limited(ctx,"code-ip:"+ip,20,15*60*1000)||await limited(ctx,"code-email:"+email,5,15*60*1000))throw failure(429,"Too many codes requested. Wait a few minutes and try again.");
+      await sendEmailCode(ctx.query,email,{req,env:ctx.env});
+      return json(res,202,{sent:true,message:SENT_REPLY});
+    }
+    if(p==="/v1/auth/email-code/verify" && m==="POST"){
+      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+      if(await limited(ctx,"code-verify:"+ip,40,15*60*1000))throw failure(429,"Too many tries. Wait a few minutes and try again.");
+      const x=await body(req);
+      const r=await verifyEmailCode(ctx.query,x?.email,x?.code,{req,ref:refFromCookie(req,ctx.env)||(typeof x?.ref==="string"?x.ref:null)});
+      if(r.created)await serverEvent(ctx.query,"signup_completed",{userId:r.user.id,visitor:x?.visitor});
+      return json(res,200,{user:r.user,access:accessSummary(r.account,ctx.env),created:r.created},{"Set-Cookie":sessionCookie(r.token)});
+    }
     if(p==="/v1/auth/register" && m==="POST"){
       if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
+      const signupRef=refFromCookie(req,ctx.env);
+      if(signupRef)await ctx.query("UPDATE users SET signup_ref=$2 WHERE id=$1 AND signup_ref IS NULL",[r.user.id,signupRef]);
       await logSecurityEvent(ctx.query,{req,userId:r.user.id,kind:"register"});
       // A confirmation link goes out whenever email is configured; checkout and complimentary access wait for it when enforced.
       let sent=false;
@@ -895,6 +970,10 @@ async function route(req,res,ctx){
       if(await limited(ctx,"prefs:"+user.id,30))throw failure(429,"Too many changes. Try again shortly.");
       return json(res,200,await savePreferences(ctx.query,user,await body(req),{env:ctx.env,req}));
     }
+    if(p==="/v1/me/notifications/archive" && m==="POST"){
+      const user=await requireUser(req,ctx),x=await body(req);
+      return json(res,200,await archive(ctx.query,user.id,{ids:x?.ids,undo:x?.undo===true}));
+    }
     if(p==="/v1/me/notifications/read" && m==="POST"){
       const user=await requireUser(req,ctx),x=await body(req);
       return json(res,200,await markRead(ctx.query,user.id,{ids:x?.ids,all:x?.all===true}));
@@ -927,7 +1006,9 @@ async function route(req,res,ctx){
       if(await limited(ctx,"delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
       // Deleting an account needs the account's password as well as the session, so a borrowed or stolen session cannot do it.
       const confirm=await body(req);
-      if(!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password is not correct, so nothing was deleted.")}
+      // Accounts that sign in by email code have no password: a fresh emailed code confirms instead.
+      const viaCode=/^\d{6}$/.test(String(confirm?.code??confirm?.password??"").trim())&&await consumeEmailCode(ctx.query,user.email,String(confirm?.code??confirm?.password).trim());
+      if(!viaCode&&!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password or code is not correct, so nothing was deleted.")}
       // Cancel a live Stripe subscription FIRST (nothing is deleted if Stripe cannot confirm it),
       // then revoke an active brokerage grant, then remove the account and its data.
       const result=await deleteAccount(user,{query,stripe:ctx.stripe||createStripeClient({secretKey:billingSettings(ctx.env).secretKey}),

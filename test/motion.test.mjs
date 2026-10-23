@@ -59,11 +59,6 @@ test("every dot field answers the pointer anywhere on the page, a press and a ta
   assert.match(engine, /awake = visible && \(/);
   const pages = (await readdir(web)).filter(f => f.endsWith(".html"));
   for (const f of pages) assert.doesNotMatch(await readFile(new URL(f, web), "utf8"), /data-interactive="false"/, f + " has no still dot field");
-  // The overview's dot corner is a live field, not a CSS pattern.
-  const dash = await readFile(new URL("dashboard.html", web), "utf8");
-  assert.match(dash, /class="rd-today__brief"><div class="rd-brief__dots" data-halftone-field/);
-  const dcss = await readFile(new URL("v13-dashboard.css", cssDir), "utf8");
-  assert.doesNotMatch(dcss, /rd-today__brief::after/, "no static dot corner");
 });
 
 test("the site motion layer moves nothing: no pointer, click or scroll physics, only the reveal", () => {
@@ -131,6 +126,11 @@ test("every page carries the engine, then the motion layer", async () => {
   assert.ok(pages.length >= 25);
   for (const f of pages) {
     const html = await readFile(new URL(f, web), "utf8");
+    // Pages on the v2 design system (web/assets/css/ds.css, <body class="ds">) use its own restrained motion (ds.js:
+    // an 8px fade-up, count-up once, no loops) and not the v13 halftone layer.
+    if (/<body class="ds\b/.test(html)) { assert.match(html, /assets\/js\/ds\.js/, f + " loads the design-system script"); continue; }
+    // The rebuilt app (web/assets/css/ui.css, <body class="ui">) uses ui.js: springs under 400ms, reduced motion respected.
+    if (/<body class="ui\b/.test(html)) { assert.match(html, /assets\/js\/ui\.js/, f + " loads the UI runtime"); continue; }
     const e = html.search(/v13-halftone\.js/), m = html.search(/v13-motion\.js/);
     assert.ok(e > 0 && m > e, f + " loads v13-halftone.js and then v13-motion.js");
     assert.doesNotMatch(html, /src="assets\/js\/motion\.js/, f + " does not load the old scroll-animation engine");

@@ -61,11 +61,14 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 import { chromium } from "playwright-core";
+import { uiAnswer } from "./fixtures/ui-api.mjs";
 import { serveStatic } from "../src/web.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
-const PAGES_ALL = ["dashboard", "people", "person", "explore", "filings", "watchlist", "filing", "filing-private", "research", "alerts", "portfolio", "company", "company-picker"];
+/* Today (dashboard), Alerts and the ticker page (company) are on the rebuilt app (ui.css): companies get their logo from one
+   /v1/media?tickers= batch or a monogram, people get initials and never a photo. Section 11 below checks them. */
+const PAGES_ALL = ["people", "person", "explore", "filings", "watchlist", "filing", "filing-private", "research", "portfolio"];
 const PAGES = opt("pages", "").split(",").filter(Boolean).length ? opt("pages", "").split(",").filter(p => PAGES_ALL.includes(p)) : PAGES_ALL;
 // The one-off scenarios (503, image 404, cache, reduced motion, landing) run with the full set, or alone with --once --pages none.
 const ONCE = !opt("pages", "") || args.includes("--once");
@@ -352,6 +355,8 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
         if (log.photos.length <= ctx.__photosQueued) return json(200, { ticker: "AAPL", complete: false, queued: true, photos: {}, names: {}, leaders: [], sources: {} });
         return json(200, url.searchParams.get("ticker") === "AAPL" ? COMPANY_PHOTOS : { complete: true, photos: {}, names: {}, leaders: [] });
       }
+      // The track record (src/track-record.mjs): no open-market history in these fixtures.
+      if (/^\/v1\/people\/\d+\/track-record$/.test(p)) return json(200, { overall: { buys: { count: 0 }, sells: { count: 0 } }, companies: [], trades: [], horizons: [] });
       // GET /v1/people/<cik>: Tim Cook's personnel file; any other CIK has no imported records.
       if (p.startsWith("/v1/people/")) {
         const c = decodeURIComponent(p.slice("/v1/people/".length));
@@ -647,8 +652,8 @@ try {
   if (ONCE) {
     // 1. The batch is unavailable (503): curated marks and portraits, then initials; no errors.
     {
-      const { ctx, page, errors, log } = await open(1440, "/alerts.html", { media: "503" });
-      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      const { ctx, page, errors, log } = await open(1440, "/people.html", { media: "503" });
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 8000 }));
       const t = await page.evaluate(() => [...document.querySelectorAll("[data-media]")].map(x => ({ media: x.dataset.media, ticker: x.dataset.ticker, name: x.dataset.name, state: x.classList.contains("is-photo") ? "photo" : x.classList.contains("is-logo") ? "logo" : x.classList.contains("is-monogram") ? "monogram" : "loading", src: x.querySelector("img")?.getAttribute("src") || "", real: x.dataset.realSource || "", ok: (x.querySelector("img")?.naturalWidth || 0) > 0 })));
       const apple = t.filter(x => x.media === "company" && x.ticker === "AAPL"), cook = t.find(x => /COOK/.test(x.name || "")), kress = t.find(x => /KRESS/.test(x.name || "")), woods = t.find(x => /WOODS/.test(x.name || ""));
@@ -658,13 +663,13 @@ try {
       check(woods && woods.state === "monogram" && t.filter(x => x.media === "company" && x.ticker === "XOM").every(x => x.state === "monogram"), "503: initials when nothing curated exists (Exxon Mobil, Darren Woods)", woods);
       check(log.media.length === 1, "503: the unavailable batch is not asked again on this visit", log.media.length);
       check(errors.length === 0, "503: no page or console errors", errors);
-      if (SHOTS) { await page.waitForTimeout(1500); await page.locator("#alerts-real").scrollIntoViewIfNeeded(); await page.screenshot({ path: join(SHOTS, "alerts-503-1440.png") }); }
+      if (SHOTS) { await page.waitForTimeout(1500); await page.locator("#v10-people-results").scrollIntoViewIfNeeded(); await page.screenshot({ path: join(SHOTS, "people-503-1440.png") }); }
       await ctx.close();
     }
     // 2. A headshot whose image 404s: asked again once, then the company's logo stands in.
     {
-      const { ctx, page, log } = await open(1440, "/alerts.html");
-      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      const { ctx, page, log } = await open(1440, "/people.html");
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 15000 }));
       const woods = await page.evaluate(() => [...document.querySelectorAll("[data-media][data-cik='1408356']")].map(x => ({ state: x.className, src: x.querySelector("img")?.getAttribute("src") })));
       const asked = log.media.filter(r => r.keys.includes("p:1408356:XOM")).length;
@@ -709,8 +714,8 @@ try {
     // 6. A cold logo while a headshot job waits its turn (the engine says retryAfter 15 for the whole answer): the logo
     //    keeps its own 2 s schedule, so the person's tile shows the company's logo standing in long before 15 s.
     {
-      const { ctx, page, log, errors } = await open(1440, "/alerts.html", { answer: { logoPending: { TSLA: 1 }, photoRetry: 15, split: false } });
-      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
+      const { ctx, page, log, errors } = await open(1440, "/people.html", { answer: { logoPending: { TSLA: 1 }, photoRetry: 15, split: false } });
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       const standIn = await page.waitForFunction(() => { const m = document.querySelector("[data-media][data-cik='1494730']"); return m && m.classList.contains("is-stand-in") ? Math.round(performance.now()) : 0; }, null, { timeout: 12000, polling: 50 }).then(h => h.jsonValue(), () => 0);
       const asks = log.media.filter(r => r.keys.includes("t:TSLA")), photoAsks = log.media.filter(r => r.keys.includes("p:1494730:TSLA"));
       const gap = asks.length > 1 ? asks[1].at - asks[0].at : null;
@@ -721,7 +726,7 @@ try {
     }
     // 7. The photo credits with the reader at the very bottom when the pictures arrive: the footnote holds its space
     //    from the start and takes new text only off screen, so the footer and the notes below it do not move.
-    for (const [key, width] of [["people", 1440], ["filing", 1440], ["alerts", 1440], ["alerts", 390], ["portfolio", 390]]) {
+    for (const [key, width] of [["people", 1440], ["filing", 1440], ["research", 1440], ["people", 390], ["portfolio", 390]]) {
       const tag = "credits at the bottom, " + key + " " + width + "px";
       let release = () => {};
       const hold = new Promise(ok => { release = ok; });
@@ -762,67 +767,44 @@ try {
       check(errors.length === 0, "issuer without a ticker (" + forms + " engine): no page or console errors", errors);
       await ctx.close();
     }
-    // 9. A headshot whose company job waits its turn (the engine lists the pair in `queued`, retryAfterPhotos 15). On
-    //    Playwright's clock: (a) Musk's job queued 14 times, then pending once, then answered: asked again past the ten-step
-    //    schedule, the company's logo standing in meanwhile, and the photo lands; (b) Kress's job queued for good: asked for
-    //    about 15 minutes in all, then the tile settles on NVIDIA's logo standing in and nothing more is asked.
-    for (const [label, times, cik, ticker] of [["queued, then answered", 14, "1494730", "TSLA"], ["queued for good", Infinity, "1580197", "NVDA"]]) {
-      const KEY = "p:" + cik + ":" + ticker;
-      const { ctx, page, log, errors } = await open(1440, "/alerts.html", { clock: true, answer: { queued: { [cik]: times } } });
-      await page.waitForFunction(RENDERED.alerts, null, { timeout: 20000 });
-      await page.waitForFunction(c => !!document.querySelector("[data-media][data-cik='" + c + "']"), cik, { timeout: 10000 });
-      const state = () => page.evaluate(c => { const t = document.querySelector("[data-media][data-cik='" + c + "']"); return { cls: t.className, wait: t.hasAttribute("data-media-wait"), src: t.querySelector("img")?.getAttribute("src") || "" }; }, cik);
-      let standIn = false, now = null;
-      const STEP = 8000, LIMIT = 17.5 * 60e3, t0 = await page.evaluate(() => Date.now());
-      for (let fake = 0; fake < LIMIT; fake += STEP) {
-        await page.clock.fastForward(STEP);
-        await page.waitForTimeout(110);
-        now = await state();
-        if (/is-stand-in/.test(now.cls)) standIn = true;
-        if (times !== Infinity && /is-photo/.test(now.cls) && !now.wait) break;
-      }
-      await page.waitForTimeout(400);
-      now = await state();
-      const end = await page.evaluate(() => Date.now());
-      const asks = log.media.filter(r => r.keys.includes(KEY)).map(r => ({ ...r, fake: r.fake - t0 })), span = asks.length ? asks.at(-1).fake - asks[0].fake : 0;
-      if (times === 14) {
-        check(/is-photo/.test(now.cls) && now.src === PHOTOS[cik].src, "queued photo job (" + label + "): the headshot lands once the job has run", { now, asks: asks.map(a => a.fake) });
-        check(asks.length >= 16, "queued photo job (" + label + "): " + asks.length + " asks for the pair, past the ten-step schedule (queued asks do not use it up)", asks.map(a => a.fake));
-        check(standIn, "queued photo job (" + label + "): the company's logo stands in while the job waits", now);
-        const gaps = asks.slice(1).map((a, i) => a.fake - asks[i].fake);
-        check(gaps.slice(0, 13).every(g => g >= 15000) && span < 15 * 60e3, "queued photo job (" + label + "): asked every 15-60 s while queued, the photo within " + Math.round(span / 1000) + " s (under the 15-minute ceiling)", gaps);
-      } else {
-        const quiet = end - t0 - (asks.at(-1)?.fake || 0);
-        check(asks.length > 11 && span <= 15 * 60e3 + 2 * STEP && !now.wait && /is-stand-in/.test(now.cls) && now.src === LOGOS[ticker].src, "queued photo job (" + label + "): " + asks.length + " asks over " + Math.round(span / 1000) + " s, then the tile settles on the company's logo standing in", { asks: asks.map(a => a.fake), now });
-        check(quiet >= 90000, "queued photo job (" + label + "): nothing asked in the last " + Math.round(quiet / 1000) + " s (no key is asked again past about 15 minutes)", asks.map(a => a.fake));
-      }
-      check(errors.length === 0, "queued photo job (" + label + "): no page or console errors", errors);
-      await ctx.close();
-    }
-    // 10. The company report's photo job waits its turn ({complete:false, queued:true}): polled every 15-30 s without advancing
-    //     its schedule (16 queued answers, more than the 13 steps), the headshot showing once the job has run; queued for good,
-    //     it stops asking about 15 minutes after the first answer.
-    for (const [label, times] of [["queued, then complete", 16], ["queued for good", Infinity]]) {
-      const { ctx, page, log, errors } = await open(1440, "/company.html?ticker=AAPL#people", { clock: true, photosQueued: times });
-      await page.waitForFunction(RENDERED.company, null, { timeout: 20000 });
-      const cook = () => page.evaluate(src => [...document.querySelectorAll("#cx-insiders-table .cx-avatar img")].some(i => i.getAttribute("src") === src), PHOTOS["1214156"].src);
-      let shown = false;
-      const STEP = 8000, LIMIT = 17 * 60e3;
-      for (let fake = 0; fake < LIMIT && !shown; fake += STEP) {
-        await page.clock.fastForward(STEP);
-        await page.waitForTimeout(110);
-        if (times !== Infinity) shown = await cook();
-      }
-      const end = await page.evaluate(() => Date.now());
-      const asks = log.photos || [], gaps = asks.slice(1).map((a, i) => a.fake - asks[i].fake), span = asks.length ? asks.at(-1).fake - asks[0].fake : 0;
-      if (times !== Infinity) {
-        check(shown && asks.length === 17, "company photos (" + label + "): asked " + asks.length + " times, past the 13-step schedule, and the verified headshot shows once the job is done", { shown, asks: asks.map(a => a.fake) });
-        check(gaps.slice(0, 16).every(g => g >= 15000 && g <= 15000 + 30000), "company photos (" + label + "): asked every 15-30 s while queued (gaps " + gaps.slice(0, 16).map(g => Math.round(g / 1000)).join(", ") + " s)", gaps);
-      } else {
-        const quiet = end - (asks.at(-1)?.fake || end);
-        check(asks.length > 14 && span <= 15 * 60e3 + 2 * STEP && quiet >= 90000, "company photos (" + label + "): " + asks.length + " asks over " + Math.round(span / 1000) + " s, then none for " + Math.round(quiet / 1000) + " s (about 15 minutes at most)", asks.map(a => a.fake - asks[0].fake));
-      }
-      check(errors.length === 0, "company photos (" + label + "): no page or console errors", errors);
+    // 9. (Retired with the old Alerts feed it ran on: the queued-headshot schedule on a 15-minute fake clock. The
+    //    helper's per-page batching, pending follow-ups, 503, 404 and logo-schedule paths are checked above.)
+    // 11. The rebuilt app (ui.css: Today, Alerts, the ticker page), answered from scripts/fixtures/ui-api.json. Companies
+    //     get their logo from one /v1/media?tickers= batch (content-addressed files only) or a monogram while it has none;
+    //     people get initials and never a photo; nothing is asked of the per-person photo routes.
+    for (const width of [390, 1440]) for (const path of ["/dashboard.html", "/alerts.html", "/company.html?ticker=PLHD"]) {
+      const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
+      const page = await ctx.newPage(), errors = [], asks = [];
+      page.on("pageerror", e => errors.push(String(e)));
+      const SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#f0eee8"/></svg>';
+      await page.route("**/v1/**", async route => {
+        const u = new URL(route.request().url());
+        if (u.pathname === "/v1/media") {
+          const tickers = (u.searchParams.get("tickers") || "").split(",").filter(Boolean);
+          asks.push({ tickers, other: [...u.searchParams.keys()].filter(k => k !== "tickers") });
+          // Every ticker but TSTC has a logo; TSTC keeps its monogram.
+          return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ logos: Object.fromEntries(tickers.map(t => [t, t === "TSTC" ? null : { src: "/v1/media/" + "a".repeat(63) + (t.length % 10) + ".svg" }])) }) });
+        }
+        if (/^\/v1\/media\/[a-f0-9]{64}\.svg$/.test(u.pathname)) return route.fulfill({ status: 200, contentType: "image/svg+xml", body: SVG });
+        if (/^\/v1\/(company\/photos|people\/|media\/people)/.test(u.pathname)) asks.push({ photo: u.pathname });
+        const body = uiAnswer(u.pathname, route.request().method());
+        return route.fulfill({ status: body ? 200 : 404, contentType: "application/json", body: JSON.stringify(body || {}) });
+      });
+      await page.goto(base + path, { waitUntil: "load" });
+      // The ticker page has one company (its own logo in the header); its people are initials.
+      await page.waitForFunction(min => document.querySelectorAll("[data-logo]").length >= min, path.startsWith("/company") ? 1 : 3, { timeout: 20000 });
+      await page.waitForTimeout(1200);
+      const r = await page.evaluate(() => ({
+        tiles: [...document.querySelectorAll("[data-logo]")].map(t => ({ t: t.dataset.logo, img: t.querySelector("img")?.getAttribute("src") || null, loaded: t.classList.contains("has-img"), mono: (t.querySelector(".logo__mono")?.textContent || "").trim() })),
+        people: document.querySelectorAll(".mono").length,
+        photos: [...document.images].map(i => i.getAttribute("src")).filter(src => !/^\/v1\/media\/[a-f0-9]{64}\.(svg|png|webp|jpeg)$/.test(src) && !/^\/assets\//.test(src))
+      }));
+      const label = width + "px " + path;
+      check(asks.filter(a => a.tickers).length >= 1 && asks.filter(a => a.tickers).length <= 2 && asks.every(a => !a.other?.length), label + ": logos come from one /v1/media?tickers= batch (" + asks.length + " ask(s), no people=)", asks);
+      check(r.tiles.filter(x => x.t !== "TSTC").every(x => x.img && x.loaded), label + ": every company with a logo shows it", r.tiles.filter(x => !x.img && x.t !== "TSTC"));
+      check(r.tiles.filter(x => x.t === "TSTC").every(x => !x.img && x.mono.length >= 1), label + ": a company with no logo keeps its monogram", r.tiles.filter(x => x.t === "TSTC"));
+      check(!asks.some(a => a.photo) && r.photos.length === 0, label + ": no photos of people, and no image from anywhere but this origin's media store", { asks, photos: r.photos });
+      check(errors.length === 0, label + ": no page errors", errors);
       await ctx.close();
     }
   }

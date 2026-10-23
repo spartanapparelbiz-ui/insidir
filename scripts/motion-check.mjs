@@ -94,7 +94,10 @@ const ALL = [
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
-const PAGES = wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL;
+// Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
+// scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
+const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker"]);
+const PAGES = (wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL).filter(([k]) => !REBUILT.has(k));
 const passed = [], failed = [];
 const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : label + (detail === undefined ? "" : " — " + JSON.stringify(detail))); return ok; };
 const pct = v => (v * 100).toFixed(v && v < 0.001 ? 3 : 2) + "%";

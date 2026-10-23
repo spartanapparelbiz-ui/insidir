@@ -18,6 +18,9 @@
       '<section class="ix-block"><h2 class="ix-block__title">Stages</h2>' +
       table(["Stage", "Count", "Rate", "Of"], r.stages.map(s => [esc(s.label), int(s.count) + " " + esc(s.unit), s === head ? "—" : pct(s.rate), s.of ? esc(s.of) : ""])) +
       '<p class="ix-note">' + esc(r.method) + "</p></section>" +
+      '<section class="ix-block"><h2 class="ix-block__title">By source (?ref=)</h2>' +
+      table(["Source", "Visitors", "Accounts", "Trials ($1)", "Trial rate", "Paid ($39)", "Paid rate"], (r.sources || []).map(x => [esc(x.ref), int(x.visits), int(x.signups), int(x.trials), pct(x.trialRate), int(x.paid), pct(x.paidRate)])) +
+      '<p class="ix-note">The source is the first ?ref= a visitor arrived with, kept in a 90-day first-party cookie and saved on the account and its Stripe customer. Trial rate is trials over visitors; paid rate is first $39 renewals over trials.</p></section>' +
       '<section class="ix-block"><h2 class="ix-block__title">Experiments</h2>' +
       (r.experiments.length ? r.experiments.map(x => "<h3>" + esc(x.name) + "</h3>" +
         table(["Arm", "Visitors", "Clicked a trial button", "Accounts", "Paid", "Paid rate"], x.arms.map(a => [esc(a.arm), int(a.exposed), int(a.cta) + " (" + pct(a.ctaRate) + ")", int(a.signups), int(a.paid), pct(a.paidRate)])) +

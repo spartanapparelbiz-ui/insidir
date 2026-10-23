@@ -23,7 +23,7 @@ from any law. Every item marked for attorney review or regulatory approval needs
 | AI | **Source-backed summaries only, off unless `INSIDIR_OPENROUTER_API_KEY` is set.** All model calls go through `src/ai-gateway.mjs` (budgets, timeouts, usage ledger, shared verified cache). Filing explanations and Investigate syntheses are written only from retrieved SEC records, must cite them, and pass `reviewGeneratedText` (no directives, guarantees or figures absent from the sources) before display; failures are cached as blocked and never shown. Questions are screened for personalized-advice requests and prompt injection before any retrieval. |
 | Politician trades | **Not ingested or shown.** `src/analysis.mjs` lists House/Senate disclosures as `disabled_pending_permissions`. |
 | Trading | **None.** No order, trade or execution code. The optional brokerage link (SnapTrade, `src/brokerage.mjs`) is OAuth **read scope only**, off unless `BROKERAGE_CONNECT_ENABLED=1`, tokens AES-256-GCM encrypted with per-user AAD; no brokerage passwords collected. |
-| Billing | Stripe Checkout, one Price ($39/month), a $1 3-day trial on an account's first checkout, Stripe customer portal, webhook sync, six-hourly reconciliation, account deletion cancels Stripe first (`src/billing.mjs`). |
+| Billing | Stripe Checkout, one Price ($39/month), a $1 7-day trial on an account's first checkout, Stripe customer portal, webhook sync, six-hourly reconciliation, account deletion cancels Stripe first (`src/billing.mjs`). |
 | Auth & security | scrypt password hashing (12–128 chars), random 256-bit session tokens stored as SHA-256 hashes, HttpOnly + SameSite=Lax + Secure cookies, 14-day sessions purged hourly, same-origin checks on every write, per-IP/per-account rate limits on sign-up, sign-in (failed attempts only), checkout, account deletion; password re-entry to delete an account; CSP, HSTS, X-Frame-Options DENY; paywall fails closed for every unlisted `/v1` route (`src/paywall.mjs`). |
 | Creator program | $10 one-time commission per referred paying subscriber, manual 30-day review, no automatic payouts, self-referral blocked (`src/creator-program.mjs`, `CREATORS.md`). |
 
@@ -159,7 +159,7 @@ Not run in this session: the Chrome checks (`scripts/visual-layout-check.mjs`, `
 | Personalized AI recommendations (ADVISORY_ENABLED) | DISABLED — PENDING LEGAL AUTHORIZATION · REQUIRES REGULATORY OR PARTNER APPROVAL |
 | Order placement / automated trading (TRADING_ENABLED) | DISABLED — PENDING LEGAL AUTHORIZATION · REQUIRES REGULATORY OR PARTNER APPROVAL |
 | Read-only brokerage link (SnapTrade) | IMPLEMENTED — TECHNICALLY VERIFIED, off by default · REQUIRES REGULATORY OR PARTNER APPROVAL (SnapTrade production agreement) |
-| $39/month subscription, $1 3-day trial | IMPLEMENTED — TECHNICALLY VERIFIED · REQUIRES ATTORNEY REVIEW (auto-renewal law) |
+| $39/month subscription, $1 7-day trial | IMPLEMENTED — TECHNICALLY VERIFIED · REQUIRES ATTORNEY REVIEW (auto-renewal law) |
 | Recorded consent, online cancellation, refunds/disputes handling | IMPLEMENTED — TECHNICALLY VERIFIED · REQUIRES ATTORNEY REVIEW |
 | Post-purchase acknowledgment and price-change emails | BLOCKED — UNRESOLVED RISK (no email system) |
 | Creator referral program | IMPLEMENTED — TECHNICALLY VERIFIED · REQUIRES ATTORNEY REVIEW (agreements, FTC disclosure monitoring) |

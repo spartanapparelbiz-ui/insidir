@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Design system — Insidir</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0c0c0b">
+<link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg?v=2">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=2">
+<link rel="stylesheet" href="/assets/css/today.css?v=2">
+<style>
+  .dg{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:var(--sp12) var(--sp8) var(--sp16)}
+  .dg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp16)}
+  .dg-intro .t-body{margin-top:var(--sp4)}
+  .dg-sec{display:grid;grid-template-columns:220px minmax(0,1fr);gap:var(--sp8);padding:var(--sp16) 0 0}
+  .dg-sec>header p{margin-top:var(--sp2)}
+  .dg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:var(--sp3)}
+  .sw{overflow:hidden;padding:0}
+  .sw i{display:block;height:72px}
+  .sw div{padding:var(--sp3)}
+  .sw b{display:block;font-size:13px;line-height:18px;font-weight:500}
+  .sw span{font-size:12px;line-height:16px;color:var(--muted)}
+  .dg-stack{display:grid;gap:var(--sp5)}
+  .dg-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp3)}
+  .spec{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp4)}
+  .spec code{font-size:12px;line-height:16px;font-family:var(--font);color:var(--muted);white-space:nowrap}
+  .demo{padding:var(--pad)}
+  .glass-demo{position:relative;height:220px;overflow:hidden;border-radius:var(--r-card);
+    background:repeating-linear-gradient(90deg,var(--s1) 0 24px,var(--s2) 24px 48px)}
+  .glass-demo .cmdk__panel{position:absolute;left:50%;top:28px;transform:translateX(-50%);width:min(520px,90%)}
+  .dg .feed__row{grid-template-columns:28px minmax(0,1fr) minmax(0,1.1fr) 92px 64px 44px}
+  .dg .chart{height:260px}
+  @media (max-width:860px){.dg{padding:var(--sp6) var(--sp4) var(--sp12)}.dg-sec{grid-template-columns:minmax(0,1fr);gap:var(--sp5)}.dg-top{margin-bottom:var(--sp10)}}
+</style>
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/vendor/lightweight-charts-5.0.8.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=1"></script>
+<script defer src="/assets/js/chart.js?v=1"></script>
+<script defer src="/assets/js/posthog.js?v=1"></script>
+</head>
+<body class="ui">
+<main class="dg">
+  <div class="dg-top"><span class="wordmark" data-wordmark></span><span class="t-label muted">Design system, v2</span></div>
+  <header class="dg-intro">
+    <h1 class="t-display">Calm, and exact.</h1>
+    <p class="t-body muted" style="max-width:62ch">One typeface, two text colours, seven sizes. Things are separated by space and one surface step, not by lines; borders are kept for inputs and table headers. Colour lives only on numbers and chart lines: green when insiders buy or a price rises, coral when they sell or it falls, gray for sales planned in advance. Every screen uses only what is on this page.</p>
+  </header>
+
+  <section class="dg-sec" aria-labelledby="c-h"><header><h2 class="t-section" id="c-h">Colour</h2><p class="t-label muted">Layers and text. Muted text is the floor for contrast: 5.9:1 on the page.</p></header>
+    <div class="dg-stack">
+      <div class="dg-grid">
+        <div class="card sw"><i style="background:var(--bg)"></i><div><b>Background</b><span>#0c0c0b</span></div></div>
+        <div class="card sw"><i style="background:var(--s1)"></i><div><b>Surface 1</b><span>#121211</span></div></div>
+        <div class="card sw"><i style="background:var(--s2)"></i><div><b>Surface 2</b><span>#181817</span></div></div>
+        <div class="card sw"><i style="background:var(--text)"></i><div><b>Text</b><span>#f0eee8</span></div></div>
+        <div class="card sw"><i style="background:var(--muted)"></i><div><b>Muted</b><span>#8f8d87</span></div></div>
+        <div class="card sw"><i style="background:var(--fill)"></i><div><b>Fill</b><span>6% white</span></div></div>
+      </div>
+      <div class="dg-grid">
+        <div class="card sw"><i style="background:var(--up)"></i><div><b>Buy · up</b><span>#3DD68C</span></div></div>
+        <div class="card sw"><i style="background:var(--down)"></i><div><b>Sell · down</b><span>#FF6B5E</span></div></div>
+        <div class="card sw"><i style="background:var(--plan)"></i><div><b>10b5-1 plan</b><span>#8F8D87</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="t-h"><header><h2 class="t-section" id="t-h">Type</h2><p class="t-label muted">Geist only, with tabular figures everywhere. Weights 400 and 500; 600 on buttons. Sentence case. Hierarchy comes from size, weight and two colours.</p></header>
+    <div class="dg-stack">
+      <div class="spec"><span class="t-display">Display</span><code>76/80 · 500 · −0.045em · landing</code></div>
+      <div class="spec"><span class="t-title">Page title</span><code>32/38 · 500 · −0.03em</code></div>
+      <div class="spec"><span class="t-section">Section title</span><code>20/28 · 500 · −0.02em</code></div>
+      <div class="spec"><span class="t-hero big"><span class="u">$</span>2.1<span class="u">M</span></span><code>56/60 · 400 · −0.04em · hero number, split</code></div>
+      <div class="spec"><span class="t-body">Ella Martin, the CEO, bought $2.1M of PLHD stock on Oct 1, 2026.</span><code>15/24 · 400 · −0.01em · body</code></div>
+      <div class="spec"><span class="t-label muted">Filed 20 days ago</span><code>13/18 · 400 · label</code></div>
+      <div class="spec"><span class="t-micro muted">Oct 23 · $70 · 3h</span><code>12/16 · 400 · micro</code></div>
+      <div class="spec"><span class="tick">NVDA</span><code>Tickers: uppercase, 500</code></div>
+      <div class="spec"><span class="wordmark" data-wordmark style="height:24px"></span><code>The wordmark is an SVG logo</code></div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="s-h"><header><h2 class="t-section" id="s-h">Surfaces</h2><p class="t-label muted">Radius 16 for cards and 10 for controls. A card is one surface step up from the page with a 1px highlight along its top edge, and no outer shadow. Cards lift 2px on hover.</p></header>
+    <div class="dg-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+      <div class="card demo"><b class="t-body strong">Card</b><p class="t-label muted" style="margin-top:4px">Surface 1, inner top highlight.</p></div>
+      <div class="card card--2 demo"><b class="t-body strong">Raised card</b><p class="t-label muted" style="margin-top:4px">Surface 2, for a card inside a card.</p></div>
+      <div class="card card--hover demo" tabindex="0"><b class="t-body strong">Interactive card</b><p class="t-label muted" style="margin-top:4px">Hover: lifts 2px.</p></div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="ctl-h"><header><h2 class="t-section" id="ctl-h">Controls</h2><p class="t-label muted">Primary is off-white with black text; secondary is a 6% white fill. 36px in the app, 44px on the landing page. Icons only in navigation.</p></header>
+    <div class="dg-stack">
+      <div class="dg-row"><button class="btn btn--primary" type="button">Start for $1</button><button class="btn btn--secondary" type="button" data-icon="arrow-up-right">SEC filing</button><button class="btn btn--ghost" type="button">Open PLHD</button><button class="btn btn--secondary btn--icon" type="button" aria-label="Alerts" data-icon-only="bell"></button><button class="btn btn--primary btn--lg" type="button">Large</button><button class="btn btn--secondary" type="button" disabled>Disabled</button></div>
+      <div class="dg-row" style="max-width:420px"><label class="sr-only" for="dg-in">Example input</label><input class="input" id="dg-in" placeholder="you@example.com"></div>
+      <div class="dg-row"><div class="seg" role="group" aria-label="Example"><button type="button" aria-pressed="true">All</button><button type="button" aria-pressed="false">Buys</button><button type="button" aria-pressed="false">Sells</button></div><span class="kbd">⌘K</span><span class="kbd">esc</span></div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="d-h"><header><h2 class="t-section" id="d-h">Data</h2><p class="t-label muted">Every ticker shows its company's logo, or a monogram until one is found. Insiders get initials, never photos.</p></header>
+    <div class="dg-stack">
+      <div class="dg-row" style="gap:24px"><span class="trade trade--buy">Bought</span><span class="trade trade--sell">Sold</span><span class="trade trade--plan">Plan sale</span><span class="chg chg--up">+2.41%</span><span class="chg chg--down">−1.18%</span><span class="chg chg--flat">0.00%</span></div>
+      <div class="dg-row" data-dg-atoms></div>
+      <div class="card" style="padding:12px 24px"><ul class="rows" data-dg-row></ul></div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="ch-h"><header><h2 class="t-section" id="ch-h">The chart</h2><p class="t-label muted">A 1.5px line over a fill from 16% to nothing, no axis lines, at most four muted labels per axis, a soft pulsing dot at the latest close, and trades on the line: green buys, coral sales, gray rings for 10b5-1 sales, sized by amount. Example data on this page only.</p></header>
+    <div class="card demo"><div class="chart" data-dg-chart></div><div class="legend"><span><i class="l-buy"></i>Buy</span><span><i class="l-sell"></i>Sale</span><span><i class="l-plan"></i>10b5-1 plan sale</span><span>Dot size follows the amount</span></div></div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="st-h"><header><h2 class="t-section" id="st-h">States</h2><p class="t-label muted">Skeletons have the final layout's boxes. Empty states say what will appear and offer one action. Errors say what failed, in place.</p></header>
+    <div class="dg-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+      <div class="card demo"><span class="skel" style="display:block;width:40%;height:14px"></span><span class="skel" style="display:block;width:70%;height:40px;margin-top:16px"></span><span class="skel" style="display:block;width:90%;height:14px;margin-top:16px"></span></div>
+      <div class="card demo"><div class="empty"><h3>Your watchlist is empty</h3><p>Add the stocks you own. You'll see their insiders here.</p><button class="btn btn--primary" type="button">Add a stock</button></div></div>
+      <div class="card demo"><div class="err"><p>The latest filings didn't load.</p><button class="btn btn--secondary" type="button">Try again</button></div></div>
+    </div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="g-h"><header><h2 class="t-section" id="g-h">Glass</h2><p class="t-label muted">Background blur only on the ⌘K palette, menus, tooltips and the sticky bars.</p></header>
+    <div class="glass-demo" aria-hidden="true"><div class="cmdk__panel"><div class="cmdk__in"><span data-icon-only="search"></span><span class="t-body muted">Search a stock, insider or fund</span></div><div class="cmdk__list"><div class="cmdk__group">Stocks</div><div class="cmdk__item" aria-selected="true" data-dg-cmd></div></div></div></div>
+  </section>
+
+  <section class="dg-sec" aria-labelledby="m-h"><header><h2 class="t-section" id="m-h">Motion</h2><p class="t-label muted">Springs, never slower than 400ms. Charts draw in, numbers roll to their value, new rows slide in, cards lift 2px, pages fade and rise 6px. Reduced motion: final states, no movement.</p></header>
+    <div class="dg-row"><span class="t-hero big" data-dg-roll>$0</span><button class="btn btn--secondary" type="button" data-dg-replay>Replay</button></div>
+  </section>
+
+  <footer class="data-foot"><p class="t-label muted">Research, not investment advice. Charts by <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a> Lightweight Charts (Apache 2.0). Icons: Lucide (ISC). Font: Geist (SIL OFL). The wordmark is drawn from JetBrains Mono (SIL OFL).</p></footer>
+</main>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+  const UI=window.InsidirUI,I=window.InsidirIcons;if(!UI)return;
+  for(const b of document.querySelectorAll("[data-icon]"))b.insertAdjacentHTML("beforeend",I.svg(b.dataset.icon));
+  for(const b of document.querySelectorAll("[data-icon-only]"))b.innerHTML=I.svg(b.dataset.iconOnly,b.dataset.iconOnly==="search"?18:16);
+  for(const w of document.querySelectorAll("[data-wordmark]"))w.innerHTML=UI.WORDMARK;
+  document.querySelector("[data-dg-atoms]").innerHTML=UI.logo("NVDA",24,"Nvidia")+UI.logo("PEP",32,"Pepsico")+UI.logo("EXMP",40,"Example")+UI.monogram("DOE JANE")+UI.monogram("ROE RICHARD",32)+UI.spark([10,11,10.5,12,12.4,13,12.8,14],{w:96,h:28})+UI.spark([14,13,13.4,12,11,11.5,10],{w:96,h:28})+UI.ring(72,{label:"Example score 72"})+UI.ring(38,{label:"Example score 38"});
+  document.querySelector("[data-dg-row]").innerHTML=`<li class="row feed__row">${UI.logo("EXMP",28,"Example")}<span class="feed__co"><span class="strong">Example</span><span class="feed__sub t-label muted"><span class="tick">EXMP</span></span></span><span class="feed__who">${UI.monogram("DOE JANE")}<span class="t-label">Jane Doe <span class="muted">Director</span></span></span><span class="feed__trade">${UI.trade({kind:"buy"})}</span><span class="feed__amt up">$943K</span><span class="feed__ago t-micro muted">23m</span></li>`;
+  document.querySelector("[data-dg-cmd]").innerHTML=UI.logo("EXMP",24,"Example")+`<span class="tick">EXMP</span><span>Example</span><span class="meta">Stock</span>`;
+  UI.settle(document);
+  // example data, this page only
+  const closes=[],start=Date.UTC(2026,3,1);let v=40;for(let i=0;i<200;i++){const d=new Date(start+i*864e5);if(d.getUTCDay()%6===0)continue;v=v*(1+Math.sin(i/14)*0.012+0.002);closes.push([d.toISOString().slice(0,10),Math.round(v*100)/100]);}
+  const at=i=>closes[i][0];
+  window.InsidirChart.mount(document.querySelector("[data-dg-chart]"),{closes,markers:[{day:at(30),kind:"buy",value:450000,owner:"DOE JANE",role:"director"},{day:at(70),kind:"buy",value:2400000,owner:"MARTIN ELLA",role:"CEO"},{day:at(95),kind:"sell",value:800000,owner:"ROE RICHARD",role:"CFO"},{day:at(120),kind:"sell",planned:true,value:1600000,owner:"PARK AVERY",role:"director"}]},{range:"1Y"});
+  const roll=()=>UI.roll(document.querySelector("[data-dg-roll]"),2100000,x=>UI.big(x),{html:true});roll();document.querySelector("[data-dg-replay]").addEventListener("click",roll);
+});
+</script>
+</body>
+</html>

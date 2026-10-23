@@ -99,8 +99,8 @@ test("the alerts page offers only what exists: no political-trade or price-move 
   const html = readFileSync(new URL("alerts.html", WEB), "utf8");
   assert.doesNotMatch(html, /political|Political|Price moves|price-move|members of Congress|Coming soon/);
   assert.doesNotMatch(html, /role="switch"/, "the old local-only switches are gone; preferences are saved by the engine");
-  assert.match(html, /alerts-center\.js/);
-  const js = readFileSync(new URL("assets/js/alerts-center.js", WEB), "utf8");
+  assert.match(html, /alerts-app\.js/);
+  const js = readFileSync(new URL("assets/js/alerts-app.js", WEB), "utf8");
   assert.match(js, /\/v1\/me\/email-preferences/); assert.match(js, /\/v1\/me\/notifications/);
   assert.doesNotMatch(js, /manual-holdings|brokerage/, "alerts never use holdings");
   assert.match(html, /opt in to device notifications/i, "push is described as opt-in, never as automatic");

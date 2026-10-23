@@ -1,0 +1,47 @@
+/* The ticker page (company.html): the price is the screen's one hero, the chart sits full width under it, the rest is
+   quiet tabs. Only ui.css tokens. */
+.tk{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap)}
+.tk .tabs{overflow-x:auto;scrollbar-width:none}
+.tk .tabs::-webkit-scrollbar{display:none}
+.tk-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp4)}
+.tk-id{display:flex;align-items:center;gap:var(--sp4);min-width:0}
+.tk-id .t-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-price{display:grid;gap:var(--sp1);margin-top:calc(-1*var(--sp4))}
+.tk-price .t-label{display:flex;align-items:center;gap:var(--sp3)}
+.tk-chart{padding:var(--pad)}
+.tk-chart__head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);flex-wrap:wrap}
+.tk-plot{height:400px;margin-top:var(--sp5)}
+.tk-panel{padding:var(--pad)}
+.tk-panel>.t-label{margin-top:var(--sp4)}
+.tk-table{overflow-x:auto}
+.tk-who{display:flex;align-items:center;gap:var(--sp3);min-width:0}
+.tk-who a:hover .strong{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fill-2)}
+.tk-track{display:flex;align-items:center;gap:var(--sp3)}
+.bars{display:flex;align-items:center;gap:2px;height:24px}
+.bars i{display:block;width:4px;border-radius:1px;background:var(--muted)}
+.bars i.up{background:var(--up)} .bars i.down{background:var(--down)}
+.tk-row-link{display:inline-flex;align-items:center;min-height:24px;color:var(--muted)}
+.tk-row-link:hover{color:var(--text)}
+.tk-filing{grid-template-columns:96px minmax(0,1fr) auto}
+.tk-about{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--sp10)}
+.tk-facts{display:grid;gap:var(--sp4);align-content:start}
+.tk-facts dt{font-size:13px;line-height:18px;color:var(--muted)}
+.tk-facts dd{font-size:15px;line-height:24px}
+.tk-news{display:grid;gap:var(--sp4);margin-top:var(--sp8)}
+.tk-pick{display:grid;justify-items:start;gap:var(--sp4);max-width:560px}
+.tk-pick__list{display:flex;flex-wrap:wrap;gap:var(--sp2);margin-top:var(--sp4)}
+.data-foot{display:grid;gap:var(--sp1);margin-top:var(--sp8);color:var(--muted)}
+.data-foot a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fill-2)}
+@media (max-width:860px){.tk-about{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:767px){
+  .tk-plot{height:260px}.tk-chart,.tk-panel{padding:var(--sp5)}
+  .tk-chart__head .seg{display:flex;width:100%}.tk-chart__head .seg button{flex:1}
+  .tk-head{flex-wrap:wrap;gap:var(--sp4)}.tk-id{flex:1 1 100%}.tk-id .t-title{white-space:normal}.tk-id .logo{--sz:40px}
+  /* the insiders table becomes a list */
+  .tk-ins thead{display:none}
+  .tk-ins tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp1) var(--sp3);padding:var(--sp3) 0}
+  .tk-ins td{padding:0!important}
+  .tk-ins td.c-last{grid-column:1/-1;padding-left:36px!important}
+  .tk-ins td.c-bought,.tk-ins td.c-sold{display:none}
+  .tk-ins td.c-track{grid-column:1/-1;padding-left:36px!important}
+}

@@ -4,7 +4,7 @@ Who to approach for the Insidir creator partner program, how to qualify them, an
 
 ## The offer, in one breath
 
-$10 one-time for each new subscriber who signs up through the creator's link and pays their first $39 month (new subscribers start with a 3-day trial for $1; the $10 is earned when the first $39 payment goes through). No upfront fee, no per-view payments. Commissions are paid after a 30-day review for refunds, disputes and self-referrals.
+$10 one-time for each new subscriber who signs up through the creator's link and pays their first $39 month (new subscribers start with a 7-day trial for $1; the $10 is earned when the first $39 payment goes through). No upfront fee, no per-view payments. Commissions are paid after a 30-day review for refunds, disputes and self-referrals.
 
 Be straight about the size: $10 on a $39 product is modest. The pitch works for creators whose audience already talks about insider buying and SEC filings, because Insidir is a tool they would use on camera anyway. It does not work as a paid-placement substitute, so do not pitch it as one.
 
@@ -69,7 +69,7 @@ Personalise the first line every time: one specific post, what was in it, and wh
 >
 > I run Insidir (insidir.com). It reads SEC filings straight from EDGAR: company reports, XBRL financials, Form 4 insider trades parsed from the filed XML, and the people behind them, with every figure linked to its source document. No AI summaries, no price predictions, no advice.
 >
-> We have a small creator program: $10 for each new subscriber who joins through your link and stays past the trial (it is $1 for 3 days, then $39 a month). No obligation to post on a schedule, and it only makes sense if you would actually use the tool.
+> We have a small creator program: $10 for each new subscriber who joins through your link and stays past the trial (it is $1 for 7 days, then $39 a month). No obligation to post on a schedule, and it only makes sense if you would actually use the tool.
 >
 > Happy to set you up with access so you can try it on your next [company] breakdown first. Interested?
 >
@@ -98,7 +98,7 @@ Then stop. Three touches, no more.
 
 ### Creator brief (send after agreement)
 
-- **What Insidir is:** SEC-sourced company research. Company reports, filings, Form 4 insider activity, people, watchlist and alerts, research journal. 3 days for $1, then $39 a month, cancel any time. Today's insider trades are free to read at insidir.com/insider-trading.
+- **What Insidir is:** SEC-sourced company research. Company reports, filings, Form 4 insider activity, people, watchlist and alerts, research journal. 7 days for $1, then $39 a month, cancel any time. Today's insider trades are free to read at insidir.com/insider-trading.
 - **Say:** "reads SEC filings from EDGAR", "every figure links to the original document", "insider purchases kept apart from awards and exercises", "delayed prices".
 - **Never say:** that Insidir predicts prices, gives advice or signals, has live prices, has a free trial or free tier (the trial costs $1), or that following insiders makes money. Do not show returns.
 - **Disclosure:** clear and up front, in the post or video itself, not only in a link page. For example: "Paid partnership: I earn $10 if you subscribe to Insidir through my link." If you got free access, say that too.
@@ -110,7 +110,7 @@ Then stop. Three touches, no more.
 |---|---|
 | "$10 is low." | It is. It suits creators who would use the tool anyway; it is not meant to buy a dedicated post. If they only do paid placements, thank them and stop. |
 | "I only do flat-fee sponsorships." | The program is commission-only today. Note their rate in the tracker in case that changes; do not improvise a fee. |
-| "Is there a free trial for my audience?" | Not free, but close: 3 days of everything for $1, then $39 a month, cancel any time. The public insider-trade pages at insidir.com/insider-trading are free to read and a good thing to link. |
+| "Is there a free trial for my audience?" | Not free, but close: 7 days of everything for $1, then $39 a month, cancel any time. The public insider-trade pages at insidir.com/insider-trading are free to read and a good thing to link. |
 | "Why not just use EDGAR or OpenInsider?" | EDGAR is the source, and Insidir links back to it. What it adds is the reading: Form 4 XML parsed into plain transactions, open-market trades kept apart from awards and exercises, a page per insider, XBRL financials as filed, and a watchlist with alerts. |
 | "Does it tell people what to buy?" | No. It is not a broker and gives no advice, which also keeps the creator clear of advice claims. |
 | "Can I use my own code on my own account?" | No. Self-referrals are not paid. |

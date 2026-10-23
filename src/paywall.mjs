@@ -2,7 +2,7 @@
  *
  * The product (dashboard, research desk, companies, company reports, filings, people,
  * person files, watchlist, portfolio, alerts and every API that feeds them) is only usable with an
- * active paid subscription, which starts with a paid trial ($1 for 3 days, then $39 a month; see
+ * active paid subscription, which starts with a paid trial ($1 for 7 days, then $39 a month; see
  * billing.mjs). There is no free tier. A trialing subscription grants access like an active one.
  *
  * Everything here is a pure function of its inputs (the request path, the user row and
@@ -17,7 +17,7 @@ import { paywallEnabled, complimentaryEmails, billingSettings, verificationRequi
 // entity: any SEC filer by CIK (entity.html?cik=1067983, fed by GET /v1/entities/<cik>).
 export const PRODUCT_PAGES = Object.freeze(["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence", "entity"]);
 // Account pages: signed in; no subscription needed (that is where you get one).
-export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account"]);
+export const ACCOUNT_PAGES = Object.freeze(["subscribe", "billing", "account", "welcome"]);
 // Public pages are never gated. account-deleted.html is public because the visitor has just been signed out.
 export const PUBLIC_PAGES = Object.freeze(["index", "platform", "insidir-intelligence", "why-insidir", "data", "pricing", "company-info", "terms", "privacy", "disclosures", "subscription-policy", "signin", "signup", "404", "account-deleted", "forgot-password", "reset-password", "verify-email"]);
 // Pages a sign-in or subscribe step may send someone back to afterwards.
@@ -94,6 +94,8 @@ export function classifyApi(pathname, method = "GET") {
   if (p === "/v1/admin/costs" || p === "/v1/admin/funnel") return "open";
   // First-party funnel events (src/funnel.mjs): sent by public pages, signed in or not.
   if (p === "/v1/events" && m === "POST") return "open";
+  // The free weekly email (src/newsletter.mjs) and the landing page's live filing strip (src/landing.mjs): public.
+  if (p === "/v1/newsletter" || p.startsWith("/v1/newsletter/") || (p === "/v1/live" && (m === "GET" || m === "HEAD"))) return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).

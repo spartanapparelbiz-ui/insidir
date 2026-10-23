@@ -47,7 +47,8 @@ try {
       });
       assert.ok(r.overflow <= 1, `${viewport.width}px ${path}: horizontal overflow ${r.overflow}px`);
       assert.equal(r.bg, "rgb(12, 12, 11)", path + " sits on the night paper");
-      assert.match(r.font, /JetBrains Mono/, path);
+      // The landing page is on the rebuilt design system (ui.css): Geist is its one typeface. The stories keep V13.
+      assert.match(r.font, path === "/" ? /^"?Geist"?,/ : /JetBrains Mono/, path);
       assert.equal(r.h1, 1, path + " has one h1");
       if (path !== "/") assert.deepEqual(r.tinted, [], `${viewport.width}px ${path}: green or orange on screen`);
       assert.equal(r.nativeVisible, false, "headless Chrome has no share sheet, so the button stays hidden");

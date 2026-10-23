@@ -24,7 +24,7 @@ const TRADES = Array.from({ length: 60 }, (_, i) => line(i + 1, ["AAPL", "NVDA",
 function api(path, method, url) {
   if (path === "/v1/me") return me;
   if (path === "/v1/status") return { engine: "online", sec: "configured", filings: 1234, lastIngest: { started_at: "2026-10-16T21:00:00Z", finished_at: "2026-10-16T21:10:00Z", status: "success" } };
-  if (path === "/v1/billing/status") return { enabled: true, access: me.access, offer: { kind: "trial", trialDays: 3, trialFeeCents: 100, planCents: 3900, disclosure: "You will be charged $1.00 today. Unless you cancel before the end of your 3-day trial, your subscription renews automatically at $39.00 per month until you cancel.", disclosureVersion: "test" } };
+  if (path === "/v1/billing/status") return { enabled: true, access: me.access, offer: { kind: "trial", trialDays: 3, trialFeeCents: 100, planCents: 3900, disclosure: "You will be charged $1.00 today. Unless you cancel before the end of your 7-day trial, your subscription renews automatically at $39.00 per month until you cancel.", disclosureVersion: "test" } };
   if (path === "/v1/transactions") return { items: TRADES.slice(0, Number(url.searchParams.get("limit")) || 100) };
   if (path === "/v1/me/people/updates") return { people: [], items: [], following: 0 };
   if (path === "/v1/me/intelligence/briefing") return F.briefing;

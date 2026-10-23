@@ -1,0 +1,50 @@
+/* The insider track record (web/assets/js/track-record.js) and its one line on trade cards (.rd-track). Halftone
+   tokens only: ink, muted, the up/down pair; no new colours. */
+body.v13 .tr{display:grid!important;gap:22px!important}
+body.v13 .tr-sides{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))!important;gap:18px!important}
+body.v13 .tr-side{border:1px solid var(--hf-line)!important;background:var(--hf-surface)!important;padding:18px 20px!important}
+body.v13 .tr-side h3{margin:0 0 12px!important;font:600 14px/1.4 var(--hf-mono)!important;color:var(--hf-ink)!important;letter-spacing:0!important}
+body.v13 .tr-side h3 span{font-weight:400!important;color:var(--hf-faint)!important;margin-left:8px!important}
+body.v13 .tr-tiles{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin:0!important}
+body.v13 .tr-tile{border-top:1px solid var(--hf-line)!important;padding-top:10px!important;margin:0!important}
+body.v13 .tr-tile dt{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important}
+body.v13 .tr-tile dd{margin:6px 0 0!important;display:grid!important;gap:2px!important}
+body.v13 .tr-tile b{font:600 clamp(22px,2.6vw,30px)/1.1 var(--hf-mono)!important;color:var(--hf-ink)!important;font-variant-numeric:tabular-nums!important}
+body.v13 .tr-tile span{font:400 12px/1.5 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .tr-tile.is-thin b{color:var(--hf-soft)!important}
+body.v13 .tr-sentence{margin:14px 0 0!important;font:400 14px/1.6 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13 .tr-companies{margin:0!important;padding:0!important;list-style:none!important;display:grid!important;gap:6px!important;font:400 13px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important}
+body.v13 .tr-companies b{color:var(--hf-ink)!important;margin-right:6px!important}
+body.v13 .tr-table-wrap{overflow-x:auto!important;border:1px solid var(--hf-line)!important}
+body.v13 .tr-table{width:100%!important;border-collapse:collapse!important;font:400 13px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important}
+body.v13 .tr-table th{font:var(--hf-label)!important;letter-spacing:var(--hf-track)!important;text-transform:uppercase!important;color:var(--hf-faint)!important;text-align:left!important;padding:10px 12px!important;border-bottom:1px solid var(--hf-line)!important;white-space:nowrap!important}
+body.v13 .tr-table td{padding:10px 12px!important;border-bottom:1px solid var(--hf-line)!important;vertical-align:top!important;white-space:nowrap!important}
+body.v13 .tr-table tr:last-child td{border-bottom:0!important}
+body.v13 .tr-table a{color:var(--hf-ink)!important;text-decoration:underline 1px var(--hf-line)!important;text-underline-offset:3px!important}
+body.v13 .tr-table a:hover{text-decoration-color:currentColor!important}
+body.v13 .tr-num{text-align:right!important;font-variant-numeric:tabular-nums!important}
+body.v13 .tr-badge{display:inline-block!important;padding:1px 6px!important;border:1px solid currentColor!important;font:600 11px/1.5 var(--hf-mono)!important}
+body.v13 .tr-badge--buy{color:var(--hf-up)!important}
+body.v13 .tr-badge--sell{color:var(--hf-down)!important}
+body.v13 .tr-ret{color:var(--hf-muted)!important}
+body.v13 .tr-ret i{font-style:normal!important;font-size:9px!important;margin-right:6px!important;vertical-align:1px!important}
+body.v13 .tr-ret.is-hit{color:var(--hf-ink)!important;font-weight:600!important}
+body.v13 .tr-ret--up i{color:var(--hf-up)!important}
+body.v13 .tr-ret--down i{color:var(--hf-down)!important}
+body.v13 .tr-pending{color:var(--hf-faint)!important;font-style:italic!important}
+body.v13 .tr-method,body.v13 .tr-disclaimer,body.v13 .tr-empty{margin:0!important;font:400 12px/1.6 var(--hf-mono)!important;color:var(--hf-muted)!important;max-width:880px!important}
+body.v13 .tr-method b{color:var(--hf-soft)!important}
+body.v13 .tr-empty a{color:var(--hf-ink)!important}
+@media (max-width:720px){
+  body.v13 .tr-tiles{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  body.v13 .tr-table thead{display:none!important}
+  body.v13 .tr-table,body.v13 .tr-table tbody,body.v13 .tr-table tr,body.v13 .tr-table td{display:block!important;width:100%!important}
+  body.v13 .tr-table tr{padding:10px 12px!important;border-bottom:1px solid var(--hf-line)!important}
+  body.v13 .tr-table td{border:0!important;padding:2px 0!important;text-align:left!important;white-space:normal!important}
+  body.v13 .tr-table td[data-label]::before{content:attr(data-label) " · "!important;color:var(--hf-faint)!important}
+}
+
+/* The one line on a trade card: "This director's past buys: 6/8 up after 3 months." It opens the track record. */
+body.v13 .rd-track{display:block!important;margin:4px 0 0!important;font:400 11px/1.5 var(--hf-mono)!important;color:var(--hf-soft)!important;
+  text-decoration:underline 1px var(--hf-line)!important;text-underline-offset:3px!important;white-space:normal!important}
+body.v13 .rd-track:hover{color:var(--hf-ink)!important;text-decoration-color:currentColor!important}

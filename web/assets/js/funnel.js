@@ -43,6 +43,8 @@
   const path = location.pathname.replace(/\.html$/, "").replace(/\/$/, "/index");
   const page = path === "/index" || path === "/" ? "landing" : path.slice(1);
   if (page === "landing") send("landing_viewed");
+  // A public stock page (/NVDA): counted without the symbol.
+  if (document.body && document.body.hasAttribute("data-funnel-stock")) send("ticker_viewed", { path: "/stock" });
   if (page === "pricing") send("pricing_viewed");
   if (page === "signup") send("signup_started");
   if (page === "subscribe" && /[?&]checkout=cancel\b/.test(location.search)) send("checkout_return_canceled");

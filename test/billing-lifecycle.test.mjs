@@ -64,7 +64,7 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal((await access(A.cookie)).active, false);
     assert.equal(await product(A.cookie), 402);
     const status = (await call("/v1/billing/status", { cookie: A.cookie })).json;
-    assert.deepEqual([status.offer.kind, status.offer.todayCents, status.offer.recurringCents, status.offer.trialDays], ["trial", 100, 3900, 3]);
+    assert.deepEqual([status.offer.kind, status.offer.todayCents, status.offer.recurringCents, status.offer.trialDays], ["trial", 100, 3900, 7]);
     assert.equal((await checkout(A.cookie, "trial")).status, 403, "unverified address: checkout waits for confirmation");
     await verify(A.email, A.cookie);
   });
@@ -77,11 +77,11 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     const session = [...sim.sessions.values()].at(-1);
     assert.equal(session.params["line_items[0][price]"], "price_pro");
     assert.equal(session.params["line_items[1][price_data][unit_amount]"], "100");
-    assert.equal(session.params["subscription_data[trial_period_days]"], "3");
+    assert.equal(session.params["subscription_data[trial_period_days]"], "7");
     assert.equal(session.params.payment_method_collection, "always");
     const consent = (await q("SELECT * FROM billing_consents WHERE user_id=$1", [A.id])).rows;
     assert.equal(consent.length, 1);
-    assert.deepEqual([consent[0].offer, consent[0].amount_today_cents, consent[0].recurring_cents, consent[0].trial_days, consent[0].stripe_checkout_id], ["trial", 100, 3900, 3, session.id]);
+    assert.deepEqual([consent[0].offer, consent[0].amount_today_cents, consent[0].recurring_cents, consent[0].trial_days, consent[0].stripe_checkout_id], ["trial", 100, 3900, 7, session.id]);
     assert.match(consent[0].disclosure_text, /\$1\.00 today.*\$39\.00 per month/);
     assert.equal(session.params["metadata[insidir_consent_id]"], String(consent[0].id));
     // A second checkout closes the first page, so only one can ever be paid.
@@ -103,7 +103,7 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal((await q("SELECT count(*)::int AS n FROM creator_commissions WHERE referred_user_id=$1", [A.id])).rows[0].n, 0, "the $1 trial invoice never earns a commission");
     const ack = await mails(A.id, "acknowledgment");
     assert.equal(ack.length, 1);
-    assert.match(ack[0].text_body, /charged \$1\.00 today for a 3-day trial/);
+    assert.match(ack[0].text_body, /charged \$1\.00 today for a 7-day trial/);
     assert.match(ack[0].text_body, /renews automatically at \$39\.00 per month/);
     assert.match(ack[0].text_body, /How to cancel: open Billing/);
     assert.match(ack[0].text_body, /The terms you agreed to at checkout: You agree to pay \$1\.00 today/);
@@ -114,16 +114,28 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal((await mails(A.id, "acknowledgment")).length, 1);
   });
 
-  await t.test("trial reminder: once, however often Stripe or the worker asks", async () => {
-    await deliver(sim.trialWillEnd(subA.id));
+  await t.test("trial reminder: 24 hours before the charge, once, however often Stripe or the worker asks", async () => {
+    // Stripe's trial_will_end comes three days before a 7-day trial ends: too early for "tomorrow", so nothing is queued.
+    assert.ok(subA.trial_end - Math.floor(Date.now() / 1000) > 6 * 86400, "the simulated checkout started a 7-day trial");
+    await q("UPDATE users SET current_period_end=now()+interval '72 hours' WHERE id=$1", [A.id]);
     await deliver(sim.trialWillEnd(subA.id));
     const { queueTrialReminders } = await import("../src/billing-notices.mjs");
+    await queueTrialReminders(q, { env: ENV });
+    assert.equal((await mails(A.id, "trial_reminder")).length, 0, "day 4: no reminder yet");
     await q("UPDATE users SET current_period_end=now()+interval '30 hours' WHERE id=$1", [A.id]);
+    await queueTrialReminders(q, { env: ENV });
+    assert.equal((await mails(A.id, "trial_reminder")).length, 0, "30 hours out: still not");
+    await q("UPDATE users SET current_period_end=now()+interval '23 hours' WHERE id=$1", [A.id]);
     const r = await queueTrialReminders(q, { env: ENV });
     assert.ok(r.checked >= 1);
+    await queueTrialReminders(q, { env: ENV });
     const reminders = await mails(A.id, "trial_reminder");
     assert.equal(reminders.length, 1, "one reminder per subscription, from Stripe's event or the worker, whichever comes first");
+    assert.match(reminders[0].subject, /^Tomorrow your Insidir trial ends and \$39\.00 is charged$/);
     assert.match(reminders[0].text_body, /charged \$39\.00/);
+    assert.match(reminders[0].text_body, /What you keep: your watchlist/);
+    assert.match(reminders[0].text_body, /billing\.html#cancel/);
+    assert.equal(reminders[0].category, "billing", "sent whatever the member's email preferences");
   });
 
   await t.test("the trial converts: the first $39 renewal keeps access and earns the creator commission once", async () => {

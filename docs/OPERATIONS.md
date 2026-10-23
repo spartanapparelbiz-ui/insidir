@@ -81,7 +81,7 @@ same job at once; each run updates `worker_heartbeats`.
 | `notifications` | 5 min | New events → `notifications` for members watching them. |
 | `alert-emails` / `daily-digests` | 5 min / hourly | Immediate alert emails; daily digests at each member's chosen hour. |
 | `email-delivery` | 1 min | Outbox delivery (only when a provider is configured). |
-| `billing-reconcile` / `trial-reminders` | 6 h / hourly | Stripe re-reads for lapsed periods; trial-ending reminders. |
+| `billing-reconcile` / `trial-reminders` | 6 h / hourly | Stripe re-reads for lapsed periods; the trial emails: day 1, day 5 and the charge reminder 24 hours before the $39 (`src/trial-emails.mjs`, `src/billing-notices.mjs`). |
 | `maintenance` | hourly | Expired sessions, rate-limit windows, used tokens, admin sessions, security events older than 180 days, abandoned email bodies. |
 
 ## 5. Monitoring
@@ -111,9 +111,23 @@ Point an external uptime monitor at `GET /healthz` (database and SEC configurati
 
 ## 7. Stripe dashboard actions the code cannot do
 
-1. Webhook endpoint `https://insidir.com/v1/billing/webhook` must send: `checkout.session.completed`,
+1. Webhook endpoint `https://insidir.com/v1/billing/webhook` must send: `checkout.session.completed`, `checkout.session.expired` (the abandoned-checkout reminder),
    `customer.subscription.created`, `.updated`, `.deleted`, `.paused`, `.resumed`, `.trial_will_end`, `invoice.paid`,
    `invoice.payment_failed`, `charge.refunded`, `charge.dispute.created`. The test-mode script reports what is missing.
 2. Customer portal: enable cancellation and payment-method updates.
 3. Decide whether Stripe's own receipts stay on (Insidir now sends its own; two receipts are harmless but noisy).
 4. Confirm the live Price is $39.00 USD monthly with no trial of its own.
+5. Settings → Payment methods: turn on Apple Pay, Google Pay and Link for Checkout (Apple Pay also needs the
+   insidir.com domain registered under Payment method domains). Checkout shows them automatically once on.
+6. Leave Stripe's own abandoned-cart emails off (Settings → Checkout → Recovery emails): Insidir sends its one
+   reminder itself, an hour after the page was opened, and only to accounts without a subscription.
+
+## 8. Growth reports
+
+- `/admin` (redirects to admin-funnel.html; token + one-time code as §2): the funnel from landing visit to paid,
+  stock searches and stock pages, the headline A/B test (h1:a / h1:b), and visits, accounts, trials and paid members
+  by `?ref=` source. Allowed sources: `INSIDIR_REFS` (comma-separated; defaults to the seven channels in
+  src/attribution.mjs).
+- PostHog (anonymous, never linked to an account): landing pageview → `ticker_searched` → stock pageview →
+  `signup_code_sent` → `checkout_started` → `trial_confirmed` (welcome.html). Paid ($39 renewals) is only in /admin,
+  because PostHog ids are not tied to accounts (privacy.html §2).

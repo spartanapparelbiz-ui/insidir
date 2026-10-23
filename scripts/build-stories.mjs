@@ -394,7 +394,7 @@ function creatorsPage() {
 </div>
 <section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
  <h2 id="pp-about">The fine print</h2>
- <p>Public pricing (a 3-day trial for $1, then $39 a month) is unchanged by the program. Referral codes never grant paid access. No fake endorsements or testimonials: partners disclose material relationships and complimentary access. Public research, not investment advice.</p>
+ <p>Public pricing (a 7-day trial for $1, then $39 a month) is unchanged by the program. Referral codes never grant paid access. No fake endorsements or testimonials: partners disclose material relationships and complimentary access. Public research, not investment advice.</p>
 </section>`;
   return shell({ title: "Creators — Insidir Finance", description: "Insidir creator partnerships. Share better stock research and earn $10 for each eligible new paid subscriber you refer. No upfront promotion commitment.", path: "/creators.html", body, image: cardImage("creator-kit"), imageAlt: "Insidir creator partnerships" });
 }
