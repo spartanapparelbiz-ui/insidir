@@ -49,6 +49,7 @@ import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
 import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY} from "./email-code.mjs";
 import {refCookieFor,refFromCookie} from "./attribution.mjs";
 import {handleTickerRoute} from "./ticker-page.mjs";
+import {handleLanding} from "./landing.mjs";
 import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
@@ -345,6 +346,8 @@ async function route(req,res,ctx){
   if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
   // First-visit attribution (src/attribution.mjs): a page opened with an allowed ?ref= sets insidir_ref once.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && u.searchParams.has("ref")){const c=refCookieFor(req,u,{env:ctx.env,secure:config.cookieSecure});if(c)res.setHeader("Set-Cookie",c);}
+  // The landing page, server-rendered with live data, and its live filing strip (src/landing.mjs).
+  if((m==="GET"||m==="HEAD") && (p==="/"||p==="/index.html"||p==="/v1/live") && await handleLanding(req,res,u,{query:ctx.query,env:ctx.env,secure:config.cookieSecure}))return;
   // Public stock pages at /<TICKER>, /search and the per-stock share images (src/ticker-page.mjs).
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handleTickerRoute(req,res,u,{query:ctx.query,env:ctx.env}))return;
   // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.

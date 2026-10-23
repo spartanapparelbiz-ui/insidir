@@ -116,7 +116,7 @@ a.ds-card.is-focus{box-shadow:var(--focus)}
 .ds-trade__meta .ds-num{font-size:14px}
 
 /* ---------- table ---------- */
-.ds-table-wrap{border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--raised)}
+.ds-table-wrap{position:relative;border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--raised)}
 .ds-table{width:100%;border-collapse:collapse;font:400 15px/20px var(--sans)}
 .ds-table th{padding:14px var(--s3);text-align:left;font:500 14px/20px var(--sans);color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
 .ds-table td{padding:14px var(--s3);border-bottom:1px solid var(--line);white-space:nowrap}
@@ -129,7 +129,7 @@ a.ds-card.is-focus{box-shadow:var(--focus)}
 .ds-table a:hover{text-decoration-color:var(--text)}
 
 /* ---------- tabs ---------- */
-.ds-tabs{display:inline-flex;max-width:100%;overflow-x:auto;scrollbar-width:none;gap:4px;padding:4px;border:1px solid var(--line);border-radius:calc(var(--r-btn) + 4px);background:var(--raised)}
+.ds-tabs{position:relative;display:inline-flex;max-width:100%;overflow-x:auto;scrollbar-width:none;gap:4px;padding:4px;border:1px solid var(--line);border-radius:calc(var(--r-btn) + 4px);background:var(--raised)}
 .ds-tabs::-webkit-scrollbar{display:none}
 .ds-tab{flex:none;white-space:nowrap;min-height:40px;padding:0 var(--s2);border:0;border-radius:var(--r-btn);background:none;color:var(--muted);font:500 14px/20px var(--sans);cursor:pointer;transition:color .15s,background-color .15s}
 .ds-tab:hover,.ds-tab.is-hover{color:var(--text)}
@@ -163,6 +163,7 @@ a.ds-card.is-focus{box-shadow:var(--focus)}
 .ds-faq details p{margin:0 0 var(--s3);max-width:var(--text-max);color:var(--muted);font:400 16px/26px var(--sans)}
 
 /* ---------- motion ---------- */
-.ds-reveal{opacity:0;transform:translateY(8px);transition:opacity .25s var(--ease),transform .25s var(--ease)}
-.ds-reveal.is-in{opacity:1;transform:none}
+.ds-reveal{transition:opacity .25s var(--ease),transform .25s var(--ease)}
+/* Hidden only once ds.js runs (it adds .ds-js to <html>), so content never depends on script. */
+.ds-js .ds-reveal:not(.is-in){opacity:0;transform:translateY(8px)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.ds-reveal{opacity:1;transform:none}}

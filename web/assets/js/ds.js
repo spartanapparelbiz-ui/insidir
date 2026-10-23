@@ -2,6 +2,7 @@
    8px fade-up on entry, numbers that count up once, and the search box that opens a stock's page. Nothing loops;
    prefers-reduced-motion turns the motion off. */
 (()=>{"use strict";
+document.documentElement.classList.add("ds-js");
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const nav=document.querySelector("[data-ds-nav]");
 if(nav){const on=()=>nav.classList.toggle("is-scrolled",scrollY>8);on();addEventListener("scroll",on,{passive:true});}
@@ -29,6 +30,8 @@ const clean=v=>String(v||"").trim().toUpperCase().replace(/^\$/,"");
 const prefetch=t=>{if(!TICK.test(t)||prefetched.has(t)||prefetched.size>8)return;prefetched.add(t);const l=document.createElement("link");l.rel="prefetch";l.href="/"+encodeURIComponent(t);l.as="document";document.head.appendChild(l);};
 for(const f of document.querySelectorAll("[data-ds-search]")){
  const input=f.querySelector("input");let timer=0;
+ // A narrow phone shows the short placeholder, so the examples are never cut off.
+ if(input?.dataset.short&&matchMedia("(max-width: 479px)").matches)input.placeholder=input.dataset.short;
  input?.addEventListener("input",()=>{clearTimeout(timer);const t=clean(input.value);if(t.length>=1&&t.length<=5)timer=setTimeout(()=>prefetch(t),250);});
  f.addEventListener("submit",e=>{const t=clean(input?.value);if(!TICK.test(t)){e.preventDefault();input?.focus();return;}
   e.preventDefault();try{localStorage.setItem("insidir:first-ticker",t)}catch{}try{window.posthog?.capture?.("ticker_searched",{ticker:t})}catch{}

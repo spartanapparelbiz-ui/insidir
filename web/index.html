@@ -1,344 +1,101 @@
 <!doctype html>
 <html lang="en">
-<head><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Insidir: see when CEOs buy and sell their own stock</title>
+<meta name="description" content="Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts.">
+<link rel="canonical" href="https://insidir.com/">
 <meta name="theme-color" content="#0c0c0b">
-<meta name="application-name" content="insidir.">
-<meta property="og:site_name" content="insidir.">
-<meta property="og:title" content="Insidir — Financial intelligence. Connected.">
-<meta property="og:description" content="Discover relationships, understand market developments, and uncover opportunities through connected financial intelligence. 7 days for $1.">
-<meta name="description" content="Insidir is connected financial intelligence: relationships, changes and evidence from SEC disclosures, with updates for the companies and people you follow. 7 days for $1, then $39/month. Cancel online.">
-<title>Insidir — Financial intelligence. Connected.</title>
-<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=2">
-<!-- Headline experiment (src/funnel.mjs): each visitor keeps one arm, set before first paint so nothing swaps on screen.
-     "organized" and "disclosure" are the two headlines; /admin-funnel.html compares their trial starts. -->
-<script>try{var k="insidir:exp:headline",v=localStorage.getItem(k);if(v!=="organized"&&v!=="disclosure"){v=Math.random()<.5?"organized":"disclosure";localStorage.setItem(k,v)}document.documentElement.setAttribute("data-exp-headline",v)}catch(e){}</script>
-<link rel="preload" href="assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v9-landing.css">
-<link rel="stylesheet" href="assets/css/v13-halftone.css">
-<link rel="stylesheet" href="assets/css/v13-home.css">
-<link rel="stylesheet" href="assets/css/v14-home.css">
-<link rel="stylesheet" href="assets/css/v15-home.css">
-<link rel="stylesheet" href="assets/css/v16-rich.css">
-<link rel="stylesheet" href="assets/css/v17-smooth.css">
-<link rel="stylesheet" href="assets/css/v29-system.css">
-<link rel="stylesheet" href="assets/css/v29-landing.css">
-<link rel="stylesheet" href="assets/css/v31-automation.css">
-<link rel="stylesheet" href="assets/css/v32-home.css?v=5">
-<script defer src="assets/js/v6-site.js"></script>
-<script defer src="assets/js/v9-motion.js"></script>
-<script defer src="assets/js/v13-halftone.js"></script><script defer src="assets/js/v13-motion.js"></script>
-<script defer src="/assets/js/referral.js"></script>
-<script defer src="/assets/js/funnel.js"></script>
-<script defer src="assets/js/v31-flow.js"></script>
-<script defer src="assets/js/v32-system.js"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css">
-<script defer src="/assets/js/posthog.js?v=1"></script>
+<meta property="og:site_name" content="Insidir"><meta property="og:type" content="website">
+<meta property="og:title" content="Insidir: see when CEOs buy and sell their own stock"><meta property="og:description" content="Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts."><meta property="og:url" content="https://insidir.com/">
+<meta property="og:image" content="https://insidir.com/assets/og/insidir-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://insidir.com/assets/og/insidir-og.png">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ds.css?v=3">
+<link rel="stylesheet" href="/assets/css/site-v2.css?v=1">
+<meta name="color-scheme" content="dark">
 </head>
-<body class="v6-site v9-site v12-home v13">
-<a class="skip-link" href="#Content">Skip to content</a>
-<header class="v6-nav v9-nav">
- <div class="v9-width v6-nav__inner">
-  <a class="v6-logo" href="index.html" aria-label="Insidir home">insidir<span class="v13-dot" aria-hidden="true">.</span></a>
-  <nav class="v6-nav__links" aria-label="Main navigation">
-   <a href="platform.html">Platform</a><a href="insidir-intelligence.html">Intelligence</a><a href="pricing.html">Pricing</a>
-  </nav>
-  <div class="v6-nav__actions">
-   <a class="v6-signin" href="signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="signup.html" data-cta="nav">Start for $1</a>
-   <button id="v6-menu-button" class="v6-menu-btn" type="button" data-hf-atom aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
-  </div>
- </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>
-  <a href="platform.html">Platform</a><a href="insidir-intelligence.html">Intelligence</a><a href="pricing.html">Pricing</a><a href="/insider-trading">Insider filings</a><a href="/stories.html">Research stories</a><a href="why-insidir.html">Why Insidir</a><a href="data.html">Data &amp; sources</a><a href="signin.html">Log in</a><a href="signup.html" data-cta="menu">Start for $1</a>
- </nav>
-</header>
-<main id="Content">
-
-<!-- 1. Hero: centred, with the instrument beneath. -->
-<section class="v9-hero v12-hero v13-hero sx-hero" data-halftone-hero data-wordmark="insidir" data-fit-to=".v13-hero__inner" data-crop="0.22" data-letter-spacing="-0.02em" aria-labelledby="v6-hero-heading">
- <canvas aria-hidden="true"></canvas>
- <div class="v9-width v6-hero__inner v13-hero__inner">
-  <p class="v12-eyebrow v9-hero__eyebrow">Built on SEC disclosures</p>
-  <h1 id="v6-hero-heading"><span class="lx-arm lx-arm--a">Financial intelligence.<br><em>Connected.</em></span><span class="lx-arm lx-arm--b">Financial intelligence.<br><em>Connected.</em></span></h1>
-  <p class="v9-hero__description">Discover relationships, understand market developments, and uncover opportunities through connected financial intelligence.</p>
-  <div class="v9-hero__actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="hero">Explore Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
-   <a class="v9-btn v12-outline-button" href="platform.html" data-demo="hero-platform">View the platform<span class="v13-arrow" aria-hidden="true">→</span></a>
-  </div>
-  <p class="v9-hero__caption lp-terms lp-terms--price"><span class="lp-deal"><b>7 days</b> for $1</span><span class="lp-terms__price">Then <b>$39</b>/month</span><span>Cancel online</span></p>
-
- </div>
- <noscript><svg class="lp-word" viewBox="0 0 1000 156" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false"><text x="-17.6" y="200">insidir</text></svg></noscript>
- <span class="hwf-sr">insidir</span>
-</section>
-
-<!-- 1b. The instrument, directly under the hero: the dotted i, one dot per layer of the system. -->
-<section class="sx-instrument" aria-label="The layers of Insidir">
- <div class="v9-width">
-  <div class="sx-inst" data-instrument>
-   <div class="sx-inst__mark" role="group" aria-label="The layers of Insidir, as the dots of the i">
-    <button type="button" class="sx-dot sx-dot--head" data-layer="briefings" aria-pressed="false" aria-label="Intelligence briefings"></button>
-    <button type="button" class="sx-dot sx-dot--serif" data-layer="disclosures" aria-pressed="true" aria-label="Public disclosures"></button>
-    <button type="button" class="sx-dot sx-dot--s1" data-layer="insiders" aria-pressed="false" aria-label="Insider transactions"></button>
-    <button type="button" class="sx-dot sx-dot--s2" data-layer="relationships" aria-pressed="false" aria-label="Company relationships"></button>
-    <button type="button" class="sx-dot sx-dot--s3" data-layer="holdings" aria-pressed="false" aria-label="Institutional holdings"></button>
-    <button type="button" class="sx-dot sx-dot--s4" data-layer="watchlist" aria-pressed="false" aria-label="Watchlist events"></button>
-    <button type="button" class="sx-dot sx-dot--b1" data-layer="investigations" aria-pressed="false" aria-label="Investigations"></button>
-    <button type="button" class="sx-dot sx-dot--b2" data-layer="notifications" aria-pressed="false" aria-label="Notifications"></button>
-    <button type="button" class="sx-dot sx-dot--b3" data-layer="sources" aria-pressed="false" aria-label="Source verification"></button>
-   </div>
-   <div class="sx-inst__read" aria-live="polite">
-    <div class="sx-layer" data-layer-panel="disclosures"><p class="sx-label">Layer · Public disclosures</p><b>SEC filings, read on a schedule.</b><span class="sx-layer__eg">Form 4 · PepsiCo · filed Oct 16, 2026</span></div>
-    <div class="sx-layer" data-layer-panel="insiders" hidden><p class="sx-label">Layer · Insider transactions</p><b>Every insider trade, read.</b><span class="sx-layer__eg">4 lines · code P · $128.28</span></div>
-    <div class="sx-layer" data-layer-panel="relationships" hidden><p class="sx-label">Layer · Company relationships</p><b>Roles exactly as filed.</b><span class="sx-layer__eg">Robert C. Pohlad · Director · PepsiCo</span></div>
-    <div class="sx-layer" data-layer-panel="holdings" hidden><p class="sx-label">Layer · Institutional holdings</p><b>What big funds own, quarter by quarter.</b><span class="sx-layer__eg">Form 13F-HR · selected managers</span></div>
-    <div class="sx-layer" data-layer-panel="watchlist" hidden><p class="sx-label">Layer · Watchlist events</p><b>New records matched to you.</b><span class="sx-layer__eg">PEP · on your watchlist · New</span></div>
-    <div class="sx-layer" data-layer-panel="briefings" hidden><p class="sx-label">Layer · Intelligence briefings</p><b>Findings, in a published order.</b><span class="sx-layer__eg">Robert C. Pohlad at PepsiCo reported 4 purchases</span></div>
-    <div class="sx-layer" data-layer-panel="investigations" hidden><p class="sx-label">Layer · Investigations</p><b>Questions, answered with citations.</b><span class="sx-layer__eg">"What did PepsiCo insiders disclose this month?"</span></div>
-    <div class="sx-layer" data-layer-panel="notifications" hidden><p class="sx-label">Layer · Notifications</p><b>In app; push and email opt-in.</b><span class="sx-layer__eg">Insidir · New SEC disclosure</span></div>
-    <div class="sx-layer" data-layer-panel="sources" hidden><p class="sx-label">Layer · Source verification</p><b>Every figure links its document.</b><span class="sx-layer__eg">Filing no. 0001061272-26-000004</span></div>
-    <p class="sx-inst__hint">Select a dot · examples from a real Form 4</p>
-   </div>
-  </div>
+<body class="ds v2" data-exp-h1="a">
+<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
+<a class="ds-mark" href="/" aria-label="Insidir home">insidir.</a>
+<nav class="ds-nav__links" aria-label="Main"><a href="#how">Platform</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+<div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/start" data-cta="nav">Start for $1</a></div>
+</div></header>
+<main id="main">
+<section class="v2-hero" data-v2-hero aria-labelledby="hero-h">
+ <div class="ds-wrap v2-hero__in">
+  <h1 class="ds-h1" id="hero-h">See when CEOs buy and sell their own stock.</h1>
+  <p class="ds-body v2-hero__sub">Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts.</p>
+  <form class="ds-search v2-search--hero" action="/search" method="get" role="search" data-ds-search>
+<label class="sr-only" for="hero-q">Stock ticker</label>
+<input id="hero-q" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
+<button class="ds-btn" type="submit" data-cta="search">See insiders</button></form>
+  <p class="ds-small v2-hero__terms">$1 for 7 days. Cancel online anytime.</p>
+  
  </div>
 </section>
 
-<!-- 2. The intelligence system: records in, the dotted i, findings out. -->
-<section class="lp-section sx-system" data-system aria-labelledby="sx-system-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">The intelligence system</p><h2 id="sx-system-h">Disclosure in. <span>Intelligence out.</span></h2></header>
-  <div class="sx-sys" role="group" aria-label="Public records enter Insidir, are processed and interpreted, and leave as a Briefing item and an alert.">
-   <div class="sx-sys__col">
-    <p class="sx-label">Records</p>
-    <div class="sx-rec"><b>Form 4 · PEP</b><span>PepsiCo director · filed Oct 16, 2026</span></div>
-    <div class="sx-rec"><b>Form 4 · NTRA</b><span>Natera executive chairman · filed Oct 16, 2026</span></div>
-    <div class="sx-rec"><b>Form 13F-HR</b><span>Quarterly institutional holdings</span></div>
-   </div>
-   <span class="sx-wire sx-wire--in" aria-hidden="true"><i></i></span>
-   <ol class="sx-sys__core sx-stages" aria-label="The four stages">
-    <li><button type="button" class="sx-stage" data-stage-go="1"><b class="sx-stage-label">Monitor</b><span>SEC disclosures and followed entities.</span></button></li>
-    <li><button type="button" class="sx-stage" data-stage-go="2"><b class="sx-stage-label">Process</b><span>Transactions, filings, and relationships.</span></button></li>
-    <li><button type="button" class="sx-stage" data-stage-go="3"><b class="sx-stage-label">Interpret</b><span>Briefings and cited investigations.</span></button></li>
-    <li><button type="button" class="sx-stage" data-stage-go="4"><b class="sx-stage-label">Notify</b><span>Relevant updates, on your terms.</span></button></li>
-   </ol>
-   <span class="sx-wire sx-wire--out" aria-hidden="true"><i></i></span>
-   <div class="sx-sys__col">
-    <p class="sx-label">Output</p>
-    <div class="sx-out"><div class="sx-out__top"><span class="sx-label">Briefing</span><span class="sx-chip sx-chip--ink">New</span></div><b>Robert C. Pohlad at PepsiCo reported 4 purchases</b><span>Matched to your watchlist · SEC source linked</span></div>
-    <div class="sx-out"><div class="sx-out__top"><span class="sx-label">Alert</span><span class="sx-chip sx-chip--line">In app</span></div><b>Insidir · New SEC disclosure</b><span>A new Form 4 was imported for PEP.</span></div>
-   </div>
-  </div>
-  <p class="sx-note">Illustrative sequence built from real SEC filings. Sources are checked on a schedule; data and notifications can be delayed.</p>
- </div>
-</section>
 
-<!-- 3. Product in motion: one real Form 4, from EDGAR to the evidence (assets/js/v31-flow.js). -->
-<section class="lp-section ax-flow sx-motion" data-flow aria-labelledby="sx-motion-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">Product in motion</p><h2 id="sx-motion-h">From filing <span>to finding.</span></h2></header>
-  <ol class="ax-flow__rail" role="tablist" aria-label="One filing through Insidir">
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-1" aria-selected="true" aria-controls="ax-step-1"><span class="ax-flow__node" aria-hidden="true">01</span><span class="ax-flow__verb">Filed</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-2" aria-selected="false" aria-controls="ax-step-2" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">02</span><span class="ax-flow__verb">Indexed</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-3" aria-selected="false" aria-controls="ax-step-3" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">03</span><span class="ax-flow__verb">Matched</span></button></li>
-   <li role="presentation"><button type="button" class="ax-flow__step" role="tab" id="ax-tab-4" aria-selected="false" aria-controls="ax-step-4" tabindex="-1"><span class="ax-flow__node" aria-hidden="true">04</span><span class="ax-flow__verb">Evidence</span></button></li>
-  </ol>
-  <div class="ax-flow__stage">
-   <article class="ax-flow__panel ax-panel" id="ax-step-1" role="tabpanel" aria-labelledby="ax-tab-1">
-    <div class="ax-flow__copy"><p class="ax-label">01 · Filed</p><h3>A Form 4 reaches EDGAR.</h3><p>PepsiCo director, trade Oct 14, filed Oct 16, 2026.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">SEC EDGAR · Form 4</p><em>Real filing</em></div>
-     <div class="ax-card__body"><div class="ax-row"><div><b>PEPSICO INC · POHLAD ROBERT C</b><span>Filing no. 0001061272-26-000004</span></div><span class="ax-state ax-state--new">New</span></div></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-2" role="tabpanel" aria-labelledby="ax-tab-2" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">02 · Indexed</p><h3>Four trades, read.</h3><p>Taken straight from the filing, codes and all.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Indexed record</p><em>From the XML</em></div>
-     <div class="ax-card__body"><table class="ax-lines"><caption class="hwf-sr">The four reported lines</caption><thead><tr><th scope="col">Trade date</th><th scope="col">Code</th><th scope="col">Shares</th><th scope="col">Price</th></tr></thead>
-      <tbody><tr><td>Oct 14, 2026</td><td>P</td><td>84,507</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>9,989</td><td>$128.28</td></tr></tbody></table></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-3" role="tabpanel" aria-labelledby="ax-tab-3" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">03 · Matched</p><h3>Your watchlist updates.</h3><p>One finding, with the reason it is there.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Briefing · watchlist</p><em>Format as in the product</em></div>
-     <div class="ax-card__body"><div class="ax-row"><div><b>Robert C. Pohlad at PepsiCo reported 4 purchases</b><span>184,646 shares at $128.28 · about $23.7M · held indirectly</span></div><span class="ax-state ax-state--new">New</span></div>
-      <ul class="ax-reasons" aria-label="Why it is here"><li><span>Company is on your watchlist</span><span>+2</span></li><li><span>Includes an open-market purchase or sale (code P or S)</span><span>+1</span></li></ul></div></div>
-   </article>
-   <article class="ax-flow__panel ax-panel" id="ax-step-4" role="tabpanel" aria-labelledby="ax-tab-4" hidden>
-    <div class="ax-flow__copy"><p class="ax-label">04 · Evidence</p><h3>The source, one click away.</h3><p>Footnote 1 changes the reading. Read it yourself.</p></div>
-    <div class="ax-card"><div class="ax-card__bar"><p class="ax-label">Evidence · SEC EDGAR</p><em>Real filing</em></div>
-     <div class="ax-card__body"><blockquote class="ax-quote">"…shares of PepsiCo Common Stock acquired from irrevocable trusts established by the reporting person…"<cite>Footnote 1, Form 4 filed Oct 16, 2026</cite></blockquote>
-      <div class="ax-row ax-row--quiet"><div><b>Original filing</b><span><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener" data-demo="flow-filing">0001061272-26-000004 on EDGAR ↗</a></span></div><span class="ax-state ax-state--on">Source</span></div></div></div>
-   </article>
-  </div>
-  <div class="ax-flow__foot"><p class="sx-note" style="margin:0">A real filing; not live data. <a href="/insider-trading/PEP" data-demo="example-transaction">PepsiCo's public Form 4 record</a> · <a href="/stories/enterprise-products-insider-purchase.html" data-demo="example-filing">A filing, line by line</a></p><button type="button" class="ax-flow__toggle" data-flow-toggle aria-pressed="false" hidden>Pause</button></div>
- </div>
-</section>
 
-<!-- 4. The platform: four capabilities on one record, with Intelligence as the layer that connects them. -->
-<section class="lp-section cp-section" aria-labelledby="cp-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">The platform</p><h2 id="cp-h">Four capabilities. <span>One connected record.</span></h2></header>
-  <ul class="cp-grid">
-   <li class="cp cp--wide">
-    <h3>Connections</h3><p>See how companies, executives, institutional holders and their disclosures relate, on an interactive map built from SEC filings.</p>
-    <div class="cp__fig" aria-hidden="true">
-     <p class="sx-label">Relationship map · example</p>
-     <div class="cp-row"><span><b>Robert C. Pohlad</b> · Director at PepsiCo</span><span class="sx-chip sx-chip--line">Form 4</span></div>
-     <div class="cp-row"><span><b>Two reporting owners</b> · filed jointly</span><span class="sx-chip sx-chip--line">Form 4</span></div>
-     <div class="cp-row cp-row--ghost"><span class="sx-bar" style="max-width:56%"></span><span class="sx-chip">Filed</span></div>
-    </div>
-   </li>
-   <li class="cp cp--wide">
-    <h3>Changes</h3><p>What actually changed between comparable disclosures, explained in plain words, rather than a notice that a filing exists.</p>
-    <div class="cp__fig" aria-hidden="true">
-     <div class="cp-row"><span><b>Insider share purchase disclosed</b></span><span class="sx-chip sx-chip--ink">New</span></div>
-     <div class="cp-row"><span>Insider role changed · as filed</span><span class="sx-chip sx-chip--line">Form 4</span></div>
-     <div class="cp-row"><span>Revenue against a year earlier</span><span class="sx-chip sx-chip--line">10-Q</span></div>
-    </div>
-   </li>
-   <li class="cp">
-    <h3>Autopilot</h3><p>Follow a company or a reporting person once, then receive the relevant updates from supported public records.</p>
-    <div class="cp__fig" aria-hidden="true">
-     <div class="cp-row"><span>Following PepsiCo</span><span class="sx-chip sx-chip--ink">On</span></div>
-     <div class="cp-seg"><span class="is-on">Important</span><span>All</span><span>Daily</span><span>Weekly</span></div>
-    </div>
-   </li>
-   <li class="cp">
-    <h3>Evidence</h3><p>Verify important figures against the original filing, its reporting date and the calculation behind the number.</p>
-    <div class="cp__fig" aria-hidden="true">
-     <div class="cp-row"><span>Source · SEC Form 4</span><span class="sx-chip sx-chip--line">↗</span></div>
-     <div class="cp-row"><span>Field · transaction shares</span><span class="sx-chip sx-chip--line">As filed</span></div>
-    </div>
-   </li>
-   <li class="cp">
-    <h3>Intelligence</h3><p>The layer underneath: ask a research question in plain English and Insidir connects the relevant records, explains what is verified and keeps a concise briefing.</p>
-    <div class="cp__fig" aria-hidden="true">
-     <div class="cp-q">Are insiders at PepsiCo buying or selling?</div>
-     <div class="cp-a"><div><span class="sx-bar" style="flex:1"></span><span class="cp-cite">1</span></div><div><span class="sx-bar sx-bar--soft" style="flex:.7"></span><span class="cp-cite">2</span></div></div>
-    </div>
-   </li>
-  </ul>
-  <p class="sx-note">Examples show the product's formats. Findings are research leads, not recommendations. <a href="platform.html">The full platform</a></p>
- </div>
-</section>
 
-<!-- 4a. Every depth: one real record read three ways (progressive disclosure, native details elements). -->
-<section class="lp-section dx-section" aria-labelledby="dx-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">One platform, every depth</p><h2 id="dx-h">Clear at a glance. <span>Complete underneath.</span></h2></header>
-  <div class="dx-grid">
-   <ol class="dx-depths">
-    <li><p class="sx-label">01 · Understand</p><h3>What happened, in plain words.</h3><p>Who, what, how much and when, with the qualifications that change the reading kept in the sentence. No SEC vocabulary required.</p></li>
-    <li><p class="sx-label">02 · Monitor</p><h3>Everything you follow, in one place.</h3><p>Insider transactions, ownership changes, company comparisons and Autopilot updates across the companies and people you choose.</p></li>
-    <li><p class="sx-label">03 · Investigate</p><h3>The full record, when you want it.</h3><p>Historical disclosures, relationship maps, cited investigations and the original filing behind every figure.</p></li>
-   </ol>
-   <article class="dx-card" aria-label="One Form 4, read three ways">
-    <div class="dx-card__bar"><p class="sx-label">Changes · PepsiCo</p><em>Real filing · Oct 16, 2026</em></div>
-    <h3 class="dx-card__head">Insider share purchase disclosed</h3>
-    <p class="dx-card__text">Robert C. Pohlad (Director) bought 184,646 shares of PepsiCo at $128.28 a share, $23,686,388.88 as filed. Traded Oct 14, 2026, filed Oct 16, 2026. Held indirectly, as filed: By Revocable Trust. The filing adds 2 footnotes to these lines; read them in the filing detail.</p>
-    <details class="dx-more">
-     <summary>Filing detail</summary>
-     <table class="ax-lines"><caption class="hwf-sr">The four reported lines</caption><thead><tr><th scope="col">Trade date</th><th scope="col">Code</th><th scope="col">Shares</th><th scope="col">Price</th></tr></thead>
-      <tbody><tr><td>Oct 14, 2026</td><td>P</td><td>84,507</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>45,075</td><td>$128.28</td></tr><tr><td>Oct 14, 2026</td><td>P</td><td>9,989</td><td>$128.28</td></tr></tbody></table>
-     <p>Code P: an open-market or private purchase. Footnote F1, as filed: "Represents shares of PepsiCo Common Stock acquired from irrevocable trusts established by the reporting person through the exercise of the reporting person's power to substitute assets of equivalent value for property held by such trusts…"</p>
-     <p class="dx-why">The footnote changes the reading: these shares moved between the director's own trusts. Insidir keeps it beside the line instead of leaving it out.</p>
-    </details>
-    <details class="dx-more">
-     <summary>Source</summary>
-     <p>Form 4 filed with the SEC on Oct 16, 2026 · accession 0001061272-26-000004 · values as filed in the XML.</p>
-     <p><a href="https://www.sec.gov/Archives/edgar/data/1061272/000106127226000004/0001061272-26-000004-index.htm" rel="noopener" data-demo="depth-filing">Open the original Form 4 on EDGAR ↗</a></p>
-    </details>
-   </article>
-  </div>
-  <p class="sx-note">One product for every investor: the plain sentence first, the filing detail and the source when you ask for them. A real filing shown in the product's format; not live data.</p>
- </div>
-</section>
 
-<!-- 4b. The questions a member brings, and where Insidir answers each one. -->
-<section class="lp-section qx-section" aria-labelledby="qx-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">Why investors use Insidir</p><h2 id="qx-h">The questions <span>worth $39 a month.</span></h2></header>
-  <ol class="qx-list">
-   <li><h3>What might deserve my attention?</h3><p>Purchases, clustered buying and large sales at the companies and people you follow, ranked into your briefing as research leads.</p><span class="qx-where">Intelligence · Changes</span></li>
-   <li><h3>What are major institutional investors reporting?</h3><p>Quarter-end 13F holdings, new positions and exits, compared quarter on quarter. Filed up to 45 days later, never live trades.</p><span class="qx-where">Ownership (13F)</span></li>
-   <li><h3>Are insiders buying or selling?</h3><p>Every Form 4 line in words: open-market purchases and sales apart from awards, gifts and tax withholding, with 10b5-1 plans marked.</p><span class="qx-where">Changes · Evidence</span></li>
-   <li><h3>What changed at the companies I watch?</h3><p>New filings, amendments, role changes and financial results against a year earlier, delivered as they are detected.</p><span class="qx-where">Autopilot</span></li>
-   <li><h3>Are there risks I haven't noticed?</h3><p>Large insider sales, amended filings, executive role changes and 8-K events that can change the reading of a position.</p><span class="qx-where">Changes · Autopilot</span></li>
-   <li><h3>What evidence supports this finding?</h3><p>The SEC document, the field, the period and the value as filed, one click from every figure.</p><span class="qx-where">Evidence</span></li>
-  </ol>
-  <p class="sx-note">Insidir reads public SEC filings, which are published after the events they report. It does not tell you what to buy or sell, and no result is guaranteed.</p>
- </div>
-</section>
 
-<!-- 5. Financial data infrastructure. -->
-<section class="lp-section di-section sx-paper" aria-labelledby="di-h">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">Financial data infrastructure</p><h2 id="di-h">Original sources. <span>Every record linked.</span></h2></header>
-  <table class="di-table">
-   <caption class="hwf-sr">Sources Insidir reads and what each provides</caption>
-   <tbody>
-    <tr><th scope="row">SEC EDGAR</th><td>Filings and original documents</td><td>Public record</td></tr>
-    <tr><th scope="row">Form 4</th><td>Insider buys and sells, read from each filing</td><td>About every 2 min</td></tr>
-    <tr><th scope="row">Form 13F</th><td>What big funds own, for selected funds</td><td>Twice daily</td></tr>
-    <tr><th scope="row">8-K · 6-K</th><td>Company announcements</td><td>On a schedule</td></tr>
-    <tr><th scope="row">Financial statements</th><td>Revenue, profit and the other figures companies report</td><td>On request</td></tr>
-    <tr><th scope="row">Insiders</th><td>Executives, directors and big shareholders</td><td>From filings</td></tr>
-    <tr><th scope="row">Market data</th><td>Delayed prices, Yahoo Finance</td><td>Delayed</td></tr>
-   </tbody>
-  </table>
-  <p class="sx-note">Independent; not affiliated with the SEC. Data can be delayed or incomplete. <a href="data.html">Data &amp; sources</a></p>
- </div>
-</section>
 
-<!-- 6. Pricing. -->
-<section class="lp-section lp-plan" aria-labelledby="lp-plan-heading" data-funnel-view="pricing">
- <div class="v9-width">
-  <header class="sx-head"><p class="sx-eyebrow">Pricing</p><h2 id="lp-plan-heading">Insidir Pro. <span>One plan.</span></h2></header>
-  <article class="lp-plan__card" aria-label="Insidir subscription">
-   <div class="lp-plan__price">
-    <p class="v12-eyebrow">Insidir Pro · Full access</p>
-    <p class="lp-plan__amount">$39<span>/ month</span></p>
-    <p class="lp-plan__trial"><span>Offer</span><b>$1</b> for your first 7 days</p>
-    <p class="lp-plan__terms">After the 7-day trial, $39 is charged every month in US dollars through Stripe until you cancel. Cancel before the trial ends and you pay nothing more.</p>
-    <dl class="lp-receipt" aria-label="What you pay"><div><dt>Today, 7-day trial</dt><dd>$1.00</dd></div><div><dt>Then every month</dt><dd>$39.00</dd></div><div><dt>Cancel</dt><dd>Online, one step</dd></div></dl>
-    <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="pricing">Start 7 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
-   </div>
-   <div class="lp-plan__list">
-    <p class="v12-eyebrow">Included</p>
-    <ul>
-     <li>Research leads in a daily briefing</li>
-     <li>Insider buying and selling, in words</li>
-     <li>Connections between companies, executives and investors</li>
-     <li>Changes at every company you follow, with Autopilot alerts</li>
-     <li>Institutional holdings (13F), quarter on quarter</li>
-     <li>Evidence for every figure, linked to the SEC</li>
-    </ul>
-    <p class="sx-legal">Research software. Not a broker or investment adviser; no personalized advice or trade execution. <a href="pricing.html">Billing details</a> · <a href="subscription-policy.html">Subscription policy</a></p>
-   </div>
-  </article>
- </div>
-</section>
+<section class="ds-section" id="compare" aria-labelledby="cmp-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
+ <h2 class="ds-h2" id="cmp-h">Built for one job: following insiders.</h2>
+ <p class="ds-body">Here is how Insidir compares with reading the SEC's own website, checked on public pages.</p>
+ <div class="ds-table-wrap"><table class="ds-table v2-compare"><caption class="sr-only">Insidir compared with other ways to follow insider trades, as of Oct 23, 2026</caption>
+<thead><tr><th scope="col"><span class="sr-only">Feature</span></th><th scope="col" class="v2-us">Insidir</th><th scope="col">SEC EDGAR yourself</th></tr></thead>
+<tbody><tr><th scope="row">Plain-English explanation of each trade</th><td class="v2-us"><span class="v2-yes">Yes</span></td><td><span class="v2-no">No</span></td></tr><tr><th scope="row">Alerts minutes after a filing</th><td class="v2-us"><span class="v2-yes">Yes</span></td><td>RSS feeds only</td></tr><tr><th scope="row">Every number linked to its filing</th><td class="v2-us"><span class="v2-yes">Yes</span></td><td>It is the filing</td></tr><tr><th scope="row">Built for phones</th><td class="v2-us"><span class="v2-yes">Yes</span></td><td>Raw forms</td></tr><tr><th scope="row">Each insider&#39;s track record</th><td class="v2-us"><span class="v2-yes">Yes</span></td><td><span class="v2-no">No</span></td></tr><tr><th scope="row">Price</th><td class="v2-us">$1 for 7 days, then $39/mo</td><td>Free</td></tr></tbody></table></div>
+<p class="ds-small v2-note">As of Oct 23, 2026, from each product's public pages. Tell us if something changed: hello@aethric.llc</p>
+</div></section>
 
-<!-- 7. Close. -->
-<section class="lp-final v13-field-host" aria-labelledby="lp-final-heading">
- <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="180" aria-hidden="true"></div>
- <div class="v9-width lp-final__inner">
-  <p class="v12-eyebrow">7 days for $1 · then $39/month</p>
-  <h2 id="lp-final-heading">Recognize opportunities.<br><span>Understand the risks.</span></h2>
-  <p class="lp-final__lede">Insidir isn't just financial information. It's financial intelligence designed to help investors recognize opportunities, understand risks and make more informed decisions.</p>
-  <div class="lp-final__actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="final">Explore Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
-   <a class="v9-btn v12-outline-button" href="platform.html">View the platform<span class="v13-arrow" aria-hidden="true">→</span></a>
-  </div>
+<section class="ds-section" id="pricing" aria-labelledby="pr-h" data-funnel-view="pricing"><div class="ds-wrap ds-reveal" data-ds-reveal>
+ <h2 class="ds-h2" id="pr-h">$1 for 7 days. Then $39 a month.</h2>
+ <p class="ds-body">One plan with everything in it, and you can cancel online in two clicks.</p>
+ <div class="ds-price">
+  <p class="ds-price__name">Insidir Pro</p>
+  <p class="ds-price__amt"><b class="ds-num">$39</b><span>/ month</span></p>
+  <p class="ds-price__seats">$1 for your first 7 days.</p>
+  <ul class="ds-price__list"><li>Every insider trade in plain English</li><li>Alerts minutes after a filing</li><li>Track record for every insider</li><li>Unlimited watchlist and follows</li><li>Every number linked to the SEC filing</li></ul>
+  <a class="ds-btn ds-btn--lg" href="/start" data-cta="pricing">Start for $1</a>
+  <p class="ds-price__note">$1 today. We email you before you're charged. Cancel in 2 clicks.</p>
+  
  </div>
-</section>
+</div></section>
+
+<section class="ds-section" id="faq" aria-labelledby="faq-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
+ <h2 class="ds-h2" id="faq-h">Questions people ask first.</h2>
+ <p class="ds-body">Short answers, with the <a href="/subscription-policy.html">full terms</a> one tap away.</p>
+ <div class="ds-faq"><details open><summary>What is an insider?</summary><p>CEOs, CFOs, directors and anyone who owns more than 10% of a company. The law makes them report their trades to the SEC within two business days.</p></details><details><summary>Is this legal to use?</summary><p>Yes. These are public records. Insidir reads them faster and explains them.</p></details><details><summary>What do I get for $1?</summary><p>Everything, for 7 days. On day 6 we email you before the $39 charge.</p></details><details><summary>How do I cancel?</summary><p>Billing, then Cancel. Two clicks, online, any time.</p></details><details><summary>Do you tell me what to buy?</summary><p>No. Insidir shows what insiders did. Research, not investment advice.</p></details><details><summary>Where does the data come from?</summary><p>SEC EDGAR, the government&#39;s filing system. Every number links to its filing.</p></details></div>
+</div></section>
+
+<section class="ds-section v2-final" aria-labelledby="end-h"><div class="ds-wrap ds-reveal" data-ds-reveal>
+ <h2 class="ds-h2" id="end-h">Search any stock. See who's buying.</h2>
+ <p class="ds-body">It takes ten seconds and you don't need an account.</p>
+ <div class="v2-final__grid">
+  <form class="ds-search v2-search--hero" action="/search" method="get" role="search" data-ds-search>
+<label class="sr-only" for="end-q">Stock ticker</label>
+<input id="end-q" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
+<button class="ds-btn" type="submit" data-cta="search">See insiders</button></form>
+  <figure class="v2-founder">
+   <blockquote><p>I kept missing the one signal that is actually public: the people who run a company buying its stock with their own money. The filings were there, written for lawyers. I built Insidir to read them for me, and now for you.</p></blockquote>
+   <figcaption><b>Nicholas</b>, founder</figcaption></figure>
+  
+ </div>
+</div></section>
 </main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="platform.html">Platform</a></li><li><a href="insidir-intelligence.html">Intelligence</a></li><li><a href="/insider-trading">Insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="why-insidir.html">Why Insidir</a></li><li><a href="data.html">Data &amp; sources</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Overview</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="creators.html">Creators</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
-</div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer>
+<div class="v2-sticky" data-v2-sticky><a class="ds-btn" href="/start" data-cta="sticky">Start for $1</a><span class="ds-small">7 days, cancel anytime</span></div>
+<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
+<div class="v2-foot__brand"><a class="ds-mark" href="/">insidir.</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
+<nav aria-label="Product"><h2>Product</h2><a href="/insider-trading">Insider trades today</a><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
+<nav aria-label="Company"><h2>Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
+<nav aria-label="Account"><h2>Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
+</div></footer>
+<script src="/assets/js/ds.js?v=2" defer></script>
+<script src="/assets/js/site-v2.js?v=1" defer></script>
+<script src="/assets/js/funnel.js" defer></script>
+<script src="/assets/js/posthog.js?v=1" defer></script>
 </body></html>

@@ -28,7 +28,7 @@ test("repository photography stays available while pages only show sharp images"
  await withServer(async base=>{
    const home=await(await fetch(base+"/")).text();
    const dash=await(await fetch(base+"/dashboard.html")).text();
-   assert.match(home,/data-halftone-hero/);
+   assert.match(home,/data-v2-hero/);
    assert.match(dash,/id="v10-follow-feed"/);
    assert.match(dash,/id="v3-trades"/);
    // Decorative, upscaled photography was blurry: the dashboard and explore pages show none.
@@ -130,8 +130,9 @@ test("sign-in and public landing use the same working identity",async()=>{
     assert.doesNotMatch(html,/Continue with Google|data-auth-toast=/);
   }
   const homepage=await(await fetch(base+"/index.html")).text();
-  assert.match(homepage,/v13-home\.css/);
-  assert.match(homepage,/id="v6-menu-button"/);
+  // The landing page is on the v2 design system (web/assets/css/ds.css), with its own sticky navigation.
+   assert.match(homepage,/assets\/css\/ds\.css/);
+   assert.match(homepage,/<header class="ds-nav" data-ds-nav>/);
  });
 });
 
@@ -140,17 +141,16 @@ test("every navigation button has its own page and nothing sends visitors back t
   const paths=["/index.html","/platform.html","/why-insidir.html","/data.html","/pricing.html","/company-info.html","/subscribe.html","/account-deleted.html","/dashboard.html","/research.html","/explore.html","/company.html","/filings.html","/watchlist.html","/portfolio.html","/alerts.html","/billing.html","/terms.html","/privacy.html","/account.html"];
   for(const p of paths)assert.equal((await fetch(base+p)).status,200,p);
   const home=await(await fetch(base+"/index.html")).text();
-  const nav=home.match(/<nav class="v6-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
-  // The landing navigation is three pages (Platform, Intelligence, Pricing); the others are in the mobile menu and footer.
-  for(const page of ["platform.html","insidir-intelligence.html","pricing.html"])assert.match(nav,new RegExp('href="'+page.replace(".","\\.")+'"'),"landing navigation links to "+page);
-  const footer=home.match(/<footer[\s\S]*?<\/footer>/)?.[0]||"";
-  for(const page of ["why-insidir.html","data.html","/insider-trading","/stories.html"])assert.ok(footer.includes('href="'+page+'"'),"the landing footer still reaches "+page);
-  assert.doesNotMatch(nav,/href="#/,"landing navigation buttons open pages, not anchors on the landing page");
+  // The v2 landing is one page: its navigation (Platform, Pricing, FAQ) moves within it; the footer reaches the rest.
+   const nav=home.match(/<nav class="ds-nav__links"[\s\S]*?<\/nav>/)?.[0]||"";
+   for(const [label,href] of [["Platform","#how"],["Pricing","#pricing"],["FAQ","#faq"]])assert.ok(nav.includes('href="'+href+'">'+label),"landing navigation: "+label);
+   const footer=home.match(/<footer[\s\S]*?<\/footer>/)?.[0]||"";
+   for(const page of ["/data.html","/insider-trading","/stories.html","/terms.html","/privacy.html"])assert.ok(footer.includes('href="'+page+'"'),"the landing footer reaches "+page);
   const fs=await import("node:fs/promises");
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
     const html=await fs.readFile(new URL("../web/"+file,import.meta.url),"utf8");
     assert.doesNotMatch(html,/href="(\/|index\.html)#[a-z]/,file+" must not link to an anchor on the landing page");
-    if(file==="index.html")assert.doesNotMatch(html.replace(/href="#main"/g,""),/<a [^>]*href="#[a-z]/,"landing buttons open pages, not anchors on the landing page");
+    if(file==="index.html")assert.match(html,/href="\/start"[^>]*>Start for \$1</,"the landing page's one action starts the trial");
     for(const m of html.matchAll(/href="([a-z0-9-]+\.html)(?:[?#][^"]*)?"/g)){
       const r=await fetch(base+"/"+m[1]);assert.equal(r.status,200,file+" links to a missing page "+m[1]);
     }
@@ -244,10 +244,11 @@ test("V6 product identity uses full-width top navigation and removes legacy gree
  });
 });
 
-test("the landing page shows no product dashboard, no live data feed and no links into paid pages",async()=>{await withServer(async base=>{
+test("the landing page shows real filings, not a product dashboard, and links only to public pages",async()=>{await withServer(async base=>{
  const home=await(await fetch(base+"/")).text();
- assert.match(home,/Financial intelligence\.<br><em>Connected\./);
- assert.match(home,/data-halftone-hero/);
+ assert.match(home,/<h1 class="ds-h1" id="hero-h">See when CEOs buy and sell their own stock\.<\/h1>/);
+ assert.match(home,/data-v2-hero/);
+ assert.doesNotMatch(home,/not live data|Illustrative|example data/i,"no labels for made-up data: there is none");
  for(const marker of ["v12-terminal","v12-demo-","data-v12-ticker","v6-live-records","v12-graph","v12-mini-bars","v12-report-aside"])assert.ok(!home.includes(marker),"landing must not ship the dashboard preview: "+marker);
  const main=home.split(/<footer/)[0];
  for(const gated of ["dashboard.html","research.html","explore.html","company.html","filings.html","filing.html","watchlist.html","portfolio.html","alerts.html","people.html","person.html"])assert.ok(!main.includes('href="'+gated),"landing content must not link into the paid product: "+gated);
@@ -300,8 +301,8 @@ test("manual portfolio entry is visible without a brokerage connection", async (
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
  await withServer(async base=>{
   const home=await(await fetch(base+"/")).text();
-  assert.match(home,/Financial intelligence\.<br><em>Connected\./);
-  assert.match(home,/Aethric LLC/);
+  assert.match(home,/See when CEOs buy and sell their own stock\./);
+   assert.match(home,/Aethric LLC/);
   assert.doesNotMatch(home,/markets open|live stock price|% gain|fake returns/i);
   const pricing=await(await fetch(base+"/pricing.html")).text();
   assert.match(pricing,/\$39/);
@@ -389,9 +390,9 @@ test("Company report ships the market-terminal design for every ticker without e
 test("landing page is fully responsive markup: viewport meta, no fixed-width layout and reduced-motion support",async()=>{
  await withServer(async base=>{
   const html=await(await fetch(base+"/")).text();
-  assert.match(html,/<meta name="viewport" content="width=device-width,\s*initial-scale=1">/);
-  assert.match(html,/v13-home\.css/);
-  const css=await(await fetch(base+"/assets/css/v13-home.css")).text();
+  assert.match(html,/<meta name="viewport" content="width=device-width,\s*initial-scale=1(,viewport-fit=cover)?">/);
+  assert.match(html,/site-v2\.css/);
+  const css=(await(await fetch(base+"/assets/css/site-v2.css")).text())+(await(await fetch(base+"/assets/css/ds.css")).text());
   assert.match(css,/@media \(max-width:/);
   assert.match(css,/prefers-reduced-motion/);
   assert.doesNotMatch(html,/fake customer reviews|fake dashboard|[+]1\.73%|market cap \$3\.33T/i);
@@ -400,7 +401,12 @@ test("landing page is fully responsive markup: viewport meta, no fixed-width lay
 
 test("V13 halftone identity: shared theme on every page, dotted wordmark only in the landing hero", async () => {
   await withServer(async base => {
-    const pages = ["index.html", "signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html", "person.html"];
+    // The landing page is on the v2 design system (ds.css: no halftone, no dotted wordmark); every other page keeps V13.
+    const v2 = await (await fetch(base + "/index.html")).text();
+    assert.match(v2, /assets\/css\/ds\.css/);
+    assert.match(v2, /<a class="ds-mark" href="\/" aria-label="Insidir home">insidir\.<\/a>/, "the wordmark is the plain JetBrains Mono one");
+    assert.doesNotMatch(v2, /data-halftone-(hero|footer)/);
+    const pages = ["signin.html", "signup.html", "dashboard.html", "research.html", "explore.html", "filings.html", "filing.html", "watchlist.html", "portfolio.html", "alerts.html", "people.html", "account.html", "billing.html", "company.html", "pricing.html", "company-info.html", "terms.html", "privacy.html", "404.html", "platform.html", "why-insidir.html", "data.html", "subscribe.html", "account-deleted.html", "person.html"];
     let wordmarks = 0;
     for (const page of pages) {
       const res = await fetch(base + "/" + page);
@@ -414,10 +420,9 @@ test("V13 halftone identity: shared theme on every page, dotted wordmark only in
       if (/data-app-header/.test(html)) assert.match(await (await fetch(base + "/assets/js/app.js")).text(), /insidir<span class="v13-dot"/, page + " product header logo uses the dotted wordmark");
       else assert.match(html, /insidir<span class="(v13-dot|v12-logo-dot)"/, page + " logo uses the dotted wordmark");
       wordmarks += (html.match(/data-halftone-(hero|footer)/g) || []).length;
-      if (page === "index.html") assert.match(html, /<section class="v9-hero v12-hero v13-hero(?: sx-hero)?" data-halftone-hero data-wordmark="insidir"/, "landing hero prints the dotted wordmark (it holds together as the page scrolls)");
-      else assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
+      assert.doesNotMatch(html, /data-halftone-(hero|footer)/, page + " must not print the giant wordmark");
     }
-    assert.equal(wordmarks, 1, "exactly one dotted wordmark on the whole site");
+    assert.equal(wordmarks, 0, "the giant dotted wordmark left with the old landing page");
     const css = await fetch(base + "/assets/css/v13-halftone.css");
     assert.equal(css.status, 200);
     const theme = await css.text();

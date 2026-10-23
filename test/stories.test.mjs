@@ -170,6 +170,5 @@ test("the insider-trading pages link the stories, and a covered company or perso
   for (const s of STORIES) assert.ok(hub.body.includes(`href="${storyPath(s)}"`), "the hub lists " + s.slug);
   assert.match(hub.body, /href="\/stories\.html">Research stories<\/a>/, "the public pages' navigation reaches the stories");
   const home = readFileSync(new URL("index.html", WEB), "utf8");
-  assert.match(home, /href="\/stories\.html"/, "the landing page links the stories");
-  assert.match(home, /href="\/stories\/[a-z0-9-]+\.html"/, "and opens one as a real example");
+  assert.match(home, /href="\/stories\.html">Research stories</, "the landing page's footer links the stories");
 });

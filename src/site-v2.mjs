@@ -109,17 +109,18 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="stylesheet" href="/assets/css/site-v2.css?v=1">
 ${extra}</head>`;
 }
-export const nav = ({ cta = "nav" } = {}) => `<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
+// On the landing page the section links are same-page anchors (#how); elsewhere they lead to it (/#how).
+export const nav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
 <a class="ds-mark" href="/" aria-label="Insidir home">insidir.</a>
-<nav class="ds-nav__links" aria-label="Main"><a href="/#how">Platform</a><a href="/#pricing">Pricing</a><a href="/#faq">FAQ</a></nav>
+<nav class="ds-nav__links" aria-label="Main"><a href="${h}#how">Platform</a><a href="${h}#pricing">Pricing</a><a href="${h}#faq">FAQ</a></nav>
 <div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/start" data-cta="${esc(cta)}">Start for $1</a></div>
-</div></header>`;
-export const footer = () => `<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
-<div class="v2-foot__brand"><a class="ds-mark" href="/">insidir.</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice.</p></div>
-<nav aria-label="Product"><h2>Product</h2><a href="/insider-trading">Insider trades today</a><a href="/#how">How it works</a><a href="/#pricing">Pricing</a><a href="/data.html">Data sources</a></nav>
+</div></header>`; };
+export const footer = ({ home = false } = {}) => { const h = home ? "" : "/"; return `<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
+<div class="v2-foot__brand"><a class="ds-mark" href="/">insidir.</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
+<nav aria-label="Product"><h2>Product</h2><a href="/insider-trading">Insider trades today</a><a href="${h}#how">How it works</a><a href="${h}#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
 <nav aria-label="Company"><h2>Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
 <nav aria-label="Account"><h2>Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
-</div></footer>`;
+</div></footer>`; };
 export const scripts = () => `<script src="/assets/js/ds.js?v=2" defer></script>
 <script src="/assets/js/site-v2.js?v=1" defer></script>
 <script src="/assets/js/funnel.js" defer></script>
@@ -134,5 +135,5 @@ export const emailForm = (where = "page") => `<form class="v2-mail" action="/v1/
 
 export const searchBox = (id = "q", { large = true } = {}) => `<form class="ds-search${large ? " v2-search--hero" : ""}" action="/search" method="get" role="search" data-ds-search>
 <label class="sr-only" for="${esc(id)}">Stock ticker</label>
-<input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" maxlength="12">
+<input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
 <button class="ds-btn" type="submit" data-cta="search">See insiders</button></form>`;
