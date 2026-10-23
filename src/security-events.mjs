@@ -12,6 +12,7 @@ export const SECURITY_EVENT_KINDS = Object.freeze([
   "register", "login_success", "login_failure", "login_rate_limited", "logout", "sessions_revoked",
   "email_verification_sent", "email_verified", "email_verification_failed",
   "password_reset_requested", "password_reset_completed", "password_reset_failed", "password_changed", "password_change_failed",
+  "email_code_sent", "email_code_failed",
   "account_deleted", "account_delete_failed", "data_exported",
   "admin_access", "admin_denied", "admin_mfa_failed", "admin_mfa_replay"
 ]);

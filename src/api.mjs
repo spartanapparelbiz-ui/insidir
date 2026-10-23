@@ -46,6 +46,8 @@ import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mj
 import {searchEntities,entityRecord,resolveEntity,padCik,KINDS} from "./sec-directory.mjs";
 import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
 import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
+import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY} from "./email-code.mjs";
+import {refCookieFor,refFromCookie} from "./attribution.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -339,6 +341,8 @@ async function route(req,res,ctx){
   if(decision.action==="deny")return json(res,decision.status,decision.body);
   if(decision.kind==="product"||decision.kind==="account")keepPrivate(res);
   if(p==="/v1" && m==="GET")return json(res,200,{name:"Insidir Engine",service:"api",documentation:"/v1/sources",advice:false});
+  // First-visit attribution (src/attribution.mjs): a page opened with an allowed ?ref= sets insidir_ref once.
+  if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && u.searchParams.has("ref")){const c=refCookieFor(req,u,{env:ctx.env,secure:config.cookieSecure});if(c)res.setHeader("Set-Cookie",c);}
   // Public insider pages, sitemaps and robots.txt (src/public-pages.mjs): server-rendered from the SEC import, no session needed.
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && await handlePublicPage(req,res,u,{query:ctx.query,env:ctx.env,requester:clientAddress(req)}))return;
   if((m==="GET"||m==="HEAD") && !p.startsWith("/v1/") && p!=="/healthz" && await serveStatic(req,res))return;
@@ -718,7 +722,7 @@ async function route(req,res,ctx){
     if(await limited(ctx,"events:"+clientAddress(req),240,15*60*1000))return json(res,204,{});
     const row=cleanClientEvent(await body(req));
     const user=await ctx.currentUser(req).catch(()=>null);
-    await recordEvent(ctx.query,{...row,userId:user?.id||null});
+    await recordEvent(ctx.query,{...row,userId:user?.id||null,ref:refFromCookie(req,ctx.env)});
     // A member's first company report counts as their first research, for the activation measure.
     if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
     return json(res,204,{});
@@ -825,9 +829,28 @@ async function route(req,res,ctx){
       if(await limited(ctx,"intel-prefs:"+user.id,30,15*60*1000))throw failure(429,"Too many changes. Try again shortly.");
       return json(res,200,{...await saveIntelligencePreferences(user.id,await body(req),ctx.query),pushConfigured:pushReady()});
     }
+    // Email-code sign-in (src/email-code.mjs): no passwords; a new account on the first code.
+    if(p==="/v1/auth/email-code" && m==="POST"){
+      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+      const x=await body(req),email=normalizeEmail(x?.email);
+      if(!email)throw failure(400,"Enter a valid email address.");
+      if(await limited(ctx,"code-ip:"+ip,20,15*60*1000)||await limited(ctx,"code-email:"+email,5,15*60*1000))throw failure(429,"Too many codes requested. Wait a few minutes and try again.");
+      await sendEmailCode(ctx.query,email,{req,env:ctx.env});
+      return json(res,202,{sent:true,message:SENT_REPLY});
+    }
+    if(p==="/v1/auth/email-code/verify" && m==="POST"){
+      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
+      if(await limited(ctx,"code-verify:"+ip,40,15*60*1000))throw failure(429,"Too many tries. Wait a few minutes and try again.");
+      const x=await body(req);
+      const r=await verifyEmailCode(ctx.query,x?.email,x?.code,{req,ref:refFromCookie(req,ctx.env)||(typeof x?.ref==="string"?x.ref:null)});
+      if(r.created)await serverEvent(ctx.query,"signup_completed",{userId:r.user.id,visitor:x?.visitor});
+      return json(res,200,{user:r.user,access:accessSummary(r.account,ctx.env),created:r.created},{"Set-Cookie":sessionCookie(r.token)});
+    }
     if(p==="/v1/auth/register" && m==="POST"){
       if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
+      const signupRef=refFromCookie(req,ctx.env);
+      if(signupRef)await ctx.query("UPDATE users SET signup_ref=$2 WHERE id=$1 AND signup_ref IS NULL",[r.user.id,signupRef]);
       await logSecurityEvent(ctx.query,{req,userId:r.user.id,kind:"register"});
       // A confirmation link goes out whenever email is configured; checkout and complimentary access wait for it when enforced.
       let sent=false;
@@ -934,7 +957,9 @@ async function route(req,res,ctx){
       if(await limited(ctx,"delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
       // Deleting an account needs the account's password as well as the session, so a borrowed or stolen session cannot do it.
       const confirm=await body(req);
-      if(!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password is not correct, so nothing was deleted.")}
+      // Accounts that sign in by email code have no password: a fresh emailed code confirms instead.
+      const viaCode=/^\d{6}$/.test(String(confirm?.code??confirm?.password??"").trim())&&await consumeEmailCode(ctx.query,user.email,String(confirm?.code??confirm?.password).trim());
+      if(!viaCode&&!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password or code is not correct, so nothing was deleted.")}
       // Cancel a live Stripe subscription FIRST (nothing is deleted if Stripe cannot confirm it),
       // then revoke an active brokerage grant, then remove the account and its data.
       const result=await deleteAccount(user,{query,stripe:ctx.stripe||createStripeClient({secretKey:billingSettings(ctx.env).secretKey}),

@@ -17,7 +17,7 @@ the questions, sources, plan, final) and two vague CTAs ("Explore Insidir", "Vie
 | 3 | How it works | Three steps. No finance degree needed. | Pick your stocks, we read every filing, and you get one sentence when an insider trades. | Tabs with real product screens: 1 Pick your stocks · 2 We read every filing · 3 You get one-sentence alerts |
 | 4 | Receipts | What happened after they bought. | Every insider buy over $1M by two or more insiders at one company in the last 6 months, and what the stock did 30 and 90 days later, including the ones that went down. | Table of receipts (fixed rule, all rows shown) + the free weekly email form under it |
 | 5 | Comparison | Built for one job: following insiders. | Here is how Insidir compares with the tools people use today, checked on their public pages as of [date]. | Comparison table |
-| 6 | Pricing | $1 for 7 days. Then $29 a month, for life. | The first 100 subscribers keep the founding price forever; after that it is $39 a month. | Pricing card with monthly/annual toggle and seats-left count |
+| 6 | Pricing | $1 for 7 days. Then $39 a month. | One plan with everything in it, and you can cancel online in two clicks. | Pricing card |
 | 7 | FAQ | Questions people ask first. | Short answers, with the full terms one tap away. | Accordion (6 questions) |
 | 8 | Final CTA | Search any stock. See who's buying. | It takes ten seconds and you don't need an account. | Search box again + founder note (photo, Nicholas, 3 sentences) |
 
@@ -72,25 +72,23 @@ Phone: `insidir.` · **Start for $1**
 | Every number linked to its filing | Yes | to verify | to verify | It is the filing |
 | Built for phones | Yes | to verify | to verify | No |
 | Insider track record (hit rate) | Yes | to verify | to verify | No |
-| Price | $1 for 7 days, then $29/mo | to verify ($50/mo per the brief) | to verify | Free |
+| Price | $1 for 7 days, then $39/mo | to verify ($50/mo per the brief) | to verify | Free |
 Footnote: Competitor details from their public pages as of [date]. Tell us if something changed.
 
 ### 6. Pricing
-- Toggle: Monthly · Annual (2 months free)
-- Card: **Founding price** · **$29** / month, locked for life · `63 of 100 founding seats left` (from Stripe)
-  Annual: **$290** / year
+- Card: **Insidir Pro** · **$39** / month
 - Included: Every insider trade in plain English · Alerts minutes after filing · Track record for every insider ·
   Unlimited watchlist and follows · Every number linked to the SEC filing
 - Button: **Start for $1**
 - Under the button: $1 today. We email you before you're charged. Cancel in 2 clicks.
 - Anchor: Unusual Whales is $50/mo. (only after verification)
-- After 100 seats: $39/month · $390/year (same layout, no founding line)
+- Decided Oct 23, 2026: the price stays $39/month. No founding tier, no seats count, no annual plan.
 
 ### 7. FAQ
 1. **What is an insider?** CEOs, CFOs, directors and anyone who owns more than 10% of a company. The law makes
    them report their trades to the SEC within two business days.
 2. **Is this legal to use?** Yes. These are public records. Insidir reads them faster and explains them.
-3. **What do I get for $1?** Everything, for 7 days. On day 6 we email you before the $39 (or founding $29) charge.
+3. **What do I get for $1?** Everything, for 7 days. On day 6 we email you before the $39 charge.
 4. **How do I cancel?** Billing → Cancel. Two clicks, online, any time.
 5. **Do you tell me what to buy?** No. Insidir shows what insiders did. Research, not investment advice.
 6. **Where does the data come from?** SEC EDGAR, the government's filing system. Every number links to its filing.
@@ -159,18 +157,12 @@ Every section after the hero, left-aligned:
   [ one visual, max 1160px, 14px radius, 1px hairline ]
 ```
 
-## Decisions I need from you before building
+## Decisions (answered Oct 23, 2026)
 
-1. **Price change.** Founding $29/mo for the first 100, $290/yr, then $39/mo ($390/yr?) needs new Stripe Prices
-   (live mode). You asked me not to touch live Stripe without asking. OK to create them in test mode now and give
-   you the exact live-mode steps? The trial emails and terms I changed today say $39; they would change too.
-2. **Founder photo.** I need the image file (and your approval of the note's wording).
-3. **Competitor cells.** unusualwhales.com and openinsider.com are unreachable from this build environment. I'll
-   leave those cells marked "to verify" and hidden in production until verified; or you paste their pricing pages.
-4. **Sign-in.** There is no Google sign-in and no Clerk in the repo today (email + password). Your flow asks for
-   email-code sign-in with no passwords. I'll add email-code sign-in and attach `ref` to the Insidir account and
-   the Stripe customer (no Clerk). OK?
-5. **Ticker URLs.** Public pages already exist at /insider-trading/NVDA (server-rendered, indexable). I'll serve
-   them at /NVDA too, with /NVDA canonical, and trim the free view to 3 trades + the blurred rest.
-6. **Instagram testing.** I can emulate Instagram's in-app browser (its user agent, viewport, no Google) in
-   Chromium here, but not on a real iPhone or Android. A real-device pass needs you or a device lab.
+1. Price: stays $39/month. No founding tier, seats count or annual plan.
+2. Founder note: approved as drafted. Shown without a photo until web/assets/img/founder.jpg is added.
+3. Competitor cells: hidden until verified from their public pages.
+4. Sign-in: email-code sign-in, no passwords for new accounts; `ref` attached to the Insidir account and the Stripe
+   customer (no Clerk).
+5. Ticker pages: served at /NVDA (canonical), free view trimmed to 3 trades.
+6. Instagram: emulated in Chromium (user agent, viewport); a real-device pass is still needed.

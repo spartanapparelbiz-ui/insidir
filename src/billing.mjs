@@ -402,7 +402,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
     if (consent?.consent !== true || !["trial", "full"].includes(consent?.offer) || consent?.disclosureVersion !== DISCLOSURE_VERSION)
       throw failure(400, "Please review the subscription terms and tick the box to agree to them before checkout.");
     return exclusiveBilling(u.id, async () => {
-      const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at,email_verified_at FROM users WHERE id=$1", [u.id])).rows[0];
+      const row = (await query("SELECT email,stripe_customer_id,subscription_status,trial_started_at,email_verified_at,signup_ref FROM users WHERE id=$1", [u.id])).rows[0];
       if (!row) throw failure(401, "Sign in required");
       // With verification enforced, the receipts, renewal notices and cancellation confirmations must reach an inbox the customer controls.
       if (verificationRequired(env) && !row.email_verified_at) throw failure(403, "Confirm your email address before subscribing: open the link we sent you, or send a new one from this page.", { verifyEmail: true });
@@ -433,7 +433,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (blocked) throw failure(409, blocked);
       }
       if (!customer) {
-        const created = await stripe.post("/customers", { email: row.email || u.email, "metadata[insidir_user_id]": u.id });
+        // The first-visit ref (src/attribution.mjs) rides on the customer, so Stripe reports can be cut by source too.
+        const created = await stripe.post("/customers", { email: row.email || u.email, "metadata[insidir_user_id]": u.id, ...(row.signup_ref ? { "metadata[insidir_ref]": row.signup_ref } : {}) });
         const saved = await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND stripe_customer_id IS NULL RETURNING stripe_customer_id", [created.id, u.id]);
         customer = saved.rows[0]?.stripe_customer_id || (await query("SELECT stripe_customer_id FROM users WHERE id=$1", [u.id])).rows[0]?.stripe_customer_id;
         if (!customer) throw failure(503, "Could not prepare checkout. Try again shortly.");
@@ -458,6 +459,7 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         client_reference_id: u.id, success_url: site + "/billing.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
         "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id,
         "metadata[insidir_consent_id]": consentId, "subscription_data[metadata][insidir_consent_id]": consentId,
+        ...(row.signup_ref ? { "metadata[insidir_ref]": row.signup_ref, "subscription_data[metadata][insidir_ref]": row.signup_ref } : {}),
         "custom_text[submit][message]": "By subscribing you authorize Insidir to charge $39.00 per month until you cancel. Cancel any time from Billing." };
       if (offer.kind === "trial") Object.assign(params, trialCheckoutParams(trial));
       const session = await stripe.post("/checkout/sessions", params);

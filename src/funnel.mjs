@@ -65,14 +65,14 @@ export function dedupeKey({ event, kind, visitor, userId, label, variant, day: d
   return event + ":" + (visitor || "user-" + userId) + ":" + d + ":" + (label || "") + ":" + (variant || "");
 }
 
-export const INSERT_SQL = `INSERT INTO funnel_events(event,visitor,user_id,label,variant,path,referrer,dedupe_key)
-  VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (dedupe_key) DO NOTHING`;
+export const INSERT_SQL = `INSERT INTO funnel_events(event,visitor,user_id,label,variant,path,referrer,dedupe_key,ref)
+  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (dedupe_key) DO NOTHING`;
 
 /* Stores one event; returns true when it was new. Never throws: measurement must not break the product. */
 export async function recordEvent(run, row) {
   try {
     const key = row.dedupeKey || dedupeKey(row);
-    const r = await run(INSERT_SQL, [row.event, row.visitor || null, row.userId || null, row.label || null, row.variant || null, row.path || null, row.referrer || null, key.slice(0, 200)]);
+    const r = await run(INSERT_SQL, [row.event, row.visitor || null, row.userId || null, row.label || null, row.variant || null, row.path || null, row.referrer || null, key.slice(0, 200), row.ref || null]);
     return (r?.rowCount || 0) > 0;
   } catch (e) {
     if (!/funnel_events/.test(String(e?.message || ""))) console.error("Funnel event not recorded", e?.message || e);
