@@ -125,14 +125,14 @@ function phoneFrame(d) {
 <div class="v2-phone__screen"><div class="v2-phone__bar"><span class="ds-mark">insidir.</span><span class="ds-btn">Start for $1</span></div>
 <p class="v2-tk__tick ds-num">${esc(d.ticker)}</p><p class="v2-phone__h">${esc(d.name || d.ticker)} insiders: who's buying and selling.</p>
 <ol class="v2-trades">${rows}</ol>
-<div class="v2-phone__lock"><b>${Math.max(0, d.trades.length - FREE_TRADES)} more trades</b><span class="ds-btn">Unlock for $1</span></div></div>
+<div class="v2-phone__lock"><b>${(n => n > 0 ? n + " more trade" + (n === 1 ? "" : "s") : "Get the next one first")(d.trades.length - FREE_TRADES)}</b><span class="ds-btn">Unlock for $1</span></div></div>
 <figcaption class="sr-only">The free view of ${esc(d.ticker)}: its last ${FREE_TRADES} insider trades.</figcaption></figure>`;
 }
 
 const fmtInt = n => Number(n || 0).toLocaleString("en-US");
 // A result in 0.1% steps: the colour follows the shown value, so "0.0%" is never green or red.
-const receiptCell = x => { if (x.pending) return `<span class="v2-pending" title="${esc("Measured on " + day(x.on))}"><span class="v2-long">On ${esc(day(x.on))}</span><span class="v2-short">Pending</span></span>`; if (x.r == null) return `<span class="v2-pending">No price</span>`;
-  const r = Math.round(x.r * 1000) / 1000; return `<span class="ds-num ${r > 0 ? "ds-buy" : r < 0 ? "ds-sell" : ""}">${esc(r === 0 ? "0.0%" : pct(r))}</span>`; };
+const receiptCell = x => { if (x.pending) return `<span class="v2-pending" title="${esc("Measured on " + day(x.on))}"><span class="v2-long">Pending until ${esc(day(x.on))}</span><span class="v2-short">Pending</span></span>`; if (x.r == null) return `<span class="v2-pending">No price</span>`;
+  const r = Math.round(x.r * 1000) / 1000; return `<span class="ds-num ${r > 0 ? "ds-buy" : r < 0 ? "ds-sell" : "v2-flat"}">${esc(r === 0 ? "0.0%" : pct(r))}</span>`; };
 function receiptsTable(rows) {
   if (!rows.length) return `<div class="ds-card v2-quiet"><p>No company had two or more insiders buy over $1M within 10 days in the last 6 months.</p></div>`;
   const shown = rows.slice(0, 12);

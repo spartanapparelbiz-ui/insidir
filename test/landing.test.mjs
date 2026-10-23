@@ -41,7 +41,7 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   // Receipts: the fixed rule, the ones that went down too, pending results labelled as pending.
   assert.ok(html.includes(RECEIPT_RULE));
   assert.match(html, /ds-sell">−2\.3%/);
-  assert.match(html, /<span class="v2-long">On Oct 31, 2026<\/span><span class="v2-short">Pending<\/span>/);
+  assert.match(html, /<span class="v2-long">Pending until Oct 31, 2026<\/span><span class="v2-short">Pending<\/span>/);
   // Comparison: only verified competitors; the unverified anchor line is not shown.
   assert.ok(!COMPETITORS.others.some(c => c.verified), "nobody verified yet");
   assert.doesNotMatch(html, /Unusual Whales|OpenInsider|\$50\/mo/);

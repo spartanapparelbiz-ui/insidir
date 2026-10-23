@@ -74,7 +74,7 @@ export function tradeCard(r, { href = null } = {}) {
   const label = k === "buy" ? "Buy" : k === "sell" ? "Sell" : "Filed";
   return `<article class="ds-card ds-trade">
 <a class="ds-trade__tick" href="${esc(href || "/" + encodeURIComponent(t))}">${esc(t)}</a><span class="ds-badge ds-badge--${k === "other" ? "" : k}">${label}</span>
-<p class="ds-trade__who">${esc(personName(r.owner_name))}${r.role ? ` <span>· ${esc(r.role)}</span>` : ""}</p>
+<p class="ds-trade__who">${esc(personName(r.owner_name))}${r.role ? `<span class="ds-trade__role">${esc(r.role.charAt(0).toUpperCase() + r.role.slice(1))}</span>` : ""}</p>
 <span class="ds-trade__amt ds-num ${k === "buy" ? "ds-buy" : k === "sell" ? "ds-sell" : ""}">${esc(money(r.estimated_value) || "—")}</span>
 <span class="ds-trade__meta"><span class="ds-num">${esc(day(r.transaction_date) || "")}</span>${filing ? `<a href="${esc(filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</span>
 </article>`;

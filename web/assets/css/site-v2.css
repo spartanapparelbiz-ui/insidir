@@ -58,6 +58,8 @@
 .v2-hero{padding:var(--s10) 0 var(--s10);text-align:center}
 .v2-hero__in{display:grid;justify-items:center;grid-template-columns:minmax(0,1fr)}
 .v2-hero__in>*{max-width:100%;min-width:0}
+.v2-hero__in>.ds-body{max-width:min(100%,var(--text-max))}
+.v2-hero__in>.ds-search{max-width:min(100%,560px)}
 .v2-live{min-width:0;width:100%}
 .v2-hero .ds-h1{max-width:920px}
 .v2-hero__sub{margin:var(--s3) auto 0}
@@ -73,8 +75,8 @@
 }
 
 /* the iPhone frame: the real stock page, drawn by the same components */
-.v2-phone{margin:0;width:300px;height:600px;padding:12px;border:1px solid var(--line-strong);border-radius:48px;background:#000}
-.v2-phone__screen{height:100%;overflow:hidden;border-radius:38px;background:var(--bg);padding:16px 14px;border:1px solid var(--line)}
+.v2-phone{margin:0;width:300px;padding:12px;border:1px solid var(--line-strong);border-radius:48px;background:#000}
+.v2-phone__screen{overflow:hidden;border-radius:38px;background:var(--bg);padding:16px 14px 22px;border:1px solid var(--line)}
 .v2-phone__bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--s3)}
 .v2-phone__bar .ds-mark{font-size:15px;min-height:0}
 .v2-phone__bar .ds-btn{min-height:28px;padding:0 10px;font-size:11px;border-radius:7px}
@@ -95,7 +97,7 @@
 .v2-live__item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;min-height:52px;padding:0 var(--s2);text-decoration:none;color:var(--text);font:400 15px/20px var(--sans)}
 .v2-live__item:hover{background:var(--hover)}
 .v2-live__item b{font:500 15px/20px var(--mono)}
-.v2-live__item time{font-size:13px;color:var(--muted)}
+.v2-live__item time{font:400 13px/20px var(--sans);font-variant-numeric:tabular-nums;color:var(--muted)}
 .v2-live__row.is-new{animation:v2-in .35s var(--ease) both}
 @keyframes v2-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @media (max-width:767px){
@@ -145,6 +147,7 @@
 .v2-receipts-wrap{display:grid;gap:var(--s2)}
 .v2-receipts-wrap .v2-mail{margin-top:var(--s5)}
 .v2-pending{color:var(--muted)}
+.v2-flat{color:var(--muted)}
 .v2-short{display:none}
 .v2-compare th[scope="row"]{font:400 15px/20px var(--sans);color:var(--text);white-space:normal;min-width:200px}
 .v2-compare .v2-us{background:rgba(255,255,255,.025)}
