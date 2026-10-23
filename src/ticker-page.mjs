@@ -57,6 +57,10 @@ export async function tickerData(query, ticker) {
   return { ticker, name, trades: rows, latestAny, counts: { trades: rows.length, buys: buys.length, sells: sells.length } };
 }
 
+/* Never a dead end: three popular stocks to try instead. */
+export const POPULAR = Object.freeze(["NVDA", "TSLA", "AAPL", "MSFT"]);
+const suggest = t => `<p class="v2-suggest"><span class="ds-small">Try a popular one:</span>${POPULAR.filter(x => x !== t).slice(0, 3).map(x => `<a class="v2-chip" href="/${x}">${x}</a>`).join("")}</p>`;
+
 function tradeItem(r) {
   const filing = /^https:\/\/(www\.)?sec\.gov\//.test(String(r.source_url || "")) ? r.source_url : null;
   const k = kindOf(r);
@@ -71,7 +75,7 @@ export function renderTickerPage(d, { origin }) {
   const description = free.length ? `${sentence(free[0])} See every insider buy and sell at ${who}, in plain English, from SEC filings.`
     : `Insider buys and sells at ${who} (${t}), in plain English, from SEC filings.`;
   const list = free.length ? `<ol class="v2-trades">${free.map(tradeItem).join("")}</ol>`
-    : `<div class="ds-card v2-quiet"><p>No insider at ${esc(who)} bought or sold ${esc(t)} stock on the open market in the last 12 months.</p>${d.latestAny.length ? `<p class="ds-small">Their latest filings were other kinds of Form 4, such as stock awards and tax withholding:</p><ol class="v2-trades">${d.latestAny.map(tradeItem).join("")}</ol>` : ""}</div>`;
+    : `<div class="ds-card v2-quiet"><p>No insider at ${esc(who)} has bought or sold ${esc(t)} stock on the open market in the last 12 months, so there is nothing to show here yet.</p>${d.latestAny.length ? `<p class="ds-small">Their latest insider reports were other kinds, such as stock awards and shares held back for tax:</p><ol class="v2-trades">${d.latestAny.map(tradeItem).join("")}</ol>` : ""}${suggest(t)}</div>`;
   const body = `${nav({ cta: "ticker-nav" })}
 <main id="main">
 <section class="v2-tk ds-wrap">
@@ -87,7 +91,7 @@ export function renderTickerPage(d, { origin }) {
     <div class="v2-lock__copy">
       <h2 class="v2-lock__h" id="lock-h">${more ? `${more} more insider trade${more === 1 ? "" : "s"} at ${esc(t)} in the last 12 months.` : `Get the next ${esc(t)} insider trade the minute it's filed.`}</h2>
       <p class="ds-small">Full history, each insider's track record, a signal score on every trade, and alerts minutes after a new filing.</p>
-      <a class="ds-btn ds-btn--lg" href="/start?t=${encodeURIComponent(t)}" data-cta="ticker-unlock">Unlock for $1</a>
+      <a class="ds-btn ds-btn--lg" href="/start?t=${encodeURIComponent(t)}" data-cta="ticker-unlock">Start for $1</a>
       <p class="ds-small">$1 for 7 days, then $39 a month. Cancel online anytime.</p>
     </div>
   </div>
@@ -104,6 +108,24 @@ ${scripts()}
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: `${who} insider trading`, url: origin + "/" + t, about: { "@type": "Corporation", name: who, tickerSymbol: t } };
   return head({ title, description, canonical: "/" + encodeURIComponent(t), origin, image: "/og/" + encodeURIComponent(t) + ".png",
     extra: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` }) + `\n<body class="ds v2" data-funnel-stock>\n` + body;
+}
+
+/* A symbol we have nothing on: say so plainly and offer three popular stocks and the search box, never an empty page. */
+export function renderUnknownTicker(t, { origin }) {
+  const body = `${nav({ cta: "ticker-nav" })}
+<main id="main">
+<section class="v2-tk ds-wrap">
+  <p class="v2-tk__tick ds-num">${esc(t)}</p>
+  <h1 class="ds-h1 v2-tk__h">We couldn't find a stock called ${esc(t)}.</h1>
+  <p class="ds-body">Check the spelling of the symbol, or try one of these.</p>
+  <div class="ds-card v2-quiet">${suggest(t)}<div class="v2-tk__search"><p class="ds-small">Look up another stock</p>${searchBox("q2", { large: false })}</div></div>
+</section>
+</main>
+${footer()}
+${scripts()}
+</body></html>`;
+  return head({ title: `${t}: stock not found | Insidir`, description: "Insider buys and sells for any U.S. stock, in plain English, from SEC filings.", canonical: "/" + encodeURIComponent(t), origin, noindex: true })
+    + `\n<body class="ds v2">\n` + body;
 }
 
 /* ---------- the share image ---------- */
@@ -165,7 +187,11 @@ export async function handleTickerRoute(req, res, url, { query, env = process.en
   if (!t) return false;
   const asked = p.replace(/^\/|\/$/g, "");
   const d = await cached("data:" + t, CACHE_MS, () => tickerData(query, t));
-  if (!d) return false;
+  if (!d) {
+    if (!/^[A-Za-z]{1,5}(?:[.-][A-Za-z]{1,2})?$/.test(asked)) return false;
+    send(req, res, 404, "text/html; charset=utf-8", Buffer.from(renderUnknownTicker(t, { origin: siteOrigin(env) })), { maxAge: 60 });
+    return true;
+  }
   if (asked !== t) { redirect(res, 301, "/" + encodeURIComponent(t) + url.search); return true; }
   const html = await cached("page:" + t, CACHE_MS, async () => Buffer.from(renderTickerPage(d, { origin: siteOrigin(env) })));
   send(req, res, 200, "text/html; charset=utf-8", html);

@@ -12,7 +12,7 @@
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { esc, money, day, ago, pct, sentence, withRole, LINE_SQL, scripts, kindOf, personName, companyName } from "./site-v2.mjs";
-import { uiHead, uiNav, uiFooter, uiSearch, uiEmailForm, uiLogo, uiBig, uiTrade, uiInitials, WORDMARK } from "./site-ui.mjs";
+import { uiHead, uiNav, uiFooter, uiSearch, uiEmailForm, uiLogo, uiBig, uiTrade, uiInitials, WORDMARK, EXAMPLES } from "./site-ui.mjs";
 import { scoreRow } from "./signal-score.mjs";
 import { siteOrigin } from "./public-pages.mjs";
 import { weekBuys } from "./newsletter.mjs";
@@ -137,10 +137,10 @@ const receiptCell = x => { if (x.pending) return `<span class="muted" title="${e
 function receiptsTable(rows) {
   if (!rows.length) return `<div class="card scard"><p class="muted">No company had two or more insiders buy over $1M within 10 days in the last 6 months.</p></div>`;
   const shown = rows.slice(0, 12);
-  const body = shown.map(r => `<tr><td><a class="scell" href="/${esc(encodeURIComponent(r.ticker))}">${uiLogo(r.ticker, 24)}<span class="tick">${esc(r.ticker)}</span></a></td><td>${r.insiders} insiders</td><td class="r">${esc(money(r.total))}</td>
-<td class="muted">${esc(day(r.start))}</td><td class="r">${receiptCell(r.d30)}</td><td class="r">${receiptCell(r.d90)}</td><td class="r">${r.filing ? `<a class="muted slink" href="${esc(r.filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</td></tr>`).join("");
+  const body = shown.map(r => `<tr><td><a class="scell" href="/${esc(encodeURIComponent(r.ticker))}">${uiLogo(r.ticker, 24)}<span class="scell__t"><span class="tick">${esc(r.ticker)}</span><span class="t-micro muted c-sub">${r.insiders} insiders</span><span class="t-micro muted c-sub">${esc(day(r.start))}</span></span></a></td><td class="c-who">${r.insiders} insiders</td><td class="r">${r.filing ? `<a class="samt" href="${esc(r.filing)}" rel="nofollow noopener" target="_blank" title="Open the SEC Form 4">${esc(money(r.total))}</a>` : esc(money(r.total))}</td>
+<td class="muted c-first">${esc(day(r.start))}</td><td class="r">${receiptCell(r.d30)}</td><td class="r">${receiptCell(r.d90)}</td><td class="r c-filing">${r.filing ? `<a class="muted slink" href="${esc(r.filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</td></tr>`).join("");
   return `<div class="card scard stable"><table class="table"><caption class="sr-only">${esc(RECEIPT_RULE)}</caption>
-<thead><tr><th scope="col">Stock</th><th scope="col">Who bought</th><th scope="col" class="r">Amount</th><th scope="col">First buy</th><th scope="col" class="r">30 days later</th><th scope="col" class="r">90 days later</th><th scope="col"><span class="sr-only">Filing</span></th></tr></thead>
+<thead><tr><th scope="col">Stock</th><th scope="col" class="c-who">Who bought</th><th scope="col" class="r">Amount</th><th scope="col" class="c-first">First buy</th><th scope="col" class="r">30 days later</th><th scope="col" class="r">90 days later</th><th scope="col" class="c-filing"><span class="sr-only">Filing</span></th></tr></thead>
 <tbody>${body}</tbody></table></div>${rows.length > shown.length ? `<p class="t-label muted snote">${rows.length - shown.length} more match the rule; the 12 newest are shown.</p>` : ""}`;
 }
 
@@ -210,7 +210,7 @@ function hero(d, now) {
  <div class="swrap shero__in">
   <h1 class="t-display shero__h1" id="hero-h">${esc(HERO_H1)}</h1>
   <p class="shero__sub">${esc(SUB)}</p>
-  ${uiSearch("hero-q")}
+  ${uiSearch("hero-q", { examples: EXAMPLES })}
   <p class="t-label muted shero__terms">$1 for 7 days. Cancel online anytime.</p>
  </div>
  ${productShot(d, now)}
@@ -272,6 +272,7 @@ ${section("end-h", "Search any stock. See who's buying.", "It takes ten seconds 
 <div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/start" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
 ${uiFooter({ home: true })}
 ${scripts()}
+<script src="/assets/js/landing-nav.js?v=1" defer></script>
 </body></html>`;
   const title = "Insidir: see when CEOs buy and sell their own stock";
   return uiHead({ title, description: SUB, canonical: "/", origin }) + "\n" + body;

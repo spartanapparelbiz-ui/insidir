@@ -34,7 +34,7 @@ ${extra}</head>`;
 
 export const uiNav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="snav" data-ds-nav><div class="snav__in">
 <a class="wordmark" href="/" aria-label="Insidir home">${WORDMARK}</a>
-<nav class="snav__links" aria-label="Main"><a href="${h}#how">Platform</a><a href="${h}#pricing">Pricing</a><a href="${h}#faq">FAQ</a></nav>
+<nav class="snav__links" aria-label="Main"><a href="${h}#how" data-spy="how">How it works</a><a href="${h}#pricing" data-spy="pricing">Pricing</a><a href="${h}#faq" data-spy="faq">FAQ</a></nav>
 <div class="snav__end"><a class="btn btn--ghost" href="/signin.html">Log in</a><a class="btn btn--secondary" href="/start" data-cta="${esc(cta)}">Start for $1</a></div>
 </div></header>`; };
 
@@ -46,10 +46,12 @@ export const uiFooter = ({ home = false } = {}) => { const h = home ? "" : "/"; 
 </div></footer>`; };
 
 /* The ticker search: ds.js opens the stock's page and prefetches it while it is typed. */
-export const uiSearch = (id = "q") => `<form class="ssearch" action="/search" method="get" role="search" data-ds-search>
+export const EXAMPLES = Object.freeze(["NVDA", "TSLA", "AAPL"]);
+export const uiSearch = (id = "q", { examples = [] } = {}) => `<form class="ssearch" action="/search" method="get" role="search" data-ds-search>
 <label class="sr-only" for="${esc(id)}">Stock ticker</label>
 <input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
-<button class="btn btn--primary btn--lg" type="submit">See insiders</button></form>`;
+<button class="btn btn--primary btn--lg" type="submit">See insiders</button></form>${examples.length ? `
+<p class="schips"><span class="muted">Or try</span>${examples.map(t => `<a class="chip" href="/${esc(encodeURIComponent(t))}" data-chip="${esc(t)}">${esc(t)}</a>`).join("")}</p>` : ""}`;
 
 /* The free weekly email (src/newsletter.mjs); site-v2.js posts it. */
 export const uiEmailForm = (where = "page") => `<form class="smail" action="/v1/newsletter" method="post" data-v2-mail data-where="${esc(where)}">

@@ -16,7 +16,7 @@ a.muted.slink,.slink.muted{color:var(--muted)}
 .snav .wordmark svg{height:17px}
 .snav__links{display:flex;gap:var(--sp6);font-size:13px;line-height:18px;color:var(--muted)}
 .snav__links a{transition:color var(--fast)}
-.snav__links a:hover{color:var(--text)}
+.snav__links a:hover,.snav__links a[aria-current="true"]{color:var(--text)}
 .snav__end{display:flex;align-items:center;gap:var(--sp2);margin-left:auto}
 
 /* hero: centered, quiet, the search box is the one action */
@@ -30,6 +30,10 @@ a.muted.slink,.slink.muted{color:var(--muted)}
 .ssearch input::-webkit-search-cancel-button{display:none}
 .ssearch:focus-within{box-shadow:var(--hi),var(--edge-focus)}
 .shero__terms{margin-top:var(--sp4)}
+.schips{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:var(--sp2);margin-top:var(--sp4);font-size:13px;line-height:18px}
+.chip{position:relative;display:inline-flex;align-items:center;height:32px;padding:0 var(--sp3);border-radius:999px;background:var(--fill);font-weight:500;transition:background-color var(--fast)}
+.chip::before{content:"";position:absolute;inset:-6px -2px}
+.chip:hover{background:var(--fill-2)}
 
 /* the product shot: the app's own parts, tilted back, lit from above, fading out at the bottom */
 .shot{position:relative;max-width:1120px;margin:var(--sp24) auto 0;padding:0 var(--sp6);perspective:2400px}
@@ -67,6 +71,9 @@ a.muted.slink,.slink.muted{color:var(--muted)}
 .scard{padding:var(--sp3) var(--pad)}
 .stable{overflow-x:auto;padding:var(--pad)}
 .scell{display:inline-flex;align-items:center;gap:var(--sp2)}
+.scell__t{display:grid}
+.c-sub{display:none;white-space:nowrap}
+.samt:hover{text-decoration:underline;text-underline-offset:3px}
 
 /* live this week */
 .scount{display:flex;gap:var(--sp16);margin:0 0 var(--sp8)}
@@ -184,6 +191,9 @@ a.muted.slink,.slink.muted{color:var(--muted)}
   .wrow .mono{display:none}
   .wrow__person{font-size:13px;line-height:18px;color:var(--muted)}
   .slong{display:none}.sshort{display:inline}
+  .c-who,.c-first,.c-filing{display:none}.c-sub{display:block}
+  .stable .table th,.stable .table td{padding-left:var(--sp2);padding-right:var(--sp2)}
+  .stable .table th{white-space:normal}.stable .scell .logo{display:none}
   .smail__row{flex-direction:column}
   .sprice{padding:var(--sp6)}
   .send{gap:var(--sp10)}

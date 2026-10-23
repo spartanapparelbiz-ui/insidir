@@ -28,6 +28,10 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   assert.equal(FIXED_LINE, H1_TEXT);
   assert.match(html, /placeholder="Type a stock: NVDA, TSLA, PEP"/);
   assert.match(html, />See insiders<\/button>/);
+  // Nobody stares at an empty box: three example stocks under it. The nav names what the section is.
+  assert.match(html, /<p class="schips"><span class="muted">Or try<\/span><a class="chip" href="\/NVDA" data-chip="NVDA">NVDA<\/a><a class="chip" href="\/TSLA" data-chip="TSLA">TSLA<\/a><a class="chip" href="\/AAPL" data-chip="AAPL">AAPL<\/a><\/p>/);
+  assert.match(html, /<a href="#how" data-spy="how">How it works<\/a><a href="#pricing" data-spy="pricing">Pricing<\/a><a href="#faq" data-spy="faq">FAQ<\/a>/);
+  assert.doesNotMatch(html, />Platform</);
   assert.match(html, /\$1 for 7 days\. Cancel online anytime\./);
   assert.doesNotMatch(html, /Explore Insidir|View the platform|Financial intelligence/, "the two vague buttons and the abstract headline are gone");
   // The product shot is the app's own parts with real numbers: the week's biggest buy, its sentence, its score, its stock.

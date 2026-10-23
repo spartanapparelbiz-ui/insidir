@@ -49,7 +49,7 @@ test("the page: the last 3 trades in plain English with their filings, the rest 
   assert.equal((html.match(/See the SEC filing/g) || []).length, FREE_TRADES, "each linked to its filing");
   assert.ok(!html.includes("x5/form4.xml") && !html.includes("x6/form4.xml"), "locked trades are not in the page, not even blurred");
   assert.match(html, /4 more insider trades at EXMP in the last 12 months\./);
-  assert.match(html, /href="\/start\?t=EXMP" data-cta="ticker-unlock">Unlock for \$1<\/a>/);
+  assert.match(html, /href="\/start\?t=EXMP" data-cta="ticker-unlock">Start for \$1<\/a>/);
   assert.match(html, /Research, not investment advice\./);
   assert.match(html, /data-v2-mail/, "the free weekly email form");
   assert.match(html, /"@type":"Corporation","name":"Example","tickerSymbol":"EXMP"/);
@@ -63,7 +63,9 @@ test("a stock with no open-market trades says so plainly and shows its latest ot
   const query = fakeQuery({ [LATEST_ANY_SQL]: { rows: [line(0, { transaction_code: "A", category: "other", estimated_value: null })] }, [ENTITY_SQL]: { rows: [{ cik: "1", name: "QUIET CO" }] } });
   const d = await tickerData(query, "QUIE");
   const html = renderTickerPage(d, { origin: "https://insidir.example" });
-  assert.match(html, /No insider at Example bought or sold QUIE stock on the open market in the last 12 months\./);
+  assert.match(html, /No insider at Example has bought or sold QUIE stock on the open market in the last 12 months, so there is nothing to show here yet\./);
+  assert.match(html, /Try a popular one:<\/span><a class="v2-chip" href="\/NVDA">NVDA<\/a><a class="v2-chip" href="\/TSLA">TSLA<\/a><a class="v2-chip" href="\/AAPL">AAPL<\/a>/, "never a dead end");
+  assert.doesNotMatch(html, /Form 4, such as/, "no jargon in the explanation");
   assert.match(html, /Get the next QUIE insider trade the minute it's filed\./);
   assert.equal(await tickerData(fakeQuery(), "NOPE"), null, "an unknown symbol has no page");
 });
@@ -78,7 +80,11 @@ test("routing: canonical upper case, /search, the old URLs, unknown symbols fall
   assert.deepEqual([(await go("/search?t=%24exmp")).headers.location], ["/EXMP"]);
   assert.deepEqual([(await go("/search?t=%3Cx%3E")).headers.location], ["/"]);
   assert.deepEqual([(await go("/insider-trading/exmp")).headers.location], ["/EXMP"]);
-  assert.equal((await go("/ZZZZ")).done, false, "unknown: the static site answers (its 404)");
+  const unknown = await go("/ZZZZ");
+  assert.equal(unknown.status, 404, "unknown: a 404 that still helps");
+  assert.match(String(unknown.body), /We couldn't find a stock called ZZZZ\./);
+  assert.match(String(unknown.body), /href="\/NVDA">NVDA</);
+  assert.match(String(unknown.body), /<meta name="robots" content="noindex">/);
   assert.equal((await go("/pricing")).done, false);
   const og = await go("/og/EXMP.png");
   assert.equal(og.headers["content-type"], "image/png");
