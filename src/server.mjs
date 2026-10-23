@@ -12,6 +12,7 @@ import { purgeUserTokens } from "./account-security.mjs";
 import { purgeAdminAuth } from "./admin-auth.mjs";
 import { queueTrialReminders } from "./billing-notices.mjs";
 import { queueTrialEmails } from "./trial-emails.mjs";
+import { refreshTrackRecords } from "./track-record.mjs";
 import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from "./research-events.mjs";
 import { loadOwnership } from "./sec.mjs";
 import { persistFiling } from "./db.mjs";
@@ -64,6 +65,8 @@ async function main() {
   }
   // Research events (src/research-events.mjs): incremental, idempotent; also covers imports started by /v1/internal/ingest.
   if (workers) every("research-events", 15 * 60 * 1000, 90 * 1000, () => buildResearchEvents({ query }));
+  // Insider track records (src/track-record.mjs): returns 1, 3 and 6 months after each open-market trade, every 30 minutes.
+  if (workers) every("track-records", 30 * 60 * 1000, 3 * 60 * 1000, () => refreshTrackRecords(query));
   // Alerts (src/notifications.mjs): new events to the members watching them every 5 minutes; immediate emails every
   // 5 minutes and daily digests hourly (each member at their digest hour). Emails wait in the outbox for delivery.
   if (workers) {

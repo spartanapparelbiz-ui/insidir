@@ -352,6 +352,8 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
         if (log.photos.length <= ctx.__photosQueued) return json(200, { ticker: "AAPL", complete: false, queued: true, photos: {}, names: {}, leaders: [], sources: {} });
         return json(200, url.searchParams.get("ticker") === "AAPL" ? COMPANY_PHOTOS : { complete: true, photos: {}, names: {}, leaders: [] });
       }
+      // The track record (src/track-record.mjs): no open-market history in these fixtures.
+      if (/^\/v1\/people\/\d+\/track-record$/.test(p)) return json(200, { overall: { buys: { count: 0 }, sells: { count: 0 } }, companies: [], trades: [], horizons: [] });
       // GET /v1/people/<cik>: Tim Cook's personnel file; any other CIK has no imported records.
       if (p.startsWith("/v1/people/")) {
         const c = decodeURIComponent(p.slice("/v1/people/".length));

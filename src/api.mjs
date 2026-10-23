@@ -45,6 +45,7 @@ import {costReport,timed} from "./cost-analytics.mjs";
 import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mjs";
 import {searchEntities,entityRecord,resolveEntity,padCik,KINDS} from "./sec-directory.mjs";
 import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
+import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -268,6 +269,7 @@ async function followedPeopleUpdates(userId,limit,run=query){
   const missing=[...new Set(people.map(row=>row.last_id).filter(id=>id!=null&&!byId.has(id)))];
   if(missing.length)for(const row of (await run(TRANSACTIONS_BY_ID_SQL,[missing])).rows)byId.set(row.id,row);
   await withJointOwners([...byId.values()],run,joint);
+  await withTrackRecords([...byId.values()],run);
   return {
     people:people.map(row=>({owner_cik:row.owner_cik,owner_name:row.owner_name??null,followed_at:row.followed_at,
       ticker:row.ticker??null,issuer_name:row.issuer_name??null,
@@ -355,6 +357,8 @@ async function route(req,res,ctx){
     if(handled!==false)return;
   }
   // GET /v1/people/<cik>: one reporting person's profile (src/person-profile.mjs); product data.
+  // An insider's track record (src/track-record.mjs): before /v1/people/<cik>, which it extends.
+  if(await handleTrackRecordRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
   if(await handlePersonRoute(req,res,u,{query:ctx.query,requireUser:async r=>decision.user||requireUser(r,ctx)})!==false)return;
   if(p.startsWith("/v1/billing/")) { const result=await billingRoutes(req,res,p,json,{currentUser:ctx.currentUser,env:ctx.env,stripe:ctx.stripe,query:ctx.query,limiter:ctx.limiter}); if(result!==false) return result; }
   if(p.startsWith("/v1/creators/admin/")) { const result=await creatorAdminRoutes(req,res,p,json,{query:ctx.query,env:ctx.env,limiter:ctx.limiter}); if(result!==false) return result; }
@@ -425,6 +429,7 @@ async function route(req,res,ctx){
     if(!f.rows.length)throw failure(404,"Filing not found");
     const transactions=await query("SELECT * FROM sec_transactions WHERE accession=$1 ORDER BY id",[accession]);
     await withJointOwners(transactions.rows,query,await hasFilingOwners(query));
+    await withTrackRecords(transactions.rows,query);
     return json(res,200,{filing:f.rows[0],transactions:transactions.rows,note:"A Form 4 may include sales, grants, option exercises, and amendments; inspect transaction codes."});
   }
   if(p==="/v1/transactions" && m==="GET"){
@@ -438,6 +443,7 @@ async function route(req,res,ctx){
       WHERE f.ingest_status='parsed' AND ($1::text IS NULL OR t.ticker=$1) AND ($2::text IS NULL OR t.category=$2)
       ORDER BY t.transaction_date DESC NULLS LAST,f.published_at DESC LIMIT $3 OFFSET $4`,[t,category,limit,offset]);
       await withJointOwners(r.rows,query,await hasFilingOwners(query));
+      await withTrackRecords(r.rows,query);
       return r;
     });
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC Form 4",disclaimer:"Reported purchases and sales are not recommendations or predictive signals."});
@@ -758,6 +764,7 @@ async function route(req,res,ctx){
       )
       ORDER BY f.published_at DESC LIMIT 100`,[user.id]);
     await withJointOwners(results.rows,ctx.query,await hasFilingOwners(ctx.query));
+    await withTrackRecords(results.rows,ctx.query);
     return json(res,200,{items:results.rows,delivery:pushReady()?"in_app_and_opt_in_web_push":"in_app_on_demand",note:"Matched against followed tickers and reporting-owner SEC CIKs. Verify official sources."});
   }
   if(p==="/v1/internal/ingest" && m==="POST"){

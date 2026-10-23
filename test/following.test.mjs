@@ -26,6 +26,8 @@ const J = Object.fromEntries(Object.entries(FOLLOW_SQL.joint).map(([k, v]) => [k
 const FOLLOW_SET = "fp AS MATERIALIZED (SELECT n.bare,LPAD(n.bare,10,'0') AS owner_cik,MIN(n.created_at) AS created_at FROM (SELECT LTRIM(owner_cik,'0') AS bare,created_at FROM followed_people WHERE user_id=$1 ORDER BY created_at DESC LIMIT 150) n WHERE n.bare<>'' GROUP BY n.bare)";
 const BY_ID_SQL = "SELECT t.*,f.issuer_name,f.published_at,f.is_amendment,f.rule_10b5_1 FROM sec_transactions t JOIN sec_filings f ON f.accession=t.accession WHERE t.id=ANY($1::text[])";
 const TABLE = flat(OWNERS_TABLE_SQL);
+// The trade-card track records (src/track-record.mjs), one batched lookup for the rows the route returns.
+const TRACK_SQL = "SELECT r.* FROM insider_track_records r JOIN unnest($1::text[],$2::text[]) AS x(o,i) ON r.owner_key=x.o AND r.issuer_key=x.i";
 const PRESENT = { [TABLE]: { rows: [{ present: true }], rowCount: 1 } };
 const DISCLAIMER = "Reported purchases and sales are not recommendations or predictive signals.";
 
@@ -352,7 +354,7 @@ test("response shape: numbers are numbers, dates ISO strings, rows like /v1/tran
   for (const p of body.people) for (const key of ["filings_30d", "transactions_30d", "purchases_30d_value", "sales_30d_value"])
     assert.equal(typeof p[key], "number", p.owner_cik + " " + key);
   // Three fixed round trips after the table check; only the missing latest line is looked up, never one query per person.
-  assert.deepEqual(query.statements.map(s => s.sql), [TABLE, S.people, S.items, BY_ID_SQL]);
+  assert.deepEqual(query.statements.map(s => s.sql), [TABLE, S.people, S.items, BY_ID_SQL, TRACK_SQL]);
   assert.deepEqual(query.statements[3].params, [[bobLast.id]]);
 });
 
@@ -365,7 +367,7 @@ test("no by-id lookup when every latest line is already in the feed; a vanished 
     assert.deepEqual(body.people.map(p => p.last?.id), [a.id, b.id]);
     assert.equal(body.following, 2);
   });
-  assert.deepEqual(query.statements.map(s => s.sql), [TABLE, S.people, S.items]);
+  assert.deepEqual(query.statements.map(s => s.sql), [TABLE, S.people, S.items, TRACK_SQL]);
   // Two people sharing one missing id (cannot happen, but the lookup is de-duplicated) and a line deleted by a re-ingest.
   query = fakeQuery({ [S.people]: { rows: [person("0000000100", "gone:N:0"), person("0000000100", "gone:N:0")] } });
   await withApi(query, async base => {

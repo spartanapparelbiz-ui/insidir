@@ -346,6 +346,9 @@ const latestTrade=rows=>rows.filter(x=>kind(x)!=="other").reduce((b,x)=>!b||newe
 /* "Katherine L. Adams bought 800 shares at $226.40 = $181,120 · traded Oct 12, filed Oct 14 (2 days later)"; the name opens
    the person's file. The deal and the dates are two lines: the " · " between them stays in the text (zero-sized where
    the dates' line begins), so no line ends on it. `tail` (the New mark) closes the dates' line. */
+/* The insider's track record at this company, one line, from the API (src/track-record.mjs withTrackRecords): "This
+   director's past buys: 6/8 up after 3 months." It opens the person's track record. Absent when there is none. */
+const trackNote=x=>{const t=x&&x.track_record;return t&&t.line&&/^person\.html\?cik=\d+#track-record$/.test(String(t.url||""))?'<a class="rd-track" href="'+E(t.url)+'">'+E(t.line)+'</a>':"";};
 function tradeLine(x,{ticker=false,tail=""}={}){
  const d=describe(x,{ticker}),v=valueText(x),lag=lagOf(x);
  // The price and the value it comes to are one unit ("$226.40 = $181,120"), so a line never begins with "=".
@@ -361,7 +364,7 @@ function watchDetail(t,trades){
  const rows=rowsFor(t,trades),best=latestTrade(rows),look=lookups.get(t);
  if(best){
   const since=rows.filter(x=>kind(x)==="other"&&newer(x,best)).reduce((b,x)=>!b||newer(x,b)?x:b,null);
-  return {row:best,isNew:isNew(best),html:tradeLine(best,{tail:isNew(best)?" "+NEW:""})+
+  return {row:best,isNew:isNew(best),html:tradeLine(best,{tail:isNew(best)?" "+NEW:""})+trackNote(best)+
    (since?'<small>Also filed since: '+E(noun(since))+' by <span class="rd-ent rd-ent--inline">'+whoTile(since,"sm")+personName(since)+'</span> ('+E(tradedShort(since.transaction_date)||filedShort(since.published_at))+')</small>':'')};
  }
  if(look?.error)return {html:'<span class="rd-muted">Latest purchase or sale unavailable right now</span>'};
@@ -501,7 +504,7 @@ function tradeRow(x,i){
   '<td data-label="Person" class="rd-td-who"><span class="rd-ent">'+whoTile(x,"sm")+personName(x)+'</span></td>'+
   '<td data-label="Company" class="rd-td-co">'+(t?'<span class="rd-ent">'+coTile(x,"sm")+'<a data-ent="company" href="'+E(companyHref(t))+'">'+E(t)+'</a></span>'+(x.issuer_name?'<span class="rd-sub">'+E(companyName(x.issuer_name))+'</span>':''):
    '<span class="rd-ent">'+coTile(x,"sm")+'<span data-ent="company">'+E(x.issuer_name?companyName(x.issuer_name):"Issuer not reported")+'</span></span><span class="rd-sub">No ticker</span>')+'</td>'+
-  '<td data-label="What happened" class="rd-td-what">'+badge(x)+(notes?'<span class="rd-sub">'+E(notes)+'</span>':'')+'</td>'+
+  '<td data-label="What happened" class="rd-td-what">'+badge(x)+(notes?'<span class="rd-sub">'+E(notes)+'</span>':'')+trackNote(x)+'</td>'+
   '<td data-label="Shares" class="rd-num rd-td-shares"><span class="rd-qty rd-qty--'+k+'">'+E(signedShares(x))+'</span></td>'+
   // Phones read a missing price or value in words on the record's second line ("no price reported").
   '<td data-label="Price" class="rd-num rd-td-price">'+(F.digits(p)!==null?E(price(p)):'<span class="rd-muted"><span class="rd-long">No price</span><span class="rd-short">no price reported</span></span>')+'</td>'+
