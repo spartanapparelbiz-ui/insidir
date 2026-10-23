@@ -272,3 +272,6 @@ body.v13.v3-auth .auth-ledger dd{font:400 13px/1.6 var(--hf-mono)!important;colo
   body.v13.v3-auth .auth-btn__spinner{animation:none!important;border-top-color:var(--hf-bg)!important}
 }
 }
+
+/* The "sign up with an email code" link stands alone on its line: a 24px-tall target (WCAG 2.2 target size). */
+.auth-next .auth-link{display:inline-flex;align-items:center;min-height:24px}

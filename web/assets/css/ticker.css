@@ -20,7 +20,7 @@
 .bars{display:flex;align-items:center;gap:2px;height:24px}
 .bars i{display:block;width:4px;border-radius:1px;background:var(--muted)}
 .bars i.up{background:var(--up)} .bars i.down{background:var(--down)}
-.tk-row-link{color:var(--muted)}
+.tk-row-link{display:inline-flex;align-items:center;min-height:24px;color:var(--muted)}
 .tk-row-link:hover{color:var(--text)}
 .tk-filing{grid-template-columns:96px minmax(0,1fr) auto}
 .tk-about{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--sp10)}

@@ -241,7 +241,7 @@ ${f ? `<a class="chg chg--up lrow__amt row__link" href="${esc(f)}" rel="nofollow
   <div class="show__vis show__note"><span class="show__app" aria-hidden="true">i.</span><span><span class="show__note-top"><span class="strong">Insidir</span><span class="t-micro muted">now</span></span><span class="t-label">${esc(sentence(example))}</span></span></div></li>
 </ol>` : "";
   const body = `<body class="ui site">
-<a class="sr-only" href="#main">Skip to content</a>
+<a class="skip" href="#main">Skip to content</a>
 ${uiNav({ cta: "nav", home: true })}
 <main id="main">
 ${hero(d, now)}

@@ -24,7 +24,7 @@
 <script defer src="/assets/js/posthog.js?v=1"></script>
 </head>
 <body class="ui">
-<a class="sr-only" href="#main">Skip to content</a>
+<a class="skip" href="#main">Skip to content</a>
 <div data-ui-shell data-page="company">
 
 <!-- No ticker in the address: a quiet way in. -->
@@ -47,7 +47,7 @@
     <div class="tk-chart__head"><div class="legend" title="Dot size follows the amount"><span><i class="l-buy"></i>Buy</span><span><i class="l-sell"></i>Sale</span><span><i class="l-plan"></i>10b5-1 plan sale</span></div>
       <div class="seg" role="group" aria-label="Chart range">
         <button type="button" data-range="1M" aria-pressed="false">1M</button><button type="button" data-range="3M" aria-pressed="false">3M</button><button type="button" data-range="6M" aria-pressed="false">6M</button><button type="button" data-range="1Y" aria-pressed="true">1Y</button><button type="button" data-range="5Y" aria-pressed="false">5Y</button></div></div>
-    <div class="chart tk-plot" data-chart role="img" aria-label="Daily closes with insider trades marked"><div class="skel" style="height:100%"></div></div>
+    <div class="chart tk-plot" data-chart role="group" aria-label="Daily closes with insider trades marked"><div class="skel" style="height:100%"></div></div>
   </section>
 
   <nav class="tabs" role="tablist" aria-label="Sections">

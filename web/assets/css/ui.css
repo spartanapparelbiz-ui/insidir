@@ -59,6 +59,10 @@ body.ui::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200
 .ui :focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r-sm)}
 .ui [hidden]{display:none!important}
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* The skip link: off screen until a keyboard user tabs to it, then a full-size button at the top left */
+.skip{position:fixed;left:var(--sp4);top:-64px;z-index:300;display:inline-flex;align-items:center;height:44px;padding:0 var(--sp4);border-radius:var(--r-ctl);
+  background:var(--text);color:var(--bg);font-size:13px;line-height:18px;font-weight:600;transition:top var(--fast)}
+.skip:focus{top:var(--sp4)}
 .ui *{scrollbar-width:thin;scrollbar-color:var(--rule-2) transparent}
 .ui ::-webkit-scrollbar{width:6px;height:6px}
 .ui ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:10px;border:0;background-clip:padding-box}
@@ -183,11 +187,14 @@ body.ui::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200
 .chart__grid b{top:-8px}
 .chart__x span{bottom:0;transform:translateX(-50%)}
 .chart__x span.is-first{transform:none}.chart__x span.is-last{transform:translateX(-100%)}
-.mk{position:absolute;width:var(--d,10px);height:var(--d,10px);transform:translate(-50%,-50%);border-radius:50%;pointer-events:auto;cursor:pointer;
+/* a marker: the dot is sized by the trade's dollars; the button around it is always 24px, so it is easy to tap */
+.mk{position:absolute;z-index:1;width:24px;height:24px;padding:0;border:0;background:none;transform:translate(-50%,-50%);border-radius:50%;pointer-events:auto;cursor:pointer;color:var(--up)}
+.mk::before{content:"";position:absolute;left:50%;top:50%;width:var(--d,10px);height:var(--d,10px);transform:translate(-50%,-50%);border-radius:50%;background:currentColor;
   box-shadow:var(--cut);transition:transform var(--fast) var(--spring)}
-.mk--buy{background:var(--up)} .mk--sell{background:var(--down)}
-.mk--plan{background:var(--bg);box-shadow:var(--cut),var(--ring-plan)}
-.mk:hover,.mk:focus-visible{transform:translate(-50%,-50%) scale(1.25);z-index:2;border-radius:50%}
+.mk--buy{color:var(--up)} .mk--sell{color:var(--down)}
+.mk--plan::before{background:var(--bg);box-shadow:var(--cut),var(--ring-plan)}
+.mk:hover,.mk:focus-visible{z-index:2}
+.mk:hover::before,.mk:focus-visible::before{transform:translate(-50%,-50%) scale(1.25)}
 .chart__now{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--text);transform:translate(-50%,-50%);pointer-events:none}
 .chart__now::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:var(--text);opacity:0;animation:pulse 2.4s var(--spring) infinite}
 .chart__tip{min-width:128px}

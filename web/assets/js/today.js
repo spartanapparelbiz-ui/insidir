@@ -39,7 +39,7 @@ function renderHero(el,h){
  </div>
  <div class="hero__chart"><div class="hero__chart-head"><div class="hero__px" data-px><span class="t-section">&nbsp;</span></div>
   <div class="seg" role="group" aria-label="Chart range">${["1M","3M","6M","1Y"].map(r=>`<button type="button" data-range="${r}" aria-pressed="${r==="6M"}">${r}</button>`).join("")}</div></div>
-  <div data-chart class="chart" role="img" aria-label="${esc(t.ticker)} daily closes with insider trades marked"></div>
+  <div data-chart class="chart" role="group" aria-label="${esc(t.ticker)} daily closes with insider trades marked"></div>
   <div class="legend" title="Dot size follows the amount"><span><i class="l-buy"></i>Buy</span><span><i class="l-sell"></i>Sale</span><span><i class="l-plan"></i>10b5-1 plan sale</span></div></div>`;
  hydrateLogos(el);settle(el);
  roll(el.querySelector("[data-hero-num]"),Number(t.value)||0,v=>big(v),{html:true});

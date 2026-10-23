@@ -8,13 +8,15 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { serveStatic } from "../src/web.mjs";
 import { chromium } from "playwright-core";
+import { uiAnswer } from "./fixtures/ui-api.mjs";
 
 const AXE = readFileSync(createRequire(import.meta.url).resolve("axe-core/axe.min.js"), "utf8");
 const F = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", import.meta.url), "utf8"));
 const C = JSON.parse(readFileSync(new URL("./fixtures/coverage-api.json", import.meta.url), "utf8"));
-const PAGES = ["/", "/pricing.html", "/platform.html", "/insidir-intelligence.html", "/signup.html", "/signin.html", "/subscribe.html", "/dashboard.html", "/intelligence.html", "/alerts.html", "/watchlist.html", "/people.html", "/entity.html?cik=1081316"];
+const PAGES = ["/", "/pricing.html", "/platform.html", "/insidir-intelligence.html", "/signup.html", "/signin.html", "/subscribe.html", "/dashboard.html", "/company.html?ticker=PLHD", "/intelligence.html", "/alerts.html", "/watchlist.html", "/people.html", "/entity.html?cik=1081316"];
 const me = { user: { id: 1, email: "reader@example.com" }, access: { active: true, plan: "pro", status: "active" } };
-const answer = p => p === "/v1/me" ? me : p === "/v1/entities/1081316" ? C.entity : p === "/v1/entities/search" ? C.search : p === "/v1/coverage" ? C.coverage : p === "/v1/me/intelligence/briefing" ? F.briefing : p === "/v1/intelligence/mirror/managers" ? F.managers : p === "/v1/ai/status" ? F.aiStatus : { items: [] };
+// The rebuilt pages (Today, the ticker page, Alerts) are checked with real-looking data from scripts/fixtures/ui-api.json.
+const answer = p => p === "/v1/me" ? me : p === "/v1/entities/1081316" ? C.entity : p === "/v1/entities/search" ? C.search : p === "/v1/coverage" ? C.coverage : p === "/v1/me/intelligence/briefing" ? F.briefing : p === "/v1/intelligence/mirror/managers" ? F.managers : p === "/v1/ai/status" ? F.aiStatus : uiAnswer(p) || { items: [] };
 const server = createServer((req, res) => {
   const u = new URL(req.url, "http://x");
   if (u.pathname.startsWith("/v1/")) { res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify(answer(u.pathname))); return; }

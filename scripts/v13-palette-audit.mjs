@@ -64,7 +64,10 @@ const ALL_PAGES = [
   ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html#token=" + "a".repeat(64)], ["verify-email", "/verify-email.html#token=" + "b".repeat(64)], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
-const pages = wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES;
+// Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
+// scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
+const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker"]);
+const pages = (wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES).filter(([k]) => !REBUILT.has(k));
 
 /* ---------- API fixtures (mock only; production reads the real routes) ---------- */
 const source = "https://www.sec.gov/Archives/edgar/data/320193/000032019326000077/aapl-report.htm";
