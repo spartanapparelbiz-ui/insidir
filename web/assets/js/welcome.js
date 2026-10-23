@@ -135,7 +135,7 @@
       consent = prefs.consent;
       if (prefs.consent?.text) $("[data-wl-consent-text]").textContent = prefs.consent.text;
       if (prefs.emailAlerts && prefs.emailAlerts !== "off") { $("[data-wl-email]").textContent = "Email alerts are on"; $("[data-wl-email]").disabled = true; $("[data-wl-consent]").closest("label").hidden = true; }
-      else if (!prefs.emailAvailable) { $("[data-wl-email]").hidden = true; $("[data-wl-consent]").closest("label").hidden = true; }
+      else if (!prefs.emailAvailable) $("[data-wl-email]").closest(".wl-opt").hidden = true;
     } catch { /* the buttons explain themselves on failure */ }
   }
   $("[data-wl-consent]").addEventListener("change", e => { $("[data-wl-email]").disabled = !e.currentTarget.checked; });
