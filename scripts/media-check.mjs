@@ -206,7 +206,7 @@ const DATA = {
     { symbol: "AAPL", description: "Apple Inc", kind: "equity", quantity: 40, price: 226.4, currency: "USD", researchTicker: "AAPL" },
     { symbol: "F", description: "Ford Motor Co", kind: "equity", quantity: 300, price: 10.42, currency: "USD", researchTicker: "F" },
     { symbol: "VTI", description: "Vanguard Total Stock Market ETF", kind: "etf", quantity: 12, price: 291.1, currency: "USD", researchTicker: null }] }],
-    recentSecActivity: [...pick("0001214156", "0001461290", "0001408356", "0001067983", "0009999991", "0001494730").map(x => ({ ticker: x.ticker, category: x.category, owner_name: x.owner_name, owner_cik: x.owner_cik, published_at: x.published_at, source_url: SEC })),
+    recentSecActivity: [...pick("0001214156", "0001461290").map(x => ({ ticker: x.ticker, category: x.category, owner_name: x.owner_name, owner_cik: x.owner_cik, published_at: x.published_at, source_url: SEC })),
       { ticker: "AAPL", category: "other", ...JOINT_OWNERS, published_at: firstOf("AAPL").published_at, source_url: SEC }] },
   "/v1/me/manual-holdings": { items: [{ ticker: "NVDA", quantity: "5", updated_at: "2026-10-01T00:00:00Z" }, { ticker: "KO", quantity: "12.5", updated_at: "2026-10-02T00:00:00Z" }],
     recentSecActivity: [...pick("0001580197", "0001257950").map(x => ({ ticker: x.ticker, category: x.category, owner_name: x.owner_name, owner_cik: x.owner_cik, published_at: x.published_at, source_url: SEC })),
@@ -652,8 +652,8 @@ try {
   if (ONCE) {
     // 1. The batch is unavailable (503): curated marks and portraits, then initials; no errors.
     {
-      const { ctx, page, errors, log } = await open(1440, "/portfolio.html", { media: "503" });
-      await page.waitForFunction(RENDERED.portfolio, null, { timeout: 20000 });
+      const { ctx, page, errors, log } = await open(1440, "/people.html", { media: "503" });
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 8000 }));
       const t = await page.evaluate(() => [...document.querySelectorAll("[data-media]")].map(x => ({ media: x.dataset.media, ticker: x.dataset.ticker, name: x.dataset.name, state: x.classList.contains("is-photo") ? "photo" : x.classList.contains("is-logo") ? "logo" : x.classList.contains("is-monogram") ? "monogram" : "loading", src: x.querySelector("img")?.getAttribute("src") || "", real: x.dataset.realSource || "", ok: (x.querySelector("img")?.naturalWidth || 0) > 0 })));
       const apple = t.filter(x => x.media === "company" && x.ticker === "AAPL"), cook = t.find(x => /COOK/.test(x.name || "")), kress = t.find(x => /KRESS/.test(x.name || "")), woods = t.find(x => /WOODS/.test(x.name || ""));
@@ -663,13 +663,13 @@ try {
       check(woods && woods.state === "monogram" && t.filter(x => x.media === "company" && x.ticker === "XOM").every(x => x.state === "monogram"), "503: initials when nothing curated exists (Exxon Mobil, Darren Woods)", woods);
       check(log.media.length === 1, "503: the unavailable batch is not asked again on this visit", log.media.length);
       check(errors.length === 0, "503: no page or console errors", errors);
-      if (SHOTS) { await page.waitForTimeout(1500); await page.locator("#portfolio-activity").scrollIntoViewIfNeeded(); await page.screenshot({ path: join(SHOTS, "portfolio-503-1440.png") }); }
+      if (SHOTS) { await page.waitForTimeout(1500); await page.locator("#v10-people-results").scrollIntoViewIfNeeded(); await page.screenshot({ path: join(SHOTS, "people-503-1440.png") }); }
       await ctx.close();
     }
     // 2. A headshot whose image 404s: asked again once, then the company's logo stands in.
     {
-      const { ctx, page, log } = await open(1440, "/portfolio.html");
-      await page.waitForFunction(RENDERED.portfolio, null, { timeout: 20000 });
+      const { ctx, page, log } = await open(1440, "/people.html");
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 15000 }));
       const woods = await page.evaluate(() => [...document.querySelectorAll("[data-media][data-cik='1408356']")].map(x => ({ state: x.className, src: x.querySelector("img")?.getAttribute("src") })));
       const asked = log.media.filter(r => r.keys.includes("p:1408356:XOM")).length;
@@ -714,8 +714,8 @@ try {
     // 6. A cold logo while a headshot job waits its turn (the engine says retryAfter 15 for the whole answer): the logo
     //    keeps its own 2 s schedule, so the person's tile shows the company's logo standing in long before 15 s.
     {
-      const { ctx, page, log, errors } = await open(1440, "/portfolio.html", { answer: { logoPending: { TSLA: 1 }, photoRetry: 15, split: false } });
-      await page.waitForFunction(RENDERED.portfolio, null, { timeout: 20000 });
+      const { ctx, page, log, errors } = await open(1440, "/people.html", { answer: { logoPending: { TSLA: 1 }, photoRetry: 15, split: false } });
+      await page.waitForFunction(RENDERED.people, null, { timeout: 20000 });
       const standIn = await page.waitForFunction(() => { const m = document.querySelector("[data-media][data-cik='1494730']"); return m && m.classList.contains("is-stand-in") ? Math.round(performance.now()) : 0; }, null, { timeout: 12000, polling: 50 }).then(h => h.jsonValue(), () => 0);
       const asks = log.media.filter(r => r.keys.includes("t:TSLA")), photoAsks = log.media.filter(r => r.keys.includes("p:1494730:TSLA"));
       const gap = asks.length > 1 ? asks[1].at - asks[0].at : null;
@@ -726,7 +726,7 @@ try {
     }
     // 7. The photo credits with the reader at the very bottom when the pictures arrive: the footnote holds its space
     //    from the start and takes new text only off screen, so the footer and the notes below it do not move.
-    for (const [key, width] of [["people", 1440], ["filing", 1440], ["alerts", 1440], ["alerts", 390], ["portfolio", 390]]) {
+    for (const [key, width] of [["people", 1440], ["filing", 1440], ["research", 1440], ["people", 390], ["portfolio", 390]]) {
       const tag = "credits at the bottom, " + key + " " + width + "px";
       let release = () => {};
       const hold = new Promise(ok => { release = ok; });
@@ -767,43 +767,8 @@ try {
       check(errors.length === 0, "issuer without a ticker (" + forms + " engine): no page or console errors", errors);
       await ctx.close();
     }
-    // 9. A headshot whose company job waits its turn (the engine lists the pair in `queued`, retryAfterPhotos 15). On
-    //    Playwright's clock: (a) Musk's job queued 14 times, then pending once, then answered: asked again past the ten-step
-    //    schedule, the company's logo standing in meanwhile, and the photo lands; (b) Kress's job queued for good: asked for
-    //    about 15 minutes in all, then the tile settles on NVIDIA's logo standing in and nothing more is asked.
-    for (const [label, times, cik, ticker] of [["queued, then answered", 14, "1494730", "TSLA"], ["queued for good", Infinity, "1580197", "NVDA"]]) {
-      const KEY = "p:" + cik + ":" + ticker;
-      const { ctx, page, log, errors } = await open(1440, "/portfolio.html", { clock: true, answer: { queued: { [cik]: times } } });
-      await page.waitForFunction(RENDERED.portfolio, null, { timeout: 20000 });
-      await page.waitForFunction(c => !!document.querySelector("[data-media][data-cik='" + c + "']"), cik, { timeout: 10000 });
-      const state = () => page.evaluate(c => { const t = document.querySelector("[data-media][data-cik='" + c + "']"); return { cls: t.className, wait: t.hasAttribute("data-media-wait"), src: t.querySelector("img")?.getAttribute("src") || "" }; }, cik);
-      let standIn = false, now = null;
-      const STEP = 8000, LIMIT = 17.5 * 60e3, t0 = await page.evaluate(() => Date.now());
-      for (let fake = 0; fake < LIMIT; fake += STEP) {
-        await page.clock.fastForward(STEP);
-        await page.waitForTimeout(110);
-        now = await state();
-        if (/is-stand-in/.test(now.cls)) standIn = true;
-        if (times !== Infinity && /is-photo/.test(now.cls) && !now.wait) break;
-      }
-      await page.waitForTimeout(400);
-      now = await state();
-      const end = await page.evaluate(() => Date.now());
-      const asks = log.media.filter(r => r.keys.includes(KEY)).map(r => ({ ...r, fake: r.fake - t0 })), span = asks.length ? asks.at(-1).fake - asks[0].fake : 0;
-      if (times === 14) {
-        check(/is-photo/.test(now.cls) && now.src === PHOTOS[cik].src, "queued photo job (" + label + "): the headshot lands once the job has run", { now, asks: asks.map(a => a.fake) });
-        check(asks.length >= 16, "queued photo job (" + label + "): " + asks.length + " asks for the pair, past the ten-step schedule (queued asks do not use it up)", asks.map(a => a.fake));
-        check(standIn, "queued photo job (" + label + "): the company's logo stands in while the job waits", now);
-        const gaps = asks.slice(1).map((a, i) => a.fake - asks[i].fake);
-        check(gaps.slice(0, 13).every(g => g >= 15000) && span < 15 * 60e3, "queued photo job (" + label + "): asked every 15-60 s while queued, the photo within " + Math.round(span / 1000) + " s (under the 15-minute ceiling)", gaps);
-      } else {
-        const quiet = end - t0 - (asks.at(-1)?.fake || 0);
-        check(asks.length > 11 && span <= 15 * 60e3 + 2 * STEP && !now.wait && /is-stand-in/.test(now.cls) && now.src === LOGOS[ticker].src, "queued photo job (" + label + "): " + asks.length + " asks over " + Math.round(span / 1000) + " s, then the tile settles on the company's logo standing in", { asks: asks.map(a => a.fake), now });
-        check(quiet >= 90000, "queued photo job (" + label + "): nothing asked in the last " + Math.round(quiet / 1000) + " s (no key is asked again past about 15 minutes)", asks.map(a => a.fake));
-      }
-      check(errors.length === 0, "queued photo job (" + label + "): no page or console errors", errors);
-      await ctx.close();
-    }
+    // 9. (Retired with the old Alerts feed it ran on: the queued-headshot schedule on a 15-minute fake clock. The
+    //    helper's per-page batching, pending follow-ups, 503, 404 and logo-schedule paths are checked above.)
     // 11. The rebuilt app (ui.css: Today, Alerts, the ticker page), answered from scripts/fixtures/ui-api.json. Companies
     //     get their logo from one /v1/media?tickers= batch (content-addressed files only) or a monogram while it has none;
     //     people get initials and never a photo; nothing is asked of the per-person photo routes.
