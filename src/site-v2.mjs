@@ -1,6 +1,7 @@
 /* Shared server-rendered pieces for the v2 public pages (the landing page, /<TICKER>), on the design system in
  * web/assets/css/ds.css. One date format ("Oct 16, 2026"), one money format ("$1.2M"), tickers in Geist Mono upper
  * case, buy green and sell red only on trade data. Every trade carries its SEC filing link. */
+import { readFileSync } from "node:fs";
 import { roleWord } from "./track-record.mjs";
 
 export const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -88,6 +89,12 @@ export const LINE_SQL = `SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_c
 export const withRole = rows => rows.map(r => ({ ...r, role: role(r) }));
 
 /* ---------- page chrome ---------- */
+/* The two stylesheets are inlined (about 6 KB gzipped together): a phone on a slow connection paints the headline
+   without waiting for two more round trips. Read once at start-up; font URLs become absolute. */
+const css = name => readFileSync(new URL("../web/assets/css/" + name, import.meta.url), "utf8")
+  .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s*\n\s*/g, " ").replace(/url\(\.\.\/fonts\//g, "url(/assets/fonts/");
+const INLINE_CSS = css("ds.css") + css("site-v2.css");
+
 export function head({ title, description, canonical, origin, image = null, noindex = false, extra = "" }) {
   const url = origin + canonical;
   return `<!doctype html>
@@ -105,8 +112,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical
 <link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/ds.css?v=3">
-<link rel="stylesheet" href="/assets/css/site-v2.css?v=1">
+<style>${INLINE_CSS}</style>
 ${extra}</head>`;
 }
 // On the landing page the section links are same-page anchors (#how); elsewhere they lead to it (/#how).

@@ -51,7 +51,7 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   assert.match(html, /\$1 today\. We email you before you're charged\. Cancel in 2 clicks\./);
   assert.doesNotMatch(html, /\$29|founding|seats left|\$290|2 months free/i);
   // Proof is real or absent: no testimonials until a real one is published; no counters, timers or viewers invented.
-  assert.doesNotMatch(html, /v2-quote|people viewing|countdown|not live data/i);
+  assert.doesNotMatch(html.slice(html.indexOf("<body")), /v2-quote|people viewing|countdown|not live data/i, "(the inlined stylesheet may name the class)");
   assert.match(html, /<b>Nicholas<\/b>, founder/);
   assert.match(html, /Research, not investment advice\./);
   assert.match(html, /Not affiliated with the SEC\./);

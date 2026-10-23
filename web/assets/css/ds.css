@@ -5,7 +5,7 @@
 
 @font-face{font-family:"Geist";font-style:normal;font-weight:100 900;font-display:swap;src:url(../fonts/Geist-Variable.woff2) format("woff2")}
 @font-face{font-family:"Geist Mono";font-style:normal;font-weight:100 900;font-display:swap;src:url(../fonts/GeistMono-Variable.woff2) format("woff2")}
-@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;src:url(../fonts/JetBrainsMono-normal-latin.woff2) format("woff2");unicode-range:U+0000-00FF}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;src:url(../fonts/JetBrainsMono-mark.woff2) format("woff2");unicode-range:U+0020,U+002E,U+0064,U+0069,U+006E,U+0072,U+0073}
 
 :root{
   /* colour */
