@@ -133,7 +133,12 @@ const liveRow = (r, now) => {
 ${uiTrade(k, k === "sell" && r.rule_10b5_1 === true)}<span class="${amountCls(k)} lrow__amt">${esc(money(r.estimated_value) || "—")}</span>
 <time class="t-label muted lrow__ago" datetime="${esc(new Date(r.published_at).toISOString())}">${esc(ago(r.published_at, now) || "")}</time>`;
 };
-export const liveItems = (rows, now = Date.now()) => rows.filter(r => r.published_at).map(r => ({ id: String(r.id), html: liveRow(r, now) }));
+/* Each live row also carries its plain facts (the trade as filed, its filing), so other pages, such as the design
+ * system page, can show real filings with the app's own components. */
+export const liveItems = (rows, now = Date.now()) => rows.filter(r => r.published_at).map(r => ({ id: String(r.id), html: liveRow(r, now),
+  ticker: T(r), issuer: r.issuer_name || null, owner: r.owner_name || null, role: r.role || null, kind: kindOf(r), planned: kindOf(r) === "sell" && r.rule_10b5_1 === true,
+  value: r.estimated_value == null ? null : Number(r.estimated_value), day: r.transaction_date ? String(r.transaction_date instanceof Date ? r.transaction_date.toISOString() : r.transaction_date).slice(0, 10) : null,
+  filedAt: new Date(r.published_at).toISOString(), sentence: sentence(r), url: secUrl(r.source_url) }));
 
 const fmtInt = n => Number(n || 0).toLocaleString("en-US");
 // A result in 0.1% steps: the colour follows the shown value, so "0.0%" is never green or red.

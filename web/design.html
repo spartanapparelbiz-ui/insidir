@@ -72,10 +72,10 @@
       <div class="spec"><span class="t-display">Display</span><code>76/80 · 500 · −0.045em · landing</code></div>
       <div class="spec"><span class="t-title">Page title</span><code>32/38 · 500 · −0.03em</code></div>
       <div class="spec"><span class="t-section">Section title</span><code>20/28 · 500 · −0.02em</code></div>
-      <div class="spec"><span class="t-hero big"><span class="u">$</span>2.1<span class="u">M</span></span><code>56/60 · 400 · −0.04em · hero number, split</code></div>
-      <div class="spec"><span class="t-body">Ella Martin, the CEO, bought $2.1M of PLHD stock on Oct 1, 2026.</span><code>15/24 · 400 · −0.01em · body</code></div>
-      <div class="spec"><span class="t-label muted">Filed 20 days ago</span><code>13/18 · 400 · label</code></div>
-      <div class="spec"><span class="t-micro muted">Oct 23 · $70 · 3h</span><code>12/16 · 400 · micro</code></div>
+      <div class="spec"><span class="t-hero big" data-dg-big><span class="skel" style="display:inline-block;width:160px;height:48px"></span></span><code>56/60 · 400 · −0.04em · hero number, split</code></div>
+      <div class="spec"><span class="t-body" data-dg-sentence><span class="skel" style="display:inline-block;width:320px;height:16px"></span></span><code>15/24 · 400 · −0.01em · body</code></div>
+      <div class="spec"><span class="t-label muted" data-dg-label>Label text</span><code>13/18 · 400 · label</code></div>
+      <div class="spec"><span class="t-micro muted" data-dg-micro>Micro text</span><code>12/16 · 400 · micro</code></div>
       <div class="spec"><span class="tick">NVDA</span><code>Tickers: uppercase, 500</code></div>
       <div class="spec"><span class="wordmark" data-wordmark style="height:24px"></span><code>The wordmark is an SVG logo</code></div>
     </div>
@@ -91,22 +91,22 @@
 
   <section class="dg-sec" aria-labelledby="ctl-h"><header><h2 class="t-section" id="ctl-h">Controls</h2><p class="t-label muted">Primary is off-white with black text; secondary is a 6% white fill. 36px in the app, 44px on the landing page. Icons only in navigation.</p></header>
     <div class="dg-stack">
-      <div class="dg-row"><button class="btn btn--primary" type="button">Start for $1</button><button class="btn btn--secondary" type="button" data-icon="arrow-up-right">SEC filing</button><button class="btn btn--ghost" type="button">Open PLHD</button><button class="btn btn--secondary btn--icon" type="button" aria-label="Alerts" data-icon-only="bell"></button><button class="btn btn--primary btn--lg" type="button">Large</button><button class="btn btn--secondary" type="button" disabled>Disabled</button></div>
+      <div class="dg-row"><button class="btn btn--primary" type="button">Start for $1</button><button class="btn btn--secondary" type="button" data-icon="arrow-up-right">SEC filing</button><button class="btn btn--ghost" type="button">Open stock</button><button class="btn btn--secondary btn--icon" type="button" aria-label="Alerts" data-icon-only="bell"></button><button class="btn btn--primary btn--lg" type="button">Large</button><button class="btn btn--secondary" type="button" disabled>Disabled</button></div>
       <div class="dg-row" style="max-width:420px"><label class="sr-only" for="dg-in">Example input</label><input class="input" id="dg-in" placeholder="you@example.com"></div>
       <div class="dg-row"><div class="seg" role="group" aria-label="Example"><button type="button" aria-pressed="true">All</button><button type="button" aria-pressed="false">Buys</button><button type="button" aria-pressed="false">Sells</button></div><span class="kbd">⌘K</span><span class="kbd">esc</span></div>
     </div>
   </section>
 
-  <section class="dg-sec" aria-labelledby="d-h"><header><h2 class="t-section" id="d-h">Data</h2><p class="t-label muted">Every ticker shows its company's logo, or a monogram until one is found. Insiders get initials, never photos.</p></header>
+  <section class="dg-sec" aria-labelledby="d-h"><header><h2 class="t-section" id="d-h">Data</h2><p class="t-label muted">Every ticker shows its company's logo, or a monogram until one is found. Insiders get initials, never photos. The examples on this page are the newest real filings from SEC EDGAR, never made-up figures.</p></header>
     <div class="dg-stack">
-      <div class="dg-row" style="gap:24px"><span class="trade trade--buy">Bought</span><span class="trade trade--sell">Sold</span><span class="trade trade--plan">Plan sale</span><span class="chg chg--up">+2.41%</span><span class="chg chg--down">−1.18%</span><span class="chg chg--flat">0.00%</span></div>
+      <div class="dg-row" style="gap:24px"><span class="trade trade--buy">Bought</span><span class="trade trade--sell">Sold</span><span class="trade trade--plan">Plan sale</span><span data-dg-chg></span></div>
       <div class="dg-row" data-dg-atoms></div>
       <div class="card" style="padding:12px 24px"><ul class="rows" data-dg-row></ul></div>
     </div>
   </section>
 
   <section class="dg-sec" aria-labelledby="ch-h"><header><h2 class="t-section" id="ch-h">The chart</h2><p class="t-label muted">A 1.5px line over a fill from 16% to nothing, no axis lines, at most four muted labels per axis, a soft pulsing dot at the latest close, and trades on the line: green buys, coral sales, gray rings for 10b5-1 sales, sized by amount. Example data on this page only.</p></header>
-    <div class="card demo"><div class="chart" data-dg-chart></div><div class="legend"><span><i class="l-buy"></i>Buy</span><span><i class="l-sell"></i>Sale</span><span><i class="l-plan"></i>10b5-1 plan sale</span><span>Dot size follows the amount</span></div></div>
+    <div class="card demo"><div class="chart" data-dg-chart><p class="t-label muted" data-dg-chart-note>The chart shows real prices and insider trades for the newest filing's stock once you are signed in.</p></div><div class="legend"><span><i class="l-buy"></i>Buy</span><span><i class="l-sell"></i>Sale</span><span><i class="l-plan"></i>10b5-1 plan sale</span><span>Dot size follows the amount</span></div></div>
   </section>
 
   <section class="dg-sec" aria-labelledby="st-h"><header><h2 class="t-section" id="st-h">States</h2><p class="t-label muted">Skeletons have the final layout's boxes. Empty states say what will appear and offer one action. Errors say what failed, in place.</p></header>
@@ -122,7 +122,7 @@
   </section>
 
   <section class="dg-sec" aria-labelledby="m-h"><header><h2 class="t-section" id="m-h">Motion</h2><p class="t-label muted">Springs, never slower than 400ms. Charts draw in, numbers roll to their value, new rows slide in, cards lift 2px, pages fade and rise 6px. Reduced motion: final states, no movement.</p></header>
-    <div class="dg-row"><span class="t-hero big" data-dg-roll>$0</span><button class="btn btn--secondary" type="button" data-dg-replay>Replay</button></div>
+    <div class="dg-row"><span class="t-hero big" data-dg-roll></span><button class="btn btn--secondary" type="button" data-dg-replay>Replay</button></div>
   </section>
 
   <footer class="data-foot"><p class="t-label muted">Research, not investment advice. Charts by <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a> Lightweight Charts (Apache 2.0). Icons: Lucide (ISC). Font: Geist (SIL OFL). The wordmark is drawn from JetBrains Mono (SIL OFL).</p></footer>
@@ -133,15 +133,33 @@ document.addEventListener("DOMContentLoaded",()=>{
   for(const b of document.querySelectorAll("[data-icon]"))b.insertAdjacentHTML("beforeend",I.svg(b.dataset.icon));
   for(const b of document.querySelectorAll("[data-icon-only]"))b.innerHTML=I.svg(b.dataset.iconOnly,b.dataset.iconOnly==="search"?18:16);
   for(const w of document.querySelectorAll("[data-wordmark]"))w.innerHTML=UI.WORDMARK;
-  document.querySelector("[data-dg-atoms]").innerHTML=UI.logo("NVDA",24,"Nvidia")+UI.logo("PEP",32,"Pepsico")+UI.logo("EXMP",40,"Example")+UI.monogram("DOE JANE")+UI.monogram("ROE RICHARD",32)+UI.spark([10,11,10.5,12,12.4,13,12.8,14],{w:96,h:28})+UI.spark([14,13,13.4,12,11,11.5,10],{w:96,h:28})+UI.ring(72,{label:"Example score 72"})+UI.ring(38,{label:"Example score 38"});
-  document.querySelector("[data-dg-row]").innerHTML=`<li class="row feed__row">${UI.logo("EXMP",28,"Example")}<span class="feed__co"><span class="strong">Example</span><span class="feed__sub t-label muted"><span class="tick">EXMP</span></span></span><span class="feed__who">${UI.monogram("DOE JANE")}<span class="t-label">Jane Doe <span class="muted">Director</span></span></span><span class="feed__trade">${UI.trade({kind:"buy"})}</span><span class="feed__amt up">$943K</span><span class="feed__ago t-micro muted">23m</span></li>`;
-  document.querySelector("[data-dg-cmd]").innerHTML=UI.logo("EXMP",24,"Example")+`<span class="tick">EXMP</span><span>Example</span><span class="meta">Stock</span>`;
   UI.settle(document);
-  // example data, this page only
-  const closes=[],start=Date.UTC(2026,3,1);let v=40;for(let i=0;i<200;i++){const d=new Date(start+i*864e5);if(d.getUTCDay()%6===0)continue;v=v*(1+Math.sin(i/14)*0.012+0.002);closes.push([d.toISOString().slice(0,10),Math.round(v*100)/100]);}
-  const at=i=>closes[i][0];
-  window.InsidirChart.mount(document.querySelector("[data-dg-chart]"),{closes,markers:[{day:at(30),kind:"buy",value:450000,owner:"DOE JANE",role:"director"},{day:at(70),kind:"buy",value:2400000,owner:"MARTIN ELLA",role:"CEO"},{day:at(95),kind:"sell",value:800000,owner:"ROE RICHARD",role:"CFO"},{day:at(120),kind:"sell",planned:true,value:1600000,owner:"PARK AVERY",role:"director"}]},{range:"1Y"});
-  const roll=()=>UI.roll(document.querySelector("[data-dg-roll]"),2100000,x=>UI.big(x),{html:true});roll();document.querySelector("[data-dg-replay]").addEventListener("click",roll);
+  // Every example is a real filing: the newest trades from GET /v1/live (public), and, for a signed-in member, the real
+  // price history of the newest trade's stock (GET /v1/chart). Nothing on this page is made up.
+  fetch("/v1/live",{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():{items:[]}).catch(()=>({items:[]})).then(async({items=[]})=>{
+    const live=items.filter(x=>x.ticker&&x.value!=null),top=live[0];
+    const set=(sel,html)=>{const el=document.querySelector(sel);if(el)el.innerHTML=html;};
+    if(!top){set("[data-dg-big]","");set("[data-dg-sentence]","No filings imported yet.");set("[data-dg-row]",'<li class="t-label muted">No filings imported yet.</li>');return;}
+    set("[data-dg-big]",UI.big(top.value));
+    set("[data-dg-sentence]",UI.esc(top.sentence));
+    set("[data-dg-label]","Filed "+UI.esc(UI.fmt.ago(top.filedAt))+" ago");
+    set("[data-dg-micro]",UI.esc([UI.fmt.date(top.day||top.filedAt,false),UI.fmt.money(top.value),UI.fmt.ago(top.filedAt)].join(" · ")));
+    const tickers=[...new Set(live.map(x=>x.ticker))].slice(0,3),owners=[...new Set(live.map(x=>x.owner).filter(Boolean))].slice(0,2);
+    set("[data-dg-atoms]",tickers.map((t,i)=>UI.logo(t,[24,32,40][i],live.find(x=>x.ticker===t).issuer||"")).join("")+owners.map((o,i)=>UI.monogram(o,i?32:28)).join(""));
+    set("[data-dg-row]",live.slice(0,3).map(m=>`<li class="row feed__row">${UI.logo(m.ticker,28,m.issuer||"")}<span class="feed__co"><span class="strong">${UI.esc(UI.fmt.company(m.issuer)||m.ticker)}</span><span class="feed__sub t-label muted"><span class="tick">${UI.esc(m.ticker)}</span></span></span><span class="feed__who">${UI.monogram(m.owner)}<span class="t-label">${UI.esc(UI.fmt.person(m.owner))} <span class="muted">${UI.esc(UI.fmt.role(m.role))}</span></span></span><span class="feed__trade">${UI.trade(m)}</span><span class="feed__amt ${m.kind==="buy"?"up":m.kind==="sell"?"down":""}">${UI.esc(UI.fmt.money(m.value))}</span><span class="feed__ago t-micro muted">${UI.esc(UI.fmt.ago(m.filedAt))}</span></li>`).join(""));
+    set("[data-dg-cmd]",UI.logo(top.ticker,24,top.issuer||"")+`<span class="tick">${UI.esc(top.ticker)}</span><span>${UI.esc(UI.fmt.company(top.issuer)||top.ticker)}</span><span class="meta">Stock</span>`);
+    UI.hydrateLogos(document);
+    const roll=()=>UI.roll(document.querySelector("[data-dg-roll]"),top.value,x=>UI.big(x),{html:true});roll();document.querySelector("[data-dg-replay]").addEventListener("click",roll);
+    // The real chart, and real day changes from it, for a signed-in member.
+    let c=null;try{const r=await fetch("/v1/chart?ticker="+encodeURIComponent(top.ticker)+"&days=365",{credentials:"same-origin",headers:{Accept:"application/json"}});c=r.ok?await r.json():null;}catch{}
+    if(!c||!(c.closes||[]).length)return;
+    document.querySelector("[data-dg-chart-note]")?.remove();
+    window.InsidirChart.mount(document.querySelector("[data-dg-chart]"),{closes:c.closes,markers:c.markers||[]},{range:"1Y"});
+    const cl=c.closes.map(x=>x[1]),moves=[];for(let i=cl.length-1;i>0&&moves.length<40;i--)moves.push(cl[i]/cl[i-1]-1);
+    const up=moves.find(m=>m>0),down=moves.find(m=>m<0);
+    set("[data-dg-chg]",[up!=null?`<span class="chg chg--up">${UI.fmt.pct(up,2)}</span>`:"",down!=null?`<span class="chg chg--down">${UI.fmt.pct(down,2)}</span>`:""].join(" "));
+    document.querySelector("[data-dg-atoms]").insertAdjacentHTML("beforeend",UI.spark(cl.slice(-30),{w:96,h:28}));
+  });
 });
 </script>
 </body>

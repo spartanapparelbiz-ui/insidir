@@ -114,3 +114,15 @@ test("the static fallback (web/index.html) is the same design without live data"
   assert.match(html, /assets\/css\/ds\.css/);
   assert.doesNotMatch(html, /v2-live__item|ds-trade"/, "no live rows baked into a static file");
 });
+
+test("no made-up figures: the design page shows the newest real filings from /v1/live, which carries each trade's facts", async () => {
+  const { liveItems } = await import("../src/landing.mjs");
+  const html = readFileSync(new URL("../web/design.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /EXMP|PLHD|DOE JANE|ROE RICHARD|Ella Martin|Placeholder Brands|example data|Example score|\+2\.41%|−1\.18%|Oct 23 · \$70/, "no invented companies, people or numbers");
+  assert.match(html, /fetch\("\/v1\/live"/);
+  const [item] = liveItems([{ id: 7, ticker: "abc", issuer_name: "A CORP", owner_name: "SMITH ANN", role: "director", transaction_code: "P", acquired_disposed: "A",
+    estimated_value: "1250000.00", transaction_date: "2026-10-20", published_at: "2026-10-21T20:00:00Z", source_url: "https://www.sec.gov/Archives/edgar/data/1/000000000126000001/x.xml" }], Date.parse("2026-10-21T21:00:00Z"));
+  assert.deepEqual([item.ticker, item.kind, item.value, item.day, item.url], ["ABC", "buy", 1250000, "2026-10-20", "https://www.sec.gov/Archives/edgar/data/1/000000000126000001/x.xml"]);
+  assert.match(item.sentence, /bought/i);
+  assert.ok(item.html.includes("ABC"), "the row the landing page already uses is still there");
+});
