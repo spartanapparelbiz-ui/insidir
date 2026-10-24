@@ -13,7 +13,7 @@
 (() => {
   "use strict";
   const PAGES = ["dashboard", "research", "explore", "company", "filings", "filing", "people", "person", "watchlist", "portfolio", "alerts", "intelligence", "entity", "billing", "account"];
-  const LABELS = { dashboard: "Today", research: "the research desk", explore: "companies", company: "the company report", filings: "SEC filings", filing: "the filing", people: "people", person: "the personnel file", watchlist: "your watchlist", portfolio: "your portfolio", alerts: "your alerts", intelligence: "Intelligence", entity: "the filer's page", billing: "billing", account: "your account" };
+  const LABELS = { dashboard: "Today", research: "the stock page", explore: "companies", company: "the stock page", filings: "SEC filings", filing: "the filing", people: "people", person: "the insider's page", watchlist: "your watchlist", portfolio: "your portfolio", alerts: "your alerts", intelligence: "Intelligence", entity: "the filer's page", billing: "billing", account: "your account" };
   const NEXT_KEY = "insidir:after-checkout";
   const CONTACT = "write to hello@aethric.llc";
   const NOT_STARTED = "Checkout couldn't start, and nothing was charged. Please try again in a moment, or " + CONTACT + ".";

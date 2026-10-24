@@ -3,7 +3,7 @@
 .site{overflow-x:hidden}
 .site .btn{height:44px;padding:0 var(--sp5);font-size:15px}
 .swrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 var(--sp6)}
-.slink{color:var(--text);text-decoration:underline;text-decoration-color:rgba(240,238,232,.3);text-underline-offset:3px;transition:text-decoration-color var(--fast)}
+.slink{padding-block:4px;color:var(--text);text-decoration:underline;text-decoration-color:rgba(240,238,232,.3);text-underline-offset:3px;transition:text-decoration-color var(--fast)}
 .slink:hover{text-decoration-color:var(--text)}
 a.muted.slink,.slink.muted{color:var(--muted)}
 .snote{margin-top:var(--sp4)}
@@ -142,8 +142,8 @@ a.muted.slink,.slink.muted{color:var(--muted)}
 .sfoot__in{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:var(--sp8)}
 .sfoot__brand{display:grid;align-content:start;gap:var(--sp4)}
 .sfoot__brand p{max-width:300px}
-.sfoot nav{display:grid;align-content:start;gap:var(--sp2);font-size:13px;line-height:18px}
-.sfoot nav a{color:var(--text);opacity:.8}
+.sfoot nav{display:grid;align-content:start;gap:0;font-size:13px;line-height:18px}
+.sfoot nav a{display:flex;align-items:center;min-height:26px;color:var(--text);opacity:.8}
 .sfoot nav a:hover{opacity:1}
 
 /* the sticky bar on phones once the hero has scrolled away (site-v2.js) */

@@ -166,7 +166,7 @@ body.ui::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200
 .row:hover{background:rgba(255,255,255,.025)}
 .row>a.hit{position:absolute;inset:0;z-index:0;border-radius:inherit}
 .row:has(>a.hit)>*:not(.hit){position:relative;z-index:1;pointer-events:none}
-.row>.row__link{pointer-events:auto}
+.row:has(>a.hit)>.row__link{pointer-events:auto}
 
 /* ---------- states ---------- */
 .skel{position:relative;overflow:hidden;background:rgba(255,255,255,.04);border-radius:6px}

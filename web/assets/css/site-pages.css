@@ -132,3 +132,5 @@ a.sp-card .sp-more{margin-top:var(--sp2)}
   .sp-sub{margin-top:var(--sp10)}
   .sp-doc{padding-top:var(--sp10)}
 }
+/* standalone links are at least 24px tall (WCAG 2.5.8) without moving the text */
+a.t-label{padding-block:3px}

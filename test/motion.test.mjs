@@ -103,8 +103,9 @@ test("the movement curve is a short ease-out with no overshoot, and the reveal o
 });
 
 test("no hover state on the site moves or resizes anything, and no keyframe bounces", async () => {
+  // The halftone sheets still served (the new design's sheets have their own short, spring-based hover rules).
   const files = (await readdir(cssDir)).filter(f => /^v13-.*\.css$|^entity-media\.css$/.test(f));
-  assert.ok(files.length >= 10);
+  assert.ok(files.length >= 3);
   const moving = [], bouncing = [];
   for (const f of files) {
     const css = await readFile(new URL(f, cssDir), "utf8");
@@ -134,6 +135,8 @@ test("every page carries the engine, then the motion layer", async () => {
     // plain text (Insidir sends no email, so there is no reset form). start.html only redirects to sign-up.
     if (/http-equiv="refresh"/.test(html)) continue;
     if (f === "forgot-password.html") { assert.match(html, /<body class="ui\b/); continue; }
+    // Public pages on site.css (<body class="ui site">) use the site script (ds.js: nav, search box, one fade-in).
+    if (/<body class="ui site\b/.test(html)) { assert.match(html, /assets\/js\/(ui|ds)\.js/, f + " loads the UI runtime or the site script"); continue; }
     if (/<body class="ui\b/.test(html)) { assert.match(html, /assets\/js\/(ui|auth)\.js/, f + " loads the UI runtime or its form script"); continue; }
     const e = html.search(/v13-halftone\.js/), m = html.search(/v13-motion\.js/);
     assert.ok(e > 0 && m > e, f + " loads v13-halftone.js and then v13-motion.js");

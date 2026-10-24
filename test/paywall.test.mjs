@@ -915,7 +915,8 @@ test("router: the personnel file (person.html and GET /v1/people/<cik>) is behin
     assert.equal(r.headers.location, "/subscribe.html?next=%2Fperson.html%3Fcik%3D1214156");
     r = await send(base, "/person.html?cik=1214156", as("paid"));
     assert.equal(r.status, 200);
-    assert.match(r.text, /<title>Personnel file/);
+    assert.match(r.text, /<title>Insider — Insidir<\/title>/);
+    assert.match(r.text, /data-ui-shell data-page="people"/); assert.match(r.text, /assets\/js\/person-app\.js/);
     assert.match(r.headers["cache-control"], /^private\b/);
     assert.match(r.headers.vary, /\bCookie\b/);
     assert.equal((await send(base, "/v1/people/1214156")).status, 401);

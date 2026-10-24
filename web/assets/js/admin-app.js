@@ -132,7 +132,6 @@
         objCard("SEC source (this instance)", s.sec && { ...s.sec, lastError: s.sec.lastError ? s.sec.lastError.status + " " + s.sec.lastError.message : null }),
         objCard("Research events", re.unavailable ? re : { ...re, ...(re.builder || {}), ...(re.failedImports || {}), disclosureCompanies: re.disclosureSources?.companies, disclosureFailing: re.disclosureSources?.failing }),
         objCard("Alerts", s.notifications && (s.notifications.unavailable ? s.notifications : { ...s.notifications, ...(s.notifications.preferences || {}) })),
-        objCard("Email outbox", s.email),
         objCard("Billing", s.billing && (s.billing.unavailable ? s.billing : { ...s.billing, events7d: list(s.billing.events7d, e => e.kind + " " + e.n), accounts: list(s.billing.accountsByStatus, e => e.status + " " + e.n) })),
         objCard("AI spend and limits", s.ai && (s.ai.unavailable ? s.ai : { ...s.ai, refusalsToday: list(s.ai.refusalsToday, e => e.budget + " " + e.n) })),
         objCard("Security (24 hours)", Array.isArray(s.security) ? Object.fromEntries(s.security.map(x => [x.kind, x.n])) : s.security),

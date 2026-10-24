@@ -21,8 +21,8 @@
   const DASHBOARD = "dashboard.html";
   const SUBSCRIBE = "subscribe.html";
   const PAGES = {
-    dashboard: "your dashboard", research: "the research desk", explore: "companies", company: "the company report",
-    filings: "SEC filings", filing: "the filing", people: "people", person: "the personnel file", watchlist: "your watchlist", portfolio: "your portfolio",
+    dashboard: "your dashboard", research: "the stock page", explore: "companies", company: "the stock page",
+    filings: "SEC filings", filing: "the filing", people: "people", person: "the insider's page", watchlist: "your watchlist", portfolio: "your portfolio",
     alerts: "your alerts", billing: "billing", account: "your account", subscribe: "the subscription step"
   };
   // Pages that need a login but no subscription: someone headed there goes straight there.

@@ -10,7 +10,7 @@
 .ix-ink{color:var(--text)}
 .ix-center{display:flex;justify-content:center;margin-top:var(--sp4)}
 .ix-gap-t{margin-top:var(--sp4)}
-.ix-link{text-decoration:underline;text-decoration-color:var(--fill-2);text-underline-offset:3px;transition:text-decoration-color var(--fast)}
+.ix-link{padding-block:4px;text-decoration:underline;text-decoration-color:var(--fill-2);text-underline-offset:3px;transition:text-decoration-color var(--fast)}
 .ix-link:hover{text-decoration-color:var(--text)}
 .ix-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp2) var(--sp4)}
 .ix-src,.ix-open{display:inline-flex;align-items:center;gap:var(--sp1);min-height:24px;font-size:13px;line-height:18px;font-weight:500;color:var(--text);

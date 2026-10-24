@@ -1,15 +1,15 @@
-/* Insidir Intelligence in Chrome: every control on intelligence.html, at 1440px and on a 390px touch phone.
-   /v1 is mocked from scripts/fixtures/intelligence-api.json (responses captured from a local server over synthetic
-   QA records); requests the page sends are recorded and checked. Covers: the instrument (the ten circles of the
-   favicon at their own coordinates, counts as received, dot and row selection by pointer, touch and keyboard, the
-   records panel and its links, connector lines on desktop only), the introduction (shown once, skippable, absent
-   under reduced motion), the tape (rows, timeline ticks, row detail with the SEC source, filters, new vs historical),
-   the morning-report briefing (lead, secondary stories, desks, window and order toggles, delivery frequency saved and
-   restored when saving fails, explain only when AI is configured, the setup state with quick-add), Capital Structure
-   (a person's evidence and its lines), Investigate (a streamed report with its five sections, citations that resolve,
-   expandable records, follow-up context, refusal of an empty question, a stream error), Mirror (treemap, budget chips,
-   an invalid budget, the unavailable state), error states with retry, no content wider than the screen, and no
-   uncaught errors. Usage: CHROME_BIN=... node scripts/intelligence-check.mjs */
+/* Insidir Intelligence in Chrome: every control on intelligence.html (the ui.css design), at 1440px and on a 390px
+   touch phone. /v1 is mocked from scripts/fixtures/intelligence-api.json (responses captured from a local server over
+   synthetic QA records); requests the page sends are recorded and checked. Covers: the page heading, the overview (ten
+   count tiles with counts as received, selection by pointer, touch and keyboard, the records panel and its links), the
+   tape (rows, timeline ticks, row detail with the SEC source, filters, new vs historical), identity tiles (company logos
+   and insiders' faces from ui.js, resolved through /v1/media, with photo credits), the briefing (lead, secondary stories,
+   desks, window and order toggles, delivery frequency saved and restored when saving fails, explain only when AI is
+   configured, the setup state with quick-add), the reporting structure (a person's evidence and its lines), Ask (a
+   streamed report with its five sections, citations that resolve, expandable records, follow-up context, refusal of an
+   empty question, a stream error, the research-not-advice line), Mirror (treemap, budget chips, an invalid budget, the
+   unavailable state), error states with retry, reduced motion, no content wider than the screen, and no uncaught errors.
+   Usage: CHROME_BIN=... node scripts/intelligence-check.mjs */
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
@@ -20,7 +20,6 @@ const F = JSON.parse(readFileSync(new URL("./fixtures/intelligence-api.json", im
 /* The page reads "now" to place records in their window (the tape's last F.tape.filters.days days), so the browser's
    clock is held at the moment the fixtures were captured; the latest time they carry is the instrument's. */
 const CAPTURED = Date.parse(F.instrument.computedAt);
-const FAVICON = [...readFileSync(new URL("../web/assets/icons/favicon.svg", import.meta.url), "utf8").matchAll(/<circle cx="(\d+)" cy="(\d+)" r="(\d+)"\/>/g)].map(m => m.slice(1).map(Number));
 const server = createServer((req, res) => serveStatic(req, res).then(done => { if (!done) { res.writeHead(404); res.end(); } }));
 await new Promise(r => server.listen(0, "127.0.0.1", r));
 const base = "http://127.0.0.1:" + server.address().port;
@@ -29,9 +28,8 @@ let failures = 0;
 const check = async (name, fn) => { try { await fn(); console.log("ok   " + name); } catch (e) { failures++; console.log("FAIL " + name + "\n     " + String(e.message).split("\n").slice(0, 6).join("\n     ")); } };
 const stream = (lines, answer) => lines.map(l => JSON.stringify(l)).join("\n") + "\n" + (answer ? JSON.stringify({ stage: "answer", answer }) + "\n" : "");
 
-async function open({ width, mobile = false, scenario = {}, reduced = false, intro = false }) {
+async function open({ width, mobile = false, scenario = {}, reduced = false }) {
   const ctx = await browser.newContext({ viewport: { width, height: mobile ? 844 : 900 }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 2 : 1, reducedMotion: reduced ? "reduce" : "no-preference" });
-  if (!intro) await ctx.addInitScript(() => { try { sessionStorage.setItem("ix-intro", "1"); } catch { /* */ } });
   const sent = [];
   await ctx.route("**/v1/**", async route => {
     const req = route.request(), url = new URL(req.url()), p = url.pathname, m = req.method();
@@ -73,28 +71,27 @@ const overflow = page => page.evaluate(() => {
   return bad.slice(0, 8);
 });
 const cat = id => F.instrument.mark.find(c => c.id === id);
+const bare = c => String(c || "").replace(/^0+/, "");
 
 for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, true]]) {
   const { ctx, page, sent, errors } = await open({ width, mobile });
   const tap = sel => mobile ? page.tap(sel) : page.click(sel);
-  await check(label + ": hero copy, and the instrument is the favicon's ten circles at their own coordinates", async () => {
-    assert.equal((await page.textContent(".ix-hero__title")).trim(), "See what others overlook.");
-    assert.match(await page.textContent(".ix-hero .ix-kicker"), /Insidir \/ Intelligence/i);
-    assert.match(await page.textContent(".ix-hero__lede"), /actionable research insights.*follows the public record, connects the information/);
-    await page.waitForSelector("[data-mark] .im-dot[role=button]");
-    const drawn = await page.$$eval("[data-mark] .im-core", cs => cs.map(c => ["cx", "cy", "r"].map(a => Number(c.getAttribute(a)))));
-    assert.deepEqual(drawn, FAVICON);
-    assert.equal(await page.getAttribute("[data-mark] svg", "viewBox"), "343 107 338 740");
+  await check(label + ": one heading, and the overview shows every count as received", async () => {
+    assert.equal(await page.$$eval("h1", h => h.length), 1);
+    assert.equal((await page.textContent("main h1")).trim(), "Intelligence");
+    assert.match(await page.textContent(".ix-lede"), /cited report/);
+    await page.waitForSelector("[data-cat]");
+    assert.equal(await page.$$eval("[data-cat]", b => b.length), 10);
     for (const id of ["companies", "filings", "insiders", "purchases", "sales", "changes", "watchlist", "people", "holdings"])
       assert.equal(await page.textContent('[data-count="' + id + '"]'), cat(id).count.toLocaleString("en-US"), id + " count as received");
     await page.waitForFunction(n => document.querySelector('[data-count="findings"]').textContent === String(n), F.briefing.stories.length);
     assert.match(await page.textContent("[data-instrument-note]"), /not live market data/);
     assert.deepEqual(await overflow(page), []);
   });
-  await check(label + ": selecting a dot opens its records with working links", async () => {
-    await tap('[data-mark] [data-dot="sales"] .im-core');
-    assert.equal(await page.getAttribute('[data-mark] [data-dot="sales"]', "aria-pressed"), "true");
+  await check(label + ": selecting a count opens its records with working links", async () => {
+    await tap('[data-cat="sales"]');
     assert.equal(await page.getAttribute('[data-cat="sales"]', "aria-pressed"), "true");
+    assert.equal(await page.$$eval('[data-cat][aria-pressed="true"]', b => b.length), 1, "one count selected at a time");
     await page.waitForSelector("[data-panel] .ix-panel__list");
     const links = await page.$$eval("[data-panel] .ix-panel__list a", a => a.map(x => ({ href: x.href, text: x.textContent })));
     assert.equal(links.length, cat("sales").records.length);
@@ -103,20 +100,13 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     assert.ok(await page.isVisible("[data-panel]"), "panel visible after the tap");
     await tap('[data-cat="watchlist"]');
     const w = await page.$$eval("[data-panel] .ix-panel__list a", a => a.map(x => x.getAttribute("href")));
-    assert.ok(w.length && w.every(h => /^company\.html\?ticker=/.test(h)), "watchlist records open company reports");
+    assert.ok(w.length && w.every(h => /^\/?company\.html\?ticker=/.test(h)), "watchlist records open stock pages");
   });
-  await check(label + ": connector lines run from each dot to its row on desktop only", async () => {
-    const n = await page.$$eval("[data-links] path.iv-link", p => p.length);
-    if (mobile) assert.equal(n, 0); else {
-      assert.equal(n, 10);
-      assert.equal(await page.$eval('[data-links] path[data-link="watchlist"]', p => p.classList.contains("is-active")), true);
-    }
-  });
-  if (!mobile) await check(label + ": the dots are keyboard buttons", async () => {
-    await page.focus('[data-mark] [data-dot="filings"]');
+  if (!mobile) await check(label + ": the counts are keyboard buttons", async () => {
+    await page.focus('[data-cat="filings"]');
     await page.keyboard.press("Enter");
-    assert.equal(await page.getAttribute('[data-mark] [data-dot="filings"]', "aria-pressed"), "true");
-    assert.match(await page.textContent("[data-caption]"), /SEC filings/);
+    assert.equal(await page.getAttribute('[data-cat="filings"]', "aria-pressed"), "true");
+    assert.match(await page.textContent("[data-panel]"), new RegExp(cat("filings").label));
   });
   await check(label + ": the tape lists disclosures, opens a row, and filters", async () => {
     await page.waitForSelector(".ix-tape__item");
@@ -142,17 +132,19 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     await page.waitForTimeout(200);
     assert.equal(sent.filter(r => r.p === "/v1/intelligence/tape").at(-1).q, "?days=7&form=all");
   });
-  await check(label + ": every person and company carries a real identity tile, asked for in /v1/media batches", async () => {
+  await check(label + ": every insider has a face tile and every company a logo, resolved through /v1/media", async () => {
     const tape = F.tape.events.filter(e => e.personCik);
-    const tiles = await page.$$eval(".ix-tape__item", rows => rows.map(r => ({ person: r.querySelector('.ix-tape__who [data-media="person"]')?.dataset.cik || null, company: r.querySelector('.ix-tape__co [data-media="company"]')?.dataset.ticker || null })));
-    assert.equal(tiles.filter(t => t.person).length, tape.length, "a headshot tile for every tape row that names a reporting person");
-    assert.deepEqual(tiles.filter(t => t.person).map(t => t.person), tape.map(e => e.personCik));
-    assert.ok(tiles.every((t, i) => t.company === F.tape.events[i].ticker), "a logo tile for every tape company");
-    for (const p of F.structure.people) assert.ok(await page.$('.ix-cap [data-person="' + p.cik + '"] [data-media="person"][data-cik="' + p.cik.replace(/^0+/, "") + '"]'), "structure headshot for " + p.name);
-    assert.ok(await page.$('.ix-node--company [data-media="company"][data-ticker="' + F.structure.company.ticker + '"]'), "structure company logo");
-    assert.ok(await page.$$eval('.ix-people [data-media="person"]', t => t.length) > 0, "briefing people carry headshot tiles");
-    assert.ok(sent.some(r => r.p === "/v1/media"), "tiles are resolved through the engine's /v1/media batch");
-    assert.ok(await page.$("[data-media-credits]"), "a photo-credits footnote for headshots");
+    const tiles = await page.$$eval(".ix-tape__item", rows => rows.map(r => ({ person: r.querySelector(".ix-tape__who [data-face]")?.dataset.cik || null, company: r.querySelector(".ix-tape__co [data-logo]")?.dataset.logo ?? null })));
+    assert.deepEqual(tiles.filter(t => t.person).map(t => t.person), tape.map(e => bare(e.personCik)), "a face tile for every tape row that names a reporting person");
+    assert.ok(tiles.every((t, i) => t.company === (F.tape.events[i].ticker || "")), "a logo tile for every tape company");
+    assert.equal(await page.$$eval("main img[src*='/headshot'], main [data-media]", x => x.length), 0, "no old entity-media tiles");
+    for (const p of F.structure.people) assert.ok(await page.$('.ix-cap [data-person="' + p.cik + '"] [data-face][data-cik="' + bare(p.cik) + '"]'), "structure face for " + p.name);
+    assert.ok(await page.$('.ix-node--company [data-logo="' + F.structure.company.ticker + '"]'), "structure company logo");
+    assert.ok(await page.$$eval(".ix-people [data-face]", t => t.length) > 0, "briefing people carry face tiles");
+    const media = sent.filter(r => r.p === "/v1/media");
+    assert.ok(media.some(r => /tickers=/.test(r.q)), "logos are asked for in /v1/media?tickers=");
+    assert.ok(media.some(r => /people=/.test(r.q)), "faces are asked for in /v1/media?people=");
+    assert.ok(await page.$("[data-ui-credits]"), "a photo-credits line for faces");
   });
   await check(label + ": the briefing is a morning report with dated, sourced stories", async () => {
     await page.waitForSelector(".ix-lead");
@@ -160,8 +152,10 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     assert.equal(await page.$$eval(".ix-front .ix-second", x => x.length), Math.min(4, F.briefing.stories.length - 1));
     const lead = await page.textContent(".ix-lead");
     assert.match(lead, /Main development/); assert.match(lead, /Event/); assert.match(lead, /Disclosed/); assert.match(lead, /Retrieved by Insidir/); assert.match(lead, /Why it’s here/);
-    const hrefs = await page.$$eval(".ix-report .ix-sources a", a => a.map(x => x.href));
+    const hrefs = await page.$$eval(".ix-report .ix-sources a.ix-src", a => a.map(x => x.href));
     assert.ok(hrefs.length && hrefs.every(h => h.startsWith("https://www.sec.gov/")), "sources are SEC links");
+    const inApp = await page.$$eval(".ix-report .ix-sources a.ix-open", a => a.map(x => x.getAttribute("href")));
+    assert.ok(inApp.every(h => /^\/filing\.html\?accession=\d{18}$/.test(h)), "in-app links open the filing view");
     assert.ok(await page.$$eval(".ix-desk__co", x => x.length) > 0, "company desk");
     assert.equal(!!(await page.$("[data-explain]")), !!F.aiStatus.configured);
   });
@@ -170,7 +164,7 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     await page.waitForTimeout(300);
     assert.ok(sent.some(r => r.p === "/v1/me/intelligence/briefing" && r.q === "?days=30"));
     await tap("[data-order] [data-order-by='latest']");
-    assert.equal(await page.getAttribute("[data-order] [data-order-by='latest']", "aria-checked"), "true");
+    assert.equal(await page.getAttribute("[data-order] [data-order-by='latest']", "aria-pressed"), "true");
     const newest = [...F.briefing.stories].sort((a, b) => String(b.disclosedAt).localeCompare(String(a.disclosedAt)))[0];
     assert.equal(await page.getAttribute(".ix-lead", "data-story"), newest.id);
     await tap("[data-frequency] [data-frequency-value='weekly']");
@@ -189,8 +183,6 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     assert.match(ev, new RegExp(person.name)); assert.match(ev, /Relationship \(as filed\)/);
     assert.match(ev, new RegExp(F.structure.labels.personSecurity.slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.ok(await page.$eval(".ix-node--security", n => n.classList.contains("is-related")));
-    const lines = await page.$$eval("[data-cap-links] path", p => p.length);
-    assert.equal(lines, mobile ? 0 : F.structure.people.length + F.structure.securities.length);
   });
   await check(label + ": an example question streams a five-part report whose citations resolve", async () => {
     await tap("[data-examples] li:nth-child(2) button");
@@ -198,11 +190,14 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
     const req = sent.filter(r => r.p === "/v1/me/intelligence/investigate").at(-1);
     assert.equal(req.q, "?stream=1"); assert.match(req.accept, /ndjson/);
     assert.equal(req.body.question, "Show recent insider transactions at Tesla.");
-    assert.deepEqual(await page.$$eval(".ix-answer .ix-part__title", h => h.map(x => x.textContent)), ["§1What happened", "§2Evidence", "§3Timeline", "§4Connections", "§5What is uncertain"]);
+    assert.deepEqual(await page.$$eval(".ix-answer .ix-part__title", h => h.map(x => x.textContent)), ["What happened", "Evidence", "Timeline", "Connections", "What is uncertain"]);
     const cites = await page.$$eval(".ix-answer a.ix-cite", a => a.map(x => x.getAttribute("href")));
     assert.ok(cites.length > 0, "the report has citations");
     for (const h of new Set(cites)) assert.ok(await page.$(h), "citation target exists: " + h);
     assert.equal(await page.$$eval(".ix-answer .ix-rels li", x => x.length), F.answer.relationships.length);
+    assert.match(await page.textContent(".ix-answer"), /Research from public SEC records, not investment advice/);
+    const srcs = await page.$$eval(".ix-answer .ix-srclist a.ix-src", a => a.map(x => x.href));
+    assert.ok(srcs.length && srcs.every(h => h.startsWith("https://www.sec.gov/")), "report sources are SEC links");
     assert.match(await page.textContent(".ix-answer"), new RegExp(F.answer.verification.references + " citation references checked against " + F.answer.verification.citations + " SEC sources"));
     await tap(".ix-answer .ix-rec > summary");
     assert.equal(await page.$eval(".ix-answer .ix-rec", d => d.open), true);
@@ -241,21 +236,6 @@ for (const [label, width, mobile] of [["desktop", 1440, false], ["phone", 390, t
   await ctx.close();
 }
 
-await check("introduction: shown once, skippable, and over within its time limit", async () => {
-  const { ctx, page } = await open({ width: 1440, intro: true });
-  assert.equal(await page.evaluate(() => document.documentElement.classList.contains("ix-intro")), true);
-  assert.equal(await page.isVisible("[data-skip-intro]"), true);
-  await page.click("[data-skip-intro]");
-  assert.equal(await page.evaluate(() => document.documentElement.classList.contains("ix-intro")), false);
-  assert.equal(await page.isVisible("[data-skip-intro]"), false);
-  await page.reload({ waitUntil: "load" });
-  assert.equal(await page.evaluate(() => document.documentElement.classList.contains("ix-intro")), false, "not repeated in the same session");
-  await ctx.close();
-  const second = await open({ width: 1440, intro: true });
-  await second.page.waitForTimeout(2300);
-  assert.equal(await second.page.evaluate(() => document.documentElement.classList.contains("ix-intro")), false, "ends by itself");
-  await second.ctx.close();
-});
 await check("tape: records retrieved since the last visit are marked new", async () => {
   const { ctx, page } = await open({ width: 1440, scenario: { "/v1/intelligence/tape": () => [200, { ...F.tape, events: F.tape.events.map((e, i) => ({ ...e, new: i === 0 })) }] } });
   await page.waitForSelector(".ix-tape__item");
@@ -288,13 +268,14 @@ await check("errors: retries, a failing frequency save, a stream error, an unkno
   assert.match(await page.textContent("[data-panel]"), /instrument could not be loaded/);
   fail = false;
   await page.click("[data-retry='instrument']");
-  await page.waitForSelector("[data-mark] .im-dot[role=button]");
+  await page.waitForSelector("[data-cat]");
+  assert.equal(await page.textContent('[data-count="sales"]'), cat("sales").count.toLocaleString("en-US"));
   await page.click("[data-retry='briefing']");
   await page.waitForSelector(".ix-lead");
-  const before = await page.$eval("[data-frequency] [aria-checked=true]", b => b.dataset.frequencyValue);
+  const before = await page.$eval("[data-frequency] [aria-pressed=true]", b => b.dataset.frequencyValue);
   await page.click("[data-frequency] [data-frequency-value='daily']");
   await page.waitForTimeout(300);
-  assert.equal(await page.$eval("[data-frequency] [aria-checked=true]", b => b.dataset.frequencyValue), before);
+  assert.equal(await page.$eval("[data-frequency] [aria-pressed=true]", b => b.dataset.frequencyValue), before);
   assert.match(await page.textContent("[data-delivery]"), /Not saved/);
   await page.fill("#ix-question", "Show recent insider transactions at Nvidia.");
   await page.click(".ix-ask__go");
@@ -327,11 +308,11 @@ await check("AI on: a filing explanation and a cited synthesis are shown with th
   for (const h of await page.$$eval("[data-synth-box] a.ix-cite", a => a.map(x => x.getAttribute("href")))) assert.ok(await page.$(h), h);
   await ctx.close();
 });
-await check("reduced motion: no introduction and nothing animates", async () => {
-  const { ctx, page } = await open({ width: 1440, reduced: true, intro: true });
+await check("reduced motion: nothing animates", async () => {
+  const { ctx, page } = await open({ width: 1440, reduced: true });
   await page.waitForSelector(".ix-lead");
-  assert.equal(await page.evaluate(() => document.documentElement.classList.contains("ix-intro")), false);
-  await page.click('[data-mark] [data-dot="sales"] .im-core');
+  await page.click('[data-cat="sales"]');
+  await page.waitForTimeout(100);
   const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === "running" && a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest("main.ix")).length);
   assert.equal(running, 0);
   await ctx.close();

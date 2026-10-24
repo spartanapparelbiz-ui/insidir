@@ -141,7 +141,7 @@ function enter(nodes){if(reduce)return;const list=[...nodes];list.forEach((el,i)
 
 /* ---------- shell ---------- */
 const NAV=[["dashboard","Today","sun","/dashboard.html"],["watchlist","Watchlist","star","/watchlist.html"],["alerts","Alerts","bell","/alerts.html"],
- ["intelligence","Intelligence","sparkles","/intelligence.html"],["connections","Connections","waypoints","/explore.html"],["settings","Settings","settings","/account.html"]];
+ ["intelligence","Intelligence","sparkles","/intelligence.html"],["connections","Companies","waypoints","/explore.html"],["settings","Settings","settings","/account.html"]];
 const TABS=["dashboard","watchlist","alerts","intelligence"];
 function mountShell(){
  const host=$("[data-ui-shell]");if(!host)return;

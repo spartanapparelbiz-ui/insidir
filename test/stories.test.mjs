@@ -73,7 +73,9 @@ test("story pages: canonical, social cards, article data, sources, share control
       assert.match(html, /Historical filing/);
       assert.match(html, /not investment advice/i);
       for (const f of s.figures) assert.ok(html.includes(f.value.replace(/&/g, "&amp;")), f.value);
-      for (const v of ["v13-halftone.js", "v13-motion.js", "v14-public.css", "v26-stories.css"]) assert.ok(html.includes(v), v);
+      for (const v of ["assets/css/ui.css", "assets/css/site.css", "assets/css/stories-ui.css"]) assert.ok(html.includes(v), v);
+      assert.match(html, /<body class="ui site\b/, "stories are on the new public design");
+      for (const v of ["v13-halftone.js", "v13-motion.js", "v14-public.css", "v26-stories.css"]) assert.ok(!html.includes(v), "no old-design asset: " + v);
     }
     const hub = await (await fetch(base + "/stories.html")).text();
     for (const s of STORIES) assert.ok(hub.includes(`href="${storyPath(s)}"`), "hub links " + s.slug);
