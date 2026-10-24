@@ -1,5 +1,5 @@
 /* The paywall in the browser: auth.js chooses where a person lands after logging in or creating
-   an account, and app.js sends any product request answered 401 or 402 to the right page. Both
+   an account, and ui.js's api() sends any product request answered 401 or 402 to the right page. Both
    scripts run here in a bare VM with a minimal fake DOM, so the rules are checked without a browser. */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -29,39 +29,46 @@ function sandbox(pathname, search, fetchImpl) {
 }
 const reply = (status, body) => ({ status, ok: status >= 200 && status < 300, headers: { get: () => "application/json" }, json: async () => body });
 
-/* ---------- app.js: 401 → signin.html?next=, 402 → subscribe.html?next= ---------- */
-async function appGate(pathname, search, url, status) {
-  const { ctx, assigned } = sandbox(pathname, search, async () => reply(status, { error: "x" }));
-  ctx.document = { readyState: "complete", querySelector: () => null, querySelectorAll: () => [], addEventListener() {}, fonts: null };
+/* ---------- ui.js api(): 401 → /signin.html?next=, 402 → /subscribe.html?next= ----------
+   Every app page asks the engine through InsidirUI.api(); the function runs here on its own, with a fake location. */
+async function uiGate(pathname, search, url, status, body = { error: "x" }) {
+  const assigned = [];
+  const location = { pathname, search, origin: ORIGIN, get href() { return ORIGIN + pathname + search; }, set href(v) { assigned.push(v); } };
+  const ui = await source("ui.js");
+  const fn = /async function api\(path[\s\S]*?\n\}\n/.exec(ui)?.[0];
+  assert.ok(fn, "ui.js defines api()");
+  const ctx = { location, Object, Error, JSON, encodeURIComponent, fetch: async () => reply(status, body) };
   vm.createContext(ctx);
-  vm.runInContext(await source("app.js"), ctx);
-  const res = await ctx.fetch(url);
-  assert.equal(res.status, status, "the response still reaches the page script");
-  return assigned;
+  vm.runInContext(fn + "\nglobalThis.api = api;", ctx);
+  let error = null, data = null;
+  try { data = await ctx.api(url); } catch (e) { error = e; }
+  return { assigned, error, data };
 }
 
-test("app.js sends a lapsed subscription to subscribe.html and an ended session to sign in, with next=", async () => {
-  assert.deepEqual(await appGate("/company.html", "?ticker=AAPL", "/v1/intelligence?ticker=AAPL", 402), ["subscribe.html?next=company.html%3Fticker%3DAAPL"]);
-  assert.deepEqual(await appGate("/dashboard", "", "/v1/transactions?limit=8", 402), ["subscribe.html?next=dashboard.html"]);
-  assert.deepEqual(await appGate("/watchlist.html", "", "/v1/me/watchlist", 401), ["signin.html?next=watchlist.html"]);
-  assert.deepEqual(await appGate("/research.html", "?ticker=MSFT", ORIGIN + "/v1/me", 401), ["signin.html?next=research.html%3Fticker%3DMSFT"]);
-  assert.deepEqual(await appGate("/billing.html", "", "/v1/me", 401), ["signin.html?next=billing.html"], "account pages still need a session");
+test("ui.js sends a lapsed subscription to subscribe and an ended session to sign in, with next=", async () => {
+  let r = await uiGate("/company.html", "?ticker=AAPL", "/v1/chart?ticker=AAPL", 402);
+  assert.deepEqual(r.assigned, ["/subscribe.html?next=company.html%3Fticker%3DAAPL"]); assert.equal(r.error.status, 402, "the page script still sees the refusal");
+  r = await uiGate("/watchlist.html", "", "/v1/me/watchlist", 401);
+  assert.deepEqual(r.assigned, ["/signin.html?next=watchlist.html"]); assert.equal(r.error.status, 401);
+  r = await uiGate("/dashboard.html", "", "/v1/me/today", 402);
+  assert.deepEqual(r.assigned, ["/subscribe.html?next=dashboard.html"]);
 });
 
-test("app.js sends a reader of a personnel file back to that file after sign-in or subscribing", async () => {
-  assert.deepEqual(await appGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 401), ["signin.html?next=person.html%3Fcik%3D1214156"]);
-  assert.deepEqual(await appGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 402), ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
-  assert.deepEqual(await appGate("/person", "?cik=0001214156", "/v1/me/people", 401), ["signin.html?next=person.html%3Fcik%3D0001214156"], "the extensionless path too");
+test("ui.js sends a reader of an insider's page back to that page after sign-in or subscribing", async () => {
+  assert.deepEqual((await uiGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 401)).assigned, ["/signin.html?next=person.html%3Fcik%3D1214156"]);
+  assert.deepEqual((await uiGate("/person.html", "?cik=1214156", "/v1/people/1214156?limit=500", 402)).assigned, ["/subscribe.html?next=person.html%3Fcik%3D1214156"]);
 });
 
-test("app.js leaves open routes, other origins and account pages' 402s alone", async () => {
-  assert.deepEqual(await appGate("/billing.html", "", "/v1/search?q=AAP", 402), [], "billing exists to fix the subscription");
-  assert.deepEqual(await appGate("/account.html", "", "/v1/me/watchlist", 402), []);
-  assert.deepEqual(await appGate("/dashboard.html", "", "/v1/billing/status", 401), [], "billing routes are open");
-  assert.deepEqual(await appGate("/dashboard.html", "", "/v1/auth/logout", 401), [], "auth routes are open");
-  assert.deepEqual(await appGate("/dashboard.html", "", "https://example.com/v1/filings", 402), [], "other origins are not ours to gate");
-  assert.deepEqual(await appGate("/dashboard.html", "", "/v1/filings?limit=5", 404), [], "the database-free preview answers 404 and stays put");
-  assert.deepEqual(await appGate("/", "", "/v1/filings", 402), [], "public pages never redirect");
+test("ui.js stays put on other answers, and account pages never meet a 402", async () => {
+  const ok = await uiGate("/dashboard.html", "", "/v1/me/today", 200, { items: [] });
+  assert.deepEqual([ok.assigned, ok.data], [[], { items: [] }]);
+  const missing = await uiGate("/dashboard.html", "", "/v1/filings?limit=5", 404, { error: "Not found" });
+  assert.deepEqual([missing.assigned, missing.error.status, missing.error.message], [[], 404, "Not found"], "the database-free preview answers 404 and stays put");
+  // Account and billing pages call only routes the paywall leaves open to a lapsed member, so ui.js never sends them away.
+  const { classifyApi } = await import("../src/paywall.mjs");
+  const acct = await source("account-app.js");
+  for (const [, path, method] of acct.matchAll(/req\("([^"?]+)[^"]*"(?:,\s*"([A-Z]+)")?/g)) assert.notEqual(classifyApi(path, method || "GET"), "product", path);
+  for (const f of ["billing-app.js", "subscribe-app.js"]) assert.doesNotMatch(await source(f), /UI\.api\(/, f + " handles every answer itself");
 });
 
 /* ---------- auth.js: where a person lands ---------- */
@@ -105,7 +112,7 @@ test("auth.js: logging in checks /v1/me and lands on the dashboard, next= or the
 test("auth.js: next= to a personnel file is honoured after logging in, and kept through the paywall", async () => {
   const next = "?next=" + encodeURIComponent("/person.html?cik=1214156");
   assert.deepEqual((await authSubmit({ mode: "login", me: active, search: next })).assigned, ["person.html?cik=1214156"]);
-  assert.deepEqual((await authSubmit({ mode: "login", me: active, search: "?next=" + encodeURIComponent("person.html?cik=1214156") })).assigned, ["person.html?cik=1214156"], "the relative form app.js writes");
+  assert.deepEqual((await authSubmit({ mode: "login", me: active, search: "?next=" + encodeURIComponent("person.html?cik=1214156") })).assigned, ["person.html?cik=1214156"], "the relative form next= carries");
   assert.deepEqual((await authSubmit({ mode: "login", me: inactive, search: next })).assigned, ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
   assert.deepEqual((await authSubmit({ mode: "register", search: next })).assigned, ["subscribe.html?next=person.html%3Fcik%3D1214156"]);
 });
@@ -130,7 +137,7 @@ test("auth.js: a failed login stays on the page", async () => {
   assert.ok(!failed.calls.includes("GET /v1/me"));
 });
 
-/* ---------- subscribe.js: the subscription step names where the reader is going and continues there ---------- */
+/* ---------- subscribe-app.js: the subscription step names where the reader is going and continues there ---------- */
 async function subscribePage(search, me) {
   const calls = [];
   const { ctx, assigned } = sandbox("/subscribe.html", search, async (path, init = {}) => { calls.push((init.method || "GET") + " " + path); return path === "/v1/me" ? me : reply(200, {}); });
@@ -140,22 +147,22 @@ async function subscribePage(search, me) {
   ctx.sessionStorage = { getItem: () => null, setItem() {}, removeItem() {} };
   ctx.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
   vm.createContext(ctx);
-  vm.runInContext(await source("subscribe.js"), ctx);
+  vm.runInContext(await source("subscribe-app.js"), ctx);
   for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
   return { el, calls, assigned, body: ctx.document.body };
 }
 
-test("subscribe.js: next= to a personnel file is named, and an active member continues to it", async () => {
+test("subscribe-app.js: next= to an insider's page is named, and an active member continues to it", async () => {
   const search = "?next=" + encodeURIComponent("person.html?cik=1214156");
   const done = await subscribePage(search, active);
   assert.equal(done.body.dataset.pwState, "active");
-  assert.equal(done.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the personnel file.");
+  assert.equal(done.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the insider's page.");
   assert.equal(done.el('[data-pw-notice="next"]').hidden, false);
   assert.equal(done.el("[data-pw-continue]").getAttribute("href"), "person.html?cik=1214156");
-  assert.equal(done.el("[data-pw-continue]").textContent, "Continue to the personnel file");
+  assert.equal(done.el("[data-pw-continue]").textContent, "Continue to the insider's page");
   const ready = await subscribePage(search, reply(200, { user: { email: "a@b.co" }, access: { active: false, billingEnabled: true } }));
   assert.equal(ready.body.dataset.pwState, "ready", "a member without access is offered the plan, with the file still named");
-  assert.equal(ready.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the personnel file.");
+  assert.equal(ready.el('[data-pw-notice="next"]').textContent, "Subscribe to continue to the insider's page.");
   const other = await subscribePage("?next=" + encodeURIComponent("https://evil.example/person.html?cik=1"), active);
   assert.equal(other.el("[data-pw-continue]").getAttribute("href"), "dashboard.html", "only a page on this site is honoured");
 });

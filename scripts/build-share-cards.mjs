@@ -1,36 +1,38 @@
 /* Renders the 1200×630 share images for the research stories (web/assets/img/stories/*.png) in Chrome, with the
- * site's own JetBrains Mono, so a shared link unfurls with the story's headline, its key figures and its source.
+ * site's own Geist and wordmark, so a shared link unfurls with the story's headline, its key figures and its source.
  *
  *   npm install --no-save playwright-core@1.58.0
  *   CHROME_BIN=/path/to/chrome node scripts/build-share-cards.mjs
  *
  * Text and figures come from src/stories.mjs; nothing on a card is invented. Run again after editing a story. */
 import { mkdir } from "node:fs/promises";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { STORIES } from "../src/stories.mjs";
 import { escapeHtml as esc, day } from "../src/public-pages.mjs";
+import { WORDMARK } from "../src/site-ui.mjs";
 
 const { chromium } = await import("playwright-core");
 const executablePath = process.env.CHROME_BIN || "/opt/pw-browsers/chromium";
-const font = pathToFileURL(fileURLToPath(new URL("../web/assets/fonts/JetBrainsMono-normal-latin.woff2", import.meta.url))).href;
+// Inlined: a page set with setContent (about:blank) may not load file:// fonts.
+const font = "data:font/woff2;base64," + readFileSync(fileURLToPath(new URL("../web/assets/fonts/Geist-Variable.woff2", import.meta.url))).toString("base64");
 const outDir = fileURLToPath(new URL("../web/assets/img/stories/", import.meta.url));
 
 const page = ({ label, title, sub, figures, foot }) => `<!doctype html><html><head><meta charset="utf-8"><style>
-@font-face{font-family:M;src:url(${font}) format("woff2");font-weight:100 800}
+@font-face{font-family:G;src:url(${font}) format("woff2");font-weight:100 900}
 *{box-sizing:border-box;margin:0}
-body{width:1200px;height:630px;background:#0c0c0b;color:#f0eee8;font-family:M,monospace;padding:56px 64px;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.top{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#908f8b;font-weight:500}
-.logo{font-size:30px;font-weight:800;letter-spacing:-.04em;text-transform:none;color:#f0eee8}
-h1{margin-top:44px;font-size:${title.length > 70 ? 46 : 54}px;line-height:1.1;font-weight:800;letter-spacing:-.035em;max-width:1000px}
-h1 span{color:#908f8b}
-.figs{margin-top:auto;display:flex;border:1px solid #30302e;background:#171717}
-.fig{flex:1;padding:18px 22px;border-right:1px solid #30302e}.fig:last-child{border-right:0}
-.fig b{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#908f8b;font-weight:500}
-.fig i{display:block;margin-top:8px;font-style:normal;font-size:30px;font-weight:700;letter-spacing:-.02em}
-.foot{margin-top:22px;display:flex;justify-content:space-between;font-size:15px;color:#a4a4a0}
-.dots{position:absolute;right:64px;top:330px;width:240px;height:60px;background-image:radial-gradient(#434240 1.6px,transparent 1.7px);background-size:12px 12px;opacity:.9}
-</style></head><body><div class="dots"></div>
-<div class="top"><span class="logo">insidir.</span><span>${esc(label)}</span></div>
+body{width:1200px;height:630px;background:#0c0c0b;color:#f0eee8;font-family:G,sans-serif;padding:56px 64px;display:flex;flex-direction:column;font-variant-numeric:tabular-nums}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#8f8d87}
+.logo{height:30px;color:#f0eee8}.logo svg{height:30px;width:auto;display:block}
+h1{margin-top:48px;font-size:${title.length > 70 ? 48 : 56}px;line-height:1.1;font-weight:600;letter-spacing:-.025em;max-width:1000px}
+h1 span{color:#8f8d87}
+.figs{margin-top:auto;display:flex;gap:12px}
+.fig{flex:1;padding:20px 24px;border-radius:16px;background:#161615}
+.fig b{display:block;font-size:17px;color:#8f8d87;font-weight:400}
+.fig i{display:block;margin-top:8px;font-style:normal;font-size:32px;font-weight:600;letter-spacing:-.02em}
+.foot{margin-top:24px;display:flex;justify-content:space-between;font-size:18px;color:#8f8d87}
+</style></head><body>
+<div class="top"><span class="logo">${WORDMARK}</span><span>${esc(label)}</span></div>
 <h1>${title}${sub ? ` <span>${esc(sub)}</span>` : ""}</h1>
 ${figures?.length ? `<div class="figs">${figures.map(f => `<div class="fig"><b>${esc(f.label)}</b><i>${esc(f.value)}</i></div>`).join("")}</div>` : ""}
 <div class="foot">${foot.map(x => `<span>${esc(x)}</span>`).join("")}</div>

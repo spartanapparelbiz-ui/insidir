@@ -69,7 +69,9 @@ test("private pages never include the PostHog script; the privacy policy names P
   for (const page of pages) {
     const html = await readFile(new URL(page, WEB), "utf8");
     const tagged = html.includes("/assets/js/posthog.js");
-    if (PRIVATE_PAGES.includes(page.replace(/\.html$/, ""))) assert.equal(tagged, false, page + " must not load analytics");
+    // A page that only redirects (research.html → the stock page) records nothing; the page it opens does.
+    if (/http-equiv="refresh"/.test(html)) assert.equal(tagged, false, page + " only redirects");
+    else if (PRIVATE_PAGES.includes(page.replace(/\.html$/, ""))) assert.equal(tagged, false, page + " must not load analytics");
     else assert.equal(tagged, true, page + " loads analytics");
   }
   const privacy = await readFile(new URL("privacy.html", WEB), "utf8");

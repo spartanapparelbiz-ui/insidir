@@ -25,7 +25,7 @@ function mount(el,data,{cap=25}={}){
   for(const [p,list] of kids){const pa=pos.get(p).a;list.forEach((k,i)=>{const a=pa+(i-(list.length-1)/2)*Math.min(.32,span/Math.max(1,list.length));pos.set(k.id,{x:cx+R2*Math.cos(a),y:cy+R2*Math.sin(a),a,parent:p});});}
   const lines=[...pos.entries()].filter(([id,p])=>p.parent).map(([id,p])=>{const q=pos.get(p.parent);return `<line data-to="${UI.esc(id)}" x1="${q.x.toFixed(1)}" y1="${q.y.toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}"/>`;}).join("");
   const node=(id,p)=>{const n=byId.get(id)||{name:id,kind:"company"};const isC=id===center;const lab=n.kind==="company"?(n.ticker||UI.fmt.company(n.name)):UI.fmt.person(n.name);
-   const pic=n.kind==="company"?UI.logo(n.ticker||"",isC?40:28,n.name):UI.monogram(n.name,isC?32:24);
+   const pic=n.kind==="company"?UI.logo(n.ticker||"",isC?40:28,n.name):UI.face(n.name,{cik:n.cik||(/[?&]cik=(\d+)/.exec(n.url||"")||[])[1],size:isC?32:24});
    const href=n.url?(n.url.startsWith("/")?n.url:"/"+n.url):null;
    return `<${href?`a href="${UI.esc(href)}"`:"span"} class="gn${isC?" gn--c":""}" data-id="${UI.esc(id)}" style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px">${pic}<span class="gn__l">${UI.esc(lab)}</span></${href?"a":"span"}>`;};
   el.innerHTML=`<div class="graph" style="height:${H}px"><svg width="${W}" height="${H}" aria-hidden="true">${lines}</svg>${[...pos.entries()].map(([id,p])=>node(id,p)).join("")}</div>

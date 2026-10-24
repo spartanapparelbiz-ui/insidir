@@ -64,10 +64,11 @@ const ALL_PAGES = [
   ["forgot-password", "/forgot-password.html"], ["ops", "/ops.html"], ["intelligence", "/intelligence.html?q=What%20did%20Nvidia%20insiders%20disclose%20this%20month%3F"], ["intelligence-empty", "/intelligence.html#empty"], ["admin-costs", "/admin-costs.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
-// Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
-// scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
-const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker", "signin", "signup", "forgot-password", "filing"]);
-const pages = (wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES).filter(([k]) => !REBUILT.has(k));
+// Every page is now rebuilt on ui.css (the new design system), not V13: scripts/visual-layout-check.mjs and
+// scripts/a11y-check.mjs check them. This V13 gate only runs on pages named with --pages.
+const REBUILT = new Set(ALL_PAGES.map(([k]) => k));
+const pages = (wanted.length ? ALL_PAGES.filter(([k]) => wanted.includes(k)) : ALL_PAGES).filter(([k]) => wanted.length || !REBUILT.has(k));
+if (!pages.length) { console.log("Every page is on the new design (ui.css); nothing left for this V13 gate. See scripts/visual-layout-check.mjs and scripts/a11y-check.mjs."); process.exit(0); }
 
 /* ---------- API fixtures (mock only; production reads the real routes) ---------- */
 const source = "https://www.sec.gov/Archives/edgar/data/320193/000032019326000077/aapl-report.htm";

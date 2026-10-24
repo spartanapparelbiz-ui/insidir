@@ -41,16 +41,18 @@ test("the page: the last 3 trades in plain English with their filings, the rest 
   assert.match(html, /<title>EXMP insider trading: who&#39;s buying and selling \| Insidir<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/insidir\.example\/EXMP">/);
   assert.match(html, /<meta property="og:image" content="https:\/\/insidir\.example\/og\/EXMP\.png">/);
-  assert.match(html, /<h1 class="ds-h1 v2-tk__h">Example insiders: who's buying and selling\.<\/h1>/);
+  assert.match(html, /<h1 class="t-hero stk-h1">Example insiders: who's buying and selling\.<\/h1>/);
   assert.match(html, /Jane Doe, a director, bought \$240K of EXMP stock on Oct 20, 2026\./);
   assert.match(html, /Rich Roe, the CFO, sold \$241K of EXMP stock on Oct 19, 2026, under a plan set up in advance\./);
   assert.ok(!/<script>x/i.test(html), "names are escaped");
-  assert.equal((html.match(/class="v2-trade v2-trade--/g) || []).length, FREE_TRADES, "exactly three free trades");
+  assert.equal((html.match(/class="card stk-trade"/g) || []).length, FREE_TRADES, "exactly three free trades");
   assert.equal((html.match(/See the SEC filing/g) || []).length, FREE_TRADES, "each linked to its filing");
   assert.ok(!html.includes("x5/form4.xml") && !html.includes("x6/form4.xml"), "locked trades are not in the page, not even blurred");
   assert.match(html, /4 more insider trades at EXMP in the last 12 months\./);
   assert.match(html, /href="\/signup.html" data-cta="ticker-unlock">Start for \$1<\/a>/);
   assert.match(html, /Research, not investment advice\./);
+  assert.match(html, /<body class="ui site"/, "the new design (ui.css + site.css)");
+  assert.doesNotMatch(html, /ds-h1|v2-tk|ds\.css|site-v2\.css/, "nothing from the old design");
   assert.doesNotMatch(html, /data-v2-mail|newsletter/, "no email sign-up: Insidir sends no email");
   assert.match(html, /"@type":"Corporation","name":"Example","tickerSymbol":"EXMP"/);
 
@@ -64,7 +66,7 @@ test("a stock with no open-market trades says so plainly and shows its latest ot
   const d = await tickerData(query, "QUIE");
   const html = renderTickerPage(d, { origin: "https://insidir.example" });
   assert.match(html, /No insider at Example has bought or sold QUIE stock on the open market in the last 12 months, so there is nothing to show here yet\./);
-  assert.match(html, /Try a popular one:<\/span><a class="v2-chip" href="\/NVDA">NVDA<\/a><a class="v2-chip" href="\/TSLA">TSLA<\/a><a class="v2-chip" href="\/AAPL">AAPL<\/a>/, "never a dead end");
+  assert.match(html, /Try a popular one<\/span><a class="chip" href="\/NVDA">NVDA<\/a><a class="chip" href="\/TSLA">TSLA<\/a><a class="chip" href="\/AAPL">AAPL<\/a>/, "never a dead end");
   assert.doesNotMatch(html, /Form 4, such as/, "no jargon in the explanation");
   assert.match(html, /Get the next QUIE insider trade the minute it's filed\./);
   assert.equal(await tickerData(fakeQuery(), "NOPE"), null, "an unknown symbol has no page");

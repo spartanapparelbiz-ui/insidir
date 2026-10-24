@@ -249,14 +249,18 @@ ${f ? `<a class="chg chg--up lrow__amt row__link" href="${esc(f)}" rel="nofollow
   ${secUrl(example.source_url) ? `<a class="t-label slink" href="${esc(example.source_url)}" rel="nofollow noopener" target="_blank">Open the filing ↗</a>` : ""}</div></li>
  <li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">You get one sentence</h3><p class="muted">In the app or as a phone notification, minutes after the filing posts.</p>
   <div class="show__vis show__note"><span class="show__app" aria-hidden="true">i.</span><span><span class="show__note-top"><span class="strong">Insidir</span><span class="t-micro muted">now</span></span><span class="t-label">${esc(sentence(example))}</span></span></div></li>
-</ol>` : "";
+</ol>` : `<ol class="show">
+ <li class="card show__step"><p class="t-label muted">1</p><h3 class="t-section">Pick your stocks</h3><p class="muted">Type a ticker or paste a list. Follow a CEO by name.</p></li>
+ <li class="card show__step"><p class="t-label muted">2</p><h3 class="t-section">We read every filing</h3><p class="muted">Every Form 4, in one plain sentence. Every number links to the filing.</p></li>
+ <li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">You get one sentence</h3><p class="muted">In the app or as a phone notification, minutes after the filing posts.</p></li>
+</ol>`; // without live data the steps are words only, so the nav's #how always lands
   const body = `<body class="ui site">
 <a class="skip" href="#main">Skip to content</a>
 ${uiNav({ cta: "nav", home: true })}
 <main id="main">
 ${hero(d, now)}
 ${top.length ? section("live-h", "This week's biggest insider buys.", "Insiders are CEOs, CFOs, directors and big shareholders, and these are the largest buys they reported this week, straight from SEC EDGAR.", week) : ""}
-${how ? section("how-h", "Three steps. No finance degree needed.", "Pick your stocks, we read every filing, and you get one sentence when an insider trades.", how, ' id="how"') : ""}
+${section("how-h", "Three steps. No finance degree needed.", "Pick your stocks, we read every filing, and you get one sentence when an insider trades.", how, ' id="how"')}
 ${d ? section("rc-h", "What happened after they bought.", esc(RECEIPT_RULE), `${receiptsTable(d.receipts)}
  <p class="t-label muted snote">Measured from the close on the day of the first buy. Past results don't predict future ones. Research, not investment advice.</p>
 `, ' id="receipts"') : ""}

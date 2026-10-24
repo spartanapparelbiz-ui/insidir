@@ -91,7 +91,7 @@ test("release gate: nothing the site serves carries invented sample data", async
       for (const variant of [p, p.toUpperCase().replace("/ASSETS/JS/", "/assets/js/"), p.replace("/js/", "/js/./"), p.replace("assets", "%61ssets")])
         assert.equal((await fetch(base + variant)).status, 404, variant);
     }
-    assert.equal((await fetch(base + "/assets/js/live-research.js")).status, 200, "live scripts still serve");
+    assert.equal((await fetch(base + "/assets/js/ui.js")).status, 200, "live scripts still serve");
   } finally { server.close(); }
 });
 

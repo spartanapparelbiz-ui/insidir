@@ -14,7 +14,8 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { esc, money, day, sentence, tradeCard, withRole, LINE_SQL, head, nav, footer, scripts, searchBox, companyName, kindOf, personName } from "./site-v2.mjs";
+import { esc, money, day, sentence, withRole, LINE_SQL, scripts, companyName, kindOf, personName } from "./site-v2.mjs";
+import { uiHead, uiNav, uiFooter, uiSearch, uiLogo, uiInitials, uiTrade } from "./site-ui.mjs";
 import { siteOrigin } from "./public-pages.mjs";
 import { storiesForTicker, storyPath } from "./stories.mjs";
 
@@ -59,14 +60,38 @@ export async function tickerData(query, ticker) {
 
 /* Never a dead end: three popular stocks to try instead. */
 export const POPULAR = Object.freeze(["NVDA", "TSLA", "AAPL", "MSFT"]);
-const suggest = t => `<p class="v2-suggest"><span class="ds-small">Try a popular one:</span>${POPULAR.filter(x => x !== t).slice(0, 3).map(x => `<a class="v2-chip" href="/${x}">${x}</a>`).join("")}</p>`;
+const suggest = t => `<p class="schips"><span class="muted">Try a popular one</span>${POPULAR.filter(x => x !== t).slice(0, 3).map(x => `<a class="chip" href="/${x}">${x}</a>`).join("")}</p>`;
+const SEC = /^https:\/\/(www\.)?sec\.gov\//;
+const amountCls = k => k === "buy" ? "chg chg--up" : k === "sell" ? "chg chg--down" : "chg";
 
+/* One trade: who, what, how much (linked to the SEC filing), when, and the plain-English sentence. */
 function tradeItem(r) {
-  const filing = /^https:\/\/(www\.)?sec\.gov\//.test(String(r.source_url || "")) ? r.source_url : null;
-  const k = kindOf(r);
-  return `<li class="v2-trade v2-trade--${k}"><span class="ds-badge ds-badge--${k === "other" ? "" : k}">${k === "buy" ? "Buy" : k === "sell" ? "Sell" : "Filed"}</span>
-<p>${esc(sentence(r))}</p>${filing ? `<a class="ds-link" href="${esc(filing)}" rel="nofollow noopener" target="_blank">See the SEC filing <span class="ds-arrow" aria-hidden="true">↗</span></a>` : ""}</li>`;
+  const filing = SEC.test(String(r.source_url || "")) ? r.source_url : null, k = kindOf(r), who = personName(r.owner_name);
+  const amount = esc(money(r.estimated_value) || "—");
+  return `<li class="card stk-trade">
+<div class="stk-trade__top"><span class="mono mono--32" aria-hidden="true">${esc(uiInitials(who))}</span>
+<span class="stk-trade__who"><span class="strong">${esc(who)}</span>${r.role ? `<span class="t-label muted">${esc(r.role)}</span>` : ""}</span>
+${uiTrade(k, k === "sell" && r.rule_10b5_1 === true)}${filing ? `<a class="${amountCls(k)} stk-trade__amt" href="${esc(filing)}" rel="nofollow noopener" target="_blank" title="Open the SEC Form 4">${amount}</a>` : `<span class="${amountCls(k)} stk-trade__amt">${amount}</span>`}</div>
+<p class="t-body">${esc(sentence(r))}</p>
+<p class="t-label muted">${esc(day(r.transaction_date) || "")}${filing ? ` · <a class="slink muted" href="${esc(filing)}" rel="nofollow noopener" target="_blank">See the SEC filing <span aria-hidden="true">↗</span></a>` : ""}</p></li>`;
 }
+
+const head2 = (t, who, h1, p) => `<header class="stk-head">
+  <div class="stk-id">${uiLogo(t, 56)}<span class="stk-id__t"><span class="tick">${esc(t)}</span><span class="t-label muted">${esc(who)}</span></span></div>
+  <h1 class="t-hero stk-h1">${h1}</h1>
+  <p class="ssec__p">${p}</p>
+</header>`;
+const lookup = `<div class="stk-search"><p class="t-label muted">Look up another stock</p>${uiSearch("q2")}</div>`;
+const page = (inner, cta) => `<a class="skip" href="#main">Skip to content</a>
+${uiNav({ cta })}
+<main id="main">
+<section class="ssec stk"><div class="swrap">
+${inner}
+</div></section>
+</main>
+${uiFooter()}
+${scripts()}
+</body></html>`;
 
 export function renderTickerPage(d, { origin }) {
   const t = d.ticker, who = d.name || t;
@@ -74,57 +99,35 @@ export function renderTickerPage(d, { origin }) {
   const title = `${t} insider trading: who's buying and selling | Insidir`;
   const description = free.length ? `${sentence(free[0])} See every insider buy and sell at ${who}, in plain English, from SEC filings.`
     : `Insider buys and sells at ${who} (${t}), in plain English, from SEC filings.`;
-  const list = free.length ? `<ol class="v2-trades">${free.map(tradeItem).join("")}</ol>`
-    : `<div class="ds-card v2-quiet"><p>No insider at ${esc(who)} has bought or sold ${esc(t)} stock on the open market in the last 12 months, so there is nothing to show here yet.</p>${d.latestAny.length ? `<p class="ds-small">Their latest insider reports were other kinds, such as stock awards and shares held back for tax:</p><ol class="v2-trades">${d.latestAny.map(tradeItem).join("")}</ol>` : ""}${suggest(t)}</div>`;
-  const body = `${nav({ cta: "ticker-nav" })}
-<main id="main">
-<section class="v2-tk ds-wrap">
-  <p class="v2-tk__tick ds-num">${esc(t)}</p>
-  <h1 class="ds-h1 v2-tk__h">${esc(who)} insiders: who's buying and selling.</h1>
-  <p class="ds-body">What ${esc(who)}'s CEO, CFO, directors and big shareholders reported to the SEC, in plain English. Newest first.</p>
-  ${list}
-  ${storiesForTicker(t).map(st => `<p class="v2-tk__story"><a class="ds-link" href="${esc(storyPath(st))}">Read: ${esc(st.title)} <span class="ds-arrow" aria-hidden="true">→</span></a></p>`).join("")}
-</section>
-<section class="v2-lock ds-wrap" aria-labelledby="lock-h">
-  <div class="ds-card v2-lock__card">
-    <div class="v2-lock__blur" aria-hidden="true">${"<i><b></b><b></b><b></b></i>".repeat(4)}</div>
-    <div class="v2-lock__copy">
-      <h2 class="v2-lock__h" id="lock-h">${more ? `${more} more insider trade${more === 1 ? "" : "s"} at ${esc(t)} in the last 12 months.` : `Get the next ${esc(t)} insider trade the minute it's filed.`}</h2>
-      <p class="ds-small">Full history, each insider's track record, a signal score on every trade, and alerts minutes after a new filing.</p>
-      <a class="ds-btn ds-btn--lg" href="/signup.html" data-cta="ticker-unlock">Start for $1</a>
-      <p class="ds-small">$1 for 7 days, then $39 a month. Cancel online anytime.</p>
-    </div>
+  const list = free.length ? `<ol class="stk-trades">${free.map(tradeItem).join("")}</ol>`
+    : `<div class="card stk-quiet"><p>No insider at ${esc(who)} has bought or sold ${esc(t)} stock on the open market in the last 12 months, so there is nothing to show here yet.</p>${d.latestAny.length ? `<p class="t-label muted">Their latest insider reports were other kinds, such as stock awards and shares held back for tax:</p><ol class="stk-trades">${d.latestAny.map(tradeItem).join("")}</ol>` : ""}${suggest(t)}</div>`;
+  const inner = `${head2(t, who, `${esc(who)} insiders: who's buying and selling.`, `What ${esc(who)}'s CEO, CFO, directors and big shareholders reported to the SEC, in plain English. Newest first.`)}
+${list}
+${storiesForTicker(t).map(st => `<p class="stk-story"><a class="slink" href="${esc(storyPath(st))}">Read: ${esc(st.title)} <span aria-hidden="true">→</span></a></p>`).join("")}
+<div class="card stk-lock" aria-labelledby="lock-h">
+  <div class="stk-lock__blur" aria-hidden="true">${"<i><b></b><b></b><b></b></i>".repeat(4)}</div>
+  <div class="stk-lock__copy">
+    <h2 class="t-title" id="lock-h">${more ? `${more} more insider trade${more === 1 ? "" : "s"} at ${esc(t)} in the last 12 months.` : `Get the next ${esc(t)} insider trade the minute it's filed.`}</h2>
+    <p class="muted">Full history, each insider's track record, a signal score on every trade, and alerts minutes after a new filing.</p>
+    <a class="btn btn--primary btn--lg" href="/signup.html" data-cta="ticker-unlock">Start for $1</a>
+    <p class="t-label muted">$1 for 7 days, then $39 a month. Cancel online anytime.</p>
   </div>
-</section>
-<section class="ds-wrap v2-tk__more">
-  <div class="v2-tk__search"><p class="ds-small">Look up another stock</p>${searchBox("q2", { large: false })}</div>
-  <p class="ds-small v2-tk__legal">Insiders are a company's officers, directors and owners of more than 10% of its stock. They must report their trades to the SEC within two business days. Insidir reads every filing; this page shows public records. Research, not investment advice.</p>
-</section>
-</main>
-${footer()}
-${scripts()}
-</body></html>`;
+</div>
+${lookup}
+<p class="t-label muted stk-legal">Insiders are a company's officers, directors and owners of more than 10% of its stock. They must report their trades to the SEC within two business days. Insidir reads every filing; this page shows public records. Research, not investment advice.</p>`;
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: `${who} insider trading`, url: origin + "/" + t, about: { "@type": "Corporation", name: who, tickerSymbol: t } };
-  return head({ title, description, canonical: "/" + encodeURIComponent(t), origin, image: "/og/" + encodeURIComponent(t) + ".png",
-    extra: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` }) + `\n<body class="ds v2" data-funnel-stock>\n` + body;
+  return uiHead({ title, description, canonical: "/" + encodeURIComponent(t), origin, image: "/og/" + encodeURIComponent(t) + ".png",
+    extra: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` }) + `\n<body class="ui site" data-funnel-stock>\n` + page(inner, "ticker-nav");
 }
 
 /* A symbol we have nothing on: say so plainly and offer three popular stocks and the search box, never an empty page. */
 export function renderUnknownTicker(t, { origin }) {
-  const body = `${nav({ cta: "ticker-nav" })}
-<main id="main">
-<section class="v2-tk ds-wrap">
-  <p class="v2-tk__tick ds-num">${esc(t)}</p>
-  <h1 class="ds-h1 v2-tk__h">We couldn't find a stock called ${esc(t)}.</h1>
-  <p class="ds-body">Check the spelling of the symbol, or try one of these.</p>
-  <div class="ds-card v2-quiet">${suggest(t)}<div class="v2-tk__search"><p class="ds-small">Look up another stock</p>${searchBox("q2", { large: false })}</div></div>
-</section>
-</main>
-${footer()}
-${scripts()}
-</body></html>`;
-  return head({ title: `${t}: stock not found | Insidir`, description: "Insider buys and sells for any U.S. stock, in plain English, from SEC filings.", canonical: "/" + encodeURIComponent(t), origin, noindex: true })
-    + `\n<body class="ds v2">\n` + body;
+  const inner = `${head2(t, "Not found", `We couldn't find a stock called ${esc(t)}.`, "Check the spelling of the symbol, or try one of these.")}
+<div class="card stk-quiet">${suggest(t)}</div>
+${lookup}
+<p class="t-label muted stk-legal">Insidir shows public SEC records. Research, not investment advice.</p>`;
+  return uiHead({ title: `${t}: stock not found | Insidir`, description: "Insider buys and sells for any U.S. stock, in plain English, from SEC filings.", canonical: "/" + encodeURIComponent(t), origin, noindex: true })
+    + `\n<body class="ui site">\n` + page(inner, "ticker-nav");
 }
 
 /* ---------- the share image ---------- */

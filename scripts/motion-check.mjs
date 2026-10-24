@@ -94,10 +94,11 @@ const ALL = [
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
 ];
 const wanted = opt("pages", "").split(",").filter(Boolean);
-// Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
-// scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
-const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker", "signin", "signup", "forgot-password", "filing"]);
-const PAGES = (wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL).filter(([k]) => !REBUILT.has(k));
+// Every page is now rebuilt on ui.css (the new design system), not V13: scripts/visual-layout-check.mjs and
+// scripts/a11y-check.mjs check them. This V13 gate only runs on pages named with --pages.
+const REBUILT = new Set(ALL.map(([k]) => k));
+const PAGES = (wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL).filter(([k]) => wanted.length || !REBUILT.has(k));
+if (!PAGES.length) { console.log("Every page is on the new design (ui.css); nothing left for this V13 gate. See scripts/visual-layout-check.mjs and scripts/a11y-check.mjs."); process.exit(0); }
 const passed = [], failed = [];
 const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : label + (detail === undefined ? "" : " — " + JSON.stringify(detail))); return ok; };
 const pct = v => (v * 100).toFixed(v && v < 0.001 ? 3 : 2) + "%";

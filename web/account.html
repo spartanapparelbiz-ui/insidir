@@ -1,57 +1,119 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0c0b"><meta name="description" content="Manage your Insidir account: login, subscription, saved research, privacy and account deletion."><title>Account — insidir.</title><meta name="robots" content="noindex"><link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css"><link rel="stylesheet" href="assets/css/v3-account.css?v=2"><script defer src="assets/js/app.js?v=23"></script><script defer src="assets/js/v3-account.js?v=4"></script>  <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
-<link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
-<link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=26">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
-<link rel="stylesheet" href="assets/css/v13-paywall.css?v=8">
-<link rel="stylesheet" href="assets/css/v27-product.css?v=2">
-<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"></head><body class="app-body v2-app v3-app v6-app v13"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header></header>
-<main class="app-main v3-account" id="main">
-<header class="v3-account__head desk-masthead" id="Content">
-<div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-<div class="desk-topline"><p class="v3-eyebrow">Insidir / Account</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Login</span><span class="rd-bit"><span class="rd-sep"> · </span>subscription</span><span class="rd-bit"><span class="rd-sep"> · </span>saved research</span><span class="rd-bit"><span class="rd-sep"> · </span>privacy</span></p></div>
-<h1>Your account.</h1>
-<p class="v3-account__lead desk-lead">Your research belongs to you. Manage how you log in, your subscription and the information you choose to save.</p>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Settings — Insidir</title>
+<meta name="description" content="Manage your Insidir account: login, password and sessions, subscription, a copy of your data, privacy and account deletion.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir">
+<link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=3">
+<link rel="stylesheet" href="/assets/css/account-app.css?v=1">
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=4"></script>
+<script defer src="/assets/js/account-app.js?v=1"></script>
+</head>
+<body class="ui">
+<a class="skip" href="#main">Skip to content</a>
+<div data-ui-shell data-page="settings">
+
+<header class="page-head">
+  <div><h1 class="t-title">Settings</h1><p class="t-label muted">Your login, security, subscription and data. Insidir sends no email.</p></div>
 </header>
-<div class="v3-account__grid" data-hf-reveal-group>
-<section class="v3-account__panel"><p class="v3-eyebrow">01 / Login</p><h2>Your details</h2><p class="v3-account__label">Logged in as</p><p class="v3-account__value" id="account-email">Checking your session…</p><p id="account-status" aria-live="polite" role="status" class="v3-account__hint"></p><div class="v3-account__actions"><button type="button" id="account-signout" class="v3-account__button" data-hf-atom>Sign out</button><a id="account-signin" href="signin.html?next=account.html" class="v3-account__button" data-hf-atom hidden>Log in →</a></div></section>
-<section class="v3-account__panel"><p class="v3-eyebrow">02 / Subscription</p><h2>Plan and billing</h2><p class="v3-account__label">Insidir Pro · $39 / month</p><p class="v3-account__value" id="account-plan">Checking your subscription…</p><p id="account-plan-note">Your renewal date, payment method and invoices are in Billing. Card details stay with Stripe.</p><div class="v3-account__actions"><a class="v3-account__button" id="account-primary" href="billing.html" data-hf-atom>Open billing →</a><button type="button" id="account-cancel" class="v3-account__button v3-account__button--cancel" aria-controls="account-cancel-confirm" aria-expanded="false" data-hf-atom hidden>Cancel subscription</button></div>
-<div class="v3-account__cancel-confirm" id="account-cancel-confirm" role="group" aria-labelledby="account-cancel-heading" hidden>
-<h3 id="account-cancel-heading">Cancel your Insidir subscription?</h3>
-<p id="account-cancel-copy">Cancellation stops the next renewal. Your current paid or trial access will continue until the period ends.</p>
-<div class="v3-account__cancel-actions"><button type="button" id="account-cancel-yes">Confirm cancellation</button><button type="button" id="account-cancel-keep">Keep subscription</button></div>
+
+<div class="set">
+  <section class="set-sec" aria-labelledby="login-h">
+    <div class="set-sec__head"><h2 class="t-section" id="login-h">Login</h2></div>
+    <div class="card set-card">
+      <dl class="set-field"><dt>Logged in as</dt><dd id="account-email" aria-live="polite"><span class="skel" style="display:inline-block;width:200px;height:16px"></span></dd></dl>
+      <p class="set-note">This is the address you log in with. Insidir sends no email, so nothing is ever sent to it. Alerts arrive in the app and, if you turn them on, as notifications on your devices. <a href="/alerts.html#settings">Alert settings</a></p>
+      <p class="set-msg" id="account-status" role="status" aria-live="polite"></p>
+      <div class="set-acts"><button class="btn btn--secondary" type="button" id="account-signout">Sign out</button></div>
+    </div>
+  </section>
+
+  <section class="set-sec" aria-labelledby="plan-h">
+    <div class="set-sec__head"><h2 class="t-section" id="plan-h">Subscription</h2></div>
+    <div class="card set-card">
+      <dl class="set-field"><dt>Insidir Pro · $39 a month</dt><dd id="account-plan">Checking your subscription…</dd></dl>
+      <p class="set-note" id="account-plan-note">Your renewal date, payment method and invoices are in Billing. Card details stay with Stripe.</p>
+      <div class="set-acts">
+        <a class="btn btn--primary" id="account-primary" href="/billing.html">Open billing</a>
+        <button class="btn btn--ghost" type="button" id="account-cancel" aria-controls="account-cancel-confirm" aria-expanded="false" hidden>Cancel subscription</button>
+      </div>
+      <div class="set-confirm" id="account-cancel-confirm" role="group" aria-labelledby="account-cancel-heading" hidden>
+        <h3 id="account-cancel-heading">Cancel your Insidir subscription?</h3>
+        <p id="account-cancel-copy">Cancellation stops the next renewal. Your current paid or trial access continues until the period ends.</p>
+        <div class="set-acts"><button class="btn btn--primary" type="button" id="account-cancel-yes">Confirm cancellation</button><button class="btn btn--secondary" type="button" id="account-cancel-keep">Keep subscription</button></div>
+      </div>
+      <p class="set-msg" id="account-cancel-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section class="set-sec" id="account-security" aria-labelledby="security-h">
+    <div class="set-sec__head"><h2 class="t-section" id="security-h">Password and sessions</h2></div>
+    <div class="card set-card">
+      <form class="set-form" id="account-password-form" novalidate>
+        <div class="set-field"><label for="account-password-current">Current password</label><input class="input" id="account-password-current" type="password" autocomplete="current-password" maxlength="1024" required></div>
+        <div class="set-field"><label for="account-password-new">New password, 12 to 128 characters</label><input class="input" id="account-password-new" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></div>
+        <div class="set-acts"><button class="btn btn--primary" type="submit" id="account-password-save">Change password</button><button class="btn btn--secondary" type="button" id="account-sessions-revoke">Sign out other devices</button></div>
+      </form>
+      <p class="set-msg" id="account-security-feedback" role="status" aria-live="polite"></p>
+      <div class="set-field">
+        <h3 class="set-label" id="events-h">Recent sign-ins and changes</h3>
+        <ul class="set-events" id="account-events" aria-labelledby="events-h" aria-busy="true">
+          <li><span class="skel" style="width:120px;height:12px"></span><span class="skel" style="width:96px;height:12px"></span></li>
+          <li><span class="skel" style="width:100px;height:12px"></span><span class="skel" style="width:96px;height:12px"></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-sec" aria-labelledby="data-h">
+    <div class="set-sec__head"><h2 class="t-section" id="data-h">Your data</h2></div>
+    <div class="card set-card">
+      <p class="set-note">Your watchlist, research journal, followed people and the holdings you enter are private to your account.</p>
+      <div class="set-links"><a class="btn btn--secondary" href="/watchlist.html">Watchlist</a><a class="btn btn--secondary" href="/research.html">Research journal</a><a class="btn btn--secondary" href="/people.html">People</a><a class="btn btn--secondary" href="/portfolio.html">Holdings</a></div>
+      <div class="set-field">
+        <h3 class="strong">Download a copy</h3>
+        <p class="set-note">A JSON file with your account details, watchlist, followed people, research journal, holdings, alert settings, subscription consents and any emails sent before Insidir stopped sending email. Card details are held by Stripe, not Insidir.</p>
+      </div>
+      <div class="set-acts"><button class="btn btn--secondary" type="button" id="account-export">Download my data</button></div>
+      <p class="set-msg" id="account-export-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section class="set-sec" aria-labelledby="privacy-h">
+    <div class="set-sec__head"><h2 class="t-section" id="privacy-h">Privacy</h2></div>
+    <div class="card set-card">
+      <p class="set-note">Read how Aethric LLC handles Insidir account data, and ask us about anything these settings don't cover at <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>.</p>
+      <div class="set-links"><a class="btn btn--secondary" href="/privacy.html">Privacy policy</a><a class="btn btn--ghost" href="/terms.html">Terms</a><a class="btn btn--ghost" href="/subscription-policy.html">Subscription policy</a></div>
+    </div>
+  </section>
+
+  <section class="set-sec" aria-labelledby="delete-h">
+    <div class="set-sec__head"><h2 class="t-section" id="delete-h">Delete your account</h2></div>
+    <div class="card set-card">
+      <p class="set-note">Deleting your account first cancels any Insidir subscription with Stripe, so no further payments are taken; if Stripe can't confirm the cancellation, nothing is deleted. It then revokes any read-only brokerage connection and removes your login, every session, your watchlist, research journal, followed people, manually entered holdings, alerts and alert settings. Records the law requires us to keep (your subscription consents) are kept as the privacy policy explains. This cannot be undone.</p>
+      <div class="set-acts"><button class="btn btn--secondary" type="button" id="account-delete" disabled>Delete account</button></div>
+      <form class="set-confirm set-form" id="account-delete-form" hidden novalidate>
+        <p>Enter your password to permanently delete <strong id="account-delete-email">this account</strong>. Any subscription is cancelled with Stripe first. This cannot be undone.</p>
+        <div class="set-field"><label for="account-delete-password">Password</label><input class="input" id="account-delete-password" type="password" autocomplete="current-password" required maxlength="1024"></div>
+        <div class="set-acts"><button class="btn btn--primary" type="submit" id="account-delete-confirm">Delete permanently</button><button class="btn btn--secondary" type="button" id="account-delete-cancel">Keep my account</button></div>
+      </form>
+      <p class="set-msg" id="account-delete-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </section>
 </div>
-<p id="account-cancel-feedback" class="v3-account__hint" role="status" aria-live="polite"></p></section>
-<section class="v3-account__panel"><p class="v3-eyebrow">03 / Your research</p><h2>Saved information</h2><p>Your watchlist, research journal, followed people and manually entered holdings are private to your account.</p><div class="v3-account__links"><a href="watchlist.html" data-hf-atom>Watchlist →</a><a href="research.html" data-hf-atom>Research journal →</a><a href="people.html" data-hf-atom>People →</a><a data-hf-atom href="portfolio.html">Holdings →</a></div></section>
-<section class="v3-account__panel"><p class="v3-eyebrow">04 / Privacy</p><h2>Your data, your choice</h2><p>Read how Aethric LLC handles Insidir account data, and ask us about anything the controls here don't cover.</p><div class="v3-account__actions"><a class="v3-account__button" href="privacy.html" data-hf-atom>Privacy policy →</a><a class="v3-account__text" href="mailto:hello@aethric.llc" data-hf-atom>hello@aethric.llc</a></div></section>
-<section class="v3-account__panel" id="account-email-panel"><p class="v3-eyebrow">05 / Login address</p><h2>Your email address</h2><p class="v3-account__label">Address</p><p class="v3-account__value" id="account-verified">Checking…</p><p class="v3-account__hint">This is the address you log in with. Insidir never emails it. Alerts arrive in the app and as device notifications.</p><div class="v3-account__actions"><a class="v3-account__text" href="alerts.html" data-hf-atom>Alert settings →</a></div></section>
-<section class="v3-account__panel" id="account-security"><p class="v3-eyebrow">06 / Security</p><h2>Password and sessions</h2>
-<form id="account-password-form" class="v3-account__form" novalidate>
- <label for="account-password-current">Current password</label><input id="account-password-current" type="password" autocomplete="current-password" maxlength="1024" required>
- <label for="account-password-new">New password (12–128 characters)</label><input id="account-password-new" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
- <div class="v3-account__actions"><button type="submit" class="v3-account__button" id="account-password-save" data-hf-atom>Change password</button><button type="button" class="v3-account__text" id="account-sessions-revoke" data-hf-atom>Sign out other devices</button></div>
-</form>
-<p id="account-security-feedback" class="v3-account__hint" role="status" aria-live="polite"></p>
-<p class="v3-account__label">Recent sign-ins and changes</p><ul class="v3-account__events" id="account-events"><li>Loading…</li></ul></section>
-<section class="v3-account__panel"><p class="v3-eyebrow">07 / Your data</p><h2>Download a copy</h2><p>A JSON file with your account details, watchlist, followed people, research journal, holdings, alert settings, subscription consents and any emails sent before Insidir stopped sending email. Card details are held by Stripe, not Insidir.</p><div class="v3-account__actions"><button type="button" class="v3-account__button" id="account-export" data-hf-atom>Download my data</button></div><p id="account-export-feedback" class="v3-account__hint" role="status" aria-live="polite"></p></section>
+
+<footer class="data-foot">
+  <p class="t-micro">Insidir sends no email. Alerts stay in the app and on the devices you choose. Payments and invoices are handled by Stripe. Research, not investment advice.</p>
+</footer>
 </div>
-<section class="v3-account__danger" data-hf-reveal><div><p class="v3-eyebrow">Account deletion</p><h2>Delete your account</h2><p>Deleting your account first cancels any Insidir subscription with Stripe, so no further payments are taken; if Stripe can't confirm the cancellation, nothing is deleted. It then revokes any read-only brokerage connection and removes your login, every session, your watchlist, research journal, followed people, manually entered holdings, alerts and alert settings. Records the law requires us to keep (your subscription consents) are kept as the privacy policy explains. This cannot be undone.</p></div><button type="button" id="account-delete" data-hf-atom disabled>Delete account</button></section>
-<form id="account-delete-form" class="v3-account__confirm" hidden novalidate>
- <p>Enter your password to permanently delete <strong id="account-delete-email">this account</strong>. Any subscription is cancelled with Stripe first. This cannot be undone.</p>
- <label for="account-delete-password">Password</label>
- <div class="v3-account__confirm-row"><input id="account-delete-password" type="password" autocomplete="current-password" required maxlength="1024">
- <button type="submit" id="account-delete-confirm">Delete permanently</button><button type="button" id="account-delete-cancel">Keep my account</button></div>
-</form>
-<p id="account-delete-feedback" role="status" aria-live="polite" class="v3-account__hint"></p>
-</main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
-</div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer></body></html>
+</body>
+</html>

@@ -1,7 +1,6 @@
-/* Shared server-rendered pieces for the v2 public pages (the landing page, /<TICKER>), on the design system in
- * web/assets/css/ds.css. One date format ("Oct 16, 2026"), one money format ("$1.2M"), tickers in Geist upper
- * case, buy green and sell red only on trade data. Every trade carries its SEC filing link. */
-import { readFileSync } from "node:fs";
+/* Shared server-rendered helpers for the public pages (the landing page, /<TICKER>): one date format ("Oct 16, 2026"),
+ * one money format ("$1.2M"), plain-English trade sentences, buy and sell kinds. The page chrome is in src/site-ui.mjs.
+ * Every trade carries its SEC filing link. */
 import { roleWord } from "./track-record.mjs";
 
 export const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -66,19 +65,6 @@ export function sentence(r, { company = true } = {}) {
   return `${who}${roleW ? ", " + article + roleW + "," : ""} ${verb} ${amount}${co}${when ? " on " + when : ""}${plan}.`;
 }
 
-const secUrl = u => /^https:\/\/(www\.)?sec\.gov\//.test(String(u || "")) ? String(u) : null;
-
-/* The trade card (ds.css .ds-trade): ticker, who, amount, date and the filing. */
-export function tradeCard(r, { href = null } = {}) {
-  const k = kindOf(r), t = String(r.ticker || "").toUpperCase(), filing = secUrl(r.source_url);
-  const label = k === "buy" ? "Buy" : k === "sell" ? "Sell" : "Filed";
-  return `<article class="ds-card ds-trade">
-<a class="ds-trade__tick" href="${esc(href || "/" + encodeURIComponent(t))}">${esc(t)}</a><span class="ds-badge ds-badge--${k === "other" ? "" : k}">${label}</span>
-<p class="ds-trade__who">${esc(personName(r.owner_name))}${r.role ? `<span class="ds-trade__role">${esc(r.role.charAt(0).toUpperCase() + r.role.slice(1))}</span>` : ""}</p>
-<span class="ds-trade__amt ds-num ${k === "buy" ? "ds-buy" : k === "sell" ? "ds-sell" : ""}">${esc(money(r.estimated_value) || "—")}</span>
-<span class="ds-trade__meta"><span class="ds-num">${esc(day(r.transaction_date) || "")}</span>${filing ? `<a href="${esc(filing)}" rel="nofollow noopener" target="_blank">Form 4 ↗</a>` : ""}</span>
-</article>`;
-}
 
 /* Lines with the reporting owner's role, as filed (sec_filing_owners). */
 export const LINE_SQL = `SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.transaction_code,t.category,t.derivative,
@@ -88,53 +74,9 @@ export const LINE_SQL = `SELECT t.id,t.accession,t.issuer_cik,t.ticker,t.owner_c
   LEFT JOIN sec_filing_owners o ON o.accession=t.accession AND t.owner_cik IS NOT NULL AND LTRIM(o.owner_cik,'0')=LTRIM(t.owner_cik,'0')`;
 export const withRole = rows => rows.map(r => ({ ...r, role: role(r) }));
 
-/* ---------- page chrome ---------- */
-/* The two stylesheets are inlined (about 6 KB gzipped together): a phone on a slow connection paints the headline
-   without waiting for two more round trips. Read once at start-up; font URLs become absolute. */
-const css = name => readFileSync(new URL("../web/assets/css/" + name, import.meta.url), "utf8")
-  .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s*\n\s*/g, " ").replace(/url\(\.\.\/fonts\//g, "url(/assets/fonts/");
-const INLINE_CSS = css("ds.css") + css("site-v2.css");
-const WORDMARK = readFileSync(new URL("../web/assets/brand/insidir-wordmark.svg", import.meta.url), "utf8").trim()
-  .replace(/<\?xml[^>]*>\s*/, "").replace(/\s(role|aria-label)="[^"]*"/g, "").replace(/<title>[^<]*<\/title>/, "").replace("<svg ", '<svg aria-hidden="true" ');
-
-export function head({ title, description, canonical, origin, image = null, noindex = false, extra = "" }) {
-  const url = origin + canonical;
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
-${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical" href="${esc(url)}">
-<meta name="theme-color" content="#0c0c0b">
-<meta property="og:site_name" content="Insidir"><meta property="og:type" content="website">
-<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${esc(origin + (image || "/assets/og/insidir-og.png"))}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(origin + (image || "/assets/og/insidir-og.png"))}">
-<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
-<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<style>${INLINE_CSS}</style>
-${extra}</head>`;
-}
-// On the landing page the section links are same-page anchors (#how); elsewhere they lead to it (/#how).
-export const nav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
-<a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a>
-<nav class="ds-nav__links" aria-label="Main"><a href="${h}#how">Platform</a><a href="${h}#pricing">Pricing</a><a href="${h}#faq">FAQ</a></nav>
-<div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/signup.html" data-cta="${esc(cta)}">Start for $1</a></div>
-</div></header>`; };
-export const footer = ({ home = false } = {}) => { const h = home ? "" : "/"; return `<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
-<div class="v2-foot__brand"><a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
-<nav aria-label="Product"><h2>Product</h2><a href="/insider-trading">Insider trades today</a><a href="${h}#how">How it works</a><a href="${h}#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
-<nav aria-label="Company"><h2>Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
-<nav aria-label="Account"><h2>Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
-</div></footer>`; };
+/* ---------- page chrome (the head, nav and footer are in src/site-ui.mjs) ---------- */
 export const scripts = () => `<script src="/assets/js/ds.js?v=2" defer></script>
 <script src="/assets/js/site-v2.js?v=1" defer></script>
 <script src="/assets/js/funnel.js" defer></script>
 <script src="/assets/js/posthog.js?v=1" defer></script>`;
 
-
-export const searchBox = (id = "q", { large = true } = {}) => `<form class="ds-search${large ? " v2-search--hero" : ""}" action="/search" method="get" role="search" data-ds-search>
-<label class="sr-only" for="${esc(id)}">Stock ticker</label>
-<input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
-<button class="ds-btn" type="submit">See insiders</button></form>`;

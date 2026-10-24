@@ -1,0 +1,93 @@
+/* Watchlist, SEC filings and Companies (watchlist.html, filings.html, explore.html): a page head, one row of controls,
+   one card of rows. Separated by space, not lines. Only ui.css tokens; colour only on the amounts of insider trades. */
+.sec{display:grid;gap:var(--sp4);align-content:start}
+.sec__head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);min-height:36px}
+.lx-card{padding:var(--sp3) var(--pad);overflow:hidden}
+.lx-msg{min-height:18px}
+.lx-msg:empty{display:none}
+.lx-more{display:flex;justify-content:center;padding:var(--sp2) 0}
+.lx-row-skel{display:block;height:14px}
+
+/* controls: a search or add field and its button on one line */
+.lx-form{display:flex;align-items:flex-end;flex-wrap:wrap;gap:var(--sp2)}
+.lx-field{display:grid;gap:var(--sp1);min-width:0}
+.lx-field>label{font-size:13px;line-height:18px;color:var(--muted)}
+.lx-field--grow{flex:1 1 320px}
+.lx-field--tick{flex:0 1 140px}
+.lx-form .btn{height:40px}
+.lx-form .input{text-overflow:ellipsis}
+.lx-add{display:flex;gap:var(--sp2);width:100%;max-width:360px}
+.lx-add .input{flex:1;min-width:0}
+.lx-upper{text-transform:uppercase}
+.lx-upper::placeholder{text-transform:none}
+.lx-add .btn{height:40px}
+
+/* shared row text: one line each, cut with an ellipsis */
+.lx-two{display:flex;flex-direction:column;min-width:0}
+.lx-two>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ui.css's ".row:has(>a.hit)>*:not(.hit)" outranks its own ".row>.row__link", so the action in a row is lifted here */
+.lx-card .rows>.row>.row__link{pointer-events:auto}
+.lx-who{display:flex;align-items:center;gap:var(--sp2);min-width:0}
+.lx-who>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lx-go{display:inline-grid;place-items:center;color:var(--muted)}
+.row:hover .lx-go{color:var(--text)}
+
+/* ---------- watchlist rows ---------- */
+.wl{grid-template-columns:32px minmax(0,1fr) 120px 96px minmax(0,1.6fr) 36px;min-height:72px}
+.wl__px{display:grid;justify-items:end;text-align:right;gap:2px}
+.wl__px .chg{display:block}
+.wl__spark-slot,.wl__spark{display:block;width:96px;height:28px}
+.wl__trade{display:grid;gap:2px;min-width:0}
+.wl__trade-top{display:flex;align-items:center;gap:var(--sp3);min-width:0}
+.wl__trade .t-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl__amt{display:inline-flex;align-items:center;min-height:24px;font-size:15px;line-height:24px;font-weight:500;white-space:nowrap;pointer-events:auto;
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fill-2);transition:text-decoration-color var(--fast)}
+a.wl__amt:hover{text-decoration-color:currentColor}
+.wl__amt.plan{color:var(--plan)}
+.wl__retry{pointer-events:auto;height:28px;padding:0 var(--sp2);justify-self:start}
+.wl__rm{color:var(--muted)}
+
+/* ---------- filings rows ---------- */
+.fx{grid-template-columns:28px minmax(0,1.1fr) minmax(0,1fr) 104px 16px;min-height:60px}
+.fx__co{display:flex;align-items:center;gap:var(--sp2);min-width:0}
+.fx__co .strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx__tick{flex:none;display:inline-flex;align-items:center;height:24px;padding:0 var(--sp2);border:0;border-radius:6px;background:var(--fill);color:var(--muted);
+  font-size:12px;line-height:16px;font-weight:500;text-transform:uppercase;cursor:pointer;pointer-events:auto;transition:background-color var(--fast),color var(--fast)}
+.fx__tick:hover{background:var(--fill-2);color:var(--text)}
+.fx__day{text-align:right;white-space:nowrap}
+.fx__day.t-label{overflow:visible}
+
+/* ---------- company rows ---------- */
+.ex{grid-template-columns:32px minmax(0,1.4fr) minmax(0,1fr) 36px;min-height:64px}
+.ex>.lx-go{justify-self:center}
+.ex__last{text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex__conn{color:var(--muted)}
+
+/* ---------- toast, footer ---------- */
+.toast{position:fixed;left:50%;bottom:calc(var(--sp6) + env(safe-area-inset-bottom,0px));z-index:90;transform:translateX(-50%);display:flex;align-items:center;gap:var(--sp4);
+  padding:var(--sp2) var(--sp2) var(--sp2) var(--sp4);border-radius:12px;background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:var(--hi),var(--float);font-size:13px;line-height:18px;max-width:calc(100vw - 2*var(--sp4))}
+.data-foot{display:grid;gap:var(--sp1);margin-top:var(--sp16);color:var(--muted)}
+.data-foot a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--fill-2)}
+
+@media (max-width:767px){
+  .lx-card{padding:var(--sp2) var(--sp4)}
+  .page-head>.lx-add{margin-top:var(--sp4);max-width:none}
+  .lx-field--grow{flex-basis:100%}
+  .lx-field--tick{flex:1 1 0}
+  .lx-form--one .lx-field--grow{flex:1 1 0}
+  .wl__trade .t-label{white-space:normal}
+  .sec__head .seg{display:flex;width:100%}.sec__head .seg button{flex:1}
+  .wl{grid-template-columns:28px minmax(0,1fr) auto 36px;grid-template-areas:"logo id px rm" "logo trade trade rm";row-gap:var(--sp1);min-height:80px;align-items:start}
+  .wl>.logo{grid-area:logo;--sz:28px;margin-top:2px}.wl__id{grid-area:id}.wl__px{grid-area:px}.wl__trade{grid-area:trade}.wl__rm{grid-area:rm;align-self:center}
+  .wl__spark-slot{display:none}
+  .wl__px{display:flex;align-items:baseline;gap:var(--sp2)}
+  .wl__amt{font-size:13px;line-height:18px}
+  .fx{grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"logo co day" "logo what what";row-gap:2px;min-height:64px;align-items:start}
+  .fx>.logo{grid-area:logo;margin-top:2px}.fx__co{grid-area:co}.fx__what{grid-area:what}.fx__day{grid-area:day;padding-top:3px}.fx>.lx-go{display:none}
+  .fx__what{flex-direction:row;gap:var(--sp2)}.fx__what>*:first-child{flex:none}
+  .ex{grid-template-columns:32px minmax(0,1fr) 36px;grid-template-areas:"logo co conn" "logo last conn";row-gap:0}
+  .ex>.logo{grid-area:logo}.ex__co{grid-area:co}.ex__last{grid-area:last;text-align:left}.ex>.ex__conn,.ex>.lx-go{grid-area:conn}
+  .ex__last:empty{display:none}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}

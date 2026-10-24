@@ -4,7 +4,10 @@
      fmt                    one money format ($1.2M), one price ($78.60), one date (Oct 23, 2026), percent, time ago
      logo(t,size,name)      a rounded square: the company's real logo from the media pipeline (GET /v1/media, cached),
                             a monogram on surface 2 until one exists; hydrateLogos(root) fills them in
-     monogram(name)         insiders get initials, never photos
+     monogram(name)         an insider's initials
+     face(name,{cik,ticker,issuerCik,size}) an insider's real photo from the media pipeline (GET /v1/media people=) when
+                            one exists, their initials until then or when there is none; hydrateLogos(root) fills both
+                            logos and faces in, and fills every [data-ui-credits] with the photo credits
      spark(values)          a 30-day sparkline (green when up over the window, coral when down)
      ring(score)            the signal score as a thin ring meter
      roll(el,to,format)     numbers roll to their value (spring, under 400 ms)
@@ -24,7 +27,7 @@ const WORDMARK=`<svg viewBox="70 -793 4531 803" aria-hidden="true"><path fill="c
 async function api(path,{method="GET",body}={}){
  const res=await fetch(path,{method,credentials:"same-origin",headers:{Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
  if(res.status===401){location.href="/signin.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);throw Object.assign(Error("Sign in required"),{status:401});}
- if(res.status===402){location.href="/subscribe.html";throw Object.assign(Error("Subscription required"),{status:402});}
+ if(res.status===402){location.href="/subscribe.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);throw Object.assign(Error("Subscription required"),{status:402});}
  let data=null;try{data=await res.json();}catch{}
  if(!res.ok)throw Object.assign(Error(data?.error||"Something went wrong"),{status:res.status});
  return data;
@@ -70,7 +73,7 @@ const initials=name=>{const w=fmt.person(name).replace(/[^A-Za-z .-]/g,"").split
 /* ---------- logos ---------- */
 const MEDIA=/^\/v1\/media\/[a-f0-9]{64}\.(png|webp|jpeg|svg)$/;
 const KEY="insidir:logos:v1";let store={};try{store=JSON.parse(sessionStorage.getItem(KEY)||"{}")||{};}catch{store={};}
-const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(store));}catch{}};
+const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(store));}catch{}saveFaces();};
 function logo(t,size=28,name=""){const T=String(t||"").toUpperCase();const label=fmt.company(name)||T;
  const mono=(T||label).replace(/[^A-Z0-9]/gi,"").slice(0,T.length>3?2:Math.min(2,T.length||2)).toUpperCase()||"·";
  const src=store[T];
@@ -78,16 +81,39 @@ function logo(t,size=28,name=""){const T=String(t||"").toUpperCase();const label
 const pending=new Set();let timer=0,tries=0;
 function hydrateLogos(root=document){
  for(const el of $$("[data-logo]",root)){const t=el.dataset.logo;if(!TICK.test(t))continue;if(store[t])paint(el,store[t]);else if(store[t]!==null)pending.add(t);}
+ for(const el of $$("[data-face]",root)){const c=el.dataset.cik;if(faces[c])paintFace(el,faces[c]);else if(faces[c]!==null)pendingFaces.add(el.dataset.face);}
+ credits();
  clearTimeout(timer);timer=setTimeout(askLogos,60);
 }
 function paint(el,src){if(el.querySelector("img"))return;const img=new Image();img.alt="";img.decoding="async";img.onload=()=>el.classList.add("has-img");img.src=src;el.append(img);}
 async function askLogos(){
- const list=[...pending].slice(0,40);if(!list.length)return;
- try{const r=await fetch("/v1/media?tickers="+list.join(","),{credentials:"same-origin",headers:{Accept:"application/json"}});if(!r.ok)throw 0;const b=await r.json();
+ const list=[...pending].slice(0,40),people=[...pendingFaces].slice(0,60);if(!list.length&&!people.length)return;
+ try{const q=[list.length?"tickers="+list.join(","):"",people.length?"people="+people.map(encodeURIComponent).join(","):""].filter(Boolean).join("&");
+  const r=await fetch("/v1/media?"+q,{credentials:"same-origin",headers:{Accept:"application/json"}});if(!r.ok)throw 0;const b=await r.json();
   for(const [k,v] of Object.entries(b.logos||{})){const t=String(k).toUpperCase();if(v&&MEDIA.test(String(v.src))){store[t]=v.src;pending.delete(t);for(const el of $$(`[data-logo="${CSS.escape(t)}"]`))paint(el,v.src);}else if(v===null){store[t]=null;pending.delete(t);}}
-  save();
-  const waiting=(b.pending?.logos||[]).length;if(waiting&&tries++<5)setTimeout(askLogos,1000*Math.min(8,2**tries));
+  for(const [k,v] of Object.entries(b.photos||{})){const c=String(k).replace(/^0+/,"");
+   if(v&&MEDIA.test(String(v.src)))faces[c]={src:v.src,credit:v.credit||null,source:v.source||null,sourceUrl:v.sourceUrl||null,name:v.name||null};else if(v===null)faces[c]=null;
+   for(const key of [...pendingFaces])if(key.split(":")[0]===c)pendingFaces.delete(key);
+   if(faces[c])for(const el of $$(`[data-face][data-cik="${CSS.escape(c)}"]`))paintFace(el,faces[c]);}
+  save();credits();
+  const waiting=(b.pending?.logos||[]).length+(b.pending?.photos||[]).length;if(waiting&&tries++<5)setTimeout(askLogos,1000*Math.min(8,2**tries));
  }catch{/* the monogram stays */}
+}
+/* ---------- faces: insiders' photos ---------- */
+const FKEY="insidir:faces:v1";let faces={};try{faces=JSON.parse(sessionStorage.getItem(FKEY)||"{}")||{};}catch{faces={};}
+const pendingFaces=new Set();
+const saveFaces=()=>{try{sessionStorage.setItem(FKEY,JSON.stringify(faces));}catch{}};
+const cikOf=v=>{const s=String(v??"").trim();return /^\d{1,10}$/.test(s)?s.replace(/^0+/,""):"";};
+function face(name,{cik,ticker,issuerCik,size=24}={}){
+ const c=cikOf(cik),T=String(ticker||"").toUpperCase(),ic=cikOf(issuerCik);
+ const key=c?(TICK.test(T)?c+":"+T:ic?c+":cik:"+ic:c):"",f=c?faces[c]:null;
+ return `<span class="mono face face--${size}${f?" has-img":""}"${key?` data-face="${esc(key)}" data-cik="${esc(c)}"`:""} aria-hidden="true"><span class="face__mono">${esc(initials(name))}</span>${f?`<img alt="" src="${esc(f.src)}" loading="lazy" decoding="async">`:""}</span>`;}
+function paintFace(el,f){if(!f||el.querySelector("img"))return;const img=new Image();img.alt="";img.decoding="async";img.onload=()=>el.classList.add("has-img");img.src=f.src;el.append(img);}
+/* Every photo shown is credited: [data-ui-credits] lists the photographer or source and licence for each face on the page. */
+function credits(){
+ const shown=[...new Set($$("[data-face].has-img,[data-face]").map(el=>el.dataset.cik))].map(c=>faces[c]).filter(f=>f&&(f.credit||f.source));
+ const text=shown.length?"Photos: "+[...new Set(shown.map(f=>[f.name,f.credit||f.source].filter(Boolean).join(", ")))].join("; ")+".":"";
+ for(const el of $$("[data-ui-credits]"))el.textContent=text;
 }
 
 /* ---------- small pictures ---------- */
@@ -115,7 +141,7 @@ function enter(nodes){if(reduce)return;const list=[...nodes];list.forEach((el,i)
 
 /* ---------- shell ---------- */
 const NAV=[["dashboard","Today","sun","/dashboard.html"],["watchlist","Watchlist","star","/watchlist.html"],["alerts","Alerts","bell","/alerts.html"],
- ["intelligence","Intelligence","sparkles","/intelligence.html"],["connections","Connections","waypoints","/explore.html"],["settings","Settings","settings","/account.html"]];
+ ["intelligence","Intelligence","sparkles","/intelligence.html"],["connections","Companies","waypoints","/explore.html"],["settings","Settings","settings","/account.html"]];
 const TABS=["dashboard","watchlist","alerts","intelligence"];
 function mountShell(){
  const host=$("[data-ui-shell]");if(!host)return;
@@ -137,7 +163,9 @@ function mountShell(){
  const topEl=$("[data-ui-top]");const stick=()=>topEl.classList.toggle("is-stuck",scrollY>4);addEventListener("scroll",stick,{passive:true});stick();
  // who is signed in, and unread alerts
  api("/v1/me").then(me=>{const e=me?.user?.email||"";$("[data-ui-me]").textContent=(e[0]||"·").toUpperCase();$("[data-ui-account]").dataset.email=e;}).catch(()=>{});
- api("/v1/me/notifications?limit=1&unread=1").then(x=>{const u=Number(x?.unread)||0;const b=$("[data-ui-unread]");if(u){b.hidden=false;b.textContent=u>99?"99+":u;$("[data-ui-unread-dot]").hidden=false;}}).catch(()=>{});
+ // unread alerts: a plain fetch, so a member without access (a paid route answers 402) is never sent away from
+ // Settings or Billing, where they fix billing, download their data or delete the account
+ fetch("/v1/me/notifications?limit=1&unread=1",{credentials:"same-origin",headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():null).then(x=>{const u=Number(x?.unread)||0;const b=$("[data-ui-unread]");if(u){b.hidden=false;b.textContent=u>99?"99+":u;$("[data-ui-unread-dot]").hidden=false;}}).catch(()=>{});
  $("[data-ui-account]").addEventListener("click",e=>accountMenu(e.currentTarget));
  $("[data-ui-cmdk]").addEventListener("click",()=>palette());
  addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();palette();}if(e.key==="/"&&!/input|textarea|select/i.test(document.activeElement?.tagName||"")&&!document.activeElement?.isContentEditable){e.preventDefault();palette();}});
@@ -195,6 +223,6 @@ function palette(){
  addEventListener("keydown",keys,true);start();input.focus();
 }
 
-window.InsidirUI=Object.freeze({api,filingHref,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,palette,initials,reduce,big,trade,WORDMARK,icon:(n,s,c)=>I.svg(n,s,c)});
+window.InsidirUI=Object.freeze({api,filingHref,fmt,esc,logo,hydrateLogos,monogram,face,spark,ring,settle,roll,enter,palette,initials,reduce,big,trade,WORDMARK,icon:(n,s,c)=>I.svg(n,s,c)});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mountShell);else mountShell();
 })();

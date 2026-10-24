@@ -1,366 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0c0c0b">
-<meta name="description" content="What Insidir does: monitoring of supported SEC sources for what you follow, a personal Briefing and alerts, company reports, the SEC filing library, insider activity, the people who report, historical 13F holdings, a private research journal and a manual portfolio. Every figure linked to its source.">
-<meta property="og:site_name" content="insidir.">
-<meta property="og:title" content="Platform — Insidir">
-<meta property="og:description" content="What Insidir does: company reports, the SEC filing library and viewer, insider activity, the people who report to the SEC, watchlist and alerts, a private research journal and a manual portfolio. Every figure linked to its source.">
-<title>Platform — insidir.</title>
-<link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v3-static.css">
-<link rel="stylesheet" href="assets/css/v6-static.css?v=1">
-<link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
-<link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-static.css?v=9">
-<link rel="stylesheet" href="assets/css/v15-site.css?v=1">
-<link rel="stylesheet" href="assets/css/v16-demo-chart.css?v=2">
-<link rel="stylesheet" href="assets/css/v16-rich-site.css?v=1">
-<link rel="stylesheet" href="assets/css/v17-smooth.css?v=3">
-<script defer src="assets/js/v6-site.js?v=2"></script>
-<script defer src="assets/js/v16-demo-chart.js?v=1"></script>
-<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="assets/css/v29-system.css"><script defer src="/assets/js/funnel.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Platform — Insidir</title>
+<meta name="description" content="What Insidir does: every SEC Form 4 insider trade in plain English, stock pages with every insider buy and sale on the price chart, the filing as filed, a signal score, watchlist and alerts, Intelligence and connections. Every number links to its SEC filing.">
+<link rel="canonical" href="https://insidir.com/platform.html">
+<meta name="theme-color" content="#0c0c0b"><meta name="color-scheme" content="dark">
+<meta property="og:site_name" content="Insidir"><meta property="og:type" content="website">
+<meta property="og:title" content="Platform — Insidir"><meta property="og:description" content="What Insidir does: every SEC Form 4 insider trade in plain English, stock pages with every insider buy and sale on the price chart, the filing as filed, a signal score, watchlist and alerts, Intelligence and connections. Every number links to its SEC filing."><meta property="og:url" content="https://insidir.com/platform.html">
+<meta property="og:image" content="https://insidir.com/assets/og/insidir-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://insidir.com/assets/og/insidir-og.png">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=3">
+<link rel="stylesheet" href="/assets/css/site.css?v=1">
+<link rel="stylesheet" href="/assets/css/site-pages.css?v=2">
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=4"></script>
+<script defer src="/assets/js/ds.js?v=2"></script>
+<script defer src="/assets/js/site-v2.js?v=1"></script>
+<script defer src="/assets/js/funnel.js"></script>
 <script defer src="/assets/js/posthog.js?v=1"></script>
 </head>
-<body class="v3-static v6-static v13">
-<a class="skip-link" href="#Content">Skip to content</a>
-<header class="v6-nav v9-nav">
- <div class="mk-shell v6-nav__inner">
-  <a class="v6-logo" href="index.html" aria-label="Insidir home"><svg class="wordmark-svg" viewBox="70 -793 4531 803" aria-hidden="true"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a>
-  <nav class="v6-nav__links" aria-label="Main navigation"><a href="/platform.html" aria-current="page">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a></nav>
-  <div class="v6-nav__actions">
-   <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
-   <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
-  </div>
- </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden><a href="/platform.html" aria-current="page">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a><a href="/insider-trading">Insider filings</a><a href="/stories.html">Research stories</a><a href="/why-insidir.html">Why Insidir</a><a href="/data.html">Data &amp; sources</a><a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
-</header>
-<main id="Content">
-<section class="mk-hero v13-field-host" aria-labelledby="mk-title">
- <div class="v13-field mk-hero__field" data-halftone-field data-field-coverage="0.1" aria-hidden="true"></div>
- <div class="mk-shell mk-hero__grid">
-  <div>
-   <p class="mk-eyebrow">Insidir / Platform</p>
-   <h1 id="mk-title">The intelligence platform. <span>Built on the record.</span></h1>
-   <p class="mk-lede">Intelligence, Connections, Changes, Autopilot and Evidence, built on SEC records, to help you spot opportunities worth researching, recognize risks and decide with the facts in front of you. One subscription.</p>
-   <div class="mk-actions">
-    <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Explore Insidir <span class="v13-arrow" aria-hidden="true">→</span></a>
-    <a class="v9-btn v12-outline-button" href="insidir-intelligence.html">How Intelligence works <span class="v13-arrow" aria-hidden="true">→</span></a>
-   </div>
-   <p class="mk-caption mk-terms"><span><b>$1</b> for the first 7 days, then $39/month</span><span>Cancel online</span><span class="mk-keep">Not a broker, not investment advice</span></p>
-  </div>
-  <nav aria-label="On this page" data-hf-reveal>
-   <p class="mk-eyebrow mk-index-title">On this page</p>
-   <ol class="mk-index">
-    <li><a href="#0-core"><span data-hf-atom>00</span>Core capabilities<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#1-reports"><span data-hf-atom>01</span>Company reports<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#2-filings"><span data-hf-atom>02</span>SEC filings<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#3-insiders"><span data-hf-atom>03</span>Insider activity &amp; people<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#4-alerts"><span data-hf-atom>04</span>Monitoring &amp; alerts<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#5-journal"><span data-hf-atom>05</span>Research journal<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#6-portfolio"><span data-hf-atom>06</span>Portfolio<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#7-more"><span data-hf-atom>07</span>Also included<span aria-hidden="true">↓</span></a></li>
-   </ol>
-  </nav>
- </div>
-</section>
-
-<section class="mk-section" id="0-core" aria-labelledby="0-core-h">
- <div class="mk-shell">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Core capabilities</p><h2 id="0-core-h">Four capabilities. <span>On every profile.</span></h2></div>
-   <div class="mk-head__aside"><p>Built into company and person profiles, research results and your briefing, not separate apps. Plain words first; the filing detail and the source one step further.</p></div>
-  </div>
-  <ul class="mk-cells" data-hf-reveal>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Connections</span></div><h3>Who is connected</h3><p>Companies, executives, institutional holders and their disclosures on an interactive map from Form 4 records, with zoom, filters, an as-of date and a table view.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Changes</span></div><h3>What actually changed</h3><p>New insider transactions, amendments, role changes, results against a year earlier and 8-K events, each headlined in plain words with the figures as filed and its footnotes kept.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Autopilot</span></div><h3>Follow once</h3><p>Follow a company or reporting person and choose important updates, every filing, a daily or weekly summary, or pause. Updates come from supported public records.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Evidence</span></div><h3>Verify the figure</h3><p>Every change opens its source: the SEC document, the field, the period, the value as filed and how anything derived was calculated.</p></li>
-  </ul>
- </div>
-</section>
-
-<section class="mk-section" id="1-reports" aria-labelledby="1-reports-h">
- <div class="mk-shell" data-folio="01 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Company reports</p><h2 id="1-reports-h">One report <span>per company.</span></h2></div>
-   <div class="mk-head__aside"><p>Delayed prices, reported financials, filings, insiders and people. Each sourced.</p></div>
-  </div>
-
-  <figure class="mk-anatomy mk-anatomy--demo" aria-labelledby="mk-demo-caption">
-   <div class="mk-anatomy__frame mk-demo" data-demo-chart data-hf-reveal>
-    <div class="mk-ana mk-ana--head"><span class="mk-key" data-hf-atom aria-hidden="true">A</span><span class="mk-demo__logo"><img src="assets/img/logos/rddt.png" width="332" height="332" alt="Reddit logo" decoding="async"></span><div class="mk-demo__id"><p class="mk-demo__name">Reddit, Inc.</p><p class="mk-demo__meta"><b>RDDT</b><span>NYSE</span><span>Large accelerated filer</span><span>Fiscal year ends Dec 31</span></p></div><ul class="mk-ana__actions" aria-hidden="true"><li>Watch</li><li>Alert</li><li>Share</li></ul></div>
-    <div class="mk-ana mk-ana--chart">
-     <div class="mk-ana__row"><span class="mk-key" data-hf-atom aria-hidden="true">B</span><span class="mk-ana__label">Delayed price</span></div>
-     <div class="mk-demo__quote"><p class="mk-demo__price">$156.14<span class="mk-demo__day is-down">&#9660; &minus;3.22 (&minus;2.02%)</span></p><p class="mk-demo__when">At close &middot; Oct 16, 2026, 4:04 PM EDT &middot; <span class="mk-demo__change is-down" data-demo-change>&#9660; &minus;38.81 (&minus;19.91%) past year</span></p></div>
-     <div class="mk-demo__plot" data-demo-plot tabindex="0" role="group" aria-label="RDDT delayed closing prices. Use the left and right arrow keys to read a point." aria-describedby="mk-demo-caption"><!-- demo-svg --><svg class="mk-demo__svg mk-demo__svg--down" viewBox="0 0 720 240" width="720" height="240" aria-hidden="true" focusable="false"><defs><linearGradient id="mk-demo-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0eee8" stop-opacity=".14"/><stop offset="1" stop-color="#f0eee8" stop-opacity="0"/></linearGradient></defs><line class="mk-demo__grid" x1="4" x2="672" y1="164.3" y2="164.3"/><text class="mk-demo__ylab" x="678" y="164.3" dy="0.35em">150</text><line class="mk-demo__grid" x1="4" x2="672" y1="100.8" y2="100.8"/><text class="mk-demo__ylab" x="678" y="100.8" dy="0.35em">200</text><line class="mk-demo__grid" x1="4" x2="672" y1="37.3" y2="37.3"/><text class="mk-demo__ylab" x="678" y="37.3" dy="0.35em">250</text><path class="mk-demo__area" d="M4.0 107.2L6.6 97.6L9.3 93.5L11.9 104.5L14.6 99.7L17.2 82.7L19.9 76.3L22.5 84.3L25.2 87.1L27.8 107.9L30.5 89.4L33.1 94.5L35.8 116.3L38.4 105.5L41.1 121.6L43.7 107.7L46.4 95.5L49.0 90.4L51.7 97.2L54.3 114.2L57.0 109.3L59.6 116.6L62.3 119.0L64.9 116.3L67.6 123.8L70.2 121.8L72.8 107.1L75.5 77.3L78.1 91.2L80.8 79.9L83.4 71.1L86.1 71.9L88.7 74.3L91.4 71.9L94.0 57.5L96.7 53.9L99.3 54.9L102.0 52.4L104.6 58.2L107.3 69.3L109.9 77.3L112.6 70.3L115.2 66.1L117.9 61.0L120.5 58.6L123.2 58.7L125.8 68.0L128.5 68.0L131.1 68.1L133.8 56.8L136.4 58.4L139.0 62.8L141.7 47.6L144.3 44.8L147.0 32.4L149.6 30.3L152.3 32.3L154.9 44.2L157.6 44.9L160.2 25.9L162.9 34.3L165.5 64.3L168.2 61.4L170.8 68.6L173.5 87.9L176.1 82.3L178.8 76.8L181.4 83.5L184.1 105.5L186.7 109.5L189.4 113.4L192.0 125.8L194.7 129.8L197.3 144.7L200.0 160.9L202.6 163.0L205.2 177.2L207.9 174.8L210.5 164.3L213.2 177.9L215.8 188.3L218.5 177.4L221.1 178.0L223.8 167.5L226.4 169.2L229.1 164.1L231.7 173.9L234.4 174.4L237.0 164.7L239.7 162.7L242.3 169.6L245.0 168.0L247.6 169.8L250.3 167.7L252.9 171.5L255.6 177.8L258.2 178.4L260.9 184.5L263.5 180.7L266.2 186.8L268.8 186.7L271.4 177.0L274.1 171.5L276.7 173.5L279.4 179.4L282.0 177.2L284.7 175.8L287.3 181.9L290.0 177.5L292.6 193.2L295.3 200.1L297.9 197.2L300.6 183.8L303.2 181.9L305.9 182.1L308.5 179.1L311.2 175.6L313.8 170.7L316.5 179.1L319.1 177.3L321.8 165.1L324.4 158.5L327.1 153.5L329.7 148.5L332.4 146.8L335.0 143.6L337.6 155.6L340.3 146.1L342.9 160.5L345.6 158.1L348.2 151.3L350.9 166.9L353.5 167.2L356.2 167.8L358.8 143.4L361.5 140.1L364.1 136.8L366.8 143.3L369.4 146.6L372.1 156.9L374.7 152.2L377.4 161.3L380.0 159.1L382.7 156.3L385.3 153.9L388.0 152.7L390.6 158.1L393.3 168.5L395.9 164.2L398.6 174.9L401.2 171.1L403.8 159.0L406.5 141.8L409.1 131.3L411.8 128.9L414.4 140.0L417.1 139.5L419.7 121.2L422.4 134.5L425.0 137.5L427.7 128.6L430.3 136.1L433.0 134.8L435.6 148.9L438.3 123.8L440.9 132.0L443.6 144.0L446.2 132.6L448.9 138.3L451.5 144.4L454.2 150.7L456.8 154.1L459.5 142.8L462.1 133.3L464.8 134.3L467.4 103.6L470.0 107.6L472.7 99.7L475.3 101.5L478.0 106.7L480.6 100.4L483.3 106.7L485.9 99.6L488.6 96.6L491.2 103.3L493.9 119.5L496.5 124.7L499.2 124.1L501.8 118.8L504.5 138.4L507.1 140.4L509.8 140.5L512.4 127.2L515.1 128.2L517.7 128.7L520.4 128.7L523.0 176.2L525.7 158.3L528.3 151.6L531.0 157.6L533.6 163.2L536.2 149.4L538.9 153.2L541.5 156.4L544.2 159.9L546.8 154.0L549.5 128.6L552.1 145.9L554.8 153.8L557.4 162.1L560.1 163.9L562.7 160.1L565.4 160.9L568.0 148.5L570.7 157.5L573.3 159.3L576.0 160.5L578.6 167.1L581.3 171.1L583.9 154.0L586.6 156.7L589.2 158.6L591.9 165.1L594.5 168.8L597.2 157.5L599.8 154.4L602.4 148.6L605.1 152.1L607.7 154.6L610.4 160.7L613.0 163.2L615.7 153.2L618.3 157.1L621.0 161.8L623.6 160.8L626.3 164.5L628.9 173.1L631.6 170.2L634.2 173.9L636.9 164.9L639.5 167.0L642.2 163.8L644.8 165.6L647.5 160.9L650.1 156.1L652.8 151.7L655.4 151.7L658.1 157.6L660.7 166.1L663.4 152.4L666.0 156.5L666.0 214.0L4.0 214.0Z" fill="url(#mk-demo-fill)"/><path class="mk-demo__line" d="M4.0 107.2L6.6 97.6L9.3 93.5L11.9 104.5L14.6 99.7L17.2 82.7L19.9 76.3L22.5 84.3L25.2 87.1L27.8 107.9L30.5 89.4L33.1 94.5L35.8 116.3L38.4 105.5L41.1 121.6L43.7 107.7L46.4 95.5L49.0 90.4L51.7 97.2L54.3 114.2L57.0 109.3L59.6 116.6L62.3 119.0L64.9 116.3L67.6 123.8L70.2 121.8L72.8 107.1L75.5 77.3L78.1 91.2L80.8 79.9L83.4 71.1L86.1 71.9L88.7 74.3L91.4 71.9L94.0 57.5L96.7 53.9L99.3 54.9L102.0 52.4L104.6 58.2L107.3 69.3L109.9 77.3L112.6 70.3L115.2 66.1L117.9 61.0L120.5 58.6L123.2 58.7L125.8 68.0L128.5 68.0L131.1 68.1L133.8 56.8L136.4 58.4L139.0 62.8L141.7 47.6L144.3 44.8L147.0 32.4L149.6 30.3L152.3 32.3L154.9 44.2L157.6 44.9L160.2 25.9L162.9 34.3L165.5 64.3L168.2 61.4L170.8 68.6L173.5 87.9L176.1 82.3L178.8 76.8L181.4 83.5L184.1 105.5L186.7 109.5L189.4 113.4L192.0 125.8L194.7 129.8L197.3 144.7L200.0 160.9L202.6 163.0L205.2 177.2L207.9 174.8L210.5 164.3L213.2 177.9L215.8 188.3L218.5 177.4L221.1 178.0L223.8 167.5L226.4 169.2L229.1 164.1L231.7 173.9L234.4 174.4L237.0 164.7L239.7 162.7L242.3 169.6L245.0 168.0L247.6 169.8L250.3 167.7L252.9 171.5L255.6 177.8L258.2 178.4L260.9 184.5L263.5 180.7L266.2 186.8L268.8 186.7L271.4 177.0L274.1 171.5L276.7 173.5L279.4 179.4L282.0 177.2L284.7 175.8L287.3 181.9L290.0 177.5L292.6 193.2L295.3 200.1L297.9 197.2L300.6 183.8L303.2 181.9L305.9 182.1L308.5 179.1L311.2 175.6L313.8 170.7L316.5 179.1L319.1 177.3L321.8 165.1L324.4 158.5L327.1 153.5L329.7 148.5L332.4 146.8L335.0 143.6L337.6 155.6L340.3 146.1L342.9 160.5L345.6 158.1L348.2 151.3L350.9 166.9L353.5 167.2L356.2 167.8L358.8 143.4L361.5 140.1L364.1 136.8L366.8 143.3L369.4 146.6L372.1 156.9L374.7 152.2L377.4 161.3L380.0 159.1L382.7 156.3L385.3 153.9L388.0 152.7L390.6 158.1L393.3 168.5L395.9 164.2L398.6 174.9L401.2 171.1L403.8 159.0L406.5 141.8L409.1 131.3L411.8 128.9L414.4 140.0L417.1 139.5L419.7 121.2L422.4 134.5L425.0 137.5L427.7 128.6L430.3 136.1L433.0 134.8L435.6 148.9L438.3 123.8L440.9 132.0L443.6 144.0L446.2 132.6L448.9 138.3L451.5 144.4L454.2 150.7L456.8 154.1L459.5 142.8L462.1 133.3L464.8 134.3L467.4 103.6L470.0 107.6L472.7 99.7L475.3 101.5L478.0 106.7L480.6 100.4L483.3 106.7L485.9 99.6L488.6 96.6L491.2 103.3L493.9 119.5L496.5 124.7L499.2 124.1L501.8 118.8L504.5 138.4L507.1 140.4L509.8 140.5L512.4 127.2L515.1 128.2L517.7 128.7L520.4 128.7L523.0 176.2L525.7 158.3L528.3 151.6L531.0 157.6L533.6 163.2L536.2 149.4L538.9 153.2L541.5 156.4L544.2 159.9L546.8 154.0L549.5 128.6L552.1 145.9L554.8 153.8L557.4 162.1L560.1 163.9L562.7 160.1L565.4 160.9L568.0 148.5L570.7 157.5L573.3 159.3L576.0 160.5L578.6 167.1L581.3 171.1L583.9 154.0L586.6 156.7L589.2 158.6L591.9 165.1L594.5 168.8L597.2 157.5L599.8 154.4L602.4 148.6L605.1 152.1L607.7 154.6L610.4 160.7L613.0 163.2L615.7 153.2L618.3 157.1L621.0 161.8L623.6 160.8L626.3 164.5L628.9 173.1L631.6 170.2L634.2 173.9L636.9 164.9L639.5 167.0L642.2 163.8L644.8 165.6L647.5 160.9L650.1 156.1L652.8 151.7L655.4 151.7L658.1 157.6L660.7 166.1L663.4 152.4L666.0 156.5"/><circle class="mk-demo__end" cx="666.0" cy="156.5" r="3.5"/><text class="mk-demo__xlab" x="70.2" y="234" text-anchor="middle">Nov 2025</text><text class="mk-demo__xlab" x="202.6" y="234" text-anchor="middle">Feb 2026</text><text class="mk-demo__xlab" x="335.0" y="234" text-anchor="middle">Apr 2026</text><text class="mk-demo__xlab" x="467.4" y="234" text-anchor="middle">Jul 2026</text><text class="mk-demo__xlab" x="599.8" y="234" text-anchor="middle">Sep 2026</text><g class="mk-demo__cross" visibility="hidden"><line class="mk-demo__cross-line" x1="0" x2="0" y1="12" y2="214.0"/><circle class="mk-demo__cross-dot" r="4.5"/></g></svg><!-- /demo-svg --><div class="mk-demo__tip" data-demo-tip hidden></div></div>
-     <p class="mk-sr" data-demo-live aria-live="polite"></p>
-     <div class="mk-ana__ranges mk-demo__ranges" role="group" aria-label="Chart range"><button type="button" data-demo-range="1D" aria-pressed="false">1D</button><button type="button" data-demo-range="1W" aria-pressed="false">1W</button><button type="button" data-demo-range="1M" aria-pressed="false">1M</button><button type="button" data-demo-range="3M" aria-pressed="false">3M</button><button type="button" data-demo-range="1Y" aria-pressed="true">1Y</button><button type="button" data-demo-range="5Y" aria-pressed="false">5Y</button></div>
-    </div>
-    <div class="mk-ana mk-ana--facts"><div class="mk-ana__row"><span class="mk-key" data-hf-atom aria-hidden="true">C</span><span class="mk-ana__label">Key facts</span></div>
-     <dl class="mk-demo__facts">
-      <div title="$156.14 &times; 202.58M shares, implied by TTM net income &divide; diluted EPS (SEC, Jun 30, 2026)"><dt>Market cap</dt><dd>$31.6B</dd></div>
-      <div title="Market cap + debt (none reported) &minus; cash and short-term investments $2.79B (balance sheet, Jun 30, 2026)"><dt>Enterprise value</dt><dd>$28.8B</dd></div>
-      <div title="Price &divide; trailing diluted EPS"><dt>P/E ratio</dt><dd>36.3</dd></div>
-      <div title="Jul 1, 2025 &ndash; Jun 30, 2026, from the 10-K and 10-Q (XBRL)"><dt>Revenue (TTM)</dt><dd>$2.8B</dd></div>
-      <div title="Jul 1, 2025 &ndash; Jun 30, 2026, from the 10-K and 10-Q (XBRL)"><dt>Net income (TTM)</dt><dd>$871.1M</dd></div>
-      <div title="Not in the sources"><dt>Employees</dt><dd class="is-missing">&mdash;</dd></div>
-      <div><dt>Headquarters</dt><dd>San Francisco, CA</dd></div>
-      <div><dt>Founded</dt><dd>2005</dd></div>
-      <div><dt>Website</dt><dd>redditinc.com</dd></div>
-     </dl>
-    </div>
-    <div class="mk-ana mk-ana--tabs mk-demo__tabs"><span class="mk-key" data-hf-atom aria-hidden="true">D</span><ul class="mk-ana__tabs" aria-hidden="true"><li>Overview</li><li>Financials</li><li>SEC filings</li><li>Insider activity</li><li class="is-on">People</li><li>News</li></ul>
-     <ul class="mk-demo__people" aria-label="People who file for Reddit, from their Form 4 filings">
-      <li><img src="assets/img/people/steve-huffman.webp" width="256" height="256" alt="Steve Huffman" decoding="async" loading="lazy"><div><p class="mk-demo__person">Steve Huffman</p><p class="mk-demo__roles">CEO &amp; President &middot; Director &middot; 10% owner</p></div><a class="mk-demo__cik" href="https://www.sec.gov/cgi-bin/own-disp?action=getowner&amp;CIK=0001827011" rel="noopener">SEC CIK 0001827011<span class="v13-arrow" aria-hidden="true">&#8599;</span></a></li>
-      <li><img src="assets/img/people/jennifer-wong.webp" width="256" height="256" alt="Jennifer Wong" decoding="async" loading="lazy"><div><p class="mk-demo__person">Jennifer Wong</p><p class="mk-demo__roles">Chief Operating Officer</p></div><a class="mk-demo__cik" href="https://www.sec.gov/cgi-bin/own-disp?action=getowner&amp;CIK=0001663651" rel="noopener">SEC CIK 0001663651<span class="v13-arrow" aria-hidden="true">&#8599;</span></a></li>
-     </ul>
-    </div>
-   </div>
-   <figcaption class="mk-demo__caption" id="mk-demo-caption">A real report: Reddit, Inc. (RDDT) at the close on October 16, 2026, saved from Insidir. Prices are delayed, from Yahoo Finance; the facts come from the company&rsquo;s SEC filings; roles are as filed on Form&nbsp;4. A snapshot, not live, and not a recommendation. Photos: Steve Huffman by Cody Glenn/Web Summit via Sportsfile, CC BY 2.0 (Wikimedia Commons); Jennifer Wong from IMAX Corp.&rsquo;s 2026 proxy statement, where she is a director under the same SEC CIK.</figcaption>
-   <script type="application/json" id="mk-demo-data">{"ticker":"RDDT","company":"Reddit, Inc.","asOf":"2026-10-16T20:04:29Z","source":"Yahoo Finance, delayed","ranges":{"1D":{"change":-3.22,"percent":-2.021,"previousClose":159.36,"points":[[1792157400000,161.65],[1792157700000,161.59],[1792158000000,163.17],[1792158300000,163.72],[1792158600000,164.07],[1792158900000,162.8],[1792159200000,161.44],[1792159500000,159.6],[1792159800000,159.55],[1792160100000,161.17],[1792160400000,161.15],[1792160700000,160.2],[1792161000000,160.81],[1792161300000,160.33],[1792161600000,160.25],[1792161900000,161.16],[1792162200000,160.19],[1792162500000,160.29],[1792162800000,160.16],[1792163100000,159.12],[1792163400000,159.96],[1792163700000,159.32],[1792164000000,159.17],[1792164300000,159.15],[1792164600000,159.13],[1792164900000,158.7],[1792165200000,158.54],[1792165500000,158.27],[1792165800000,157.69],[1792166100000,157.82],[1792166400000,158.49],[1792166700000,158.5],[1792167000000,158.75],[1792167300000,158.25],[1792167600000,158.38],[1792167900000,158.85],[1792168200000,158.18],[1792168500000,158.19],[1792168800000,158.02],[1792169100000,157.6],[1792169400000,157.44],[1792169700000,157.47],[1792170000000,156.69],[1792170300000,156.14],[1792170600000,155.51],[1792170900000,154.71],[1792171200000,155.07],[1792171500000,154.96],[1792171800000,156.06],[1792172100000,155.69],[1792172400000,156.13],[1792172700000,155.89],[1792173000000,155.49],[1792173300000,155.09],[1792173600000,155.18],[1792173900000,155.48],[1792174200000,155.14],[1792174500000,155.25],[1792174800000,154.83],[1792175100000,154.56],[1792175400000,154.78],[1792175700000,154.54],[1792176000000,154.41],[1792176300000,154.21],[1792176600000,153.94],[1792176900000,154.05],[1792177200000,153.79],[1792177500000,153.52],[1792177800000,154.75],[1792178100000,153.91],[1792178400000,154.53],[1792178700000,154.87],[1792179000000,155.31],[1792179300000,155.25],[1792179600000,154.86],[1792179900000,155.39],[1792180200000,155.55],[1792180500000,156.08],[1792180800000,156.14]]},"1W":{"change":1.66,"percent":1.075,"points":[[1791811800000,154.48],[1791813600000,153.13],[1791815400000,153.25],[1791817200000,154.12],[1791819000000,154.18],[1791820800000,154.83],[1791822600000,154.57],[1791824400000,155.57],[1791826200000,155.89],[1791828000000,158.2],[1791829800000,157.09],[1791831600000,158.23],[1791833400000,159.86],[1791898200000,161.35],[1791900000000,163.13],[1791901800000,162.39],[1791903600000,160.56],[1791905400000,158.86],[1791907200000,159.04],[1791909000000,158.72],[1791910800000,157.76],[1791912600000,156.85],[1791914400000,157.99],[1791916200000,157.46],[1791918000000,157.37],[1791919800000,155.07],[1791984600000,154.54],[1791986400000,151.85],[1791988200000,152.72],[1791990000000,151],[1791991800000,150.18],[1791993600000,150.96],[1791995400000,151.09],[1791997200000,150.12],[1791999000000,149.76],[1792000800000,149.03],[1792002600000,149.17],[1792004400000,149.07],[1792006200000,148.52],[1792071000000,150.71],[1792072800000,153.58],[1792074600000,155.89],[1792076400000,156.93],[1792078200000,157.09],[1792080000000,155.14],[1792081800000,155.59],[1792083600000,156.4],[1792085400000,156.95],[1792087200000,156.53],[1792089000000,157],[1792090800000,157.57],[1792092600000,159.33],[1792157400000,162.8],[1792159200000,160.2],[1792161000000,160.29],[1792162800000,159.15],[1792164600000,157.82],[1792166400000,158.85],[1792168200000,157.47],[1792170000000,154.96],[1792171800000,155.09],[1792173600000,154.56],[1792175400000,154.05],[1792177200000,154.87],[1792179000000,156.08],[1792180800000,156.14]]},"1M":{"change":5.85,"percent":3.892,"points":[[1789651800000,150.29],[1789655400000,152.1],[1789659000000,152.82],[1789662600000,152.37],[1789666200000,151.51],[1789669800000,152.24],[1789673400000,152.9],[1789738200000,153.03],[1789741800000,152.87],[1789745400000,151.76],[1789749000000,151.2],[1789752600000,151.25],[1789756200000,153.23],[1789759800000,150.84],[1789997400000,155.04],[1790001000000,155.44],[1790004600000,157.37],[1790008200000,157.51],[1790011800000,158.93],[1790015400000,159.14],[1790019000000,158.71],[1790083800000,158.7],[1790087400000,159.22],[1790091000000,158.6],[1790094600000,154.89],[1790098200000,152.57],[1790101800000,153.33],[1790105400000,155.64],[1790170200000,149.01],[1790173800000,149.97],[1790177400000,150.93],[1790181000000,150.94],[1790184600000,151.31],[1790188200000,152.11],[1790191800000,151.98],[1790256600000,152.43],[1790260200000,152.15],[1790263800000,153.68],[1790267400000,151.76],[1790271000000,152.12],[1790274600000,151.84],[1790278200000,152.69],[1790343000000,152.82],[1790346600000,152.72],[1790350200000,153.39],[1790353800000,153.09],[1790357400000,151.97],[1790361000000,151.8],[1790364600000,149.88],[1790602200000,147.88],[1790605800000,147.23],[1790609400000,147.47],[1790613000000,145.68],[1790616600000,144.59],[1790620200000,144.38],[1790623800000,143.12],[1790688600000,147],[1790692200000,144.92],[1790695800000,144.74],[1790699400000,144.37],[1790703000000,144.87],[1790706600000,143.24],[1790710200000,145.35],[1790775000000,149.93],[1790778600000,147.43],[1790782200000,148.25],[1790785800000,144.65],[1790789400000,144.19],[1790793000000,143.47],[1790796600000,142.42],[1790861400000,145.78],[1790865000000,143.8],[1790868600000,145.76],[1790872200000,148.13],[1790875800000,148.12],[1790879400000,149.23],[1790883000000,149.54],[1790947800000,147.94],[1790951400000,147.26],[1790955000000,147.36],[1790958600000,146.2],[1790962200000,148.14],[1790965800000,147.94],[1790969400000,147.85],[1791207000000,149.12],[1791210600000,149.91],[1791214200000,150.53],[1791217800000,151.53],[1791221400000,151.48],[1791225000000,149.76],[1791228600000,150.39],[1791293400000,149.1],[1791297000000,149.63],[1791300600000,149.11],[1791304200000,148.27],[1791307800000,148.81],[1791311400000,148.09],[1791315000000,148.95],[1791379800000,147.85],[1791383400000,149.4],[1791387000000,151.35],[1791390600000,152.52],[1791394200000,153.6],[1791397800000,152.73],[1791401400000,152.72],[1791466200000,156.5],[1791469800000,155.26],[1791473400000,156.58],[1791477000000,155.26],[1791480600000,156.37],[1791484200000,156.72],[1791487800000,156.47],[1791552600000,161.18],[1791556200000,159.74],[1791559800000,161.06],[1791563400000,161.33],[1791567000000,161.15],[1791570600000,159.9],[1791574200000,159.84],[1791811800000,153.13],[1791815400000,154.12],[1791819000000,154.83],[1791822600000,155.57],[1791826200000,158.2],[1791829800000,158.23],[1791833400000,159.86],[1791898200000,163.13],[1791901800000,160.56],[1791905400000,159.04],[1791909000000,157.76],[1791912600000,157.99],[1791916200000,157.37],[1791919800000,155.07],[1791984600000,151.85],[1791988200000,151],[1791991800000,150.96],[1791995400000,150.12],[1791999000000,149.03],[1792002600000,149.07],[1792006200000,148.52],[1792071000000,153.58],[1792074600000,156.93],[1792078200000,155.14],[1792081800000,156.4],[1792085400000,156.53],[1792089000000,157.57],[1792092600000,159.33],[1792157400000,160.2],[1792161000000,159.15],[1792164600000,158.85],[1792168200000,154.96],[1792171800000,154.56],[1792175400000,154.87],[1792179000000,156.08],[1792180800000,156.14]]},"3M":{"change":-25.04,"percent":-13.821,"points":[[1784295000000,181.18],[1784554200000,181.64],[1784640600000,185.84],[1784727000000,170.38],[1784813400000,168.78],[1784899800000,168.73],[1785159000000,179.23],[1785245400000,178.44],[1785331800000,177.99],[1785418200000,178.04],[1785504600000,140.67],[1785763800000,154.71],[1785850200000,159.97],[1785936600000,155.26],[1786023000000,150.87],[1786109400000,161.7],[1786368600000,158.72],[1786455000000,156.19],[1786541400000,153.45],[1786627800000,158.12],[1786714200000,178.09],[1786973400000,164.5],[1787059800000,158.25],[1787146200000,151.71],[1787232600000,150.31],[1787319000000,153.29],[1787578200000,152.7],[1787664600000,162.45],[1787751000000,155.36],[1787837400000,153.95],[1787923800000,153],[1788183000000,147.81],[1788269400000,144.64],[1788355800000,158.1],[1788442200000,155.99],[1788528600000,154.46],[1788874200000,149.38],[1788960600000,146.44],[1789047000000,155.34],[1789133400000,157.77],[1789392600000,162.38],[1789479000000,159.63],[1789565400000,157.6],[1789651800000,152.83],[1789738200000,150.85],[1789997400000,158.73],[1790083800000,155.67],[1790170200000,151.98],[1790256600000,152.72],[1790343000000,149.84],[1790602200000,143.08],[1790688600000,145.36],[1790775000000,142.44],[1790861400000,149.53],[1790947800000,147.86],[1791207000000,150.42],[1791293400000,148.95],[1791379800000,152.71],[1791466200000,156.47],[1791552600000,159.91],[1791811800000,159.93],[1791898200000,155.29],[1791984600000,148.6],[1792071000000,159.36],[1792157400000,156.14]]},"1Y":{"change":-38.81,"percent":-19.908,"points":[[1760707800000,194.95],[1760967000000,202.48],[1761053400000,205.71],[1761139800000,197.05],[1761226200000,200.82],[1761312600000,214.2],[1761571800000,219.24],[1761658200000,212.97],[1761744600000,210.77],[1761831000000,194.42],[1761917400000,208.95],[1762180200000,204.98],[1762266600000,187.77],[1762353000000,196.27],[1762439400000,183.64],[1762525800000,194.58],[1762785000000,204.19],[1762871400000,208.21],[1762957800000,202.82],[1763044200000,189.42],[1763130600000,193.31],[1763389800000,187.55],[1763476200000,185.69],[1763562600000,187.78],[1763649000000,181.88],[1763735400000,183.48],[1763994600000,195],[1764081000000,218.48],[1764167400000,207.56],[1764340200000,216.47],[1764599400000,223.4],[1764685800000,222.76],[1764772200000,220.84],[1764858600000,222.75],[1764945000000,234.11],[1765204200000,236.95],[1765290600000,236.11],[1765377000000,238.11],[1765463400000,233.54],[1765549800000,224.78],[1765809000000,218.5],[1765895400000,224],[1765981800000,227.34],[1766068200000,231.34],[1766154600000,233.19],[1766413800000,233.15],[1766500200000,225.82],[1766586600000,225.85],[1766759400000,225.77],[1767018600000,234.65],[1767105000000,233.36],[1767191400000,229.87],[1767364200000,241.89],[1767623400000,244.05],[1767709800000,253.81],[1767796200000,255.5],[1767882600000,253.95],[1767969000000,244.56],[1768228200000,244.02],[1768314600000,258.93],[1768401000000,252.38],[1768487400000,228.75],[1768573800000,231.01],[1768919400000,225.36],[1769005800000,210.13],[1769092200000,214.54],[1769178600000,218.88],[1769437800000,213.63],[1769524200000,196.3],[1769610600000,193.14],[1769697000000,190.05],[1769783400000,180.27],[1770042600000,177.15],[1770129000000,165.41],[1770215400000,152.69],[1770301800000,151.05],[1770388200000,139.83],[1770647400000,141.74],[1770733800000,149.98],[1770820200000,139.29],[1770906600000,131.07],[1770993000000,139.65],[1771338600000,139.23],[1771425000000,147.46],[1771511400000,146.13],[1771597800000,150.17],[1771857000000,142.46],[1771943400000,142.08],[1772029800000,149.67],[1772116200000,151.25],[1772202600000,145.81],[1772461800000,147.11],[1772548200000,145.69],[1772634600000,147.29],[1772721000000,144.34],[1772807400000,139.39],[1773063000000,138.86],[1773149400000,134.13],[1773235800000,137.12],[1773322200000,132.25],[1773408600000,132.36],[1773667800000,140],[1773754200000,144.33],[1773840600000,142.79],[1773927000000,138.12],[1774013400000,139.85],[1774272600000,140.96],[1774359000000,136.12],[1774445400000,139.63],[1774531800000,127.26],[1774618200000,121.84],[1774877400000,124.13],[1774963800000,134.65],[1775050200000,136.18],[1775136600000,136],[1775482200000,138.34],[1775568600000,141.14],[1775655000000,145],[1775741400000,138.38],[1775827800000,139.73],[1776087000000,149.35],[1776173400000,154.54],[1776259800000,158.48],[1776346200000,162.45],[1776432600000,163.8],[1776691800000,166.28],[1776778200000,156.82],[1776864600000,164.31],[1776951000000,152.96],[1777037400000,154.89],[1777296600000,160.21],[1777383000000,147.93],[1777469400000,147.75],[1777555800000,147.23],[1777642200000,166.48],[1777901400000,169.07],[1777987800000,171.63],[1778074200000,166.56],[1778160600000,163.95],[1778247000000,155.8],[1778506200000,159.51],[1778592600000,152.35],[1778679000000,154.12],[1778765400000,156.31],[1778851800000,158.17],[1779111000000,159.11],[1779197400000,154.88],[1779283800000,146.72],[1779370200000,150.04],[1779456600000,141.67],[1779802200000,144.64],[1779888600000,154.19],[1779975000000,167.69],[1780061400000,176],[1780320600000,177.85],[1780407000000,169.13],[1780493400000,169.49],[1780579800000,183.91],[1780666200000,173.45],[1780925400000,171.13],[1781011800000,178.11],[1781098200000,172.21],[1781184600000,173.26],[1781271000000,162.1],[1781530200000,181.88],[1781616600000,175.39],[1781703000000,165.95],[1781789400000,174.96],[1782135000000,170.44],[1782221400000,165.63],[1782307800000,160.72],[1782394200000,158.02],[1782480600000,166.94],[1782739800000,174.39],[1782826200000,173.58],[1782912600000,197.76],[1782999000000,194.67],[1783344600000,200.86],[1783431000000,199.44],[1783517400000,195.31],[1783603800000,200.31],[1783690200000,195.34],[1783949400000,200.93],[1784035800000,203.27],[1784122200000,198.03],[1784208600000,185.26],[1784295000000,181.18],[1784554200000,181.64],[1784640600000,185.84],[1784727000000,170.38],[1784813400000,168.78],[1784899800000,168.73],[1785159000000,179.23],[1785245400000,178.44],[1785331800000,177.99],[1785418200000,178.04],[1785504600000,140.67],[1785763800000,154.71],[1785850200000,159.97],[1785936600000,155.26],[1786023000000,150.87],[1786109400000,161.7],[1786368600000,158.72],[1786455000000,156.19],[1786541400000,153.45],[1786627800000,158.12],[1786714200000,178.09],[1786973400000,164.5],[1787059800000,158.25],[1787146200000,151.71],[1787232600000,150.31],[1787319000000,153.29],[1787578200000,152.7],[1787664600000,162.45],[1787751000000,155.36],[1787837400000,153.95],[1787923800000,153],[1788183000000,147.81],[1788269400000,144.64],[1788355800000,158.1],[1788442200000,155.99],[1788528600000,154.46],[1788874200000,149.38],[1788960600000,146.44],[1789047000000,155.34],[1789133400000,157.77],[1789392600000,162.38],[1789479000000,159.63],[1789565400000,157.6],[1789651800000,152.83],[1789738200000,150.85],[1789997400000,158.73],[1790083800000,155.67],[1790170200000,151.98],[1790256600000,152.72],[1790343000000,149.84],[1790602200000,143.08],[1790688600000,145.36],[1790775000000,142.44],[1790861400000,149.53],[1790947800000,147.86],[1791207000000,150.42],[1791293400000,148.95],[1791379800000,152.71],[1791466200000,156.47],[1791552600000,159.91],[1791811800000,159.93],[1791898200000,155.29],[1791984600000,148.6],[1792071000000,159.36],[1792157400000,156.14]]},"5Y":{"change":110.14,"percent":239.435,"points":[[1710734400000,46],[1711339200000,49.32],[1711944000000,47.56],[1712548800000,42.27],[1713153600000,40.88],[1713758400000,45.43],[1714363200000,46.64],[1714968000000,53.53],[1715572800000,62.04],[1716177600000,54.72],[1716782400000,54.24],[1717387200000,59.8],[1717992000000,60.94],[1718596800000,57.3],[1719201600000,63.89],[1719806400000,72.97],[1720411200000,73.85],[1721016000000,64.7],[1721620800000,62.36],[1722225600000,57.58],[1722830400000,52.91],[1723435200000,54.92],[1724040000000,59.21],[1724644800000,60.03],[1725249600000,56.85],[1725854400000,59.09],[1726459200000,66.17],[1727064000000,67.08],[1727668800000,72.38],[1728273600000,73.25],[1728878400000,80.9],[1729483200000,81.36],[1730088000000,112.98],[1730696400000,134.8],[1731301200000,124.78],[1731906000000,146.67],[1732510800000,140.69],[1733115600000,162.76],[1733720400000,172.65],[1734325200000,170.71],[1734930000000,173.54],[1735534800000,177.74],[1736139600000,167.08],[1736744400000,175.33],[1737349200000,182.4],[1737954000000,199.55],[1738558800000,225.23],[1739163600000,196.38],[1739768400000,166.4],[1740373200000,161.78],[1740978000000,133.98],[1741579200000,128.21],[1742184000000,115.7],[1742788800000,107.71],[1743393600000,86.91],[1743998400000,101.15],[1744603200000,96.16],[1745208000000,118.1],[1745812800000,113.83],[1746417600000,108.46],[1747022400000,113.23],[1747627200000,100.76],[1748232000000,112.35],[1748836800000,121.29],[1749441600000,118.18],[1750046400000,139.15],[1750651200000,143.01],[1751256000000,157.03],[1751860800000,145.59],[1752465600000,148.24],[1753070400000,149.66],[1753675200000,188.64],[1754280000000,215.44],[1754884800000,246.5],[1755489600000,217.31],[1756094400000,225.08],[1756699200000,240],[1757304000000,254.29],[1757908800000,264.48],[1758513600000,240.11],[1759118400000,207.2],[1759723200000,198.55],[1760328000000,194.95],[1760932800000,214.2],[1761537600000,208.95],[1762146000000,194.58],[1762750800000,193.31],[1763355600000,183.48],[1763960400000,216.47],[1764565200000,234.11],[1765170000000,224.78],[1765774800000,233.19],[1766379600000,225.77],[1766984400000,241.89],[1767589200000,244.56],[1768194000000,231.01],[1768798800000,218.88],[1769403600000,180.27],[1770008400000,139.83],[1770613200000,139.65],[1771218000000,150.17],[1771822800000,145.81],[1772427600000,139.39],[1773028800000,132.36],[1773633600000,139.85],[1774238400000,121.84],[1774843200000,136],[1775448000000,139.73],[1776052800000,163.8],[1776657600000,154.89],[1777262400000,166.48],[1777867200000,155.8],[1778472000000,158.17],[1779076800000,141.67],[1779681600000,176],[1780286400000,173.45],[1780891200000,162.1],[1781496000000,174.96],[1782100800000,166.94],[1782705600000,194.67],[1783310400000,195.34],[1783915200000,181.18],[1784520000000,168.73],[1785124800000,140.67],[1785729600000,161.7],[1786334400000,178.09],[1786939200000,153.29],[1787544000000,153],[1788148800000,154.46],[1788753600000,157.77],[1789358400000,150.85],[1789963200000,149.84],[1790568000000,147.86],[1791172800000,159.91],[1791777600000,156.14],[1792181069000,156.14]]}}}</script>
-   <ol class="mk-legend" data-hf-reveal-group>
-    <li><h3><span class="mk-key" data-hf-atom>A</span>Company</h3><p>Logo, name, exchange and a short description, matched to the company by its SEC identifier.</p><p class="mk-legend__src">SEC · Wikidata · Wikipedia</p></li>
-    <li><h3><span class="mk-key" data-hf-atom>B</span>Price chart</h3><p>Delayed prices across six ranges, from one day to five years, with the latest session quote. It opens on one year; pick a range above and point at the line to read any close.</p><p class="mk-legend__src">Yahoo Finance, delayed</p></li>
-    <li><h3><span class="mk-key" data-hf-atom>C</span>Key facts</h3><p>Market cap, enterprise value, P/E, trailing-twelve-month revenue and net income, employees, headquarters, founding year and website.</p><p class="mk-legend__src">SEC XBRL · Wikidata · calculated</p></li>
-    <li><h3><span class="mk-key" data-hf-atom>D</span>Six tabs</h3><p>Statements by period, the filing history, recent Form&nbsp;4 trades, leadership and the people who file, <span class="hf-nw">8-K</span> announcements and headlines.</p><p class="mk-legend__src">SEC EDGAR · Form 4 · publishers</p></li>
-   </ol>
-  </figure>
-  <div class="mk-sub" data-hf-reveal><h3>Calculated values show their inputs.</h3><p>Hover a calculated fact to see what it was built from.</p></div>
-  <div class="mk-split mk-split--even" data-hf-reveal-group>
-   <dl class="mk-formulas">
-    <div><dt>Market cap</dt><dd>price × shares outstanding</dd></div>
-    <div><dt>Enterprise value</dt><dd>market cap + total debt − cash and short-term investments</dd></div>
-    <div><dt>P/E ratio</dt><dd>price ÷ trailing diluted EPS</dd></div>
-    <div><dt>TTM</dt><dd>latest fiscal year + current year to date − prior year to date</dd></div>
-   </dl>
-   <ul class="mk-list">
-    <li>Financial statements from XBRL, in US GAAP and in IFRS for <span class="hf-nw">20-F</span> and <span class="hf-nw">40-F</span> filers.</li>
-    <li>Financial values carry their form, their period and a link to the filing they were reported in.</li>
-    <li>The insider tab reads the company's 16 most recent Form&nbsp;4 and <span class="hf-nw">4/A</span> filings from EDGAR when you open it.</li>
-    <li>The news tab lists <span class="hf-nw">8-K</span> announcements with their item descriptions, and headlines that link to the publisher.</li>
-    <li>Calculated values are skipped for foreign issuers whose listed shares may be ADRs, and missing values are shown as missing.</li>
-   </ul>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="2-filings" aria-labelledby="2-filings-h">
- <div class="mk-shell" data-folio="02 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">SEC filings</p><h2 id="2-filings-h">A verifiable <span>filing library.</span></h2></div>
-   <div class="mk-head__aside"><p>Form&nbsp;4 filings, parsed line by line, linked to EDGAR.</p></div>
-  </div>
-
-  <ol class="mk-steps mk-steps--4" data-hf-reveal-group>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>01</span><h3>Read from the SEC</h3><p>New filings come from the SEC's current-filings feed, requested with a declared identity and below the SEC's rate limit.</p></li>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>02</span><h3>Parsed from the XML</h3><p>Each filing is read from its ownership XML: who filed, the security, the code, the date, the shares and the reported price.</p></li>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>03</span><h3>Kept once</h3><p>Every filing is stored once under its accession number. Amendments are marked as amendments, never merged.</p></li>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>04</span><h3>Opened in the viewer</h3><p>The filing viewer lists the parsed transactions and links straight to the document on EDGAR.</p></li>
-  </ol>
-  <p class="mk-note" data-hf-reveal>The library holds the filings Insidir has imported, starting from recent filings; it is not a complete historical archive. Company reports read each company's own filing history from EDGAR directly.</p>
- </div>
-</section>
-
-<section class="mk-section" id="3-insiders" aria-labelledby="3-insiders-h">
- <div class="mk-shell" data-folio="03 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Insider activity &amp; people</p><h2 id="3-insiders-h">Purchases and sales, <span>kept apart.</span></h2></div>
-   <div class="mk-head__aside"><p>Open-market trades counted. Awards, exercises and gifts shown, never counted.</p></div>
-  </div>
-
-  <figure class="mk-screen mk-screen--narrow" data-hf-reveal>
-   <div class="mk-screen__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Insider activity</em></div>
-   <picture><source type="image/avif" srcset="assets/img/product/insider-activity-720.avif 720w, assets/img/product/insider-activity-1080.avif 1080w, assets/img/product/insider-activity-1440.avif 1440w, assets/img/product/insider-activity-1500.avif 1500w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw"><img src="assets/img/product/insider-activity.webp" srcset="assets/img/product/insider-activity-720.webp 720w, assets/img/product/insider-activity-1080.webp 1080w, assets/img/product/insider-activity-1440.webp 1440w, assets/img/product/insider-activity.webp 1500w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw" width="1500" height="1270" loading="lazy" decoding="async" alt="Reported transactions on a company report: each insider, their role, the transaction, trade date and filing date."></picture>
-  </figure>
-  <div class="mk-split" data-hf-reveal-group>
-   <ul class="mk-codes" aria-label="Form 4 transaction codes">
-    <li class="is-buy"><b data-hf-atom>P</b><span>Open-market purchase<small>Counted as buying</small></span></li>
-    <li class="is-sell"><b data-hf-atom>S</b><span>Open-market sale<small>Counted as selling</small></span></li>
-    <li><b data-hf-atom>A</b><span>Grant or award<small>Shown, not counted</small></span></li>
-    <li><b data-hf-atom>M</b><span>Option exercise<small>Shown, not counted</small></span></li>
-    <li><b data-hf-atom>F</b><span>Tax withholding<small>Shown, not counted</small></span></li>
-    <li><b data-hf-atom>G</b><span>Gift<small>Shown, not counted</small></span></li>
-    <li><b data-hf-atom>D</b><span>Disposition to the issuer<small>Shown, not counted</small></span></li>
-    <li><b data-hf-atom>J</b><span>Other acquisition or disposition<small>Shown, not counted</small></span></li>
-   </ul>
-   <div>
-    <p class="mk-list-title">What each transaction shows</p>
-    <ul class="mk-list">
-     <li>The reporting person and their role at the company</li>
-     <li>The transaction code, in words</li>
-     <li>Shares, the reported price and the value they imply</li>
-     <li>Shares held after the transaction, as reported</li>
-     <li>Derivative trades and amendments, labelled as such</li>
-     <li>The filing itself, one click away on EDGAR</li>
-    </ul>
-   </div>
-  </div>
-  <div class="mk-sub" data-hf-reveal><h3>Two dates, side by side.</h3><p>A trade and its filing are different days, so every table shows both.</p></div>
-  <ol class="mk-dates" data-hf-reveal-group>
-   <li><b>Trade</b><strong>Transaction date</strong><p>The day the insider bought, sold, received or exercised.</p></li>
-   <li><b>Filing</b><strong>Filed with the SEC</strong><p>A Form&nbsp;4 is generally due within two business days of the transaction.</p></li>
-   <li><b>Insidir</b><strong>In your research</strong><p>Read from the SEC and shown with both dates and the link to the filing.</p></li>
-  </ol>
-  <div class="mk-sub" data-hf-reveal><h3>The people behind the filings.</h3><p>Officers, directors and major owners who report to the SEC.</p></div>
-  <figure class="mk-screen" data-hf-reveal>
-   <div class="mk-screen__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Personnel file</em></div>
-   <picture><source type="image/avif" srcset="assets/img/product/personnel-file-720.avif 720w, assets/img/product/personnel-file-1080.avif 1080w, assets/img/product/personnel-file-1440.avif 1440w, assets/img/product/personnel-file-1920.avif 1920w, assets/img/product/personnel-file-2400.avif 2400w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw"><img src="assets/img/product/personnel-file.webp" srcset="assets/img/product/personnel-file-720.webp 720w, assets/img/product/personnel-file-1080.webp 1080w, assets/img/product/personnel-file-1440.webp 1440w, assets/img/product/personnel-file-1920.webp 1920w, assets/img/product/personnel-file.webp 2400w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw" width="2400" height="1369" loading="lazy" decoding="async" alt="A personnel file: the reporting person's published photo, roles at each company, SEC filer number and record."></picture>
-  </figure>
-  <div class="mk-split mk-split--even" data-hf-reveal-group>
-   <div class="mk-record">
-    <p class="mk-record__head"><span>Reporting person</span><span class="mk-tag" data-hf-atom>Form 4</span></p>
-    <dl class="mk-ledger">
-     <div><dt>Name</dt><dd>As it appears on the filing</dd></div>
-     <div><dt>SEC CIK</dt><dd>The filer's SEC identifier</dd></div>
-     <div><dt>Companies</dt><dd>The issuers the person files for</dd></div>
-     <div><dt>Activity</dt><dd>Imported filings and transactions</dd></div>
-     <div><dt>Latest</dt><dd>The most recent transaction date</dd></div>
-     <div><dt>Follow</dt><dd>Keep the name in your research</dd></div>
-    </dl>
-   </div>
-   <ul class="mk-list">
-    <li>Search the reporting-person directory by name.</li>
-    <li>Follow people; the list is private to your account.</li>
-    <li>Company reports list the people who file for that company, with their roles.</li>
-    <li>Leadership and founders come from Wikidata; photographs are published images from Wikimedia Commons, never generated.</li>
-    <li>A portrait appears only when the name and the company match; otherwise you see initials.</li>
-   </ul>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="4-alerts" aria-labelledby="4-alerts-h">
- <div class="mk-shell" data-folio="04 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Monitoring &amp; alerts</p><h2 id="4-alerts-h">Disclosure <span>monitoring.</span></h2></div>
-   <div class="mk-head__aside"><p>Watchlists and followed people, matched to new SEC filings on a schedule.</p></div>
-  </div>
-
-  <figure class="mk-screen" data-hf-reveal>
-   <div class="mk-screen__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Overview</em></div>
-   <picture><source type="image/avif" srcset="assets/img/product/overview-720.avif 720w, assets/img/product/overview-1080.avif 1080w, assets/img/product/overview-1440.avif 1440w, assets/img/product/overview-1920.avif 1920w, assets/img/product/overview-2560.avif 2560w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw"><img src="assets/img/product/overview.webp" srcset="assets/img/product/overview-720.webp 720w, assets/img/product/overview-1080.webp 1080w, assets/img/product/overview-1440.webp 1440w, assets/img/product/overview-1920.webp 1920w, assets/img/product/overview.webp 2560w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw" width="2560" height="1600" loading="lazy" decoding="async" alt="The overview: new trades by the people you follow, your watchlist and the latest SEC import."></picture>
-  </figure>
-  <ol class="mk-steps" data-hf-reveal-group>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>01</span><h3>Save and follow</h3><p>Add a company to your watchlist from its report, and follow a reporting person from their file. Remove either the same way.</p></li>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>02</span><h3>Checked and matched</h3><p>Form&nbsp;4 filings are imported about every 2 minutes and company reports (8-K, 6-K) on their own schedule, then matched to what you follow.</p></li>
-   <li class="mk-step"><span class="mk-step__num" data-hf-atom>03</span><h3>In your inbox</h3><p>New matches appear in Alerts, marked unread, with the filer, the transaction, the value and the source; Alerts also lists the last 30 days of matching activity.</p></li>
-  </ol>
-  <p class="mk-note" data-hf-reveal>Device notifications are opt-in; delivery can be delayed. Filings from before you followed are not alerted. Insidir sends no email.</p>
- </div>
-</section>
-
-<section class="mk-section" id="5-journal" aria-labelledby="5-journal-h">
- <div class="mk-shell" data-folio="05 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Research journal</p><h2 id="5-journal-h">A private <span>research journal.</span></h2></div>
-   <div class="mk-head__aside"><p>A status and notes per company, beside the evidence.</p></div>
-  </div>
-
-  <figure class="mk-screen" data-hf-reveal>
-   <div class="mk-screen__bar" aria-hidden="true"><span></span><span></span><span></span><em>insidir.com · Research desk</em></div>
-   <picture><source type="image/avif" srcset="assets/img/product/research-desk-720.avif 720w, assets/img/product/research-desk-1080.avif 1080w, assets/img/product/research-desk-1440.avif 1440w, assets/img/product/research-desk-1920.avif 1920w, assets/img/product/research-desk-2400.avif 2400w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw"><img src="assets/img/product/research-desk.webp" srcset="assets/img/product/research-desk-720.webp 720w, assets/img/product/research-desk-1080.webp 1080w, assets/img/product/research-desk-1440.webp 1440w, assets/img/product/research-desk-1920.webp 1920w, assets/img/product/research-desk.webp 2400w" sizes="(max-width: 899px) calc(100vw - 40px), 60vw" width="2400" height="1369" loading="lazy" decoding="async" alt="The research desk: search a ticker, read its source-backed records and keep a private review."></picture>
-  </figure>
-  <div class="mk-split" data-hf-reveal-group>
-   <div>
-    <ul class="mk-statuses" aria-label="Research statuses">
-     <li><b>Researching</b><p>You are reading the filings and checking the numbers.</p></li>
-     <li><b>Watching</b><p>You have a view and are waiting for the next filing.</p></li>
-     <li><b>Passed</b><p>You looked and decided against it, with the reason written down.</p></li>
-    </ul>
-    <div class="mk-notebox"><p><b>Notes</b>&nbsp; Up to 1,500 characters per company: the sources you checked, the dates to verify, what would change your mind.</p></div>
-   </div>
-   <div>
-    <p class="mk-list-title">On the research desk</p>
-    <ul class="mk-list">
-     <li>Selected <span class="hf-nw">8-K</span>, <span class="hf-nw">10-K</span>, <span class="hf-nw">10-Q</span>, proxy and ownership filings for the company</li>
-     <li>Four reported XBRL measures, where the company reports them</li>
-     <li>A chronological brief of filings and imported Form&nbsp;4 trades</li>
-     <li>Your status and notes, saved per company and deleted with your account</li>
-    </ul>
-   </div>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="6-portfolio" aria-labelledby="6-portfolio-h">
- <div class="mk-shell" data-folio="06 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Portfolio</p><h2 id="6-portfolio-h">Holdings, <span>no brokerage login.</span></h2></div>
-   <div class="mk-head__aside"><p>Enter tickers and shares. See related Form&nbsp;4 activity.</p></div>
-  </div>
-
-  <div class="mk-split mk-split--even" data-hf-reveal-group>
-   <div class="mk-record">
-    <p class="mk-record__head"><span>Holding</span><span class="mk-tag" data-hf-atom>Entered by you</span></p>
-    <dl class="mk-ledger">
-     <div><dt>Ticker</dt><dd>The stock you hold</dd></div>
-     <div><dt>Shares</dt><dd>Your quantity, to eight decimal places</dd></div>
-     <div><dt>Activity</dt><dd>Imported Form&nbsp;4 transactions from the last 30 days</dd></div>
-     <div><dt>Research</dt><dd>Opens the research desk for that ticker</dd></div>
-    </dl>
-   </div>
-   <ul class="mk-list">
-    <li>Up to 100 holdings, each editable and removable.</li>
-    <li>No brokerage connection, credentials or trading permissions.</li>
-    <li>No prices or portfolio values are estimated: quantities are what you entered.</li>
-    <li>Matching by ticker is a lead for your research, not proof that a filing concerns your shares.</li>
-   </ul>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="7-more" aria-labelledby="7-more-h">
- <div class="mk-shell" data-folio="07 / 07">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Also included</p><h2 id="7-more-h">Included. <span>And excluded.</span></h2></div>
-   <div class="mk-head__aside"><p>The rest of the desk, and what Insidir leaves out.</p><a class="mk-link" href="why-insidir.html">Why Insidir<span class="v13-arrow" aria-hidden="true">→</span></a></div>
-  </div>
-
-  <ul class="mk-cells" data-hf-reveal>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Intelligence</span></div><h3>Briefing, Investigate, Mirror</h3><p>Your personal Briefing, questions answered from SEC records with numbered sources, and selected institutions' historical 13F holdings with hypothetical allocations. <a href="insidir-intelligence.html">How it works</a></p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Dashboard</span></div><h3>The latest, in one place</h3><p>The most recently imported filings and insider transactions, beside your watchlist and your research notes.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Search</span></div><h3>Any ticker, any name</h3><p>Search tickers, companies and people from any page, with Cmd&nbsp;K or Ctrl&nbsp;K, across the SEC's official ticker list.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Companies</span></div><h3>Browse the issuers</h3><p>The companies with imported filings, each one a click from its report and its filings.</p></li>
-  </ul>
-  <div class="mk-sub" data-hf-reveal><h3>Not in Insidir.</h3><p>Left out on purpose.</p></div>
-  <ul class="mk-list mk-list--no mk-list--2" data-hf-reveal>
-   <li>No trade execution or order routing</li>
-   <li>No live or real-time quotes</li>
-   <li>No price targets, ratings or buy and sell signals</li>
-   <li>No unlabelled AI text: AI-assisted wording, where switched on, is marked and cites its sources</li>
-   <li>No email, ever, and no device notifications unless you turn them on</li>
-   <li>No advertising</li>
-  </ul>
- </div>
-</section>
-
-<section class="mk-final v13-field-host" aria-labelledby="mk-final-heading">
- <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="180" aria-hidden="true"></div>
- <div class="mk-shell mk-final__inner" data-hf-reveal-group>
-  <p class="mk-eyebrow">Insidir · $1 for the first 7 days, then $39/month</p>
-  <h2 id="mk-final-heading">Explore <span>the platform.</span></h2>
-  <p class="mk-final__copy">7 days for $1. Then $39/month. Cancel online.</p>
-  <div class="mk-actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Start 7 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
-   <a class="v9-btn v12-outline-button" href="pricing.html">See pricing <span class="v13-arrow" aria-hidden="true">→</span></a>
-  </div>
- </div>
-</section>
-</main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<body class="ui site">
+<a class="skip" href="#main">Skip to content</a>
+<header class="snav" data-ds-nav><div class="snav__in">
+<a class="wordmark" href="/" aria-label="Insidir home"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="70 -793 4531 803"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a>
+<nav class="snav__links" aria-label="Main"><a href="/#how" data-spy="how">How it works</a><a href="/#pricing" data-spy="pricing">Pricing</a><a href="/#faq" data-spy="faq">FAQ</a></nav>
+<div class="snav__end"><a class="btn btn--ghost" href="/signin.html">Log in</a><a class="btn btn--secondary" href="/signup.html" data-cta="nav">Start for $1</a></div>
+</div></header>
+<main id="main" class="sp-main">
+<section class="sp-hero" data-v2-hero aria-labelledby="hero-h"><div class="swrap"><div class="sp-hero__in">
+ <h1 class="t-display" id="hero-h">Everything Insidir does, in plain words.</h1>
+ <p class="sp-hero__sub">Insidir reads the insider filings at the SEC and turns each one into a sentence, a dot on the price chart and an alert for the stocks and people you follow. Every number links to the filing it came from.</p>
+ <div class="sp-actions"><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="page">Start for $1</a><a class="btn btn--secondary btn--lg" href="/insidir-intelligence.html">How Intelligence works</a></div>
+ <p class="t-label muted sp-terms">$1 for 7 days, then $39 a month. Cancel online anytime. Not a broker, not investment advice.</p>
 </div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer>
-</body>
-</html>
+<nav class="sp-toc" aria-label="On this page"><p class="t-label muted">On this page</p><ul><li><a class="chip" href="#today">Today</a></li><li><a class="chip" href="#stocks">Stock pages</a></li><li><a class="chip" href="#filings">The filing</a></li><li><a class="chip" href="#score">Signal score</a></li><li><a class="chip" href="#alerts">Watchlist and alerts</a></li><li><a class="chip" href="#intelligence">Intelligence</a></li><li><a class="chip" href="#more">Also included</a></li><li><a class="chip" href="#not">Not in Insidir</a></li></ul></nav>
+</div></section>
+<section class="ssec" id="today" aria-labelledby="today-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="today-h">Today: what insiders did, on one screen.</h2><p class="ssec__p">The first screen after you sign in. Nothing on it is a sample: when nothing new has been filed, it says so.</p></header>
+ <ul class="sp-grid"><li class="card sp-card"><h3 class="t-section">The biggest trade</h3><p class="muted">The largest open-market insider trade at the stocks you watch, with its sentence, its signal score and the stock on a chart. With a quiet watchlist, the largest one across the market.</p></li><li class="card sp-card"><h3 class="t-section">Your watchlist</h3><p class="muted">Each stock you watch with its last close and its insider activity, one tap from its page.</p></li><li class="card sp-card"><h3 class="t-section">The latest filings</h3><p class="muted">The newest insider trades as they are imported, each in one sentence. New ones slide in while the page is open.</p></li><li class="card sp-card"><h3 class="t-section">People you follow</h3><p class="muted">New trades by the insiders you follow, under their initials and their role.</p></li><li class="card sp-card"><h3 class="t-section">Your notes</h3><p class="muted">The companies you are researching, with the status and notes you wrote.</p></li><li class="card sp-card"><h3 class="t-section">Where the data stands</h3><p class="muted">When the import last ran, so you know how fresh the page is.</p></li></ul>
+</div></section>
+<section class="ssec" id="stocks" aria-labelledby="stocks-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="stocks-h">One page per stock.</h2><p class="ssec__p">The price is the headline and the chart is the story: every insider buy and sale sits on the price line where it happened.</p></header>
+ <div class="sp-split">
+  <div class="card sp-card"><h3 class="t-section">The chart</h3><p class="muted">Daily closing prices, never live quotes. Each open-market trade is a dot on the line, sized by its dollars; tap one to read the trade and open its filing.</p>
+   <p class="legend" aria-label="Chart legend"><span><i class="l-buy"></i>Insider bought</span><span><i class="l-sell"></i>Insider sold</span><span><i class="l-plan"></i>Pre-scheduled 10b5-1 sale</span></p></div>
+  <div class="card sp-card"><h3 class="t-section">Five tabs</h3><ul class="sp-list"><li><span><b>Insiders</b>: who traded, their role and each insider's track record after past buys</span></li><li><span><b>Funds</b>: the institutions that report the stock in their 13F holdings</span></li><li><span><b>Filings</b>: the company's SEC filings, newest first</span></li><li><span><b>Connections</b>: the people and companies tied to it through Form 4 filings</span></li><li><span><b>Company</b>: a short profile and recent headlines</span></li></ul></div>
+ </div>
+ <div class="sp-sub"><h3 class="t-section">Watch it in one tap.</h3><p class="muted">Watch adds the stock to your watchlist with important alerts on. Press it again to stop.</p></div>
+</div></section>
+<section class="ssec" id="filings" aria-labelledby="filings-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="filings-h">The filing, as filed, in plain English.</h2><p class="ssec__p">Every Form 4 is parsed line by line: who filed, the security, the transaction code, the dates, the shares and the reported price.</p></header>
+ <div class="sp-split">
+  <div class="card"><ul class="sp-codes" aria-label="Form 4 transaction codes">
+   <li><span class="tick">P</span><span>Open-market purchase</span><span class="trade trade--buy">Counted as buying</span></li>
+   <li><span class="tick">S</span><span>Open-market sale</span><span class="trade trade--sell">Counted as selling</span></li>
+   <li><span class="tick">A</span><span>Grant or award</span><span class="t-label muted">Shown, not counted</span></li>
+   <li><span class="tick">M</span><span>Option exercise</span><span class="t-label muted">Shown, not counted</span></li>
+   <li><span class="tick">F</span><span>Tax withholding</span><span class="t-label muted">Shown, not counted</span></li>
+   <li><span class="tick">G</span><span>Gift</span><span class="t-label muted">Shown, not counted</span></li>
+   <li><span class="tick">D</span><span>Disposition to the issuer</span><span class="t-label muted">Shown, not counted</span></li>
+   <li><span class="tick">J</span><span>Other acquisition or disposition</span><span class="t-label muted">Shown, not counted</span></li>
+  </ul></div>
+  <div class="card sp-card"><h3 class="t-section sp-list-h">What each trade shows</h3><ul class="sp-list"><li><span>The person who filed and their role at the company</span></li><li><span>The transaction code, in words</span></li><li><span>Shares, the reported price and the value they imply</span></li><li><span>Shares held after the trade, as reported</span></li><li><span>Pre-scheduled 10b5-1 sales, derivative trades and amendments, labelled as such</span></li><li><span>The filing itself, one tap away</span></li></ul></div>
+ </div>
+ <div class="sp-sub"><h3 class="t-section">The whole form, inside Insidir.</h3><p class="muted">A filing opens in Insidir laid out in the form's own boxes and tables, with every footnote, and the reported lines in plain words above it. The original on SEC.gov is always linked.</p></div>
+ <ol class="show"><li class="card show__step"><p class="t-label muted">1</p><h3 class="t-section">Trade</h3><p class="muted">The day the insider bought, sold, received or exercised.</p></li><li class="card show__step"><p class="t-label muted">2</p><h3 class="t-section">Filing</h3><p class="muted">A Form 4 is generally due within two business days of the trade.</p></li><li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">Insidir</h3><p class="muted">Read from the SEC, shown with both dates and the link to the filing.</p></li></ol>
+ <p class="t-label muted sp-note">Every filing is stored once under its accession number. Amendments are marked as amendments, never merged. The library holds the filings Insidir has imported, starting from recent ones; it is not a complete historical archive.</p>
+</div></section>
+<section class="ssec" id="score" aria-labelledby="score-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="score-h">A signal score for every open-market trade.</h2><p class="ssec__p">Low, Medium or High: how much the filing says, worked out by fixed rules and explained in one sentence. It describes the filing; it is not a forecast or a recommendation.</p></header>
+ <ul class="sp-grid"><li class="card sp-card"><h3 class="t-section">Buy or sale</h3><p class="muted">An open-market purchase says more than a sale. Pre-scheduled 10b5-1 sales are labelled and score low.</p></li><li class="card sp-card"><h3 class="t-section">Size</h3><p class="muted">How large the trade is against what the insider held before it.</p></li><li class="card sp-card"><h3 class="t-section">Others buying</h3><p class="muted">Whether other insiders at the same company bought around the same time.</p></li><li class="card sp-card"><h3 class="t-section">First in a while</h3><p class="muted">Whether this is the insider's first purchase at the company in a long time.</p></li><li class="card sp-card"><h3 class="t-section">After a fall</h3><p class="muted">Whether the insider bought after the stock had fallen.</p></li><li class="card sp-card"><h3 class="t-section">Track record</h3><p class="muted">How this insider's past purchases went in the months after them.</p></li></ul><p class="t-label muted sp-note">Awards, gifts, tax withholding and option exercises are routine and say so instead of scoring.</p>
+</div></section>
+<section class="ssec" id="alerts" aria-labelledby="alerts-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="alerts-h">Follow once. Hear about it when it is filed.</h2><p class="ssec__p">Watch a stock or follow an insider, and new filings that match arrive in Alerts.</p></header>
+ <ol class="show"><li class="card show__step"><p class="t-label muted">1</p><h3 class="t-section">Save and follow</h3><p class="muted">Watch a stock from its page and follow an insider from theirs. Remove either the same way.</p></li><li class="card show__step"><p class="t-label muted">2</p><h3 class="t-section">Checked and matched</h3><p class="muted">New Form 4 filings are imported about every 2 minutes, and watched companies' other SEC filings on their own schedule, then matched to what you follow.</p></li><li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">In Alerts</h3><p class="muted">Each match arrives in Alerts in one sentence with its signal score, marked unread. Open it to go to the stock, or archive it, with an Undo.</p></li></ol><p class="t-label muted sp-note">Important alerts cover purchases, purchases by several insiders, large sales and company disclosures. Device notifications are opt-in, and delivery can be delayed. Filings from before you followed are not alerted. Insidir sends no email.</p>
+</div></section>
+<section class="ssec" id="intelligence" aria-labelledby="intelligence-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="intelligence-h">Intelligence: briefings and questions, cited.</h2><p class="ssec__p">Three tools built on the same SEC records, each figure linked to its source.</p></header>
+ <ul class="sp-grid"><li class="card sp-card"><h3 class="t-section">Briefing</h3><p class="muted">What changed for the companies and people you follow, ordered by published rules, with the reason each item is there.</p></li><li class="card sp-card"><h3 class="t-section">Investigate</h3><p class="muted">A research question in plain English, answered from SEC records with numbered sources.</p></li><li class="card sp-card"><h3 class="t-section">Mirror</h3><p class="muted">An institution's disclosed 13F holdings, and how a hypothetical budget would split by their weights. Labelled hypothetical.</p></li></ul><p class="sp-note"><a class="slink" href="/insidir-intelligence.html">How Intelligence works</a></p>
+</div></section>
+<section class="ssec" id="more" aria-labelledby="more-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="more-h">Also included.</h2><p class="ssec__p">The rest of the product, in the same plan.</p></header>
+ <ul class="sp-grid sp-grid--2"><li class="card sp-card"><h3 class="t-section">Connections</h3><p class="muted">Companies, executives and the people who file with them, drawn as a map from Form 4 records, with a table view.</p></li><li class="card sp-card"><h3 class="t-section">Search</h3><p class="muted">Tickers, companies, insiders and funds from any page, with ⌘K or Ctrl K.</p></li><li class="card sp-card"><h3 class="t-section">Research notes</h3><p class="muted">A private status and notes for each company you research, kept beside the evidence.</p></li><li class="card sp-card"><h3 class="t-section">Portfolio</h3><p class="muted">Type in your tickers and shares to see related insider activity. No brokerage login, no prices estimated.</p></li></ul>
+</div></section>
+<section class="ssec" id="not" aria-labelledby="not-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="not-h">Not in Insidir.</h2><p class="ssec__p">Left out on purpose.</p></header>
+ <div class="card sp-card"><ul class="sp-list"><li><span>No trade execution or order routing</span></li><li><span>No live or real-time quotes</span></li><li><span>No price targets, ratings or buy and sell recommendations</span></li><li><span>No unlabelled AI text: AI-assisted wording, where switched on, is marked and cites its sources</span></li><li><span>No email, ever, and no device notifications unless you turn them on</span></li><li><span>No advertising</span></li></ul></div>
+ <p class="sp-note"><a class="slink" href="/why-insidir.html">Why Insidir works this way</a></p>
+</div></section>
+<section class="ssec" aria-labelledby="start-h"><div class="swrap" data-ds-reveal>
+ <div class="sp-end"><h2 class="t-title" id="start-h">See it on a stock you own.</h2><p class="ssec__p">7 days for $1. Then $39 a month. Cancel online.</p><div class="sp-actions"><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="page">Start 7 days for $1</a><a class="btn btn--secondary btn--lg" href="/pricing.html">See pricing</a></div><p class="t-label muted">Research, not investment advice.</p></div>
+</div></section>
+</main>
+<div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
+<footer class="sfoot"><div class="swrap sfoot__in">
+<div class="sfoot__brand"><a class="wordmark" href="/" aria-label="Insidir home"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="70 -793 4531 803"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a><p class="t-label muted">© 2026 Aethric LLC. Research, not investment advice. Not affiliated with the SEC.</p></div>
+<nav aria-label="Product"><h2 class="t-label muted">Product</h2><a href="/insider-trading">Insider trades today</a><a href="/#how">How it works</a><a href="/#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
+<nav aria-label="Company"><h2 class="t-label muted">Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
+<nav aria-label="Account"><h2 class="t-label muted">Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
+</div></footer>
+</body></html>

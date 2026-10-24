@@ -8,6 +8,7 @@
  * Alerts reach members in the app's inbox and as device notifications. Insidir sends no email: alert emails and daily
  * digests are gone, email_alerts is always 'off', and asking for anything else is refused. The signed unsubscribe link
  * still works for anyone holding an alert email sent before, and only ever turns things off. */
+import { WORDMARK } from "./site-ui.mjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { emailDigest, requestAddress } from "./security-events.mjs";
 import { eventSummary } from "./research-events.mjs";
@@ -154,15 +155,21 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 /* The page behind an unsubscribe link: GET asks for one confirming click (link scanners never unsubscribe anyone);
  * mail clients' one-click POST (RFC 8058) needs none. */
 export function unsubscribePage(state, token = "") {
+  const acts = html => `<div class="nt-acts">${html}</div>`;
   const body = state === "confirm"
-    ? `<h1>Stop alert emails?</h1><p class="mk-lede">Insidir no longer sends any email. This makes sure alert emails stay off for your account. Alerts stay in the app.</p>
-<form method="post" action="/v1/email/unsubscribe?t=${encodeURIComponent(token)}"><button class="v9-btn v9-btn--ink" type="submit">Unsubscribe from alert emails</button></form>`
+    ? `<h1 class="t-title">Stop alert emails?</h1><p class="au-sub">Insidir no longer sends any email. This makes sure alert emails stay off for your account. Alerts stay in the app.</p>
+<form method="post" action="/v1/email/unsubscribe?t=${encodeURIComponent(token)}">${acts(`<button class="btn btn--primary" type="submit">Unsubscribe from alert emails</button>`)}</form>`
     : state === "done"
-      ? `<h1>You're unsubscribed.</h1><p class="mk-lede">Insidir will not send you alert emails, or any other email.</p><p><a class="v9-btn v12-outline-button" href="/alerts.html">Open Alerts</a></p>`
-      : `<h1>This link is not valid.</h1><p class="mk-lede">It may be incomplete. Insidir no longer sends any email, so there is nothing to turn off. Questions: hello@aethric.llc.</p><p><a class="v9-btn v12-outline-button" href="/alerts.html">Open Alerts</a></p>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>Alert emails — insidir.</title><link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/v13-halftone.css?v=10"><link rel="stylesheet" href="/assets/css/v13-static.css?v=2"></head>
-<body class="v3-static v6-static v13"><main id="Content" class="mk-shell" style="padding:72px 16px;max-width:640px;margin:0 auto">
-<p class="mk-eyebrow">Insidir / Email</p>${body}<p style="margin-top:32px"><a href="/">insidir.</a> · <a href="/privacy.html">Privacy</a></p></main></body></html>`;
+      ? `<h1 class="t-title">You're unsubscribed.</h1><p class="au-sub">Insidir will not send you alert emails, or any other email.</p>${acts(`<a class="btn btn--primary" href="/alerts.html">Open Alerts</a>`)}`
+      : `<h1 class="t-title">This link is not valid.</h1><p class="au-sub">It may be incomplete. Insidir no longer sends any email, so there is nothing to turn off. Questions: hello@aethric.llc.</p>${acts(`<a class="btn btn--secondary" href="/">Return home</a>`)}`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b"><meta name="color-scheme" content="dark">
+<title>Alert emails — Insidir</title><link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=3"><link rel="stylesheet" href="/assets/css/auth-ui.css?v=1"><link rel="stylesheet" href="/assets/css/notice-app.css?v=1"></head>
+<body class="ui"><a class="skip" href="#main">Skip to content</a><div class="au">
+<header class="au-top"><a class="wordmark" href="/" aria-label="Insidir home">${WORDMARK}</a></header>
+<main class="au-main" id="main"><div class="au-card"><p class="t-label muted">Email</p>${body}</div></main>
+<footer class="au-foot">© 2026 Aethric LLC. Research, not investment advice. <a class="au-link" href="/privacy.html">Privacy</a> · <a class="au-link" href="/terms.html">Terms</a></footer>
+</div></body></html>`;
 }

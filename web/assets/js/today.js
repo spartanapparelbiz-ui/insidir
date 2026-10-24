@@ -4,7 +4,7 @@
    data lands, replaces a skeleton of the same size, and says what failed in place with a Try again. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,big,trade}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,face,spark,ring,settle,roll,enter,big,trade}=UI;
 const $=s=>document.querySelector(s);
 const coHref=t=>"/company.html?ticker="+encodeURIComponent(t);
 const tone=m=>m.planned?"plan":m.kind==="buy"?"up":"down";
@@ -82,7 +82,7 @@ const row=m=>`<li class="row feed__row" data-id="${esc(m.id)}">
  <a class="hit" href="${coHref(m.ticker)}" aria-label="${esc(fmt.person(m.owner))}, ${esc(fmt.role(m.role))} at ${esc(fmt.company(m.name)||m.ticker)}, ${m.kind==="buy"?"bought":"sold"} ${fmt.money(m.value)}${m.planned?" under a 10b5-1 plan":""}"></a>
  ${logo(m.ticker,28,m.name)}
  <span class="feed__co"><span class="tick">${esc(m.ticker)}</span><span class="feed__sub t-label muted"><span>${esc(fmt.company(m.name)||"")}</span><span class="feed__ago-m"> · ${esc(fmt.ago(m.filedAt))}</span></span></span>
- <span class="feed__who">${monogram(m.owner)}<span class="t-label"><span>${esc(fmt.person(m.owner))}</span> <span class="muted">${esc(fmt.role(m.role))}</span></span></span>
+ <span class="feed__who">${face(m.owner,{cik:m.ownerCik,ticker:m.ticker})}<span class="t-label"><span>${esc(fmt.person(m.owner))}</span> <span class="muted">${esc(fmt.role(m.role))}</span></span></span>
  <span class="feed__trade">${trade(m)}</span>
  <span class="feed__amt ${tone(m)}">${fmt.money(m.value)}</span>
  ${m.url||m.id?`<a class="row__link feed__ago t-micro muted" href="${esc(filingHref(m.url,m.id))}" title="Open the SEC filing">${esc(fmt.ago(m.filedAt))}</a>`:`<span class="feed__ago t-micro muted">${esc(fmt.ago(m.filedAt))}</span>`}</li>`;
@@ -115,13 +115,14 @@ async function loadPeople(){
  try{const d=await api("/v1/me/people/updates?limit=6");el.removeAttribute("aria-busy");const ppl=(d.people||[]).slice(0,5);
   if(!ppl.length){el.outerHTML=`<div class="empty" data-people style="padding:16px 0"><h3>Follow an insider</h3><p>Follow a CEO or director and every trade they file lands here and in your alerts.</p><a class="btn btn--secondary" href="/people.html">Find people</a></div>`;return;}
   el.innerHTML=ppl.map(p=>{const l=p.last||{};const k=l.transaction_code==="P"?"buy":l.transaction_code==="S"?"sell":null;
-   return `<li class="row side-row"><a class="hit" href="/person.html?cik=${encodeURIComponent(p.owner_cik)}" aria-label="${esc(fmt.person(p.owner_name))}"></a>${monogram(p.owner_name,32)}<span><span class="strong">${esc(fmt.person(p.owner_name))}</span><span class="t-label muted"><span class="tick">${esc(p.ticker||"")}</span>${p.last_published_at?" · "+esc(fmt.ago(p.last_published_at)):""}</span></span>${k?`<span class="strong ${l.rule_10b5_1&&k==="sell"?"plan":k==="buy"?"up":"down"}">${fmt.money(l.estimated_value)}</span>`:""}</li>`;}).join("");
+   return `<li class="row side-row"><a class="hit" href="/person.html?cik=${encodeURIComponent(p.owner_cik)}" aria-label="${esc(fmt.person(p.owner_name))}"></a>${face(p.owner_name,{cik:p.owner_cik,ticker:p.ticker,size:32})}<span><span class="strong">${esc(fmt.person(p.owner_name))}</span><span class="t-label muted"><span class="tick">${esc(p.ticker||"")}</span>${p.last_published_at?" · "+esc(fmt.ago(p.last_published_at)):""}</span></span>${k?`<span class="strong ${l.rule_10b5_1&&k==="sell"?"plan":k==="buy"?"up":"down"}">${fmt.money(l.estimated_value)}</span>`:""}</li>`;}).join("");
+  hydrateLogos(el);
  }catch(e){if(e.status!==401&&e.status!==402)failed(el,"People you follow",loadPeople);}
 }
 async function loadNotes(){
  const el=$("[data-notes]");
  try{const d=await api("/v1/me/research-decisions");el.removeAttribute("aria-busy");const n=(d.items||[]).slice(0,4);
-  if(!n.length){el.outerHTML=`<div class="empty" data-notes style="padding:16px 0"><h3>No notes yet</h3><p>Save a note on any company page and it waits for you here.</p></div>`;return;}
+  if(!n.length){el.outerHTML=`<div class="empty" data-notes style="padding:16px 0"><h3>No notes yet</h3><p>Save a note on any stock page and it waits for you here.</p></div>`;return;}
   el.innerHTML=n.map(x=>`<li class="row side-row"><a class="hit" href="${coHref(x.ticker)}" aria-label="${esc(x.ticker)} note"></a>${logo(x.ticker,28)}<span><span class="tick">${esc(x.ticker)}</span><span class="t-label muted">${esc(String(x.notes||x.review_status||"").slice(0,80))}</span></span><span class="t-micro muted">${esc(fmt.date(x.updated_at,false))}</span></li>`).join("");hydrateLogos(el);
  }catch(e){if(e.status!==401&&e.status!==402)failed(el,"Your notes",loadNotes);}
 }

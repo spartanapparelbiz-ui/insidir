@@ -47,8 +47,8 @@ try {
       });
       assert.ok(r.overflow <= 1, `${viewport.width}px ${path}: horizontal overflow ${r.overflow}px`);
       assert.equal(r.bg, "rgb(12, 12, 11)", path + " sits on the night paper");
-      // The landing page is on the rebuilt design system (ui.css): Geist is its one typeface. The stories keep V13.
-      assert.match(r.font, path === "/" ? /^"?Geist"?,/ : /JetBrains Mono/, path);
+      // Every page is on the rebuilt design system (ui.css): Geist is its one typeface.
+      assert.match(r.font, /^"?Geist"?,/, path);
       assert.equal(r.h1, 1, path + " has one h1");
       if (path !== "/") assert.deepEqual(r.tinted, [], `${viewport.width}px ${path}: green or orange on screen`);
       assert.equal(r.nativeVisible, false, "headless Chrome has no share sheet, so the button stays hidden");
@@ -64,7 +64,7 @@ try {
       await page.waitForFunction(() => document.querySelector("[data-share-status]").textContent.length > 0);
       assert.equal(await page.evaluate(() => navigator.clipboard.readText()), expected, "copy link with " + (query || "no code"));
       assert.equal(await page.textContent("[data-share-status]"), "Link copied.");
-      const signup = await page.getAttribute(".pp-upsell a[href*='signup']", "href");
+      const signup = await page.getAttribute("[data-st-upsell] a[href*='signup']", "href");
       assert.equal(signup, expected.includes("ref=") ? "https://insidir.com/signup.html?ref=good_creator".replace("https://insidir.com", new URL(base).origin) : "/signup.html", "sign-up link with " + (query || "no code"));
     }
     await page.goto(base + storyPath(story), { waitUntil: "load" });

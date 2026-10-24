@@ -118,7 +118,10 @@ test("person page: built from the profile, redirected to its canonical name slug
   assert.deepEqual([padded.status, padded.headers.location], [301, "/insiders/9876543-doe-jane"]);
   const page = await get("/insiders/9876543-doe-jane", query);
   assert.equal(page.status, 200);
-  assert.match(page.body, /<h1 id="pp-title">Doe Jane <span>insider trades\.<\/span><\/h1>/);
+  assert.match(page.body, /<h1 class="t-display" id="pp-title">Doe Jane <span class="muted">insider trades\.<\/span><\/h1>/);
+  assert.match(page.body, /<body class="ui site">/, "the public design (ui.css + site.css)");
+  assert.doesNotMatch(page.body, /v13-|v6-|v9-|halftone|JetBrains/, "no old-design assets");
+  assert.match(page.body, /Research, not investment advice/);
   assert.match(page.body, /filed under the name DOE JANE/);
   assert.match(page.body, /href="\/EXMP"/);
   assert.match(page.body, /Follow Doe in Insidir/);
@@ -145,7 +148,10 @@ test("hub page lists the biggest purchases and sales, the newest filings and the
   assert.match(r.body, /Biggest open-market sales/);
   assert.match(r.body, /1,200/);
   assert.match(r.body, /\$910M/);
-  assert.match(r.body, /<a href="\/EXMP"><b>EXMP<\/b><span>Example Corp<\/span><em>3 filings · 1 bought · 2 sold<\/em><\/a>/);
+  assert.match(r.body, /href="\/EXMP"><span class="scell"><span class="logo logo--32" data-logo="EXMP"[^]*?<b>EXMP<\/b><span class="t-label muted">Example Corp<\/span><\/span><\/span><span class="t-label muted">3 filings · 1 bought · 2 sold<\/span><\/a>/);
+  assert.doesNotMatch(r.body, /v13-|v6-|v9-|halftone|JetBrains/, "no old-design assets");
+  // Every value in the tables links to its SEC filing.
+  for (const cell of r.body.match(/<td class="r[^"]*">[^]*?<\/td>/g) || []) if (!/^<td class="r[^"]*">—<\/td>$/.test(cell)) assert.match(cell, /href="https:\/\/www\.sec\.gov\//, cell);
   assert.match(r.body, /Fund A Fund B/, "a joint line without an owners list reads as filed");
   assert.match(r.body, /aria-current="page">Insider filings/);
   assert.match(HUB_SQL.biggest("reported_purchase"), /NOT t\.derivative/);

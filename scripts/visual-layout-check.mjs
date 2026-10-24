@@ -138,7 +138,27 @@ try{
     assert.equal(auth.bg,"rgb(12, 12, 11)",route+" sits on the night background");
     assert.ok(auth.logo&&auth.advice,route+" has the SVG wordmark and the research-not-advice line");
    }
-   console.log("Browser verified:",item.width+"px","landing","Today","ticker page","Alerts","SEC filing","working auth","no overflow");
+   // ---------- every other page, rebuilt on the new design (ui.css; site.css on public pages) ----------
+   const APP=["/watchlist.html","/filings.html","/explore.html","/people.html","/person.html?cik=1214156","/account.html","/billing.html","/intelligence.html","/entity.html?cik=1081316","/portfolio.html"];
+   const PUBLIC=["/platform.html","/pricing.html","/why-insidir.html","/insidir-intelligence.html","/data.html","/company-info.html","/terms.html","/privacy.html","/subscription-policy.html","/disclosures.html",
+     "/stories.html","/stories/enterprise-products-insider-purchase.html","/creators.html","/creator-kit.html","/subscribe.html","/welcome.html","/account-deleted.html","/no-such-page"];
+   for(const route of [...APP,...PUBLIC]){
+    await page.goto(base+route,{waitUntil:"load",timeout:20000});
+    await page.waitForTimeout(300);
+    const p=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,ui:document.body.classList.contains("ui"),h1:[...document.querySelectorAll("h1")].filter(e=>e.checkVisibility()).length,
+      font:getComputedStyle(document.body).fontFamily,bg:getComputedStyle(document.body).backgroundColor,advice:/Research, not investment advice/.test(document.body.textContent),
+      old:[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.getAttribute("href")).filter(h=>/\/(v\d+-|ds\.css|base\.css|research\.css)/.test(h)),
+      halftone:!!document.querySelector("[data-halftone-hero],[data-halftone-footer],canvas[data-halftone]")}));
+    assert.ok(p.overflow<=4,item.width+"px "+route+" horizontal overflow "+JSON.stringify(p));
+    assert.ok(p.ui&&p.h1===1,route+" is a ui.css page with one heading "+JSON.stringify(p));
+    assert.match(p.font,/^"?Geist"?,/,route+" uses Geist");
+    assert.equal(p.bg,"rgb(12, 12, 11)",route+" sits on the night background");
+    assert.ok(p.advice,route+" keeps the research-not-advice line");
+    assert.deepEqual(p.old,[],route+" loads no old-design stylesheet");
+    assert.ok(!p.halftone,route+" has no halftone");
+    if(APP.includes(route))checkShell(route,await shell());
+   }
+   console.log("Browser verified:",item.width+"px","landing","Today","ticker page","Alerts","SEC filing","every rebuilt page","working auth","no overflow");
    assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));
   }finally{await context.close()}
  }

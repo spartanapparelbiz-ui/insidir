@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { STORIES, CREATOR_CONCEPTS, PRODUCT_CLIPS, SUPPORTING_QUOTES, PUBLIC_STORY_PATHS, REF_CODE_PATTERN, storyPath, storiesForTicker, storiesForPerson, readSeconds } from "../src/stories.mjs";
-import { renderAll, ORIGIN } from "../scripts/build-stories.mjs";
+import { renderAll, ORIGIN, SHOW_CLIPS } from "../scripts/build-stories.mjs";
 import { REF_CODE } from "../src/creator-program.mjs";
 import { serveStatic } from "../src/web.mjs";
 import { handlePublicPage, sitemapFile, clearPublicPageCache } from "../src/public-pages.mjs";
@@ -73,7 +73,9 @@ test("story pages: canonical, social cards, article data, sources, share control
       assert.match(html, /Historical filing/);
       assert.match(html, /not investment advice/i);
       for (const f of s.figures) assert.ok(html.includes(f.value.replace(/&/g, "&amp;")), f.value);
-      for (const v of ["v13-halftone.js", "v13-motion.js", "v14-public.css", "v26-stories.css"]) assert.ok(html.includes(v), v);
+      for (const v of ["assets/css/ui.css", "assets/css/site.css", "assets/css/stories-ui.css"]) assert.ok(html.includes(v), v);
+      assert.match(html, /<body class="ui site\b/, "stories are on the new public design");
+      for (const v of ["v13-halftone.js", "v13-motion.js", "v14-public.css", "v26-stories.css"]) assert.ok(!html.includes(v), "no old-design asset: " + v);
     }
     const hub = await (await fetch(base + "/stories.html")).text();
     for (const s of STORIES) assert.ok(hub.includes(`href="${storyPath(s)}"`), "hub links " + s.slug);
@@ -115,7 +117,8 @@ test("the creator kit: six concepts of 15–30 seconds, sources, real footage, l
     assert.match(html, /AI-generated/);
     assert.match(html, /Endorsement Guides/);
     assert.match(html, /No made-up testimonials/);
-    for (const clip of PRODUCT_CLIPS) assert.ok(html.includes(`/assets/video/${clip.id}.mp4`), clip.id);
+    // The clips were recorded in the earlier app design: off the kit (SHOW_CLIPS false) until they are re-recorded.
+    for (const clip of PRODUCT_CLIPS) assert.equal(html.includes(`/assets/video/${clip.id}.mp4`), SHOW_CLIPS, clip.id);
     const creators = await (await fetch(base + "/creators.html")).text();
     assert.match(creators, /\$10/); assert.match(creators, /30 days/); assert.match(creators, /href="\/creator-kit\.html"/);
     assert.match(creators, /Commissions are reviewed after a 30-day eligibility period and paid manually after confirmation\./, "program terms are unchanged");

@@ -12,8 +12,9 @@ test("the instrument is the Insidir mark itself: the same ten circles as favicon
   assert.equal(circles.length, 10);
   assert.deepEqual(MARK.map(d => [d.cx, d.cy, d.r]), circles);
   assert.equal(new Set(MARK.map(d => d.id)).size, 10, "every dot has its own layer");
-  const js = readFileSync(new URL("../web/assets/js/intelligence-mark.js", import.meta.url), "utf8");
-  for (const [cx, cy, r] of circles) assert.match(js, new RegExp("\\[\\s*" + cx + ",\\s*" + cy + ",\\s*" + r + "\\s*\\]"), "the page draws circle " + [cx, cy, r]);
+  // The Intelligence page reads the instrument's categories from the engine's answer (inst.data.mark), keeping no copy.
+  const js = readFileSync(new URL("../web/assets/js/intelligence-app.js", import.meta.url), "utf8");
+  assert.match(js, /inst\.data\.mark/);
 });
 
 test("event-tape filters are whitelisted and bounded", () => {

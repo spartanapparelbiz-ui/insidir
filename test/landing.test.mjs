@@ -110,9 +110,12 @@ test("routing: / is server-rendered; /index.html redirects; /v1/live feeds the l
 
 test("the static fallback (web/index.html) is the same design without live data", () => {
   const html = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
-  assert.match(html, /See when CEOs buy and sell their own stock\./);
-  assert.match(html, /assets\/css\/ds\.css/);
-  assert.doesNotMatch(html, /v2-live__item|ds-trade"/, "no live rows baked into a static file");
+  assert.ok(html.includes(H1_TEXT), "the same headline as the live page");
+  assert.match(html, /assets\/css\/ui\.css/); assert.match(html, /assets\/css\/site\.css/);
+  assert.match(html, /<body class="ui site"/);
+  assert.match(html, /Research, not investment advice/);
+  assert.doesNotMatch(html, /assets\/css\/(ds|v13-[\w-]+|site-v2)\.css/, "no old-design stylesheet");
+  assert.doesNotMatch(html, /class="hit" href="\/[A-Z]|class="trade trade--/, "no live rows baked into a static file");
 });
 
 test("no made-up figures: the design page shows the newest real filings from /v1/live, which carries each trade's facts", async () => {
