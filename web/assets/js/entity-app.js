@@ -1,7 +1,7 @@
 /* One SEC filer or fund (entity.html?cik=<CIK>) on the ui.css design. Everything shown is what the record says:
      GET /v1/entities/<cik>                         the SEC record (src/sec-directory.mjs): names, tickers, kind, imported
                                                     Form 4 relationships, EDGAR's latest filings
-     GET /v1/intelligence/mirror/managers/<cik>     its Form 13F holdings, when Insidir has imported them (404: none)
+     GET /v1/intelligence/mirror/managers[/<cik>]   its Form 13F holdings, when it is one of the managers Insidir imports
      GET /v1/entities/<cik>/connections?asOf=       people and companies tied to it by Form 4 filings (graph and list)
      GET /v1/entities/<cik>/changes?days=           what changed, each item with its SEC evidence
      GET /v1/ai/status, GET /v1/ai/explain          a checked plain-English summary of a filing, only when AI is on
@@ -57,7 +57,7 @@ function header(){
  $("[data-en-sub]").textContent=[M?"Fund filing Form 13F":KIND[e.kind]||"SEC filer","CIK "+e.cik,listing].filter(Boolean).join(" · ");
  const acts=[];
  if(isCo&&e.listed&&e.tickers[0])acts.push(`<a class="btn btn--primary" href="/company.html?ticker=${encodeURIComponent(e.tickers[0])}">Stock page</a>`);
- if(e.isReportingOwner)acts.push(`<a class="btn btn--secondary" href="/person.html?cik=${bare}">Insider page</a><button class="btn btn--secondary" type="button" data-en-follow>Follow</button>`);
+ if(e.isReportingOwner)acts.push(`<a class="btn btn--secondary" href="/person.html?cik=${bare}">Reporting-owner page</a><button class="btn btn--secondary" type="button" data-en-follow>Follow</button>`);
  acts.push(`<a class="btn btn--ghost" href="${esc(secUrl(R.edgar?.browseUrl)||"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK="+cik10+"&owner=include&count=40")}" target="_blank" rel="noopener noreferrer">EDGAR ↗</a>`);
  $("[data-en-acts]").innerHTML=acts.join("");hydrateLogos($("[data-en-pic]"));
  $("[data-en-follow]")?.addEventListener("click",async ev=>{const b=ev.currentTarget;b.disabled=true;
@@ -79,10 +79,10 @@ function holdings(){
   ${d.positionsTotal>50?`<p class="t-label muted">The 50 largest of ${esc(d.positionsTotal)} positions. The full list is in the information table on SEC.gov.</p>`:""}
   <h2 class="t-label muted en-h">${ch?"Changes since the quarter ended "+esc(day(ch.comparedTo.periodOfReport)):"Changes between quarters"}</h2>
   ${ch?`${ch.comparable?"":`<p class="t-label muted">One of the two reports did not match its own cover-page totals, so some differences may reflect missing rows.</p>`}<div class="en-changes">
-   <div><h3 class="t-label muted">New positions</h3>${list(ch.new,x=>`<li><span>${esc(x.issuer)}</span><span class="up">${esc(num(x.shares))} sh</span></li>`)}</div>
-   <div><h3 class="t-label muted">Exited</h3>${list(ch.exited,x=>`<li><span>${esc(x.issuer)}</span><span class="down">was ${esc(num(x.previousShares))} sh</span></li>`)}</div>
-   <div><h3 class="t-label muted">Increased</h3>${list(ch.increased,x=>`<li><span>${esc(x.issuer)}</span><span class="up">+${esc(num(x.change))}${x.changePct!=null?" ("+pct(x.changePct,0)+")":""}</span></li>`)}</div>
-   <div><h3 class="t-label muted">Decreased</h3>${list(ch.decreased,x=>`<li><span>${esc(x.issuer)}</span><span class="down">${esc(num(x.change))}${x.changePct!=null?" ("+pct(x.changePct,0)+")":""}</span></li>`)}</div></div>`:`<p class="t-label muted">Only one quarterly report has been imported, so there is nothing to compare yet.</p>`}
+   <div><h3 class="t-label muted">New positions</h3>${list(ch.new,x=>`<li><span>${esc(fmt.company(x.issuer)||x.issuer)}</span><span class="up">${esc(num(x.shares))} sh</span></li>`)}</div>
+   <div><h3 class="t-label muted">Exited</h3>${list(ch.exited,x=>`<li><span>${esc(fmt.company(x.issuer)||x.issuer)}</span><span class="down">was ${esc(num(x.previousShares))} sh</span></li>`)}</div>
+   <div><h3 class="t-label muted">Increased</h3>${list(ch.increased,x=>`<li><span>${esc(fmt.company(x.issuer)||x.issuer)}</span><span class="up">+${esc(num(x.change))}${x.changePct!=null?" ("+pct(x.changePct,0)+")":""}</span></li>`)}</div>
+   <div><h3 class="t-label muted">Decreased</h3>${list(ch.decreased,x=>`<li><span>${esc(fmt.company(x.issuer)||x.issuer)}</span><span class="down">${esc(num(x.change))}${x.changePct!=null?" ("+pct(x.changePct,0)+")":""}</span></li>`)}</div></div>`:`<p class="t-label muted">Only one quarterly report has been imported, so there is nothing to compare yet.</p>`}
   <h2 class="t-label muted en-h">Disclosure history</h2>
   <ul class="rows">${d.history.map(h=>`<li class="row en-filing">${secUrl(h.sourceUrl)?`<a class="hit" href="${esc(secUrl(h.sourceUrl))}" target="_blank" rel="noopener noreferrer" aria-label="Form ${esc(h.formType)} for the quarter ended ${esc(day(h.periodOfReport))} on SEC.gov"></a>`:""}<span class="strong">${esc(h.formType||"13F-HR")}</span><span class="t-label muted">Quarter ended ${esc(day(h.periodOfReport))} · ${plural(h.entries,"row")} · ${esc(fmt.money(h.reportedValue))}${h.completeness!=="complete"?" · totals unverified":""}</span><span class="t-micro muted">Filed ${esc(day(h.filedAt))}</span></li>`).join("")}</ul>
   <ul class="en-notes">${(d.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`;
@@ -172,7 +172,7 @@ function record(){
 /* ---------- load ---------- */
 (async()=>{
  try{
-  const [r,m]=await Promise.all([api("/v1/entities/"+encodeURIComponent(raw)),api("/v1/intelligence/mirror/managers/"+encodeURIComponent(cik10)).catch(()=>null)]);
+  const [r,m]=await Promise.all([api("/v1/entities/"+encodeURIComponent(raw)),api("/v1/intelligence/mirror/managers").then(l=>(l.managers||[]).some(x=>String(x.cik).padStart(10,"0")===cik10)?api("/v1/intelligence/mirror/managers/"+encodeURIComponent(cik10)):null).catch(()=>null)]);
   R=r;M=m&&m.current&&Array.isArray(m.positions)?m:null;
  }catch(e){
   if(e.status===401||e.status===402)return;
