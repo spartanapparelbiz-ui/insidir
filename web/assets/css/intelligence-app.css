@@ -159,6 +159,7 @@
 .ix-tile__n{font-size:32px;line-height:38px;font-weight:500;letter-spacing:-.03em}
 .ix-tile.is-empty .ix-tile__n{color:var(--muted)}
 .ix-panel{display:grid;gap:var(--sp3);min-height:120px;outline:none}
+.ix-panel__head h3{font-size:15px;line-height:24px}
 .ix-panel__head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp3)}
 .ix-panel__list{margin:0;padding:0;list-style:none}
 .ix-rec{grid-template-columns:24px minmax(0,1fr) auto;min-height:52px}
