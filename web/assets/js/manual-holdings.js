@@ -128,5 +128,6 @@
     try{await request("/v1/me/manual-holdings/"+encodeURIComponent(ticker),{method:"DELETE"});await load();}
     catch(e){feedback(e.message,true);button.disabled=false;}
   });
+  window.addEventListener("insidir:portfolio-imported",load);
   load();
 })();

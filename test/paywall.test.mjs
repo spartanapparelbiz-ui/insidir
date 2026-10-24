@@ -59,7 +59,7 @@ test("API: open endpoints, product endpoints for every method, unknown routes fa
     assert.equal(classifyApi(path, method), "open", method + " " + path);
   const product = ["/v1/filings", "/v1/filings/000123456726000042", "/v1/transactions", "/v1/companies", "/v1/clusters", "/v1/insiders",
     "/v1/status", "/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news",
-    "/v1/me/watchlist", "/v1/me/manual-holdings", "/v1/me/people", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/me/brokerage/portfolio",
+    "/v1/me/watchlist", "/v1/me/manual-holdings", "/v1/me/portfolio/import", "/v1/me/people", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/me/brokerage/portfolio",
     "/v1/me/brokerage/connect", "/v1/me/brokerage/callback", "/v1/me/", "/v1/no-such-route", "/v1/%66ilings", "/v1/me/watchlist/AAPL/x",
     "/v1/me/brokerage/", "/v1/me/people/"];
   for (const path of product) for (const method of ["GET", "HEAD", "POST", "DELETE", "get"]) assert.equal(classifyApi(path, method), "product", method + " " + path);
@@ -266,6 +266,22 @@ test("gate: INSIDIR_PAYWALL=0 turns gating off for local development", async () 
     const d = await decide(path, null, OFF, method);
     assert.equal(d.action, "allow", path);
     assert.equal(d.calls, 0);
+  }
+});
+
+
+test("private CSV import strictly requires an active paid entitlement",async()=>{
+  const path="/v1/me/portfolio/import";
+  assert.equal(classifyApi(path,"POST"),"product");
+  const anonymous=await decide(path,null,ON,"POST");
+  assert.deepEqual([anonymous.action,anonymous.status],["deny",401]);
+  for(const user of [USERS.none,USERS.lapsed]){
+    const result=await decide(path,user,ON,"POST");
+    assert.deepEqual([result.action,result.status],["deny",402]);
+  }
+  for(const user of [USERS.paid,USERS.trial]){
+    const result=await decide(path,user,ON,"POST");
+    assert.equal(result.action,"allow");
   }
 });
 

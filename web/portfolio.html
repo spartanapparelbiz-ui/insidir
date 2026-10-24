@@ -14,6 +14,7 @@
   <script defer src="assets/js/entity-media.js?v=media-6"></script>
   <script defer src="assets/js/portfolio.js?v=4"></script>
   <script defer src="assets/js/manual-holdings.js?v=4"></script>
+  <script type="module" src="assets/js/portfolio-import-ui.mjs"></script>
   <link rel="stylesheet" href="assets/css/v2-app.css">
   <link rel="stylesheet" href="assets/css/v3-app.css">
   <link rel="stylesheet" href="assets/css/v6-app.css?v=2">
@@ -24,7 +25,7 @@
 <link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
 <link rel="stylesheet" href="assets/css/entity-media.css?v=media-2">
 <script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"></head>
+<link rel="stylesheet" href="/assets/css/ultra-hd.css?v=1"><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"><link rel="stylesheet" href="assets/css/portfolio-import.css?v=1"></head>
 <body class="portfolio-page v2-app v3-app v6-app v13">
   <a class="skip-link" href="#main">Skip to content</a>
   <header data-app-header data-active="portfolio"></header>
@@ -32,22 +33,36 @@
     <section class="portfolio-hero desk-masthead">
       <div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
       <div class="desk-topline"><p class="research-eyebrow">INSIDIR / PRIVATE PORTFOLIO</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Self-reported holdings</span><span class="rd-bit"><span class="rd-sep"> · </span>read-only sync</span><span class="rd-bit"><span class="rd-sep"> · </span>no orders</span></p></div>
-      <h1>Your holdings.<br>The bigger picture.</h1>
-      <p class="research-lead desk-lead">Add your stocks in seconds. Explore public SEC records related to your holdings — no brokerage connection, payment, or trading permissions required.</p>
-      <p class="portfolio-warning">Manually entered quantities are not verified holdings. This page does not provide live prices, execute trades, or make investment recommendations.</p>
+      <h1>Your stocks.<br>One connected picture.</h1>
+      <p class="research-lead desk-lead">Upload your current brokerage holdings CSV. Insidir finds the stocks you own and connects them to relevant public disclosures. No brokerage login needed.</p>
+      <p class="portfolio-warning">Imported quantities are self-reported, not verified brokerage balances. Insidir does not execute trades or make investment recommendations.</p>
     </section>
     <div class="portfolio-grid">
     <div class="portfolio-main">
+    <section class="portfolio-import panel" aria-labelledby="portfolio-import-title">
+      <p class="research-eyebrow">01 / RECOMMENDED SETUP</p>
+      <h2 id="portfolio-import-title">Import your portfolio.</h2>
+      <p class="portfolio-description">Export your <strong>current holdings or positions</strong> as a CSV from your brokerage, then choose it below. Don't use a transaction-history file.</p>
+      <div class="portfolio-csv-input">
+        <label for="portfolio-csv-file">Choose a holdings CSV</label>
+        <input id="portfolio-csv-file" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" aria-describedby="portfolio-import-help">
+      </div>
+      <p id="portfolio-import-help" class="research-small">Your CSV is read on this device. Only confirmed stock symbols and optional share quantities are sent to Insidir. No brokerage password, account number, or order permissions are needed. Up to 100 positions per import.</p>
+      <p id="portfolio-csv-summary" role="status" aria-live="polite">Choose a file to preview the stocks before saving them.</p>
+      <div id="portfolio-csv-preview" class="portfolio-csv-preview" aria-label="Detected positions"></div>
+      <button id="portfolio-csv-confirm" type="button" class="btn btn--dark" disabled hidden>Import and monitor</button>
+      <p id="portfolio-csv-completed" hidden><a class="portfolio-small-link" href="watchlist.html">View your monitored stocks →</a></p>
+    </section>
     <section class="portfolio-connection panel" aria-labelledby="manual-title">
-      <p class="research-eyebrow">01 / FREE PORTFOLIO</p>
-      <h2 id="manual-title">Add your holdings.</h2>
-      <p class="portfolio-description">Enter a stock ticker and number of shares. Insidir privately saves your entries and shows available SEC evidence. No brokerage login required.</p>
+      <p class="research-eyebrow">02 / OPTIONAL MANUAL ENTRY</p>
+      <h2 id="manual-title">Add or correct a holding.</h2>
+      <p class="portfolio-description">Prefer the CSV importer above. You can also add or correct a stock and its share quantity individually.</p>
       <form id="manual-form" class="manual-holdings-form">
         <div><label for="manual-ticker">Ticker</label><input id="manual-ticker" name="ticker" type="text" autocomplete="off" spellcheck="false" maxlength="15" placeholder="e.g. AAPL" required></div>
         <div><label for="manual-quantity">Shares</label><input id="manual-quantity" name="quantity" type="number" min="0.00000001" max="1000000000" step="any" placeholder="e.g. 2.5" required></div>
         <button class="btn btn--dark" type="submit" id="manual-save" data-hf-still>Save holding</button>
       </form>
-      <p id="manual-feedback" class="research-feedback" role="status" aria-live="polite">Sign in to save your portfolio. You can add up to 100 tickers.</p>
+      <p id="manual-feedback" class="research-feedback" role="status" aria-live="polite">Your private holdings can include up to 100 manually recorded quantities.</p>
       <a href="signin.html" id="manual-signin" class="portfolio-small-link" data-hf-atom hidden>Sign in to add holdings →</a>
       <div id="manual-content" data-desk-reveal="group" hidden>
         <div class="portfolio-section-heading"><div><p class="research-eyebrow">YOUR ENTRIES</p><h2>Your stocks.</h2></div><p class="research-small">Self-reported quantities, not current market values</p></div>
@@ -61,12 +76,12 @@
     </section>
     <section id="portfolio-results" hidden>
       <div class="portfolio-section-heading" data-desk-reveal>
-        <div><p class="research-eyebrow">03 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
+        <div><p class="research-eyebrow">04 / CONNECTED ACCOUNTS</p><h2>Connected investments.</h2></div>
         <p class="research-small">Reported by your brokerage through SnapTrade; not live quotes.</p>
       </div>
       <div id="portfolio-accounts" class="portfolio-accounts" data-desk-reveal="group"></div>
       <section class="portfolio-activity panel" aria-labelledby="portfolio-activity-title" data-desk-reveal>
-        <p class="research-eyebrow">04 / BROKERAGE SEC EVIDENCE</p>
+        <p class="research-eyebrow">05 / BROKERAGE SEC EVIDENCE</p>
         <h2 id="portfolio-activity-title">Public records for your holdings.</h2>
         <p class="portfolio-description">Recently published insider ownership disclosures that match the ticker symbols of selected U.S. stock positions. A ticker match alone cannot verify security identity or imply an investment opportunity.</p>
         <div id="portfolio-activity"></div>
@@ -76,9 +91,9 @@
     <aside class="portfolio-rail" data-hf-reveal-group>
     <section class="portfolio-connection panel" aria-labelledby="portfolio-connection-title">
       <div>
-        <p class="research-eyebrow">02 / OPTIONAL AUTOMATIC SYNC</p>
+        <p class="research-eyebrow">03 / OPTIONAL BROKERAGE SYNC</p>
         <h2 id="portfolio-connection-title">Connect a brokerage later.</h2>
-        <p class="portfolio-description">Optional read-only sync requires a supported and configured SnapTrade connection. It is not necessary to use Insidir's free manual portfolio.</p>
+        <p class="portfolio-description">Optional read-only sync requires a supported and configured SnapTrade connection. The CSV import above does not need a brokerage connection. All personalized portfolio tools remain available only to members with active access.</p>
         <p id="portfolio-status" role="status" aria-live="polite">Checking brokerage connection…</p>
         <div class="portfolio-actions">
           <button id="portfolio-connect" class="btn btn--dark" type="button" hidden>Connect brokerage</button>
@@ -90,7 +105,7 @@
       </div>
     </section>
     <section class="portfolio-next panel" aria-labelledby="portfolio-next-title">
-      <p class="research-eyebrow">05 / RESEARCH</p>
+      <p class="research-eyebrow">06 / RESEARCH</p>
       <h2 id="portfolio-next-title">Research first. Your decision.</h2>
       <p>Use the Research Desk to examine original SEC filings, financial disclosures, and reporting dates. Insidir's current brokerage connection cannot trade, suggest personalized orders, or enable automatic strategies.</p>
       <a class="btn btn--dark" href="research.html">Open research desk →</a>

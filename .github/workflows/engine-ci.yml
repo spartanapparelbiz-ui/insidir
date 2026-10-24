@@ -42,6 +42,8 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright-core@1.58.0 axe-core@4.10.2
           CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/visual-layout-check.mjs
+      - name: Verify portfolio CSV upload on mobile and desktop in Chrome
+        run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/portfolio-import-mobile-check.mjs
       - name: Verify Insidir Intelligence in Chrome (every control, desktop and phone, errors, empty states, reduced motion)
         run: CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)" node scripts/intelligence-check.mjs
       - name: Verify accessibility and touch targets in Chrome (axe WCAG 2.1 AA at 1440px; no overflow and 24px targets on a phone)
