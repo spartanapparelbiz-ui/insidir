@@ -18,7 +18,7 @@ test("social stock entry is public, accessible, and gives verifiable value befor
   }
   assert.ok(html.includes("No login or card needed"));
   assert.ok(html.includes("direct links to SEC filings"), "source documents shown");
-  assert.ok(html.includes("Research, not investment advice"));
+  assert.match(html, /research, not investment advice/i);
   assert.ok(!html.includes('data-funnel-stock'), "the entry isn't falsely counted as a viewed stock");
 });
 
