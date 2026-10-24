@@ -13,8 +13,10 @@ if (PG_URL) Object.assign(process.env, { DATABASE_URL: PG_URL + (PG_URL.includes
 const A = await import("../src/attribution.mjs");
 
 test("attribution: only the listed refs, first touch wins, cookie set once", () => {
-  assert.deepEqual(A.DEFAULT_REFS, ["insidirfinance", "marketreceipts", "wallstreetdecoded", "companybriefdaily", "marketexplaineddaily", "tiktok", "youtube"]);
+  assert.deepEqual(A.DEFAULT_REFS, ["insidirfinance", "marketreceipts", "wallstreetdecoded", "companybriefdaily", "marketexplaineddaily", "tiktok", "instagram", "facebook", "youtube"]);
   assert.equal(A.cleanRef(" TikTok "), "tiktok");
+  assert.equal(A.cleanRef("Instagram"), "instagram");
+  assert.equal(A.cleanRef(" FACEBOOK "), "facebook");
   assert.equal(A.cleanRef("someoneelse"), null);
   const req = cookie => ({ headers: { cookie } });
   const url = new URL("https://insidir.com/?ref=youtube");
