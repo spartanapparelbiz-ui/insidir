@@ -3,8 +3,8 @@
       polls /v1/billing/status?refresh=1 and moves on only once the subscription is active.
    2. Pick 3 stocks: the first is the one searched before signing up (insidir:first-ticker), saved to the watchlist.
    3. The latest insider trade at the first stock, in one sentence, linked to its SEC filing.
-   4. Alerts: notifications on this device (permission asked only on the button) and email alerts (with the
-      consent text the server stores). Either can be skipped. */
+   4. Alerts: notifications on this device (permission asked only on the button). It can be skipped; alerts also
+      wait in the app's Alerts inbox. Insidir sends no email. */
 (() => {
   "use strict";
   const $ = (s, el = document) => el.querySelector(s);
@@ -120,34 +120,16 @@
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   const pushable = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && window.isSecureContext;
   const b64 = key => { const s = (key + "=".repeat((4 - key.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/"); return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
-  let consent = null;
   async function startAlerts() {
     show("alerts");
     const pushBtn = $("[data-wl-push]"), pushText = $("[data-wl-push-text]");
-    if (ios && !standalone) { pushBtn.hidden = true; pushText.textContent = "On iPhone, notifications work once Insidir is on your Home Screen: tap Share, then Add to Home Screen. Email alerts work right now."; }
-    else if (!pushable()) { pushBtn.hidden = true; pushText.textContent = "This browser can't show notifications. Email alerts work everywhere."; }
+    if (ios && !standalone) { pushBtn.hidden = true; pushText.textContent = "On iPhone, notifications work once Insidir is on your Home Screen: tap Share, then Add to Home Screen. Until then, new filings for your stocks wait in Alerts."; }
+    else if (!pushable()) { pushBtn.hidden = true; pushText.textContent = "This browser can't show notifications. New filings for your stocks wait in Alerts."; }
     else {
-      try { const s = await api("/v1/me/push"); if (!s.configured) { pushBtn.hidden = true; pushText.textContent = "Phone notifications aren't switched on yet. Email alerts work right now."; } }
+      try { const s = await api("/v1/me/push"); if (!s.configured) { pushBtn.hidden = true; pushText.textContent = "Phone notifications aren't switched on yet. New filings for your stocks wait in Alerts."; } }
       catch { pushBtn.hidden = true; }
     }
-    try {
-      const prefs = await api("/v1/me/email-preferences");
-      consent = prefs.consent;
-      if (prefs.consent?.text) $("[data-wl-consent-text]").textContent = prefs.consent.text;
-      if (prefs.emailAlerts && prefs.emailAlerts !== "off") { $("[data-wl-email]").textContent = "Email alerts are on"; $("[data-wl-email]").disabled = true; $("[data-wl-consent]").closest("label").hidden = true; }
-      else if (!prefs.emailAvailable) $("[data-wl-email]").closest(".wl-opt").hidden = true;
-    } catch { /* the buttons explain themselves on failure */ }
   }
-  $("[data-wl-consent]").addEventListener("change", e => { $("[data-wl-email]").disabled = !e.currentTarget.checked; });
-  $("[data-wl-email]").addEventListener("click", async e => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    try {
-      await api("/v1/me/email-preferences", "POST", { emailAlerts: "immediate", consent: true, consentVersion: consent?.version });
-      btn.textContent = "Email alerts are on"; $("[data-wl-consent]").closest("label").hidden = true;
-      capture("onboarding_alerts", { channel: "email" }); funnel("alerts-email");
-    } catch (err) { say("alerts", err.message, true); btn.disabled = false; }
-  });
   $("[data-wl-push]").addEventListener("click", async e => {
     const btn = e.currentTarget;
     btn.disabled = true;

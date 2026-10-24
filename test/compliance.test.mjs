@@ -101,7 +101,8 @@ test("the alerts page offers only what exists: no political-trade or price-move 
   assert.doesNotMatch(html, /role="switch"/, "the old local-only switches are gone; preferences are saved by the engine");
   assert.match(html, /alerts-app\.js/);
   const js = readFileSync(new URL("assets/js/alerts-app.js", WEB), "utf8");
-  assert.match(js, /\/v1\/me\/email-preferences/); assert.match(js, /\/v1\/me\/notifications/);
+  assert.doesNotMatch(js, /email-preferences/, "Insidir sends no email: no alert-email setting"); assert.match(js, /\/v1\/me\/notifications/);
+  assert.doesNotMatch(html, /email/i, "the Alerts page offers no email delivery");
   assert.doesNotMatch(js, /manual-holdings|brokerage/, "alerts never use holdings");
   assert.match(html, /opt in to device notifications/i, "push is described as opt-in, never as automatic");
 });

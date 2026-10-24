@@ -120,7 +120,7 @@ ${extra}</head>`;
 export const nav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="ds-nav" data-ds-nav><div class="ds-nav__in">
 <a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a>
 <nav class="ds-nav__links" aria-label="Main"><a href="${h}#how">Platform</a><a href="${h}#pricing">Pricing</a><a href="${h}#faq">FAQ</a></nav>
-<div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/start" data-cta="${esc(cta)}">Start for $1</a></div>
+<div class="ds-nav__end"><a class="ds-login" href="/signin.html">Log in</a><a class="ds-btn" href="/signup.html" data-cta="${esc(cta)}">Start for $1</a></div>
 </div></header>`; };
 export const footer = ({ home = false } = {}) => { const h = home ? "" : "/"; return `<footer class="v2-foot"><div class="ds-wrap v2-foot__in">
 <div class="v2-foot__brand"><a class="ds-mark" href="/" aria-label="Insidir home">${WORDMARK}</a><p class="ds-small">© 2026 Aethric LLC. Research, not advice. Not affiliated with the SEC.</p></div>
@@ -133,12 +133,6 @@ export const scripts = () => `<script src="/assets/js/ds.js?v=2" defer></script>
 <script src="/assets/js/funnel.js" defer></script>
 <script src="/assets/js/posthog.js?v=1" defer></script>`;
 
-/* The free weekly email (src/newsletter.mjs). */
-export const emailForm = (where = "page") => `<form class="v2-mail" action="/v1/newsletter" method="post" data-v2-mail data-where="${esc(where)}">
-<p class="v2-mail__h">Get the 5 biggest insider buys every week. Free.</p>
-<div class="v2-mail__row"><label class="sr-only" for="mail-${esc(where)}">Email</label><input id="mail-${esc(where)}" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="you@example.com"><button class="ds-btn" type="submit">Send it to me</button></div>
-<p class="ds-small" data-v2-mail-msg role="status" aria-live="polite">One email a week. Unsubscribe in one click.</p>
-</form>`;
 
 export const searchBox = (id = "q", { large = true } = {}) => `<form class="ds-search${large ? " v2-search--hero" : ""}" action="/search" method="get" role="search" data-ds-search>
 <label class="sr-only" for="${esc(id)}">Stock ticker</label>

@@ -15,14 +15,7 @@ Nothing in this release switches on a regulated capability. `GET /v1/capabilitie
 |---|---|---|
 | `INSIDIR_ADMIN_TOKEN` | (falls back to `INSIDIR_CREATOR_ADMIN_TOKEN`) | Admin bearer token, 32+ random characters. |
 | `INSIDIR_ADMIN_TOTP_SECRET` | empty | Base32 secret of the administrators' authenticator app. **Without it every admin route answers 503** (there is no single-factor admin access any more). Generate: `node -e 'import("./src/totp.mjs").then(m=>{const s=m.generateTotpSecret();console.log(s);console.log(m.otpauthUri(s))})'` and scan the `otpauth://` URI into the authenticator. Store the secret in the host's secret store only. |
-| `INSIDIR_EMAIL_PROVIDER` | empty (nothing sent) | `postmark` in production; `log` prints messages to the console (local development only: it prints one-time links). |
-| `POSTMARK_SERVER_TOKEN` | empty | Postmark server API token. |
-| `INSIDIR_EMAIL_FROM` | empty | From address on a domain you have verified in Postmark (SPF, DKIM, Return-Path), e.g. `Insidir <notices@insidir.com>`. |
-| `INSIDIR_EMAIL_REPLY_TO` | `hello@aethric.llc` | Reply-To. |
-| `POSTMARK_TRANSACTIONAL_STREAM` / `POSTMARK_ALERT_STREAM` | `outbound` | Message streams. Put alerts and digests on a separate stream if Postmark asks for it. |
-| `INSIDIR_EMAIL_WEBHOOK_SECRET` | empty | 24+ characters. Postmark webhook basic-auth password (section 3). |
 | `INSIDIR_APP_SECRET` | empty | 32+ random characters. Signs one-click unsubscribe links. **Alert emails are not sent without it.** Changing it invalidates links already sent. |
-| `INSIDIR_POSTAL_ADDRESS` | empty | Business postal address printed in alert-email footers (CAN-SPAM; ATTORNEY-REVIEW.md C-1). |
 | `INSIDIR_AI_EXPLANATIONS` | off | `1` lets the explanation service call Claude. Leave off until counsel has reviewed it (ATTORNEY-REVIEW.md, D-1). |
 | `ANTHROPIC_API_KEY` | empty | API key for explanations (only read when `INSIDIR_AI_EXPLANATIONS=1`). |
 | `INSIDIR_AI_MODEL` / `INSIDIR_AI_EFFORT` | none / `medium` | Model for research-event explanations; there is no default, and the service stays off until one is named. Choose an inexpensive model. |
@@ -50,21 +43,15 @@ Nothing in this release switches on a regulated capability. `GET /v1/capabilitie
 4. Ten failed attempts from one address lock admin access for that address for 15 minutes. Every admin request,
    allowed or refused, is in `admin_audit_log`; failures are also in `security_events`.
 
-## 3. Email (Postmark)
+## 3. Email: none
 
-1. Create a Postmark server, verify the sending domain (DKIM and Return-Path DNS records), set the variables above.
-2. Webhook: Servers → your server → Webhooks → add
-   `https://postmark:<INSIDIR_EMAIL_WEBHOOK_SECRET>@insidir.com/v1/email/webhook/postmark` with **Bounce, Spam
-   Complaint, Subscription Change and Delivery** events.
-3. Every message is written to `email_outbox` first and delivered by the `email-delivery` worker every minute. Retries:
-   1, 2, 4 … minutes, capped at 6 hours, abandoned after 8 attempts. Invalid or inactive recipients (Postmark codes
-   300, 406) are not retried and are added to `email_suppressions`. Delivery is at least once: if an instance dies
-   after Postmark accepted a message but before the row is marked, it is sent again after its 5-minute lock expires.
-4. Bodies are erased after delivery or abandonment, except billing notices (`retain_body`), which are the record of
-   what the customer was told.
-5. Without a provider nothing is sent; messages wait in the outbox and the ops page shows the backlog. Emails queued
-   while no provider was configured are delivered once one is (verification links expire after 48 hours, reset links
-   after 1 hour; members can ask for new ones).
+Insidir sends no email whatsoever: no sign-in codes, newsletter, alert emails or digests, trial reminders, receipts,
+billing or security notices, password-reset links or checkout reminders. There is no email provider in the code
+(`src/email.mjs` has no transport, and `INSIDIR_EMAIL_PROVIDER`, `POSTMARK_*` and `INSIDIR_EMAIL_*` are ignored).
+Migration `028_no_email.sql` turned alert emails off for every member and cancelled everything left in
+`email_outbox`. A member who forgets their password writes to hello@aethric.llc from their account address; reset it
+by hand after confirming who they are. Stripe can send its own receipts if they are switched on in the Stripe
+dashboard.
 
 ## 4. Background jobs
 
@@ -78,9 +65,7 @@ same job at once; each run updates `worker_heartbeats`.
 | `filing-retry` | 30 min | Failed Form 4 imports retried with backoff (15 min doubling, at most a day, 5 attempts). |
 | `company-disclosures` | 30 min | SEC submissions of watched companies, each at most every 6 hours, at most 20 a run; stops on a 403. |
 | `notifications` | 5 min | New events → `notifications` for members watching them. |
-| `alert-emails` / `daily-digests` | 5 min / hourly | Immediate alert emails; daily digests at each member's chosen hour. |
-| `email-delivery` | 1 min | Outbox delivery (only when a provider is configured). |
-| `billing-reconcile` / `trial-reminders` | 6 h / hourly | Stripe re-reads for lapsed periods; the trial emails: day 1, day 5 and the charge reminder 24 hours before the $39 (`src/trial-emails.mjs`, `src/billing-notices.mjs`). |
+| `billing-reconcile` | 6 h | Stripe re-reads for lapsed periods. |
 | `maintenance` | hourly | Expired sessions, rate-limit windows, used tokens, admin sessions, security events older than 180 days, abandoned email bodies. |
 
 ## 5. Monitoring

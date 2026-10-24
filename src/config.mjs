@@ -66,20 +66,14 @@ export function trialSettings(env = process.env) {
   });
 }
 
-/* Outgoing email (src/email.mjs). INSIDIR_EMAIL_PROVIDER=postmark needs POSTMARK_SERVER_TOKEN and INSIDIR_EMAIL_FROM;
- * `log` prints messages for local development. Anything else: nothing is sent (messages wait in the outbox). */
+/* Insidir sends no email at all. There is no email provider: nothing is sent and nothing is queued, whatever the
+ * environment says (INSIDIR_EMAIL_PROVIDER, POSTMARK_SERVER_TOKEN and the rest are ignored). Only the public URL is
+ * still read, for links on the site. */
 export function emailSettings(env = process.env) {
-  const provider = String(env.INSIDIR_EMAIL_PROVIDER || "").trim().toLowerCase();
-  const from = String(env.INSIDIR_EMAIL_FROM || "").trim();
-  const token = String(env.POSTMARK_SERVER_TOKEN || "").trim();
-  const webhookSecret = String(env.INSIDIR_EMAIL_WEBHOOK_SECRET || "").trim();
   const publicUrl = String(env.INSIDIR_PUBLIC_URL || "").trim().replace(/\/+$/, "") || "https://insidir.com";
-  const enabled = provider === "log" || (provider === "postmark" && !!token && /@/.test(from));
-  return Object.freeze({ provider: enabled ? provider : "none", requested: provider || null, from: from || "Insidir <no-reply@insidir.com>",
-    replyTo: String(env.INSIDIR_EMAIL_REPLY_TO || "hello@aethric.llc").trim(), token, webhookSecret, publicUrl, enabled,
-    transactionalStream: String(env.POSTMARK_TRANSACTIONAL_STREAM || "outbound"), alertStream: String(env.POSTMARK_ALERT_STREAM || env.POSTMARK_TRANSACTIONAL_STREAM || "outbound") });
+  return Object.freeze({ provider: "none", requested: null, from: null, replyTo: "hello@aethric.llc", token: "", webhookSecret: "", publicUrl, enabled: false,
+    transactionalStream: null, alertStream: null });
 }
 
 
-/* There is no email-verification step: nobody is asked to confirm their address before subscribing or turning on
- * alert emails. Only a complimentary address, once email is configured, needs its owner to prove it (src/paywall.mjs). */
+/* There is no email-verification step: nobody is asked to confirm their address. */

@@ -88,7 +88,7 @@ const ALL = [
   ["watchlist", "/watchlist.html"], ["portfolio", "/portfolio.html"], ["alerts", "/alerts.html"], ["people", "/people.html"],
   ["account", "/account.html"], ["billing", "/billing.html"], ["company", "/company.html?ticker=AAPL"], ["company-picker", "/company.html"],
   ["pricing", "/pricing.html"], ["company-info", "/company-info.html"], ["terms", "/terms.html"], ["privacy", "/privacy.html"], ["404", "/no-such-page"],
-  ["forgot-password", "/forgot-password.html"], ["reset-password", "/reset-password.html"], ["verify-email", "/verify-email.html"], ["ops", "/ops.html"],
+  ["forgot-password", "/forgot-password.html"], ["ops", "/ops.html"],
   ["platform", "/platform.html"], ["why-insidir", "/why-insidir.html"], ["data", "/data.html"], ["subscribe", "/subscribe.html"], ["account-deleted", "/account-deleted.html"],
   ["person", "/person.html?cik=1214156"], ["person-404", "/person.html?cik=999"],
   ["stories", "/stories.html"], ["story", "/stories/enterprise-products-insider-purchase.html"], ["creator-kit", "/creator-kit.html"], ["creators", "/creators.html"]
@@ -96,7 +96,7 @@ const ALL = [
 const wanted = opt("pages", "").split(",").filter(Boolean);
 // Pages rebuilt on ui.css (the landing page, Today, Alerts, the ticker page) follow the new design system, not V13:
 // scripts/visual-layout-check.mjs and scripts/a11y-check.mjs check them with real data.
-const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker", "signin", "signup"]);
+const REBUILT = new Set(["index", "dashboard", "alerts", "company", "company-picker", "signin", "signup", "forgot-password"]);
 const PAGES = (wanted.length ? ALL.filter(([k]) => wanted.includes(k)) : ALL).filter(([k]) => !REBUILT.has(k));
 const passed = [], failed = [];
 const check = (ok, label, detail) => { (ok ? passed : failed).push(ok ? label : label + (detail === undefined ? "" : " — " + JSON.stringify(detail))); return ok; };

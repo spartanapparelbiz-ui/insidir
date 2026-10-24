@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { renderLanding, clusterBuys, receiptReturns, landingData, handleLanding, clearLandingCache, HERO_H1 as H1_TEXT, FIXED_LINE, LIVE_SQL, RECEIPT_LINES_SQL, COUNTERS_SQL, RECEIPT_RULE } from "../src/landing.mjs";
-import { WEEK_BUYS_SQL } from "../src/newsletter.mjs";
+import { renderLanding, clusterBuys, receiptReturns, landingData, handleLanding, clearLandingCache, HERO_H1 as H1_TEXT, FIXED_LINE, LIVE_SQL, RECEIPT_LINES_SQL, COUNTERS_SQL, RECEIPT_RULE, WEEK_BUYS_SQL } from "../src/landing.mjs";
 import { TRADES_SQL } from "../src/ticker-page.mjs";
 import { COMPETITORS } from "../src/landing-competitors.mjs";
 
@@ -61,7 +60,8 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   assert.match(html, /As of Oct 23, 2026/);
   // Pricing stays $39 (decided Oct 23, 2026): no founding tier, no seat counter, no annual toggle.
   assert.match(html, /\$1 for 7 days\. Then \$39 a month\./);
-  assert.match(html, /\$1 today\. We email you before you're charged\. Cancel in 2 clicks\./);
+  assert.match(html, /\$1 today, then \$39 a month after 7 days\. Cancel in 2 clicks\./);
+  assert.doesNotMatch(html, /email you|we email|newsletter|data-v2-mail/i, "Insidir sends no email, and the page never says it does");
   assert.doesNotMatch(html, /\$29|founding|seats left|\$290|2 months free/i);
   // Proof is real or absent: no testimonials until a real one is published; no counters, timers or viewers invented.
   assert.doesNotMatch(html.slice(html.indexOf("<body")), /squotes|people viewing|countdown|not live data/i);
@@ -70,7 +70,6 @@ test("eight sections in order, one headline + one sentence each, one action, rea
   assert.match(html, /Research, not investment advice\./);
   assert.match(html, /Not affiliated with the SEC\./);
   assert.match(html, /data-v2-sticky/, "the sticky Start for $1 bar on phones");
-  assert.match(html, /data-v2-mail data-where="receipts"/, "the free weekly email after the receipts");
   assert.match(html, /<svg aria-hidden="true" xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="70 -793 4531 803">/, "the wordmark is the SVG logo");
 });
 

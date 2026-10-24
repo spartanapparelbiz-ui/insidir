@@ -14,7 +14,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { esc, money, day, sentence, tradeCard, withRole, LINE_SQL, head, nav, footer, scripts, emailForm, searchBox, companyName, kindOf, personName } from "./site-v2.mjs";
+import { esc, money, day, sentence, tradeCard, withRole, LINE_SQL, head, nav, footer, scripts, searchBox, companyName, kindOf, personName } from "./site-v2.mjs";
 import { siteOrigin } from "./public-pages.mjs";
 import { storiesForTicker, storyPath } from "./stories.mjs";
 
@@ -91,13 +91,12 @@ export function renderTickerPage(d, { origin }) {
     <div class="v2-lock__copy">
       <h2 class="v2-lock__h" id="lock-h">${more ? `${more} more insider trade${more === 1 ? "" : "s"} at ${esc(t)} in the last 12 months.` : `Get the next ${esc(t)} insider trade the minute it's filed.`}</h2>
       <p class="ds-small">Full history, each insider's track record, a signal score on every trade, and alerts minutes after a new filing.</p>
-      <a class="ds-btn ds-btn--lg" href="/start?t=${encodeURIComponent(t)}" data-cta="ticker-unlock">Start for $1</a>
+      <a class="ds-btn ds-btn--lg" href="/signup.html" data-cta="ticker-unlock">Start for $1</a>
       <p class="ds-small">$1 for 7 days, then $39 a month. Cancel online anytime.</p>
     </div>
   </div>
 </section>
 <section class="ds-wrap v2-tk__more">
-  ${emailForm("ticker")}
   <div class="v2-tk__search"><p class="ds-small">Look up another stock</p>${searchBox("q2", { large: false })}</div>
   <p class="ds-small v2-tk__legal">Insiders are a company's officers, directors and owners of more than 10% of its stock. They must report their trades to the SEC within two business days. Insidir reads every filing; this page shows public records. Research, not investment advice.</p>
 </section>
