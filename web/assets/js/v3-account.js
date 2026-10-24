@@ -178,19 +178,13 @@ document.addEventListener("DOMContentLoaded",async()=>{
   $("account-delete-email").textContent=$("account-email").textContent||"this account";
   form.hidden=false;$("account-delete").hidden=true;pw.value="";pw.focus();
  });
- // Accounts that sign in by email code have no password: a fresh code confirms the deletion instead.
- $("account-delete-code")?.addEventListener("click",async()=>{
-  out.classList.remove("is-error");
-  try{await req("/v1/auth/email-code","POST",{email:$("account-email").textContent.trim()});out.textContent="We emailed you a 6-digit code. Type it in the box below.";pw.type="text";pw.setAttribute("inputmode","numeric");pw.focus();}
-  catch(e){deleteFailed(String(e.message||"We couldn't send a code. Try again."));}
- });
  $("account-delete-cancel").addEventListener("click",()=>{
   form.hidden=true;$("account-delete").hidden=false;pw.value="";out.classList.remove("is-error");out.textContent="Nothing was changed.";$("account-delete").focus();
  });
  form.addEventListener("submit",async ev=>{
   ev.preventDefault();
   out.classList.remove("is-error");
-  if(!pw.value){deleteFailed("Enter your password, or the code we emailed you, to delete the account.");pw.focus();return;}
+  if(!pw.value){deleteFailed("Enter your password to delete the account.");pw.focus();return;}
   const button=$("account-delete-confirm");button.disabled=true;
   out.textContent="Cancelling any subscription and deleting your account…";
   try{await req("/v1/me","DELETE",{password:pw.value});pw.value="";forget();location.assign("account-deleted.html");}

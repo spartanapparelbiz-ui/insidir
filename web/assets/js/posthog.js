@@ -9,7 +9,7 @@
   const TOKEN = "phc_nSznyqripwegsZFp5fVvusojJPXwJKeSWUQij2zrP27L";
   const API_HOST = "https://us.i.posthog.com";
   const LOADER = "https://us-assets.i.posthog.com/static/array.js";
-  const PRIVATE = /^\/(signin|forgot-password|reset-password|verify-email|account|account-deleted|billing|portfolio|ops|admin-[a-z-]+)(\.html)?$/;
+  const PRIVATE = /^\/(signin|forgot-password|start|account|account-deleted|billing|portfolio|ops|admin-[a-z-]+)(\.html)?$/;
 
   if (!TOKEN) return;
   if (navigator.globalPrivacyControl === true || navigator.doNotTrack === "1" || window.doNotTrack === "1") return;

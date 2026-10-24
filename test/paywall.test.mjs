@@ -131,14 +131,12 @@ test("the /v1/me access object", () => {
   assert.equal(accessSummary({ ...USERS.paid, current_period_end: "not a date" }, ON).currentPeriodEnd, null);
 });
 
-test("no email verification: only a complimentary address, once email is configured, needs its owner to prove it", () => {
-  const email = { ...COMP, INSIDIR_EMAIL_PROVIDER: "log" };
-  assert.equal(hasAccess(USERS.owner, COMP), true, "no email configured: the complimentary address works at once");
-  assert.equal(hasAccess(USERS.owner, email), false, "email configured: an unproved complimentary address grants nothing");
-  assert.equal(hasAccess({ ...USERS.owner, email_verified_at: new Date() }, email), true, "proved (an email-code sign-in): full access");
-  assert.equal(accessSummary(USERS.owner, email).complimentary, false);
+test("no email at all: setting an email provider changes nothing, and nobody is asked to confirm an address", () => {
+  const email = { ...COMP, INSIDIR_EMAIL_PROVIDER: "postmark", POSTMARK_SERVER_TOKEN: "pm-token", INSIDIR_EMAIL_FROM: "a@insidir.com" };
+  assert.equal(hasAccess(USERS.owner, COMP), true, "the complimentary address works at once");
+  assert.equal(hasAccess(USERS.owner, email), true, "a configured provider is ignored: still no confirmation step");
   assert.equal(hasAccess(USERS.paid, email), true, "a paying subscriber is never asked to confirm anything");
-  assert.equal("verificationRequired" in accessSummary(USERS.paid, email), false, "the access object no longer carries a verification flag");
+  assert.equal("verificationRequired" in accessSummary(USERS.paid, email), false, "the access object carries no verification flag");
 });
 
 test("account management routes need a sign-in but no subscription; admin and email-link routes authenticate themselves", () => {
@@ -631,7 +629,7 @@ test("billing routes: status reports pro/none, checkout returns to billing or su
   assert.equal(posted[0]["metadata[insidir_consent_id]"], "41");
   assert.deepEqual(replies.at(-1), { status: 200, body: { url: "https://checkout.stripe.com/c/pay/x" } });
   assert.equal(posted[0].success_url, "https://insidir.example/welcome.html?checkout=success", "paying lands on the first-minute setup");
-  assert.equal(posted[0]["after_expiration[recovery][enabled]"], "true", "an abandoned checkout can be recovered");
+  assert.equal(posted[0]["after_expiration[recovery][enabled]"], undefined, "no recovery link: Insidir sends no reminder");
   assert.ok(Math.abs(Number(posted[0].expires_at) - (Date.now() / 1000 + 3600)) < 60, "the checkout page closes after an hour");
   assert.equal(posted[0].cancel_url, "https://insidir.example/subscribe.html?checkout=cancel");
   assert.equal(posted[0]["line_items[0][price]"], "price_pro");

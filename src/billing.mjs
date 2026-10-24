@@ -16,8 +16,6 @@ import { billingSettings, trialSettings } from "./config.mjs";
 import { accessSummary } from "./paywall.mjs";
 import { recordFirstPaidInvoice } from "./creator-program.mjs";
 import { memoryLimiter } from "./rate-limit.mjs";
-import { recoveryParams, queueCheckoutRecovery } from "./checkout-recovery.mjs";
-import * as notices from "./billing-notices.mjs";
 
 // Used only when the caller passes no shared limiter (tests); the engine passes its PostgreSQL-backed one.
 const localLimiter = memoryLimiter();
@@ -170,8 +168,6 @@ export function trialCheckoutParams({ days, feeCents }) {
 }
 
 const hasPrice = (sub, priceId) => !!priceId && (sub?.items?.data || []).some(item => item?.price?.id === priceId);
-// An invoice for the plan (older API versions name the price on the line, newer ones under pricing.price_details).
-const invoiceForPlan = (invoice, priceId) => !!priceId && (invoice?.lines?.data || []).some(l => l?.price?.id === priceId || l?.pricing?.price_details?.price === priceId || l?.plan?.id === priceId);
 
 // The subscription that decides access: the plan's subscription in the best standing, newest first.
 export function pickSubscription(subscriptions, priceId) {
@@ -467,8 +463,8 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       const consentId = String(consentRow.rows?.[0]?.id ?? "");
       const params = { mode: "subscription", customer, "managed_payments[enabled]": "false", "line_items[0][price]": settings.priceId, "line_items[0][quantity]": "1",
         client_reference_id: u.id, success_url: site + "/welcome.html?checkout=success", cancel_url: site + "/subscribe.html?checkout=cancel",
-        // Closes after an hour and can be recovered: the expiry webhook sends the one reminder (src/checkout-recovery.mjs).
-        ...recoveryParams(), "metadata[insidir_offer]": offer.kind,
+        // Closes after an hour. Insidir sends no reminder (no email at all).
+        expires_at: String(Math.floor(Date.now() / 1000) + 3600), "metadata[insidir_offer]": offer.kind,
         "subscription_data[metadata][insidir_user_id]": u.id, "metadata[insidir_user_id]": u.id,
         "metadata[insidir_consent_id]": consentId, "subscription_data[metadata][insidir_consent_id]": consentId,
         ...(row.signup_ref ? { "metadata[insidir_ref]": row.signup_ref, "subscription_data[metadata][insidir_ref]": row.signup_ref } : {}),
@@ -503,8 +499,6 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
       }
       const stored = await syncCustomer(row.stripe_customer_id, { stripe, query, priceId: settings.priceId });
       await logBillingEvent(query, { userId: u.id, customer: row.stripe_customer_id, kind: "cancel_requested", detail: { subscriptions: live.map(s => s.id), accessUntil: stored?.current_period_end ?? null } });
-      for (const sub of live) await notices.cancellationConfirmed(query, { customer: row.stripe_customer_id, subscription: sub.id, accessUntil: periodEnd(sub, settings.priceId) || stored?.current_period_end }, { env })
-        .catch(e => console.error(JSON.stringify({ event: "billing.notice_failed", kind: "cancel_confirmed", error: String(e?.message || e) })));
       await serverEvent(query, "subscription_canceled", { userId: u.id, object: live[0]?.id });
       return json(res, 200, { canceled: true, accessUntil: stored?.current_period_end ? new Date(stored.current_period_end).toISOString() : null,
         message: "Your subscription is cancelled. You will not be charged again, and access continues until the end of the current period." });
@@ -585,23 +579,17 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
         if (ref) await query("UPDATE users SET stripe_customer_id=$1 WHERE id=$2 AND (stripe_customer_id IS NULL OR stripe_customer_id=$1)", [obj.customer, ref]);
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-        if (!await cancelOrphanCheckout(obj, ref, { stripe, query })) await notices.acknowledgeCheckout(query, obj, { env });
+        await cancelOrphanCheckout(obj, ref, { stripe, query });
         // Funnel: a paid checkout, as Stripe's signed webhook reports it (never a browser redirect).
         await serverEvent(query, "checkout_completed", { userId: ref || await userForCustomer(query, obj.customer), object: obj.id });
       }
       if (event.type === "checkout.session.expired" && obj.mode === "subscription") {
         const ref = USER_ID.test(String(obj.client_reference_id || "")) ? obj.client_reference_id : null;
         await serverEvent(query, "checkout_expired", { userId: ref, object: obj.id });
-        // Only a page that ran out its hour gets a reminder; one Insidir closed because a newer checkout opened does not.
-        if (Number(obj.expires_at) > 0 && Number(obj.expires_at) <= Number(event.created || 0) + 300) await queueCheckoutRecovery(query, obj, { env });
       }
       // A subscription that ended (cancelled in the portal, by Stripe, or at the end of a cancelled period).
       if (event.type === "customer.subscription.deleted") await serverEvent(query, "subscription_canceled", { userId: await userForCustomer(query, obj.customer), object: obj.id });
       if (event.type.startsWith("customer.subscription.") && event.type !== "customer.subscription.trial_will_end") await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-      // Cancellations made outside Insidir (the Stripe portal, the dashboard) are confirmed too; same key as the in-app cancel.
-      if (event.type === "customer.subscription.updated" && hasPrice(obj, settings.priceId) && obj.cancel_at_period_end === true && event.data?.previous_attributes?.cancel_at_period_end === false)
-        await notices.cancellationConfirmed(query, { customer: obj.customer, subscription: obj.id, accessUntil: periodEnd(obj, settings.priceId) }, { env });
-      if (event.type === "customer.subscription.deleted" && hasPrice(obj, settings.priceId)) await notices.subscriptionEnded(query, obj, { env });
       // Refunds and chargebacks: recorded, and any creator commission for that customer goes back to manual review.
       if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
         let customer = CUSTOMER_ID.test(String(obj.customer || "")) ? obj.customer : null;
@@ -609,24 +597,16 @@ export async function billingRoutes(req, res, p, json, deps = {}) {
         if (CUSTOMER_ID.test(String(customer || ""))) {
           await query("UPDATE creator_commissions SET status='needs_review' WHERE stripe_customer_id=$1 AND status IN ('pending','approved')", [customer]);
           await logBillingEvent(query, { customer, kind: event.type === "charge.refunded" ? "refund" : "dispute", detail: { id: obj.id, amount: obj.amount ?? obj.amount_refunded ?? null, reason: obj.reason ?? null } });
-          if (event.type === "charge.refunded") await notices.refundIssued(query, { ...obj, customer }, { env });
         }
       }
       if (event.type === "invoice.payment_failed" && CUSTOMER_ID.test(String(obj.customer || ""))) {
         await logBillingEvent(query, { customer: obj.customer, kind: "payment_failed", detail: { invoice: obj.id, attempt: obj.attempt_count ?? null } });
         await syncCustomer(obj.customer, { stripe, query, priceId: settings.priceId });
-        if (invoiceForPlan(obj, settings.priceId)) await notices.paymentFailed(query, obj, { env });
       }
       if (event.type === "customer.subscription.trial_will_end" && CUSTOMER_ID.test(String(obj.customer || "")))
-      {
         await logBillingEvent(query, { customer: obj.customer, kind: "trial_will_end", detail: { subscription: obj.id, trialEnd: obj.trial_end ?? null } });
-        // Stripe sends this three days before a trial ends. On a 7-day trial that is too early for "tomorrow you'll be
-        // charged": the hourly worker sends that 24 hours before the end. Short trials (and one ended early) get it now.
-        if (hasPrice(obj, settings.priceId) && obj.status === "trialing" && obj.cancel_at_period_end !== true && Number(obj.trial_end) * 1000 - Date.now() <= 48 * 3600_000) await notices.trialReminder(query, { customer: obj.customer, subscription: obj.id, trialEnd: obj.trial_end }, { env });
-      }
       // The first $39 payment: the plan's first invoice, or after a paid trial its first renewal (the trial
       // invoice carries only the trial fee and is never eligible). One commission per referred account.
-      if (event.type === "invoice.paid" && invoiceForPlan(obj, settings.priceId)) await notices.paymentReceipt(query, obj, { env });
       if (event.type === "invoice.paid" && (obj.billing_reason === "subscription_create" || obj.billing_reason === "subscription_cycle")) {
         // Re-read Stripe to verify that the customer's actual subscription is active
         // on Insidir's exact Price, not just any invoice marked paid.

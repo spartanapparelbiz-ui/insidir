@@ -1,5 +1,5 @@
 /* The public site's chrome on the one design system (web/assets/css/ui.css + web/assets/css/site.css): the head with
- * both stylesheets inlined, the nav, the footer, the search box, the weekly email form, and the server-side versions of
+ * both stylesheets inlined, the nav, the footer, the search box, and the server-side versions of
  * the app's components (logo, big number, trade label), so the landing page shows the product with the product's own
  * parts. Geist only, tabular figures, two text colours, colour only on numbers and chart lines. */
 import { readFileSync } from "node:fs";
@@ -35,7 +35,7 @@ ${extra}</head>`;
 export const uiNav = ({ cta = "nav", home = false } = {}) => { const h = home ? "" : "/"; return `<header class="snav" data-ds-nav><div class="snav__in">
 <a class="wordmark" href="/" aria-label="Insidir home">${WORDMARK}</a>
 <nav class="snav__links" aria-label="Main"><a href="${h}#how" data-spy="how">How it works</a><a href="${h}#pricing" data-spy="pricing">Pricing</a><a href="${h}#faq" data-spy="faq">FAQ</a></nav>
-<div class="snav__end"><a class="btn btn--ghost" href="/signin.html">Log in</a><a class="btn btn--secondary" href="/start" data-cta="${esc(cta)}">Start for $1</a></div>
+<div class="snav__end"><a class="btn btn--ghost" href="/signin.html">Log in</a><a class="btn btn--secondary" href="/signup.html" data-cta="${esc(cta)}">Start for $1</a></div>
 </div></header>`; };
 
 export const uiFooter = ({ home = false } = {}) => { const h = home ? "" : "/"; return `<footer class="sfoot"><div class="swrap sfoot__in">
@@ -52,13 +52,6 @@ export const uiSearch = (id = "q", { examples = [] } = {}) => `<form class="ssea
 <input id="${esc(id)}" name="t" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a stock: NVDA, TSLA, PEP" data-short="NVDA, TSLA, PEP" maxlength="12">
 <button class="btn btn--primary btn--lg" type="submit">See insiders</button></form>${examples.length ? `
 <p class="schips"><span class="muted">Or try</span>${examples.map(t => `<a class="chip" href="/${esc(encodeURIComponent(t))}" data-chip="${esc(t)}">${esc(t)}</a>`).join("")}</p>` : ""}`;
-
-/* The free weekly email (src/newsletter.mjs); site-v2.js posts it. */
-export const uiEmailForm = (where = "page") => `<form class="smail" action="/v1/newsletter" method="post" data-v2-mail data-where="${esc(where)}">
-<p class="strong">Get the 5 biggest insider buys every week. Free.</p>
-<div class="smail__row"><label class="sr-only" for="mail-${esc(where)}">Email</label><input class="input" id="mail-${esc(where)}" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="you@example.com"><button class="btn btn--secondary btn--lg" type="submit">Send it to me</button></div>
-<p class="t-label muted" data-v2-mail-msg role="status" aria-live="polite">One email a week. Unsubscribe in one click.</p>
-</form>`;
 
 /* ---------- the app's components, server-side (same markup as web/assets/js/ui.js) ---------- */
 export const uiLogo = (ticker, size = 28) => {

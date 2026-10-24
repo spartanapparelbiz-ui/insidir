@@ -11,7 +11,7 @@ const DB = process.env.INSIDIR_TEST_DATABASE_URL;
 const ORIGIN = "https://insidir.test";
 const WHSEC = "whsec_lifecycle_test_secret";
 const ENV = { INSIDIR_PAYWALL: "1", INSIDIR_BILLING_ENABLED: "1", INSIDIR_STRIPE_SECRET_KEY: "sk_test_simulated", INSIDIR_STRIPE_PRICE_ID: "price_pro",
-  INSIDIR_STRIPE_WEBHOOK_SECRET: WHSEC, INSIDIR_PUBLIC_URL: ORIGIN, INSIDIR_EMAIL_PROVIDER: "log", INSIDIR_TRIAL: "1" };
+  INSIDIR_STRIPE_WEBHOOK_SECRET: WHSEC, INSIDIR_PUBLIC_URL: ORIGIN, INSIDIR_TRIAL: "1" };
 const PASSWORD = "lifecycle passphrase 2026";
 
 test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, async t => {
@@ -40,7 +40,8 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.ok(r.status < 300, "webhook " + e.type + " answered " + r.status); out.push(r); } return out; };
   const access = async cookie => (await call("/v1/me", { cookie })).json.access;
   const product = async cookie => (await call("/v1/filings", { cookie })).status;
-  const mails = async (userId, kind) => (await q("SELECT * FROM email_outbox WHERE user_id=$1 AND kind=$2 ORDER BY id", [userId, kind])).rows;
+  // Insidir sends no email: not one message is queued for a member, whatever Stripe reports.
+  const mails = async userId => (await q("SELECT count(*)::int AS n FROM email_outbox WHERE user_id=$1", [userId])).rows[0].n;
 
   const signup = async (tag, ref) => {
     const email = `${tag}-${randomUUID()}@example.com`;
@@ -62,7 +63,7 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     const status = (await call("/v1/billing/status", { cookie: A.cookie })).json;
     assert.deepEqual([status.offer.kind, status.offer.todayCents, status.offer.recurringCents, status.offer.trialDays], ["trial", 100, 3900, 7]);
     // No email verification: nothing is sent to confirm, and checkout is open at once (the next test checks it).
-    assert.equal((await q("SELECT count(*)::int AS n FROM email_outbox WHERE kind='verify_email' AND to_email=$1", [A.email])).rows[0].n, 0, "no confirmation email");
+    assert.equal(await mails(A.id), 0, "no confirmation email");
   });
 
   await t.test("checkout needs recorded consent to the exact offer and creates the $1 trial checkout", async () => {
@@ -85,7 +86,7 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal(session.status, "expired");
   });
 
-  await t.test("paying: events out of order and duplicated still give one trialing member, one acknowledgment, no commission", async () => {
+  await t.test("paying: events out of order and duplicated still give one trialing member, no commission, no email", async () => {
     const session = [...sim.sessions.values()].filter(s => s.status === "open").at(-1);
     const { subscription, invoice, events } = sim.completeCheckout(session.id);
     subA = subscription; firstInvoice = invoice;
@@ -97,41 +98,18 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.deepEqual([a.active, a.status, a.plan], [true, "trialing", "pro"]);
     assert.equal(await product(A.cookie), 200);
     assert.equal((await q("SELECT count(*)::int AS n FROM creator_commissions WHERE referred_user_id=$1", [A.id])).rows[0].n, 0, "the $1 trial invoice never earns a commission");
-    const ack = await mails(A.id, "acknowledgment");
-    assert.equal(ack.length, 1);
-    assert.match(ack[0].text_body, /charged \$1\.00 today for a 7-day trial/);
-    assert.match(ack[0].text_body, /renews automatically at \$39\.00 per month/);
-    assert.match(ack[0].text_body, /How to cancel: open Billing/);
-    assert.match(ack[0].text_body, /The terms you agreed to at checkout: You agree to pay \$1\.00 today/);
-    assert.equal(ack[0].retain_body, true);
-    assert.equal((await mails(A.id, "payment_receipt")).length, 1, "a receipt for the $1");
-    // A delayed redelivery (a new event id for the same checkout) does not queue a second acknowledgment.
+    // A delayed redelivery (a new event id for the same checkout) changes nothing.
     await deliver([{ ...completed, id: "evt_redelivered_" + randomUUID().slice(0, 8) }]);
-    assert.equal((await mails(A.id, "acknowledgment")).length, 1);
+    assert.deepEqual([(await access(A.cookie)).status, await mails(A.id)], ["trialing", 0], "no acknowledgment or receipt email");
   });
 
-  await t.test("trial reminder: 24 hours before the charge, once, however often Stripe or the worker asks", async () => {
-    // Stripe's trial_will_end comes three days before a 7-day trial ends: too early for "tomorrow", so nothing is queued.
+  await t.test("trial ending: Stripe's notice is recorded, and no reminder email is sent", async () => {
     assert.ok(subA.trial_end - Math.floor(Date.now() / 1000) > 6 * 86400, "the simulated checkout started a 7-day trial");
-    await q("UPDATE users SET current_period_end=now()+interval '72 hours' WHERE id=$1", [A.id]);
-    await deliver(sim.trialWillEnd(subA.id));
-    const { queueTrialReminders } = await import("../src/billing-notices.mjs");
-    await queueTrialReminders(q, { env: ENV });
-    assert.equal((await mails(A.id, "trial_reminder")).length, 0, "day 4: no reminder yet");
-    await q("UPDATE users SET current_period_end=now()+interval '30 hours' WHERE id=$1", [A.id]);
-    await queueTrialReminders(q, { env: ENV });
-    assert.equal((await mails(A.id, "trial_reminder")).length, 0, "30 hours out: still not");
     await q("UPDATE users SET current_period_end=now()+interval '23 hours' WHERE id=$1", [A.id]);
-    const r = await queueTrialReminders(q, { env: ENV });
-    assert.ok(r.checked >= 1);
-    await queueTrialReminders(q, { env: ENV });
-    const reminders = await mails(A.id, "trial_reminder");
-    assert.equal(reminders.length, 1, "one reminder per subscription, from Stripe's event or the worker, whichever comes first");
-    assert.match(reminders[0].subject, /^Tomorrow your Insidir trial ends and \$39\.00 is charged$/);
-    assert.match(reminders[0].text_body, /charged \$39\.00/);
-    assert.match(reminders[0].text_body, /What you keep: your watchlist/);
-    assert.match(reminders[0].text_body, /billing\.html#cancel/);
-    assert.equal(reminders[0].category, "billing", "sent whatever the member's email preferences");
+    await deliver(sim.trialWillEnd(subA.id));
+    const kinds = (await q("SELECT kind FROM billing_events WHERE stripe_customer_id=$1", [subA.customer])).rows.map(r => r.kind);
+    assert.ok(kinds.includes("trial_will_end"));
+    assert.equal(await mails(A.id), 0);
   });
 
   await t.test("the trial converts: the first $39 renewal keeps access and earns the creator commission once", async () => {
@@ -142,31 +120,31 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     const commissions = (await q("SELECT * FROM creator_commissions WHERE referred_user_id=$1", [A.id])).rows;
     assert.equal(commissions.length, 1);
     assert.deepEqual([commissions[0].amount_cents, commissions[0].status], [1000, "pending"]);
-    assert.equal((await mails(A.id, "payment_receipt")).length, 2);
+    assert.equal(await mails(A.id), 0, "no receipt email");
     await deliver(sim.endPeriod(subA.id));
     assert.equal((await q("SELECT count(*)::int AS n FROM creator_commissions WHERE referred_user_id=$1", [A.id])).rows[0].n, 1, "later renewals never add one");
   });
 
-  await t.test("a failed card: past_due stops access and the customer is told", async () => {
+  await t.test("a failed card: past_due stops access (shown in Billing, never emailed)", async () => {
     await deliver(sim.endPeriod(subA.id, { card: "fail" }));
     const a = await access(A.cookie);
     assert.deepEqual([a.active, a.status], [false, "past_due"]);
     assert.equal(await product(A.cookie), 402);
-    assert.equal((await mails(A.id, "payment_failed")).length, 1);
+    assert.equal(await mails(A.id), 0);
     assert.equal((await checkout(A.cookie, "full")).status, 409, "no second subscription while one is unpaid");
   });
 
-  await t.test("refund and dispute: recorded, commission back to review, refund notice", async () => {
+  await t.test("refund and dispute: recorded, commission back to review, no email", async () => {
     const chargeId = [...sim.charges.values()].find(c => c.amount === 3900).id;
     await deliver(sim.refund(chargeId));
     await deliver(sim.dispute(chargeId));
     assert.equal((await q("SELECT status FROM creator_commissions WHERE referred_user_id=$1", [A.id])).rows[0].status, "needs_review");
     const kinds = (await q("SELECT kind FROM billing_events WHERE stripe_customer_id=$1 ORDER BY id", [subA.customer])).rows.map(r => r.kind);
     for (const k of ["payment_failed", "refund", "dispute"]) assert.ok(kinds.includes(k), k);
-    assert.equal((await mails(A.id, "refund_issued")).length, 1);
+    assert.equal(await mails(A.id), 0);
   });
 
-  await t.test("cancellation online: no further charges, access to the period end, one confirmation", async () => {
+  await t.test("cancellation online: no further charges, access to the period end, no email", async () => {
     const B = await signup("canceller");
     assert.equal((await checkout(B.cookie, "trial")).status, 200);
     const { subscription, events } = sim.completeCheckout([...sim.sessions.values()].at(-1).id);
@@ -176,14 +154,14 @@ test("subscription lifecycle on PostgreSQL with a Stripe simulator", { skip: !DB
     assert.equal(cancel.status, 200); assert.equal(cancel.json.canceled, true);
     assert.equal(subscription.cancel_at_period_end, true, "Stripe was told to stop renewing");
     assert.equal((await access(B.cookie)).active, true, "the paid trial runs to its end");
-    // The portal reports the same cancellation: still one confirmation.
+    // The portal reports the same cancellation: nothing is emailed.
     await deliver([{ id: "evt_" + randomUUID().slice(0, 12), type: "customer.subscription.updated", data: { object: subscription, previous_attributes: { cancel_at_period_end: false } } }]);
-    assert.equal((await mails(B.id, "cancel_confirmed")).length, 1);
+    assert.equal(await mails(B.id), 0);
     await deliver(sim.endPeriod(subscription.id));
     const b = await access(B.cookie);
     assert.deepEqual([b.active, b.status], [false, "canceled"], "never charged the $39: the trial ended cancelled");
     assert.ok(!sim.calls.some(c => c.path === "/subscriptions/" + subscription.id && c.method === "DELETE"));
-    assert.equal((await mails(B.id, "subscription_ended")).length, 1);
+    assert.equal(await mails(B.id), 0);
     // Trial used: the account is offered the full price only, and must agree to it.
     const status = (await call("/v1/billing/status", { cookie: B.cookie })).json;
     assert.equal(status.offer.kind, "full");

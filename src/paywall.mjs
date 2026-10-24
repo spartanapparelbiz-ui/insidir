@@ -10,7 +10,7 @@
  * gate() on every request before it serves a page or an API response.
  */
 import { posix } from "node:path";
-import { paywallEnabled, complimentaryEmails, billingSettings, emailSettings } from "./config.mjs";
+import { paywallEnabled, complimentaryEmails, billingSettings } from "./config.mjs";
 
 // Paid product pages: signed in AND an active subscription.
 // person: one reporting person's file (person.html?cik=1214156, fed by GET /v1/people/<cik>).
@@ -94,8 +94,8 @@ export function classifyApi(pathname, method = "GET") {
   if (p === "/v1/admin/costs" || p === "/v1/admin/funnel") return "open";
   // First-party funnel events (src/funnel.mjs): sent by public pages, signed in or not.
   if (p === "/v1/events" && m === "POST") return "open";
-  // The free weekly email (src/newsletter.mjs) and the landing page's live filing strip (src/landing.mjs): public.
-  if (p === "/v1/newsletter" || p.startsWith("/v1/newsletter/") || (p === "/v1/live" && (m === "GET" || m === "HEAD"))) return "open";
+  // The landing page's live filing strip (src/landing.mjs): public.
+  if (p === "/v1/live" && (m === "GET" || m === "HEAD")) return "open";
   // A prepared logo or headshot by content address: an unguessable public image (the batch that
   // names it, /v1/media, stays product). Open, so no session lookup per <img> and it can be
   // cached publicly (for a day, so a takedown reaches caches).
@@ -129,15 +129,13 @@ export function isComplimentary(email, env = process.env) {
   return !!e && complimentaryEmails(env).has(e);
 }
 
-/* Once email is configured, a complimentary address grants access only after its owner has proved it is theirs (signing
- * in with an emailed code does): otherwise whoever registered the address first with a password would get the owner's
- * access. This is the one place a confirmed address still matters; nobody else is ever asked to confirm theirs. */
+/* A complimentary address on INSIDIR_COMPLIMENTARY_EMAILS has access. Insidir sends no email, so there is no way to
+ * confirm an address and none is asked for; keep that list to addresses whose owners hold the account. */
 export function complimentaryAccess(row, env = process.env) {
-  if (!row || !isComplimentary(row.email, env)) return false;
-  return !emailSettings(env).enabled || !!(row.email_verified_at ?? row.emailVerifiedAt);
+  return !!row && isComplimentary(row.email, env);
 }
 
-// Access = subscription active or trialing, OR a complimentary account (verified when verification is enforced).
+// Access = subscription active or trialing, OR a complimentary account.
 export function hasAccess(row, env = process.env) {
   if (!row) return false;
   return subscriptionActive(row) || complimentaryAccess(row, env);

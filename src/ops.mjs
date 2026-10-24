@@ -150,7 +150,7 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
     if (stale?.stale) alerts.push({ area: "coverage", level: "stale", detail: "No new Form 4 imported for more than 4 days" });
   }
   const trial = trialSettings(env);
-  if (trial.enabled && trial.days !== TRIAL_DAYS) alerts.push({ area: "billing", level: "warning", detail: `INSIDIR_TRIAL_DAYS gives new checkouts a ${trial.days}-day trial, but the site, terms and emails promise ${TRIAL_DAYS} days` });
+  if (trial.enabled && trial.days !== TRIAL_DAYS) alerts.push({ area: "billing", level: "warning", detail: `INSIDIR_TRIAL_DAYS gives new checkouts a ${trial.days}-day trial, but the site and terms promise ${TRIAL_DAYS} days` });
   for (const alert of spendAlerts(ai)) alerts.push(alert);
   if (ingestion?.staleness && ingestion.staleness.status !== "ok") alerts.push({ area: "ingestion", level: ingestion.staleness.status, detail: ingestion.staleness.reasons.join("; ") });
   if (researchEvents?.builder?.pending_filings > 500) alerts.push({ area: "research-events", level: "warning", detail: `${researchEvents.builder.pending_filings} parsed filings not yet turned into events` });
@@ -158,9 +158,6 @@ export async function opsSnapshot({ query, env = process.env, autoIngest = env.A
   if (ingestion?.stuck_runs) alerts.push({ area: "ingestion", level: "warning", detail: ingestion.stuck_runs + " ingestion run(s) still 'running' after 30 minutes" });
   const sec = secHealth();
   if (sec.blocked) alerts.push({ area: "sec", level: "stale", detail: "SEC answered 403 to this process; pause and check SEC_USER_AGENT and request rates" });
-  if (email && !email.unavailable && email.provider === "none" && (email.queued || 0) > 0) alerts.push({ area: "email", level: "warning", detail: `${email.queued} message(s) queued and no email provider configured` });
-  if (email?.oldestQueuedMinutes > 30 && email.provider !== "none") alerts.push({ area: "email", level: "warning", detail: `oldest queued message waiting ${email.oldestQueuedMinutes} minutes` });
-  if (notifications?.preferences?.email_on > 0 && !String(env.INSIDIR_POSTAL_ADDRESS || "").trim()) alerts.push({ area: "email", level: "warning", detail: "alert emails are on for some members but INSIDIR_POSTAL_ADDRESS is not set (see ATTORNEY-REVIEW.md C-1)" });
   if (billing?.enabled && billing.webhookMinutesAgo == null) alerts.push({ area: "billing", level: "warning", detail: "billing enabled but no Stripe webhook has ever been processed" });
   for (const w of Array.isArray(workers) ? workers : []) if (w.last_error_at && (!w.last_ok_at || new Date(w.last_error_at) > new Date(w.last_ok_at))) alerts.push({ area: "worker:" + w.name, level: "warning", detail: String(w.last_error || "").slice(0, 160) });
   return { generatedAt: new Date().toISOString(), status: alerts.some(a => a.level === "stale") ? "degraded" : alerts.length ? "warning" : "ok", alerts,

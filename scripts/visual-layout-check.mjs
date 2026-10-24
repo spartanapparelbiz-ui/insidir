@@ -48,7 +48,7 @@ try{
      return {h1:r(".shero__h1"),search:r(".ssearch"),overflow:document.documentElement.scrollWidth-innerWidth,
        font:getComputedStyle(document.querySelector("h1")).fontFamily,bg:getComputedStyle(document.body).backgroundColor,
        navTargets:[...document.querySelectorAll(".snav__links a")].map(a=>a.getAttribute("href")),
-       starts:[...document.querySelectorAll('a[href="/start"]')].map(a=>a.textContent.trim()),
+       starts:[...document.querySelectorAll('a[href="/signup.html"][data-cta]')].map(a=>a.textContent.trim()),
        chips:[...document.querySelectorAll(".schips .chip")].map(a=>a.getAttribute("href")),
        shot:!!document.querySelector(".shot .shot__hero"),footer:/Research, not investment advice/.test(document.querySelector("footer")?.textContent||""),
        images:[...document.images].filter(i=>i.getBoundingClientRect().width>2&&!/\.svg/.test(i.currentSrc)&&/\/assets\//.test(i.currentSrc)).map(i=>({src:i.currentSrc,scale:i.getBoundingClientRect().width/(i.naturalWidth||1)}))};
@@ -58,7 +58,7 @@ try{
    assert.match(landing.font,/^"?Geist"?,/,"Landing headline must use the one typeface, Geist: "+landing.font);
    assert.equal(landing.bg,"rgb(12, 12, 11)","Landing must sit on the night background");
    assert.deepEqual(landing.navTargets,["#how","#pricing","#faq"],"The nav is a map of the page");
-   assert.ok(landing.starts.length>=3&&landing.starts.every(t=>t==="Start for $1"),"Every button to /start says Start for $1: "+JSON.stringify(landing.starts));
+   assert.ok(landing.starts.length>=3&&landing.starts.every(t=>t==="Start for $1"),"Every button to sign-up says Start for $1: "+JSON.stringify(landing.starts));
    assert.deepEqual(landing.chips,["/NVDA","/TSLA","/AAPL"],"Three example stocks under the search box");
    assert.ok(landing.shot,"The product shot is drawn from the app's own parts");
    assert.ok(landing.footer,"Every page keeps the research-not-advice line");
@@ -112,9 +112,13 @@ try{
    assert.deepEqual(issues,[],"Browser errors on the rebuilt pages: "+issues.join("; "));
    await page.unrouteAll();
 
-   for(const route of ["/signin.html","/signup.html","/start.html"]){
+   // /start only redirects to sign-up now (Insidir sends no email, so there is no email-code page).
+   await page.goto(base+"/start",{waitUntil:"domcontentloaded",timeout:20000});
+   await page.waitForURL(/\/signup\.html$/,{timeout:10000});
+   for(const route of ["/signin.html","/signup.html","/forgot-password.html"]){
     await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:20000});
-    assert.ok(await page.locator(route==="/start.html"?"[data-st-email-form]":"[data-auth-form]").isVisible(),route+" form unavailable");
+    if(route==="/forgot-password.html")assert.ok(await page.locator('a[href="mailto:hello@aethric.llc"]').isVisible(),"forgot-password says who to write to");
+    else assert.ok(await page.locator("[data-auth-form]").isVisible(),route+" form unavailable");
     const auth=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,heading:getComputedStyle(document.querySelector("h1")).fontFamily,
       headingColor:getComputedStyle(document.querySelector("h1")).color,bg:getComputedStyle(document.body).backgroundColor,
       logo:!!document.querySelector(".au-top .wordmark svg[viewBox=\"70 -793 4531 803\"]"),advice:/Research, not investment advice/.test(document.body.textContent)}));

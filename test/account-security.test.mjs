@@ -5,11 +5,10 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { generateTotpSecret, totpCode, base32Decode, stepAt } from "../src/totp.mjs";
 import { emailDigest } from "../src/security-events.mjs";
-import { sendVerificationEmail } from "../src/account-security.mjs";
 
 /* Account security end to end: the real engine (src/server.mjs, two instances on one database) against PostgreSQL.
- * Runs only when INSIDIR_TEST_DATABASE_URL points at a throwaway database. Email uses the outbox with no delivery
- * worker (INSIDIR_BACKGROUND_WORKERS=0), so the test reads the one-time links straight from email_outbox. */
+ * Runs only when INSIDIR_TEST_DATABASE_URL points at a throwaway database. Insidir sends no email: the test checks that
+ * nothing ever reaches email_outbox. */
 const DB = process.env.INSIDIR_TEST_DATABASE_URL;
 const PASSWORD = "correct horse battery staple 42";
 const ADMIN_TOKEN = "a".repeat(48), TOTP = generateTotpSecret();
@@ -22,7 +21,7 @@ async function start() {
   const port = 20000 + Math.floor(Math.random() * 20000), base = `http://127.0.0.1:${port}`, origin = `http://localhost:${port}`;
   const child = spawn(process.execPath, ["src/server.mjs"], {
     env: { ...process.env, DATABASE_URL: DB, PORT: String(port), COOKIE_SECURE: "0", ALLOW_SIGNUP: "1", ALLOWED_ORIGINS: origin, AUTO_INGEST: "0",
-      INSIDIR_BACKGROUND_WORKERS: "0", INSIDIR_BILLING_ENABLED: "0", INSIDIR_EMAIL_PROVIDER: "log", INSIDIR_PUBLIC_URL: "https://insidir.test",
+      INSIDIR_BACKGROUND_WORKERS: "0", INSIDIR_BILLING_ENABLED: "0", INSIDIR_PUBLIC_URL: "https://insidir.test",
       INSIDIR_COMPLIMENTARY_EMAILS: OWNER, INSIDIR_ADMIN_TOKEN: ADMIN_TOKEN, INSIDIR_ADMIN_TOTP_SECRET: TOTP },
     stdio: ["ignore", "pipe", "pipe"]
   });
@@ -42,66 +41,28 @@ async function start() {
   };
   return { call };
 }
-const tokenFrom = text => text.match(/#token=([a-f0-9]{64})/)?.[1];
 
 test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, async t => {
   const db = new pg.Client({ connectionString: DB }); await db.connect();
   const A = await start(), B = await start();
   t.after(async () => { for (const e of engines) e.kill(); await db.end(); });
-  const latest = async (email, kind) => (await db.query("SELECT * FROM email_outbox WHERE recipient_hash=$1 AND kind=$2 ORDER BY id DESC LIMIT 1", [emailDigest(email), kind])).rows[0];
+  const mailFor = async email => (await db.query("SELECT count(*)::int AS n FROM email_outbox WHERE recipient_hash=$1", [emailDigest(email)])).rows[0].n;
 
-  // A confirmation link as one sent before email verification was removed (it is no longer sent on registration).
-  const oldLink = async (id, email) => { await sendVerificationEmail((sql, p) => db.query(sql, p), { id, email }); return tokenFrom((await latest(email, "verify_email")).text_body); };
-
-  await t.test("registration sends no confirmation email; a link sent before still works once, for that account only", async () => {
+  await t.test("registration sends nothing; there is no verification, no reset link and no resend", async () => {
     const email = `verify-${randomUUID()}@example.com`;
     const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD } });
     assert.equal(reg.status, 201);
     assert.equal(reg.json.verification, undefined, "nothing to confirm");
-    assert.equal(await latest(email, "verify_email"), undefined, "no confirmation email is queued");
     assert.equal((await A.call("/v1/auth/resend-verification", { method: "POST", cookie: reg.cookie, body: {} })).status, 404, "no resend route");
-    const me = (await A.call("/v1/me", { cookie: reg.cookie })).json;
-    const token = await oldLink(me.user.id, email);
-    assert.ok(token);
-    assert.equal((await db.query("SELECT count(*)::int AS n FROM user_tokens WHERE token_hash=$1", [token])).rows[0].n, 0, "only the digest is stored");
-    assert.equal((await B.call("/v1/auth/verify-email", { method: "POST", body: { token } })).status, 200, "another instance accepts it");
-    assert.equal((await A.call("/v1/auth/verify-email", { method: "POST", body: { token } })).status, 400, "used once");
-    assert.equal((await A.call("/v1/me", { cookie: reg.cookie })).json.access.emailVerified, true);
-    assert.equal((await A.call("/v1/auth/verify-email", { method: "POST", body: { token: "f".repeat(64) } })).status, 400);
-  });
-
-  await t.test("password recovery: same answer for every address, a reset signs out everywhere, links work once", async () => {
-    const email = `reset-${randomUUID()}@example.com`;
-    const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".31" });
+    for (const path of ["/v1/auth/verify-email", "/v1/auth/forgot-password", "/v1/auth/reset-password"]) {
+      const r = await B.call(path, { method: "POST", body: { email, token: "f".repeat(64), password: "a brand new passphrase 77" }, client: NET + ".31" });
+      assert.equal(r.status, 410, path); assert.match(r.json.error, /hello@aethric\.llc/);
+    }
     const unknown = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email: `nobody-${randomUUID()}@example.com` }, client: NET + ".31" });
     const known = await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".31" });
-    assert.equal(unknown.status, 202); assert.equal(known.status, 202);
     assert.deepEqual(unknown.json, known.json, "the answer does not reveal whether the account exists");
-    const token = tokenFrom((await latest(email, "password_reset")).text_body);
-    assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token, password: "short" } })).status, 400);
-    assert.equal((await B.call("/v1/auth/reset-password", { method: "POST", body: { token, password: "a brand new passphrase 77" } })).status, 200, "the short attempt did not spend the token");
-    assert.equal((await A.call("/v1/me", { cookie: reg.cookie })).status, 401, "existing sessions are signed out");
-    assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token, password: "another new passphrase 88" } })).status, 400, "used once");
-    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".32" })).status, 401);
-    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: "a brand new passphrase 77" }, client: NET + ".32" })).status, 200);
-    assert.ok(await latest(email, "password_changed"), "a security notice is queued");
-    const kinds = (await db.query("SELECT kind FROM security_events WHERE user_id=(SELECT id FROM users WHERE email=$1) ORDER BY id", [email])).rows.map(r => r.kind);
-    for (const k of ["register", "password_reset_requested", "password_reset_completed", "login_failure", "login_success"]) {
-      if (k === "login_failure") continue; // a failure for a known account is logged by email digest, not user id
-      assert.ok(kinds.includes(k), k);
-    }
-  });
-
-  await t.test("a newer reset link voids the older one", async () => {
-    const email = `twice-${randomUUID()}@example.com`;
-    await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".33" });
-    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".33" });
-    const first = tokenFrom((await latest(email, "password_reset")).text_body);
-    await A.call("/v1/auth/forgot-password", { method: "POST", body: { email }, client: NET + ".33" });
-    const second = tokenFrom((await latest(email, "password_reset")).text_body);
-    assert.notEqual(first, second);
-    assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token: first, password: "a brand new passphrase 77" } })).status, 400);
-    assert.equal((await A.call("/v1/auth/reset-password", { method: "POST", body: { token: second, password: "a brand new passphrase 77" } })).status, 200);
+    assert.equal((await A.call("/v1/auth/login", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".32" })).status, 200, "the password is unchanged");
+    assert.equal(await mailFor(email), 0, "nothing queued");
   });
 
   await t.test("rate limits are shared: failures on one instance count on the other", async () => {
@@ -145,13 +106,10 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     assert.equal(ex.json.account.password_hash, undefined, "never the password hash");
   });
 
-  await t.test("a complimentary address has access only once its owner confirmed it (verification enforced by email config)", async () => {
+  await t.test("a complimentary address has access at once: there is no address confirmation", async () => {
     const reg = await A.call("/v1/auth/register", { method: "POST", body: { email: OWNER, password: PASSWORD }, client: NET + ".90" });
-    assert.equal(reg.json.access.active, false);
-    assert.equal((await A.call("/v1/filings", { cookie: reg.cookie })).status, 402);
-    const token = await oldLink(reg.json.user.id, OWNER);
-    await A.call("/v1/auth/verify-email", { method: "POST", body: { token } });
-    assert.equal((await A.call("/v1/me", { cookie: reg.cookie })).json.access.active, true);
+    assert.equal(reg.json.access.active, true);
+    assert.equal(reg.json.access.complimentary, true);
   });
 
   await t.test("admin: token AND one-time code; a code works once; a session cookie then opens the ops snapshot", async () => {
@@ -171,7 +129,7 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     assert.ok(audit.includes("admin.session_opened"));
   });
 
-  await t.test("account deletion: logged without a user id, optional mail cancelled, a confirmation kept", async () => {
+  await t.test("account deletion: logged without a user id, and no email is sent", async () => {
     const email = `delete-${randomUUID()}@example.com`;
     const reg = await A.call("/v1/auth/register", { method: "POST", body: { email, password: PASSWORD }, client: NET + ".95" });
     assert.equal((await A.call("/v1/me", { method: "DELETE", cookie: reg.cookie, body: { password: "not the password" } })).status, 403);
@@ -180,7 +138,6 @@ test("account security on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE
     assert.equal((await db.query("SELECT count(*)::int AS n FROM users WHERE email=$1", [email])).rows[0].n, 0);
     const ev = (await db.query("SELECT user_id FROM security_events WHERE kind='account_deleted' AND email_hash=$1", [emailDigest(email)])).rows;
     assert.equal(ev.length, 1); assert.equal(ev[0].user_id, null);
-    const confirmation = await latest(email, "account_deleted");
-    assert.equal(confirmation.category, "billing"); assert.equal(confirmation.retain_body, true);
+    assert.equal(await mailFor(email), 0, "no confirmation email");
   });
 });

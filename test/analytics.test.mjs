@@ -6,7 +6,7 @@ import vm from "node:vm";
 import { readFile, readdir } from "node:fs/promises";
 
 const WEB = new URL("../web/", import.meta.url);
-const PRIVATE_PAGES = ["signin", "forgot-password", "reset-password", "verify-email", "account", "account-deleted", "billing", "portfolio", "ops", "admin-costs", "admin-funnel"];
+const PRIVATE_PAGES = ["signin", "forgot-password", "start", "account", "account-deleted", "billing", "portfolio", "ops", "admin-costs", "admin-funnel"];
 
 /* Runs the script in a bare browser stand-in, with a project token filled in so the gates themselves are what is tested. */
 async function run({ href = "https://insidir.com/dashboard.html", gpc = false, dnt = null } = {}) {

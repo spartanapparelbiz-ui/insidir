@@ -1,24 +1,21 @@
-import { config, billingSettings, emailSettings } from "./config.mjs";
+import { config, billingSettings } from "./config.mjs";
 import { migrate, pool, query } from "./db.mjs";
 import { ingest } from "./ingest.mjs";
 import { createApiServer } from "./api.mjs";
 import { warmAfterIngest } from "./media-warm.mjs";
 import { reconcileLapsed, createStripeClient } from "./billing.mjs";
 import { runWorker } from "./ops.mjs";
-import { deliverDue, transportFor, purgeEmailBodies } from "./email.mjs";
+import { purgeEmailBodies } from "./email.mjs";
 import { purgeRateLimits } from "./rate-limit.mjs";
 import { purgeSecurityEvents } from "./security-events.mjs";
 import { purgeUserTokens } from "./account-security.mjs";
 import { purgeAdminAuth } from "./admin-auth.mjs";
-import { queueTrialReminders } from "./billing-notices.mjs";
-import { queueTrialEmails } from "./trial-emails.mjs";
 import { refreshTrackRecords } from "./track-record.mjs";
-import { sendWeekly } from "./newsletter.mjs";
 import { buildResearchEvents, retryFailedFilings, pollCompanyDisclosures } from "./research-events.mjs";
 import { loadOwnership } from "./sec.mjs";
 import { persistFiling } from "./db.mjs";
 import { secReady } from "./config.mjs";
-import { fanOut, sendImmediate, sendDigests } from "./notifications.mjs";
+import { fanOut } from "./notifications.mjs";
 import { initPush, pushTick } from "./push.mjs";
 import { aiTick } from "./ai-explain.mjs";
 import { monitorTick } from "./intelligence-monitor.mjs";
@@ -66,17 +63,11 @@ async function main() {
   }
   // Research events (src/research-events.mjs): incremental, idempotent; also covers imports started by /v1/internal/ingest.
   if (workers) every("research-events", 15 * 60 * 1000, 90 * 1000, () => buildResearchEvents({ query }));
-  // The free weekly email (src/newsletter.mjs): checked hourly, sent once a week on Monday from 13:00 UTC.
-  if (workers) every("newsletter-weekly", 60 * 60 * 1000, 7 * 60 * 1000, () => sendWeekly(query));
   // Insider track records (src/track-record.mjs): returns 1, 3 and 6 months after each open-market trade, every 30 minutes.
   if (workers) every("track-records", 30 * 60 * 1000, 3 * 60 * 1000, () => refreshTrackRecords(query));
-  // Alerts (src/notifications.mjs): new events to the members watching them every 5 minutes; immediate emails every
-  // 5 minutes and daily digests hourly (each member at their digest hour). Emails wait in the outbox for delivery.
-  if (workers) {
-    every("notifications", 5 * 60 * 1000, 2 * 60 * 1000, () => fanOut({ query }));
-    every("alert-emails", 5 * 60 * 1000, 3 * 60 * 1000, () => sendImmediate({ query, connect }));
-    every("daily-digests", 60 * 60 * 1000, 7 * 60 * 1000, () => sendDigests({ query, connect }));
-  }
+  // Alerts (src/notifications.mjs): new events to the members watching them every 5 minutes, in the app's inbox and
+  // as device notifications. Insidir sends no email.
+  if (workers) every("notifications", 5 * 60 * 1000, 2 * 60 * 1000, () => fanOut({ query }));
   // Failed Form 4 imports, retried with backoff after they leave EDGAR's current feed; watched companies' other
   // SEC filings. Both use the shared SEC client (declared User-Agent, throttle) and stop on a 403.
   if (workers && secReady()) {
@@ -118,15 +109,6 @@ async function main() {
   if (workers && process.env.INSIDIR_HOUSE_DISCLOSURES_APPROVED === "1") every("house-disclosures", 6 * 60 * 60 * 1000, 2 * 60 * 1000, () => pollHouse({ run: query }));
   // Billing reconciliation (see billing.mjs): a minute after start, then every six hours, when Stripe is configured.
   if (workers && billingSettings().enabled) every("billing-reconcile", 6 * 60 * 60 * 1000, 60 * 1000, () => reconcileLapsed({ stripe: createStripeClient() }));
-  // The trial's emails, hourly: day 1 (set up), day 5 (this week's insider moves) and, 24 hours before the $39 charge,
-  // the charge reminder (src/trial-emails.mjs, src/billing-notices.mjs). Each is queued once per subscription.
-  if (workers && billingSettings().enabled) every("trial-reminders", 60 * 60 * 1000, 5 * 60 * 1000, async () => ({ reminders: await queueTrialReminders(query), emails: await queueTrialEmails(query) }));
-  // Email delivery: every minute when a provider is configured; otherwise messages wait in the outbox.
-  const email = emailSettings();
-  if (workers && email.enabled) {
-    const transport = transportFor(email);
-    every("email-delivery", 60 * 1000, 15 * 1000, () => deliverDue({ query, transport, settings: email }));
-  }
   // Hourly maintenance: expired sessions, rate-limit windows, used tokens, admin sessions, old security events and
   // the bodies of abandoned messages.
   if (workers) every("maintenance", 60 * 60 * 1000, 60 * 1000, async () => ({

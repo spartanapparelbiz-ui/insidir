@@ -49,9 +49,9 @@ test("the page: the last 3 trades in plain English with their filings, the rest 
   assert.equal((html.match(/See the SEC filing/g) || []).length, FREE_TRADES, "each linked to its filing");
   assert.ok(!html.includes("x5/form4.xml") && !html.includes("x6/form4.xml"), "locked trades are not in the page, not even blurred");
   assert.match(html, /4 more insider trades at EXMP in the last 12 months\./);
-  assert.match(html, /href="\/start\?t=EXMP" data-cta="ticker-unlock">Start for \$1<\/a>/);
+  assert.match(html, /href="\/signup.html" data-cta="ticker-unlock">Start for \$1<\/a>/);
   assert.match(html, /Research, not investment advice\./);
-  assert.match(html, /data-v2-mail/, "the free weekly email form");
+  assert.doesNotMatch(html, /data-v2-mail|newsletter/, "no email sign-up: Insidir sends no email");
   assert.match(html, /"@type":"Corporation","name":"Example","tickerSymbol":"EXMP"/);
 
   const png = await ogImage(d);

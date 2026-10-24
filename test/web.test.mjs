@@ -152,7 +152,7 @@ test("every navigation button has its own page and nothing sends visitors back t
   for(const file of (await fs.readdir(new URL("../web/",import.meta.url))).filter(f=>f.endsWith(".html"))){
     const html=await fs.readFile(new URL("../web/"+file,import.meta.url),"utf8");
     assert.doesNotMatch(html,/href="(\/|index\.html)#[a-z]/,file+" must not link to an anchor on the landing page");
-    if(file==="index.html")assert.match(html,/href="\/start"[^>]*>Start for \$1</,"the landing page's one action starts the trial");
+    if(file==="index.html")assert.match(html,/href="\/signup.html"[^>]*>Start for \$1</,"the landing page's one action starts the trial");
     for(const m of html.matchAll(/href="([a-z0-9-]+\.html)(?:[?#][^"]*)?"/g)){
       const r=await fetch(base+"/"+m[1]);assert.equal(r.status,200,file+" links to a missing page "+m[1]);
     }

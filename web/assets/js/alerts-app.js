@@ -1,8 +1,7 @@
 /* Alerts (alerts.html): an inbox of every alert (GET /v1/me/notifications?scores=1): an unread dot, the trade or
    filing in one sentence, its signal score and how long ago. Opening one marks it read (POST /v1/me/notifications/read)
    and goes to the stock; archiving (the Archive button, or a swipe left on a phone) hides it with an Undo
-   (POST /v1/me/notifications/archive). Delivery: this device's notifications (/v1/me/push), alert emails
-   (/v1/me/email-preferences, with the consent text the server stores) and the Intelligence briefing frequency
+   (POST /v1/me/notifications/archive). Delivery: this device's notifications (/v1/me/push) and the Intelligence briefing frequency
    (/v1/me/intelligence/preferences). */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
@@ -88,23 +87,12 @@ async function pushSetup(){
     const n=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(s.publicKey)});try{await api("/v1/me/push",{method:"POST",body:n.toJSON()});}catch(err){await n.unsubscribe();throw err;}set(true);}
   }catch(err){msg(err.message);}finally{btn.disabled=false;}});
 }
-let consent=null,emailMode="off";
-async function emailSetup(){
- let p;try{p=await api("/v1/me/email-preferences");}catch{return;}
- consent=p.consent;emailMode=p.emailAlerts||"off";$("[data-email-consent-text]").textContent=p.consent?.text||"";
- if(!p.emailAvailable){$("[data-email-seg]").hidden=true;$("[data-email-text]").textContent="Alert emails aren't available yet.";return;}
- const mark=()=>$$("[data-email]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.email===emailMode)));mark();
- $$("[data-email]").forEach(b=>b.addEventListener("click",async()=>{const mode=b.dataset.email;if(mode===emailMode)return;msg("");
-  const box=$("[data-email-consent]"),tick=box.querySelector("input");
-  if(emailMode==="off"&&mode!=="off"&&!tick.checked){box.hidden=false;msg("Tick the box to agree to alert emails, then choose again.");return;}
-  try{await api("/v1/me/email-preferences",{method:"POST",body:{emailAlerts:mode,consent:true,consentVersion:consent?.version}});emailMode=mode;mark();box.hidden=true;msg(mode==="off"?"Alert emails are off.":"Saved.");}catch(err){msg(err.message);}}));
-}
 async function briefSetup(){
  let p;try{p=await api("/v1/me/intelligence/preferences");}catch{return;}
  const mark=f=>$$("[data-brief]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.brief===f)));mark(p.frequency);
  $$("[data-brief]").forEach(b=>b.addEventListener("click",async()=>{try{const r=await api("/v1/me/intelligence/preferences",{method:"POST",body:{frequency:b.dataset.brief}});mark(r.frequency);msg("Saved.");}catch(err){msg(err.message);}}));
 }
 
-load();pushSetup();emailSetup();briefSetup();
+load();pushSetup();briefSetup();
 if(location.hash==="#settings")setTimeout(()=>$("#settings")?.scrollIntoView(),300);
 })();

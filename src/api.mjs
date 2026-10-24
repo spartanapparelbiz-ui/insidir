@@ -21,8 +21,7 @@ import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
 import { memoryLimiter,pgLimiter } from "./rate-limit.mjs";
 import { logSecurityEvent,recentSecurityEvents,emailDigest } from "./security-events.mjs";
-import { verifyEmail,requestPasswordReset,resetPassword,changePassword,revokeOtherSessions,exportAccount,FORGOT_REPLY } from "./account-security.mjs";
-import { emailSettings } from "./config.mjs";
+import { changePassword,revokeOtherSessions,exportAccount } from "./account-security.mjs";
 import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdminCookie,adminSettings } from "./admin-auth.mjs";
 import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
@@ -32,7 +31,6 @@ import { connections } from "./connections.mjs";
 import { changes } from "./changes.mjs";
 import { getPreferences,savePreferences,listNotifications,markRead,archive,unsubscribe,unsubscribePage } from "./notifications.mjs";
 import { withScores } from "./alerts-app.mjs";
-import { handleEmailWebhook,enqueueEmail,renderEmail } from "./email.mjs";
 import {pushStatus,subscribePush,unsubscribePush,pushReady} from "./push.mjs";
 import {explainFiling,aiReady} from "./ai-explain.mjs";
 import {monitorSources} from "./intelligence-monitor.mjs";
@@ -47,13 +45,11 @@ import {cleanClientEvent,recordEvent,serverEvent,funnelReport} from "./funnel.mj
 import {searchEntities,entityRecord,resolveEntity,padCik,KINDS} from "./sec-directory.mjs";
 import {coverageReport,qualityChecks} from "./coverage-ingest.mjs";
 import {handleTrackRecordRoute,withTrackRecords} from "./track-record.mjs";
-import {sendEmailCode,verifyEmailCode,consumeEmailCode,normalizeEmail,SENT_REPLY} from "./email-code.mjs";
 import {refCookieFor,refFromCookie} from "./attribution.mjs";
 import {handleTickerRoute} from "./ticker-page.mjs";
 import {handleLanding} from "./landing.mjs";
 import {chartData,todayData,feedData} from "./today.mjs";
 import {tickerInsiders,tickerFunds} from "./ticker-app.mjs";
-import {newsletterRoutes} from "./newsletter.mjs";
 import {brokerageConfigured,startBrokerageLink,finishBrokerageLink,connectionStatus,readPortfolio,disconnectBrokerage,deletePendingBrokerage} from "./brokerage.mjs";
 const allowedMethods="GET,HEAD,POST,DELETE,OPTIONS";
 /* Rate limits are shared by every instance (PostgreSQL, src/rate-limit.mjs); ctx.limiter is in memory only without a
@@ -305,18 +301,12 @@ function reqOrigin(req,res){
   if(!origin)return;
   if(checkOrigin(req)){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Access-Control-Allow-Credentials","true");res.setHeader("Vary","Origin")}
 }
-/* After an account is deleted: nothing optional is left waiting to be sent to it, and the address gets one
- * confirmation (kept as the record that the deletion and any cancellation happened). */
-async function accountDeletedNotice(run,user,result,env){
-  await run(`UPDATE email_outbox SET status='cancelled',to_email=NULL,text_body=NULL,html_body=NULL WHERE user_id IS NULL AND recipient_hash=$1 AND status='queued' AND category IN ('alert','digest','security')`,[emailDigest(user.email)]);
-  if(!emailSettings(env).enabled)return;
-  const {text,html}=renderEmail({heading:"Your Insidir account was deleted",
-    paragraphs:["Your Insidir account and the information saved in it (watchlist, research journal, followed people, holdings and sessions) were deleted at your request.",
-      result.subscriptionCanceled?"Your Insidir subscription was cancelled with Stripe before the account was deleted, so no further payments will be taken.":"There was no Insidir subscription that could still bill this account.",
-      "Records the law requires us to keep (your subscription consent, invoices held by Stripe) are kept as the privacy policy describes. If you did not ask for this, email hello@aethric.llc."],
-    footer:["This confirmation is sent once and cannot be unsubscribed from."]});
-  await enqueueEmail(run,{to:user.email,category:"billing",kind:"account_deleted",dedupeKey:"deleted:"+user.id,subject:"Your Insidir account was deleted",text,html,retainBody:true});
+/* After an account is deleted, any message left in the old outbox for its address is erased. Insidir sends no email,
+ * so no confirmation is sent either. */
+async function eraseQueuedEmail(run,user){
+  await run(`UPDATE email_outbox SET status='cancelled',to_email=NULL,text_body=NULL,html_body=NULL WHERE recipient_hash=$1 AND status='queued'`,[emailDigest(user.email)]);
 }
+const RESET_BY_HAND="Insidir does not send email, so there is no reset link. Write to hello@aethric.llc from your account address and we will help you back in.";
 async function route(req,res,ctx){
   const u=new URL(req.url||"/","http://localhost");
   const p=u.pathname,m=req.method||"GET";
@@ -608,7 +598,6 @@ async function route(req,res,ctx){
       note:"Factual alerts about public filings for your watchlist and the people you follow. Not investment advice."});
   }
   // Provider webhooks are server-to-server (no Origin); they authenticate with their own secret.
-  if(p==="/v1/email/webhook/postmark" && m==="POST")return handleEmailWebhook(req,res,json,{query:ctx.query,env:ctx.env,readBody:rawBody});
   if(p==="/v1/me/manual-holdings" && m==="GET"){
     const user=await requireUser(req,ctx);
     const holdings=await ctx.query("SELECT ticker,quantity,updated_at FROM manual_holdings WHERE user_id=$1 ORDER BY ticker LIMIT 100",[user.id]);
@@ -740,14 +729,6 @@ async function route(req,res,ctx){
     if(row.event==="research_opened"&&user)await serverEvent(ctx.query,"first_research_completed",{userId:user.id,once:true});
     return json(res,204,{});
   }
-  // The free weekly email (src/newsletter.mjs). The sign-up checks its origin; the unsubscribe POST comes from mail
-  // providers (RFC 8058 one-click) and is authorised by its signed link instead.
-  if(p==="/v1/newsletter"||p.startsWith("/v1/newsletter/")){
-    if(p==="/v1/newsletter"&&m==="POST"&&!checkOrigin(req))throw failure(403,"Untrusted Origin");
-    const done=await newsletterRoutes(req,res,u,{query:ctx.query,env:ctx.env,json,readJson:()=>body(req),ref:refFromCookie(req,ctx.env),
-      limited:()=>limited(ctx,"newsletter:"+clientAddress(req),10,60*60*1000)});
-    if(done!==false)return;
-  }
   if(p==="/v1/ai/status" && m==="GET"){
     await requireUser(req,ctx);return json(res,200,{configured:aiReady(),mode:"source_backed_financial_explanations_only",model:modelFor("fast",ctx.env),limits:{userHourly:aiLimits(ctx.env).userHourly,userDaily:aiLimits(ctx.env).userDaily},advice:false});
   }
@@ -874,23 +855,9 @@ async function route(req,res,ctx){
       if(await limited(ctx,"intel-prefs:"+user.id,30,15*60*1000))throw failure(429,"Too many changes. Try again shortly.");
       return json(res,200,{...await saveIntelligencePreferences(user.id,await body(req),ctx.query),pushConfigured:pushReady()});
     }
-    // Email-code sign-in (src/email-code.mjs): no passwords; a new account on the first code.
-    if(p==="/v1/auth/email-code" && m==="POST"){
-      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
-      const x=await body(req),email=normalizeEmail(x?.email);
-      if(!email)throw failure(400,"Enter a valid email address.");
-      if(await limited(ctx,"code-ip:"+ip,20,15*60*1000)||await limited(ctx,"code-email:"+email,5,15*60*1000))throw failure(429,"Too many codes requested. Wait a few minutes and try again.");
-      await sendEmailCode(ctx.query,email,{req,env:ctx.env});
-      return json(res,202,{sent:true,message:SENT_REPLY});
-    }
-    if(p==="/v1/auth/email-code/verify" && m==="POST"){
-      if(!checkOrigin(req))throw failure(403,"Untrusted Origin");
-      if(await limited(ctx,"code-verify:"+ip,40,15*60*1000))throw failure(429,"Too many tries. Wait a few minutes and try again.");
-      const x=await body(req);
-      const r=await verifyEmailCode(ctx.query,x?.email,x?.code,{req,ref:refFromCookie(req,ctx.env)||(typeof x?.ref==="string"?x.ref:null)});
-      if(r.created)await serverEvent(ctx.query,"signup_completed",{userId:r.user.id,visitor:x?.visitor});
-      return json(res,200,{user:r.user,access:accessSummary(r.account,ctx.env),created:r.created},{"Set-Cookie":sessionCookie(r.token)});
-    }
+    // Email-code sign-in is gone: Insidir sends no email. Accounts sign up and log in with a password.
+    if((p==="/v1/auth/email-code"||p==="/v1/auth/email-code/verify") && m==="POST")
+      throw failure(410,"Sign-in codes by email are no longer offered. Log in with your password, or write to hello@aethric.llc for help.");
     if(p==="/v1/auth/register" && m==="POST"){
       if(await limited(ctx,"signup:"+ip,8))throw failure(429,"Too many registration attempts");
       const x=await body(req),r=await register(x.email,x.password,x.ref);
@@ -924,27 +891,8 @@ async function route(req,res,ctx){
       if(who)await logSecurityEvent(ctx.query,{req,userId:who.id,kind:"logout"});
       return json(res,200,{ok:true},{"Set-Cookie":clearCookie()});
     }
-    /* Password recovery (src/account-security.mjs), and confirmation links sent before email verification was removed
-     * (they still confirm, harmlessly). Tokens arrive in the request body, never in a URL the server logs. */
-    if(p==="/v1/auth/verify-email" && m==="POST"){
-      if(await limited(ctx,"verify-ip:"+ip,30))throw failure(429,"Too many attempts. Try again shortly.");
-      const x=await body(req);
-      return json(res,200,await verifyEmail(ctx.query,x?.token,{req}));
-    }
-    if(p==="/v1/auth/forgot-password" && m==="POST"){
-      if(await limited(ctx,"forgot-ip:"+ip,10))throw failure(429,"Too many requests. Wait 15 minutes and try again.");
-      const x=await body(req),who=typeof x?.email==="string"?x.email.trim().toLowerCase().slice(0,320):"";
-      // Per address the answer stays the same past the limit (nothing is sent), so it reveals nothing.
-      if(who && await limited(ctx,"forgot-email:"+who,3,60*60*1000))return json(res,202,{accepted:true,message:FORGOT_REPLY});
-      if(!emailSettings(ctx.env).enabled)throw failure(503,"Password recovery by email is not available yet. Email hello@aethric.llc from your account address.");
-      await requestPasswordReset(ctx.query,x?.email,{env:ctx.env,req});
-      return json(res,202,{accepted:true,message:FORGOT_REPLY});
-    }
-    if(p==="/v1/auth/reset-password" && m==="POST"){
-      if(await limited(ctx,"reset-ip:"+ip,20))throw failure(429,"Too many attempts. Wait 15 minutes and try again.");
-      const x=await body(req);
-      return json(res,200,await resetPassword(ctx.query,x?.token,x?.password,{req}),{"Set-Cookie":clearCookie()});
-    }
+    // Insidir sends no email: no confirmation links, no reset links. A forgotten password is reset by hand.
+    if((p==="/v1/auth/forgot-password"||p==="/v1/auth/reset-password"||p==="/v1/auth/verify-email") && m==="POST")throw failure(410,RESET_BY_HAND);
     // POST /v1/research-events/<id>/explanation {question}: a question about one record; advice requests are refused unanswered.
     const ask=/^\/v1\/research-events\/(\d{1,18})\/explanation$/.exec(p);
     if(ask && m==="POST"){
@@ -995,16 +943,14 @@ async function route(req,res,ctx){
       if(await limited(ctx,"delete-account:"+user.id,6,15*60*1000))throw failure(429,"Too many attempts. Try again shortly.");
       // Deleting an account needs the account's password as well as the session, so a borrowed or stolen session cannot do it.
       const confirm=await body(req);
-      // Accounts that sign in by email code have no password: a fresh emailed code confirms instead.
-      const viaCode=/^\d{6}$/.test(String(confirm?.code??confirm?.password??"").trim())&&await consumeEmailCode(ctx.query,user.email,String(confirm?.code??confirm?.password).trim());
-      if(!viaCode&&!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password or code is not correct, so nothing was deleted.")}
+      if(!await passwordMatches(user.id,confirm?.password)){await logSecurityEvent(ctx.query,{req,userId:user.id,kind:"account_delete_failed",detail:{reason:"password"}});throw failure(403,"That password is not correct, so nothing was deleted.")}
       // Cancel a live Stripe subscription FIRST (nothing is deleted if Stripe cannot confirm it),
       // then revoke an active brokerage grant, then remove the account and its data.
       const result=await deleteAccount(user,{query,stripe:ctx.stripe||createStripeClient({secretKey:billingSettings(ctx.env).secretKey}),
         revokeBrokerage:disconnectBrokerage});
       // Logged after the row is gone: no user id, only the address digest, so the event outlives nothing personal but that.
       await logSecurityEvent(ctx.query,{req,email:user.email,kind:"account_deleted",detail:{subscriptionCanceled:!!result.subscriptionCanceled}});
-      await accountDeletedNotice(ctx.query,user,result,ctx.env).catch(e=>console.error("Deletion confirmation not queued",e?.message));
+      await eraseQueuedEmail(ctx.query,user).catch(e=>console.error("Queued email not erased",e?.message));
       return json(res,200,result,{"Set-Cookie":clearCookie()});
     }
     if(p==="/v1/me/research-decisions" && m==="POST"){

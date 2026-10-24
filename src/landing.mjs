@@ -12,10 +12,9 @@
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { esc, money, day, ago, pct, sentence, withRole, LINE_SQL, scripts, kindOf, personName, companyName } from "./site-v2.mjs";
-import { uiHead, uiNav, uiFooter, uiSearch, uiEmailForm, uiLogo, uiBig, uiTrade, uiInitials, WORDMARK, EXAMPLES } from "./site-ui.mjs";
+import { uiHead, uiNav, uiFooter, uiSearch, uiLogo, uiBig, uiTrade, uiInitials, WORDMARK, EXAMPLES } from "./site-ui.mjs";
 import { scoreRow } from "./signal-score.mjs";
 import { siteOrigin } from "./public-pages.mjs";
-import { weekBuys } from "./newsletter.mjs";
 import { closesFor } from "./prices.mjs";
 import { addDays, closeOnOrAfter, closeOnOrBefore } from "./track-record.mjs";
 import { COMPETITORS, CHECKED_ON } from "./landing-competitors.mjs";
@@ -28,6 +27,12 @@ export const H1 = Object.freeze({
 export const SUB = "Insiders have to report every trade to the SEC. Insidir reads every filing and tells you what it means in plain English, minutes after it posts.";
 
 /* ---------- data ---------- */
+/* The week's five largest open-market purchases, one per trade (a joint filing counts once). */
+export const WEEK_BUYS_SQL = `SELECT * FROM (SELECT DISTINCT ON (x.accession,x.transaction_date,x.shares,x.price_per_share) x.* FROM (${LINE_SQL}
+  WHERE f.ingest_status='parsed' AND NOT f.is_amendment AND NOT t.derivative AND t.transaction_code='P' AND t.estimated_value IS NOT NULL
+    AND f.validation_status IS DISTINCT FROM 'flagged' AND t.transaction_date>=current_date-7) x
+  ORDER BY x.accession,x.transaction_date,x.shares,x.price_per_share) y ORDER BY y.estimated_value DESC LIMIT $1`;
+const weekBuys = async (query, limit = 5) => withRole((await query(WEEK_BUYS_SQL, [limit])).rows || []);
 export const LIVE_SQL = LINE_SQL + `
   WHERE f.ingest_status='parsed' AND NOT t.derivative AND t.transaction_code IN ('P','S') AND t.estimated_value IS NOT NULL AND t.ticker IS NOT NULL
     AND f.validation_status IS DISTINCT FROM 'flagged'
@@ -156,7 +161,7 @@ function comparison() {
 const FAQ = [
   ["What is an insider?", "CEOs, CFOs, directors and anyone who owns more than 10% of a company. The law makes them report their trades to the SEC within two business days."],
   ["Is this legal to use?", "Yes. These are public records. Insidir reads them faster and explains them."],
-  ["What do I get for $1?", "Everything, for 7 days. On day 6 we email you before the $39 charge."],
+  ["What do I get for $1?", "Everything, for 7 days. Then $39 a month unless you cancel. Billing in your account shows the date of the first charge."],
   ["How do I cancel?", "Billing, then Cancel. Two clicks, online, any time."],
   ["Do you tell me what to buy?", "No. Insidir shows what insiders did. Research, not investment advice."],
   ["Where does the data come from?", "SEC EDGAR, the government's filing system. Every number links to its filing."]
@@ -237,7 +242,7 @@ ${f ? `<a class="chg chg--up lrow__amt row__link" href="${esc(f)}" rel="nofollow
  <li class="card show__step"><p class="t-label muted">2</p><h3 class="t-section">We read every filing</h3><p class="muted">Every Form 4, in one plain sentence. Every number links to the filing.</p>
   <div class="show__vis show__read"><p>${esc(sentence(example))}</p><p class="t-label muted">SEC Form 4 · Filed ${esc(day(example.published_at) || "")}${example.price_per_share ? ` · $${esc(Number(example.price_per_share).toFixed(2))} a share` : ""}</p>
   ${secUrl(example.source_url) ? `<a class="t-label slink" href="${esc(example.source_url)}" rel="nofollow noopener" target="_blank">Open the filing ↗</a>` : ""}</div></li>
- <li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">You get one sentence</h3><p class="muted">Push or email, minutes after the filing posts.</p>
+ <li class="card show__step"><p class="t-label muted">3</p><h3 class="t-section">You get one sentence</h3><p class="muted">In the app or as a phone notification, minutes after the filing posts.</p>
   <div class="show__vis show__note"><span class="show__app" aria-hidden="true">i.</span><span><span class="show__note-top"><span class="strong">Insidir</span><span class="t-micro muted">now</span></span><span class="t-label">${esc(sentence(example))}</span></span></div></li>
 </ol>` : "";
   const body = `<body class="ui site">
@@ -249,15 +254,15 @@ ${top.length ? section("live-h", "This week's biggest insider buys.", "Insiders 
 ${how ? section("how-h", "Three steps. No finance degree needed.", "Pick your stocks, we read every filing, and you get one sentence when an insider trades.", how, ' id="how"') : ""}
 ${d ? section("rc-h", "What happened after they bought.", esc(RECEIPT_RULE), `${receiptsTable(d.receipts)}
  <p class="t-label muted snote">Measured from the close on the day of the first buy. Past results don't predict future ones. Research, not investment advice.</p>
- <div class="card scard smail-card">${uiEmailForm("receipts")}</div>`, ' id="receipts"') : ""}
+`, ' id="receipts"') : ""}
 ${section("cmp-h", "Built for one job: following insiders.", "Here is how Insidir compares with reading the SEC's own website, checked on public pages.", comparison(), ' id="compare"')}
 ${section("pr-h", "$1 for 7 days. Then $39 a month.", "One plan with everything in it, and you can cancel online in two clicks.", `<div class="card sprice">
   <p class="t-label muted">Insidir Pro</p>
   <p class="t-hero big"><span class="u">$</span>39<span class="u"> / month</span></p>
   <p class="muted">$1 for your first 7 days.</p>
   <ul class="sprice__list"><li>Every insider trade in plain English</li><li>Alerts minutes after a filing</li><li>Track record for every insider</li><li>Unlimited watchlist and follows</li><li>Every number linked to the SEC filing</li></ul>
-  <a class="btn btn--primary btn--lg" href="/start" data-cta="pricing">Start for $1</a>
-  <p class="t-label muted">$1 today. We email you before you're charged. Cancel in 2 clicks.</p>
+  <a class="btn btn--primary btn--lg" href="/signup.html" data-cta="pricing">Start for $1</a>
+  <p class="t-label muted">$1 today, then $39 a month after 7 days. Cancel in 2 clicks.</p>
   ${COMPETITORS.anchor ? `<p class="t-label muted">${esc(COMPETITORS.anchor)}</p>` : ""}
  </div>`, ' id="pricing" data-funnel-view="pricing"')}
 ${section("faq-h", "Questions people ask first.", `Short answers, with the <a class="slink" href="/subscription-policy.html">full terms</a> one tap away.`, `<div class="sfaq">${FAQ.map(([q, a], i) => `<details class="card"${i === 0 ? " open" : ""}><summary>${esc(q)}</summary><p class="muted">${esc(a)}</p></details>`).join("")}</div>`, ' id="faq"')}
@@ -269,7 +274,7 @@ ${section("end-h", "Search any stock. See who's buying.", "It takes ten seconds 
   ${d?.testimonials?.length ? `<div class="squotes">${d.testimonials.map(t => `<figure class="card scard"><blockquote><p>${esc(t.quote)}</p></blockquote><figcaption class="t-label muted"><b>${esc(t.name)}</b>${t.detail ? `, ${esc(t.detail)}` : ""}</figcaption></figure>`).join("")}</div>` : ""}
  </div>`)}
 </main>
-<div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/start" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
+<div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
 ${uiFooter({ home: true })}
 ${scripts()}
 <script src="/assets/js/landing-nav.js?v=1" defer></script>

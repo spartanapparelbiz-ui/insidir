@@ -130,8 +130,11 @@ test("every page carries the engine, then the motion layer", async () => {
     // an 8px fade-up, count-up once, no loops) and not the v13 halftone layer.
     if (/<body class="ds\b/.test(html)) { assert.match(html, /assets\/js\/ds\.js/, f + " loads the design-system script"); continue; }
     // The rebuilt app (web/assets/css/ui.css, <body class="ui">) uses ui.js: springs under 400ms, reduced motion respected.
-    // The sign-in, sign-up and start pages are on ui.css too, with their own small form scripts (auth.js, start.js).
-    if (/<body class="ui\b/.test(html)) { assert.match(html, /assets\/js\/(ui|auth|start)\.js/, f + " loads the UI runtime or its form script"); continue; }
+    // The sign-in and sign-up pages are on ui.css too, with their own small form script (auth.js); forgot-password is
+    // plain text (Insidir sends no email, so there is no reset form). start.html only redirects to sign-up.
+    if (/http-equiv="refresh"/.test(html)) continue;
+    if (f === "forgot-password.html") { assert.match(html, /<body class="ui\b/); continue; }
+    if (/<body class="ui\b/.test(html)) { assert.match(html, /assets\/js\/(ui|auth)\.js/, f + " loads the UI runtime or its form script"); continue; }
     const e = html.search(/v13-halftone\.js/), m = html.search(/v13-motion\.js/);
     assert.ok(e > 0 && m > e, f + " loads v13-halftone.js and then v13-motion.js");
     assert.doesNotMatch(html, /src="assets\/js\/motion\.js/, f + " does not load the old scroll-animation engine");

@@ -25,11 +25,10 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
   const { newSession } = await import("../src/auth.mjs");
   await migrate();
   const q = (sql, p) => pool.query(sql, p);
-  const connect = () => pool.connect();
   const tag = randomUUID().slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, "X");
   const T1 = "N" + tag.slice(0, 4), T2 = "M" + tag.slice(0, 4), T3 = "Q" + tag.slice(0, 4);
   const person = String(Math.floor(Math.random() * 1e8)).padStart(10, "0");
-  const ENV = { ...SECRET, INSIDIR_PAYWALL: "1", INSIDIR_EMAIL_PROVIDER: "log", INSIDIR_PUBLIC_URL: "https://insidir.test", INSIDIR_COMPLIMENTARY_EMAILS: "" };
+  const ENV = { ...SECRET, INSIDIR_PAYWALL: "1", INSIDIR_PUBLIC_URL: "https://insidir.test", INSIDIR_COMPLIMENTARY_EMAILS: "" };
   const member = async (status = "active") => {
     const email = `alerts-${randomUUID()}@example.com`;
     const u = (await q("INSERT INTO users(email,password_hash,subscription_status,email_verified_at) VALUES($1,'x',$2,now()) RETURNING id,email", [email, status])).rows[0];
@@ -101,62 +100,28 @@ test("alerts on PostgreSQL", { skip: !DB && "set INSIDIR_TEST_DATABASE_URL" }, a
     assert.equal((await call("/v1/me/notifications", { cookie: L.cookie })).status, 402, "no subscription: no product data");
   });
 
-  await t.test("alert email consent: needs the box ticked; recorded with the words shown; no confirmation step", async () => {
+  await t.test("no alert emails: email is always off, turning it on is refused, nothing is queued", async () => {
     const prefs = await call("/v1/me/email-preferences", { cookie: M.cookie });
-    assert.deepEqual([prefs.json.emailAlerts, prefs.json.emailAvailable, prefs.json.emailVerified], ["off", true, true]);
-    assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: M.cookie, body: { emailAlerts: "immediate" } })).status, 400);
-    const on = await call("/v1/me/email-preferences", { method: "POST", cookie: M.cookie, body: { emailAlerts: "immediate", consent: true, consentVersion: N.ALERT_CONSENT_VERSION } });
-    assert.equal(on.status, 200); assert.equal(on.json.emailAlerts, "immediate");
-    const c = (await q("SELECT * FROM email_consents WHERE user_id=$1", [M.id])).rows;
-    assert.deepEqual([c.length, c[0].action, c[0].setting, c[0].consent_text], [1, "opt_in", "immediate", N.ALERT_CONSENT_TEXT]);
-    assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: L.cookie, body: { emailAlerts: "bogus" } })).status, 400);
-    await q("UPDATE users SET email_verified_at=NULL WHERE id=$1", [L.id]);
-    assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: L.cookie, body: { emailAlerts: "daily", consent: true, consentVersion: N.ALERT_CONSENT_VERSION } })).status, 200, "no email verification: an unconfirmed address can turn alert emails on");
+    assert.deepEqual([prefs.json.emailAlerts, prefs.json.emailAvailable, prefs.json.modes], ["off", false, ["off"]]);
+    for (const mode of ["immediate", "daily"])
+      assert.equal((await call("/v1/me/email-preferences", { method: "POST", cookie: M.cookie, body: { emailAlerts: mode, consent: true } })).status, 410, mode);
+    assert.equal(N.sendImmediate, undefined); assert.equal(N.sendDigests, undefined);
+    const saved = await call("/v1/me/email-preferences", { method: "POST", cookie: M.cookie, body: { eventTypes: ["insider_purchase", "insider_sale"] } });
+    assert.equal(saved.status, 200); assert.deepEqual(saved.json.eventTypes, ["insider_purchase", "insider_sale"]);
+    assert.equal(saved.json.emailAlerts, "off");
+    assert.equal((await q("SELECT count(*)::int AS n FROM email_outbox WHERE user_id=ANY($1::uuid[])", [[M.id, O.id, L.id]])).rows[0].n, 0);
   });
 
-  await t.test("immediate emails: one per member per run, each alert in exactly one email, even with two workers", async () => {
-    const [a, b] = await Promise.all([N.sendImmediate({ query: q, connect, env: ENV }), N.sendImmediate({ query: q, connect, env: ENV })]);
-    assert.equal(a.emails + b.emails, 1);
-    const mails = (await q("SELECT * FROM email_outbox WHERE user_id=$1 AND kind='alert'", [M.id])).rows;
-    assert.equal(mails.length, 1);
-    assert.equal(mails[0].category, "alert");
-    assert.match(mails[0].headers["List-Unsubscribe"], /^<https:\/\/insidir\.test\/v1\/email\/unsubscribe\?t=/);
-    assert.equal(mails[0].headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
-    assert.match(mails[0].text_body, /not investment advice/);
-    assert.match(mails[0].text_body, /Source: https:\/\/www\.sec\.gov\//);
-    assert.ok((await notes(M.id)).every(n => n.emailed_at && n.email_status === "queued"));
-    assert.equal((await N.sendImmediate({ query: q, connect, env: ENV })).emails, 0, "nothing new: no email");
-    assert.equal((await N.sendImmediate({ query: q, connect, env: {} })).skippedReason !== undefined, true, "no signing secret: no alert emails");
-  });
-
-  await t.test("daily digest: at the member's hour, once a day; no access means no email", async () => {
-    await q("UPDATE users SET email_verified_at=now() WHERE id=$1", [L.id]);
-    await q("UPDATE notification_preferences SET email_alerts='daily',digest_hour_utc=7 WHERE user_id=$1", [L.id]);
-    await q("INSERT INTO notification_preferences(user_id,email_alerts,digest_hour_utc) VALUES($1,'daily',7) ON CONFLICT (user_id) DO UPDATE SET email_alerts='daily',digest_hour_utc=7,in_app=true", [O.id]);
-    await q("UPDATE watchlist SET created_at=now()-interval '10 days' WHERE user_id=$1", [O.id]);
-    await event("digest-1"); await N.fanOut({ query: q });
-    assert.equal((await N.sendDigests({ query: q, connect, env: ENV, hour: 8 })).emails, 0, "not their hour");
-    const r = await N.sendDigests({ query: q, connect, env: ENV, hour: 7 });
-    assert.equal(r.emails, 1, "O has access; L's subscription is cancelled");
-    assert.equal((await q("SELECT count(*)::int AS n FROM email_outbox WHERE user_id=$1 AND kind='daily_digest'", [O.id])).rows[0].n, 1);
-    assert.ok((await notes(L.id)).filter(n => n.event_key.endsWith("digest-1")).every(n => n.email_status === "skipped_no_access"));
-    await event("digest-2"); await N.fanOut({ query: q });
-    await N.sendDigests({ query: q, connect, env: ENV, hour: 7 });
-    assert.equal((await q("SELECT count(*)::int AS n FROM email_outbox WHERE user_id=$1 AND kind='daily_digest'", [O.id])).rows[0].n, 1, "one digest per day: the dedupe key holds");
-  });
-
-  await t.test("unsubscribe: the link asks first; one click (RFC 8058) unsubscribes, is recorded and cancels queued alerts", async () => {
-    await event("pending"); await N.fanOut({ query: q }); await N.sendImmediate({ query: q, connect, env: ENV });
+  await t.test("unsubscribe links from emails sent before still work, and only ever turn things off", async () => {
+    // Someone who had alert emails on before Insidir stopped sending email.
+    await q("UPDATE notification_preferences SET email_alerts='immediate' WHERE user_id=$1", [M.id]);
     const token = N.unsubscribeToken(M.id, ENV);
     const page = await call("/v1/email/unsubscribe?t=" + encodeURIComponent(token), { headers: { Origin: "" } });
     assert.equal(page.status, 200); assert.match(page.text, /Stop alert emails\?/);
-    assert.equal((await call("/v1/me/email-preferences", { cookie: M.cookie })).json.emailAlerts, "immediate", "a GET changes nothing");
     const done = await fetch(base + "/v1/email/unsubscribe?t=" + encodeURIComponent(token), { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "List-Unsubscribe=One-Click" });
     assert.equal(done.status, 200);
-    assert.equal((await call("/v1/me/email-preferences", { cookie: M.cookie })).json.emailAlerts, "off");
+    assert.equal((await q("SELECT email_alerts FROM notification_preferences WHERE user_id=$1", [M.id])).rows[0].email_alerts, "off");
     assert.ok((await q("SELECT action FROM email_consents WHERE user_id=$1", [M.id])).rows.some(r => r.action === "unsubscribe_one_click"));
-    const queued = (await q("SELECT status,text_body FROM email_outbox WHERE user_id=$1 AND kind='alert' ORDER BY id", [M.id])).rows;
-    assert.ok(queued.every(r => r.status === "cancelled" && r.text_body === null), "nothing optional is sent after unsubscribing");
     const bad = await fetch(base + "/v1/email/unsubscribe?t=" + encodeURIComponent(token.slice(0, -2) + "zz"), { method: "POST", body: "List-Unsubscribe=One-Click" });
     assert.equal(bad.status, 400);
   });
