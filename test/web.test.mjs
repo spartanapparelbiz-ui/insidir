@@ -279,17 +279,24 @@ test("read-only portfolio page loads without placing orders", async () => {
     assert.equal((await fetch(base+"/assets/js/portfolio.js")).status,200);
   });
 });
-test("manual portfolio entry is visible without a brokerage connection", async () => {
+test("paid portfolio has CSV-first preview and optional manual entry", async () => {
   await withServer(async base => {
     const res=await fetch(base+"/portfolio.html");
     assert.equal(res.status,200);
     const html=await res.text();
-    assert.match(html,/Add your holdings/);
+    assert.match(html,/Import your portfolio/);
+    assert.match(html,/id="portfolio-csv-file"/);
+    assert.match(html,/id="portfolio-csv-preview"/);
+    assert.match(html,/id="portfolio-csv-confirm"/);
+    assert.match(html,/assets\/js\/portfolio-import-ui.mjs/);
     assert.match(html,/id="manual-form"/);
     assert.match(html,/assets\/js\/manual-holdings.js/);
-    assert.match(html,/no brokerage connection/i);
-    const script=await fetch(base+"/assets/js/manual-holdings.js");
-    assert.equal(script.status,200);
+    assert.match(html,/No brokerage login needed/);
+    assert.doesNotMatch(html,/01 \/ FREE PORTFOLIO/);
+    for(const path of ["/assets/js/manual-holdings.js","/assets/js/portfolio-csv.mjs",
+      "/assets/js/portfolio-import-ui.mjs","/assets/css/portfolio-import.css"]){
+      assert.equal((await fetch(base+path)).status,200,path);
+    }
   });
 });
 test("V6 marketing, legal and account pages are real and source-aware",async()=>{
