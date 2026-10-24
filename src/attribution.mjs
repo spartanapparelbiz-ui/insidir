@@ -2,7 +2,7 @@
  * one, the server sets insidir_ref (90 days, first touch wins); funnel events, the account (users.signup_ref) and the
  * Stripe customer (metadata[insidir_ref]) carry it, and /admin counts visits, trials and paid members by ref.
  * INSIDIR_REFS replaces the list (comma-separated). Unknown values are ignored, never stored. */
-export const DEFAULT_REFS = Object.freeze(["insidirfinance", "marketreceipts", "wallstreetdecoded", "companybriefdaily", "marketexplaineddaily", "tiktok", "youtube"]);
+export const DEFAULT_REFS = Object.freeze(["insidirfinance", "marketreceipts", "wallstreetdecoded", "companybriefdaily", "marketexplaineddaily", "tiktok", "instagram", "facebook", "youtube"]);
 export const REF_COOKIE = "insidir_ref";
 const DAYS = 90;
 

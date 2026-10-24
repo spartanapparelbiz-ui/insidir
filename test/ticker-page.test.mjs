@@ -27,7 +27,7 @@ test("which paths are stock pages: symbols only, never one of the site's own pag
   assert.equal(tickerFromPath("/NVDA"), "NVDA");
   assert.equal(tickerFromPath("/nvda/"), "NVDA");
   assert.equal(tickerFromPath("/BRK.B"), "BRK-B");
-  for (const p of ["/", "/pricing", "/data", "/terms", "/start", "/design", "/search", "/admin", "/TOOLONG", "/A1", "/v1", "/NVDA/x", "/dashboard"]) assert.equal(tickerFromPath(p), null, p);
+  for (const p of ["/", "/check", "/pricing", "/data", "/terms", "/start", "/design", "/search", "/admin", "/TOOLONG", "/A1", "/v1", "/NVDA/x", "/dashboard"]) assert.equal(tickerFromPath(p), null, p);
   assert.equal(classifyPage("/NVDA"), "public", "no login");
 });
 
@@ -49,7 +49,7 @@ test("the page: the last 3 trades in plain English with their filings, the rest 
   assert.equal((html.match(/See the SEC filing/g) || []).length, FREE_TRADES, "each linked to its filing");
   assert.ok(!html.includes("x5/form4.xml") && !html.includes("x6/form4.xml"), "locked trades are not in the page, not even blurred");
   assert.match(html, /4 more insider trades at EXMP in the last 12 months\./);
-  assert.match(html, /href="\/signup.html" data-cta="ticker-unlock">Start for \$1<\/a>/);
+  assert.ok(html.includes('href="/signup.html?next=company.html%3Fticker%3DEXMP" data-cta="ticker-unlock">Follow EXMP for $1</a>'));
   assert.match(html, /Research, not investment advice\./);
   assert.doesNotMatch(html, /data-v2-mail|newsletter/, "no email sign-up: Insidir sends no email");
   assert.match(html, /"@type":"Corporation","name":"Example","tickerSymbol":"EXMP"/);

@@ -42,7 +42,10 @@
   // Pages, by path.
   const path = location.pathname.replace(/\.html$/, "").replace(/\/$/, "/index");
   const page = path === "/index" || path === "/" ? "landing" : path.slice(1);
-  if (page === "landing") send("landing_viewed");
+  // Only an allowlisted channel name is recorded; never a raw query or stock symbol.
+  const campaign = (new URLSearchParams(location.search).get("utm_source") || "").toLowerCase();
+  const socialSource = ["tiktok", "instagram", "facebook"].includes(campaign) ? campaign : null;
+  if (page === "landing" || page === "check") send("landing_viewed", socialSource ? { label: socialSource } : undefined);
   // A public stock page (/NVDA): counted without the symbol.
   if (document.body && document.body.hasAttribute("data-funnel-stock")) send("ticker_viewed", { path: "/stock" });
   if (page === "pricing") send("pricing_viewed");
