@@ -5,7 +5,7 @@
    Watch adds the stock to the watchlist with important alerts on. Each tab loads when first opened. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,big,trade,roll}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,face,big,trade,roll}=UI;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const T=String(new URLSearchParams(location.search).get("ticker")||"").trim().toUpperCase().replace(/^\$/,"");
 const TICK=/^[A-Z][A-Z0-9.-]{0,9}$/;
@@ -60,11 +60,11 @@ async function insiders(){
  let d;try{d=await api("/v1/ticker/"+encodeURIComponent(T)+"/insiders");}catch(e){loaded.delete("insiders");failed(el,"The insiders",insiders);return;}
  if(!d.items.length){quiet(el,"No open-market insider trades in two years",`Nobody at ${fmt.company(name)||T} bought or sold on the open market since ${fmt.date(new Date(Date.now()-730*864e5).toISOString())}. Watch it to hear the minute someone does.`);return;}
  el.innerHTML=`<div class="tk-table"><table class="table tk-ins"><thead><tr><th scope="col">Insider</th><th scope="col">Latest trade</th><th scope="col" class="r">Bought</th><th scope="col" class="r">Sold</th><th scope="col">Track record</th></tr></thead><tbody>
- ${d.items.map(x=>`<tr><td><span class="tk-who">${monogram(x.owner,24)}<a href="/person.html?cik=${encodeURIComponent(x.ownerCik.padStart(10,"0"))}"><span class="strong">${esc(fmt.person(x.owner))}</span> <span class="muted t-label">${esc(fmt.role(x.role))}</span></a></span></td>
+ ${d.items.map(x=>`<tr><td><span class="tk-who">${face(x.owner,{cik:x.ownerCik,ticker:T,size:24})}<a href="/person.html?cik=${encodeURIComponent(x.ownerCik.padStart(10,"0"))}"><span class="strong">${esc(fmt.person(x.owner))}</span> <span class="muted t-label">${esc(fmt.role(x.role))}</span></a></span></td>
   <td class="c-last">${x.last?`<span class="tk-track">${trade(x.last)}<span class="t-label muted">${esc(fmt.money(x.last.value))}, ${esc(fmt.date(x.last.day,false))}</span>${x.last.url?`<a class="tk-row-link t-micro" href="${esc(filingHref(x.last.url,x.last.id))}">Filing</a>`:""}</span>`:""}</td>
   <td class="r c-bought ${x.bought?"up":"muted"}">${x.bought?fmt.money(x.bought):""}</td><td class="r c-sold ${x.sold?"down":"muted"}">${x.sold?fmt.money(x.sold):""}</td>
   <td class="c-track">${x.track?`<span class="tk-track">${bars(x.bars)}<span class="t-label">${x.track.hits}/${x.track.n} up after 3 months</span></span>`:`<span class="t-label muted">${x.buys?"Too early to tell":"No buys"}</span>`}</td></tr>`).join("")}</tbody></table></div>
- <p class="t-label muted">Open-market buys and sales in the last two years. A track record counts buys whose 3 months have passed.</p>`;
+ <p class="t-label muted">Open-market buys and sales in the last two years. A track record counts buys whose 3 months have passed.</p>`;hydrateLogos(el);
 }
 async function funds(){
  const el=$("[data-pan=funds]");
