@@ -377,6 +377,23 @@ test("the ticker page (company.html) is on the rebuilt app: price hero, full-wid
   assert.doesNotMatch(code,/Math\.random|mockPrice|syntheticPrice|__tkChart/);
  });
 });
+test("the ticker page keeps the private research note: status, a 1,500-character note, save and delete for this ticker only",async()=>{
+ await withServer(async base=>{
+  const html=await(await fetch(base+"/company.html?ticker=MSFT")).text();
+  assert.match(html,/data-tk-note/);
+  assert.match(html,/<label[^>]*for="tk-note-text"[^>]*>Note<\/label>/);
+  assert.match(html,/<textarea[^>]*id="tk-note-text"[^>]*maxlength="1500"/,"the textarea carries the server's limit (src/research.mjs)");
+  for(const s of ["researching","watching","passed"])assert.match(html,new RegExp('data-status="'+s+'" aria-pressed="false"'));
+  assert.match(html,/Private to you\./);
+  assert.match(html,/data-note-save/);assert.match(html,/data-note-delete/);assert.match(html,/data-note-undo/);
+  const code=await(await fetch(base+"/assets/js/ticker.js")).text();
+  assert.match(code,/\/v1\/me\/research-decisions\?ticker="\+encodeURIComponent\(T\)/,"the note loads and deletes for the current ticker only");
+  assert.match(code,/method:"POST",body:\{ticker:T,reviewStatus:/);
+  assert.match(code,/method:"DELETE"/);
+  const today=await(await fetch(base+"/assets/js/today.js")).text();
+  assert.match(today,/Save a note on any stock page/);
+ });
+});
 
 test("landing page is fully responsive markup: viewport meta, no fixed-width layout and reduced-motion support",async()=>{
  await withServer(async base=>{

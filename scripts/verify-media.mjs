@@ -11,8 +11,8 @@
  *    are drawn with object-fit: cover in square tiles, so the shorter native side must reach
  *    2 × tile × zoom.
  *
- * Portrait URLs are read from web/assets/js/entity-media.js and web/people.html, so this list
- * cannot drift from what the pages actually load.
+ * Insider photos come from the engine (GET /v1/media); the gate checks that its minimum photo size covers 2× the
+ * largest face tile in ui.css.
  */
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -28,32 +28,19 @@ const logos = [
   ["NVIDIA logo", "https://upload.wikimedia.org/wikipedia/commons/4/48/Nvidia_Logo.svg"],
   ["Tesla logo", "https://upload.wikimedia.org/wikipedia/commons/b/bb/Tesla_T_symbol.svg"]
 ];
-const identity = await read("assets/js/entity-media.js");
-const people = await read("people.html");
-const app = await read("assets/css/v13-app.css");
-const legacy = await read("assets/css/entity-media.css");
-const personFile = await read("assets/css/v13-person.css");
-
-// Largest square identity tile on any page (portraits are drawn into these with object-fit: cover).
-const tileSizes = [...(app + legacy).matchAll(/--ins-size:(\d+(?:\.\d+)?)px/g)].map(m => Number(m[1]));
-const knownTile = Number((/\.v10-known__photo\{[^}]*?width:(\d+)px/.exec(app) || [])[1]);
-assert.ok(tileSizes.length && knownTile > 0, "could not read the rendered portrait sizes from the stylesheets");
-// The personnel file draws its photo at --pf-photo (person.html), larger than any list tile.
-const fileSizes = [...personFile.matchAll(/--pf-photo:(\d+(?:\.\d+)?)px/g)].map(m => Number(m[1]));
-assert.ok(fileSizes.length, "could not read the personnel-file photo size from v13-person.css");
-const MAX_TILE = Math.max(...tileSizes, knownTile, ...fileSizes);
-
+// Insider photos now come from the engine's media pipeline (GET /v1/media, drawn by UI.face in web/assets/js/ui.js):
+// src/people-photos.mjs refuses any picture whose shorter side is under its threshold, and the largest face tile is in
+// ui.css. Every photo shown is therefore at least 2x sharp as long as the threshold covers twice the biggest tile.
+const ui = await read("assets/css/ui.css");
+const photos = await readFile(new URL("../src/people-photos.mjs", import.meta.url), "utf8");
+const faceSizes = [...ui.matchAll(/\.face--(\d+)\{width:(\d+)px/g)].map(m => Number(m[2]));
+assert.ok(faceSizes.length, "could not read the face tile sizes from ui.css");
+const MAX_TILE = Math.max(...faceSizes);
+const minSide = Number((/Math\.min\(size\.width, size\.height\) < (\d+)/.exec(photos) || [])[1]);
+assert.ok(minSide > 0, "could not read the minimum photo size from src/people-photos.mjs");
+assert.ok(minSide >= 2 * MAX_TILE, `photos as small as ${minSide}px are accepted, under 2x the ${MAX_TILE}px face tile`);
+console.log(`Verified photo sharpness rule: the shorter side is at least ${minSide}px, 2x or more the largest ${MAX_TILE}px face tile`);
 const portraits = [];
-for (const m of identity.matchAll(/"([a-z-]+)":\{name:"([^"]+)",src:"([^"]+)",\s*thumb:"([^"]+)"/g)) {
-  portraits.push({ name: m[2] + " (identity tile)", url: m[4], maxRendered: MAX_TILE, zoom: 1 });
-}
-// Familiar faces on people.html: <img data-real-image src="…" … style="…transform:scale(z)…"> … <strong>Name</strong>
-for (const m of people.matchAll(/<img data-real-image src="(https:\/\/upload\.wikimedia\.org\/[^"]+\.jpe?g)"([^>]*)>[\s\S]*?<strong>([^<]+)<\/strong>/g)) {
-  const zoom = Number((/transform:scale\(([\d.]+)\)/.exec(m[2]) || [])[1]) || 1;
-  portraits.push({ name: m[3] + " (people page)", url: m[1], maxRendered: knownTile, zoom });
-}
-assert.ok(portraits.length >= 8, "expected the four curated portraits in entity-media.js and people.html, found " + portraits.length);
-for (const p of portraits) assert.match(p.url, /^https:\/\/(upload|thumb)\.wikimedia\.org\/wikipedia\/commons\//, p.name + ": portraits must come from Wikimedia Commons");
 
 /* ---------- JPEG dimensions from the start-of-frame header ---------- */
 function jpegSize(buf) {
@@ -121,4 +108,4 @@ if (failures.length) {
   for (const f of failures) console.error("FAIL " + f);
   throw new Error(failures.length + " media check(s) failed");
 }
-console.log(`All ${logos.length + portraits.length} exact-source public assets verified; every portrait is at least 2× its largest rendered size (${MAX_TILE}px identity tile, ${knownTile}px people-page tile).`);
+console.log(`All ${logos.length + portraits.length} exact-source public assets verified; insider photos are held to at least ${minSide}px, 2× the largest ${MAX_TILE}px face tile.`);
