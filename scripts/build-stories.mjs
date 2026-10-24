@@ -24,7 +24,7 @@ export const ORIGIN = "https://insidir.com";
 export const PUBLISHED = "2026-10-18";
 /* The creator kit's product clips (/assets/video). They were recorded in the earlier app design; set false to take
  * them, and every line that points to them, off the kit until they are re-recorded. */
-export const SHOW_CLIPS = true;
+export const SHOW_CLIPS = false;
 const web = fileURLToPath(new URL("../web/", import.meta.url));
 const arrow = '<span aria-hidden="true">→</span>', out = '<span aria-hidden="true">↗</span>', newTab = '<span class="sr-only"> (opens in a new tab)</span>';
 const ext = (url, label, cls = "") => `<a${cls ? ` class="${cls}"` : ""} href="${esc(url)}" rel="noopener" target="_blank">${label} ${out}${newTab}</a>`;

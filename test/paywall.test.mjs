@@ -1016,7 +1016,9 @@ test("router: when the session cannot be checked, pages get a readable 503 and s
       assert.match(r.headers["content-security-policy"], /default-src 'self'/);
       assert.match(r.text, /<title>Temporarily unavailable/);
       assert.match(r.text, /href="\/company\.html\?ticker=AAPL">Try again/);
-      assert.match(r.text, /class="v13-footer v13-footer--plain"/);
+      assert.match(r.text, /<body class="ui">/, "the new design (ui.css)");
+      assert.match(r.text, /Research, not investment advice/);
+      assert.doesNotMatch(r.text, /v13-|halftone/, "no old-design assets");
       assert.doesNotMatch(r.text, /id="v3-trades"|id="v3-filings"|data-greeting/, "none of the product page is served");
       r = await send(base, "/account", { method: "HEAD", ...as("none") });
       assert.deepEqual([r.status, r.text], [503, ""]);

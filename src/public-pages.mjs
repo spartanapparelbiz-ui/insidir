@@ -23,6 +23,8 @@ import { gzipSync } from "node:zlib";
 import { TRANSACTION_CODES } from "./insiders.mjs";
 import { personProfile, parsePersonCik, hasFilingOwners, withJointOwners } from "./person-profile.mjs";
 import { STORIES, PUBLIC_STORY_PATHS, storyPath, storiesForTicker, storiesForPerson } from "./stories.mjs";
+import { uiHead, uiNav, uiFooter, uiLogo, uiInitials, uiTrade } from "./site-ui.mjs";
+import { scripts } from "./site-v2.mjs";
 
 export const CACHE_TTL_MS = 10 * 60_000, CACHE_ENTRIES = 3000;
 export const RENDERS_PER_MINUTE = 90;
@@ -90,143 +92,97 @@ const KIND_LABEL = { buy: "Bought", sell: "Sold", other: "Other" };
 const codeWords = code => TRANSACTION_CODES[String(code || "").toUpperCase()] || "Other Form 4 transaction";
 const safeHttp = url => /^https:\/\/(www\.)?sec\.gov\//.test(String(url || "")) ? String(url) : null;
 
-/* ---------- the page shell (the static pages' styles, header and footer) ---------- */
+/* ---------- the page shell ---------- */
 export function siteOrigin(env = process.env) {
   const raw = String(env.INSIDIR_PUBLIC_URL || "").trim();
   try { const u = new URL(raw); if (u.protocol === "https:" || u.protocol === "http:") return u.origin; } catch { /* default */ }
   return "https://insidir.com";
 }
-// The public navigation, as on every static page: three primary links; the mobile menu adds the secondary pages
-// (the insider index is marked current on these pages).
-const NAV = '<a href="/platform.html">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a>';
-const NAV_MORE = '<a href="/insider-trading"%CUR%>Insider filings</a><a href="/stories.html">Research stories</a><a href="/why-insidir.html">Why Insidir</a><a href="/data.html">Data &amp; sources</a>';
-function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null, current = false }) {
-  const nav = NAV, more = NAV_MORE.replace("%CUR%", current ? ' aria-current="page"' : "");
-  const url = origin + canonical;
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0c0c0b">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
-${noindex ? '<meta name="robots" content="noindex">\n' : ""}<link rel="canonical" href="${esc(url)}">
-<meta property="og:site_name" content="insidir.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${esc(url)}">
-<meta name="twitter:card" content="summary">
-<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml">
-<link rel="preload" href="/assets/fonts/JetBrainsMono-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/v3-static.css">
-<link rel="stylesheet" href="/assets/css/v6-static.css?v=1">
-<link rel="stylesheet" href="/assets/css/v7-unified.css?v=1">
-<link rel="stylesheet" href="/assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="/assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="/assets/css/v13-static.css?v=9">
-<link rel="stylesheet" href="/assets/css/v14-public.css?v=1">
-<script defer src="/assets/js/v6-site.js?v=2"></script>
-<script defer src="/assets/js/referral.js?v=1"></script>
-<script defer src="/assets/js/posthog.js?v=1"></script>
-<link rel="stylesheet" href="/assets/css/v29-system.css">
-${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}</head>
-<body class="v3-static v6-static v13 v14-public">
-<a class="skip-link" href="#Content">Skip to content</a>
-<header class="v6-nav v9-nav">
- <div class="mk-shell v6-nav__inner">
-  <a class="v6-logo" href="/" aria-label="Insidir home"><svg class="wordmark-svg" viewBox="70 -793 4531 803" aria-hidden="true"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a>
-  <nav class="v6-nav__links" aria-label="Main navigation">${nav}</nav>
-  <div class="v6-nav__actions">
-   <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
-   <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
-  </div>
- </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden>${nav}${more}<a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
-</header>
-<main id="Content">
+/* The public site's chrome (src/site-ui.mjs, ui.css + site.css inlined, plus site-pages.css): the landing page's nav and
+   footer. No product script runs here: logos and people show their initials (the media batch is a member route). */
+function shell({ title, description, canonical, body, origin, noindex = false, jsonLd = null }) {
+  return uiHead({ title, description, canonical, origin, noindex,
+    extra: `<link rel="stylesheet" href="/assets/css/site-pages.css?v=2">
+${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>\n` : ""}` }) + `
+<body class="ui site">
+<a class="skip" href="#main">Skip to content</a>
+${uiNav({ cta: "nav" })}
+<main id="main" class="sp-main">
 ${body}
 </main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Public records"><h3>Public records</h3><ul><li><a href="/insider-trading">Latest insider filings</a></li><li><a href="/stories.html">Research stories</a></li><li><a href="/data.html">Data &amp; sources</a></li><li><a href="/platform.html">Platform</a></li><li><a href="/why-insidir.html">Why Insidir</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="/signin.html">Log in</a></li><li><a href="/signup.html">Start for $1</a></li><li><a href="/pricing.html">Pricing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="/company-info.html">About</a></li><li><a href="/creators.html">Creators</a></li><li><a href="/terms.html">Terms</a></li><li><a href="/privacy.html">Privacy</a></li><li><a href="/disclosures.html">Disclosures</a></li><li><a href="/subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
-</div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public SEC records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer>
+${uiFooter()}
+${scripts()}
+<script src="/assets/js/referral.js?v=1" defer></script>
 </body>
 </html>
 `;
 }
 
-const crumbs = items => `<nav class="pp-crumbs" aria-label="Breadcrumb"><ol>${items.map(([label, href]) => `<li>${href ? `<a href="${esc(href)}">${esc(label)}</a>` : `<span aria-current="page">${esc(label)}</span>`}</li>`).join("")}</ol></nav>`;
+const crumbs = items => `<nav class="sp-crumbs" aria-label="Breadcrumb"><ol>${items.map(([label, href]) => `<li>${href ? `<a class="slink muted" href="${esc(href)}">${esc(label)}</a>` : `<span aria-current="page">${esc(label)}</span>`}</li>`).join("")}</ol></nav>`;
+const section = (id, heading, note, inner) => `<section class="ssec sp-rec" aria-labelledby="${id}"><div class="swrap">
+ <header class="ssec__head"><h2 class="t-title" id="${id}">${esc(heading)}</h2>${note ? `<p class="ssec__p">${esc(note)}</p>` : ""}</header>
+ ${inner}
+</div></section>`;
 
-// The trial offer every public page ends with (also used by scripts/build-stories.mjs for the static story pages).
+// The trial offer every public page ends with.
 export function upsell(subject) {
-  return `<section class="pp-upsell" aria-labelledby="pp-upsell-h">
- <div class="pp-upsell__copy">
-  <p class="pp-label">The full record</p>
-  <h2 id="pp-upsell-h">${esc(subject)}</h2>
-  <ul class="pp-checks">
-   <li>Every Form 4 line, amendments counted once, with the filing one click away</li>
-   <li>Company reports: delayed price chart, XBRL financials, filings and 8-K announcements</li>
-   <li>Follow people and save companies; new filings show up on your overview</li>
-   <li>A private research journal beside the evidence</li>
-  </ul>
- </div>
- <div class="pp-upsell__offer">
-  <p class="pp-offer__price"><strong>$1</strong><span>for 7 days</span></p>
-  <p class="pp-offer__then">Then $39 a month. Cancel any time.</p>
-  <a class="v9-btn v9-btn--ink" href="/signup.html" data-cta="page">Start 7 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
-  <a class="pp-offer__more" href="/platform.html">See everything Insidir does</a>
- </div>
-</section>`;
+  return `<section class="ssec" aria-labelledby="pp-upsell-h" data-pp-upsell><div class="swrap"><div class="sp-split">
+ <div class="sp-end"><p class="t-label muted">The full record</p><h2 class="t-title" id="pp-upsell-h">${esc(subject)}</h2>
+  <ul class="sp-list"><li><span>Every Form 4 line in plain English, amendments counted once, with the filing one click away</span></li><li><span>A page for every stock: the price chart with every insider buy and sale, insiders and their track records</span></li><li><span>Follow people and watch companies; alerts in the app minutes after a new filing</span></li></ul></div>
+ <div class="card sprice"><p class="t-label muted">Insidir Pro</p><p class="t-hero big"><span class="u">$</span>1<span class="u"> for 7 days</span></p>
+  <p class="muted">Then $39 a month. Cancel online anytime.</p>
+  <a class="btn btn--primary btn--lg" href="/signup.html" data-cta="page">Start 7 days for $1</a>
+  <a class="slink muted t-label" href="/platform.html">See everything Insidir does</a></div>
+</div></div></section>`;
 }
 
-// Research stories as a list in the pp-companies style (the stories' own pages carry the full design).
+// Research stories as a list of cards (the stories' own pages carry the full design).
 export function storyList(stories) {
-  return `<ul class="pp-companies pp-stories">${stories.map(s => `<li><a href="${esc(storyPath(s))}"><b>${esc(s.title)}</b><span>${esc(s.kind)} · ${esc(s.form)} · filed ${esc(day(s.filed))}</span><em>Read the research <span class="v13-arrow" aria-hidden="true">→</span></em></a></li>`).join("")}</ul>`;
+  return `<ul class="sp-grid sp-grid--2 sp-stories">${stories.map(s => `<li><a class="card sp-card" href="${esc(storyPath(s))}"><p class="t-label muted">${esc(s.kind)} · ${esc(s.form)} · filed ${esc(day(s.filed))}</p><h3 class="t-section">${esc(s.title)}</h3><p class="muted sp-more">Read the research →</p></a></li>`).join("")}</ul>`;
 }
-const storiesSection = (stories, heading, note) => stories.length ? `<section class="pp-section mk-shell" aria-labelledby="pp-stories">
- <div class="pp-head"><h2 id="pp-stories">${esc(heading)}</h2><p>${esc(note)}</p></div>
- ${storyList(stories)}
-</section>` : "";
+const storiesSection = (stories, heading, note) => stories.length ? section("pp-stories", heading, note, storyList(stories)) : "";
 
-const badge = kind => `<span class="pp-badge pp-badge--${kind}">${KIND_LABEL[kind]}</span>`;
+const badge = kind => kind === "other" ? `<span class="trade trade--plan">Other</span>` : uiTrade(kind);
+const face = name => `<span class="mono face face--24" aria-hidden="true"><span class="face__mono">${esc(uiInitials(displayName(name)))}</span></span>`;
 
 // One person cell: a linked name, or for a joint filing every owner it lists.
 function whoCell(row) {
-  if (row.owner_cik != null) return `<a href="${esc(personUrl(row.owner_cik, row.owner_name))}">${esc(displayName(row.owner_name))}</a>`;
+  if (row.owner_cik != null) return `<span class="scell">${face(row.owner_name)}<a class="slink" href="${esc(personUrl(row.owner_cik, row.owner_name))}">${esc(displayName(row.owner_name))}</a></span>`;
   const owners = Array.isArray(row.owners) ? row.owners.filter(o => o?.cik) : [];
   if (!owners.length) return esc(displayName(row.owner_name)) || "Joint filing";
   const first = owners[0];
   const rest = owners.length - 1;
-  return `<a href="${esc(personUrl(first.cik, first.name))}">${esc(displayName(first.name))}</a>${rest ? ` <span class="pp-muted">and ${rest} other${rest === 1 ? "" : "s"}</span>` : ""}`;
+  return `<span class="scell">${face(first.name)}<span><a class="slink" href="${esc(personUrl(first.cik, first.name))}">${esc(displayName(first.name))}</a>${rest ? ` <span class="muted">and ${rest} other${rest === 1 ? "" : "s"}</span>` : ""}</span></span>`;
 }
 
 function linesTable(rows, { showCompany = false, showPerson = true, caption }) {
-  if (!rows.length) return `<p class="pp-empty">No Form 4 lines are imported yet.</p>`;
-  const head = `<tr><th scope="col">Type</th>${showPerson ? '<th scope="col">Insider</th>' : ""}${showCompany ? '<th scope="col">Company</th>' : ""}<th scope="col">Transaction</th><th scope="col" class="pp-num">Shares</th><th scope="col" class="pp-num">Price</th><th scope="col" class="pp-num">Value</th><th scope="col">Trade date</th><th scope="col">Filed</th></tr>`;
+  if (!rows.length) return `<p class="muted">No Form 4 lines are imported yet.</p>`;
+  const head = `<tr><th scope="col">Type</th>${showPerson ? '<th scope="col">Insider</th>' : ""}${showCompany ? '<th scope="col">Company</th>' : ""}<th scope="col">Transaction</th><th scope="col" class="r">Shares</th><th scope="col" class="r">Price</th><th scope="col" class="r">Value</th><th scope="col">Trade date</th><th scope="col">Filed</th></tr>`;
   const body = rows.map(row => {
     const kind = kindOf(row), source = safeHttp(row.source_url);
-    const company = tickerOk(row.ticker) ? `<a href="${esc(companyUrl(row.ticker))}"><b>${esc(row.ticker)}</b></a> <span class="pp-muted">${esc(displayName(row.issuer_name))}</span>` : esc(displayName(row.issuer_name));
-    const what = esc(codeWords(row.transaction_code)) + (row.transaction_code ? ` <span class="pp-code">${esc(String(row.transaction_code).toUpperCase())}</span>` : "") +
-      (row.derivative ? ' <span class="pp-muted">derivative</span>' : "") + (row.is_amendment ? ' <span class="pp-muted">4/A</span>' : "");
+    const linked = text => source ? `<a class="slink" href="${esc(source)}" rel="nofollow noopener" target="_blank">${text}</a>` : text;
+    const company = tickerOk(row.ticker) ? `<span class="scell">${uiLogo(row.ticker, 24)}<span class="scell__t"><a class="slink" href="${esc(companyUrl(row.ticker))}">${esc(row.ticker)}</a><span class="t-label muted">${esc(displayName(row.issuer_name))}</span></span></span>` : esc(displayName(row.issuer_name));
+    const what = esc(codeWords(row.transaction_code)) + (row.transaction_code ? ` <span class="muted">(${esc(String(row.transaction_code).toUpperCase())})</span>` : "") +
+      (row.derivative ? ' <span class="muted">derivative</span>' : "") + (row.is_amendment ? ' <span class="muted">4/A</span>' : "");
+    const tone = kind === "buy" ? " up" : kind === "sell" ? " down" : "";
     return `<tr>
 <td>${badge(kind)}</td>${showPerson ? `<td>${whoCell(row)}</td>` : ""}${showCompany ? `<td>${company}</td>` : ""}
-<td>${what}</td><td class="pp-num">${shares(row.shares)}</td><td class="pp-num">${row.price_per_share == null ? "—" : money(row.price_per_share, { compact: false })}</td>
-<td class="pp-num pp-val pp-val--${kind}">${money(row.estimated_value)}</td><td>${esc(day(row.transaction_date))}</td>
-<td>${source ? `<a href="${esc(source)}" rel="nofollow noopener" target="_blank">${esc(day(row.published_at))} <span class="v13-arrow" aria-hidden="true">↗</span></a>` : esc(day(row.published_at))}</td></tr>`;
+<td>${what}</td><td class="r">${linked(shares(row.shares))}</td><td class="r">${row.price_per_share == null ? "—" : linked(money(row.price_per_share, { compact: false }))}</td>
+<td class="r${tone}">${row.estimated_value == null ? "—" : linked(money(row.estimated_value))}</td><td>${esc(day(row.transaction_date))}</td>
+<td>${source ? `<a class="slink" href="${esc(source)}" rel="nofollow noopener" target="_blank">${esc(day(row.published_at))} <span aria-hidden="true">↗</span><span class="sr-only"> (SEC filing, opens in a new tab)</span></a>` : esc(day(row.published_at))}</td></tr>`;
   }).join("\n");
-  return `<div class="pp-table-wrap" tabindex="0" role="region" aria-label="${esc(caption)}"><table class="pp-table"><caption class="hwf-sr">${esc(caption)}</caption><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="card stable sp-table" tabindex="0" role="region" aria-label="${esc(caption)}"><table class="table"><caption class="sr-only">${esc(caption)}</caption><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
-const stat = (label, value, note, tone = "") => `<div class="pp-stat${tone ? " pp-stat--" + tone : ""}"><dt>${esc(label)}</dt><dd>${value}</dd>${note ? `<p>${esc(note)}</p>` : ""}</div>`;
+const stat = (label, value, note, tone = "") => `<div class="card"><dt class="t-label muted">${esc(label)}</dt><dd class="t-title${tone === "buy" ? " up" : tone === "sell" ? " down" : ""}">${value}</dd>${note ? `<p class="t-label muted">${esc(note)}</p>` : ""}</div>`;
+const hero = ({ crumbsHtml, eyebrow, title, sub, extra = "" }) => `<section class="sp-hero" aria-labelledby="pp-title"><div class="swrap"><div class="sp-hero__in">
+ ${crumbsHtml}
+ <p class="t-label muted sp-eyebrow">${eyebrow}</p>
+ <h1 class="t-display" id="pp-title">${title}</h1>
+ <p class="sp-hero__sub">${sub}</p>
+ ${extra}
+</div></div></section>`;
+const notes = (heading, text) => `<section class="ssec" aria-labelledby="pp-about"><div class="swrap"><div class="sp-sub"><h2 class="t-section" id="pp-about">${esc(heading)}</h2><p class="muted">${esc(text)}</p></div></div></section>`;
 
 /* ---------- data ---------- */
 const PARSED_LINE_COLUMNS = `t.id,t.accession,t.issuer_cik,t.ticker,t.owner_cik,t.owner_name,t.transaction_date,t.security_title,t.transaction_code,
@@ -279,43 +235,25 @@ export async function hubPage({ query, origin }) {
   const joint = await hasFilingOwners(query);
   await withJointOwners([...buys, ...sells, ...latest], query, joint);
   const t = totals[0] || {};
-  const companyList = companies.length ? `<ul class="pp-companies">${companies.filter(c => tickerOk(c.ticker)).map(c => `<li><a href="${esc(companyUrl(c.ticker))}"><b>${esc(c.ticker)}</b><span>${esc(displayName(c.issuer_name))}</span><em>${c.filings} filing${c.filings === 1 ? "" : "s"}${c.buys ? ` · ${c.buys} bought` : ""}${c.sells ? ` · ${c.sells} sold` : ""}</em></a></li>`).join("")}</ul>` : `<p class="pp-empty">No filings in the last 30 days are imported yet.</p>`;
-  const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider filings", null]])}
- <p class="pp-label">SEC Form 4 · checked about every 2 minutes</p>
- <h1 id="pp-title">Insider trading, <span>from the filings.</span></h1>
- <p class="pp-lede">What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing. These are legally required public reports, published by the SEC: not nonpublic information, and not a recommendation.</p>
- <dl class="pp-stats">
+  const companyList = companies.length ? `<ul class="sp-grid sp-grid--4 sp-cos">${companies.filter(c => tickerOk(c.ticker)).map(c => `<li><a class="card sp-card sp-co" href="${esc(companyUrl(c.ticker))}"><span class="scell">${uiLogo(c.ticker, 32)}<span class="scell__t"><b>${esc(c.ticker)}</b><span class="t-label muted">${esc(displayName(c.issuer_name))}</span></span></span><span class="t-label muted">${c.filings} filing${c.filings === 1 ? "" : "s"}${c.buys ? ` · ${c.buys} bought` : ""}${c.sells ? ` · ${c.sells} sold` : ""}</span></a></li>`).join("")}</ul>` : `<p class="muted">No filings in the last 30 days are imported yet.</p>`;
+  const body = `${hero({ crumbsHtml: crumbs([["Insidir", "/"], ["Insider filings", null]]), eyebrow: "SEC Form 4 · checked about every 2 minutes",
+    title: `Insider trading, <span class="muted">from the filings.</span>`,
+    sub: "What officers, directors and 10% owners of US public companies report buying and selling, read from the Form 4s they file with the SEC. Open-market purchases and sales are kept apart from awards, exercises and gifts, and every line links to the filing. These are legally required public reports, published by the SEC: not nonpublic information, and not a recommendation.",
+    extra: `<dl class="sp-cov sp-stats">
   ${stat("Filings, 30 days", esc((t.filings ?? 0).toLocaleString("en-US")), "Form 4 and 4/A, as imported")}
   ${stat("Companies", esc((t.companies ?? 0).toLocaleString("en-US")), "with a filing in the window")}
   ${stat("Reported purchases", esc(money(t.buy_value)), "original filings, 30 days", "buy")}
   ${stat("Reported sales", esc(money(t.sell_value)), "original filings, 30 days", "sell")}
- </dl>
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-buys">
- <div class="pp-head"><h2 id="pp-buys">Biggest open-market purchases</h2><p>Last 30 days, by reported value. Code P, non-derivative, original filings.</p></div>
- ${linesTable(buys, { showCompany: true, caption: "Biggest insider purchases in the last 30 days" })}
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-sells">
- <div class="pp-head"><h2 id="pp-sells">Biggest open-market sales</h2><p>Last 30 days, by reported value. Code S, non-derivative, original filings.</p></div>
- ${linesTable(sells, { showCompany: true, caption: "Biggest insider sales in the last 30 days" })}
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-latest">
- <div class="pp-head"><h2 id="pp-latest">Just filed</h2><p>The newest purchases and sales, by filing date.</p></div>
- ${linesTable(latest, { showCompany: true, caption: "Newest insider purchases and sales" })}
-</section>
-<section class="pp-section mk-shell" aria-labelledby="pp-active">
- <div class="pp-head"><h2 id="pp-active">Most active companies</h2><p>Most Form 4 filings in the last 30 days.</p></div>
- ${companyList}
-</section>
+ </dl>` })}
+${section("pp-buys", "Biggest open-market purchases", "Last 30 days, by reported value. Code P, non-derivative, original filings.", linesTable(buys, { showCompany: true, caption: "Biggest insider purchases in the last 30 days" }))}
+${section("pp-sells", "Biggest open-market sales", "Last 30 days, by reported value. Code S, non-derivative, original filings.", linesTable(sells, { showCompany: true, caption: "Biggest insider sales in the last 30 days" }))}
+${section("pp-latest", "Just filed", "The newest purchases and sales, by filing date.", linesTable(latest, { showCompany: true, caption: "Newest insider purchases and sales" }))}
+${section("pp-active", "Most active companies", "Most Form 4 filings in the last 30 days.", companyList)}
 ${storiesSection(STORIES, "Research stories", "Historical filings explained line by line, free to read and share. Each one links to the original SEC document.")}
-<div class="mk-shell">${upsell("Follow the people behind the trades.")}</div>
-<section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
- <h2 id="pp-about">About this data</h2>
- <p>Insiders must report most trades in their company's stock on SEC Form 4, generally within two business days. Values are shares × the price the filer reported; lines without a reported price are not valued. Purchases and sales here are open-market trades (codes P and S); grants, option exercises, tax withholding and gifts are listed as other transactions. Totals count original filings only, because a Form 4/A restates lines already filed. This is a public record, not a recommendation or a prediction.</p>
-</section>`;
+${upsell("Follow the people behind the trades.")}
+${notes("About this data", "Insiders must report most trades in their company's stock on SEC Form 4, generally within two business days. Values are shares × the price the filer reported; lines without a reported price are not valued. Purchases and sales here are open-market trades (codes P and S); grants, option exercises, tax withholding and gifts are listed as other transactions. Totals count original filings only, because a Form 4/A restates lines already filed. This is a public record. Research, not investment advice.")}`;
   return {
-    html: shell({ origin, canonical: "/insider-trading", current: true,
+    html: shell({ origin, canonical: "/insider-trading",
       title: "Insider trading today: latest Form 4 buys and sells — Insidir",
       description: "The latest insider purchases and sales at US public companies, read from SEC Form 4 filings: biggest open-market buys and sells of the last 30 days, the newest filings and the most active companies.",
       body, jsonLd: { "@context": "https://schema.org", "@type": "CollectionPage", name: "Insider trading from SEC Form 4 filings", url: origin + "/insider-trading" } })
@@ -332,37 +270,30 @@ export async function personPage(cik, { query, origin }) {
   const companies = profile.companies.slice(0, 20);
   const primary = companies[0];
   const roleText = c => Array.isArray(c.roles) && c.roles.length ? c.roles.join(" · ") : "";
-  const companyRows = companies.length ? `<ul class="pp-people pp-people--companies">${companies.map(c => {
-    const label = c.ticker ? `<b>${esc(c.ticker)}</b> ${esc(displayName(c.issuer_name))}` : `<b>${esc(displayName(c.issuer_name) || "Issuer " + c.issuer_cik)}</b>`;
-    const inner = `${label}<span>${esc(roleText(c) || "Reporting person")} · ${c.transactions} line${c.transactions === 1 ? "" : "s"} · last ${esc(day(c.last_transaction_date))}</span>${num(c.purchases_value) ? `<em class="pp-val--buy">Bought ${esc(money(c.purchases_value))}</em>` : ""}${num(c.sales_value) ? `<em class="pp-val--sell">Sold ${esc(money(c.sales_value))}</em>` : ""}`;
-    return `<li>${tickerOk(c.ticker) ? `<a href="${esc(companyUrl(c.ticker))}">${inner}</a>` : `<div>${inner}</div>`}</li>`;
+  const companyRows = companies.length ? `<ul class="sp-grid sp-grid--2 sp-cos">${companies.map(c => {
+    const label = `<span class="scell">${c.ticker ? uiLogo(c.ticker, 32) : `<span class="logo logo--32" aria-hidden="true"><span class="logo__mono">${esc(uiInitials(displayName(c.issuer_name)))}</span></span>`}<span class="scell__t"><b>${esc(c.ticker || displayName(c.issuer_name) || "Issuer " + c.issuer_cik)}</b>${c.ticker ? `<span class="t-label muted">${esc(displayName(c.issuer_name))}</span>` : ""}</span></span>`;
+    const inner = `${label}<span class="t-label muted">${esc(roleText(c) || "Reporting person")} · ${c.transactions} line${c.transactions === 1 ? "" : "s"} · last ${esc(day(c.last_transaction_date))}</span>${num(c.purchases_value) || num(c.sales_value) ? `<span class="sp-co__vals">${num(c.purchases_value) ? `<span class="up">Bought ${esc(money(c.purchases_value))}</span>` : ""}${num(c.sales_value) ? `<span class="down">Sold ${esc(money(c.sales_value))}</span>` : ""}</span>` : ""}`;
+    return `<li>${tickerOk(c.ticker) ? `<a class="card sp-card sp-co" href="${esc(companyUrl(c.ticker))}">${inner}</a>` : `<div class="card sp-card sp-co">${inner}</div>`}</li>`;
   }).join("")}</ul>` : "";
   const role = primary ? [roleText(primary), primary.ticker ? displayName(primary.issuer_name) || primary.ticker : displayName(primary.issuer_name)].filter(Boolean).join(", ") : "";
   const description = `${name}${role ? ` (${role})` : ""}: insider trades reported on SEC Form 4. ${all.purchases.count} purchase${all.purchases.count === 1 ? "" : "s"} (${money(all.purchases.value)}) and ${all.sales.count} sale${all.sales.count === 1 ? "" : "s"} (${money(all.sales.value)}) in Insidir's import.`;
-  const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], [name, null]])}
- <p class="pp-label">Reporting person · SEC CIK ${esc(String(cik).replace(/^0+/, ""))}</p>
- <h1 id="pp-title">${esc(name)} <span>insider trades.</span></h1>
- <p class="pp-lede">${role ? esc(role) + ". " : ""}Every Form 4 line below is a public SEC record${filed && filed !== name ? `, filed under the name ${esc(filed)}` : ""}. Last filing ${esc(day(all.last_published_at))}.</p>
- <dl class="pp-stats">
-  ${stat("Purchases", `${esc(money(all.purchases.value))} <small>${all.purchases.count} line${all.purchases.count === 1 ? "" : "s"}</small>`, "all imported filings", "buy")}
-  ${stat("Sales", `${esc(money(all.sales.value))} <small>${all.sales.count} line${all.sales.count === 1 ? "" : "s"}</small>`, "all imported filings", "sell")}
-  ${stat("Last 30 days", `${d30.transactions} <small>line${d30.transactions === 1 ? "" : "s"}</small>`, `${money(d30.purchases.value)} bought · ${money(d30.sales.value)} sold`)}
+  const first = name.split(" ")[0] || name;
+  const body = `${hero({ crumbsHtml: crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], [name, null]]),
+    eyebrow: `Reporting person · SEC CIK ${esc(String(cik).replace(/^0+/, ""))}`,
+    title: `${esc(name)} <span class="muted">insider trades.</span>`,
+    sub: `${role ? esc(role) + ". " : ""}Insider trades reported on SEC Form 4. Every line below is a public SEC record${filed && filed !== name ? `, filed under the name ${esc(filed)}` : ""}. Last filing ${esc(day(all.last_published_at))}.`,
+    extra: `<dl class="sp-cov sp-stats">
+  ${stat("Purchases", `${esc(money(all.purchases.value))}`, `${all.purchases.count} line${all.purchases.count === 1 ? "" : "s"}, all imported filings`, "buy")}
+  ${stat("Sales", `${esc(money(all.sales.value))}`, `${all.sales.count} line${all.sales.count === 1 ? "" : "s"}, all imported filings`, "sell")}
+  ${stat("Last 30 days", `${d30.transactions} line${d30.transactions === 1 ? "" : "s"}`, `${money(d30.purchases.value)} bought · ${money(d30.sales.value)} sold`)}
   ${stat("Companies", esc(String(profile.companies.length)), "where this person reports")}
  </dl>
- <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/signup.html">Follow ${esc(name.split(" ")[0] || name)} in Insidir <span class="v13-arrow" aria-hidden="true">→</span></a><a class="v9-btn v12-outline-button" href="${esc(profile.edgar_url)}" rel="nofollow noopener" target="_blank">Filings on EDGAR <span class="v13-arrow" aria-hidden="true">↗</span></a></p>
-</section>
-${companyRows ? `<section class="pp-section mk-shell" aria-labelledby="pp-companies"><div class="pp-head"><h2 id="pp-companies">Companies and roles</h2><p>Roles as written in the person's latest Form 4 at each company.</p></div>${companyRows}</section>` : ""}
-<section class="pp-section mk-shell" aria-labelledby="pp-lines">
- <div class="pp-head"><h2 id="pp-lines">Recent transactions</h2><p>The ${profile.transactions.length} newest lines by trade date${all.transactions > profile.transactions.length ? ` of ${all.transactions.toLocaleString("en-US")}` : ""}. Each filing date links to the document on SEC EDGAR.</p></div>
- ${linesTable(profile.transactions, { showCompany: true, showPerson: false, caption: `Recent insider transactions by ${name}` })}
-</section>
+ <div class="sp-actions"><a class="btn btn--primary" href="/signup.html" data-cta="person">Follow ${esc(first)} in Insidir</a><a class="btn btn--secondary" href="${esc(profile.edgar_url)}" rel="nofollow noopener" target="_blank">Filings on EDGAR <span aria-hidden="true">↗</span></a></div>` })}
+${companyRows ? section("pp-companies", "Companies and roles", "Roles as written in the person's latest Form 4 at each company.", companyRows) : ""}
+${section("pp-lines", "Recent transactions", `The ${profile.transactions.length} newest lines by trade date${all.transactions > profile.transactions.length ? ` of ${all.transactions.toLocaleString("en-US")}` : ""}. Every number links to the filing on SEC EDGAR.`, linesTable(profile.transactions, { showCompany: true, showPerson: false, caption: `Recent insider transactions by ${name}` }))}
 ${storiesSection(storiesForPerson(cik), "Research on this person's filings", "A historical Form 4, explained line by line.")}
-<div class="mk-shell">${upsell(`Know the next time ${name.split(" ")[0] || name} files.`)}</div>
-<section class="pp-section pp-notes mk-shell" aria-labelledby="pp-about">
- <h2 id="pp-about">About this record</h2>
- <p>Built only from public SEC Form 4 filings in Insidir's import. Values are shares × the price the filer reported. A line repeated by a later Form 4/A is counted once in the totals. Insidir does not estimate holdings or predict trades; this is not investment advice.</p>
-</section>`;
+${upsell(`Know the next time ${first} files.`)}
+${notes("About this record", "Built only from public SEC Form 4 filings in Insidir's import. Values are shares × the price the filer reported. A line repeated by a later Form 4/A is counted once in the totals. Insidir does not estimate holdings or predict trades. Research, not investment advice.")}`;
   return {
     canonical,
     html: shell({ origin, canonical, title: `${name} insider trades — SEC Form 4 filings — Insidir`, description, body,
@@ -372,13 +303,10 @@ ${storiesSection(storiesForPerson(cik), "Research on this person's filings", "A 
 }
 
 function notFoundPage(origin, what) {
-  const body = `<section class="pp-hero mk-shell" aria-labelledby="pp-title">
- ${crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], ["Not found", null]])}
- <p class="pp-label">404</p>
- <h1 id="pp-title">No Form 4s <span>imported yet.</span></h1>
- <p class="pp-lede">Insidir has no imported Form 4 lines for ${esc(what)}. That does not mean none exist: the import covers recent filings and grows about every 2 minutes.</p>
- <p class="pp-actions"><a class="v9-btn v9-btn--ink" href="/insider-trading">Latest insider filings <span class="v13-arrow" aria-hidden="true">→</span></a></p>
-</section>`;
+  const body = hero({ crumbsHtml: crumbs([["Insidir", "/"], ["Insider filings", "/insider-trading"], ["Not found", null]]), eyebrow: "404",
+    title: `No Form 4s <span class="muted">imported yet.</span>`,
+    sub: `Insidir has no imported Form 4 lines for ${esc(what)}. That does not mean none exist: the import covers recent filings and grows about every 2 minutes.`,
+    extra: `<div class="sp-actions"><a class="btn btn--primary" href="/insider-trading">Latest insider filings</a></div>` });
   return shell({ origin, canonical: "/insider-trading", title: "Not found — Insidir", description: "No imported Form 4 lines.", body, noindex: true });
 }
 

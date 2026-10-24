@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { STORIES, CREATOR_CONCEPTS, PRODUCT_CLIPS, SUPPORTING_QUOTES, PUBLIC_STORY_PATHS, REF_CODE_PATTERN, storyPath, storiesForTicker, storiesForPerson, readSeconds } from "../src/stories.mjs";
-import { renderAll, ORIGIN } from "../scripts/build-stories.mjs";
+import { renderAll, ORIGIN, SHOW_CLIPS } from "../scripts/build-stories.mjs";
 import { REF_CODE } from "../src/creator-program.mjs";
 import { serveStatic } from "../src/web.mjs";
 import { handlePublicPage, sitemapFile, clearPublicPageCache } from "../src/public-pages.mjs";
@@ -117,7 +117,8 @@ test("the creator kit: six concepts of 15–30 seconds, sources, real footage, l
     assert.match(html, /AI-generated/);
     assert.match(html, /Endorsement Guides/);
     assert.match(html, /No made-up testimonials/);
-    for (const clip of PRODUCT_CLIPS) assert.ok(html.includes(`/assets/video/${clip.id}.mp4`), clip.id);
+    // The clips were recorded in the earlier app design: off the kit (SHOW_CLIPS false) until they are re-recorded.
+    for (const clip of PRODUCT_CLIPS) assert.equal(html.includes(`/assets/video/${clip.id}.mp4`), SHOW_CLIPS, clip.id);
     const creators = await (await fetch(base + "/creators.html")).text();
     assert.match(creators, /\$10/); assert.match(creators, /30 days/); assert.match(creators, /href="\/creator-kit\.html"/);
     assert.match(creators, /Commissions are reviewed after a 30-day eligibility period and paid manually after confirmation\./, "program terms are unchanged");

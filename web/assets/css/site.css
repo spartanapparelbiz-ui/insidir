@@ -205,3 +205,26 @@ a.muted.slink,.slink.muted{color:var(--muted)}
   .ssticky.is-on{opacity:1;transform:none;pointer-events:auto}
   .ssticky .btn{flex:none}
 }
+
+/* the public stock page (src/ticker-page.mjs): the last three trades, the locked rest, another lookup */
+.stk .swrap{max-width:760px;display:grid;gap:var(--sp6)}
+.stk-head{display:grid;gap:var(--sp3)}
+.stk-id{display:flex;align-items:center;gap:var(--sp3)}
+.stk-id__t{display:grid}
+.stk-h1{margin:0;overflow-wrap:anywhere}
+.stk-trades{display:grid;gap:var(--sp3);margin:0;padding:0;list-style:none}
+.stk-trade{display:grid;gap:var(--sp2);padding:var(--sp4) var(--pad)}
+.stk-trade p{margin:0}
+.stk-trade__top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp2) var(--sp3)}
+.stk-trade__who{display:grid;flex:1 1 160px;min-width:0}
+.stk-trade__amt{display:inline-flex;align-items:center;min-height:24px;text-decoration:none}
+.stk-quiet{display:grid;gap:var(--sp3);padding:var(--sp4) var(--pad)}
+.stk-quiet p{margin:0}
+.stk-lock{position:relative;overflow:hidden;padding:var(--sp6) var(--pad)}
+.stk-lock__blur{position:absolute;inset:0;display:grid;gap:var(--sp3);padding:var(--sp6) var(--pad);filter:blur(6px);opacity:.35;pointer-events:none}
+.stk-lock__blur i{display:flex;gap:var(--sp3)}
+.stk-lock__blur b{height:14px;flex:1;border-radius:7px;background:var(--fill-2)}
+.stk-lock__copy{position:relative;display:grid;justify-items:start;gap:var(--sp3)}
+.stk-lock__copy h2,.stk-lock__copy p{margin:0}
+.stk-search{display:grid;gap:var(--sp2)}
+.stk-legal{margin:0}
