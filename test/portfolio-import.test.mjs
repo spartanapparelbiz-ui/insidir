@@ -41,6 +41,12 @@ test("Zero, negative, options and cash rows are excluded",()=>{
  assert.equal(result.skipped.nonStock,1);
 });
 
+test("Options marked only in Security Type are not imported as stock holdings",()=>{
+ const result=parsePortfolioCsv("Symbol,Security Type,Quantity,Description\nAAPL,Stock,3,Apple\nAAPL,Option,10,Apple\nMSFT,Fixed Income,20,Microsoft\n");
+ assert.deepEqual(result.items,[{ticker:"AAPL",quantity:"3"}]);
+ assert.equal(result.skipped.nonStock,2);
+});
+
 test("Malformed, oversize, and symbol-free inputs fail safely",()=>{
  assert.throws(()=>parsePortfolioCsv(""),/non-empty/);
  assert.throws(()=>parsePortfolioCsv('Symbol,Quantity\n"AAPL,3\n'),/unclosed/);
