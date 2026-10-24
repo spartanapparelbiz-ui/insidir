@@ -19,6 +19,7 @@ import { capabilityDecision,capabilitySummary,capabilityNotices } from "./capabi
 import { handlePersonRoute, hasFilingOwners, withJointOwners, JOINT_OWNERS_SQL, SAME_LINE, SUPERSEDED, RECENT_DISCLOSED } from "./person-profile.mjs";
 import { loadOwnersFrom, loadIssuersFrom } from "./media-batch.mjs";
 import { validateManualHolding } from "./manual-holdings.mjs";
+import { validatePortfolioImport, savePortfolioImport } from "./portfolio-import.mjs";
 import { memoryLimiter,pgLimiter } from "./rate-limit.mjs";
 import { logSecurityEvent,recentSecurityEvents,emailDigest } from "./security-events.mjs";
 import { changePassword,revokeOtherSessions,exportAccount } from "./account-security.mjs";
@@ -978,6 +979,12 @@ async function route(req,res,ctx){
       const user=await requireUser(req,ctx),t=ticker(u.searchParams.get("ticker"));
       const deleted=await query("DELETE FROM research_decisions WHERE user_id=$1 AND ticker=$2 RETURNING ticker",[user.id,t]);
       return json(res,200,{deleted:deleted.rowCount>0,ticker:t});
+    }
+    if(p==="/v1/me/portfolio/import" && m==="POST"){
+      const user=await requireUser(req,ctx);
+      if(await limited(ctx,"portfolio-import:"+user.id,8,15*60*1000))throw failure(429,"Too many portfolio imports. Try again later.");
+      const items=validatePortfolioImport(await body(req));
+      return json(res,200,await savePortfolioImport(user.id,items,ctx.query));
     }
     if(p==="/v1/me/manual-holdings" && m==="POST"){
       const user=await requireUser(req,ctx);
