@@ -269,6 +269,22 @@ test("gate: INSIDIR_PAYWALL=0 turns gating off for local development", async () 
   }
 });
 
+
+test("private CSV import strictly requires an active paid entitlement",async()=>{
+  const path="/v1/me/portfolio/import";
+  assert.equal(classifyApi(path,"POST"),"product");
+  const anonymous=await decide(path,null,ON,"POST");
+  assert.deepEqual([anonymous.action,anonymous.status],["deny",401]);
+  for(const user of [USERS.none,USERS.lapsed]){
+    const result=await decide(path,user,ON,"POST");
+    assert.deepEqual([result.action,result.status],["deny",402]);
+  }
+  for(const user of [USERS.paid,USERS.trial]){
+    const result=await decide(path,user,ON,"POST");
+    assert.equal(result.action,"allow");
+  }
+});
+
 /* ---------------------------------------------------------------- Stripe */
 
 function fakeStripe(handlers = {}) {
