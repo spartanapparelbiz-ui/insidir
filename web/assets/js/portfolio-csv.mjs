@@ -7,6 +7,7 @@ const canonical = value => String(value ?? "").toLowerCase().replace(/[^a-z0-9]/
 const symbols = new Set(["symbol","ticker","stocksymbol","securitysymbol","tickersymbol","stockticker"]);
 const quantities = new Set(["quantity","qty","shares","sharequantity","totalshares","totalquantity","currentquantity","qtyquantity","positionquantity","units","numberofshares"]);
 const descriptions = new Set(["description","securitydescription","securityname","name","instrument","instrumentdescription"]);
+const assetTypes = new Set(["assettype","assetclass","securitytype","investmenttype","instrumenttype","type"]);
 const nonStocks = /(?:\boption\b|\bcall\b|\bput\b|\bcrypto\b|\bcash\b|\bmoney market\b|\bsweep\b|\bforeign currency\b|\bcertificate of deposit\b)/i;
 const invalidSymbols = new Set(["CASH","USD","US DOLLAR","TOTAL","ACCOUNT","SWEEP","SPAXX","FDRXX","VMFXX","SWVXX","FDIC","N/A","--"]);
 const validTicker = /^[A-Z][A-Z0-9.-]{0,9}$/;
@@ -67,7 +68,7 @@ const numberString = n => n.toFixed(8).replace(/\.?0+$/,"");
 
 export function parsePortfolioCsv(text) {
   const rows=csvRows(text);
-  let headerIndex=-1,si=-1,qi=-1,di=-1;
+  let headerIndex=-1,si=-1,qi=-1,di=-1,ti=-1;
   for(let i=0;i<Math.min(30,rows.length);i++){
     const h=rows[i].map(canonical);
     const symbol=h.findIndex(x=>symbols.has(x));
@@ -75,7 +76,7 @@ export function parsePortfolioCsv(text) {
     // A transaction-history export must never be misrepresented as current positions.
     const history=h.some(x=>/^(transactiondate|tradedate|settlementdate|activitydate|transactiontype|transactionaction|action|side|buyorsell|activity)$/.test(x));
     if(history)throw Error("This looks like a transaction history. Export current holdings/positions instead.");
-    headerIndex=i;si=symbol;qi=h.findIndex(x=>quantities.has(x));di=h.findIndex(x=>descriptions.has(x));
+    headerIndex=i;si=symbol;qi=h.findIndex(x=>quantities.has(x));di=h.findIndex(x=>descriptions.has(x));ti=h.findIndex(x=>assetTypes.has(x));
     break;
   }
   if(headerIndex<0)throw Error("No ticker/symbol column found. Export a holdings/positions CSV, not an account statement.");
@@ -85,8 +86,9 @@ export function parsePortfolioCsv(text) {
     if(!raw){reasons.empty++;continue;}
     const ticker=raw.replace(/^\$/,"").toUpperCase();
     const description=di>=0?String(row[di]??""):"";
+    const assetType=ti>=0?String(row[ti]??""):"";
     if(invalidSymbols.has(ticker)||!validTicker.test(ticker)){reasons.unsupported++;continue;}
-    if(nonStocks.test(description)){reasons.nonStock++;continue;}
+    if(nonStocks.test(description)||nonStocks.test(assetType)||/\b(?:bond|fixed income|future|warrant)\b/i.test(assetType)){reasons.nonStock++;continue;}
     let quantity=null;
     if(qi>=0){
       const v=qtyValue(row[qi]);
