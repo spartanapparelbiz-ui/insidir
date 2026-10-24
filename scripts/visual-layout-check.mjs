@@ -88,9 +88,9 @@ try{
    await page.waitForFunction(()=>document.querySelectorAll("[data-feed] li").length>2&&document.querySelector("[data-hero] .hero__num"),null,{timeout:15000});
    checkShell("Today",await shell());
    const today=await page.evaluate(()=>({hero:document.querySelector("[data-hero] .hero__num").getAttribute("aria-label"),
-     filings:[...document.querySelectorAll("[data-feed] a[href*='sec.gov']")].length,strip:document.querySelectorAll("[data-strip] .wcard").length}));
+     filings:[...document.querySelectorAll("[data-feed] a[href^='/filing.html?accession=']")].length,strip:document.querySelectorAll("[data-strip] .wcard").length}));
    assert.match(today.hero,/^\$\d/,"Today's hero is the biggest insider move, in dollars");
-   assert.ok(today.filings>0,"Feed rows link to their SEC filings");
+   assert.ok(today.filings>0,"Feed rows open their SEC filings inside Insidir");
    assert.ok(today.strip>0,"The watchlist strip shows the watched stocks");
    await page.locator("[data-chart] canvas").first().waitFor({timeout:10000});
 
@@ -109,6 +109,16 @@ try{
    await page.waitForFunction(()=>document.querySelectorAll("[data-al-list] .al").length>3,null,{timeout:15000});
    checkShell("Alerts",await shell());
    assert.match(await page.locator("[data-al-count]").innerText(),/unread|caught up/);
+
+   // The SEC filing inside the app (filing.html): the whole form as filed, the original on SEC.gov linked.
+   await page.goto(base+"/filing.html?accession=000000004226000015",{waitUntil:"domcontentloaded",timeout:20000});
+   await page.waitForFunction(()=>document.querySelector("[data-fl-doc]")?.getAttribute("aria-busy")==="false"&&document.querySelectorAll(".fl-table tbody tr").length>=3,null,{timeout:15000});
+   checkShell("Filing",await shell());
+   assert.match(await page.locator("[data-fl-doc]").innerText(),/Form 4[\s\S]*Statement of Changes in Beneficial Ownership[\s\S]*Table I[\s\S]*Table II[\s\S]*Explanation of responses[\s\S]*Weighted average price/,"the filing's form, both tables and its footnotes are in the app");
+   assert.equal(await page.locator("[data-fl-original]").getAttribute("href"),"https://www.sec.gov/Archives/edgar/data/42/000000004226000015/form4.xml","the original on SEC.gov is linked");
+   assert.match(await page.locator(".fl-table").first().innerText(),/\$78\.6025/,"the price exactly as filed");
+   const fl=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-innerWidth,wraps:[...document.querySelectorAll(".fl-table-wrap")].every(w=>getComputedStyle(w).overflowX==="auto")}));
+   assert.ok(fl.overflow<=4&&fl.wraps,"the form's wide tables scroll inside their own box, the page never does: "+JSON.stringify(fl));
    assert.deepEqual(issues,[],"Browser errors on the rebuilt pages: "+issues.join("; "));
    await page.unrouteAll();
 
@@ -128,7 +138,7 @@ try{
     assert.equal(auth.bg,"rgb(12, 12, 11)",route+" sits on the night background");
     assert.ok(auth.logo&&auth.advice,route+" has the SVG wordmark and the research-not-advice line");
    }
-   console.log("Browser verified:",item.width+"px","landing","Today","ticker page","Alerts","working auth","no overflow");
+   console.log("Browser verified:",item.width+"px","landing","Today","ticker page","Alerts","SEC filing","working auth","no overflow");
    assert.deepEqual(issues,[],"Uncaught browser exceptions: "+issues.join("; "));
   }finally{await context.close()}
  }

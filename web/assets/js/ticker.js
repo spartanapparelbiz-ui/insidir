@@ -5,7 +5,7 @@
    Watch adds the stock to the watchlist with important alerts on. Each tab loads when first opened. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,fmt,esc,logo,hydrateLogos,monogram,big,trade,roll}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,big,trade,roll}=UI;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const T=String(new URLSearchParams(location.search).get("ticker")||"").trim().toUpperCase().replace(/^\$/,"");
 const TICK=/^[A-Z][A-Z0-9.-]{0,9}$/;
@@ -61,7 +61,7 @@ async function insiders(){
  if(!d.items.length){quiet(el,"No open-market insider trades in two years",`Nobody at ${fmt.company(name)||T} bought or sold on the open market since ${fmt.date(new Date(Date.now()-730*864e5).toISOString())}. Watch it to hear the minute someone does.`);return;}
  el.innerHTML=`<div class="tk-table"><table class="table tk-ins"><thead><tr><th scope="col">Insider</th><th scope="col">Latest trade</th><th scope="col" class="r">Bought</th><th scope="col" class="r">Sold</th><th scope="col">Track record</th></tr></thead><tbody>
  ${d.items.map(x=>`<tr><td><span class="tk-who">${monogram(x.owner,24)}<a href="/person.html?cik=${encodeURIComponent(x.ownerCik.padStart(10,"0"))}"><span class="strong">${esc(fmt.person(x.owner))}</span> <span class="muted t-label">${esc(fmt.role(x.role))}</span></a></span></td>
-  <td class="c-last">${x.last?`<span class="tk-track">${trade(x.last)}<span class="t-label muted">${esc(fmt.money(x.last.value))}, ${esc(fmt.date(x.last.day,false))}</span>${x.last.url?`<a class="tk-row-link t-micro" href="${esc(x.last.url)}" target="_blank" rel="nofollow noopener">Filing</a>`:""}</span>`:""}</td>
+  <td class="c-last">${x.last?`<span class="tk-track">${trade(x.last)}<span class="t-label muted">${esc(fmt.money(x.last.value))}, ${esc(fmt.date(x.last.day,false))}</span>${x.last.url?`<a class="tk-row-link t-micro" href="${esc(filingHref(x.last.url,x.last.id))}">Filing</a>`:""}</span>`:""}</td>
   <td class="r c-bought ${x.bought?"up":"muted"}">${x.bought?fmt.money(x.bought):""}</td><td class="r c-sold ${x.sold?"down":"muted"}">${x.sold?fmt.money(x.sold):""}</td>
   <td class="c-track">${x.track?`<span class="tk-track">${bars(x.bars)}<span class="t-label">${x.track.hits}/${x.track.n} up after 3 months</span></span>`:`<span class="t-label muted">${x.buys?"Too early to tell":"No buys"}</span>`}</td></tr>`).join("")}</tbody></table></div>
  <p class="t-label muted">Open-market buys and sales in the last two years. A track record counts buys whose 3 months have passed.</p>`;
@@ -80,7 +80,7 @@ async function filings(){
  let d;try{d=await api("/v1/filings?ticker="+encodeURIComponent(T)+"&limit=30");}catch{loaded.delete("filings");failed(el,"The filings",filings);return;}
  const items=d.items||[];
  if(!items.length){quiet(el,"No filings imported yet","Filings for "+T+" appear here as they post to SEC EDGAR.");return;}
- el.innerHTML=`<ul class="rows">${items.map(f=>`<li class="row tk-filing">${f.source_url?`<a class="hit" href="${esc(f.source_url)}" target="_blank" rel="nofollow noopener" aria-label="Form ${esc(f.form_type||f.title)} filed ${esc(fmt.date(f.published_at))}"></a>`:""}
+ el.innerHTML=`<ul class="rows">${items.map(f=>`<li class="row tk-filing">${f.source_url||f.accession?`<a class="hit" href="${esc(filingHref(f.source_url,f.accession))}" aria-label="Form ${esc(f.form_type||f.title)} filed ${esc(fmt.date(f.published_at))}"></a>`:""}
   <span class="strong">Form ${esc(f.form_type||f.title||"")}${f.is_amendment?" (amended)":""}</span><span class="t-label muted">${esc((f.owner_names||[]).map(fmt.person).join(", ")||fmt.company(f.issuer_name))}</span><span class="t-micro muted">${esc(fmt.date(f.published_at))}</span></li>`).join("")}</ul>`;
 }
 async function connections(){

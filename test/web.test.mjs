@@ -504,13 +504,14 @@ test("charts use green for purchases and rises, red for sales and falls; the pro
 test("every person and company on the product pages gets a real logo or headshot from one /v1/media batch",async()=>{
   const web=new URL("../web/",import.meta.url),js=new URL("assets/js/",web),css=new URL("assets/css/",web);
   // Every page that names a person or a company loads the identity helper and its stylesheet.
-  for(const page of ["people","person","explore","filings","watchlist","filing","research","portfolio","intelligence"]){
+  // (filing.html is on ui.css now: the SEC form itself, with monograms and logos, not photos.)
+  for(const page of ["people","person","explore","filings","watchlist","research","portfolio","intelligence"]){
     const html=await readFile(new URL(page+".html",web),"utf8");
     assert.match(html,/<script defer src="assets\/js\/entity-media\.js(\?v=[^"]+)?"><\/script>/,page+" loads entity-media.js");
     assert.match(html,/<link rel="stylesheet" href="assets\/css\/entity-media\.css(\?v=[^"]+)?">/,page+" loads entity-media.css");
   }
   // Pages that show headshots carry the credits footnote the helper fills.
-  for(const page of ["people","person","filing","research","portfolio","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
+  for(const page of ["people","person","research","portfolio","intelligence"])assert.match(await readFile(new URL(page+".html",web),"utf8"),/data-media-credits/,page+" has a credits footnote");
   const helper=await readFile(new URL("entity-media.js",js),"utf8");
   assert.match(helper,/"\/v1\/media\?"/,"the helper asks the engine's batch endpoint");
   assert.match(helper,/MEDIA_SRC=\/\^\\\/v1\\\/media\\\/\[a-f0-9\]\{64\}/,"only content-addressed images on this origin are loaded from an answer");
@@ -525,7 +526,7 @@ test("every person and company on the product pages gets a real logo or headshot
   for(const fn of ["logo","portrait","person","company","hydrate","credits","ready","refresh","logoFor","photoFor","photo","displayName","initials","knownBrand"])
     assert.match(helper,new RegExp("InsidirMedia=Object\\.freeze\\(\\{[^}]*\\b"+fn+"\\b"),"InsidirMedia."+fn);
   // Call sites identify people by SEC owner CIK and companies without a ticker by issuer CIK.
-  const sites={"research.js":/cik:\s?item\.owner_cik/,"v2-filing.js":/cik:t\.owner_cik/,"live-research.js":/cik:x\.owner_cik/,"portfolio.js":/cik:t\.owner_cik/,
+  const sites={"research.js":/cik:\s?item\.owner_cik/,"live-research.js":/cik:x\.owner_cik/,"portfolio.js":/cik:t\.owner_cik/,
     "manual-holdings.js":/cik:item\.owner_cik/,"v2-collections.js":/cik:x\.issuer_cik/,"v12-company.js":/InsidirMedia[\s\S]*logoFor/};
   for(const [file,rule] of Object.entries(sites))assert.match(await readFile(new URL(file,js),"utf8"),rule,file);
   // The company picker and header ask the batch, not one logo request per tile.
@@ -582,14 +583,13 @@ test("identity tiles fill their box on every page, logos are not held back by th
   // The footnote holds its space and writes only off screen.
   assert.match(helper,/ins-media-credits:v1/);
   assert.match(helper,/if\(!visible\|\|short\|\|!hostIO\)write\(host,visible\);\s*else hostIO\.observe\(host\);/);
-  assert.match(await readFile(new URL("v2-filing.js",js),"utf8"),/issuerCik:t\.issuer_cik\|\|f\.issuer_cik/,"filing rows name the issuer by CIK");
   // The company report's header logo is never drawn above half its stored size (2x sharp wide wordmarks).
   assert.match(await readFile(new URL("v12-company.js",js),"utf8"),/max-width", `min\(100%, \$\{Math\.floor\(mark\.w \/ 2\)\}px\)`/);
   // The browser check measures the picture's own box, so a half-size tile cannot pass it again.
   const check=await readFile(new URL("../scripts/media-check.mjs",import.meta.url),"utf8");
   assert.match(check,/every picture fills its tile/);
   assert.match(check,/credits at the bottom/);
-  assert.match(check,/"filing-private"/);
+  assert.match(check,/Retired with the old filing page/);
 });
 
 test("the personnel file is a gated product page built only from GET /v1/people/<cik>",async()=>{
@@ -627,7 +627,7 @@ test("every person name links to their own file (person.html?cik=<owner CIK with
   const js=new URL("../web/assets/js/",import.meta.url);
   // A literal "person.html?cik=" joined to a CIK with its leading zeros removed (the people search stays the fallback).
   const link=/["'`]person\.html\?cik=["'`]\s*\+\s*[\w$.]+\.replace\(\/\^0\+\/,\s*["'`]{2}\)/;
-  for(const file of ["v10-people.js","v3-dashboard.js","v12-company.js","app.js","v2-filing.js","research.js"]){
+  for(const file of ["v10-people.js","v3-dashboard.js","v12-company.js","app.js","filing-app.js","research.js"]){
     const code=await readFile(new URL(file,js),"utf8");
     assert.ok(code.includes("person.html?cik="),file+" links people to person.html?cik=");
     assert.match(code,link,file+" builds the link from the owner CIK without leading zeros");
