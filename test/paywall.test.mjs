@@ -59,7 +59,7 @@ test("API: open endpoints, product endpoints for every method, unknown routes fa
     assert.equal(classifyApi(path, method), "open", method + " " + path);
   const product = ["/v1/filings", "/v1/filings/000123456726000042", "/v1/transactions", "/v1/companies", "/v1/clusters", "/v1/insiders",
     "/v1/status", "/v1/search", "/v1/intelligence", "/v1/market/chart", "/v1/company/profile", "/v1/company/insiders", "/v1/company/news",
-    "/v1/me/watchlist", "/v1/me/manual-holdings", "/v1/me/people", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/me/brokerage/portfolio",
+    "/v1/me/watchlist", "/v1/me/manual-holdings", "/v1/me/portfolio/import", "/v1/me/people", "/v1/me/alerts", "/v1/me/brokerage/status", "/v1/me/brokerage/portfolio",
     "/v1/me/brokerage/connect", "/v1/me/brokerage/callback", "/v1/me/", "/v1/no-such-route", "/v1/%66ilings", "/v1/me/watchlist/AAPL/x",
     "/v1/me/brokerage/", "/v1/me/people/"];
   for (const path of product) for (const method of ["GET", "HEAD", "POST", "DELETE", "get"]) assert.equal(classifyApi(path, method), "product", method + " " + path);
