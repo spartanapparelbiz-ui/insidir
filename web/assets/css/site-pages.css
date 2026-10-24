@@ -1,0 +1,134 @@
+/* Insidir's public pages beyond the landing page (platform, pricing, why, intelligence, data, about and the legal
+   pages), on ui.css + site.css: the landing page's nav, sections, cards and footer, plus a page hero, an "On this
+   page" row, card grids, fact lists, the live coverage report and a readable prose column for legal text.
+   Only ui.css tokens and type classes; every class here starts with sp-. */
+.sp-main [id]{scroll-margin-top:88px}
+
+/* the page hero: left-aligned, one headline, one sentence, the actions */
+.sp-hero{position:relative;padding-top:var(--sp24)}
+.sp-hero__in{display:grid;justify-items:start;max-width:880px}
+.sp-hero__sub{max-width:600px;margin-top:var(--sp6);color:var(--muted);text-wrap:pretty}
+.sp-actions{display:flex;flex-wrap:wrap;gap:var(--sp2);margin-top:var(--sp10)}
+.sp-terms{margin-top:var(--sp4)}
+.sp-eyebrow{margin-bottom:var(--sp4)}
+
+/* on this page: the landing page's chips */
+.sp-toc{display:grid;gap:var(--sp3);margin-top:var(--sp16)}
+.sp-toc ul{display:flex;flex-wrap:wrap;gap:var(--sp2);margin:0;padding:0;list-style:none}
+
+/* cards in a grid */
+.sp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp4);margin:0;padding:0;list-style:none}
+.sp-grid--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sp-grid--4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sp-card{display:grid;align-content:start;gap:var(--sp2);padding:var(--pad)}
+.sp-card .t-label{margin-bottom:var(--sp1)}
+a.sp-card .sp-more{margin-top:var(--sp2)}
+.sp-sub{display:grid;gap:var(--sp2);max-width:640px;margin:var(--sp16) 0 var(--sp6)}
+.sp-note{max-width:640px;margin-top:var(--sp6)}
+.sp-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp4);align-items:start}
+
+/* a plain list with the pricing card's dots */
+.sp-list{display:grid;gap:var(--sp2);margin:0;padding:0;list-style:none}
+.sp-list li{display:flex;gap:var(--sp3);align-items:baseline}
+.sp-list li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--muted);flex:none;transform:translateY(-2px)}
+.sp-list-h{margin-bottom:var(--sp3)}
+
+/* facts: a label and its value, separated by space */
+.sp-facts{display:grid;gap:var(--sp4);margin:0;padding:var(--pad)}
+.sp-facts>div{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:var(--sp4)}
+.sp-facts dt{color:var(--muted)}
+.sp-facts dd{margin:0}
+
+/* Form 4 codes: the letter, its meaning, and whether it counts */
+.sp-codes{display:grid;gap:var(--sp1);margin:0;padding:var(--sp2) var(--pad);list-style:none}
+.sp-codes li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:var(--sp3);min-height:44px}
+.sp-codes .tick{text-align:center}
+.sp-codes .trade{justify-self:end}
+
+/* the six rules: what the rule says, then what it means in practice */
+.sp-rules{display:grid;gap:var(--sp4);margin:0;padding:0;list-style:none}
+.sp-rule{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--sp10);padding:var(--sp8)}
+.sp-rule__body{display:grid;align-content:start;gap:var(--sp3)}
+
+/* a small neutral label (Intelligence's five labels) */
+.sp-badge{display:inline-flex;align-items:center;height:24px;padding:0 var(--sp2);border-radius:var(--r-sm);background:var(--fill);font-size:13px;line-height:18px;font-weight:500;white-space:nowrap}
+.sp-labels{display:grid;gap:var(--sp1);margin:0;padding:var(--sp2) var(--pad);list-style:none}
+.sp-labels li{display:grid;grid-template-columns:120px minmax(0,1fr);gap:var(--sp4);align-items:start;padding:var(--sp3) 0}
+.sp-labels .sp-badge{justify-self:start}
+.sp-labels p{color:var(--muted)}
+
+/* data: freshness, one row per cadence */
+.sp-cadence{display:grid;gap:var(--sp1);margin:0;padding:var(--sp2) var(--pad);list-style:none}
+.sp-cadence>li{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:var(--sp4);padding:var(--sp3) 0}
+.sp-cadence .sp-list{gap:var(--sp1)}
+.sp-sources{display:grid;gap:var(--sp4);margin:0;padding:0;list-style:none}
+.sp-source{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:var(--sp10);padding:var(--sp8)}
+.sp-source__name{display:grid;align-content:start;justify-items:start;gap:var(--sp2)}
+.sp-source__body{display:grid;align-content:start;gap:var(--sp4)}
+.sp-source__body .sp-facts{padding:0}
+.sp-source__body .sp-facts>div{grid-template-columns:minmax(0,120px) minmax(0,1fr)}
+
+/* the live coverage report (data-app.js): counts from the database, a skeleton until they land */
+.sp-cov{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp4);margin:0}
+.sp-cov>div{display:grid;align-content:start;gap:var(--sp1);padding:var(--pad)}
+.sp-cov dd{margin:0}
+.sp-cov .t-title{font-variant-numeric:tabular-nums}
+.sp-cov .skel{height:38px;width:60%}
+.sp-cov__sync{margin-top:var(--sp4)}
+.sp-cov__more{display:grid;gap:var(--sp2);margin-top:var(--sp4)}
+.sp-cov__more details{padding:0 var(--pad)}
+.sp-cov__more summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;cursor:pointer;list-style:none;font-weight:500}
+.sp-cov__more summary::-webkit-details-marker{display:none}
+.sp-cov__more summary::after{content:"+";color:var(--muted);font-weight:400;transition:transform var(--fast)}
+.sp-cov__more details[open] summary::after{transform:rotate(45deg)}
+.sp-cov__more .sp-list{padding-bottom:var(--pad)}
+.sp-cov-err{padding:var(--sp2) var(--pad)}
+
+/* tables inside a card: rows separated by space */
+.sp-table td,.sp-table th[scope="row"]{vertical-align:top;padding-top:var(--sp3);padding-bottom:var(--sp3)}
+.sp-table th[scope="row"]{font-weight:500;white-space:normal;padding-left:0}
+.sp-table caption{caption-side:bottom;text-align:left;padding-top:var(--sp4);font-size:13px;line-height:18px;color:var(--muted)}
+
+/* the closing call to action */
+.sp-end{display:grid;justify-items:start;gap:var(--sp4)}
+.sp-end .sp-actions{margin-top:0}
+
+/* legal pages: a table of contents beside one readable column of prose */
+.sp-doc{display:grid;grid-template-columns:200px minmax(0,1fr);gap:var(--sp16);align-items:start;padding-top:var(--sp16)}
+.sp-doc__toc{position:sticky;top:96px;display:grid;gap:var(--sp3)}
+.sp-doc__toc ol{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.sp-doc__toc a{display:flex;align-items:center;min-height:32px;padding:0 var(--sp3);margin:0 calc(-1*var(--sp3));border-radius:var(--r-sm);color:var(--muted);font-size:13px;line-height:18px;transition:color var(--fast),background-color var(--fast)}
+.sp-doc__toc a:hover{color:var(--text);background:var(--fill)}
+.sp-prose{max-width:680px;overflow-wrap:break-word}
+.sp-prose section+section{margin-top:var(--sp12)}
+.sp-prose h2{margin:0 0 var(--sp4);font-size:20px;line-height:28px;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
+.sp-prose h2 span{color:var(--muted)}
+.sp-prose p{margin:0 0 var(--sp4);text-wrap:pretty}
+.sp-prose ul{display:grid;gap:var(--sp2);margin:0 0 var(--sp4);padding-left:var(--sp5)}
+.sp-prose li::marker{color:var(--muted)}
+.sp-prose a{text-decoration:underline;text-decoration-color:rgba(240,238,232,.3);text-underline-offset:3px;transition:text-decoration-color var(--fast)}
+.sp-prose a:hover{text-decoration-color:var(--text)}
+.sp-prose code{font:inherit}
+.sp-callout{margin:0 0 var(--sp4);padding:var(--sp4) var(--pad);border-radius:var(--r-card);background:var(--s1);box-shadow:var(--hi)}
+.sp-callout p:last-child{margin-bottom:0}
+
+@media (min-width:1024px){.show.sp-show--4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:1023px){
+  .sp-grid,.sp-grid--4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sp-rule,.sp-source{grid-template-columns:minmax(0,1fr);gap:var(--sp6)}
+  .sp-cov{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sp-doc{grid-template-columns:minmax(0,1fr);gap:var(--sp10)}
+  .sp-doc__toc{position:static}
+}
+@media (max-width:767px){
+  .sp-hero{padding-top:var(--sp16)}
+  .sp-hero__sub{margin-top:var(--sp4)}
+  .sp-actions{margin-top:var(--sp8)}
+  .sp-toc{margin-top:var(--sp10)}
+  .sp-grid,.sp-grid--2,.sp-grid--4,.sp-split{grid-template-columns:minmax(0,1fr)}
+  .sp-rule,.sp-source{padding:var(--sp6)}
+  .sp-facts>div,.sp-source__body .sp-facts>div,.sp-cadence>li,.sp-labels li{grid-template-columns:minmax(0,1fr);gap:var(--sp1)}
+  .sp-cov{grid-template-columns:minmax(0,1fr)}
+  .sp-sub{margin-top:var(--sp10)}
+  .sp-doc{padding-top:var(--sp10)}
+}

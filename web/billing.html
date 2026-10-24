@@ -1,71 +1,89 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir"><meta name="theme-color" content="#0c0c0b"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billing — insidir.</title><meta name="description" content="Your Insidir subscription: status, renewal date, payment method and invoices through Stripe's billing portal."><meta name="robots" content="noindex"><link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="stylesheet" href="assets/css/base.css"><link rel="stylesheet" href="assets/css/app.css"><link rel="stylesheet" href="assets/css/v2-app.css"><link rel="stylesheet" href="assets/css/v3-app.css">
-<link rel="stylesheet" href="assets/css/v6-app.css?v=2">
-<link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
-<link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-app.css?v=26">
-<link rel="stylesheet" href="assets/css/v13-desk.css?v=12">
-<link rel="stylesheet" href="assets/css/v13-paywall.css?v=8">
-<script defer src="assets/js/app.js?v=23"></script>
-<script defer src="assets/js/billing.js?v=5"></script>
-<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<style>body.v13 .bl-cancel{margin:16px 0 0;padding:16px 18px;border:1px solid var(--hf-line-strong);background:var(--hf-surface)}body.v13 .bl-cancel[hidden]{display:none}body.v13 .bl-cancel h3{margin:0 0 6px}body.v13 .bl-cancel p{margin:0 0 12px;color:var(--hf-soft)}body.v13 .bl-cancel .bl-pause-note{margin:12px 0 0}</style><link rel="stylesheet" href="assets/css/v29-system.css"><link rel="stylesheet" href="assets/css/v29-app.css"><link rel="stylesheet" href="assets/css/v33-platform.css?v=4"></head><body class="app-body v2-app v3-app v6-app v13 pw-billing"><a class="skip-link" href="#Content">Skip to content</a><header data-app-header data-active=""></header>
-<main class="app-main v3-billing" id="main">
-<header class="v3-billing__head desk-masthead" id="Content">
-<div class="pd-band" data-halftone-field data-dot-gap="11" data-field-coverage="0.1" data-radius="170" aria-hidden="true"></div>
-<div class="desk-topline"><p class="v3-eyebrow">Your account / Billing</p><p class="desk-topline__note rd-seq"><span class="rd-bit rd-bit--first">Payments processed by Stripe</span><span class="rd-bit"><span class="rd-sep"> · </span>status from verified Stripe events</span></p></div>
-<h1>Billing.</h1>
-<p class="v3-billing__lead desk-lead">Your Insidir subscription, its renewal date and your payment method. Card details stay with Stripe; Insidir never sees them.</p>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Billing — Insidir</title>
+<meta name="description" content="Your Insidir subscription: status, trial and renewal dates, payment method and invoices through Stripe's billing portal, and cancel online.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c0b">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Insidir">
+<link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=2">
+<link rel="stylesheet" href="/assets/css/account-app.css?v=1">
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/account-shell-guard.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=3"></script>
+<script defer src="/assets/js/billing-app.js?v=1"></script>
+</head>
+<body class="ui">
+<a class="skip" href="#main">Skip to content</a>
+<div data-ui-shell data-page="settings">
+
+<header class="page-head">
+  <div><h1 class="t-title">Billing</h1><p class="t-label muted">Payments are processed by Stripe. Card details stay with Stripe; Insidir never sees them.</p></div>
 </header>
 
-<section class="bl-confirm" data-bl-confirm data-state="waiting" role="status" aria-live="polite" hidden>
-<p class="bl-confirm__label">Checkout complete</p>
-<h2 data-bl-confirm-title>Confirming your subscription…</h2>
-<p data-bl-confirm-text>Stripe is confirming the subscription with Insidir. This usually takes a few seconds.</p>
-<div class="bl-confirm__actions"><a class="btn btn--dark" href="dashboard.html" data-bl-open hidden>Open dashboard</a><button type="button" class="btn btn--light" data-bl-recheck hidden>Check again</button></div>
-</section>
+<div class="set">
+  <section class="card set-card" data-bl-confirm data-state="waiting" role="status" aria-live="polite" hidden>
+    <p class="set-label">Checkout complete</p>
+    <h2 class="t-section" data-bl-confirm-title>Confirming your subscription…</h2>
+    <p class="set-note" data-bl-confirm-text>Stripe is confirming the subscription with Insidir. This usually takes a few seconds.</p>
+    <div class="set-acts"><a class="btn btn--primary" href="/dashboard.html" data-bl-open hidden>Open Today</a><button class="btn btn--secondary" type="button" data-bl-recheck hidden>Check again</button></div>
+  </section>
 
-<section class="bl-plan" aria-labelledby="bl-plan-title">
-<div class="bl-plan__head">
-<p class="v3-eyebrow">Your plan</p>
-<h2 id="bl-plan-title">Insidir Pro</h2>
-<p class="bl-badge" data-bl-badge>Checking</p>
-<p class="bl-plan__price"><strong>$39</strong>per month, billed monthly in US dollars</p>
-</div>
-<dl class="bl-facts">
-<div><dt>Status</dt><dd data-bl-status>Checking your subscription…</dd></div>
-<div><dt data-bl-period-label>Current period ends</dt><dd data-bl-period>—</dd></div>
-<div><dt>Payment method</dt><dd data-bl-method>—</dd></div>
-<div><dt>Account</dt><dd data-bl-email>—</dd></div>
-</dl>
-<p id="bill-status" class="bl-message" role="status" aria-live="polite"></p>
-<div class="bl-actions">
-<button type="button" id="manage" class="btn btn--dark" data-busy-label="Opening billing portal…" hidden>Manage billing</button>
-<a class="btn btn--dark" href="subscribe.html" data-bl-subscribe hidden>Subscribe · $39/month</a>
-<a class="btn btn--light" href="dashboard.html" data-bl-dashboard hidden>Open dashboard</a>
-<button type="button" class="btn btn--light" data-bl-cancel data-busy-label="Cancelling…" hidden>Cancel subscription</button>
-</div>
-<div class="bl-cancel" data-bl-cancel-confirm role="alertdialog" aria-labelledby="bl-cancel-h" aria-describedby="bl-cancel-p" hidden>
-<h3 id="bl-cancel-h">Cancel your subscription?</h3>
-<p id="bl-cancel-p" data-bl-cancel-text>You won't be charged again. Access continues until the end of the current period.</p>
-<div class="bl-actions"><button type="button" class="btn btn--dark" data-bl-cancel-yes>Yes, cancel</button><button type="button" class="btn btn--light" data-bl-pause hidden>Pause 1 month instead</button><button type="button" class="btn btn--light" data-bl-cancel-no>Keep subscription</button></div>
-<p class="bl-pause-note" data-bl-pause-text hidden></p>
-</div>
-<div class="bl-actions" data-bl-resume-row hidden><button type="button" class="btn btn--light" data-bl-resume>Resume now</button></div>
-</section>
+  <section class="set-sec" aria-labelledby="bl-plan-title">
+    <div class="set-sec__head"><h2 class="t-section" id="bl-plan-title">Insidir Pro</h2></div>
+    <div class="card set-card">
+      <div class="set-plan">
+        <p class="set-plan__price">$39<span class="u"> a month, billed monthly in US dollars</span></p>
+        <p class="set-pill" data-bl-badge data-tone="wait">Checking</p>
+      </div>
+      <dl class="set-facts">
+        <div><dt>Status</dt><dd data-bl-status>Checking your subscription…</dd></div>
+        <div><dt data-bl-period-label>Renews on</dt><dd data-bl-period>—</dd></div>
+        <div><dt>Payment method</dt><dd data-bl-method>—</dd></div>
+        <div><dt>Account</dt><dd data-bl-email>—</dd></div>
+      </dl>
+      <p class="set-msg" id="bill-status" role="status" aria-live="polite"></p>
+      <div class="set-field" data-bl-offer hidden>
+        <p class="set-label">The offer for this account</p>
+        <p class="set-value" data-bl-offer-line></p>
+        <p class="set-terms" data-bl-offer-terms></p>
+        <p class="set-note">You agree to these exact terms with a tick on the next page, before Stripe's secure checkout opens.</p>
+      </div>
+      <div class="set-acts">
+        <button class="btn btn--primary" type="button" id="manage" data-busy-label="Opening billing portal…" hidden>Manage billing</button>
+        <a class="btn btn--primary" href="/subscribe.html" data-bl-subscribe hidden>Subscribe · $39 a month</a>
+        <a class="btn btn--secondary" href="/dashboard.html" data-bl-dashboard hidden>Open Today</a>
+        <button class="btn btn--ghost" type="button" data-bl-cancel hidden>Cancel subscription</button>
+      </div>
+      <div class="set-confirm" id="cancel" data-bl-cancel-confirm role="group" aria-labelledby="bl-cancel-h" aria-describedby="bl-cancel-p" hidden>
+        <h3 id="bl-cancel-h">Cancel your subscription?</h3>
+        <p id="bl-cancel-p" data-bl-cancel-text>You won't be charged again. Access continues until the end of the current period.</p>
+        <div class="set-acts"><button class="btn btn--primary" type="button" data-bl-cancel-yes>Yes, cancel</button><button class="btn btn--secondary" type="button" data-bl-pause hidden>Pause 1 month instead</button><button class="btn btn--secondary" type="button" data-bl-cancel-no>Keep subscription</button></div>
+        <p data-bl-pause-text hidden></p>
+      </div>
+      <div class="set-acts" data-bl-resume-row hidden><button class="btn btn--secondary" type="button" data-bl-resume>Resume now</button></div>
+    </div>
+  </section>
 
-<section class="bl-help" aria-label="Billing help" data-hf-reveal-group>
-<div><p class="v3-eyebrow">01 / Change or cancel</p><h3>Right here, or in Stripe's portal</h3><p>Cancel subscription stops renewal in one step; access continues to the end of the period you paid for, and a trial ends without the $39 charge. Manage billing opens Stripe's secure portal to update your card or download invoices. See the <a href="subscription-policy.html">Subscription policy</a>.</p></div>
-<div><p class="v3-eyebrow">02 / Deleting your account</p><h3>Cancels billing first</h3><p>Deleting your account from <a href="account.html">Account</a> cancels the subscription with Stripe before anything is removed, so no further payments are taken.</p></div>
-<div><p class="v3-eyebrow">03 / Questions</p><h3>Talk to a person</h3><p>A charge you don't recognise or a billing question? Email <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>. Subscriptions are covered by the <a href="terms.html">Terms</a>.</p></div>
-</section>
-</main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+  <section class="set-sec" aria-labelledby="bl-help-h">
+    <div class="set-sec__head"><h2 class="t-section" id="bl-help-h">Help</h2></div>
+    <div class="set-help">
+      <div class="card"><h3>Change or cancel</h3><p class="set-note">Cancel subscription stops renewal in one step; access continues to the end of the period you paid for, and a trial ends without the $39 charge. Manage billing opens Stripe's secure portal to update your card or download invoices. See the <a href="/subscription-policy.html">subscription policy</a>.</p></div>
+      <div class="card"><h3>Deleting your account</h3><p class="set-note">Deleting your account from <a href="/account.html">Settings</a> cancels the subscription with Stripe before anything is removed, so no further payments are taken.</p></div>
+      <div class="card"><h3>Questions</h3><p class="set-note">A charge you don't recognise or a billing question? Write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a>. Subscriptions are covered by the <a href="/terms.html">Terms</a>.</p></div>
+    </div>
+  </section>
 </div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer></body></html>
+
+<footer class="data-foot">
+  <p class="t-micro">Insidir sends no email; your subscription, renewal date and cancellation are always here. Research, not investment advice.</p>
+</footer>
+</div>
+</body>
+</html>

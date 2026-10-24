@@ -1,0 +1,11 @@
+/* Static notices on auth-ui.css: account-deleted.html and 404.html. Only ui.css tokens. */
+.nt-acts{display:flex;flex-wrap:wrap;gap:var(--sp2);margin-top:var(--sp8)}
+.nt-acts .btn{flex:1 1 160px}
+.nt-list{display:grid;gap:var(--sp4);margin:var(--sp8) 0 0;padding:var(--pad);border-radius:var(--r-card);background:var(--s1);box-shadow:var(--hi)}
+.nt-list>div{display:grid;gap:var(--sp1)}
+.nt-list dt{font-size:13px;line-height:18px;font-weight:500}
+.nt-list dd{font-size:13px;line-height:18px;color:var(--muted);text-wrap:pretty}
+.nt-pages{margin-top:var(--sp8)}
+.nt-pages ul{display:grid;gap:var(--sp1);margin:var(--sp3) 0 0;padding:0;list-style:none}
+.nt-pages a{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);min-height:44px;padding:0 var(--sp4);border-radius:var(--r-ctl);background:var(--s1);font-size:15px;line-height:24px;transition:background-color var(--fast)}
+.nt-pages a:hover{background:var(--s2)}

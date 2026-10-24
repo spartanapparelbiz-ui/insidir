@@ -1,225 +1,116 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Insidir"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0c0c0b">
-<meta name="description" content="Where Insidir's data comes from: SEC EDGAR submissions, XBRL company facts, Form 4 ownership reports, the SEC ticker list, delayed Yahoo Finance prices and Wikidata, Wikipedia and Wikimedia Commons profiles. Freshness, licensing and limitations.">
-<meta property="og:site_name" content="insidir.">
-<meta property="og:title" content="Data & sources — Insidir">
-<meta property="og:description" content="Where Insidir's data comes from: SEC EDGAR submissions, XBRL company facts, Form 4 ownership reports, the SEC ticker list, delayed Yahoo Finance prices and Wikidata, Wikipedia and Wikimedia Commons profiles. Freshness, licensing and limitations.">
-<title>Data & sources — insidir.</title>
-<link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/v3-static.css">
-<link rel="stylesheet" href="assets/css/v6-static.css?v=1">
-<link rel="stylesheet" href="assets/css/v7-unified.css?v=1">
-<link rel="stylesheet" href="assets/css/v9-interior.css?v=1">
-<link rel="stylesheet" href="assets/css/v13-halftone.css?v=10">
-<link rel="stylesheet" href="assets/css/v13-static.css?v=9">
-<link rel="stylesheet" href="assets/css/v15-site.css?v=1">
-<link rel="stylesheet" href="assets/css/v16-rich-site.css?v=1">
-<link rel="stylesheet" href="assets/css/v17-smooth.css?v=3">
-<script defer src="assets/js/v6-site.js?v=2"></script><script defer src="assets/js/coverage.js"></script>
-<script defer src="assets/js/v13-halftone.js?v=8"></script><script defer src="assets/js/v13-motion.js?v=5"></script>
-<link rel="stylesheet" href="assets/css/v29-system.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Data &amp; sources — Insidir</title>
+<meta name="description" content="Where Insidir's data comes from: SEC EDGAR filings, Form 4 ownership reports, XBRL company facts, 13F holdings, the SEC ticker list, delayed Yahoo Finance prices and Wikidata and Wikipedia profiles. Freshness, live coverage, licensing and limitations.">
+<link rel="canonical" href="https://insidir.com/data.html">
+<meta name="theme-color" content="#0c0c0b"><meta name="color-scheme" content="dark">
+<meta property="og:site_name" content="Insidir"><meta property="og:type" content="website">
+<meta property="og:title" content="Data &amp; sources — Insidir"><meta property="og:description" content="Where Insidir's data comes from: SEC EDGAR filings, Form 4 ownership reports, XBRL company facts, 13F holdings, the SEC ticker list, delayed Yahoo Finance prices and Wikidata and Wikipedia profiles. Freshness, live coverage, licensing and limitations."><meta property="og:url" content="https://insidir.com/data.html">
+<meta property="og:image" content="https://insidir.com/assets/og/insidir-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://insidir.com/assets/og/insidir-og.png">
+<link rel="icon" href="/assets/icons/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/ui.css?v=2">
+<link rel="stylesheet" href="/assets/css/site.css?v=1">
+<link rel="stylesheet" href="/assets/css/site-pages.css?v=1">
+<script defer src="/assets/vendor/motion-12.23.12.js"></script>
+<script defer src="/assets/js/icons.js?v=1"></script>
+<script defer src="/assets/js/ui.js?v=3"></script>
+<script defer src="/assets/js/ds.js?v=2"></script>
+<script defer src="/assets/js/site-v2.js?v=1"></script>
+<script defer src="/assets/js/data-app.js?v=1"></script>
+<script defer src="/assets/js/funnel.js"></script>
 <script defer src="/assets/js/posthog.js?v=1"></script>
 </head>
-<body class="v3-static v6-static v13">
-<a class="skip-link" href="#Content">Skip to content</a>
-<header class="v6-nav v9-nav">
- <div class="mk-shell v6-nav__inner">
-  <a class="v6-logo" href="index.html" aria-label="Insidir home"><svg class="wordmark-svg" viewBox="70 -793 4531 803" aria-hidden="true"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a>
-  <nav class="v6-nav__links" aria-label="Main navigation"><a href="/platform.html">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a></nav>
-  <div class="v6-nav__actions">
-   <a class="v6-signin" href="/signin.html">Log in</a>
-   <a class="v9-btn v9-btn--ink v9-btn--small" href="/signup.html" data-cta="nav">Start for $1</a>
-   <button id="v6-menu-button" class="v6-menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="v6-menu"><span></span><span></span></button>
-  </div>
- </div>
- <nav id="v6-menu" class="v6-mobile" aria-label="Mobile navigation" hidden><a href="/platform.html">Platform</a><a href="/insidir-intelligence.html">Intelligence</a><a href="/pricing.html">Pricing</a><a href="/insider-trading">Insider filings</a><a href="/stories.html">Research stories</a><a href="/why-insidir.html">Why Insidir</a><a href="/data.html" aria-current="page">Data &amp; sources</a><a href="/signin.html">Log in</a><a href="/signup.html" data-cta="menu">Start for $1</a></nav>
-</header>
-<main id="Content">
-<section class="mk-hero v13-field-host" aria-labelledby="mk-title">
- <div class="v13-field mk-hero__field" data-halftone-field data-field-coverage="0.1" aria-hidden="true"></div>
- <div class="mk-shell mk-hero__grid">
-  <div>
-   <p class="mk-eyebrow">Insidir / Data &amp; sources</p>
-   <h1 id="mk-title">Where every number <span>comes from.</span></h1>
-   <p class="mk-lede">Each source Insidir uses: what for, how fresh, how licensed, and its limits.</p>
-   <div class="mk-actions">
-    <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Start 7 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
-    <a class="v9-btn v12-outline-button" href="platform.html">See the platform <span class="v13-arrow" aria-hidden="true">→</span></a>
-   </div>
-  </div>
-  <nav aria-label="On this page" data-hf-reveal>
-   <p class="mk-eyebrow mk-index-title">On this page</p>
-   <ol class="mk-index">
-    <li><a href="#1-sources"><span data-hf-atom>01</span>Sources<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#2-freshness"><span data-hf-atom>02</span>Freshness<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#3-licensing"><span data-hf-atom>03</span>Licensing &amp; credit<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#4-not-used"><span data-hf-atom>04</span>Not used<span aria-hidden="true">↓</span></a></li>
-    <li><a href="#5-limits"><span data-hf-atom>05</span>Limitations<span aria-hidden="true">↓</span></a></li>
-   </ol>
-  </nav>
- </div>
-</section>
-
-<section class="mk-section" id="1-sources" aria-labelledby="1-sources-h">
- <div class="mk-shell" data-folio="01 / 05">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Sources</p><h2 id="1-sources-h">Eight sources, <span>each one named.</span></h2></div>
-   <div class="mk-head__aside"><p>Four come from the SEC and carry the filings themselves. The other four add delayed prices, headlines and company profiles, and are credited wherever they appear.</p></div>
-  </div>
-
-  <ol class="mk-sources" data-hf-reveal-group>
-   <li class="mk-source" id="edgar">
-    <div class="mk-source__name"><h3>SEC EDGAR submissions</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Each company's filing history: annual and quarterly reports, current reports on Form <span class="hf-nw">8-K</span>, proxy statements and ownership filings, with the original documents.</p><p>Insidir requests it with a declared identity and keeps its requests below the SEC's fair-access limit of ten per second.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company reports (SEC filings, News), the research desk</dd></div><div><dt>Freshness</dt><dd>Read when you open a report; kept for up to 15 minutes</dd></div></dl>
-   </li>
-   <li class="mk-source" id="xbrl">
-    <div class="mk-source__name"><h3>SEC XBRL company facts</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/sec-api-documentation" rel="noopener">EDGAR APIs<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Financial statement values exactly as the company tagged them, with the period, the form and the filing date. Insidir reads US GAAP and, for <span class="hf-nw">20-F</span> and <span class="hf-nw">40-F</span> filers, IFRS.</p><p>Trailing-twelve-month figures, market cap, enterprise value and P/E are calculated from these values and show their inputs.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Financials, key facts, the research desk</dd></div><div><dt>Freshness</dt><dd>Read when you open a report; kept for up to 15 minutes</dd></div></dl>
-   </li>
-   <li class="mk-source" id="form4">
-    <div class="mk-source__name"><h3>Form 4 ownership reports</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/edgar/search/" rel="noopener">EDGAR<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>What officers, directors and 10% owners report buying, selling, receiving and exercising, parsed from the filed ownership XML.</p><p>Insidir uses them two ways: an imported library of recent filings from the SEC's current-filings feed, and each company's own recent filings, read from EDGAR when you open its report.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>SEC filings, insider activity, people, alerts, portfolio</dd></div><div><dt>Freshness</dt><dd>Library: checked about every 2 minutes when automatic import is enabled. Reports: summaries kept 15 minutes, filed documents 24 hours</dd></div></dl>
-   </li>
-   <li class="mk-source" id="tickers">
-    <div class="mk-source__name"><h3>SEC company ticker list</h3><p>Official · U.S. SEC</p><a class="mk-link" href="https://www.sec.gov/files/company_tickers.json" rel="noopener">The list<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>The SEC's own mapping from ticker to company identifier (CIK). Insidir resolves every search and report through it, never through a fuzzy name match.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Search, company reports</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
-   </li>
-   <li class="mk-source" id="yahoo">
-    <div class="mk-source__name"><h3>Yahoo Finance</h3><p>Delayed prices · third party</p><a class="mk-link" href="https://finance.yahoo.com/" rel="noopener">Yahoo Finance<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Delayed price history for six ranges and the latest session quote, plus headlines from the ticker's public news feed. Headlines link to the publisher; Insidir copies no article text.</p><p>Prices are delayed, are not an official record of trades and are not meant for trading.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Price chart, market cap, enterprise value, P/E, news headlines</dd></div><div><dt>Freshness</dt><dd>Prices kept 1 to 60 minutes depending on the range; headlines 15 minutes</dd></div></dl>
-   </li>
-   <li class="mk-source" id="wikidata">
-    <div class="mk-source__name"><h3>Wikidata</h3><p>CC0 · public domain</p><a class="mk-link" href="https://www.wikidata.org/" rel="noopener">Wikidata<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Founding year, latest employee count, official website, logo, leadership and founders. A profile is matched to the company only by its SEC identifier (Wikidata property P5531).</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company profiles, people in company reports</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
-   </li>
-   <li class="mk-source" id="wikipedia">
-    <div class="mk-source__name"><h3>Wikipedia</h3><p>CC BY-SA 4.0</p><a class="mk-link" href="https://en.wikipedia.org/" rel="noopener">Wikipedia<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>The short description at the top of a company report, taken from the summary of the company's article and credited with a link to it and to the license.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company descriptions</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl>
-   </li>
-   <li class="mk-source" id="commons">
-    <div class="mk-source__name"><h3>Wikimedia Commons</h3><p>License per file</p><a class="mk-link" href="https://commons.wikimedia.org/" rel="noopener">Commons<span class="v13-arrow" aria-hidden="true">↗</span></a></div>
-    <div class="mk-source__body"><p>Company logos and published photographs of executives, loaded from Wikimedia's servers. Each file is used under its own license, and no portrait is generated or guessed.</p></div>
-    <dl class="mk-ledger"><div><dt>Used in</dt><dd>Company logos, people in company reports</dd></div><div><dt>Freshness</dt><dd>Loaded from Wikimedia when shown</dd></div></dl>
-   </li>
-  </ol>
- </div>
-</section>
-
-<section class="mk-section" id="2-freshness" aria-labelledby="2-freshness-h">
- <div class="mk-shell" data-folio="02 / 05">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Freshness</p><h2 id="2-freshness-h">How old a number <span>can be.</span></h2></div>
-   <div class="mk-head__aside"><p>Insidir keeps a copy of what it reads for a short time before asking the source again. The longest it waits, by kind of data:</p></div>
-  </div>
-
-  <ol class="mk-cadence" data-hf-reveal-group>
-   <li><b data-hf-atom>1<small>min</small></b><ul><li>Prices, one-day range</li></ul></li>
-   <li><b data-hf-atom>5<small>min</small></b><ul><li>Prices, one-week range</li></ul></li>
-   <li><b data-hf-atom>10<small>min</small></b><ul><li>Prices, one-month range</li></ul></li>
-   <li><b data-hf-atom>15<small>min</small></b><ul><li>Prices, three months and one year</li><li>Company filings and XBRL facts</li><li>Insider activity in reports</li><li><span class="hf-nw">8-K</span> announcements and headlines</li><li>Form 4 import, when enabled</li></ul></li>
-   <li><b data-hf-atom>1<small>hour</small></b><ul><li>Prices, five-year range</li><li>EDGAR daily Form 4 index, checked against the import</li></ul></li>
-   <li><b data-hf-atom>24<small>hours</small></b><ul><li>SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li><li>Filed Form 4 documents, which never change</li></ul></li>
-  </ol>
-  <p class="mk-note" data-hf-reveal>Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
-  <div class="mk-coverage" id="mk-coverage" aria-labelledby="mk-coverage-h">
-   <h3 id="mk-coverage-h">Coverage, measured now.</h3>
-   <p class="mk-coverage__lede">Counted from Insidir’s database when this page loads, and checked against EDGAR’s own daily index of Form 4 filings.</p>
-   <div id="mk-coverage-body" aria-live="polite"><p class="mk-coverage__wait">Counting…</p></div>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="3-licensing" aria-labelledby="3-licensing-h">
- <div class="mk-shell" data-folio="03 / 05">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Licensing &amp; credit</p><h2 id="3-licensing-h">Credited <span>where it appears.</span></h2></div>
-   <div class="mk-head__aside"><p>Each source is used on its own terms, and each page that shows it says where it came from.</p></div>
-  </div>
-
-  <div class="mk-table-wrap" data-hf-reveal>
-   <table class="mk-table">
-    <thead><tr><th scope="col">Source</th><th scope="col">Terms</th><th scope="col">How Insidir credits it</th></tr></thead>
-    <tbody>
-     <tr><th scope="row">SEC EDGAR, XBRL and Form 4</th><td data-label="Terms">Public records published by the SEC, accessed under its fair-access guidelines with a declared identity.</td><td data-label="Credit">Every filing and figure links to its original document on sec.gov.</td></tr>
-     <tr><th scope="row">Yahoo Finance</th><td data-label="Terms">Third-party delayed price data and publisher headlines.</td><td data-label="Credit">The chart names Yahoo Finance and links to the quote; headlines link to the publisher.</td></tr>
-     <tr><th scope="row">Wikidata</th><td data-label="Terms">CC0 1.0, a public domain dedication.</td><td data-label="Credit">Profile facts are labelled with their source.</td></tr>
-     <tr><th scope="row">Wikipedia</th><td data-label="Terms">CC BY-SA 4.0.</td><td data-label="Credit">The description is credited to Wikipedia with links to the article and the license.</td></tr>
-     <tr><th scope="row">Wikimedia Commons</th><td data-label="Terms">Each file under its own license.</td><td data-label="Credit">Images are credited to Wikimedia Commons; curated logos and portraits link to their file page.</td></tr>
-    </tbody>
-    <caption>Company names and logos are trademarks of their owners. Insidir is not affiliated with or endorsed by the SEC, Yahoo or the Wikimedia Foundation.</caption>
-   </table>
-  </div>
- </div>
-</section>
-
-<section class="mk-section" id="4-not-used" aria-labelledby="4-not-used-h">
- <div class="mk-shell" data-folio="04 / 05">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Not used</p><h2 id="4-not-used-h">Sources Insidir <span>leaves alone.</span></h2></div>
-   <div class="mk-head__aside"><p>Some data is popular with investing apps. Insidir does not ingest it until its legal and licensing questions are settled, and some of it never.</p></div>
-  </div>
-
-  <ul class="mk-cells mk-cells--4" data-hf-reveal>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Congressional disclosures</h3><p>House and Senate financial disclosures are not scraped, ingested or shown pending legal review.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Social media</h3><p>No posts are collected from X, Truth Social or any other service without authorized access.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Disabled</span></div><h3>Crypto wallets</h3><p>No wallet is attributed to a public figure without strong, verifiable evidence.</p></li>
-   <li class="mk-cell"><div class="mk-cell__top"><span class="mk-num">Never</span></div><h3>Generated text</h3><p>No summaries, ratings or signals written by AI, and no invented data to fill a gap.</p></li>
-  </ul>
- </div>
-</section>
-
-<section class="mk-section" id="5-limits" aria-labelledby="5-limits-h">
- <div class="mk-shell" data-folio="05 / 05">
-  <div class="mk-head" data-hf-reveal>
-   <div><p class="mk-eyebrow">Limitations</p><h2 id="5-limits-h">What the record <span>cannot tell you.</span></h2></div>
-   <div class="mk-head__aside"><p>Public data has gaps. These are the ones that matter most when you read Insidir.</p></div>
-  </div>
-
-  <ul class="mk-list mk-list--2" data-hf-reveal>
-   <li>The filing library starts from the filings Insidir has imported; it is not a complete historical archive.</li>
-   <li>The SEC notes that its ticker list may be incomplete, so a company may not be found by ticker.</li>
-   <li>Not every company reports every measure in XBRL, and values can be restated in later filings.</li>
-   <li>A Form&nbsp;4 is filed after the trade, generally within two business days; amendments can repeat or correct earlier reports.</li>
-   <li>Prices are delayed, can be unavailable and are not an official record of trades.</li>
-   <li>Market cap, enterprise value and P/E are not calculated for foreign issuers whose listed shares may be ADRs.</li>
-   <li>Wikidata and Wikipedia are edited by volunteers and can lag or be wrong; a company with no SEC identifier on Wikidata has no profile.</li>
-   <li>Any source can be briefly unavailable. Pages say so rather than estimate.</li>
-  </ul>
- </div>
-</section>
-
-<section class="mk-final v13-field-host" aria-labelledby="mk-final-heading">
- <div class="v13-field" data-halftone-field data-dot-gap="11" data-field-coverage="0.07" data-radius="180" aria-hidden="true"></div>
- <div class="mk-shell mk-final__inner" data-hf-reveal-group>
-  <p class="mk-eyebrow">Insidir · 7 days for $1, then $39 a month</p>
-  <h2 id="mk-final-heading">Explore <span>Insidir.</span></h2>
-  <p class="mk-final__copy">7 days for $1. Then $39/month. Cancel online.</p>
-  <div class="mk-actions">
-   <a class="v9-btn v9-btn--ink" href="signup.html" data-cta="page">Start 7 days for $1 <span class="v13-arrow" aria-hidden="true">→</span></a>
-   <a class="v9-btn v12-outline-button" href="platform.html">See the platform <span class="v13-arrow" aria-hidden="true">→</span></a>
-  </div>
- </div>
-</section>
-</main>
-<footer class="v13-footer v13-footer--plain" aria-label="Site footer">
-<div class="hwf-top">
-<div class="hwf-brand"><strong>Insidir</strong><span>©2026 · Aethric LLC · Research, not advice</span></div>
-<nav class="hwf-col" aria-label="Platform"><h3>Platform</h3><ul><li><a href="explore.html">Companies</a></li><li><a href="people.html">People</a></li><li><a href="filings.html">SEC filings</a></li><li><a href="research.html">Research desk</a></li><li><a href="watchlist.html">Watchlist</a></li><li><a href="alerts.html">Alerts</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Account"><h3>Account</h3><ul><li><a href="signin.html">Log in</a></li><li><a href="signup.html">Start for $1</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="pricing.html">Pricing</a></li><li><a href="billing.html">Billing</a></li></ul></nav>
-<nav class="hwf-col" aria-label="Company"><h3>Company</h3><ul><li><a href="company-info.html">About</a></li><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="disclosures.html">Disclosures</a></li><li><a href="subscription-policy.html">Subscriptions</a></li><li><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></li></ul></nav>
+<body class="ui site">
+<a class="skip" href="#main">Skip to content</a>
+<header class="snav" data-ds-nav><div class="snav__in">
+<a class="wordmark" href="/" aria-label="Insidir home"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="70 -793 4531 803"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a>
+<nav class="snav__links" aria-label="Main"><a href="/#how" data-spy="how">How it works</a><a href="/#pricing" data-spy="pricing">Pricing</a><a href="/#faq" data-spy="faq">FAQ</a></nav>
+<div class="snav__end"><a class="btn btn--ghost" href="/signin.html">Log in</a><a class="btn btn--secondary" href="/signup.html" data-cta="nav">Start for $1</a></div>
+</div></header>
+<main id="main" class="sp-main">
+<section class="sp-hero" data-v2-hero aria-labelledby="hero-h"><div class="swrap"><div class="sp-hero__in">
+ <h1 class="t-display" id="hero-h">Where every number comes from.</h1>
+ <p class="sp-hero__sub">Each source Insidir uses: what for, how fresh, how licensed, and its limits.</p>
+ <div class="sp-actions"><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="page">Start 7 days for $1</a><a class="btn btn--secondary btn--lg" href="/platform.html">See the platform</a></div>
+ 
 </div>
-<div class="hwf-rule"><span class="hwf-note"><span>Public records</span> <span>Data may be delayed</span> <span>Not investment advice</span></span><button type="button" class="hwf-up">Back to top ↑</button></div>
-</footer>
-</body>
-</html>
+<nav class="sp-toc" aria-label="On this page"><p class="t-label muted">On this page</p><ul><li><a class="chip" href="#1-sources">Sources</a></li><li><a class="chip" href="#2-freshness">Freshness</a></li><li><a class="chip" href="#coverage">Coverage</a></li><li><a class="chip" href="#3-licensing">Licensing &amp; credit</a></li><li><a class="chip" href="#4-not-used">Not used</a></li><li><a class="chip" href="#5-limits">Limitations</a></li></ul></nav>
+</div></section>
+<section class="ssec" id="1-sources" aria-labelledby="1-sources-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="1-sources-h">Each source, named.</h2><p class="ssec__p">Five come from the SEC and carry the filings themselves. The others add delayed prices, headlines, company profiles and logos.</p></header>
+ <ol class="sp-sources">
+ <li class="card sp-source" id="edgar"><div class="sp-source__name"><h3 class="t-section">SEC EDGAR filings</h3><p class="t-label muted">Official · U.S. SEC</p><a class="t-label slink" href="https://www.sec.gov/edgar/search/" rel="noopener" target="_blank">EDGAR ↗</a></div>
+ <div class="sp-source__body"><p class="muted">Each company's filing history: annual and quarterly reports, current reports on Form 8-K, proxy statements and ownership filings, with the original documents.</p><p class="muted">Insidir requests it with a declared identity and keeps its requests below the SEC's fair-access limit of ten per second.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Stock pages (Filings), the filing view, alerts, Intelligence, the research desk</dd></div><div><dt>Freshness</dt><dd>Watched companies' new filings are checked about every 30 minutes; a filed document, which never changes, is read once and kept</dd></div></dl></div></li>
+ <li class="card sp-source" id="form4"><div class="sp-source__name"><h3 class="t-section">Form 4 ownership reports</h3><p class="t-label muted">Official · U.S. SEC</p><a class="t-label slink" href="https://www.sec.gov/edgar/search/" rel="noopener" target="_blank">EDGAR ↗</a></div>
+ <div class="sp-source__body"><p class="muted">What officers, directors and 10% owners report buying, selling, receiving and exercising, parsed from the filed ownership XML, footnotes included.</p><p class="muted">New filings come from the SEC's current-filings feed. EDGAR's own daily index of Form 4 filings is read to catch anything the feed missed.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Today, stock pages, insiders and their track records, signal scores, alerts, the portfolio</dd></div><div><dt>Freshness</dt><dd>New filings checked about every 2 minutes when automatic import is enabled; the daily index every hour</dd></div></dl></div></li>
+ <li class="card sp-source" id="xbrl"><div class="sp-source__name"><h3 class="t-section">SEC XBRL company facts</h3><p class="t-label muted">Official · U.S. SEC</p><a class="t-label slink" href="https://www.sec.gov/edgar/sec-api-documentation" rel="noopener" target="_blank">EDGAR APIs ↗</a></div>
+ <div class="sp-source__body"><p class="muted">Financial statement values exactly as the company tagged them, with the period, the form and the filing date. Insidir reads US GAAP and, for 20-F and 40-F filers, IFRS.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Intelligence (results against a year earlier), the research desk</dd></div></dl></div></li>
+ <li class="card sp-source" id="13f"><div class="sp-source__name"><h3 class="t-section">Form 13F holdings</h3><p class="t-label muted">Official · U.S. SEC</p><a class="t-label slink" href="https://www.sec.gov/edgar/search/" rel="noopener" target="_blank">EDGAR ↗</a></div>
+ <div class="sp-source__body"><p class="muted">The quarterly holdings that institutional investment managers report, read from EDGAR. Reported up to 45 days after each quarter ends, so they describe the past.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>The Funds tab on stock pages, Mirror</dd></div></dl></div></li>
+ <li class="card sp-source" id="tickers"><div class="sp-source__name"><h3 class="t-section">SEC company ticker list</h3><p class="t-label muted">Official · U.S. SEC</p><a class="t-label slink" href="https://www.sec.gov/files/company_tickers.json" rel="noopener" target="_blank">The list ↗</a></div>
+ <div class="sp-source__body"><p class="muted">The SEC's own mapping from ticker to company identifier (CIK). Insidir resolves tickers through it, so a stock page belongs to the right company.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Search, stock pages</dd></div><div><dt>Freshness</dt><dd>Refreshed daily</dd></div></dl></div></li>
+ <li class="card sp-source" id="yahoo"><div class="sp-source__name"><h3 class="t-section">Yahoo Finance</h3><p class="t-label muted">Delayed prices · third party</p><a class="t-label slink" href="https://finance.yahoo.com/" rel="noopener" target="_blank">Yahoo Finance ↗</a></div>
+ <div class="sp-source__body"><p class="muted">Delayed daily closing prices, stored by Insidir, plus headlines from the ticker's public news feed. Headlines link to the publisher; Insidir copies no article text.</p><p class="muted">Prices are delayed, are not an official record of trades and are not meant for trading.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Price charts, insiders' track records, headlines</dd></div><div><dt>Freshness</dt><dd>Closes downloaded about once a day per stock; headlines kept 15 minutes</dd></div></dl></div></li>
+ <li class="card sp-source" id="wikidata"><div class="sp-source__name"><h3 class="t-section">Wikidata</h3><p class="t-label muted">CC0 · public domain</p><a class="t-label slink" href="https://www.wikidata.org/" rel="noopener" target="_blank">Wikidata ↗</a></div>
+ <div class="sp-source__body"><p class="muted">Founding year, employee count, official website and headquarters. A profile is matched to the company only by its SEC identifier (Wikidata property P5531).</p><dl class="sp-facts"><div><dt>Used in</dt><dd>The Company tab on stock pages</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl></div></li>
+ <li class="card sp-source" id="wikipedia"><div class="sp-source__name"><h3 class="t-section">Wikipedia</h3><p class="t-label muted">CC BY-SA 4.0</p><a class="t-label slink" href="https://en.wikipedia.org/" rel="noopener" target="_blank">Wikipedia ↗</a></div>
+ <div class="sp-source__body"><p class="muted">The short company description, taken from the summary of the company's article.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Company descriptions</dd></div><div><dt>Freshness</dt><dd>Kept for 24 hours</dd></div></dl></div></li>
+ <li class="card sp-source" id="logos"><div class="sp-source__name"><h3 class="t-section">Company logos</h3><p class="t-label muted">License per file</p><a class="t-label slink" href="https://commons.wikimedia.org/" rel="noopener" target="_blank">Wikimedia Commons ↗</a></div>
+ <div class="sp-source__body"><p class="muted">Logos come from public logo services, Wikipedia and Wikimedia Commons, SEC filings and companies' own websites. Insidir's server checks each image and serves it from insidir.com; a company without a confirmed logo shows its ticker's initials.</p><dl class="sp-facts"><div><dt>Used in</dt><dd>Logos beside each stock</dd></div></dl></div></li>
+</ol>
+</div></section>
+<section class="ssec" id="2-freshness" aria-labelledby="2-freshness-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="2-freshness-h">How old a number can be.</h2><p class="ssec__p">Insidir checks each source on a schedule and keeps a copy of what it reads for a short time. The longest it waits, by kind of data:</p></header>
+ <div class="card"><ol class="sp-cadence">
+  <li><p class="strong">About every 2 minutes</p><ul class="sp-list"><li>New Form 4 filings, when automatic import is enabled</li></ul></li>
+  <li><p class="strong">15 minutes</p><ul class="sp-list"><li>Headlines</li></ul></li>
+  <li><p class="strong">About every 30 minutes</p><ul class="sp-list"><li>Other SEC filings of watched companies</li></ul></li>
+  <li><p class="strong">Every hour</p><ul class="sp-list"><li>EDGAR's daily Form 4 index, checked against the import</li></ul></li>
+  <li><p class="strong">About once a day</p><ul class="sp-list"><li>Daily closing prices, per stock</li><li>The SEC company ticker list</li><li>Wikidata and Wikipedia profiles</li></ul></li>
+  <li><p class="strong">Kept</p><ul class="sp-list"><li>Filed documents, which never change</li></ul></li>
+ </ol></div>
+ <p class="t-label muted sp-note">Prices are delayed by the provider before Insidir reads them; they are never live. A source that cannot be reached is reported as unavailable rather than filled in.</p>
+</div></section>
+<section class="ssec" id="coverage" aria-labelledby="coverage-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="coverage-h">Coverage, measured now.</h2><p class="ssec__p">Counted from Insidir's database when this page loads, and checked against EDGAR's own daily index of Form 4 filings.</p></header>
+ <div data-coverage aria-live="polite"><dl class="sp-cov" aria-busy="true"><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div><div class="card"><dt><span class="skel" style="display:block;height:18px;width:50%"></span></dt><dd><span class="skel" style="display:block"></span></dd></div></dl></div>
+</div></section>
+<section class="ssec" id="3-licensing" aria-labelledby="3-licensing-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="3-licensing-h">Credited where it appears.</h2><p class="ssec__p">Each source is used on its own terms.</p></header>
+ <div class="card scard stable"><table class="table sp-table">
+  <thead><tr><th scope="col">Source</th><th scope="col">Terms</th><th scope="col">How Insidir credits it</th></tr></thead>
+  <tbody>
+   <tr><th scope="row">SEC EDGAR, XBRL, Form 4 and 13F</th><td>Public records published by the SEC, accessed under its fair-access guidelines with a declared identity.</td><td>Every filing and figure links to its original document on sec.gov.</td></tr>
+   <tr><th scope="row">Yahoo Finance</th><td>Third-party delayed price data and publisher headlines.</td><td>Named on this page as the price source; headlines link to the publisher.</td></tr>
+   <tr><th scope="row">Wikidata</th><td>CC0 1.0, a public domain dedication.</td><td>Named on this page as the source of company facts.</td></tr>
+   <tr><th scope="row">Wikipedia</th><td>CC BY-SA 4.0.</td><td>Named on this page as the source of company descriptions.</td></tr>
+   <tr><th scope="row">Logos</th><td>Each file under its own license.</td><td>Shown only as the company's own mark.</td></tr>
+  </tbody>
+  <caption>Company names and logos are trademarks of their owners. Insidir is not affiliated with or endorsed by the SEC, Yahoo or the Wikimedia Foundation.</caption>
+ </table></div>
+</div></section>
+<section class="ssec" id="4-not-used" aria-labelledby="4-not-used-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="4-not-used-h">Sources Insidir leaves alone.</h2><p class="ssec__p">Some data is popular with investing apps. Insidir does not ingest it until its legal and licensing questions are settled, and some of it never.</p></header>
+ <ul class="sp-grid sp-grid--4"><li class="card sp-card"><p class="t-label muted">Disabled</p><h3 class="t-section">Congressional disclosures</h3><p class="muted">House and Senate financial disclosures are not scraped, ingested or shown pending legal review.</p></li><li class="card sp-card"><p class="t-label muted">Disabled</p><h3 class="t-section">Social media</h3><p class="muted">No posts are collected from X, Truth Social or any other service without authorized access.</p></li><li class="card sp-card"><p class="t-label muted">Disabled</p><h3 class="t-section">Crypto wallets</h3><p class="muted">No wallet is attributed to a public figure without strong, verifiable evidence.</p></li><li class="card sp-card"><p class="t-label muted">Never</p><h3 class="t-section">Invented data</h3><p class="muted">No made-up figure fills a gap, and no rating or recommendation is published. AI-assisted wording, where switched on, is labelled and cites its records.</p></li></ul>
+</div></section>
+<section class="ssec" id="5-limits" aria-labelledby="5-limits-h"><div class="swrap" data-ds-reveal>
+ <header class="ssec__head"><h2 class="t-title" id="5-limits-h">What the record cannot tell you.</h2><p class="ssec__p">Public data has gaps. These are the ones that matter most when you read Insidir.</p></header>
+ <div class="card sp-card"><ul class="sp-list"><li>The filing library starts from the filings Insidir has imported; it is not a complete historical archive.</li><li>The SEC notes that its ticker list may be incomplete, so a company may not be found by ticker.</li><li>Not every company reports every measure in XBRL, and values can be restated in later filings.</li><li>A Form 4 is filed after the trade, generally within two business days; amendments can repeat or correct earlier reports.</li><li>13F holdings are reported weeks after the quarter they describe.</li><li>Prices are delayed, can be unavailable and are not an official record of trades.</li><li>Wikidata and Wikipedia are edited by volunteers and can lag or be wrong; a company with no SEC identifier on Wikidata has no profile.</li><li>Any source can be briefly unavailable. Pages say so rather than estimate.</li></ul></div>
+</div></section>
+<section class="ssec" aria-labelledby="start-h"><div class="swrap" data-ds-reveal>
+ <div class="sp-end"><h2 class="t-title" id="start-h">Check any number yourself.</h2><p class="ssec__p">7 days for $1. Then $39 a month. Cancel online.</p><div class="sp-actions"><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="page">Start 7 days for $1</a><a class="btn btn--secondary btn--lg" href="/platform.html">See the platform</a></div><p class="t-label muted">Research, not investment advice.</p></div>
+</div></section>
+</main>
+<div class="ssticky" data-v2-sticky><a class="btn btn--primary btn--lg" href="/signup.html" data-cta="sticky">Start for $1</a><span class="t-label muted">7 days, cancel anytime</span></div>
+<footer class="sfoot"><div class="swrap sfoot__in">
+<div class="sfoot__brand"><a class="wordmark" href="/" aria-label="Insidir home"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="70 -793 4531 803"><path fill="currentColor" d="M70 0V-136H260V-415H95V-550H400V-136H560V0ZM320 -637Q279 -637 254.5 -658.047619047619Q230.0 -679.0952380952381 230 -715Q230 -751 254.5 -772.0Q279 -793 320 -793Q361 -793 385.5 -772.0Q410 -751 410 -715Q410.0 -679.0952380952381 385.5 -658.047619047619Q361 -637 320 -637Z M666 0V-550H811V-445H855L811 -410Q811 -480 851.0 -520.0Q891 -560 959 -560Q1039 -560 1087.5 -504.0Q1136 -448 1136 -355V0H986V-340Q986 -383 963.5 -406.5Q941 -430 900 -430Q860 -430 838.0 -406.5Q816 -383 816 -340V0Z M1477 10Q1409 10 1358.0 -11.5Q1307 -33 1278.5 -71.0Q1250 -109 1250 -160H1400Q1400 -136 1421.5 -121.5Q1443 -107 1477 -107H1521Q1562 -107 1583.5 -122.0Q1605 -137 1605 -164Q1605 -189 1586.0 -202.5Q1567 -216 1527 -221L1463 -229Q1360 -242 1313.0 -279.0Q1266 -316 1266 -392Q1266 -472 1321.0 -516.0Q1376 -560 1482 -560H1520Q1621 -560 1681.0 -516.0Q1741 -472 1741 -398H1591Q1591 -418 1571.5 -430.5Q1552 -443 1520 -443H1482Q1445 -443 1428.0 -430.5Q1411 -418 1411 -393Q1411 -370 1426.5 -358.0Q1442 -346 1476 -341L1545 -332Q1649 -319 1699.5 -280.0Q1750 -241 1750 -164Q1750 -80 1692.0 -35.0Q1634 10 1521 10Z M1870 0V-136H2060V-415H1895V-550H2200V-136H2360V0ZM2120 -637Q2079 -637 2054.5 -658.047619047619Q2030.0 -679.0952380952381 2030 -715Q2030 -751 2054.5 -772.0Q2079 -793 2120 -793Q2161 -793 2185.5 -772.0Q2210 -751 2210 -715Q2210.0 -679.0952380952381 2185.5 -658.047619047619Q2161 -637 2120 -637Z M2643 10Q2560 10 2510.0 -48.0Q2460 -106 2460 -205V-345Q2460 -443 2510.0 -501.5Q2560 -560 2643 -560Q2711 -560 2750.0 -520.5Q2789 -481 2789 -410L2754 -445H2789L2784 -580V-730H2934V0H2789V-105H2754L2789 -140Q2789 -69 2750.0 -29.5Q2711 10 2643 10ZM2697 -120Q2738 -120 2761.0 -143.5Q2784 -167 2784 -210V-340Q2784 -383 2761.0 -406.5Q2738 -430 2697 -430Q2655 -430 2632.5 -406.5Q2610 -383 2610 -340V-210Q2610 -167 2632.5 -143.5Q2655 -120 2697 -120Z M3070 0V-136H3260V-415H3095V-550H3400V-136H3560V0ZM3320 -637Q3279 -637 3254.5 -658.047619047619Q3230.0 -679.0952380952381 3230 -715Q3230 -751 3254.5 -772.0Q3279 -793 3320 -793Q3361 -793 3385.5 -772.0Q3410 -751 3410 -715Q3410.0 -679.0952380952381 3385.5 -658.047619047619Q3361 -637 3320 -637Z M3682 0V-550H3822V-445H3860L3817 -381Q3817 -470 3858.0 -515.0Q3899 -560 3978 -560Q4069 -560 4119.5 -505.0Q4170 -450 4170 -350V-305H4010V-340Q4010 -385 3985.5 -410.0Q3961 -435 3920 -435Q3877 -435 3854.5 -410.0Q3832 -385 3832 -340V0Z M4500 10Q4454 10 4426.5 -17.5Q4399 -45 4399 -91Q4399 -138 4426.5 -165.0Q4454 -192 4500 -192Q4547 -192 4574.0 -165.0Q4601 -138 4601 -91Q4601 -45 4574.0 -17.5Q4547 10 4500 10Z"/></svg></a><p class="t-label muted">© 2026 Aethric LLC. Research, not investment advice. Not affiliated with the SEC.</p></div>
+<nav aria-label="Product"><h2 class="t-label muted">Product</h2><a href="/insider-trading">Insider trades today</a><a href="/#how">How it works</a><a href="/#pricing">Pricing</a><a href="/stories.html">Research stories</a><a href="/data.html">Data sources</a></nav>
+<nav aria-label="Company"><h2 class="t-label muted">Company</h2><a href="/company-info.html">About</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/subscription-policy.html">Subscription policy</a></nav>
+<nav aria-label="Account"><h2 class="t-label muted">Account</h2><a href="/signin.html">Log in</a><a href="mailto:hello@aethric.llc">hello@aethric.llc</a></nav>
+</div></footer>
+</body></html>
