@@ -1,0 +1,17 @@
+
+/* Simple, primary paid portfolio CSV import; existing v33 design language. */
+.portfolio-import{margin-bottom:24px}
+.portfolio-import h2{font-size:clamp(27px,3vw,38px);line-height:1.15;letter-spacing:-.035em;margin:10px 0 12px}
+.portfolio-csv-input{margin:22px 0 12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.portfolio-csv-input label{font-weight:600}
+.portfolio-csv-input input{display:block;max-width:100%;min-width:0;font:inherit;padding:12px;border:1px solid var(--line,#626260);border-radius:8px;background:transparent;color:inherit}
+.portfolio-csv-input input::file-selector-button{padding:9px 13px;margin-right:12px;border:0;border-radius:6px;background:#f0eee8;color:#111;cursor:pointer}
+#portfolio-csv-summary{font-size:14px;line-height:1.6;margin:16px 0;max-width:760px}
+#portfolio-csv-summary[data-error="true"]{color:#e6ad9e}
+.portfolio-csv-preview{margin-bottom:14px}
+.portfolio-csv-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;list-style:none;padding:0;margin:0 0 12px}
+.portfolio-csv-list li{padding:11px 12px;border-radius:8px;border:1px solid var(--line,#535350);font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#portfolio-csv-confirm{margin:6px 0 8px}
+#portfolio-csv-completed{margin:12px 0;font-weight:600}
+[hidden]{display:none!important}
+@media(max-width:540px){.portfolio-import{padding:22px 18px}.portfolio-csv-input{align-items:stretch;flex-direction:column}.portfolio-csv-input input{width:100%}.portfolio-csv-list{grid-template-columns:1fr 1fr}}
