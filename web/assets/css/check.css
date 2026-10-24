@@ -1,0 +1,43 @@
+/* Focused social traffic entry point; uses Insidir's original wordmark, typography and palette. */
+.check-hero{min-height:min(760px,calc(100svh - 68px));display:grid;align-items:center;padding:72px 0 96px}
+.check-hero__inner{width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.check-kicker{font:500 12px/18px var(--mono);letter-spacing:.12em;color:var(--muted);margin:0 0 24px}
+.check-hero .ds-h1{max-width:910px;font-size:clamp(44px,7vw,84px);line-height:1.02;letter-spacing:-.05em}
+.check-hero .ds-h1 span{color:#bcb9b0}
+.check-hero__lead{max-width:620px;margin:24px auto 0}
+.check-search{width:min(100%,590px);margin:36px 0 0}
+.check-free{margin:14px 0 0;color:var(--muted);font:400 13px/20px var(--sans)}
+.check-popular{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:28px}
+.check-popular>span{font:400 14px/20px var(--sans);color:var(--muted);padding:0 8px}
+.check-popular .v2-chip{gap:8px;text-decoration:none;border:1px solid var(--line);min-height:42px}
+.check-symbol{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.check-explain{border-top:1px solid var(--line);padding:64px 0 72px;background:var(--raised)}
+.check-explain h2{font:550 clamp(25px,4vw,38px)/1.15 var(--sans);letter-spacing:-.03em;margin:0 0 32px}
+.check-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.check-steps>div{border-top:1px solid var(--line-strong);padding-top:18px}
+.check-step{color:var(--muted);font:500 12px/20px var(--mono)}
+.check-steps h3{margin:10px 0 8px;font:550 19px/25px var(--sans);letter-spacing:-.02em}
+.check-steps p{margin:0;color:var(--muted);font:400 15px/24px var(--sans)}
+.check-disclosure{margin:46px 0 0;max-width:880px;color:var(--muted);font:400 13px/21px var(--sans)}
+.check-footer{border-top:1px solid var(--line);padding:28px 0}
+.check-footer .ds-wrap{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.check-footer span,.check-footer a{font:400 13px/20px var(--sans);color:var(--muted)}
+.check-footer nav{display:flex;gap:16px;flex-wrap:wrap}
+.check-footer a:hover{color:var(--text)}
+@media(max-width:767px){
+.check-hero{min-height:auto;padding:76px 0 92px}
+.check-kicker{font-size:11px;margin-bottom:20px}
+.check-hero .ds-h1{font-size:clamp(42px,11vw,60px);line-height:1.05}
+.check-hero__lead{margin-top:20px}
+.check-search{margin-top:28px}
+.check-steps{grid-template-columns:1fr;gap:28px}
+.check-explain{padding:48px 0}
+.check-popular{gap:6px;margin-top:24px}
+.check-popular .v2-chip{padding:0 11px}
+.check-footer{padding:28px 0 48px}
+}
+
+@media(max-width:420px){
+.check-search{flex-direction:column;align-items:stretch}
+.check-search .ds-btn{width:100%}
+}
