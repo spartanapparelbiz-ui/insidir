@@ -90,3 +90,46 @@ test("CSV quoting and newlines are parsed without breaking fields",()=>{
  assert.deepEqual(csvRows('Symbol,Description,Quantity\r\n"AAPL","Apple ""Incorporated""\nUS",1\r\n'),
   [["Symbol","Description","Quantity"],["AAPL",'Apple "Incorporated"\nUS',"1"]]);
 });
+
+test("PostgreSQL integration: writes monitored watchlist, quantities and keeps existing entries atomically",
+  {skip:!process.env.INSIDIR_TEST_DATABASE_URL && "Set INSIDIR_TEST_DATABASE_URL for the real PostgreSQL test"},async()=>{
+    const pg=await import("pg");
+    const client=new pg.default.Client({connectionString:process.env.INSIDIR_TEST_DATABASE_URL});
+    await client.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("CREATE TEMP TABLE watchlist (user_id text NOT NULL,ticker text NOT NULL,created_at timestamptz DEFAULT now(),PRIMARY KEY(user_id,ticker)) ON COMMIT DROP");
+      await client.query("CREATE TEMP TABLE manual_holdings (user_id text NOT NULL,ticker text NOT NULL,quantity numeric(24,8) NOT NULL CHECK(quantity>0),updated_at timestamptz DEFAULT now(),PRIMARY KEY(user_id,ticker)) ON COMMIT DROP");
+      await client.query("INSERT INTO watchlist(user_id,ticker) VALUES('test-user','MSFT')");
+      await client.query("INSERT INTO manual_holdings(user_id,ticker,quantity) VALUES('test-user','MSFT',3)");
+
+      const items=validatePortfolioImport({items:[
+        {ticker:"AAPL",quantity:"2.5"},{ticker:"NVDA",quantity:"4"},{ticker:"PLTR",quantity:null}
+      ]});
+      const run=(sql,params)=>client.query(sql,params);
+      let outcome=await savePortfolioImport("test-user",items,run);
+      assert.equal(outcome.imported,3);
+      assert.equal(outcome.newlyFollowed,3);
+      assert.equal(outcome.quantitiesSaved,2);
+      assert.equal(outcome.quantitiesNotSaved,0);
+      let rows=await client.query("SELECT ticker FROM watchlist WHERE user_id='test-user' ORDER BY ticker");
+      assert.deepEqual(rows.rows.map(x=>x.ticker),["AAPL","MSFT","NVDA","PLTR"]);
+      rows=await client.query("SELECT ticker,quantity::text FROM manual_holdings WHERE user_id='test-user' ORDER BY ticker");
+      assert.deepEqual(rows.rows.map(x=>[x.ticker,x.quantity]),[["AAPL","2.50000000"],["MSFT","3.00000000"],["NVDA","4.00000000"]]);
+
+      outcome=await savePortfolioImport("test-user",items,run);
+      assert.equal(outcome.newlyFollowed,0,"repeat import must not duplicate the watchlist");
+      assert.equal((await client.query("SELECT COUNT(*)::int AS n FROM watchlist")).rows[0].n,4);
+      const changed=validatePortfolioImport({items:[{ticker:"AAPL",quantity:"3.25"}]});
+      await savePortfolioImport("test-user",changed,run);
+      assert.equal((await client.query("SELECT quantity::text AS n FROM manual_holdings WHERE ticker='AAPL'")).rows[0].n,"3.25000000");
+      assert.equal((await client.query("SELECT quantity::text AS n FROM manual_holdings WHERE ticker='MSFT'")).rows[0].n,"3.00000000");
+
+      // Rejecting an import before the SQL call must not mutate any member data.
+      assert.throws(()=>validatePortfolioImport({items:[{ticker:"AAPL",quantity:"-20"}]}));
+      assert.equal((await client.query("SELECT COUNT(*)::int AS n FROM watchlist")).rows[0].n,4);
+    } finally {
+      await client.query("ROLLBACK").catch(()=>{});
+      await client.end();
+    }
+  });
