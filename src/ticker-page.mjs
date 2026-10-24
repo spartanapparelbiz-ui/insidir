@@ -76,6 +76,8 @@ export function renderTickerPage(d, { origin }) {
     : `Insider buys and sells at ${who} (${t}), in plain English, from SEC filings.`;
   const list = free.length ? `<ol class="v2-trades">${free.map(tradeItem).join("")}</ol>`
     : `<div class="ds-card v2-quiet"><p>No insider at ${esc(who)} has bought or sold ${esc(t)} stock on the open market in the last 12 months, so there is nothing to show here yet.</p>${d.latestAny.length ? `<p class="ds-small">Their latest insider reports were other kinds, such as stock awards and shares held back for tax:</p><ol class="v2-trades">${d.latestAny.map(tradeItem).join("")}</ol>` : ""}${suggest(t)}</div>`;
+  // Carry the company they just researched through signup and the verified checkout return.
+  const unlockHref = "/signup.html?next=" + encodeURIComponent("company.html?ticker=" + t);
   const body = `${nav({ cta: "ticker-nav" })}
 <main id="main">
 <section class="v2-tk ds-wrap">
@@ -91,7 +93,7 @@ export function renderTickerPage(d, { origin }) {
     <div class="v2-lock__copy">
       <h2 class="v2-lock__h" id="lock-h">${more ? `${more} more insider trade${more === 1 ? "" : "s"} at ${esc(t)} in the last 12 months.` : `Get the next ${esc(t)} insider trade the minute it's filed.`}</h2>
       <p class="ds-small">Full history, each insider's track record, a signal score on every trade, and alerts minutes after a new filing.</p>
-      <a class="ds-btn ds-btn--lg" href="/signup.html" data-cta="ticker-unlock">Start for $1</a>
+      <a class="ds-btn ds-btn--lg" href="${esc(unlockHref)}" data-cta="ticker-unlock">Follow ${esc(t)} for $1</a>
       <p class="ds-small">$1 for 7 days, then $39 a month. Cancel online anytime.</p>
     </div>
   </div>
