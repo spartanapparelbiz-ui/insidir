@@ -47,10 +47,10 @@ export async function savePortfolioImport(userId, items, run) {
           AND n.rank <= GREATEST(0,100-(SELECT COUNT(*) FROM existing))))
     ), watch_saved AS (
       INSERT INTO watchlist(user_id,ticker)
-      SELECT $1,ticker FROM incoming ON CONFLICT DO NOTHING RETURNING ticker
+      SELECT $1,ticker FROM incoming WHERE TRUE ON CONFLICT DO NOTHING RETURNING ticker
     ), holdings_saved AS (
       INSERT INTO manual_holdings(user_id,ticker,quantity)
-      SELECT $1,ticker,quantity::numeric FROM eligible
+      SELECT $1,ticker,quantity::numeric FROM eligible WHERE TRUE
       ON CONFLICT(user_id,ticker) DO UPDATE
         SET quantity=EXCLUDED.quantity,updated_at=now()
       RETURNING ticker
