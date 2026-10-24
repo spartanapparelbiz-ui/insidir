@@ -34,7 +34,7 @@ a.pp-co:hover>span:last-child{text-decoration:underline;text-underline-offset:3p
 .pp-auto__row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp6)}
 .pp-auto__row .t-label{max-width:56ch;margin-top:2px}
 .pp-auto__ctl{display:flex;align-items:center;gap:var(--sp2);flex:none}
-.pp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--sp6) var(--sp8);padding:var(--pad)}
+.pp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp6) var(--sp8);padding:var(--pad)}
 .pp-stat{display:grid;gap:2px;align-content:start;min-width:0}
 .pp-stat .t-section{margin-top:var(--sp1)}
 .pp-stat .t-micro{text-wrap:pretty}

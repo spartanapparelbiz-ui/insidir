@@ -27,7 +27,7 @@ const WORDMARK=`<svg viewBox="70 -793 4531 803" aria-hidden="true"><path fill="c
 async function api(path,{method="GET",body}={}){
  const res=await fetch(path,{method,credentials:"same-origin",headers:{Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
  if(res.status===401){location.href="/signin.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);throw Object.assign(Error("Sign in required"),{status:401});}
- if(res.status===402){location.href="/subscribe.html";throw Object.assign(Error("Subscription required"),{status:402});}
+ if(res.status===402){location.href="/subscribe.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);throw Object.assign(Error("Subscription required"),{status:402});}
  let data=null;try{data=await res.json();}catch{}
  if(!res.ok)throw Object.assign(Error(data?.error||"Something went wrong"),{status:res.status});
  return data;
@@ -163,7 +163,9 @@ function mountShell(){
  const topEl=$("[data-ui-top]");const stick=()=>topEl.classList.toggle("is-stuck",scrollY>4);addEventListener("scroll",stick,{passive:true});stick();
  // who is signed in, and unread alerts
  api("/v1/me").then(me=>{const e=me?.user?.email||"";$("[data-ui-me]").textContent=(e[0]||"·").toUpperCase();$("[data-ui-account]").dataset.email=e;}).catch(()=>{});
- api("/v1/me/notifications?limit=1&unread=1").then(x=>{const u=Number(x?.unread)||0;const b=$("[data-ui-unread]");if(u){b.hidden=false;b.textContent=u>99?"99+":u;$("[data-ui-unread-dot]").hidden=false;}}).catch(()=>{});
+ // unread alerts: a plain fetch, so a member without access (a paid route answers 402) is never sent away from
+ // Settings or Billing, where they fix billing, download their data or delete the account
+ fetch("/v1/me/notifications?limit=1&unread=1",{credentials:"same-origin",headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():null).then(x=>{const u=Number(x?.unread)||0;const b=$("[data-ui-unread]");if(u){b.hidden=false;b.textContent=u>99?"99+":u;$("[data-ui-unread-dot]").hidden=false;}}).catch(()=>{});
  $("[data-ui-account]").addEventListener("click",e=>accountMenu(e.currentTarget));
  $("[data-ui-cmdk]").addEventListener("click",()=>palette());
  addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();palette();}if(e.key==="/"&&!/input|textarea|select/i.test(document.activeElement?.tagName||"")&&!document.activeElement?.isContentEditable){e.preventDefault();palette();}});
