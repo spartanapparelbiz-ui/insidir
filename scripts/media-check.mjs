@@ -68,7 +68,7 @@ const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf("--" + name); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback; };
 /* Today (dashboard), Alerts and the ticker page (company) are on the rebuilt app (ui.css): companies get their logo from one
    /v1/media?tickers= batch or a monogram, people get initials and never a photo. Section 11 below checks them. */
-const PAGES_ALL = ["people", "person", "explore", "filings", "watchlist", "filing", "filing-private", "research", "portfolio"];
+const PAGES_ALL = ["people", "person", "explore", "filings", "watchlist", "research", "portfolio"];
 const PAGES = opt("pages", "").split(",").filter(Boolean).length ? opt("pages", "").split(",").filter(p => PAGES_ALL.includes(p)) : PAGES_ALL;
 // The one-off scenarios (503, image 404, cache, reduced motion, landing) run with the full set, or alone with --once --pages none.
 const ONCE = !opt("pages", "") || args.includes("--once");
@@ -391,16 +391,14 @@ async function open(width, path, { media = "ok", reducedMotion = "no-preference"
   await page.goto(base + path, { waitUntil: "domcontentloaded", timeout: 30000 });
   return { ctx, page, errors, log };
 }
-const PATH = { dashboard: "/dashboard.html", people: "/people.html", explore: "/explore.html", filings: "/filings.html", watchlist: "/watchlist.html", filing: "/filing.html?accession=" + FILING.accession,
-  "filing-private": "/filing.html?accession=" + PRIVATE.accession,
+const PATH = { dashboard: "/dashboard.html", people: "/people.html", explore: "/explore.html", filings: "/filings.html", watchlist: "/watchlist.html",
   research: "/research.html?ticker=AAPL", alerts: "/alerts.html", portfolio: "/portfolio.html", company: "/company.html?ticker=AAPL", "company-picker": "/company.html", person: "/person.html?cik=1214156" };
 // Each page has rendered its records when this holds.
 const RENDERED = {
   dashboard: () => document.querySelectorAll("[data-media]").length >= 12 && !/Loading/.test(document.querySelector("#v3-trades")?.textContent || "Loading"),
   people: () => document.querySelectorAll("#v10-people-results [data-media]").length >= 4,
   explore: () => document.querySelectorAll("#collection-rows [data-media]").length >= 11, /* the 11 tickered fixture companies in the /v1/company/directory mock */ filings: () => document.querySelectorAll("#collection-rows [data-media]").length >= 12,
-  watchlist: () => document.querySelectorAll("#collection-rows [data-media]").length >= 6, filing: () => document.querySelectorAll("#filing-rows [data-media]").length >= 4,
-  "filing-private": () => document.querySelectorAll("#filing-rows [data-media]").length >= 1 && !!document.querySelector("#filing-heading [data-media]"),
+  watchlist: () => document.querySelectorAll("#collection-rows [data-media]").length >= 6,
   research: () => document.querySelectorAll("#research-transactions [data-media]").length >= 4 && !!document.querySelector("#research-company [data-media]"),
   alerts: () => document.querySelectorAll("#alerts-real [data-media]").length >= 12, portfolio: () => document.querySelectorAll("#portfolio-activity [data-media]").length >= 4 && document.querySelectorAll("#manual-evidence [data-media]").length >= 4,
   company: () => document.querySelectorAll("#cx-insiders-table .cx-avatar").length >= 4 && !!document.querySelector("#cx-logo img"),
@@ -603,10 +601,6 @@ try {
     const tiles = await page.evaluate(inspect, ORACLE);
     tileChecks(tag, tiles);
     linkChecks(tag, await page.evaluate(personLinks, KNOWN_PEOPLE));
-    if (key === "filing") {
-      const joint = await page.evaluate(() => [...document.querySelectorAll("#filing-rows tr")].map(r => [...r.querySelectorAll('a[href^="person.html?cik="]')].map(a => a.getAttribute("href"))).find(h => h.length > 1) || []);
-      check(joint.includes("person.html?cik=1214156") && joint.includes("person.html?cik=1408568"), tag + ": a joint filing's line names each reporting owner, each linked to their own file", joint);
-    }
     if (key === "alerts" || key === "portfolio") {
       // Joint lines: each owner the engine lists links to their own file; with no list, each name split from the joined
       // owner_name opens the directory search (the ", Jr." stays on its name).
@@ -726,7 +720,7 @@ try {
     }
     // 7. The photo credits with the reader at the very bottom when the pictures arrive: the footnote holds its space
     //    from the start and takes new text only off screen, so the footer and the notes below it do not move.
-    for (const [key, width] of [["people", 1440], ["filing", 1440], ["research", 1440], ["people", 390], ["portfolio", 390]]) {
+    for (const [key, width] of [["people", 1440], ["person", 1440], ["research", 1440], ["people", 390], ["portfolio", 390]]) {
       const tag = "credits at the bottom, " + key + " " + width + "px";
       let release = () => {};
       const hold = new Promise(ok => { release = ok; });
@@ -752,21 +746,9 @@ try {
       check(errors.length === 0, tag + ": no page or console errors", errors);
       await ctx.close();
     }
-    // 8. The engine takes people= as "<owner>:cik:<issuer>": a person at an issuer with no ticker gets their headshot. An older
-    //    engine that takes "<owner>:<TICKER>" only lists that form as invalid: the tile steps down to the issuer's logo, by CIK.
-    for (const forms of ["server", "legacy"]) {
-      const { ctx, page, log, errors } = await open(1440, PATH["filing-private"], { answer: { forms } });
-      await page.waitForFunction(RENDERED["filing-private"], null, { timeout: 20000 });
-      await page.evaluate(() => window.InsidirMedia.ready(document, { timeout: 10000 }));
-      const tiles = await page.evaluate(inspect, { ...ORACLE, extended: forms === "server" });
-      const smith = tiles.find(t => t.cik === "1900001");
-      if (forms === "server") check(smith && smith.state === "photo" && smith.src === PHOTOS_BY_CIK["1900001"].src, "issuer without a ticker: asked as people=1900001:cik:1999999, the person's headshot shows", { smith, asked: log.media.map(r => r.url) });
-      else check(smith && smith.state === "stand-in" && smith.src === LOGOS["cik:1999999"].src, "older engine (owner:TICKER only): the person at an issuer with no ticker gets that issuer's logo standing in, found by CIK", { smith, asked: log.media.map(r => r.url) });
-      check(log.media.some(r => r.keys.includes("p:1900001:cik:1999999")), "issuer without a ticker (" + forms + " engine): the request names the issuer by CIK", log.media.map(r => r.url));
-      check(log.media.filter(r => r.keys.includes("p:1900001:cik:1999999")).length === 1, "issuer without a ticker (" + forms + " engine): asked once, answered or listed invalid, never asked again", log.media.map(r => r.url));
-      check(errors.length === 0, "issuer without a ticker (" + forms + " engine): no page or console errors", errors);
-      await ctx.close();
-    }
+    // 8. (Retired with the old filing page it ran on: a headshot for a person at an issuer with no ticker. The filing
+    //    page is on ui.css now (filing.html, the whole SEC form in the app) and shows monograms and logos, not photos;
+    //    scripts/visual-layout-check.mjs covers it.)
     // 9. (Retired with the old Alerts feed it ran on: the queued-headshot schedule on a 15-minute fake clock. The
     //    helper's per-page batching, pending follow-ups, 503, 404 and logo-schedule paths are checked above.)
     // 11. The rebuilt app (ui.css: Today, Alerts, the ticker page), answered from scripts/fixtures/ui-api.json. Companies

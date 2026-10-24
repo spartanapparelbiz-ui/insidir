@@ -22,6 +22,7 @@ import { validateManualHolding } from "./manual-holdings.mjs";
 import { memoryLimiter,pgLimiter } from "./rate-limit.mjs";
 import { logSecurityEvent,recentSecurityEvents,emailDigest } from "./security-events.mjs";
 import { changePassword,revokeOtherSessions,exportAccount } from "./account-security.mjs";
+import { filingDocument } from "./filing-document.mjs";
 import { authorizeAdmin,openAdminSession,closeAdminSession,adminCookie,clearAdminCookie,adminSettings } from "./admin-auth.mjs";
 import { audit as adminAudit } from "./creator-program.mjs";
 import { opsSnapshot } from "./ops.mjs";
@@ -426,6 +427,14 @@ async function route(req,res,ctx){
       AND ($1::text IS NULL OR ticker=$1) AND ($2::text = '' OR issuer_name ILIKE '%'||$2||'%' OR title ILIKE '%'||$2||'%')
       ORDER BY published_at DESC NULLS LAST,accession DESC LIMIT $3 OFFSET $4`,[t,search,limit,offset]));
     return json(res,200,{items:rows.rows,limit,offset,source:"SEC EDGAR",note:"Publication is not transaction time."});
+  }
+  // The SEC filing itself, in the app (src/filing-document.mjs): fetched from SEC.gov once, then kept; the original stays linked.
+  const doc=/^\/v1\/filings\/(\d{18}|\d{10}-\d{2}-\d{6})\/document$/.exec(p);
+  if(doc && m==="GET"){
+    const fetcher=secReady()?(ctx.secFetch||undefined):async()=>{throw Object.assign(new Error("Reading filings from SEC.gov is not configured"),{status:503})};
+    const r=await filingDocument(query,doc[1],{fetcher});
+    if(!r)throw failure(404,"Filing not found");
+    return json(res,200,r);
   }
   if(p.startsWith("/v1/filings/") && m==="GET"){
     const accession=p.slice("/v1/filings/".length);

@@ -4,7 +4,7 @@
    data lands, replaces a skeleton of the same size, and says what failed in place with a Try again. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,big,trade}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,big,trade}=UI;
 const $=s=>document.querySelector(s);
 const coHref=t=>"/company.html?ticker="+encodeURIComponent(t);
 const tone=m=>m.planned?"plan":m.kind==="buy"?"up":"down";
@@ -35,7 +35,7 @@ function renderHero(el,h){
   <p class="hero__what">${trade(t)}<span class="t-label muted">Filed ${esc(fmt.ago(t.filedAt))} ago</span></p>
   <p class="t-body hero__sentence">${esc(t.sentence)}</p>
   <div class="hero__score">${ring(s.score,{label:`Signal score ${s.score} of 100, ${s.band}`})}<div><p class="t-label strong" style="color:var(--text);margin:0">${esc(s.band)} signal</p><p>${esc(why)}</p></div></div>
-  <div class="hero__acts">${t.url?`<a class="btn btn--secondary" href="${esc(t.url)}" target="_blank" rel="nofollow noopener">SEC filing</a>`:""}<a class="btn btn--ghost" href="${coHref(t.ticker)}">Open ${esc(t.ticker)}</a></div>
+  <div class="hero__acts">${t.url||t.id?`<a class="btn btn--secondary" href="${esc(filingHref(t.url,t.id))}">SEC filing</a>`:""}<a class="btn btn--ghost" href="${coHref(t.ticker)}">Open ${esc(t.ticker)}</a></div>
  </div>
  <div class="hero__chart"><div class="hero__chart-head"><div class="hero__px" data-px><span class="t-section">&nbsp;</span></div>
   <div class="seg" role="group" aria-label="Chart range">${["1M","3M","6M","1Y"].map(r=>`<button type="button" data-range="${r}" aria-pressed="${r==="6M"}">${r}</button>`).join("")}</div></div>
@@ -85,7 +85,7 @@ const row=m=>`<li class="row feed__row" data-id="${esc(m.id)}">
  <span class="feed__who">${monogram(m.owner)}<span class="t-label"><span>${esc(fmt.person(m.owner))}</span> <span class="muted">${esc(fmt.role(m.role))}</span></span></span>
  <span class="feed__trade">${trade(m)}</span>
  <span class="feed__amt ${tone(m)}">${fmt.money(m.value)}</span>
- ${m.url?`<a class="row__link feed__ago t-micro muted" href="${esc(m.url)}" target="_blank" rel="nofollow noopener" title="Open the SEC filing">${esc(fmt.ago(m.filedAt))}</a>`:`<span class="feed__ago t-micro muted">${esc(fmt.ago(m.filedAt))}</span>`}</li>`;
+ ${m.url||m.id?`<a class="row__link feed__ago t-micro muted" href="${esc(filingHref(m.url,m.id))}" title="Open the SEC filing">${esc(fmt.ago(m.filedAt))}</a>`:`<span class="feed__ago t-micro muted">${esc(fmt.ago(m.filedAt))}</span>`}</li>`;
 const visible=()=>items.filter(m=>filter==="all"||(filter==="watch"?watch.has(m.ticker):m.kind===filter&&!(filter==="buy"&&m.planned)));
 function drawFeed(){
  feedEl.removeAttribute("aria-busy");

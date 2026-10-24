@@ -30,6 +30,11 @@ async function api(path,{method="GET",body}={}){
  return data;
 }
 
+/* An ownership filing opens inside Insidir (filing.html: the whole form as filed, with the original on SEC.gov linked);
+   the accession comes from the trade's id ("<accession>:N:0") or the filing's SEC address. Anything else stays on SEC.gov. */
+const filingHref=(url,id)=>{const a=/^(\d{18}|\d{10}-\d{2}-\d{6})(?::|$)/.exec(String(id||""))?.[1]||/^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/\d+\/(\d{18})\//.exec(String(url||""))?.[1];
+ return a?"/filing.html?accession="+encodeURIComponent(a):String(url||"");};
+
 /* ---------- formats ---------- */
 const n=v=>v==null||v===""?null:Number.isFinite(Number(v))?Number(v):null;
 const fmt={
@@ -190,6 +195,6 @@ function palette(){
  addEventListener("keydown",keys,true);start();input.focus();
 }
 
-window.InsidirUI=Object.freeze({api,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,palette,initials,reduce,big,trade,WORDMARK,icon:(n,s,c)=>I.svg(n,s,c)});
+window.InsidirUI=Object.freeze({api,filingHref,fmt,esc,logo,hydrateLogos,monogram,spark,ring,settle,roll,enter,palette,initials,reduce,big,trade,WORDMARK,icon:(n,s,c)=>I.svg(n,s,c)});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mountShell);else mountShell();
 })();

@@ -1,0 +1,54 @@
+/* The SEC filing inside Insidir (filing.html): the form's own boxes and tables, as filed. Only ui.css tokens; no colour
+   on the document itself, which reads like the paper it is. */
+.fl-head{display:flex;align-items:center;gap:var(--sp4);min-width:0}
+.fl-head h1{overflow-wrap:anywhere}
+.fl-link{display:inline-flex;align-items:center;gap:var(--sp1);min-height:24px;color:var(--muted);transition:color var(--fast)}
+.fl-link:hover{color:var(--text)}
+.fl-card{padding:var(--sp3) var(--pad)}
+.fl-line{grid-template-columns:minmax(0,1fr) auto;min-height:56px}
+.fl-line .t-label{display:block}
+.fl-line__v{text-align:right;white-space:nowrap}
+
+.fl-doc{padding:var(--sp8) var(--pad);display:grid;gap:var(--sp8)}
+.fl-form{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--sp2) var(--sp6)}
+.fl-form__name{font-size:28px;line-height:32px;font-weight:600;letter-spacing:-.02em}
+.fl-form__title{font-size:15px;line-height:24px;font-weight:500}
+.fl-form__law{max-width:520px}
+.fl-boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--sp3)}
+.fl-box{padding:var(--sp4);border-radius:var(--r-ctl);background:var(--s2);display:grid;gap:var(--sp2);align-content:start}
+.fl-box__label{color:var(--muted)}
+.fl-box p{margin:0}
+.fl-box a,.fl-line a{display:inline-flex;align-items:center;min-height:24px;color:inherit;text-decoration:underline;text-decoration-color:var(--rule-2);text-underline-offset:3px}
+.fl-box a:hover,.fl-line a:hover{text-decoration-color:var(--text)}
+.fl-checks{display:grid;gap:var(--sp1);margin:0;padding:0;list-style:none}
+.fl-checks li{display:flex;align-items:center;gap:var(--sp2)}
+.fl-check{display:inline-grid;place-items:center;flex:none;width:14px;height:14px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--rule-2);font-size:11px;line-height:1}
+.fl-check.is-on{background:var(--text);color:var(--bg);box-shadow:none}
+.fl-table-wrap{position:relative;overflow-x:auto;margin:0 calc(-1*var(--pad));padding:0 var(--pad)}
+.fl-table{width:100%;min-width:880px;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;line-height:18px}
+.fl-table--wide{min-width:1320px}
+.fl-table caption{text-align:left;padding-bottom:var(--sp3)}
+.fl-table th{padding:0 var(--sp2) var(--sp3);border-bottom:1px solid var(--rule);text-align:left;vertical-align:bottom;font-weight:400;color:var(--muted)}
+.fl-table th.sub{padding-top:var(--sp2)}
+.fl-table td{padding:var(--sp3) var(--sp2);vertical-align:top}
+.fl-table tbody tr+tr td{box-shadow:inset 0 1px 0 var(--fill)}
+.fl-table .r{text-align:right}
+.fl-table td.r{white-space:nowrap}
+.fl-table .empty{color:var(--muted);padding-left:0}
+.fl-table th:first-child,.fl-table td:first-child{padding-left:0}
+.fl-table th:last-child,.fl-table td:last-child{padding-right:0}
+.fl-fn{font-size:.85em;vertical-align:super;line-height:0}
+/* each mark is a 24px target (WCAG 2.5.8) without pushing the line apart */
+.fl-fn a{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;margin:-8px -5px -8px -3px;color:var(--muted);text-decoration:none}
+.fl-fn a:hover{color:var(--text);text-decoration:underline}
+.fl-notes{display:grid;gap:var(--sp3);margin:0;padding:0;list-style:none}
+.fl-notes li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:var(--sp2)}
+.fl-notes li:target{background:var(--s2);border-radius:var(--r-sm);outline:4px solid var(--s2)}
+.fl-sign{display:flex;flex-wrap:wrap;gap:var(--sp4) var(--sp10)}
+.fl-sign p{margin:0}
+.fl-part{display:grid;gap:var(--sp3)}
+@media (max-width:767px){
+  .fl-doc{padding:var(--sp6) var(--sp4);gap:var(--sp6)}
+  .fl-table-wrap{margin:0 calc(-1*var(--sp4));padding:0 var(--sp4)}
+  .fl-form__name{font-size:24px;line-height:28px}
+}
