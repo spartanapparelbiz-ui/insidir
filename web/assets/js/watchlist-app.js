@@ -5,7 +5,7 @@
    does); remove one with Undo (DELETE /v1/me/watchlist/T). Sort A–Z, by latest insider trade, or by when it was added. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,filingHref,fmt,esc,logo,hydrateLogos,spark,enter,trade}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,face,spark,enter,trade}=UI;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const list=$("[data-wl-list]"),msgEl=$("[data-wl-msg]"),countEl=$("[data-wl-count]");
 const clean=v=>{const t=String(v??"").trim().toUpperCase().replace(/^\$/,"");return /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(t)?t:"";};
@@ -38,14 +38,14 @@ function sparkCell(d){
  if(d.state==="loading")return `<span class="skel wl__spark"></span>`;
  return v.length>1?spark(v,{w:96,h:28}):`<span class="wl__spark" aria-hidden="true"></span>`;
 }
-function tradeCell(d){
+function tradeCell(d,t){
  if(d.state==="loading")return `<span class="skel" style="width:70%;height:16px"></span><span class="skel" style="width:50%;height:12px"></span>`;
  if(d.state==="err")return `<span class="t-label muted">The latest insider trade didn't load.</span><button class="btn btn--ghost wl__retry" type="button" data-retry>Try again</button>`;
  const m=latest(d.c);
  if(!m)return `<span class="t-label muted">No open-market insider buys or sales in the last year</span>`;
  const tone=m.planned?"plan":m.kind==="buy"?"up":"down",href=filingHref(m.url,m.id),amt=m.value!=null?fmt.money(m.value):"Filing";
  const amount=href?`<a class="wl__amt ${tone}" href="${esc(href)}" aria-label="${esc(amt==="Filing"?"SEC filing":amt+", SEC filing")}">${esc(amt)}</a>`:(m.value!=null?`<span class="wl__amt ${tone}">${esc(amt)}</span>`:"");
- return `<span class="wl__trade-top">${trade(m)}${amount}</span><span class="t-label muted">${esc(fmt.person(m.owner))}${m.role?", "+esc(fmt.role(m.role)):""} · ${esc(fmt.date(m.day))}</span>`;
+ return `<span class="wl__trade-top">${trade(m)}${amount}</span><span class="lx-who t-label muted">${face(m.owner,{cik:m.ownerCik,ticker:t,size:24})}<span>${esc(fmt.person(m.owner))}${m.role?", "+esc(fmt.role(m.role)):""} · ${esc(fmt.date(m.day))}</span></span>`;
 }
 function row(w){
  const t=w.ticker,d=data.get(t)||{state:"loading"},n=name(t),added=fmt.date(w.created_at);
@@ -54,13 +54,13 @@ function row(w){
  <span class="wl__id lx-two"${added?` title="Added ${esc(added)}"`:""}><span class="tick">${esc(t)}</span><span class="t-label muted" data-name>${esc(n)}</span></span>
  <span class="wl__px" data-px>${pxCell(d)}</span>
  <span class="wl__spark-slot" data-spark>${sparkCell(d)}</span>
- <span class="wl__trade" data-trade>${tradeCell(d)}</span>
+ <span class="wl__trade" data-trade>${tradeCell(d,t)}</span>
  <button class="btn btn--ghost btn--icon row__link wl__rm" type="button" data-rm aria-label="Remove ${esc(t)} from your watchlist">${UI.icon("x")}</button></li>`;
 }
 function paint(t){
  const li=list.querySelector(`.wl[data-t="${CSS.escape(t)}"]`);if(!li)return;const d=data.get(t)||{state:"loading"};
  const n=name(t);li.querySelector("[data-name]").textContent=n;li.querySelector(".hit").setAttribute("aria-label","Open "+t+(n?", "+n:""));
- li.querySelector("[data-px]").innerHTML=pxCell(d);li.querySelector("[data-spark]").innerHTML=sparkCell(d);li.querySelector("[data-trade]").innerHTML=tradeCell(d);
+ li.querySelector("[data-px]").innerHTML=pxCell(d);li.querySelector("[data-spark]").innerHTML=sparkCell(d);li.querySelector("[data-trade]").innerHTML=tradeCell(d,t);hydrateLogos(li);
 }
 const ORDER={
  az:(a,b)=>a.ticker.localeCompare(b.ticker,"en"),

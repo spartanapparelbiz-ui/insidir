@@ -25,6 +25,10 @@
 /* shared row text: one line each, cut with an ellipsis */
 .lx-two{display:flex;flex-direction:column;min-width:0}
 .lx-two>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ui.css's ".row:has(>a.hit)>*:not(.hit)" outranks its own ".row>.row__link", so the action in a row is lifted here */
+.lx-card .rows>.row>.row__link{pointer-events:auto}
+.lx-who{display:flex;align-items:center;gap:var(--sp2);min-width:0}
+.lx-who>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lx-go{display:inline-grid;place-items:center;color:var(--muted)}
 .row:hover .lx-go{color:var(--text)}
 

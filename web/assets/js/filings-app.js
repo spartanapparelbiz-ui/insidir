@@ -4,11 +4,12 @@
    Insidir (/filing.html?accession=, which links the original on SEC.gov); its ticker narrows the list to that stock. */
 (()=>{"use strict";
 const UI=window.InsidirUI;if(!UI)return;
-const {api,filingHref,fmt,esc,logo,hydrateLogos,enter}=UI;
+const {api,filingHref,fmt,esc,logo,hydrateLogos,face,enter}=UI;
 const $=s=>document.querySelector(s);
 const form=$("[data-fx-form]"),qIn=$("#fx-q"),tIn=$("#fx-t"),clearBtn=$("[data-fx-clear]"),list=$("[data-fx-list]"),more=$("[data-fx-more]"),msgEl=$("[data-fx-msg]"),countEl=$("[data-fx-count]");
 const PAGE=40,MAX_OFFSET=1000;
 const clean=v=>{const t=String(v??"").trim().toUpperCase().replace(/^\$/,"");return /^[A-Z0-9][A-Z0-9.-]{0,14}$/.test(t)?t:"";};
+const bare=c=>String(c??"").replace(/^0+/,"");
 const say=t=>{msgEl.textContent=t||"";};
 /* A filing is dated on the SEC's calendar day (Eastern): one accepted at 9:30 p.m. ET was filed that day. */
 const DAY=new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"America/New_York"});
@@ -23,10 +24,12 @@ function row(f){
  const label=formLabel(f.form_type||f.title),amended=f.is_amendment&&!/\/A$/i.test(String(f.form_type||""));
  const who=(Array.isArray(f.owner_names)?f.owner_names:[]).filter(Boolean).map(fmt.person);
  const day=at(DAY,f.published_at);
+ // A Form 4 is filed under the reporting person's CIK; when the filer is the company itself, no CIK is passed (initials only).
+ const ownerCik=f.filer_cik&&bare(f.filer_cik)!==bare(f.issuer_cik)&&who.length===1?f.filer_cik:null;
  return `<li class="row fx">${href?`<a class="hit" href="${esc(href)}" aria-label="${esc(label+(amended?" (amended)":"")+", "+co+(day?", published "+day:""))}"></a>`:""}
  ${logo(t,28,f.issuer_name)}
  <span class="fx__co"><span class="strong">${esc(co)}</span>${t?`<button type="button" class="fx__tick" data-tick="${esc(t)}" aria-label="Show only ${esc(t)} filings" title="Show only ${esc(t)} filings">${esc(t)}</button>`:""}</span>
- <span class="fx__what lx-two"><span class="t-label">${esc(label)}${amended?" (amended)":""}</span>${who.length?`<span class="t-label muted">${esc(who.join(", "))}</span>`:""}</span>
+ <span class="fx__what lx-two"><span class="t-label">${esc(label)}${amended?" (amended)":""}</span>${who.length?`<span class="lx-who t-label muted">${face(f.owner_names.find(Boolean),{cik:ownerCik,ticker:t,issuerCik:f.issuer_cik,size:24})}<span>${esc(who.join(", "))}</span></span>`:""}</span>
  <span class="fx__day t-label muted"${f.published_at?` title="Published ${esc(at(WHEN,f.published_at))}"`:""}>${esc(day||"Date not reported")}</span>
  <span class="lx-go" aria-hidden="true">${href?UI.icon("chevron-right"):""}</span></li>`;
 }

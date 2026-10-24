@@ -5,6 +5,7 @@
 .sec__head .t-label{margin-top:var(--sp1);max-width:72ch}
 .ix-lede{max-width:72ch}
 .ix-pad{padding:var(--pad)}
+.ix :is(h4,h5){margin:0;font-size:inherit}
 .ix-line{display:block}
 .ix-ink{color:var(--text)}
 .ix-center{display:flex;justify-content:center;margin-top:var(--sp4)}
@@ -73,6 +74,7 @@
 .ix-cite{display:inline-grid;place-items:center;min-width:24px;height:24px;margin:-6px -2px;padding:0 3px;border-radius:6px;font-size:11px;line-height:16px;font-weight:500;color:var(--muted)}
 .ix-cite:hover{color:var(--text);background:var(--fill)}
 .ix-block{display:grid;gap:var(--sp3)}
+.ix-block[data-synth-box]{justify-items:start}
 .ix-block__head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp2)}
 .ix-facts{display:grid;gap:var(--sp2);margin:0;padding:0 0 0 var(--sp4);font-size:15px;line-height:24px}
 .ix-facts li::marker{color:var(--muted)}

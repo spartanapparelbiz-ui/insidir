@@ -41,7 +41,7 @@ a.pp-co:hover>span:last-child{text-decoration:underline;text-underline-offset:3p
 .pp .tabs{overflow-x:auto;scrollbar-width:none}
 .pp-panel{padding:var(--pad)}
 .pp-panel__head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);margin-bottom:var(--sp3)}
-.pp-scroll{overflow-x:auto}
+.pp-scroll{position:relative;overflow-x:auto}
 .pp-sub{display:grid;gap:var(--sp2);margin-top:var(--sp8)}
 .pp-sub .rows{margin-top:var(--sp2)}
 .pp-amt{display:inline-flex;align-items:center;min-height:24px;font-weight:500;white-space:nowrap;border-radius:var(--r-sm)}
