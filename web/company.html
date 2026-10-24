@@ -12,14 +12,14 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=3"><link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/css/ui.css?v=3">
-<link rel="stylesheet" href="/assets/css/ticker.css?v=1">
+<link rel="stylesheet" href="/assets/css/ticker.css?v=2">
 <script defer src="/assets/vendor/motion-12.23.12.js"></script>
 <script defer src="/assets/vendor/lightweight-charts-5.0.8.js"></script>
 <script defer src="/assets/js/icons.js?v=1"></script>
 <script defer src="/assets/js/ui.js?v=4"></script>
 <script defer src="/assets/js/chart.js?v=2"></script>
 <script defer src="/assets/js/graph.js?v=1"></script>
-<script defer src="/assets/js/ticker.js?v=3"></script>
+<script defer src="/assets/js/ticker.js?v=4"></script>
 <script defer src="/assets/js/funnel.js"></script>
 <script defer src="/assets/js/posthog.js?v=1"></script>
 </head>
@@ -62,6 +62,17 @@
   <section class="card tk-panel" role="tabpanel" id="pan-filings" aria-labelledby="tab-filings" data-pan="filings" hidden></section>
   <section class="card tk-panel" role="tabpanel" id="pan-connections" aria-labelledby="tab-connections" data-pan="connections" hidden></section>
   <section class="card tk-panel" role="tabpanel" id="pan-company" aria-labelledby="tab-company" data-pan="company" hidden></section>
+
+  <!-- Your note: the member's private research journal for this stock (GET/POST/DELETE /v1/me/research-decisions). -->
+  <section class="card tk-note" data-tk-note aria-labelledby="note-h" aria-busy="true">
+    <div class="tk-note__head"><div><h2 class="t-section" id="note-h">Your note</h2><p class="t-label muted">Private to you. Only you can see it, and it never places or suggests a trade.</p></div>
+      <div class="seg" role="group" aria-label="Research status" data-note-status><button type="button" data-status="researching" aria-pressed="false">Researching</button><button type="button" data-status="watching" aria-pressed="false">Watching</button><button type="button" data-status="passed" aria-pressed="false">Passed</button></div></div>
+    <label class="t-label muted" for="tk-note-text">Note</label>
+    <textarea class="input tk-note__text" id="tk-note-text" rows="4" maxlength="1500" aria-describedby="tk-note-count" placeholder="What you are looking at, and why"></textarea>
+    <div class="tk-note__foot"><p class="t-micro muted" id="tk-note-count" data-note-count>0 of 1,500 characters</p>
+      <p class="t-label muted tk-note__msg" data-note-msg role="status" aria-live="polite"></p>
+      <button class="btn btn--ghost" type="button" data-note-undo hidden>Undo</button><button class="btn btn--ghost" type="button" data-note-delete hidden>Delete</button><button class="btn btn--primary" type="button" data-note-save>Save note</button></div>
+  </section>
 
   <footer class="data-foot">
     <p class="t-micro muted" data-ui-credits></p>

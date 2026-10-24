@@ -101,5 +101,39 @@ async function company(){
   ${facts.length?`<dl class="tk-facts">${facts.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==="Website"?`<a href="${esc(/^https?:/.test(v)?v:"https://"+v)}" target="_blank" rel="noopener">${esc(String(v).replace(/^https?:\/\//,""))}</a>`:esc(v)}</dd></div>`).join("")}</dl>`:""}</div>`;
 }
 
+/* ---------- your note: the private research journal for this ticker only ---------- */
+const NOTE_MAX=1500,noteEl=$("[data-tk-note]"),noteText=$("#tk-note-text"),noteMsg=t=>{$("[data-note-msg]").textContent=t;};
+let saved=null,status="researching",noteBusy=false;
+const markStatus=s=>{status=s;$$("[data-status]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.status===s)));};
+const count=()=>{$("[data-note-count]").textContent=noteText.value.length.toLocaleString("en-US")+" of "+NOTE_MAX.toLocaleString("en-US")+" characters";};
+const showNote=n=>{saved=n?{status:n.review_status,notes:n.notes||""}:null;markStatus(saved?saved.status:"researching");noteText.value=saved?saved.notes:"";count();$("[data-note-delete]").hidden=!saved;};
+async function loadNote(){
+ try{const d=await api("/v1/me/research-decisions?ticker="+encodeURIComponent(T));showNote((d.items||[]).find(x=>x.ticker===T)||null);
+  noteMsg(saved?"Saved "+fmt.date(d.items.find(x=>x.ticker===T).updated_at)+".":"");}
+ catch(e){if(e.status===401||e.status===402)return;noteMsg("Your note didn't load.");}
+ finally{noteEl.removeAttribute("aria-busy");}
+}
+async function saveNote(next=status){
+ if(noteBusy)return;const notes=noteText.value.trim();
+ if(notes.length>NOTE_MAX){noteMsg("Notes are at most 1,500 characters.");return;}
+ const before=saved?saved.status:null;noteBusy=true;markStatus(next);noteMsg("Saving…");$("[data-note-undo]").hidden=true;
+ try{const r=await api("/v1/me/research-decisions",{method:"POST",body:{ticker:T,reviewStatus:next,notes}});
+  saved={status:r.item.review_status,notes:r.item.notes||""};$("[data-note-delete]").hidden=false;noteMsg("Saved.");}
+ catch(e){if(before)markStatus(before);noteMsg("Not saved: "+e.message);}
+ finally{noteBusy=false;}
+}
+$$("[data-status]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.status===status&&saved)return;if(saved||noteText.value.trim())saveNote(b.dataset.status);else markStatus(b.dataset.status);}));
+$("[data-note-save]").addEventListener("click",()=>saveNote());
+noteText.addEventListener("input",count);
+noteText.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();saveNote();}});
+$("[data-note-delete]").addEventListener("click",async()=>{
+ if(!saved||noteBusy)return;const gone=saved;noteBusy=true;noteMsg("Deleting…");
+ try{await api("/v1/me/research-decisions?ticker="+encodeURIComponent(T),{method:"DELETE"});showNote(null);noteMsg("Note deleted.");
+  const u=$("[data-note-undo]");u.hidden=false;u.onclick=async()=>{u.hidden=true;noteText.value=gone.notes;count();await saveNote(gone.status);};}
+ catch(e){noteMsg("Not deleted: "+e.message);}
+ finally{noteBusy=false;}
+});
+loadNote();
+
 loadChart();show(current);
 })();

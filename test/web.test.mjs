@@ -514,8 +514,8 @@ test("faces fill their box, fade in place over the initials, and the credits nev
   assert.match(ui,/<span class="face__mono">/,"initials are always drawn first");
   // The browser check measures the picture's own box, so a half-size tile cannot pass it again.
   const check=await readFile(new URL("../scripts/media-check.mjs",import.meta.url),"utf8");
-  assert.match(check,/every picture fills its tile/);
-  assert.match(check,/credits at the bottom/);
+  assert.match(check,/a photo fills its tile/);
+  assert.match(check,/no tile or heading moves when pictures and credits l/);
 });
 
 test("the insider's page is a gated product page built only from GET /v1/people/<cik>",async()=>{

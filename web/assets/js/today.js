@@ -122,7 +122,7 @@ async function loadPeople(){
 async function loadNotes(){
  const el=$("[data-notes]");
  try{const d=await api("/v1/me/research-decisions");el.removeAttribute("aria-busy");const n=(d.items||[]).slice(0,4);
-  if(!n.length){el.outerHTML=`<div class="empty" data-notes style="padding:16px 0"><h3>No notes yet</h3><p>Save a note on any company page and it waits for you here.</p></div>`;return;}
+  if(!n.length){el.outerHTML=`<div class="empty" data-notes style="padding:16px 0"><h3>No notes yet</h3><p>Save a note on any stock page and it waits for you here.</p></div>`;return;}
   el.innerHTML=n.map(x=>`<li class="row side-row"><a class="hit" href="${coHref(x.ticker)}" aria-label="${esc(x.ticker)} note"></a>${logo(x.ticker,28)}<span><span class="tick">${esc(x.ticker)}</span><span class="t-label muted">${esc(String(x.notes||x.review_status||"").slice(0,80))}</span></span><span class="t-micro muted">${esc(fmt.date(x.updated_at,false))}</span></li>`).join("");hydrateLogos(el);
  }catch(e){if(e.status!==401&&e.status!==402)failed(el,"Your notes",loadNotes);}
 }
