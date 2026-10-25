@@ -391,10 +391,11 @@ export function venueHttp(name: BucketName): HttpClient {
   return c;
 }
 
-/** Rate-limit headroom and counters for every venue API that has been used, for the worker's status report. */
-export function rateLimitStats(): Partial<Record<BucketName, HttpStats>> {
-  const out: Partial<Record<BucketName, HttpStats>> = {};
-  for (const [name, c] of registry) out[name] = c.stats();
+/** Rate-limit headroom and counters for every venue API (configured limits included even before first use), for
+ *  the worker's status report. */
+export function rateLimitStats(): Record<BucketName, HttpStats> {
+  const out = {} as Record<BucketName, HttpStats>;
+  for (const name of BUCKETS) out[name] = venueHttp(name).stats();
   return out;
 }
 

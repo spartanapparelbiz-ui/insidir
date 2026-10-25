@@ -1,0 +1,9 @@
+{
+  "cursor": "",
+  "markets": [
+    { "ticker": "KXFEDDECISION-25DEC-C25", "event_ticker": "KXFEDDECISION-25DEC", "market_type": "binary", "title": "Cut 25bps?", "status": "finalized", "result": "yes", "close_time": "2025-12-10T18:59:00Z" },
+    { "ticker": "KXFEDDECISION-25DEC-H0", "event_ticker": "KXFEDDECISION-25DEC", "market_type": "binary", "title": "Hold?", "status": "settled", "result": "no" },
+    { "ticker": "KXBTCD-25OCT31-T100000", "event_ticker": "KXBTCD-25OCT31", "market_type": "binary", "title": "BTC above 100k?", "status": "active", "result": "" },
+    { "ticker": "NOT-REQUESTED", "event_ticker": "X", "status": "settled", "result": "yes" }
+  ]
+}

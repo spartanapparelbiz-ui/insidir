@@ -22,6 +22,9 @@ export interface VenueClient {
   listEvents(opts?: ListOptions): Promise<VEvent[]>;
   /** Order books keyed by VMarket.id. Markets whose book could not be fetched are absent from the map. */
   getBooks(markets: readonly VMarket[], opts?: BookOptions): Promise<Map<string, Book>>;
+  /** Markets by VMarket.id in ANY status (open, closed, settled), with `result` filled once settled. For settling
+   *  logged deals. Ids the venue does not know are absent from the map; never throws for a missing id. */
+  getMarketsById(ids: readonly string[], opts?: BookOptions): Promise<Map<string, VMarket>>;
 }
 
 export interface Sweep {

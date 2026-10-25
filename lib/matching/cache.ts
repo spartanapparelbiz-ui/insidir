@@ -1,0 +1,77 @@
+/* The match-decision cache and the LLM usage store: interfaces plus in-memory implementations (for tests and
+ * one-off scripts; the worker's Postgres implementations live with the DB code). Every decision is cached,
+ * accepted and rejected alike, so the LLM is never asked twice about the same pair while neither market's text
+ * has changed. */
+import type { LlmUsageStore } from "./llm";
+
+export interface MatchDecision {
+  status: "accepted" | "rejected" | "unsure";
+  method: "deterministic" | "llm";
+  /** YES on a is NO on b. */
+  inverted: boolean;
+  /** 0..1: the deterministic score, or the LLM's confidence. */
+  confidence: number;
+  reasons: string[];
+  /** The LLM's plain-English rule differences, merged into the safety notes. */
+  llmDifferences: string[];
+  /** Hash of both markets' title, labels and rules: a changed market is decided again. */
+  fingerprint: string;
+  /** Matcher version for deterministic decisions (bumping it re-decides them; LLM answers are kept). */
+  version: number;
+  decidedAt: number;
+  /** For "unsure" after an LLM failure: when it may be asked again. */
+  retryAt: number | null;
+}
+
+export interface MatchCache {
+  get(key: string): Promise<MatchDecision | null>;
+  /** Optional batch read (a DB does this in one query). */
+  getMany?(keys: readonly string[]): Promise<Map<string, MatchDecision>>;
+  set(key: string, decision: MatchDecision): Promise<void>;
+}
+
+export interface MemoryMatchCache extends MatchCache {
+  readonly map: Map<string, MatchDecision>;
+  writes: number;
+}
+
+export function createMemoryCache(initial?: Iterable<[string, MatchDecision]>): MemoryMatchCache {
+  const map = new Map<string, MatchDecision>(initial);
+  const cache: MemoryMatchCache = {
+    map,
+    writes: 0,
+    async get(key) {
+      return map.get(key) ?? null;
+    },
+    async getMany(keys) {
+      const out = new Map<string, MatchDecision>();
+      for (const k of keys) {
+        const d = map.get(k);
+        if (d) out.set(k, d);
+      }
+      return out;
+    },
+    async set(key, decision) {
+      cache.writes++;
+      map.set(key, decision);
+    },
+  };
+  return cache;
+}
+
+export interface MemoryUsageStore extends LlmUsageStore {
+  readonly spend: Map<string, number>;
+}
+
+export function createMemoryUsageStore(initial?: Record<string, number>): MemoryUsageStore {
+  const spend = new Map<string, number>(Object.entries(initial ?? {}));
+  return {
+    spend,
+    async getMonthSpendUsd(month) {
+      return spend.get(month) ?? 0;
+    },
+    async addSpendUsd(month, usd) {
+      spend.set(month, (spend.get(month) ?? 0) + usd);
+    },
+  };
+}

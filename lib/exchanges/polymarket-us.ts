@@ -24,6 +24,8 @@ export const US_ENDPOINTS = {
   markets: "/v1/markets",
   events: "/v1/events",
   /** {id} is replaced by the market id (or slug). */
+  market: "/v1/markets/{id}",
+  /** {id} is replaced by the market id (or slug). */
   book: "/v1/markets/{id}/book",
 } as const;
 /** Page size for list endpoints (limit/offset, or cursor when the response returns one). */
@@ -56,7 +58,8 @@ function usResult(m: JsonObject): Side | "void" | null {
   if (r === "yes") return "yes";
   if (r === "no") return "no";
   if (r === "void" || r === "voided" || r === "cancelled" || r === "canceled") return "void";
-  return null;
+  const status = str(pick(m, "status", "state"))?.toLowerCase();
+  return status === "voided" || status === "cancelled" || status === "canceled" ? "void" : null;
 }
 
 /** One Polymarket US market → VMarket ("polymarket_us"). Gamma-shaped rows reuse the international reader. */
@@ -325,6 +328,26 @@ export class PolymarketUsClient implements VenueClient {
   async getBook(marketId: string, priority: Priority = "normal"): Promise<Book | null> {
     const raw = await this.http.json(`${this.baseUrl}${US_ENDPOINTS.book.replace("{id}", encodeURIComponent(marketId))}`, { priority, maxRetries: 1 });
     return readUsBook(raw, this.clock.now());
+  }
+
+  /** Markets by id in any status, one GET /v1/markets/{id} each (unverified endpoint). Fails soft: unreachable,
+   *  unknown or unreadable ids are absent. */
+  async getMarketsById(ids: readonly string[], opts: BookOptions = {}): Promise<Map<string, VMarket>> {
+    const out = new Map<string, VMarket>();
+    if (!this.status().enabled) return out;
+    await Promise.all(
+      [...new Set(ids)].map(async id => {
+        try {
+          const raw = await this.http.json(`${this.baseUrl}${US_ENDPOINTS.market.replace("{id}", encodeURIComponent(id))}`, { priority: opts.priority ?? "normal", maxRetries: 1 });
+          const row = isObject(raw) && isObject(raw.market) ? raw.market : raw;
+          const m = isObject(row) ? readUsMarket(row) : null;
+          if (m) out.set(id, m);
+        } catch {
+          // Absent.
+        }
+      }),
+    );
+    return out;
   }
 
   async getBooks(markets: readonly VMarket[], opts: BookOptions = {}): Promise<Map<string, Book>> {

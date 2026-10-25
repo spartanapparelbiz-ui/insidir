@@ -52,7 +52,7 @@ button { font: inherit; }
 .hdr { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
 .hdr__in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; }
 .wordmark { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--text); }
-.wordmark svg { height: 20px; width: auto; }
+.wordmark svg { height: 24px; width: auto; }
 .hdr__nav { display: flex; align-items: center; gap: 4px; }
 .hdr__nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 10px; color: var(--muted); text-decoration: none; }
 .hdr__nav a:hover, .hdr__nav a[aria-current="page"] { color: var(--text); }

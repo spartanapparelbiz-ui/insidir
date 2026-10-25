@@ -99,6 +99,9 @@ const MAX_POSTING = 500;
 const RARE_TOKEN_MAX_DF = 30;
 const RARE_TOKENS_PER_MARKET = 3;
 const RARE_TOKEN_MIN_LEN = 4;
+/** Blocking: at most this many B markets are fully scored per A market (pre-ranked by shared keys, then close
+ *  proximity). */
+const MAX_SCORED_PER_MARKET = 60;
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
@@ -216,6 +219,8 @@ export function hardConflicts(ea: Entities, eb: Entities): string[] {
   if (ea.thresholds.length && eb.thresholds.length && between(ea.thresholds) !== between(eb.thresholds)) out.push("a range vs an open-ended threshold");
   // Dates.
   if (ea.dates.length && eb.dates.length && !ea.dates.some(x => eb.dates.some(y => compatibleDates(x, y)))) out.push("different dates");
+  else if (!ea.dates.length && !eb.dates.length && ea.ruleDates.length && eb.ruleDates.length && !ea.ruleDates.some(x => eb.ruleDates.some(y => compatibleDates(x, y))))
+    out.push("the rules give different dates");
   if (ea.years.length && eb.years.length && inter(ea.years.map(String), eb.years.map(String)).length === 0) out.push("different years");
   if (ea.times.length && eb.times.length && !ea.times.some(x => eb.times.some(y => sameTime(x, y)))) out.push("different times of day");
   if (ea.counters.length && eb.counters.length && inter(ea.counters.map(String), eb.counters.map(String)).length === 0) out.push("different week or game numbers");
@@ -321,7 +326,11 @@ export function scorePair(pa: MarketProfile, pb: MarketProfile, cfg: MatchConfig
     reasons.push(`same date (${ea.dates.map(d => d.key).join(", ")})`);
   } else if (explicitDates) caps.push("dates only partly agree");
   else if (ea.dates.length !== eb.dates.length) caps.push("only one title states a date");
-  if (!explicitDates && gapH !== null && gapH > SAME_EVENT_GAP_HOURS) caps.push(`no stated date and closes ${Math.round(gapH)}h apart`);
+  // Recurring events (games) need a date or close times near each other; long-dated markets are anchored by a year.
+  const recurring = ea.teams.length > 0 || eb.teams.length > 0 || (!ea.years.length && !eb.years.length);
+  const ruleDatesAgree = ea.ruleDates.length > 0 && eb.ruleDates.length > 0 && ea.ruleDates.some(x => eb.ruleDates.some(y => compatibleDates(x, y)));
+  if (!explicitDates && !ruleDatesAgree && recurring && gapH !== null && gapH > SAME_EVENT_GAP_HOURS) caps.push(`no stated date and closes ${Math.round(gapH)}h apart`);
+  if (!explicitDates && ruleDatesAgree) reasons.push("the rules give the same date");
 
   // Entities.
   const entity = weightedJaccard(pa.keys, pb.keys);
@@ -441,7 +450,6 @@ export function candidatesFromProfiles(pas: MarketProfile[], pbs: MarketProfile[
   const window = Math.ceil(cfg.maxCloseGapHours / 24);
   const out: Candidate[] = [];
   for (const pa of pas) {
-    const seen = new Set<number>();
     const lists: number[][] = [];
     for (const k of pa.blockKeys) {
       if (pa.m.closeTime === null) {
@@ -457,12 +465,19 @@ export function candidatesFromProfiles(pas: MarketProfile[], pbs: MarketProfile[
       const ln = idx.bucketed.get(`${k}@n`);
       if (ln && ln.length <= MAX_POSTING) lists.push(ln);
     }
-    for (const l of lists) for (const i of l) seen.add(i);
+    const shared = new Map<number, number>();
+    for (const l of lists) for (const i of l) shared.set(i, (shared.get(i) ?? 0) + 1);
+    // Pre-rank by shared blocking keys, then close-time proximity, and score only the best few.
+    const gap = (i: number) => {
+      const cb = pbs[i]?.m.closeTime ?? null;
+      return pa.m.closeTime === null || cb === null ? cfg.maxCloseGapHours * HOUR_MS : Math.abs(pa.m.closeTime - cb);
+    };
+    const pool = [...shared.keys()].filter(i => gap(i) <= cfg.maxCloseGapHours * HOUR_MS);
+    const ranked = pool.length <= MAX_SCORED_PER_MARKET ? pool : pool.sort((x, y) => (shared.get(y) ?? 0) - (shared.get(x) ?? 0) || gap(x) - gap(y) || x - y).slice(0, MAX_SCORED_PER_MARKET);
     const scored: Array<{ c: Candidate; raw: number }> = [];
-    for (const i of seen) {
+    for (const i of ranked) {
       const pb = pbs[i];
       if (!pb) continue;
-      if (pa.m.closeTime !== null && pb.m.closeTime !== null && Math.abs(pa.m.closeTime - pb.m.closeTime) > cfg.maxCloseGapHours * HOUR_MS) continue;
       const s = scorePair(pa, pb, cfg);
       const c: Candidate = {
         key: pairKey(pa.m, pb.m),

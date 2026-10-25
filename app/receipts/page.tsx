@@ -31,7 +31,7 @@ export default async function ReceiptsPage() {
       <main className="wrap lp">
         <section className="sec">
           <h1 className="sec__h">Receipts</h1>
-          <p className="sec__p">Every lock we found in the last {windowDays} days, as it looked when found, and how it settled. Wins and misses, nothing removed. &ldquo;Open&rdquo; means the markets haven&apos;t settled yet. Profit is at the full size that was fillable when found, after fees.</p>
+          <p className="sec__p">Every lock we found in the last {windowDays} days, as it looked when found, and how it settled. Wins and misses, nothing removed. &ldquo;Open&rdquo; means the markets haven&apos;t settled yet. Profit is for the full amount you could buy when we found it, after fees.</p>
           {!ent.fullHistory ? <p className="small muted">Older history is part of <Link href="/pricing">Insidir Pro</Link>.</p> : null}
           {!paid ? <p className="small muted">Sizes of deals that haven&apos;t settled are for members; deals found in the last 30 minutes appear here after the free delay.</p> : null}
         </section>

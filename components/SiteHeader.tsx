@@ -13,7 +13,7 @@ export function SiteHeader({ plan, signedIn, current }: { plan: Plan; signedIn: 
           {link("/terminal", "Terminal")}
           {link("/receipts", "Receipts")}
           {plan === "pro" ? link("/whales", "Whales") : null}
-          {signedIn ? link("/settings", "Settings") : <Link href="/auth/login?next=/terminal">Log in</Link>}
+          {signedIn ? link("/settings", "Settings") : <Link href="/auth/login?next=/terminal" prefetch={false}>Log in</Link>}
         </nav>
       </div>
     </header>

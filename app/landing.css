@@ -16,7 +16,7 @@
 .lp-deal__legs { display: grid; gap: 2px; }
 .lp-deal__leg { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; line-height: 20px; }
 .lp-deal__leg b { font-size: 17px; }
-.lp-deal__leg.lp-eq { border-top: 1px solid var(--line); padding-top: 2px; }
+.lp-deal__leg.lp-d3 { border-top: 1px solid var(--line); padding-top: 2px; }
 .lp-bar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; background: var(--line); }
 .lp-bar span { display: block; height: 100%; transform-origin: left; }
 .lp-bar__a { background: #5f5d58; }
@@ -28,10 +28,10 @@
 /* The math plays once, in order: side A, side B, what you pay, the $1 back, then the profit. CSS only. */
 @keyframes lp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes lp-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.lp-deal .lp-a { animation: lp-in .4s .15s both; }
-.lp-deal .lp-b { animation: lp-in .4s .55s both; }
-.lp-deal .lp-eq { animation: lp-in .4s .95s both; }
-.lp-deal .lp-out { animation: lp-in .4s 1.35s both; }
+.lp-deal .lp-d1 { animation: lp-in .4s .15s both; }
+.lp-deal .lp-d2 { animation: lp-in .4s .55s both; }
+.lp-deal .lp-d3 { animation: lp-in .4s .95s both; }
+.lp-deal .lp-d4 { animation: lp-in .4s 1.35s both; }
 .lp-bar__a { animation: lp-grow .4s .15s both; }
 .lp-bar__b { animation: lp-grow .4s .55s both; }
 .lp-bar__f { animation: lp-grow .4s 1.35s both; }
@@ -126,3 +126,5 @@
 .lp-legal h2 { font-size: 18px; font-weight: 800; padding-top: 12px; }
 .lp-legal p, .lp-legal li { color: var(--muted); }
 .lp-legal ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+@media (min-width: 560px) { .lp .sec > .btn { justify-self: start; } }

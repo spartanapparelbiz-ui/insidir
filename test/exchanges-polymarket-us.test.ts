@@ -105,3 +105,22 @@ describe("PolymarketUsClient", () => {
     expect(client.status().reachable).toBe(true);
   });
 });
+
+describe("PolymarketUsClient.getMarketsById", () => {
+  it("reads markets in any status and fails soft for unknown ids", async () => {
+    const { http } = testHttp(url => {
+      const p = new URL(url).pathname;
+      if (p === "/v1/markets/a") return { body: { market: { id: "a", title: "A?", status: "settled", result: "no" } } };
+      if (p === "/v1/markets/b") return { body: { id: "b", title: "B?", status: "voided" } };
+      if (p === "/v1/markets/c") return { body: { id: "c", title: "C?", status: "open" } };
+      if (p === "/v1/markets/boom") return { status: 500 };
+      return undefined;
+    });
+    const client = new PolymarketUsClient({ http, baseUrl: "https://us.test", enabled: true });
+    const got = await client.getMarketsById(["a", "b", "c", "boom", "missing"]);
+    expect([...got.keys()].sort()).toEqual(["a", "b", "c"]);
+    expect(got.get("a")).toMatchObject({ result: "no", active: false });
+    expect(got.get("b")!.result).toBe("void");
+    expect(got.get("c")).toMatchObject({ result: null, active: true });
+  });
+});

@@ -48,10 +48,10 @@ function HeroDeal({ r, delayed, now }: { r: ReceiptRow; delayed: boolean; now: n
       </figcaption>
       <p className="lp-deal__title">{o.title}</p>
       <div className="lp-deal__legs">
-        <p className="lp-deal__leg lp-a"><span className="dim">Buy {a.side.toUpperCase()} on {VENUE_NAME[a.venue]}</span><b>{centsText(m.aCents)}</b></p>
-        <p className="lp-deal__leg lp-b"><span className="dim">Buy {b.side.toUpperCase()} on {VENUE_NAME[b.venue]}</span><b>{centsText(m.bCents)}</b></p>
-        <p className="lp-deal__leg lp-eq"><span className="dim">You pay</span><b>{centsText(m.inCents)}</b></p>
-        <p className="lp-deal__leg lp-out"><span className="dim">You get back, either way</span><b>$1</b></p>
+        <p className="lp-deal__leg lp-d1"><span className="dim">Buy {a.side.toUpperCase()} on {VENUE_NAME[a.venue]}</span><b>{centsText(m.aCents)}</b></p>
+        <p className="lp-deal__leg lp-d2"><span className="dim">Buy {b.side.toUpperCase()} on {VENUE_NAME[b.venue]}</span><b>{centsText(m.bCents)}</b></p>
+        <p className="lp-deal__leg lp-d3"><span className="dim">You pay</span><b>{centsText(m.inCents)}</b></p>
+        <p className="lp-deal__leg lp-d4"><span className="dim">You get back, either way</span><b>$1</b></p>
       </div>
       <div className="lp-bar" aria-hidden="true">
         <span className="lp-bar__a" style={{ width: w(m.aCents) }} />

@@ -6,11 +6,13 @@
 import { VENUE_NAME, type Safety, type VMarket } from "@/lib/types";
 import { RESOLUTION_SOURCES } from "./aliases";
 import { hardConflicts } from "./candidates";
-import { compatibleDates, extractEntities, parseNumbers, sameNumber, type Entities, type Threshold } from "./entities";
+import { NUMBER_EQ_ABS, compatibleDates, extractEntities, parseNumbers, sameNumber, type Entities, type Threshold } from "./entities";
 import { deaccent, extractTimes, normalize, type DateMention, type TimeMention } from "./normalize";
 
-/** Close times further apart than this get a YELLOW note. */
+/** Close times further apart than this get a YELLOW note: games and dated events (teams, a date or a time in the
+ *  title), and long-dated markets (an election in 2028), where a day's difference in the close is routine. */
 const CLOSE_GAP_YELLOW_HOURS = 3;
+const CLOSE_GAP_YELLOW_HOURS_LONG = 36;
 /** Two cutoff times within this many minutes are the same (ET is compared as UTC−5). */
 const CUTOFF_EQ_MINUTES = 60;
 /** At most this many LLM differences are shown. */
@@ -127,6 +129,8 @@ function fmtValue(t: Threshold): string {
   const v = (x: number) => (t.unit === "usd" ? `$${x.toLocaleString("en-US")}` : t.unit === "pct" ? `${x}%` : t.unit === "deg" ? `${x}°` : x.toLocaleString("en-US"));
   return t.upper !== null ? `${v(t.value)}–${v(t.upper)}` : v(t.value);
 }
+/** 99,999.99 → 100,000 when it is within a cent of a whole number (Kalshi's "above 99,999.99" strikes). */
+const roundish = (x: number) => (Math.abs(x - Math.round(x)) <= NUMBER_EQ_ABS ? Math.round(x) : x);
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function fmtDate(d: DateMention): string {
   const m = MONTH_NAMES[d.month - 1] ?? String(d.month);
@@ -160,7 +164,10 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
   const ta = ea.thresholds[0];
   const tb = eb.thresholds[0];
   if (ta && tb && sameNumber(ta.value, tb.value) && ta.inclusive !== null && tb.inclusive !== null && (opts.inverted ? ta.inclusive === tb.inclusive : ta.inclusive !== tb.inclusive)) {
-    yellow.push(`Exactly ${fmtValue(ta)} counts differently: ${A} ${ta.inclusive ? "includes" : "excludes"} it, ${B} ${tb.inclusive ? "includes" : "excludes"} it`);
+    const v = fmtValue({ ...ta, value: roundish(ta.value) });
+    const yes = (venue: string, inc: boolean, dir: Threshold["direction"]) =>
+      `${venue} counts exactly ${v} as ${inc === (dir !== "below") ? "YES" : "NO"}`;
+    yellow.push(`Boundary differs: ${yes(A, ta.inclusive, ta.direction)}; ${yes(B, tb.inclusive, tb.direction)}`);
   }
 
   // Dates and cutoff times in the rules.
@@ -175,7 +182,8 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
   }
   if (a.closeTime !== null && b.closeTime !== null) {
     const gap = Math.abs(a.closeTime - b.closeTime) / HOUR_MS;
-    if (gap > CLOSE_GAP_YELLOW_HOURS) yellow.push(gap >= 48 ? `Closes ${Math.round(gap / 24)} days apart` : `Closes ${Math.round(gap)} hours apart`);
+    const dated = [ea, eb].some(e => e.teams.length > 0 || e.dates.length > 0 || e.times.length > 0);
+    if (gap > (dated ? CLOSE_GAP_YELLOW_HOURS : CLOSE_GAP_YELLOW_HOURS_LONG)) yellow.push(gap >= 48 ? `Closes ${Math.round(gap / 24)} days apart` : `Closes ${Math.round(gap)} hours apart`);
   }
 
   // Resolution sources.

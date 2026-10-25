@@ -110,3 +110,13 @@ describe("qs", () => {
     expect(qs({})).toBe("");
   });
 });
+
+describe("rateLimitStats", () => {
+  it("reports every venue bucket with configured and published limits", async () => {
+    const { rateLimitStats, BUCKETS } = await import("@/lib/exchanges/http");
+    const s = rateLimitStats();
+    expect(Object.keys(s).sort()).toEqual([...BUCKETS].sort());
+    expect(s.kalshi).toMatchObject({ ratePerSec: 16, burst: 16, requests: 0, rateLimited: 0, published: "20 reads/s (Basic tier)" });
+    expect(s.polymarket_clob.ratePerSec).toBe(40);
+  });
+});

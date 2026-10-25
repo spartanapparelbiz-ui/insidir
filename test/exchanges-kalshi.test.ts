@@ -198,3 +198,25 @@ describe("readKalshiMarket details", () => {
     expect(kalshiUrl(null, null, "ABC")).toBe("https://kalshi.com/markets/abc");
   });
 });
+
+describe("KalshiClient.getMarketsById (settlement)", () => {
+  it("batches GET /markets?tickers=, falls back per ticker, fills results, leaves unknown ids out", async () => {
+    const { http, calls } = testHttp(url => {
+      const u = new URL(url);
+      if (u.pathname.endsWith("/markets") && u.searchParams.get("tickers")) return { body: fixture("kalshi-markets-byid.json") };
+      if (u.pathname.endsWith("/markets/KXVOID-1")) return { body: fixture("kalshi-market-void.json") };
+      if (u.pathname.endsWith("/series")) return { body: fixture("kalshi-series.json") };
+      return undefined;
+    });
+    const client = new KalshiClient({ http, baseUrl: "https://k.test" });
+    const ids = ["KXFEDDECISION-25DEC-C25", "KXFEDDECISION-25DEC-H0", "KXBTCD-25OCT31-T100000", "KXVOID-1", "KXUNKNOWN-1"];
+    const got = await client.getMarketsById(ids);
+    expect([...got.keys()].sort()).toEqual(ids.filter(i => i !== "KXUNKNOWN-1").sort());
+    expect(got.get("KXFEDDECISION-25DEC-C25")).toMatchObject({ result: "yes", active: false, fee: { venue: "kalshi", multiplier: 0.5 } });
+    expect(got.get("KXFEDDECISION-25DEC-H0")!.result).toBe("no");
+    expect(got.get("KXVOID-1")!.result).toBe("void");
+    expect(got.get("KXBTCD-25OCT31-T100000")).toMatchObject({ result: null, active: true });
+    const batch = calls.find(c => new URL(c.url).searchParams.get("tickers"))!;
+    expect(new URL(batch.url).searchParams.get("status")).toBeNull();
+  });
+});

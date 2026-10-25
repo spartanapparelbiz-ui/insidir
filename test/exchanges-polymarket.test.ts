@@ -363,3 +363,34 @@ describe("polling", () => {
     expect(await pollOnce(["1"], last, () => undefined, { client })).toBe(1);
   });
 });
+
+describe("PolymarketClient.getMarketsById (settlement)", () => {
+  it("queries Gamma by condition_ids with closed=true and closed=false, reads final results", async () => {
+    const { http, calls } = testHttp(url => {
+      const u = new URL(url);
+      if (u.pathname !== "/markets") return undefined;
+      const ids = u.searchParams.getAll("condition_ids");
+      const src = u.searchParams.get("closed") === "true" ? "gamma-markets-byid-closed.json" : "gamma-markets-byid-open.json";
+      return { body: (fixture(src) as Array<{ conditionId: string }>).filter(m => ids.includes(m.conditionId)) };
+    });
+    const client = new PolymarketClient({ gamma: http, clob: http, data: http, gammaUrl: "https://gamma.test" });
+    const ids = ["0xyes", "0xno", "0xvoid", "0xpending", "0xopen", "0xmissing"];
+    const got = await client.getMarketsById(ids);
+    expect([...got.keys()].sort()).toEqual(["0xno", "0xopen", "0xpending", "0xvoid", "0xyes"]);
+    expect(got.get("0xyes")).toMatchObject({ result: "yes", active: false, eventId: "9", category: "politics", url: "https://polymarket.com/event/ev-nine/settled-yes" });
+    expect(got.get("0xno")!.result).toBe("no");
+    expect(got.get("0xvoid")!.result).toBe("void");
+    // Closed but UMA resolution only proposed: not settled yet.
+    expect(got.get("0xpending")!.result).toBeNull();
+    expect(got.get("0xopen")).toMatchObject({ result: null, active: true });
+    expect(calls).toHaveLength(2);
+  });
+
+  it("batches ids (≤ 50 per request)", async () => {
+    const { http, calls } = testHttp(() => ({ body: [] }));
+    const client = new PolymarketClient({ gamma: http, clob: http, data: http, gammaUrl: "https://gamma.test" });
+    await client.getMarketsById(Array.from({ length: 120 }, (_, i) => `0x${i}`));
+    expect(calls).toHaveLength(6);
+    expect(calls.every(c => new URL(c.url).searchParams.getAll("condition_ids").length <= 50)).toBe(true);
+  });
+});

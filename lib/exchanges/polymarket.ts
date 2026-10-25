@@ -21,6 +21,8 @@ import { bool, boolOrNull, epochMs, isObject, list, num, objList, pick, rows, st
 import { strikeFromText } from "./strike";
 import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type Sweep, type VenueClient } from "./venue";
 
+/** Condition ids per Gamma /markets?condition_ids= request when looking markets up by id. */
+export const GAMMA_IDS_BATCH = 50;
 /** Gamma /events page size (offset pagination). Events carry their markets, so pages are kept moderate. */
 export const GAMMA_EVENTS_PAGE_LIMIT = 100;
 /** Hard stop for offset loops. */
@@ -114,13 +116,21 @@ export function polymarketUrl(eventSlug: string | null, marketSlug: string | nul
 }
 
 /** Settled result from outcomePrices once closed: [1,0] YES, [0,1] NO, [0.5,0.5] void (50-50 refund). */
-function gammaResult(m: JsonObject): Side | "void" | null {
-  if (!bool(m.closed)) return null;
+/** Final outcomePrices must be at least this close to 1 / 0 to count as settled (a closed market awaiting resolution
+ *  still shows its last trade prices). */
+export const SETTLED_PRICE_TOLERANCE = 0.005;
+
+/** Settled result. When Gamma states umaResolutionStatus, only "resolved" counts; otherwise the market must be
+ *  closed. Then the final outcomePrices decide: [1,0] YES, [0,1] NO, [0.5,0.5] void (50-50 refund). */
+export function gammaResult(m: JsonObject): Side | "void" | null {
+  const uma = str(m.umaResolutionStatus)?.toLowerCase();
+  if (uma !== undefined ? uma !== "resolved" : !bool(m.closed)) return null;
   const prices = list(m.outcomePrices).map(num);
   const [a, b] = prices;
   if (a == null || b == null) return null;
-  if (a >= 0.99 && b <= 0.01) return "yes";
-  if (b >= 0.99 && a <= 0.01) return "no";
+  const tol = SETTLED_PRICE_TOLERANCE;
+  if (a >= 1 - tol && b <= tol) return "yes";
+  if (b >= 1 - tol && a <= tol) return "no";
   if (Math.abs(a - 0.5) < 0.01 && Math.abs(b - 0.5) < 0.01) return "void";
   return null;
 }
@@ -568,6 +578,30 @@ export class PolymarketClient implements VenueClient {
   async getPrice(tokenId: string, side: "BUY" | "SELL", priority: Priority = "normal"): Promise<number | null> {
     const raw = await this.clob.json(`${this.clobUrl}/price${qs({ token_id: tokenId, side })}`, { priority });
     return isObject(raw) ? num(raw.price) : null;
+  }
+
+  /** Markets by conditionId in any status: Gamma /markets?condition_ids=…, once with closed=true and once with
+   *  closed=false (Gamma filters on closed), GAMMA_IDS_BATCH ids per request. A failed batch leaves its ids out. */
+  async getMarketsById(ids: readonly string[], opts: BookOptions = {}): Promise<Map<string, VMarket>> {
+    const out = new Map<string, VMarket>();
+    const wanted = new Set(ids);
+    await Promise.all(
+      chunk([...wanted], GAMMA_IDS_BATCH).flatMap(group =>
+        [true, false].map(async closed => {
+          const query = [...group.map(id => `condition_ids=${encodeURIComponent(id)}`), `closed=${closed}`, `limit=${group.length}`].join("&");
+          try {
+            const raw = await this.gamma.json(`${this.gammaUrl}/markets?${query}`, { priority: opts.priority });
+            for (const r of rows(raw, ["markets", "data"])) {
+              const m = readGammaMarket(r, null);
+              if (m && wanted.has(m.id) && (!out.has(m.id) || m.result !== null)) out.set(m.id, m);
+            }
+          } catch {
+            // Left out: the caller retries settlement next cycle.
+          }
+        }),
+      ),
+    );
+    return out;
   }
 
   async getBooks(markets: readonly VMarket[], opts: BookOptions = {}): Promise<Map<string, Book>> {

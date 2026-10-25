@@ -34,7 +34,7 @@ export default async function PrivacyPage() {
           <p>We use your email to send only the alerts and digests you turn on, and messages about your account. Every email has a one-click unsubscribe. Email is sent through Resend.</p>
 
           <h2>Your Kalshi CSV</h2>
-          <p>If you upload a Kalshi CSV on the P&amp;L page, it is processed to compute your P&amp;L. The file isn&apos;t kept beyond your session unless you choose to save the result.</p>
+          <p>If you upload a Kalshi CSV on the P&amp;L page, it is processed to compute your P&amp;L and is not stored.</p>
 
           <h2>What we never do</h2>
           <ul>

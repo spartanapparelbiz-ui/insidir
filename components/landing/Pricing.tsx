@@ -35,7 +35,7 @@ export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refu
       </div>
       <ul className="lp-objections">{OBJECTIONS.map(t => <li key={t}>{t}</li>)}</ul>
       {refund ? <p className="lp-refund">{REFUND_LINE}</p> : null}
-      <p className="small muted">{COMPETITOR_PRICE_LINE} Cancel anytime in one click.</p>
+      <p className="small muted">{COMPETITOR_PRICE_LINE}</p>
     </section>
   );
 }

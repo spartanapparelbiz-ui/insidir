@@ -22,6 +22,8 @@ import {
 
 /** How many characters of the rules are scanned for a league hint ("professional basketball game"). */
 const RULES_LEAGUE_SCAN_CHARS = 600;
+/** How many characters of the rules are scanned for the event's scheduled date (it is stated early). */
+const RULES_DATE_SCAN_CHARS = 800;
 /** Max capitalised words in a generic person name ("Alexandria Ocasio Cortez"). */
 const MAX_NAME_WORDS = 3;
 
@@ -59,6 +61,8 @@ export interface Entities {
   league: League | "other" | null;
   /** Dates in the title / event title / YES label. */
   dates: DateMention[];
+  /** Full dates (with a day) near the start of the rules ("originally scheduled for Nov 5, 2026"). */
+  ruleDates: DateMention[];
   years: number[];
   times: TimeMention[];
   /** Quantities that are not thresholds and not counters. */
@@ -233,6 +237,13 @@ export function sameNumber(a: number, b: number): boolean {
   return Math.abs(a - b) <= Math.max(NUMBER_EQ_ABS, Math.abs(a) * 1e-9);
 }
 
+// Normalised once: hint phrases and futures words, padded for whole-word `includes` checks.
+const pad = (h: string) => ` ${normalizePhrase(h)} `;
+const OTHER_HINTS_N = OTHER_LEAGUE_HINTS.map(pad);
+const LEAGUE_HINTS_N: ReadonlyArray<readonly [League, readonly string[]]> = LEAGUES.map(l => [l, LEAGUE_HINTS[l].map(pad)] as const);
+const FUTURES_N = FUTURES_WORDS.map(pad);
+const CONFLICT_WORDS = CONFLICT_GROUPS.flat();
+
 function detectLeague(m: MatchInput): League | "other" | null {
   const series = (m.seriesId ?? "").toUpperCase();
   if (/WNBA|NCAA|CFB|CBB|MLS|EPL|UCL|UFC|ATP|WTA|PGA|NASCAR|F1/.test(series)) return "other";
@@ -243,9 +254,9 @@ function detectLeague(m: MatchInput): League | "other" | null {
   ];
   for (const t of texts) {
     const p = ` ${normalizePhrase(t)} `;
-    if (OTHER_LEAGUE_HINTS.some(h => p.includes(` ${normalizePhrase(h)} `))) return "other";
-    const found = LEAGUES.filter(l => LEAGUE_HINTS[l].some(h => p.includes(` ${normalizePhrase(h)} `)));
-    if (found.length === 1) return found[0] ?? null;
+    if (OTHER_HINTS_N.some(h => p.includes(h))) return "other";
+    const found = LEAGUE_HINTS_N.filter(([, hs]) => hs.some(h => p.includes(h)));
+    if (found.length === 1) return found[0]?.[0] ?? null;
   }
   return null;
 }
@@ -351,7 +362,8 @@ export function extractEntities(m: MatchInput): Entities {
   const title = normalize(m.title, { refTime: ref });
   const event = m.eventTitle && m.eventTitle.trim() !== m.title.trim() ? normalize(m.eventTitle, { refTime: ref }) : null;
   const genericYes = isGenericLabel(m.yesLabel);
-  const genericNo = isGenericLabel(m.noLabel);
+  // Kalshi often repeats the YES label as the NO label; that names nothing about the NO side.
+  const genericNo = isGenericLabel(m.noLabel) || normalizePhrase(m.noLabel) === normalizePhrase(m.yesLabel);
   const yes = genericYes ? null : normalize(m.yesLabel, { refTime: ref });
   const no = genericNo ? null : normalize(m.noLabel, { refTime: ref });
 
@@ -393,9 +405,9 @@ export function extractEntities(m: MatchInput): Entities {
 
   const allTokens = [...title.tokens, ...(yes?.tokens ?? []), ...(event?.tokens ?? [])];
   const tokenSet = new Set([...allTokens, ...words, ...orgs]);
-  const conditions = uniq(CONFLICT_GROUPS.flat().filter(w => tokenSet.has(w)));
+  const conditions = uniq(CONFLICT_WORDS.filter(w => tokenSet.has(w)));
   const phraseAll = ` ${normalizePhrase(`${m.title} ${m.eventTitle ?? ""}`)} `;
-  const futures = FUTURES_WORDS.some(w => phraseAll.includes(` ${normalizePhrase(w)} `));
+  const futures = FUTURES_N.some(w => phraseAll.includes(w));
   const negated = title.tokens.includes("not") || /\bwon'?t\b|\bfails? to\b/i.test(m.title);
 
   const titleTypeTokens = new Set([...title.tokens, ...(yes?.tokens ?? [])]);
@@ -441,6 +453,7 @@ export function extractEntities(m: MatchInput): Entities {
     places,
     league,
     dates,
+    ruleDates: dedupeDates(normalize((m.rules ?? "").slice(0, RULES_DATE_SCAN_CHARS), { refTime: ref }).dates.filter(d => d.day !== null)),
     years,
     times: [...title.times, ...(yes?.times ?? [])],
     numbers,

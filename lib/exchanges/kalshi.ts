@@ -25,6 +25,8 @@ export const MARKETS_PAGE_LIMIT = 1000;
 export const EVENTS_PAGE_LIMIT = 200;
 /** Hard stop for cursor loops (a server that keeps returning a cursor must not loop forever). */
 export const MAX_PAGES = 500;
+/** Tickers per GET /markets?tickers= lookup (any status). */
+export const TICKERS_BATCH = 100;
 /** Tickers per GET /markets/orderbooks request (unverified endpoint; documented max believed to be 100). */
 export const ORDERBOOK_BATCH = 100;
 /** Exclude multivariate (combo / parlay) markets from the sweep: they are thousands of illiquid one-offs. */
@@ -171,6 +173,9 @@ function result(v: unknown): Side | "void" | null {
   return null;
 }
 
+/** Statuses meaning the market was cancelled and refunded (unverified names). */
+const VOID_STATUSES = new Set(["voided", "void", "cancelled", "canceled"]);
+
 /** Statuses Kalshi uses for markets that are trading. /markets?status=open returns "active" ("open" in older docs). */
 const TRADING_STATUSES = new Set(["active", "open"]);
 
@@ -227,7 +232,7 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     noTokenId: null,
     strike,
     active: status === undefined || TRADING_STATUSES.has(status),
-    result: result(m.result),
+    result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
   };
 }
@@ -488,6 +493,55 @@ export class KalshiClient implements VenueClient {
         }
       }),
     );
+    return out;
+  }
+
+  /** One market in any status (GET /markets/{ticker} → {market}). Null when unknown. */
+  async getMarket(ticker: string, priority: Priority = "normal"): Promise<JsonObject | null> {
+    const raw = await this.http.json(`${this.base}/markets/${encodeURIComponent(ticker)}`, { priority });
+    return isObject(raw) ? (isObject(raw.market) ? raw.market : str(raw.ticker) ? raw : null) : null;
+  }
+
+  /** Markets by ticker in any status, result filled once settled: GET /markets?tickers=A,B (no status filter) in
+   *  batches of TICKERS_BATCH, then GET /markets/{ticker} for any the batch did not return. Unknown tickers are
+   *  absent. Series metadata (fee multiplier, category) comes from the series cache. */
+  async getMarketsById(ids: readonly string[], opts: BookOptions = {}): Promise<Map<string, VMarket>> {
+    const priority = opts.priority ?? "normal";
+    const wanted = [...new Set(ids)];
+    const raw = new Map<string, JsonObject>();
+    await Promise.all(
+      chunk(wanted, TICKERS_BATCH).map(async group => {
+        try {
+          const res = await this.http.json(`${this.base}/markets${qs({ tickers: group.join(","), limit: group.length })}`, { priority });
+          for (const r of rows(res, ["markets"])) {
+            const t = str(r.ticker);
+            if (t && group.includes(t)) raw.set(t, r);
+          }
+        } catch {
+          // Fall through to one-by-one below.
+        }
+      }),
+    );
+    await Promise.all(
+      wanted
+        .filter(t => !raw.has(t))
+        .map(async t => {
+          try {
+            const r = await this.getMarket(t, priority);
+            if (r) raw.set(t, r);
+          } catch {
+            // Absent.
+          }
+        }),
+    );
+    const seriesTickers = [...raw.values()].map(r => seriesTickerOf(r, null)).filter((s): s is string => s !== null);
+    const series = await this.getSeriesMap(seriesTickers, priority);
+    const out = new Map<string, VMarket>();
+    for (const [t, r] of raw) {
+      const st = seriesTickerOf(r, null);
+      const m = readKalshiMarket(r, { series: st ? (series.get(st) ?? null) : null });
+      if (m) out.set(t, m);
+    }
     return out;
   }
 

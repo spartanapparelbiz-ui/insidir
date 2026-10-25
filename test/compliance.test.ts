@@ -15,8 +15,10 @@ function files(dir: string): string[] {
   });
 }
 const SOURCES = DIRS.flatMap(d => files(join(ROOT, d))).filter(p => !p.endsWith(join("lib", "copy.ts")));
+/** Code comments, which never render (block comments, JSX comments and whole-line // comments). */
+const stripComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 /** String literals and JSX text, roughly: anything between quotes/backticks or between > and <. */
-const texts = (src: string): string => [...src.matchAll(/"([^"\n]{3,})"|'([^'\n]{3,})'|`([^`]{3,})`|>([^<>{}\n]{3,})</g)].map(m => m.slice(1).find(Boolean) ?? "").join("\n");
+const texts = (src: string): string => [...stripComments(src).matchAll(/"([^"\n]{3,})"|'([^'\n]{3,})'|`([^`]{3,})`|>([^<>{}\n]{3,})</g)].map(m => m.slice(1).find(Boolean) ?? "").join("\n");
 
 describe("copy compliance", () => {
   it("no page or alert promises a guaranteed or risk-free result", () => {

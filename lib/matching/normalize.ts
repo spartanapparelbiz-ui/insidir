@@ -270,6 +270,7 @@ export function normalize(raw: string, opts: { refTime?: number | null } = {}): 
   let s = deaccent(raw);
   for (const [re, rep] of PROTECTED_PHRASES) s = s.replace(re, rep);
   s = s
+    .replace(/\bno change\b/gi, " hold ")
     .replace(/\bover\s*\/\s*under\b/gi, " ou ")
     .replace(/\bo\s*\/\s*u\b/gi, " ou ")
     .replace(/\s@\s/g, " vs ")
