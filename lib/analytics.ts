@@ -18,7 +18,7 @@ const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "ut
 export const AB_TESTS = {
   hero: {
     a: { headline: "Polymarket and Kalshi disagree. You collect the difference.", cta: "See today's live deals" },
-    b: { headline: "When two prediction markets disagree, the gap can lock in a profit.", cta: "See the deals" },
+    b: { headline: "Two apps. Two prices. You keep the gap.", cta: "See today's live deals" },
   },
 } as const;
 export type HeroVariant = keyof typeof AB_TESTS.hero;

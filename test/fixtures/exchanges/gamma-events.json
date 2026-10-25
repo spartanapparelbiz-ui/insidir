@@ -1,0 +1,110 @@
+[
+  {
+    "id": "1001",
+    "slug": "fed-decision-in-december",
+    "title": "Fed decision in December?",
+    "description": "Event rules.",
+    "endDate": "2025-12-10T00:00:00Z",
+    "negRisk": true,
+    "negRiskAugmented": false,
+    "tags": [{ "id": "2", "label": "Economy", "slug": "economy" }, { "id": "100", "label": "Fed Rates", "slug": "fed-rates" }],
+    "markets": [
+      {
+        "id": "501",
+        "question": "Fed decreases interest rates by 25 bps after December 2025 meeting?",
+        "conditionId": "0xaaa1",
+        "slug": "fed-decreases-interest-rates-by-25-bps-after-december-2025-meeting",
+        "groupItemTitle": "25 bps decrease",
+        "description": "This market will resolve to Yes if the Fed cuts by 25 bps.",
+        "resolutionSource": "https://www.federalreserve.gov",
+        "endDate": "2025-12-10T00:00:00Z",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.62\", \"0.38\"]",
+        "clobTokenIds": "[\"111\", \"112\"]",
+        "active": true,
+        "closed": false,
+        "acceptingOrders": true,
+        "enableOrderBook": true,
+        "negRisk": true,
+        "volume24hr": "15000.5"
+      },
+      {
+        "id": "502",
+        "question": "No change in Fed interest rates after December 2025 meeting?",
+        "conditionId": "0xaaa2",
+        "slug": "no-change-in-fed-interest-rates-after-december-2025-meeting",
+        "groupItemTitle": "No change",
+        "outcomes": ["Yes", "No"],
+        "outcomePrices": ["0.35", "0.65"],
+        "clobTokenIds": ["121", "122"],
+        "active": true,
+        "closed": false,
+        "acceptingOrders": true,
+        "negRisk": true
+      },
+      {
+        "id": "503",
+        "question": "Fed increases interest rates after December 2025 meeting?",
+        "conditionId": "0xaaa3",
+        "slug": "fed-increases-interest-rates-after-december-2025-meeting",
+        "groupItemTitle": "Increase",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0\", \"1\"]",
+        "clobTokenIds": "[\"131\", \"132\"]",
+        "active": true,
+        "closed": true,
+        "negRisk": true
+      }
+    ]
+  },
+  {
+    "id": "2002",
+    "slug": "nba-lal-bos-2025-11-01",
+    "title": "Lakers vs. Celtics",
+    "tags": [{ "label": "Sports", "slug": "sports" }, { "label": "NBA", "slug": "nba" }],
+    "negRisk": false,
+    "markets": [
+      {
+        "question": "Lakers vs. Celtics",
+        "conditionId": "0xbbb1",
+        "slug": "nba-lal-bos-2025-11-01",
+        "outcomes": "[\"Lakers\", \"Celtics\"]",
+        "outcomePrices": "[\"0.45\", \"0.55\"]",
+        "clobTokenIds": "[\"211\", \"212\"]",
+        "active": true,
+        "closed": false,
+        "endDate": "2025-11-01T23:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": "3003",
+    "slug": "presidential-election-winner-2028",
+    "title": "Presidential Election Winner 2028",
+    "tags": [{ "label": "Politics", "slug": "politics" }, { "label": "Elections", "slug": "elections" }],
+    "negRisk": true,
+    "negRiskAugmented": true,
+    "markets": [
+      { "question": "Will JD Vance win the 2028 US Presidential Election?", "conditionId": "0xccc1", "slug": "vance-2028", "groupItemTitle": "JD Vance", "outcomes": "[\"Yes\",\"No\"]", "clobTokenIds": "[\"311\",\"312\"]", "active": true, "closed": false },
+      { "question": "Will Gavin Newsom win the 2028 US Presidential Election?", "conditionId": "0xccc2", "slug": "newsom-2028", "groupItemTitle": "Gavin Newsom", "outcomes": "[\"Yes\",\"No\"]", "clobTokenIds": "[\"321\",\"322\"]", "active": true, "closed": false },
+      { "question": "Will another person win?", "conditionId": "0xccc3", "slug": "other-2028", "groupItemTitle": "Other", "outcomes": "[\"Yes\",\"No\"]", "clobTokenIds": "[\"331\",\"332\"]", "active": true, "closed": false, "negRiskOther": true }
+    ]
+  },
+  {
+    "id": "4004",
+    "slug": "bitcoin-above-on-october-31",
+    "title": "Bitcoin above ___ on October 31?",
+    "tags": [{ "label": "Crypto", "slug": "crypto" }, { "label": "Bitcoin", "slug": "bitcoin" }],
+    "negRisk": true,
+    "markets": [
+      { "question": "Will the price of Bitcoin be above $100,000 on October 31?", "conditionId": "0xddd1", "slug": "btc-above-100k-oct-31", "groupItemTitle": "100,000", "outcomes": "[\"Yes\",\"No\"]", "clobTokenIds": "[\"411\",\"412\"]", "active": true, "closed": false },
+      { "question": "Will the price of Bitcoin be above $110,000 on October 31?", "conditionId": "0xddd2", "slug": "btc-above-110k-oct-31", "groupItemTitle": "↑ 110,000", "outcomes": "[\"Yes\",\"No\"]", "clobTokenIds": "[\"421\",\"422\"]", "active": true, "closed": false, "acceptingOrders": false }
+    ]
+  },
+  {
+    "id": "1001",
+    "slug": "fed-decision-in-december",
+    "title": "duplicate from an overlapping page",
+    "markets": []
+  }
+]

@@ -16,14 +16,14 @@ import { num } from "./parse";
 export const COLUMN_ALIASES = {
   ticker: ["ticker", "marketticker", "market", "contract", "contractticker", "symbol"],
   title: ["title", "markettitle", "marketname", "eventtitle", "description"],
-  type: ["type", "transactiontype", "recordtype", "activity", "activitytype", "kind", "category"],
+  type: ["type", "transactiontype", "recordtype", "activity", "activitytype", "kind"],
   side: ["side", "position", "contractside", "yesno", "outcome"],
   action: ["action", "direction", "buysell", "orderside", "tradeside", "ordertype"],
   contracts: ["count", "contracts", "quantity", "qty", "size", "shares", "filledcount", "filled", "numberofcontracts"],
-  price: ["price", "avgprice", "averageprice", "fillprice", "entryprice", "priceperContract".toLowerCase(), "pricecents", "pricedollars"],
+  price: ["price", "avgprice", "averageprice", "fillprice", "entryprice", "pricepercontract", "pricecents", "pricedollars"],
   yesPrice: ["yesprice", "yespricecents", "yespricedollars"],
   noPrice: ["noprice", "nopricecents", "nopricedollars"],
-  fee: ["fee", "fees", "tradingfee", "feecost", "feecents", "feedollars", "fees$"],
+  fee: ["fee", "fees", "tradingfee", "feecost", "feecents", "feedollars", "fee$", "fees$"],
   timestamp: ["createdtime", "created", "createdat", "date", "time", "timestamp", "datetime", "executedat", "tradedate", "settledtime", "settledat", "settlementdate", "filledat"],
   result: ["marketresult", "result", "settlementresult", "resolution", "settledas"],
   revenue: ["revenue", "payout", "proceeds", "settlementvalue", "settlementamount", "amount", "value", "revenuecents"],
@@ -285,7 +285,13 @@ export function parseKalshiCsv(text: string): KalshiCsvResult {
       continue;
     }
     const side = readSide(get("side"), get("action"), type);
-    const action = readAction(get("action"), type, get("side")) ?? "buy";
+    // Without any buy/sell information a fill is read as a buy (Kalshi exports list sells as their own rows).
+    const actionRead = readAction(get("action"), type, get("side"));
+    if (!actionRead && get("action") !== undefined) {
+      res.skipped.push({ line, reason: "unreadable buy/sell" });
+      continue;
+    }
+    const action = actionRead ?? "buy";
     const contracts = num(get("contracts"));
     const price =
       readPrice(get("price"), columns.price) ??

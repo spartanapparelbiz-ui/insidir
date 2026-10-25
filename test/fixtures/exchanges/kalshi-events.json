@@ -1,0 +1,19 @@
+{
+  "cursor": null,
+  "events": [
+    {
+      "event_ticker": "KXBTCD-25OCT31",
+      "series_ticker": "KXBTCD",
+      "title": "Bitcoin price on Oct 31, 2025",
+      "category": "Crypto",
+      "mutually_exclusive": false
+    },
+    {
+      "event_ticker": "KXFEDDECISION-25DEC",
+      "series_ticker": "KXFEDDECISION",
+      "title": "Fed decision in December 2025",
+      "category": "Economics",
+      "mutually_exclusive": true
+    }
+  ]
+}

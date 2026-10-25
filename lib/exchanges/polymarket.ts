@@ -176,7 +176,7 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
     url: urlFor(ev?.slug ?? null, str(m.slug)),
     yesTokenId,
     noTokenId,
-    strike: yesNo ? strikeFromText(group ?? question, ev?.title ?? question) : null,
+    strike: yesNo ? ((group ? strikeFromText(group, ev?.title ?? question) : null) ?? strikeFromText(question, ev?.title ?? "")) : null,
     active:
       marketActive !== false &&
       !bool(m.closed) &&

@@ -1,4 +1,4 @@
-CREATE SCHEMA "terminal";
+CREATE SCHEMA IF NOT EXISTS "terminal";
 --> statement-breakpoint
 CREATE TABLE "terminal"."alerts_sent" (
 	"user_id" text NOT NULL,

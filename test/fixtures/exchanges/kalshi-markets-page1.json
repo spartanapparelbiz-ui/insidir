@@ -1,0 +1,43 @@
+{
+  "cursor": "CURSOR2",
+  "markets": [
+    {
+      "ticker": "KXBTCD-25OCT31-T100000",
+      "event_ticker": "KXBTCD-25OCT31",
+      "market_type": "binary",
+      "title": "Bitcoin price on Oct 31, 2025?",
+      "yes_sub_title": "$100,000 or above",
+      "no_sub_title": "$100,000 or above",
+      "status": "active",
+      "close_time": "2025-10-31T21:00:00Z",
+      "expected_expiration_time": "2025-10-31T21:05:00Z",
+      "strike_type": "greater",
+      "floor_strike": 100000,
+      "rules_primary": "If the price of Bitcoin is above $100,000 at 5pm ET, the market resolves to Yes.",
+      "rules_secondary": "Source: CF Benchmarks BRTI.",
+      "result": "",
+      "volume_24h": 1234
+    },
+    {
+      "ticker": "KXBTCD-25OCT31-T105000",
+      "event_ticker": "KXBTCD-25OCT31",
+      "market_type": "binary",
+      "title": "Bitcoin price on Oct 31, 2025?",
+      "yes_sub_title": "$105,000 or above",
+      "status": "active",
+      "close_time": "2025-10-31T21:00:00Z",
+      "strike_type": "greater",
+      "floor_strike": "105000",
+      "rules_primary": "Above $105,000.",
+      "volume_24h_fp": "55.00"
+    },
+    {
+      "ticker": "KXMVENFLMULTIGAME-S2025ABC",
+      "event_ticker": "KXMVENFLMULTIGAME-S2025ABC",
+      "market_type": "binary",
+      "title": "Combo",
+      "mve_collection_ticker": "KXMVENFLMULTIGAME",
+      "status": "active"
+    }
+  ]
+}

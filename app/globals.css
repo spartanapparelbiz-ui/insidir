@@ -71,6 +71,9 @@ button { font: inherit; }
 .deals { display: grid; gap: 10px; }
 .deal { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--s1); text-decoration: none; color: inherit; }
 .deal:hover { border-color: var(--line-2); }
+/* not re-confirmed by a recent scan, or delayed: never presented as live */
+.deal--stale { opacity: .55; }
+.deal--stale .num__v { color: var(--muted); }
 .deal__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .deal__title { font-weight: 700; overflow-wrap: anywhere; }
 .deal__play { color: var(--muted); font-size: 13px; line-height: 19px; }

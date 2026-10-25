@@ -3,11 +3,12 @@ import Link from "next/link";
 import type { Plan } from "@/lib/types";
 import { COMPETITOR_PRICE_LINE, planCards } from "./model";
 
-export function Pricing({ current, signedIn, insidirHref, proHref }: { current: Plan; signedIn: boolean; insidirHref: string; proHref: string }) {
+export function Pricing({ current, signedIn, insidirHref, proHref, level = 2 }: { current: Plan; signedIn: boolean; insidirHref: string; proHref: string; level?: 1 | 2 }) {
   const cards = planCards();
+  const H = level === 1 ? "h1" : "h2";
   return (
     <section className="sec" id="pricing" data-section="pricing" aria-labelledby="pricing-h">
-      <h2 id="pricing-h" className="sec__h">Pricing</h2>
+      <H id="pricing-h" className="sec__h">Pricing</H>
       <div className="lp-plans">
         {cards.map(c => {
           const mine = signedIn && c.plan === current;

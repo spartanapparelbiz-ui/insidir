@@ -3,6 +3,7 @@
  * dollar profit removed (not hidden in the browser: never sent). Paid viewers get the live state. Region and the
  * viewer's own filters apply to everyone. */
 import { entitlements } from "./plans";
+import { FRESH_MS } from "./status";
 import { allowedVenues, venuesOk } from "./region";
 import type { Opportunity, Plan, Region, Safety, Venue } from "./types";
 import { VENUE_NAME } from "./types";
@@ -52,6 +53,10 @@ export interface FeedRow {
   gapCents: number | null;
   /** True when the viewer sees a delayed, size-less row. */
   locked: boolean;
+  /** When a scan last re-confirmed the deal. */
+  lastSeenAt: number;
+  /** Not re-confirmed within FRESH_MS (or a delayed row): grey it out, never show it as live. */
+  stale: boolean;
 }
 
 const cents = (p: number): string => {
@@ -83,13 +88,13 @@ export function playText(o: Pick<Opportunity, "kind" | "legs" | "gapCents">): st
   }
 }
 
-function toRow(o: Opportunity, foundAt: number, locked: boolean): FeedRow {
+function toRow(o: Opportunity, foundAt: number, locked: boolean, lastSeenAt: number, stale: boolean): FeedRow {
   return {
     id: o.id, kind: o.kind, title: o.title, play: playText(o),
     legs: o.legs.map(l => ({ venue: l.venue, venueName: VENUE_NAME[l.venue], side: l.side, label: l.label, priceCents: Math.round(l.avgPrice * 1000) / 10, url: l.url })),
     roi: o.roi, safety: o.safety, safetyNotes: o.safetyNotes, categories: o.categories, foundAt, closeTime: o.closeTime, days: o.days,
     profit: locked ? null : o.profit, cost: locked ? null : o.cost, fees: locked ? null : o.fees, sets: locked ? null : o.sets,
-    profitPerDay: locked ? null : o.profitPerDay, gapCents: o.gapCents, locked,
+    profitPerDay: locked ? null : o.profitPerDay, gapCents: o.gapCents, locked, lastSeenAt, stale,
   };
 }
 
@@ -111,9 +116,12 @@ export function feedFor(opps: readonly StoredOpp[], viewer: FeedViewer, now: num
     if (o.kind !== "second_opinion" && o.roi < viewer.minRoi) continue;
     if (!delayed && viewer.minSizeUsd > 0 && o.cost + o.fees < viewer.minSizeUsd) continue;
     if (viewer.categories.length && !o.categories.some(c => viewer.categories.includes(c))) continue;
-    rows.push({ row: toRow(o, s.firstSeenAt, ent.sizesHidden), rank: o.kind === "second_opinion" ? -1 : o.profitPerDay });
+    // A delayed (free) row is never live; a paid row is live only if a scan re-confirmed it within FRESH_MS.
+    const stale = delayed || now - s.lastSeenAt > FRESH_MS;
+    rows.push({ row: toRow(o, s.firstSeenAt, ent.sizesHidden, delayed ? s.firstSeenAt : s.lastSeenAt, stale), rank: o.kind === "second_opinion" ? -1 : o.profitPerDay });
   }
-  rows.sort((a, b) => b.rank - a.rank || b.row.roi - a.row.roi);
+  // Fresh deals first, then by profit per day.
+  rows.sort((a, b) => Number(a.row.stale) - Number(b.row.stale) || b.rank - a.rank || b.row.roi - a.row.roi);
   const out = rows.map(r => r.row);
   return ent.maxRows === null ? out : out.slice(0, ent.maxRows);
 }

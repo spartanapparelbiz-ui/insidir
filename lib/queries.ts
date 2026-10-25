@@ -89,3 +89,24 @@ export const marketsByKey = (keys: ReadonlyArray<{ venue: VMarket["venue"]; id: 
 });
 
 export const settledCount = (): Promise<number> => safe(0, async () => (await getDb().select({ id: receipts.id }).from(receipts).where(isNotNull(receipts.settledAt))).length);
+
+/** "Left on the table today": total profit available across GREEN locks first found since `sinceMs`, as computed at
+ *  detection (fees included, fillable size only). Null when there were none. */
+export function leftOnTable(rows: readonly ReceiptRow[], sinceMs: number): { total: number; deals: number } | null {
+  const green = rows.filter(r => r.detectedAt >= sinceMs && r.snapshot.safety === "green" && r.snapshot.kind !== "second_opinion" && r.snapshot.profit > 0);
+  if (!green.length) return null;
+  return { total: green.reduce((a, r) => a + r.snapshot.profit, 0), deals: green.length };
+}
+
+/** Average GREEN locks found per day over the window. The landing page's refund offer only shows when this is >= 1
+ *  over the last 30 days (computed from the receipts log, never assumed). */
+export function greenPerDay(rows: readonly ReceiptRow[], days: number, now: number): number {
+  const since = now - days * 86_400_000;
+  const n = rows.filter(r => r.detectedAt >= since && r.snapshot.safety === "green" && r.snapshot.kind !== "second_opinion").length;
+  return n / days;
+}
+
+/** The single most recent real deal from the last 24 hours for the hero, as found (snapshot). */
+export function heroDeal(rows: readonly ReceiptRow[], now: number): ReceiptRow | null {
+  return rows.find(r => r.detectedAt >= now - 86_400_000 && r.snapshot.kind === "cross_arb" && r.snapshot.safety === "green" && r.snapshot.legs.length === 2) ?? null;
+}

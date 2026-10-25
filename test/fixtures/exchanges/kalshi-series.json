@@ -1,0 +1,21 @@
+{
+  "series": [
+    {
+      "ticker": "KXBTCD",
+      "title": "Bitcoin price above/below",
+      "category": "Crypto",
+      "tags": ["BTC"],
+      "fee_type": "quadratic",
+      "fee_multiplier": 1,
+      "settlement_sources": [{ "name": "CF Benchmarks", "url": "https://www.cfbenchmarks.com" }]
+    },
+    {
+      "ticker": "KXFEDDECISION",
+      "title": "Fed meeting",
+      "category": "Economics",
+      "fee_type": "quadratic",
+      "fee_multiplier": "0.5",
+      "settlement_sources": []
+    }
+  ]
+}

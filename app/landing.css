@@ -1,0 +1,90 @@
+/* Public pages (landing, receipts, pricing, terms, privacy). Builds on globals.css tokens; no gradients, no images. */
+.lp { padding-bottom: 24px; }
+
+/* 1. hero */
+.lp-hero { display: grid; gap: 28px; padding: 36px 0 0; }
+.lp-hero__copy { display: grid; gap: 16px; align-content: start; }
+.lp-hero__h { font-size: clamp(34px, 10vw, 64px); line-height: 1.02; font-weight: 800; letter-spacing: -0.045em; text-wrap: balance; }
+.lp-hero__sub { color: var(--muted); font-size: 16px; max-width: 46ch; }
+.lp-hero__ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+.lp-hero__ctas .btn { flex: 1 1 auto; }
+@media (min-width: 560px) { .lp-hero__ctas .btn { flex: 0 0 auto; } }
+.lp-widget { display: grid; gap: 10px; text-decoration: none; color: inherit; align-content: start; }
+.lp-widget:hover { border-color: var(--line-2); }
+.lp-widget__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.lp-widget__title { font-weight: 700; font-size: 17px; overflow-wrap: anywhere; }
+.lp-widget__roi { display: grid; gap: 6px; padding: 6px 0; }
+@media (min-width: 900px) {
+  .lp-hero { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; padding-top: 72px; gap: 48px; }
+}
+
+/* 2. proof strip */
+.lp-proof { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 32px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 15px; }
+.lp-proof b { font-size: 18px; }
+
+/* 3. how it works */
+.lp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+@media (min-width: 900px) { .lp-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lp-step { display: grid; gap: 10px; align-content: start; }
+.lp-step__n { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.lp-step__eq { display: grid; gap: 2px; font-size: 17px; }
+.lp-step__eq b { font-size: 22px; }
+.lp-outs { display: grid; gap: 8px; }
+.lp-out { display: grid; gap: 2px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+.lp-out b { color: var(--profit); }
+.lp-lock { font-weight: 700; }
+.lp-real { display: grid; gap: 8px; }
+/* CSS-only entrance as each step scrolls into view, where the browser supports scroll-driven animation. */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  .lp-step, .lp-out { animation: lp-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+  .lp-step:nth-child(2) { animation-range: entry 10% entry 70%; }
+  .lp-step:nth-child(3) { animation-range: entry 20% entry 80%; }
+}
+@media (prefers-reduced-motion: reduce) { .lp-step, .lp-out { animation: none !important; opacity: 1; transform: none; } }
+
+/* 5. receipts */
+.lp-follow { font-size: 17px; }
+.lp-follow b { font-size: 22px; }
+.lp-rcpts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lp-rcpt { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--s1); }
+.lp-rcpt__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.lp-rcpt__nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 640px) { .lp-rcpt__nums { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.lp-week { display: grid; gap: 12px; padding-top: 24px; }
+.lp-week__h { font-size: 18px; font-weight: 800; }
+
+/* 6. safety */
+.lp-lights { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lp-lights li { display: grid; gap: 8px; }
+@media (min-width: 900px) { .lp-lights { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* 7. pricing */
+.lp-plans { display: grid; gap: 10px; }
+@media (min-width: 900px) { .lp-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lp-plan { display: grid; gap: 10px; grid-template-rows: auto auto auto 1fr auto; }
+.lp-plan--main { border-color: var(--line-2); }
+.lp-plan__name { font-size: 18px; font-weight: 800; }
+.lp-plan__price { display: flex; align-items: baseline; gap: 6px; }
+.lp-plan__list { margin: 0; padding: 0 0 4px; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.lp-plan__list li::before { content: "· "; color: var(--dim); }
+
+/* 8. faq */
+.lp-faq { display: grid; border-top: 1px solid var(--line); }
+.lp-faq__item { border-bottom: 1px solid var(--line); }
+.lp-faq__item summary { min-height: var(--tap); padding: 12px 0; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+.lp-faq__item summary::-webkit-details-marker { display: none; }
+.lp-faq__item summary::after { content: "+"; color: var(--muted); font-weight: 400; }
+.lp-faq__item[open] summary::after { content: "−"; }
+.lp-faq__a { display: grid; gap: 8px; padding: 0 0 16px; color: var(--muted); max-width: 70ch; }
+.lp-faq__a ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* 9. final */
+.lp-final { padding-top: 72px; }
+
+/* legal pages */
+.lp-legal { display: grid; gap: 14px; max-width: 72ch; padding-top: 36px; }
+.lp-legal h1 { font-size: clamp(28px, 7vw, 40px); line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; }
+.lp-legal h2 { font-size: 18px; font-weight: 800; padding-top: 12px; }
+.lp-legal p, .lp-legal li { color: var(--muted); }
+.lp-legal ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }

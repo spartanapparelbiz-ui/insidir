@@ -103,7 +103,7 @@ export function readUsMarket(m: JsonObject, eventCtx: { id: string; title: strin
     url: usUrl(null, slug),
     yesTokenId: null,
     noTokenId: null,
-    strike: yesNo ? strikeFromText(group ?? title, eventTitle ?? title) : null,
+    strike: yesNo ? ((group ? strikeFromText(group, eventTitle ?? title) : null) ?? strikeFromText(title, eventTitle ?? "")) : null,
     active: marketStatusActive(m),
     result: usResult(m),
     volume24h: num(pick(m, "volume24hr", "volume24h", "volume_24h", "volume24Hr")),

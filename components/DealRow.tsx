@@ -2,7 +2,8 @@
  * and are drawn as blurred blocks with an Unlock button. */
 import Link from "next/link";
 import type { FeedRow } from "@/lib/feed";
-import { ago, days, pct, usd } from "@/lib/format";
+import { days, pct, usd } from "@/lib/format";
+import { Ago } from "./Ago";
 import { SafetyLight } from "./SafetyLight";
 
 function Num({ k, v }: { k: string; v: string | null }) {
@@ -25,12 +26,13 @@ export function DealRow({ row, now, unlockHref }: { row: FeedRow; now: number; u
         <Num k="Per day" v={lock ? (row.profitPerDay === null ? null : usd(row.profitPerDay)) : "—"} />
       </div>
       <div className="deal__foot">
-        <span className="dim tiny">Found {ago(row.foundAt, now)} · resolves in {days(row.days)}{row.locked ? " · 30 min delay" : ""}</span>
+        <span className="dim tiny">Found <Ago at={row.foundAt} serverNow={now} /> · resolves in {days(row.days)}{row.locked ? " · 30 min delay" : row.stale ? " · not live" : ""}</span>
         {row.locked ? <span className="btn btn--secondary" style={{ minHeight: 36 }}>Unlock</span> : null}
       </div>
     </>
   );
+  const cls = "deal" + (row.stale ? " deal--stale" : "");
   return row.locked
-    ? <Link className="deal" href={unlockHref} data-unlock="feed-row">{body}</Link>
-    : <Link className="deal" href={`/deal/${encodeURIComponent(row.id)}`}>{body}</Link>;
+    ? <Link className={cls} href={unlockHref} data-unlock="feed-row">{body}</Link>
+    : <Link className={cls} href={`/deal/${encodeURIComponent(row.id)}`}>{body}</Link>;
 }
