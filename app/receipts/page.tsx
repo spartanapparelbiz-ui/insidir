@@ -5,11 +5,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Beacons } from "@/components/landing/Beacons";
-import { StickyCta } from "@/components/landing/Cta";
+import { Sticky } from "@/components/landing/Sticky";
 import { dayText, FollowLine, ReceiptList, TallyLine } from "@/components/landing/Receipts";
-import { byWeek, checkoutHref, outsideDelay, RECEIPTS_FULL_DAYS, RECEIPTS_PUBLIC_DAYS, visibleReceipts } from "@/components/landing/model";
+import { byWeek, LANDING_CTA, outsideDelay, RECEIPTS_FULL_DAYS, RECEIPTS_PUBLIC_DAYS, visibleReceipts } from "@/components/landing/model";
 import { getViewer } from "@/lib/auth/viewer";
-import { checkoutUrl } from "@/lib/auth/whop";
 import { entitlements, isPaid } from "@/lib/plans";
 import { receiptRows } from "@/lib/queries";
 import "../landing.css";
@@ -25,7 +24,6 @@ export default async function ReceiptsPage() {
   const paid = isPaid(viewer.plan);
   const rows = outsideDelay(visibleReceipts(await receiptRows(windowDays), viewer.region), entitlements(paid ? viewer.plan : "free"), now);
   const weeks = byWeek(rows);
-  const insidir = checkoutHref(checkoutUrl("insidir"));
 
   return (
     <>
@@ -46,7 +44,7 @@ export default async function ReceiptsPage() {
           </section>
         )) : <p className="muted" style={{ paddingTop: 24 }}>No deals logged in this window yet.</p>}
       </main>
-      {!paid ? <StickyCta checkout={insidir} /> : null}
+      {!paid ? <Sticky label={LANDING_CTA} href="/terminal" /> : null}
       <Beacons />
     </>
   );

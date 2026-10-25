@@ -1,9 +1,12 @@
 /* 7. Pricing: three cards whose prices and features come from PLANS (lib/plans.ts). Shared with /pricing. */
 import Link from "next/link";
 import type { Plan } from "@/lib/types";
-import { COMPETITOR_PRICE_LINE, planCards } from "./model";
+import { COMPETITOR_PRICE_LINE, OBJECTIONS, planCards, REFUND_LINE } from "./model";
 
-export function Pricing({ current, signedIn, insidirHref, proHref, level = 2 }: { current: Plan; signedIn: boolean; insidirHref: string; proHref: string; level?: 1 | 2 }) {
+/** `refund`: show the risk-reversal line (only when the log averages a green deal a day; the caller decides). */
+export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refund, level = 2 }: {
+  current: Plan; signedIn: boolean; insidirHref: string; proHref: string; freeCta: string; refund: boolean; level?: 1 | 2;
+}) {
   const cards = planCards();
   const H = level === 1 ? "h1" : "h2";
   return (
@@ -13,7 +16,7 @@ export function Pricing({ current, signedIn, insidirHref, proHref, level = 2 }: 
         {cards.map(c => {
           const mine = signedIn && c.plan === current;
           const href = c.plan === "free" ? "/terminal" : c.plan === "pro" ? proHref : insidirHref;
-          const label = c.plan === "free" ? "See live deals" : `Start ${c.plan === "pro" ? "Pro " : ""}for $${c.price}`;
+          const label = c.plan === "free" ? freeCta : `Start ${c.plan === "pro" ? "Pro " : ""}for $${c.price}`;
           return (
             <article key={c.plan} className={`lp-plan card${c.plan === "insidir" ? " lp-plan--main" : ""}`} data-plan={c.plan} data-price={c.price}>
               <h3 className="lp-plan__name">{c.name}</h3>
@@ -30,6 +33,8 @@ export function Pricing({ current, signedIn, insidirHref, proHref, level = 2 }: 
           );
         })}
       </div>
+      <ul className="lp-objections">{OBJECTIONS.map(t => <li key={t}>{t}</li>)}</ul>
+      {refund ? <p className="lp-refund">{REFUND_LINE}</p> : null}
       <p className="small muted">{COMPETITOR_PRICE_LINE} Cancel anytime in one click.</p>
     </section>
   );

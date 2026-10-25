@@ -22,7 +22,7 @@ export function FollowLine({ res, period }: { res: BacktestResult | null; period
     <p className="lp-follow">
       Following every green deal {period} with {usd(FOLLOW_STAKE)} would have {verb}{" "}
       <b className={res.realizedProfit > 0 ? "profit" : undefined}>{usd(Math.abs(res.realizedProfit))}</b>
-      <span className="muted small"> on {usd(res.staked)} staked across {res.count} settled green {res.count === 1 ? "deal" : "deals"}, fees included, each capped at what was fillable when found{res.broken ? `; ${res.broken} settled differently and ${res.broken === 1 ? "is" : "are"} counted at its real result` : ""}{res.pending ? `; ${res.pending} still open, not counted` : ""}.</span>
+      <span className="muted small"> on {usd(res.staked)} staked across {res.count} settled green {res.count === 1 ? "deal" : "deals"}, fees included, each capped at what you could actually buy when found{res.broken ? `; ${res.broken} settled differently and ${res.broken === 1 ? "is" : "are"} counted at its real result` : ""}{res.pending ? `; ${res.pending} still open, not counted` : ""}.</span>
     </p>
   );
 }

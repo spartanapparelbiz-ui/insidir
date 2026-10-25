@@ -1,0 +1,8 @@
+﻿Ticker,Type,Side,Action,Contracts,Price,Fee ($),Created Time,Market Result,Revenue,Cost,Order ID
+KXFEDDECISION-25DEC-C25,Trade,Yes,Buy,10,0.45,$0.18,2025-10-01 14:30:00,,,,ord-1
+KXFEDDECISION-25DEC-C25,Trade,yes,Sell,4,52¢,0.07,2025-10-02T10:00:00Z,,,,ord-2
+"KXBTCD-25OCT31-T100000",Trade,No,Buy,"1,000",38,"$26.60",10/03/2025 9:15 AM,,,,ord-3
+KXFEDDECISION-25DEC-C25,Settlement,,,6,,,2025-12-10 19:00:00,yes,$6.00,$2.70,
+KXBTCD-25OCT31-T100000,Settlement,,,1000,,,2025-10-31,no,"1,000.00",(380.00),
+,Deposit,,,,,,2025-09-01,,100,,
+KXOTHER-1,Trade,,Buy,5,0.5,,2025-10-05,,,,

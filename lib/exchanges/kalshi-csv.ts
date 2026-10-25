@@ -31,8 +31,8 @@ export const COLUMN_ALIASES = {
   profit: ["profit", "pnl", "realizedpnl", "realizedprofit", "netprofit", "net", "profitloss"],
   yesContracts: ["yescount", "yescontracts"],
   noContracts: ["nocount", "nocontracts"],
-  yesCost: ["yestotalcost", "yescost"],
-  noCost: ["nototalcost", "nocost"],
+  yesCost: ["yestotalcost", "yestotalcostcents", "yescost", "yescostcents"],
+  noCost: ["nototalcost", "nototalcostcents", "nocost", "nocostcents"],
   id: ["tradeid", "fillid", "orderid", "id", "transactionid"],
 } as const;
 
@@ -250,7 +250,8 @@ export function parseKalshiCsv(text: string): KalshiCsvResult {
     const type = get("type")?.toLowerCase() ?? "";
     const title = get("title") ?? null;
     const timestamp = parseTime(get("timestamp") ?? "");
-    const fee = readMoney(get("fee"), columns.fee);
+    const feeRaw = readMoney(get("fee"), columns.fee);
+    const fee = feeRaw === null ? null : Math.abs(feeRaw);
 
     const isSettlement = /settle|payout|resolv|expir/.test(type) || (!type && get("price") === undefined && get("yesPrice") === undefined && (get("result") !== undefined || get("revenue") !== undefined));
     const isTrade = !isSettlement && (/trade|fill|order|buy|sell/.test(type) || !type);
@@ -260,7 +261,9 @@ export function parseKalshiCsv(text: string): KalshiCsvResult {
       const contracts = num(get("contracts")) ?? (yesContracts !== null || noContracts !== null ? (yesContracts ?? 0) + (noContracts ?? 0) : null);
       const yesCost = readMoney(get("yesCost"), columns.yesCost);
       const noCost = readMoney(get("noCost"), columns.noCost);
-      const cost = readMoney(get("cost"), columns.cost) ?? (yesCost !== null || noCost !== null ? (yesCost ?? 0) + (noCost ?? 0) : null);
+      // Costs are amounts paid; some exports show them negative or in parentheses, so the magnitude is used.
+      const statedCost = readMoney(get("cost"), columns.cost);
+      const cost = statedCost !== null ? Math.abs(statedCost) : yesCost !== null || noCost !== null ? Math.abs(yesCost ?? 0) + Math.abs(noCost ?? 0) : null;
       const revenue = readMoney(get("revenue"), columns.revenue);
       const stated = readMoney(get("profit"), columns.profit);
       res.settlements.push({

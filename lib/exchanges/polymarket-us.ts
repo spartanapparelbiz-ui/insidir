@@ -213,13 +213,13 @@ export function buildUsSweep(rawEvents: readonly JsonObject[], rawMarkets: reado
     const gammaShaped = objList(e.markets).some(m => str(m.conditionId) !== null);
     if (gammaShaped) {
       const r = readGammaEvent(e, "polymarket_us", usUrl);
-      if (!r) continue;
+      if (!r || flags.has(r.event.id)) continue;
       for (const m of r.markets) add(m);
       flags.set(r.event.id, { title: r.event.title, mutuallyExclusive: r.event.mutuallyExclusive, exhaustive: r.event.exhaustive });
       continue;
     }
     const id = str(pick(e, "id", "slug", "ticker", "eventId"));
-    if (!id) continue;
+    if (!id || flags.has(id)) continue;
     const title = str(pick(e, "title", "name"));
     for (const m of objList(e.markets)) add(readUsMarket(m, { id, title, slug: str(e.slug) }));
     const me = bool(pick(e, "mutuallyExclusive", "mutually_exclusive", "negRisk"));

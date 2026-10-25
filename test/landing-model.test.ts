@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  byWeek, followLine, landingReceipts, outsideDelay, planCards, planFeatures, publicFeedViewer, realCrossArb, startOfTodayUTC, tally,
+  byWeek, followLine, landingReceipts, outsideDelay, perDollar, planCards, planFeatures, publicFeedViewer, realCrossArb, startOfTodayUTC, tally,
   visibleReceipts, weekStartUTC,
 } from "@/components/landing/model";
 import { exampleMath } from "@/components/landing/HowItWorks";
@@ -117,5 +117,12 @@ describe("hero widget and how-it-works data", () => {
     expect(m.fees).toBeCloseTo(1.74 + 1.2); // Kalshi rounds up to the cent; Polymarket sports 5%
     expect(m.profit).toBeCloseTo(2.06);
     expect(m.profit).toBeGreaterThan(0);
+  });
+
+  it("hero per-$1 math: prices, what you pay, fees per set and what's left of the $1; no dollar size", () => {
+    const m = perDollar(opp({ sets: 100, fees: 2.9, payout: 100 }));
+    expect(m).toEqual({ aCents: 55, bCents: 40, inCents: 95, feeCents: 2.9, profitCents: 2.1, roi: 3 / 97 });
+    expect(perDollar(opp({ legs: [leg("kalshi", "yes", 0.5)] }))).toBeNull();
+    expect(Object.keys(m ?? {})).not.toContain("profit");
   });
 });
