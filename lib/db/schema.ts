@@ -18,15 +18,19 @@ export interface UserSettings {
   /** Show yellow plays (red are hidden unless the user opts in). */
   showYellow: boolean;
   showRed: boolean;
+  /** Web push alerts (Pro: instant; Insidir: within 60 seconds). */
   alertPush: boolean;
-  alertTelegram: boolean;
+  /** Email alerts as a backup when push isn't available (paid plans). */
+  alertEmail: boolean;
+  /** A daily summary email (the only alert channel on the free plan). */
+  emailDigest: boolean;
   /** Only alert for plays at or above this ROI. */
   alertMinRoi: number;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
-  showYellow: true, showRed: false, alertPush: false, alertTelegram: false, alertMinRoi: 0.01,
+  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01,
 };
 
 export const users = terminal.table("users", {
@@ -43,8 +47,8 @@ export const users = terminal.table("users", {
   planCheckedAt: timestamp("plan_checked_at", { withTimezone: true }),
   settings: jsonb("settings").$type<UserSettings>().notNull().default(DEFAULT_SETTINGS),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
-  telegramChatId: text("telegram_chat_id"),
-  telegramLinkCode: text("telegram_link_code"),
+  /** When the last daily summary went out (one per day). */
+  lastDigestAt: timestamp("last_digest_at", { withTimezone: true }),
   visitorId: text("visitor_id"),
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
@@ -141,7 +145,7 @@ export const pushSubscriptions = terminal.table("push_subscriptions", {
 export const alertsSent = terminal.table("alerts_sent", {
   userId: text("user_id").notNull(),
   oppId: text("opp_id").notNull(),
-  channel: text("channel").$type<"push" | "telegram">().notNull(),
+  channel: text("channel").$type<"push" | "email">().notNull(),
   sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
   openedAt: timestamp("opened_at", { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.userId, t.oppId, t.channel] })]);

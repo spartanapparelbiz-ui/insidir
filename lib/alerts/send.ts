@@ -1,7 +1,11 @@
-/* Delivery: web push (VAPID) and Telegram. Both free. Server/worker only.
+/* Delivery: web push (VAPID, free) and email through Resend (free tier to start). Server/worker only.
  *
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…)   web push
- *   TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, TELEGRAM_WEBHOOK_SECRET          Telegram bot */
+ *   RESEND_API_KEY, EMAIL_FROM ("Insidir <alerts@insidir.com>")                 email
+ *   EMAIL_UNSUBSCRIBE_SECRET                                                     signs one-click unsubscribe links
+ *
+ * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
+import { createHmac, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
 
 export interface PushTarget { endpoint: string; p256dh: string; auth: string }
@@ -29,23 +33,52 @@ export async function sendPush(t: PushTarget, payload: { title: string; body: st
   }
 }
 
-const tg = (method: string): string => `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN ?? ""}/${method}`;
+/* ---------- email ---------- */
 
-export async function sendTelegram(chatId: string, text: string, url?: string): Promise<SendResult> {
-  if (!process.env.TELEGRAM_BOT_TOKEN) return "failed";
+const unsubSecret = (): string => process.env.EMAIL_UNSUBSCRIBE_SECRET || "";
+
+/** A signature for one user's unsubscribe link. Stateless: no token table. */
+export function unsubscribeSig(userId: string, secret = unsubSecret()): string {
+  return createHmac("sha256", secret).update("unsubscribe:" + userId).digest("base64url");
+}
+export function verifyUnsubscribe(userId: string, sig: string, secret = unsubSecret()): boolean {
+  if (!secret || !userId || !sig) return false;
+  const a = Buffer.from(unsubscribeSig(userId, secret)), b = Buffer.from(sig);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+export const unsubscribeUrl = (appUrl: string, userId: string): string =>
+  `${appUrl}/api/email/unsubscribe?u=${encodeURIComponent(userId)}&s=${unsubscribeSig(userId)}`;
+
+export interface Email { to: string; subject: string; text: string; html: string; unsubscribe: string }
+
+/** Sends through Resend's API. Every message carries one-click unsubscribe headers (RFC 8058). */
+export async function sendEmail(e: Email): Promise<SendResult> {
+  const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM;
+  if (!key || !from) return "failed";
   try {
-    const res = await fetch(tg("sendMessage"), {
-      method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(8_000),
-      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true, ...(url ? { reply_markup: { inline_keyboard: [[{ text: "Open the deal", url }]] } } : {}) }),
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST", signal: AbortSignal.timeout(10_000),
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [e.to], subject: e.subject, text: e.text, html: e.html,
+        headers: { "List-Unsubscribe": `<${e.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
     });
-    if (res.status === 403) return "gone"; // the user blocked the bot
+    if (res.status === 422) return "gone"; // invalid recipient
     return res.ok ? "sent" : "failed";
   } catch { return "failed"; }
 }
 
-/** "/start <code>" from the bot's deep link → the link code. */
-export function startCode(text: unknown): string | null {
-  if (typeof text !== "string") return null;
-  const m = /^\/start\s+([A-Za-z0-9_-]{8,64})$/.exec(text.trim());
-  return m?.[1] ?? null;
+const esc = (s: string): string => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
+
+export const EMAIL_FOOTER = "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
+
+/** A plain, fast email: black on white for every mail client, monospace, no images. */
+export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {
+  const text = [opts.heading, "", ...opts.lines.map(l => (l.url ? `${l.text}\n${l.url}` : l.text)), "", ...(opts.cta ? [`${opts.cta.label}: ${opts.cta.url}`, ""] : []),
+    EMAIL_FOOTER, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
+  const html = `<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.5;color:#111;max-width:560px">` +
+    `<p style="font-size:18px;font-weight:700;margin:0 0 16px">${esc(opts.heading)}</p>` +
+    opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#111">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
+    (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
+    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a></p></div>`;
+  return { text, html };
 }

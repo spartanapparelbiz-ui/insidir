@@ -132,7 +132,10 @@ function embeddedEvent(m: JsonObject): JsonObject | null {
 
 /** One Gamma market → VMarket. Null unless it is a binary CLOB market with two token ids. Pure. `venue` lets the
  *  Polymarket US client reuse this reader when its payload is Gamma-shaped. */
-export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, venue: Venue = "polymarket"): VMarket | null {
+/** Deep-link builder (eventSlug, marketSlug) → URL; Polymarket US passes its own. */
+export type UrlFor = (eventSlug: string | null, marketSlug: string | null) => string;
+
+export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, venue: Venue = "polymarket", urlFor: UrlFor = polymarketUrl): VMarket | null {
   const conditionId = str(m.conditionId) ?? str(m.condition_id);
   if (!conditionId) return null;
   const outcomes = strList(m.outcomes);
@@ -170,7 +173,7 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
     closeTime: epochMs(pick(m, "endDate", "endDateIso")) ?? ev?.endDate ?? null,
     category,
     fee,
-    url: polymarketUrl(ev?.slug ?? null, str(m.slug)),
+    url: urlFor(ev?.slug ?? null, str(m.slug)),
     yesTokenId,
     noTokenId,
     strike: yesNo ? strikeFromText(group ?? question, ev?.title ?? question) : null,
@@ -191,7 +194,7 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
  *  mutuallyExclusive: negRisk (winner-take-all). exhaustive: negRisk, NOT augmented (no outcomes can be added),
  *  at least two tradeable markets, and every market of the event is either in marketIds or already resolved NO,
  *  so exactly one listed market can still resolve YES. */
-export function readGammaEvent(e: unknown, venue: Venue = "polymarket"): { event: VEvent; markets: VMarket[] } | null {
+export function readGammaEvent(e: unknown, venue: Venue = "polymarket", urlFor: UrlFor = polymarketUrl): { event: VEvent; markets: VMarket[] } | null {
   if (!isObject(e)) return null;
   const ctx = readGammaEventContext(e);
   if (!ctx) return null;
@@ -199,7 +202,7 @@ export function readGammaEvent(e: unknown, venue: Venue = "polymarket"): { event
   const markets: VMarket[] = [];
   let unaccounted = 0;
   for (const r of raw) {
-    const m = readGammaMarket(r, ctx, venue);
+    const m = readGammaMarket(r, ctx, venue, urlFor);
     if (!m) {
       unaccounted++;
       continue;
@@ -792,7 +795,7 @@ export class PolymarketMarketStream {
       const ts = epochMs(msg.timestamp);
       // Current format: {market, price_changes: [{asset_id, price, size, side, hash}]}.
       // Older format: {asset_id, market, changes: [{price, size, side}], hash}.
-      const changes = objList(msg.price_changes).length
+      const changes: JsonObject[] = objList(msg.price_changes).length
         ? objList(msg.price_changes)
         : objList(msg.changes).map(c => ({ ...c, asset_id: msg.asset_id, hash: msg.hash }));
       const touched = new Set<string>();

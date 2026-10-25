@@ -115,10 +115,9 @@ CREATE TABLE "terminal"."users" (
 	"manage_url" text,
 	"cancel_at_period_end" boolean DEFAULT false NOT NULL,
 	"plan_checked_at" timestamp with time zone,
-	"settings" jsonb DEFAULT '{"minRoi":0.005,"minSizeUsd":0,"categories":[],"venues":["kalshi","polymarket","polymarket_us"],"showYellow":true,"showRed":false,"alertPush":false,"alertTelegram":false,"alertMinRoi":0.01}'::jsonb NOT NULL,
+	"settings" jsonb DEFAULT '{"minRoi":0.005,"minSizeUsd":0,"categories":[],"venues":["kalshi","polymarket","polymarket_us"],"showYellow":true,"showRed":false,"alertPush":false,"alertEmail":false,"emailDigest":false,"alertMinRoi":0.01}'::jsonb NOT NULL,
 	"onboarded_at" timestamp with time zone,
-	"telegram_chat_id" text,
-	"telegram_link_code" text,
+	"last_digest_at" timestamp with time zone,
 	"visitor_id" text,
 	"utm" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL

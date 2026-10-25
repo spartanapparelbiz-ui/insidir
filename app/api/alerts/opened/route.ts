@@ -8,7 +8,7 @@ import { alertsSent } from "@/lib/db/schema";
 
 export async function GET(req: NextRequest) {
   const opp = req.nextUrl.searchParams.get("opp") ?? "";
-  const ch = req.nextUrl.searchParams.get("ch") === "telegram" ? "telegram" : "push";
+  const ch = req.nextUrl.searchParams.get("ch") === "email" ? "email" : "push";
   const to = new URL(`/deal/${encodeURIComponent(opp)}`, req.nextUrl.origin);
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (user && opp) {

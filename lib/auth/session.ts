@@ -26,7 +26,6 @@ export interface SessionUser {
   manageUrl: string | null;
   cancelAtPeriodEnd: boolean;
   onboarded: boolean;
-  telegramLinked: boolean;
 }
 
 export async function createSession(userId: string): Promise<{ token: string; expires: Date }> {
@@ -79,6 +78,5 @@ export async function userForToken(token: string | undefined): Promise<SessionUs
   return {
     id: u.id, name: u.name ?? u.username, email: u.email, plan: u.plan, region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings },
     membershipId: u.membershipId, manageUrl: u.manageUrl, cancelAtPeriodEnd: u.cancelAtPeriodEnd, onboarded: Boolean(u.onboardedAt),
-    telegramLinked: Boolean(u.telegramChatId),
   };
 }

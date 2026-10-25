@@ -246,8 +246,8 @@ export const PROTECTED_PHRASES: ReadonlyArray<readonly [RegExp, string]> = [
 export const WORD_MAP: Readonly<Record<string, string>> = {
   versus: "vs", v: "vs",
   democrat: "democratic", democrats: "democratic", dem: "democratic", dems: "democratic",
-  republicans: "republican", rep: "republican", gop: "republican",
-  decrease: "cut", decreases: "cut", decreased: "cut", lower: "cut", lowers: "cut", cuts: "cut", reduce: "cut", reduces: "cut",
+  republicans: "republican", gop: "republican",
+  decrease: "cut", decreases: "cut", decreased: "cut", cuts: "cut", reduce: "cut", reduces: "cut",
   increase: "hike", increases: "hike", increased: "hike", raise: "hike", raises: "hike", hikes: "hike",
   pause: "hold", pauses: "hold", unchanged: "hold", maintain: "hold", maintains: "hold", holds: "hold",
   wins: "win", winner: "win", winning: "win", won: "win", beats: "beat", defeats: "defeat",
@@ -268,7 +268,7 @@ export const CONFLICT_GROUPS: ReadonlyArray<readonly string[]> = [
   ["primary", "general"],
   ["high-temp", "low-temp"],
   ["rain", "snow"],
-  ["first", "second", "third", "last"],
+  ["first", "second", "third"],
   ["mvp", "dpoy", "roy", "coach"],
 ];
 
