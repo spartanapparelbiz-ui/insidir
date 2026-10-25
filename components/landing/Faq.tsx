@@ -1,13 +1,18 @@
 /* 8. FAQ, as <details>. Honest answers; shared (a subset) with /pricing. */
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { RISK_QUESTION } from "./model";
 
-export type FaqId = "risk" | "trade" | "fees" | "settle" | "where" | "iphone" | "cancel";
+export type FaqId = "what" | "risk" | "trade" | "fees" | "settle" | "where" | "iphone" | "cancel";
 
-/** The owner's question, kept word for word. Its answer is an explicit No. */
-export const RISK_QUESTION = "Is this risk-free?";
 
 export const FAQ: Array<{ id: FaqId; q: string; a: ReactNode }> = [
+  { id: "what", q: "What is this, in plain words?", a: (
+    <>
+      <p>Sometimes two apps put different prices on the same yes-or-no question. If you buy YES on one and NO on the other, and the two together cost less than $1, you get $1 back whichever way it ends. The difference, after fees, is yours.</p>
+      <p>Traders call this arbitrage: buying the same thing in two places at two prices. Insidir finds these gaps and does the math. It does not guess who will win.</p>
+    </>
+  ) },
   { id: "risk", q: RISK_QUESTION, a: (
     <>
       <p>No. It is not risk-free. A deal locks in a profit only if both sides fill at the prices shown and both markets settle the same way. Things that can go wrong:</p>

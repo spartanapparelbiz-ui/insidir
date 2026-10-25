@@ -5,10 +5,25 @@ import type { FeedRow, FeedViewer } from "@/lib/feed";
 import { PLANS, type Entitlements } from "@/lib/plans";
 import type { ReceiptRow } from "@/lib/queries";
 import { allowedVenues, venuesOk } from "@/lib/region";
-import type { Plan, Region } from "@/lib/types";
+import type { Opportunity, Plan, Region } from "@/lib/types";
 
-/** Owner-requested comparison line, in one place so it is easy to change or remove. */
-export const COMPETITOR_PRICE_LINE = "Other arbitrage tools charge around $200/mo.";
+/** Owner-requested comparison line, in one place so it is easy to change or remove. (The owner's wording was
+ *  "Other arbitrage tools charge around $200/mo."; "arbitrage" may only appear inside the FAQ, so it is reworded.) */
+export const COMPETITOR_PRICE_LINE = "Other tools that do this charge around $200/mo.";
+
+/** The one call to action on the landing page: into the feed. */
+export const LANDING_CTA = "See today's live deals";
+
+/** The owner's FAQ question, kept word for word. Its answer is an explicit No. */
+export const RISK_QUESTION = "Is this risk-free?";
+
+/** Risk reversal, shown under the pricing cards only when the log averages at least this many green deals a day. */
+export const REFUND_LINE = "Find no green deal in your first 7 days and get a full refund.";
+export const REFUND_MIN_GREEN_PER_DAY = 1;
+export const REFUND_WINDOW_DAYS = 30;
+
+/** Objection killers, right under the pricing cards. */
+export const OBJECTIONS = ["Not a prediction. Just math.", "We never touch your money.", "Cancel in one click."] as const;
 
 /** Stake per green deal in the "if you had followed every green deal" line, dollars. */
 export const FOLLOW_STAKE = 500;
@@ -23,7 +38,7 @@ export const PREVIEW_ROWS = 3;
 export const RECEIPTS_PUBLIC_DAYS = 7;
 export const RECEIPTS_FULL_DAYS = 90;
 
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 
 /** Midnight UTC of the day `now` falls in. */
 export const startOfTodayUTC = (now: number): number => Math.floor(now / DAY_MS) * DAY_MS;
@@ -43,9 +58,23 @@ export const publicFeedViewer = (region: Region | null): FeedViewer => ({
 /** Where "Start for $39" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
 export const checkoutHref = (url: string | null): string => url ?? "/auth/login?next=/terminal";
 
-/** A real two-leg green cross-venue row for "Today's real one", or null. */
+/** A real two-leg green cross-venue row from the feed, or null. */
 export const realCrossArb = (rows: readonly FeedRow[]): FeedRow | null =>
   rows.find(r => r.kind === "cross_arb" && r.safety === "green" && r.legs.length === 2) ?? null;
+
+/** The hero's per-$1 math for a two-leg lock, in cents per set: what each side costs, the fees, and what's left of
+ *  the $1. No dollar size or total profit (those are paid fields). */
+export interface PerDollar { aCents: number; bCents: number; inCents: number; feeCents: number; profitCents: number; roi: number }
+export function perDollar(o: Opportunity): PerDollar | null {
+  const [a, b] = o.legs;
+  if (!a || !b || !(o.sets > 0)) return null;
+  const c = (v: number) => Math.round(v * 1000) / 10;
+  const aCents = c(a.avgPrice), bCents = c(b.avgPrice);
+  const feeCents = c(o.fees / o.sets);
+  const payCents = c(o.payout / o.sets);
+  const inCents = c(a.avgPrice + b.avgPrice);
+  return { aCents, bCents, inCents, feeCents, profitCents: Math.round((payCents - inCents - feeCents) * 10) / 10, roi: o.roi };
+}
 
 /* ---------- receipts ---------- */
 
