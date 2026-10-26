@@ -649,6 +649,24 @@ export class PolymarketClient implements VenueClient {
     return readWhaleTrades(await this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority }), minCash);
   }
 
+  /** One page of public trades, newest first (GET /trades). `filterAmount` with filterType=CASH keeps fills of at
+   *  least that many dollars. Raw rows: lib/moves/sources.ts reads them. */
+  async getTradesPage(opts: { filterAmount: number; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
+    const params = { filterType: "CASH", filterAmount: opts.filterAmount, limit: opts.limit ?? DATA_PAGE_LIMIT, offset: opts.offset, takerOnly: true };
+    return this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority });
+  }
+
+  /** A wallet's trades in one market (GET /trades?user=&market=), raw. For the accuracy check. */
+  async getWalletMarketTrades(user: string, market: string, priority: Priority = "normal"): Promise<unknown> {
+    return this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: true })}`, { priority });
+  }
+
+  /** One page of a wallet's closed (resolved) positions, with realized profit (GET /closed-positions). */
+  async getClosedPositionsPage(user: string, opts: { limit?: number; offset?: number; priority?: Priority } = {}): Promise<unknown> {
+    const params = { user, limit: opts.limit ?? 50, offset: opts.offset ?? 0, sortBy: "REALIZEDPNL", sortDirection: "DESC" };
+    return this.data.json(`${this.dataUrl}/closed-positions${qs(params)}`, { priority: opts.priority });
+  }
+
   /** A wallet's open positions (public). Paginates up to DATA_MAX_PAGES. */
   async getPositions(user: string, opts: { sizeThreshold?: number; priority?: Priority } = {}): Promise<PolymarketPosition[]> {
     const out: PolymarketPosition[] = [];

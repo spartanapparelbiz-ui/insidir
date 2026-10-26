@@ -7,10 +7,13 @@
  *                              heartbeat per venue (the site shows "Live data paused, retrying" when they go quiet)
  *   alerts    every ALERT_MS:  web push (Pro instant, Insidir within 60s), email backup, daily summaries
  *   whales    every WHALE_MS:  Polymarket trades over $10K
+ *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
+ *             every 5 min (lib/moves/jobs.ts)
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
-import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
+import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
+import { MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -205,6 +208,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const clients = createVenueClients();
   const state: State = { universe: { markets: [], events: [], pairs: [] }, lastFull: 0, hot: new Set(), lastTickAt: new Map() };
   log("worker starting");
+  // Big money moves (docs/V2.md): only with both public clients in place.
+  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
   await sweep(clients, state).catch(e => log("first sweep failed:", errMsg(e)));
   const stops = [
     every("sweep", SWEEP_MS, () => sweep(clients, state)),
@@ -213,6 +218,20 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("digests", DIGEST_CHECK_MS, digestsOnce),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
+    ...(poller ? [
+      every("moves", MOVES_MS, async () => {
+        const fresh = await movesOnce(getDb(), poller, state.universe.markets, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
+        if (fresh.length) log(`moves: ${fresh.length} new`);
+      }),
+      every("moves:settle", 10 * 60_000, async () => {
+        const n = await settleMovesOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+        if (n) log(`moves: ${n} markets settled`);
+      }),
+      every("moves:records", 5 * 60_000, async () => {
+        const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
+        if (n) log(`moves: ${n} trader records refreshed`);
+      }),
+    ] : []),
     every("ratelimits", 60_000, async () => {
       const s = rateLimitStats();
       log("rate limits:", Object.entries(s).map(([k, v]) => `${k} ${v.requests} req, ${v.rateLimited} 429s, ${v.retries} retries`).join(" | "));

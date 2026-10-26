@@ -345,6 +345,12 @@ export class KalshiClient implements VenueClient {
     return out;
   }
 
+  /** One page of public trades across all markets since `minTs` (GET /markets/trades; anonymous: size, price,
+   *  taker side, time). Raw: lib/moves/sources.ts reads it; the caller follows `cursor`. */
+  getTradesPage(opts: { minTsSec: number; cursor?: string; limit?: number; priority?: Priority }): Promise<unknown> {
+    return this.http.json(`${this.base}/markets/trades${qs({ min_ts: opts.minTsSec, limit: opts.limit ?? 1000, cursor: opts.cursor })}`, { priority: opts.priority ?? "hot" });
+  }
+
   /** Raw open markets (GET /markets?status=open, limit 1000, cursor pagination). */
   listOpenMarketsRaw(priority: Priority = "normal"): Promise<JsonObject[]> {
     return this.paginate("/markets", { status: "open", limit: MARKETS_PAGE_LIMIT, mve_filter: EXCLUDE_MULTIVARIATE ? "exclude" : undefined }, "markets", priority);
