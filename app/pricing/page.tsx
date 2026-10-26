@@ -10,7 +10,7 @@ import { greenPerDay, receiptRows } from "@/lib/queries";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: "Free, Insidir $39/mo and Insidir Pro $99/mo. Cancel anytime in one click." };
+export const metadata: Metadata = { title: "Pricing", description: "Free, Insidir ($1 for 3 days, then $39/mo) and Insidir Pro ($99/mo). Cancel anytime in one click." };
 
 export default async function PricingPage() {
   const now = Date.now();

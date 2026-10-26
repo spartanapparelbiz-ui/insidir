@@ -1,7 +1,7 @@
 /* The public receipts log: every lock found, as it looked when found, and how it settled. Wins and misses alike;
  * unsettled rows say "Open". Shared by the landing page (section 4) and /receipts. A compact list: one line per
  * deal on desktop, two on phones. */
-import { SafetyLight } from "@/components/SafetyLight";
+import { SAFETY_LABEL } from "@/components/SafetyLight";
 import type { BacktestResult } from "@/lib/engines/receipts";
 import { pct, usd } from "@/lib/format";
 import type { ReceiptRow } from "@/lib/queries";
@@ -20,12 +20,12 @@ export function FollowLine({ res, period }: { res: BacktestResult | null; period
   const made = res.realizedProfit >= 0;
   return (
     <div className="lp-follow">
-      <p className="lp-follow__line">Following every green deal {period} with {usd(FOLLOW_STAKE)} would have {made ? "made" : "lost"}{" "}
+      <p className="lp-follow__line">Putting {usd(FOLLOW_STAKE)} in every &ldquo;same rules: yes&rdquo; deal {period} would have {made ? "made" : "lost"}{" "}
         <span className={`mono${made && res.realizedProfit > 0 ? " profit" : ""}`}>{usd(Math.abs(res.realizedProfit))}</span>.</p>
       <p className="lp-follow__note">
-        That&apos;s {usd(res.staked)} staked across {res.count} settled green {res.count === 1 ? "deal" : "deals"}, after fees, each capped at what you could buy when we found it.
-        {res.broken ? ` ${res.broken} settled differently and ${res.broken === 1 ? "counts" : "count"} at the real result.` : ""}
-        {res.pending ? ` ${res.pending} still open, not counted.` : ""}
+        That&apos;s {usd(res.staked)} put in across {res.count} finished {res.count === 1 ? "deal" : "deals"}, after fees. Each is cut to what you could buy when we found it.
+        {res.broken ? ` ${res.broken} had different winners on the two apps. ${res.broken === 1 ? "It counts" : "They count"} at the real result.` : ""}
+        {res.pending ? ` ${res.pending} not over yet, not counted.` : ""}
       </p>
     </div>
   );
@@ -35,7 +35,7 @@ export function TallyLine({ t }: { t: ReceiptTally }) {
   if (!t.total) return null;
   return (
     <p className="lp-tally">
-      {t.total} found. {t.sameWay} settled the same way{t.differently ? `, ${t.differently} settled differently` : ""}{t.open ? `, ${t.open} still open` : ""}.
+      {t.total} found. {t.sameWay} paid out as planned{t.differently ? `, ${t.differently} had different winners` : ""}{t.open ? `, ${t.open} not over yet` : ""}.
     </p>
   );
 }
@@ -45,13 +45,13 @@ export function ReceiptItem({ r }: { r: ReceiptRow }) {
   const o = r.snapshot;
   const settled = isSettled(r);
   const won = settled && r.sameWay === true;
-  const result = !settled ? "Open" : won ? signed(r.realizedProfit ?? 0) : "Settled differently";
+  const result = !settled ? "Not over" : won ? signed(r.realizedProfit ?? 0) : "Different winners";
   return (
     <li className={`rcpt${settled && !won ? " rcpt--miss" : ""}`}>
       <span className="rcpt__when mono">{whenText(r.detectedAt)}</span>
       <span className="rcpt__title">{o.title}</span>
-      <span className="rcpt__light"><SafetyLight safety={o.safety} /></span>
-      <span className="rcpt__roi mono"><span className="sr-only">ROI when found: </span>{pct(o.roi)}</span>
+      <span className="rcpt__light"><span className={`light light--${o.safety}`}><span className="rcpt__pre">Same rules? </span>{SAFETY_LABEL[o.safety]}</span></span>
+      <span className="rcpt__roi mono"><span className="rcpt__pre">You make </span>{pct(o.roi)}</span>
       <span className={`rcpt__result mono${won && (r.realizedProfit ?? 0) > 0 ? " profit" : ""}`}><span className="sr-only">Result: </span>{result}</span>
     </li>
   );
@@ -60,7 +60,7 @@ export function ReceiptItem({ r }: { r: ReceiptRow }) {
 export function ReceiptList({ rows }: { rows: readonly ReceiptRow[] }) {
   return (
     <div className="rcpts">
-      <p className="rcpts__head" aria-hidden="true"><span>Found</span><span>Deal</span><span>Light</span><span>ROI</span><span>Result</span></p>
+      <p className="rcpts__head" aria-hidden="true"><span>Found</span><span>Deal</span><span>Same rules?</span><span>You make</span><span>Result</span></p>
       <ul className="rcpts__list">{rows.map(r => <ReceiptItem key={r.id} r={r} />)}</ul>
     </div>
   );

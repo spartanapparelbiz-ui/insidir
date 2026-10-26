@@ -156,3 +156,26 @@ button { font: inherit; color: inherit; }
 .r { text-align: right !important; }
 .scroll-x { overflow-x: auto; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* the "Pro view" switch in the top bar (pages that show deals) */
+.vt { margin: 0 0 0 auto; }
+.vt__btn { display: inline-flex; align-items: center; gap: 10px; min-height: var(--tap); padding: 0 4px; border: 0; background: transparent; color: var(--steel);
+  font: 500 var(--t14)/1 var(--sans); cursor: pointer; white-space: nowrap; }
+.vt__btn:hover, .vt__btn[aria-checked="true"] { color: var(--paper); }
+.vt__track { position: relative; width: 36px; height: 22px; border-radius: var(--r-pill); background: var(--line); flex: none; }
+.vt__knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--steel); transition: transform .15s ease-out; }
+.vt__btn[aria-checked="true"] .vt__track { background: var(--paper); }
+.vt__btn[aria-checked="true"] .vt__knob { transform: translateX(14px); background: var(--ink); }
+@media (min-width: 561px) { .vt { order: 3; margin-left: 8px; } .hdr__in--vt .wordmark { margin-right: auto; } }
+
+/* the "?" next to a number: a small round button; its line opens in the top layer (the browser's popover) */
+.help { display: inline-flex; vertical-align: 1px; margin-left: 4px; }
+.help__q { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--line); color: var(--steel); font: 700 12px/1 var(--sans); cursor: pointer; position: relative; }
+/* a 44px tap area around the small dot, without moving the text */
+.help__q::after { content: ""; position: absolute; inset: -13px; }
+.help__q:hover, .help__q:focus-visible { background: var(--steel); color: var(--ink); }
+.help__tip { margin: auto auto 24px; inset: auto 16px 0; max-width: 420px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-row);
+  background: var(--surface); color: var(--paper); font: 400 var(--t17)/1.45 var(--sans); }
+.help__tip::backdrop { background: rgba(0, 0, 0, .5); }
+@media (min-width: 900px) { .help__tip { inset: auto 0 0; margin: auto auto 48px; } }

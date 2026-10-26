@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="wrap">
         <p>{FOOTER}</p>
         <nav className="foot__links" aria-label="Footer">
-          <Link href="/receipts">Receipts</Link>
+          <Link href="/receipts">Past deals</Link>
           <Link href="/#pricing">Pricing</Link>
           <Link href="/#faq">FAQ</Link>
           <Link href="/terms">Terms</Link>

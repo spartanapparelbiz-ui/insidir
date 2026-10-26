@@ -2,7 +2,7 @@
  * Every number these produce comes from rows the caller read from the database. */
 import { followGreen, type BacktestResult, type Receipt } from "@/lib/engines/receipts";
 import type { FeedRow, FeedViewer, StoredOpp } from "@/lib/feed";
-import { PLANS, type Entitlements } from "@/lib/plans";
+import { PLANS, type Entitlements, type Intro } from "@/lib/plans";
 import type { ReceiptRow } from "@/lib/queries";
 import type { NearMiss } from "@/lib/engines/near-miss";
 import { allowedVenues, venuesOk } from "@/lib/region";
@@ -12,9 +12,6 @@ import { VENUE_NAME, type Opportunity, type Plan, type Region } from "@/lib/type
  *  "Other arbitrage tools charge around $200/mo."; "arbitrage" may only appear inside the FAQ, so it is reworded.) */
 export const COMPETITOR_PRICE_LINE = "Other tools that do this charge around $200/mo.";
 
-/** The hero's sub line. */
-export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that lock in a profit after fees.";
-
 /** The one call to action on the landing page: into the feed. */
 export const LANDING_CTA = "See today's live deals";
 
@@ -22,7 +19,7 @@ export const LANDING_CTA = "See today's live deals";
 export const RISK_QUESTION = "Is this risk-free?";
 
 /** Risk reversal, shown under the pricing cards only when the log averages at least this many green deals a day. */
-export const REFUND_LINE = "Find no green deal in your first 7 days and get a full refund.";
+export const REFUND_LINE = "No “same rules: yes” deal in your first 7 days? Get all your money back.";
 export const REFUND_MIN_GREEN_PER_DAY = 1;
 export const REFUND_WINDOW_DAYS = 30;
 
@@ -59,7 +56,7 @@ export const publicFeedViewer = (region: Region | null): FeedViewer => ({
   plan: "free", region, minRoi: 0, minSizeUsd: 0, categories: [], venues: [], showYellow: true, showRed: false,
 });
 
-/** Where "Start for $39" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
+/** Where the Insidir checkout button goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
 export const checkoutHref = (url: string | null): string => url ?? "/auth/login?next=/terminal";
 
 /** A real two-leg green cross-venue row from the feed, or null. */
@@ -144,23 +141,23 @@ export function byWeek(rows: readonly ReceiptRow[], stake: number = FOLLOW_STAKE
 /** Feature lines from a plan's entitlements, so the cards can't drift from what the server enforces. */
 export function planFeatures(e: Entitlements): string[] {
   const out: string[] = [];
-  out.push(e.feedDelayMinutes > 0 ? `Feed delayed ${e.feedDelayMinutes} min` : "Full live feed");
+  out.push(e.feedDelayMinutes > 0 ? `Deals ${e.feedDelayMinutes} min late` : "Every deal, live");
   if (e.maxRows !== null) out.push(`Top ${e.maxRows} deals`);
-  out.push(e.sizesHidden ? "Sizes and dollar profit hidden" : "Sizes and dollar profit");
+  out.push(e.sizesHidden ? "How big each deal goes: hidden" : "How big each deal goes, in dollars");
   // Alerts: web push, with email as the backup; the free plan gets a daily email digest of the delayed feed.
-  if (e.alertDelaySeconds === null) out.push("Daily email digest");
+  if (e.alertDelaySeconds === null) out.push("A daily email");
   else {
-    out.push(e.alertDelaySeconds === 0 ? "Instant push alerts, in seconds" : `Push alerts within ${e.alertDelaySeconds} seconds`);
-    out.push("Email backup and daily summary");
+    out.push(e.alertDelaySeconds === 0 ? "Phone alerts the second we find one" : `Phone alerts within ${e.alertDelaySeconds} seconds`);
+    out.push("Email alerts and a daily summary");
   }
-  if (e.calculator) out.push("Calculator");
-  out.push(e.fullHistory ? "Full receipts history" : "Receipts (last 7 days)");
-  if (e.whales) out.push("Whale tracker");
-  if (e.pnl) out.push("P&L from your Kalshi CSV");
+  if (e.calculator) out.push("Exact math for your amount");
+  out.push(e.fullHistory ? "Every past deal" : "Past deals (last 7 days)");
+  if (e.whales) out.push("Big-bet tracker");
+  if (e.pnl) out.push("Your results, from your Kalshi file");
   return out;
 }
 
-export interface PlanCard { plan: Plan; name: string; price: number; tagline: string; features: string[]; inherits: string | null }
+export interface PlanCard { plan: Plan; name: string; price: number; intro: Intro | null; tagline: string; features: string[]; inherits: string | null }
 
 /** Free / Insidir / Pro. Pro lists only what it adds over Insidir. */
 export function planCards(): PlanCard[] {
@@ -168,9 +165,9 @@ export function planCards(): PlanCard[] {
   const ins = planFeatures(PLANS.insidir.entitlements);
   const pro = planFeatures(PLANS.pro.entitlements).filter(f => !ins.includes(f));
   return [
-    { plan: "free", name: PLANS.free.name, price: PLANS.free.price, tagline: PLANS.free.tagline, features: free, inherits: null },
-    { plan: "insidir", name: PLANS.insidir.name, price: PLANS.insidir.price, tagline: PLANS.insidir.tagline, features: ins, inherits: null },
-    { plan: "pro", name: PLANS.pro.name, price: PLANS.pro.price, tagline: PLANS.pro.tagline, features: pro, inherits: PLANS.insidir.name },
+    { plan: "free", name: PLANS.free.name, price: PLANS.free.price, intro: null, tagline: PLANS.free.tagline, features: free, inherits: null },
+    { plan: "insidir", name: PLANS.insidir.name, price: PLANS.insidir.price, intro: PLANS.insidir.intro, tagline: PLANS.insidir.tagline, features: ins, inherits: null },
+    { plan: "pro", name: PLANS.pro.name, price: PLANS.pro.price, intro: null, tagline: PLANS.pro.tagline, features: pro, inherits: PLANS.insidir.name },
   ];
 }
 

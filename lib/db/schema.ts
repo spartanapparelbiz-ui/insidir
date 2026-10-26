@@ -29,11 +29,13 @@ export interface UserSettings {
   alertMinRoi: number;
   /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
   soundOnGreen: boolean;
+  /** The Terminal's dense Pro view instead of the Simple view (the default). Set by the toggle in the top bar. */
+  proView: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
-  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
+  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false, proView: false,
 };
 
 export const users = terminal.table("users", {

@@ -1,11 +1,13 @@
 /* The landing page. One goal: get visitors into the live feed; every CTA says LANDING_CTA and goes to /terminal
- * (only the pricing cards, after the value, offer checkout). Server-rendered with real numbers, then kept live by one
- * Server-Sent Events stream (components/live): the hero's prices tick, the scanner heartbeat and "open for" timer count
- * real time, today's count rolls up, the tape and toasts show real events. Everything runs on the viewer's clock:
- * free visitors see deals 30 minutes late, like the feed. A section without a real number is hidden, never filled.
- * Order: the hero (headline, the split, the pitch), the live strip, the Terminal, receipts, safety lights, pricing,
- * FAQ, final CTA. The hero never looks empty: a live deal, else the last real deal, else the closest market's real
- * prices (components/landing/model.ts heroView). The scanner heartbeat sits small in the header. */
+ * (only the pricing cards, after the value, offer checkout).
+ * Above the fold: one idea, one example, one button (components/landing/Hero): the sentence, the animated
+ * 55¢ + 40¢ = 95¢ in, $1 back example, and "See today's live deals". Everything else is below the fold:
+ * How it works (three panels), a real deal right now (TodayDeal: a live deal, else the last real deal, else the
+ * closest market's real prices, components/landing/model.ts heroView), the live strip, the deals as Simple cards,
+ * receipts, same rules?, pricing, FAQ, final CTA.
+ * Server-rendered with real numbers, then kept live by one Server-Sent Events stream (components/live). Everything
+ * runs on the viewer's clock: free visitors see deals 30 minutes late, like the feed. A section without a real number
+ * is hidden, never filled. The scanner heartbeat sits small in the header. */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -17,15 +19,16 @@ import { FinalCta } from "@/components/landing/Cta";
 import { Faq } from "@/components/landing/Faq";
 import { HeaderBeat } from "@/components/landing/HeaderBeat";
 import { Hero } from "@/components/landing/Hero";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { TodayDeal } from "@/components/landing/TodayDeal";
 import { LiveStrip } from "@/components/landing/LiveStrip";
 import { Pricing } from "@/components/landing/Pricing";
 import { FollowLine, ReceiptList } from "@/components/landing/Receipts";
 import { SafetySection } from "@/components/landing/Safety";
 import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
-import { Toasts } from "@/components/landing/Toasts";
 import {
-  checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
+  checkoutHref, DAY_MS, followLine, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
   RECEIPTS_PUBLIC_DAYS, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, visibleReceipts,
 } from "@/components/landing/model";
 import { AB_COOKIE, AB_TESTS, heroVariant, recordEvent } from "@/lib/analytics";
@@ -91,24 +94,24 @@ export default async function Landing() {
         status={<HeaderBeat serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />} />
       <main className="lp">
           <div className="wrap">
-            <Hero view={view} delayMs={delayMs} medianLifeMin={stats.medianLifeMin} headline={hero.headline} sub={HERO_SUB} cta={LANDING_CTA}
-              serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />
+            <Hero headline={hero.headline} cta={LANDING_CTA} />
+            <HowItWorks />
+            <TodayDeal view={view} delayMs={delayMs} medianLifeMin={stats.medianLifeMin} serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />
             <LiveStrip serverNow={now} initialTape={initialTape} stats={{
               foundToday: today?.found ?? 0, foundWeek: week?.found ?? 0, period,
               biggestRoi: proof?.biggestRoi ?? null, medianRoi: proof?.medianRoi ?? null,
               left: leftOnTable(log, period === "today" ? todayStart : weekStart), flagged: stats.flagged, medianGapMin: stats.medianGapMin, todayStart, weekStart,
             }} />
           </div>
-          <Toasts serverNow={now} />
         <div className="wrap">
           <TerminalPreview rows={feedFor(opps, fv, now)} hidden={liveHiddenCount(opps, viewer.region, delayMs, now)} now={now} unlockHref={insidir} cta={LANDING_CTA} />
           {recent.length ? (
             <section className="sec" data-section="receipts" aria-labelledby="rcpt-h">
-              <h2 id="rcpt-h" className="sec__h">Receipts</h2>
-              <p className="sec__p">The last 7 days, as found and as they ended. Wins and misses.</p>
+              <h2 id="rcpt-h" className="sec__h">Past deals</h2>
+              <p className="sec__p">Every deal from the last 7 days, and how it ended. Wins and misses.</p>
               <FollowLine res={followLine(log)} period="in the last 7 days" />
               <ReceiptList rows={recent} />
-              <Link className="btn btn--secondary" href="/receipts">See every receipt</Link>
+              <Link className="btn btn--secondary" href="/receipts">See every past deal</Link>
             </section>
           ) : null}
           <SafetySection />

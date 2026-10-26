@@ -4,6 +4,7 @@ import { cache } from "react";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { FeedViewer } from "@/lib/feed";
 import type { Plan, Region } from "@/lib/types";
+import { readView, VIEW_COOKIE, type View } from "@/lib/view";
 import { REGION_COOKIE, SESSION_COOKIE, userForToken, type SessionUser } from "./session";
 
 export interface Viewer {
@@ -25,4 +26,10 @@ export function feedViewer(v: Viewer): FeedViewer {
   const s = v.user?.settings ?? DEFAULT_SETTINGS;
   return { plan: v.plan, region: v.region, minRoi: v.user ? s.minRoi : 0, minSizeUsd: s.minSizeUsd, categories: v.user ? s.categories : [],
     venues: s.venues, showYellow: s.showYellow, showRed: s.showRed };
+}
+
+/** Simple or Pro view: a signed-in user's saved setting, else the visitor's cookie (lib/view.ts). */
+export async function getView(v: Viewer): Promise<View> {
+  if (v.user) return v.user.settings.proView ? "pro" : "simple";
+  return readView((await cookies()).get(VIEW_COOKIE)?.value);
 }

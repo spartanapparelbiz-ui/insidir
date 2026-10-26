@@ -6,13 +6,20 @@
  * live while the scanner or the connection is down ("Live data paused, retrying").
  *
  * Free viewers: the server sends the delayed, redacted versions; when a deal closes before the free feed could show
- * it, a line says when members got it and when the free feed would have. Tapping a row opens the detail sheet. */
+ * it, a line says when members got it and when the free feed would have.
+ *
+ * Two views. Simple (the default): each deal is a card that reads like a sentence (components/simple/DealCard), and
+ * "Show me how" opens the three-step walkthrough in a sheet. Pro: the dense table; tapping a row opens the detail
+ * sheet. */
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { DealRow, DealRowHead, type RowMotion } from "@/components/DealRow";
+import { DealCard } from "@/components/simple/DealCard";
+import { HowSheet } from "@/components/simple/HowSheet";
 import { useLive } from "@/components/live/useLive";
 import type { FeedRow } from "@/lib/feed";
 import type { DataStatus } from "@/lib/status";
 import type { Plan, Venue } from "@/lib/types";
+import type { View } from "@/lib/view";
 import { DealSheet } from "./DealSheet";
 import { applyTick, missedByDelay, missedLine, quietLine } from "./live-rows";
 import { StatusBanner } from "./StatusBanner";
@@ -54,9 +61,9 @@ function chime() {
   o.stop(t + 0.32);
 }
 
-export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows, unlockHref, venues, emptyText, medianGapMin, soundOnGreen }: {
+export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows, unlockHref, venues, emptyText, medianGapMin, soundOnGreen, view = "simple" }: {
   initialRows: FeedRow[]; initialNow: number; initialStatus: DataStatus; plan: Plan; maxRows: number | null; unlockHref: string;
-  venues: Venue[]; emptyText: string; medianGapMin: number | null; soundOnGreen: boolean;
+  venues: Venue[]; emptyText: string; medianGapMin: number | null; soundOnGreen: boolean; view?: View;
 }) {
   const live = useLive();
   const [rows, setRows] = useState(initialRows);
@@ -66,6 +73,8 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
   const [status, setStatus] = useState(initialStatus);
   const [fetchFailed, setFetchFailed] = useState(false);
   const [open, setOpen] = useState<{ id: string; title: string } | null>(null);
+  // Simple view: the deal whose walkthrough is open, with its last row in case it closes and drops off the list.
+  const [how, setHow] = useState<{ row: FeedRow; closed: boolean } | null>(null);
   // Server clock minus browser clock, so "found X ago" uses the server's time.
   const offset = useRef(initialNow - Date.now());
   const [now, setNow] = useState(initialNow);
@@ -107,6 +116,7 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
       if (!live.reducedMotion) mark(e.oppId, "tick", TICK_MS);
     });
     const offClosed = live.on("deal_closed", e => {
+      setHow(h => (h && h.row.id === e.oppId ? { ...h, closed: true } : h));
       if (rowsRef.current.some(r => r.id === e.oppId)) mark(e.oppId, "closing", CLOSING_MS, () => setRows(p => p.filter(r => r.id !== e.oppId)));
     });
     return () => { offFound(); offTick(); offClosed(); };
@@ -170,6 +180,9 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
 
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const hl = e.target instanceof Element ? e.target.closest<HTMLElement>("a.sd-how") : null;
+    const row = hl ? list.find(r => r.id === hl.dataset.dealHow) : undefined;
+    if (hl && row) { e.preventDefault(); setHow({ row, closed: false }); return; }
     const link = e.target instanceof Element ? e.target.closest("a.tr-link") : null;
     const art = link?.closest<HTMLElement>("[data-deal]");
     const id = art?.dataset.deal;
@@ -178,20 +191,26 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
     setOpen({ id, title: link.textContent ?? "" });
   };
   const close = useCallback(() => setOpen(null), []);
+  const closeHow = useCallback(() => setHow(null), []);
+  const howRow = how ? (list.find(r => r.id === how.row.id) ?? how.row) : null;
 
   return (
     <section className="feed" aria-labelledby="feed-h">
       <div className="feed__head">
-        <h1 id="feed-h" className="feed__h">Deals</h1>
+        <h1 id="feed-h" className="feed__h">{view === "pro" ? "Deals" : "Today's price gaps"}</h1>
         <p className="feed__state" role="status">
           {isLive ? <><span className="feed__dot" aria-hidden="true" />Live</> : plan === "free" ? "30 min delay" : "Not live"}
         </p>
       </div>
       <StatusBanner status={scanner} venues={venues} offline={offline} />
-      {list.length ? (
+      {list.length && view === "pro" ? (
         <div className="tr-list" onClick={onClick}>
           <DealRowHead locked={anyLocked} />
           {list.map(r => <DealRow key={r.id} row={r} now={now} unlockHref={unlockHref} motion={motion[r.id] ?? null} />)}
+        </div>
+      ) : list.length ? (
+        <div className="sd-list" onClick={onClick}>
+          {list.map(r => <DealCard key={r.id} row={r} now={now} unlockHref={unlockHref} motion={motion[r.id] ?? null} heading="h2" />)}
         </div>
       ) : (
         <div className="empty">
@@ -208,6 +227,7 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
         </section>
       ) : null}
       {open ? <DealSheet id={open.id} title={open.title} live={live} onClose={close} /> : null}
+      {how && howRow ? <HowSheet row={howRow} closed={how.closed} unlockHref={unlockHref} onClose={closeHow} /> : null}
     </section>
   );
 }

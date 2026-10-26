@@ -9,7 +9,7 @@ import { unlockHref, vapidPublicKey } from "@/components/app/links";
 import { SettingsForm } from "@/components/app/SettingsForm";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
-import { isPaid, PLANS } from "@/lib/plans";
+import { isPaid, PLANS, startText } from "@/lib/plans";
 import "../app.css";
 
 export const dynamic = "force-dynamic";
@@ -40,13 +40,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <section className="card fs" aria-labelledby="plan-h">
           <h2 id="plan-h" className="fs__h">Plan</h2>
-          <p className="plan__now"><span className="plan__name">{PLANS[viewer.plan].name}</span>{paid ? <span className="plan__price">${PLANS[viewer.plan].price} a month</span> : null}
+          <p className="plan__now"><span className="plan__name">{PLANS[viewer.plan].name}</span>{paid ? <span className="plan__price">${PLANS[viewer.plan].price}/mo</span> : null}
             {user.cancelAtPeriodEnd ? <span className="tag">Cancels at period end</span> : null}</p>
           <p className="muted small">{PLANS[viewer.plan].tagline}.</p>
           <div className="row-gap">
-            {viewer.plan === "free" ? <a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Start Insidir for ${PLANS.insidir.price} a month</a> : null}
-            {viewer.plan !== "pro" ? <a className="btn btn--secondary" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">{viewer.plan === "free" ? "Or Pro" : "Upgrade to Pro"} for ${PLANS.pro.price} a month</a> : null}
-            {viewer.plan === "pro" ? <Link className="btn btn--secondary" href="/pnl">Your P&amp;L</Link> : null}
+            {viewer.plan === "free" ? <a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">{startText("insidir")}, then ${PLANS.insidir.price}/mo</a> : null}
+            {viewer.plan !== "pro" ? <a className="btn btn--secondary" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">{viewer.plan === "free" ? "Or Pro" : "Upgrade to Pro"} for ${PLANS.pro.price}/mo</a> : null}
+            {viewer.plan === "pro" ? <Link className="btn btn--secondary" href="/pnl">My results</Link> : null}
             {user.manageUrl ? <a className="btn btn--ghost" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage on Whop</a> : null}
           </div>
           {paid && !user.cancelAtPeriodEnd ? (

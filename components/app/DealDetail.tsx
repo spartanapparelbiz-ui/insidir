@@ -4,7 +4,8 @@
 import { SafetyLight } from "@/components/SafetyLight";
 import type { DealOk, DealRules } from "@/lib/deal-view";
 import { LOCK_LINE } from "@/lib/copy";
-import { centsText, days, pct, usd } from "@/lib/format";
+import { centsText, pct, usd } from "@/lib/format";
+import { paysOutRough } from "@/lib/simple";
 import { Ago } from "./Ago";
 import { Calculator } from "./Calculator";
 import { Locked } from "./Locked";
@@ -32,7 +33,7 @@ function Rules({ r }: { r: DealRules }) {
           {r.resolutionSource ? <div><dt>Source</dt><dd>{r.resolutionSource}</dd></div> : null}
         </dl>
       ) : null}
-      <div className="rule__text">{r.rules === null ? "The rule text isn't loaded yet. Open the market on the venue to read it." : r.rules || "The venue publishes no rule text for this market."}</div>
+      <div className="rule__text">{r.rules === null ? "We don't have this rule text yet. Open the app to read it." : r.rules || "The app gives no rule text for this one."}</div>
     </article>
   );
 }
@@ -49,7 +50,7 @@ export function DealDetail({ view, now, unlockHref, closed = false, titleId, hea
   const lock = row.kind !== "second_opinion";
   const H = heading;
   const tag = closed ? "Closed" : view.gone ? "No longer live" : row.locked ? "30 min delay" : row.stale ? "Not live" : null;
-  const size = row.cost === null ? null : usd(row.cost + (row.fees ?? 0));
+  const size = row.cost === null ? null : usd(row.cost);
   return (
     <div className="dd">
       <header className="dd-head">
@@ -68,26 +69,25 @@ export function DealDetail({ view, now, unlockHref, closed = false, titleId, hea
       <dl className="dd-nums" aria-label="Numbers">
         {lock ? (
           <>
-            <Num k="Profit after fees" v={row.profit === null ? null : usd(row.profit)} cls="profit dd-big" />
-            <Num k="Return" v={pct(row.roi)} />
-            <Num k="Max size" v={size} />
-            <Num k="Profit per day" v={row.profitPerDay === null ? null : usd(row.profitPerDay)} />
+            <Num k="You keep" v={row.profit === null ? null : usd(row.profit)} cls="profit dd-big" />
+            <Num k="You make" v={pct(row.roi)} />
+            <Num k="Works up to" v={size} />
             <Num k="Fees" v={row.fees === null ? null : usd(row.fees)} />
-            <Num k="Resolves in" v={days(row.days)} />
+            <Num k="Pays out" v={paysOutRough(row.closeTime, now)} />
           </>
         ) : (
           <>
             <Num k="Price gap" v={`${row.gapCents ?? 0}¢`} />
-            <Num k="Resolves in" v={days(row.days)} />
+            <Num k="Pays out" v={paysOutRough(row.closeTime, now)} />
           </>
         )}
       </dl>
       {lock ? <p className="muted small">{LOCK_LINE}</p>
-        : <p className="dd-note">This is not a lock. The two venues price the same outcome {row.gapCents ?? 0}¢ apart, and buying one side doesn&apos;t lock in anything.</p>}
+        : <p className="dd-note">This is a tip, not a locked deal. The two apps price the same thing {row.gapCents ?? 0}¢ apart, and buying one side doesn&apos;t lock in anything.</p>}
       {row.locked ? <a className="btn btn--primary" href={unlockHref} data-unlock="deal-nums">Unlock sizes and profit</a> : null}
 
       <section className="dd-sec" aria-labelledby={titleId ? `${titleId}-legs` : "legs-h"}>
-        <h3 id={titleId ? `${titleId}-legs` : "legs-h"} className="dd-sec__h">{row.legs.length > 2 ? `The ${row.legs.length} legs` : row.legs.length === 2 ? "Both legs" : "The market"}</h3>
+        <h3 id={titleId ? `${titleId}-legs` : "legs-h"} className="dd-sec__h">{row.legs.length > 2 ? `All ${row.legs.length} sides` : row.legs.length === 2 ? "Both sides" : "The market"}</h3>
         <div className="legs">
           {row.legs.map((l, i) => {
             const f = fills[i];
@@ -98,13 +98,13 @@ export function DealDetail({ view, now, unlockHref, closed = false, titleId, hea
                 <p className="leg__label">{l.label}</p>
                 {f ? (
                   <dl className="leg__kv">
-                    <div><dt>Contracts</dt><dd>{f.contracts.toLocaleString("en-US")}</dd></div>
-                    <div><dt>Worst price</dt><dd>{centsText(f.worstPriceCents)}</dd></div>
+                    <div><dt>Shares</dt><dd>{f.contracts.toLocaleString("en-US")}</dd></div>
+                    <div><dt>Highest price</dt><dd>{centsText(f.worstPriceCents)}</dd></div>
                     <div><dt>Cost</dt><dd>{usd(f.cost)}</dd></div>
                     <div><dt>Fee</dt><dd>{usd(f.fee)}</dd></div>
                   </dl>
                 ) : null}
-                {l.url ? <a className="btn btn--secondary btn--block leg__open" href={l.url} target="_blank" rel="noopener noreferrer">Open on {l.venueName}</a> : null}
+                {l.url ? <a className="btn btn--secondary btn--block leg__open" href={l.url} target="_blank" rel="noopener noreferrer">Open {l.venueName}</a> : null}
               </div>
             );
           })}
@@ -114,14 +114,14 @@ export function DealDetail({ view, now, unlockHref, closed = false, titleId, hea
       {lock ? (
         gone ? <p className="muted small">This deal is no longer live, so the calculator is off.</p>
           : view.calc ? <Calculator legs={view.calc.legs} payoutPerSet={view.calc.payoutPerSet} maxSets={view.calc.maxSets} />
-            : !paid ? <Locked title="Calculator" text="Type an amount and see the contracts per side, cost, fees, payout and profit at today's prices." href={unlockHref} plan="insidir" where="deal-calc" />
+            : !paid ? <Locked title="Calculator" text="Type an amount and see the shares on each side, the cost, the fees and what you keep, at today's prices." href={unlockHref} plan="insidir" where="deal-calc" />
               : null
       ) : null}
 
       <section className="dd-sec" aria-labelledby={titleId ? `${titleId}-rules` : "rules-h"}>
-        <h3 id={titleId ? `${titleId}-rules` : "rules-h"} className="dd-sec__h">How each market settles <SafetyLight safety={row.safety} /></h3>
+        <h3 id={titleId ? `${titleId}-rules` : "rules-h"} className="dd-sec__h">How each app picks the winner <SafetyLight safety={row.safety} /></h3>
         {row.safetyNotes.length ? <ul className="notes">{row.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}</ul>
-          : <p className="muted small">{rules.length > 1 ? "No differences found between the markets' rules. Read both before you buy." : "The rules as the venue publishes them."}</p>}
+          : <p className="muted small">{rules.length > 1 ? "We found no differences between the two apps' rules. Read both before you buy." : "The rules, as the app gives them."}</p>}
         <div className={`rules${rules.length === 2 ? " rules--two" : ""}`}>
           {rules.map(r => <Rules key={r.key} r={r} />)}
         </div>

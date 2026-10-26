@@ -2,14 +2,15 @@
  * and are drawn as solid "locked" bars, with one Unlock link per row. No hooks, so it renders on any page (the
  * landing page shows the real component) without the LiveFeed wrapper; styles live in ./deal-row.css.
  *
- * Desktop: one line in grid columns (event, the play, profit after fees, max size, profit per day, rules light,
- * freshness). Phones: a compact three-line row. The whole row is a real link to /deal/[id] (a stretched link), so it
+ * The Pro view (the Simple view is components/simple/DealCard). Desktop: one line in grid columns (event, what to
+ * buy, you keep / you make, works up to, pays out, same rules?, found). Phones: a compact three-line row. The whole row is a real link to /deal/[id] (a stretched link), so it
  * works without JS; the Terminal opens it in a sheet instead when JS is on. */
 import Link from "next/link";
 import type { FeedRow } from "@/lib/feed";
 import { pct, usd } from "@/lib/format";
+import { paysOutRough, SAME_RULES } from "@/lib/simple";
 import { Ago } from "./Ago";
-import { SafetyLight } from "./SafetyLight";
+import { SAFETY_MEANING } from "./SafetyLight";
 import "./deal-row.css";
 
 /** A locked value: a solid bar with a lock, never a loading skeleton. The value itself was never sent. */
@@ -25,8 +26,8 @@ export function LockBar({ w = 56 }: { w?: number }) {
 export function DealRowHead({ locked = false }: { locked?: boolean }) {
   return (
     <div className={`tr-head${locked ? " tr-head--locked" : ""}`} aria-hidden="true">
-      <span>Event</span><span>The play</span><span className="tr-r">Profit after fees</span><span className="tr-r">Max size</span>
-      <span className="tr-r">Per day</span><span>Rules</span><span>Freshness</span>{locked ? <span /> : null}
+      <span>Event</span><span>What to buy</span><span className="tr-r">You keep · make</span><span className="tr-r">Works up to</span>
+      <span className="tr-r">Pays out</span><span>Same rules?</span><span>Found</span>{locked ? <span /> : null}
     </div>
   );
 }
@@ -46,7 +47,7 @@ export function DealRow({ row, now, unlockHref, href, motion = null }: {
   const stale = row.stale || motion === "closing";
   const cls = "deal tr-row" + (stale ? " deal--stale" : "") + (row.locked ? " tr-row--locked" : "") + (motion ? ` tr-row--${motion}` : "");
   const status = row.locked ? ", 30 min delay" : motion === "closing" ? ", now closed" : row.stale ? ", not live" : "";
-  const size = row.cost === null ? null : usd(row.cost + (row.fees ?? 0));
+  const size = row.cost === null ? null : usd(row.cost);
   return (
     <article className={cls} data-deal={row.id}>
       <p className="tr-title"><Link className="tr-link" href={to} title={row.title}>{row.title}</Link></p>
@@ -54,11 +55,11 @@ export function DealRow({ row, now, unlockHref, href, motion = null }: {
       <p className="tr-profit tr-r">
         {!lock ? <span className="tr-gap">{row.gapCents ?? 0}¢ gap</span>
           : row.profit === null ? <LockBar w={64} /> : <span className="tr-v profit">{usd(row.profit)}</span>}
-        {lock ? <span className="tr-roi">{pct(row.roi)}</span> : null}
+        {lock ? <span className="tr-roi" title="You make: what you keep for each $100 you put in">{pct(row.roi)}</span> : null}
       </p>
-      <p className="tr-size tr-r">{!lock ? <span className="tr-none">None</span> : size === null ? <LockBar /> : <><span className="tr-pre">Max </span>{size}</>}</p>
-      <p className="tr-day tr-r">{!lock ? <span className="tr-none">None</span> : row.profitPerDay === null ? <LockBar w={48} /> : <>{usd(row.profitPerDay)}<span className="tr-pre"> a day</span></>}</p>
-      <p className="tr-light"><SafetyLight safety={row.safety} /></p>
+      <p className="tr-size tr-r">{!lock ? <span className="tr-none">None</span> : size === null ? <LockBar /> : <><span className="tr-pre">Up to </span>{size}</>}</p>
+      <p className="tr-day tr-r"><span className="tr-pre">Pays out </span>{paysOutRough(row.closeTime, now)}</p>
+      <p className="tr-light"><span className={`light light--${row.safety}`} title={SAFETY_MEANING[row.safety]}><span className="tr-pre">Same rules? </span>{SAME_RULES[row.safety]}</span></p>
       <p className="tr-age">Found <Ago at={row.foundAt} serverNow={now} />{status}</p>
       {row.locked ? <a className="tr-unlock" href={unlockHref} data-unlock="feed-row">Unlock</a> : null}
     </article>

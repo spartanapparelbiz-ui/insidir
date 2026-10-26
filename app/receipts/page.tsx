@@ -14,7 +14,7 @@ import { receiptRows } from "@/lib/queries";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Receipts", description: "Every deal Insidir found, as it looked when found, and how it settled. Wins and misses." };
+export const metadata: Metadata = { title: "Past deals", description: "Every deal Insidir found, and how it ended. Wins and misses." };
 
 export default async function ReceiptsPage() {
   const now = Date.now();
@@ -30,10 +30,11 @@ export default async function ReceiptsPage() {
       <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/receipts" />
       <main className="wrap lp">
         <section className="sec">
-          <h1 className="sec__h">Receipts</h1>
-          <p className="sec__p">Every lock we found in the last {windowDays} days, as it looked when found, and how it settled. Wins and misses, nothing removed. &ldquo;Open&rdquo; means the markets haven&apos;t settled yet. Profit is for the full amount you could buy when we found it, after fees.</p>
-          {!ent.fullHistory ? <p className="small muted">Older history is part of <Link href="/pricing">Insidir Pro</Link>.</p> : null}
-          {!paid ? <p className="small muted">Deals found in the last 30 minutes appear here after the free delay.</p> : null}
+          <h1 className="sec__h">Past deals</h1>
+          <p className="sec__p">Every deal we found in the last {windowDays} days, and how it ended. Wins and misses, nothing removed.</p>
+          <p className="small muted">&ldquo;Not over&rdquo; means the game hasn&apos;t ended yet. Dollar results are for the most you could buy, after fees.</p>
+          {!ent.fullHistory ? <p className="small muted">Older deals come with <Link href="/pricing">Insidir Pro</Link>.</p> : null}
+          {!paid ? <p className="small muted">Deals from the last 30 minutes show up here a bit later.</p> : null}
         </section>
         {weeks.length ? weeks.map(w => (
           <section key={w.start} className="lp-week" aria-label={`Week of ${dayText(w.start)}`}>
@@ -42,7 +43,7 @@ export default async function ReceiptsPage() {
             <TallyLine t={w.tally} />
             <ReceiptList rows={w.rows} />
           </section>
-        )) : <p className="muted" style={{ paddingTop: 24 }}>No deals logged in this window yet.</p>}
+        )) : <p className="muted" style={{ paddingTop: 24 }}>No deals here yet.</p>}
       </main>
       {!paid ? <Sticky label={LANDING_CTA} href="/terminal" /> : null}
       <Beacons />

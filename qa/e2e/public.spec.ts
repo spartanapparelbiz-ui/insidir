@@ -5,7 +5,7 @@ import { dealId, footerOk, noHorizontalScroll, PRO_PAGES, PUBLIC_PAGES, shotName
 
 test("the Terminal works without signing in: delayed, top 3, sizes hidden", async ({ page }) => {
   await page.goto("/terminal");
-  const rows = page.locator(".deal");
+  const rows = page.locator("[data-deal]");
   await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeLessThanOrEqual(3);
   await expect(page.getByText("30 min delay").first()).toBeVisible();

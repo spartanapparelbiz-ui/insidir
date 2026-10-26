@@ -68,6 +68,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     minRoi: current.minRoi, minSizeUsd: current.minSizeUsd, categories: [...current.categories], venues: [...current.venues],
     showYellow: current.showYellow, showRed: current.showRed, alertPush: current.alertPush, alertEmail: current.alertEmail,
     emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi, soundOnGreen: current.soundOnGreen ?? false,
+    proView: current.proView ?? false,
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -81,7 +82,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   if (has("venues") || complete) {
     const chosen = list(input.venues).filter((v): v is Venue => (VENUES as readonly string[]).includes(v));
     const allowed = chosen.filter(v => regionVenues.includes(v));
-    if (!allowed.length) { errors.push("Pick at least one venue."); s.venues = s.venues.filter(v => regionVenues.includes(v)); }
+    if (!allowed.length) { errors.push("Pick at least one app."); s.venues = s.venues.filter(v => regionVenues.includes(v)); }
     else s.venues = allowed;
   } else {
     s.venues = s.venues.filter(v => regionVenues.includes(v));
@@ -93,15 +94,15 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
 
   if (has("minRoiPct")) {
     const v = number(input.minRoiPct, 0, MAX_ROI_PCT);
-    if (v === null) errors.push(`Min ROI must be between 0 and ${MAX_ROI_PCT}%.`); else s.minRoi = v / 100;
+    if (v === null) errors.push(`Lowest "you make" must be between 0 and ${MAX_ROI_PCT}%.`); else s.minRoi = v / 100;
   }
   if (has("alertMinRoiPct")) {
     const v = number(input.alertMinRoiPct, 0, MAX_ROI_PCT);
-    if (v === null) errors.push(`Alert min ROI must be between 0 and ${MAX_ROI_PCT}%.`); else s.alertMinRoi = v / 100;
+    if (v === null) errors.push(`The alert "you make" must be between 0 and ${MAX_ROI_PCT}%.`); else s.alertMinRoi = v / 100;
   }
   if (has("minSizeUsd")) {
     const v = number(input.minSizeUsd, 0, MAX_SIZE_USD);
-    if (v === null) errors.push("Min size must be a dollar amount of 0 or more."); else s.minSizeUsd = v;
+    if (v === null) errors.push("Smallest deal must be a dollar amount of 0 or more."); else s.minSizeUsd = v;
   }
 
   for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen"] as const) {

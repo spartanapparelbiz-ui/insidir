@@ -46,7 +46,7 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
   if (!open) return null;
 
   const toggle = (c: string) => setCats(x => (x.includes(c) ? x.filter(y => y !== c) : [...x, c]));
-  const titles = ["What do you trade?", "Set your size filters", "Turn on alerts"];
+  const titles = ["What do you bet on?", "Pick the deals you want", "Turn on alerts"];
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="ob-h">
       <div className="sheet" ref={box}>
@@ -72,9 +72,9 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
         {step === 1 ? (
           <>
             <p className="muted small">Hide deals below these numbers. You can change them any time in Settings.</p>
-            <div className="field"><label htmlFor="ob-roi">Lowest return (%)</label>
+            <div className="field"><label htmlFor="ob-roi">Lowest &ldquo;you make&rdquo; (%)</label>
               <input id="ob-roi" className="input" inputMode="decimal" value={minRoi} onChange={e => setMinRoi(e.target.value)} /></div>
-            <div className="field"><label htmlFor="ob-size">Smallest size ($)</label>
+            <div className="field"><label htmlFor="ob-size">Smallest deal ($)</label>
               <input id="ob-size" className="input" inputMode="decimal" value={minSize} onChange={e => setMinSize(e.target.value)} /></div>
           </>
         ) : null}

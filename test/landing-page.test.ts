@@ -26,16 +26,17 @@ function literals(src: string): string {
 const LANDING_FILES = [
   "app/page.tsx", ...readdirSync(join(ROOT, "components/landing")).filter(f => f !== "Faq.tsx").map(f => "components/landing/" + f),
   "components/DealRow.tsx", "components/SafetyLight.tsx", "components/SiteHeader.tsx", "components/SiteFooter.tsx",
+  ...readdirSync(join(ROOT, "components/simple")).filter(f => f.endsWith(".tsx")).map(f => "components/simple/" + f), "lib/simple.ts",
 ];
 
 describe("landing page", () => {
   it("renders its sections in the required order", () => {
     const src = read("app/page.tsx");
-    const markers = ["<Hero ", "<LiveStrip ", "<TerminalPreview ", 'data-section="receipts"', "<SafetySection ", "<Pricing ", "<Faq ", "<FinalCta ", "<Sticky "];
+    const markers = ["<Hero ", "<HowItWorks ", "<TodayDeal ", "<LiveStrip ", "<TerminalPreview ", 'data-section="receipts"', "<SafetySection ", "<Pricing ", "<Faq ", "<FinalCta ", "<Sticky "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const [file, sec] of [["Hero", "hero"], ["LiveStrip", "live"], ["TerminalPreview", "preview"], ["Safety", "safety"],
+    for (const [file, sec] of [["Hero", "hero"], ["HowItWorks", "how"], ["TodayDeal", "today"], ["LiveStrip", "live"], ["TerminalPreview", "preview"], ["Safety", "safety"],
       ["Pricing", "pricing"], ["Faq", "faq"], ["Cta", "final"]] as const) {
       expect(read(`components/landing/${file}.tsx`)).toContain(`data-section="${sec}"`);
     }
@@ -53,7 +54,7 @@ describe("landing page", () => {
       const text = literals(read(f)).split(RISK_QUESTION).join(" ");
       expect(bannedPhrases(text), f).toEqual([]);
     }
-    expect(read("components/landing/Faq.tsx")).toContain("No. It is not risk-free.");
+    expect(read("components/landing/Faq.tsx")).toContain("No, it is not risk-free.");
   });
 
   it("never says bankroll, VPN or Telegram, and never links the international Polymarket site", () => {
@@ -102,7 +103,7 @@ describe("landing page", () => {
   it("is monochrome: no colour in the styles except the three safety lights", () => {
     const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a"]);
     const SAFETY = ["--green", "--amber", "--red"];
-    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/deal-row.css", "components/app/ios.css"]) {
+    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/deal-row.css", "components/app/ios.css", "components/simple/simple.css"]) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       for (const hex of css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) expect(PALETTE.has(hex.toLowerCase()), `${f}: ${hex}`).toBe(true);
       expect(css, f).not.toMatch(/gold|ffc53d|rgba?\((?!0, 0, 0)/i);

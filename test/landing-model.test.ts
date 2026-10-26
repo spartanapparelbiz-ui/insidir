@@ -91,12 +91,12 @@ describe("pricing cards come from PLANS", () => {
 
   it("features follow the entitlements", () => {
     const free = planFeatures(PLANS.free.entitlements);
-    expect(free).toEqual(expect.arrayContaining(["Feed delayed 30 min", "Top 3 deals", "Sizes and dollar profit hidden", "Daily email digest"]));
+    expect(free).toEqual(expect.arrayContaining(["Deals 30 min late", "Top 3 deals", "How big each deal goes: hidden", "A daily email"]));
     const ins = planFeatures(PLANS.insidir.entitlements);
-    expect(ins).toEqual(expect.arrayContaining(["Full live feed", "Push alerts within 60 seconds", "Calculator"]));
+    expect(ins).toEqual(expect.arrayContaining(["Every deal, live", "Phone alerts within 60 seconds", "Exact math for your amount"]));
     const pro = planCards()[2]!.features;
-    expect(pro).toEqual(expect.arrayContaining(["Instant push alerts, in seconds", "Whale tracker", "Full receipts history"]));
-    expect(pro).not.toContain("Calculator"); // listed under "Everything in Insidir"
+    expect(pro).toEqual(expect.arrayContaining(["Phone alerts the second we find one", "Big-bet tracker", "Every past deal"]));
+    expect(pro).not.toContain("Exact math for your amount"); // listed under "Everything in Insidir"
   });
 });
 

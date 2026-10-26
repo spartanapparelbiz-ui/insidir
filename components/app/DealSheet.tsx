@@ -1,19 +1,17 @@
 "use client";
 /* The Terminal's detail sheet: tapping a row opens the deal here instead of leaving the page. It slides up from the
  * bottom on phones and opens as a right-side panel on desktop. Progressive enhancement: rows stay real links to
- * /deal/[id]. The content comes from GET /api/deal/[id] (lib/deal-view.ts, the deal page's own paywall), and its
- * numbers follow live price ticks for this deal. Escape, the close button or the backdrop close it; focus stays
- * inside while it's open and goes back to the row afterwards. */
-import { useCallback, useEffect, useRef, useState } from "react";
+ * /deal/[id]. The frame (focus, Escape, backdrop) is ./Sheet. The content comes from GET /api/deal/[id]
+ * (lib/deal-view.ts, the deal page's own paywall), and its numbers follow live price ticks for this deal. */
+import { useCallback, useEffect, useState } from "react";
 import type { Live } from "@/components/live/useLive";
 import type { DealOk, DealResponse, DealView } from "@/lib/deal-view";
 import { DealDetail } from "./DealDetail";
 import { applyTick } from "./live-rows";
+import { Sheet } from "./Sheet";
 
 const isResponse = (v: unknown): v is DealResponse =>
   typeof v === "object" && v !== null && typeof (v as DealResponse).now === "number" && typeof (v as DealResponse).view === "object";
-
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
 
 function tick(view: DealOk, t: Parameters<typeof applyTick>[1], at: number): DealOk {
   const row = applyTick(view.row, t, at);
@@ -28,9 +26,6 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
   const [error, setError] = useState(false);
   const [closed, setClosed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const panel = useRef<HTMLDivElement>(null);
-  const close = useRef(onClose);
-  close.current = onClose;
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -52,37 +47,11 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
     return () => { offTick(); offClosed(); };
   }, [id, live]);
 
-  // Focus in, trap, Escape; give focus back to whatever opened the sheet; no page scroll behind it.
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const el = panel.current;
-    el?.querySelector<HTMLElement>("[data-close]")?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); close.current(); return; }
-      if (e.key !== "Tab" || !el) return;
-      const items = [...el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(x => x.offsetParent !== null || x === document.activeElement);
-      const first = items[0], last = items[items.length - 1];
-      if (!first || !last) return;
-      if (e.shiftKey && (document.activeElement === first || !el.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && (document.activeElement === last || !el.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener("keydown", onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = overflow; opener?.focus(); };
-  }, []);
-
   const retry = useCallback(() => setAttempt(a => a + 1), []);
   const view = res?.view;
   const href = `/deal/${encodeURIComponent(id)}`;
   return (
-    <div className="dsheet">
-      <div className="dsheet__scrim" onClick={onClose} aria-hidden="true" />
-      <div className="dsheet__panel" ref={panel} role="dialog" aria-modal="true" aria-labelledby="dsheet-h">
-        <div className="dsheet__bar">
-          <a className="btn btn--ghost dsheet__full" href={href}>Open full page</a>
-          <button type="button" className="btn btn--secondary dsheet__x" onClick={onClose} data-close>Close</button>
-        </div>
+    <Sheet labelledBy="dsheet-h" href={href} onClose={onClose}>
         {res && view?.state === "ok" ? (
           <DealDetail view={view} now={res.now} unlockHref={res.unlockHref} closed={closed} titleId="dsheet-h" heading="h2" />
         ) : res && view ? (
@@ -104,7 +73,6 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
             ) : <p className="muted" role="status">Loading the deal</p>}
           </div>
         )}
-      </div>
-    </div>
+    </Sheet>
   );
 }

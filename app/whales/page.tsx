@@ -14,7 +14,7 @@ import { VENUE_NAME } from "@/lib/types";
 import "../app.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Whales", robots: { index: false } };
+export const metadata: Metadata = { title: "Big bets", robots: { index: false } };
 
 const short = (w: string): string => (w.length > 12 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w);
 
@@ -29,8 +29,8 @@ export default async function WhalesPage() {
       <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/whales" />
       <main className="wrap app">
         <Beacons where="whales" />
-        <h1 className="page__h">Whales</h1>
-        {allowed ? <p className="muted small">Large trades on the venues you can use, newest first.</p> : null}
+        <h1 className="page__h">Big bets</h1>
+        {allowed ? <p className="muted small">The biggest bets on the apps you use, newest first.</p> : null}
         {!allowed ? (
           <Locked title="Whales" text="See the latest large trades as they happen: who traded, which market, which side, how much and at what price." href={unlockHref("pro", "/whales")} plan="pro" where="whales" />
         ) : trades.length ? (
@@ -53,7 +53,7 @@ export default async function WhalesPage() {
             </table>
           </div>
         ) : (
-          <div className="empty"><p className="empty__h">No large trades yet</p><p className="muted small">Large trades show up here as the scanner records them. Leave this page open, or check back later.</p></div>
+          <div className="empty"><p className="empty__h">No big bets yet</p><p className="muted small">Big bets show up here as soon as we see them. Leave this page open, or check back later.</p></div>
         )}
       </main>
     </>

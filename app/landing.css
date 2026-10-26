@@ -5,7 +5,42 @@
 
 .lp { padding-bottom: 24px; }
 
-/* ---------- 1. the hero: headline, then the split (the centrepiece, full width), then the pitch ---------- */
+/* ---------- 1. the hero: one sentence, one animated example, one button. It fills the first screen, so everything
+ * else starts below the fold. ---------- */
+.hero.hx { min-height: calc(100svh - 76px); align-content: center; gap: 24px; padding: 16px 0 24px; }
+.hx__ex { margin: 0; display: grid; gap: 12px; }
+.hx__row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 6px; }
+.hx__side { display: grid; gap: 2px; padding: 12px 10px; border-radius: var(--r-row); background: var(--surface); min-width: 0; }
+.hx__side--in { background: var(--paper); color: var(--ink); }
+.hx__app { font-size: var(--t14); line-height: 1.2; color: var(--steel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx__side--in .hx__app { color: var(--ink); }
+.hx__dir { font: 500 var(--t14)/1.2 var(--sans); }
+.hx__num { font: 700 var(--t32)/1.1 var(--mono); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.hx__op { font: 700 var(--t22)/1 var(--mono); color: var(--steel); padding-bottom: 14px; }
+.hx__back { font-size: var(--t22); line-height: 1.2; }
+.hx__dollar { font: 700 var(--t48)/1 var(--mono); letter-spacing: -0.04em; margin-right: 6px; }
+.hx__cap { color: var(--steel); font-size: var(--t14); line-height: 1.5; }
+@media (min-width: 900px) {
+  .hero.hx { gap: 32px; padding-top: 16px; }
+  .hx__row { max-width: 760px; gap: 12px; }
+  .hx__side { padding: 20px 24px; }
+  .hx__num { font-size: var(--t72); line-height: 1; }
+  .hx__op { font-size: var(--t32); padding-bottom: 24px; }
+  .hx__back { font-size: var(--t32); }
+  .hx__dollar { font-size: var(--t72); }
+}
+/* The one orchestrated moment: the two prices land, then what you put in, then the dollar back. Plays once. */
+@media (prefers-reduced-motion: no-preference) {
+  .hx__s1, .hx__s2, .hx__s3, .hx__s4 { animation: hx-in 520ms cubic-bezier(.2, .8, .2, 1) both; }
+  .hx__s2 { animation-delay: 450ms; }
+  .hx__s3 { animation-delay: 900ms; }
+  .hx__s4 { animation: hx-in 520ms 1400ms cubic-bezier(.2, .8, .2, 1) both, hx-pop 700ms 1900ms ease-out; }
+}
+@keyframes hx-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes hx-pop { 0%, 20% { background: var(--flash); color: var(--ink); } 100% { background: transparent; color: inherit; } }
+.hx__s4 { border-radius: 6px; justify-self: start; }
+
+/* ---------- the old hero's split, now "a real one, right now" below the fold ---------- */
 .hero { display: grid; gap: 16px; padding: 24px 0 0; }
 .hero__h { font-size: var(--t32); line-height: 1.1; text-wrap: balance; }
 .hero__deal-wrap { margin: 8px 0 0; display: grid; gap: 12px; }
@@ -111,11 +146,14 @@
 .rcpt__when { grid-area: when; color: var(--steel); }
 .rcpt__title { grid-area: title; overflow-wrap: anywhere; }
 .rcpt__light { grid-area: light; }
-.rcpt__roi { grid-area: roi; color: var(--steel); text-align: right; }
+.rcpt__roi { grid-area: roi; color: var(--steel); text-align: right; white-space: nowrap; }
+/* on phones there are no column headings, so each value says what it is */
+.rcpt__pre { font-family: var(--sans); }
 .rcpt__result { grid-area: result; text-align: right; font-weight: 700; }
 .rcpt--miss .rcpt__result { color: var(--steel); font-weight: 400; }
 @media (min-width: 760px) {
   .rcpts__head, .rcpt { grid-template-columns: 72px minmax(0, 1fr) 128px 64px 160px; grid-template-areas: "when title light roi result"; }
+  .rcpt__pre { display: none; }
   .rcpts__head { display: grid; gap: 12px; padding: 0 16px; color: var(--steel); font-size: var(--t14); }
   .rcpts__head span:nth-child(4), .rcpts__head span:nth-child(5) { text-align: right; }
 }
@@ -166,13 +204,6 @@
 .lp-sticky--on { transform: none; visibility: visible; }
 @media (prefers-reduced-motion: no-preference) { .lp-sticky { transition: transform 200ms ease, visibility 200ms; } }
 
-/* activity toasts: top on phones (clear of the sticky CTA), bottom-left on desktop */
-.toasts { position: fixed; z-index: 40; left: 16px; right: 16px; top: 68px; pointer-events: none; }
-.toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-row); padding: 6px 6px 6px 14px; max-width: 420px; }
-.toast__text { font-size: var(--t14); line-height: 1.4; flex: 1; }
-.toast__x { background: none; border: 0; color: var(--steel); min-height: var(--tap); padding: 0 10px; cursor: pointer; font-size: var(--t14); }
-.toast__x:hover { color: var(--paper); }
-@media (min-width: 900px) { .toasts { top: auto; bottom: 24px; left: 24px; right: auto; width: 400px; } }
 
 /* ---------- legal pages ---------- */
 .lp-legal { display: grid; gap: 16px; max-width: 70ch; padding-top: 24px; }

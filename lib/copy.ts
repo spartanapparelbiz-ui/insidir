@@ -2,10 +2,10 @@
 
 /** On every page. */
 export const FOOTER =
-  "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
+  "This is information, not financial advice. We are not part of Polymarket or Kalshi. Prices move, and your buy may not go through. Check that these apps are open where you live.";
 
 /** How a lock is described everywhere. */
-export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";
+export const LOCK_LINE = "You keep the gap only if both buys go through and both apps pick the same winner.";
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */

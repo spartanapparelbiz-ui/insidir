@@ -2,6 +2,7 @@
 import { expect, type BrowserContext, type Page, type Response } from "@playwright/test";
 import { Pool } from "pg";
 import { APP_URL, E2E_DB } from "./env";
+import { FOOTER } from "@/lib/copy";
 import { E2E_USERS } from "./seed";
 
 export const pool = new Pool({ connectionString: E2E_DB, max: 2 });
@@ -70,9 +71,14 @@ export async function noHorizontalScroll(page: Page): Promise<void> {
 
 export async function footerOk(page: Page): Promise<void> {
   const footer = page.locator("footer").last();
-  await expect(footer).toContainText("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.");
+  await expect(footer).toContainText(FOOTER);
   await expect(footer.locator('a[href="/privacy"]')).toHaveCount(1);
   await expect(footer.locator('a[href="/terms"]')).toHaveCount(1);
+}
+
+/** Switches the signed-in user (or visitor) to the Pro or Simple view, the way the top bar's toggle does. */
+export async function setView(page: Page, view: "simple" | "pro"): Promise<void> {
+  await page.request.post(`${APP_URL}/api/view`, { form: { view, next: "/terminal" }, maxRedirects: 0 });
 }
 
 export const shotName = (name: string, page: Page): string => `qa/screenshots/${name}-${page.viewportSize()!.width}.png`;

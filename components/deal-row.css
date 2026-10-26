@@ -8,8 +8,8 @@
 .deal.tr-row {
   position: relative; display: grid; align-items: baseline; gap: 4px 12px; padding: 12px 14px;
   border-radius: var(--r-row); background: var(--surface); color: var(--paper); font-size: var(--t14); line-height: 20px;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  grid-template-areas: "title title title profit" "play play play day" "light size age age";
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title profit" "play play" "light day" "size age";
 }
 .deal.tr-row:hover { background: var(--line); }
 .tr-row > p { margin: 0; min-width: 0; }
@@ -41,9 +41,9 @@
 .tr-unlock:hover { box-shadow: inset 0 0 0 1px var(--paper); }
 
 /* free (delayed) rows: the profit bar and Unlock on the right, size and per day left out on phones */
-.deal.tr-row--locked { grid-template-areas: "title title title profit" "play play play unlock" "light age age age"; align-items: center; }
-.tr-row--locked .tr-size, .tr-row--locked .tr-day { display: none; }
-.tr-row--locked .tr-age { justify-self: end; }
+.deal.tr-row--locked { grid-template-areas: "title profit" "play play" "light day" "age unlock"; align-items: center; }
+.tr-row--locked .tr-size { display: none; }
+.tr-row--locked .tr-age { justify-self: start; text-align: left; }
 /* Delayed rows are never live (they say "30 min delay"), but their safety light still means what it says. */
 .deal--stale.tr-row--locked { filter: none; }
 

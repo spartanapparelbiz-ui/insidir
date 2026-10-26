@@ -1,0 +1,94 @@
+/* The Simple view (the default): deal cards that read like sentences, the "Show me how" walkthrough, and the
+ * 30-second "How it works". Tokens from app/globals.css only; monochrome, the safety dot is the only colour.
+ * Big, plain type: 17px body, 22px titles on phones; money in bold mono. Tap targets 44px+. */
+
+/* ---------- the deal card ---------- */
+.sd-list { display: grid; gap: 8px; }
+@media (min-width: 900px) { .sd-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+.sd { display: grid; gap: 10px; align-content: start; padding: var(--pad); border-radius: var(--r-row); background: var(--surface); color: var(--paper); }
+.sd__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sd__title { font: 600 var(--t22)/1.25 var(--sans); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.sd__top .tag { background: var(--ink); flex: none; }
+.sd__buy { font-size: var(--t17); line-height: 1.45; }
+.sd__math { font-size: var(--t17); line-height: 1.6; color: var(--paper); }
+.sd__math b { font-weight: 700; }
+.sd__keep { font-size: var(--t22); line-height: 1; }
+/* the facts: one per line, so nothing wraps mid-fact */
+.sd__facts { display: grid; justify-items: start; gap: 2px; color: var(--steel); font-size: var(--t17); line-height: 1.6; }
+.sd__facts .light { font-size: var(--t17); font-weight: 500; }
+.sd__fact { color: var(--steel); }
+.sd__fact b { color: var(--paper); }
+a.sd__rules { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--paper); }
+.sd__unlock { color: var(--paper); white-space: nowrap; }
+.sd__unlock .tr-lock { margin-right: 4px; vertical-align: -3px; }
+.nw { white-space: nowrap; }
+.sd__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+.sd__foot .btn { min-width: 160px; }
+.sd__age { color: var(--steel); font-size: var(--t14); }
+/* not re-checked by a recent scan, or just closed: Dim, never shown as live */
+.sd--stale .sd__title, .sd--stale .sd__buy, .sd--stale .sd__math, .sd--stale .sd__math b { color: var(--dim); }
+@keyframes sd-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes sd-hi { 0%, 12% { background: var(--flash); } 100% { background: var(--surface); } }
+@keyframes sd-flash { 0%, 15% { background: var(--flash); color: var(--ink); } 100% { background: transparent; color: inherit; } }
+.sd--new { animation: sd-in .28s ease-out both, sd-hi .9s ease-out both; }
+.sd--tick .sd__math b { border-radius: 4px; animation: sd-flash .9s ease-out both; }
+.sd--closing { opacity: .6; transition: opacity .4s ease-out; }
+
+/* ---------- Show me how ---------- */
+.how { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.how__h { font-size: var(--t22); }
+.how__amount label { color: var(--paper); font-size: var(--t17); }
+.how__box { position: relative; max-width: 280px; }
+.how__dollar { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font: 700 var(--t22)/1 var(--mono); color: var(--steel); pointer-events: none; }
+.how__input.input { padding-left: 34px; }
+.dsheet .how__input.input, .card .how__input.input { background: var(--ink); }
+.how__status { color: var(--steel); font-size: var(--t14); min-height: 0; }
+.how__status:empty { display: none; }
+.how__steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.how__step { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; padding: var(--pad); border-radius: var(--r-row); background: var(--surface); }
+.dsheet .how__step { background: var(--ink); }
+.how__n { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--paper); color: var(--ink); font: 700 var(--t17)/1 var(--mono); }
+.how__body { display: grid; gap: 8px; justify-items: start; font-size: var(--t17); line-height: 1.5; }
+.how__body b { font-weight: 700; }
+.how__keep { font-size: var(--t22); }
+.how__sub { color: var(--steel); font-size: var(--t14); }
+.how__open { margin-top: 4px; }
+.how__note { color: var(--steel); font-size: var(--t14); line-height: 1.5; }
+.how__note a { color: var(--paper); }
+
+/* ---------- one deal, Simple view ---------- */
+.sdd .dd-h { font-size: var(--t32); }
+.sdd__buy { font-size: var(--t22); line-height: 1.35; }
+.sdd__rules { display: grid; gap: 8px; }
+.sdd__rules > summary { display: inline-flex; align-items: center; min-height: var(--tap); cursor: pointer; color: var(--paper); text-decoration: underline; text-decoration-color: var(--steel); text-underline-offset: 3px; }
+.sdd__rules[open] > summary { margin-bottom: 8px; }
+.sdd__rules .rule + .rule { margin-top: 8px; }
+
+/* ---------- How it works: three panels ---------- */
+.ex { display: grid; gap: 16px; }
+.ex__h { font-size: var(--t32); line-height: 1.15; }
+.ex__panels { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ex__panel { display: grid; gap: 12px; align-content: start; padding: var(--pad); border-radius: var(--r-row); background: var(--surface); }
+.ex__n { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--paper); color: var(--ink); font: 700 var(--t17)/1 var(--mono); }
+.ex__line { font: 600 var(--t22)/1.25 var(--sans); }
+.ex__pic { display: grid; gap: 6px; }
+.ex__chip { display: block; padding: 10px 12px; border-radius: var(--r-row); background: var(--ink); font-size: var(--t17); }
+.ex__chip > .dim { margin-right: 8px; }
+.ex__sum { font-size: var(--t17); }
+.ex__sum b { font-weight: 700; }
+.ex__small { color: var(--steel); font-size: var(--t14); }
+@media (min-width: 900px) {
+  .ex__h { font-size: var(--t48); line-height: 1.05; }
+  .ex__panels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+}
+
+/* the Terminal's first visit: How it works above the deals, with Got it */
+.first { display: grid; gap: 16px; justify-items: start; padding-bottom: 8px; }
+.first .ex { width: 100%; }
+.first .ex__h { font-size: var(--t22); }
+.first__ok { min-width: 160px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sd--new, .sd--tick .sd__math b { animation: none; }
+  .sd--closing { transition: none; }
+}

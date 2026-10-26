@@ -28,9 +28,9 @@ const SINCE = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", 
 
 function tapeText(e: LiveEvent, now: number): string | null {
   switch (e.type) {
-    case "deal_found": return `New deal: ${e.data.row.title}, ${pct(e.data.row.roi)} after fees, ${agoOrNow(e.data.row.foundAt, now)}`;
-    case "deal_closed": return e.data.title ? `Closed: ${e.data.title}, lasted ${span(e.data.lifeMs)}` : `Closed: a deal only members saw, lasted ${span(e.data.lifeMs)}`;
-    case "whale": return `Big bet: ${usd(e.data.cash)} on ${e.data.outcome}, ${e.data.marketTitle}`;
+    case "deal_found": return `New deal: ${e.data.row.title}. You make ${pct(e.data.row.roi)} after fees. ${agoOrNow(e.data.row.foundAt, now)}`;
+    case "deal_closed": return e.data.title ? `Over: ${e.data.title}. It lasted ${span(e.data.lifeMs)}` : `Over: a deal only members saw. It lasted ${span(e.data.lifeMs)}`;
+    case "whale": return `Big bet: ${usd(e.data.cash)} on ${e.data.outcome}. ${e.data.marketTitle}`;
     default: return null;
   }
 }
@@ -79,21 +79,21 @@ export function LiveStrip({ stats, initialTape, serverNow }: { stats: StripStats
             <dt>{count.label}</dt>
             <dd className="mono"><span key={bumped} className={bumped ? "roll roll--tick" : undefined} data-testid="found-today">{count.n}</span></dd>
           </div>
-          {biggest !== null && samePeriod ? <div className="strip__num"><dt>Biggest{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(biggest)}</dd></div> : null}
-          {stats.medianRoi !== null && samePeriod ? <div className="strip__num"><dt>Median{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(stats.medianRoi)}</dd></div> : null}
-          {stats.left && samePeriod ? <div className="strip__num"><dt>Left on the table {sameWeek ? "this week" : "today"}</dt><dd className="mono profit">{usd(stats.left.total)}</dd></div> : null}
+          {biggest !== null && samePeriod ? <div className="strip__num"><dt>Best &ldquo;you make&rdquo;{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(biggest)}</dd></div> : null}
+          {stats.medianRoi !== null && samePeriod ? <div className="strip__num"><dt>Typical{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(stats.medianRoi)}</dd></div> : null}
+          {stats.left && samePeriod ? <div className="strip__num"><dt>Nobody took {sameWeek ? "this week" : "today"}</dt><dd className="mono profit">{usd(stats.left.total)}</dd></div> : null}
         </dl>
       ) : null}
       {stats.flagged ? (
         <p className="strip__flagged">
-          <span className="mono profit">{usd(stats.flagged.total)}</span> in profit flagged since {SINCE.format(new Date(stats.flagged.since))}.
-          <span className="strip__foot"> If every green deal was taken at $500, after fees. Flagged, not won: you still have to place both sides.</span>
+          <span className="mono profit">{usd(stats.flagged.total)}</span> found since {SINCE.format(new Date(stats.flagged.since))}.
+          <span className="strip__foot"> That&apos;s if you put $500 in each &ldquo;same rules: yes&rdquo; deal, after fees. Found, not won: you still have to buy both sides.</span>
         </p>
       ) : null}
       <div className="tape" role="region" aria-label="Latest events" tabIndex={0}>
         {quiet ? (
           <p className="tape__quiet">
-            {stats.medianGapMin !== null ? <>Quiet right now. Deals usually show up every <span className="mono">{Math.max(1, Math.round(stats.medianGapMin))}</span> min.</> : <>Quiet right now. New deals show up here as the scanner finds them.</>}
+            {stats.medianGapMin !== null ? <>Quiet right now. Deals usually show up every <span className="mono">{Math.max(1, Math.round(stats.medianGapMin))}</span> min.</> : <>Quiet right now. New deals show up here as soon as we find them.</>}
           </p>
         ) : null}
         <ol className="tape__list">

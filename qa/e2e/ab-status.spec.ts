@@ -33,9 +33,9 @@ test("scanner stopped: 'Live data paused, retrying', deals greyed out, nothing c
     await q("update terminal.opportunities set last_seen_at = now() - interval '5 minutes'");
     await page.reload();
     await expect(page.getByText("Live data paused, retrying").first()).toBeVisible();
-    const rows = page.locator(".deal");
+    const rows = page.locator("[data-deal]");
     await expect(rows.first()).toBeVisible();
-    expect(await rows.count()).toBe(await page.locator(".deal.deal--stale").count());
+    expect(await rows.count()).toBe(await page.locator("[data-deal].sd--stale, [data-deal].deal--stale").count());
     await page.screenshot({ path: `qa/screenshots/terminal-paused-${page.viewportSize()!.width}.png`, fullPage: true });
   } finally {
     await q("delete from terminal.worker_heartbeats where job = 'e2e:pause'");

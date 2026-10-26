@@ -17,8 +17,9 @@ const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "ut
 /** A/B tests: each visitor is assigned one variant per test, kept in a cookie for 90 days. */
 export const AB_TESTS = {
   hero: {
-    a: { headline: "Two apps. Two prices. You keep the difference.", cta: "See today's live deals" },
-    b: { headline: "Polymarket and Kalshi disagree. You collect the difference.", cta: "See today's live deals" },
+    // Paused: the owner set one sentence for every visitor. Give "b" a new headline to test again.
+    a: { headline: "When two apps price the same game differently, you can buy both sides and keep the difference.", cta: "See today's live deals" },
+    b: { headline: "When two apps price the same game differently, you can buy both sides and keep the difference.", cta: "See today's live deals" },
   },
 } as const;
 export type HeroVariant = keyof typeof AB_TESTS.hero;

@@ -1,8 +1,8 @@
-/* 3. The Terminal, as the real component: up to 5 rows. First the free feed's rows (30 minutes late, sizes and dollar
- * profit never sent), then the live deals a free visitor can't see yet, which are counted and timed but show nothing
- * else. Every row has one Unlock. Hidden when there's nothing real to show. */
+/* Today's deals, as the real Simple-view cards: up to 5. First the free feed's deals (30 minutes late, sizes never
+ * sent), then the live deals a free visitor can't see yet, which are counted and timed but show nothing else.
+ * Hidden when there's nothing real to show. */
 import Link from "next/link";
-import { DealRow } from "@/components/DealRow";
+import { DealCard } from "@/components/simple/DealCard";
 import { Ago } from "./Ago";
 import type { FeedRow } from "@/lib/feed";
 
@@ -16,14 +16,14 @@ export function TerminalPreview({ rows, hidden, now, unlockHref, cta }: {
   if (!shown.length && !extra.length) return null;
   return (
     <section className="sec" data-section="preview" aria-labelledby="preview-h">
-      <h2 id="preview-h" className="sec__h">The Terminal</h2>
-      <p className="sec__p">Real rows from the free feed, shown 30 minutes late. Members see every deal the moment it&apos;s found, with sizes and profit in dollars.</p>
-      <div className="deals lp-preview">
-        {shown.map(r => <DealRow key={r.id} row={r} now={now} unlockHref={unlockHref} />)}
+      <h2 id="preview-h" className="sec__h">Today&apos;s deals</h2>
+      <p className="sec__p">Real deals, shown 30 minutes late. Members see every deal the moment we find it.</p>
+      <div className="sd-list lp-preview">
+        {shown.map(r => <DealCard key={r.id} row={r} now={now} unlockHref={unlockHref} />)}
         {extra.map((h, i) => (
           <Link key={`live-${h.foundAt}-${i}`} className="deal deal--hidden" href={unlockHref} data-unlock="preview-live">
             <span className="deal__title">A live deal members can see now</span>
-            <span className="deal__play">Found <Ago at={h.foundAt} now={now} />. You&apos;d see it 30 minutes after that.</span>
+            <span className="deal__play">Found <Ago at={h.foundAt} now={now} />. You&apos;d see it 30 minutes later.</span>
             <span className="deal__unlock">Unlock</span>
           </Link>
         ))}

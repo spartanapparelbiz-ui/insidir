@@ -22,7 +22,7 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   // Value before signup: the feed opens with no account.
   await page.getByRole("link", { name: "See today's live deals" }).first().click();
   await expect(page).toHaveURL(/\/terminal/);
-  await expect(page.locator(".deal").first()).toBeVisible();
+  await expect(page.locator("[data-deal]").first()).toBeVisible();
 
   // Tap 1: Unlock. Tap 2: pay on Whop.
   await page.locator("[data-unlock]").first().click();

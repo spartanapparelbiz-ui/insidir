@@ -52,6 +52,8 @@ export interface FeedRow {
   sets: number | null;
   profitPerDay: number | null;
   gapCents: number | null;
+  /** What one complete set pays back however it settles (1 for a two-sided lock). Not a size: free rows get it too. */
+  payoutPerSet: number;
   /** True when the viewer sees a delayed, size-less row. */
   locked: boolean;
   /** When a scan last re-confirmed the deal. */
@@ -68,7 +70,8 @@ function toRow(o: Opportunity, foundAt: number, locked: boolean, lastSeenAt: num
     legs: o.legs.map(l => ({ venue: l.venue, venueName: VENUE_NAME[l.venue], side: l.side, label: l.label, priceCents: Math.round(l.avgPrice * 1000) / 10, url: l.url })),
     roi: o.roi, safety: o.safety, safetyNotes: o.safetyNotes, categories: o.categories, foundAt, closeTime: o.closeTime, days: o.days,
     profit: locked ? null : o.profit, cost: locked ? null : o.cost, fees: locked ? null : o.fees, sets: locked ? null : o.sets,
-    profitPerDay: locked ? null : o.profitPerDay, gapCents: o.gapCents, locked, lastSeenAt, stale,
+    profitPerDay: locked ? null : o.profitPerDay, gapCents: o.gapCents,
+    payoutPerSet: o.sets > 0 ? o.payout / o.sets : 1, locked, lastSeenAt, stale,
   };
 }
 

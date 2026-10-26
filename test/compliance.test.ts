@@ -34,8 +34,20 @@ describe("copy compliance", () => {
     }
   });
   it("the footer disclaimer is on every page", () => {
-    expect(FOOTER).toBe("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.");
+    expect(FOOTER).toBe("This is information, not financial advice. We are not part of Polymarket or Kalshi. Prices move, and your buy may not go through. Check that these apps are open where you live.");
     expect(readFileSync(join(ROOT, "app", "layout.tsx"), "utf8")).toContain("<SiteFooter />");
     expect(readFileSync(join(ROOT, "components", "SiteFooter.tsx"), "utf8")).toContain("{FOOTER}");
+  });
+});
+
+describe("offers", () => {
+  it("are exactly Free, Insidir ($1 for 3 days, then $39/mo) and Pro ($99/mo)", async () => {
+    const { PLANS, offerText, startText } = await import("@/lib/plans");
+    expect(Object.keys(PLANS)).toEqual(["free", "insidir", "pro"]);
+    expect([offerText("free"), offerText("insidir"), offerText("pro")]).toEqual(["Free", "$1 for 3 days, then $39/mo", "$99/mo"]);
+    expect([startText("insidir"), startText("pro")]).toEqual(["Try 3 days for $1", "Start Pro for $99/mo"]);
+  });
+  it("no Founding plan, spots-left counter or countdown anywhere in the code", () => {
+    for (const p of SOURCES) expect(readFileSync(p, "utf8"), p).not.toMatch(/founding|founder|spots?[ _-]?left|countdown/i);
   });
 });
