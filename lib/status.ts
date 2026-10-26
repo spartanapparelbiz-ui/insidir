@@ -11,6 +11,21 @@ export const FRESH_MS = 60_000;
 /** A venue whose last good scan is older than this is "paused". */
 export const STALE_MS = 2 * 60_000;
 
+/** The safety switch: once live data has been paused (no good scan for STALE_MS) for this long, every buy and checkout
+ *  button is hidden and checkout refuses, so no one pays while the feed is broken. */
+export const CHECKOUT_CLOSE_AFTER_PAUSED_MS = 10 * 60_000;
+
+/** Checkout is open while the newest good scan is at most STALE_MS + 10 minutes old. No scan at all: closed. */
+export const checkoutOpenAt = (lastScanAt: number | null, now: number): boolean =>
+  lastScanAt !== null && now - lastScanAt <= STALE_MS + CHECKOUT_CLOSE_AFTER_PAUSED_MS;
+
+export const CHECKOUT_CLOSED_TEXT = "Checkout opens when live data is back";
+
+/** Whether anyone may start a checkout right now (reads the scan heartbeats). */
+export async function checkoutOpen(now = Date.now()): Promise<boolean> {
+  return checkoutOpenAt((await dataStatus(now)).lastScanAt, now);
+}
+
 export interface DataStatus { live: boolean; paused: Venue[]; lastScanAt: number | null }
 
 export function statusFrom(beats: ReadonlyArray<{ job: string; lastRunAt: number; ok: boolean }>, now: number): DataStatus {
@@ -44,6 +59,8 @@ export interface Health {
   /** "not_configured": no DATABASE_URL; "unreachable": the query failed (database down, or migrations not applied). */
   database: "ok" | "not_configured" | "unreachable";
   live: boolean;
+  /** The safety switch (checkoutOpenAt): false hides every buy button and makes checkout refuse. */
+  checkoutOpen: boolean;
   /** The latest scan heartbeat per exchange. All null = the worker has never written one to this database. */
   venues: Record<Venue, VenueHealth>;
   /** The worker's other jobs (sweep, alerts, whales, settle…): when each last ran and whether it failed. */
@@ -64,7 +81,7 @@ export function healthFrom(rows: ReadonlyArray<{ job: string; lastRunAt: number;
   }
   const jobs: Health["jobs"] = {};
   for (const r of rows) if (!r.job.startsWith("scan:") && !r.job.startsWith("e2e:")) jobs[r.job] = { lastRunAt: new Date(r.lastRunAt).toISOString(), ok: r.ok, error: clip(r.error) };
-  return { live: status.live, venues, jobs };
+  return { live: status.live, checkoutOpen: checkoutOpenAt(status.lastScanAt, now), venues, jobs };
 }
 
 export async function health(now = Date.now()): Promise<Health> {

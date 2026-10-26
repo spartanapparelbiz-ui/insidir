@@ -156,3 +156,7 @@ button { font: inherit; color: inherit; }
 .r { text-align: right !important; }
 .scroll-x { overflow-x: auto; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Safety switch (app/layout.tsx): no buy or checkout button while live data has been paused for over 10 minutes. */
+html[data-checkout="closed"] [data-unlock], html[data-checkout="closed"] [data-checkout] { display: none !important; }
+.checkout-closed { margin: 0; padding: 10px 16px; text-align: center; background: var(--surface); color: var(--paper); font-size: var(--t14); }

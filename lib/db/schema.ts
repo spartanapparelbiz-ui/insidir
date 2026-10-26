@@ -37,16 +37,18 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export const users = terminal.table("users", {
-  /** Whop user id (user_...). */
+  /** Our own user id: what Whop checkout metadata carries as `customer_id`. Accounts made before the SDK
+   *  migration reuse their Whop user id here; new ones get a random UUID. */
   id: text("id").primaryKey(),
+  /** Whop user id (user_...), from Sign in with Whop. Every access check uses it. */
+  whopUserId: text("whop_user_id").notNull().unique(),
+  whopUsername: text("whop_username"),
   email: text("email"),
   name: text("name"),
-  username: text("username"),
   region: text("region").$type<Region>(),
+  /** The last plan users.checkAccess answered (lib/whop/access.ts). A copy for stats and the worker's first pass;
+   *  every paid request and every paid alert asks Whop again. */
   plan: text("plan").$type<Plan>().notNull().default("free"),
-  membershipId: text("membership_id"),
-  manageUrl: text("manage_url"),
-  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   planCheckedAt: timestamp("plan_checked_at", { withTimezone: true }),
   settings: jsonb("settings").$type<UserSettings>().notNull().default(DEFAULT_SETTINGS),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
@@ -58,7 +60,7 @@ export const users = terminal.table("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Our own sessions. Whop tokens are never stored: after login the membership is read with the account API key. */
+/** Our own sessions. Whop tokens are never stored: access is checked with the account API key. */
 export const sessions = terminal.table("sessions", {
   /** SHA-256 of the cookie token. */
   tokenHash: text("token_hash").primaryKey(),
@@ -165,12 +167,20 @@ export const events = terminal.table("events", {
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("events_name_at_idx").on(t.name, t.at), index("events_visitor_idx").on(t.visitorId)]);
 
-/** Whop webhook ids already processed (deliveries are at-least-once). */
+/** Every verified Whop webhook, keyed by its webhook-id (deliveries are at-least-once; a repeat id is ignored).
+ *  `failed` rows are processed again when Whop retries them. */
 export const webhookEvents = terminal.table("webhook_events", {
   id: text("id").primaryKey(),
   type: text("type").notNull(),
+  /** The resource the event is about (mem_, pay_, rfnd_, dspt_…). */
+  ref: text("ref"),
+  status: text("status").$type<"processing" | "processed" | "ignored" | "failed">().notNull().default("processed"),
+  /** What was done, or why it failed. */
+  note: text("note"),
+  payload: jsonb("payload").$type<Record<string, unknown>>(),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
-});
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+}, t => [index("webhook_events_type_ref_idx").on(t.type, t.ref)]);
 
 export const llmUsage = terminal.table("llm_usage", {
   month: text("month").primaryKey(),

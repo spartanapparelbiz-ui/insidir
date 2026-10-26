@@ -22,6 +22,13 @@
       "when": 1792984269606,
       "tag": "0002_near_misses",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792991493107,
+      "tag": "0003_whop_sdk",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 /* An alert was opened: marks it, records the first "alert_opened" funnel event, and goes to the deal. */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/whop/config";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";

@@ -185,3 +185,8 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .adm-select { width: auto; }
 .adm-note { flex: 1 1 200px; width: auto; }
 @media (min-width: 700px) { .adm-pair .rules--two { grid-template-columns: 1fr 1fr; } }
+
+/* Whop: post-checkout welcome, referral link */
+.banner--ok::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.banner--ok { font-weight: 700; }
+.refer__link { overflow-wrap: anywhere; user-select: all; padding: 10px 12px; border-radius: var(--r-row); background: var(--surface); }

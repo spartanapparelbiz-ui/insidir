@@ -182,3 +182,10 @@
 .lp-legal p, .lp-legal li { color: var(--steel); }
 .lp-legal ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 @media (min-width: 900px) { .lp-legal h1 { font-size: var(--t48); } }
+
+/* /pricing?plan=…: the embedded Whop checkout and its server-side fallback */
+.checkout { display: grid; gap: 12px; padding: 20px; margin-bottom: 24px; }
+.whopcheckout { display: grid; gap: 12px; min-height: 320px; }
+.checkout-fallback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.checkout-fallback--quiet { justify-content: center; }
+.checkout .banner--err { border-radius: var(--r-row); background: var(--surface); padding: 10px 12px; font-size: var(--t14); }

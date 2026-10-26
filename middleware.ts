@@ -1,4 +1,5 @@
-/* Sets the random visitor id, keeps first-touch UTM tags, and assigns the A/B variant. Cookies only; no tracking
+/* Sets the random visitor id, keeps first-touch UTM tags, remembers a Whop affiliate's `?a=<username>` for 30 days
+ * (passed to checkout as the affiliate code), and assigns the A/B variant. Cookies only; no tracking
  * beyond our own first-party events. New cookies are also passed on the request, so the very first render already
  * sees its variant (otherwise the page would render "a" while the cookie says "b"). */
 import { NextResponse, type NextRequest } from "next/server";
@@ -17,6 +18,11 @@ export function middleware(req: NextRequest) {
   }
   const utm: Record<string, string> = {};
   for (const k of UTM_KEYS) { const v = req.nextUrl.searchParams.get(k); if (v) utm[k] = v.slice(0, 100); }
+  // Latest referral wins, the way Whop's own `?a=` links behave. Usernames only: nothing else is stored.
+  const aff = req.nextUrl.searchParams.get("a");
+  if (aff && /^[A-Za-z0-9_.-]{1,64}$/.test(aff) && req.cookies.get("insidir_aff")?.value !== aff) {
+    set.push({ name: "insidir_aff", value: aff, maxAge: 30 * 86_400, httpOnly: true });
+  }
   if (Object.keys(utm).length && !req.cookies.get("insidir_utm")) {
     set.push({ name: "insidir_utm", value: JSON.stringify(utm), maxAge: 90 * 86_400, httpOnly: true });
   }

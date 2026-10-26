@@ -1,5 +1,5 @@
 /* Admin sign-in: ADMIN_TOKEN + a current TOTP code → an httpOnly cookie (lib/admin.ts). Rate limited per client. */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/whop/config";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, adminLogin, tooManyAttempts } from "@/lib/admin";
 

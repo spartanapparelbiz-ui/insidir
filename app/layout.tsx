@@ -5,6 +5,7 @@ import { RegisterSW } from "@/components/app/RegisterSW";
 import { FontLoader } from "@/components/FontLoader";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
+import { CHECKOUT_CLOSED_TEXT, checkoutOpen } from "@/lib/status";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -30,14 +31,19 @@ const mono = localFont({
 
 export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+/** The safety switch is decided once per request here: when live data has been paused for over 10 minutes the page is
+ *  marked data-checkout="closed", which hides every buy and checkout button (globals.css), and says why. Checkout
+ *  itself refuses on the server too (/pricing, /api/checkout). */
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const open = await checkoutOpen().catch(() => false);
   return (
-    <html lang="en" className={mono.variable}>
+    <html lang="en" className={mono.variable} data-checkout={open ? "open" : "closed"}>
       <head>
         <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
         <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="" />
       </head>
       <body>
+        {open ? null : <p className="checkout-closed" role="status" data-testid="checkout-closed">{CHECKOUT_CLOSED_TEXT}.</p>}
         {children}
         <SiteFooter />
         <RegisterSW />

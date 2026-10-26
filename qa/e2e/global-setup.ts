@@ -6,7 +6,7 @@ import { closeDb } from "@/lib/db";
 import { APP_URL, E2E_DB, OUT, PUSH_PORT, WHOP, WHOP_PORT } from "./env";
 import { Pool } from "pg";
 import { startMockWhop } from "./mock-whop";
-import { seed } from "./seed";
+import { E2E_USERS, seed } from "./seed";
 
 export default async function globalSetup() {
   mkdirSync(OUT, { recursive: true });
@@ -14,6 +14,10 @@ export default async function globalSetup() {
   await seed();
   await closeDb();
   const whop = await startMockWhop({ port: WHOP_PORT, appUrl: APP_URL, webhookSecret: WHOP.secret, plans: WHOP.plans });
+  for (const u of Object.values(E2E_USERS)) {
+    if (u.plan === "free") continue;
+    await fetch(`http://localhost:${WHOP_PORT}/__membership`, { method: "POST", body: JSON.stringify({ user_id: u.id, product_id: WHOP.products[u.plan] }) });
+  }
   // A stand-in push service (what FCM / Apple would be): records each delivery the worker makes.
   const pushes: Array<{ path: string; headers: Record<string, unknown>; body: string; at: number }> = [];
   const pushFile = join(OUT, "pushes.json");

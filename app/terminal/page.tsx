@@ -23,9 +23,15 @@ import "../app.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Terminal", description: "Live prediction-market deals found by math: prices on Polymarket and Kalshi that lock in a profit after fees if both sides fill and both markets settle the same way." };
 
-export default async function TerminalPage() {
+/** After checkout Whop sends the buyer to /terminal?welcome=1. Access is asked of Whop past the cache, and while the
+ *  payment is still confirming the page reloads itself a few times (welcome=2, 3, …). */
+const WELCOME_TRIES = 10;
+
+export default async function TerminalPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
-  const viewer = await getViewer();
+  const q = await searchParams;
+  const welcome = typeof q.welcome === "string" ? Math.max(1, Math.min(WELCOME_TRIES, Number(q.welcome) || 1)) : 0;
+  const viewer = await getViewer(welcome > 0);
   const jar = await cookies();
   const ent = entitlements(viewer.plan);
   const [opps, status, stats] = await Promise.all([storedOpps(), dataStatus(now), liveStats(viewer.region, ent.feedDelayMinutes * 60_000, now)]);
@@ -45,8 +51,15 @@ export default async function TerminalPage() {
   return (
     <>
       <SiteHeader plan={viewer.plan} signedIn={Boolean(user)} current="/terminal" />
+      {welcome && !paid && welcome < WELCOME_TRIES ? <meta httpEquiv="refresh" content={`3;url=/terminal?welcome=${welcome + 1}`} /> : null}
       <main className="wrap wrap--wide app term">
         <Beacons where="terminal" />
+        {welcome && paid ? <p className="banner banner--ok" role="status" data-testid="welcome">You&apos;re in. Here&apos;s what&apos;s live right now.</p> : null}
+        {welcome && !paid && user ? (
+          <p className="banner" role="status" data-testid="confirming">
+            {welcome < WELCOME_TRIES ? "Confirming your payment with Whop…" : "Whop is still confirming your payment. Refresh in a minute; you won't be charged twice."}
+          </p>
+        ) : null}
         {!user && !viewer.region ? (
           <form className="lineform" method="post" action="/api/region">
             <input type="hidden" name="next" value="/terminal" />

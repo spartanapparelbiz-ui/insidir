@@ -14,10 +14,11 @@ export interface Viewer {
 
 const readRegion = (v: string | undefined): Region | null => (v === "us" || v === "non_us" ? v : null);
 
-export const getViewer = cache(async (): Promise<Viewer> => {
+/** `freshAccess` asks Whop past the 60-second cache: the Terminal does it once right after checkout. */
+export const getViewer = cache(async (freshAccess = false): Promise<Viewer> => {
   const jar = await cookies();
   let user: SessionUser | null = null;
-  try { user = await userForToken(jar.get(SESSION_COOKIE)?.value); } catch { user = null; }
+  try { user = await userForToken(jar.get(SESSION_COOKIE)?.value, { freshAccess }); } catch { user = null; }
   return { user, plan: user?.plan ?? "free", region: user?.region ?? readRegion(jar.get(REGION_COOKIE)?.value) };
 });
 

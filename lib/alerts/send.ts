@@ -3,6 +3,7 @@
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…)   web push
  *   RESEND_API_KEY, EMAIL_FROM ("Insidir <alerts@insidir.com>")                 email
  *   EMAIL_UNSUBSCRIBE_SECRET                                                     signs one-click unsubscribe links
+ *   EMAIL_API_URL                                                                test only: a local inbox (qa/e2e)
  *
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -49,18 +50,19 @@ export function verifyUnsubscribe(userId: string, sig: string, secret = unsubSec
 export const unsubscribeUrl = (appUrl: string, userId: string): string =>
   `${appUrl}/api/email/unsubscribe?u=${encodeURIComponent(userId)}&s=${unsubscribeSig(userId)}`;
 
-export interface Email { to: string; subject: string; text: string; html: string; unsubscribe: string }
+/** `unsubscribe` is for alerts and summaries; billing notices (lib/whop/webhooks.ts) are transactional and have none. */
+export interface Email { to: string; subject: string; text: string; html: string; unsubscribe?: string }
 
-/** Sends through Resend's API. Every message carries one-click unsubscribe headers (RFC 8058). */
+/** Sends through Resend's API. Alerts and summaries carry one-click unsubscribe headers (RFC 8058). */
 export async function sendEmail(e: Email): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM;
   if (!key || !from) return "failed";
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch(process.env.EMAIL_API_URL || "https://api.resend.com/emails", {
       method: "POST", signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: [e.to], subject: e.subject, text: e.text, html: e.html,
-        headers: { "List-Unsubscribe": `<${e.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
+        ...(e.unsubscribe ? { headers: { "List-Unsubscribe": `<${e.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}) }),
     });
     if (res.status === 422) return "gone"; // invalid recipient
     return res.ok ? "sent" : "failed";
@@ -72,13 +74,15 @@ const esc = (s: string): string => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "
 export const EMAIL_FOOTER = "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
 
 /** A plain, fast email: black on white for every mail client, monospace, no images. */
-export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {
+export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe?: string; footer?: string }): { text: string; html: string } {
+  const footer = opts.footer ?? EMAIL_FOOTER;
   const text = [opts.heading, "", ...opts.lines.map(l => (l.url ? `${l.text}\n${l.url}` : l.text)), "", ...(opts.cta ? [`${opts.cta.label}: ${opts.cta.url}`, ""] : []),
-    EMAIL_FOOTER, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
+    footer, ...(opts.unsubscribe ? [`Unsubscribe: ${opts.unsubscribe}`] : [])].join("\n");
   const html = `<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.5;color:#111;max-width:560px">` +
     `<p style="font-size:18px;font-weight:700;margin:0 0 16px">${esc(opts.heading)}</p>` +
     opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#111">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
     (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
-    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a></p></div>`;
+    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(footer)}` +
+    (opts.unsubscribe ? `<br><a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a>` : "") + `</p></div>`;
   return { text, html };
 }

@@ -19,6 +19,9 @@
     "check:endpoints": "tsx scripts/check-endpoints.ts"
   },
   "dependencies": {
+    "@whop/elements": "1.9.0",
+    "@whop/elements-react": "1.9.0",
+    "@whop/sdk": "2.6.0",
     "drizzle-orm": "^0.44.7",
     "next": "^15.5.28",
     "pg": "^8.23.1",

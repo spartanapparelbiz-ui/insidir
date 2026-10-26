@@ -25,13 +25,13 @@ import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
 import { Toasts } from "@/components/landing/Toasts";
 import {
-  checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
+  DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
   RECEIPTS_PUBLIC_DAYS, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, visibleReceipts,
 } from "@/components/landing/model";
+import { checkoutPath } from "@/components/app/links";
 import { AB_COOKIE, AB_TESTS, heroVariant, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { feedViewer, getViewer } from "@/lib/auth/viewer";
-import { checkoutUrl } from "@/lib/auth/whop";
 import { feedFor } from "@/lib/feed";
 import { closedDeals, nearMisses } from "@/lib/hero";
 import { latestTick, recentFor } from "@/lib/live/queries";
@@ -81,8 +81,8 @@ export default async function Landing() {
   const view = heroView(split, split ? null : lastDeal(closed, viewer.region, delayMs, now), nearestMarket(near, viewer.region));
   const refund = greenPerDay(mine, REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
   const recent = landingReceipts(log, LANDING_RECEIPTS);
-  const insidir = checkoutHref(checkoutUrl("insidir"));
-  const pro = checkoutHref(checkoutUrl("pro"));
+  const insidir = checkoutPath("insidir");
+  const pro = checkoutPath("pro");
 
   return (
     <>

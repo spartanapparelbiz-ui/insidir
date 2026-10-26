@@ -1,6 +1,6 @@
 /* Admin match overrides (terminal.match_overrides): force a match (optionally inverted), block a pair, set its
  * safety light, or clear the override. The matcher reads these on its next run. */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/whop/config";
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin";
