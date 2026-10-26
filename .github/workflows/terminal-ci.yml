@@ -5,7 +5,8 @@ on:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.58 ships browsers for Ubuntu 24.04, not 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     services:
@@ -17,7 +18,7 @@ jobs:
           POSTGRES_DB: terminal_e2e
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U insidir" --health-interval 5s --health-timeout 5s --health-retries 10
+          --health-cmd "pg_isready -U insidir -d terminal_e2e" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       E2E_DATABASE_URL: postgresql://insidir:insidir@localhost:5432/terminal_e2e
     steps:
