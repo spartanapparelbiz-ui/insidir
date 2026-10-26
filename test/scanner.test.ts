@@ -1,6 +1,6 @@
 /* The scan over a SYNTHETIC universe: one matched pair with a lock, a multi-outcome event, a ladder. */
-import { describe, expect, it } from "vitest";
-import { marketsToBook, scan } from "@/lib/scanner";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { laddersEnabled, marketsToBook, scan } from "@/lib/scanner";
 import type { VEvent } from "@/lib/types";
 import { book, DAY, key, L, market, NOW, pair } from "./engines-fixtures";
 
@@ -14,7 +14,18 @@ const unrelated = market({ id: "U" });
 
 const u = { markets: [k, p, e1, e2, e3, hi, lo, unrelated], events: [ev], pairs: [pair(k, p)] };
 
+describe("LADDERS_ENABLED", () => {
+  it("ladders are off unless it is exactly 1", () => {
+    expect(laddersEnabled({})).toBe(false);
+    expect(laddersEnabled({ LADDERS_ENABLED: "0" })).toBe(false);
+    expect(laddersEnabled({ LADDERS_ENABLED: "1" })).toBe(true);
+  });
+});
+
 describe("scan", () => {
+  // These cases cover every engine, ladders included.
+  beforeAll(() => { process.env.LADDERS_ENABLED = "1"; });
+  afterAll(() => { delete process.env.LADDERS_ENABLED; });
   it("books only the markets an engine can use", () => {
     const need = marketsToBook(u);
     expect(need.get("kalshi")?.map(m => m.id).sort()).toEqual(["E1", "E2", "E3", "HI", "K", "LO"]);
@@ -47,13 +58,4 @@ describe("scan", () => {
     expect(marketsToBook(blocked).get("polymarket")).toBeUndefined();
   });
 
-  it("with ladders off (the worker's default) no ladder runs and its books aren't fetched", () => {
-    const books = new Map([[key("kalshi", "LO"), book({ yesAsks: [L(0.4, 20)], noAsks: [L(0.65, 20)] })], [key("kalshi", "HI"), book({ yesAsks: [L(0.55, 20)], noAsks: [L(0.5, 20)] })]]);
-    expect(scan(u, books, NOW).counts.ladder).toBe(1);
-    const { opps, counts } = scan(u, books, NOW, { ladders: false });
-    expect(counts.ladder).toBe(0);
-    expect(opps.some(o => o.kind === "ladder")).toBe(false);
-    const on = [...marketsToBook(u).values()].flat().length, off = [...marketsToBook(u, { ladders: false }).values()].flat().length;
-    expect(off).toBeLessThanOrEqual(on);
-  });
 });

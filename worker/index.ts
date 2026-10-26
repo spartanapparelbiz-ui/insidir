@@ -10,8 +10,8 @@
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
+import { activityFloorFromEnv, isActiveEnough } from "@/lib/exchanges/venue";
 import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
-import { activityFloorFromEnv, appendAll, isActiveEnough } from "@/lib/exchanges/venue";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -21,7 +21,7 @@ import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
 import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
-import { marketsToBook, scan, type Universe, ladderEngineOn } from "@/lib/scanner";
+import { marketsToBook, scan, type Universe } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { pct, usd } from "@/lib/format";
 import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
@@ -42,6 +42,8 @@ export const DIGEST_CHECK_MS = 10 * 60_000;
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 /** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 300);
+/** push(...xs) overflows the stack past ~100K items (Kalshi lists 130K+ markets), so append in a loop. */
+const append = <T>(to: T[], xs: readonly T[]) => { for (const x of xs) to.push(x); };
 
 interface State { universe: Universe; lastFull: number; hot: Set<string>; lastTickAt: Map<string, number> }
 
@@ -54,7 +56,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
       const [all, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
       const floor = activityFloorFromEnv(process.env);
       const m = all.filter(x => isActiveEnough(x, floor));
-      appendAll(markets, m); appendAll(events, e); byVenue.set(venue, m);
+      append(markets, m); append(events, e); byVenue.set(venue, m);
       await saveMarkets(db, m);
       log(`sweep ${venue}: ${m.length} of ${all.length} markets trading enough to scan, ${e.length} events`);
     } catch (e) {
@@ -62,8 +64,8 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
       await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);
       // Keep the venue's last known markets so a blip doesn't drop its deals.
       const prev = state.universe.markets.filter(x => x.venue === venue);
-      appendAll(markets, prev); byVenue.set(venue, prev);
-      appendAll(events, state.universe.events.filter(x => x.venue === venue));
+      append(markets, prev); byVenue.set(venue, prev);
+      append(events, state.universe.events.filter(x => x.venue === venue));
     }
   }
   const kalshi = byVenue.get("kalshi") ?? [];
@@ -77,7 +79,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
     const list = byVenue.get(other) ?? [];
     if (!kalshi.length || !list.length) continue;
     const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    appendAll(pairs, p);
+    append(pairs, p);
     log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
   }
   await savePairs(db, pairs);
@@ -88,7 +90,7 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   const db = getDb();
   const now = Date.now();
   const full = now - state.lastFull >= FULL_SCAN_MS;
-  const need = marketsToBook(state.universe, { ladders: ladderEngineOn(process.env) });
+  const need = marketsToBook(state.universe);
   const books = new Map<string, Book>();
   for (const [venue, list] of need) {
     const targets = full ? list : list.filter(m => state.hot.has(marketKey(m.venue, m.id)));
@@ -104,7 +106,7 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   }
   if (full) state.lastFull = now;
   if (!books.size) return;
-  const { opps, counts, nearMisses } = scan(state.universe, books, now, { ladders: ladderEngineOn(process.env) });
+  const { opps, counts, nearMisses } = scan(state.universe, books, now);
   const fresh = await saveOpportunities(db, opps, new Date(now), state.lastTickAt);
   await saveNearMisses(db, nearMisses);
   const dropped = full ? await deactivateStale(db, new Date(now)) : 0;

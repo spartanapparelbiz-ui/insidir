@@ -15,14 +15,11 @@ describe("endpoint shape check", () => {
     ["Kalshi GET /series", "kalshi-series.json"],
     ["Kalshi GET /markets/{ticker}/orderbook", "kalshi-orderbook-dollars.json"],
     ["Kalshi GET /markets/{ticker}/orderbook", "kalshi-orderbook-cents.json"],
+    ["Polymarket Gamma GET /events", "gamma-events.json"],
     ["Polymarket CLOB POST /books", "clob-books.json"],
     ["Polymarket Data GET /trades", "data-trades.json"],
   ])("%s matches %s", (prefix, file) => {
     expect(shapeErrors(fx(file), fields(prefix))).toEqual([]);
-  });
-
-  it("Polymarket Gamma GET /events/keyset matches gamma-events.json wrapped in a keyset page", () => {
-    expect(shapeErrors({ events: fx("gamma-events.json"), next_cursor: "c1" }, fields("Polymarket Gamma GET /events/keyset"))).toEqual([]);
   });
 
   it("fails loudly on a renamed or retyped field", () => {

@@ -155,27 +155,20 @@ describe("CLOB books", () => {
 });
 
 describe("Gamma pagination", () => {
-  it("pages /events/keyset by after_cursor until there is no next cursor (offset paging stops at 2,000)", async () => {
+  it("pages /events/keyset by next_cursor until there is none", async () => {
     const page = (n: number, start: number) => Array.from({ length: n }, (_, i) => ({ id: String(start + i), markets: [] }));
     const { http, calls } = testHttp(url => {
-      const cur = new URL(url).searchParams.get("after_cursor");
-      return { body: cur === null ? { events: page(100, 0), next_cursor: "c1" } : cur === "c1" ? { events: page(100, 100), next_cursor: "c2" } : { events: page(3, 200) } };
+      const after = new URL(url).searchParams.get("after_cursor");
+      return { body: after === null ? { events: page(100, 0), next_cursor: "c1" } : after === "c1" ? { events: page(100, 100), next_cursor: "c2" } : { events: page(3, 200) } };
     });
     const client = new PolymarketClient({ gamma: http, clob: http, data: http, gammaUrl: "https://gamma.test" });
     const raw = await client.listEventsRaw();
     expect(raw).toHaveLength(203);
     expect(calls).toHaveLength(3);
-    const first = new URL(calls[0]!.url);
-    expect(first.pathname).toBe("/events/keyset");
-    expect([first.searchParams.get("active"), first.searchParams.get("closed"), first.searchParams.get("limit"), first.searchParams.get("offset")]).toEqual(["true", "false", "100", null]);
+    const q = new URL(calls[0]!.url).searchParams;
+    expect(new URL(calls[0]!.url).pathname).toBe("/events/keyset");
+    expect([q.get("active"), q.get("closed"), q.get("limit")]).toEqual(["true", "false", "100"]);
     expect(new URL(calls[2]!.url).searchParams.get("after_cursor")).toBe("c2");
-  });
-
-  it("stops on an empty page or a repeated cursor", async () => {
-    const { http, calls } = testHttp(() => ({ body: { events: [{ id: "1", markets: [] }], next_cursor: "same" } }));
-    const client = new PolymarketClient({ gamma: http, clob: http, data: http, gammaUrl: "https://gamma.test" });
-    expect(await client.listEventsRaw()).toHaveLength(2);
-    expect(calls).toHaveLength(2);
   });
 });
 

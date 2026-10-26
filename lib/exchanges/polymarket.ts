@@ -1,7 +1,7 @@
 /* Polymarket (international) public APIs, no key:
  *
- *   Gamma  GET  /events/keyset?active=true&closed=false&limit=…&after_cursor=…   events with nested markets (the sweep)
- *          GET  /markets/keyset?active=true&closed=false&limit=…&after_cursor=…  markets (helper)
+ *   Gamma  GET  /events/keyset?active=true&closed=false&limit=…    events with nested markets (the sweep)
+ *          GET  /markets?active=true&closed=false&limit=…&offset=…  markets (helper)
  *   CLOB   POST /books   [{token_id}] (≤ 500)                        books for many tokens
  *          GET  /book?token_id=…                                     one book (fallback)
  *          GET  /midpoint?token_id=…, GET /price?token_id=…&side=…   price helpers
@@ -23,11 +23,10 @@ import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type
 
 /** Condition ids per Gamma /markets?condition_ids= request when looking markets up by id. */
 export const GAMMA_IDS_BATCH = 50;
-/** Gamma /events/keyset page size. Events carry their markets, so pages are kept moderate. Offset paging is not used:
- *  Gamma refuses offsets past 2,000 ("offset too large, use /events/keyset for deeper pagination"). */
+/** Gamma /events/keyset page size (the server caps it at 100). Events carry their markets, so pages are kept moderate. */
 export const GAMMA_EVENTS_PAGE_LIMIT = 100;
-/** Hard stop for paging loops. */
-export const GAMMA_MAX_PAGES = 300;
+/** Hard stop for pagination loops. */
+export const GAMMA_MAX_PAGES = 1000;
 /** CLOB POST /books: at most this many token ids per request (documented). */
 export const CLOB_BOOKS_BATCH = 500;
 /** Whale threshold: trades of at least this many dollars. */
@@ -238,36 +237,33 @@ export function readGammaEvent(e: unknown, venue: Venue = "polymarket", urlFor: 
   };
 }
 
-/** Builds a sweep a page at a time, so raw Gamma pages can be dropped as soon as they are read: all open events with
- *  their nested markets come to well over 512 MB of JSON, more than a worker can hold at once. De-duplicates events
- *  and markets across pages. */
-export class GammaSweepBuilder {
-  private readonly markets: VMarket[] = [];
-  private readonly events: VEvent[] = [];
-  private readonly seenEvents = new Set<string>();
-  private readonly seenMarkets = new Set<string>();
-  constructor(private readonly venue: Venue = "polymarket") {}
-
-  add(rawEvents: Iterable<unknown>): this {
-    for (const raw of rawEvents) {
-      const r = readGammaEvent(raw, this.venue);
-      if (!r || this.seenEvents.has(r.event.id)) continue;
-      this.seenEvents.add(r.event.id);
-      const kept = r.markets.filter(m => m.active && !this.seenMarkets.has(m.id));
-      for (const m of kept) { this.seenMarkets.add(m.id); this.markets.push(m); }
-      if (kept.length > 0) this.events.push({ ...r.event, marketIds: r.event.marketIds.filter(id => kept.some(m => m.id === id)) });
-    }
-    return this;
-  }
-
-  build(fetchedAt: number): Sweep {
-    return { markets: this.markets, events: this.events, fetchedAt };
-  }
+/** Folds raw Gamma events into a sweep one page at a time (de-duplicated: pages can overlap), so the raw pages
+ *  never all sit in memory at once (the full open universe is 200K+ markets). */
+export function gammaSweepBuilder(venue: Venue = "polymarket") {
+  const markets: VMarket[] = [];
+  const events: VEvent[] = [];
+  const seenEvents = new Set<string>();
+  const seenMarkets = new Set<string>();
+  return {
+    add(rawEvents: readonly unknown[]): void {
+      for (const raw of rawEvents) {
+        const r = readGammaEvent(raw, venue);
+        if (!r || seenEvents.has(r.event.id)) continue;
+        seenEvents.add(r.event.id);
+        const kept = r.markets.filter(m => m.active && !seenMarkets.has(m.id));
+        for (const m of kept) { seenMarkets.add(m.id); markets.push(m); }
+        if (kept.length > 0) events.push({ ...r.event, marketIds: r.event.marketIds.filter(id => kept.some(m => m.id === id)) });
+      }
+    },
+    done: (fetchedAt: number): Sweep => ({ markets, events, fetchedAt }),
+  };
 }
 
-/** Assemble a sweep from raw Gamma events. Pure. */
+/** Assemble a sweep from raw Gamma event pages. Pure. */
 export function buildGammaSweep(rawEvents: readonly unknown[], fetchedAt: number, venue: Venue = "polymarket"): Sweep {
-  return new GammaSweepBuilder(venue).add(rawEvents).build(fetchedAt);
+  const b = gammaSweepBuilder(venue);
+  b.add(rawEvents);
+  return b.done(fetchedAt);
 }
 
 /* ---------- CLOB books ---------- */
@@ -504,37 +500,37 @@ export class PolymarketClient implements VenueClient {
 
   /* Gamma */
 
-  /** Every open item from a Gamma keyset list, one page at a time: `after_cursor` takes the previous page's
-   *  `next_cursor`; the last page has none (or is empty). Pages are in id order, so new events appearing mid-sweep
-   *  don't shift them. */
-  private async *keysetPages(kind: "events" | "markets", limit: number, priority: Priority): AsyncGenerator<JsonObject[]> {
-    let cursor: string | null = null;
+  /** Raw open events with nested markets: GET /events/keyset?active=true&closed=false, following next_cursor via
+   *  after_cursor (ordered by id). Gamma rejects /events offsets past 2,000 with a 422, which cut the sweep short. */
+  async listEventsRaw(priority: Priority = "normal"): Promise<JsonObject[]> {
+    const out: JsonObject[] = [];
+    await this.eachEventsPage(got => { out.push(...got); }, priority);
+    return out;
+  }
+
+  private async eachEventsPage(onPage: (rawEvents: JsonObject[]) => void, priority: Priority): Promise<void> {
+    let cursor: string | undefined;
     for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
-      const params = { active: true, closed: false, archived: false, limit, ...(cursor ? { after_cursor: cursor } : {}) };
-      const body = await this.gamma.json(`${this.gammaUrl}/${kind}/keyset${qs(params)}`, { priority });
-      const got = rows(body, [kind]);
-      if (got.length) yield got;
-      const next = isObject(body) ? str(body.next_cursor) : null;
-      if (!got.length || !next || next === cursor) return;
+      const params = { active: true, closed: false, archived: false, limit: GAMMA_EVENTS_PAGE_LIMIT, after_cursor: cursor };
+      const body = await this.gamma.json(`${this.gammaUrl}/events/keyset${qs(params)}`, { priority });
+      const got = rows(body, ["events"]);
+      onPage(got);
+      const next = body && typeof body === "object" && !Array.isArray(body) ? (body as JsonObject).next_cursor : undefined;
+      if (typeof next !== "string" || !next || got.length === 0) break;
       cursor = next;
     }
   }
 
-  private async keyset(kind: "events" | "markets", limit: number, priority: Priority): Promise<JsonObject[]> {
+  /** Raw open markets: GET /markets?active=true&closed=false (each row embeds its event under events[]). */
+  async listMarketsRaw(priority: Priority = "normal", pageLimit = 500): Promise<JsonObject[]> {
     const out: JsonObject[] = [];
-    for await (const page of this.keysetPages(kind, limit, priority)) for (const r of page) out.push(r);
+    for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
+      const params = { active: true, closed: false, archived: false, limit: pageLimit, offset: page * pageLimit, order: "id", ascending: true };
+      const got = rows(await this.gamma.json(`${this.gammaUrl}/markets${qs(params)}`, { priority }));
+      out.push(...got);
+      if (got.length < pageLimit) break;
+    }
     return out;
-  }
-
-  /** Raw open events with nested markets: GET /events/keyset?active=true&closed=false. Holds every page: for the
-   *  sweep use sweep(), which keeps only the parsed markets. */
-  listEventsRaw(priority: Priority = "normal"): Promise<JsonObject[]> {
-    return this.keyset("events", GAMMA_EVENTS_PAGE_LIMIT, priority);
-  }
-
-  /** Raw open markets: GET /markets/keyset?active=true&closed=false (each row embeds its event under events[]). */
-  listMarketsRaw(priority: Priority = "normal", pageLimit = 500): Promise<JsonObject[]> {
-    return this.keyset("markets", pageLimit, priority);
   }
 
   /** One event by slug (GET /events/slug/{slug}). */
@@ -544,9 +540,9 @@ export class PolymarketClient implements VenueClient {
 
   sweep(opts: ListOptions = {}): Promise<Sweep> {
     return this.sweepCache.get(async () => {
-      const b = new GammaSweepBuilder();
-      for await (const page of this.keysetPages("events", GAMMA_EVENTS_PAGE_LIMIT, opts.priority ?? "normal")) b.add(page);
-      return b.build(this.clock.now());
+      const b = gammaSweepBuilder();
+      await this.eachEventsPage(got => b.add(got), opts.priority ?? "normal");
+      return b.done(this.clock.now());
     }, opts.refresh);
   }
 

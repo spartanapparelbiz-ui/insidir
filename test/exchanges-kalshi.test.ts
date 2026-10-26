@@ -165,7 +165,6 @@ describe("KalshiClient books", () => {
     const client = new KalshiClient({ http, baseUrl: "https://k.test" });
     const books = await client.getOrderbooks(["A", "B"], "hot");
     expect(calls).toHaveLength(1);
-    // One tickers parameter per market (a comma-joined value is read as a single ticker).
     expect(new URL(calls[0]!.url).searchParams.getAll("tickers")).toEqual(["A", "B"]);
     expect(books.get("A")!.yesAsks).toEqual([{ price: 0.45, size: 7 }]);
     expect(books.get("B")!.yesAsks).toEqual([]);
@@ -193,6 +192,10 @@ describe("readKalshiMarket details", () => {
     expect(m).toMatchObject({ strike: { kind: "between", value: 60, upper: 61, subject: "nyc-high-temp" }, result: "void", active: true, seriesId: "KXHIGHNY" });
     expect(readKalshiMarket({ ticker: "X", event_ticker: "E", strike_type: "less", cap_strike: 3 })!.strike).toEqual({ kind: "below", value: 3, upper: null, subject: "e" });
     expect(readKalshiMarket({ event_ticker: "E" })).toBeNull();
+    // An unrecognised series holds unrelated events (one per race): their rungs must not share a ladder.
+    const race = (ev: string) => readKalshiMarket({ ticker: `${ev}-X`, event_ticker: ev, series_ticker: "KXVOTEGENERAL", strike_type: "greater_or_equal", floor_strike: 30 })!.strike!.subject;
+    expect(race("KXVOTEGENERAL-GOVAK-26BWIL")).not.toBe(race("KXVOTEGENERAL-KXHOUSERACE-OK05-26SBIC"));
+    expect(readKalshiMarket({ ticker: "B-1", event_ticker: "KXBTCD-26OCT26", series_ticker: "KXBTCD", strike_type: "greater", floor_strike: 1 })!.strike!.subject).toBe("btc");
   });
 
   it("builds deep links", () => {

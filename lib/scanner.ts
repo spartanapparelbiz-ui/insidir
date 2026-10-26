@@ -19,12 +19,6 @@ export interface Universe {
   pairs: readonly MarketPair[];
 }
 
-/** `ladders`: run the threshold-ladder engine. The worker turns it off unless LADDER_ENGINE=1: on live Kalshi data
- *  its subject matching paired different measures (core CPI month-over-month with year-over-year) and different
- *  players or teams in one event, so it reported locks that aren't. */
-export interface ScanOptions { ladders: boolean }
-export const ladderEngineOn = (env: Record<string, string | undefined>): boolean => env.LADDER_ENGINE === "1";
-
 export interface ScanCounts { crossArb: number; secondOpinion: number; multi: number; ladder: number; implication: number }
 
 const byKey = (markets: readonly VMarket[]): Map<string, VMarket> => new Map(markets.map(m => [marketKey(m.venue, m.id), m]));
@@ -34,22 +28,28 @@ const multiEvents = (u: Universe, idx: Map<string, VMarket>): Array<{ event: VEv
     event, markets: event.marketIds.map(id => idx.get(marketKey(event.venue, id))).filter((m): m is VMarket => Boolean(m)),
   })).filter(x => x.markets.length === x.event.marketIds.length);
 
+/** Threshold ladders (and the "if A then B" rules derived from them) run only when LADDERS_ENABLED=1. Off by
+ *  default: production runs with LADDERS_ENABLED=0. */
+export const laddersEnabled = (env: Record<string, string | undefined> = process.env): boolean => env.LADDERS_ENABLED === "1";
+
 /** Every market whose book a scan needs, grouped by venue. */
-export function marketsToBook(u: Universe, opts: ScanOptions = { ladders: true }): Map<Venue, VMarket[]> {
+export function marketsToBook(u: Universe): Map<Venue, VMarket[]> {
   const idx = byKey(u.markets);
   const need = new Map<string, VMarket>();
   const add = (m: VMarket | undefined) => { if (m?.active) need.set(marketKey(m.venue, m.id), m); };
   for (const p of u.pairs) if (!p.blocked) { add(idx.get(marketKey(p.a.venue, p.a.id))); add(idx.get(marketKey(p.b.venue, p.b.id))); }
   for (const { markets } of multiEvents(u, idx)) markets.forEach(add);
-  for (const imp of [...(opts.ladders ? findLadderImplications(u.markets) : []), ...findRuleImplications(u.markets)]) { add(imp.antecedent); add(imp.consequent); }
+  for (const imp of [...(laddersEnabled() ? findLadderImplications(u.markets) : []), ...findRuleImplications(u.markets)]) { add(imp.antecedent); add(imp.consequent); }
   const out = new Map<Venue, VMarket[]>();
-  // Push into each venue's list: copying the list per market (out.set(v, [...list, m])) is quadratic at 100k+ markets.
-  for (const m of need.values()) { const list = out.get(m.venue); if (list) list.push(m); else out.set(m.venue, [m]); }
+  for (const m of need.values()) {
+    const list = out.get(m.venue);
+    if (list) list.push(m); else out.set(m.venue, [m]);
+  }
   return out;
 }
 
 /** Runs every engine. `books` is keyed by marketKey(venue, id). */
-export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number, opts: ScanOptions = { ladders: true }): { opps: Opportunity[]; counts: ScanCounts; nearMisses: NearMiss[] } {
+export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number): { opps: Opportunity[]; counts: ScanCounts; nearMisses: NearMiss[] } {
   const idx = byKey(u.markets);
   const arbInputs: ArbInput[] = [];
   for (const pair of u.pairs) {
@@ -62,7 +62,7 @@ export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number,
   const crossArb = findCrossArbs(arbInputs, now);
   const secondOpinion = findSecondOpinions(arbInputs, now);
   const multi = findMultiOutcome(multiInputs, now);
-  const ladder = opts.ladders ? findLadders(u.markets, books, now) : [];
+  const ladder = laddersEnabled() ? findLadders(u.markets, books, now) : [];
   const implication = findImplications(u.markets, books, now);
   // One opportunity per id (a ladder rung could also match a rule): keep the most profitable.
   const best = new Map<string, Opportunity>();

@@ -35,6 +35,9 @@ export const TYPE_WORDS: ReadonlySet<string> = new Set([
   "pct", "bps", "percent", "usd", "be", "not",
 ]);
 
+/** WORD_MAP is a plain object: own keys only, or a title word like "constructor" maps to a function. */
+const mapWord = (w: string): string => (Object.hasOwn(WORD_MAP, w) ? WORD_MAP[w]! : w);
+
 const MONTHS: Readonly<Record<string, number>> = {
   jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6,
   jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11,
@@ -336,12 +339,6 @@ export function normalize(raw: string, opts: { refTime?: number | null } = {}): 
       return mapWord(w);
     });
   return { tokens, dates, times, numbers, years: [...new Set(years)] };
-}
-
-/** WORD_MAP is a plain object: an own-property check keeps titles containing words like "constructor" or "toString"
- *  from returning Object.prototype's functions instead of strings. */
-function mapWord(w: string): string {
-  return Object.hasOwn(WORD_MAP, w) ? WORD_MAP[w]! : w;
 }
 
 function round9(v: number): number {

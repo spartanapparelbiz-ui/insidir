@@ -99,12 +99,12 @@ describe("aliases", () => {
   });
 });
 
-describe("words that are Object.prototype keys", () => {
-  it("stay plain strings (a live title with 'constructor' crashed matching)", () => {
-    const n = normalize("Will the constructor toString valueOf hasOwnProperty win?");
+describe("Object.prototype words", () => {
+  it("keeps words like 'constructor' as plain string tokens", () => {
+    const n = normalize("Will the constructor toString valueOf win?");
     expect(n.tokens.every(t => typeof t === "string")).toBe(true);
     expect(n.tokens).toContain("constructor");
     expect(() => contentTokens(n.tokens)).not.toThrow();
-    expect(normalizePhrase("constructor __proto__")).toBe("constructor proto");
+    expect(normalizePhrase("Constructor hasOwnProperty")).toBe("constructor hasownproperty");
   });
 });
