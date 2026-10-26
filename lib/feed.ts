@@ -4,6 +4,7 @@
  * viewer's own filters apply to everyone. */
 import { entitlements } from "./plans";
 import { FRESH_MS } from "./status";
+import { playText } from "./play";
 import { allowedVenues, venuesOk } from "./region";
 import type { Opportunity, Plan, Region, Safety, Venue } from "./types";
 import { VENUE_NAME } from "./types";
@@ -59,34 +60,7 @@ export interface FeedRow {
   stale: boolean;
 }
 
-const cents = (p: number): string => {
-  const c = p * 100;
-  return (c < 10 && c % 1 !== 0 ? c.toFixed(1) : String(Math.round(c))) + "¢";
-};
-const dollars = (v: number): string => (v >= 100 ? "$" + Math.round(v).toLocaleString("en-US") : "$" + v.toFixed(2));
-
-/** "Buy YES on Kalshi at 55¢ + NO on Polymarket at 40¢" and the like. */
-export function playText(o: Pick<Opportunity, "kind" | "legs" | "gapCents">): string {
-  const legs = o.legs;
-  const venue = legs[0] ? VENUE_NAME[legs[0].venue] : "";
-  switch (o.kind) {
-    case "cross_arb":
-      return legs.map((l, i) => `${i ? "" : "Buy "}${l.side.toUpperCase()} on ${VENUE_NAME[l.venue]} at ${cents(l.avgPrice)}`).join(" + ");
-    case "multi_yes":
-    case "multi_no": {
-      const side = o.kind === "multi_yes" ? "YES" : "NO";
-      const total = legs.reduce((a, l) => a + l.avgPrice, 0);
-      return `Buy ${side} on all ${legs.length} outcomes on ${venue} for ${total < 1 ? cents(total) : dollars(total)} a set`;
-    }
-    case "ladder":
-    case "implication":
-      return legs.map((l, i) => `${i ? "" : "Buy "}${l.side.toUpperCase()} “${l.label}” at ${cents(l.avgPrice)}`).join(" + ") + ` on ${venue}`;
-    case "second_opinion": {
-      const l = legs[0];
-      return l ? `${VENUE_NAME[l.venue]} prices YES at ${cents(l.avgPrice)}, ${o.gapCents ?? 0}¢ below the other venue (not a lock)` : "Price gap";
-    }
-  }
-}
+export { playText };
 
 function toRow(o: Opportunity, foundAt: number, locked: boolean, lastSeenAt: number, stale: boolean): FeedRow {
   return {

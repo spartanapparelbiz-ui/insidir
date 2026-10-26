@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
+import { FontLoader } from "@/components/FontLoader";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
@@ -32,10 +33,15 @@ export const viewport: Viewport = { themeColor: "#000000", width: "device-width"
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={mono.variable}>
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
+        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="" />
+      </head>
       <body>
         {children}
         <SiteFooter />
         <RegisterSW />
+        <FontLoader />
       </body>
     </html>
   );

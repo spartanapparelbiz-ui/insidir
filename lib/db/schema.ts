@@ -26,11 +26,13 @@ export interface UserSettings {
   emailDigest: boolean;
   /** Only alert for plays at or above this ROI. */
   alertMinRoi: number;
+  /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
+  soundOnGreen: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
-  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01,
+  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
 };
 
 export const users = terminal.table("users", {
@@ -174,6 +176,18 @@ export const llmUsage = terminal.table("llm_usage", {
   usd: doublePrecision("usd").notNull().default(0),
   calls: integer("calls").notNull().default(0),
 });
+
+/** Everything the worker sees happen, in order: the live pipe the site streams over Server-Sent Events. Every toast,
+ *  tape item and live counter on the site comes from a row here (never invented). `venues` lets the stream apply
+ *  the viewer's region. Pruned after 7 days by the worker. */
+export const liveEvents = terminal.table("live_events", {
+  id: serial("id").primaryKey(),
+  type: text("type").$type<"deal_found" | "deal_closed" | "price_tick" | "whale">().notNull(),
+  oppId: text("opp_id"),
+  venues: text("venues").array().$type<Venue[]>().notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("live_events_at_idx").on(t.at)]);
 
 export const workerHeartbeats = terminal.table("worker_heartbeats", {
   job: text("job").primaryKey(),

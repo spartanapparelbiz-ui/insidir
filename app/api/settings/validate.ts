@@ -19,7 +19,7 @@ export const MAX_ROI_PCT = 100;
 /** Highest size filter accepted, dollars. */
 export const MAX_SIZE_USD = 10_000_000;
 
-const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "alertMinRoiPct",
+const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -67,7 +67,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   const s: UserSettings = {
     minRoi: current.minRoi, minSizeUsd: current.minSizeUsd, categories: [...current.categories], venues: [...current.venues],
     showYellow: current.showYellow, showRed: current.showRed, alertPush: current.alertPush, alertEmail: current.alertEmail,
-    emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi,
+    emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi, soundOnGreen: current.soundOnGreen ?? false,
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -104,7 +104,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     if (v === null) errors.push("Min size must be a dollar amount of 0 or more."); else s.minSizeUsd = v;
   }
 
-  for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest"] as const) {
+  for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen"] as const) {
     if (has(k)) {
       const b = bool(input[k]);
       if (b === null) errors.push(`${k} must be on or off.`); else s[k] = b;

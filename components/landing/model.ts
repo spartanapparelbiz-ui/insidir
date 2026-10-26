@@ -1,15 +1,18 @@
 /* Pure helpers behind the public pages (landing, /receipts, /pricing). No I/O, no clock reads: `now` is passed in.
  * Every number these produce comes from rows the caller read from the database. */
 import { followGreen, type BacktestResult, type Receipt } from "@/lib/engines/receipts";
-import type { FeedRow, FeedViewer } from "@/lib/feed";
+import type { FeedRow, FeedViewer, StoredOpp } from "@/lib/feed";
 import { PLANS, type Entitlements } from "@/lib/plans";
 import type { ReceiptRow } from "@/lib/queries";
 import { allowedVenues, venuesOk } from "@/lib/region";
-import type { Opportunity, Plan, Region } from "@/lib/types";
+import { VENUE_NAME, type Opportunity, type Plan, type Region } from "@/lib/types";
 
 /** Owner-requested comparison line, in one place so it is easy to change or remove. (The owner's wording was
  *  "Other arbitrage tools charge around $200/mo."; "arbitrage" may only appear inside the FAQ, so it is reworded.) */
 export const COMPETITOR_PRICE_LINE = "Other tools that do this charge around $200/mo.";
+
+/** The hero's sub line. */
+export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that lock in a profit after fees.";
 
 /** The one call to action on the landing page: into the feed. */
 export const LANDING_CTA = "See today's live deals";
@@ -168,4 +171,49 @@ export function planCards(): PlanCard[] {
     { plan: "insidir", name: PLANS.insidir.name, price: PLANS.insidir.price, tagline: PLANS.insidir.tagline, features: ins, inherits: null },
     { plan: "pro", name: PLANS.pro.name, price: PLANS.pro.price, tagline: PLANS.pro.tagline, features: pro, inherits: PLANS.insidir.name },
   ];
+}
+
+/* ---------- the live hero ---------- */
+
+/** The hero's deal as this viewer may see it: on their clock (free: 30 minutes late), a green two-venue lock from
+ *  the last 24 hours, preferring one that is still open on that clock. Prices are as found, or as of the latest real
+ *  price tick before the viewer's clock (applied by the caller). */
+export interface HeroSplit {
+  oppId: string;
+  title: string;
+  legs: Array<{ venueName: string; side: "YES" | "NO"; priceCents: number }>;
+  roi: number;
+  firstSeenAt: number;
+  /** When it stopped being found, on the viewer's clock; null while open. */
+  closedAt: number | null;
+}
+
+export function heroSplit(opps: readonly StoredOpp[], region: Region | null, delayMs: number, now: number): HeroSplit | null {
+  const clock = now - delayMs;
+  const venues = allowedVenues(region);
+  const ok = opps.filter(s => {
+    const o = delayMs > 0 ? s.snapshot : s.live;
+    return o.kind === "cross_arb" && o.safety === "green" && o.legs.length === 2 && venuesOk(o, venues)
+      && s.firstSeenAt <= clock && s.firstSeenAt >= now - DAY_MS && (delayMs > 0 || s.active);
+  });
+  const openAt = (s: StoredOpp) => s.active || s.lastSeenAt >= clock;
+  const pick = [...ok].sort((a, b) => Number(openAt(b)) - Number(openAt(a)) || b.firstSeenAt - a.firstSeenAt)[0];
+  if (!pick) return null;
+  const o = delayMs > 0 ? pick.snapshot : pick.live;
+  return {
+    oppId: o.id, title: o.title, roi: o.roi, firstSeenAt: pick.firstSeenAt,
+    closedAt: openAt(pick) ? null : pick.lastSeenAt,
+    legs: o.legs.map(l => ({ venueName: VENUE_NAME[l.venue], side: l.side === "yes" ? "YES" : "NO", priceCents: Math.round(l.avgPrice * 1000) / 10 })),
+  };
+}
+
+/** Profit per $1 paid out, in cents, from the ROI alone (profit / (cost + fees) = roi, cost + fees + profit = $1). */
+export const profitCentsPerDollar = (roi: number): number => Math.round((100 * roi / (1 + roi)) * 10) / 10;
+
+/** Live deals a free viewer can't see yet (found inside the delay): counted, never shown. */
+export function liveHiddenCount(opps: readonly StoredOpp[], region: Region | null, delayMs: number, now: number): Array<{ foundAt: number }> {
+  if (delayMs <= 0) return [];
+  const venues = allowedVenues(region);
+  return opps.filter(s => s.active && s.firstSeenAt > now - delayMs && s.live.kind !== "second_opinion" && s.live.safety !== "red" && venuesOk(s.live, venues))
+    .map(s => ({ foundAt: s.firstSeenAt })).sort((a, b) => b.foundAt - a.foundAt);
 }
