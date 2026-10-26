@@ -111,7 +111,10 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
 1. Create a project with a **Postgres** database.
 2. Add a **web** service from this repo. `railway.json` sets the build (`npm run build`), the pre-deploy migration
    (`npm run db:migrate`), the start command and the `/api/health` health check. Attach your domain.
-3. Add a **worker** service from the same repo with start command `npm run worker` (no domain, no health check).
+3. Add a **worker** service from the same repo. In its Settings → Config-as-code, set the Railway config file to
+   `/railway.worker.json` (start command `npm run worker`, no domain, no health check). Without this the worker
+   service picks up `railway.json`, whose start command overrides the dashboard and runs the web app instead, so no
+   scan runs and the site shows "Live data paused, retrying".
 4. Set `DATABASE_URL` on both services (reference the Postgres service variable), and the variables above.
 5. **Whop:**
    - Create an OAuth app. Its redirect URI is `https://YOUR_DOMAIN/auth/callback`.

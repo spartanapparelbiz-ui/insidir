@@ -39,6 +39,8 @@ export const DIGEST_CHECK_MS = 10 * 60_000;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** push(...xs) overflows the stack past ~100K items (Kalshi lists 130K+ markets), so append in a loop. */
+const append = <T>(to: T[], xs: readonly T[]) => { for (const x of xs) to.push(x); };
 
 interface State { universe: Universe; lastFull: number; hot: Set<string> }
 
@@ -49,7 +51,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
       const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      markets.push(...m); events.push(...e); byVenue.set(venue, m);
+      append(markets, m); append(events, e); byVenue.set(venue, m);
       await saveMarkets(db, m);
       log(`sweep ${venue}: ${m.length} markets, ${e.length} events`);
     } catch (e) {
@@ -57,8 +59,8 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
       await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);
       // Keep the venue's last known markets so a blip doesn't drop its deals.
       const prev = state.universe.markets.filter(x => x.venue === venue);
-      markets.push(...prev); byVenue.set(venue, prev);
-      events.push(...state.universe.events.filter(x => x.venue === venue));
+      append(markets, prev); byVenue.set(venue, prev);
+      append(events, state.universe.events.filter(x => x.venue === venue));
     }
   }
   const kalshi = byVenue.get("kalshi") ?? [];
@@ -72,7 +74,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
     const list = byVenue.get(other) ?? [];
     if (!kalshi.length || !list.length) continue;
     const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    pairs.push(...p);
+    append(pairs, p);
     log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
   }
   await savePairs(db, pairs);

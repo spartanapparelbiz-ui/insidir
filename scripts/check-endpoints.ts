@@ -64,6 +64,10 @@ export const CHECKS: Check[] = [
   },
   { name: "Polymarket Gamma GET /events", url: () => `${g}/events?closed=false&active=true&limit=20`, fields: ["[].id:string", "[].title:string", "[].markets:array", "[].markets[].conditionId:string"] },
   {
+    name: "Polymarket Gamma GET /events/keyset (the sweep)", url: () => `${g}/events/keyset?closed=false&active=true&archived=false&limit=20`,
+    fields: ["events:array", "events[].id:string", "events[].title:string", "events[].markets:array", "events[].markets[].conditionId:string", "next_cursor:string"],
+  },
+  {
     name: "Polymarket CLOB POST /books", method: "POST", url: () => `${c}/books`, body: () => [{ token_id: ctx.tokenId ?? "" }],
     fields: ["[].asset_id:string", "[].bids:array", "[].asks:array", "[].hash:string"],
   },
