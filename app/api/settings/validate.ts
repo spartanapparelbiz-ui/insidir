@@ -3,6 +3,7 @@
  * Only the known fields are read; anything else (a "bankroll", say) is ignored and reported back, never stored.
  * Venues are always cut to the user's region: US users can only keep Kalshi and Polymarket US. ROI fields arrive
  * as percentages ("1.5" = 1.5%) and are stored as fractions. */
+import { LEAGUES } from "@/lib/moves/types";
 import type { UserSettings } from "@/lib/db/schema";
 import { minutesOf, validTimeZone } from "@/lib/alerts/quiet";
 import { REGION_VENUES } from "@/lib/region";
@@ -17,11 +18,14 @@ export const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
 };
 /** Highest ROI filter accepted, percent. */
 export const MAX_ROI_PCT = 100;
+/** At most this many custom alert rules (Pro). */
+export const MAX_MOVE_RULES = 10;
+
 /** Highest size filter accepted, dollars. */
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -82,6 +86,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi, soundOnGreen: current.soundOnGreen ?? false,
     alertSafety: current.alertSafety === "green_yellow" ? "green_yellow" : "green", alertCategories: [...(current.alertCategories ?? [])],
     quietStart: current.quietStart ?? null, quietEnd: current.quietEnd ?? null, timeZone: current.timeZone ?? null,
+    ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -135,6 +140,16 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     else errors.push("That time zone isn't recognized.");
   }
 
+  if (has("moveRules")) {
+    const raw = Array.isArray(input.moveRules) ? input.moveRules : null;
+    const rules = (raw ?? []).slice(0, MAX_MOVE_RULES).map(r => r as Record<string, unknown>).map(r => ({
+      tab: r.tab === "sports" || r.tab === "markets" ? (r.tab as "sports" | "markets") : null,
+      league: typeof r.league === "string" && (LEAGUES as readonly string[]).includes(r.league) ? r.league : null,
+      min: number(r.min, 10_000, MAX_SIZE_USD),
+    }));
+    if (!raw || rules.some(r => r.min === null)) errors.push("Each rule needs a size of $10,000 or more.");
+    else s.moveRules = rules.map(r => ({ tab: r.tab, league: r.league, min: r.min! }));
+  }
   for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen"] as const) {
     if (has(k)) {
       const b = bool(input[k]);

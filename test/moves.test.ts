@@ -216,3 +216,93 @@ describe("the poller", () => {
     expect(await poller.pollKalshi(T0, new Map(), info)).toEqual([]);
   });
 });
+
+/* ---------- V2 step 3: alerts, the daily email, share cards and posts ---------- */
+import { alertJobs, alertMessage, dailyDue, dailyEmail, hourInNewYork, reasonFor, ruleMatches, type AlertUser as MoveAlertU } from "@/lib/moves/alerts";
+import { moveCardText } from "@/lib/move-card";
+import { postCaption, postsAllowed } from "@/lib/moves/posts";
+import { liveEmail } from "@/lib/moves/waitlist";
+import { BANNED_WORDS as BANNED } from "@/lib/moves/copy";
+import { parseSettings } from "@/app/api/settings/validate";
+import { DEFAULT_SETTINGS } from "@/lib/db/schema";
+
+describe("move alerts", () => {
+  const base: Move = {
+    id: "pm:0xaa:mkt1:yes:1", source: "polymarket", marketId: "mkt1", eventTitle: "Chiefs vs Bills", marketTitle: "Chiefs vs Bills", outcome: "Chiefs",
+    outcomeSide: "yes", amount: 60_000, avgPrice: 0.62, wallet: "0xaa", walletName: null, at: 1_000_000, lastAt: 1_000_000, fills: 3, tab: "sports",
+    league: "NFL", category: "sports", url: null, result: null, settledAt: null,
+  };
+  const user = (o: Partial<MoveAlertU> = {}): MoveAlertU => ({
+    id: "u1", plan: "insidir", email: "a@b.co", push: true, emailOn: true, quietStart: null, quietEnd: null, timeZone: null,
+    traders: new Set(), markets: new Set(), rules: [], ...o,
+  });
+  it("sends followed traders' moves on both channels; nothing for Free", () => {
+    expect(alertJobs([user({ traders: new Set(["0xaa"]) })], [base], 2_000_000).map(j => `${j.channel}:${j.reason}`)).toEqual(["push:trader", "email:trader"]);
+    expect(alertJobs([user({ plan: "free", traders: new Set(["0xaa"]) })], [base], 2_000_000)).toEqual([]);
+  });
+  it("followed markets alert only from $50,000", () => {
+    expect(reasonFor(user({ markets: new Set(["mkt1"]) }), base)).toBe("market");
+    expect(reasonFor(user({ markets: new Set(["mkt1"]) }), { ...base, amount: 49_999 })).toBeNull();
+  });
+  it("custom rules are Pro only and match tab, league and size", () => {
+    const rules = [{ tab: "sports" as const, league: "NFL" as const, min: 50_000 }];
+    expect(reasonFor(user({ rules }), base)).toBeNull();
+    expect(reasonFor(user({ plan: "pro", rules }), base)).toBe("rule");
+    expect(ruleMatches(rules[0]!, { ...base, league: "NBA" })).toBe(false);
+    expect(ruleMatches({ tab: null, league: null, min: 100_000 }, base)).toBe(false);
+  });
+  it("quiet hours hold every alert back", () => {
+    expect(alertJobs([user({ traders: new Set(["0xaa"]), quietStart: "00:00", quietEnd: "23:59", timeZone: "UTC" })], [base], Date.UTC(2026, 9, 26, 12))).toEqual([]);
+  });
+  it("the message says what happened, links to the market, uses no banned words", () => {
+    const msg = alertMessage(base, null, "trader", "https://insidir.com", base.at);
+    expect(msg.body).toBe("A wallet just put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(msg.url).toBe("https://insidir.com/market/mkt1?from=alert");
+    for (const re of BANNED) expect(`${msg.title} ${msg.body}`).not.toMatch(re);
+  });
+  it("the daily email goes out at 8am ET or later, once a day, to paid members who want it", () => {
+    const at8 = Date.UTC(2026, 9, 26, 12, 5); // 8:05am EDT
+    expect(hourInNewYork(at8)).toBe(8);
+    const u = { plan: "insidir" as const, email: "a@b.co", emailDigest: true, lastDigestAt: null };
+    expect(dailyDue(u, at8)).toBe(true);
+    expect(dailyDue(u, at8 - 3_600_000)).toBe(false);
+    expect(dailyDue({ ...u, lastDigestAt: at8 - 3_600_000 }, at8)).toBe(false);
+    expect(dailyDue({ ...u, plan: "free" }, at8)).toBe(false);
+    expect(dailyDue({ ...u, emailDigest: false }, at8)).toBe(false);
+  });
+  it("the daily email lists the top moves and how top-trader moves settled", () => {
+    const e = dailyEmail([base], [{ ...base, result: "won" }, { ...base, id: "x", result: "lost" }], new Map(), "https://insidir.com");
+    const text = e.lines.map(l => l.text).join("\n");
+    expect(e.subject).toBe("$60,000 on Chiefs to win, and more");
+    expect(text).toContain("A wallet put $60,000 on Chiefs to win.");
+    expect(text).toContain("How yesterday's top-trader moves settled: 1 won, 1 lost.");
+    for (const re of BANNED) expect(`${e.subject}\n${text}`).not.toMatch(re);
+    expect(dailyEmail([], [], new Map(), "x").lines[0]!.text).toBe("No moves of $10,000 or more in the last 24 hours.");
+  });
+  it("share card text and post captions never advise", () => {
+    const t = moveCardText({ ...base, result: "won" }, null);
+    expect(t.amount).toBe("$60,000");
+    expect(t.on).toBe("on Chiefs to win");
+    expect(t.result).toBe("It won.");
+    const cap = postCaption(base, null);
+    expect(cap.split("\n")[0]).toBe("A wallet put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(cap).toContain("Not financial advice.");
+    for (const re of BANNED) { expect(cap).not.toMatch(re); expect(Object.values(t).join(" ")).not.toMatch(re); }
+  });
+  it("/admin/posts opens only for allowlisted emails", () => {
+    const env = { POSTS_ADMIN_EMAILS: "Owner@Example.com, other@x.co" };
+    expect(postsAllowed("owner@example.com", env)).toBe(true);
+    expect(postsAllowed("someone@else.com", env)).toBe(false);
+    expect(postsAllowed(null, env)).toBe(false);
+    expect(postsAllowed("owner@example.com", {})).toBe(false);
+  });
+  it("the waitlist email says '[Feature] is live on Insidir.'", () => {
+    expect(liveEmail("alerts_push", "https://insidir.com").subject).toBe("Phone alerts is live on Insidir.");
+  });
+  it("settings accept Pro rules, cleaned, at most 10, $10k minimum", () => {
+    const ok = parseSettings({ moveRules: [{ tab: "sports", league: "NFL", min: 100_000 }, { tab: "weird", league: "XYZ", min: 20_000 }] }, DEFAULT_SETTINGS, null, false);
+    expect(ok.errors).toEqual([]);
+    expect(ok.settings.moveRules).toEqual([{ tab: "sports", league: "NFL", min: 100_000 }, { tab: null, league: null, min: 20_000 }]);
+    expect(parseSettings({ moveRules: [{ min: 5 }] }, DEFAULT_SETTINGS, null, false).errors.length).toBe(1);
+  });
+});

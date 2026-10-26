@@ -36,6 +36,8 @@ export interface UserSettings {
   /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
   quietStart: string | null;
   quietEnd: string | null;
+  /** Pro custom alert rules for big money moves (docs/V2.md §7): any tab, league or size. */
+  moveRules?: Array<{ tab: "sports" | "markets" | "crypto" | "stocks" | null; league: string | null; min: number }>;
   /** The user's IANA time zone (from their browser), for quiet hours. */
   timeZone: string | null;
 }

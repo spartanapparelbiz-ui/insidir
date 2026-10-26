@@ -33,7 +33,7 @@ export function lastedText(ms: number): string {
 }
 
 let fonts: Promise<Array<{ name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" }>> | null = null;
-function loadFonts() {
+export function loadFonts() {
   fonts ??= Promise.all(([500, 700, 800] as const).map(async weight => ({
     name: "Plus Jakarta Sans", weight, style: "normal" as const,
     data: await readFile(join(process.cwd(), "lib/og-fonts", `plus-jakarta-sans-${weight}.ttf`)),

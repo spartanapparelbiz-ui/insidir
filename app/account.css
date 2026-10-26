@@ -48,3 +48,22 @@
 .atable td.mono { color: var(--muted); white-space: nowrap; }
 .aempty { display: grid; gap: 12px; justify-items: start; color: var(--muted); }
 .pushbtn { display: grid; gap: 8px; justify-items: start; }
+
+/* Pro custom alert rules */
+.rules { display: grid; gap: 16px; width: 100%; }
+.rules__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rules__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0 0 0 16px; border: 1px solid var(--border); border-radius: 12px; font-weight: 600; }
+.rules__add { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: end; }
+.rules__add select.input { min-height: 48px; }
+@media (min-width: 640px) { .rules__add { grid-template-columns: minmax(0, 1fr) minmax(0, 200px) auto; } }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* /admin/posts */
+.posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.post { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; }
+.post__img { width: 100%; max-width: 270px; height: auto; border-radius: 12px; border: 1px solid var(--border); }
+.post__body { display: grid; gap: 16px; align-content: start; justify-items: start; }
+.post__h { font-weight: 800; font-size: var(--t20); }
+.post__caption { display: grid; gap: 8px; width: 100%; }
+.post__text { width: 100%; min-height: 140px; resize: vertical; font-family: var(--font); line-height: 1.4; padding: 12px; }
+@media (min-width: 800px) { .post { grid-template-columns: 270px minmax(0, 1fr); } }

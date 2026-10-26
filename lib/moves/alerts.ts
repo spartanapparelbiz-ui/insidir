@@ -4,7 +4,7 @@
  *   Free: no alerts. Quiet hours hold push and email alerts back. One alert per user, move and channel. */
 import { inQuietHours } from "@/lib/alerts/quiet";
 import type { Plan } from "@/lib/types";
-import { agoText, moveSentence, payoutLine } from "./copy";
+import { agoText, dollars, moveSentence, onWhat, payoutLine } from "./copy";
 import { movePlan } from "./gate";
 import type { League, Move, Tab, TraderRecord } from "./types";
 
@@ -60,4 +60,47 @@ export function alertMessage(m: Move, record: TraderRecord | null, reason: Alert
   const title = reason === "trader" ? "A trader you follow just moved" : reason === "market" ? "Big money in a market you follow" : "A big move matched your rule";
   const body = [moveSentence(m, record), payoutLine(m), agoText(m.at, now) === "just now" ? null : agoText(m.at, now)].filter(Boolean).join(" ");
   return { title, body, url: `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=alert` };
+}
+
+/** Moves older than this when the worker sees them don't alert: the news is stale. */
+export const ALERT_MAX_AGE_MS = 10 * 60_000;
+
+/* ---------- the daily email (8am ET): yesterday's top 5 moves and how yesterday's top-trader moves settled ---------- */
+
+export const DAILY_HOUR_ET = 8;
+export const DAILY_TOP = 5;
+
+/** The hour in New York at `now` (0–23). */
+export function hourInNewYork(now: number): number {
+  const h = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date(now)).find(p => p.type === "hour")?.value;
+  return Number(h ?? 0) % 24;
+}
+
+/** Due when it's 8am ET or later, the member wants it, their plan includes it, and none went out in the last 20 hours. */
+export function dailyDue(u: { plan: Plan; email: string | null; emailDigest: boolean; lastDigestAt: number | null }, now: number): boolean {
+  if (!movePlan(u.plan).dailyEmail || !u.emailDigest || !u.email) return false;
+  if (hourInNewYork(now) < DAILY_HOUR_ET) return false;
+  return u.lastDigestAt === null || now - u.lastDigestAt > 20 * 3_600_000;
+}
+
+export interface DailyEmail { subject: string; heading: string; lines: Array<{ text: string; url?: string }> }
+
+/** `top` are the biggest moves of the last 24h; `settled` are top-trader moves that settled in the last 24h. */
+export function dailyEmail(top: readonly Move[], settled: readonly Move[], records: ReadonlyMap<string, TraderRecord>, appUrl: string): DailyEmail {
+  const rec = (m: Move) => (m.wallet ? records.get(m.wallet) ?? null : null);
+  const link = (m: Move) => `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=daily`;
+  const lines: DailyEmail["lines"] = [];
+  if (top.length) {
+    lines.push({ text: "The biggest money moves of the last 24 hours:" });
+    for (const m of top.slice(0, DAILY_TOP)) lines.push({ text: [moveSentence(m, rec(m), false), payoutLine(m)].filter(Boolean).join(" "), url: link(m) });
+  } else lines.push({ text: "No moves of $10,000 or more in the last 24 hours." });
+  const done = settled.filter(m => m.result === "won" || m.result === "lost");
+  if (done.length) {
+    const won = done.filter(m => m.result === "won").length;
+    lines.push({ text: `How yesterday's top-trader moves settled: ${won} won, ${done.length - won} lost.` });
+    for (const m of done.slice(0, DAILY_TOP)) lines.push({ text: `${m.result === "won" ? "Won" : "Lost"}: ${dollars(m.amount)} on ${onWhat(m)}.`, url: link(m) });
+  }
+  const biggest = top[0];
+  const subject = biggest ? `${dollars(biggest.amount)} on ${onWhat(biggest)}, and more` : "Yesterday on Insidir";
+  return { subject: subject.length > 90 ? "Yesterday's biggest money moves" : subject, heading: "Yesterday's biggest money moves", lines };
 }

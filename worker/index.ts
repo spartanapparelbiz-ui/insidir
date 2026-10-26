@@ -5,7 +5,9 @@
  *   scan      every SCAN_MS:   fetch the books the engines need ("hot" priority for markets with live deals, the rest
  *                              on the full-scan cadence), run every engine, store deals and their receipts, write a
  *                              heartbeat per venue (the site shows "Live data paused, retrying" when they go quiet)
- *   alerts    every ALERT_MS:  web push (Pro instant, Insidir within 60s), email backup, daily summaries
+ *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
+ *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
+ *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             every 5 min (lib/moves/jobs.ts)
@@ -17,15 +19,17 @@ import { MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
-import { alertText, digestDue, digestRows, dueAlerts } from "@/lib/alerts/fanout";
+import { alertText, dueAlerts } from "@/lib/alerts/fanout";
+import { ALERT_MAX_AGE_MS, alertJobs, alertMessage, dailyDue, dailyEmail } from "@/lib/moves/alerts";
+import { dailyLists, moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
+import { recordsFor } from "@/lib/moves/store";
+import { isReady } from "@/lib/features";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
 import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
-import { storedOpps } from "@/lib/queries";
 import { marketsToBook, scan, type Universe } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
-import { pct, usd } from "@/lib/format";
 import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, dbMatchCache, dbUsageStore, deactivateStale, dropPush, heartbeat, loadOverrides, markDigestSent,
@@ -118,7 +122,8 @@ async function alertsOnce(): Promise<void> {
   const now = Date.now();
   const deals = await alertableDeals(db, new Date(now - 15 * 60_000));
   if (!deals.length) return;
-  const users = await alertUsers(db, new Date(now));
+  // Price gaps are a Pro extra in V2.
+  const users = (await alertUsers(db, new Date(now))).filter(u => u.plan === "pro");
   const byId = new Map(deals.map(d => [d.opp.id, d.opp]));
   const userById = new Map(users.map(u => [u.id, u]));
   for (const job of dueAlerts(users, deals, now)) {
@@ -138,21 +143,45 @@ async function alertsOnce(): Promise<void> {
   }
 }
 
-async function digestsOnce(): Promise<void> {
+/** Push and email for new moves (docs/V2.md §7). Each user, move and channel goes out once (alerts_sent, "move:<id>"). */
+async function moveAlertsOnce(): Promise<void> {
+  const push = isReady("alerts_push"), email = isReady("alerts_email");
+  if (!push && !email) return;
   const db = getDb();
   const now = Date.now();
-  const users = (await alertUsers(db, new Date(now))).filter(u => digestDue(u, now));
-  if (!users.length) return;
-  const opps = await storedOpps();
-  for (const u of users) {
-    const rows = digestRows(u, opps, now);
+  const fresh = await recentMoves(db, new Date(now - ALERT_MAX_AGE_MS));
+  if (!fresh.length) return;
+  const users = (await moveAlertUsers(db)).map(u => ({ ...u, push: u.push && push, emailOn: u.emailOn && email }));
+  const jobs = alertJobs(users, fresh, now);
+  if (!jobs.length) return;
+  const byId = new Map(fresh.map(m => [m.id, m])), userById = new Map(users.map(u => [u.id, u]));
+  const records = await recordsFor(db, fresh.map(m => m.wallet ?? ""));
+  for (const job of jobs) {
+    const m = byId.get(job.moveId), user = userById.get(job.userId);
+    if (!m || !user || !(await claimAlert(db, job.userId, `move:${m.id}`, job.channel))) continue;
+    const msg = alertMessage(m, m.wallet ? records.get(m.wallet) ?? null : null, job.reason, appUrl(), now);
+    if (job.channel === "push") {
+      for (const t of await pushTargets(db, user.id)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
+    } else if (user.email) {
+      const unsub = unsubscribeUrl(appUrl(), user.id);
+      await sendEmail({ to: user.email, subject: msg.title, ...renderEmail({ heading: msg.title, lines: [{ text: msg.body }], cta: { label: "See the market", url: msg.url }, unsubscribe: unsub }), unsubscribe: unsub });
+    }
+  }
+}
+
+/** The 8am ET daily email for members who keep it on. */
+async function dailyOnce(): Promise<void> {
+  if (!isReady("daily_email")) return;
+  const db = getDb();
+  const now = Date.now();
+  const due = (await moveAlertUsers(db)).filter(u => dailyDue(u, now));
+  if (!due.length) return;
+  const { top, settled, records } = await dailyLists(db, now);
+  const e = dailyEmail(top, settled, records, appUrl());
+  for (const u of due) {
     const unsub = unsubscribeUrl(appUrl(), u.id);
-    const lines = rows.length
-      ? rows.map(r => ({ text: `${r.title}: ${r.play}. ${pct(r.roi)}${r.profit !== null ? `, ${usd(r.profit)} after fees` : ""}${r.locked ? " (30 min delay)" : ""}`, url: `${appUrl()}/deal/${encodeURIComponent(r.id)}` }))
-      : [{ text: "No deals matched your settings in the last day." }];
-    const heading = rows.length ? `Today on Insidir: ${rows.length} deal${rows.length === 1 ? "" : "s"}` : "Today on Insidir";
-    const body = renderEmail({ heading, lines, cta: { label: "See today's live deals", url: `${appUrl()}/terminal` }, unsubscribe: unsub });
-    if (u.email && (await sendEmail({ to: u.email, subject: heading, ...body, unsubscribe: unsub })) === "sent") await markDigestSent(db, u.id, new Date(now));
+    const body = renderEmail({ heading: e.heading, lines: e.lines, cta: { label: "See the live feed", url: `${appUrl()}/feed?from=daily` }, unsubscribe: unsub });
+    if (u.email && (await sendEmail({ to: u.email, subject: e.subject, ...body, unsubscribe: unsub })) === "sent") await markDigestSent(db, u.id, new Date(now));
   }
 }
 
@@ -214,8 +243,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const stops = [
     every("sweep", SWEEP_MS, () => sweep(clients, state)),
     every("scan", SCAN_MS, () => scanOnce(clients, state)),
-    every("alerts", ALERT_MS, alertsOnce),
-    every("digests", DIGEST_CHECK_MS, digestsOnce),
+    every("alerts", ALERT_MS, async () => { if (isReady("price_gaps")) await alertsOnce(); }),
+    every("moves:alerts", ALERT_MS, moveAlertsOnce),
+    every("moves:daily", DIGEST_CHECK_MS, dailyOnce),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [

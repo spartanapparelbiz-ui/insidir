@@ -5,17 +5,17 @@ import { SESSION_COOKIE, userForToken } from "@/lib/auth/session";
 import { appUrl } from "@/lib/auth/whop";
 import { getDb } from "@/lib/db";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
-import { entitlements } from "@/lib/plans";
+import { movePlan } from "@/lib/moves/gate";
 import { dropPush, pushTargets } from "@/lib/worker/store";
 
 export const dynamic = "force-dynamic";
 
-const TEST = { title: "Test alert from Insidir", body: "Alerts work on this device. A real alert shows the deal, both prices and the profit after fees." };
+const TEST = { title: "Test alert from Insidir", body: "Alerts work on this device. A real alert says who moved, how much, and on what." };
 
 export async function POST(req: NextRequest) {
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.json({ error: "Sign in first, then try again." }, { status: 401 });
-  if (entitlements(user.plan).alertDelaySeconds === null) return NextResponse.json({ error: "Alerts come with Insidir and Insidir Pro." }, { status: 403 });
+  if (!movePlan(user.plan).alerts) return NextResponse.json({ error: "Alerts come with Insidir and Pro." }, { status: 403 });
   const db = getDb();
   const targets = await pushTargets(db, user.id);
   if (targets.length) {
