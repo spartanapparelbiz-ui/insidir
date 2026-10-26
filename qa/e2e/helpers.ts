@@ -1,0 +1,56 @@
+/* Shared helpers for the end-to-end specs. */
+import { expect, type BrowserContext, type Page, type Response } from "@playwright/test";
+import { Pool } from "pg";
+import { APP_URL, E2E_DB } from "./env";
+import { E2E_USERS } from "./seed";
+
+export const pool = new Pool({ connectionString: E2E_DB, max: 2 });
+export async function q<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<T[]> {
+  return (await pool.query(text, params)).rows as T[];
+}
+
+export type SeedUser = keyof typeof E2E_USERS;
+export async function signIn(context: BrowserContext, who: SeedUser): Promise<void> {
+  await context.addCookies([{ name: "insidir_session", value: E2E_USERS[who]!.token, url: APP_URL, httpOnly: true, sameSite: "Lax" }]);
+}
+
+/** The id of the seeded deal whose title contains `part`. */
+export async function dealId(part: string): Promise<string> {
+  const rows = await q<{ id: string }>("select id from terminal.opportunities where data->>'title' like $1 and kind <> 'second_opinion' order by id limit 1", [`%${part}%`]);
+  if (!rows[0]) throw new Error(`no seeded deal like ${part}`);
+  return rows[0].id;
+}
+
+/** Every same-site response body (HTML, RSC payloads, JSON) the page receives while `fn` runs. */
+export async function captureBodies(page: Page, fn: () => Promise<void>): Promise<Array<{ url: string; body: string }>> {
+  const out: Array<{ url: string; body: string }> = [];
+  const pending: Promise<void>[] = [];
+  const on = (r: Response) => {
+    if (!r.url().startsWith(APP_URL) || /\.(png|svg|woff2?|ico|css)(\?|$)/.test(r.url())) return;
+    pending.push(r.text().then(body => { out.push({ url: r.url(), body }); }, () => undefined));
+  };
+  page.on("response", on);
+  await fn();
+  await page.waitForLoadState("networkidle").catch(() => undefined);
+  page.off("response", on);
+  await Promise.all(pending);
+  return out;
+}
+
+/** Pages every visitor can open, and the ones a signed-in Pro member adds. */
+export const PUBLIC_PAGES = ["/", "/terminal", "/receipts", "/pricing", "/terms", "/privacy"];
+export const PRO_PAGES = ["/terminal", "/settings", "/pnl", "/whales"];
+
+export async function noHorizontalScroll(page: Page): Promise<void> {
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(over, "page scrolls sideways").toBeLessThanOrEqual(0);
+}
+
+export async function footerOk(page: Page): Promise<void> {
+  const footer = page.locator("footer").last();
+  await expect(footer).toContainText("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.");
+  await expect(footer.locator('a[href="/privacy"]')).toHaveCount(1);
+  await expect(footer.locator('a[href="/terms"]')).toHaveCount(1);
+}
+
+export const shotName = (name: string, page: Page): string => `qa/screenshots/${name}-${page.viewportSize()!.width}.png`;

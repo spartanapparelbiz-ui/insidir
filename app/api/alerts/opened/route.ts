@@ -1,4 +1,5 @@
 /* An alert was opened: marks it, records the first "alert_opened" funnel event, and goes to the deal. */
+import { appUrl } from "@/lib/auth/whop";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";
@@ -9,7 +10,7 @@ import { alertsSent } from "@/lib/db/schema";
 export async function GET(req: NextRequest) {
   const opp = req.nextUrl.searchParams.get("opp") ?? "";
   const ch = req.nextUrl.searchParams.get("ch") === "email" ? "email" : "push";
-  const to = new URL(`/deal/${encodeURIComponent(opp)}`, req.nextUrl.origin);
+  const to = new URL(`/deal/${encodeURIComponent(opp)}`, appUrl());
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (user && opp) {
     const opened = await getDb().update(alertsSent).set({ openedAt: new Date() })

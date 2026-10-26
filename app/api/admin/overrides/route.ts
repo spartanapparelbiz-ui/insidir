@@ -1,5 +1,6 @@
 /* Admin match overrides (terminal.match_overrides): force a match (optionally inverted), block a pair, set its
  * safety light, or clear the override. The matcher reads these on its next run. */
+import { appUrl } from "@/lib/auth/whop";
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin";
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const note = String(form?.get("note") ?? "").slice(0, MAX_NOTE) || null;
   const safetyRaw = String(form?.get("safety") ?? "");
   const safety: Safety | null = safetyRaw === "green" || safetyRaw === "yellow" || safetyRaw === "red" ? safetyRaw : null;
-  const back = (q: string) => NextResponse.redirect(new URL(`/admin${q}#matches`, req.nextUrl.origin), 303);
+  const back = (q: string) => NextResponse.redirect(new URL(`/admin${q}#matches`, appUrl()), 303);
   if (!key || !hasDatabase()) return back("?error=" + encodeURIComponent(!key ? "Missing pair." : "No database."));
   const db = getDb();
   if (action === "clear") {

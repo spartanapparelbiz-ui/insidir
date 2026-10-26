@@ -24,7 +24,7 @@ function market(venue: Venue, id: string, over: Partial<VMarket> = {}): VMarket 
     venue, id, eventId: "EV-" + id, seriesId: null, title: `E2E fixture: market ${id}`, eventTitle: null, yesLabel: "Yes", noLabel: "No",
     rules: "E2E fixture rules.", resolutionSource: null, closeTime: Date.now() + 10 * DAY, category: "economics",
     fee: venue === "kalshi" ? { venue: "kalshi", multiplier: 1 } : { venue, rate: 0.05 },
-    url: `https://example.test/${venue}/${id}`, yesTokenId: null, noTokenId: null, strike: null, active: true, result: null, volume24h: null, ...over,
+    url: venue === "kalshi" ? `https://kalshi.com/markets/e2e/${id}` : venue === "polymarket" ? `https://polymarket.com/event/e2e-${id}` : `https://polymarket.us/market/e2e-${id}`, yesTokenId: null, noTokenId: null, strike: null, active: true, result: null, volume24h: null, ...over,
   };
 }
 const book = (yesAsks: Level[], noAsks: Level[], now: number): Book => ({ yesAsks, noAsks, yesBids: [], noBids: [], fetchedAt: now, hash: null });
@@ -57,6 +57,13 @@ export function universe(now: number) {
   return { markets: m, events, pairs, books };
 }
 
+function history(now: number) {
+  const k = market("kalshi", "K-hist", { title: "E2E fixture: settled lock", category: "sports" });
+  const p = market("polymarket_us", "P-hist", { title: "E2E fixture: settled lock", category: "sports" });
+  const books = new Map<string, Book>([[marketKey(k.venue, k.id), book([L(0.45, 120)], [L(0.6, 120)], now)], [marketKey(p.venue, p.id), book([L(0.6, 120)], [L(0.51, 120)], now)]]);
+  return { markets: [k, p], events: [] as VEvent[], pairs: [pair(k, p)], books };
+}
+
 const FRESH = new Set(["handcheck", "intl-fresh"]);
 const ageOf = (o: Opportunity): number => (o.legs.some(l => [...FRESH].some(f => l.marketId.endsWith(f))) ? 0 : 45 * MIN);
 
@@ -75,8 +82,10 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     await db.insert(opportunities).values({ id: o.id, kind: o.kind, data: o, venues: [...new Set(o.legs.map(l => l.venue))], safety: o.safety, roi: o.roi, profitPerDay: o.profitPerDay, firstSeenAt: first, lastSeenAt: new Date(now), active: true });
     await db.insert(receipts).values({ oppId: o.id, kind: o.kind, safety: o.safety, detectedAt: first, snapshot: o });
   }
-  // Settled history for the receipts page: one green Kalshi ↔ Polymarket US lock a day for the last 30 days.
-  const hist = deals.find(o => o.legs.some(l => l.marketId === "K-us-old"))!;
+  // Settled history for the receipts page: one green Kalshi ↔ Polymarket US lock a day for the last 30 days
+  // (its own prices, so its numbers never equal a live deal's).
+  const h = history(now);
+  const hist = scan(h, h.books, now).opps.find(o => o.kind === "cross_arb")!;
   for (let d = 1; d <= 30; d++) {
     const snap: Opportunity = { ...hist, id: `${hist.id}#hist${d}`, title: `E2E fixture: settled lock, day ${d}` };
     const at = new Date(now - d * DAY);

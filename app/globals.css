@@ -14,7 +14,7 @@
   --green: #2fbf71;         /* safety: green, mid lightness */
   --amber: #f5b13d;         /* safety: amber, lighter */
   --red: #e5484d;           /* safety: red, darker */
-  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --mono: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 10px;
   --tap: 44px;
   color-scheme: dark;

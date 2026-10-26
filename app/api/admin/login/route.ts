@@ -1,11 +1,12 @@
 /* Admin sign-in: ADMIN_TOKEN + a current TOTP code → an httpOnly cookie (lib/admin.ts). Rate limited per client. */
+import { appUrl } from "@/lib/auth/whop";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, adminLogin, tooManyAttempts } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const back = (q: string) => NextResponse.redirect(new URL(`/admin${q}`, req.nextUrl.origin), 303);
+  const back = (q: string) => NextResponse.redirect(new URL(`/admin${q}`, appUrl()), 303);
   const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const now = Date.now();
   if (tooManyAttempts(client, now, false)) return back("?error=wait");

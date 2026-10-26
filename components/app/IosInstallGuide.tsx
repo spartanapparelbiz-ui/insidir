@@ -1,6 +1,8 @@
 "use client";
-/* iPhone/iPad Safari only, when Insidir isn't already installed: how to add it to the Home Screen, which iOS
- * requires before a site can send push alerts. Dismissible; remembered in localStorage. Renders nothing elsewhere. */
+/* iPhone/iPad, when Insidir isn't already installed: how to add it to the Home Screen, which iOS requires before a
+ * site can send push alerts. Inside Instagram's or Facebook's in-app browser (where most visitors arrive) it first
+ * says to open the page in Safari, since Add to Home Screen isn't available there. Dismissible; remembered in
+ * localStorage. Renders nothing elsewhere. */
 import { useEffect, useState } from "react";
 import { isIos, isStandalone } from "./push";
 import "./ios.css";
@@ -11,6 +13,7 @@ function isSafari(): boolean {
   const ua = navigator.userAgent;
   return /Safari\//.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS|GSA|DuckDuckGo|Instagram|FBAN|FBAV)/.test(ua);
 }
+const isInApp = (): boolean => /(Instagram|FBAN|FBAV)/.test(navigator.userAgent);
 
 /** The iOS Share glyph (a box with an arrow), drawn inline so the step matches the real button. */
 function ShareGlyph() {
@@ -22,11 +25,13 @@ function ShareGlyph() {
 }
 
 export function IosInstallGuide() {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState<false | "safari" | "inapp">(false);
   useEffect(() => {
     let dismissed = false;
     try { dismissed = localStorage.getItem(KEY) === "1"; } catch { dismissed = false; }
-    if (!dismissed && isIos() && isSafari() && !isStandalone()) setShow(true);
+    if (dismissed || !isIos() || isStandalone()) return;
+    if (isSafari()) setShow("safari");
+    else if (isInApp()) setShow("inapp");
   }, []);
   if (!show) return null;
   const close = () => {
@@ -39,11 +44,19 @@ export function IosInstallGuide() {
         <p id="ios-h" className="ios__h">Add Insidir to your Home Screen to get instant alerts</p>
         <button type="button" className="btn btn--ghost ios__x" onClick={close} aria-label="Dismiss">Close</button>
       </div>
+      {show === "inapp" ? (
+        <ol className="ios__steps">
+          <li>Tap <b>•••</b> at the top right, then <b>Open in external browser</b> (Safari).</li>
+          <li>In Safari, tap the Share button <ShareGlyph />, then <b>Add to Home Screen</b>.</li>
+          <li>Open Insidir from the new icon and turn on alerts in Settings.</li>
+        </ol>
+      ) : (
       <ol className="ios__steps">
         <li>Tap the Share button <ShareGlyph /> in Safari&apos;s toolbar.</li>
         <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
         <li>Open Insidir from the new icon and turn on alerts in Settings.</li>
       </ol>
+      )}
     </aside>
   );
 }
