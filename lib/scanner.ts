@@ -28,6 +28,10 @@ const multiEvents = (u: Universe, idx: Map<string, VMarket>): Array<{ event: VEv
     event, markets: event.marketIds.map(id => idx.get(marketKey(event.venue, id))).filter((m): m is VMarket => Boolean(m)),
   })).filter(x => x.markets.length === x.event.marketIds.length);
 
+/** Threshold ladders (and the "if A then B" rules derived from them) run only when LADDERS_ENABLED=1. Off by
+ *  default: production runs with LADDERS_ENABLED=0. */
+export const laddersEnabled = (env: Record<string, string | undefined> = process.env): boolean => env.LADDERS_ENABLED === "1";
+
 /** Every market whose book a scan needs, grouped by venue. */
 export function marketsToBook(u: Universe): Map<Venue, VMarket[]> {
   const idx = byKey(u.markets);
@@ -35,7 +39,7 @@ export function marketsToBook(u: Universe): Map<Venue, VMarket[]> {
   const add = (m: VMarket | undefined) => { if (m?.active) need.set(marketKey(m.venue, m.id), m); };
   for (const p of u.pairs) if (!p.blocked) { add(idx.get(marketKey(p.a.venue, p.a.id))); add(idx.get(marketKey(p.b.venue, p.b.id))); }
   for (const { markets } of multiEvents(u, idx)) markets.forEach(add);
-  for (const imp of [...findLadderImplications(u.markets), ...findRuleImplications(u.markets)]) { add(imp.antecedent); add(imp.consequent); }
+  for (const imp of [...(laddersEnabled() ? findLadderImplications(u.markets) : []), ...findRuleImplications(u.markets)]) { add(imp.antecedent); add(imp.consequent); }
   const out = new Map<Venue, VMarket[]>();
   for (const m of need.values()) {
     const list = out.get(m.venue);
@@ -58,7 +62,7 @@ export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number)
   const crossArb = findCrossArbs(arbInputs, now);
   const secondOpinion = findSecondOpinions(arbInputs, now);
   const multi = findMultiOutcome(multiInputs, now);
-  const ladder = findLadders(u.markets, books, now);
+  const ladder = laddersEnabled() ? findLadders(u.markets, books, now) : [];
   const implication = findImplications(u.markets, books, now);
   // One opportunity per id (a ladder rung could also match a rule): keep the most profitable.
   const best = new Map<string, Opportunity>();

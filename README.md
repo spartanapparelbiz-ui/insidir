@@ -70,6 +70,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
 | `*_RATE_PER_SEC` | worker | request budget per bucket |
 | `SWEEP_MS`, `SCAN_MS`, `FULL_SCAN_MS`, `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
+| `LADDERS_ENABLED` | worker | `1` turns threshold ladders on; anything else (production: `0`) leaves them off |
 
 Kalshi API keys are never asked for or stored. P&L for Kalshi comes from the CSV export the user uploads, which
 is processed and not stored.
