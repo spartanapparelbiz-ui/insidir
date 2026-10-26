@@ -13,7 +13,8 @@ export function Beacons({ where }: { where: string }) {
       const unlock = el.getAttribute("data-unlock");
       if (unlock !== null) beacon("unlock_click", unlock || where);
       const href = el instanceof HTMLAnchorElement ? el.href : "";
-      if (el.hasAttribute("data-checkout") || /^https:\/\/(www\.)?whop\.com\/checkout\//.test(href)) beacon("checkout_start", unlock || where);
+      // Any absolute link to a /checkout/ page is the Whop checkout (the site itself has no such route).
+      if (el.hasAttribute("data-checkout") || /^https?:\/\/[^/]+\/checkout\//.test(href)) beacon("checkout_start", unlock || where);
     };
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });

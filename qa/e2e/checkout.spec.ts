@@ -16,7 +16,7 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   await page.goto("/?utm_source=instagram&utm_campaign=e2e");
   await expect(page.locator("h1")).toBeVisible();
   const vid = (await context.cookies()).find(c => c.name === "insidir_vid")!.value;
-  const variant = (await context.cookies()).find(c => c.name === "insidir_ab")!.value;
+  const variant = decodeURIComponent((await context.cookies()).find(c => c.name === "insidir_ab")!.value);
 
   // Value before signup: the feed opens with no account.
   await page.getByRole("link", { name: "See today's live deals" }).first().click();

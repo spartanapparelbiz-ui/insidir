@@ -13,8 +13,16 @@ async function seeded(): Promise<{ fresh: Paid[]; old: Paid[] }> {
   return { fresh: all.filter(r => r.age < 30 * 60), old: all.filter(r => r.age >= 30 * 60) };
 }
 
-/** Ways a number can appear: raw JSON and as shown on screen. */
-const shapes = (v: number): string[] => [JSON.stringify(v), `$${v.toFixed(2)}`];
+const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Ways a paid number can appear: as a JSON field ("profit":6.92, or \"profit\":6.92 inside the page's RSC payload), as a standalone decimal, or as dollars on screen.
+ *  Whole numbers only count as JSON fields (a bare "90" appears in any stylesheet or SVG path). */
+function leaks(body: string, field: string, v: number): string | null {
+  const json = JSON.stringify(v);
+  const pats = [new RegExp(`\\\\?"${field}\\\\?":${esc(json)}(?![\\d.])`), new RegExp(`(?<![\\d.])${esc("$" + v.toFixed(2))}(?!\\d)`)];
+  if (!Number.isInteger(v)) pats.push(new RegExp(`(?<![\\d.])${esc(json)}(?![\\d])`));
+  const hit = pats.find(r => r.test(body));
+  return hit ? body.match(hit)![0] : null;
+}
 
 for (const who of ["visitor", "free member"] as const) {
   test(`no paid fields reach a ${who}`, async ({ page, context }) => {
@@ -30,20 +38,21 @@ for (const who of ["visitor", "free member"] as const) {
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
-    const leaks: string[] = [];
-    for (const { url, body } of bodies) {
+    const found: string[] = [];
+    // Static JS/CSS is the same file for every visitor, so it can't carry anyone's data.
+    for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
       for (const f of fresh) {
-        if (body.includes(f.id)) leaks.push(`${url}: fresh deal id ${f.id}`);
-        if (body.includes(f.title.replace("E2E fixture: ", ""))) leaks.push(`${url}: fresh deal title ${f.title}`);
+        if (body.includes(f.id)) found.push(`${url}: fresh deal id ${f.id}`);
+        if (body.includes(f.title.replace("E2E fixture: ", ""))) found.push(`${url}: fresh deal title ${f.title}`);
       }
       for (const o of old) {
-        for (const [k, v] of [["profit", o.profit], ["cost", o.cost], ["fees", o.fees]] as const) {
-          for (const s of shapes(v)) if (v > 0 && body.includes(s)) leaks.push(`${url}: ${k} ${s} of ${o.title}`);
+        for (const [k, v] of [["profit", o.profit], ["cost", o.cost], ["fees", o.fees], ["sets", o.sets]] as const) {
+          const hit = v > 0 ? leaks(body, k, v) : null;
+          if (hit) found.push(`${url}: ${k} ${hit} of ${o.title}`);
         }
-        if (body.includes(`"sets":${o.sets}`)) leaks.push(`${url}: sets of ${o.title}`);
       }
     }
-    expect(leaks).toEqual([]);
+    expect(found).toEqual([]);
     // And the API says so explicitly.
     const feed = await (await page.request.get("/api/feed")).json() as { rows: Array<{ profit: unknown; cost: unknown; fees: unknown; sets: unknown; locked: boolean }> };
     expect(feed.rows.length).toBeLessThanOrEqual(3);

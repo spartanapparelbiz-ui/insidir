@@ -10,7 +10,7 @@ test("A/B: new visitors get both variants, each sees its own headline, landing_v
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     await page.goto("/");
-    const cookie = (await ctx.cookies()).find(c => c.name === "insidir_ab")!.value;
+    const cookie = decodeURIComponent((await ctx.cookies()).find(c => c.name === "insidir_ab")!.value);
     const v = cookie.split(":")[1] as "a" | "b";
     seen[v]!++;
     await expect(page.locator("h1")).toHaveText(AB_TESTS.hero[v].headline);
