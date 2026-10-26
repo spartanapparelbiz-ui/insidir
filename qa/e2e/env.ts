@@ -32,4 +32,5 @@ export const SERVER_ENV: Record<string, string> = {
   NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"),
   // Every built feature is switched on in tests, so each is tested for real; Crypto and Stocks stay Coming soon.
   FEATURES_READY: "feed,records,follows,alerts_push,alerts_email,daily_email,custom_rules,price_gaps",
+  POSTS_ADMIN_EMAILS: "user_e2e_pro@example.test",
 };

@@ -30,7 +30,7 @@ test("error: a deal that doesn't exist says so and points to the Terminal; the A
 
 test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page }) => {
   try {
-    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes' where job like 'moves:%'");
+    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
     await page.goto("/feed");
     await expect(page.getByText("Catching up. Showing the latest moves we have.")).toBeVisible();
     await expect(page.getByText(/Last update from the source/)).toBeVisible();

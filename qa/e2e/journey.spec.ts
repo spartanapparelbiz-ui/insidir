@@ -1,14 +1,14 @@
-/* The whole member journey, as one person: free → paid → alerts → cancel.
- *   A visitor lands, opens the free Terminal, taps Unlock, pays on Whop (the local mock), comes back signed in to the
- *   live Terminal, goes through the 3-step onboarding, sets up alerts (an autosaved change, push on this device,
- *   a real test alert delivered to the stand-in push service, the alert history), then sees the next charge in
- *   Billing and cancels in one tap. Run at both sizes; it resets everything it creates. */
+/* The whole member journey, as one person: free → paid → follow → alerts → cancel (docs/V2.md).
+ *   A visitor lands, opens the free feed (30 minutes late), taps "Try it for $1", pays on Whop (the local mock),
+ *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
+ *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
+ *   charge in Billing and cancels in one tap. Run at both sizes; it resets everything it creates. */
 import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { APP_URL, OUT, PUSH_PORT, WHOP_PORT } from "./env";
-import { dealId, q } from "./helpers";
+import { q } from "./helpers";
 import { MOCK_USER } from "./mock-whop";
 
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
@@ -19,6 +19,7 @@ async function reset() {
   await whop("/__reset", { method: "POST" });
   await q("delete from terminal.push_subscriptions where user_id = $1", [MOCK_USER.sub]);
   await q("delete from terminal.alerts_sent where user_id = $1", [MOCK_USER.sub]);
+  await q("delete from terminal.follows where user_id = $1", [MOCK_USER.sub]);
   await q("delete from terminal.sessions where user_id = $1", [MOCK_USER.sub]);
   await q("delete from terminal.users where id = $1", [MOCK_USER.sub]);
 }
@@ -42,48 +43,32 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
   }, { endpoint, p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") });
 
   try {
-    // Free: the landing page, then the Terminal without an account.
+    // Free: the landing page, then the feed without an account (30 minutes late).
     await page.goto("/");
-    await page.getByRole("link", { name: "See today's live deals" }).first().click();
-    await expect(page).toHaveURL(/\/terminal/);
+    await page.getByRole("link", { name: "See the live feed" }).first().click();
+    await expect(page).toHaveURL(/\/feed/);
+    await expect(page.getByText("You're seeing moves 30 minutes late.")).toBeVisible();
 
-    // Paid: Unlock → Whop checkout → pay → back signed in.
+    // Paid: "Try it for $1" → Whop checkout → pay → back signed in on the live feed.
     await page.locator("[data-unlock]").first().click();
     await expect(page).toHaveURL(new RegExp(`localhost:${WHOP_PORT}/checkout/plan_e2e_`));
     await page.getByRole("button", { name: "Pay (test mode)" }).click();
-    await expect(page).toHaveURL(/\/terminal/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/feed/, { timeout: 20_000 });
 
-    // Onboarding: three steps, shown once.
-    const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "What do you trade?" })).toBeVisible();
-    await expect(dialog.getByText("Step 1 of 3")).toBeVisible();
-    await dialog.getByText("Sports", { exact: true }).click();
-    await dialog.getByRole("button", { name: "Next" }).click();
-    await expect(dialog.getByRole("heading", { name: "Turn on alerts" })).toBeVisible();
-    await dialog.getByRole("button", { name: "Next" }).click();
-    await expect(dialog.getByRole("heading", { name: "You're set" })).toBeVisible();
-    await shot("onboarding");
-    await dialog.getByRole("button", { name: "See today's live deals" }).click();
-    // Onboarding closes (the first-time tips may open next: that's their cue).
-    await expect(page.getByRole("heading", { name: "You're set" })).toHaveCount(0);
-    // The last step's button navigates to the Terminal; load it fresh rather than racing that navigation.
-    await page.waitForURL(/\/terminal/);
-    await page.goto("/gaps");
-    await expect(page.getByRole("heading", { name: "What do you trade?" })).toHaveCount(0);
-    const saved = await q<{ settings: { categories: string[] }; onboarded_at: Date | null }>("select settings, onboarded_at from terminal.users where id = $1", [MOCK_USER.sub]);
-    expect(saved[0]?.settings.categories).toEqual(["sports"]);
-    expect(saved[0]?.onboarded_at).not.toBeNull();
+    // The welcome: follow the first top trader in one tap; it shows on Following.
+    const welcome = page.locator(".welcome");
+    await expect(welcome.getByRole("heading", { name: "You're in. Follow your first 3 top traders." })).toBeVisible();
+    await welcome.getByRole("button", { name: "Follow" }).first().click();
+    await expect(welcome.getByRole("button", { name: "Following" }).first()).toBeVisible();
+    await shot("welcome");
+    await expect.poll(async () => (await q<{ n: number }>("select count(*)::int as n from terminal.follows where user_id = $1 and kind = 'trader'", [MOCK_USER.sub]))[0]?.n).toBe(1);
+    await page.goto("/following");
+    await expect(page.getByText("E2E-Top").first()).toBeVisible();
 
-    // Alerts: an autosaved change, push on this device, a real test alert, then the history.
+    // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");
     await expect(page.getByRole("heading", { name: "Alerts", level: 1 })).toBeVisible();
-    const roi = page.getByLabel("Lowest return");
-    await roi.fill("abc");
-    await expect(page.getByText("Enter a number from 0 to 100")).toBeVisible();
-    await roi.fill("2.5");
-    await expect(toast(page, "Saved")).toBeVisible();
-    await expect.poll(async () => (await q<{ r: number }>("select (settings->>'alertMinRoi')::float8 as r from terminal.users where id = $1", [MOCK_USER.sub]))[0]?.r).toBeCloseTo(0.025, 5);
-
+    await expect(page.getByText("Every move by a trader you follow.")).toBeVisible();
     await page.getByRole("button", { name: "Turn on alerts" }).click();
     await expect(toast(page, "Alerts on")).toBeVisible();
     const before = pushes().length;
@@ -91,10 +76,12 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     await expect(toast(page, "Test alert sent to 1 device")).toBeVisible();
     expect(pushes().slice(before).some(p => endpoint.endsWith(p.path))).toBe(true);
 
-    await expect(page.getByText("No alerts yet. When a deal matches, it shows up here.")).toBeVisible();
-    await q("insert into terminal.alerts_sent (user_id, opp_id, channel) values ($1, $2, 'push') on conflict do nothing", [MOCK_USER.sub, await dealId("Hawks")]);
+    await expect(page.getByText("No alerts yet. When someone you follow moves, it shows up here.")).toBeVisible();
+    await q("insert into terminal.alerts_sent (user_id, opp_id, channel) values ($1, 'move:e2e:m1', 'push') on conflict do nothing", [MOCK_USER.sub]);
     await page.reload();
-    await expect(page.locator(".atable").getByText("Will the Hawks win")).toBeVisible();
+    await expect(page.locator(".atable").getByText("$412,000 on Chiefs to win")).toBeVisible();
+    // Insidir, not Pro: custom rules point to Pro.
+    await expect(page.locator("[data-unlock=rules]")).toHaveText("Go Pro");
     await shot("alerts");
 
     // Billing: the next charge, then cancel in one tap.

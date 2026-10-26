@@ -100,3 +100,29 @@ test("results show wins and losses; /terminal goes to the feed", async ({ page }
   await page.goto("/terminal");
   await expect(page).toHaveURL(/\/feed$/);
 });
+
+test("share card: a 1080×1920 PNG, never early for free viewers", async ({ page, context }) => {
+  const late = await page.request.get("/api/share/e2e%3Am4");
+  expect(late.status()).toBe(200);
+  expect(late.headers()["content-type"]).toBe("image/png");
+  const png = await late.body();
+  expect(png.readUInt32BE(16)).toBe(1080);
+  expect(png.readUInt32BE(20)).toBe(1920);
+  expect((await page.request.get("/api/share/e2e%3Am1")).status()).toBe(404); // 4 minutes old: paid data
+  await signIn(context, "insidir");
+  expect((await page.request.get("/api/share/e2e%3Am1")).status()).toBe(200);
+});
+
+test("/admin/posts: only the allowlisted email; top moves with Download and a caption", async ({ page, context }) => {
+  expect((await page.goto("/admin/posts"))?.status()).toBe(404);
+  await signIn(context, "insidir");
+  expect((await page.goto("/admin/posts"))?.status()).toBe(404);
+  await context.clearCookies();
+  await signIn(context, "pro");
+  await page.goto("/admin/posts");
+  await expect(page.getByRole("heading", { name: "Posts", level: 1 })).toBeVisible();
+  const first = page.locator("[data-post]").first();
+  await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
+  await expect(first.getByLabel("Caption")).toHaveValue(/^A top trader put \$412,000 on Chiefs to win\./);
+  await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
+});
