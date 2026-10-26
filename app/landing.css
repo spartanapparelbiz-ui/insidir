@@ -63,8 +63,8 @@
 @media (prefers-reduced-motion: no-preference) {
   .roll--tick { display: inline-block; animation: tick 700ms cubic-bezier(.2, .8, .2, 1); }
 }
-/* a live tick: the number flashes white (#FFFFFF behind Ink text) and fades back to its normal colour */
-@keyframes tick { 0%, 15% { transform: translateY(-12%); background: var(--flash); color: var(--ink); } 100% { transform: none; background: transparent; color: inherit; } }
+/* a live tick: the number glows violet for a moment and settles back to its normal colour */
+@keyframes tick { 0%, 25% { transform: translateY(-12%); color: var(--accent); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); } 100% { transform: none; color: inherit; text-shadow: none; } }
 .roll--tick { border-radius: 6px; }
 
 /* ---------- 2. the live strip ---------- */
@@ -273,3 +273,52 @@
 .lp-loop { margin: 0; display: grid; gap: 8px; justify-items: center; }
 .lp-loop__video { width: min(280px, 72vw); height: auto; aspect-ratio: 390 / 844; border-radius: 28px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
 .lp-loop__cap { color: var(--steel); font-size: var(--t14); text-align: center; max-width: 40ch; }
+
+/* ---------- trust row (under the hero) and the real scale line ---------- */
+.trust { display: grid; gap: 12px; padding-top: 24px; }
+.trust__row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+@media (min-width: 900px) { .trust__row { display: flex; flex-wrap: wrap; gap: 8px 32px; } }
+.trust__item { display: flex; align-items: center; gap: 10px; color: var(--paper); font-size: var(--t14); line-height: 1.3; }
+.trust__icon { width: 20px; height: 20px; flex: none; color: var(--steel); }
+.trust__item a { color: var(--accent-text); }
+.trust__scale { display: inline-flex; align-items: center; gap: 8px; color: var(--steel); font-size: var(--t14); }
+.trust__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+@media (prefers-reduced-motion: no-preference) { .trust__dot { animation: beat 1.6s ease-in-out infinite; } }
+
+/* ---------- how Insidir makes money ---------- */
+.lp-money__line { font-size: var(--t22); line-height: 1.35; font-weight: 600; max-width: 34ch; }
+@media (min-width: 900px) { .lp-money__line { font-size: var(--t32); line-height: 1.2; } }
+
+/* ---------- the receipts statement (light band): an audited ledger, ruled lines, exact times ---------- */
+.stmt { display: grid; gap: 0; border-top: 2px solid var(--paper); border-bottom: 2px solid var(--paper); padding: 16px 0; }
+.stmt__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.stmt__brand { font: 700 var(--t14)/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.stmt__period { color: var(--steel); font-size: var(--t14); }
+.stmt__tally { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.stmt__tally dt { color: var(--steel); font-size: 12px; line-height: 16px; }
+.stmt__tally dd { margin: 0; font: 700 var(--t22)/1.2 var(--mono); }
+.stmt__foot { padding-top: 12px; color: var(--steel); font-size: 12px; line-height: 1.5; }
+.stmt .rcpts { gap: 0; }
+.stmt .rcpts__head { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.stmt .rcpts__list { gap: 0; }
+.stmt .rcpt { background: none; border-radius: 0; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.stmt .rcpt:last-child { border-bottom: 0; }
+.stmt .rcpt__when { color: var(--paper); }
+@media (min-width: 760px) {
+  .stmt .rcpts__head, .stmt .rcpt { grid-template-columns: 112px minmax(0, 1fr) 128px 72px 160px; }
+  .stmt .rcpts__head { padding-inline: 0; }
+}
+/* a miss is printed plainly, never hidden */
+.stmt .rcpt--miss .rcpt__result { color: var(--steel); }
+
+/* ---------- FAQ on the light band ---------- */
+.band--paper .lp-faq { gap: 0; border-top: 1px solid var(--line); }
+.band--paper .lp-faq__item { background: none; border-radius: 0; border-bottom: 1px solid var(--line); }
+.band--paper .lp-faq__item summary { padding: 0; }
+.band--paper .lp-faq__a { padding: 0 0 16px; }
+.lp-faq__item summary { transition: color .12s; }
+.lp-faq__item summary:hover { color: var(--accent-text); }
+.lp-faq__item summary:hover::after { color: var(--accent-text); }
+.lp-legal ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.lp-legal ol li strong, .lp-legal ul li strong { color: var(--paper); }
+.lp-about__lead { color: var(--paper) !important; font-size: var(--t22); line-height: 1.4; }

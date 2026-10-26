@@ -50,7 +50,8 @@
 }
 @media (prefers-reduced-motion: reduce) { .dt-row--closing td, .dt-row--closing th { opacity: .55; } }
 @keyframes dt-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-@keyframes dt-flash { 0%, 15% { background: var(--flash); color: var(--ink); } 100% { background: transparent; color: var(--paper); } }
+/* a live tick: the number glows violet for a moment, then settles back to Paper */
+@keyframes dt-flash { 0%, 25% { color: var(--accent); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); } 100% { color: var(--paper); text-shadow: none; } }
 
 /* phones: Rules (icon), Event with the play and bar under it, Profit with ROI under it */
 @media (max-width: 899px) {
@@ -73,7 +74,7 @@
 .tbar__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
 .tbar__h { font-size: var(--t32); line-height: 40px; }
 .tbar__beat { display: inline-flex; align-items: center; gap: 8px; color: var(--steel); font-size: var(--t14); }
-.tbar__beat::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--paper); }
+.tbar__beat::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .tbar__beat--paused::before { background: var(--steel); }
 @media (prefers-reduced-motion: no-preference) { .tbar__beat:not(.tbar__beat--paused)::before { animation: beat 1.6s ease-in-out infinite; } }
 .tbar__totals { display: flex; flex-wrap: wrap; gap: 0; margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -87,7 +88,7 @@
 .tbar__num { width: 96px; }
 .tbar__search { flex: 1 1 200px; min-width: 160px; }
 .tbar__toggle { min-height: 40px; height: 40px; padding: 0 16px; font-size: var(--t14); }
-.tbar__toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--paper); }
+.tbar__toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); color: var(--paper); }
 /* filters: always shown on desktop; on phones behind one "Filters and sort" button */
 .tbar__filters { display: grid; gap: 8px; }
 .tbar__more { justify-self: start; }

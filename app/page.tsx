@@ -3,8 +3,9 @@
  * Server-Sent Events stream (components/live): the hero's prices tick, the scanner heartbeat and "open for" timer count
  * real time, today's count rolls up, the tape and toasts show real events. Everything runs on the viewer's clock:
  * free visitors see deals 30 minutes late, like the feed. A section without a real number is hidden, never filled.
- * Order: the hero (headline, the split, the pitch), the live strip, the Terminal, receipts, safety lights, pricing,
- * FAQ, final CTA. The hero never looks empty: a live deal, else the last real deal, else the closest market's real
+ * Order, alternating black and light bands: the hero (headline, the split, the pitch) with the trust row and the real
+ * scale line, the live strip, how it works, the Terminal (black) → receipts, printed like a statement (light) →
+ * safety lights, how Insidir makes money, pricing (black) → FAQ (light) → final CTA and footer (black). The hero never looks empty: a live deal, else the last real deal, else the closest market's real
  * prices (components/landing/model.ts heroView). The scanner heartbeat sits small in the header. */
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -18,7 +19,8 @@ import { HeaderBeat } from "@/components/landing/HeaderBeat";
 import { Hero } from "@/components/landing/Hero";
 import { LiveStrip } from "@/components/landing/LiveStrip";
 import { Pricing } from "@/components/landing/Pricing";
-import { FollowLine, ReceiptList } from "@/components/landing/Receipts";
+import { FollowLine, ReceiptList, Statement } from "@/components/landing/Receipts";
+import { MoneySection, TrustRow } from "@/components/landing/Trust";
 import { SafetySection } from "@/components/landing/Safety";
 import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
@@ -27,7 +29,7 @@ import { Steps } from "@/components/landing/Steps";
 import { ProfitChart, type ChartPoint } from "@/components/receipts/ProfitChart";
 import { cumulative, loadLedger, usd2 } from "@/lib/ledger";
 import {
-  checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
+  checkoutHref, DAY_MS, followLine, tally, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
   RECEIPTS_PUBLIC_DAYS, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, visibleReceipts,
 } from "@/components/landing/model";
 import { AB_COOKIE, AB_TESTS, heroVariant, recordEvent } from "@/lib/analytics";
@@ -40,6 +42,7 @@ import { latestTick, recentFor } from "@/lib/live/queries";
 import { liveStats } from "@/lib/live/stats";
 import { entitlements, isPaid } from "@/lib/plans";
 import { greenPerDay, leftOnTable, proofStats, receiptRows, storedOpps } from "@/lib/queries";
+import { scanScale } from "@/lib/scale";
 import { dataStatus } from "@/lib/status";
 import "./landing.css";
 
@@ -80,6 +83,7 @@ export default async function Landing() {
   const week = proofStats(log, weekStart);
   const proof = today?.found ? today : week;
   const period = today?.found ? "today" : "week";
+  const scale = await scanScale(viewer.region, status, now);
   const view = heroView(split, split ? null : lastDeal(closed, viewer.region, delayMs, now), nearestMarket(near, viewer.region));
   const refund = greenPerDay(mine, REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
   const recent = landingReceipts(log, LANDING_RECEIPTS);
@@ -100,6 +104,7 @@ export default async function Landing() {
           <div className="wrap">
             <Hero view={view} delayMs={delayMs} medianLifeMin={stats.medianLifeMin} headline={hero.headline} sub={HERO_SUB} cta={LANDING_CTA}
               serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />
+            <TrustRow scale={scale} />
             <LiveStrip serverNow={now} initialTape={initialTape} stats={{
               foundToday: today?.found ?? 0, foundWeek: week?.found ?? 0, period,
               biggestRoi: proof?.biggestRoi ?? null, medianRoi: proof?.medianRoi ?? null,
@@ -110,19 +115,32 @@ export default async function Landing() {
           <Toasts serverNow={now} />
         <div className="wrap">
           <TerminalPreview rows={feedFor(opps, fv, now)} hidden={liveHiddenCount(opps, viewer.region, delayMs, now)} now={now} unlockHref={insidir} cta={LANDING_CTA} />
-          {recent.length ? (
-            <section className="sec" data-section="receipts" aria-labelledby="rcpt-h">
-              <h2 id="rcpt-h" className="sec__h">Receipts</h2>
-              <p className="sec__p">The last 7 days, as found and as they ended. Wins and misses.</p>
-              <FollowLine res={followLine(log)} period="in the last 7 days" />
-              {curve.length >= 2 ? <ProfitChart points={curve} summary={`Following every green deal with $500 over the last 7 days: ${curve[curve.length - 1]!.valueText}.`} /> : null}
-              <ReceiptList rows={recent} />
-              <Link className="btn btn--secondary" href="/receipts">See every receipt</Link>
-            </section>
-          ) : null}
+        </div>
+        {recent.length ? (
+          <div className="band--paper" data-band="paper">
+            <div className="wrap">
+              <section className="sec" data-section="receipts" aria-labelledby="rcpt-h">
+                <h2 id="rcpt-h" className="sec__h">Receipts</h2>
+                <p className="sec__p">The last 7 days, as found and as they ended. Wins and misses.</p>
+                <Statement from={weekStart} to={now - delayMs} t={tally(log)}>
+                  <ReceiptList rows={recent} />
+                </Statement>
+                <FollowLine res={followLine(log)} period="in the last 7 days" />
+                {curve.length >= 2 ? <ProfitChart points={curve} summary={`Following every green deal with $500 over the last 7 days: ${curve[curve.length - 1]!.valueText}.`} /> : null}
+                <Link className="btn btn--secondary" href="/receipts">See every receipt</Link>
+              </section>
+            </div>
+          </div>
+        ) : null}
+        <div className="wrap">
           <SafetySection />
+          <MoneySection />
           <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={insidir} proHref={pro} freeCta={LANDING_CTA} refund={refund} />
-          <Faq />
+        </div>
+        <div className="band--paper" data-band="paper">
+          <div className="wrap"><Faq /></div>
+        </div>
+        <div className="wrap">
           <FinalCta cta={LANDING_CTA} />
         </div>
       </main>

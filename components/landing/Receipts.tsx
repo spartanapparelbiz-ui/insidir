@@ -1,6 +1,8 @@
 /* The public receipts log: every lock found, as it looked when found, and how it settled. Wins and misses alike;
- * unsettled rows say "Open". Shared by the landing page (section 4) and /receipts. A compact list: one line per
- * deal on desktop, two on phones. */
+ * unsettled rows say "Open". On the landing page it is printed like a statement on a light section (Statement):
+ * the period, the tally, then one ruled line per deal with its exact time found (UTC). One line per deal on
+ * desktop, two on phones. */
+import type { ReactNode } from "react";
 import { SafetyLight } from "@/components/SafetyLight";
 import type { BacktestResult } from "@/lib/engines/receipts";
 import { pct, usd } from "@/lib/format";
@@ -11,6 +13,10 @@ const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", 
 export const whenText = (ms: number): string => WHEN.format(new Date(ms));
 const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 export const dayText = (ms: number): string => DAY.format(new Date(ms));
+
+const STAMP = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" });
+/** "Oct 26, 14:32": the exact minute a deal was found, in UTC. */
+export const stampText = (ms: number): string => STAMP.format(new Date(ms));
 
 const signed = (v: number): string => (v > 0 ? "+" : "") + usd(v);
 
@@ -48,7 +54,7 @@ export function ReceiptItem({ r }: { r: ReceiptRow }) {
   const result = !settled ? "Open" : won ? signed(r.realizedProfit ?? 0) : "Settled differently";
   return (
     <li className={`rcpt${settled && !won ? " rcpt--miss" : ""}`}>
-      <span className="rcpt__when mono">{whenText(r.detectedAt)}</span>
+      <time className="rcpt__when mono" dateTime={new Date(r.detectedAt).toISOString()}>{stampText(r.detectedAt)}</time>
       <span className="rcpt__title">{o.title}</span>
       <span className="rcpt__light"><SafetyLight safety={o.safety} /></span>
       <span className="rcpt__roi mono"><span className="sr-only">ROI when found: </span>{pct(o.roi)}</span>
@@ -62,6 +68,25 @@ export function ReceiptList({ rows }: { rows: readonly ReceiptRow[] }) {
     <div className="rcpts">
       <p className="rcpts__head" aria-hidden="true"><span>Found</span><span>Deal</span><span>Light</span><span>ROI</span><span>Result</span></p>
       <ul className="rcpts__list">{rows.map(r => <ReceiptItem key={r.id} r={r} />)}</ul>
+    </div>
+  );
+}
+
+/** The landing page's receipts, printed like an audited statement: the period and time zone, the tally (zeros
+ *  hidden), the lines, and a note that rows are never edited (receipts are snapshots taken when found). */
+export function Statement({ from, to, t, children }: { from: number; to: number; t: ReceiptTally; children: ReactNode }) {
+  const tallies = [["Found", t.total], ["Settled the same way", t.sameWay], ["Settled differently", t.differently], ["Still open", t.open]] as const;
+  return (
+    <div className="stmt">
+      <div className="stmt__head">
+        <p className="stmt__brand">Insidir · Receipts</p>
+        <p className="stmt__period mono">{whenText(from)} – {dayText(to)} · times in UTC</p>
+      </div>
+      <dl className="stmt__tally">
+        {tallies.filter(([, n]) => n > 0).map(([k, n]) => <div key={k}><dt>{k}</dt><dd className="mono">{n}</dd></div>)}
+      </dl>
+      {children}
+      <p className="stmt__foot">Each line is the deal as we found it, saved at that moment and never edited. Misses stay in.</p>
     </div>
   );
 }

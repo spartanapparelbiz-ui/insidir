@@ -7,6 +7,7 @@ import { closeDb, getDb } from "@/lib/db";
 import { DEFAULT_SETTINGS, nearMisses, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
+import { saveMarkets } from "@/lib/worker/store";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarket, Venue } from "@/lib/types";
 
@@ -73,8 +74,10 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets CASCADE`);
   const u = universe(now);
+  // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
+  await saveMarkets(db, u.markets);
   const { opps } = scan(u, u.books, now);
   // Second opinions double the cross-venue rows; the feed shows the lock, which is what the tests check.
   const deals = opps.filter(o => o.kind !== "second_opinion");

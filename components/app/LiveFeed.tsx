@@ -260,26 +260,26 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
             onClick={() => setFiltersOpen(o => !o)}>Filters and sort{anyFilter ? " (on)" : ""}</button>
           <div className="tbar__controls" id="tbar-controls">
             <label className="tbar__field tbar__search">Search
-              <input ref={search} className="input" type="search" placeholder="Event or venue  ( / )" value={filter.q} onChange={e => set("q", e.target.value)} />
+              <input ref={search} className={`input${filter.q.trim() ? " input--on" : ""}`} type="search" placeholder="Event or venue  ( / )" value={filter.q} onChange={e => set("q", e.target.value)} />
             </label>
             <label className="tbar__field">Category
-              <select className="input" value={filter.category} onChange={e => set("category", e.target.value)}>
+              <select className={`input${filter.category ? " input--on" : ""}`} value={filter.category} onChange={e => set("category", e.target.value)}>
                 <option value="">All</option>
                 {cats.map(c => <option key={c} value={c}>{c[0]!.toUpperCase() + c.slice(1)}</option>)}
               </select>
             </label>
             <label className="tbar__field">Min ROI %
-              <input className="input tbar__num" type="number" inputMode="decimal" min={0} step={0.1} value={filter.minRoi ? Math.round(filter.minRoi * 10_000) / 100 : ""}
+              <input className={`input tbar__num${filter.minRoi > 0 ? " input--on" : ""}`} type="number" inputMode="decimal" min={0} step={0.1} value={filter.minRoi ? Math.round(filter.minRoi * 10_000) / 100 : ""}
                 placeholder="0" onChange={e => set("minRoi", Math.max(0, Number(e.target.value) || 0) / 100)} />
             </label>
             {plan !== "free" ? (
               <label className="tbar__field">Min size $
-                <input className="input tbar__num" type="number" inputMode="decimal" min={0} step={10} value={filter.minSize || ""} placeholder="0"
+                <input className={`input tbar__num${filter.minSize > 0 ? " input--on" : ""}`} type="number" inputMode="decimal" min={0} step={10} value={filter.minSize || ""} placeholder="0"
                   onChange={e => set("minSize", Math.max(0, Number(e.target.value) || 0))} />
               </label>
             ) : null}
             <label className="tbar__field">Rules
-              <select className="input" value={filter.safety} onChange={e => set("safety", e.target.value as Safety | "")}>
+              <select className={`input${filter.safety ? " input--on" : ""}`} value={filter.safety} onChange={e => set("safety", e.target.value as Safety | "")}>
                 <option value="">Any</option><option value="green">Same rules</option><option value="yellow">Check rules</option><option value="red">Skip</option>
               </select>
             </label>

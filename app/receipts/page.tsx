@@ -113,18 +113,18 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
           <form className="rx-filters" method="get" action="/receipts">
             <input type="hidden" name="period" value={ledger.period} />
             <label className="tbar__field">Result
-              <select name="result" className="input" defaultValue={f.result}>
+              <select name="result" className={`input${f.result !== "all" ? " input--on" : ""}`} defaultValue={f.result}>
                 <option value="all">All</option><option value="won">Settled the same way</option><option value="differently">Settled differently</option><option value="open">Open</option>
               </select>
             </label>
             <label className="tbar__field">Category
-              <select name="category" className="input" defaultValue={f.category}>
+              <select name="category" className={`input${f.category ? " input--on" : ""}`} defaultValue={f.category}>
                 <option value="">All</option>
                 {ledger.categories.map(c => <option key={c} value={c}>{c[0]!.toUpperCase() + c.slice(1)}</option>)}
               </select>
             </label>
-            <label className="tbar__field">From<input type="date" name="from" className="input" defaultValue={f.from} /></label>
-            <label className="tbar__field">To<input type="date" name="to" className="input" defaultValue={f.to} /></label>
+            <label className="tbar__field">From<input type="date" name="from" className={`input${f.from ? " input--on" : ""}`} defaultValue={f.from} /></label>
+            <label className="tbar__field">To<input type="date" name="to" className={`input${f.to ? " input--on" : ""}`} defaultValue={f.to} /></label>
             <button type="submit" className="btn btn--primary rx-apply">Show receipts</button>
             {filtered ? <Link className="btn btn--ghost rx-apply" href={`/receipts?period=${ledger.period}`}>Clear filters</Link> : null}
           </form>

@@ -1,10 +1,15 @@
-/* Insidir design tokens. Monochrome: 95%+ of every screen is black, white or grey.
+/* Insidir design tokens. Black base, one accent: 95%+ of every screen is black, white or grey.
  *   Ink #000 page, Surface #141414 rows/cards/inputs, Line #262626 dividers (only where truly needed),
  *   Paper #F5F5F5 text and profit numbers, Steel #8C9099 secondary text, Dim #5A5F66 timestamps and stale or closed deals.
- *   The only colours on the site are the safety lights, as small dots next to a text label (Same rules / Check rules / Skip):
- *   Green #30D158, Amber #FF9F0A, Red #FF453A. No coloured text, buttons, flashes or backgrounds anywhere.
+ *   One accent, Violet #8B7CFF, and only for: the live pulse dot and "Scanning live", the "You keep" gap on the $1 bar,
+ *   links, focus rings, the active tab and selected filters, the primary CTA (solid violet, white bold text), and the
+ *   brief glow on a live number's changed digit. Never a big background, never a gradient; under 5% of any screen.
+ *   Profit numbers stay Paper. The safety lights keep their own colours, as small dots next to a text label
+ *   (Same rules / Check rules / Skip): Green #30D158, Amber #FF9F0A, Red #FF453A.
+ *   Light sections (.band--paper: Paper #F5F5F2, Ink text) break up the page; inside one, the tokens flip.
  *   Money gets emphasis by size and weight, not colour: profit numbers are JetBrains Mono bold, one step larger.
- *   Buttons: primary solid Paper with Ink text; secondary transparent with a 1px Steel outline. Both fully round.
+ *   Buttons: primary solid Violet with white bold 19px text (white on violet is 3.3:1, so the label is WCAG large text);
+ *   secondary transparent with a 1px Steel outline. Both fully round.
  *   Live updates flash white (#FFFFFF fading to the normal colour), never a colour.
  *   JetBrains Mono for every price and number (tabular); General Sans for headlines and prose.
  *   Type scale: 14 / 17 / 22 / 32 / 48 / 72 / 120. Spacing on a 4px grid: 8 / 16 / 24 / 32 / 48 / 64 / 96.
@@ -20,6 +25,10 @@
   --green: #30d158;
   --amber: #ff9f0a;
   --red: #ff453a;
+  --accent: #8b7cff;
+  /* the accent as text on Paper (#8B7CFF there is 3.0:1); same hue, deeper: 5.9:1 */
+  --accent-text: #8b7cff;
+  --on-accent: #ffffff;
 
   --mono: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sans: "General Sans", var(--font-sans-fallback, ui-sans-serif), -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -45,9 +54,12 @@ html, body { margin: 0; background: var(--ink); color: var(--paper); }
 body { font: 400 var(--t17)/1.5 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--steel); }
 a:hover { text-decoration-color: var(--paper); }
-:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+/* links in running text are the accent */
+:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn), a.link { color: var(--accent-text); text-decoration-color: color-mix(in srgb, var(--accent-text) 45%, transparent); }
+:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn):hover, a.link:hover { text-decoration-color: var(--accent-text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 h1, h2, h3, p { margin: 0; }
-h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+h1, h2, h3 { font-weight: 650; letter-spacing: -0.025em; text-wrap: balance; }
 button { font: inherit; color: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -71,10 +83,11 @@ button { font: inherit; color: inherit; }
 /* buttons: fully round, 44px minimum. Primary: solid Paper, Ink text. Secondary: transparent, 1px Steel outline. */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 22px; border-radius: var(--r-pill);
   font: 600 var(--t17)/1 var(--sans); text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
-.btn--primary { background: var(--paper); color: var(--ink); }
-.btn--primary:hover { background: var(--flash); }
+.btn--primary { background: var(--accent); color: var(--on-accent); font-size: 19px; font-weight: 700; }
+.btn--primary:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+.btn--primary:active:not([disabled]) { background: color-mix(in srgb, var(--accent) 88%, #000); }
 .btn--secondary { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 1px var(--steel); }
-.btn--secondary:hover { box-shadow: inset 0 0 0 1px var(--paper); }
+.btn--secondary:hover { box-shadow: inset 0 0 0 1px var(--paper); background: color-mix(in srgb, var(--paper) 6%, transparent); }
 .btn--ghost { background: transparent; color: var(--steel); }
 .btn--ghost:hover { color: var(--paper); }
 .btn--block { width: 100%; }
@@ -88,8 +101,10 @@ button { font: inherit; color: inherit; }
 .wordmark svg { height: 24px; width: auto; }
 .hdr__nav { display: flex; align-items: center; gap: 4px; font-size: var(--t17); }
 .hdr__nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 10px; color: var(--steel); text-decoration: none; }
+.hdr__nav a { transition: color .12s; }
 .hdr__nav a:hover, .hdr__nav a[aria-current="page"] { color: var(--paper); }
-.hdr__nav a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; text-decoration-color: var(--paper); }
+.hdr__nav a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 8px; text-decoration-color: var(--steel); }
+.hdr__nav a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; text-decoration-color: var(--accent); }
 @media (max-width: 560px) {
   .hdr__in { flex-wrap: wrap; row-gap: 0; }
   .hdr__nav { font-size: var(--t14); gap: 0; }
@@ -100,14 +115,21 @@ button { font: inherit; color: inherit; }
 }
 /* the scanner heartbeat: small, beside the wordmark (landing page) */
 .hbeat { margin: 0 auto 0 16px; display: inline-flex; align-items: center; gap: 8px; color: var(--steel); font-size: var(--t14); line-height: 1; white-space: nowrap; }
-.hbeat__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--paper); flex: none; }
+.hbeat__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
 .hbeat--paused { color: var(--paper); }
 .hbeat--paused .hbeat__dot { background: var(--steel); }
 @media (prefers-reduced-motion: no-preference) { .hbeat:not(.hbeat--paused) .hbeat__dot { animation: beat 1.6s ease-in-out infinite; } }
 @keyframes beat { 50% { opacity: .25; } }
-.foot { margin-top: var(--sec); padding: 32px 0 120px; border-top: 1px solid var(--line); color: var(--steel); font-size: var(--t14); line-height: 1.5; }
-.foot__links { display: flex; flex-wrap: wrap; gap: 0 20px; margin-top: 12px; }
-.foot__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
+.foot { margin-top: var(--sec); padding: 40px 0 120px; border-top: 1px solid var(--line); color: var(--steel); font-size: var(--t14); line-height: 1.5; }
+.band--paper + .foot, .foot:first-child { margin-top: 0; border-top: 0; }
+.foot__grid { display: grid; gap: 24px; }
+@media (min-width: 900px) { .foot__grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 48px; } }
+.foot__who { color: var(--paper); font-weight: 600; }
+.foot__contact { display: grid; gap: 2px; margin-top: 8px; }
+.foot__links { display: flex; flex-wrap: wrap; gap: 0 20px; }
+.foot__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--steel); text-decoration: none; transition: color .12s; }
+.foot__links a:hover { color: var(--paper); text-decoration: underline; text-decoration-color: var(--accent); }
+.foot__legal { margin-top: 16px; }
 
 /* safety light: a small coloured dot next to a Paper label, never colour alone. The only colour on the site. */
 .light { display: inline-flex; align-items: center; gap: 8px; color: var(--paper); font: 500 var(--t14)/1 var(--sans); white-space: nowrap; }
@@ -142,7 +164,11 @@ button { font: inherit; color: inherit; }
 .input { width: 100%; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-row); border: 0; background: var(--surface); color: var(--paper); font: inherit; }
 .card .input { background: var(--ink); }
 .check { display: flex; align-items: center; gap: 10px; min-height: var(--tap); }
-.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--paper); }
+.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.input { transition: box-shadow .12s; }
+.input:hover { box-shadow: inset 0 0 0 1px var(--line); }
+/* a filter that is set (not its default) */
+.input--on, .input--on:hover { box-shadow: inset 0 0 0 1px var(--accent); }
 
 /* sticky bottom CTA on phones */
 .stickycta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--ink); display: flex; gap: 8px; }
@@ -150,8 +176,10 @@ button { font: inherit; color: inherit; }
 @media (min-width: 900px) { .stickycta { display: none; } .foot { padding-bottom: 32px; } }
 
 .sec { padding: var(--sec) 0 0; display: grid; gap: 24px; }
-.sec__h { font-size: var(--t32); line-height: 1.15; }
-@media (min-width: 900px) { .sec__h { font-size: var(--t48); line-height: 1.05; } }
+.sec__h { font-size: var(--t32); line-height: 1.1; font-weight: 700; letter-spacing: -0.035em; }
+@media (min-width: 900px) { .sec__h { font-size: var(--t48); line-height: 1.02; } }
+/* the small label over a section heading */
+.sec__kicker { color: var(--steel); font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: -12px; }
 .sec__p { color: var(--steel); max-width: 62ch; }
 .table { width: 100%; border-collapse: collapse; font-size: var(--t14); }
 .table th, .table td { text-align: left; padding: 10px 12px 10px 0; vertical-align: top; }
@@ -168,7 +196,9 @@ button { font: inherit; color: inherit; }
   .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr);
     background: var(--ink); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
   .tabbar__item { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; color: var(--steel); text-decoration: none; font-size: 12px; line-height: 1.2; }
+  .tabbar__item:active { background: var(--surface); }
   .tabbar__item[aria-current="page"] { color: var(--paper); }
+  .tabbar__item[aria-current="page"] .tabbar__icon { color: var(--accent); }
   .tabbar__icon { width: 22px; height: 22px; }
   /* room for the bar under the page */
   body:has(.tabbar) .foot { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
@@ -220,12 +250,12 @@ button { font: inherit; color: inherit; }
 .dbar__seg--a { background: var(--line); }
 .dbar__seg--b { background: var(--dim); }
 .dbar__in { font-size: var(--t14); font-weight: 700; white-space: nowrap; }
-.dbar__gap { position: relative; display: flex; justify-content: flex-end; background: var(--paper); min-width: 2px; }
+.dbar__gap { position: relative; display: flex; justify-content: flex-end; background: var(--accent); min-width: 2px; }
 .dbar__fees { height: 100%; background: var(--steel); }
 .dbar--sm .dbar__fees { background: var(--steel); }
 .dbar__legend { display: flex; font-size: 12px; line-height: 1.35; color: var(--steel); }
 .dbar__key { padding-right: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dbar__key--keep { color: var(--paper); font-weight: 600; white-space: normal; padding-right: 0; min-width: 72px; }
+.dbar__key--keep { color: var(--accent-text); font-weight: 700; white-space: normal; padding-right: 0; min-width: 72px; }
 .dbar__feenote { color: var(--steel); font-weight: 400; }
 .dbar__key--over { color: var(--paper); }
 @media (prefers-reduced-motion: no-preference) {
@@ -239,3 +269,29 @@ button { font: inherit; color: inherit; }
 @keyframes dbar-b { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes dbar-gap { from { opacity: 0; transform: scaleX(.2); transform-origin: left; } to { opacity: 1; transform: none; } }
 @keyframes dbar-shimmer { 60%, 100% { transform: translateX(100%); } }
+
+/* ---------- light sections: Paper #F5F5F2 with Ink text; the tokens flip inside, so every component follows ---------- */
+.band--paper {
+  --ink: #f5f5f2; --surface: #ebebe6; --line: #d4d4cd; --paper: #0a0a0a; --steel: #55595f; --dim: #8a8d92; --flash: #0a0a0a;
+  --accent-text: #5546d6; --bg: var(--ink); --text: var(--paper);
+  background: var(--ink); color: var(--paper); color-scheme: light; padding-bottom: var(--sec); margin-top: var(--sec);
+}
+.band--paper .sec { padding-top: var(--sec); }
+.band--paper .btn--secondary { box-shadow: inset 0 0 0 1px var(--paper); }
+.band--paper .btn--secondary:hover { background: var(--paper); color: var(--ink); }
+
+/* ---------- live numbers: the changed digit rolls in with a brief violet glow ---------- */
+.rolln { display: inline-flex; white-space: pre; }
+.rolln__d { display: inline-block; }
+@media (prefers-reduced-motion: no-preference) {
+  .rolln__d--new { animation: rolln .9s cubic-bezier(.2, .8, .2, 1); }
+}
+@keyframes rolln {
+  0% { transform: translateY(-40%); opacity: 0; color: var(--accent); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
+  35% { transform: none; opacity: 1; color: var(--accent); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+/* ---------- press and hover feedback on everything you can tap ---------- */
+summary, [role="button"], .tabbar__item, .hdr__nav a, .foot__links a { -webkit-tap-highlight-color: transparent; }
+summary:active, .hdr__nav a:active, .foot__links a:active { opacity: .7; }

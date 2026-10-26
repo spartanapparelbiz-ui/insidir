@@ -60,7 +60,7 @@ export async function readLive(page: Page, ms = 3000): Promise<string> {
 }
 
 /** Pages every visitor can open, and the ones a signed-in Pro member adds. */
-export const PUBLIC_PAGES = ["/", "/terminal", "/receipts", "/pricing", "/terms", "/privacy"];
+export const PUBLIC_PAGES = ["/", "/terminal", "/receipts", "/pricing", "/terms", "/privacy", "/about"];
 export const PRO_PAGES = ["/terminal", "/settings", "/pnl", "/whales"];
 
 export async function noHorizontalScroll(page: Page): Promise<void> {

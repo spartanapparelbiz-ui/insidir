@@ -22,7 +22,7 @@ async function main() {
   const pool = new Pool({ connectionString: E2E_DB, max: 1 });
   const deal = (await pool.query<{ id: string }>("select id from terminal.opportunities where data->>'title' like '%Jets%' limit 1")).rows[0]?.id ?? "x";
   await pool.end();
-  const ROUTES = ["/", "/terminal", `/deal/${deal}`, "/receipts", "/pricing", "/settings", "/alerts", "/pnl", "/whales", "/terms", "/privacy", "/admin", "/this-page-does-not-exist"];
+  const ROUTES = ["/", "/terminal", `/deal/${deal}`, "/receipts", "/pricing", "/settings", "/alerts", "/pnl", "/whales", "/terms", "/privacy", "/about", "/admin", "/this-page-does-not-exist"];
   const name = (r: string) => r === "/" ? "home" : r.startsWith("/deal/") ? "deal" : r === "/this-page-does-not-exist" ? "404" : r.slice(1);
   const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
   const rows: unknown[] = [];

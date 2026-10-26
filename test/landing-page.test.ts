@@ -99,8 +99,12 @@ describe("landing page", () => {
     expect(page).toContain('<Sticky label={LANDING_CTA} href="/terminal" />');
   });
 
-  it("is monochrome: no colour in the styles except the three safety lights", () => {
-    const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a"]);
+  it("is black, white and grey plus one accent: the light band's greys, Violet, and the three safety lights", () => {
+    const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a",
+      // the light band (Paper #F5F5F2) and its flipped greys
+      "#f5f5f2", "#ebebe6", "#d4d4cd", "#0a0a0a", "#55595f", "#8a8d92",
+      // the accent, and the same hue deepened for text on Paper; color-mix() lightens/darkens it with white/black
+      "#8b7cff", "#5546d6", "#fff", "#000"]);
     const SAFETY = ["--green", "--amber", "--red"];
     for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/app/terminal.css", "app/receipts/receipts.css", "components/app/ios.css"]) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -109,6 +113,11 @@ describe("landing page", () => {
       // The safety colours appear only as a dot's background, never as text, buttons or borders.
       for (const line of css.split("\n").filter(l => SAFETY.some(v => l.includes(`var(${v})`)))) {
         expect(line, `${f}: ${line}`).toMatch(/--dot: var\(--(green|amber|red)\)|::before[^{]*\{[^}]*background: var\(--(green|amber|red)\)|^\s*--(green|amber|red): #/);
+      }
+      // Violet: never in a gradient, and a solid violet background only on the small things allowed to carry it.
+      for (const line of css.split("\n").filter(l => /gradient/.test(l))) expect(line, `${f}: ${line}`).not.toMatch(/accent/);
+      for (const m of css.matchAll(/([^{}]+)\{[^}]*background(?:-color)?: (?:color-mix\(in srgb, )?var\(--accent\)/g)) {
+        expect(m[1]!.trim(), `${f}: violet background on ${m[1]!.trim()}`).toMatch(/btn--primary|dbar__gap|dot|beat/);
       }
     }
   });

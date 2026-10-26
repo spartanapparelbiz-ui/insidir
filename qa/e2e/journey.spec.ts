@@ -64,7 +64,8 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     await expect(dialog.getByRole("heading", { name: "You're set" })).toBeVisible();
     await shot("onboarding");
     await dialog.getByRole("button", { name: "See today's live deals" }).click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
+    // Onboarding closes (the first-time tips may open next: that's their cue).
+    await expect(page.getByRole("heading", { name: "You're set" })).toHaveCount(0);
     // The last step's button navigates to the Terminal; load it fresh rather than racing that navigation.
     await page.waitForURL(/\/terminal/);
     await page.goto("/terminal");

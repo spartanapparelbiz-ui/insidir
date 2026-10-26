@@ -13,17 +13,12 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLiveContext, useServerNow } from "@/components/live/LiveProvider";
 import { ago, centsText, clockText, pct, span } from "@/lib/format";
 import { DollarBar } from "@/components/ui/DollarBar";
+import { RollNumber } from "@/components/ui/RollNumber";
 import { profitCentsPerDollar, type HeroLeg, type HeroView } from "./model";
 
-/** A number that rolls to each new value with a brief white flash (the load-time roll-in is CSS). */
+/** A number that rolls to each new value: the changed digits drop in with a brief violet glow (components/ui/RollNumber). */
 function Rolling({ value, format, className }: { value: number; format: (v: number) => string; className?: string }) {
-  const [ticks, setTicks] = useState(0);
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    setTicks(t => t + 1);
-  }, [value]);
-  return <span key={ticks} className={`roll${ticks ? " roll--tick" : ""}${className ? ` ${className}` : ""}`}>{format(value)}</span>;
+  return <RollNumber text={format(value)} className={className} />;
 }
 
 export interface HeroProps {
