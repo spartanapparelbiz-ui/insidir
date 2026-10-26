@@ -6,7 +6,7 @@
  *   GET /series                                         every series (fee_type, fee_multiplier, category)
  *   GET /series/{series_ticker}                         one series (fallback, cached per series)
  *   GET /markets/{ticker}/orderbook                     one book, BIDS ONLY
- *   GET /markets/orderbooks?tickers=A,B,…               several books (unverified; falls back to one-by-one)
+ *   GET /markets/orderbooks?tickers=A&tickers=B…        up to 100 books per call (falls back to one-by-one)
  *
  * The orderbook lists bids for YES and for NO. Buying YES means matching a NO bid, so YES asks are 1 − NO bids
  * (the best, i.e. highest, NO bid gives the cheapest YES ask), and NO asks are 1 − YES bids. Raw responses are read
@@ -27,7 +27,7 @@ export const EVENTS_PAGE_LIMIT = 200;
 export const MAX_PAGES = 500;
 /** Tickers per GET /markets?tickers= lookup (any status). */
 export const TICKERS_BATCH = 100;
-/** Tickers per GET /markets/orderbooks request (unverified endpoint; documented max believed to be 100). */
+/** Tickers per GET /markets/orderbooks request (100 answered 100 books, checked against the live API). */
 export const ORDERBOOK_BATCH = 100;
 /** Exclude multivariate (combo / parlay) markets from the sweep: they are thousands of illiquid one-offs. */
 export const EXCLUDE_MULTIVARIATE = true;
@@ -463,7 +463,10 @@ export class KalshiClient implements VenueClient {
           continue;
         }
         try {
-          const raw = await this.http.json(`${this.base}/markets/orderbooks${qs({ tickers: group.join(",") })}`, { priority });
+          // One `tickers` parameter per market: a comma-joined value is read as a single ticker (Kalshi then returns one
+          // empty book named after the whole list, and every market fell back to its own request).
+          const query = group.map(t => `tickers=${encodeURIComponent(t)}`).join("&");
+          const raw = await this.http.json(`${this.base}/markets/orderbooks?${query}`, { priority });
           const list = rows(raw, ["orderbooks"]);
           if (raw === null || (list.length === 0 && !(isObject(raw) && Array.isArray(raw.orderbooks)))) {
             this.batchOrderbooks = false;

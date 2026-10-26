@@ -165,6 +165,8 @@ describe("KalshiClient books", () => {
     const client = new KalshiClient({ http, baseUrl: "https://k.test" });
     const books = await client.getOrderbooks(["A", "B"], "hot");
     expect(calls).toHaveLength(1);
+    // One tickers parameter per market (a comma-joined value is read as a single ticker).
+    expect(new URL(calls[0]!.url).searchParams.getAll("tickers")).toEqual(["A", "B"]);
     expect(books.get("A")!.yesAsks).toEqual([{ price: 0.45, size: 7 }]);
     expect(books.get("B")!.yesAsks).toEqual([]);
   });
