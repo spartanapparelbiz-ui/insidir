@@ -142,6 +142,16 @@ Team names, people, assets and other entities used by the matcher live in
 [`lib/matching/aliases.ts`](lib/matching/aliases.ts). Add an alias when a real pair is missed; wrong matches can
 also be fixed at once from `/admin` (match, block, or force a safety light).
 
+## QA
+
+| What | How |
+|---|---|
+| Unit tests | `npm test` (fees, arb math both ways, book walking, multi-outcome, ladders, implications, matching, paywall, alerts, the hand-checked 55¢ + 40¢ example) |
+| End to end | `./qa/e2e/run.sh` builds a copy of the app with test settings and runs Playwright at 390×844 and 1440×900 against a seeded `terminal_e2e` database, a local mock of Whop (OAuth, memberships, signed webhooks, a test-mode checkout) and a stand-in push service. Needs local Postgres; create and migrate the database first (`DATABASE_URL=…/terminal_e2e npm run db:migrate`). |
+| Lighthouse and axe | Start the e2e build (`npx next start -p 3100` in its folder), then `npx tsx qa/audit.ts`. Gates: Performance ≥ 90, Accessibility ≥ 95, SEO ≥ 95 (mobile); zero serious axe issues. Reports in `qa/reports/`. |
+| iPhone push | By hand: [`qa/IPHONE-CHECKLIST.md`](qa/IPHONE-CHECKLIST.md) |
+| Screenshots | Written by the e2e run to `qa/screenshots/<page>-390.png` and `-1440.png` |
+
 ## Copy rules
 
 Never "guaranteed" or "risk-free". A lock is described as: "Locks in a profit if both sides fill and both markets
