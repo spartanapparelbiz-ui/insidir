@@ -13,13 +13,13 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   timeout: 60_000,
-  reporter: [["list"], ["json", { outputFile: "qa/e2e/.out/results.json" }]],
+  reporter: [["list"], ["json", { outputFile: ".out/results.json" }]],
   use: {
     baseURL: APP_URL, trace: "retain-on-failure",
     // Use the sandbox's preinstalled Chromium when the pinned @playwright/test expects another build.
     ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : {}),
   },
-  outputDir: "qa/e2e/.out/artifacts",
+  outputDir: ".out/artifacts",
   projects: [
     { name: "phone-390", use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } },
     { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
