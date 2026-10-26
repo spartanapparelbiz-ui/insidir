@@ -1,0 +1,52 @@
+name: Insidir Terminal checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: insidir
+          POSTGRES_PASSWORD: insidir
+          POSTGRES_DB: terminal_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U insidir" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql://insidir:insidir@localhost:5432/terminal_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck (strict)
+        run: npm run typecheck
+      - name: Unit tests (fees, arb math, book walking, multi-outcome, ladders, implications, matching, paywall, alerts)
+        run: npm test
+      - name: Migrate the e2e database
+        run: DATABASE_URL="$E2E_DATABASE_URL" npm run db:migrate
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: End to end at 390x844 and 1440x900 (paywall, region, checkout with mock Whop, calculator, cancel, push, A/B, links, footer)
+        run: ./qa/e2e/run.sh
+      - name: Keep the e2e report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e
+          path: |
+            qa/e2e/.out/results.json
+            qa/e2e/.out/artifacts
+            qa/screenshots
+          if-no-files-found: ignore
