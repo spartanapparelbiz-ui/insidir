@@ -16,8 +16,11 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Plan } from "@/lib/types";
 
-export const WHOP_API = "https://api.whop.com/api/v1";
-export const WHOP_OAUTH = "https://api.whop.com/oauth";
+/** Whop's origins. Overridable only so end-to-end tests can point at a local mock Whop (qa/e2e/mock-whop.ts). */
+const API_ORIGIN = (process.env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "");
+const CHECKOUT_ORIGIN = (process.env.WHOP_CHECKOUT_ORIGIN ?? "https://whop.com").replace(/\/+$/, "");
+export const WHOP_API = `${API_ORIGIN}/api/v1`;
+export const WHOP_OAUTH = `${API_ORIGIN}/oauth`;
 export const WEBHOOK_TOLERANCE_SECONDS = 300;
 
 const env = (k: string): string => process.env[k] ?? "";
@@ -149,7 +152,7 @@ export async function cancelMembership(membershipId: string): Promise<void> {
  *  so a buyer comes back, is signed in (Whop skips consent once approved) and lands on the live Terminal. */
 export function checkoutUrl(plan: Exclude<Plan, "free">): string | null {
   const id = plan === "pro" ? env("WHOP_PLAN_PRO") : env("WHOP_PLAN_INSIDIR");
-  return id ? `https://whop.com/checkout/${encodeURIComponent(id)}` : null;
+  return id ? `${CHECKOUT_ORIGIN}/checkout/${encodeURIComponent(id)}` : null;
 }
 
 /* ---------- webhooks (Standard Webhooks) ---------- */

@@ -56,6 +56,11 @@ button { font: inherit; }
 .hdr__nav { display: flex; align-items: center; gap: 4px; }
 .hdr__nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 10px; color: var(--muted); text-decoration: none; }
 .hdr__nav a:hover, .hdr__nav a[aria-current="page"] { color: var(--text); }
+@media (max-width: 560px) {
+  .hdr__in { flex-wrap: wrap; row-gap: 0; }
+  .hdr__nav--app { width: 100%; justify-content: space-between; margin: 0 -8px; width: calc(100% + 16px); font-size: 14px; }
+  .hdr__nav--app a { padding: 0 8px; }
+}
 .foot { border-top: 1px solid var(--line); margin-top: 64px; padding: 24px 0 120px; color: var(--muted); font-size: 12px; line-height: 18px; }
 .foot__links { display: flex; flex-wrap: wrap; gap: 0 16px; margin-top: 12px; }
 .foot__links a { display: inline-flex; align-items: center; min-height: var(--tap); }

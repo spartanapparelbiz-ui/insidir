@@ -3,6 +3,7 @@
  * database, and a section without a real number is hidden rather than filled. Section order: hero, proof, how,
  * preview, receipts, safety, pricing, faq, final. Client JS: the "found X ago" ticker, the sticky bar and the
  * funnel beacon. */
+import { IosInstallGuide } from "@/components/app/IosInstallGuide";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -83,7 +84,7 @@ export default async function Landing() {
         <SafetySection />
         <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={insidir} proHref={pro} freeCta={LANDING_CTA} refund={refund} />
         <Faq />
-        {/* MOUNT: components/app/IosInstallGuide.tsx (owned by the app agent) goes here, between the FAQ and the final CTA. */}
+        <IosInstallGuide />
         <FinalCta cta={LANDING_CTA} />
       </main>
       <Sticky label={LANDING_CTA} href="/terminal" />

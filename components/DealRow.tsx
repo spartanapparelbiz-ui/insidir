@@ -22,7 +22,7 @@ export function DealRow({ row, now, unlockHref }: { row: FeedRow; now: number; u
       <div className="deal__nums">
         <Num k="Profit" v={lock ? (row.profit === null ? null : usd(row.profit)) : "—"} />
         <Num k="ROI" v={lock ? pct(row.roi) : `${row.gapCents ?? 0}¢ gap`} />
-        <Num k="Max size" v={row.cost === null ? null : usd(row.cost + (row.fees ?? 0))} />
+        <Num k="Max size" v={row.cost === null ? null : row.kind === "second_opinion" ? "—" : usd(row.cost + (row.fees ?? 0))} />
         <Num k="Per day" v={lock ? (row.profitPerDay === null ? null : usd(row.profitPerDay)) : "—"} />
       </div>
       <div className="deal__foot">

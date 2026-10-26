@@ -23,7 +23,7 @@ export function Beacons() {
       if (unlock) send("unlock_click", where);
       // checkout_start only when the tap actually leaves for the Whop checkout (not the sign-in fallback).
       const href = (unlock ?? checkout)?.closest("a")?.getAttribute("href") ?? "";
-      if ((unlock || checkout) && /^https:\/\/whop\.com\//.test(href)) send("checkout_start", where);
+      if ((unlock || checkout) && /^https?:\/\/[^/]+\/checkout\//.test(href)) send("checkout_start", where);
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);

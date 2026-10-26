@@ -3,6 +3,7 @@
  * requires before a site can send push alerts. Dismissible; remembered in localStorage. Renders nothing elsewhere. */
 import { useEffect, useState } from "react";
 import { isIos, isStandalone } from "./push";
+import "./ios.css";
 
 const KEY = "insidir_ios_guide_dismissed";
 

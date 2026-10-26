@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { RegisterSW } from "@/components/app/RegisterSW";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         {children}
         <SiteFooter />
+        <RegisterSW />
       </body>
     </html>
   );

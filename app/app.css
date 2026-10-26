@@ -32,15 +32,6 @@
 .empty__h { font-size: 18px; font-weight: 700; }
 .notlive { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 8px; width: max-content; }
 
-/* iOS install guide */
-.ios { display: grid; gap: 10px; }
-.ios__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.ios__h { font-weight: 700; }
-.ios__x { min-height: var(--tap); padding: 0 10px; flex: none; }
-.ios__steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); font-size: 13px; line-height: 19px; }
-.ios__steps b { color: var(--text); }
-.ios__glyph { width: 18px; height: 18px; vertical-align: -3px; color: var(--text); }
-
 /* onboarding overlay: full-screen sheet on phones, centered card on desktop */
 .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .82); display: flex; align-items: flex-end; justify-content: center; }
 .sheet { width: 100%; max-width: 520px; max-height: 100dvh; overflow-y: auto; display: grid; gap: 14px; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
