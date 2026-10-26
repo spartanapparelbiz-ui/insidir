@@ -224,6 +224,8 @@ export function hardConflicts(ea: Entities, eb: Entities): string[] {
     out.push("the rules give different dates");
   if (ea.years.length && eb.years.length && inter(ea.years.map(String), eb.years.map(String)).length === 0) out.push("different years");
   if (ea.times.length && eb.times.length && !ea.times.some(x => eb.times.some(y => sameTime(x, y)))) out.push("different times of day");
+  // "Reaches $X any time before the deadline" is not "is above $X at 5pm": hitting it once is not holding it then.
+  if (ea.measure && eb.measure && ea.measure !== eb.measure) out.push("any time vs a set time");
   if (ea.counters.length && eb.counters.length && inter(ea.counters.map(String), eb.counters.map(String)).length === 0) out.push("different week or game numbers");
   // Words.
   if (ea.quotes.length && eb.quotes.length && !setEq(ea.quotes, eb.quotes)) out.push(`different quoted words (${ea.quotes.join(", ")} vs ${eb.quotes.join(", ")})`);

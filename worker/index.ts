@@ -97,7 +97,7 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   const db = getDb();
   const now = Date.now();
   const full = now - state.lastFull >= FULL_SCAN_MS;
-  const need = marketsToBook(state.universe);
+  const need = marketsToBook(state.universe, now);
   const books = new Map<string, Book>();
   for (const [venue, list] of need) {
     const targets = full ? list : list.filter(m => state.hot.has(marketKey(m.venue, m.id)));
