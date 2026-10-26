@@ -1,0 +1,110 @@
+/* Insidir X-ray: black only, JetBrains Mono everywhere, mobile first.
+   Outcome colours: the first outcome is blue, the second orange, at different lightness so they also read in
+   greyscale. Red is reserved for "strong" insider pattern flags. No gradients. */
+:root {
+  --bg: #000;
+  --surface: #0b0b0b;
+  --line: #1c1c1c;
+  --text: #ededed;
+  --muted: #8c8c8c;
+  --o1: #3d7eff;   /* first outcome: blue, darker */
+  --o2: #ffb057;   /* second outcome: orange, lighter */
+  --o3: #b0b0b0;
+  --red: #ff4d4d;  /* strong insider pattern only */
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 14px/1.6 var(--mono); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: #555; }
+a:hover { text-decoration-color: var(--text); }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+
+.wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 40px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font-weight: 700; text-decoration: none; letter-spacing: -0.02em; }
+.brand span { color: var(--muted); font-weight: 400; }
+.muted { color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.small { font-size: 12px; line-height: 18px; }
+.o0 { color: var(--o1); } .o1 { color: var(--o2); } .o2 { color: var(--o3); }
+.bg0 { background: var(--o1); } .bg1 { background: var(--o2); } .bg2 { background: var(--o3); }
+.red { color: var(--red); }
+
+/* the paste box */
+.home { display: grid; gap: 20px; padding-top: 12vh; }
+.home h1 { font-size: 28px; line-height: 34px; letter-spacing: -0.03em; }
+.paste { display: flex; flex-wrap: wrap; gap: 8px; }
+.paste input { flex: 1 1 260px; min-width: 0; height: 48px; padding: 0 14px; background: var(--surface); color: var(--text);
+  border: 1px solid #2a2a2a; border-radius: 8px; font: inherit; }
+.paste input::placeholder { color: #666; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 20px; border-radius: 8px;
+  background: var(--text); color: #000; font: inherit; font-weight: 700; border: 0; cursor: pointer; text-decoration: none; }
+.btn:hover { background: #fff; }
+.btn--ghost { background: transparent; color: var(--text); border: 1px solid #333; }
+.btn--ghost:hover { background: var(--surface); }
+.tip { padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; }
+.tip code { color: var(--text); }
+.err { color: var(--red); }
+
+/* market header */
+.mh { display: grid; gap: 12px; }
+.mh__event { color: var(--muted); }
+.mh h1 { font-size: 22px; line-height: 30px; letter-spacing: -0.02em; font-weight: 700; text-wrap: balance; }
+.mh__odds { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 18px; font-weight: 700; }
+.mh__meta { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.resolved { display: inline-block; padding: 2px 10px; border: 1px solid #333; border-radius: 999px; font-weight: 700; }
+
+/* sections */
+.sec { display: grid; gap: 14px; }
+.sec__label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.sec h2 { font-size: 20px; line-height: 28px; letter-spacing: -0.02em; }
+
+/* the verdict hero */
+.hero { display: grid; gap: 16px; padding: 24px 0 8px; border-top: 1px solid var(--line); }
+.hero h2 { font-size: clamp(30px, 8vw, 52px); line-height: 1.05; letter-spacing: -0.04em; font-weight: 800; }
+.split { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--line); }
+.split > i { display: block; height: 100%; }
+.split__key { display: flex; justify-content: space-between; gap: 12px; }
+
+/* rows */
+.rows { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.row { display: grid; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; }
+.row__main { min-width: 0; display: grid; gap: 2px; }
+.row__right { text-align: right; white-space: nowrap; }
+.flag--strong .row__who { color: var(--red); }
+.tag { display: inline-block; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; font-size: 11px; line-height: 18px; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.reasons { margin: 4px 0 0; padding: 0; list-style: none; color: var(--muted); }
+.reasons li::before { content: "– "; }
+.flowbar { display: block; height: 6px; border-radius: 2px; min-width: 2px; }
+
+/* locked rows */
+.skel { display: block; height: 14px; border-radius: 3px; background: #161616; }
+.locked { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.locked__rows { display: grid; gap: 10px; }
+
+/* proven wallets */
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 620px; }
+th, td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 400; font-size: 12px; }
+td.r, th.r { text-align: right; }
+
+.method { display: grid; gap: 14px; }
+.method h3 { font-size: 14px; }
+.method p { color: var(--muted); max-width: 70ch; }
+.note { padding: 10px 14px; border: 1px solid #333; border-radius: 8px; color: var(--muted); }
+
+.list { display: grid; border-top: 1px solid var(--line); }
+.list a { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); text-decoration: none; align-items: baseline; }
+.list a:hover .list__q { text-decoration: underline; }
+
+.foot { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: 12px; line-height: 18px; display: grid; gap: 6px; }
+
+@media (min-width: 720px) {
+  .wrap { padding: 32px 24px 64px; }
+  .home h1 { font-size: 36px; line-height: 42px; }
+  .mh h1 { font-size: 26px; line-height: 34px; }
+}

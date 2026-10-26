@@ -1,192 +1,158 @@
-## Insidir V29: faster, clearer to buy, organised around what people do (October 2026)
+# Insidir Terminal
 
-Same identity (paper and ink, JetBrains Mono, the dotted i, the halftone wordmark); a different engine room.
+A live scanner for mispriced markets on Kalshi, Polymarket and Polymarket US. Pure math, no predictions: it looks
+for sets of positions that pay $1 per set in every outcome for less than $1 after fees, and for prices that
+disagree across venues.
 
-- **Delivery.** Every asset a page references (fonts aside, which stylesheets load) is fingerprinted as it is served (`?v=<content hash>`, `src/web.mjs`) and cached for a year as immutable; pages and assets answer `304` to a fresh copy; compression runs off the event loop; API JSON and the public insider pages are compressed (API payloads 66-79% smaller). Nobody bumps `?v=` by hand any more.
-- **Database.** `sql/015` adds indexes for the queries every member runs (the dashboard's market window went from 141 ms to 5.6 ms on 300k synthetic lines); market-wide answers are shared for 15-60 s per server and cleared when an SEC import finishes (`src/cache.mjs`).
-- **AI cost.** The Intelligence summary reuses the answer just researched instead of re-running it; identical concurrent generations share one model call; calls in flight count against the AI budget.
-- **Landing page** (`web/index.html`, `v29-landing.css`): nine sections in the order a visitor decides (what it is, why it exists, the real product and four public records to open free, Discover / Investigate / Follow, Intelligence around the dotted i, sources and limits, one offer with plain cancellation, eight questions, a final invitation). A headline experiment is assigned before first paint. Public navigation is Platform, Intelligence, Pricing, Log in, Start for $1; a new public page, `insidir-intelligence.html`, explains Intelligence.
-- **Funnel measurement** (`src/funnel.mjs`, `sql/016`, `admin-funnel.html`): first-party, whitelisted events with a random visitor id; nothing with Global Privacy Control or Do Not Track; account and payment stages from the engine and Stripe's signed webhooks, never a redirect. The report shows only measured counts and names no experiment winner without data. Checkout also confirms the Stripe Price is the published $39 a month before it starts.
-- **Product.** The Intelligence page is the instrument version merged from `main` (event tape, research reports, 13F treemap); it now shares the V29 header, tokens and funnel measurement, and ticks off a new member's first steps. Alerts lists matches first, then a working Delivery panel. New members get an optional "Get started" on the overview. The announcement banner that shifted every product page after first paint is gone; the header fits every width.
-- **Smoothness and access.** The halftone engine lays out once instead of three times, draws after first paint, and prints its grain once into a still layer instead of over every frame (on a throttled phone the landing page's blocking time fell from 3.8 s to 0.8 s and its slowest interaction from 392 ms to 112 ms); sticky bars dropped their per-frame backdrop blur; the Intelligence hero dims by opacity only. Every page has the Home Screen icon. `scripts/a11y-check.mjs` (axe WCAG 2.1 AA, overflow, 24px touch targets) runs in CI; `scripts/perf-check.mjs` measures LCP, CLS, blocking time, the slowest interaction and transfer under throttling.
-- **Tokens** (`v29-system.css`, see `docs/WEBSITE.md`): colour, type, space, radii, motion, focus and tap size, with no new `!important` layer. 25 stylesheets and scripts that nothing loaded were deleted.
+Information only, not financial advice. Not affiliated with Polymarket or Kalshi.
 
-## Insidir V30: account security, research events, sourced explanations and alerts (October 2026)
+## How it fits together
 
-- **Accounts:** email confirmation, password recovery and change, sign-out of other devices, a security log, a data download; rate limits shared by every instance; admin access needs a token and a one-time code.
-- **Subscription notices:** acknowledgment of the terms after checkout, receipts, trial reminders, failed-payment and cancellation emails, each sent once per Stripe event; the whole lifecycle is tested against PostgreSQL with a Stripe simulator, and `scripts/stripe-test-mode-check.mjs` checks it against Stripe test mode.
-- **Research events** from the SEC import (purchases and sales, amended filings and what changed, purchases by several insiders, watched companies' other filings), with trade, filing and retrieval times kept apart and every source linked; **sourced explanations** with server-side checks (the AI part is off by default); **alerts** in the app and, with recorded consent, by email.
-- **Operations page** (`ops.html`) for ingestion freshness, workers, email, billing webhooks and source health. Removed the retired scripts that held invented data.
-- Runbook: `docs/OPERATIONS.md`. What was verified and what is still blocked: `docs/RELEASE-REPORT.md`. Questions for counsel: `docs/ATTORNEY-REVIEW.md`.
+```
+worker (npm run worker) ──► venues: Kalshi, Polymarket (Gamma, CLOB, Data API), Polymarket US
+   │  sweep: list markets/events, match Kalshi ↔ Polymarket, store pairs
+   │  scan:  fetch order books, run every engine, store deals + receipts, heartbeats
+   │  alerts / digests / whales / settle
+   ▼
+Postgres (schema "terminal", Drizzle)
+   ▲
+web (Next.js App Router) ── /terminal, /deal/[id], /settings, /pnl, /whales, /receipts, /pricing, /admin
+   └─ Whop for sign-in and billing; plan checked on the server; paid fields never sent to free users
+```
 
-## Insidir V28: headshots from archived copies of bot-walled company sites (October 2026)
+| Path | What |
+|---|---|
+| `lib/fees.ts` | Kalshi and Polymarket taker fees (Kalshi rounds up to the cent) |
+| `lib/engines/` | Cross-venue locks, multi-outcome sets (all YES / all NO), threshold ladders, implication rules, second opinions, whales, receipts |
+| `lib/matching/` | Kalshi ↔ Polymarket matching: deterministic first, OpenRouter LLM only when unsure, every decision cached, safety lights |
+| `lib/exchanges/` | Venue clients with rate-limit buckets, 429 back-off and "hot" priority for markets with live deals |
+| `lib/scanner.ts` | Which books a scan needs, and every engine over them |
+| `worker/index.ts` | The worker loop |
+| `lib/feed.ts` | Plan and region filtering, done on the server (free: 30 min delay, top 3, sizes removed) |
+| `config/implications.ts` | Curated "if A then B" rules |
 
-- **Internet Archive fallback** (`src/web-archive.mjs`, `src/leader-pages.mjs`). When a company's own site answers the crawler with a bot wall (PayPal, Ferguson, Qualcomm, Regal Rexnord), its leadership and board pages are read from the Internet Archive's copy instead:
-  - The Wayback availability API picks the closest snapshot of exactly that page. It must be a 200 response and no older than 18 months.
-  - The snapshot is fetched unmodified, and every picture in it is pointed at its archived copy, so nothing more is requested from the site that refused us.
-  - The usual strict card matching then applies. A name alone never attaches a face.
-  - A path that robots.txt disallows is never read, live or archived. A walled host whose first 8 archive lookups all miss is given up.
-- **Credit:** such a photo reads "Company website (host), Internet Archive copy of <date>", and its source link points to the snapshot.
+## Local setup
 
-## Insidir V27: richer, smoother pages; a clear price with the $1 offer up front; more verified headshots (October 2026)
+```bash
+npm install
+cp .env.example .env.local          # fill in what you need; DATABASE_URL is enough to start
+npm run db:migrate                  # creates schema "terminal" and its tables
+npm run dev                         # web on http://localhost:3000
+npm run worker                      # in a second terminal
+```
 
-- **Redesign, same look** (`web/assets/css/v16-rich.css`, `v16-rich-site.css`). The landing hero carries a ledger of five real Form 4 lines filed Oct 16, 2026, each checked against the database, with dot bars scaled to value. The product window has numbered pins and a legend. Figures get dot meters that encode the fact. Every page gets corner ticks, registration crosses, numbered running heads, dot-screen backdrops, "FIG." labels, a halftone price panel and numbered questions. Still JetBrains Mono, paper and ink, square corners, colour-only hovers.
-- **More verified headshots** (a sample of 20 companies went from 117 to 125 of 172 people):
-  - Donnelley-filed proxies print the name ~900 characters after the portrait, past committees, tenure and age. A "card" rule now pairs them when the first name after the card is a known filer, no other name comes first and none sits right before the portrait.
-  - Companies whose Wikidata item lacks their SEC CIK (Marvell, Ferguson) are found by ticker on a US exchange, with the name checked.
-  - With no company item at all, a Wikipedia article whose lead names the company still ties the filer (Martine Rothblatt at United Therapeutics).
-- **Smoother, plainer pages** (`web/assets/css/v17-smooth.css`): rounded, top-lit panels, rounded buttons and screenshots, no corner brackets or section rules. The hero shows a real company report instead of a Form 4 table, the second button reads "See how it works", and "Today's insider trades" wording is gone (nav: "Insider filings").
-- **Price:** $39 a month is stated everywhere next to an ink-filled "$1 for your first 7 days" offer. The plan cards carry a receipt ($1.00 today, $39.00 every month), and checkout states the date of the first $39 charge.
-- **Still without a photo:** mostly executives whose companies' sites refuse automated visitors (PayPal, Ferguson, Qualcomm, Regal Rexnord) and who have no free Wikipedia photo. Those blocks are respected, and no face is ever attached by name alone.
-## Insidir V26: research stories, sharing and a creator kit (October 2026)
+Other scripts:
 
-Public research people can read, share and turn into short videos, built around the product without touching accounts, billing or creator commissions.
+| Script | What |
+|---|---|
+| `npm test` | Unit tests (Vitest) |
+| `npm run typecheck` | Strict TypeScript |
+| `npm run build` | Production build |
+| `npm run scan` | One live scan without a database: top 10 deals with the math, pairs matched and their lights, false positives caught, rate-limit headroom, monthly cost (`--top N`, `--json`) |
+| `npm run check:endpoints` | Calls every venue endpoint and fails loudly if a field the parsers rely on changed |
+| `npm run db:generate` | New migration after editing `lib/db/schema.ts` |
 
-- **Research stories** (`/stories.html`, `/stories/<slug>.html`). Free, indexable pages that explain one historical SEC filing each: the March 2026 Enterprise Products Partners Form 4 (co-CEO A. J. Teague, code P), Newmont's 2025 10-K and Berkshire Hathaway's 2025 10-K. Every figure carries a verbatim quote from its filing or is labelled as Insidir's arithmetic; `test/stories.test.mjs` checks each figure against its quote and recomputes the arithmetic, and `node scripts/verify-stories.mjs` re-reads every quote and source link from sec.gov. Each page lists what the filing does not tell you, says it is historical and not advice, and links the original document.
-- **Sharing.** Copy link, the device's share sheet (shown only where it exists) and "Copy for a video description" (title, link, SEC source) on every story, with a selected-text fallback where the clipboard is blocked. A link keeps a `?ref=` it arrived with when the code has the approved shape and drops it otherwise; a code remembered from an earlier visit is never added to someone else's link. Nothing is sent anywhere. Canonicals, Open Graph and Twitter cards, `Article` JSON-LD and 1200×630 share images (`scripts/build-share-cards.mjs`) on every page.
-- **Creator kit** (`/creator-kit.html`). Six 15–30 second concepts on those filings, each with a first-seconds hook, a script with copy buttons, what to record, the filing and the research page; the four real product clips for download; a tracked-link builder that only builds links for codes with the program's `REF_CODE` shape (approval is still decided by the server at registration); and copyable disclosure lines with the FTC rules, AI-presenter disclosure and the "keep it honest" rules.
-- **Connected.** The landing page, the public insider pages' navigation and footer, the insider-trading hub (a "Research stories" list), and any company or person page a story covers link the stories. `/creators.html` and the private `partner-*.html` briefs are rebuilt in the site's design (the briefs stay `noindex` and keep their partnership wording, and point to the public edition). The sitemap lists the new public pages; nothing was removed from it.
-- **One source.** `src/stories.mjs` holds the stories and concepts; `node scripts/build-stories.mjs` renders the static pages (`--check` fails when a committed page is stale). `scripts/stories-check.mjs` checks the pages in Chrome at 390 and 1440px: layout, palette, copying, referral handling and the link builder.
-- **What can be measured today.** Approved-code registrations (`creator_referrals`) and the first full-price payment that follows (`creator_commissions`), per creator, through the existing admin routes. Not measured: page views, shares, copies, clicks or video traffic; the site has no analytics and this release adds none. Railway's request logs are the only rough count of story-page visits.
+## Environment variables
 
-## Insidir V25: correct logos, headshots and owner identities (October 2026)
+Every variable is listed with comments in [`.env.example`](.env.example). The ones that matter:
 
-A visual audit of the 60 most active companies' logos and 95 resolved headshots against SEC records found four kinds of mistake. Each is fixed by a rule, so the same mistake can't recur elsewhere:
+| Variable | Service | Needed for |
+|---|---|---|
+| `DATABASE_URL` | both | everything |
+| `APP_URL` | both | Whop redirect, links in alerts and unsubscribe links |
+| `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET`, `WHOP_API_KEY`, `WHOP_COMPANY_ID` | web | sign-in, reading and cancelling memberships |
+| `WHOP_PRODUCT_INSIDIR`, `WHOP_PRODUCT_PRO`, `WHOP_PLAN_INSIDIR`, `WHOP_PLAN_PRO` | web | which product grants which plan; checkout links |
+| `WHOP_WEBHOOK_SECRET` | web | `/api/whop/webhook` signature check |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | email backup alerts and daily summaries |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | worker | LLM second check on unsure matches (optional, capped per month) |
+| `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
+| `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
+| `*_RATE_PER_SEC` | worker | request budget per bucket |
+| `SWEEP_MS`, `SCAN_MS`, `FULL_SCAN_MS`, `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
 
-- **Renamed companies kept their old logo.** Wikipedia still showed the Skillz mark on the article for Firy Inc. after the June 2026 rename. A Wikipedia or Wikidata logo file named for one of the company's SEC former names, and not its current one, is now treated as the old identity and never used (`staleNameFile` in `src/logo-resolver.mjs`).
-- **A ticker-letter placeholder.** The stock-logo file for WGO is just the letters "WGO". Winnebago Industries' own wordmark from its site is now a checked-in override.
-- **An illustrated "headshot".** Reddit's 2026 proxy prints cartoon avatars of its directors, and one passed every automated portrait check as Sarah E. Farrell's photo. Sources audited as not being photographs are listed in `src/photo-exclusions.mjs`. They are never read, and records stored earlier stop being served.
-- **A person classified as a company.** "Sa Neto Francisco" (Francisco Sá Neto) matched the corporate suffix "S.A.", so he could never get a photo. Short suffixes (S.A., AG, N.V., Co) now count only when dotted or after the first word, in the engine and on every page.
+Kalshi API keys are never asked for or stored. P&L for Kalshi comes from the CSV export the user uploads, which
+is processed and not stored.
 
-Also:
-- GIF proxy originals were refused by the media table's type constraint and lived in memory only; `sql/012_entity_media_gif.sql` accepts them.
-- `scripts/audit-media.mjs --sec` builds a contact sheet of every stored photo and logo against the SEC names, flagging duplicates, caption mismatches, faces on funds, excluded sources and logos named for former names. Run it against the production database to check by eye.
-- The platform page's demo report now shows Reddit's real logo and a People panel: Steve Huffman and Jennifer Wong, with their verified headshots, Form 4 roles and SEC CIK links, credited.
+## The worker
 
-## Insidir V24: a working demo report on the platform page (October 2026)
+`npm run worker` runs these jobs. Each catches its own errors, so one venue being down pauses only that venue.
 
-The company-report diagram on `platform.html` (A header, B chart, C key facts, D tabs) used to be grey placeholder bars and a dot field. It is now a working report for Reddit, Inc. (RDDT), saved from the product at the close on October 16, 2026:
+| Job | Every | What |
+|---|---|---|
+| sweep | 5 min | List open markets and events on each venue (keeps the last good list if a venue fails), match Kalshi ↔ Polymarket and Kalshi ↔ Polymarket US, save pairs |
+| scan | 5 s | Refresh books for markets with live deals ("hot"); every 60 s refresh all of them. Run every engine, save deals, write a receipt the first time a deal is seen, mark deals inactive after 90 s unseen, write a heartbeat per venue |
+| alerts | 5 s | Pro: push at once. Insidir: push within 60 s. Email backup for paid users without push (max 6 an hour) |
+| digests | 10 min | Daily summary email at 13:00 UTC for users who opted in (the free plan's alert) |
+| whales | 15 s | Polymarket trades over $10K |
+| settle | 15 min | Record how each logged deal resolved, for the public receipts |
 
-- **B, the chart** (`web/assets/js/v16-demo-chart.js`, `web/assets/css/v16-demo-chart.css`). Six range buttons (1D, 1W, 1M, 3M, 1Y, 5Y) redraw it from real delayed Yahoo Finance series embedded in the page as JSON (`#mk-demo-data`). No request is made and nothing is live. Point at the line, or focus it and use the arrow keys, to read any close; the reading is announced to screen readers. The line is red or green only for the direction of the selected range, always beside a ▲/▼ and a signed figure.
-- **A and C** carry the real header and key facts. Market cap, enterprise value and P/E show their inputs on hover, as in the product.
-- The caption says what it is: a delayed snapshot, not live, and not a recommendation. The company-report screenshot above it is removed because the demo replaces it.
-- `scripts/build-demo-chart.mjs` writes the no-script first paint (the 1Y chart) using the page's own renderer. `test/demo-chart.test.mjs` checks that the snapshot's figures agree with each other (every range ends on the quoted close, the day change, market cap and P/E) and that the first paint matches the script's output.
+The site shows "Live data paused, retrying" when no venue heartbeat is newer than 2 minutes, "found X seconds
+ago" on every deal, and greys out deals not re-seen in the last minute.
 
-## Insidir V23: the product, shown (October 2026)
+## Rate limits
 
-- **Real screens, not descriptions.** Retina screenshots of the live product on real SEC filings (`web/assets/img/product/`, WebP, 10–110 KB each): the overview, a company report, insider activity, a personnel file, the research desk.
-- **Landing page.** After the hero, a showcase: the overview in a window, with two real Form 4 lines (a PepsiCo director's purchase, Natera's executive chairman's sale, both filed October 16, 2026) floating over its edges; a figures band (the 2-business-day filing deadline, the 15-minute import, 8 named sources, the $1 trial); the six tools as a bento of real screens and small real-data lists instead of six identical boxes; the four rules as cards; a larger price and display scale.
-- **Platform page** shows each tool's real screen in a window; every public and legal page gets the larger display scale, receding second lines and a calmer reading measure (`web/assets/css/v15-site.css`).
-- Same identity and rules: paper and ink, green and red for direction only, JetBrains Mono, square corners, no glow, hovers change colour only. The new stylesheets live in the `insidir-v13` cascade layer so they refine the V13 files in source order. Palette, contrast and retina-sharpness audit clean.
+Every request goes through a per-bucket token bucket set to about 80% of the published limit:
 
-## Insidir V22: research-only safeguards, recorded subscription consent, one-step cancellation (October 2026)
+| Bucket | Default | Published |
+|---|---|---|
+| kalshi | 16/s | 20 reads/s (Basic tier) |
+| polymarket_gamma | 24/s | /markets 300 per 10 s, /events 500 per 10 s |
+| polymarket_clob | 40/s | /books 500 per 10 s (up to 500 tokens per call) |
+| polymarket_data | 12/s | /positions 150 per 10 s, /trades 200 per 10 s |
+| polymarket_us | 5/s | unknown (unverified API) |
 
-- **Research-only by construction.** `src/capabilities.mjs` refuses personalized-advice and order-placement routes on the server, before the paywall and any handler, for every user. A regulated mode needs a reviewed code change *and* a complete authorization record in `docs/authorizations/`; an environment flag alone does nothing. Emergency stops: `INSIDIR_TRADING_HALT=1`, `INSIDIR_BROKERAGE_HALT=1`. `GET /v1/capabilities` states what the deployment does.
-- **Subscription compliance.** The subscribe page shows the exact automatic-renewal terms for the account and checkout stays disabled until a separate box is ticked; the agreement is recorded (`billing_consents`) before Stripe is called, and a changed offer is refused until the customer agrees again. Billing has a one-step **Cancel subscription**. Refunds and chargebacks send creator commissions back to review; failed payments and trial endings are recorded.
-- **Truthful product surface.** Prototype scripts with invented sample data are never served; the alerts page no longer offers political-trade or price-move alerts; public pages say Form 4s are public reports, not nonpublic information. A release-gate test scans every page for guarantees, approval claims, directives and invented data.
-- **Admin audit trail** for creator-program administration; new **Disclosures** and **Subscription and cancellation policy** pages; Terms and Privacy updated. Full audit, risks and the human checklist: `docs/COMPLIANCE.md`.
+On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retries, and logs it. "Hot" requests
+(markets with a live deal) go ahead of the rest. The worker logs request counts, 429s and retries every minute;
+`npm run scan` prints the same.
 
-## Insidir V21: public insider pages, a $1 trial and a product tour (October 2026)
+## Deploying on Railway
 
-- **Public insider pages for search.** `/insider-trading` (the biggest open-market purchases and sales of the last 30 days, the newest filings, the most active companies), `/insider-trading/<TICKER>` for every company in the import and `/insiders/<cik>-<name>` for every reporting person, rendered as plain HTML from the Form 4 import with canonical URLs, structured data, a sitemap index (`/sitemap.xml`) and `robots.txt`. Readable without an account; each page ends with the trial offer. The product itself stays behind the paywall. See `docs/ENGINE.md`, "Public insider pages".
-- **A 7-day trial for $1.** An account's first checkout charges $1 and opens everything for 7 days; the plan then renews at $39 a month unless cancelled. One trial per account (`sql/010_paid_trial.sql`), a card collected up front, the terms shown in Stripe's checkout. `INSIDIR_TRIAL=0` switches it off. Creator commissions move to the first $39 payment. Copy updated on the landing, pricing, sign-up, subscribe and terms pages. See `docs/ENGINE.md`, "Paid trial".
-- **A cleaner landing page with a product tour.** "See it work": four short clips recorded in the real product on real SEC filings (find a company, read insider trades, open a person's file, follow people and save companies), as numbered tabs beside one player. Clips play muted while on screen and advance in order, pause with one button, and wait for a click under reduced motion; H.264 MP4 and VP9 WebM with posters, served by byte range. A link to the free insider pages sits under the tour, and the navigation gains "Insider trades".
+1. Create a project with a **Postgres** database.
+2. Add a **web** service from this repo. `railway.json` sets the build (`npm run build`), the pre-deploy migration
+   (`npm run db:migrate`), the start command and the `/api/health` health check. Attach your domain.
+3. Add a **worker** service from the same repo with start command `npm run worker` (no domain, no health check).
+4. Set `DATABASE_URL` on both services (reference the Postgres service variable), and the variables above.
+5. **Whop:**
+   - Create an OAuth app. Its redirect URI is `https://YOUR_DOMAIN/auth/callback`.
+   - Create two products, Insidir ($39/mo) and Pro ($99/mo). Set each product's redirect after purchase to
+     `https://YOUR_DOMAIN/auth/login?next=/terminal`, so a buyer lands on the live Terminal.
+   - Add a webhook to `https://YOUR_DOMAIN/api/whop/webhook` for membership events
+     (`membership.activated`, `membership.deactivated`, `membership.cancel_at_period_end_changed`, `payment.succeeded`).
+     Put its secret in `WHOP_WEBHOOK_SECRET`.
+6. **Network:** the worker must reach `api.elections.kalshi.com`, `gamma-api.polymarket.com`, `clob.polymarket.com`,
+   `data-api.polymarket.com` (and `api.polymarket.us` if enabled), `openrouter.ai` and `api.resend.com`; the web
+   service needs `api.whop.com` and `api.resend.com`.
+7. After the first deploy, run `npm run check:endpoints` once (Railway shell) and fix anything it flags.
 
-## Insidir V20: every dot answers (October 2026)
+## Adding an implication rule
 
-- **Live dots.** Every halftone dot field on the site answers the pointer, hard: the landing wordmark, the person file's header band, the marketing heroes and closing panels, the sign-in panel, the plan card, the 404's numerals, the footer strip on every page and a new live dot corner in the overview's brief (it replaces the static CSS pattern). The pointer anywhere on the page blows a hole through any field within reach and sweeps the dots after it; holding the button or a finger down widens the hole; every click or tap sends a shock ring through every field on screen. The dots spring home and settle in about a second.
-- **Content still.** Only the dots move: links, buttons, numbers, tiles and text stay exactly where they are, hovers change colour only, and with reduced motion the dots hold still too.
-- **Fixes and speed.** A field can no longer fall asleep with its dots still displaced (a frame too early for a physics step used to stop it); a resting pointer lets a field sleep within a couple of seconds (it could keep one repainting for 20 s); reduced motion is followed live; a field off screen takes no ring; a plain field is printed at rest once and each frame redraws only what moved; a phone rings on a tap, presses on a held finger and costs nothing to scroll. `scripts/motion-check.mjs` now requires every plain dot field on a page to answer a sweep and a click (counted only beyond the press's reach), to sleep under a resting pointer and a held press, and to come back pixel-identical to rest within 4s, and reduced motion turned on mid-visit to still the dots, while every sampled element stays put.
+Rules live in [`config/implications.ts`](config/implications.ts); the file's header has the full steps. In short:
 
-## Insidir V19: a calm site, and a more precise design (October 2026)
+1. `antecedent.titlePattern`: an anchored RegExp with named groups, e.g. `(?<team>…)`.
+2. `consequent.titlePattern`: regex source where `{team}` inserts the capture and `{team:map}` looks it up in
+   `entityMap`.
+3. Only add implications that hold in every outcome under both markets' rules. If there is any edge case, set
+   `safety: "yellow"` and explain it in `safetyNotes`.
+4. Add a test with synthetic markets in `test/engines-implication.test.ts`.
 
-- **Calm.** Nothing on the site moves under the pointer, on a click or with a scroll; hovers change colour only. The landing wordmark is the one thing that answers the pointer, gently. Public pages keep a quiet 12px fade-up as blocks arrive; the product's pages hold nothing back. (Shipped first, on its own.)
-- **One system.** One container lines every page up on the same edges (the logo, the content and the footer start at x = 60 at 1440 and x = 20 on a phone). One type scale in the one typeface, with capitals kept for labels and sentence case for everything you press. A brighter, clearly stepped grey ramp (faint 58 %, muted 66 %, soft 80 % ink). Square panels with hairline borders, tinted Bought / Sold badges, a 2px focus ring, colour-only hovers. See `docs/WEBSITE.md`, "Design system".
-- **The landing page,** in the same face and colours and still with no product mock-up: a larger headline beside a plain fact sheet (sources, filings, financials, insiders, prices, advice), the wordmark fitted exactly to the page grid, and a different form for each section: an index of the six tools with their sources, a ledger of the data sources with links, the path from a filing to the screen with a key to Form 4 transaction codes, four rules, one plan card, questions.
-- **The overview,** on panels: the greeting and what changed since your last visit beside a "Latest SEC import" brief, five complete trades from the people you follow in the first screen, quiet "Following ✓" buttons, New as a dot, values emphasised, fixed table columns, sections numbered 01–06. Every other page takes the same system.
+## Matching aliases
 
-## Insidir V18: a clearer overview, the people you follow, real faces and logos, personnel files (October 2026)
+Team names, people, assets and other entities used by the matcher live in
+[`lib/matching/aliases.ts`](lib/matching/aliases.ts). Add an alias when a real pair is missed; wrong matches can
+also be fixed at once from `/admin` (match, block, or force a safety light).
 
-- **A new overview.** The dashboard now reads top to bottom: Today (three sentences: what changed for you since your last visit, what the latest imported trades add up to, how fresh the import is), then People you follow, your watchlist and notes, Across the market (exact totals, bought and sold by trade date, by company, biggest trades), All recent trades and About this data. It renders without anything jumping (skeletons sized from your last visit) and holds still: nothing on it moves under the pointer or while the page scrolls.
-- **People you follow show up on your home page.** Follow anyone from the overview, the people directory or their file; every trade they file appears first on the overview, marked New until you have seen it, with each person's last 30 days (bought, sold, trades). Follow and unfollow happen in place, with Undo.
-- **A real logo or headshot for every person and company.** Taken from the internet, never generated: company websites, logo services, SEC proxy statements (DEF 14A) and Wikimedia Commons, matched to the SEC filer by CIK and re-hosted by the engine. Each page asks for all of its pictures in one `GET /v1/media` batch; a person with no published photo shows their company's logo, and initials appear only when neither exists. Photos are credited on every page.
-- **Personnel files.** Every reporting person has a simple "declassified" file at `person.html?cik=<CIK>` (`GET /v1/people/<cik>`), built only from public SEC Form 4 records: file photo, name as filed, roles at each company, an exact record (everything imported against the last 30 days), known affiliations, every transaction in plain words and the filings with links to SEC EDGAR, plus Follow. Every person's name across the site opens their file. A line restated by a later Form 4/A is counted once, and joint filings are attributed to each owner once `npm run migrate` has added `sec_filing_owners` and `npm run backfill-owners` has run once for filings imported earlier.
-- **Calm motion.** The site no longer reacts to the pointer, a click or a scroll: buttons, links, chips, numbers and tiles stay exactly where they are, hovers change colour only, plain dot fields (the footer strip, page bands) are still print texture, and nothing trails a scroll. The one thing that answers the pointer is the landing wordmark, gently (its dots move about 12px at most and settle in half a second; it no longer scatters on scroll). Public pages keep a quiet scroll reveal: a block below the fold fades up 12px into place once as it arrives; the product's pages hold nothing back. This replaces the V16 and V17 motion below.
-- **Checks.** The palette audit and the motion check render the personnel file (and a CIK with no file); the tests fail if a person link stops going to the file. `scripts/motion-check.mjs` now checks the calm: with a real mouse and wheel, nothing sampled on any page moves under the pointer, a press, a click, a hover or a scroll, plain dot fields stay pixel-identical, the wordmark answers and settles within 1.5s, and the reveal runs only on public pages.
+## QA
 
-## Insidir V17: no orange, scroll motion, people you follow (October 2026)
+| What | How |
+|---|---|
+| Unit tests | `npm test` (fees, arb math both ways, book walking, multi-outcome, ladders, implications, matching, paywall, alerts, the hand-checked 55¢ + 40¢ example) |
+| End to end | `./qa/e2e/run.sh` builds a copy of the app with test settings and runs Playwright at 390×844 and 1440×900 against a seeded `terminal_e2e` database, a local mock of Whop (OAuth, memberships, signed webhooks, a test-mode checkout) and a stand-in push service. Needs local Postgres; create and migrate the database first (`DATABASE_URL=…/terminal_e2e npm run db:migrate`). |
+| Lighthouse and axe | Start the e2e build (`npx next start -p 3100` in its folder), then `npx tsx qa/audit.ts`. Gates: Performance ≥ 90, Accessibility ≥ 95, SEO ≥ 95 (mobile); zero serious axe issues. Reports in `qa/reports/`. |
+| iPhone push | By hand: [`qa/IPHONE-CHECKLIST.md`](qa/IPHONE-CHECKLIST.md) |
+| Screenshots | Written by the e2e run to `qa/screenshots/<page>-390.png` and `-1440.png` |
 
-- **Nothing is orange.** The orange accent is retired everywhere: the logo's full stop, the favicon dot, text selection, link and button hovers, step and index numbers, bullets, badges and current-page markers are ink. Errors, invalid fields and destructive actions use the red (`--hf-alert`); sales stay red and purchases green. The palette audit now fails on any orange in any state (it forces hover, focus and press on every control and scans screenshots for orange pixels), and a unit test fails if any stylesheet, page or script names the old accent.
-- **More reactive, and it moves when you scroll.** The pointer reaches further and drags dots and atoms along with its movement; atoms pop when reached and give when pressed. Scrolling leaves dots and atoms a few pixels behind and they spring back; the landing wordmark comes apart into dots as it scrolls away. Every page now assembles as you scroll: sections, cards, rows of items and footer columns rise into place on the dots' spring. `scripts/motion-check.mjs` checks the scroll trail, the reveal (at 1440px, on phones and under reduced motion) and the wordmark scatter on every page. (Withdrawn in V18 as too reactive: see Calm motion above.)
-- **People you follow, as a feed.** `GET /v1/me/people/updates` returns each followed person with their latest Form 4 line and 30-day filing, purchase and sale totals, and the newest lines by anyone you follow. Follows are capped at 150 per account.
+## Copy rules
 
-## Insidir V16: the whole site moves like the wordmark (October 2026)
-
-- **One motion everywhere.** The landing wordmark's physics (dots that part around the pointer, spring home and ripple on a click) now drive every page — landing, sign-in and sign-up, legal and marketing pages, the dashboard and the product — without the word itself: live dot fields in each page's empty zones and a dot strip across every footer, small elements (navigation, buttons, chips, index numbers, arrows) that part and spring back by a few pixels while the one you aim at holds still, one click ring through the whole page, and hover transitions on the same spring curve. One set of numbers (`InsidirHalftone.PHYSICS`); tests and `scripts/motion-check.mjs` hold every page to it. Reduced-motion users get a still page. (Withdrawn in V18: the site now holds still and only the landing wordmark answers the pointer; see Calm motion above.)
-
-## Insidir V15: an exact overview, green and red for direction, nothing glows (October 2026)
-
-- **Overview redesigned around exact figures.** The dashboard opens on insider flow for the transactions it loaded, and says which ones: purchase and sale totals (value, count, shares), the net value, transactions under other Form 4 codes (counted, never valued), and the median filing lag from trade date to SEC publication with its range. Below them: value by trade date (a diverging column chart with a hover/focus readout and a "Show the numbers" table of every day), sales against purchases by company, and the largest reported transactions with shares × price, trade date, filing date and lag. The transactions table prints signed shares, price per share, value, both dates, ownership and the SEC meaning of every code.
-- **Green and red carry direction, and only direction.** `--hf-up` `#2f996a` for purchases, rises and gains, `--hf-down` `#f94144` for sales, falls and losses; the pair was validated for colour-blind separation (OKLab ΔE 9.6 under deuteranopia) and contrast (≥ 4.86:1 on paper and panels) and always appears with a word, a sign or a ▲/▼ marker. Company report charts and insider rows follow the same rule.
-- **Less orange.** Inside the product the orange accent is gone from the chrome (active tab, icons, hovers, primary buttons); it stays on the logo's full stop, warnings and validation errors. Nothing glows anywhere: no halos, orange gradients or orange-tinted wordmark dots, and the tests and palette audit fail if one comes back.
-
-## Insidir V14: hard paywall, a page behind every button, sharp images (October 2026)
-
-- **Hard paywall.** Insidir is a paid product: $39/month through Stripe, no free tier and no free trial. The engine gates every product page (dashboard, research desk, companies, company reports, filings, people, watchlist, portfolio, alerts) and every product API. Signed-out visitors are sent to sign in, signed-in accounts without an active subscription to `/subscribe.html`; product APIs answer 401 or 402. Sign-up continues straight to the subscription step, and deleting an account cancels the Stripe subscription first. See [ENGINE.md](docs/ENGINE.md) for the environment variables. **Until Stripe billing is configured, nobody except the accounts listed in `INSIDIR_COMPLIMENTARY_EMAILS` can use the product.**
-- **A real page behind every button.** New public pages: Platform (`platform.html`), Why Insidir (`why-insidir.html`), Data and sources (`data.html`), plus Subscribe (`subscribe.html`) and Account deleted (`account-deleted.html`). No link anywhere points to an anchor on the landing page, and the tests fail on any link to a missing page.
-- **Landing page without a dashboard.** The research-preview terminal and the live filings feed are gone; the landing page loads no product data and links nothing into paid pages. It tells the product story in type, works from 320px to 1920px and keeps the interactive halftone wordmark.
-- **A dashboard that reads in order.** Search first, then insider flow, your watchlist (with each ticker's latest imported insider transaction) and research notes, insider transactions with filters, latest filings, the data source, and reporting people. `scripts/dashboard-check.mjs` tests it in Chrome against mocked data: sections, filters, empty and error states, 401/402 redirects, every link and overflow at five widths.
-- **Sharp images only.** The palette audit now fails any raster image whose native pixels are less than twice its rendered size. Decorative upscaled photos were removed from the dashboard, explore and 404 pages, and portraits use high-resolution Wikimedia Commons files checked by `scripts/verify-media.mjs`.
-- **One typeface.** Every page, headline and the wordmark use JetBrains Mono; headlines are simply larger.
-
-## Insidir V13 "Halftone" identity (October 2026)
-
-- One visual system on every page — landing, sign-in and sign-up, the product dashboard and desk pages, company reports, pricing, legal and the not-found page: night paper `#0c0c0b`, warm off-white ink `#e9e4da` and a single warm orange `#e9762b` used only as a flat accent on the public pages and the logo's full stop; inside the product, green `#2f996a` and red `#f94144` mark market direction (purchases and rises, sales and falls); nothing glows. Every other colour is a blend of those three.
-- Type: one typeface everywhere, self-hosted JetBrains Mono (SIL OFL): tracked uppercase micro-labels, navigation, buttons, table heads, captions and body copy, and the same face at 700–800 for headings, numbers and the `insidir` wordmark with its warm dot. Square corners, hairline rules, no shadows, print grain over everything, photographs in grayscale.
-- The landing page opens on a halftone wordmark: `insidir` set enormous and cropped by the bottom of the first screen, printed as a field of dots sized by letter coverage. Dots part a little around the pointer and settle back, always in ink; a click sends a soft ring through the word. It appears only there; every page ends with the same plain tracked footer.
-- Implementation: `web/assets/css/v13-halftone.css` (shared theme in the `insidir-v13` cascade layer, so it re-skins the older stylesheets without editing them), one `v13-<family>.css` per page family, `web/assets/js/v13-halftone.js` (the halftone engine, plain JavaScript, no dependencies) and a new favicon. `node scripts/v13-palette-audit.mjs` renders every page in headless Chromium and fails on any colour outside the palette, low text contrast, serif text, overflow, browser errors, a missing footer or a dotted wordmark anywhere but the landing hero; CI runs it after the layout check.
-
-## Insidir V12 company report (October 2026)
-
-- `company.html?ticker=NVDA` is one market-terminal design for **every company in the SEC's official ticker list**: logo, name, exchange and description; a delayed price chart with 1D/1W/1M/3M/1Y/5Y ranges; key facts (market cap, enterprise value, P/E, TTM revenue and net income, employees, headquarters, founding year, website); and Overview, Financials, SEC filings, Insider activity, People and News tabs.
-- Data is fetched live and cached server-side: delayed prices from Yahoo Finance's public chart endpoint, financial statements and filings from SEC EDGAR/XBRL, insider activity from each issuer's own recent Form 4 filings, company profile facts from Wikidata (matched by SEC CIK) and descriptions from Wikipedia (CC BY-SA, attributed). Every company's real logo is shown with no box (stock-logo libraries, Wikipedia/Wikidata and the company's site, identity-checked and prepared server-side), and every officer, director and founder gets a verified photo (Wikimedia Commons, the company's leadership pages or SEC proxy headshots, matched by name and tied to the company) or their initials — never a generated face. Market cap, enterprise value and P/E are calculated from those sources and show their inputs on hover. Missing values are shown as missing, never estimated.
-- The shared product header now has the mockup navigation (Overview, Research, People, Companies, Filings, Watchlist, Alerts — Portfolio moved to the account menu), a ticker/company/people typeahead with ⌘K / Ctrl K, and the signed-in user's initial.
-- `npm run web` serves the company report endpoints without a database, so the page can be previewed with real data when `SEC_USER_AGENT` is set.
-
-## Insidir V3 (October 2026)
-
-- Production landing page: centered market-research hero, working SEC filing preview, detailed company/fundamentals/insider workflows, source disclosures, planned $39 Pro pricing, FAQs and an Aethric LLC legal footer.
-- Product workspace: shared dark charcoal visual system across dashboard, SEC Research Desk, company research, filing library/detail, watchlist, portfolio, alerts and billing. The dashboard loads live `/v1/filings`, `/v1/transactions`, authenticated `/v1/me/watchlist` and `/v1/me/research-decisions`. It never substitutes invented stock charts or live market prices.
-- Legal: `/terms.html`, `/privacy.html` and `/company-info.html` identify Aethric LLC as the operator; contact `hello@aethric.llc`. Terms and privacy have not been represented as attorney-reviewed.
-- Account center: `/account.html` uses the existing `/v1/me` and `/v1/auth/logout` endpoints and guarded `DELETE /v1/me` with user confirmation. Sign-up only requests email/password because that's what the backend stores.
-- Production safeguards: no artificial AI answers, no fake politicians' transactions, no trading execution; Pro remains visibly *planned* and cannot charge until the billing integration is activated and verified.
-- Launch checks: `npm run check`, `npm test`, Railway deploy status, `/healthz`, user registration and account lifecycle spot tests. Client-facing public pages do not require external-market-data credentials.
-
-# Insidir
-
-**Public information. Deeper investigation. Decisions on your terms.** Insidir is building an intelligence-powered investing experience: find overlooked information in lawful public records, connect the evidence, and decide how to act. The current release contains an SEC-focused research engine and website; brokerage trading, AI analysis, and user-authorized automation are roadmap features, not live capabilities.
-
-## Website (`web/`)
-- Marketing landing page with scroll-driven animation, a pricing page, sign-in and sign-up, and Terms and Privacy pages
-- Product screens: dashboard, company profile, alerts, research desk, and a Form 10-K filing viewer
-- Research-first onboarding: successful sign-up and sign-in land on `research.html` to investigate a ticker immediately. Adding a holding or connecting a brokerage is never required to browse SEC research.
-- Research desk (`research.html?ticker=AAPL`) connects imported SEC transactions and original filing links to a private, user-authored research journal. Saving a research review never submits an order.
-- **Free manual holdings:** signed-in users add tickers and share quantities directly in `portfolio.html`, then see source-linked imported Form 4 activity and links to Research Desk. No Plaid, SnapTrade, live price feed, paid API, or brokerage credentials required. Entries are explicitly user-reported and editable/removable.
-- Portfolio screen (`portfolio.html`) supports optional read-only SnapTrade Personal OAuth connections. User tokens are encrypted server-side and holdings are fetched on demand; equity holdings can open the SEC Research Desk and see recent, clearly labeled ticker-only filing matches. Requires a registered SnapTrade OAuth application and production approval.
-- Static HTML, CSS and JS with no build step and no third-party requests. Fonts (Inter, JetBrains Mono, Source Serif 4) and imagery are self-hosted
-- `npm run web` serves the site without a database at http://localhost:5173. `npm start` serves it from the engine alongside the API
-
-[Website guide](docs/WEBSITE.md)
-
-## Engine (`src/`)
-- Real SEC Form 4 XML transaction parsing, with verified source references
-- SEC-backed intelligence API: official ticker-to-CIK lookup, company submissions (8-K / 10-K / 10-Q / selected disclosures), and XBRL facts, presented as provenance-linked research observations. Works for SEC-mapped symbols even when the imported Form 4 database has no matching transaction.
-- PostgreSQL ingestion, deduplication, source dates and audit history
-- APIs for filings, purchases and sales, company and insider search, descriptive purchase clusters, and `GET /v1/intelligence?ticker=AAPL`
-- Account sessions, gated watchlists, and a private research-review journal (`GET/POST/DELETE /v1/me/research-decisions`). Reviews can be researching, watching, or passed; they are **never** orders.
-- Politician, government, social platform, and crypto sources stay **disabled until legal and data permissions are verified**
-- Read-only brokerage connections are **implemented but disabled by default** until the owner configures a registered SnapTrade OAuth application, secret encryption, redirect URI, and brokerage provider access. Personalized trading suggestions and automated order execution are **not implemented** and require separate brokerage permissions and appropriate regulatory review.
-
-[Setup, API and deployment documentation](docs/ENGINE.md) · [Environment template](.env.example)
-
-This is a technical build, not a complete commercial release or legal certification. The product screens show labelled sample data until they are connected to the engine's endpoints.
+Never "guaranteed" or "risk-free". A lock is described as: "Locks in a profit if both sides fill and both markets
+settle the same way." The footer disclaimer is on every page. `test/compliance.test.ts` checks every page's text.

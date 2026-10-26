@@ -1,0 +1,136 @@
+{
+  "base": "http://localhost:3100",
+  "at": "2026-10-26T00:40:36.760Z",
+  "gates": {
+    "performance": 0.9,
+    "accessibility": 0.95,
+    "seo": 0.95
+  },
+  "rows": [
+    {
+      "page": "landing",
+      "performance": 0.98,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 2280,
+      "cls": 0,
+      "axe390": [
+        "color-contrast (1)"
+      ],
+      "axe1440": [
+        "color-contrast (9)"
+      ],
+      "pass": false
+    },
+    {
+      "page": "terminal-free",
+      "performance": 0.98,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 1970,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "pricing",
+      "performance": 0.99,
+      "accessibility": 0.98,
+      "seo": 1,
+      "lcpMs": 1976,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "receipts",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 2013,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "terms",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 0.9,
+      "lcpMs": 1808,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": false
+    },
+    {
+      "page": "privacy",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 0.9,
+      "lcpMs": 1815,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": false
+    },
+    {
+      "page": "terminal-pro",
+      "performance": 0.95,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 1980,
+      "cls": 0.09650795772986774,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "deal-pro",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 0.6,
+      "lcpMs": 1823,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "settings",
+      "performance": 0.98,
+      "accessibility": 1,
+      "seo": 0.6,
+      "lcpMs": 2275,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "whales",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 0.6,
+      "lcpMs": 1817,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "pnl",
+      "performance": 0.98,
+      "accessibility": 1,
+      "seo": 0.6,
+      "lcpMs": 2261,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    }
+  ]
+}

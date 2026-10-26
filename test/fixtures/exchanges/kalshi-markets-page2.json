@@ -1,0 +1,35 @@
+{
+  "cursor": "",
+  "markets": [
+    {
+      "ticker": "KXFEDDECISION-25DEC-C25",
+      "event_ticker": "KXFEDDECISION-25DEC",
+      "market_type": "binary",
+      "title": "Will the Fed cut rates by 25bps in December?",
+      "yes_sub_title": "Cut 25bps",
+      "no_sub_title": "Cut 25bps",
+      "status": "active",
+      "close_time": "2025-12-10T18:59:00Z",
+      "rules_primary": "Resolves Yes if the FOMC cuts by 25bps.",
+      "rules_secondary": ""
+    },
+    {
+      "ticker": "KXFEDDECISION-25DEC-H0",
+      "event_ticker": "KXFEDDECISION-25DEC",
+      "market_type": "binary",
+      "title": "Will the Fed hold rates in December?",
+      "yes_sub_title": "Hold",
+      "status": "active",
+      "close_time": "2025-12-10T18:59:00Z",
+      "rules_primary": "Resolves Yes if the FOMC holds.",
+      "result": "no"
+    },
+    {
+      "ticker": "KXSCALAR-1",
+      "event_ticker": "KXSCALAR",
+      "market_type": "scalar",
+      "title": "Scalar market",
+      "status": "active"
+    }
+  ]
+}

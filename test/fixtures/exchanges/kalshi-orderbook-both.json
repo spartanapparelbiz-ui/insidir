@@ -1,0 +1,8 @@
+{
+  "orderbook": {
+    "yes": [[1, 999]],
+    "no": null,
+    "yes_dollars": [["0.4500", 10], ["0.4000", 100]],
+    "no_dollars": []
+  }
+}

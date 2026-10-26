@@ -1,0 +1,113 @@
+/* Insidir Terminal: pure black, off-white text, JetBrains Mono everywhere, big numbers. One accent: green for
+ * profit. Safety lights are green / amber / red at different lightness AND always carry a text label. No gradients.
+ * Mobile first (390px), tap targets 44px+. */
+:root {
+  --bg: #000;
+  --s1: #0a0a0a;
+  --s2: #121212;
+  --line: #1f1f1f;
+  --line-2: #2c2c2c;
+  --text: #f2f0ea;
+  --muted: #a3a19a;
+  --dim: #807e78;           /* ≥ 4.5:1 on every surface (WCAG AA) */
+  --profit: #33d17a;        /* the one accent: profit */
+  --green: #2fbf71;         /* safety: green, mid lightness */
+  --amber: #f5b13d;         /* safety: amber, lighter */
+  --red: #e5484d;           /* safety: red, darker */
+  --mono: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 10px;
+  --tap: 44px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 15px/1.55 var(--mono); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--dim); }
+a:hover { text-decoration-color: var(--text); }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.muted { color: var(--muted); }
+.dim { color: var(--dim); }
+.small { font-size: 13px; line-height: 19px; }
+.tiny { font-size: 12px; line-height: 16px; }
+.profit { color: var(--profit); }
+.big { font-size: clamp(32px, 9vw, 56px); line-height: 1; font-weight: 800; letter-spacing: -0.04em; }
+
+/* buttons: 44px minimum */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 18px; border-radius: var(--r);
+  font-weight: 700; text-decoration: none; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+.btn--primary { background: var(--text); color: #000; }
+.btn--primary:hover { background: #fff; }
+.btn--secondary { background: transparent; color: var(--text); border-color: var(--line-2); }
+.btn--secondary:hover { background: var(--s2); }
+.btn--ghost { background: transparent; color: var(--muted); }
+.btn--block { width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* header and footer */
+.hdr { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.hdr__in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; }
+.wordmark { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--text); }
+.wordmark svg { height: 24px; width: auto; }
+.hdr__nav { display: flex; align-items: center; gap: 4px; }
+.hdr__nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 10px; color: var(--muted); text-decoration: none; }
+.hdr__nav a:hover, .hdr__nav a[aria-current="page"] { color: var(--text); }
+@media (max-width: 560px) {
+  .hdr__in { flex-wrap: wrap; row-gap: 0; }
+  .hdr__nav--app { width: 100%; justify-content: space-between; margin: 0 -8px; width: calc(100% + 16px); font-size: 14px; }
+  .hdr__nav--app a { padding: 0 8px; }
+}
+.foot { border-top: 1px solid var(--line); margin-top: 64px; padding: 24px 0 120px; color: var(--muted); font-size: 12px; line-height: 18px; }
+.foot__links { display: flex; flex-wrap: wrap; gap: 0 16px; margin-top: 12px; }
+.foot__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
+
+/* safety light: colour + text label, never colour alone */
+.light { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.light::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.light--green { color: var(--green); }
+.light--yellow { color: var(--amber); }
+.light--red { color: var(--red); }
+
+/* deal rows */
+.deals { display: grid; gap: 10px; }
+.deal { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--s1); text-decoration: none; color: inherit; }
+.deal:hover { border-color: var(--line-2); }
+/* not re-confirmed by a recent scan, or delayed: never presented as live */
+.deal--stale { filter: grayscale(1); }  /* greyed out without dropping text below 4.5:1 */
+.deal--stale .deal__play, .deal--stale .num__k { color: var(--dim); }
+.deal--stale .num__v { color: var(--muted); }
+.deal__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.deal__title { font-weight: 700; overflow-wrap: anywhere; }
+.deal__play { color: var(--muted); font-size: 13px; line-height: 19px; }
+.deal__nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.num__k { display: block; color: var(--dim); font-size: 11px; line-height: 14px; text-transform: uppercase; letter-spacing: .06em; }
+.num__v { display: block; font-size: 17px; font-weight: 700; }
+.blur { display: inline-block; min-width: 64px; height: 18px; border-radius: 4px; background: var(--line-2); vertical-align: middle; }
+.deal__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* cards and forms */
+.card { border: 1px solid var(--line); border-radius: var(--r); background: var(--s1); padding: 16px; }
+.field { display: grid; gap: 6px; }
+.field label { color: var(--muted); font-size: 13px; }
+.input { width: 100%; min-height: var(--tap); padding: 0 12px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--bg); color: var(--text); font: inherit; }
+.check { display: flex; align-items: center; gap: 10px; min-height: var(--tap); }
+.check input { width: 20px; height: 20px; accent-color: var(--text); }
+
+/* sticky bottom CTA on phones */
+.stickycta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); display: flex; gap: 8px; }
+.stickycta .btn { flex: 1; }
+@media (min-width: 900px) { .stickycta { display: none; } .foot { padding-bottom: 32px; } }
+
+.sec { padding: 56px 0 0; display: grid; gap: 20px; }
+.sec__h { font-size: clamp(24px, 6vw, 36px); line-height: 1.1; letter-spacing: -0.03em; font-weight: 800; text-wrap: balance; }
+.sec__p { color: var(--muted); max-width: 62ch; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { text-align: left; padding: 10px 8px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table th { color: var(--dim); font-weight: 400; font-size: 12px; }
+.r { text-align: right !important; }
+.scroll-x { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

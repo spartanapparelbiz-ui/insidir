@@ -1,0 +1,6 @@
+[
+  { "conditionId": "0xyes", "question": "Settled YES?", "slug": "settled-yes", "outcomes": "[\"Yes\",\"No\"]", "outcomePrices": "[\"1\",\"0\"]", "clobTokenIds": "[\"1\",\"2\"]", "active": true, "closed": true, "umaResolutionStatus": "resolved", "events": [{ "id": "9", "slug": "ev-nine", "title": "Event nine", "tags": [{ "label": "Politics", "slug": "politics" }] }] },
+  { "conditionId": "0xno", "question": "Settled NO?", "slug": "settled-no", "outcomes": "[\"Yes\",\"No\"]", "outcomePrices": "[\"0.0005\",\"0.9995\"]", "clobTokenIds": "[\"3\",\"4\"]", "active": true, "closed": true },
+  { "conditionId": "0xvoid", "question": "Voided?", "slug": "voided", "outcomes": "[\"Yes\",\"No\"]", "outcomePrices": "[\"0.5\",\"0.5\"]", "clobTokenIds": "[\"5\",\"6\"]", "active": true, "closed": true, "umaResolutionStatus": "resolved" },
+  { "conditionId": "0xpending", "question": "Closed, awaiting resolution?", "slug": "pending", "outcomes": "[\"Yes\",\"No\"]", "outcomePrices": "[\"0.97\",\"0.03\"]", "clobTokenIds": "[\"7\",\"8\"]", "active": true, "closed": true, "umaResolutionStatus": "proposed" }
+]

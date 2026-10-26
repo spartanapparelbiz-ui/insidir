@@ -1,0 +1,31 @@
+[
+  {
+    "market": "0xaaa1",
+    "asset_id": "111",
+    "timestamp": "1730000000000",
+    "hash": "h-yes-111",
+    "bids": [{ "price": "0.58", "size": "100" }, { "price": "0.60", "size": "50" }, { "price": "0.61", "size": "25" }],
+    "asks": [{ "price": "0.66", "size": "300" }, { "price": "0.64", "size": "80" }, { "price": "0.63", "size": "40" }],
+    "min_order_size": "5",
+    "tick_size": "0.01",
+    "neg_risk": true
+  },
+  {
+    "market": "0xaaa1",
+    "asset_id": "112",
+    "timestamp": "1730000000000",
+    "hash": "h-no-112",
+    "bids": [{ "price": "0.34", "size": "300" }, { "price": "0.36", "size": "80" }, { "price": "0.37", "size": "40" }],
+    "asks": [{ "price": "0.42", "size": "100" }, { "price": "0.40", "size": "50" }, { "price": "0.39", "size": "25" }],
+    "min_order_size": "5",
+    "tick_size": "0.01",
+    "neg_risk": true
+  },
+  {
+    "market": "0xbbb1",
+    "asset_id": "211",
+    "hash": "h-211",
+    "bids": [{ "price": "0.44", "size": "1000" }],
+    "asks": [{ "price": "0.46", "size": "900" }]
+  }
+]

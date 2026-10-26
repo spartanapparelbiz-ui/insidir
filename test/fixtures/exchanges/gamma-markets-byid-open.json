@@ -1,0 +1,3 @@
+[
+  { "conditionId": "0xopen", "question": "Still open?", "slug": "still-open", "outcomes": "[\"Yes\",\"No\"]", "outcomePrices": "[\"0.4\",\"0.6\"]", "clobTokenIds": "[\"9\",\"10\"]", "active": true, "closed": false, "acceptingOrders": true }
+]

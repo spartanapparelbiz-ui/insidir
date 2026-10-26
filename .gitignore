@@ -1,8 +1,9 @@
-# No trailing slash: a symlinked node_modules (a worktree sharing another checkout's) is ignored too.
-node_modules
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.env*.local
 .env
-.env.*
-!.env.example
-.DS_Store
-coverage/
-*.log
+qa/e2e/.out/
+qa/reports/lighthouse-*.json
+qa/reports/audit.log
