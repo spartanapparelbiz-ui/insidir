@@ -10,11 +10,15 @@
 .hero__h { font-size: var(--t32); line-height: 1.1; text-wrap: balance; }
 .hero__deal-wrap { margin: 8px 0 0; display: grid; gap: 12px; }
 
-.split { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "a b" "seam seam"; gap: 2px; border-radius: 0; }
+.split { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "a b" "seam seam"; gap: 8px; border-radius: 0; }
 .split__side--a { grid-area: a; }
 .split__side--b { grid-area: b; }
 .split__seam { grid-area: seam; }
-.split__side { background: var(--surface); padding: 16px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.split__side { position: relative; background: var(--surface); padding: 16px; display: grid; gap: 2px; align-content: start; min-width: 0; border-radius: var(--r-row); }
+/* Each price ticket's line into the $1 bar: down into it on phones, sideways into it on desktop. */
+.split__side::after { content: ""; position: absolute; left: 50%; bottom: -16px; width: 1px; height: 16px; background: var(--steel); }
+.split .dbar { width: 100%; }
+.split__seam .split__per { text-align: inherit; }
 .split__venue { color: var(--steel); font-size: var(--t14); line-height: 1.3; }
 .split__price { display: grid; gap: 0; min-width: 0; }
 .split__dir { font: 500 var(--t17)/1.3 var(--sans); color: var(--paper); }
@@ -42,9 +46,11 @@
   .hero { padding-top: 32px; gap: 20px; }
   .hero__h { font-size: var(--t72); line-height: 1; letter-spacing: -0.03em; }
   .hero__deal-wrap { margin-top: 12px; }
-  .split { grid-template-columns: 1fr minmax(300px, 360px) 1fr; grid-template-areas: "a seam b"; }
+  .split { grid-template-columns: minmax(0, 1fr) minmax(400px, 1.3fr) minmax(0, 1fr); grid-template-areas: "a seam b"; }
   .split__side { padding: 32px; gap: 8px; }
-  .split__seam { padding: 32px 24px; align-content: center; text-align: center; justify-items: center; }
+  .split__seam { padding: 32px 24px; align-content: center; text-align: center; justify-items: stretch; }
+  .split__side::after { left: auto; right: -24px; bottom: auto; top: 50%; width: 24px; height: 1px; }
+  .split__side--b::after { right: auto; left: -24px; }
   .split__num { font-size: var(--t120); }
   .split__win { font-size: var(--t72); }
   .split__profit { justify-content: center; flex-direction: column; align-items: center; }
@@ -52,18 +58,11 @@
 }
 @media (min-width: 900px) and (max-width: 1180px) { .split__num { font-size: var(--t72); } }
 
-/* The one orchestrated moment: prices roll in, the seam closes, the profit lands. */
+/* The one orchestrated moment is the $1 bar's slide-in (components/ui/DollarBar, styles in globals.css). The tickets
+ * hold still; only a live tick moves a number. */
 @media (prefers-reduced-motion: no-preference) {
-  .split__side--a { animation: seam-a 700ms cubic-bezier(.2, .8, .2, 1) both; }
-  .split__side--b { animation: seam-b 700ms cubic-bezier(.2, .8, .2, 1) both; }
-  .split__num { display: inline-block; animation: roll-in 650ms 120ms cubic-bezier(.2, .8, .2, 1) both; }
-  .split__profit { animation: land 450ms 760ms cubic-bezier(.2, .8, .2, 1) both; }
   .roll--tick { display: inline-block; animation: tick 700ms cubic-bezier(.2, .8, .2, 1); }
 }
-@keyframes seam-a { from { transform: translateX(-20px); } to { transform: none; } }
-@keyframes seam-b { from { transform: translateX(20px); } to { transform: none; } }
-@keyframes roll-in { from { transform: translateY(35%); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes land { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
 /* a live tick: the number flashes white (#FFFFFF behind Ink text) and fades back to its normal colour */
 @keyframes tick { 0%, 15% { transform: translateY(-12%); background: var(--flash); color: var(--ink); } 100% { transform: none; background: transparent; color: inherit; } }
 .roll--tick { border-radius: 6px; }
@@ -181,4 +180,96 @@
 .lp-legal h2 { font-size: var(--t22); padding-top: 16px; }
 .lp-legal p, .lp-legal li { color: var(--steel); }
 .lp-legal ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+/* the way onward at the end of a legal page */
+.lp-legal__next { display: grid; gap: 16px; justify-items: start; max-width: 70ch; padding-top: var(--sec); }
+.lp-legal__next p { color: var(--steel); }
 @media (min-width: 900px) { .lp-legal h1 { font-size: var(--t48); } }
+
+/* ---------- how it works: three line drawings ---------- */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+@media (min-width: 900px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.steps__item { display: grid; gap: 8px; align-content: start; }
+.steps__art { width: 100%; max-width: 360px; height: auto; color: var(--steel); }
+.steps__art .st-line { color: var(--steel); }
+.steps__art .st-strong { color: var(--paper); }
+.steps__art text { fill: var(--paper); font-family: var(--sans); }
+.steps__art .st-small { fill: var(--steel); font-size: 11px; }
+.steps__art .st-text { font-size: 13px; }
+.steps__art .st-num { font-family: var(--mono); font-size: 14px; font-weight: 700; }
+.steps__art .st-keep { font-size: 16px; }
+.steps__h { font-size: var(--t17); display: flex; gap: 8px; align-items: baseline; }
+.steps__n { color: var(--steel); font-size: var(--t14); }
+.steps__p { color: var(--steel); font-size: var(--t14); max-width: 40ch; }
+
+/* ---------- the Terminal in device frames (CSS only) ---------- */
+.devices { display: grid; gap: 32px; justify-items: center; align-items: end; }
+.device--laptop { display: none; }
+@media (min-width: 900px) {
+  .devices { grid-template-columns: 300px minmax(0, 1fr); justify-items: stretch; }
+  .device--laptop { display: grid; }
+}
+.device--phone { width: min(100%, 320px); border-radius: 40px; padding: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.device--phone .device__screen { position: relative; height: 520px; overflow: hidden; border-radius: 30px; background: var(--ink); padding: 40px 8px 8px; }
+.device--phone .device__screen::before { content: ""; position: absolute; top: 12px; left: 50%; width: 88px; height: 22px; margin-left: -44px; border-radius: 12px; background: var(--surface); z-index: 1; }
+.device__scroll { display: grid; gap: 4px; }
+.device__scroll > div { display: grid; gap: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .devices--on .device--phone .device__scroll { animation: dev-scroll 28s linear infinite; }
+  .devices--on .device--phone:hover .device__scroll, .devices--on .device--phone:focus-within .device__scroll { animation-play-state: paused; }
+}
+@keyframes dev-scroll { from { transform: translateY(0); } to { transform: translateY(calc(-50% - 2px)); } }
+
+/* The laptop: a real desktop row layout at 1100px, scaled into the frame. */
+.device--laptop { --scale: .62; }
+.device--laptop .device__screen { height: calc(400px * var(--scale)); overflow: hidden; border-radius: 12px 12px 0 0; background: var(--ink);
+  box-shadow: inset 0 0 0 10px var(--surface), inset 0 0 0 11px var(--line); padding: 20px; }
+.device__canvas { width: 1100px; transform: scale(var(--scale)); transform-origin: top left; }
+.device__base { height: 14px; margin: 0 -24px; border-radius: 0 0 10px 10px; background: var(--surface); box-shadow: inset 0 1px 0 var(--line); }
+@media (min-width: 1100px) { .device--laptop { --scale: .72; } }
+
+/* Inside the phone frame on a desktop screen, the table uses its phone layout (the same rules as
+ * components/app/terminal.css below 900px), and its header doesn't stick under the site header. */
+.device .dt thead th { position: static; }
+@media (min-width: 900px) {
+  .device--phone .dt-c-play, .device--phone .dt-c-roi, .device--phone .dt-c-size, .device--phone .dt-c-day, .device--phone .dt-c-open { display: none; }
+  .device--phone .dt-c-rules { width: 40px; padding-right: 0; }
+  .device--phone .dt .dt-c-rules .light { font-size: 0; gap: 0; }
+  .device--phone .dt .dt-c-rules .light__icon { width: 18px; height: 18px; }
+  .device--phone .dt-c-event { width: auto; }
+  .device--phone .dt-c-profit { width: 96px; }
+  .device--phone .dt th, .device--phone .dt td { height: auto; padding-top: 10px; padding-bottom: 10px; }
+  .device--phone .dt tbody th { white-space: normal; }
+  .device--phone .dt-link { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .device--phone .dt-sub { display: block; color: var(--steel); font-weight: 400; font-size: 12px; line-height: 16px; margin-top: 2px; }
+  .device--phone .dt-c-event .dt-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+.device--phone .deals { margin-top: 8px; }
+
+/* the receipts teaser chart (components/receipts/ProfitChart); /receipts styles its own copy */
+.lp .rx-chart { margin: 0; display: grid; gap: 8px; }
+.lp .rx-chart__cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; color: var(--steel); font-size: var(--t14); }
+.lp .rx-chart__now { color: var(--paper); white-space: pre; }
+.lp .rx-chart__box { position: relative; height: 160px; border-bottom: 1px solid var(--line); }
+.lp .rx-chart__box:focus-visible { outline: 2px solid var(--paper); outline-offset: 4px; }
+.lp .rx-chart__box svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.lp .rx-chart__line { fill: none; stroke: var(--paper); stroke-width: 1.5; }
+.lp .rx-chart__zero, .lp .rx-chart__cursor { stroke: var(--line); stroke-width: 1; }
+.lp .rx-chart__dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--paper); }
+.lp .rx-chart__axis { display: flex; justify-content: space-between; color: var(--steel); font-size: 12px; }
+
+/* Phones: the steps sit drawing-beside-text (half the height), the hidden-deal card stacks its button. */
+@media (max-width: 899px) {
+  .steps { gap: 16px; }
+  .steps__item { grid-template-columns: 136px minmax(0, 1fr); grid-template-areas: "art h" "art p"; column-gap: 16px; align-items: start; }
+  .steps__art { grid-area: art; max-width: 136px; }
+  .steps__h { grid-area: h; }
+  .steps__p { grid-area: p; }
+  .device--phone .device__screen { height: 440px; }
+}
+.device--phone .deal--hidden { grid-template-columns: minmax(0, 1fr); }
+.device--phone .deal--hidden .deal__unlock { grid-row: auto; grid-column: 1; justify-self: start; }
+
+/* the product loop (components/landing/ProductLoop.tsx): a phone-shaped recording of the real Terminal */
+.lp-loop { margin: 0; display: grid; gap: 8px; justify-items: center; }
+.lp-loop__video { width: min(280px, 72vw); height: auto; aspect-ratio: 390 / 844; border-radius: 28px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.lp-loop__cap { color: var(--steel); font-size: var(--t14); text-align: center; max-width: 40ch; }

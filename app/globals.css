@@ -59,7 +59,9 @@ button { font: inherit; color: inherit; }
 @media (min-width: 900px) { .wrap { max-width: calc(var(--max) + 64px); padding: 0 32px; } }
 .prose { max-width: 66ch; }
 .muted { color: var(--steel); }
-.dim { color: var(--dim); }
+/* Dim (#5A5F66) is 3.3:1 on black: too faint for text (WCAG asks 4.5:1). It stays for non-text (lock bars, dividers,
+ * stale dots); text that should recede uses Steel. */
+.dim { color: var(--steel); }
 .small, .tiny { font-size: var(--t14); line-height: 1.45; }
 /* profit: Paper, mono, bold, one step larger than the text around it (elements with their own size keep it) */
 .profit { color: var(--paper); font-family: var(--mono); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; font-size: 1.2em; line-height: 1; }
@@ -87,10 +89,13 @@ button { font: inherit; color: inherit; }
 .hdr__nav { display: flex; align-items: center; gap: 4px; font-size: var(--t17); }
 .hdr__nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 10px; color: var(--steel); text-decoration: none; }
 .hdr__nav a:hover, .hdr__nav a[aria-current="page"] { color: var(--paper); }
+.hdr__nav a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; text-decoration-color: var(--paper); }
 @media (max-width: 560px) {
   .hdr__in { flex-wrap: wrap; row-gap: 0; }
-  .hdr__nav--app { width: 100%; justify-content: space-between; margin: 0 -8px; width: calc(100% + 16px); font-size: var(--t14); }
-  .hdr__nav--app a { padding: 0 8px; }
+  .hdr__nav { font-size: var(--t14); gap: 0; }
+  .hdr__nav a { padding: 0 6px; }
+  /* members get the bottom tab bar on phones instead */
+  .hdr:has(+ .tabbar) .hdr__nav { display: none; }
   .hdr .hbeat { order: 3; width: 100%; margin: -6px 0 6px; }
 }
 /* the scanner heartbeat: small, beside the wordmark (landing page) */
@@ -156,3 +161,81 @@ button { font: inherit; color: inherit; }
 .r { text-align: right !important; }
 .scroll-x { overflow-x: auto; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- members' bottom tab bar (phones): Terminal, Receipts, Alerts, Account ---------- */
+.tabbar { display: none; }
+@media (max-width: 899px) {
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr);
+    background: var(--ink); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar__item { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; color: var(--steel); text-decoration: none; font-size: 12px; line-height: 1.2; }
+  .tabbar__item[aria-current="page"] { color: var(--paper); }
+  .tabbar__icon { width: 22px; height: 22px; }
+  /* room for the bar under the page */
+  body:has(.tabbar) .foot { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  body:has(.tabbar) .stickycta { display: none; }
+}
+
+/* ---------- feedback: toast, busy buttons, skeletons ---------- */
+.uitoast-host { position: fixed; z-index: 70; left: 16px; right: 16px; bottom: calc(72px + env(safe-area-inset-bottom)); display: grid; justify-items: center; pointer-events: none; }
+@media (min-width: 900px) { .uitoast-host { left: auto; right: 24px; bottom: 24px; justify-items: end; } }
+.uitoast { pointer-events: auto; display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 4px 4px 4px 16px; border-radius: var(--r-row);
+  background: var(--paper); color: var(--ink); font-size: var(--t14); font-weight: 500; }
+.uitoast--err { background: var(--surface); color: var(--paper); box-shadow: inset 0 0 0 1px var(--steel); }
+.uitoast--err::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-left: -4px; }
+.uitoast__x { min-height: var(--tap); padding: 0 12px; border: 0; background: none; color: inherit; font-size: var(--t14); opacity: .7; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) { .uitoast { animation: uitoast-in .18s ease-out; } }
+@keyframes uitoast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.btn { transition: transform .06s ease-out, background-color .12s, box-shadow .12s; }
+.btn:active:not([disabled]) { transform: scale(.97); }
+.uibtn { position: relative; }
+.uibtn--busy .uibtn__label { visibility: hidden; }
+.uibtn__spin { position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+.btn.uibtn--busy[disabled] { opacity: 1; cursor: progress; }
+@media (prefers-reduced-motion: no-preference) { .uibtn__spin { animation: uispin .7s linear infinite; } }
+@keyframes uispin { to { transform: rotate(360deg); } }
+
+.uiskel { display: inline-block; border-radius: 4px; background: var(--line); vertical-align: middle; }
+@media (prefers-reduced-motion: no-preference) { .uiskel { animation: uiskel 1.2s ease-in-out infinite alternate; } }
+@keyframes uiskel { from { opacity: .55; } to { opacity: 1; } }
+.uiskel-rows { display: grid; }
+.uiskel-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 16px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
+
+/* ---------- 404 and error pages ---------- */
+.state-page { display: grid; gap: 16px; justify-items: start; padding-block: 64px; max-width: calc(560px + 64px); }
+.state-page__code { color: var(--steel); font-size: var(--t14); }
+.state-page__h { font-size: var(--t32); line-height: 1.15; }
+.state-page__p { color: var(--steel); max-width: 52ch; }
+
+/* ---------- the "Same rules?" badge icon ---------- */
+.light__icon { width: 14px; height: 14px; flex: none; color: var(--dot, var(--steel)); }
+.light:has(.light__icon)::before { display: none; }
+
+/* ---------- the $1 bar (components/ui/DollarBar.tsx) ---------- */
+.dbar { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.dbar__track { display: flex; width: 100%; overflow: hidden; border-radius: 3px; background: var(--ink); }
+.dbar--sm .dbar__track { height: 6px; gap: 1px; }
+.dbar--lg .dbar__track { height: 48px; gap: 2px; border-radius: 6px; }
+.dbar__seg { display: flex; align-items: center; padding: 0 10px; min-width: 0; overflow: hidden; color: var(--paper); }
+.dbar__seg--a { background: var(--line); }
+.dbar__seg--b { background: var(--dim); }
+.dbar__in { font-size: var(--t14); font-weight: 700; white-space: nowrap; }
+.dbar__gap { position: relative; display: flex; justify-content: flex-end; background: var(--paper); min-width: 2px; }
+.dbar__fees { height: 100%; background: var(--steel); }
+.dbar--sm .dbar__fees { background: var(--steel); }
+.dbar__legend { display: flex; font-size: 12px; line-height: 1.35; color: var(--steel); }
+.dbar__key { padding-right: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbar__key--keep { color: var(--paper); font-weight: 600; white-space: normal; padding-right: 0; min-width: 72px; }
+.dbar__feenote { color: var(--steel); font-weight: 400; }
+.dbar__key--over { color: var(--paper); }
+@media (prefers-reduced-motion: no-preference) {
+  .dbar--lg .dbar__gap::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--flash) 55%, transparent), transparent);
+    transform: translateX(-100%); animation: dbar-shimmer 3.2s ease-in-out 1.4s infinite; }
+  .dbar--animate .dbar__seg--a { animation: dbar-a .6s cubic-bezier(.2,.8,.2,1) both; }
+  .dbar--animate .dbar__seg--b { animation: dbar-b .6s cubic-bezier(.2,.8,.2,1) both; }
+  .dbar--animate .dbar__gap { animation: dbar-gap .45s .55s ease-out both; }
+}
+@keyframes dbar-a { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes dbar-b { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes dbar-gap { from { opacity: 0; transform: scaleX(.2); transform-origin: left; } to { opacity: 1; transform: none; } }
+@keyframes dbar-shimmer { 60%, 100% { transform: translateX(100%); } }

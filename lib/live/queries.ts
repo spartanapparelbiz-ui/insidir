@@ -1,5 +1,5 @@
 /* Reads from the live events log for server-rendered pages. Server only. */
-import { and, desc, eq, gte, lte, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, ne } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/lib/db";
 import { liveEvents } from "@/lib/db/schema";
 import type { FeedViewer } from "@/lib/feed";
@@ -15,6 +15,17 @@ export async function latestTick(oppId: string, at: number): Promise<RawPriceTic
       .orderBy(desc(liveEvents.id)).limit(1))[0];
     return r ? (r.data as unknown as RawPriceTick) : null;
   } catch { return null; }
+}
+
+/** A deal's price ticks since `since`, oldest first (the drawer's 30-minute sparkline). */
+export async function recentTicks(oppId: string, since: number): Promise<Array<{ at: number; legs: Array<{ avgPrice: number }>; roi: number }>> {
+  if (!hasDatabase()) return [];
+  try {
+    const rows = await getDb().select({ data: liveEvents.data, at: liveEvents.at }).from(liveEvents)
+      .where(and(eq(liveEvents.oppId, oppId), eq(liveEvents.type, "price_tick"), gte(liveEvents.at, new Date(since))))
+      .orderBy(asc(liveEvents.id)).limit(500);
+    return rows.map(r => { const d = r.data as unknown as RawPriceTick; return { at: r.at.getTime(), legs: d.legs, roi: d.roi }; });
+  } catch { return []; }
 }
 
 /** The latest events this viewer may already see (for the tape's first paint), newest first, price ticks excluded. */

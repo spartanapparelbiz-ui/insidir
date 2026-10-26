@@ -24,15 +24,16 @@ function ShareGlyph() {
   );
 }
 
-export function IosInstallGuide() {
+/** `inline`: part of another flow (onboarding's alerts step): no Close, and shown even if dismissed before. */
+export function IosInstallGuide({ inline = false }: { inline?: boolean } = {}) {
   const [show, setShow] = useState<false | "safari" | "inapp">(false);
   useEffect(() => {
     let dismissed = false;
-    try { dismissed = localStorage.getItem(KEY) === "1"; } catch { dismissed = false; }
+    try { dismissed = !inline && localStorage.getItem(KEY) === "1"; } catch { dismissed = false; }
     if (dismissed || !isIos() || isStandalone()) return;
     if (isSafari()) setShow("safari");
     else if (isInApp()) setShow("inapp");
-  }, []);
+  }, [inline]);
   if (!show) return null;
   const close = () => {
     try { localStorage.setItem(KEY, "1"); } catch { /* private mode: just hide */ }
@@ -42,19 +43,19 @@ export function IosInstallGuide() {
     <aside className="ios card" aria-labelledby="ios-h">
       <div className="ios__top">
         <p id="ios-h" className="ios__h">Add Insidir to your Home Screen to get instant alerts</p>
-        <button type="button" className="btn btn--ghost ios__x" onClick={close} aria-label="Dismiss">Close</button>
+        {inline ? null : <button type="button" className="btn btn--ghost ios__x" onClick={close} aria-label="Dismiss">Close</button>}
       </div>
       {show === "inapp" ? (
         <ol className="ios__steps">
           <li>Tap <b>•••</b> at the top right, then <b>Open in external browser</b> (Safari).</li>
           <li>In Safari, tap the Share button <ShareGlyph />, then <b>Add to Home Screen</b>.</li>
-          <li>Open Insidir from the new icon and turn on alerts in Settings.</li>
+          <li>Open Insidir from the new icon and turn on alerts on the Alerts page.</li>
         </ol>
       ) : (
       <ol className="ios__steps">
         <li>Tap the Share button <ShareGlyph /> in Safari&apos;s toolbar.</li>
         <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-        <li>Open Insidir from the new icon and turn on alerts in Settings.</li>
+        <li>Open Insidir from the new icon and turn on alerts on the Alerts page.</li>
       </ol>
       )}
     </aside>

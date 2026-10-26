@@ -8,8 +8,10 @@ import { DealDetail } from "@/components/app/DealDetail";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
+import { OPEN_TERMINAL, UNLOCK } from "@/lib/copy";
 import { dealView } from "@/lib/deal-view";
 import "../../app.css";
+import "../../pages.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Deal", robots: { index: false } };
@@ -24,10 +26,10 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const unlock = unlockHref("insidir", `/deal/${encodeURIComponent(id)}`);
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/deal" />
+      <SiteHeader signedIn={Boolean(viewer.user)} current="/terminal" />
       <main className="wrap app deal-page">
         <Beacons where="deal" />
-        <p className="small"><Link href="/terminal" className="muted">Back to the Terminal</Link></p>
+        <Link href="/terminal" className="backlink">Back to the Terminal</Link>
         {view.state === "ok" ? <DealDetail view={view} now={now} unlockHref={unlock} /> : (
           <section className="empty">
             <h1 className="empty__h">{view.state === "too_new" ? "This deal is still live" : "Deal not found"}</h1>
@@ -35,8 +37,8 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
               ? "Deals reach the free feed 30 minutes after they're found. Members see them as they happen."
               : "It may have closed, or it isn't available where you are. The Terminal has today's deals."}</p>
             <div className="row-gap">
-              {view.state === "too_new" ? <a className="btn btn--primary" href={unlock} data-unlock="deal-live">Unlock live deals</a> : null}
-              <Link className="btn btn--secondary" href="/terminal">Open the Terminal</Link>
+              {view.state === "too_new" ? <a className="btn btn--primary" href={unlock} data-unlock="deal-live">{UNLOCK}</a> : null}
+              <Link className={`btn ${view.state === "too_new" ? "btn--secondary" : "btn--primary"}`} href="/terminal">{OPEN_TERMINAL}</Link>
             </div>
           </section>
         )}

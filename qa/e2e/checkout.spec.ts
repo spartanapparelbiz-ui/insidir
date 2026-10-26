@@ -22,7 +22,7 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   // Value before signup: the feed opens with no account.
   await page.getByRole("link", { name: "See today's live deals" }).first().click();
   await expect(page).toHaveURL(/\/terminal/);
-  await expect(page.locator(".deal").first()).toBeVisible();
+  await expect(page.locator("tr[data-deal]").first()).toBeVisible();
 
   // Tap 1: Unlock. Tap 2: pay on Whop.
   await page.locator("[data-unlock]").first().click();
@@ -53,11 +53,11 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   expect([...firsts].sort((a, b) => a - b)).toEqual(firsts);
   expect(evs.find(e => e.name === "landing_view")?.variant).toBe(variant);
 
-  // One-click cancel, visible in Settings.
+  // One-click cancel, on the Account page: a toast confirms, and Billing says when it ends.
   await page.goto("/settings");
   await page.getByRole("button", { name: "Cancel subscription" }).click();
-  await expect(page.getByText("Your subscription is cancelled")).toBeVisible();
-  await expect(page.getByText("Cancels at period end")).toBeVisible();
+  await expect(page.getByText("Subscription cancelled.")).toBeVisible();
+  await expect(page.getByTestId("cancels-on")).toContainText("Cancels on");
   const after = await (await whop("/__state")).json() as { memberships: Array<{ cancel_at_period_end: boolean }> };
   expect(after.memberships[0]?.cancel_at_period_end).toBe(true);
   await page.screenshot({ path: `qa/screenshots/settings-cancelled-${page.viewportSize()!.width}.png`, fullPage: true });

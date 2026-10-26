@@ -1,6 +1,8 @@
 /* Draft — have counsel review. */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
+import { OPEN_TERMINAL } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -11,12 +13,12 @@ export default async function PrivacyPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} />
+      <SiteHeader signedIn={Boolean(viewer.user)} />
       {/* Draft — have counsel review. */}
       <main className="wrap lp">
         <article className="lp-legal">
           <h1>Privacy</h1>
-          <p className="small dim">Insidir is run by Aethric LLC. This page says what we collect, why, and what we never do.</p>
+          <p className="small muted">Insidir is run by Aethric LLC. This page says what we collect, why, and what we never do.</p>
 
           <h2>Market data</h2>
           <p>The prices, order books and rules we show come from Kalshi&apos;s, Polymarket&apos;s and Polymarket US&apos;s public APIs. That data is about markets, not about you.</p>
@@ -56,6 +58,10 @@ export default async function PrivacyPage() {
           <h2>Contact</h2>
           <p>Aethric LLC · support@insidir.com</p>
         </article>
+        <div className="lp-legal__next">
+          <p>Questions about how it works? The Terminal shows today&apos;s deals, free.</p>
+          <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+        </div>
       </main>
     </>
   );

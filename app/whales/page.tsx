@@ -1,17 +1,20 @@
 /* Whales (Pro): the latest large trades, as recorded by the worker. Only venues the viewer's region allows. */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Ago } from "@/components/app/Ago";
 import { Beacons } from "@/components/app/Beacons";
 import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
+import { OPEN_TERMINAL } from "@/lib/copy";
 import { centsText, usd } from "@/lib/format";
 import { entitlements } from "@/lib/plans";
 import { whales } from "@/lib/queries";
 import { allowedVenues } from "@/lib/region";
 import { VENUE_NAME } from "@/lib/types";
 import "../app.css";
+import "../pages.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Whales", robots: { index: false } };
@@ -26,7 +29,7 @@ export default async function WhalesPage() {
   const trades = allowed ? (await whales(100)).filter(t => venues.includes(t.venue)) : [];
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/whales" />
+      <SiteHeader signedIn={Boolean(viewer.user)} current="/whales" />
       <main className="wrap app">
         <Beacons where="whales" />
         <h1 className="page__h">Whales</h1>
@@ -42,7 +45,7 @@ export default async function WhalesPage() {
                   <tr key={`${t.txHash ?? t.wallet}-${i}`}>
                     <td className="nowrap"><Ago at={t.timestamp} now={now} /></td>
                     <td className="nowrap" title={t.wallet}>{t.name ?? short(t.wallet)}</td>
-                    <td>{t.url ? <a href={t.url} target="_blank" rel="noopener noreferrer">{t.marketTitle}</a> : t.marketTitle}<span className="dim tiny calc__lbl">{VENUE_NAME[t.venue]}</span></td>
+                    <td>{t.url ? <a href={t.url} target="_blank" rel="noopener noreferrer">{t.marketTitle}</a> : t.marketTitle}<span className="muted tiny calc__lbl">{VENUE_NAME[t.venue]}</span></td>
                     <td className="nowrap whales__side">{t.side === "SELL" ? "Sold" : "Bought"} {t.outcome}</td>
                     <td className="r">{Math.round(t.contracts).toLocaleString("en-US")}</td>
                     <td className="r">{centsText(Math.round(t.price * 1000) / 10)}</td>
@@ -53,7 +56,11 @@ export default async function WhalesPage() {
             </table>
           </div>
         ) : (
-          <div className="empty"><p className="empty__h">No large trades yet</p><p className="muted small">Large trades show up here as the scanner records them. Leave this page open, or check back later.</p></div>
+          <div className="empty" data-empty="whales">
+            <p className="empty__h">No large trades yet</p>
+            <p className="muted small">Trades of $10,000 or more show up here as the scanner records them. Until then, the live deals are on the Terminal.</p>
+            <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+          </div>
         )}
       </main>
     </>

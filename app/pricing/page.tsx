@@ -18,10 +18,10 @@ export default async function PricingPage() {
   const refund = greenPerDay(visibleReceipts(month, viewer.region), REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/pricing" />
+      <SiteHeader signedIn={Boolean(viewer.user)} current="/pricing" />
       <main className="wrap lp">
         <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={checkoutHref(checkoutUrl("insidir"))} proHref={checkoutHref(checkoutUrl("pro"))}
-          freeCta={LANDING_CTA} refund={refund} level={1} />
+          freeCta={LANDING_CTA} refund={refund} level={1} primary />
         <Faq ids={["what", "risk", "trade", "fees", "iphone", "cancel"]} />
       </main>
       <Beacons />

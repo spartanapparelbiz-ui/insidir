@@ -80,9 +80,9 @@ function Ab({ rows }: { rows: AbRow[] }) {
       <thead><tr><th>Variant</th><th className="r">Landing</th><th className="r">To feed</th><th className="r">To checkout</th><th className="r">Paid</th></tr></thead>
       <tbody>{rows.map(r => (
         <tr key={r.variant}><td>{r.variant}</td><td className="r">{r.landing}</td>
-          <td className="r">{r.feed} <span className="dim">({rate(r.feed, r.landing)})</span></td>
-          <td className="r">{r.checkout} <span className="dim">({rate(r.checkout, r.landing)})</span></td>
-          <td className="r">{r.paid} <span className="dim">({rate(r.paid, r.landing)})</span></td></tr>
+          <td className="r">{r.feed} <span className="muted">({rate(r.feed, r.landing)})</span></td>
+          <td className="r">{r.checkout} <span className="muted">({rate(r.checkout, r.landing)})</span></td>
+          <td className="r">{r.paid} <span className="muted">({rate(r.paid, r.landing)})</span></td></tr>
       ))}</tbody>
     </table>
   );

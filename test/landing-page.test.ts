@@ -25,7 +25,7 @@ function literals(src: string): string {
 /** Everything the landing page renders, except the FAQ (the one place jargon is allowed, explained). */
 const LANDING_FILES = [
   "app/page.tsx", ...readdirSync(join(ROOT, "components/landing")).filter(f => f !== "Faq.tsx").map(f => "components/landing/" + f),
-  "components/DealRow.tsx", "components/SafetyLight.tsx", "components/SiteHeader.tsx", "components/SiteFooter.tsx",
+  "components/app/DealTable.tsx", "components/ui/DollarBar.tsx", "components/SafetyLight.tsx", "components/SiteHeader.tsx", "components/SiteFooter.tsx",
 ];
 
 describe("landing page", () => {
@@ -102,7 +102,7 @@ describe("landing page", () => {
   it("is monochrome: no colour in the styles except the three safety lights", () => {
     const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a"]);
     const SAFETY = ["--green", "--amber", "--red"];
-    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/deal-row.css", "components/app/ios.css"]) {
+    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/app/terminal.css", "app/receipts/receipts.css", "components/app/ios.css"]) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       for (const hex of css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) expect(PALETTE.has(hex.toLowerCase()), `${f}: ${hex}`).toBe(true);
       expect(css, f).not.toMatch(/gold|ffc53d|rgba?\((?!0, 0, 0)/i);

@@ -1,6 +1,6 @@
 "use client";
 /* One click listener for the page: links marked data-unlock fire "unlock_click"; any link to Whop checkout fires
- * "checkout_start" before the browser leaves. Works for server-rendered links (DealRow, banners) without making
+ * "checkout_start" before the browser leaves. Works for server-rendered links (table rows, banners) without making
  * them client components. */
 import { useEffect } from "react";
 import { beacon } from "./beacon";

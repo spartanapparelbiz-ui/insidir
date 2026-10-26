@@ -2,7 +2,7 @@
  * Monochrome: Ink background, Surface rows and cards, Paper text, Steel secondary, Dim for stale or closed. The only
  * colours are the safety dots (and the warning / error dots, which use the same three). Type scale 14/17/22/32/48.
  * Mono for numbers. Mobile first; tap targets 44px+.
- * The Terminal row itself is in components/deal-row.css. */
+ * The Terminal table itself is in components/app/terminal.css. */
 .app { padding-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
 /* the Terminal used to run wider; every page now shares the 1200px content width */
 .wrap--wide { max-width: calc(var(--max) + 32px); }
@@ -185,3 +185,13 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .adm-select { width: auto; }
 .adm-note { flex: 1 1 200px; width: auto; }
 @media (min-width: 700px) { .adm-pair .rules--two { grid-template-columns: 1fr 1fr; } }
+
+/* the drawer and deal page: the $1 bar with the 30-minute gap, the pays-out chip, marked rule differences */
+.dd-viz { display: grid; gap: 16px; align-items: end; }
+.dd-viz__side { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; }
+.dd-hist { display: grid; gap: 4px; color: var(--paper); }
+.dd-hist__k { color: var(--steel); font-size: 12px; }
+.dd-hist__v { font-size: 12px; color: var(--steel); }
+@container (min-width: 560px) { .dd-viz { grid-template-columns: minmax(0, 1fr) auto; } }
+mark.rdiff { background: var(--paper); color: var(--ink); border-radius: 2px; padding: 0 1px; }
+.legs--skel { grid-template-columns: 1fr 1fr; }

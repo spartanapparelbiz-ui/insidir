@@ -1,7 +1,8 @@
 /* Draft — have counsel review. */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
-import { FOOTER, LOCK_LINE } from "@/lib/copy";
+import { FOOTER, LOCK_LINE, OPEN_TERMINAL } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -12,12 +13,12 @@ export default async function TermsPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} />
+      <SiteHeader signedIn={Boolean(viewer.user)} />
       {/* Draft — have counsel review. */}
       <main className="wrap lp">
         <article className="lp-legal">
           <h1>Terms of service</h1>
-          <p className="small dim">Insidir is run by Aethric LLC. By using insidir.com you agree to these terms.</p>
+          <p className="small muted">Insidir is run by Aethric LLC. By using insidir.com you agree to these terms.</p>
 
           <h2>What Insidir is</h2>
           <p>Insidir is an information service. It reads public market data from Kalshi, Polymarket and Polymarket US through their public APIs, and shows where their prices, after fees, add up to less than the payout. {LOCK_LINE}</p>
@@ -48,8 +49,12 @@ export default async function TermsPage() {
 
           <h2>Contact</h2>
           <p>Aethric LLC · support@insidir.com</p>
-          <p className="small dim">{FOOTER}</p>
+          <p className="small muted">{FOOTER}</p>
         </article>
+        <div className="lp-legal__next">
+          <p>Questions about how it works? The Terminal shows today&apos;s deals, free.</p>
+          <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+        </div>
       </main>
     </>
   );

@@ -48,6 +48,7 @@ describe("settings validation", () => {
     expect(r.settings).toEqual({
       minRoi: 0.015, minSizeUsd: 250, categories: ["crypto", "sports"], venues: ["kalshi", "polymarket"],
       showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.03, soundOnGreen: false,
+      alertSafety: "green", alertCategories: [], quietStart: null, quietEnd: null, timeZone: null,
     });
   });
 

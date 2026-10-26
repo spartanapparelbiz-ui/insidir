@@ -13,8 +13,11 @@ export function applyTick(row: FeedRow, t: LivePriceTick, at: number): FeedRow {
     return m ? { ...l, priceCents: m.priceCents } : l;
   });
   const play = playText({ kind: row.kind, gapCents: row.gapCents, legs: legs.map(l => ({ venue: l.venue, side: l.side, label: l.label, avgPrice: l.priceCents / 100 })) });
+  // The sparkline keeps the last 30 minutes, the new point appended (same metric as lib/deal-view.ts historyFrom).
+  const v = row.kind === "cross_arb" && legs.length === 2 ? Math.round((100 - legs[0]!.priceCents - legs[1]!.priceCents) * 10) / 10 : Math.round(t.roi * 10_000) / 100;
+  const spark = row.spark ? [...row.spark.filter(p => p.at >= at - 30 * 60_000 && p.at < at), { at, v }] : row.spark;
   return {
-    ...row, legs, play, roi: t.roi,
+    ...row, legs, play, roi: t.roi, spark,
     profit: t.profit ?? row.profit, profitPerDay: t.profitPerDay ?? row.profitPerDay, cost: t.cost ?? row.cost, fees: t.fees ?? row.fees, sets: t.sets ?? row.sets,
     lastSeenAt: Math.max(row.lastSeenAt, at), stale: false,
   };

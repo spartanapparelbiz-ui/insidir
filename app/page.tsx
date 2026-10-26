@@ -9,7 +9,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import { IosInstallGuide } from "@/components/app/IosInstallGuide";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LiveProvider } from "@/components/live/LiveProvider";
 import { Beacons } from "@/components/landing/Beacons";
@@ -24,6 +23,9 @@ import { SafetySection } from "@/components/landing/Safety";
 import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
 import { Toasts } from "@/components/landing/Toasts";
+import { Steps } from "@/components/landing/Steps";
+import { ProfitChart, type ChartPoint } from "@/components/receipts/ProfitChart";
+import { cumulative, loadLedger, usd2 } from "@/lib/ledger";
 import {
   checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
   RECEIPTS_PUBLIC_DAYS, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, visibleReceipts,
@@ -81,13 +83,18 @@ export default async function Landing() {
   const view = heroView(split, split ? null : lastDeal(closed, viewer.region, delayMs, now), nearestMarket(near, viewer.region));
   const refund = greenPerDay(mine, REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
   const recent = landingReceipts(log, LANDING_RECEIPTS);
+  // The receipts teaser: the "$500 per green deal" running total over the last 7 days (agent A's ledger, the same
+  // rows /receipts shows this viewer). Hidden with fewer than 2 settled points.
+  const ledger = await loadLedger(viewer.plan, viewer.region, { period: "7d" }, now).catch(() => null);
+  const DAYF = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const curve: ChartPoint[] = ledger ? cumulative(ledger.periodRows).map(p => ({ at: p.at, value: p.value, label: p.title, valueText: usd2(p.value), dateText: DAYF.format(new Date(p.at)) })) : [];
   const insidir = checkoutHref(checkoutUrl("insidir"));
   const pro = checkoutHref(checkoutUrl("pro"));
 
   return (
     <>
       <LiveProvider>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/"
+      <SiteHeader signedIn={Boolean(viewer.user)} current="/"
         status={<HeaderBeat serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />} />
       <main className="lp">
           <div className="wrap">
@@ -98,6 +105,7 @@ export default async function Landing() {
               biggestRoi: proof?.biggestRoi ?? null, medianRoi: proof?.medianRoi ?? null,
               left: leftOnTable(log, period === "today" ? todayStart : weekStart), flagged: stats.flagged, medianGapMin: stats.medianGapMin, todayStart, weekStart,
             }} />
+            <Steps />
           </div>
           <Toasts serverNow={now} />
         <div className="wrap">
@@ -107,6 +115,7 @@ export default async function Landing() {
               <h2 id="rcpt-h" className="sec__h">Receipts</h2>
               <p className="sec__p">The last 7 days, as found and as they ended. Wins and misses.</p>
               <FollowLine res={followLine(log)} period="in the last 7 days" />
+              {curve.length >= 2 ? <ProfitChart points={curve} summary={`Following every green deal with $500 over the last 7 days: ${curve[curve.length - 1]!.valueText}.`} /> : null}
               <ReceiptList rows={recent} />
               <Link className="btn btn--secondary" href="/receipts">See every receipt</Link>
             </section>
@@ -114,7 +123,6 @@ export default async function Landing() {
           <SafetySection />
           <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={insidir} proHref={pro} freeCta={LANDING_CTA} refund={refund} />
           <Faq />
-          <IosInstallGuide />
           <FinalCta cta={LANDING_CTA} />
         </div>
       </main>

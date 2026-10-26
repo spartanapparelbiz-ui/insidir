@@ -14,7 +14,10 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 export const MOCK_USER = { sub: "user_e2e_buyer", email: "buyer@example.test", name: "E2E Buyer", preferred_username: "e2ebuyer" };
 
-interface Membership { id: string; status: string; product: { id: string }; plan: { id: string }; cancel_at_period_end: boolean; manage_url: string; user: { id: string } }
+interface Membership { id: string; status: string; product: { id: string }; plan: { id: string }; cancel_at_period_end: boolean; manage_url: string; user: { id: string };
+  renewal_period_end: string; formatted_renewal_price: string }
+/** What the mock charges per plan, as Whop formats it. */
+const PRICE: Record<string, string> = { plan_e2e_insidir: "$39.00 / month", plan_e2e_pro: "$99.00 / month" };
 export interface MockWhopOptions { port: number; appUrl: string; webhookSecret: string; plans: Record<string, string> /* plan id → product id */ }
 
 export function startMockWhop(o: MockWhopOptions): Promise<Server> {
@@ -50,7 +53,8 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         const plan = decodeURIComponent(m[1]!);
         const product = o.plans[plan];
         if (!product) return send(res, 404, { error: "unknown plan" });
-        const mem: Membership = { id: "mem_" + randomUUID().slice(0, 8), status: "active", product: { id: product }, plan: { id: plan }, cancel_at_period_end: false, manage_url: `http://localhost:${o.port}/manage`, user: { id: MOCK_USER.sub } };
+        const mem: Membership = { id: "mem_" + randomUUID().slice(0, 8), status: "active", product: { id: product }, plan: { id: plan }, cancel_at_period_end: false, manage_url: `http://localhost:${o.port}/manage`, user: { id: MOCK_USER.sub },
+          renewal_period_end: new Date(Date.now() + 30 * 86_400_000).toISOString(), formatted_renewal_price: PRICE[plan] ?? "$39.00 / month" };
         memberships = memberships.filter(x => x.user.id !== MOCK_USER.sub).concat(mem);
         await webhook("membership.activated", mem);
         await webhook("payment.succeeded", { id: "pay_" + randomUUID().slice(0, 8), user: { id: MOCK_USER.sub }, membership: { id: mem.id } });

@@ -89,8 +89,17 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   const hist = scan(h, h.books, now).opps.find(o => o.kind === "cross_arb")!;
   for (let d = 1; d <= 30; d++) {
     const snap: Opportunity = { ...hist, id: `${hist.id}#hist${d}`, title: `E2E fixture: settled lock, day ${d}` };
-    const at = new Date(now - d * DAY);
-    await db.insert(receipts).values({ oppId: snap.id, kind: snap.kind, safety: "green", detectedAt: at, snapshot: snap, settledAt: new Date(at.getTime() + DAY), results: {}, sameWay: true, realizedProfit: snap.profit });
+    // Found at varied hours (the "when deals show up" heatmap), open for varied lengths (the "how long deals last"
+    // histogram), and day 4 settled differently: a real loss, which the ledger shows with the same weight as a win.
+    const at = new Date(now - d * DAY - ((d * 7) % 24) * 3_600_000);
+    const lifeMin = [1, 3, 4, 6, 8, 12, 15, 25, 45, 90][d % 10]!;
+    const lost = d === 4;
+    const legKeys = snap.legs.map(l => `${l.venue}:${l.marketId}`);
+    await db.insert(receipts).values({ oppId: snap.id, kind: snap.kind, safety: "green", detectedAt: at, snapshot: snap, settledAt: new Date(at.getTime() + DAY),
+      results: Object.fromEntries(legKeys.map((k, i) => [k, lost && i === 0 ? "no" : "yes"])),
+      sameWay: !lost, realizedProfit: lost ? -(snap.cost + snap.fees) : snap.profit });
+    await db.insert(opportunities).values({ id: snap.id, kind: snap.kind, data: snap, venues: [...new Set(snap.legs.map(l => l.venue))], safety: snap.safety,
+      roi: snap.roi, profitPerDay: snap.profitPerDay, firstSeenAt: at, lastSeenAt: new Date(at.getTime() + lifeMin * MIN), active: false });
   }
   // The live log, written by the same functions the worker uses: a "deal found" for each deal; one deal that closed
   // (found 20 minutes ago, gone 12 minutes later); a real price move on the Jets deal 40 minutes ago (the live state

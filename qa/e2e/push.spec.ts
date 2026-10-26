@@ -1,5 +1,5 @@
 /* Web push end to end, minus Google's/Apple's push servers (unreachable here):
- *   1. A Pro member taps "Turn on push alerts" in Settings. The browser's PushManager is replaced by a stand-in
+ *   1. A Pro member taps "Turn on alerts" on the Alerts page. The browser's PushManager is replaced by a stand-in
  *      whose endpoint is our local push service and whose keys we hold, so the real flow runs: permission → service
  *      worker → subscription → POST /api/push/subscribe.
  *   2. The real worker runs its alert job and sends a VAPID-signed, encrypted push to that endpoint.
@@ -57,9 +57,9 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
   }, { endpoint, p256dh: b64u(ecdh.getPublicKey()), auth: b64u(auth) });
 
   await signIn(context, "pro");
-  await page.goto("/settings");
-  await page.getByRole("button", { name: "Turn on push alerts" }).click();
-  await expect(page.getByRole("button", { name: "Turn off push on this device" })).toBeVisible();
+  await page.goto("/alerts");
+  await page.getByRole("button", { name: "Turn on alerts" }).click();
+  await expect(page.getByRole("button", { name: "Turn off alerts on this device" })).toBeVisible();
   const subs = await q<{ endpoint: string }>("select endpoint from terminal.push_subscriptions where user_id = $1", [pro.id]);
   expect(subs.map(s => s.endpoint)).toEqual([endpoint]);
 

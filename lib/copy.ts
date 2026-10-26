@@ -19,3 +19,13 @@ export function bannedPhrases(text: string): string[] {
   const cleaned = text.replace(NEGATED, "").replace(QUESTION, "");
   return BANNED.filter(r => r.test(cleaned)).map(r => r.source);
 }
+
+/* One name per action, everywhere (buttons say exactly what happens). */
+/** Start the Insidir plan checkout (every upgrade button for a free user or visitor). */
+export const UNLOCK = "Unlock live deals";
+/** Start the Pro plan checkout. */
+export const UNLOCK_PRO = "Unlock Pro";
+/** Go to the live Terminal (no account needed). */
+export const OPEN_TERMINAL = "See today's live deals";
+/** Change any member setting: confirmed with this toast. */
+export const SAVED = "Saved";

@@ -10,6 +10,7 @@ import type { CalcLeg } from "./calculator";
 import { feedFor, type FeedRow, type FeedViewer, type StoredOpp } from "./feed";
 import { feeModelFor } from "./fees";
 import { isPaid } from "./plans";
+import { recentTicks } from "./live/queries";
 import { marketsByKey, storedOpp } from "./queries";
 import type { Opportunity, Plan, Region, VMarket, Venue } from "./types";
 import { VENUE_NAME } from "./types";
@@ -35,6 +36,11 @@ export interface DealRules {
 
 export interface DealCalc { legs: CalcLeg[]; payoutPerSet: number; maxSets: number }
 
+/** The gap over the last 30 minutes, from real price ticks (live_events): for a two-leg lock, cents per $1 left
+ *  after both prices (100 − the two prices), else the ROI in percent. Paid viewers, live locks only. */
+export interface DealHistory { metric: "gap" | "roi"; points: Array<{ at: number; v: number }> }
+export const HISTORY_MS = 30 * 60_000;
+
 export interface DealOk {
   state: "ok";
   /** The feed row, already redacted for the viewer's plan. */
@@ -47,6 +53,8 @@ export interface DealOk {
   rules: DealRules[];
   /** Paid viewers, live locks only. */
   calc: DealCalc | null;
+  /** Paid viewers, live locks only; null with fewer than 2 points. */
+  history: DealHistory | null;
 }
 
 export type DealView = { state: "not_found" } | { state: "too_new" } | DealOk;
@@ -75,7 +83,22 @@ function resolve(stored: StoredOpp | null, viewer: DealViewer, now: number): Res
 const marketKeys = (o: Opportunity) => [...new Map(o.legs.map(l => [`${l.venue}:${l.marketId}`, { venue: l.venue, id: l.marketId, label: l.label }])).values()];
 
 /** Pure: the view of a stored deal for this viewer, given the stored markets (keyed "venue:id"). */
-export function dealViewFrom(stored: StoredOpp | null, markets: ReadonlyMap<string, VMarket>, viewer: DealViewer, now: number): DealView {
+/** Pure: the history series from a deal's snapshot, its price ticks (oldest first) and its live state. */
+export function historyFrom(stored: StoredOpp, ticks: ReadonlyArray<{ at: number; legs: Array<{ avgPrice: number }>; roi: number }>, now: number): DealHistory | null {
+  const o = stored.live;
+  const metric: DealHistory["metric"] = o.kind === "cross_arb" && o.legs.length === 2 ? "gap" : "roi";
+  const v = (legs: ReadonlyArray<{ avgPrice: number }>, roi: number) =>
+    metric === "gap" ? Math.round((100 - legs.reduce((s, l) => s + l.avgPrice * 100, 0)) * 10) / 10 : Math.round(roi * 10_000) / 100;
+  const since = now - HISTORY_MS;
+  const points: DealHistory["points"] = [];
+  if (stored.firstSeenAt >= since) points.push({ at: stored.firstSeenAt, v: v(stored.snapshot.legs, stored.snapshot.roi) });
+  for (const t of ticks) if (t.at >= since && t.at <= now) points.push({ at: t.at, v: v(t.legs, t.roi) });
+  points.push({ at: Math.min(now, Math.max(stored.lastSeenAt, points[points.length - 1]?.at ?? 0)), v: v(o.legs, o.roi) });
+  return points.length >= 2 ? { metric, points } : null;
+}
+
+export function dealViewFrom(stored: StoredOpp | null, markets: ReadonlyMap<string, VMarket>, viewer: DealViewer, now: number,
+  ticks: ReadonlyArray<{ at: number; legs: Array<{ avgPrice: number }>; roi: number }> = []): DealView {
   const r = resolve(stored, viewer, now);
   if (r.state !== "ok") return { state: r.state };
   const { row, opp, gone } = r;
@@ -97,7 +120,8 @@ export function dealViewFrom(stored: StoredOpp | null, markets: ReadonlyMap<stri
     payoutPerSet: opp.sets > 0 ? opp.payout / opp.sets : 0,
     maxSets: opp.sets,
   } : null;
-  return { state: "ok", row, paid, gone, fills, rules, calc };
+  const history = paid && lock && !gone && stored ? historyFrom(stored, ticks, now) : null;
+  return { state: "ok", row, paid, gone, fills, rules, calc, history };
 }
 
 /** Loads a deal by id and returns what this viewer may see of it. */
@@ -106,5 +130,6 @@ export async function dealView(id: string, viewer: DealViewer, now = Date.now())
   const stored = await storedOpp(id);
   const r = resolve(stored, viewer, now);
   const markets = r.state === "ok" ? await marketsByKey(marketKeys(r.opp)) : new Map<string, VMarket>();
-  return dealViewFrom(stored, markets, viewer, now);
+  const ticks = r.state === "ok" && isPaid(viewer.plan) && !r.row.locked ? await recentTicks(id, now - HISTORY_MS) : [];
+  return dealViewFrom(stored, markets, viewer, now, ticks);
 }

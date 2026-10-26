@@ -29,11 +29,21 @@ export interface UserSettings {
   alertMinRoi: number;
   /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
   soundOnGreen: boolean;
+  /** Which safety lights alert: "green" = Same rules only; "green_yellow" adds Check rules. Skip never alerts. */
+  alertSafety: "green" | "green_yellow";
+  /** Categories that alert; empty = every category. Separate from the feed's category filter. */
+  alertCategories: string[];
+  /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
+  quietStart: string | null;
+  quietEnd: string | null;
+  /** The user's IANA time zone (from their browser), for quiet hours. */
+  timeZone: string | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
   showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
+  alertSafety: "green", alertCategories: [], quietStart: null, quietEnd: null, timeZone: null,
 };
 
 export const users = terminal.table("users", {

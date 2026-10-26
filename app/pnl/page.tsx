@@ -11,6 +11,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import { entitlements } from "@/lib/plans";
 import { fetchPolymarketPnl, isWallet, type PnlSummary } from "@/lib/pnl";
 import "../app.css";
+import "../pages.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "P&L", robots: { index: false } };
@@ -33,7 +34,7 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/pnl" />
+      <SiteHeader signedIn={Boolean(viewer.user)} current="/pnl" />
       <main className="wrap app">
         <Beacons where="pnl" />
         <h1 className="page__h">Your P&amp;L</h1>
@@ -41,6 +42,9 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
           <Locked title="P&L" text="See your own realized P&L, open positions and results per market, from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref("pro", "/pnl")} plan="pro" where="pnl" />
         ) : (
           <>
+            {!summary && !wallet ? (
+              <p className="pnl-start" data-empty="pnl">Nothing loaded yet. Start by pasting your Polymarket wallet address below, or upload a Kalshi CSV. You&apos;ll see your realized P&amp;L, open positions and results per market.</p>
+            ) : null}
             <section className="card fs" aria-labelledby="pm-h">
               <h2 id="pm-h" className="fs__h">Polymarket</h2>
               <form method="get" action="/pnl" className="walletform">

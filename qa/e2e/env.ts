@@ -28,4 +28,6 @@ export const SERVER_ENV: Record<string, string> = {
   EMAIL_UNSUBSCRIBE_SECRET: "e2e-unsubscribe-secret-0123456789abcdef",
   ADMIN_TOKEN: "e2e-admin-token-0123456789abcdefghijklmnop",
   ADMIN_TOTP_SECRET: "JBSWY3DPEHPK3PXP",
+  // The stand-in push service's self-signed certificate (made by run.sh), so "Send test alert" can reach it.
+  NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"),
 };
