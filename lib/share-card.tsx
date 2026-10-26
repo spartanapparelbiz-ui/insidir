@@ -1,6 +1,6 @@
 /* The share card (docs/BRIEF.md §4.16): an image of one closed receipt, OG-sized (1200×630) or story-sized
  * (1080×1920): the event, both prices, "You keep $X at $500", how long it lasted, and insidir.com. Plain type on
- * Ink, the $1 bar in the middle; no logos of the apps. Rendered with next/og (satori), JetBrains Mono embedded
+ * Ink, the $1 bar in the middle; no logos of the apps. Rendered with next/og (satori), Plus Jakarta Sans embedded
  * (lib/og-fonts, SIL OFL). Server only. */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -32,11 +32,11 @@ export function lastedText(ms: number): string {
   return h < 48 ? `${h}h ${m % 60}m` : `${Math.floor(h / 24)} days`;
 }
 
-let fonts: Promise<Array<{ name: string; data: Buffer; weight: 400 | 700; style: "normal" }>> | null = null;
+let fonts: Promise<Array<{ name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" }>> | null = null;
 function loadFonts() {
-  fonts ??= Promise.all(([400, 700] as const).map(async weight => ({
-    name: "JetBrains Mono", weight, style: "normal" as const,
-    data: await readFile(join(process.cwd(), "lib/og-fonts", `jetbrains-mono-${weight}.woff`)),
+  fonts ??= Promise.all(([500, 700, 800] as const).map(async weight => ({
+    name: "Plus Jakarta Sans", weight, style: "normal" as const,
+    data: await readFile(join(process.cwd(), "lib/og-fonts", `plus-jakarta-sans-${weight}.ttf`)),
   })));
   return fonts;
 }
@@ -50,7 +50,7 @@ export async function shareCardImage(d: ShareCardData, format: ShareFormat): Pro
   const big = story ? 120 : 76;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "JetBrains Mono" }}>
+      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "Plus Jakarta Sans" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <svg width={story ? 180 : 132} height={story ? 60 : 44} viewBox={LOGO.viewBox} fill={C.paper}>
             <circle cx={LOGO.dot.cx} cy={LOGO.dot.cy} r={LOGO.dot.r} />

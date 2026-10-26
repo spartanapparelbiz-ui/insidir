@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
-import { FontLoader } from "@/components/FontLoader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ToastProvider } from "@/components/ui/Toast";
+import "./tokens.css";
 import "./globals.css";
+import "./v2.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -15,36 +16,20 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
-/** JetBrains Mono, self-hosted (app/fonts, SIL Open Font License): preloaded, no third-party request, and a
- *  size-matched fallback so nothing shifts when it loads. */
-const mono = localFont({
-  src: [
-    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/jetbrains-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/jetbrains-mono-latin-800-normal.woff2", weight: "800", style: "normal" },
-  ],
-  variable: "--font-mono",
-  display: "swap",
-  fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
-  adjustFontFallback: false,
-});
+/** Plus Jakarta Sans for everything (docs/V2.md §10), self-hosted by next/font: no third-party request at runtime. */
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-jakarta", display: "swap" });
 
-export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={mono.variable}>
-      <head>
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
-        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="" />
-      </head>
+    <html lang="en" className={jakarta.variable}>
       <body>
         <ToastProvider>
           {children}
           <SiteFooter />
         </ToastProvider>
         <RegisterSW />
-        <FontLoader />
       </body>
     </html>
   );

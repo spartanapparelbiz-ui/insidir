@@ -1,30 +1,25 @@
+/* Pricing (docs/V2.md §8): the three plans, unready features marked "(coming soon)" in the bullets, then the FAQ.
+ * Billing is Whop's; the buttons go straight to Whop checkout. */
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Beacons } from "@/components/landing/Beacons";
-import { Faq } from "@/components/landing/Faq";
-import { Pricing } from "@/components/landing/Pricing";
-import { checkoutHref, LANDING_CTA, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, visibleReceipts } from "@/components/landing/model";
+import { unlockHref } from "@/components/app/links";
+import { FaqV2 } from "@/components/v2/Faq";
+import { PricingCards } from "@/components/v2/Pricing";
 import { getViewer } from "@/lib/auth/viewer";
-import { checkoutUrl } from "@/lib/auth/whop";
-import { greenPerDay, receiptRows } from "@/lib/queries";
-import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: "Free, Insidir $39/mo and Insidir Pro $99/mo. Cancel anytime in one click." };
+export const metadata: Metadata = { title: "Pricing", description: "Free, or Insidir for $1 for 3 days, then $39/mo. Insidir Pro $99/mo. Cancel anytime." };
 
 export default async function PricingPage() {
-  const now = Date.now();
-  const [viewer, month] = await Promise.all([getViewer(), receiptRows(REFUND_WINDOW_DAYS)]);
-  const refund = greenPerDay(visibleReceipts(month, viewer.region), REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
+  const viewer = await getViewer();
+  const trial = unlockHref("insidir");
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} current="/pricing" />
-      <main className="wrap lp">
-        <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={checkoutHref(checkoutUrl("insidir"))} proHref={checkoutHref(checkoutUrl("pro"))}
-          freeCta={LANDING_CTA} refund={refund} level={1} primary />
-        <Faq ids={["what", "risk", "trade", "fees", "iphone", "cancel"]} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={trial} />
+      <main>
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={unlockHref("pro")} level={1} primary />
+        <FaqV2 />
       </main>
-      <Beacons />
     </>
   );
 }

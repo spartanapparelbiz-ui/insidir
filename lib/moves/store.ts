@@ -76,6 +76,8 @@ export interface MoveQuery {
   tab?: Tab | null; min?: number; league?: League | null; wallet?: string | null; marketId?: string | null;
   /** Only moves at or before this time (a free viewer's clock), ms. */
   until?: number; since?: number; before?: number; settled?: boolean; limit?: number;
+  /** Biggest first instead of newest first. */
+  byAmount?: boolean;
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
@@ -91,7 +93,7 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     q.settled ? isNotNull(moves.result) : undefined,
   ].filter(Boolean);
   const rs = await db.select().from(moves).where(w.length ? and(...w) : undefined)
-    .orderBy(q.settled ? desc(moves.settledAt) : desc(moves.at)).limit(Math.min(q.limit ?? 50, 200));
+    .orderBy(q.byAmount ? desc(moves.amount) : q.settled ? desc(moves.settledAt) : desc(moves.at)).limit(Math.min(q.limit ?? 50, 200));
   return rs.map(fromRow);
 }
 

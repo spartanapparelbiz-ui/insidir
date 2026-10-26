@@ -6,13 +6,13 @@ import { useEffect } from "react";
 export default function PageError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error(error); }, [error]);
   return (
-    <main className="wrap state-page">
-      <p className="state-page__code mono">Error</p>
-      <h1 className="state-page__h">This page didn&apos;t load</h1>
-      <p className="state-page__p">Insidir couldn&apos;t load its data just now, usually a brief network problem. Try again; if it keeps happening, the Terminal shows whether live data is paused.</p>
-      <div className="row-gap">
+    <main className="wrap state2">
+      <p className="state2__code">Hmm</p>
+      <h1 className="state2__h">This page didn&apos;t load.</h1>
+      <p className="state2__p">Usually a short network hiccup. Try again. If it keeps happening, write to hello@aethric.llc.</p>
+      <div className="state2__ctas">
         <button type="button" className="btn btn--primary" onClick={reset}>Try again</button>
-        <Link className="btn btn--secondary" href="/terminal">Open the Terminal</Link>
+        <Link className="btn btn--secondary" href="/feed">See the live feed</Link>
       </div>
     </main>
   );

@@ -1,4 +1,4 @@
-/* The 404 page: on-brand, says what happened, and gives two ways back. */
+/* The 404 page: says what happened and gives two ways back. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -10,13 +10,13 @@ export default async function NotFound() {
   const viewer = await getViewer().catch(() => null);
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer?.user)} />
-      <main className="wrap state-page">
-        <p className="state-page__code mono">404</p>
-        <h1 className="state-page__h">We can&apos;t find that page</h1>
-        <p className="state-page__p">The link may be old or mistyped. The live deals are on the Terminal.</p>
-        <div className="row-gap">
-          <Link className="btn btn--primary" href="/terminal">Open the Terminal</Link>
+      <SiteHeader signedIn={Boolean(viewer?.user)} plan={viewer?.plan} />
+      <main className="wrap state2">
+        <p className="state2__code">404</p>
+        <h1 className="state2__h">This page doesn&apos;t exist.</h1>
+        <p className="state2__p">The link may be old or mistyped. The big money is on the live feed.</p>
+        <div className="state2__ctas">
+          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
           <Link className="btn btn--secondary" href="/">Go home</Link>
         </div>
       </main>

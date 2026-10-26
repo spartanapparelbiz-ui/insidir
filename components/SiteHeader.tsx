@@ -1,37 +1,44 @@
+/* The top of every page (docs/V2.md §6): a thin violet trial bar, then the nav. Visitors: logo, How it works,
+ * Pricing, FAQ, Log in, and "Try it for $1". Members: logo, Feed, Following, Results, Account. On phones: logo, the
+ * button and a menu; members also get a bottom tab bar (Feed, Following, Results, Account) within thumb reach.
+ * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/types";
+import { TRIAL_BAR, TRY_CTA } from "@/lib/copy";
 import { Wordmark } from "./Wordmark";
 
-/** Which top-level section a path belongs to (for the highlight): Whales, P&L and Settings live under Account. */
-const SECTION: Record<string, string> = { "/settings": "/account", "/pnl": "/account", "/whales": "/account", "/alerts": "/alerts" };
+const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed" };
 
-/** The same top bar on every page: the logo (home), Terminal, Receipts, Pricing, then Log in or Account. The current
- *  section is highlighted. Signed-in members also get a bottom tab bar on phones (Terminal, Receipts, Alerts,
- *  Account), within thumb reach, every target 44px+. `status` is a small notice beside the logo (the landing page's
- *  scanner heartbeat). `plan` is kept for callers; the header itself is the same for every plan. */
-export function SiteHeader({ signedIn, current, status }: { plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode }) {
+export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pricing#plans" }: {
+  plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string;
+}) {
   const at = current ? (SECTION[current] ?? current) : undefined;
+  const paid = plan === "insidir" || plan === "pro";
   const link = (href: string, label: string, section = href) => (
-    <Link href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
+    <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
+  const links = signedIn
+    ? [link("/feed", "Feed"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
+    : [link("/#how", "How it works", "/how"), link("/pricing", "Pricing"), link("/#faq", "FAQ", "/faq"), <Link key="login" href="/auth/login?next=/feed" prefetch={false}>Log in</Link>];
   return (
     <>
-      <header className="hdr">
-        <div className="wrap hdr__in">
-          <Link className="wordmark" href="/" aria-label="Insidir home"><Wordmark /></Link>
-          {status ?? null}
-          <nav className="hdr__nav" aria-label="Main">
-            {link("/terminal", "Terminal")}
-            {link("/receipts", "Receipts")}
-            {link("/pricing", "Pricing")}
-            {signedIn ? link("/settings", "Account", "/account") : <Link className="hdr__login" href="/auth/login?next=/terminal" prefetch={false}>Log in</Link>}
-          </nav>
+      {!paid ? <p className="trialbar"><a href={trialHref} data-unlock="trial-bar">{TRIAL_BAR}</a></p> : null}
+      <header className="nav">
+        <div className="wrap nav__in">
+          <Link className="wordmark" href={signedIn ? "/feed" : "/"} aria-label="Insidir home"><Wordmark /></Link>
+          <nav className="nav__links" aria-label="Main">{links}</nav>
+          {!paid ? <a className="btn btn--primary nav__cta" href={trialHref} data-unlock="nav">{TRY_CTA}</a> : null}
+          <details className="nav__menu">
+            <summary aria-label="Menu"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></summary>
+            <nav className="nav__sheet" aria-label="Menu">{links}</nav>
+          </details>
         </div>
+        {status ? <div className="wrap nav__status">{status}</div> : null}
       </header>
       {signedIn ? (
         <nav className="tabbar" aria-label="App">
-          {[["/terminal", "Terminal", "/terminal"], ["/receipts", "Receipts", "/receipts"], ["/alerts", "Alerts", "/alerts"], ["/settings", "Account", "/account"]].map(([href, label, section]) => (
+          {[["/feed", "Feed", "/feed"], ["/following", "Following", "/following"], ["/results", "Results", "/results"], ["/settings", "Account", "/account"]].map(([href, label, section]) => (
             <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>
@@ -45,10 +52,10 @@ export function SiteHeader({ signedIn, current, status }: { plan?: Plan; signedI
 
 function TabIcon({ name }: { name: string }) {
   const d: Record<string, string> = {
-    Terminal: "M3 5h18M3 12h18M3 19h18",
-    Receipts: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6",
-    Alerts: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0",
+    Feed: "M4 6h16M4 12h16M4 18h10",
+    Following: "M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z",
+    Results: "M5 20V10M12 20V4M19 20v-7",
     Account: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
   };
-  return <svg className="tabbar__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={d[name]} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+  return <svg className="tabbar__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={d[name]} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }

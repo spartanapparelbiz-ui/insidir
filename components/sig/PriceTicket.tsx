@@ -1,5 +1,5 @@
 /* The price ticket (docs/BRIEF.md §4.2): a neutral "app card" with the venue's name in plain text, the outcome
- * (YES/NO) and the price in JetBrains Mono. Never styled like Kalshi or Polymarket: no logos, no brand colours.
+ * (YES/NO) and the price in tabular figures. Never styled like Kalshi or Polymarket: no logos, no brand colours.
  * `from` sets which edge it slides in from in the hero sequence; `state` greys it when stale or paused. */
 import type { ReactNode } from "react";
 

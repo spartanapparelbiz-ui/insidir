@@ -1,10 +1,6 @@
-/* "Coming soon" (docs/V2.md §2): the features that aren't live yet, and the waitlist for each. A feature leaves this
- * list in the same deploy that makes it ready, and its waitlist is emailed "[Feature] is live on Insidir." */
-export const COMING_SOON = {
-  crypto: "Crypto tab",
-  stocks: "Stocks tab",
-} as const;
-export type ComingSoonFeature = keyof typeof COMING_SOON;
+/* The waitlist for Coming soon features (docs/V2.md §2): any feature key from lib/features.ts. When a feature becomes
+ * ready, its waitlist is emailed "[Feature] is live on Insidir." in the same deploy. */
+import { FEATURES, type Feature } from "@/lib/features";
 
-export const isFeature = (v: string): v is ComingSoonFeature => Object.hasOwn(COMING_SOON, v);
+export const isFeature = (v: string): v is Feature => Object.hasOwn(FEATURES, v);
 export const validEmail = (v: string): boolean => v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);

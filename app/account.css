@@ -1,50 +1,50 @@
 /* Account (/settings) and Alerts (/alerts). Monochrome tokens from globals.css only. Grouped sections divided by a
  * thin Line, not cards; every row a 44px+ target; labels above inputs; the 8px spacing grid. */
 .acct { max-width: calc(720px + 64px); gap: 24px; }
-.agroup { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid var(--line); }
+.agroup { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid var(--border); }
 .agroup__h { font-size: var(--t24); line-height: 1.2; }
 .agroup__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; justify-items: start; }
 .agroup__body > * { max-width: 100%; }
 .asum { font-size: var(--t17); }
-.asum--lead { color: var(--steel); }
-.asum__sub { color: var(--steel); }
-.alist { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--steel); }
+.asum--lead { color: var(--muted); }
+.asum__sub { color: var(--muted); }
+.alist { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--muted); }
 
 /* a whole-row checkbox or radio: the row is the target */
 .arow { width: 100%; }
 .arow__check { display: flex; align-items: flex-start; gap: 12px; min-height: var(--tap); padding: 10px 0; cursor: pointer; width: 100%; }
-.arow__check input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--paper); cursor: pointer; }
+.arow__check input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--text); cursor: pointer; }
 .arow__text { display: grid; gap: 2px; }
-.arow__hint { color: var(--steel); font-size: var(--t15); line-height: 1.4; }
+.arow__hint { color: var(--muted); font-size: var(--t15); line-height: 1.4; }
 
 .afield { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; width: 100%; }
-.afield__label { padding: 0; color: var(--paper); font-size: var(--t15); font-weight: 600; }
+.afield__label { padding: 0; color: var(--text); font-size: var(--t15); font-weight: 600; }
 .afield__box { position: relative; display: flex; align-items: center; }
-.afield__box .input { min-height: 48px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.afield__box .input { min-height: 48px; font-family: var(--font); font-variant-numeric: tabular-nums; }
 .afield__box .input:has(+ .afield__suffix) { padding-right: 40px; }
-.afield__suffix { position: absolute; right: 14px; color: var(--steel); font-family: var(--mono); pointer-events: none; }
-.afield__hint { color: var(--steel); font-size: var(--t15); line-height: 1.4; }
-.afield__err { color: var(--paper); font-size: var(--t15); line-height: 1.4; }
-.afield__err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--red); vertical-align: 1px; }
-.input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--paper); }
+.afield__suffix { position: absolute; right: 14px; color: var(--muted); font-family: var(--font); pointer-events: none; }
+.afield__hint { color: var(--muted); font-size: var(--t15); line-height: 1.4; }
+.afield__err { color: var(--text); font-size: var(--t15); line-height: 1.4; }
+.afield__err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--loss); vertical-align: 1px; }
+.input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--text); }
 .afields2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; }
 @media (min-width: 600px) { .afields2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .achips { display: flex; flex-wrap: wrap; gap: 8px; }
-.achip { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; font-size: var(--t15); }
+.achip { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); cursor: pointer; font-size: var(--t15); }
 .achip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.achip:has(input:focus-visible) { outline: 2px solid var(--paper); outline-offset: 2px; }
-.achip--on { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px var(--accent); }
+.achip:has(input:focus-visible) { outline: 2px solid var(--text); outline-offset: 2px; }
+.achip--on { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--brand); }
 
 .akv { display: grid; gap: 0; margin: 0; width: 100%; }
-.akv > div { display: flex; justify-content: space-between; gap: 16px; min-height: var(--tap); align-items: center; border-bottom: 1px solid var(--line); }
-.akv dt { color: var(--steel); font-size: var(--t15); }
+.akv > div { display: flex; justify-content: space-between; gap: 16px; min-height: var(--tap); align-items: center; border-bottom: 1px solid var(--border); }
+.akv dt { color: var(--muted); font-size: var(--t15); }
 .akv dd { margin: 0; text-align: right; }
-.akv__sub { color: var(--steel); }
+.akv__sub { color: var(--muted); }
 
 .atable { width: 100%; border-collapse: collapse; font-size: var(--t15); }
-.atable th { text-align: left; color: var(--steel); font-weight: 400; padding: 0 16px 8px 0; border-bottom: 1px solid var(--line); }
-.atable td { padding: 0 16px 0 0; height: 44px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.atable td.mono { color: var(--steel); white-space: nowrap; }
-.aempty { display: grid; gap: 12px; justify-items: start; color: var(--steel); }
+.atable th { text-align: left; color: var(--muted); font-weight: 400; padding: 0 16px 8px 0; border-bottom: 1px solid var(--border); }
+.atable td { padding: 0 16px 0 0; height: 44px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.atable td.mono { color: var(--muted); white-space: nowrap; }
+.aempty { display: grid; gap: 12px; justify-items: start; color: var(--muted); }
 .pushbtn { display: grid; gap: 8px; justify-items: start; }

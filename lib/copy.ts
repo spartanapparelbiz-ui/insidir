@@ -2,7 +2,12 @@
 
 /** On every page. */
 export const FOOTER =
-  "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available where you live.";
+  "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.";
+
+/** The thin bar above the nav, and the one paid call to action (docs/V2.md §6). */
+export const TRIAL_BAR = "Try Insidir for $1 for 3 days. Cancel anytime.";
+export const TRY_CTA = "Try it for $1";
+export const TRIAL_LINE = "$1 for 3 days, then $39/mo. Cancel anytime.";
 
 /** How a lock is described everywhere. */
 export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";
