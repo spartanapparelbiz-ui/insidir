@@ -59,6 +59,10 @@ export const CHECKS: Check[] = [
     fields: ["orderbook_fp|orderbook:object", "orderbook_fp.yes_dollars|orderbook.yes_dollars|orderbook.yes|orderbook_fp.no_dollars|orderbook.no_dollars|orderbook.no:array"],
   },
   {
+    name: "Kalshi GET /markets/orderbooks (batch)", url: () => `${k}/markets/orderbooks?tickers=${encodeURIComponent(ctx.kalshiTicker ?? "")}`,
+    fields: ["orderbooks:array", "orderbooks[].ticker:string", "orderbooks[].orderbook_fp|orderbooks[].orderbook:object"],
+  },
+  {
     name: "Polymarket Gamma GET /markets", url: () => `${g}/markets?closed=false&active=true&limit=20&order=volume24hr&ascending=false`,
     fields: ["[].id:string", "[].question:string", "[].conditionId:string", "[].clobTokenIds:string", "[].outcomes:string", "[].endDate:string", "[].active:boolean", "[].closed:boolean"],
   },
