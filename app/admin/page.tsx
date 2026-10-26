@@ -77,7 +77,7 @@ function QuarantineCard({ q }: { q: QuarantineView }) {
       <ul className="notes">{q.reasons.map((r, i) => <li key={i}><b>{r}</b></li>)}</ul>
       {o.safetyNotes.length ? <ul className="notes">{o.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}</ul> : null}
       <ul className="small">{o.legs.map((l, i) => (
-        <li key={i}>{l.side.toUpperCase()} {l.label} on {VENUE_NAME[l.venue]} at {(l.avgPrice * 100).toFixed(1)}¢ × {l.contracts.toLocaleString("en-US")} {l.url ? <a href={l.url} target="_blank" rel="noreferrer">open</a> : null}</li>
+        <li key={i}>{l.label} at {(l.avgPrice * 100).toFixed(1)}¢ × {l.contracts.toLocaleString("en-US")} {l.url ? <a href={l.url} target="_blank" rel="noreferrer">open on {VENUE_NAME[l.venue]}</a> : null}</li>
       ))}</ul>
       {q.markets.length <= 4 ? (
         <div className={`rules${q.markets.length === 2 ? " rules--two" : ""}`}>
@@ -160,7 +160,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
       <section id="quarantine" className="sec2">
         <h2 className="sec2__h">Quarantine <span className="dim small">({heldTotal.v}{heldTotal.v > held.v.length ? `, latest ${held.v.length} shown` : ""})</span></h2>
-        <p className="muted small">Held back from users, alerts and the public log: a return above 15%, more than $50 kept at $500, or a pair whose rules differ in date, threshold or source.</p>
+        <p className="muted small">Held back from users, alerts and the public log: a return above 15%, more than $50 kept at $500, or a pair whose rules differ in date, threshold, source or how a tie settles.</p>
         {held.v.length ? <div className="adm-pairs">{held.v.map(q => <QuarantineCard key={q.opp.id} q={q} />)}</div> : <p className="muted small">Nothing quarantined.</p>}
       </section>
 
