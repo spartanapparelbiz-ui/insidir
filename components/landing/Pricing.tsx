@@ -1,11 +1,14 @@
 /* 7. Pricing: three cards whose prices and features come from PLANS (lib/plans.ts). Shared with /pricing. */
 import Link from "next/link";
+import { UNLOCK, UNLOCK_PRO } from "@/lib/copy";
 import type { Plan } from "@/lib/types";
 import { COMPETITOR_PRICE_LINE, OBJECTIONS, planCards, REFUND_LINE } from "./model";
 
-/** `refund`: show the risk-reversal line (only when the log averages a green deal a day; the caller decides). */
-export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refund, level = 2 }: {
-  current: Plan; signedIn: boolean; insidirHref: string; proHref: string; freeCta: string; refund: boolean; level?: 1 | 2;
+/** `refund`: show the risk-reversal line (only when the log averages a green deal a day; the caller decides).
+ *  `primary`: whether the Insidir card's button is the page's one primary action (the pricing page) or secondary
+ *  (the landing page, where the hero's CTA is the primary). */
+export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refund, level = 2, primary = false }: {
+  current: Plan; signedIn: boolean; insidirHref: string; proHref: string; freeCta: string; refund: boolean; level?: 1 | 2; primary?: boolean;
 }) {
   const cards = planCards();
   const H = level === 1 ? "h1" : "h2";
@@ -16,7 +19,7 @@ export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refu
         {cards.map(c => {
           const mine = signedIn && c.plan === current;
           const href = c.plan === "free" ? "/terminal" : c.plan === "pro" ? proHref : insidirHref;
-          const label = c.plan === "free" ? freeCta : `Start ${c.plan === "pro" ? "Pro " : ""}for $${c.price}`;
+          const label = c.plan === "free" ? freeCta : c.plan === "pro" ? UNLOCK_PRO : UNLOCK;
           return (
             <article key={c.plan} className={`lp-plan card${c.plan === "insidir" ? " lp-plan--main" : ""}`} data-plan={c.plan} data-price={c.price}>
               <h3 className="lp-plan__name">{c.name}</h3>
@@ -28,7 +31,7 @@ export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refu
               </ul>
               {mine ? <Link className="btn btn--secondary btn--block" href="/settings">Your plan</Link>
                 : c.plan === "free" ? <Link className="btn btn--secondary btn--block" href={href}>{label}</Link>
-                : <a className={`btn btn--block ${c.plan === "insidir" ? "btn--primary" : "btn--secondary"}`} href={href} data-checkout={`pricing-${c.plan}`}>{label}</a>}
+                : <a className={`btn btn--block ${c.plan === "insidir" && primary ? "btn--primary" : "btn--secondary"}`} href={href} data-checkout={`pricing-${c.plan}`}>{label}</a>}
             </article>
           );
         })}

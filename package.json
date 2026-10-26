@@ -16,7 +16,9 @@
     "db:migrate": "tsx lib/db/migrate.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:endpoints": "tsx scripts/check-endpoints.ts"
+    "check:endpoints": "tsx scripts/check-endpoints.ts",
+    "check:moves": "tsx scripts/check-moves.ts",
+    "notify:waitlist": "tsx scripts/notify-waitlist.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.7",

@@ -4,7 +4,9 @@
 import { NextResponse } from "next/server";
 import { feedViewer, getViewer } from "@/lib/auth/viewer";
 import { feedFor, type FeedRow } from "@/lib/feed";
+import { isPaid } from "@/lib/plans";
 import { storedOpps } from "@/lib/queries";
+import { withSparks } from "@/lib/terminal-data";
 import { dataStatus, type DataStatus } from "@/lib/status";
 import type { Plan } from "@/lib/types";
 
@@ -16,6 +18,7 @@ export async function GET() {
   const now = Date.now();
   const viewer = await getViewer();
   const [opps, status] = await Promise.all([storedOpps(), dataStatus(now)]);
-  const body: FeedResponse = { now, plan: viewer.plan, status, rows: feedFor(opps, feedViewer(viewer), now) };
+  const rows = feedFor(opps, feedViewer(viewer), now);
+  const body: FeedResponse = { now, plan: viewer.plan, status, rows: isPaid(viewer.plan) ? await withSparks(rows, opps, now) : rows };
   return NextResponse.json(body, { headers: { "Cache-Control": "private, no-store" } });
 }

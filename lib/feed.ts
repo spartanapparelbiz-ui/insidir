@@ -58,6 +58,8 @@ export interface FeedRow {
   lastSeenAt: number;
   /** Not re-confirmed within FRESH_MS (or a delayed row): grey it out, never show it as live. */
   stale: boolean;
+  /** The gap over the last 30 minutes (lib/deal-view.ts historyFrom), paid rows only; added by the Terminal. */
+  spark?: Array<{ at: number; v: number }> | null;
 }
 
 export { playText };

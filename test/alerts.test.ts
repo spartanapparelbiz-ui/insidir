@@ -37,10 +37,24 @@ describe("alert fan-out", () => {
     expect(dueAlerts([user()], [deal(5, { safety: "red" })], NOW)).toEqual([]);
     expect(dueAlerts([user()], [deal(5, { roi: 0.005 })], NOW)).toEqual([]);
     expect(dueAlerts([user({ settings: { ...user().settings, minSizeUsd: 100 } })], [deal(5)], NOW)).toEqual([]);
-    expect(dueAlerts([user({ settings: { ...user().settings, categories: ["politics"] } })], [deal(5)], NOW)).toEqual([]);
+    // Alerts have their own categories (the Alerts page); the feed's category filter doesn't apply to them.
+    expect(dueAlerts([user({ settings: { ...user().settings, alertCategories: ["politics"] } })], [deal(5)], NOW)).toEqual([]);
+    expect(dueAlerts([user({ settings: { ...user().settings, categories: ["politics"] } })], [deal(5)], NOW)).toHaveLength(1);
     expect(dueAlerts([user()], [deal(3600)], NOW)).toEqual([]);
     expect(dueAlerts([user()], [deal(5, { kind: "second_opinion" })], NOW)).toEqual([]);
     expect(dueAlerts([user({ hasPush: false, email: null })], [deal(5)], NOW)).toEqual([]);
+  });
+  it("safety lights: Same rules only by default; Check rules when chosen; Skip never", () => {
+    expect(dueAlerts([user()], [deal(5, { safety: "yellow" })], NOW)).toEqual([]);
+    expect(dueAlerts([user({ settings: { ...user().settings, alertSafety: "green_yellow" } })], [deal(5, { safety: "yellow" })], NOW)).toHaveLength(1);
+    expect(dueAlerts([user({ settings: { ...user().settings, alertSafety: "green_yellow", showRed: true } })], [deal(5, { safety: "red" })], NOW)).toEqual([]);
+  });
+  it("quiet hours, in the member's own time zone, send nothing", () => {
+    // NOW is 15:00 UTC = 11:00 in New York (EDT).
+    const quiet = (start: string, end: string, timeZone: string | null) => user({ settings: { ...user().settings, quietStart: start, quietEnd: end, timeZone } });
+    expect(dueAlerts([quiet("10:00", "12:00", "America/New_York")], [deal(5)], NOW)).toEqual([]);
+    expect(dueAlerts([quiet("10:00", "12:00", "UTC")], [deal(5)], NOW)).toHaveLength(1);
+    expect(dueAlerts([quiet("14:00", "16:00", null)], [deal(5)], NOW)).toEqual([]);
   });
   it("the alert text states facts and the lock condition, never a promise or advice", () => {
     const t = alertText(opp(), "https://insidir.com", "push");

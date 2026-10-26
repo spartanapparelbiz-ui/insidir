@@ -1,7 +1,7 @@
 /* Delivery: web push (VAPID, free) and email through Resend (free tier to start). Server/worker only.
  *
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…)   web push
- *   RESEND_API_KEY, EMAIL_FROM ("Insidir <alerts@insidir.com>")                 email
+ *   RESEND_API_KEY, EMAIL_FROM ("Insidir <hello@aethric.llc>")                 email
  *   EMAIL_UNSUBSCRIBE_SECRET                                                     signs one-click unsubscribe links
  *
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
@@ -69,16 +69,16 @@ export async function sendEmail(e: Email): Promise<SendResult> {
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 
-export const EMAIL_FOOTER = "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
+export const EMAIL_FOOTER = "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones. Insidir is built by Aethric LLC, Pompano Beach, FL. Not affiliated with Polymarket or Kalshi.";
 
-/** A plain, fast email: black on white for every mail client, monospace, no images. */
+/** A plain, fast email: dark on white for every mail client, system sans, no images. */
 export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {
   const text = [opts.heading, "", ...opts.lines.map(l => (l.url ? `${l.text}\n${l.url}` : l.text)), "", ...(opts.cta ? [`${opts.cta.label}: ${opts.cta.url}`, ""] : []),
     EMAIL_FOOTER, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
-  const html = `<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.5;color:#111;max-width:560px">` +
+  const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0B0B12;max-width:560px">` +
     `<p style="font-size:18px;font-weight:700;margin:0 0 16px">${esc(opts.heading)}</p>` +
-    opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#111">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
-    (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
-    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a></p></div>`;
+    opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#0B0B12">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
+    (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#5B4BFF;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
+    `<p style="color:#5B6070;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#5B6070">Unsubscribe</a></p></div>`;
   return { text, html };
 }

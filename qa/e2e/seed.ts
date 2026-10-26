@@ -4,9 +4,10 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { DEFAULT_SETTINGS, nearMisses, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { DEFAULT_SETTINGS, moves, nearMisses, opportunities, receipts, sessions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
+import { saveMarkets } from "@/lib/worker/store";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarket, Venue } from "@/lib/types";
 
@@ -73,8 +74,10 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist CASCADE`);
   const u = universe(now);
+  // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
+  await saveMarkets(db, u.markets);
   const { opps } = scan(u, u.books, now);
   // Second opinions double the cross-venue rows; the feed shows the lock, which is what the tests check.
   const deals = opps.filter(o => o.kind !== "second_opinion");
@@ -89,8 +92,17 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   const hist = scan(h, h.books, now).opps.find(o => o.kind === "cross_arb")!;
   for (let d = 1; d <= 30; d++) {
     const snap: Opportunity = { ...hist, id: `${hist.id}#hist${d}`, title: `E2E fixture: settled lock, day ${d}` };
-    const at = new Date(now - d * DAY);
-    await db.insert(receipts).values({ oppId: snap.id, kind: snap.kind, safety: "green", detectedAt: at, snapshot: snap, settledAt: new Date(at.getTime() + DAY), results: {}, sameWay: true, realizedProfit: snap.profit });
+    // Found at varied hours (the "when deals show up" heatmap), open for varied lengths (the "how long deals last"
+    // histogram), and day 4 settled differently: a real loss, which the ledger shows with the same weight as a win.
+    const at = new Date(now - d * DAY - ((d * 7) % 24) * 3_600_000);
+    const lifeMin = [1, 3, 4, 6, 8, 12, 15, 25, 45, 90][d % 10]!;
+    const lost = d === 4;
+    const legKeys = snap.legs.map(l => `${l.venue}:${l.marketId}`);
+    await db.insert(receipts).values({ oppId: snap.id, kind: snap.kind, safety: "green", detectedAt: at, snapshot: snap, settledAt: new Date(at.getTime() + DAY),
+      results: Object.fromEntries(legKeys.map((k, i) => [k, lost && i === 0 ? "no" : "yes"])),
+      sameWay: !lost, realizedProfit: lost ? -(snap.cost + snap.fees) : snap.profit });
+    await db.insert(opportunities).values({ id: snap.id, kind: snap.kind, data: snap, venues: [...new Set(snap.legs.map(l => l.venue))], safety: snap.safety,
+      roi: snap.roi, profitPerDay: snap.profitPerDay, firstSeenAt: at, lastSeenAt: new Date(at.getTime() + lifeMin * MIN), active: false });
   }
   // The live log, written by the same functions the worker uses: a "deal found" for each deal; one deal that closed
   // (found 20 minutes ago, gone 12 minutes later); a real price move on the Jets deal 40 minutes ago (the live state
@@ -127,6 +139,30 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     ],
     totalCents: 101, at: now - 2 * MIN,
   } });
+  // V2 moves (test fixtures, labelled as such): a top trader, a wallet without a record, Kalshi moves, settled ones.
+  const TOP = "0xe2e00000000000000000000000000000000000aa", NEW = "0xe2e00000000000000000000000000000000000bb";
+  const mv = (o: Omit<Partial<typeof moves.$inferInsert>, "at" | "lastAt"> & { id: string; at: number }) => ({
+    source: "polymarket" as const, marketId: "0xe2emarket1", eventTitle: "E2E fixture: Chiefs vs. Bills", marketTitle: "E2E fixture: Chiefs vs. Bills",
+    outcome: "Chiefs", outcomeSide: "yes" as const, amount: 412_000, avgPrice: 0.62, wallet: TOP, walletName: "E2E-Top", fills: 3, tab: "sports" as const,
+    league: "NFL", category: "sports", url: "https://polymarket.com/event/e2e-chiefs", ...o, at: new Date(o.at), lastAt: new Date(o.at + 2 * MIN),
+  });
+  await db.insert(moves).values([
+    mv({ id: "e2e:m1", at: now - 4 * MIN }),
+    mv({ id: "e2e:m2", at: now - 9 * MIN, source: "kalshi", marketId: "KXE2E-LAKERS", eventTitle: "E2E fixture: Lakers vs. Celtics", marketTitle: "E2E fixture: Lakers vs. Celtics winner?",
+      outcome: "Lakers", amount: 48_000, avgPrice: 0.55, wallet: null, walletName: null, fills: 1, league: "NBA", url: "https://kalshi.com/markets/kxe2e" }),
+    mv({ id: "e2e:m3", at: now - 50 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket2", eventTitle: "E2E fixture: Fed rate cut in December?",
+      marketTitle: "E2E fixture: Fed rate cut in December?", outcome: "Yes", amount: 85_000, avgPrice: 0.31, wallet: NEW, walletName: null }),
+    mv({ id: "e2e:m4", at: now - 3 * 60 * MIN, amount: 160_000, avgPrice: 0.48 }),
+    mv({ id: "e2e:s1", at: now - 3 * DAY, amount: 120_000, avgPrice: 0.4, result: "won", settledAt: new Date(now - 2 * DAY) }),
+    mv({ id: "e2e:s2", at: now - 4 * DAY, amount: 64_000, avgPrice: 0.7, outcome: "Bills", outcomeSide: "no", result: "lost", settledAt: new Date(now - 3 * DAY) }),
+  ]);
+  await db.insert(traderRecords).values([
+    { wallet: TOP, name: "E2E-Top", resolved: 63, won: 41, lost: 22, profit: 1_200_000, biggestWin: 310_000, updatedAt: new Date(now) },
+    { wallet: NEW, name: null, resolved: 7, won: 5, lost: 2, profit: 9_000, biggestWin: 4_000, updatedAt: new Date(now) },
+  ]);
+  for (const job of ["moves:polymarket", "moves:kalshi"]) {
+    await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: {} }).onConflictDoNothing();
+  }
   for (const x of Object.values(E2E_USERS)) {
     await db.insert(users).values({ id: x.id, email: `${x.id}@example.test`, name: x.id, plan: x.plan, region: x.region, settings: DEFAULT_SETTINGS, // Plan already verified: no Whop call for seeded users (the checkout test covers the real Whop path).
       planCheckedAt: new Date(now + 365 * DAY), onboardedAt: new Date(now), membershipId: x.plan === "free" ? null : `mem_${x.id}` });

@@ -12,17 +12,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLiveContext, useServerNow } from "@/components/live/LiveProvider";
 import { ago, centsText, clockText, pct, span } from "@/lib/format";
+import { DollarBar } from "@/components/ui/DollarBar";
+import { RollNumber } from "@/components/ui/RollNumber";
 import { profitCentsPerDollar, type HeroLeg, type HeroView } from "./model";
 
-/** A number that rolls to each new value with a brief white flash (the load-time roll-in is CSS). */
+/** A number that rolls to each new value: the changed digits drop in with a brief violet glow (components/ui/RollNumber). */
 function Rolling({ value, format, className }: { value: number; format: (v: number) => string; className?: string }) {
-  const [ticks, setTicks] = useState(0);
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    setTicks(t => t + 1);
-  }, [value]);
-  return <span key={ticks} className={`roll${ticks ? " roll--tick" : ""}${className ? ` ${className}` : ""}`}>{format(value)}</span>;
+  return <RollNumber text={format(value)} className={className} />;
 }
 
 export interface HeroProps {
@@ -39,6 +35,8 @@ export interface HeroProps {
 const round1 = (c: number) => Math.round(c * 10) / 10;
 /** A title as a sentence: ends in exactly one stop ("Will X win?" stays as is). */
 const sentence = (t: string) => (/[.?!]$/.test(t.trim()) ? t.trim() : t.trim() + ".");
+/** The bar's segments: "YES on Kalshi" etc. */
+const barLegs = (legs: HeroLeg[]) => legs.map(l => ({ label: `${l.side} on ${l.venueName}`, cents: l.priceCents }));
 const legText = (l: HeroLeg) => `${l.venueName} ${l.side} ${centsText(l.priceCents)}`;
 
 function Side({ leg, which }: { leg: HeroLeg; which: "a" | "b" }) {
@@ -82,10 +80,11 @@ export function Hero({ view: initial, delayMs, medianLifeMin, headline, sub, cta
     const n = view.near;
     legs = n.legs;
     const edge = round1(100 - n.totalCents);
+    // Not a deal: the bar shows the two prices against $1 (over $1 leaves nothing; under, the fees eat it).
     seam = <>
       <p className="split__math"><span className="mono">{centsText(n.totalCents)}</span> in. <span className="mono">$1</span> back.</p>
-      <p className="split__profit"><span className="split__win split__win--none">{edge > 0 ? "+" : edge < 0 ? "−" : ""}{centsText(Math.abs(edge))}</span>
-        <span className="split__per">{edge > 0 ? "per $1 before fees, and fees eat it" : "per $1. No profit at these prices"}</span></p>
+      <DollarBar legs={barLegs(n.legs)} feesCents={edge > 0 ? edge : 0} size="lg" animate
+        keepLabel={edge > 0 ? "Fees eat the rest" : undefined} />
     </>;
     caption = <><span className="hero__title">{sentence(n.title)}</span> {legText(n.legs[0]!)} / {legText(n.legs[1]!)}. Not a deal yet: <span className="mono">{centsText(n.totalCents)}</span> in.</>;
     label = `${n.title}: ${legText(n.legs[0]!)}, ${legText(n.legs[1]!)}. Not a deal yet: ${centsText(n.totalCents)} in.`;
@@ -93,10 +92,13 @@ export function Hero({ view: initial, delayMs, medianLifeMin, headline, sub, cta
     const s = view.split;
     legs = s.legs;
     const inCents = round1(s.legs[0]!.priceCents + s.legs[1]!.priceCents);
+    // The $1 bar: what the two sides cost, the fees, and what's left. Cents per $1 of payout, not dollars at a
+    // stake: the free page never sends a deal's size.
+    const keep = profitCentsPerDollar(s.roi);
     seam = <>
       <p className="split__math"><span className="mono">{centsText(inCents)}</span> in. <span className="mono">$1</span> back. Either way.</p>
-      <p className="split__profit"><Rolling value={profitCentsPerDollar(s.roi)} format={v => `${v.toFixed(1)}¢`} className="split__win" />
-        <span className="split__per">profit per $1, after fees{view.mode === "last" ? ", when found" : ""}</span></p>
+      <DollarBar legs={barLegs(s.legs)} feesCents={Math.max(0, round1(100 - inCents - keep))} size="lg" animate
+        keepLabel={`You keep ${centsText(keep)}${view.mode === "last" ? " (when found)" : ""}`} />
     </>;
     if (view.mode === "last") {
       caption = <>Last deal: <span className="hero__title">{s.title}</span>, <span className="mono">{pct(s.roi)}</span> after fees, closed {ago(s.closedAt ?? clock, now)}.</>;

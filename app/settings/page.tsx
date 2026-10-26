@@ -1,65 +1,135 @@
-/* Settings: region, venues, filters, alerts (web push + email), plan with a one-click cancel, sign out.
- * Signed-in only. No bankroll. */
+/* Account (/settings): Alerts (a summary; the switches live on /alerts and /following), Location, Billing, Account. Every
+ * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
+ * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage billing (Whop's own
+ * page) and one-click cancel (at the end of the period you paid for). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Beacons } from "@/components/app/Beacons";
-import { IosInstallGuide } from "@/components/app/IosInstallGuide";
-import { unlockHref, vapidPublicKey } from "@/components/app/links";
-import { SettingsForm } from "@/components/app/SettingsForm";
+import { CancelButton } from "@/components/account/AccountForms";
+import { ComingSoon } from "@/components/v2/ComingSoon";
+import { LocationPill } from "@/components/v2/LocationPill";
+import { isReady } from "@/lib/features";
+import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
+import { fetchMemberships, type MembershipLite } from "@/lib/auth/whop";
+import { getDb, hasDatabase } from "@/lib/db";
+import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
+import { eq } from "drizzle-orm";
 import "../app.css";
+import "../account.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Settings", robots: { index: false } };
+export const metadata: Metadata = { title: "Account", robots: { index: false } };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+const DAY = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+const day = (ms: number): string => DAY.format(new Date(ms));
+
+async function membership(userId: string, id: string | null): Promise<MembershipLite | null | "error"> {
+  if (!id) return null;
+  try { return (await fetchMemberships(userId)).find(m => m.id === id) ?? null; } catch { return "error"; }
+}
+
+async function deviceCount(userId: string): Promise<number> {
+  if (!hasDatabase()) return 0;
+  try { return (await getDb().select({ e: pushSubscriptions.endpoint }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId))).length; } catch { return 0; }
+}
+
+export default async function AccountPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const viewer = await getViewer();
   const user = viewer.user;
   if (!user) redirect("/auth/login?next=/settings");
   const q = await searchParams;
-  const one = (k: string): string | null => { const v = q[k]; return typeof v === "string" ? v : null; };
   const paid = isPaid(viewer.plan);
-  const notice = one("saved") ? "Saved." : one("cancel") === "done" ? "Your subscription is cancelled. You keep access until the end of the paid period."
-    : one("cancel") === "failed" ? "Couldn't cancel right now. Try again in a minute, or use Manage on Whop below." : null;
-  const error = one("error");
+  const [mem, devices] = await Promise.all([paid ? membership(user.id, user.membershipId) : Promise.resolve(null), deviceCount(user.id)]);
+  const m = mem === "error" ? null : mem;
+  const s = user.settings;
+  const alertsReady = isReady("alerts_push") || isReady("alerts_email");
+  // Notices from the no-JS form fallbacks (cancel, saved).
+  const notice = q.cancel === "done" ? "Subscription cancelled. You keep access until the end of this billing period."
+    : q.cancel === "failed" ? "Couldn't reach Whop to cancel. Try again in a minute, or use Manage billing." : q.saved ? "Saved." : null;
 
   return (
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/settings" />
-      <main className="wrap app settings">
-        <Beacons where="settings" />
-        <h1 className="page__h">Settings</h1>
+      <main className="wrap app acct">
+        <h1 className="page__h">Account</h1>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
-        {error ? <p className="banner banner--err" role="alert">Settings not saved. {error.slice(0, 300)}</p> : null}
-        <IosInstallGuide />
 
-        <SettingsForm settings={user.settings} region={viewer.region} paid={paid} vapidKey={vapidPublicKey()} email={user.email} />
-
-        <section className="card fs" aria-labelledby="plan-h">
-          <h2 id="plan-h" className="fs__h">Plan</h2>
-          <p className="plan__now"><span className="plan__name">{PLANS[viewer.plan].name}</span>{paid ? <span className="plan__price">${PLANS[viewer.plan].price} a month</span> : null}
-            {user.cancelAtPeriodEnd ? <span className="tag">Cancels at period end</span> : null}</p>
-          <p className="muted small">{PLANS[viewer.plan].tagline}.</p>
-          <div className="row-gap">
-            {viewer.plan === "free" ? <a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Start Insidir for ${PLANS.insidir.price} a month</a> : null}
-            {viewer.plan !== "pro" ? <a className="btn btn--secondary" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">{viewer.plan === "free" ? "Or Pro" : "Upgrade to Pro"} for ${PLANS.pro.price} a month</a> : null}
-            {viewer.plan === "pro" ? <Link className="btn btn--secondary" href="/pnl">Your P&amp;L</Link> : null}
-            {user.manageUrl ? <a className="btn btn--ghost" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage on Whop</a> : null}
+        <section className="agroup" aria-labelledby="g-alerts">
+          <h2 id="g-alerts" className="agroup__h">Alerts</h2>
+          <div className="agroup__body">
+            {!alertsReady ? (
+              <div className="soonrow">
+                <ComingSoon feature="alerts_push" className="btn btn--secondary">Phone alerts</ComingSoon>
+                <ComingSoon feature="alerts_email" className="btn btn--secondary">Email alerts</ComingSoon>
+              </div>
+            ) : paid ? (
+              <>
+                <p className="asum">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email alerts on" : "Off"}
+                  <span className="asum__sub">{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</span></p>
+                <Link className="btn btn--primary" href="/alerts">Alert settings</Link>
+              </>
+            ) : (
+              <p className="asum">Alerts come with Insidir. We ping you when a trader or market you follow moves.</p>
+            )}
           </div>
-          {paid && !user.cancelAtPeriodEnd ? (
-            <form method="post" action="/api/account/cancel" className="cancel">
-              <button type="submit" className="btn btn--secondary btn--block">Cancel subscription</button>
-              <p className="muted small">One click, no forms. You keep access until the end of the period you paid for.</p>
-            </form>
-          ) : null}
         </section>
 
-        <form method="post" action="/auth/logout">
-          <button type="submit" className="btn btn--ghost btn--block">Sign out</button>
-        </form>
+        <section className="agroup" aria-labelledby="g-region">
+          <h2 id="g-region" className="agroup__h">Location</h2>
+          <div className="agroup__body">
+            <p className="asum">We only link you to apps that work where you are. Every move shows either way.</p>
+            <LocationPill region={viewer.region} />
+          </div>
+        </section>
+
+        <section className="agroup" aria-labelledby="g-billing" id="billing">
+          <h2 id="g-billing" className="agroup__h">Billing</h2>
+          <div className="agroup__body">
+            <dl className="akv">
+              <div><dt>Plan</dt><dd>{PLANS[viewer.plan].name}{paid ? <span className="akv__sub"> · ${PLANS[viewer.plan].price}/mo</span> : null}</dd></div>
+              {paid ? (
+                <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : "Next charge"}</dt>
+                  <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.renewalPrice}</span> : null}</>
+                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it from Whop just now. Manage billing shows it.</span> : <span className="akv__sub">Shown on Whop</span>}</dd></div>
+              ) : null}
+            </dl>
+            {paid ? (
+              <>
+                {user.cancelAtPeriodEnd ? <p className="asum" data-testid="cancels-on">Cancels on {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of this billing period"}. You keep access until then.</p> : null}
+                <div className="row-gap">
+                  {user.manageUrl ? <a className="btn btn--secondary" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage billing</a> : null}
+                  {!user.cancelAtPeriodEnd ? <CancelButton /> : null}
+                  {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">Go Pro</a> : null}
+                </div>
+                {!user.cancelAtPeriodEnd ? <p className="afield__hint">One tap, no forms. You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}. No refund for the current month.</p> : null}
+              </>
+            ) : (
+              <>
+                <p className="asum">You see big moves 30 minutes late. Insidir shows every move live, with trader records and alerts.</p>
+                <div className="row-gap"><a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Try it for $1</a></div>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="agroup" aria-labelledby="g-account">
+          <h2 id="g-account" className="agroup__h">Account</h2>
+          <div className="agroup__body">
+            <dl className="akv">
+              <div><dt>Email</dt><dd>{user.email ?? <span className="akv__sub">None on your Whop account</span>}</dd></div>
+            </dl>
+            {viewer.plan === "pro" ? (
+              <div className="row-gap" aria-label="Pro tools">
+                <Link className="btn btn--secondary" href="/whales">Whales</Link>
+                <Link className="btn btn--secondary" href="/pnl">Your P&amp;L</Link>
+              </div>
+            ) : null}
+            <form method="post" action="/auth/logout"><button type="submit" className="btn btn--secondary">Sign out</button></form>
+          </div>
+        </section>
       </main>
     </>
   );

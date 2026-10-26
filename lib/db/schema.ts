@@ -29,11 +29,23 @@ export interface UserSettings {
   alertMinRoi: number;
   /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
   soundOnGreen: boolean;
+  /** Which safety lights alert: "green" = Same rules only; "green_yellow" adds Check rules. Skip never alerts. */
+  alertSafety: "green" | "green_yellow";
+  /** Categories that alert; empty = every category. Separate from the feed's category filter. */
+  alertCategories: string[];
+  /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
+  quietStart: string | null;
+  quietEnd: string | null;
+  /** Pro custom alert rules for big money moves (docs/V2.md §7): any tab, league or size. */
+  moveRules?: Array<{ tab: "sports" | "markets" | "crypto" | "stocks" | null; league: string | null; min: number }>;
+  /** The user's IANA time zone (from their browser), for quiet hours. */
+  timeZone: string | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
   showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
+  alertSafety: "green", alertCategories: [], quietStart: null, quietEnd: null, timeZone: null,
 };
 
 export const users = terminal.table("users", {
@@ -212,3 +224,66 @@ export const rateLimits = terminal.table("rate_limits", {
   count: integer("count").notNull().default(0),
 }, t => [primaryKey({ columns: [t.key, t.windowStart] })]);
 
+
+/* ---------- V2: big money moves (docs/V2.md) ---------- */
+
+/** One big move (lib/moves/types.ts Move). Settled moves keep their result for Results and records. */
+export const moves = terminal.table("moves", {
+  id: text("id").primaryKey(),
+  source: text("source").$type<"polymarket" | "kalshi">().notNull(),
+  marketId: text("market_id").notNull(),
+  eventTitle: text("event_title").notNull(),
+  marketTitle: text("market_title").notNull(),
+  outcome: text("outcome").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  /** Dollars put in. */
+  amount: doublePrecision("amount").notNull(),
+  avgPrice: doublePrecision("avg_price").notNull(),
+  wallet: text("wallet"),
+  walletName: text("wallet_name"),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
+  fills: integer("fills").notNull().default(1),
+  tab: text("tab").$type<"sports" | "markets" | "crypto" | "stocks">().notNull(),
+  league: text("league"),
+  category: text("category").notNull(),
+  url: text("url"),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("moves_at_idx").on(t.at),
+  index("moves_tab_at_idx").on(t.tab, t.at),
+  index("moves_wallet_idx").on(t.wallet),
+  index("moves_market_idx").on(t.marketId),
+]);
+
+/** A Polymarket wallet's record from its resolved positions (lib/moves/records.ts). */
+export const traderRecords = terminal.table("trader_records", {
+  wallet: text("wallet").primaryKey(),
+  name: text("name"),
+  resolved: integer("resolved").notNull(),
+  won: integer("won").notNull(),
+  lost: integer("lost").notNull(),
+  profit: doublePrecision("profit").notNull(),
+  biggestWin: doublePrecision("biggest_win").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** What a member follows: a trader (wallet) or a market. */
+export const follows = terminal.table("follows", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"trader" | "market">().notNull(),
+  target: text("target").notNull(),
+  push: boolean("push").notNull().default(true),
+  email: boolean("email").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.kind, t.target] })]);
+
+/** "Tell me when it's live": one row per email per Coming soon feature. */
+export const waitlist = terminal.table("waitlist", {
+  email: text("email").notNull(),
+  feature: text("feature").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  notifiedAt: timestamp("notified_at", { withTimezone: true }),
+}, t => [primaryKey({ columns: [t.email, t.feature] })]);

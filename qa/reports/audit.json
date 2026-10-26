@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3100",
-  "at": "2026-10-26T00:40:36.760Z",
+  "at": "2026-10-26T07:20:53.963Z",
   "gates": {
     "performance": 0.9,
     "accessibility": 0.95,
@@ -12,22 +12,31 @@
       "performance": 0.98,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 2280,
+      "lcpMs": 2190,
       "cls": 0,
-      "axe390": [
-        "color-contrast (1)"
-      ],
+      "axe390": [],
       "axe1440": [
-        "color-contrast (9)"
+        "aria-hidden-focus (1)"
       ],
       "pass": false
     },
     {
-      "page": "terminal-free",
-      "performance": 0.98,
+      "page": "feed-free",
+      "performance": 0.96,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1970,
+      "lcpMs": 2296,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "results",
+      "performance": 1,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 1755,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -38,18 +47,7 @@
       "performance": 0.99,
       "accessibility": 0.98,
       "seo": 1,
-      "lcpMs": 1976,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": true
-    },
-    {
-      "page": "receipts",
-      "performance": 0.99,
-      "accessibility": 1,
-      "seo": 1,
-      "lcpMs": 2013,
+      "lcpMs": 1726,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -57,43 +55,43 @@
     },
     {
       "page": "terms",
-      "performance": 0.99,
-      "accessibility": 1,
-      "seo": 0.9,
-      "lcpMs": 1808,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": false
-    },
-    {
-      "page": "privacy",
-      "performance": 0.99,
-      "accessibility": 1,
-      "seo": 0.9,
-      "lcpMs": 1815,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": false
-    },
-    {
-      "page": "terminal-pro",
-      "performance": 0.95,
+      "performance": 0.98,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1980,
-      "cls": 0.09650795772986774,
+      "lcpMs": 1851,
+      "cls": 0,
       "axe390": [],
       "axe1440": [],
       "pass": true
     },
     {
-      "page": "deal-pro",
+      "page": "privacy",
+      "performance": 0.98,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 2168,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "feed-member",
       "performance": 0.99,
       "accessibility": 1,
-      "seo": 0.6,
-      "lcpMs": 1823,
+      "seo": 1,
+      "lcpMs": 1875,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
+    },
+    {
+      "page": "following",
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 1587,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -101,33 +99,22 @@
     },
     {
       "page": "settings",
-      "performance": 0.98,
-      "accessibility": 1,
-      "seo": 0.6,
-      "lcpMs": 2275,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": true
-    },
-    {
-      "page": "whales",
       "performance": 0.99,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 1817,
+      "lcpMs": 1818,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
       "pass": true
     },
     {
-      "page": "pnl",
+      "page": "alerts",
       "performance": 0.98,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 2261,
-      "cls": 0,
+      "lcpMs": 2267,
+      "cls": 0.008610194552454445,
       "axe390": [],
       "axe1440": [],
       "pass": true

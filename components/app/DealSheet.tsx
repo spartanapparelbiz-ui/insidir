@@ -9,6 +9,21 @@ import type { Live } from "@/components/live/useLive";
 import type { DealOk, DealResponse, DealView } from "@/lib/deal-view";
 import { DealDetail } from "./DealDetail";
 import { applyTick } from "./live-rows";
+import { UNLOCK } from "@/lib/copy";
+import { SkeletonLine } from "@/components/ui/Skeleton";
+
+/** The drawer while the deal loads: the real layout's shape (tags, title, the $1 bar, the numbers, both legs). */
+function DealSkeleton() {
+  return (
+    <div className="dd" role="status" aria-label="Loading the deal">
+      <SkeletonLine w={120} h={16} />
+      <SkeletonLine w="60%" h={28} />
+      <SkeletonLine w="100%" h={48} />
+      <div className="dd-nums">{Array.from({ length: 6 }, (_, i) => <div key={i} className="dd-num"><SkeletonLine w={80} h={12} /><SkeletonLine w={64} h={22} /></div>)}</div>
+      <div className="legs legs--skel"><SkeletonLine w="100%" h={120} /><SkeletonLine w="100%" h={120} /></div>
+    </div>
+  );
+}
 
 const isResponse = (v: unknown): v is DealResponse =>
   typeof v === "object" && v !== null && typeof (v as DealResponse).now === "number" && typeof (v as DealResponse).view === "object";
@@ -26,7 +41,7 @@ function tick(view: DealOk, t: Parameters<typeof applyTick>[1], at: number): Dea
 export function DealSheet({ id, title, live, onClose }: { id: string; title: string; live: Live; onClose: () => void }) {
   const [res, setRes] = useState<{ now: number; view: DealView; unlockHref: string } | null>(null);
   const [error, setError] = useState(false);
-  const [closed, setClosed] = useState(false);
+  const [closed, setClosed] = useState<number | null>(null);
   const [attempt, setAttempt] = useState(0);
   const panel = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
@@ -48,7 +63,7 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
       if (e.oppId !== id) return;
       setRes(r => (r && r.view.state === "ok" ? { ...r, view: tick(r.view, e.data, e.at) } : r));
     });
-    const offClosed = live.on("deal_closed", e => { if (e.oppId === id) setClosed(true); });
+    const offClosed = live.on("deal_closed", e => { if (e.oppId === id) setClosed(e.data.closedAt); });
     return () => { offTick(); offClosed(); };
   }, [id, live]);
 
@@ -84,14 +99,14 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
           <button type="button" className="btn btn--secondary dsheet__x" onClick={onClose} data-close>Close</button>
         </div>
         {res && view?.state === "ok" ? (
-          <DealDetail view={view} now={res.now} unlockHref={res.unlockHref} closed={closed} titleId="dsheet-h" heading="h2" />
+          <DealDetail view={view} now={res.now} unlockHref={res.unlockHref} closed={closed !== null} closedAt={closed} titleId="dsheet-h" heading="h2" />
         ) : res && view ? (
           <div className="dd">
             <h2 id="dsheet-h" className="dd-h">{view.state === "too_new" ? "This deal is still live" : "Deal not found"}</h2>
             <p className="muted">{view.state === "too_new"
               ? "Deals reach the free feed 30 minutes after they're found. Members see them as they happen."
               : "It may have closed, or it isn't available where you are."}</p>
-            {view.state === "too_new" ? <a className="btn btn--primary" href={res.unlockHref} data-unlock="sheet-live">Unlock live deals</a> : null}
+            {view.state === "too_new" ? <a className="btn btn--primary" href={res.unlockHref} data-unlock="sheet-live">{UNLOCK}</a> : null}
           </div>
         ) : (
           <div className="dd">
@@ -101,7 +116,7 @@ export function DealSheet({ id, title, live, onClose }: { id: string; title: str
                 <p className="muted" role="alert">Couldn&apos;t load this deal. Check your connection, then try again.</p>
                 <div className="row-gap"><button type="button" className="btn btn--secondary" onClick={retry}>Try again</button><a className="btn btn--ghost" href={href}>Open full page</a></div>
               </>
-            ) : <p className="muted" role="status">Loading the deal</p>}
+            ) : <DealSkeleton />}
           </div>
         )}
       </div>

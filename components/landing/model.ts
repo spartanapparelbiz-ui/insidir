@@ -59,7 +59,7 @@ export const publicFeedViewer = (region: Region | null): FeedViewer => ({
   plan: "free", region, minRoi: 0, minSizeUsd: 0, categories: [], venues: [], showYellow: true, showRed: false,
 });
 
-/** Where "Start for $39" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
+/** Where "Unlock live deals" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
 export const checkoutHref = (url: string | null): string => url ?? "/auth/login?next=/terminal";
 
 /** A real two-leg green cross-venue row from the feed, or null. */

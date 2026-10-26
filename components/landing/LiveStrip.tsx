@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveContext, useServerNow } from "@/components/live/LiveProvider";
 import type { LiveEvent } from "@/lib/live/types";
 import { agoOrNow, pct, span, usd } from "@/lib/format";
+import { RollNumber } from "@/components/ui/RollNumber";
 import { dealCount } from "./model";
 
 export interface StripStats {
@@ -41,7 +42,6 @@ export function LiveStrip({ stats, initialTape, serverNow }: { stats: StripStats
   const [found, setFound] = useState(stats.foundToday);
   const [week, setWeek] = useState(stats.foundWeek);
   const [biggest, setBiggest] = useState(stats.biggestRoi);
-  const [bumped, setBumped] = useState(0);
   const counted = useRef(new Set<string>());
 
   useEffect(() => live.on("deal_found", e => {
@@ -51,7 +51,6 @@ export function LiveStrip({ stats, initialTape, serverNow }: { stats: StripStats
     setWeek(n => n + 1);
     if (r.foundAt < stats.todayStart) return;
     setFound(n => n + 1);
-    setBumped(b => b + 1);
     setBiggest(x => (x === null || r.roi > x ? r.roi : x));
   }), [live, stats.todayStart, stats.weekStart]);
 
@@ -77,7 +76,7 @@ export function LiveStrip({ stats, initialTape, serverNow }: { stats: StripStats
         <dl className="strip__nums">
           <div className="strip__num">
             <dt>{count.label}</dt>
-            <dd className="mono"><span key={bumped} className={bumped ? "roll roll--tick" : undefined} data-testid="found-today">{count.n}</span></dd>
+            <dd className="mono"><RollNumber text={String(count.n)} testId="found-today" /></dd>
           </div>
           {biggest !== null && samePeriod ? <div className="strip__num"><dt>Biggest{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(biggest)}</dd></div> : null}
           {stats.medianRoi !== null && samePeriod ? <div className="strip__num"><dt>Median{sameWeek ? " this week" : ""}</dt><dd className="mono">{pct(stats.medianRoi)}</dd></div> : null}

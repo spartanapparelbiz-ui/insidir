@@ -1,0 +1,7 @@
+/* Page-level styles for the deal page wrapper, P&L and Whales (the app's shared styles live in app/app.css). */
+/* "Back to the Terminal": a full 44px tap target, not a 14px line. */
+.backlink { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--muted); font-size: var(--t15); text-decoration: none; }
+.backlink::before { content: "←"; margin-right: 8px; }
+.backlink:hover { color: var(--text); }
+/* P&L before anything is loaded: says what to do first. */
+.pnl-start { color: var(--muted); max-width: 62ch; }

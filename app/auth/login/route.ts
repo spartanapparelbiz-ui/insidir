@@ -3,8 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { startAuthorize } from "@/lib/auth/whop";
 
 export function GET(req: NextRequest) {
-  const next = req.nextUrl.searchParams.get("next") ?? "/terminal";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/terminal";
+  const next = req.nextUrl.searchParams.get("next") ?? "/feed";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/feed";
   const { url, state, verifier } = startAuthorize();
   const res = NextResponse.redirect(url, 303);
   const secure = req.nextUrl.protocol === "https:";

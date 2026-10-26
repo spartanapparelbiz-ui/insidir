@@ -34,7 +34,7 @@ describe("copy compliance", () => {
     }
   });
   it("the footer disclaimer is on every page", () => {
-    expect(FOOTER).toBe("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.");
+    expect(FOOTER).toBe("Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.");
     expect(readFileSync(join(ROOT, "app", "layout.tsx"), "utf8")).toContain("<SiteFooter />");
     expect(readFileSync(join(ROOT, "components", "SiteFooter.tsx"), "utf8")).toContain("{FOOTER}");
   });

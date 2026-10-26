@@ -1,18 +1,17 @@
-/* Source-level checks of the public pages: section order, copy rules, region rules. No DOM needed. */
-import { readdirSync, readFileSync } from "node:fs";
+/* Source-level checks of the V2 public pages (docs/V2.md §4, §6, §10): section order, copy rules, location rules and
+ * the design tokens. No DOM needed. */
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { RISK_QUESTION } from "@/components/landing/model";
-import { COMPETITOR_PRICE_LINE, LANDING_CTA } from "@/components/landing/model";
-import { bannedPhrases } from "@/lib/copy";
+import { bannedPhrases, FOOTER, TRIAL_BAR, TRIAL_LINE, TRY_CTA } from "@/lib/copy";
+import { BANNED_WORDS } from "@/lib/moves/copy";
 
 const ROOT = join(__dirname, "..");
 const read = (p: string): string => readFileSync(join(ROOT, p), "utf8");
-const FILES = [
-  "app/page.tsx", "app/landing.css", "app/receipts/page.tsx", "app/pricing/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx",
-  "app/manifest.ts", "app/opengraph-image.tsx",
-  ...readdirSync(join(ROOT, "components/landing")).map(f => "components/landing/" + f),
-];
+const tree = (dir: string): string[] => readdirSync(join(ROOT, dir)).flatMap(f => {
+  const p = `${dir}/${f}`;
+  return statSync(join(ROOT, p)).isDirectory() ? tree(p) : /\.(tsx?|css)$/.test(f) ? [p] : [];
+});
 
 /** The user-facing text in a source file: string literals and JSX text, comments removed. */
 function literals(src: string): string {
@@ -22,42 +21,53 @@ function literals(src: string): string {
   return [...strings, ...jsxText].join("\n").replace(/&apos;/g, "'");
 }
 
-/** Everything the landing page renders, except the FAQ (the one place jargon is allowed, explained). */
-const LANDING_FILES = [
-  "app/page.tsx", ...readdirSync(join(ROOT, "components/landing")).filter(f => f !== "Faq.tsx").map(f => "components/landing/" + f),
-  "components/DealRow.tsx", "components/SafetyLight.tsx", "components/SiteHeader.tsx", "components/SiteFooter.tsx",
+/** Every V2 page and component a visitor or member sees. */
+const V2_UI = [
+  "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
+  "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", ...tree("components/v2"), "lib/moves/copy.ts",
 ];
 
-describe("landing page", () => {
-  it("renders its sections in the required order", () => {
+describe("V2 landing page", () => {
+  it("renders its sections in order: hero, tab strip, how it works, results, pricing, FAQ, the dark band", () => {
     const src = read("app/page.tsx");
-    const markers = ["<Hero ", "<LiveStrip ", "<TerminalPreview ", 'data-section="receipts"', "<SafetySection ", "<Pricing ", "<Faq ", "<FinalCta ", "<Sticky "];
+    const markers = ['className="hero2"', 'className="wrap tabstrip"', 'id="how"', 'id="res-h"', "<PricingCards ", "<FaqV2 ", 'className="band2"'];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const [file, sec] of [["Hero", "hero"], ["LiveStrip", "live"], ["TerminalPreview", "preview"], ["Safety", "safety"],
-      ["Pricing", "pricing"], ["Faq", "faq"], ["Cta", "final"]] as const) {
-      expect(read(`components/landing/${file}.tsx`)).toContain(`data-section="${sec}"`);
-    }
   });
 
-  it("is dynamic and records landing_view with the A/B cookie", () => {
+  it("says the brief's words", () => {
+    const src = read("app/page.tsx");
+    expect(src).toContain("Follow the big money.");
+    expect(src).toContain("Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.");
+    expect(src).toContain("See the live feed");
+    expect(src).toContain("The next big bet is happening right now.");
+    expect(src).toContain("Real past moves. Not a promise.");
+    expect(read("lib/copy.ts")).toContain("Try Insidir for $1 for 3 days. Cancel anytime.");
+    expect(read("lib/copy.ts")).toContain("$1 for 3 days, then $39/mo. Cancel anytime.");
+  });
+
+  it("is dynamic and records landing_view", () => {
     const src = read("app/page.tsx");
     expect(src).toContain('export const dynamic = "force-dynamic"');
     expect(src).toMatch(/recordEvent\(\{ name: "landing_view"/);
-    expect(src).toContain("AB_TESTS.hero[heroVariant(abRaw)]");
   });
+});
 
-  it("uses no banned phrases (the owner's FAQ question is answered with an explicit No)", () => {
-    for (const f of FILES) {
-      const text = literals(read(f)).split(RISK_QUESTION).join(" ");
+describe("copy rules on every V2 page", () => {
+  it("never uses the banned words or phrases", () => {
+    for (const f of V2_UI) {
+      const text = literals(read(f));
+      for (const b of BANNED_WORDS) expect(text, `${f}: ${b}`).not.toMatch(b);
       expect(bannedPhrases(text), f).toEqual([]);
     }
-    expect(read("components/landing/Faq.tsx")).toContain("No. It is not risk-free.");
+    // lib/copy.ts also holds the Price gaps lines (Pro, coming soon); the V2 strings in it are checked one by one.
+    for (const t of [FOOTER, TRIAL_BAR, TRY_CTA, TRIAL_LINE]) for (const b of BANNED_WORDS) expect(t).not.toMatch(b);
   });
 
-  it("never says bankroll, VPN or Telegram, and never links the international Polymarket site", () => {
-    for (const f of FILES) {
+  it("never says bankroll, VPN or Telegram, and never hard-codes an international Polymarket link", () => {
+    for (const f of V2_UI) {
       const src = read(f);
       expect(src, f).not.toMatch(/bankroll/i);
       expect(src, f).not.toMatch(/\bvpns?\b/i);
@@ -66,58 +76,33 @@ describe("landing page", () => {
     }
   });
 
-  it("keeps the competitor line in one place", () => {
-    const hits = FILES.filter(f => read(f).includes("$200/mo"));
-    expect(hits).toEqual(["components/landing/model.ts"]);
-    expect(COMPETITOR_PRICE_LINE).toContain("$200/mo");
+  it("the support email is hello@aethric.llc everywhere", () => {
+    for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) expect(read(f), f).not.toMatch(/support@insidir\.com/);
   });
+});
 
-  it("the manifest makes an installable app that opens the Terminal", async () => {
-    const { default: manifest } = await import("@/app/manifest");
-    const m = manifest();
-    expect(m).toMatchObject({ name: "Insidir Terminal", short_name: "Insidir", start_url: "/terminal", display: "standalone", background_color: "#000000", theme_color: "#000000" });
-    expect(m.icons?.map(i => i.src)).toEqual(expect.arrayContaining(["/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"]));
-  });
-
-  it("says \"arbitrage\" only inside the FAQ, where it's explained, and no other jargon outside it", () => {
-    for (const f of LANDING_FILES) {
-      const text = literals(read(f));
-      expect(text, f).not.toMatch(/arbitrage/i);
-      expect(text, f).not.toMatch(/\b(spread|liquidity|taker)\b/i);
+describe("design system", () => {
+  it("defines every colour in app/tokens.css; other stylesheets use tokens only", () => {
+    const tokens = read("app/tokens.css");
+    for (const hex of ["#ffffff", "#f6f7fb", "#e6e8ef", "#0b0b12", "#5b6070", "#5b4bff", "#4a3af0", "#f1eeff", "#087a55", "#e8f8f1", "#c2410c", "#fff1e6", "#eaf4ff"]) {
+      expect(tokens.toLowerCase(), hex).toContain(hex);
     }
-    expect(literals(read("components/landing/Faq.tsx"))).toMatch(/Traders call this arbitrage/);
-  });
-
-  it("has one goal: every landing CTA goes to the feed with the same words; checkout only on the pricing cards", () => {
-    expect(LANDING_CTA).toBe("See today's live deals");
-    for (const f of ["app/page.tsx", "components/landing/Hero.tsx", "components/landing/Cta.tsx", "components/landing/Sticky.tsx", "components/landing/TerminalPreview.tsx"]) {
-      const src = read(f);
-      expect(src, f).not.toMatch(/Start for|\$39|data-checkout/);
-    }
-    const page = read("app/page.tsx");
-    expect(page.match(/cta=\{LANDING_CTA\}/g)?.length).toBeGreaterThanOrEqual(3);
-    expect(page).toContain('<Sticky label={LANDING_CTA} href="/terminal" />');
-  });
-
-  it("is monochrome: no colour in the styles except the three safety lights", () => {
-    const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a"]);
-    const SAFETY = ["--green", "--amber", "--red"];
-    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/deal-row.css", "components/app/ios.css"]) {
+    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
-      for (const hex of css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) expect(PALETTE.has(hex.toLowerCase()), `${f}: ${hex}`).toBe(true);
-      expect(css, f).not.toMatch(/gold|ffc53d|rgba?\((?!0, 0, 0)/i);
-      // The safety colours appear only as a dot's background, never as text, buttons or borders.
-      for (const line of css.split("\n").filter(l => SAFETY.some(v => l.includes(`var(${v})`)))) {
-        expect(line, `${f}: ${line}`).toMatch(/--dot: var\(--(green|amber|red)\)|::before[^{]*\{[^}]*background: var\(--(green|amber|red)\)|^\s*--(green|amber|red): #/);
-      }
+      expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
     }
   });
 
-  it("only offers the refund when the log averages a green deal a day, and shows the objection lines", () => {
-    const page = read("app/page.tsx");
-    expect(page).toMatch(/greenPerDay\(mine, REFUND_WINDOW_DAYS, now\) >= REFUND_MIN_GREEN_PER_DAY/);
-    const pricing = read("components/landing/Pricing.tsx");
-    expect(pricing).toContain("{refund ? <p className=\"lp-refund\">{REFUND_LINE}</p> : null}");
-    expect(pricing).toContain("OBJECTIONS.map");
+  it("uses Plus Jakarta Sans only: General Sans and JetBrains Mono are gone", () => {
+    expect(read("app/layout.tsx")).toMatch(/Plus_Jakarta_Sans\(/);
+    for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
+      const src = read(f);
+      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|--font-mono/);
+    }
+  });
+
+  it("the manifest opens the feed in the bright theme", async () => {
+    const { default: manifest } = await import("@/app/manifest");
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/feed", background_color: "#ffffff", theme_color: "#ffffff" });
   });
 });
