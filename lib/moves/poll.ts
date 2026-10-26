@@ -26,12 +26,16 @@ export interface MoveSources {
   polyTradesPage(offset: number): Promise<unknown>;
   /** The wallet's trades over the last day (for the noise checks). */
   polyWalletTrades(wallet: string, sinceMs: number): Promise<WalletTrade[]>;
+  /** True when the wallet has no activity at all before `beforeMs` ("A brand-new wallet"); null when unknown. */
+  polyWalletIsNew?(wallet: string, beforeMs: number): Promise<boolean | null>;
   kalshiTradesPage(minTsSec: number, cursor?: string): Promise<unknown>;
 }
 
 export class MovesPoller {
   private polyFills = new Map<string, Fill>();
   private noise = new Map<string, { noisy: boolean; at: number }>();
+  /** Per move id: did the wallet have any activity before it? */
+  private fresh = new Map<string, { isNew: boolean | null; at: number }>();
   private kalshiSeen = new Map<string, number>();
   private kalshiSince: number | null = null;
 
@@ -64,16 +68,25 @@ export class MovesPoller {
     for (const m of candidates) {
       const key = `${m.wallet}|${m.marketId}`;
       let n = this.noise.get(key);
-      if (!n || now - n.at > NOISE_TTL_MS) {
-        if (checks >= NOISE_CHECKS_PER_POLL) continue; // checked on a later poll before it is shown
-        checks++;
+      const needsNoise = !n || now - n.at > NOISE_TTL_MS;
+      const needsFresh = Boolean(this.src.polyWalletIsNew) && !this.fresh.has(m.id);
+      if ((needsNoise || needsFresh) && checks >= NOISE_CHECKS_PER_POLL) continue; // checked on a later poll before it is shown
+      if (needsNoise || needsFresh) checks++;
+      if (needsNoise) {
         const trades = await this.src.polyWalletTrades(m.wallet!, now - 86_400_000);
         n = { noisy: noisyWallet(trades, m.marketId, now), at: now };
         this.noise.set(key, n);
       }
-      if (!n.noisy) out.push(m);
+      if (n!.noisy) continue;
+      if (needsFresh) {
+        let isNew: boolean | null = null;
+        try { isNew = await this.src.polyWalletIsNew!(m.wallet!, m.at); } catch { isNew = null; }
+        this.fresh.set(m.id, { isNew, at: now });
+      }
+      out.push({ ...m, newWallet: this.fresh.get(m.id)?.isNew ?? null });
     }
     for (const [k, v] of this.noise) if (now - v.at > 4 * NOISE_TTL_MS) this.noise.delete(k);
+    for (const [k, v] of this.fresh) if (now - v.at > 2 * LOOKBACK_MS) this.fresh.delete(k);
     return out;
   }
 

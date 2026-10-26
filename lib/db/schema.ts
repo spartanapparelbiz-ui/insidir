@@ -305,6 +305,8 @@ export const moves = terminal.table("moves", {
   settledAt: timestamp("settled_at", { withTimezone: true }),
   /** SEC moves only: the filing facts the card shows (lib/stocks/moves.ts StockDetail). */
   detail: jsonb("detail").$type<Record<string, unknown>>(),
+  /** Polymarket only: true when the wallet had no activity at all before this move; null when not checked. */
+  newWallet: boolean("new_wallet"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),
@@ -322,7 +324,35 @@ export const traderRecords = terminal.table("trader_records", {
   lost: integer("lost").notNull(),
   profit: doublePrecision("profit").notNull(),
   biggestWin: doublePrecision("biggest_win").notNull(),
+  /** The most money the wallet has put into one market: closed positions' money in and open positions' initial value. */
+  biggestBet: doublePrecision("biggest_bet"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** A Polymarket wallet's resolved positions (Data API /closed-positions), one row per market and outcome, for the
+ *  profile stats (lib/profiles/trader.ts). Replaced whole each time the wallet's record is refreshed. */
+export const traderPositions = terminal.table("trader_positions", {
+  wallet: text("wallet").notNull(),
+  marketId: text("market_id").notNull(),
+  outcomeIndex: integer("outcome_index").notNull(),
+  title: text("title").notNull(),
+  outcome: text("outcome"),
+  eventSlug: text("event_slug"),
+  /** Profile category: a league for sports, "Crypto", or "Markets" (lib/profiles/trader.ts categoryOf). */
+  category: text("category").notNull(),
+  tab: text("tab").$type<"sports" | "markets" | "crypto">().notNull(),
+  /** Dollars put in: shares bought × average price. */
+  moneyIn: doublePrecision("money_in").notNull(),
+  pnl: doublePrecision("pnl").notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_positions_resolved_idx").on(t.resolvedAt)]);
+
+/** Wallets to keep a record for besides the ones seen moving: Polymarket's public leaderboard (for /top). */
+export const trackedWallets = terminal.table("tracked_wallets", {
+  wallet: text("wallet").primaryKey(),
+  name: text("name"),
+  reason: text("reason").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 /** What a member follows: a trader (wallet) or a market. */
@@ -348,3 +378,70 @@ export const secSeen = terminal.table("sec_seen", {
   key: text("key").primaryKey(),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Open-market buys (P) and sales (S) of stock from Form 4 filings, one row per filing line and reporting owner
+ *  (lib/stocks/history.ts). From every Form 4 the Stocks job reads, plus each insider's and company's EDGAR history. */
+export const insiderTrades = terminal.table("insider_trades", {
+  accession: text("accession").notNull(),
+  line: integer("line").notNull(),
+  ownerCik: text("owner_cik").notNull(),
+  ownerName: text("owner_name").notNull(),
+  role: text("role").notNull(),
+  issuerCik: text("issuer_cik").notNull(),
+  company: text("company").notNull(),
+  ticker: text("ticker"),
+  code: text("code").$type<"P" | "S">().notNull(),
+  tradeDate: text("trade_date"),
+  shares: doublePrecision("shares").notNull(),
+  price: doublePrecision("price").notNull(),
+  value: doublePrecision("value").notNull(),
+  filedAt: timestamp("filed_at", { withTimezone: true }).notNull(),
+  url: text("url").notNull(),
+}, t => [
+  primaryKey({ columns: [t.accession, t.ownerCik, t.line] }),
+  index("insider_trades_owner_idx").on(t.ownerCik, t.filedAt),
+  index("insider_trades_issuer_idx").on(t.issuerCik, t.filedAt),
+]);
+
+/** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
+ *  which date the history is complete. */
+export const secHistory = terminal.table("sec_history", {
+  kind: text("kind").$type<"owner" | "issuer">().notNull(),
+  cik: text("cik").notNull(),
+  name: text("name"),
+  /** Form 4 accessions still to read, newest first. */
+  pending: jsonb("pending").$type<Array<{ accession: string; filedOn: string }>>().notNull().default([]),
+  /** Every Form 4 filed on or after this date has been read; null until the first pass is done. */
+  completeSince: text("complete_since"),
+  queuedAt: timestamp("queued_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.kind, t.cik] })]);
+
+/** A tracked fund (13F manager): its EDGAR name and how many 13F-HR quarters EDGAR lists. */
+export const funds = terminal.table("funds", {
+  cik: text("cik").primaryKey(),
+  name: text("name").notNull(),
+  quartersOnFile: integer("quarters_on_file").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** A 13F-HR the fund history has read. */
+export const fundFilings = terminal.table("fund_filings", {
+  fundCik: text("fund_cik").notNull(),
+  accession: text("accession").notNull(),
+  period: text("period"),
+  filedOn: text("filed_on").notNull(),
+  url: text("url").notNull(),
+  /** False for a notice or a table that doesn't add up to its cover page: kept so it isn't read again, never shown. */
+  complete: boolean("complete").notNull(),
+}, t => [primaryKey({ columns: [t.fundCik, t.accession] })]);
+
+/** A 13F-HR's share positions per CUSIP (options left out), values in dollars. */
+export const fundHoldings = terminal.table("fund_holdings", {
+  fundCik: text("fund_cik").notNull(),
+  accession: text("accession").notNull(),
+  cusip: text("cusip").notNull(),
+  company: text("company").notNull(),
+  shares: doublePrecision("shares").notNull(),
+  value: doublePrecision("value").notNull(),
+}, t => [primaryKey({ columns: [t.fundCik, t.accession, t.cusip] })]);

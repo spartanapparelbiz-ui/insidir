@@ -6,8 +6,9 @@ import type { Db } from "@/lib/db";
 import { secSeen } from "@/lib/db/schema";
 import { upsertMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
-import { companyName, filingIndexUrl, indexTimestamp, insiderBuy, ownershipCandidates, parseAtom, parseOwnership, type AtomFiling } from "./form4";
+import { companyName, filingIndexUrl, insiderBuy, parseAtom, type AtomFiling } from "./form4";
 import { cik10, complete, filingIndex13f, fundAdds, managerCiks, parseInfoTable, parsePrimaryDoc, pickDocuments, positions, thirteenFFilings, type Position, type ThirteenF } from "./form13f";
+import { fundHistoryOnce, queueHistory, readOwnership, saveTrades, tradeRows, type TradeRow } from "./history";
 import { fundMove, insiderMove } from "./moves";
 import type { SecClient } from "./sec";
 
@@ -30,22 +31,21 @@ const markSeen = (db: Db, key: string) => db.insert(secSeen).values({ key }).onC
 
 const atomUrl = (start: number) => `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100${start ? `&start=${start}` : ""}`;
 
-/** One Form 4 filing → its insider-buy move, or null when it has none of $100k+. */
-export async function readForm4(sec: SecClient, f: AtomFiling): Promise<Move | null> {
-  const index = await sec.json(`${f.indexBase}index.json`);
-  const filedAt = f.publishedAt ?? indexTimestamp(index) ?? Date.now();
-  for (const name of ownershipCandidates(index)) {
-    const body = await sec.text(f.indexBase + name);
-    if (!body.includes("ownershipDocument")) continue;
-    let o;
-    try { o = parseOwnership(body); } catch { continue; }
-    const buy = insiderBuy(o, f.accession);
-    if (!buy) return null;
-    const lines = o.lines.filter(l => !l.derivative && l.code === "P" && l.acquiredDisposed === "A").length;
-    return insiderMove(buy, filedAt, lines, filingIndexUrl(f.filerCik, f.accession));
-  }
-  throw new Error(`No ownership XML in ${f.accession}`);
+/** One Form 4 filing → its insider-buy move (null when it has none of $100k+) and every open-market buy and sale on it. */
+export async function readForm4Full(sec: SecClient, f: AtomFiling): Promise<{ move: Move | null; trades: TradeRow[] }> {
+  const got = await readOwnership(sec, f.indexBase);
+  if (!got) throw new Error(`No ownership XML in ${f.accession}`);
+  const filedAt = f.publishedAt ?? got.filedAt ?? Date.now();
+  const o = got.ownership;
+  const url = filingIndexUrl(f.filerCik, f.accession);
+  const trades = tradeRows(o, f.accession, filedAt, url);
+  const buy = insiderBuy(o, f.accession);
+  if (!buy) return { move: null, trades };
+  const lines = o.lines.filter(l => !l.derivative && l.code === "P" && l.acquiredDisposed === "A").length;
+  return { move: insiderMove(buy, filedAt, lines, url), trades };
 }
+
+export const readForm4 = async (sec: SecClient, f: AtomFiling): Promise<Move | null> => (await readForm4Full(sec, f)).move;
 
 /** Pages back through the current-filings feed until a page holds nothing new, then reads the new filings. */
 export async function form4Once(db: Db, sec: SecClient): Promise<{ read: number; moves: number; errors: number }> {
@@ -64,13 +64,23 @@ export async function form4Once(db: Db, sec: SecClient): Promise<{ read: number;
   for (const f of fresh.slice(0, FORM4_PER_RUN)) {
     try {
       // 4/A restates an earlier filing: recorded, never shown.
-      const m = f.formType === "4" ? await readForm4(sec, f) : null;
-      if (m) out.push(m);
+      if (f.formType === "4") {
+        const { move, trades } = await readForm4Full(sec, f);
+        if (trades.length) await saveTrades(db, trades);
+        if (move) out.push(move);
+      }
       await markSeen(db, `f4:${f.accession}`);
       read++;
     } catch { errors++; }
   }
-  if (out.length) await upsertMoves(db, out);
+  if (out.length) {
+    await upsertMoves(db, out);
+    // Each buyer's and company's EDGAR history, for the profile and "why this matters" (lib/stocks/history.ts).
+    await queueHistory(db, out.flatMap(m => m.detail?.kind === "insider" ? [
+      ...(m.detail.ownerCik ? [{ kind: "owner" as const, cik: m.detail.ownerCik, name: m.detail.ownerName }] : []),
+      { kind: "issuer" as const, cik: m.detail.issuerCik, name: m.detail.company },
+    ] : []));
+  }
   return { read, moves: out.length, errors };
 }
 
@@ -106,6 +116,15 @@ export async function fundOnce(db: Db, sec: SecClient, cik: string): Promise<num
   if (list.length) await upsertMoves(db, list);
   await markSeen(db, key);
   return list.length;
+}
+
+/** Every tracked fund's history: one more of its last 8 13F-HRs read in full per run (lib/stocks/history.ts). */
+export async function fundHistoriesOnce(db: Db, sec: SecClient, now: number, env: Record<string, string | undefined> = process.env): Promise<{ read: number; errors: number }> {
+  let read = 0, errors = 0;
+  for (const cik of managerCiks(env)) {
+    try { read += await fundHistoryOnce(db, sec, cik, now, (id, f) => thirteenFPositions(sec, id, f)); } catch { errors++; }
+  }
+  return { read, errors };
 }
 
 export async function form13fOnce(db: Db, sec: SecClient, env: Record<string, string | undefined> = process.env): Promise<{ funds: number; moves: number; errors: number }> {

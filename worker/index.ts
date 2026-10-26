@@ -8,8 +8,9 @@
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
- *             every 5 min (lib/moves/jobs.ts)
- *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts)
+ *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h (lib/moves/jobs.ts)
+ *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts);
+ *             for profiles, buyers' and companies' Form 4 histories every 5 min and funds' quarters every 30 min
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
@@ -17,8 +18,9 @@ import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, typ
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
-import { MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
-import { form13fOnce, form4Once, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
+import { leaderboardOnce, MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
+import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
+import { historyOnce } from "@/lib/stocks/history";
 import { SecClient } from "@/lib/stocks/sec";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
@@ -214,6 +216,10 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader records refreshed`);
       }),
+      every("moves:leaderboard", 6 * 3_600_000, async () => {
+        const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
+        log(`moves: ${n} leaderboard wallets tracked`);
+      }),
     ] : []),
     // Stocks (docs/INSIDIR-V2.md): SEC Form 4 insider buys and 13F fund adds, only with SEC_USER_AGENT set.
     ...(sec && stocksIngestOn() ? [
@@ -230,6 +236,15 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
           await heartbeat(getDb(), "stocks:13f", r.errors < r.funds, r.errors ? `${r.errors} funds failed` : null, r);
           if (r.moves) log(`stocks: ${r.moves} fund adds from 13F filings`);
         } catch (e) { await heartbeat(getDb(), "stocks:13f", false, errMsg(e)).catch(() => undefined); throw e; }
+      }),
+      // Profiles: each $100k+ buyer's and company's Form 4 history, and each fund's last 8 quarters (lib/stocks/history.ts).
+      every("stocks:history", 5 * 60_000, async () => {
+        const r = await historyOnce(getDb(), sec, Date.now());
+        if (r.read || r.errors) log(`stocks: ${r.read} history filings read, ${r.done} histories complete, ${r.errors} errors`);
+      }),
+      every("stocks:funds", 30 * 60_000, async () => {
+        const r = await fundHistoriesOnce(getDb(), sec, Date.now());
+        if (r.read || r.errors) log(`stocks: ${r.read} fund quarters read, ${r.errors} errors`);
       }),
     ] : []),
     every("ratelimits", 60_000, async () => {

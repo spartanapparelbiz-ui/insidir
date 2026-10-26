@@ -4,7 +4,7 @@
  *   Polymarket Data API GET /closed-positions: conditionId, realizedPnl.
  *   Kalshi GET /markets/trades: trade_id, ticker, count (or count_fp), yes_price / no_price in cents (or
  *     yes_price_dollars / no_price_dollars), taker_side, created_time. Kalshi trades carry no account. */
-import { displayName, polymarketUrl } from "@/lib/exchanges/polymarket";
+import { polymarketUrl } from "@/lib/exchanges/polymarket";
 import { epochMs, num, rows, str } from "@/lib/exchanges/parse";
 import type { VMarket } from "@/lib/types";
 import type { ResolvedPosition } from "./records";
@@ -23,7 +23,7 @@ export function readPolymarketFills(raw: unknown): Fill[] {
     out.push({
       source: "polymarket", id: `${str(t.transactionHash) ?? "tx"}:${wallet}:${marketId}:${idx ?? 0}:${at}`,
       marketId, eventTitle: str(t.eventTitle) ?? str(t.title) ?? marketId, marketTitle: str(t.title) ?? marketId,
-      outcome, outcomeSide: idx === 1 ? "no" : "yes", side, contracts, price, wallet: wallet.toLowerCase(), walletName: displayName(t), at,
+      outcome, outcomeSide: idx === 1 ? "no" : "yes", side, contracts, price, wallet: wallet.toLowerCase(), walletName: publicUsername(t), at,
       url: polymarketUrl(str(t.eventSlug), str(t.slug)),
     });
   }
@@ -65,4 +65,22 @@ export function readClosedPositions(raw: unknown): ResolvedPosition[] {
     if (marketId && pnl !== null) out.push({ marketId, realizedPnl: pnl });
   }
   return out;
+}
+
+/** Polymarket's public leaderboard rows (Data API /v1/leaderboard): proxyWallet and the public username. */
+export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: string | null }> {
+  const out: Array<{ wallet: string; name: string | null }> = [];
+  for (const r of rows(raw)) {
+    const w = (str(r.proxyWallet) ?? str(r.wallet) ?? "").toLowerCase();
+    if (!/^0x[0-9a-f]{40}$/.test(w)) continue;
+    out.push({ wallet: w, name: publicUsername(r) });
+  }
+  return out;
+}
+
+/** A wallet's public Polymarket username (never the auto-made pseudonym); null when it has none. */
+export function publicUsername(r: Record<string, unknown>): string | null {
+  const name = str(r.name) ?? str(r.userName) ?? str(r.username);
+  if (r.displayUsernamePublic === false || !name || /^0x[0-9a-f]{6,}/i.test(name)) return null;
+  return name.trim().slice(0, 60) || null;
 }

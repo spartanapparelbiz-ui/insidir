@@ -2,6 +2,7 @@
  * the amount, on what, what it pays, the record (when the viewer may see it), when, and how it settled. No logos of
  * the apps, no advice. Rendered with next/og (satori) and Plus Jakarta Sans (lib/og-fonts, SIL OFL). Server only. */
 import { ImageResponse } from "next/og";
+import { insiderWho } from "@/lib/profiles/name";
 import { dollars, onWhat, payoutLine, recordLine, stockNote, who } from "@/lib/moves/copy";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { loadFonts } from "@/lib/share-card";
@@ -17,7 +18,7 @@ export function moveCardText(m: Move, record: TraderRecord | null) {
   const d = m.detail;
   if (m.source === "sec" && d) {
     return {
-      who: d.kind === "insider" ? `${d.role} of ${d.company} bought` : `${d.fund} added`,
+      who: d.kind === "insider" ? `${insiderWho(d.ownerName, d.role, d.company)}, bought` : `${d.fund} added`,
       amount: dollars(m.amount),
       on: d.kind === "insider" ? `of ${d.company} stock` : `of ${d.company} last quarter`,
       pays: stockNote(d),

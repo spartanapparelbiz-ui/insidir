@@ -19,7 +19,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   const links = signedIn
-    ? [link("/feed", "Feed"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
+    ? [link("/feed", "Feed"), link("/top", "Top traders"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
     : [link("/#how", "How it works", "/how"), link("/pricing", "Pricing"), link("/#faq", "FAQ", "/faq"), <Link key="login" href="/auth/login?next=/feed" prefetch={false}>Log in</Link>];
   return (
     <>

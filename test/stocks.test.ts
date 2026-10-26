@@ -109,7 +109,7 @@ describe("stock cards", () => {
   const add = fundAdds(positions(parseInfoTable(fx("13f-info-prev.xml")), "2026-08-14"), positions(parseInfoTable(fx("13f-info-cur.xml")), "2026-11-14"))[1]!;
   const fund = fundMove(add, "Berkshire Hathaway", "0001067983", f13, prevF, "https://www.sec.gov/Archives/edgar/data/1067983/000106798326000002/0001067983-26-000002-index.htm");
   it("say it the way the brief does", () => {
-    expect(moveSentence(insider, null, true)).toBe("The CEO of Example Devices just bought $1.4M of Example Devices stock.");
+    expect(moveSentence(insider, null, true)).toBe("Jane Doe, CEO of Example Devices, just bought $1.4M of Example Devices stock.");
     expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of Example Devices last quarter.");
     expect(stockNote(insider.detail!)).toBe("Bought Oct 22 at $182.65 a share. Filed with the SEC Oct 26.");
     expect(stockNote(fund.detail!)).toBe("Filed Nov 14 for the quarter ending Sep 30. 13F data can be up to 45 days old.");

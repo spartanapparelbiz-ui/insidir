@@ -12,6 +12,8 @@ import { agoText, moveSentence, payoutLine, recordLine, stockNote } from "./copy
 import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
 import { hasRecord, isTopTrader, walletLabel } from "./records";
+import { personName, profileHref } from "@/lib/profiles/name";
+import { whyLines } from "@/lib/profiles/why-facts";
 import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
 import type { League, Move, Tab } from "./types";
 
@@ -40,6 +42,10 @@ export interface FeedItem {
   /** Stocks: the line under the sentence (trade or filing date, 13F age) and the ticker for the tag. */
   note: string | null;
   ticker: string | null;
+  /** Who moved, as the sentence names them, and their profile (/p/[id]); Kalshi traders are anonymous (no link). */
+  who: { name: string; href: string | null; badge: "New wallet" | null };
+  /** "Why this matters": at most one fact (lib/profiles/why.ts). */
+  why: string | null;
 }
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
@@ -57,10 +63,21 @@ export async function feedStatus(db: Db, now: number): Promise<FeedStatus> {
   return { state: "behind", lastAt, text: "Catching up. Showing the latest moves we have." };
 }
 
-export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number): Promise<FeedItem[]> {
+/** Who moved, for the card: the name the sentence uses and where tapping it goes. */
+export function whoOf(m: Move): FeedItem["who"] {
+  const d = m.detail;
+  if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik }) : null, badge: null };
+  if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik }), badge: null };
+  if (m.source === "kalshi" || !m.wallet) return { name: "Someone", href: null, badge: null };
+  return { name: walletLabel(m.wallet, m.walletName), href: profileHref({ kind: "trader", wallet: m.wallet }),
+    badge: m.newWallet ? "New wallet" : null };
+}
+
+export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {
   const p = movePlan(plan);
   const recs = p.records ? await recordsFor(db, moves.map(m => m.wallet ?? "")) : new Map();
   const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));
+  const why = await whyLines(db, moves, { records: p.records, until, now }).catch(() => new Map<string, string | null>());
   return moves.map(m => {
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
     const shown = p.records && hasRecord(rec) ? rec : null;
@@ -71,6 +88,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
+      who: whoOf(m), why: why.get(m.id) ?? null,
     };
   });
 }
@@ -79,5 +97,5 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
 export async function feedFor(db: Db, plan: Plan, region: Region | null, q: MoveQuery, now: number): Promise<FeedItem[]> {
   const delay = movePlan(plan).delayMs;
   const until = Math.min(q.until ?? now, now - delay);
-  return feedItems(db, await listMoves(db, { ...q, until }), plan, region, now);
+  return feedItems(db, await listMoves(db, { ...q, until }), plan, region, now, until);
 }

@@ -1,12 +1,16 @@
 /* One sentence per move that a 12-year-old gets (docs/INSIDIR-V2.md §4). We say what happened, never what to do.
- *   "A top trader just put $412,000 on Chiefs to win."
- *   "A wallet just put $85,000 on "Yes" in "Fed rate cut in December?""
- *   "Someone just put $48,000 on Lakers to win."
+ * Every sentence names who moved when the source says (lib/profiles/name.ts):
+ *   "kch123, a top trader, just put $412,000 on Chiefs to win."   (public username; "a top trader" for members only)
+ *   "0x12…ab just put $85,000 on "Yes" in "Fed rate cut in December?""   (no username: the short address)
+ *   "A brand-new wallet just put $200,000 on Chiefs to win."      (no activity at all before this move)
+ *   "Someone just put $48,000 on Lakers to win."                   (Kalshi: anonymous by design)
+ *   "Jen Hsun Huang, CEO of Nvidia, just bought $1.4M of Nvidia stock."   (SEC Form 4, as filed)
  *   "Pays $161 on every $100 if Chiefs win."      (payout = 100 ÷ price)
  *   "Won 41 of 63 · +$1.2M all-time"
  * Never: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider
  * info, lock, guaranteed, risk-free, free money, sure thing, "buy this", "copy this bet" (test/moves.test.ts). */
-import { isTopTrader } from "./records";
+import { insiderWho } from "@/lib/profiles/name";
+import { isTopTrader, walletLabel } from "./records";
 import type { Move, TraderRecord } from "./types";
 
 const YES_NO = /^(yes|no)$/i;
@@ -37,10 +41,13 @@ export function onWhat(m: Pick<Move, "outcome" | "marketTitle" | "tab"> & { deta
   return m.tab === "sports" ? `${o} to win` : `"${o}" in "${clean(m.marketTitle)}"`;
 }
 
-/** Who moved: a top trader (20+ resolved markets, positive all-time profit), a wallet, or someone (Kalshi). */
-export function who(m: Pick<Move, "source">, record: TraderRecord | null): string {
-  if (m.source === "kalshi") return "Someone";
-  return isTopTrader(record) ? "A top trader" : "A wallet";
+/** Who moved: the wallet's public username or short address ("…, a top trader" when the viewer may see records and
+ *  it is one), "A brand-new wallet", or "Someone" (Kalshi). Never anything about who is behind a wallet. */
+export function who(m: Pick<Move, "source" | "wallet" | "walletName"> & { newWallet?: boolean | null }, record: TraderRecord | null): string {
+  if (m.source === "kalshi" || !m.wallet) return "Someone";
+  if (m.newWallet) return "A brand-new wallet";
+  const label = walletLabel(m.wallet, m.walletName);
+  return isTopTrader(record) ? `${label}, a top trader,` : label;
 }
 
 export function moveSentence(m: Move, record: TraderRecord | null, live = true): string {
@@ -65,9 +72,9 @@ const DAY_UTC = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric
 const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
 const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** "The CEO of Apple just bought $1.4M of Apple stock." / "Berkshire Hathaway added $250M of Chevron last quarter." */
+/** "Tim Cook, CEO of Apple, just bought $1.4M of Apple stock." / "Berkshire Hathaway added $250M of Chevron last quarter." */
 export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, live = true): string {
-  if (d.kind === "insider") return `${d.role} of ${d.company} ${live ? "just bought" : "bought"} ${dollars(amount)} of ${d.company} stock.`;
+  if (d.kind === "insider") return `${insiderWho(d.ownerName, d.role, d.company)}, ${live ? "just bought" : "bought"} ${dollars(amount)} of ${d.company} stock.`;
   return `${d.fund} added ${dollars(amount)} of ${d.company} last quarter${d.newPosition ? ", a new position" : ""}.`;
 }
 
