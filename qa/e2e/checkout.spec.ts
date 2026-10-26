@@ -12,6 +12,7 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   await whop("/__reset", { method: "POST" });
   await q("delete from terminal.sessions where user_id = $1", [MOCK_USER.sub]);
   await q("delete from terminal.users where id = $1", [MOCK_USER.sub]);
+  const started = (await q<{ now: Date }>("select now()"))[0]!.now;
 
   await page.goto("/?utm_source=instagram&utm_campaign=e2e");
   await expect(page.locator("h1")).toBeVisible();
@@ -44,7 +45,7 @@ test("unlock → Whop checkout → live Terminal, events in order, then cancel i
   // Funnel events fire in order.
   await page.waitForTimeout(500);
   const evs = await q<{ name: string; variant: string | null }>(
-    "select name, variant from terminal.events where visitor_id = $1 or user_id = $2 order by at, id", [vid, MOCK_USER.sub]);
+    "select name, variant from terminal.events where (visitor_id = $1 or user_id = $2) and at >= $3 order by at, id", [vid, MOCK_USER.sub, started]);
   const names = evs.map(e => e.name);
   const order = ["landing_view", "feed_view", "unlock_click", "checkout_start", "paid"];
   const firsts = order.map(n => names.indexOf(n));

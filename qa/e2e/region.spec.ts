@@ -31,5 +31,8 @@ test("a non-US member sees international Polymarket deals, US venues stay too", 
   await signIn(context, "proIntl");
   await page.goto("/terminal");
   await expect(page.getByText("Will the Fed cut").first()).toBeVisible();
+  // Venue links live on the deal page.
+  await page.goto(`/deal/${await dealId("Fed cut")}`);
   await expect(page.locator('a[href^="https://polymarket.com/"]').first()).toBeAttached();
+  await expect(page.locator('a[href^="https://kalshi.com/"]').first()).toBeAttached();
 });
