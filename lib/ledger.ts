@@ -190,13 +190,17 @@ export function csvField(v: string | number | null): string {
 export const CSV_HEADER = ["receipt_id", "found_at_utc", "event", "safety", "categories", "prices_at_detection", "fillable_size_usd",
   "profit_after_fees_usd", "roi", "settled_at_utc", "outcome", "realized_profit_usd", "same_rules_check"];
 
-export function toCsv(rows: readonly LedgerRow[], names: Record<Venue, string>): string {
+/** A free viewer never gets the size or dollar profit of a deal that hasn't settled (the free feed withholds them too):
+ *  only settled history is public. */
+export const hiddenFor = (r: LedgerRow, sizesHidden: boolean): boolean => sizesHidden && !isSettled(r);
+
+export function toCsv(rows: readonly LedgerRow[], names: Record<Venue, string>, sizesHidden = false): string {
   const lines = [CSV_HEADER.join(",")];
   for (const r of rows) {
     const o = r.snapshot;
     lines.push([
       receiptId(r.id), new Date(r.detectedAt).toISOString(), o.title, o.safety, o.categories.join(";"), pricesText(o, names),
-      outlayOf(o).toFixed(2), o.profit.toFixed(2), (o.roi * 100).toFixed(2) + "%",
+      hiddenFor(r, sizesHidden) ? "members only" : outlayOf(o).toFixed(2), hiddenFor(r, sizesHidden) ? "members only" : o.profit.toFixed(2), (o.roi * 100).toFixed(2) + "%",
       r.settledAt === null ? "" : new Date(r.settledAt).toISOString(), outcomeOf(r),
       r.realizedProfit === null ? "" : r.realizedProfit.toFixed(2), rulesCheckText(r).toLowerCase(),
     ].map(csvField).join(","));

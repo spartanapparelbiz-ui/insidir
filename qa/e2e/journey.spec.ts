@@ -65,7 +65,9 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     await shot("onboarding");
     await dialog.getByRole("button", { name: "See today's live deals" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.reload();
+    // The last step's button navigates to the Terminal; load it fresh rather than racing that navigation.
+    await page.waitForURL(/\/terminal/);
+    await page.goto("/terminal");
     await expect(page.getByRole("heading", { name: "What do you trade?" })).toHaveCount(0);
     const saved = await q<{ settings: { categories: string[] }; onboarded_at: Date | null }>("select settings, onboarded_at from terminal.users where id = $1", [MOCK_USER.sub]);
     expect(saved[0]?.settings.categories).toEqual(["sports"]);

@@ -63,12 +63,16 @@ function chime() {
 export interface TerminalTotals { found: number; bestRoi: number | null }
 
 export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows, unlockHref, unlockLabel, venues, medianGapMin, soundOnGreen,
-  totals, missedToday, todayStart, filtered }: {
+  totals, missedToday, todayStart, filtered, tips = true, alertsOn = true }: {
   initialRows: FeedRow[]; initialNow: number; initialStatus: DataStatus; plan: Plan; maxRows: number | null; unlockHref: string; unlockLabel: string;
   venues: Venue[]; medianGapMin: number | null; soundOnGreen: boolean;
   totals: TerminalTotals; missedToday: number; todayStart: number;
   /** The member's saved filters (Settings) are narrowing the feed. */
   filtered: boolean;
+  /** First-visit tips: off while onboarding is showing (one dialog at a time). */
+  tips?: boolean;
+  /** A member with no alerts on gets "Turn on alerts" as the page's one primary action. */
+  alertsOn?: boolean;
 }) {
   const live = useLive();
   const [rows, setRows] = useState(initialRows);
@@ -241,6 +245,7 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
       <div className="tbar">
         <div className="tbar__top">
           <h1 id="feed-h" className="tbar__h">Terminal</h1>
+          {plan !== "free" && !alertsOn ? <a className="btn btn--primary tbar__alerts" href="/alerts">Turn on alerts</a> : null}
           <p className={`tbar__beat${scanner.live && !offline ? "" : " tbar__beat--paused"}`} role="status" aria-live="off">
             {beat}{plan === "free" ? ". Free feed: 30 min delay" : ""}
           </p>
@@ -298,7 +303,7 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
         {shown.length ? (
           <>
             <DealTable rows={shown} now={now} motion={motion} selected={selected} compact={compact} caption={`Deals, ${SORTS.find(s => s.key === sort)?.label.toLowerCase()} first`} />
-            <TerminalTips />
+            {tips ? <TerminalTips /> : null}
           </>
         ) : (
           <div className="dt-empty">

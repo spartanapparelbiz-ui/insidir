@@ -49,10 +49,15 @@ async function main() {
         const info = await page.evaluate(() => ({
           h1: document.querySelector("h1")?.textContent?.trim() ?? null,
           title: document.title,
-          primaries: [...document.querySelectorAll<HTMLElement>(".btn--primary")].filter(b => b.offsetParent !== null).map(b => b.textContent?.trim()),
+          primaries: [...document.querySelectorAll<HTMLElement>(".btn--primary")].filter(b => b.offsetParent !== null && getComputedStyle(b).visibility !== "hidden").map(b => b.textContent?.trim()),
           sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          // The target a finger actually hits: a control inside a <label> or a clickable table row counts as that
+          // label or row; links inside running text are exempt (WCAG 2.5.8).
           smallTargets: [...document.querySelectorAll<HTMLElement>("a, button, input, select, summary")].filter(e => {
-            const b = e.getBoundingClientRect(); return e.offsetParent !== null && b.width > 0 && (b.height < 24 || b.width < 24);
+            if (e.offsetParent === null || getComputedStyle(e).visibility === "hidden") return false;
+            const hit = e.closest("label, tr[data-deal], tr[data-receipt]") as HTMLElement | null ?? e;
+            if (e.tagName === "A" && e.closest("p, li, dd") && !e.classList.contains("btn")) return false;
+            const b = hit.getBoundingClientRect(); return b.width > 0 && (b.height < 24 || b.width < 24);
           }).length,
         }));
         const axe = await new AxeBuilder({ page }).analyze().then(a => a.violations.filter(v => v.impact === "serious" || v.impact === "critical").map(v => `${v.id}(${v.nodes.length})`)).catch(() => ["axe failed"]);

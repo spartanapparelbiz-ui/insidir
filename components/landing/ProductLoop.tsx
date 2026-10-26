@@ -29,7 +29,7 @@ export function ProductLoop() {
         controls={still} aria-label="The Terminal on a phone: a new deal slides in at the top, is tapped, and its details open.">
         {near ? <><source src="/media/terminal-loop.webm" type="video/webm" /><source src="/media/terminal-loop.mp4" type="video/mp4" /></> : null}
       </video>
-      <figcaption className="lp-loop__cap">Recorded from the live Terminal: a new deal arrives, one tap opens the math.</figcaption>
+      <figcaption className="lp-loop__cap">A screen recording of the real Terminal, with example deals: a new deal arrives, one tap opens the math.</figcaption>
     </figure>
   );
 }

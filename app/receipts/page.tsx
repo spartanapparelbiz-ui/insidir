@@ -15,9 +15,10 @@ import { getViewer } from "@/lib/auth/viewer";
 import { unlockHref } from "@/components/app/links";
 import { UNLOCK_PRO } from "@/lib/copy";
 import {
-  CHART_MIN_DAYS, cents1, cumulative, DAY_MS, dataSince, lifeHistogram, loadLedger, outcomeOf, outcomeText, outlayOf, PAGE_ROWS, PERIODS, pct2,
+  CHART_MIN_DAYS, cents1, cumulative, DAY_MS, dataSince, hiddenFor, lifeHistogram, loadLedger, outcomeOf, outcomeText, outlayOf, PAGE_ROWS, PERIODS, pct2,
   pricesText, receiptId, rulesCheckText, summary, usd2, utcStamp, whenGrid, type LedgerRow,
 } from "@/lib/ledger";
+import { entitlements } from "@/lib/plans";
 import { VENUE_NAME } from "@/lib/types";
 import "@/components/app/terminal.css";
 import "./receipts.css";
@@ -27,18 +28,19 @@ export const metadata: Metadata = { title: "Receipts", description: "Every deal 
 
 const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-function item(r: LedgerRow): LedgerItem {
+function item(r: LedgerRow, sizesHidden: boolean): LedgerItem {
   const o = r.snapshot;
+  const hide = hiddenFor(r, sizesHidden);
   const res = (venue: string, id: string) => {
     const v = r.results?.[`${venue}:${id}`];
     return v === "yes" ? "YES won" : v === "no" ? "NO won" : v === "void" ? "Voided (refunded)" : "Not settled yet";
   };
   return {
     id: r.id, rid: receiptId(r.id), foundAt: utcStamp(r.detectedAt), title: o.title, safety: o.safety, prices: pricesText(o, VENUE_NAME),
-    size: usd2(outlayOf(o)), profit: usd2(o.profit), outcome: outcomeText(r), outcomeKind: outcomeOf(r), check: rulesCheckText(r),
+    size: hide ? null : usd2(outlayOf(o)), profit: hide ? null : usd2(o.profit), outcome: outcomeText(r), outcomeKind: outcomeOf(r), check: rulesCheckText(r),
     legs: o.legs.map(l => ({
-      venue: l.venue, venueName: VENUE_NAME[l.venue], side: l.side, label: l.label, contracts: Math.floor(l.contracts).toLocaleString("en-US"),
-      avg: cents1(l.avgPrice), worst: cents1(l.worstPrice), cost: usd2(l.cost), fee: usd2(l.fee), result: res(l.venue, l.marketId), url: l.url,
+      venue: l.venue, venueName: VENUE_NAME[l.venue], side: l.side, label: l.label, contracts: hide ? null : Math.floor(l.contracts).toLocaleString("en-US"),
+      avg: cents1(l.avgPrice), worst: hide ? null : cents1(l.worstPrice), cost: hide ? null : usd2(l.cost), fee: hide ? null : usd2(l.fee), result: res(l.venue, l.marketId), url: l.url,
     })),
   };
 }
@@ -49,6 +51,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const viewer = await getViewer();
   const [ledger, since] = await Promise.all([loadLedger(viewer.plan, viewer.region, params, now), dataSince()]);
   const s = summary(ledger.periodRows);
+  const sizesHidden = entitlements(viewer.plan).sizesHidden;
   const enough = since !== null && now - since >= CHART_MIN_DAYS * DAY_MS;
   const curve = cumulative(ledger.periodRows);
   const points: ChartPoint[] = curve.map(p => ({ at: p.at, value: p.value, label: p.title, valueText: usd2(p.value), dateText: DAY.format(new Date(p.at)) }));
@@ -127,7 +130,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
           </form>
           {shown.length ? (
             <>
-              <LedgerTable items={shown.map(item)} />
+              <LedgerTable items={shown.map(r => item(r, sizesHidden))} />
               <p className="rx-note">{ledger.rows.length > shown.length ? `Showing the newest ${shown.length} of ${ledger.rows.length.toLocaleString("en-US")}. Export CSV for all of them.` : `${ledger.rows.length.toLocaleString("en-US")} ${ledger.rows.length === 1 ? "receipt" : "receipts"}.`} Times are UTC.</p>
             </>
           ) : (

@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { SafetyLight } from "@/components/SafetyLight";
 import { SkeletonLine } from "@/components/ui/Skeleton";
+import { LockBar } from "@/components/app/DealTable";
 import type { Safety, Venue } from "@/lib/types";
 
 export interface LedgerItem {
@@ -15,12 +16,13 @@ export interface LedgerItem {
   title: string;
   safety: Safety;
   prices: string;
-  size: string;
-  profit: string;
+  /** null: members only (an open deal, for a free viewer). */
+  size: string | null;
+  profit: string | null;
   outcome: string;
   outcomeKind: "open" | "won" | "differently";
   check: "Passed" | "Failed" | "Pending";
-  legs: Array<{ venue: Venue; venueName: string; side: string; label: string; contracts: string; avg: string; worst: string; cost: string; fee: string; result: string; url: string }>;
+  legs: Array<{ venue: Venue; venueName: string; side: string; label: string; contracts: string | null; avg: string; worst: string | null; cost: string | null; fee: string | null; result: string; url: string }>;
 }
 
 function Details({ item }: { item: LedgerItem }) {
@@ -39,11 +41,11 @@ function Details({ item }: { item: LedgerItem }) {
             <h4 className="rx-leg__h">{l.side.toUpperCase()} on {l.venueName}</h4>
             <p className="rx-leg__label">{l.label}</p>
             <dl className="rx-kv">
-              <div><dt>Contracts</dt><dd>{l.contracts}</dd></div>
+              <div><dt>Contracts</dt><dd>{l.contracts ?? <LockBar />}</dd></div>
               <div><dt>Avg price</dt><dd>{l.avg}</dd></div>
-              <div><dt>Worst price</dt><dd>{l.worst}</dd></div>
-              <div><dt>Cost</dt><dd>{l.cost}</dd></div>
-              <div><dt>Fee</dt><dd>{l.fee}</dd></div>
+              <div><dt>Worst price</dt><dd>{l.worst ?? <LockBar />}</dd></div>
+              <div><dt>Cost</dt><dd>{l.cost ?? <LockBar />}</dd></div>
+              <div><dt>Fee</dt><dd>{l.fee ?? <LockBar />}</dd></div>
               <div><dt>Settled on {l.venueName}</dt><dd>{l.result}</dd></div>
             </dl>
             <h5 className="rx-leg__k">Rules on {l.venueName}</h5>
@@ -84,8 +86,8 @@ export function LedgerTable({ items }: { items: LedgerItem[] }) {
                 <td className="rx-c-at mono">{it.foundAt}</td>
                 <th scope="row" className="rx-c-event"><span className="rx-title">{it.title}</span><SafetyLight safety={it.safety} /></th>
                 <td className="rx-c-prices mono">{it.prices}</td>
-                <td className="dt-r rx-c-num mono">{it.size}</td>
-                <td className="dt-r rx-c-num"><span className="dt-profit">{it.profit}</span></td>
+                <td className="dt-r rx-c-num mono">{it.size ?? <LockBar />}</td>
+                <td className="dt-r rx-c-num">{it.profit === null ? <LockBar w={64} /> : <span className="dt-profit">{it.profit}</span>}</td>
                 <td className={`rx-c-out mono rx-out--${it.outcomeKind}`}>{it.outcome}</td>
                 <td className={`rx-c-chk rx-chk--${it.check.toLowerCase()}`}>{it.check}</td>
               </tr>

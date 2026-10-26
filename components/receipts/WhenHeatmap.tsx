@@ -10,7 +10,7 @@ export function WhenHeatmap({ grid, max, n }: { grid: number[][]; max: number; n
   return (
     <figure className="rx-viz">
       <figcaption className="rx-viz__cap"><span className="rx-viz__h">When deals show up</span><span className="rx-viz__note">Hours in UTC. Brighter means more deals: a good time to have alerts on.</span></figcaption>
-      <div className="rx-viz__scroll">
+      <div className="rx-viz__scroll" role="region" aria-label="When deals show up, scrollable" tabIndex={0}>
         <svg viewBox={`0 0 ${LX + C * CW} ${7 * RH + 24}`} className="rx-viz__svg rx-viz__svg--heat" role="img" aria-label={summary}>
           {grid.map((row, d) => (
             <g key={d}>

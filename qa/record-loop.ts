@@ -12,7 +12,7 @@ import { opportunities, receipts } from "@/lib/db/schema";
 import { dealFound, publish } from "@/lib/live/publish";
 import type { Opportunity } from "@/lib/types";
 import { APP_URL, E2E_DB } from "./e2e/env";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 const OUT = "public/media";
 const TMP = "qa/.loop";
@@ -23,7 +23,8 @@ async function main() {
   rmSync(TMP, { recursive: true, force: true });
   const db = getDb();
   // A copy of a seeded live deal under a new id and title, as the worker would find it.
-  const base = (await db.select().from(opportunities).where(eq(opportunities.active, true)).limit(1))[0]!;
+  // (The Jets deal: Kalshi + Polymarket US, so the US Pro member sees it.)
+  const base = (await db.select().from(opportunities).where(and(eq(opportunities.active, true), sql`${opportunities.data}->>'title' like '%Jets%'`)).limit(1))[0]!;
   const o: Opportunity = { ...base.data, id: `${base.data.id}-loop`, title: "Will the Lakers win on Nov 12?" };
   await db.delete(opportunities).where(eq(opportunities.id, o.id));
   await db.delete(receipts).where(eq(receipts.oppId, o.id));

@@ -117,3 +117,4 @@
 .dt-empty { display: grid; gap: 8px; justify-items: start; padding: 24px 0; border-bottom: 1px solid var(--line); }
 .dt-empty__h { font-size: var(--t17); font-weight: 600; }
 .term-box { position: relative; }
+.tbar__alerts { min-height: 40px; }

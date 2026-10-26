@@ -144,7 +144,8 @@ export function DealDetail({ view, now, unlockHref, closed = false, closedAt = n
                     <div><dt>Fee</dt><dd>{money2(f.fee)}</dd></div>
                   </dl>
                 ) : null}
-                {l.url ? <a className="btn btn--secondary btn--block leg__open" href={l.url} target="_blank" rel="noopener noreferrer">Open on {l.venueName}</a> : null}
+                {/* Members: the first leg is the next step (buy it first, then the second), so it's the page's primary. */}
+                {l.url ? <a className={`btn ${paid && !gone && i === 0 ? "btn--primary" : "btn--secondary"} btn--block leg__open`} href={l.url} target="_blank" rel="noopener noreferrer">Open on {l.venueName}</a> : null}
               </div>
             );
           })}

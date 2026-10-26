@@ -19,10 +19,10 @@ const STATES: Array<{ name: string; mode: string; sql: string[] }> = [
   { name: "a-live", mode: "live", sql: [] },
   { name: "b-last", mode: "last", sql: [
     // Every deal has stopped being found 40 minutes ago (after the free clock saw it open, so it's history for them).
-    "update terminal.opportunities set active = false, last_seen_at = greatest(first_seen_at, now() - interval '40 minutes')",
+    "update terminal.opportunities set active = false, last_seen_at = greatest(first_seen_at, now() - interval '40 minutes') where last_seen_at > now() - interval '1 day'",
   ] },
   { name: "c-near", mode: "near", sql: [
-    "update terminal.opportunities set active = false, last_seen_at = greatest(first_seen_at, now() - interval '40 minutes')",
+    "update terminal.opportunities set active = false, last_seen_at = greatest(first_seen_at, now() - interval '40 minutes') where last_seen_at > now() - interval '1 day'",
     "delete from terminal.receipts where detected_at > now() - interval '7 days'",
     "delete from terminal.live_events",
   ] },

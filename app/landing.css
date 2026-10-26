@@ -87,7 +87,7 @@
 .tape__list { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; }
 .tape__item { flex: none; max-width: min(80vw, 420px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: var(--surface); border-radius: var(--r-row); padding: 12px 16px; font: 400 var(--t14)/1.4 var(--mono); color: var(--paper); }
-.tape__item--deal_closed { color: var(--dim); }
+.tape__item--deal_closed { color: var(--steel); }
 .tape__item--whale { color: var(--steel); }
 @media (prefers-reduced-motion: no-preference) { .tape__item--fresh { animation: tr-hi .9s ease-out both; } }
 

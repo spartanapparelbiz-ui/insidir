@@ -22,6 +22,8 @@ const PAGES: Array<{ name: string; path: string; signedIn: boolean }> = [
     { name: "terminal-pro", path: "/terminal", signedIn: true },
     { name: "deal-pro", path: process.env.AUDIT_DEAL_PATH ?? "/terminal", signedIn: true },
     { name: "settings", path: "/settings", signedIn: true },
+    { name: "alerts", path: "/alerts", signedIn: true },
+    { name: "receipts-pro", path: "/receipts?period=30d", signedIn: true },
     { name: "whales", path: "/whales", signedIn: true },
     { name: "pnl", path: "/pnl", signedIn: true },
   ] : []),
@@ -51,7 +53,7 @@ async function main(): Promise<void> {
         await ctx.addCookies([{ name: name!, value: rest.join("="), url: BASE }]);
       }
       const page = await ctx.newPage();
-      await page.goto(url, { waitUntil: "networkidle" });
+      await page.goto(url, { waitUntil: "load" });
       // Scroll through so scroll-revealed sections play, then let every animation finish: axe checks the page at
       // rest, not halfway through a fade-in.
       await page.evaluate(async () => {

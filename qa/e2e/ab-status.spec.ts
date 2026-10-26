@@ -30,7 +30,7 @@ test("scanner stopped: 'Live data paused, retrying', deals greyed out, nothing c
   try {
     await q("insert into terminal.worker_heartbeats (job, last_run_at, ok) values ('e2e:pause', now(), true) on conflict do nothing");
     await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes' where job like 'scan:%'");
-    await q("update terminal.opportunities set last_seen_at = now() - interval '5 minutes'");
+    await q("update terminal.opportunities set last_seen_at = now() - interval '5 minutes' where active");
     await page.reload();
     await expect(page.getByText("Live data paused, retrying").first()).toBeVisible();
     const rows = page.locator("tr[data-deal]");
@@ -40,7 +40,7 @@ test("scanner stopped: 'Live data paused, retrying', deals greyed out, nothing c
   } finally {
     await q("delete from terminal.worker_heartbeats where job = 'e2e:pause'");
     await q("update terminal.worker_heartbeats set last_run_at = now(), ok = true, error = null where job like 'scan:%'");
-    await q("update terminal.opportunities set last_seen_at = now()");
+    await q("update terminal.opportunities set last_seen_at = now() where active");
   }
   await page.reload();
   await expect(page.getByText("Live data paused, retrying")).toHaveCount(0);

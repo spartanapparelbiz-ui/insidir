@@ -65,7 +65,8 @@ export default async function TerminalPage() {
         ) : null}
         <LiveFeed initialRows={rows} initialNow={now} initialStatus={status} plan={viewer.plan} maxRows={ent.maxRows} unlockHref={unlock} unlockLabel={UNLOCK}
           venues={allowedVenues(viewer.region, fv.venues)} medianGapMin={stats.medianGapMin} soundOnGreen={Boolean(user?.settings.soundOnGreen)}
-          totals={totals} missedToday={missed} todayStart={todayStart} filtered={filtered} />
+          totals={totals} missedToday={missed} todayStart={todayStart} filtered={filtered} tips={!(user && !user.onboarded)}
+          alertsOn={Boolean(user && (user.settings.alertPush || user.settings.alertEmail))} />
         {user && !user.onboarded ? (
           <Onboarding paid={paid} vapidKey={vapidPublicKey()} email={user.email} unlockHref={unlock}
             initial={{ categories: user.settings.categories, minRoiPct: Math.round(user.settings.minRoi * 10_000) / 100, minSizeUsd: user.settings.minSizeUsd,
