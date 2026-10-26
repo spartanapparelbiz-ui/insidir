@@ -11,6 +11,7 @@
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
+import { appendAll } from "@/lib/exchanges/venue";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -39,7 +40,8 @@ export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
 export const DIGEST_CHECK_MS = 10 * 60_000;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 300);
 
 interface State { universe: Universe; lastFull: number; hot: Set<string>; lastTickAt: Map<string, number> }
 
@@ -50,7 +52,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
       const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      markets.push(...m); events.push(...e); byVenue.set(venue, m);
+      appendAll(markets, m); appendAll(events, e); byVenue.set(venue, m);
       await saveMarkets(db, m);
       log(`sweep ${venue}: ${m.length} markets, ${e.length} events`);
     } catch (e) {
@@ -58,8 +60,8 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
       await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);
       // Keep the venue's last known markets so a blip doesn't drop its deals.
       const prev = state.universe.markets.filter(x => x.venue === venue);
-      markets.push(...prev); byVenue.set(venue, prev);
-      events.push(...state.universe.events.filter(x => x.venue === venue));
+      appendAll(markets, prev); byVenue.set(venue, prev);
+      appendAll(events, state.universe.events.filter(x => x.venue === venue));
     }
   }
   const kalshi = byVenue.get("kalshi") ?? [];
@@ -73,7 +75,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
     const list = byVenue.get(other) ?? [];
     if (!kalshi.length || !list.length) continue;
     const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    pairs.push(...p);
+    appendAll(pairs, p);
     log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
   }
   await savePairs(db, pairs);

@@ -62,7 +62,7 @@ export const CHECKS: Check[] = [
     name: "Polymarket Gamma GET /markets", url: () => `${g}/markets?closed=false&active=true&limit=20&order=volume24hr&ascending=false`,
     fields: ["[].id:string", "[].question:string", "[].conditionId:string", "[].clobTokenIds:string", "[].outcomes:string", "[].endDate:string", "[].active:boolean", "[].closed:boolean"],
   },
-  { name: "Polymarket Gamma GET /events", url: () => `${g}/events?closed=false&active=true&limit=20`, fields: ["[].id:string", "[].title:string", "[].markets:array", "[].markets[].conditionId:string"] },
+  { name: "Polymarket Gamma GET /events/keyset", url: () => `${g}/events/keyset?closed=false&active=true&limit=20`, fields: ["events:array", "next_cursor:string", "events[].id:string", "events[].title:string", "events[].markets:array", "events[].markets[].conditionId:string"] },
   {
     name: "Polymarket CLOB POST /books", method: "POST", url: () => `${c}/books`, body: () => [{ token_id: ctx.tokenId ?? "" }],
     fields: ["[].asset_id:string", "[].bids:array", "[].asks:array", "[].hash:string"],

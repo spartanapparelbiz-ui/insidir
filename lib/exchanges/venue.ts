@@ -72,3 +72,10 @@ export function chunk<T>(xs: readonly T[], n: number): T[][] {
   for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
   return out;
 }
+
+/** Appends without spreading into a call: `a.push(...b)` passes every item as an argument and throws
+ *  "Maximum call stack size exceeded" past ~100k items (Kalshi lists over 130,000 open markets). */
+export function appendAll<T>(target: T[], items: Iterable<T>): T[] {
+  for (const x of items) target.push(x);
+  return target;
+}
