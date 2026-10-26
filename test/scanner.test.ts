@@ -46,4 +46,14 @@ describe("scan", () => {
     const blocked = { ...u, pairs: [pair(k, p, { blocked: true })] };
     expect(marketsToBook(blocked).get("polymarket")).toBeUndefined();
   });
+
+  it("with ladders off (the worker's default) no ladder runs and its books aren't fetched", () => {
+    const books = new Map([[key("kalshi", "LO"), book({ yesAsks: [L(0.4, 20)], noAsks: [L(0.65, 20)] })], [key("kalshi", "HI"), book({ yesAsks: [L(0.55, 20)], noAsks: [L(0.5, 20)] })]]);
+    expect(scan(u, books, NOW).counts.ladder).toBe(1);
+    const { opps, counts } = scan(u, books, NOW, { ladders: false });
+    expect(counts.ladder).toBe(0);
+    expect(opps.some(o => o.kind === "ladder")).toBe(false);
+    const on = [...marketsToBook(u).values()].flat().length, off = [...marketsToBook(u, { ladders: false }).values()].flat().length;
+    expect(off).toBeLessThanOrEqual(on);
+  });
 });

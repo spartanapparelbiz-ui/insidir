@@ -21,7 +21,7 @@ import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
 import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
-import { marketsToBook, scan, type Universe } from "@/lib/scanner";
+import { marketsToBook, scan, type Universe, ladderEngineOn } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { pct, usd } from "@/lib/format";
 import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
@@ -88,7 +88,7 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   const db = getDb();
   const now = Date.now();
   const full = now - state.lastFull >= FULL_SCAN_MS;
-  const need = marketsToBook(state.universe);
+  const need = marketsToBook(state.universe, { ladders: ladderEngineOn(process.env) });
   const books = new Map<string, Book>();
   for (const [venue, list] of need) {
     const targets = full ? list : list.filter(m => state.hot.has(marketKey(m.venue, m.id)));
@@ -104,7 +104,7 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   }
   if (full) state.lastFull = now;
   if (!books.size) return;
-  const { opps, counts, nearMisses } = scan(state.universe, books, now);
+  const { opps, counts, nearMisses } = scan(state.universe, books, now, { ladders: ladderEngineOn(process.env) });
   const fresh = await saveOpportunities(db, opps, new Date(now), state.lastTickAt);
   await saveNearMisses(db, nearMisses);
   const dropped = full ? await deactivateStale(db, new Date(now)) : 0;
