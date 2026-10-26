@@ -126,6 +126,17 @@ export const opportunities = terminal.table("opportunities", {
   active: boolean("active").notNull().default(true),
 }, t => [index("opps_active_idx").on(t.active, t.profitPerDay)]);
 
+/** Deals held back as too good to be true, or from pairs whose rules differ (lib/quarantine.ts). Never shown to
+ *  users, never alerted, never in the public log: only on /admin for review. */
+export const quarantinedDeals = terminal.table("quarantined_deals", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  data: jsonb("data").$type<Opportunity>().notNull(),
+  reasons: jsonb("reasons").$type<string[]>().notNull(),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("quarantine_seen_idx").on(t.lastSeenAt)]);
+
 /** The public log: every opportunity as it was at detection, and how it settled. */
 export const receipts = terminal.table("receipts", {
   id: serial("id").primaryKey(),

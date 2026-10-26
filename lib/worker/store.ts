@@ -1,9 +1,10 @@
 /* The worker's database side: match cache, LLM spend, overrides, markets and pairs, opportunities and receipts,
  * heartbeats, whales and alert bookkeeping. */
-import { and, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, quarantinedDeals, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
+import { hiddenKinds } from "@/lib/flags";
 import type { AlertUser } from "@/lib/alerts/fanout";
 import type { MatchCache, MatchDecision } from "@/lib/matching/cache";
 import type { LlmUsageStore } from "@/lib/matching/llm";
@@ -102,6 +103,27 @@ export async function saveOpportunities(db: Db, opps: readonly Opportunity[], no
   return fresh.map(o => o.id);
 }
 
+/** Stores quarantined deals (never in opportunities or receipts) and switches off any live copy a scan showed before
+ *  it crossed a limit. Returns the ids seen for the first time. */
+export async function saveQuarantined(db: Db, list: ReadonlyArray<{ opp: Opportunity; reasons: string[] }>, now: Date): Promise<string[]> {
+  if (!list.length) return [];
+  const ids = list.map(q => q.opp.id);
+  const existing = new Set((await db.select({ id: quarantinedDeals.id }).from(quarantinedDeals).where(inArray(quarantinedDeals.id, ids))).map(r => r.id));
+  for (let i = 0; i < list.length; i += 200) {
+    const chunk = list.slice(i, i + 200);
+    await db.insert(quarantinedDeals).values(chunk.map(q => ({ id: q.opp.id, kind: q.opp.kind, data: q.opp, reasons: q.reasons, firstSeenAt: now, lastSeenAt: now })))
+      .onConflictDoUpdate({ target: quarantinedDeals.id, set: { data: sql`excluded.data`, reasons: sql`excluded.reasons`, lastSeenAt: now } });
+  }
+  await db.update(opportunities).set({ active: false }).where(and(eq(opportunities.active, true), inArray(opportunities.id, ids)));
+  return ids.filter(id => !existing.has(id));
+}
+
+/** Switches off every live deal of these kinds (a disabled engine's leftovers). */
+export async function deactivateKinds(db: Db, kinds: readonly string[]): Promise<number> {
+  if (!kinds.length) return 0;
+  return (await db.update(opportunities).set({ active: false }).where(and(eq(opportunities.active, true), inArray(opportunities.kind, [...kinds]))).returning({ id: opportunities.id })).length;
+}
+
 /** Deals not re-found recently are no longer live; each one gets a live "deal closed" event with how long it lasted. */
 export async function deactivateStale(db: Db, now: Date): Promise<number> {
   const res = await db.update(opportunities).set({ active: false })
@@ -138,7 +160,8 @@ export async function saveWhales(db: Db, trades: readonly WhaleTrade[]): Promise
 
 /** Active deals first seen within the alert window, with their first-seen time. */
 export async function alertableDeals(db: Db, since: Date): Promise<Array<{ opp: Opportunity; firstSeenAt: number; active: boolean }>> {
-  const rows = await db.select().from(opportunities).where(and(eq(opportunities.active, true), gte(opportunities.firstSeenAt, since)));
+  const hidden = hiddenKinds();
+  const rows = await db.select().from(opportunities).where(and(eq(opportunities.active, true), gte(opportunities.firstSeenAt, since), hidden.length ? notInArray(opportunities.kind, hidden) : undefined));
   return rows.map(r => ({ opp: r.data, firstSeenAt: r.firstSeenAt.getTime(), active: r.active }));
 }
 

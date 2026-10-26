@@ -38,7 +38,7 @@ describe("extractRuleFacts", () => {
 
 describe("assessSafety", () => {
   it("GREEN: same event, same date, same rules", () => {
-    expect(assessSafety(kNflKc, pNfl, { inverted: false })).toEqual({ safety: "green", notes: [] });
+    expect(assessSafety(kNflKc, pNfl, { inverted: false })).toEqual({ safety: "green", notes: [], mismatch: [] });
     expect(assessSafety(kNewsom, pNewsom, { inverted: false }).safety).toBe("green");
   });
   it("YELLOW: Kalshi counts overtime, Polymarket's rules don't mention it", () => {
@@ -50,6 +50,7 @@ describe("assessSafety", () => {
     const s = assessSafety(kWx60, pWx60, { inverted: false });
     expect(s.safety).toBe("yellow");
     expect(s.notes).toContain("Different resolution sources: NWS/NOAA vs Weather Underground");
+    expect(s.mismatch).toEqual(["source"]);
   });
   it("YELLOW: AP vs official results, and the boundary of a threshold", () => {
     const a = mk("kalshi", "a", { title: "Will Smith win the Ohio Senate race in 2026?", rules: "Resolves per the Associated Press race call." });
@@ -57,6 +58,7 @@ describe("assessSafety", () => {
     expect(assessSafety(a, b, { inverted: false }).notes).toContain("Different resolution sources: AP vs official results");
     const btc = assessSafety(kBtc100, pBtc100, { inverted: false });
     expect(btc.safety).toBe("yellow");
+    expect(btc.mismatch).toContain("threshold");
     expect(btc.notes.join(" | ")).toMatch(/Boundary differs: Kalshi counts exactly \$100,000 as YES; Polymarket counts exactly \$100,000 as NO/);
   });
   it("YELLOW: closes hours apart; postponement clauses differ", () => {
@@ -66,6 +68,19 @@ describe("assessSafety", () => {
     expect(s.safety).toBe("yellow");
     expect(s.notes).toContain("Closes 6 hours apart");
     expect(s.notes).toContain("If the event is postponed or cancelled: Kalshi resolves No; Polymarket resolves 50-50");
+  });
+  it("RED: a tie is its own outcome, so buying both teams across venues is not a lock", () => {
+    // From a live pair: Kalshi MIL first-5 YES with Polymarket TB first-5 YES, treated as inverted.
+    const k = mk("kalshi", "KXMLBF5-MIL", { title: "Milwaukee first 5 innings winner", category: "sports", yesLabel: "Milwaukee",
+      rules: 'If Milwaukee wins the first 5 innings of the Milwaukee vs Tampa Bay game, then the market resolves to Yes. If the score at the end of the first 5 innings is tied, the "Tie" strike will resolve to Yes and all team strikes will resolve to No.' });
+    const p = mk("polymarket", "pm-tb", { title: "Tampa Bay Rays winning after 5 innings?", category: "sports", yesLabel: "Tampa Bay Rays",
+      rules: 'This market will resolve to "Tampa Bay Rays" if the Tampa Bay Rays is winning the game at the conclusion of the 5th inning. If the game is tied at the conclusion of the 5th inning, this market will resolve to "Draw".' });
+    const s = assessSafety(k, p, { inverted: true });
+    expect(s.safety).toBe("red");
+    expect(s.mismatch).toContain("tie");
+    expect(s.notes.some(n => n.startsWith("A tie is its own outcome"))).toBe(true);
+    // The same team on both venues loses together on a tie: no problem there.
+    expect(assessSafety(k, { ...p, yesLabel: "Milwaukee Brewers" }, { inverted: false }).mismatch).not.toContain("tie");
   });
   it("tie clauses compare through the inversion", () => {
     const a = mk("kalshi", "a", { title: "Chiefs vs Bills", category: "sports", yesLabel: "Chiefs", rules: "If the game ends in a tie, the market resolves to No." });
@@ -80,6 +95,7 @@ describe("assessSafety", () => {
     const s = assessSafety(a, b, { inverted: false });
     expect(s.safety).toBe("red");
     expect(s.notes[0]).toBe("Different dates: Kalshi Nov 5, 2026; Polymarket Nov 6, 2026");
+    expect(s.mismatch).toContain("date");
   });
   it("RED: different thresholds, teams, or overtime rules that conflict", () => {
     const a = mk("kalshi", "a", { title: "Will Bitcoin be above $100,000 on Nov 5?" });
@@ -98,9 +114,10 @@ describe("assessSafety", () => {
     const s = assessSafety(a, b, { inverted: false });
     expect(s.safety).toBe("red");
     expect(s.notes.join(" ")).toMatch(/Measured at different times: Kalshi uses 5:00 PM ET, Polymarket uses 12:00 PM ET/);
+    expect(s.mismatch).toContain("date");
   });
   it("merges the LLM's differences (and they make a GREEN pair YELLOW)", () => {
     const s = assessSafety(kNflKc, pNfl, { inverted: false, llmDifferences: ["Polymarket settles on the official box score", "  ", "Polymarket settles on the official box score"] });
-    expect(s).toEqual({ safety: "yellow", notes: ["Polymarket settles on the official box score"] });
+    expect(s).toEqual({ safety: "yellow", notes: ["Polymarket settles on the official box score"], mismatch: [] });
   });
 });

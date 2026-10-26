@@ -425,7 +425,9 @@ export interface Candidate {
   pb: MarketProfile;
 }
 
-interface Index {
+/** Blocking index over B profiles: key@day and key → positions in `pbs`. */
+export interface CandidateIndex {
+  pbs: readonly MarketProfile[];
   bucketed: Map<string, number[]>;
   all: Map<string, number[]>;
 }
@@ -436,17 +438,82 @@ function push(map: Map<string, number[]>, k: string, i: number): void {
   else map.set(k, [i]);
 }
 
-/** Rare title words as blocking keys, for markets the alias tables know nothing about. */
-function addRareTokenKeys(profiles: MarketProfile[]): void {
+/** Rare title words as blocking keys, for markets the alias tables know nothing about: per profile, the `tok:` keys
+ *  its rarest words give across this corpus (document frequency 2..RARE_TOKEN_MAX_DF). */
+export function rareTokenKeys(profiles: readonly MarketProfile[]): string[][] {
   const df = new Map<string, number>();
   for (const p of profiles) for (const t of new Set(p.e.tokens)) df.set(t, (df.get(t) ?? 0) + 1);
-  for (const p of profiles) {
-    const rare = [...new Set(p.e.tokens)]
-      .filter(t => t.length >= RARE_TOKEN_MIN_LEN && !/^\d/.test(t) && (df.get(t) ?? 0) <= RARE_TOKEN_MAX_DF && (df.get(t) ?? 0) >= 2)
-      .sort((x, y) => (df.get(x) ?? 0) - (df.get(y) ?? 0) || (x < y ? -1 : 1))
-      .slice(0, RARE_TOKENS_PER_MARKET);
-    for (const t of rare) p.blockKeys.push(`tok:${t}`);
+  return profiles.map(p => [...new Set(p.e.tokens)]
+    .filter(t => t.length >= RARE_TOKEN_MIN_LEN && !/^\d/.test(t) && (df.get(t) ?? 0) <= RARE_TOKEN_MAX_DF && (df.get(t) ?? 0) >= 2)
+    .sort((x, y) => (df.get(x) ?? 0) - (df.get(y) ?? 0) || (x < y ? -1 : 1))
+    .slice(0, RARE_TOKENS_PER_MARKET)
+    .map(t => `tok:${t}`));
+}
+
+/** `keys[i]` are the full blocking keys of `pbs[i]` (its own plus its rare-token keys). */
+export function buildCandidateIndex(pbs: readonly MarketProfile[], keys: readonly (readonly string[])[]): CandidateIndex {
+  const idx: CandidateIndex = { pbs, bucketed: new Map(), all: new Map() };
+  pbs.forEach((p, i) => {
+    const day = p.m.closeTime === null ? "n" : String(Math.floor(p.m.closeTime / DAY_MS));
+    for (const k of keys[i] ?? []) {
+      push(idx.bucketed, `${k}@${day}`, i);
+      push(idx.all, k, i);
+    }
+  });
+  return idx;
+}
+
+/** The best scored candidates for one A market (with its full blocking keys) against the index. */
+export function candidatesFor(pa: MarketProfile, keys: readonly string[], idx: CandidateIndex, cfg: MatchConfig): Candidate[] {
+  const { pbs } = idx;
+  const window = Math.ceil(cfg.maxCloseGapHours / 24);
+  const lists: number[][] = [];
+  for (const k of keys) {
+    if (pa.m.closeTime === null) {
+      const l = idx.all.get(k);
+      if (l && l.length <= MAX_POSTING) lists.push(l);
+      continue;
+    }
+    const day = Math.floor(pa.m.closeTime / DAY_MS);
+    for (let d = day - window; d <= day + window; d++) {
+      const l = idx.bucketed.get(`${k}@${d}`);
+      if (l && l.length <= MAX_POSTING) lists.push(l);
+    }
+    const ln = idx.bucketed.get(`${k}@n`);
+    if (ln && ln.length <= MAX_POSTING) lists.push(ln);
   }
+  const shared = new Map<number, number>();
+  for (const l of lists) for (const i of l) shared.set(i, (shared.get(i) ?? 0) + 1);
+  // Pre-rank by shared blocking keys, then close-time proximity, and score only the best few.
+  const gap = (i: number) => {
+    const cb = pbs[i]?.m.closeTime ?? null;
+    return pa.m.closeTime === null || cb === null ? cfg.maxCloseGapHours * HOUR_MS : Math.abs(pa.m.closeTime - cb);
+  };
+  const pool = [...shared.keys()].filter(i => gap(i) <= cfg.maxCloseGapHours * HOUR_MS);
+  const ranked = pool.length <= MAX_SCORED_PER_MARKET ? pool : pool.sort((x, y) => (shared.get(y) ?? 0) - (shared.get(x) ?? 0) || gap(x) - gap(y) || x - y).slice(0, MAX_SCORED_PER_MARKET);
+  const scored: Array<{ c: Candidate; raw: number }> = [];
+  for (const i of ranked) {
+    const pb = pbs[i];
+    if (!pb) continue;
+    const s = scorePair(pa, pb, cfg);
+    const c: Candidate = {
+      key: pairKey(pa.m, pb.m),
+      a: pa.m,
+      b: pb.m,
+      score: s.score,
+      orientation: s.orientation,
+      decision: decide(s, cfg),
+      reasons: s.reasons,
+      conflicts: s.conflicts,
+      caps: s.caps,
+      pa,
+      pb,
+    };
+    // Similarity before conflicts ranks near misses (kept, so their rejections are cached and explainable).
+    scored.push({ c, raw: W_ENTITY * s.entity + W_TOKENS * s.tokens });
+  }
+  scored.sort((x, y) => y.c.score - x.c.score || y.raw - x.raw || (x.c.key < y.c.key ? -1 : 1));
+  return scored.slice(0, cfg.maxCandidatesPerMarket).map(x => x.c);
 }
 
 /** All scored candidates between `as` (e.g. Kalshi) and `bs` (e.g. Polymarket), best first per A market. */
@@ -457,65 +524,10 @@ export function findCandidates(as: readonly VMarket[], bs: readonly VMarket[], c
 }
 
 export function candidatesFromProfiles(pas: MarketProfile[], pbs: MarketProfile[], cfg: MatchConfig): Candidate[] {
-  addRareTokenKeys([...pas, ...pbs]);
-  const idx: Index = { bucketed: new Map(), all: new Map() };
-  pbs.forEach((p, i) => {
-    const day = p.m.closeTime === null ? "n" : String(Math.floor(p.m.closeTime / DAY_MS));
-    for (const k of p.blockKeys) {
-      push(idx.bucketed, `${k}@${day}`, i);
-      push(idx.all, k, i);
-    }
-  });
-  const window = Math.ceil(cfg.maxCloseGapHours / 24);
+  const rare = rareTokenKeys([...pas, ...pbs]);
+  const full = (p: MarketProfile, i: number) => [...p.blockKeys, ...(rare[i] ?? [])];
+  const idx = buildCandidateIndex(pbs, pbs.map((p, i) => full(p, pas.length + i)));
   const out: Candidate[] = [];
-  for (const pa of pas) {
-    const lists: number[][] = [];
-    for (const k of pa.blockKeys) {
-      if (pa.m.closeTime === null) {
-        const l = idx.all.get(k);
-        if (l && l.length <= MAX_POSTING) lists.push(l);
-        continue;
-      }
-      const day = Math.floor(pa.m.closeTime / DAY_MS);
-      for (let d = day - window; d <= day + window; d++) {
-        const l = idx.bucketed.get(`${k}@${d}`);
-        if (l && l.length <= MAX_POSTING) lists.push(l);
-      }
-      const ln = idx.bucketed.get(`${k}@n`);
-      if (ln && ln.length <= MAX_POSTING) lists.push(ln);
-    }
-    const shared = new Map<number, number>();
-    for (const l of lists) for (const i of l) shared.set(i, (shared.get(i) ?? 0) + 1);
-    // Pre-rank by shared blocking keys, then close-time proximity, and score only the best few.
-    const gap = (i: number) => {
-      const cb = pbs[i]?.m.closeTime ?? null;
-      return pa.m.closeTime === null || cb === null ? cfg.maxCloseGapHours * HOUR_MS : Math.abs(pa.m.closeTime - cb);
-    };
-    const pool = [...shared.keys()].filter(i => gap(i) <= cfg.maxCloseGapHours * HOUR_MS);
-    const ranked = pool.length <= MAX_SCORED_PER_MARKET ? pool : pool.sort((x, y) => (shared.get(y) ?? 0) - (shared.get(x) ?? 0) || gap(x) - gap(y) || x - y).slice(0, MAX_SCORED_PER_MARKET);
-    const scored: Array<{ c: Candidate; raw: number }> = [];
-    for (const i of ranked) {
-      const pb = pbs[i];
-      if (!pb) continue;
-      const s = scorePair(pa, pb, cfg);
-      const c: Candidate = {
-        key: pairKey(pa.m, pb.m),
-        a: pa.m,
-        b: pb.m,
-        score: s.score,
-        orientation: s.orientation,
-        decision: decide(s, cfg),
-        reasons: s.reasons,
-        conflicts: s.conflicts,
-        caps: s.caps,
-        pa,
-        pb,
-      };
-      // Similarity before conflicts ranks near misses (kept, so their rejections are cached and explainable).
-      scored.push({ c, raw: W_ENTITY * s.entity + W_TOKENS * s.tokens });
-    }
-    scored.sort((x, y) => y.c.score - x.c.score || y.raw - x.raw || (x.c.key < y.c.key ? -1 : 1));
-    for (const { c } of scored.slice(0, cfg.maxCandidatesPerMarket)) out.push(c);
-  }
+  pas.forEach((pa, i) => { for (const c of candidatesFor(pa, full(pa, i), idx, cfg)) out.push(c); });
   return out;
 }
