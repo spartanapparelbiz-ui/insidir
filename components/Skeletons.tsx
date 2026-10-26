@@ -1,6 +1,8 @@
 /* Loading states in the shape of the real page (app/<route>/loading.tsx), so nothing jumps when the content lands:
  * the black bar with the logo, a serif-sized title, chips, and move cards / profile tiles / list rows as grey bars.
- * Never a blank screen or a spinner. One status line for screen readers. */
+ * Never a blank screen or a spinner. One status line for screen readers.
+ * Not on /top and /results: their filters are links to the same page, and a route-level loading boundary makes
+ * Next drop those navigations; there the current page stays on screen until the filtered one is ready. */
 import { SkeletonLine } from "@/components/ui/Skeleton";
 import { Wordmark } from "@/components/Wordmark";
 

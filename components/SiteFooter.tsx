@@ -17,11 +17,12 @@ export function SiteFooter() {
           <p><a className="link" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
         </div>
         <nav className="foot__links" aria-label="Footer">
-          <Link href="/results">Results</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/about">About</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/privacy">Privacy</Link>
+          {/* No prefetch: five dynamic pages rendered on every page view would slow the tap the visitor makes. */}
+          <Link href="/results" prefetch={false}>Results</Link>
+          <Link href="/pricing" prefetch={false}>Pricing</Link>
+          <Link href="/about" prefetch={false}>About</Link>
+          <Link href="/terms" prefetch={false}>Terms</Link>
+          <Link href="/privacy" prefetch={false}>Privacy</Link>
         </nav>
         <p className="foot__legal">{FOOTER}</p>
         <p className="foot__credits">Photos on Unsplash by{" "}

@@ -290,5 +290,6 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
 
 if (process.argv[1]?.endsWith("worker/index.ts")) {
   const runFor = Number(process.env.WORKER_RUN_FOR_MS) || undefined;
-  main({ runForMs: runFor }).catch(e => { console.error(e); process.exit(1); });
+  // A timed run (WORKER_RUN_FOR_MS) ends when its time is up, even with source requests still retrying.
+  main({ runForMs: runFor }).then(() => { if (runFor) process.exit(0); }, e => { console.error(e); process.exit(1); });
 }

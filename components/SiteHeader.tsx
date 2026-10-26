@@ -31,7 +31,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
   const at = current ? (SECTION[current] ?? current) : undefined;
   const paid = plan === "insidir" || plan === "pro";
   const link = (href: string, label: string, section = href) => (
-    <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
+    <Link key={href} href={href} prefetch={false} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   const links = signedIn
     ? [link("/feed", "Feed"), link("/top", "Top traders"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
@@ -54,7 +54,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">
           {[["/feed", "Feed", "/feed"], ["/top", "Top", "/top"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
-            <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
+            <Link key={href} href={href!} prefetch={false} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>
             </Link>

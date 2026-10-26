@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The home hero's photos (app/page.tsx, components/home/HeroPhotos.tsx). From the six Unsplash originals in
+# The home hero's photos (app/page.tsx, components/home/Hero.tsx). From the six Unsplash originals in
 # public/hero/1.jpg … 6.jpg it writes, per photo, a desktop crop (16:9, 1600×900) and a mobile crop (2:3, 828×1242)
 # that keeps the person in frame, each as AVIF and WebP, black and white with high contrast and light grain.
 # Needs ImageMagick 6 (convert) and ffmpeg with libaom-av1. Run from the repo root: bash scripts/hero-photos.sh

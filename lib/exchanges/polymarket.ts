@@ -443,24 +443,25 @@ export interface PolymarketActivity {
 export function readActivity(raw: unknown): PolymarketActivity[] {
   const out: PolymarketActivity[] = [];
   for (const a of rows(raw)) {
-    const wallet = str(a.proxyWallet) ?? str(a.user);
+    // /activity rows are camelCase; /v2/activity rows are snake_case (since 2026-10).
+    const wallet = str(a.proxyWallet) ?? str(a.proxy_wallet) ?? str(a.user);
     const timestamp = epochMs(a.timestamp);
     if (!wallet || timestamp === null) continue;
     out.push({
       wallet,
       timestamp,
       type: str(a.type)?.toUpperCase() ?? "UNKNOWN",
-      conditionId: str(a.conditionId),
-      tokenId: str(a.asset),
+      conditionId: str(a.conditionId) ?? str(a.condition_id),
+      tokenId: str(a.asset) ?? str(a.token_id),
       side: tradeSide(a.side),
       size: num(a.size),
-      usdcSize: num(a.usdcSize),
+      usdcSize: num(a.usdcSize) ?? num(a.usdc_size),
       price: num(a.price),
       outcome: str(a.outcome),
-      outcomeIndex: num(a.outcomeIndex),
+      outcomeIndex: num(a.outcomeIndex) ?? num(a.outcome_index),
       title: str(a.title),
-      txHash: str(a.transactionHash),
-      url: polymarketUrl(str(a.eventSlug), str(a.slug)),
+      txHash: str(a.transactionHash) ?? str(a.transaction_hash),
+      url: polymarketUrl(str(a.eventSlug) ?? str(a.event_slug), str(a.slug)),
     });
   }
   return out;
@@ -703,31 +704,35 @@ export class PolymarketClient implements VenueClient {
     return this.data.json(`${this.dataUrl}/v1/leaderboard${qs(params)}`, { priority: opts.priority ?? "normal" });
   }
 
-  /** A wallet's history, newest first (GET /v2/activity, falling back to /activity if /v2 is gone). */
+  /** A wallet's history, newest first. GET /v2/activity pages by cursor ({data, pagination: {has_more, next_cursor}};
+   *  it rejects `offset` with a 400); if /v2 is gone (404) or refuses the request, the classic /activity, paged by
+   *  offset. */
   async getActivity(user: string, opts: { type?: string; start?: number; end?: number; maxPages?: number; limit?: number; priority?: Priority } = {}): Promise<PolymarketActivity[]> {
     const out: PolymarketActivity[] = [];
-    let path = "/v2/activity";
     const maxPages = opts.maxPages ?? DATA_MAX_PAGES;
+    const limit = opts.limit ?? DATA_PAGE_LIMIT;
+    const base = {
+      user, limit, type: opts.type,
+      start: opts.start !== undefined ? Math.floor(opts.start / 1000) : undefined,
+      end: opts.end !== undefined ? Math.floor(opts.end / 1000) : undefined,
+      sortBy: "TIMESTAMP", sortDirection: "DESC",
+    };
+    let v2 = true;
+    let cursor: string | undefined;
     for (let page = 0; page < maxPages; page++) {
-      const limit = opts.limit ?? DATA_PAGE_LIMIT;
-      const params = {
-        user,
-        limit,
-        offset: page * limit,
-        type: opts.type,
-        start: opts.start !== undefined ? Math.floor(opts.start / 1000) : undefined,
-        end: opts.end !== undefined ? Math.floor(opts.end / 1000) : undefined,
-        sortBy: "TIMESTAMP",
-        sortDirection: "DESC",
-      };
-      let raw = await this.data.json(`${this.dataUrl}${path}${qs(params)}`, { priority: opts.priority });
-      if (raw === null && path === "/v2/activity" && page === 0) {
-        path = "/activity";
-        raw = await this.data.json(`${this.dataUrl}${path}${qs(params)}`, { priority: opts.priority });
+      let raw: unknown = null;
+      if (v2) {
+        try { raw = await this.data.json(`${this.dataUrl}/v2/activity${qs({ ...base, cursor })}`, { priority: opts.priority }); }
+        catch (e) { if (page > 0) throw e; raw = null; }
+        if (raw === null && page === 0) v2 = false;
       }
-      const got = readActivity(raw);
-      out.push(...got);
-      if (rows(raw).length < (opts.limit ?? DATA_PAGE_LIMIT)) break;
+      if (!v2) raw = await this.data.json(`${this.dataUrl}/activity${qs({ ...base, offset: page * limit })}`, { priority: opts.priority });
+      out.push(...readActivity(raw));
+      if (v2) {
+        const p = (raw as { pagination?: { has_more?: unknown; next_cursor?: unknown } } | null)?.pagination;
+        cursor = typeof p?.next_cursor === "string" && p.next_cursor ? p.next_cursor : undefined;
+        if (p?.has_more !== true || !cursor) break;
+      } else if (rows(raw).length < limit) break;
     }
     return out;
   }

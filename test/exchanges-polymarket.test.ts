@@ -212,6 +212,20 @@ describe("Data API", () => {
     expect(act[0]).toMatchObject({ type: "TRADE", side: "BUY", size: 10, usdcSize: 4, price: 0.4, timestamp: 1730000000000 });
   });
 
+  it("reads /v2/activity's snake_case rows and pages by cursor, never by offset (v2 rejects offset with a 400)", async () => {
+    const row = (ts: number) => ({ proxy_wallet: "0xw", timestamp: ts, condition_id: "0xc", type: "TRADE", side: "BUY", size: 10, usdc_size: 4, price: 0.4, outcome_index: 1, transaction_hash: "0xt", event_slug: "e", slug: "m" });
+    const { http, calls } = testHttp(url => {
+      const cursor = new URL(url).searchParams.get("cursor");
+      return { body: { data: [row(cursor ? 1 : 2)], pagination: { has_more: !cursor, next_cursor: cursor ? null : "abc" } } };
+    });
+    const client = new PolymarketClient({ data: http });
+    const got = await client.getActivity("0xw", { type: "TRADE", limit: 1, maxPages: 5 });
+    expect(got.map(a => a.timestamp)).toEqual([2000, 1000]);
+    expect(got[0]).toMatchObject({ conditionId: "0xc", usdcSize: 4, outcomeIndex: 1, txHash: "0xt", url: "https://polymarket.com/event/e/m" });
+    expect(calls.map(c => new URL(c.url).searchParams.has("offset"))).toEqual([false, false]);
+    expect(new URL(calls[1]!.url).searchParams.get("cursor")).toBe("abc");
+  });
+
   it("falls back from /v2/activity to /activity", async () => {
     const { http, calls } = testHttp(url => (url.includes("/v2/activity") ? { status: 404 } : { body: [{ proxyWallet: "0xw", timestamp: 1, type: "REDEEM" }] }));
     const client = new PolymarketClient({ gamma: http, clob: http, data: http, dataUrl: "https://data.test" });
