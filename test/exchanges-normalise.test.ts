@@ -63,3 +63,12 @@ describe("defensive readers", () => {
     expect(epochMs("2025-01-01T00:00:00Z")).toBe(Date.UTC(2025, 0, 1));
   });
 });
+
+describe("appendAll", () => {
+  it("appends more items than a spread call can take", async () => {
+    const { appendAll } = await import("@/lib/exchanges/venue");
+    const big = Array.from({ length: 300_000 }, (_, i) => i);
+    expect(() => [].push(...(big as never[]))).toThrow(RangeError);
+    expect(appendAll([-1], big)).toHaveLength(300_001);
+  });
+});

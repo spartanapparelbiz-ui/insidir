@@ -238,6 +238,7 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     active: status === undefined || TRADING_STATUSES.has(status),
     result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
+    openInterest: num(pick(m, "open_interest_fp", "open_interest")),
   };
 }
 

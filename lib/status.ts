@@ -34,3 +34,48 @@ export async function dataStatus(now = Date.now()): Promise<DataStatus> {
     return statusFrom(rows.map(r => ({ job: r.job, lastRunAt: r.lastRunAt.getTime(), ok: r.ok })), now);
   } catch { return { live: false, paused: [], lastScanAt: null }; }
 }
+
+/* ---------- /api/health ---------- */
+
+export interface VenueHealth { lastScanAt: string | null; ageSeconds: number | null; ok: boolean | null; error: string | null; paused: boolean }
+export interface Health {
+  /** The web process is up. Always true here: Railway's health check must not fail when only the worker is down. */
+  ok: true;
+  /** "not_configured": no DATABASE_URL; "unreachable": the query failed (database down, or migrations not applied). */
+  database: "ok" | "not_configured" | "unreachable";
+  live: boolean;
+  /** The latest scan heartbeat per exchange. All null = the worker has never written one to this database. */
+  venues: Record<Venue, VenueHealth>;
+  /** The worker's other jobs (sweep, alerts, whales, settle…): when each last ran and whether it failed. */
+  jobs: Record<string, { lastRunAt: string; ok: boolean; error: string | null }>;
+  checkedAt: string;
+}
+
+const clip = (s: string | null): string | null => (s ? s.slice(0, 200) : null);
+
+export function healthFrom(rows: ReadonlyArray<{ job: string; lastRunAt: number; ok: boolean; error: string | null }>, now: number): Omit<Health, "ok" | "database" | "checkedAt"> {
+  const status = statusFrom(rows, now);
+  const venues = {} as Record<Venue, VenueHealth>;
+  for (const v of ["kalshi", "polymarket", "polymarket_us"] as const) {
+    const b = rows.find(r => r.job === "scan:" + v);
+    venues[v] = b
+      ? { lastScanAt: new Date(b.lastRunAt).toISOString(), ageSeconds: Math.round((now - b.lastRunAt) / 1000), ok: b.ok, error: clip(b.error), paused: status.paused.includes(v) }
+      : { lastScanAt: null, ageSeconds: null, ok: null, error: null, paused: false };
+  }
+  const jobs: Health["jobs"] = {};
+  for (const r of rows) if (!r.job.startsWith("scan:") && !r.job.startsWith("e2e:")) jobs[r.job] = { lastRunAt: new Date(r.lastRunAt).toISOString(), ok: r.ok, error: clip(r.error) };
+  return { live: status.live, venues, jobs };
+}
+
+export async function health(now = Date.now()): Promise<Health> {
+  const checkedAt = new Date(now).toISOString();
+  if (!hasDatabase()) return { ok: true, database: "not_configured", checkedAt, ...healthFrom([], now) };
+  try {
+    const rows = await getDb().select().from(workerHeartbeats);
+    return { ok: true, database: "ok", checkedAt, ...healthFrom(rows.map(r => ({ job: r.job, lastRunAt: r.lastRunAt.getTime(), ok: r.ok, error: r.error })), now) };
+  } catch (e) {
+    // The message can name internal hosts or the database user; it goes to the logs, not to this public endpoint.
+    console.error("health: database query failed:", e instanceof Error ? e.message : e);
+    return { ok: true, database: "unreachable", checkedAt, ...healthFrom([], now) };
+  }
+}

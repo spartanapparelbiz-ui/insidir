@@ -57,4 +57,5 @@ describe("scan", () => {
     const blocked = { ...u, pairs: [pair(k, p, { blocked: true })] };
     expect(marketsToBook(blocked).get("polymarket")).toBeUndefined();
   });
+
 });
