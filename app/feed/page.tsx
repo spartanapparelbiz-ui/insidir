@@ -16,7 +16,7 @@ import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { signedShort } from "@/lib/moves/copy";
 import { getDb, hasDatabase } from "@/lib/db";
-import { isReady } from "@/lib/features";
+import { isReady, liveTabs } from "@/lib/features";
 import { feedFor, feedStatus, type FeedItem, type FeedStatus } from "@/lib/moves/feed";
 import { walletLabel } from "@/lib/moves/records";
 import { followList, topTraders } from "@/lib/moves/store";
@@ -32,7 +32,8 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
   const viewer = await getViewer();
   const jar = await cookies();
   const paid = isPaid(viewer.plan);
-  const tab = sp.tab === "markets" ? "markets" : "sports";
+  const tabs = liveTabs();
+  const tab = sp.tab === "markets" ? "markets" : sp.tab === "stocks" && tabs.includes("stocks") ? "stocks" : "sports";
   // The welcome shows once: after checkout (?welcome=1), or the first time a new paying member opens the feed.
   const welcome = paid && Boolean(viewer.user) && (Boolean(sp.welcome) || !viewer.user!.onboarded);
   let items: FeedItem[] = [], status: FeedStatus | null = null, follows: string[] | null = null, top: TraderRecord[] = [];
@@ -72,7 +73,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
             ) : <p className="welcome__p">Top traders show up here once we have 20 settled markets for them. Tap Follow on any card below in the meantime.</p>}
           </section>
         ) : null}
-        <Feed pill={<LocationPill region={viewer.region} />} initial={items} status={status} initialTab={tab} free={!paid} follows={follows} followsReady={followsReady} trialHref={trial} serverNow={now} />
+        <Feed pill={<LocationPill region={viewer.region} />} initial={items} status={status} initialTab={tab} stocks={tabs.includes("stocks")} free={!paid} follows={follows} followsReady={followsReady} trialHref={trial} serverNow={now} />
       </main>
     </>
   );

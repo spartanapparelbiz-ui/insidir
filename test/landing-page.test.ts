@@ -1,4 +1,4 @@
-/* Source-level checks of the V2 public pages (docs/V2.md §4, §6, §10): section order, copy rules, location rules and
+/* Source-level checks of the V2 public pages (docs/INSIDIR-V2.md §4, §6, §10): section order, copy rules, location rules and
  * the design tokens. No DOM needed. */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";

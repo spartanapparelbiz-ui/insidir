@@ -1,4 +1,4 @@
-/* What each plan gets of the feed (docs/V2.md §8), enforced on the server before anything is sent:
+/* What each plan gets of the feed (docs/INSIDIR-V2.md §8), enforced on the server before anything is sent:
  *   Free: moves 30 minutes late, no records (so nobody is called a top trader), no follows, no alerts.
  *   Insidir: live moves, records, up to 50 follows, push and email alerts, the daily email.
  *   Pro: everything, plus custom alert rules, unlimited follows and Price gaps. */

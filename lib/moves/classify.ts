@@ -1,4 +1,4 @@
-/* Which tab a move belongs to, and its league (docs/V2.md §3). From the venue's normalised category
+/* Which tab a move belongs to, and its league (docs/INSIDIR-V2.md §3). From the venue's normalised category
  * (lib/exchanges/categories) and the event/market words: Polymarket event tags, Kalshi series tickers and titles. */
 import type { League, Tab } from "./types";
 

@@ -1,12 +1,17 @@
-/* The 20-move accuracy check (docs/V2.md §3, §12): picks 20 random stored moves and checks each against the source
+/* The 20-move accuracy check (docs/INSIDIR-V2.md §3, §12): picks 20 random stored moves and checks each against the source
  * API: amount, side, outcome, wallet and time. Prints a table and exits 1 on any mismatch.
  *   DATABASE_URL=... npx tsx scripts/check-moves.ts [--n 20]
+ * Stocks: n more moves from SEC filings: a Form 4 is re-read from EDGAR and its open-market buys summed again; a 13F
+ * add is recomputed from both filings' information tables (needs SEC_USER_AGENT).
  * Polymarket: re-reads the wallet's trades in that market (Data API /trades?user=&market=) and re-merges the fills
  * that make up the move. Kalshi: re-reads the trade (GET /markets/trades?ticker=&min_ts=&max_ts=) by trade id. */
 import { sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
 import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { fromRow } from "@/lib/moves/store";
+import { fundAdds, thirteenFFilings } from "@/lib/stocks/form13f";
+import { readForm4, thirteenFPositions } from "@/lib/stocks/jobs";
+import { SecClient } from "@/lib/stocks/sec";
 import { readKalshiFills, readPolymarketFills } from "@/lib/moves/sources";
 import { MERGE_WINDOW_MS } from "@/lib/moves/detect";
 import type { Move } from "@/lib/moves/types";
@@ -44,20 +49,55 @@ async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket | null
   return errs;
 }
 
+/** Form 4: re-read the filing from EDGAR and rebuild the move; 13F: re-read both filings and recompute the add. */
+async function checkSec(sec: SecClient, m: Move): Promise<string[]> {
+  const d = m.detail;
+  if (!d) return ["no filing detail"];
+  const errs: string[] = [];
+  if (!m.url || !m.url.includes(d.accession)) errs.push("link is not this filing");
+  if (d.kind === "insider") {
+    const again = await readForm4(sec, { accession: d.accession, filerCik: String(Number(d.issuerCik)), formType: "4", publishedAt: null,
+      indexBase: `https://www.sec.gov/Archives/edgar/data/${Number(d.issuerCik)}/${d.accession}/`, sourceUrl: m.url ?? "" });
+    if (!again || again.detail?.kind !== "insider") return [...errs, "no open-market buy of $100k+ in the filing"];
+    if (!near(again.amount, m.amount, 0.01)) errs.push(`amount ${m.amount} vs filing ${again.amount}`);
+    if (again.detail.shares !== d.shares) errs.push(`shares ${d.shares} vs filing ${again.detail.shares}`);
+    if (again.detail.role !== d.role) errs.push(`role ${d.role} vs filing ${again.detail.role}`);
+    if (again.detail.ticker !== d.ticker) errs.push(`ticker ${d.ticker} vs filing ${again.detail.ticker}`);
+    return errs;
+  }
+  const filings = thirteenFFilings(await sec.json(`https://data.sec.gov/submissions/CIK${d.fundCik}.json`), 60);
+  const cur = filings.find(f => f.accession === d.accession), prev = filings.find(f => f.accession === d.prevAccession);
+  if (!cur || !prev) return [...errs, "filing not in the fund's EDGAR list"];
+  const [a, b] = [await thirteenFPositions(sec, d.fundCik, cur), await thirteenFPositions(sec, d.fundCik, prev)];
+  if (!a || !b) return [...errs, "information table missing or incomplete"];
+  const add = fundAdds(b, a, 0).find(x => x.cusip === d.cusip);
+  if (!add) return [...errs, "no add for this company in the filing"];
+  if (!near(add.added, m.amount, 1)) errs.push(`added ${m.amount} vs filing ${add.added}`);
+  if (add.addedShares !== d.addedShares) errs.push(`shares added ${d.addedShares} vs filing ${add.addedShares}`);
+  if (add.newPosition !== d.newPosition) errs.push("new position flag differs");
+  return errs;
+}
+
 async function main() {
   const db = getDb();
-  const rs = await db.execute(sql`select * from terminal.moves order by random() limit ${n}`);
+  // n prediction-market moves and n Stocks moves (SEC filings), each sampled at random.
+  const rs = { rows: [
+    ...(await db.execute(sql`select * from terminal.moves where source <> 'sec' order by random() limit ${n}`)).rows,
+    ...(await db.execute(sql`select * from terminal.moves where source = 'sec' order by random() limit ${n}`)).rows,
+  ] };
   const poly = new PolymarketClient(), kalshi = new KalshiClient();
+  const sec = SecClient.fromEnv();
   let bad = 0;
   for (const r of rs.rows as Array<Record<string, unknown>>) {
     const m = fromRow({
       id: r.id, source: r.source, marketId: r.market_id, eventTitle: r.event_title, marketTitle: r.market_title, outcome: r.outcome,
       outcomeSide: r.outcome_side, amount: r.amount, avgPrice: r.avg_price, wallet: r.wallet, walletName: r.wallet_name, at: new Date(r.at as string),
       lastAt: new Date(r.last_at as string), fills: r.fills, tab: r.tab, league: r.league, category: r.category, url: r.url, result: r.result,
-      settledAt: r.settled_at ? new Date(r.settled_at as string) : null, createdAt: new Date(r.created_at as string),
+      settledAt: r.settled_at ? new Date(r.settled_at as string) : null, detail: r.detail ?? null, createdAt: new Date(r.created_at as string),
     } as never);
     const mk = m.source === "kalshi" ? (await db.execute(sql`select data from terminal.markets where venue = 'kalshi' and id = ${m.marketId}`)).rows[0] as { data: VMarket } | undefined : undefined;
-    const errs = m.source === "polymarket" ? await checkPoly(poly, m) : await checkKalshi(kalshi, m, mk?.data ?? null);
+    const errs = m.source === "sec" ? (sec ? await checkSec(sec, m) : ["SEC_USER_AGENT is not set"])
+      : m.source === "polymarket" ? await checkPoly(poly, m) : await checkKalshi(kalshi, m, mk?.data ?? null);
     if (errs.length) bad++;
     console.log(`${errs.length ? "MISMATCH" : "ok      "}  ${m.source.padEnd(10)} $${m.amount.toFixed(0).padStart(9)}  ${m.outcome.slice(0, 18).padEnd(18)}  ${m.id.slice(0, 40)}  ${errs.join("; ")}`);
   }

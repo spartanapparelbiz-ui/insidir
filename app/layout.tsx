@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
-/** Plus Jakarta Sans for everything (docs/V2.md §10), self-hosted by next/font: no third-party request at runtime. */
+/** Plus Jakarta Sans for everything (docs/INSIDIR-V2.md §10), self-hosted by next/font: no third-party request at runtime. */
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-jakarta", display: "swap" });
 
 export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };

@@ -1,4 +1,4 @@
-/* docs/V2.md §3–§5, §8, §12: move detection, merging, noise filters, records (the 20-market rule), copy, gating per
+/* docs/INSIDIR-V2.md §3–§5, §8, §12: move detection, merging, noise filters, records (the 20-market rule), copy, gating per
  * plan and location rules. */
 import { describe, expect, it } from "vitest";
 import { classify, leagueOf } from "@/lib/moves/classify";

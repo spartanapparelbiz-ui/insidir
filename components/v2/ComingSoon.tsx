@@ -1,5 +1,5 @@
 "use client";
-/* The Coming soon rule (docs/V2.md §2): an item that isn't live is visible but can't be used. It shows one badge
+/* The Coming soon rule (docs/INSIDIR-V2.md §2): an item that isn't live is visible but can't be used. It shows one badge
  * style everywhere (violet tint pill, "Coming soon"), and tapping it opens a small sheet: "Coming soon. Want a
  * heads-up when it's live?" with an email field saved to the waitlist for that feature. */
 import { useEffect, useId, useState, type ReactNode } from "react";

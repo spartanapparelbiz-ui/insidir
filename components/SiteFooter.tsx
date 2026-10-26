@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FOOTER } from "@/lib/copy";
 
-/** Every page's footer (docs/V2.md §6): who builds Insidir, how to reach a person, Terms, Privacy, and the disclaimer. */
+/** Every page's footer (docs/INSIDIR-V2.md §6): who builds Insidir, how to reach a person, Terms, Privacy, and the disclaimer. */
 export const SUPPORT_EMAIL = "hello@aethric.llc";
 
 export function SiteFooter() {

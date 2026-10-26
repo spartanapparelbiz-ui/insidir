@@ -71,8 +71,11 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `*_RATE_PER_SEC` | worker | request budget per bucket |
 | `SWEEP_MS`, `SCAN_MS`, `FULL_SCAN_MS`, `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
 | `LADDERS_ENABLED` | worker | `1` turns threshold ladders on; anything else (production: `0`) leaves them off |
-| `FEATURES_READY` | web + worker | comma list of live V2 features (feed, records, follows, alerts_push, alerts_email, daily_email, custom_rules, price_gaps); anything missing shows "Coming soon" and its worker job stays off. Default `feed,records,follows` |
+| `FEATURES_READY` | web + worker | comma list of live V2 features (feed, records, follows, alerts_push, alerts_email, daily_email, custom_rules, price_gaps); anything missing shows "Coming soon" and its worker job stays off; add `stocks` once the Stocks accuracy check passes. Default `feed,records,follows` |
 | `POSTS_ADMIN_EMAILS` | web | comma list of Whop account emails allowed to open `/admin/posts` |
+| `SEC_USER_AGENT` | worker | name and monitored email for SEC EDGAR requests (required for the Stocks tab's Form 4 and 13F jobs; under 10 requests a second) |
+| `STOCKS_INGEST` | worker | `0` turns the Stocks jobs off (default on when `SEC_USER_AGENT` is set) |
+| `INSIDIR_13F_MANAGER_CIKS` | worker | funds followed for 13F adds, comma-separated CIKs (default: six large managers) |
 
 Kalshi API keys are never asked for or stored. P&L for Kalshi comes from the CSV export the user uploads, which
 is processed and not stored.

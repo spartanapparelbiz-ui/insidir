@@ -1,4 +1,4 @@
-/* Following (docs/V2.md §6): the traders and markets a member follows, the alert switches (push, email) and quiet
+/* Following (docs/INSIDIR-V2.md §6): the traders and markets a member follows, the alert switches (push, email) and quiet
  * hours. Alert switches show Coming soon until alerts are live on production. Free viewers see what following does and
  * the $1 trial. */
 import type { Metadata } from "next";

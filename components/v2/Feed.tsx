@@ -1,5 +1,5 @@
 "use client";
-/* The feed (docs/V2.md §6): tabs (Sports, Markets, Crypto soon, Stocks soon), size chips, league chips on Sports,
+/* The feed (docs/INSIDIR-V2.md §6): tabs (Sports, Markets, Crypto soon, Stocks soon), size chips, league chips on Sports,
  * newest first. It asks /api/moves every 10 seconds; new moves slide in at the top. A status line instead of scary
  * errors: "Live · updated 8s ago", or "Catching up. Showing the latest moves we have." with timestamps. Never "Connection
  * lost", never fake activity. Free viewers see moves 30 minutes late with one upsell card on top. */
@@ -14,8 +14,10 @@ const SIZES = [{ min: 10_000, label: "$10k+" }, { min: 50_000, label: "$50k+" },
 const SPORT_LEAGUES: League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf"];
 const POLL_MS = 10_000;
 
-export function Feed({ pill, initial, status: initialStatus, initialTab, free, follows, followsReady, trialHref, serverNow }: {
+export function Feed({ pill, initial, status: initialStatus, initialTab, stocks = false, free, follows, followsReady, trialHref, serverNow }: {
   pill?: ReactNode; initial: FeedItem[]; status: FeedStatus | null; initialTab: Tab; free: boolean;
+  /** Stocks is live (FEATURES_READY); otherwise it is a Coming soon item. */
+  stocks?: boolean;
   /** Wallets this member follows (null: not a member). */
   follows: string[] | null; followsReady: boolean; trialHref: string; serverNow: number;
 }) {
@@ -66,13 +68,13 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, free, f
         </div>
       </div>
       <div className="tabs" role="group" aria-label="Category">
-        {(["sports", "markets"] as const).map(t => (
+        {(stocks ? (["sports", "markets", "stocks"] as const) : (["sports", "markets"] as const)).map(t => (
           <button key={t} type="button" aria-pressed={tab === t} className="tabs__tab" onClick={() => { setTab(t); setLeague(null); }}>
-            {t === "sports" ? "Sports" : "Markets"}
+            {t === "sports" ? "Sports" : t === "markets" ? "Markets" : "Stocks"}
           </button>
         ))}
+        {stocks ? null : <ComingSoon feature="stocks" className="tabs__tab tabs__tab--soon">Stocks</ComingSoon>}
         <ComingSoon feature="crypto" className="tabs__tab tabs__tab--soon">Crypto</ComingSoon>
-        <ComingSoon feature="stocks" className="tabs__tab tabs__tab--soon">Stocks</ComingSoon>
       </div>
       <div className="chips" aria-label="Size">
         {SIZES.map(s => <button key={s.min} type="button" className="chip2" aria-pressed={min === s.min} onClick={() => setMin(s.min)}>{s.label}</button>)}

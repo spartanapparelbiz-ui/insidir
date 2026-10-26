@@ -1,4 +1,4 @@
-/* The landing FAQ (docs/V2.md §6), also on /pricing. Honest, short answers. */
+/* The landing FAQ (docs/INSIDIR-V2.md §6), also on /pricing. Honest, short answers. */
 import { PLANS, TRIAL } from "@/lib/plans";
 
 export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [

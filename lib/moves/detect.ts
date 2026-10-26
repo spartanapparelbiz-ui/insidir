@@ -1,4 +1,4 @@
-/* Move detection (docs/V2.md §3), pure.
+/* Move detection (docs/INSIDIR-V2.md §3), pure.
  *   Polymarket: a wallet's BUY fills in one market and outcome, each within MERGE_WINDOW_MS of the previous one,
  *   merge into one move; it counts when the total reaches WHALE_MIN_POLY.
  *   Kalshi: one trade of at least WHALE_MIN_KALSHI.

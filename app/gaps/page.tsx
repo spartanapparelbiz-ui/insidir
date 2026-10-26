@@ -1,4 +1,4 @@
-/* Price gaps (docs/V2.md §6, Pro only): the existing price-gap scanner, restyled. Pro members get the live table;
+/* Price gaps (docs/INSIDIR-V2.md §6, Pro only): the existing price-gap scanner, restyled. Pro members get the live table;
  * everyone else sees the free preview (30 minutes late, top 3, sizes hidden) under an upgrade card. While the
  * scanner isn't ready on production the route is the Coming soon page. Rows arrive redacted from lib/feed.ts (paid rows with their 30-minute sparklines);
  * the live pipe keeps them current. Today's totals and the free plan's "closed before you could see them" count are

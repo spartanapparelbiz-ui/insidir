@@ -1,8 +1,8 @@
-/* Big money moves (docs/V2.md §3). A move is one wallet putting a lot of money into one outcome (Polymarket, fills
+/* Big money moves (docs/INSIDIR-V2.md §3). A move is one wallet putting a lot of money into one outcome (Polymarket, fills
  * within MERGE_WINDOW_MS merged) or one big anonymous trade (Kalshi). Every field comes from the source API. */
 
-export type MoveSource = "polymarket" | "kalshi";
-/** The feed's tabs. Crypto and Stocks are "Coming soon" at launch (docs/V2.md §2). */
+export type MoveSource = "polymarket" | "kalshi" | "sec";
+/** The feed's tabs. Crypto is "Coming soon"; Stocks (SEC filings) shows once it is in FEATURES_READY (docs/INSIDIR-V2.md). */
 export type Tab = "sports" | "markets" | "crypto" | "stocks";
 export type League = "NFL" | "NBA" | "MLB" | "NHL" | "college" | "soccer" | "UFC" | "tennis" | "golf" | "other";
 export const LEAGUES: readonly League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf", "other"];
@@ -39,11 +39,20 @@ export interface Move {
   /** Set when the market settles: did this outcome pay? "void" when refunded. */
   result: "won" | "lost" | "void" | null;
   settledAt: number | null;
+  /** SEC moves: the filing facts behind the card. */
+  detail?: StockDetail | null;
 }
+
+/** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */
+export type StockDetail =
+  | { kind: "insider"; company: string; ticker: string | null; issuerCik: string; role: string; ownerName: string; ownerCik: string | null;
+      shares: number; pricePerShare: number; tradeDate: string | null; filedAt: number; accession: string }
+  | { kind: "fund"; company: string; cusip: string; fund: string; fundCik: string; period: string | null; filedOn: string;
+      addedShares: number; prevShares: number; curShares: number; curValue: number; newPosition: boolean; accession: string; prevAccession: string };
 
 /** One fill as the detector sees it (normalised from either venue). */
 export interface Fill {
-  source: MoveSource;
+  source: "polymarket" | "kalshi";
   /** Kalshi trade id / Polymarket transaction hash + log position when known. */
   id: string;
   marketId: string;

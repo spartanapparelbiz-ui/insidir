@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SUPPORT_EMAIL } from "@/components/SiteFooter";
 import { getViewer } from "@/lib/auth/viewer";
+import { isReady } from "@/lib/features";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function AboutPage() {
           <ul>
             <li><strong>Polymarket</strong>: public trades, with the wallet that made each one. We show a wallet&apos;s public name or a short address, and its record once it has 20 settled markets.</li>
             <li><strong>Kalshi</strong>: public trades. They&apos;re anonymous, so we say &ldquo;someone&rdquo;.</li>
+            {isReady("stocks") ? <li><strong>SEC EDGAR</strong>: Form 4 filings, where company insiders report buying their own company&apos;s stock, and Form 13F filings, where big funds report what they held at the end of each quarter (up to 45 days later). Every stock card links to the filing.</li> : null}
             <li>Every move, amount and record on the site comes from that data. When a market settles, we mark each move won or lost on the <Link href="/results">Results</Link> page, losses included.</li>
           </ul>
 

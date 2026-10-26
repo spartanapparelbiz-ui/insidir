@@ -1,4 +1,4 @@
-/* The whole member journey, as one person: free → paid → follow → alerts → cancel (docs/V2.md).
+/* The whole member journey, as one person: free → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
  *   A visitor lands, opens the free feed (30 minutes late), taps "Try it for $1", pays on Whop (the local mock),
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next

@@ -32,7 +32,7 @@ export const PLANS: Record<Plan, { name: string; price: number; tagline: string;
   },
 };
 
-/** The Insidir trial (docs/V2.md §0): $1 for 3 days, then the monthly price. Whop's plan charges it. */
+/** The Insidir trial (docs/INSIDIR-V2.md §0): $1 for 3 days, then the monthly price. Whop's plan charges it. */
 export const TRIAL = { price: 1, days: 3 } as const;
 
 export const entitlements = (plan: Plan): Entitlements => PLANS[plan].entitlements;

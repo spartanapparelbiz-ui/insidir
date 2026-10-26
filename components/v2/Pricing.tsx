@@ -1,4 +1,4 @@
-/* Pricing (docs/V2.md §8): Free / Insidir ($1 for 3 days, then $39/mo, "Recommended") / Pro ($99/mo). Each plan is a
+/* Pricing (docs/INSIDIR-V2.md §8): Free / Insidir ($1 for 3 days, then $39/mo, "Recommended") / Pro ($99/mo). Each plan is a
  * plain list; anything not live on production says "(coming soon)" right in the bullet, so nobody pays for something
  * that isn't there yet (lib/features.ts). Billing itself is Whop's. */
 import Link from "next/link";

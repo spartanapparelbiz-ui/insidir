@@ -1,8 +1,8 @@
-/* The move share card (docs/V2.md §7): a 1080×1920 story image of one move, in the site's bright style. Who moved,
+/* The move share card (docs/INSIDIR-V2.md §7): a 1080×1920 story image of one move, in the site's bright style. Who moved,
  * the amount, on what, what it pays, the record (when the viewer may see it), when, and how it settled. No logos of
  * the apps, no advice. Rendered with next/og (satori) and Plus Jakarta Sans (lib/og-fonts, SIL OFL). Server only. */
 import { ImageResponse } from "next/og";
-import { dollars, onWhat, payoutLine, recordLine, who } from "@/lib/moves/copy";
+import { dollars, onWhat, payoutLine, recordLine, stockNote, who } from "@/lib/moves/copy";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { loadFonts } from "@/lib/share-card";
 
@@ -14,6 +14,18 @@ const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", 
 
 /** The words on the card, separate from the drawing so they can be tested. */
 export function moveCardText(m: Move, record: TraderRecord | null) {
+  const d = m.detail;
+  if (m.source === "sec" && d) {
+    return {
+      who: d.kind === "insider" ? `${d.role} of ${d.company} bought` : `${d.fund} added`,
+      amount: dollars(m.amount),
+      on: d.kind === "insider" ? `of ${d.company} stock` : `of ${d.company} last quarter`,
+      pays: stockNote(d),
+      record: null,
+      when: `${WHEN.format(new Date(m.at))} ET`,
+      result: null,
+    };
+  }
   return {
     who: `${who(m, record)} put`,
     amount: dollars(m.amount),
@@ -37,7 +49,7 @@ export async function moveCardImage(m: Move, record: TraderRecord | null): Promi
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", fontSize: 56, fontWeight: 800, letterSpacing: "-0.03em" }}>Insidir</div>
           <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: C.violet, background: C.tint, padding: "14px 28px", borderRadius: 999 }}>
-            {m.tab === "sports" ? (m.league && m.league !== "other" ? m.league : "Sports") : "Markets"}
+            {m.tab === "stocks" ? "Stocks" : m.tab === "sports" ? (m.league && m.league !== "other" ? m.league : "Sports") : "Markets"}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", background: C.bg, borderRadius: 56, padding: 80, gap: 44, boxShadow: "0 2px 4px rgba(11,11,18,.06), 0 16px 48px rgba(11,11,18,.08)" }}>

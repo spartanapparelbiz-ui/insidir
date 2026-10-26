@@ -1,4 +1,4 @@
-/* Alerts (docs/V2.md §7): push and email for moves by followed traders and $50k+ moves in followed markets, quiet
+/* Alerts (docs/INSIDIR-V2.md §7): push and email for moves by followed traders and $50k+ moves in followed markets, quiet
  * hours, the 8am ET daily email, Pro custom rules, a test alert, and the last 20 alerts actually sent. Signed-in
  * only; alerts come with Insidir, so free members see what they'd get and one way to get it. */
 import { ComingSoonPage } from "@/components/v2/ComingSoonPage";
