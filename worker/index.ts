@@ -1,10 +1,8 @@
 /* Insidir Terminal worker (Railway service "worker": `npm run worker`).
  *
- *   sweep     every SWEEP_MS:  list markets and events on every venue, match Kalshi ↔ Polymarket (and ↔ Polymarket US),
- *                              store markets and pairs
- *   scan      every SCAN_MS:   fetch the books the engines need ("hot" priority for markets with live deals, the rest
- *                              on the full-scan cadence), run every engine, store deals and their receipts, write a
- *                              heartbeat per venue (the site shows "Live data paused, retrying" when they go quiet)
+ *   gaps      every BOOKS_MS (10s), only with GAPS_ENABLED=1: books for the Price gaps targets the cron matcher
+ *                              (`npm run match`, every 6 h) chose, every engine, quarantine, store deals and receipts,
+ *                              a heartbeat per venue. Matching itself never runs in the worker.
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
@@ -15,8 +13,10 @@
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
-import { activityFloorFromEnv, isActiveEnough } from "@/lib/exchanges/venue";
 import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
+import { gapsEnabled } from "@/lib/flags";
+import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
+import { MarketDirectory } from "@/lib/moves/directory";
 import { MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { SecClient } from "@/lib/stocks/sec";
@@ -31,19 +31,15 @@ import { isReady } from "@/lib/features";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
-import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
-import { marketsToBook, scan, type Universe } from "@/lib/scanner";
+import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
-import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
+import type { VMarket, Venue } from "@/lib/types";
 import {
-  alertableDeals, alertUsers, claimAlert, dbMatchCache, dbUsageStore, deactivateStale, dropPush, heartbeat, loadOverrides, markDigestSent,
-  pushTargets, saveMarkets, saveNearMisses, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
+  alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat, markDigestSent,
+  pushTargets, saveOpportunities, saveQuarantined, saveWhales, settleReceipt, unsettledReceipts,
 } from "@/lib/worker/store";
 
 const n = (k: string, d: number) => { const v = Number(process.env[k]); return Number.isFinite(v) && v > 0 ? v : d; };
-export const SWEEP_MS = n("SWEEP_MS", 5 * 60_000);
-export const SCAN_MS = n("SCAN_MS", 5_000);
-export const FULL_SCAN_MS = n("FULL_SCAN_MS", 60_000);
 export const ALERT_MS = n("ALERT_MS", 5_000);
 export const WHALE_MS = n("WHALE_MS", 15_000);
 export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
@@ -52,76 +48,24 @@ export const DIGEST_CHECK_MS = 10 * 60_000;
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 /** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 300);
-/** push(...xs) overflows the stack past ~100K items (Kalshi lists 130K+ markets), so append in a loop. */
-const append = <T>(to: T[], xs: readonly T[]) => { for (const x of xs) to.push(x); };
-
-interface State { universe: Universe; lastFull: number; hot: Set<string>; lastTickAt: Map<string, number> }
-
-async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise<void> {
-  const db = getDb();
-  const markets: VMarket[] = [], events: VEvent[] = [];
-  const byVenue = new Map<Venue, VMarket[]>();
-  for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
-    try {
-      const [all, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      const floor = activityFloorFromEnv(process.env);
-      const m = all.filter(x => isActiveEnough(x, floor));
-      append(markets, m); append(events, e); byVenue.set(venue, m);
-      await saveMarkets(db, m);
-      log(`sweep ${venue}: ${m.length} of ${all.length} markets trading enough to scan, ${e.length} events`);
-    } catch (e) {
-      log(`sweep ${venue} failed: ${errMsg(e)}`);
-      await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);
-      // Keep the venue's last known markets so a blip doesn't drop its deals.
-      const prev = state.universe.markets.filter(x => x.venue === venue);
-      append(markets, prev); byVenue.set(venue, prev);
-      append(events, state.universe.events.filter(x => x.venue === venue));
-    }
-  }
-  const kalshi = byVenue.get("kalshi") ?? [];
-  const env = llmEnv(process.env);
-  const deps = {
-    cache: dbMatchCache(db), overrides: await loadOverrides(db), now: Date.now(), config: matchConfigFromEnv(process.env),
-    llm: env.apiKey ? createOpenRouterConfirm({ apiKey: env.apiKey, model: env.model, monthlyCapUsd: env.monthlyCapUsd, usage: dbUsageStore(db), now: () => Date.now(), appUrl: appUrl() }) : undefined,
-  };
-  const pairs: MarketPair[] = [];
-  for (const other of ["polymarket", "polymarket_us"] as const) {
-    const list = byVenue.get(other) ?? [];
-    if (!kalshi.length || !list.length) continue;
-    const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    append(pairs, p);
-    log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
-  }
-  await savePairs(db, pairs);
-  state.universe = { markets, events, pairs };
-}
-
-async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Promise<void> {
+/** Price gaps, live (lib/gaps/live.ts): the targets the cron matcher chose (re-read every 10 min), their books every
+ *  BOOKS_MS, every engine, quarantine, then store. One heartbeat per venue ("scan:<venue>") for the Price gaps
+ *  status line. Off unless GAPS_ENABLED=1. */
+async function gapsOnce(live: LiveGaps, lastTickAt: Map<string, number>): Promise<void> {
   const db = getDb();
   const now = Date.now();
-  const full = now - state.lastFull >= FULL_SCAN_MS;
-  const need = marketsToBook(state.universe);
-  const books = new Map<string, Book>();
-  for (const [venue, list] of need) {
-    const targets = full ? list : list.filter(m => state.hot.has(marketKey(m.venue, m.id)));
-    if (!targets.length) continue;
-    try {
-      const got = await clients[venue].getBooks(targets, { priority: full ? "normal" : "hot" });
-      for (const [id, b] of got) books.set(marketKey(venue, id), b);
-      await heartbeat(db, "scan:" + venue, true, null, { markets: targets.length, books: got.size });
-    } catch (e) {
-      log(`books ${venue} failed: ${errMsg(e)}`);
-      await heartbeat(db, "scan:" + venue, false, errMsg(e)).catch(() => undefined);
-    }
+  if (await live.refresh(now)) log(`gaps: ${live.size.targets} targets, ${live.size.markets} markets, ${live.size.books} books per round`);
+  if (!live.size.books) return;
+  const r = await live.round(now);
+  for (const venue of ["kalshi", "polymarket", "polymarket_us"] as const) {
+    const err = r.errors.find(e => e.startsWith(venue + ":"));
+    await heartbeat(db, "scan:" + venue, !err, err ?? null, { books: r.books, requests: r.requests });
   }
-  if (full) state.lastFull = now;
-  if (!books.size) return;
-  const { opps, counts, nearMisses } = scan(state.universe, books, now);
-  const fresh = await saveOpportunities(db, opps, new Date(now), state.lastTickAt);
-  await saveNearMisses(db, nearMisses);
-  const dropped = full ? await deactivateStale(db, new Date(now)) : 0;
-  state.hot = new Set(opps.flatMap(o => o.legs.map(l => marketKey(l.venue, l.marketId))));
-  if (full || fresh.length) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${dropped} gone`);
+  const fresh = await saveOpportunities(db, r.opps, new Date(now), lastTickAt);
+  const held = new Set(await saveQuarantined(db, r.held, new Date(now)));
+  for (const q of r.held) if (held.has(q.opp.id)) log(`quarantined ${q.opp.kind} "${q.opp.title}" (${q.opp.id}): ${q.reasons.join("; ")}`);
+  const dropped = await deactivateStale(db, new Date(now));
+  if (fresh.length || dropped) log(`gaps: ${r.books} books, ${r.opps.length} deals, ${fresh.length} new, ${r.held.length} held, ${dropped} gone`);
 }
 
 async function alertsOnce(): Promise<void> {
@@ -242,24 +186,24 @@ function every(name: string, ms: number, fn: () => Promise<void>): () => void {
 
 export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const clients = createVenueClients();
-  const state: State = { universe: { markets: [], events: [], pairs: [] }, lastFull: 0, hot: new Set(), lastTickAt: new Map() };
-  log("worker starting");
+  const gaps = gapsEnabled() ? new LiveGaps(getDb(), clients, scanOptionsFromEnv()) : null;
+  const lastTickAt = new Map<string, number>();
+  log(`worker starting (Price gaps ${gaps ? "on" : "off: GAPS_ENABLED is not 1"})`);
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
   const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
+  const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
   if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
-  await sweep(clients, state).catch(e => log("first sweep failed:", errMsg(e)));
   const stops = [
-    every("sweep", SWEEP_MS, () => sweep(clients, state)),
-    every("scan", SCAN_MS, () => scanOnce(clients, state)),
-    every("alerts", ALERT_MS, async () => { if (isReady("price_gaps")) await alertsOnce(); }),
+    ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
+    every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
     every("moves:daily", DIGEST_CHECK_MS, dailyOnce),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [
       every("moves", MOVES_MS, async () => {
-        const fresh = await movesOnce(getDb(), poller, state.universe.markets, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
+        const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
         if (fresh.length) log(`moves: ${fresh.length} new`);
       }),
       every("moves:settle", 10 * 60_000, async () => {

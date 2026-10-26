@@ -3,7 +3,7 @@
  * markets differ (different dates, thresholds, teams, conflicting conditions); RED pairs are hidden by default.
  * Deterministic extraction of resolution sources, cutoff times, dates, thresholds, overtime / regulation,
  * postponement / cancellation and tie / draw clauses; the LLM's `differences` are merged in when present. Pure. */
-import { VENUE_NAME, type Safety, type VMarket } from "@/lib/types";
+import { VENUE_NAME, type RuleMismatch, type Safety, type VMarket } from "@/lib/types";
 import { RESOLUTION_SOURCES } from "./aliases";
 import { hardConflicts } from "./candidates";
 import { NUMBER_EQ_ABS, compatibleDates, extractEntities, parseNumbers, sameNumber, type Entities, type Threshold } from "./entities";
@@ -23,7 +23,8 @@ const MAX_NOTE_CHARS = 200;
 const IMPLIED_SOURCES: ReadonlySet<string> = new Set(["official results", "official league site"]);
 const HOUR_MS = 3_600_000;
 
-export type OutcomeClass = "yes" | "no" | "split" | "void" | "wait" | "price";
+/** "draw": the tie is its own outcome (a "Draw" result or a "Tie" strike), so it pays neither team. */
+export type OutcomeClass = "yes" | "no" | "split" | "void" | "wait" | "price" | "draw";
 
 export interface RuleFacts {
   sources: string[];
@@ -45,6 +46,7 @@ const OUTCOME_RES: ReadonlyArray<readonly [OutcomeClass, RegExp]> = [
   ["void", /\brefund|\bvoid\b|\bannul/i],
   ["wait", /remain open|until (?:the )?(?:\w+ )?(?:is |has been )?(?:played|completed|rescheduled)|will be extended|resolved? (?:once|when)/i],
   ["price", /last (?:traded )?price|fair (?:market )?(?:price|value)/i],
+  ["draw", /resolve[sd]?\s+(?:to\s+|as\s+)?["'“]?(?:draw|tie)\b|["'“](?:draw|tie)["'”]\s+(?:strike|outcome|option)/i],
   ["yes", /resolve[sd]?\s+(?:to\s+|as\s+)?["'“]?yes\b/i],
   ["no", /resolve[sd]?\s+(?:to\s+|as\s+)?["'“]?no\b/i],
 ];
@@ -91,9 +93,11 @@ export function extractRuleFacts(rules: string, resolutionSource: string | null,
   };
 }
 
+
 export interface SafetyResult {
   safety: Safety;
   notes: string[];
+  mismatch: RuleMismatch[];
 }
 
 export interface SafetyOptions {
@@ -111,6 +115,7 @@ const OUTCOME_TEXT: Readonly<Record<OutcomeClass, string>> = {
   void: "refunds",
   wait: "waits for the rescheduled event",
   price: "settles at a fair price",
+  draw: "settles as a separate Draw/Tie outcome",
 };
 const describe = (cs: readonly OutcomeClass[]) => cs.map(c => OUTCOME_TEXT[c]).join(" or ");
 const flip = (cs: readonly OutcomeClass[]): OutcomeClass[] => cs.map(c => (c === "yes" ? "no" : c === "no" ? "yes" : c)).sort();
@@ -146,10 +151,11 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
   const eb = opts.eb ?? extractEntities(b);
   const red: string[] = [];
   const yellow: string[] = [];
+  const mismatch = new Set<RuleMismatch>();
 
   // The titles themselves disagree: RED.
   for (const c of hardConflicts(ea, eb)) {
-    if (c === "different dates") red.push(`Different dates: ${A} ${ea.dates.map(fmtDate).join(", ")}; ${B} ${eb.dates.map(fmtDate).join(", ")}`);
+    if (c === "different dates") { red.push(`Different dates: ${A} ${ea.dates.map(fmtDate).join(", ")}; ${B} ${eb.dates.map(fmtDate).join(", ")}`); mismatch.add("date"); }
     else red.push(cap1(c));
   }
 
@@ -159,6 +165,7 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
   // Thresholds in the rules.
   if (fa.thresholds.length && fb.thresholds.length && !fa.thresholds.some(x => fb.thresholds.some(y => sameNumber(x.value, y.value)))) {
     red.push(`The rules use different thresholds: ${A} ${fa.thresholds.map(fmtValue).join(", ")}; ${B} ${fb.thresholds.map(fmtValue).join(", ")}`);
+    mismatch.add("threshold");
   }
   // Boundary: "at least $100,000" vs "above $100,000".
   const ta = ea.thresholds[0];
@@ -168,17 +175,20 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
     const yes = (venue: string, inc: boolean, dir: Threshold["direction"]) =>
       `${venue} counts exactly ${v} as ${inc === (dir !== "below") ? "YES" : "NO"}`;
     yellow.push(`Boundary differs: ${yes(A, ta.inclusive, ta.direction)}; ${yes(B, tb.inclusive, tb.direction)}`);
+    mismatch.add("threshold");
   }
 
   // Dates and cutoff times in the rules.
   if (!red.some(r => r.startsWith("Different dates")) && fa.dates.length && fb.dates.length && !fa.dates.some(x => fb.dates.some(y => compatibleDates(x, y)))) {
     yellow.push(`The rules mention different dates: ${A} ${fa.dates.slice(0, 3).map(fmtDate).join(", ")}; ${B} ${fb.dates.slice(0, 3).map(fmtDate).join(", ")}`);
+    mismatch.add("date");
   }
   if (fa.times.length && fb.times.length && !fa.times.some(x => fb.times.some(y => sameCutoff(x, y)))) {
     const msg = `${A} uses ${fa.times.slice(0, 2).map(fmtTime).join(" / ")}, ${B} uses ${fb.times.slice(0, 2).map(fmtTime).join(" / ")}`;
     // A price observed at a different time is a different outcome; elsewhere it is a cutoff difference.
     if ((ea.type === "threshold" || eb.type === "threshold") && (ea.assets.length || eb.assets.length)) red.push(`Measured at different times: ${msg}`);
     else yellow.push(`Different cutoff times: ${msg}`);
+    mismatch.add("date");
   }
   if (a.closeTime !== null && b.closeTime !== null) {
     const gap = Math.abs(a.closeTime - b.closeTime) / HOUR_MS;
@@ -188,11 +198,11 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
 
   // Resolution sources.
   if (fa.sources.length && fb.sources.length) {
-    if (!fa.sources.some(s => fb.sources.includes(s))) yellow.push(`Different resolution sources: ${fa.sources.join(", ")} vs ${fb.sources.join(", ")}`);
+    if (!fa.sources.some(s => fb.sources.includes(s))) { yellow.push(`Different resolution sources: ${fa.sources.join(", ")} vs ${fb.sources.join(", ")}`); mismatch.add("source"); }
   } else if (fa.sources.length || fb.sources.length) {
     const [who, list] = fa.sources.length ? [A, fa.sources] : [B, fb.sources];
     const explicit = list.filter(s => !IMPLIED_SOURCES.has(s));
-    if (explicit.length) yellow.push(`Only ${who} names a resolution source (${explicit.join(", ")})`);
+    if (explicit.length) { yellow.push(`Only ${who} names a resolution source (${explicit.join(", ")})`); mismatch.add("source"); }
   }
 
   // Overtime.
@@ -212,6 +222,12 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
       yellow.push(`Only ${xa.length ? A : B}'s rules say what happens ${label === "If it ends in a tie" ? "on a tie" : "if the event is postponed or cancelled"}`);
     }
   };
+  // A tie that is its own outcome breaks an inverted pair: "team A wins" is not "team B doesn't win" when a tie pays
+  // neither, so buying both teams loses on a tie.
+  if (opts.inverted && (fa.tie.includes("draw") || fb.tie.includes("draw"))) {
+    red.push(`A tie is its own outcome on ${fa.tie.includes("draw") ? A : B}, so one team on ${A} is not the other team losing on ${B}: a tie loses both`);
+    mismatch.add("tie");
+  }
   clause("If the event is postponed or cancelled", fa.postponed, fb.postponed);
   clause("If it ends in a tie", fa.tie, fb.tie);
 
@@ -220,5 +236,5 @@ export function assessSafety(a: VMarket, b: VMarket, opts: SafetyOptions): Safet
   for (const d of llm) if (!yellow.includes(d) && !red.includes(d)) yellow.push(d);
 
   const notes = [...red, ...yellow];
-  return { safety: red.length ? "red" : yellow.length ? "yellow" : "green", notes };
+  return { safety: red.length ? "red" : yellow.length ? "yellow" : "green", notes, mismatch: [...mismatch].sort() };
 }

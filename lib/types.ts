@@ -161,6 +161,9 @@ export interface Opportunity {
   gapCents: number | null;
 }
 
+/** What two matched markets' rules texts disagree on. A pair with any of these is quarantined (lib/quarantine.ts). */
+export type RuleMismatch = "date" | "threshold" | "source" | "tie";
+
 /** A Kalshi ↔ Polymarket match. */
 export interface MarketPair {
   /** `${a.venue}:${a.id}|${b.venue}:${b.id}` */
@@ -174,6 +177,9 @@ export interface MarketPair {
   confidence: number;
   safety: Safety;
   safetyNotes: string[];
+  /** Rules-text differences (lib/matching/safety.ts). Absent on pairs stored before it existed and on admin-forced
+   *  pairs (an admin read both rules). */
+  ruleMismatch?: RuleMismatch[];
   blocked: boolean;
 }
 

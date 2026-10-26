@@ -7,6 +7,7 @@ import type { Db } from "@/lib/db";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import type { VMarket } from "@/lib/types";
 import type { WalletTrade } from "./detect";
+import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom, type ResolvedPosition } from "./records";
 import { readClosedPositions } from "./sources";
@@ -30,17 +31,17 @@ export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient): Moves
   });
 }
 
-export async function movesOnce(db: Db, poller: MovesPoller, markets: readonly VMarket[], now: number,
+/** One poll of both venues. Market details come from the directory (database first, then the venue), so the worker
+ *  never holds the full market list. */
+export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDirectory, now: number,
   beat: (job: string, ok: boolean, err?: string) => Promise<void>): Promise<string[]> {
-  const info = MovesPoller.infoFrom(markets);
-  const kalshiMarkets = new Map(markets.filter(m => m.venue === "kalshi").map(m => [m.id, m]));
   const fresh: string[] = [];
   try {
-    fresh.push(...await upsertMoves(db, await poller.pollPolymarket(now, info)));
+    fresh.push(...await upsertMoves(db, await poller.pollPolymarket(now, ids => directory.lookup("polymarket", ids, now))));
     await beat("moves:polymarket", true);
   } catch (e) { await beat("moves:polymarket", false, e instanceof Error ? e.message : String(e)); }
   try {
-    fresh.push(...await upsertMoves(db, await poller.pollKalshi(now, kalshiMarkets, info)));
+    fresh.push(...await upsertMoves(db, await poller.pollKalshi(now, ids => directory.lookup("kalshi", ids, now))));
     await beat("moves:kalshi", true);
   } catch (e) { await beat("moves:kalshi", false, e instanceof Error ? e.message : String(e)); }
   return fresh;

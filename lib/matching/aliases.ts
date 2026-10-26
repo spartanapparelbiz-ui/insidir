@@ -263,7 +263,8 @@ export const WORD_MAP: Readonly<Record<string, string>> = {
 export const CONFLICT_GROUPS: ReadonlyArray<readonly string[]> = [
   ["democratic", "republican", "independent", "libertarian", "green"],
   ["cut", "hike", "hold"],
-  ["house", "senate", "governor", "mayor", "president"],
+  // "vice-president" is not a token: extractEntities sets it for "vice president" / "VP" (see officeWords).
+  ["house", "senate", "governor", "mayor", "president", "vice-president"],
   ["men", "women", "womens", "mens"],
   ["popular", "electoral"],
   ["primary", "general"],

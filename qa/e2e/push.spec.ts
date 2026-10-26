@@ -26,7 +26,7 @@ function runWorker(ms: number): Promise<string> {
   return new Promise((ok, fail) => {
     const p = spawn("npx", ["tsx", "worker/index.ts"], {
       env: { ...process.env, DATABASE_URL: E2E_DB, APP_URL, NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey, VAPID_PRIVATE_KEY: VAPID.privateKey, VAPID_SUBJECT: "mailto:qa@insidir.com",
-        NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"), WORKER_RUN_FOR_MS: String(ms), ALERT_MS: "1000", SWEEP_MS: "3600000", SCAN_MS: "3600000", FULL_SCAN_MS: "3600000",
+        NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"), WORKER_RUN_FOR_MS: String(ms), ALERT_MS: "1000", GAPS_ENABLED: "1",
         WHALE_MS: "3600000", SETTLE_MS: "3600000", KALSHI_API_URL: "http://127.0.0.1:9", POLYMARKET_GAMMA_URL: "http://127.0.0.1:9", POLYMARKET_CLOB_URL: "http://127.0.0.1:9",
         POLYMARKET_DATA_URL: "http://127.0.0.1:9", POLYMARKET_US_ENABLED: "0", FEATURES_READY: SERVER_ENV.FEATURES_READY },
       stdio: ["ignore", "pipe", "pipe"],

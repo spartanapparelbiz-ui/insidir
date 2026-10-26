@@ -10,7 +10,7 @@ export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 /** Default model: small and cheap, supports JSON-schema structured output. Override with OPENROUTER_MODEL. */
 export const DEFAULT_MODEL = "openai/gpt-4o-mini";
 /** Default monthly cap in USD (env MATCH_LLM_MONTHLY_USD). */
-export const DEFAULT_MONTHLY_USD = 10;
+export const DEFAULT_MONTHLY_USD = 3;
 /** Request timeout. */
 const DEFAULT_TIMEOUT_MS = 20_000;
 /** The answer is a tiny JSON object. */
