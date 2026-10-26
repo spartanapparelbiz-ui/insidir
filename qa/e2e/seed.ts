@@ -155,6 +155,17 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     mv({ id: "e2e:m4", at: now - 3 * 60 * MIN, amount: 160_000, avgPrice: 0.48 }),
     mv({ id: "e2e:s1", at: now - 3 * DAY, amount: 120_000, avgPrice: 0.4, result: "won", settledAt: new Date(now - 2 * DAY) }),
     mv({ id: "e2e:s2", at: now - 4 * DAY, amount: 64_000, avgPrice: 0.7, outcome: "Bills", outcomeSide: "no", result: "lost", settledAt: new Date(now - 3 * DAY) }),
+    // Stocks (lib/stocks): a Form 4 insider buy and a 13F fund add, in the shapes the SEC jobs store.
+    mv({ id: "f4:000099999926000001", at: now - 2 * DAY, source: "sec", marketId: "sec:0000999999", eventTitle: "E2E Fixture Devices", marketTitle: "EXDV",
+      outcome: "Bought", amount: 1_401_817.5, avgPrice: 182.6472, wallet: null, walletName: null, fills: 2, tab: "stocks", league: null, category: "insider",
+      url: "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm",
+      detail: { kind: "insider", company: "E2E Fixture Devices", ticker: "EXDV", issuerCik: "0000999999", role: "The CEO", ownerName: "E2E Owner", ownerCik: "0000888888",
+        shares: 7675, pricePerShare: 182.6472, tradeDate: "2026-10-22", filedAt: now - 2 * DAY, accession: "000099999926000001" } }),
+    mv({ id: "13f:000099999826000002:037833100", at: now - 5 * DAY, source: "sec", marketId: "cusip:037833100", eventTitle: "E2E Fixture Devices", marketTitle: "E2E Fixture Devices",
+      outcome: "Added", amount: 250_000_000, avgPrice: 220, wallet: null, walletName: null, fills: 1, tab: "stocks", league: null, category: "fund",
+      url: "https://www.sec.gov/Archives/edgar/data/999998/000099999826000002/0000999998-26-000002-index.htm",
+      detail: { kind: "fund", company: "E2E Fixture Devices", cusip: "037833100", fund: "E2E Fixture Capital", fundCik: "0000999998", period: "2026-09-30", filedOn: "2026-10-21",
+        addedShares: 1_136_364, prevShares: 4_000_000, curShares: 5_136_364, curValue: 1_130_000_080, newPosition: false, accession: "000099999826000002", prevAccession: "000099999826000001" } }),
   ]);
   await db.insert(traderRecords).values([
     { wallet: TOP, name: "E2E-Top", resolved: 63, won: 41, lost: 22, profit: 1_200_000, biggestWin: 310_000, updatedAt: new Date(now) },

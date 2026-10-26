@@ -1,4 +1,4 @@
-/* The landing page (docs/V2.md §6). Bright, phone first. Top to bottom: the trial bar and nav (SiteHeader); the hero
+/* The landing page (docs/INSIDIR-V2.md §6). Bright, phone first. Top to bottom: the trial bar and nav (SiteHeader); the hero
  * ("Follow the big money.", copy left, the real biggest move of the last 24 hours on the right with two more stacked
  * behind it); the tab strip; how it works (three steps, each with a small piece of real UI); Results (the last 10
  * settled moves from top traders, "Real past moves. Not a promise."); pricing; FAQ; the one dark band; the footer.
@@ -97,8 +97,9 @@ export default async function Landing() {
         <nav className="wrap tabstrip" aria-label="What we watch">
           <Link className="tabstrip__tab" href="/feed?tab=sports">Sports</Link>
           <Link className="tabstrip__tab" href="/feed?tab=markets">Markets</Link>
+          {isReady("stocks") ? <Link className="tabstrip__tab" href="/feed?tab=stocks">Stocks</Link>
+            : <ComingSoon feature="stocks" className="tabstrip__tab tabstrip__tab--soon">Stocks</ComingSoon>}
           <ComingSoon feature="crypto" className="tabstrip__tab tabstrip__tab--soon">Crypto</ComingSoon>
-          <ComingSoon feature="stocks" className="tabstrip__tab tabstrip__tab--soon">Stocks</ComingSoon>
         </nav>
 
         <section className="sec2" id="how" aria-labelledby="how-h">

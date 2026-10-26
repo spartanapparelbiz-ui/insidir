@@ -1,9 +1,10 @@
-/* The Coming soon rule (docs/V2.md §2): a feature is ready only when it works end to end on production with real
+/* The Coming soon rule (docs/INSIDIR-V2.md §2): a feature is ready only when it works end to end on production with real
  * data, passes its tests and the accuracy check. Anything else shows the Coming soon badge and can't be used.
  *
  * Readiness is set per deploy with FEATURES_READY, a comma list of the keys below, after checking each one on
  * production. Unset means the launch default: the feed (with records and follows), which this deploy is checked
- * against. Crypto and Stocks are never ready before their own launch (after Nov 4). */
+ * against. Stocks (SEC Form 4 and 13F) is ready once listed here, after its accuracy check on production. Crypto is
+ * never ready before its own launch. */
 export const FEATURES = {
   feed: "The live feed",
   records: "Trader records",
@@ -19,7 +20,7 @@ export const FEATURES = {
 export type Feature = keyof typeof FEATURES;
 
 const DEFAULT_READY: Feature[] = ["feed", "records", "follows"];
-const NEVER_YET: Feature[] = ["crypto", "stocks"];
+const NEVER_YET: Feature[] = ["crypto"];
 
 export function readyFeatures(env: Record<string, string | undefined> = process.env): Set<Feature> {
   const raw = env.FEATURES_READY;
@@ -28,3 +29,9 @@ export function readyFeatures(env: Record<string, string | undefined> = process.
 }
 
 export const isReady = (f: Feature, env?: Record<string, string | undefined>): boolean => readyFeatures(env).has(f);
+
+/** The feed tabs that show moves right now: Sports and Markets always, Stocks and Crypto once ready. */
+export function liveTabs(env?: Record<string, string | undefined>): Array<"sports" | "markets" | "stocks" | "crypto"> {
+  const r = readyFeatures(env);
+  return ["sports", "markets", ...(r.has("stocks") ? ["stocks" as const] : []), ...(r.has("crypto") ? ["crypto" as const] : [])];
+}

@@ -1,4 +1,4 @@
-/* The waitlist for Coming soon features (docs/V2.md §2): any feature key from lib/features.ts. When a feature becomes
+/* The waitlist for Coming soon features (docs/INSIDIR-V2.md §2): any feature key from lib/features.ts. When a feature becomes
  * ready, its waitlist is emailed "[Feature] is live on Insidir." in the same deploy. */
 import { FEATURES, type Feature } from "@/lib/features";
 

@@ -1,4 +1,4 @@
-/* Trader records (docs/V2.md §3), pure. From a Polymarket wallet's real resolved positions: markets won and lost,
+/* Trader records (docs/INSIDIR-V2.md §3), pure. From a Polymarket wallet's real resolved positions: markets won and lost,
  * win rate, all-time profit and biggest win. A record is shown only with RECORD_MIN_RESOLVED resolved markets; a wallet
  * is a "top trader" only with that many and positive all-time profit. Never anything about who is behind a wallet. */
 import type { TraderRecord } from "./types";

@@ -33,14 +33,14 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1793008299938,
-      "tag": "0004_quarantine",
+      "when": 1793007120206,
+      "tag": "0004_stocks",
       "breakpoints": true
     },
     {
       "idx": 5,
       "version": "7",
-      "when": 1793009596826,
+      "when": 1793010705522,
       "tag": "0005_gaps",
       "breakpoints": true
     }

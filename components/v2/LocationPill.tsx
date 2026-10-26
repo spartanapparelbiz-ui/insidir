@@ -1,5 +1,5 @@
 "use client";
-/* The location question (docs/V2.md §5): asked once, the first time someone taps a market link, never as a wall in
+/* The location question (docs/INSIDIR-V2.md §5): asked once, the first time someone taps a market link, never as a wall in
  * front of the feed. "Where are you? US / Outside US." The answer is remembered (cookie, and the account when signed
  * in) and shown as a small pill they can change. Links are computed on the server for the chosen region, so the page
  * reloads after a choice: a US viewer's page never contains an international Polymarket link. */

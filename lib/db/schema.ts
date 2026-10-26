@@ -36,7 +36,7 @@ export interface UserSettings {
   /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
   quietStart: string | null;
   quietEnd: string | null;
-  /** Pro custom alert rules for big money moves (docs/V2.md §7): any tab, league or size. */
+  /** Pro custom alert rules for big money moves (docs/INSIDIR-V2.md §7): any tab, league or size. */
   moveRules?: Array<{ tab: "sports" | "markets" | "crypto" | "stocks" | null; league: string | null; min: number }>;
   /** The user's IANA time zone (from their browser), for quiet hours. */
   timeZone: string | null;
@@ -278,12 +278,12 @@ export const rateLimits = terminal.table("rate_limits", {
 }, t => [primaryKey({ columns: [t.key, t.windowStart] })]);
 
 
-/* ---------- V2: big money moves (docs/V2.md) ---------- */
+/* ---------- V2: big money moves (docs/INSIDIR-V2.md) ---------- */
 
 /** One big move (lib/moves/types.ts Move). Settled moves keep their result for Results and records. */
 export const moves = terminal.table("moves", {
   id: text("id").primaryKey(),
-  source: text("source").$type<"polymarket" | "kalshi">().notNull(),
+  source: text("source").$type<"polymarket" | "kalshi" | "sec">().notNull(),
   marketId: text("market_id").notNull(),
   eventTitle: text("event_title").notNull(),
   marketTitle: text("market_title").notNull(),
@@ -303,6 +303,8 @@ export const moves = terminal.table("moves", {
   url: text("url"),
   result: text("result").$type<"won" | "lost" | "void">(),
   settledAt: timestamp("settled_at", { withTimezone: true }),
+  /** SEC moves only: the filing facts the card shows (lib/stocks/moves.ts StockDetail). */
+  detail: jsonb("detail").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),
@@ -340,3 +342,9 @@ export const waitlist = terminal.table("waitlist", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   notifiedAt: timestamp("notified_at", { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.email, t.feature] })]);
+
+/** SEC filings the Stocks jobs have already read ("f4:<accession>", "13f:<accession>"), so each is read once. */
+export const secSeen = terminal.table("sec_seen", {
+  key: text("key").primaryKey(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -1,4 +1,4 @@
-/* Pricing (docs/V2.md §8): the three plans, unready features marked "(coming soon)" in the bullets, then the FAQ.
+/* Pricing (docs/INSIDIR-V2.md §8): the three plans, unready features marked "(coming soon)" in the bullets, then the FAQ.
  * Billing is Whop's; the buttons go straight to Whop checkout. */
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";

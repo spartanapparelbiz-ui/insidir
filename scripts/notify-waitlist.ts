@@ -1,4 +1,4 @@
-/* Emails a feature's waitlist once it goes live (docs/V2.md §2): "[Feature] is live on Insidir."
+/* Emails a feature's waitlist once it goes live (docs/INSIDIR-V2.md §2): "[Feature] is live on Insidir."
  *   DATABASE_URL=... RESEND_API_KEY=... EMAIL_FROM=... npx tsx scripts/notify-waitlist.ts <feature> [--dry]
  * Refuses unless the feature is in FEATURES_READY (remove its badge in the same deploy first). Each address gets it
  * once: notified_at is set after a successful send, so a rerun only picks up the rest. */

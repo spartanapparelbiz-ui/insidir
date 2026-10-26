@@ -9,6 +9,7 @@
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             every 5 min (lib/moves/jobs.ts)
+ *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts)
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
@@ -17,6 +18,8 @@ import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
 import { MOVES_MS, movesOnce, movesPoller, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
+import { form13fOnce, form4Once, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
+import { SecClient } from "@/lib/stocks/sec";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -91,7 +94,7 @@ async function alertsOnce(): Promise<void> {
   }
 }
 
-/** Push and email for new moves (docs/V2.md §7). Each user, move and channel goes out once (alerts_sent, "move:<id>"). */
+/** Push and email for new moves (docs/INSIDIR-V2.md §7). Each user, move and channel goes out once (alerts_sent, "move:<id>"). */
 async function moveAlertsOnce(): Promise<void> {
   const push = isReady("alerts_push"), email = isReady("alerts_email");
   if (!push && !email) return;
@@ -189,6 +192,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
   const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
+  const sec = SecClient.fromEnv();
+  if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
   const stops = [
     ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
@@ -208,6 +213,23 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves:records", 5 * 60_000, async () => {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader records refreshed`);
+      }),
+    ] : []),
+    // Stocks (docs/INSIDIR-V2.md): SEC Form 4 insider buys and 13F fund adds, only with SEC_USER_AGENT set.
+    ...(sec && stocksIngestOn() ? [
+      every("stocks:form4", STOCKS_FORM4_MS, async () => {
+        try {
+          const r = await form4Once(getDb(), sec);
+          await heartbeat(getDb(), "stocks:form4", r.errors === 0 || r.read > 0, r.errors ? `${r.errors} filings failed` : null, r);
+          if (r.moves) log(`stocks: ${r.moves} insider buys from ${r.read} Form 4 filings`);
+        } catch (e) { await heartbeat(getDb(), "stocks:form4", false, errMsg(e)).catch(() => undefined); throw e; }
+      }),
+      every("stocks:13f", STOCKS_13F_MS, async () => {
+        try {
+          const r = await form13fOnce(getDb(), sec);
+          await heartbeat(getDb(), "stocks:13f", r.errors < r.funds, r.errors ? `${r.errors} funds failed` : null, r);
+          if (r.moves) log(`stocks: ${r.moves} fund adds from 13F filings`);
+        } catch (e) { await heartbeat(getDb(), "stocks:13f", false, errMsg(e)).catch(() => undefined); throw e; }
       }),
     ] : []),
     every("ratelimits", 60_000, async () => {

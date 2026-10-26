@@ -1,21 +1,21 @@
 /* GET /api/moves?tab=sports|markets&min=10000&league=NFL&before=<ms>&limit=30
- * The feed, gated by plan and region on the server (lib/moves/feed.ts). Crypto and Stocks are Coming soon: asking
- * for them returns an empty list. */
+ * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
+ * it is in FEATURES_READY) returns an empty list. */
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, feedStatus } from "@/lib/moves/feed";
 import { LEAGUES, type League, type Tab } from "@/lib/moves/types";
+import { liveTabs } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 
-const LIVE_TABS: Tab[] = ["sports", "markets"];
 
 export async function GET(req: NextRequest) {
   const now = Date.now();
   const p = req.nextUrl.searchParams;
   const tab = p.get("tab") as Tab | null;
-  if (tab && !LIVE_TABS.includes(tab)) return NextResponse.json({ items: [], status: null, comingSoon: true });
+  if (tab && !liveTabs().includes(tab)) return NextResponse.json({ items: [], status: null, comingSoon: true });
   const league = p.get("league") as League | null;
   const min = Math.max(0, Number(p.get("min")) || 0);
   const before = Number(p.get("before")) || undefined;

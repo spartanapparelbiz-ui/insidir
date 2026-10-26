@@ -1,4 +1,4 @@
-/* The worker's move polling (docs/V2.md §3), with the network injected so tests can drive it.
+/* The worker's move polling (docs/INSIDIR-V2.md §3), with the network injected so tests can drive it.
  *   Polymarket: every poll reads the newest public fills of at least FILL_MIN dollars, back to LOOKBACK_MS, keeps
  *   them in a buffer (deduped by fill id), and rebuilds moves from the buffer: a wallet's fills in one market and
  *   outcome merge while each is within 10 minutes of the last. A wallet is checked once per NOISE_TTL_MS against its

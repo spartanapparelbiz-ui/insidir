@@ -1,6 +1,6 @@
 {
-  "id": "2abf15c6-ad8e-4aa1-a02e-7a3d8fe0eeeb",
-  "prevId": "009b0026-7370-446b-a13a-908f319ae73b",
+  "id": "244c5e47-45b9-4f83-b8e0-e75c2f6e759f",
+  "prevId": "06d240c0-1346-4d84-a9be-8280039a150c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -828,6 +828,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "detail": {
+          "name": "detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1349,6 +1355,32 @@
           "with": {}
         }
       },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "terminal.sec_seen": {
+      "name": "sec_seen",
+      "schema": "terminal",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
