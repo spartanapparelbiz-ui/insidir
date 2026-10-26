@@ -155,18 +155,20 @@ describe("CLOB books", () => {
 });
 
 describe("Gamma pagination", () => {
-  it("pages by limit/offset until a short page", async () => {
+  it("pages /events/keyset by next_cursor until there is none", async () => {
     const page = (n: number, start: number) => Array.from({ length: n }, (_, i) => ({ id: String(start + i), markets: [] }));
     const { http, calls } = testHttp(url => {
-      const off = Number(new URL(url).searchParams.get("offset"));
-      return { body: off === 0 ? page(100, 0) : off === 100 ? page(100, 100) : page(3, 200) };
+      const after = new URL(url).searchParams.get("after_cursor");
+      return { body: after === null ? { events: page(100, 0), next_cursor: "c1" } : after === "c1" ? { events: page(100, 100), next_cursor: "c2" } : { events: page(3, 200) } };
     });
     const client = new PolymarketClient({ gamma: http, clob: http, data: http, gammaUrl: "https://gamma.test" });
     const raw = await client.listEventsRaw();
     expect(raw).toHaveLength(203);
     expect(calls).toHaveLength(3);
     const q = new URL(calls[0]!.url).searchParams;
+    expect(new URL(calls[0]!.url).pathname).toBe("/events/keyset");
     expect([q.get("active"), q.get("closed"), q.get("limit")]).toEqual(["true", "false", "100"]);
+    expect(new URL(calls[2]!.url).searchParams.get("after_cursor")).toBe("c2");
   });
 });
 
