@@ -37,7 +37,8 @@ export function marketsToBook(u: Universe): Map<Venue, VMarket[]> {
   for (const { markets } of multiEvents(u, idx)) markets.forEach(add);
   for (const imp of [...findLadderImplications(u.markets), ...findRuleImplications(u.markets)]) { add(imp.antecedent); add(imp.consequent); }
   const out = new Map<Venue, VMarket[]>();
-  for (const m of need.values()) out.set(m.venue, [...(out.get(m.venue) ?? []), m]);
+  // Push into each venue's list: copying the list per market (out.set(v, [...list, m])) is quadratic at 100k+ markets.
+  for (const m of need.values()) { const list = out.get(m.venue); if (list) list.push(m); else out.set(m.venue, [m]); }
   return out;
 }
 

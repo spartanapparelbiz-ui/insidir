@@ -11,7 +11,7 @@
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
-import { appendAll } from "@/lib/exchanges/venue";
+import { activityFloorFromEnv, appendAll, isActiveEnough } from "@/lib/exchanges/venue";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -51,10 +51,12 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
   const byVenue = new Map<Venue, VMarket[]>();
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
-      const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
+      const [all, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
+      const floor = activityFloorFromEnv(process.env);
+      const m = all.filter(x => isActiveEnough(x, floor));
       appendAll(markets, m); appendAll(events, e); byVenue.set(venue, m);
       await saveMarkets(db, m);
-      log(`sweep ${venue}: ${m.length} markets, ${e.length} events`);
+      log(`sweep ${venue}: ${m.length} of ${all.length} markets trading enough to scan, ${e.length} events`);
     } catch (e) {
       log(`sweep ${venue} failed: ${errMsg(e)}`);
       await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);

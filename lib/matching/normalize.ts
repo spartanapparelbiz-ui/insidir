@@ -107,7 +107,7 @@ export function normalizePhrase(s: string): string {
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map(w => WORD_MAP[w] ?? w)
+    .map(mapWord)
     .join(" ");
 }
 
@@ -333,9 +333,15 @@ export function normalize(raw: string, opts: { refTime?: number | null } = {}): 
     .map(w => {
       const ph = /^q(date|time|num|year)(\d+)q$/.exec(w);
       if (ph) return `#${ph[1] === "date" ? "d" : ph[1] === "time" ? "t" : ph[1] === "num" ? "n" : "y"}${ph[2]}`;
-      return WORD_MAP[w] ?? w;
+      return mapWord(w);
     });
   return { tokens, dates, times, numbers, years: [...new Set(years)] };
+}
+
+/** WORD_MAP is a plain object: an own-property check keeps titles containing words like "constructor" or "toString"
+ *  from returning Object.prototype's functions instead of strings. */
+function mapWord(w: string): string {
+  return Object.hasOwn(WORD_MAP, w) ? WORD_MAP[w]! : w;
 }
 
 function round9(v: number): number {

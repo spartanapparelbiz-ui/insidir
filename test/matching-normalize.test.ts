@@ -98,3 +98,13 @@ describe("aliases", () => {
     expect(normalizePhrase("  St. Louis  Cardinals ")).toBe("st louis cardinals");
   });
 });
+
+describe("words that are Object.prototype keys", () => {
+  it("stay plain strings (a live title with 'constructor' crashed matching)", () => {
+    const n = normalize("Will the constructor toString valueOf hasOwnProperty win?");
+    expect(n.tokens.every(t => typeof t === "string")).toBe(true);
+    expect(n.tokens).toContain("constructor");
+    expect(() => contentTokens(n.tokens)).not.toThrow();
+    expect(normalizePhrase("constructor __proto__")).toBe("constructor proto");
+  });
+});
