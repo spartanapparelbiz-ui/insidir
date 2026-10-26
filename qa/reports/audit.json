@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3100",
-  "at": "2026-10-26T00:40:36.760Z",
+  "at": "2026-10-26T07:08:27.539Z",
   "gates": {
     "performance": 0.9,
     "accessibility": 0.95,
@@ -10,46 +10,57 @@
     {
       "page": "landing",
       "performance": 0.98,
-      "accessibility": 1,
+      "accessibility": 0.96,
       "seo": 1,
-      "lcpMs": 2280,
+      "lcpMs": 1844,
       "cls": 0,
       "axe390": [
-        "color-contrast (1)"
+        "color-contrast (2)"
       ],
       "axe1440": [
-        "color-contrast (9)"
+        "aria-hidden-focus (1)",
+        "color-contrast (2)"
       ],
       "pass": false
     },
     {
-      "page": "terminal-free",
-      "performance": 0.98,
-      "accessibility": 1,
+      "page": "feed-free",
+      "performance": 1,
+      "accessibility": 0.91,
       "seo": 1,
-      "lcpMs": 1970,
+      "lcpMs": 1711,
       "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": true
+      "axe390": [
+        "aria-required-children (1)",
+        "color-contrast (1)"
+      ],
+      "axe1440": [
+        "aria-required-children (1)",
+        "color-contrast (2)"
+      ],
+      "pass": false
+    },
+    {
+      "page": "results",
+      "performance": 0.99,
+      "accessibility": 0.94,
+      "seo": 1,
+      "lcpMs": 1721,
+      "cls": 0,
+      "axe390": [
+        "aria-allowed-attr (7)"
+      ],
+      "axe1440": [
+        "aria-allowed-attr (7)"
+      ],
+      "pass": false
     },
     {
       "page": "pricing",
       "performance": 0.99,
       "accessibility": 0.98,
       "seo": 1,
-      "lcpMs": 1976,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": true
-    },
-    {
-      "page": "receipts",
-      "performance": 0.99,
-      "accessibility": 1,
-      "seo": 1,
-      "lcpMs": 2013,
+      "lcpMs": 1744,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -59,41 +70,47 @@
       "page": "terms",
       "performance": 0.99,
       "accessibility": 1,
-      "seo": 0.9,
-      "lcpMs": 1808,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": false
-    },
-    {
-      "page": "privacy",
-      "performance": 0.99,
-      "accessibility": 1,
-      "seo": 0.9,
-      "lcpMs": 1815,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": false
-    },
-    {
-      "page": "terminal-pro",
-      "performance": 0.95,
-      "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1980,
-      "cls": 0.09650795772986774,
+      "lcpMs": 1857,
+      "cls": 0,
       "axe390": [],
       "axe1440": [],
       "pass": true
     },
     {
-      "page": "deal-pro",
-      "performance": 0.99,
+      "page": "privacy",
+      "performance": 0.82,
       "accessibility": 1,
-      "seo": 0.6,
-      "lcpMs": 1823,
+      "seo": 1,
+      "lcpMs": 2429,
+      "cls": 0,
+      "axe390": [],
+      "axe1440": [],
+      "pass": false
+    },
+    {
+      "page": "feed-member",
+      "performance": 1,
+      "accessibility": 0.91,
+      "seo": 1,
+      "lcpMs": 1860,
+      "cls": 0,
+      "axe390": [
+        "aria-required-children (1)",
+        "color-contrast (1)"
+      ],
+      "axe1440": [
+        "aria-required-children (1)",
+        "color-contrast (2)"
+      ],
+      "pass": false
+    },
+    {
+      "page": "following",
+      "performance": 1,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 1719,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -104,30 +121,19 @@
       "performance": 0.98,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 2275,
+      "lcpMs": 1816,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
       "pass": true
     },
     {
-      "page": "whales",
+      "page": "alerts",
       "performance": 0.99,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 1817,
-      "cls": 0,
-      "axe390": [],
-      "axe1440": [],
-      "pass": true
-    },
-    {
-      "page": "pnl",
-      "performance": 0.98,
-      "accessibility": 1,
-      "seo": 0.6,
-      "lcpMs": 2261,
-      "cls": 0,
+      "lcpMs": 1901,
+      "cls": 0.008610194552454445,
       "axe390": [],
       "axe1440": [],
       "pass": true

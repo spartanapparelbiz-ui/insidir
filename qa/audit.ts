@@ -13,19 +13,16 @@ const PRO_COOKIE = process.env.AUDIT_COOKIE ?? "";
 /** Signed-in pages are noindex on purpose (private), so the SEO gate applies to public pages only. */
 const PAGES: Array<{ name: string; path: string; signedIn: boolean }> = [
   { name: "landing", path: "/", signedIn: false },
-  { name: "terminal-free", path: "/terminal", signedIn: false },
+  { name: "feed-free", path: "/feed", signedIn: false },
+  { name: "results", path: "/results", signedIn: false },
   { name: "pricing", path: "/pricing", signedIn: false },
-  { name: "receipts", path: "/receipts", signedIn: false },
   { name: "terms", path: "/terms", signedIn: false },
   { name: "privacy", path: "/privacy", signedIn: false },
   ...(PRO_COOKIE ? [
-    { name: "terminal-pro", path: "/terminal", signedIn: true },
-    { name: "deal-pro", path: process.env.AUDIT_DEAL_PATH ?? "/terminal", signedIn: true },
+    { name: "feed-member", path: "/feed", signedIn: true },
+    { name: "following", path: "/following", signedIn: true },
     { name: "settings", path: "/settings", signedIn: true },
     { name: "alerts", path: "/alerts", signedIn: true },
-    { name: "receipts-pro", path: "/receipts?period=30d", signedIn: true },
-    { name: "whales", path: "/whales", signedIn: true },
-    { name: "pnl", path: "/pnl", signedIn: true },
   ] : []),
 ];
 const GATES = { performance: 0.9, accessibility: 0.95, seo: 0.95 } as const;
@@ -60,7 +57,8 @@ async function main(): Promise<void> {
         for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); }
         window.scrollTo(0, 0);
       });
-      await page.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished.catch(() => undefined))));
+      // Infinite animations (the live dot) never finish: wait only for the ones that end.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => undefined))));
       const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]).analyze();
       axe[width] = res.violations.filter(v => v.impact === "serious" || v.impact === "critical").map(v => `${v.id} (${v.nodes.length})`);
       await ctx.close();

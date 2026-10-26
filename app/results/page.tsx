@@ -45,11 +45,11 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <h1 className="feed2__h">Results</h1>
         <p className="results__label">Real past moves. Not a promise.</p>
         <div className="chips" aria-label="Filters">
-          <Link className="chip2" aria-pressed={!tab} href={q({ tab: null })}>All</Link>
-          <Link className="chip2" aria-pressed={tab === "sports"} href={q({ tab: "sports" })}>Sports</Link>
-          <Link className="chip2" aria-pressed={tab === "markets"} href={q({ tab: "markets" })}>Markets</Link>
-          {SIZES.map(s => <Link key={s} className="chip2" aria-pressed={min === s} href={q({ min: String(s) })}>{dollars(s).replace(",000", "k")}+</Link>)}
-          <Link className="chip2" aria-pressed={topOnly} href={q({ top: topOnly ? null : "1" })}>Top traders only</Link>
+          <Link className="chip2" aria-current={(!tab) ? "true" : undefined} href={q({ tab: null })}>All</Link>
+          <Link className="chip2" aria-current={(tab === "sports") ? "true" : undefined} href={q({ tab: "sports" })}>Sports</Link>
+          <Link className="chip2" aria-current={(tab === "markets") ? "true" : undefined} href={q({ tab: "markets" })}>Markets</Link>
+          {SIZES.map(s => <Link key={s} className="chip2" aria-current={(min === s) ? "true" : undefined} href={q({ min: String(s) })}>{dollars(s).replace(",000", "k")}+</Link>)}
+          <Link className="chip2" aria-current={(topOnly) ? "true" : undefined} href={q({ top: topOnly ? null : "1" })}>Top traders only</Link>
         </div>
         {shown.length ? (
           <>

@@ -66,7 +66,7 @@
 /* ---------- Coming soon, pills, sheets ---------- */
 .soon { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--r-pill); background: var(--brand-tint); color: var(--brand-hover); font-size: var(--t13); font-weight: 700; white-space: nowrap; }
 .soonitem { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); border: 0; background: none; cursor: pointer; color: var(--muted); font: inherit; }
-.soonitem .soonitem__label { opacity: .75; }
+.soonitem .soonitem__label { color: var(--muted); }
 .soonitem.btn { color: var(--muted); }
 .soonrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 700 var(--t13)/1 var(--font); cursor: pointer; }
@@ -96,14 +96,14 @@
 @keyframes pulse2 { 50% { opacity: .35; } }
 .tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--border); margin-top: 16px; }
 .tabs__tab { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 14px; border: 0; background: none; cursor: pointer; font: 700 var(--t17)/1 var(--font); color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
-.tabs__tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--brand); }
+.tabs__tab[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--brand); }
 .tabs__tab:hover { color: var(--text); }
 .tabs__tab--soon { color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .chips--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
 .chip2 { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 700 var(--t15)/1 var(--font); cursor: pointer; text-decoration: none; white-space: nowrap; }
 .chip2:hover { border-color: var(--muted); }
-.chip2[aria-pressed="true"] { background: var(--brand-tint); border-color: var(--brand); color: var(--brand-hover); }
+.chip2[aria-pressed="true"], .chip2[aria-current="true"] { background: var(--brand-tint); border-color: var(--brand); color: var(--brand-hover); }
 
 /* ---------- the move card ---------- */
 .move { display: grid; gap: 10px; padding: 20px; border-radius: var(--r-card); background: var(--bg); box-shadow: var(--shadow-card); border: 1px solid var(--border); }
@@ -126,7 +126,7 @@
 .follow__err { color: var(--loss); font-size: var(--t13); }
 
 /* ---------- app pages (feed, trader, market, results, following) ---------- */
-.app2 { padding: 24px 16px 64px; }
+.app2 { padding-top: 24px; padding-bottom: 64px; }
 .app2__bar { display: flex; justify-content: flex-end; }
 .feed2__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
 .feed2__h { font-size: var(--t32); }

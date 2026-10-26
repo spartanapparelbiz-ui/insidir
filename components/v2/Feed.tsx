@@ -65,9 +65,9 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, free, f
           {pill}
         </div>
       </div>
-      <div className="tabs" role="tablist" aria-label="Category">
+      <div className="tabs" role="group" aria-label="Category">
         {(["sports", "markets"] as const).map(t => (
-          <button key={t} type="button" role="tab" aria-selected={tab === t} className="tabs__tab" onClick={() => { setTab(t); setLeague(null); }}>
+          <button key={t} type="button" aria-pressed={tab === t} className="tabs__tab" onClick={() => { setTab(t); setLeague(null); }}>
             {t === "sports" ? "Sports" : "Markets"}
           </button>
         ))}

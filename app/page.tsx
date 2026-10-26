@@ -78,7 +78,7 @@ export default async function Landing() {
               {hero.length ? (
                 <div className="stack" data-count={hero.length}>
                   {hero.map((m, i) => (
-                    <div key={m.id} className={`stack__card stack__card--${i}`} aria-hidden={i > 0 ? true : undefined}>
+                    <div key={m.id} className={`stack__card stack__card--${i}`} aria-hidden={i > 0 ? true : undefined} inert={i > 0 ? true : undefined}>
                       {i === 0 ? <p className="stack__label">{heroIsLatest ? "Latest big move" : "Biggest move in the last 24 hours"}{!paid ? " (30 min late)" : ""}</p> : null}
                       <MoveCard m={m} follow={follow} trialHref={trial} />
                     </div>
