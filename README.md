@@ -77,6 +77,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
 | `*_RATE_PER_SEC` | worker | request budget per bucket |
 | `SWEEP_MS`, `SCAN_MS`, `FULL_SCAN_MS`, `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
+| `LADDERS_ENABLED` | worker | `1` turns threshold ladders on; anything else (production: `0`) leaves them off |
 
 Kalshi API keys are never asked for or stored. P&L for Kalshi comes from the CSV export the user uploads, which
 is processed and not stored.
@@ -118,7 +119,10 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
 1. Create a project with a **Postgres** database.
 2. Add a **web** service from this repo. `railway.json` sets the build (`npm run build`), the pre-deploy migration
    (`npm run db:migrate`), the start command and the `/api/health` health check. Attach your domain.
-3. Add a **worker** service from the same repo with start command `npm run worker` (no domain, no health check).
+3. Add a **worker** service from the same repo. In its Settings → Config-as-code, set the Railway config file to
+   `/railway.worker.json` (start command `npm run worker`, no domain, no health check). Without this the worker
+   service picks up `railway.json`, whose start command overrides the dashboard and runs the web app instead, so no
+   scan runs and the site shows "Live data paused, retrying".
 4. Set `DATABASE_URL` on both services (reference the Postgres service variable), and the variables above.
 5. **Whop:** follow [`docs/WHOP-LAUNCH.md`](docs/WHOP-LAUNCH.md). In short, for each environment (sandbox first):
    - Create an OAuth app with redirect URI `https://YOUR_DOMAIN/auth/callback` and scopes `openid profile email`.

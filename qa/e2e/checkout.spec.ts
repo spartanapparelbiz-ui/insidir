@@ -43,7 +43,7 @@ test.describe.serial("Whop sandbox: sign-in, checkout, access, webhooks", () => 
     await page.goto("/?utm_source=instagram&utm_campaign=e2e");
     await page.getByRole("link", { name: "Log in" }).first().click();
     await expect(page).toHaveURL(/\/terminal/);
-    await expect(page.locator(".planbar")).toContainText("30 min delay");
+    await expect(page.locator(".planline")).toContainText("30 minutes late");
     // A new account gets the first-run setup; skip it like a hurried buyer would.
     await page.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -140,7 +140,7 @@ test.describe.serial("Whop sandbox: sign-in, checkout, access, webhooks", () => 
     // Whop ends the period: membership.updated, and the next request is free.
     await whop(`/__end/${mem.id}`, {});
     await page.goto("/terminal");
-    await expect(page.locator(".planbar")).toContainText("30 min delay");
+    await expect(page.locator(".planline")).toContainText("30 minutes late");
     expect((await buyer())!.plan).toBe("free");
   });
 

@@ -18,26 +18,32 @@ export const LADDER_CLOSE_TOLERANCE_MS = 60 * 60 * 1000;
 
 const fmt = (v: number): string => v.toLocaleString("en-US", { maximumFractionDigits: 6 });
 
-/** Every implication pair among the ladder rungs. */
+/** Each rung is paired with this many nearest rungs (by strike) on each side. Pairing every rung with every other one
+ *  is quadratic: on the live venues one ladder group holds thousands of rungs and produced 5.4 million pairs, which
+ *  ran the worker out of memory. A lock between two distant rungs usually shows up between nearer ones too; one that
+ *  doesn't is missed, never invented. */
+export const LADDER_NEIGHBORS = 3;
+
+/** Implication pairs among ladder rungs: same venue, subject, strike kind and close hour, nearest rungs only. */
 export function findLadderImplications(markets: readonly VMarket[]): Implication[] {
   const groups = new Map<string, VMarket[]>();
   for (const m of markets) {
     const s = m.strike;
     if (!s || (s.kind !== "above" && s.kind !== "below") || !Number.isFinite(s.value) || m.closeTime == null) continue;
-    const key = `${m.venue}|${s.subject.trim().toLowerCase()}|${s.kind}`;
+    const key = `${m.venue}|${s.subject.trim().toLowerCase()}|${s.kind}|${Math.round(m.closeTime / LADDER_CLOSE_TOLERANCE_MS)}`;
     const g = groups.get(key);
     if (g) g.push(m);
     else groups.set(key, [m]);
   }
   const out: Implication[] = [];
   for (const group of groups.values()) {
-    for (const x of group) {
-      for (const y of group) {
-        if (x === y || x.id === y.id) continue;
-        const sx = x.strike;
-        const sy = y.strike;
-        if (!sx || !sy || x.closeTime == null || y.closeTime == null) continue;
-        if (Math.abs(x.closeTime - y.closeTime) > LADDER_CLOSE_TOLERANCE_MS) continue;
+    group.sort((a, b) => a.strike!.value - b.strike!.value);
+    for (let i = 0; i < group.length; i++) {
+      for (let j = Math.max(0, i - LADDER_NEIGHBORS); j <= Math.min(group.length - 1, i + LADDER_NEIGHBORS); j++) {
+        const x = group[i]!, y = group[j]!;
+        if (i === j || x.id === y.id) continue;
+        const sx = x.strike!, sy = y.strike!;
+        if (Math.abs(x.closeTime! - y.closeTime!) > LADDER_CLOSE_TOLERANCE_MS) continue;
         // x is the antecedent, y the consequent.
         const implies = sx.kind === "above" ? sx.value > sy.value : sx.value < sy.value;
         if (!implies) continue;

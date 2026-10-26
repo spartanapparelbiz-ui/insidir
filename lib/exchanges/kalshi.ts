@@ -6,7 +6,7 @@
  *   GET /series                                         every series (fee_type, fee_multiplier, category)
  *   GET /series/{series_ticker}                         one series (fallback, cached per series)
  *   GET /markets/{ticker}/orderbook                     one book, BIDS ONLY
- *   GET /markets/orderbooks?tickers=A,B,…               several books (unverified; falls back to one-by-one)
+ *   GET /markets/orderbooks?tickers=A&tickers=B…        several books (≤ 100; falls back to one-by-one)
  *
  * The orderbook lists bids for YES and for NO. Buying YES means matching a NO bid, so YES asks are 1 − NO bids
  * (the best, i.e. highest, NO bid gives the cheapest YES ask), and NO asks are 1 − YES bids. Raw responses are read
@@ -27,7 +27,7 @@ export const EVENTS_PAGE_LIMIT = 200;
 export const MAX_PAGES = 500;
 /** Tickers per GET /markets?tickers= lookup (any status). */
 export const TICKERS_BATCH = 100;
-/** Tickers per GET /markets/orderbooks request (unverified endpoint; documented max believed to be 100). */
+/** Tickers per GET /markets/orderbooks request (documented max 100). */
 export const ORDERBOOK_BATCH = 100;
 /** Exclude multivariate (combo / parlay) markets from the sweep: they are thousands of illiquid one-offs. */
 export const EXCLUDE_MULTIVARIATE = true;
@@ -202,7 +202,11 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     .map(s => (s.name && s.url ? `${s.name} (${s.url})` : (s.name ?? s.url)))
     .filter((x): x is string => x !== null);
 
-  const subject = subjectFromKalshiSeries(seriesTicker);
+  // An unrecognised series falls back to its ticker as the subject. Such series often hold many unrelated events
+  // (KXVOTEGENERAL: one per race), so scope the subject to the event or every race would ladder against every other.
+  const seriesSubject = subjectFromKalshiSeries(seriesTicker);
+  const event_ = eventTicker.toLowerCase();
+  const subject = seriesSubject !== null && seriesSubject === seriesTicker?.toLowerCase() && event_ !== seriesSubject ? `${seriesSubject}:${event_}` : seriesSubject;
   const strike =
     kalshiStrike(m.strike_type, m.floor_strike, m.cap_strike, subject) ??
     (yesSub ? strikeFromText(yesSub, event?.title ?? str(m.title) ?? "") : null);
@@ -234,6 +238,7 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     active: status === undefined || TRADING_STATUSES.has(status),
     result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
+    openInterest: num(pick(m, "open_interest_fp", "open_interest")),
   };
 }
 
@@ -462,7 +467,8 @@ export class KalshiClient implements VenueClient {
           continue;
         }
         try {
-          const raw = await this.http.json(`${this.base}/markets/orderbooks${qs({ tickers: group.join(",") })}`, { priority });
+          // tickers is an exploded array (tickers=A&tickers=B); a comma-joined value is read as one unknown ticker.
+          const raw = await this.http.json(`${this.base}/markets/orderbooks?${group.map(t => `tickers=${encodeURIComponent(t)}`).join("&")}`, { priority });
           const list = rows(raw, ["orderbooks"]);
           if (raw === null || (list.length === 0 && !(isObject(raw) && Array.isArray(raw.orderbooks)))) {
             this.batchOrderbooks = false;

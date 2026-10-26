@@ -49,3 +49,15 @@ describe("ladders", () => {
     expect(imps[0]!.safety).toBe("yellow");
   });
 });
+
+describe("ladder size", () => {
+  it("pairs each rung with its nearest rungs only, so a 2,000-rung ladder stays linear", async () => {
+    const { LADDER_NEIGHBORS } = await import("@/lib/engines/ladder");
+    const rungs = Array.from({ length: 2000 }, (_, i) =>
+      market({ id: `r${i}`, venue: "polymarket", fee: ZERO_PM, eventId: "BIG", strike: { kind: "above", value: i, subject: "margin" } as Strike }));
+    const imps = findLadderImplications(rungs);
+    expect(imps.length).toBeLessThanOrEqual(2000 * LADDER_NEIGHBORS);
+    expect(imps.every(i => i.antecedent.strike!.value > i.consequent.strike!.value)).toBe(true);
+    expect(imps.some(i => i.antecedent.id === "r10" && i.consequent.id === "r9")).toBe(true);
+  });
+});

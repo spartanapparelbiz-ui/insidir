@@ -10,6 +10,7 @@
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
+import { activityFloorFromEnv, isActiveEnough } from "@/lib/exchanges/venue";
 import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
@@ -40,7 +41,10 @@ export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
 export const DIGEST_CHECK_MS = 10 * 60_000;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 300);
+/** push(...xs) overflows the stack past ~100K items (Kalshi lists 130K+ markets), so append in a loop. */
+const append = <T>(to: T[], xs: readonly T[]) => { for (const x of xs) to.push(x); };
 
 interface State { universe: Universe; lastFull: number; hot: Set<string>; lastTickAt: Map<string, number> }
 
@@ -50,17 +54,19 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
   const byVenue = new Map<Venue, VMarket[]>();
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
-      const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      markets.push(...m); events.push(...e); byVenue.set(venue, m);
+      const [all, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
+      const floor = activityFloorFromEnv(process.env);
+      const m = all.filter(x => isActiveEnough(x, floor));
+      append(markets, m); append(events, e); byVenue.set(venue, m);
       await saveMarkets(db, m);
-      log(`sweep ${venue}: ${m.length} markets, ${e.length} events`);
+      log(`sweep ${venue}: ${m.length} of ${all.length} markets trading enough to scan, ${e.length} events`);
     } catch (e) {
       log(`sweep ${venue} failed: ${errMsg(e)}`);
       await heartbeat(db, "scan:" + venue, false, "sweep: " + errMsg(e)).catch(() => undefined);
       // Keep the venue's last known markets so a blip doesn't drop its deals.
       const prev = state.universe.markets.filter(x => x.venue === venue);
-      markets.push(...prev); byVenue.set(venue, prev);
-      events.push(...state.universe.events.filter(x => x.venue === venue));
+      append(markets, prev); byVenue.set(venue, prev);
+      append(events, state.universe.events.filter(x => x.venue === venue));
     }
   }
   const kalshi = byVenue.get("kalshi") ?? [];
@@ -74,7 +80,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
     const list = byVenue.get(other) ?? [];
     if (!kalshi.length || !list.length) continue;
     const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    pairs.push(...p);
+    append(pairs, p);
     log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
   }
   await savePairs(db, pairs);

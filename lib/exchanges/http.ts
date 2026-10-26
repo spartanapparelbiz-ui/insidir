@@ -85,11 +85,12 @@ export interface BucketConfig {
   published: string;
 }
 
-/** Defaults sit at ~80% of the tightest published limit of the endpoints each client uses. Override per bucket with
+/** Defaults sit at ~80% (Kalshi: 50%) of the tightest published limit of the endpoints each client uses. Override per bucket with
  *  <NAME>_RATE_PER_SEC (e.g. KALSHI_RATE_PER_SEC=80 on a Premier account). */
 export const DEFAULT_BUCKETS: Record<BucketName, BucketConfig> = {
-  // 80% of 20 reads/s.
-  kalshi: { ratePerSec: 16, burst: 16, published: "20 reads/s (Basic tier)" },
+  // 50% of 20 reads/s: unauthenticated reads share a budget per egress IP, and Railway's (and the QA proxy's) IPs are
+  // shared, so 429s showed up at ~6 req/s against the 80% default.
+  kalshi: { ratePerSec: 10, burst: 10, published: "20 reads/s (Basic tier)" },
   // /events 500 per 10s = 50/s, /markets 300 per 10s = 30/s → 80% of 30/s.
   polymarket_gamma: { ratePerSec: 24, burst: 24, published: "/events 500/10s, /markets 300/10s, general 4000/10s" },
   // POST /books 500 per 10s = 50/s (the tightest endpoint we use in bulk) → 80%.

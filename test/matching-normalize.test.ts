@@ -98,3 +98,13 @@ describe("aliases", () => {
     expect(normalizePhrase("  St. Louis  Cardinals ")).toBe("st louis cardinals");
   });
 });
+
+describe("Object.prototype words", () => {
+  it("keeps words like 'constructor' as plain string tokens", () => {
+    const n = normalize("Will the constructor toString valueOf win?");
+    expect(n.tokens.every(t => typeof t === "string")).toBe(true);
+    expect(n.tokens).toContain("constructor");
+    expect(() => contentTokens(n.tokens)).not.toThrow();
+    expect(normalizePhrase("Constructor hasOwnProperty")).toBe("constructor hasownproperty");
+  });
+});
