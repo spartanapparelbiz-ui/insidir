@@ -78,7 +78,8 @@ const KALSHI_CATEGORIES: Readonly<Record<string, Category>> = {
 
 export function kalshiCategory(...names: ReadonlyArray<string | null | undefined>): Category {
   for (const n of names) {
-    const hit = n ? KALSHI_CATEGORIES[n.trim().toLowerCase()] : undefined;
+    const k = n?.trim().toLowerCase();
+    const hit = k && Object.hasOwn(KALSHI_CATEGORIES, k) ? KALSHI_CATEGORIES[k] : undefined;
     if (hit) return hit;
   }
   return normaliseCategory(names);

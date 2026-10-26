@@ -1,6 +1,6 @@
 /* Polymarket (international) public APIs, no key:
  *
- *   Gamma  GET  /events?active=true&closed=false&limit=…&offset=…   events with nested markets (the sweep)
+ *   Gamma  GET  /events/keyset?active=true&closed=false&limit=…    events with nested markets (the sweep)
  *          GET  /markets?active=true&closed=false&limit=…&offset=…  markets (helper)
  *   CLOB   POST /books   [{token_id}] (≤ 500)                        books for many tokens
  *          GET  /book?token_id=…                                     one book (fallback)
@@ -23,10 +23,10 @@ import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type
 
 /** Condition ids per Gamma /markets?condition_ids= request when looking markets up by id. */
 export const GAMMA_IDS_BATCH = 50;
-/** Gamma /events page size (offset pagination). Events carry their markets, so pages are kept moderate. */
+/** Gamma /events/keyset page size (the server caps it at 100). Events carry their markets, so pages are kept moderate. */
 export const GAMMA_EVENTS_PAGE_LIMIT = 100;
-/** Hard stop for offset loops. */
-export const GAMMA_MAX_PAGES = 300;
+/** Hard stop for pagination loops. */
+export const GAMMA_MAX_PAGES = 1000;
 /** CLOB POST /books: at most this many token ids per request (documented). */
 export const CLOB_BOOKS_BATCH = 500;
 /** Whale threshold: trades of at least this many dollars. */
@@ -237,22 +237,33 @@ export function readGammaEvent(e: unknown, venue: Venue = "polymarket", urlFor: 
   };
 }
 
-/** Assemble a sweep from raw Gamma event pages (de-duplicated: offset pages can overlap). Pure. */
-export function buildGammaSweep(rawEvents: readonly unknown[], fetchedAt: number, venue: Venue = "polymarket"): Sweep {
+/** Folds raw Gamma events into a sweep one page at a time (de-duplicated: pages can overlap), so the raw pages
+ *  never all sit in memory at once (the full open universe is 200K+ markets). */
+export function gammaSweepBuilder(venue: Venue = "polymarket") {
   const markets: VMarket[] = [];
   const events: VEvent[] = [];
   const seenEvents = new Set<string>();
   const seenMarkets = new Set<string>();
-  for (const raw of rawEvents) {
-    const r = readGammaEvent(raw, venue);
-    if (!r || seenEvents.has(r.event.id)) continue;
-    seenEvents.add(r.event.id);
-    const kept = r.markets.filter(m => m.active && !seenMarkets.has(m.id));
-    for (const m of kept) seenMarkets.add(m.id);
-    markets.push(...kept);
-    if (kept.length > 0) events.push({ ...r.event, marketIds: r.event.marketIds.filter(id => kept.some(m => m.id === id)) });
-  }
-  return { markets, events, fetchedAt };
+  return {
+    add(rawEvents: readonly unknown[]): void {
+      for (const raw of rawEvents) {
+        const r = readGammaEvent(raw, venue);
+        if (!r || seenEvents.has(r.event.id)) continue;
+        seenEvents.add(r.event.id);
+        const kept = r.markets.filter(m => m.active && !seenMarkets.has(m.id));
+        for (const m of kept) { seenMarkets.add(m.id); markets.push(m); }
+        if (kept.length > 0) events.push({ ...r.event, marketIds: r.event.marketIds.filter(id => kept.some(m => m.id === id)) });
+      }
+    },
+    done: (fetchedAt: number): Sweep => ({ markets, events, fetchedAt }),
+  };
+}
+
+/** Assemble a sweep from raw Gamma event pages. Pure. */
+export function buildGammaSweep(rawEvents: readonly unknown[], fetchedAt: number, venue: Venue = "polymarket"): Sweep {
+  const b = gammaSweepBuilder(venue);
+  b.add(rawEvents);
+  return b.done(fetchedAt);
 }
 
 /* ---------- CLOB books ---------- */
@@ -489,17 +500,25 @@ export class PolymarketClient implements VenueClient {
 
   /* Gamma */
 
-  /** Raw open events with nested markets: GET /events?active=true&closed=false, limit/offset pagination, ordered
-   *  by id so pages are stable while new events appear. */
+  /** Raw open events with nested markets: GET /events/keyset?active=true&closed=false, following next_cursor via
+   *  after_cursor (ordered by id). Gamma rejects /events offsets past 2,000 with a 422, which cut the sweep short. */
   async listEventsRaw(priority: Priority = "normal"): Promise<JsonObject[]> {
     const out: JsonObject[] = [];
-    for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
-      const params = { active: true, closed: false, archived: false, limit: GAMMA_EVENTS_PAGE_LIMIT, offset: page * GAMMA_EVENTS_PAGE_LIMIT, order: "id", ascending: true };
-      const got = rows(await this.gamma.json(`${this.gammaUrl}/events${qs(params)}`, { priority }));
-      out.push(...got);
-      if (got.length < GAMMA_EVENTS_PAGE_LIMIT) break;
-    }
+    await this.eachEventsPage(got => { out.push(...got); }, priority);
     return out;
+  }
+
+  private async eachEventsPage(onPage: (rawEvents: JsonObject[]) => void, priority: Priority): Promise<void> {
+    let cursor: string | undefined;
+    for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
+      const params = { active: true, closed: false, archived: false, limit: GAMMA_EVENTS_PAGE_LIMIT, after_cursor: cursor };
+      const body = await this.gamma.json(`${this.gammaUrl}/events/keyset${qs(params)}`, { priority });
+      const got = rows(body, ["events"]);
+      onPage(got);
+      const next = body && typeof body === "object" && !Array.isArray(body) ? (body as JsonObject).next_cursor : undefined;
+      if (typeof next !== "string" || !next || got.length === 0) break;
+      cursor = next;
+    }
   }
 
   /** Raw open markets: GET /markets?active=true&closed=false (each row embeds its event under events[]). */
@@ -520,7 +539,11 @@ export class PolymarketClient implements VenueClient {
   }
 
   sweep(opts: ListOptions = {}): Promise<Sweep> {
-    return this.sweepCache.get(async () => buildGammaSweep(await this.listEventsRaw(opts.priority ?? "normal"), this.clock.now()), opts.refresh);
+    return this.sweepCache.get(async () => {
+      const b = gammaSweepBuilder();
+      await this.eachEventsPage(got => b.add(got), opts.priority ?? "normal");
+      return b.done(this.clock.now());
+    }, opts.refresh);
   }
 
   async listMarkets(opts: ListOptions = {}): Promise<VMarket[]> {
