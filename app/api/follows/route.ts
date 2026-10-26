@@ -1,4 +1,4 @@
-/* POST /api/follows {kind: "trader"|"market", target}: follow; DELETE: unfollow. Members only (docs/V2.md §8):
+/* POST /api/follows {kind: "trader"|"market", target}: follow; DELETE: unfollow. Members only (docs/INSIDIR-V2.md §8):
  * Insidir up to 50, Pro unlimited, free none. */
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";

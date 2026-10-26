@@ -1,4 +1,4 @@
-/* A market (docs/V2.md §6): the event in plain words, the current price as a payout line, "Big money in the last 24h:
+/* A market (docs/INSIDIR-V2.md §6): the event in plain words, the current price as a payout line, "Big money in the last 24h:
  * $1.2M on Yes, $300k on No" from our moves, a simple line of the prices big traders paid, and the big moves here.
  * The market link follows the location rules (lib/moves/links.ts). */
 import type { Metadata } from "next";

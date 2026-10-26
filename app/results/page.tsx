@@ -1,4 +1,4 @@
-/* Results (docs/V2.md §6): every settled move, newest settlement first, filterable by tab, size and "top traders
+/* Results (docs/INSIDIR-V2.md §6): every settled move, newest settlement first, filterable by tab, size and "top traders
  * only". Won or lost, the amount, and when. Our proof page: complete and honest, losses included. */
 import type { Metadata } from "next";
 import Link from "next/link";

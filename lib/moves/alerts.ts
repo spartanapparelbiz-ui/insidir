@@ -1,4 +1,4 @@
-/* Who gets pinged for a new move (docs/V2.md §7), pure.
+/* Who gets pinged for a new move (docs/INSIDIR-V2.md §7), pure.
  *   Insidir and Pro members: every move by a trader they follow, and every move of $50,000+ in a market they follow.
  *   Pro also: custom rules (any tab, league or size).
  *   Free: no alerts. Quiet hours hold push and email alerts back. One alert per user, move and channel. */

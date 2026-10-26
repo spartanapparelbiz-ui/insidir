@@ -1,4 +1,4 @@
-/* A trader (docs/V2.md §6): the public name or short address, the record (won, lost, win rate, all-time profit,
+/* A trader (docs/INSIDIR-V2.md §6): the public name or short address, the record (won, lost, win rate, all-time profit,
  * biggest win) once the wallet has 20+ resolved markets, a Follow button, open positions, and recent moves. Records are
  * for members; free viewers see a locked card. Nothing about who is behind a wallet, ever. */
 import type { Metadata } from "next";

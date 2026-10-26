@@ -1,4 +1,4 @@
-/* docs/V2.md: the landing, the feed and its plan gating, location rules, Coming soon, following, results. Runs at
+/* docs/INSIDIR-V2.md: the landing, the feed and its plan gating, location rules, Coming soon, following, results. Runs at
  * 390×844 and 1440×900 against the seeded fixtures (qa/e2e/seed.ts: E2E-Top has a 41-of-63 record). */
 import { expect, test } from "@playwright/test";
 import { q, signIn } from "./helpers";
@@ -125,4 +125,25 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
   await expect(first.getByLabel("Caption")).toHaveValue(/^A top trader put \$412,000 on Chiefs to win\./);
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
+});
+
+test("Stocks: insider buys and fund adds in plain words, each linking to its SEC filing", async ({ page }) => {
+  await page.goto("/feed?tab=stocks");
+  await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
+  const insider = page.locator("[data-move='f4:000099999926000001']");
+  await expect(insider.getByText("The CEO of E2E Fixture Devices bought $1.4M of E2E Fixture Devices stock.")).toBeVisible();
+  await expect(insider.getByText("Bought Oct 22 at $182.65 a share.", { exact: false })).toBeVisible();
+  await expect(insider.locator(".tag")).toHaveText("Stocks · EXDV");
+  const link = insider.getByRole("link", { name: "See the SEC filing" });
+  await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
+  await expect(link).toHaveAttribute("target", "_blank");
+  const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
+  await expect(fund.getByText("E2E Fixture Capital added $250M of E2E Fixture Devices last quarter.")).toBeVisible();
+  await expect(fund.getByText("Filed Oct 21 for the quarter ending Sep 30. 13F data can be up to 45 days old.")).toBeVisible();
+  // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
+  await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Coming soon");
+  // Stocks never mixes into the Sports tab.
+  const sports = await (await page.request.get("/api/moves?tab=sports&min=10000")).json() as { items: Array<{ tab: string }> };
+  expect(sports.items.every(i => i.tab === "sports")).toBe(true);
 });

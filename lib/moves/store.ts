@@ -1,6 +1,7 @@
 /* Moves, trader records, follows and the waitlist in Postgres (terminal schema). Server only. */
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
+import { liveTabs } from "@/lib/features";
 import { follows, markets, moves, traderRecords, waitlist } from "@/lib/db/schema";
 import type { League, Move, Tab, TraderRecord } from "./types";
 
@@ -11,6 +12,7 @@ export const fromRow = (r: Row): Move => ({
   outcomeSide: r.outcomeSide, amount: r.amount, avgPrice: r.avgPrice, wallet: r.wallet, walletName: r.walletName,
   at: r.at.getTime(), lastAt: r.lastAt.getTime(), fills: r.fills, tab: r.tab, league: (r.league as League | null) ?? null,
   category: r.category, url: r.url, result: r.result ?? null, settledAt: r.settledAt?.getTime() ?? null,
+  detail: (r.detail as Move["detail"]) ?? null,
 });
 
 /** Inserts new moves; a move seen again (more fills merged in) gets its new total. Returns the ids that are new. */
@@ -21,6 +23,7 @@ export async function upsertMoves(db: Db, list: readonly Move[]): Promise<string
       id: m.id, source: m.source, marketId: m.marketId, eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome,
       outcomeSide: m.outcomeSide, amount: m.amount, avgPrice: m.avgPrice, wallet: m.wallet, walletName: m.walletName,
       at: new Date(m.at), lastAt: new Date(m.lastAt), fills: m.fills, tab: m.tab, league: m.league, category: m.category, url: m.url,
+      detail: (m.detail ?? null) as Record<string, unknown> | null,
     }).onConflictDoUpdate({
       target: moves.id,
       set: { amount: m.amount, avgPrice: m.avgPrice, lastAt: new Date(m.lastAt), fills: m.fills, walletName: m.walletName },
@@ -31,10 +34,11 @@ export async function upsertMoves(db: Db, list: readonly Move[]): Promise<string
   return fresh;
 }
 
-/** Markets with unsettled moves older than an hour, per source (for the settlement check). */
+/** Markets with unsettled moves older than an hour, per source (for the settlement check). SEC filings never settle. */
 export async function unsettledMarkets(db: Db, before: Date, limit = 300): Promise<Array<{ source: "polymarket" | "kalshi"; marketId: string }>> {
-  return db.selectDistinct({ source: moves.source, marketId: moves.marketId }).from(moves)
-    .where(and(isNull(moves.result), lt(moves.at, before))).limit(limit);
+  const rows = await db.selectDistinct({ source: moves.source, marketId: moves.marketId }).from(moves)
+    .where(and(isNull(moves.result), lt(moves.at, before), inArray(moves.source, ["polymarket", "kalshi"]))).limit(limit);
+  return rows as Array<{ source: "polymarket" | "kalshi"; marketId: string }>;
 }
 
 /** Marks every move in a settled market won or lost (or void when the market was refunded). */
@@ -81,8 +85,9 @@ export interface MoveQuery {
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
+  // Tabs that aren't live yet (Coming soon) never reach a page, whatever the query asks for.
   const w = [
-    q.tab ? eq(moves.tab, q.tab) : undefined,
+    inArray(moves.tab, q.tab ? liveTabs().filter(t => t === q.tab) : liveTabs()),
     q.min ? gte(moves.amount, q.min) : undefined,
     q.league ? eq(moves.league, q.league) : undefined,
     q.wallet ? eq(moves.wallet, q.wallet) : undefined,

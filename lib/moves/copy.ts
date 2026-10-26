@@ -1,4 +1,4 @@
-/* One sentence per move that a 12-year-old gets (docs/V2.md §4). We say what happened, never what to do.
+/* One sentence per move that a 12-year-old gets (docs/INSIDIR-V2.md §4). We say what happened, never what to do.
  *   "A top trader just put $412,000 on Chiefs to win."
  *   "A wallet just put $85,000 on "Yes" in "Fed rate cut in December?""
  *   "Someone just put $48,000 on Lakers to win."
@@ -28,8 +28,10 @@ export function signedShort(v: number): string {
 
 const clean = (t: string) => t.trim().replace(/\s+/g, " ");
 
-/** What the money is on, in words: a named side ("Chiefs to win" in sports) or "Yes"/"No" in a quoted question. */
-export function onWhat(m: Pick<Move, "outcome" | "marketTitle" | "tab">): string {
+/** What the money is on, in words: a named side ("Chiefs to win" in sports) or "Yes"/"No" in a quoted question;
+ *  for SEC filings, the company's stock. */
+export function onWhat(m: Pick<Move, "outcome" | "marketTitle" | "tab"> & { detail?: Move["detail"] }): string {
+  if (m.detail) return `${m.detail.company} stock`;
   const o = clean(m.outcome);
   if (YES_NO.test(o)) return `"${o[0]!.toUpperCase()}${o.slice(1).toLowerCase()}" in "${clean(m.marketTitle)}"`;
   return m.tab === "sports" ? `${o} to win` : `"${o}" in "${clean(m.marketTitle)}"`;
@@ -42,16 +44,39 @@ export function who(m: Pick<Move, "source">, record: TraderRecord | null): strin
 }
 
 export function moveSentence(m: Move, record: TraderRecord | null, live = true): string {
+  if (m.source === "sec" && m.detail) return stockSentence(m.detail, m.amount, live);
   return `${who(m, record)} ${live ? "just put" : "put"} ${dollars(m.amount)} on ${onWhat(m)}.`;
 }
 
 /** "Pays $161 on every $100 if Chiefs win." Dollars only, never cents or odds. */
 export function payoutLine(m: Pick<Move, "outcome" | "avgPrice" | "tab">): string | null {
-  if (!(m.avgPrice > 0 && m.avgPrice < 1)) return null;
+  if (m.tab === "stocks" || !(m.avgPrice > 0 && m.avgPrice < 1)) return null;
   const pays = Math.round(100 / m.avgPrice);
   const o = clean(m.outcome);
   const cond = YES_NO.test(o) ? `if the answer is ${o[0]!.toUpperCase()}${o.slice(1).toLowerCase()}` : m.tab === "sports" ? `if ${o} win` : `if it's "${o}"`;
   return `Pays $${pays.toLocaleString("en-US")} on every $100 ${cond}.`;
+}
+
+/* ---------- Stocks (SEC filings) ---------- */
+
+const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+const DAY_UTC = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+/** "2026-09-30" → "Sep 30" (a calendar date, no time zone shift). */
+const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
+const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** "The CEO of Apple just bought $1.4M of Apple stock." / "Berkshire Hathaway added $250M of Chevron last quarter." */
+export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, live = true): string {
+  if (d.kind === "insider") return `${d.role} of ${d.company} ${live ? "just bought" : "bought"} ${dollars(amount)} of ${d.company} stock.`;
+  return `${d.fund} added ${dollars(amount)} of ${d.company} last quarter${d.newPosition ? ", a new position" : ""}.`;
+}
+
+/** The line under a stock card: when it was traded or filed, and how old 13F data can be. */
+export function stockNote(d: NonNullable<Move["detail"]>): string {
+  if (d.kind === "insider") {
+    return `${d.tradeDate ? `Bought ${calDay(d.tradeDate)} at ${perShare(d.pricePerShare)} a share. ` : ""}Filed with the SEC ${DAY.format(new Date(d.filedAt))}.`;
+  }
+  return `Filed ${calDay(d.filedOn)}${d.period ? ` for the quarter ending ${calDay(d.period)}` : ""}. 13F data can be up to 45 days old.`;
 }
 
 /** "Won 41 of 63 · +$1.2M all-time", only when the wallet has a record. */

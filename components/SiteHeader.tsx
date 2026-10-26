@@ -1,4 +1,4 @@
-/* The top of every page (docs/V2.md §6): a thin violet trial bar, then the nav. Visitors: logo, How it works,
+/* The top of every page (docs/INSIDIR-V2.md §6): a thin violet trial bar, then the nav. Visitors: logo, How it works,
  * Pricing, FAQ, Log in, and "Try it for $1". Members: logo, Feed, Following, Results, Account. On phones: logo, the
  * button and a menu; members also get a bottom tab bar (Feed, Following, Results, Account) within thumb reach.
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */

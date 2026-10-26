@@ -1,4 +1,4 @@
-/* A route that exists but isn't ready yet (docs/V2.md §2): the page says so and offers the waitlist, never an empty
+/* A route that exists but isn't ready yet (docs/INSIDIR-V2.md §2): the page says so and offers the waitlist, never an empty
  * or half-working page. */
 import type { ReactNode } from "react";
 import { SiteHeader } from "@/components/SiteHeader";

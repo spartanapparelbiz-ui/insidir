@@ -1,4 +1,4 @@
-/* The feed as one viewer may receive it (docs/V2.md §6, §8), built on the server:
+/* The feed as one viewer may receive it (docs/INSIDIR-V2.md §6, §8), built on the server:
  *   - Free: moves at least 30 minutes old; no records, so nobody is called a top trader and no record line is sent.
  *   - Members: live moves with records.
  *   - Links follow the location rules (lib/moves/links.ts): a US or unknown-region viewer never gets an
@@ -8,7 +8,7 @@ import { like } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
 import type { Plan, Region } from "@/lib/types";
-import { agoText, moveSentence, payoutLine, recordLine } from "./copy";
+import { agoText, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
 import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
 import { hasRecord, isTopTrader, walletLabel } from "./records";
@@ -37,6 +37,9 @@ export interface FeedItem {
   walletLabel: string | null;
   link: MarketLink | null;
   result: Move["result"];
+  /** Stocks: the line under the sentence (trade or filing date, 13F age) and the ticker for the tag. */
+  note: string | null;
+  ticker: string | null;
 }
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
@@ -67,6 +70,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       amount: m.amount, at: m.at, ago: agoText(m.at, now), eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome, marketId: m.marketId,
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
+      note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
     };
   });
 }

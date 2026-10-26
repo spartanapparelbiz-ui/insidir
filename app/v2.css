@@ -272,3 +272,4 @@
 .feed2__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .foot__company, .sec2__h, .hero2__sub, .move__sentence, .band2__h { text-wrap: balance; }
 .soonpage__form { width: 100%; max-width: 420px; }
+@media (max-width: 420px) { .tabs__tab { padding: 0 10px; } }

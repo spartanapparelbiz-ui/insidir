@@ -1,5 +1,5 @@
 "use client";
-/* The Alerts page's controls (docs/V2.md §7): this device on/off, email alerts, a test alert, quiet hours in the
+/* The Alerts page's controls (docs/INSIDIR-V2.md §7): this device on/off, email alerts, a test alert, quiet hours in the
  * user's own time zone, the 8am ET daily email, and (Pro) custom rules. Everything saves itself. Each control is
  * shown only when its feature is ready; the rest wear a Coming soon badge. */
 import { useRouter } from "next/navigation";
