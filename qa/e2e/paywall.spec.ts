@@ -42,7 +42,8 @@ for (const who of ["visitor", "free member"] as const) {
     // Static JS/CSS is the same file for every visitor, so it can't carry anyone's data.
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
       for (const f of fresh) {
-        if (body.includes(f.id)) found.push(`${url}: fresh deal id ${f.id}`);
+        // Its own page echoes the id from the URL the visitor typed; anywhere else the id would reveal the deal.
+        if (body.includes(f.id) && !url.includes(`/deal/${f.id}`)) found.push(`${url}: fresh deal id ${f.id}`);
         if (body.includes(f.title.replace("E2E fixture: ", ""))) found.push(`${url}: fresh deal title ${f.title}`);
       }
       for (const o of old) {
