@@ -1,29 +1,22 @@
-/* Text-only share card: the wordmark and the headline. No photos, no art. */
+/* The site's link preview: black, the logo, the serif headline, and a faint photo texture (lib/share-card.tsx). */
 import { ImageResponse } from "next/og";
-import { AB_TESTS } from "@/lib/analytics";
-import { LOGO } from "@/components/Wordmark";
+import { loadFonts, OG, OgLogo, texture } from "@/lib/share-card";
 
-export const alt = "Insidir Terminal";
+export const alt = "Insidir: follow the big money";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  const [fonts, bg] = await Promise.all([loadFonts(), texture("wide")]);
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: "#000", color: "#f5f5f5", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72 }}>
-        <div style={{ display: "flex" }}>
-          <svg width="241" height="80" viewBox={LOGO.viewBox} fill="#f5f5f5">
-            <circle cx={LOGO.dot.cx} cy={LOGO.dot.cy} r={LOGO.dot.r} />
-            <path d={LOGO.bar} />
-            <path d={LOGO.text} />
-            {LOGO.textDots.map(d => <circle key={d.cx} cx={d.cx} cy={d.cy} r={d.r} />)}
-          </svg>
-        </div>
-        <div style={{ display: "flex", fontSize: 68, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>{AB_TESTS.hero.a.headline}</div>
-        <div style={{ display: "flex", fontSize: 28, color: "#8c9099" }}>Prices that lock in a profit after fees, if both sides fill and both markets settle the same way.</div>
+      <div style={{ width: "100%", height: "100%", background: OG.ink, color: OG.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72, fontFamily: "Sans", position: "relative" }}>
+        <img src={bg} width={1200} height={630} style={{ position: "absolute", left: 0, top: 0, opacity: 0.22 }} />
+        <OgLogo height={64} />
+        <div style={{ display: "flex", fontFamily: "Serif", fontSize: 96, lineHeight: 1.02 }}>Follow the big money.</div>
+        <div style={{ display: "flex", fontSize: 30, color: OG.grey2, maxWidth: 940 }}>The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.</div>
       </div>
     ),
-    size,
+    { ...size, fonts },
   );
 }

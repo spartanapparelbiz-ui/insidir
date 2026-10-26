@@ -2,6 +2,7 @@
  * only". Won or lost, the amount, and when. Our proof page: complete and honest, losses included. */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Photo } from "@/components/Photo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { getViewer } from "@/lib/auth/viewer";
@@ -69,6 +70,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           </>
         ) : (
           <div className="empty">
+            <Photo n={2} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
             <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
             <Link className="btn btn--secondary" href="/feed">See the live feed</Link>

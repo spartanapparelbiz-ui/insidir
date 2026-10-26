@@ -14,7 +14,7 @@ export default async function AboutPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/about" />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/about" tone="light" />
       <main className="wrap lp">
         <article className="lp-legal lp-about">
           <h1>About Insidir</h1>

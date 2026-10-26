@@ -56,8 +56,8 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     await expect(page).toHaveURL(/\/feed/, { timeout: 20_000 });
 
     // The welcome: follow the first top trader in one tap; it shows on Following.
-    const welcome = page.locator(".welcome");
-    await expect(welcome.getByRole("heading", { name: "You're in. Follow your first 3 top traders." })).toBeVisible();
+    const welcome = page.locator(".inband");
+    await expect(welcome.getByRole("heading", { name: "You're in." })).toBeVisible();
     await welcome.getByRole("button", { name: "Follow" }).first().click();
     await expect(welcome.getByRole("button", { name: "Following" }).first()).toBeVisible();
     await shot("welcome");

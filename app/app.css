@@ -11,14 +11,14 @@
 .row-gap { display: flex; flex-wrap: wrap; gap: 8px; }
 /* errors and losses: words first, a red dot for errors; never red text */
 .err { color: var(--text); }
-.err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--loss); vertical-align: 1px; }
-.loss { color: var(--muted); font-family: var(--font); font-variant-numeric: tabular-nums; }
+.err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--text); vertical-align: 1px; }
+.loss { color: var(--muted); font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .nowrap { white-space: nowrap; }
 
 /* banners: a safety-coloured dot and Paper words, on Surface */
 .banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--r-card); background: var(--bg-alt); font-size: var(--t15); line-height: 20px; }
-.banner--warn::before, .banner--err::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--caution); }
-.banner--err::before { background: var(--loss); }
+.banner--warn::before, .banner--err::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.banner--err::before { background: var(--text); }
 .banner__dot { display: none; }
 
 /* one-line region choice and plan line above the feed */
@@ -56,10 +56,10 @@
 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-pill); background: var(--bg); cursor: pointer; font-size: var(--t15); }
-.chip input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand); }
+.chip input { width: 18px; height: 18px; margin: 0; accent-color: var(--text); }
 .chip { transition: box-shadow var(--dur-press); }
 .chip:hover { box-shadow: inset 0 0 0 1px var(--muted); }
-.chip:has(input:checked), .chip--on { background: var(--bg); color: var(--text); box-shadow: inset 0 0 0 2px var(--brand); }
+.chip:has(input:checked), .chip--on { background: var(--bg); color: var(--text); box-shadow: inset 0 0 0 2px var(--text); }
 .pushbtn { display: grid; gap: 8px; justify-items: start; }
 
 /* settings */
@@ -72,10 +72,10 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .fs__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .fs__sub { color: var(--muted); font-size: var(--t15); }
 .input[readonly] { color: var(--muted); }
-.input--big { font: 700 var(--t24)/1 var(--font); font-variant-numeric: tabular-nums; min-height: 56px; }
+.input--big { font: 700 var(--t24)/1 var(--sans); font-variant-numeric: tabular-nums; min-height: 56px; }
 .plan__now { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .plan__name { font-size: var(--t32); font-weight: 600; letter-spacing: -0.02em; }
-.plan__price { color: var(--muted); font-family: var(--font); font-variant-numeric: tabular-nums; }
+.plan__price { color: var(--muted); font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .cancel { display: grid; gap: 6px; padding-top: 8px; }
 
 /* one deal (DealDetail): the deal page and the Terminal's sheet. Container queries, so the sheet and the page lay
@@ -89,11 +89,11 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .dd-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; margin: 0; padding: var(--pad); border-radius: var(--r-card); background: var(--bg-alt); }
 .dd-num { display: grid; gap: 2px; align-content: start; }
 .dd-num dt { color: var(--muted); font-size: var(--t15); }
-.dd-num dd { margin: 0; font: 700 var(--t24)/1.2 var(--font); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dd-num dd { margin: 0; font: 700 var(--t24)/1.2 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .dd-num dd.dd-big { font-size: var(--t32); }
 .dd-num:first-child { grid-column: 1 / -1; }
 .dd-note { display: flex; gap: 10px; align-items: baseline; padding: 12px 16px; border-radius: var(--r-card); background: var(--bg-alt); color: var(--text); font-size: var(--t15); }
-.dd-note::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--caution); transform: translateY(-1px); }
+.dd-note::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transform: translateY(-1px); }
 .dd > .btn { justify-self: start; }
 .dd-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .dd-sec__h { font-size: var(--t24); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -101,11 +101,11 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .legs > *, .rules > * { min-width: 0; }
 .leg { display: grid; gap: 8px; padding: var(--pad); border-radius: var(--r-card); background: var(--bg-alt); align-content: start; }
 .leg__venue, .rule__venue { color: var(--muted); font-size: var(--t15); }
-.leg__side { font: 700 var(--t24)/1.2 var(--font); font-variant-numeric: tabular-nums; }
+.leg__side { font: 700 var(--t24)/1.2 var(--sans); font-variant-numeric: tabular-nums; }
 .leg__label { color: var(--muted); font-size: var(--t15); }
 .leg__kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0; }
 .leg__kv dt { color: var(--muted); font-size: var(--t15); }
-.leg__kv dd { margin: 0; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.leg__kv dd { margin: 0; font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .leg__open { margin-top: 6px; }
 .notes { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: var(--t15); }
 .rules { display: grid; gap: 8px; }
@@ -135,7 +135,7 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
 .kv > div { display: grid; gap: 2px; }
 .kv dt { color: var(--muted); font-size: var(--t15); }
-.kv dd { margin: 0; font: 700 var(--t24)/1.2 var(--font); font-variant-numeric: tabular-nums; }
+.kv dd { margin: 0; font: 700 var(--t24)/1.2 var(--sans); font-variant-numeric: tabular-nums; }
 .kv dd.profit { font-size: var(--t32); }
 .kv--big dd { font-size: var(--t32); }
 .kv--big dd.profit { font-size: var(--t44); }
@@ -169,7 +169,7 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .upload__btn { width: max-content; }
 .upload__btn:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
 .whales td { font-size: var(--t15); }
-.whales__side { font-family: var(--font); }
+.whales__side { font-family: var(--sans); }
 
 /* admin */
 .sec2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-top: 12px; }

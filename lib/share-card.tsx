@@ -1,7 +1,8 @@
 /* The share card (docs/BRIEF.md §4.16): an image of one closed receipt, OG-sized (1200×630) or story-sized
- * (1080×1920): the event, both prices, "You keep $X at $500", how long it lasted, and insidir.com. Plain type on
- * Ink, the $1 bar in the middle; no logos of the apps. Rendered with next/og (satori), Plus Jakarta Sans embedded
- * (lib/og-fonts, SIL OFL). Server only. */
+ * (1080×1920): the event, both prices, "You keep $X at $500", how long it lasted, and insidir.com. Black, the logo,
+ * white type, a faint photo texture; no logos of the apps. Rendered with next/og (satori). Also home to what every
+ * share image shares: the fonts (Rufina for headlines, Schibsted Grotesk for the rest; lib/og-assets, SIL OFL), the
+ * logo, the texture and the palette. Server only. */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
@@ -22,7 +23,9 @@ export interface ShareCardData {
 export type ShareFormat = "og" | "story";
 export const SHARE_SIZE: Record<ShareFormat, { width: number; height: number }> = { og: { width: 1200, height: 630 }, story: { width: 1080, height: 1920 } };
 
-const C = { ink: "#000000", surface: "#141414", line: "#262626", paper: "#f5f5f2", steel: "#8c9099", dim: "#5a5f66", violet: "#8b7cff" };
+/** The palette (app/tokens.css): black, white, greys; green only for money and wins, the loss colour for losses. */
+export const OG = { ink: "#0B0B12", paper: "#FFFFFF", grey1: "#F2F2F4", grey2: "#E6E6EA", grey3: "#5B6070", money: "#087A55", loss: "#C2410C" } as const;
+const C = { ink: OG.ink, surface: "#1B1B24", line: OG.grey3, paper: OG.paper, steel: OG.grey2, dim: OG.grey3, violet: OG.paper };
 const cents = (c: number) => (Number.isInteger(Math.round(c * 10) / 10) ? Math.round(c) : (Math.round(c * 10) / 10).toFixed(1)) + "¢";
 const usd = (v: number) => `${v < 0 ? "−" : ""}$${Math.abs(v).toFixed(2)}`;
 export function lastedText(ms: number): string {
@@ -32,13 +35,35 @@ export function lastedText(ms: number): string {
   return h < 48 ? `${h}h ${m % 60}m` : `${Math.floor(h / 24)} days`;
 }
 
-let fonts: Promise<Array<{ name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" }>> | null = null;
+const asset = (f: string) => readFile(join(process.cwd(), "lib/og-assets", f));
+
+type Font = { name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" };
+let fonts: Promise<Font[]> | null = null;
+/** "Sans" (Schibsted Grotesk 500/700/800) and "Serif" (Rufina 700). */
 export function loadFonts() {
-  fonts ??= Promise.all(([500, 700, 800] as const).map(async weight => ({
-    name: "Plus Jakarta Sans", weight, style: "normal" as const,
-    data: await readFile(join(process.cwd(), "lib/og-fonts", `plus-jakarta-sans-${weight}.ttf`)),
-  })));
+  fonts ??= Promise.all([
+    ...([500, 700, 800] as const).map(async weight => ({ name: "Sans", weight, style: "normal" as const, data: await asset(`schibsted-grotesk-${weight}.ttf`) })),
+    asset("rufina-700.ttf").then(data => ({ name: "Serif", weight: 700 as const, style: "normal" as const, data })),
+  ]);
   return fonts;
+}
+
+const textures = new Map<string, Promise<string>>();
+/** Photo 6 (the summit) in black and white, as a data URL, for a faint texture under share images. */
+export function texture(shape: "tall" | "wide"): Promise<string> {
+  const f = shape === "tall" ? "texture-6.jpg" : "texture-6-wide.jpg";
+  if (!textures.has(f)) textures.set(f, asset(f).then(b => `data:image/jpeg;base64,${b.toString("base64")}`));
+  return textures.get(f)!;
+}
+
+/** The logo in white (components/Wordmark.tsx), `height` px tall. */
+export function OgLogo({ height, color = OG.paper }: { height: number; color?: string }) {
+  return (
+    <svg width={Math.round(height * LOGO.ratio)} height={height} viewBox={LOGO.viewBox} fill={color}>
+      <path fillRule="evenodd" d={LOGO.mark} />
+      <path fillRule="evenodd" d={LOGO.word} />
+    </svg>
+  );
 }
 
 export async function shareCardImage(d: ShareCardData, format: ShareFormat): Promise<ImageResponse> {
@@ -48,20 +73,17 @@ export async function shareCardImage(d: ShareCardData, format: ShareFormat): Pro
   const gap = Math.max(0, 100 - spent);
   const pad = story ? 96 : 64;
   const big = story ? 120 : 76;
+  const bg = await texture(story ? "tall" : "wide");
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "Plus Jakarta Sans" }}>
+      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "Sans", position: "relative" }}>
+        <img src={bg} width={size.width} height={size.height} style={{ position: "absolute", left: 0, top: 0, opacity: 0.14 }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <svg width={story ? 180 : 132} height={story ? 60 : 44} viewBox={LOGO.viewBox} fill={C.paper}>
-            <circle cx={LOGO.dot.cx} cy={LOGO.dot.cy} r={LOGO.dot.r} />
-            <path d={LOGO.bar} />
-            <path d={LOGO.text} />
-            {LOGO.textDots.map(t => <circle key={t.cx} cx={t.cx} cy={t.cy} r={t.r} />)}
-          </svg>
+          <OgLogo height={story ? 64 : 44} />
           <div style={{ display: "flex", fontSize: story ? 30 : 22, color: C.steel }}>Receipt</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: story ? 48 : 24 }}>
-          <div style={{ display: "flex", fontSize: story ? 56 : 38, lineHeight: 1.15, fontWeight: 700 }}>{d.title}</div>
+          <div style={{ display: "flex", fontFamily: "Serif", fontSize: story ? 60 : 40, lineHeight: 1.12 }}>{d.title}</div>
           <div style={{ display: "flex", flexDirection: story ? "column" : "row", gap: story ? 24 : 16 }}>
             {d.legs.map((l, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", background: C.surface, padding: story ? 32 : 20, flexGrow: story ? 0 : 1, flexBasis: story ? "auto" : 0, gap: 4 }}>
@@ -72,7 +94,7 @@ export async function shareCardImage(d: ShareCardData, format: ShareFormat): Pro
           </div>
           <div style={{ display: "flex", height: story ? 40 : 24, width: "100%", gap: 2 }}>
             {d.legs.map((l, i) => <div key={i} style={{ display: "flex", width: `${l.priceCents}%`, background: i % 2 ? C.dim : C.line }} />)}
-            {gap > 0 ? <div style={{ display: "flex", width: `${gap}%`, background: C.violet }} /> : null}
+            {gap > 0 ? <div style={{ display: "flex", width: `${gap}%`, background: OG.money }} /> : null}
           </div>
           <div style={{ display: "flex", fontSize: story ? 64 : 40, fontWeight: 700 }}>
             {d.keep >= 0 ? `You keep ${usd(d.keep)} at $${d.keepAt}` : `Lost ${usd(-d.keep)} at $${d.keepAt}`}

@@ -8,7 +8,9 @@ import { events } from "./db/schema";
 export const FUNNEL = ["landing_view", "feed_view", "unlock_click", "checkout_start", "paid", "alert_opened"] as const;
 export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
-export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip"]);
+export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip",
+  // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
+  "hero_cta_click", "ticker_click", "feed_preview_view"]);
 
 export const UTM_COOKIE = "insidir_utm";
 export const AB_COOKIE = "insidir_ab";

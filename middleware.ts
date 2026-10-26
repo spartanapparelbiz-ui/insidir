@@ -29,4 +29,4 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/((?!_next|api|icons|brand|favicon|sw.js|manifest).*)"] };
+export const config = { matcher: ["/((?!_next|api|icons|brand|hero|favicon|sw.js|manifest).*)"] };

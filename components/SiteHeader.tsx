@@ -1,4 +1,5 @@
-/* The top of every page (docs/INSIDIR-V2.md §6): a thin violet trial bar, then the nav. Visitors: logo, How it works,
+/* The top of every page (docs/INSIDIR-V2.md §6): a thin grey trial bar, then the nav: a black bar with the white logo,
+ * or white with a hairline on the plain white pages (tone="light": pricing, legal, about). Visitors: logo, How it works,
  * Pricing, FAQ, Log in, and "Try it for $1". Members: logo, Feed, Following, Results, Account. On phones: logo, the
  * button and a menu; members also get a bottom tab bar (Feed, Following, Results, Account) within thumb reach.
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
@@ -10,9 +11,18 @@ import { Wordmark } from "./Wordmark";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed" };
 
-export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pricing#plans" }: {
-  plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string;
+export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pricing#plans", tone = "dark", minimal = false }: {
+  plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
+  /** Just the logo on white (sign-in): nothing to distract from the one thing on the page. */
+  minimal?: boolean;
 }) {
+  if (minimal) {
+    return (
+      <header className="nav nav--light">
+        <div className="wrap nav__in"><Link className="wordmark" href="/" aria-label="Insidir home"><Wordmark /></Link></div>
+      </header>
+    );
+  }
   const at = current ? (SECTION[current] ?? current) : undefined;
   const paid = plan === "insidir" || plan === "pro";
   const link = (href: string, label: string, section = href) => (
@@ -20,11 +30,11 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
   );
   const links = signedIn
     ? [link("/feed", "Feed"), link("/top", "Top traders"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
-    : [link("/#how", "How it works", "/how"), link("/pricing", "Pricing"), link("/#faq", "FAQ", "/faq"), <Link key="login" href="/auth/login?next=/feed" prefetch={false}>Log in</Link>];
+    : [link("/#how", "How it works", "/how"), link("/pricing", "Pricing"), link("/#faq", "FAQ", "/faq"), <Link key="login" href="/signin">Log in</Link>];
   return (
     <>
       {!paid ? <p className="trialbar"><a href={trialHref} data-unlock="trial-bar">{TRIAL_BAR}</a></p> : null}
-      <header className="nav">
+      <header className={tone === "light" ? "nav nav--light" : "nav"}>
         <div className="wrap nav__in">
           <Link className="wordmark" href={signedIn ? "/feed" : "/"} aria-label="Insidir home"><Wordmark /></Link>
           <nav className="nav__links" aria-label="Main">{links}</nav>

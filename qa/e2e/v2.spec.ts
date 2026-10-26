@@ -10,20 +10,46 @@ test("landing: the brief's hero, and on a phone the headline, button and top of 
   const cta = page.getByRole("link", { name: "See the live feed" }).first();
   await expect(cta).toHaveAttribute("href", "/feed");
   await expect(page.getByText("$1 for 3 days, then $39/mo. Cancel anytime.").first()).toBeVisible();
-  const card = page.locator(".stack__card--0 .move");
+  // One real move per photo on a solid card (components/home/Hero.tsx).
+  const card = page.locator(".cine__card .hcard");
+  await expect(page.getByText("LIVE · big money moves")).toBeVisible();
   await expect(card).toBeVisible();
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
   expect((await card.boundingBox())!.y + 24).toBeLessThan(vh);
 });
 
-test("Plus Jakarta Sans is the computed font on headings, body text and buttons", async ({ page }) => {
+test("home hero: the button, a ticker tap and the feed preview scrolled into view are each recorded", async ({ page }) => {
+  const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
+  const before = { cta: await count("hero_cta_click"), ticker: await count("ticker_click"), preview: await count("feed_preview_view") };
+  await page.goto("/");
+  await page.locator("#preview").scrollIntoViewIfNeeded();
+  await expect.poll(() => count("feed_preview_view")).toBe(before.preview + 1);
+  await page.goto("/");
+  await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().click({ force: true }); // it scrolls, so never "stable"
+  await expect.poll(() => count("ticker_click")).toBe(before.ticker + 1);
+  await page.goto("/");
+  await page.locator(".cine__cta a").click();
+  await expect(page).toHaveURL(/\/feed/);
+  await expect.poll(() => count("hero_cta_click")).toBe(before.cta + 1);
+});
+
+test("headlines are in the serif (Rufina); body text, buttons and cards in Schibsted Grotesk; both load", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  const fonts = await page.evaluate(() => ["h1", "body", ".btn--primary", ".move__sentence"].map(s => getComputedStyle(document.querySelector(s)!).fontFamily));
-  for (const f of fonts) expect(f).toMatch(/Plus Jakarta Sans/i);
-  const loaded = await page.evaluate(() => [...document.fonts].some(f => /Plus Jakarta Sans/i.test(f.family) && f.status === "loaded"));
-  expect(loaded).toBe(true);
+  const r = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const first = (v: string) => v.split(",")[0]!.trim().replace(/["']/g, "");
+    const font = (s: string) => first(getComputedStyle(document.querySelector(s)!).fontFamily);
+    return { sans: first(root.getPropertyValue("--font-schibsted")), serif: first(root.getPropertyValue("--font-rufina")),
+      h1: font("h1"), h2: font("h2"), body: font("body"), btn: font(".btn"), card: font(".move__sentence"),
+      loaded: [...document.fonts].filter(f => f.status === "loaded").map(f => f.family) };
+  });
+  expect(r.sans).not.toBe("");
+  expect(r.serif).not.toBe("");
+  expect([r.h1, r.h2]).toEqual([r.serif, r.serif]);
+  expect([r.body, r.btn, r.card]).toEqual([r.sans, r.sans, r.sans]);
+  for (const f of [r.sans, r.serif]) expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(f.replace(/["']/g, ""));
 });
 
 test("free feed: moves 30 minutes late, no records anywhere in the response, follow locked, one upsell", async ({ page }) => {
