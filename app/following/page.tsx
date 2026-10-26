@@ -57,7 +57,7 @@ export default async function FollowingPage() {
                     const r = recs.get(f.target);
                     return (
                       <li key={f.target} className="flist__row">
-                        <span><Link className="flist__name" href={`/trader/${f.target}`}>{walletLabel(f.target, r?.name ?? null)}</Link>
+                        <span><Link className="flist__name" href={`/p/${f.target}`}>{walletLabel(f.target, r?.name ?? null)}</Link>
                           <span className="flist__rec">{hasRecord(r) ? `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time` : "Not enough history yet"}</span></span>
                         <FollowButton kind="trader" target={f.target} state="on" trialHref={trial} />
                       </li>

@@ -45,7 +45,7 @@ test("free feed: moves 30 minutes late, no records anywhere in the response, fol
 test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
   await signIn(context, "pro");
   await page.goto("/feed");
-  await expect(page.getByText("A top trader just put $412,000 on Chiefs to win.").first()).toBeVisible();
+  await expect(page.getByText("E2E-Top, a top trader, just put $412,000 on Chiefs to win.").first()).toBeVisible();
   await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
@@ -58,7 +58,7 @@ test("member feed: live moves with the record line; following a trader shows on 
 
 test("a US visitor never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
   await context.addCookies([{ name: "insidir_region", value: "us", url: "http://localhost:3100" }]);
-  for (const path of ["/", "/feed", "/market/0xe2emarket1", "/trader/0xe2e00000000000000000000000000000000000aa", "/results"]) {
+  for (const path of ["/", "/feed", "/market/0xe2emarket1", "/trader/0xe2e00000000000000000000000000000000000aa", "/p/0xe2e00000000000000000000000000000000000aa", "/top", "/results"]) {
     await page.goto(path);
     const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).href));
     for (const h of hrefs) expect(h, `${path}: ${h}`).not.toMatch(/^https?:\/\/(www\.)?polymarket\.com/);
@@ -123,7 +123,7 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(page.getByRole("heading", { name: "Posts", level: 1 })).toBeVisible();
   const first = page.locator("[data-post]").first();
   await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
-  await expect(first.getByLabel("Caption")).toHaveValue(/^A top trader put \$412,000 on Chiefs to win\./);
+  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top, a top trader, put \$412,000 on Chiefs to win\./);
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
 });
 
@@ -131,7 +131,7 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
-  await expect(insider.getByText("The CEO of E2E Fixture Devices bought $1.4M of E2E Fixture Devices stock.")).toBeVisible();
+  await expect(insider.getByText("Jane Fixture, CEO of E2E Fixture Devices, bought $1.4M of E2E Fixture Devices stock.")).toBeVisible();
   await expect(insider.getByText("Bought Oct 22 at $182.65 a share.", { exact: false })).toBeVisible();
   await expect(insider.locator(".tag")).toHaveText("Stocks · EXDV");
   const link = insider.getByRole("link", { name: "See the SEC filing" });

@@ -1,4 +1,5 @@
-/* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the sentence, the payout line, the record line, the time,
+/* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the sentence (its name opens the profile, /p/[id]), a
+ * "New wallet" label, the payout line, the record line, at most one "why this matters" fact, the time,
  * and two buttons: Follow (traders) and See market. Stock cards (SEC filings) carry the filing line and one button,
  * the SEC filing itself. Everything on it was sent by the server for this viewer's plan
  * and region (lib/moves/feed.ts). */
@@ -13,6 +14,13 @@ const TAG: Record<string, { text: string; tint: string }> = {
   stocks: { text: "Stocks", tint: "blue" },
 };
 
+/** The sentence with the name at its start as a link to the profile. */
+function Sentence({ m }: { m: FeedItem }) {
+  const { name, href } = m.who;
+  if (!href || !m.sentence.startsWith(name)) return <>{m.sentence}</>;
+  return <><Link className="move__name" href={href}>{name}</Link>{m.sentence.slice(name.length)}</>;
+}
+
 export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean }) {
   const tag = TAG[m.tab]!;
   const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.league && m.league !== "other" ? m.league : null;
@@ -22,10 +30,12 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
         <span className={`tag tag--${tag.tint}`}>{tag.text}{sub ? ` · ${sub}` : ""}</span>
         <time className="move__time" dateTime={new Date(m.at).toISOString()}>{m.ago}</time>
       </div>
-      <p className="move__sentence">{m.sentence}</p>
+      <p className="move__sentence"><Sentence m={m} /></p>
+      {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}
       {m.record ? <p className="move__record">{m.record}</p> : null}
+      {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
       {m.source === "sec" ? (
         <div className="move__actions">
@@ -35,7 +45,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
       <div className="move__actions">
         {m.wallet ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}
         <Link className="btn btn--secondary" href={`/market/${encodeURIComponent(m.marketId)}`}>See market</Link>
-        {m.wallet ? <Link className="move__who" href={`/trader/${m.wallet}`}>{m.walletLabel}</Link> : null}
+        {m.who.href && !m.sentence.startsWith(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
       </div>
       )}
     </article>

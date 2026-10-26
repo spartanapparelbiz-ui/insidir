@@ -41,6 +41,8 @@ export interface Move {
   settledAt: number | null;
   /** SEC moves: the filing facts behind the card. */
   detail?: StockDetail | null;
+  /** Polymarket: true when the wallet had no activity at all before this move ("A brand-new wallet"); null unknown. */
+  newWallet?: boolean | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */
@@ -79,5 +81,7 @@ export interface TraderRecord {
   /** Sum of realized profit over resolved markets, dollars. */
   profit: number;
   biggestWin: number;
+  /** The most money put into one market (closed and open positions), dollars; null when not read. */
+  biggestBet?: number | null;
   updatedAt: number;
 }

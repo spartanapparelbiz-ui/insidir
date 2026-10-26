@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { DEFAULT_SETTINGS, moves, nearMisses, opportunities, receipts, sessions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { DEFAULT_SETTINGS, fundFilings, fundHoldings, funds, insiderTrades, moves, nearMisses, opportunities, receipts, secHistory, sessions, traderPositions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
 import { saveMarkets } from "@/lib/worker/store";
@@ -74,7 +74,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);
@@ -140,7 +140,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     totalCents: 101, at: now - 2 * MIN,
   } });
   // V2 moves (test fixtures, labelled as such): a top trader, a wallet without a record, Kalshi moves, settled ones.
-  const TOP = "0xe2e00000000000000000000000000000000000aa", NEW = "0xe2e00000000000000000000000000000000000bb";
+  const TOP = "0xe2e00000000000000000000000000000000000aa", NEW = "0xe2e00000000000000000000000000000000000bb", BRAND = "0xe2e00000000000000000000000000000000000cc";
   const mv = (o: Omit<Partial<typeof moves.$inferInsert>, "at" | "lastAt"> & { id: string; at: number }) => ({
     source: "polymarket" as const, marketId: "0xe2emarket1", eventTitle: "E2E fixture: Chiefs vs. Bills", marketTitle: "E2E fixture: Chiefs vs. Bills",
     outcome: "Chiefs", outcomeSide: "yes" as const, amount: 412_000, avgPrice: 0.62, wallet: TOP, walletName: "E2E-Top", fills: 3, tab: "sports" as const,
@@ -153,14 +153,17 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     mv({ id: "e2e:m3", at: now - 50 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket2", eventTitle: "E2E fixture: Fed rate cut in December?",
       marketTitle: "E2E fixture: Fed rate cut in December?", outcome: "Yes", amount: 85_000, avgPrice: 0.31, wallet: NEW, walletName: null }),
     mv({ id: "e2e:m4", at: now - 3 * 60 * MIN, amount: 160_000, avgPrice: 0.48 }),
+    // A wallet with no activity at all before this move.
+    mv({ id: "e2e:m5", at: now - 40 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket3", eventTitle: "E2E fixture: Rate hike in March?",
+      marketTitle: "E2E fixture: Rate hike in March?", outcome: "Yes", amount: 200_000, avgPrice: 0.2, wallet: BRAND, walletName: null, newWallet: true }),
     mv({ id: "e2e:s1", at: now - 3 * DAY, amount: 120_000, avgPrice: 0.4, result: "won", settledAt: new Date(now - 2 * DAY) }),
     mv({ id: "e2e:s2", at: now - 4 * DAY, amount: 64_000, avgPrice: 0.7, outcome: "Bills", outcomeSide: "no", result: "lost", settledAt: new Date(now - 3 * DAY) }),
     // Stocks (lib/stocks): a Form 4 insider buy and a 13F fund add, in the shapes the SEC jobs store.
     mv({ id: "f4:000099999926000001", at: now - 2 * DAY, source: "sec", marketId: "sec:0000999999", eventTitle: "E2E Fixture Devices", marketTitle: "EXDV",
-      outcome: "Bought", amount: 1_401_817.5, avgPrice: 182.6472, wallet: null, walletName: null, fills: 2, tab: "stocks", league: null, category: "insider",
+      outcome: "Bought", amount: 1_401_811, avgPrice: 182.6464, wallet: null, walletName: null, fills: 2, tab: "stocks", league: null, category: "insider",
       url: "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm",
-      detail: { kind: "insider", company: "E2E Fixture Devices", ticker: "EXDV", issuerCik: "0000999999", role: "The CEO", ownerName: "E2E Owner", ownerCik: "0000888888",
-        shares: 7675, pricePerShare: 182.6472, tradeDate: "2026-10-22", filedAt: now - 2 * DAY, accession: "000099999926000001" } }),
+      detail: { kind: "insider", company: "E2E Fixture Devices", ticker: "EXDV", issuerCik: "0000999999", role: "The CEO", ownerName: "FIXTURE JANE", ownerCik: "0000888888",
+        shares: 7675, pricePerShare: 182.6464, tradeDate: "2026-10-22", filedAt: now - 2 * DAY, accession: "000099999926000001" } }),
     mv({ id: "13f:000099999826000002:037833100", at: now - 5 * DAY, source: "sec", marketId: "cusip:037833100", eventTitle: "E2E Fixture Devices", marketTitle: "E2E Fixture Devices",
       outcome: "Added", amount: 250_000_000, avgPrice: 220, wallet: null, walletName: null, fills: 1, tab: "stocks", league: null, category: "fund",
       url: "https://www.sec.gov/Archives/edgar/data/999998/000099999826000002/0000999998-26-000002-index.htm",
@@ -168,8 +171,40 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
         addedShares: 1_136_364, prevShares: 4_000_000, curShares: 5_136_364, curValue: 1_130_000_080, newPosition: false, accession: "000099999826000002", prevAccession: "000099999826000001" } }),
   ]);
   await db.insert(traderRecords).values([
-    { wallet: TOP, name: "E2E-Top", resolved: 63, won: 41, lost: 22, profit: 1_200_000, biggestWin: 310_000, updatedAt: new Date(now) },
-    { wallet: NEW, name: null, resolved: 7, won: 5, lost: 2, profit: 9_000, biggestWin: 4_000, updatedAt: new Date(now) },
+    { wallet: TOP, name: "E2E-Top", resolved: 63, won: 41, lost: 22, profit: 1_200_000, biggestWin: 310_000, biggestBet: 500_000, updatedAt: new Date(now) },
+    { wallet: NEW, name: null, resolved: 7, won: 5, lost: 2, profit: 9_000, biggestWin: 4_000, biggestBet: 20_000, updatedAt: new Date(now) },
+  ]);
+  // E2E-Top's resolved positions, adding up to the record: 41 won (one of $310,000, forty of $27,750), 22 lost ($10,000 each).
+  await db.insert(traderPositions).values(Array.from({ length: 63 }, (_, i) => ({
+    wallet: TOP, marketId: `0xe2epos${i}`, outcomeIndex: 0, title: `E2E fixture market ${i}`, outcome: "Yes", eventSlug: null,
+    category: i % 3 === 0 ? "Markets" : "NFL", tab: i % 3 === 0 ? "markets" as const : "sports" as const, moneyIn: 20_000,
+    pnl: i === 0 ? 310_000 : i < 41 ? 27_750 : -10_000, resolvedAt: new Date(now - (200 - 3 * i) * DAY),
+  })));
+  // The insider's Form 4 lines (this filing, and a buy three years before) and their fully read SEC history.
+  const f4 = (accession: string, line: number, tradeDate: string, shares: number, price: number, code: "P" | "S" = "P") => ({
+    accession, line, ownerCik: "888888", ownerName: "FIXTURE JANE", role: "The CEO", issuerCik: "999999", company: "E2E Fixture Devices", ticker: "EXDV", code, tradeDate,
+    shares, price, value: Math.round(shares * price * 100) / 100, filedAt: new Date(`${tradeDate}T21:00:00Z`),
+    url: `https://www.sec.gov/Archives/edgar/data/999999/${accession}/${accession.slice(0, 10)}-${accession.slice(10, 12)}-${accession.slice(12)}-index.htm`,
+  });
+  await db.insert(insiderTrades).values([
+    f4("000099999926000001", 0, "2026-10-22", 5000, 182.5), f4("000099999926000001", 1, "2026-10-22", 2675, 182.92),
+    f4("000099999925000007", 0, "2025-05-02", 3000, 150, "S"), f4("000099999923000004", 0, "2023-06-01", 2000, 120),
+  ]);
+  await db.insert(secHistory).values([
+    { kind: "owner", cik: "888888", name: "FIXTURE JANE", pending: [], completeSince: "2016-10-27" },
+    { kind: "issuer", cik: "999999", name: "E2E Fixture Devices", pending: [], completeSince: "2016-10-27" },
+  ]);
+  // The fund's last two quarters, read in full.
+  await db.insert(funds).values({ cik: "999998", name: "E2E Fixture Capital", quartersOnFile: 48, updatedAt: new Date(now) });
+  const q13 = (accession: string, period: string, filedOn: string) => ({ fundCik: "999998", accession, period, filedOn, complete: true,
+    url: `https://www.sec.gov/Archives/edgar/data/999998/${accession}/${accession.slice(0, 10)}-${accession.slice(10, 12)}-${accession.slice(12)}-index.htm` });
+  await db.insert(fundFilings).values([q13("000099999826000002", "2026-09-30", "2026-10-21"), q13("000099999826000001", "2026-06-30", "2026-08-14")]);
+  const hold = (accession: string, cusip: string, company: string, shares: number, value: number) => ({ fundCik: "999998", accession, cusip, company, shares, value });
+  await db.insert(fundHoldings).values([
+    hold("000099999826000001", "037833100", "E2E Fixture Devices", 4_000_000, 880_000_000), hold("000099999826000001", "111111111", "E2E Other Co", 1_000_000, 50_000_000),
+    hold("000099999826000001", "222222222", "E2E Sold Co", 500_000, 20_000_000),
+    hold("000099999826000002", "037833100", "E2E Fixture Devices", 5_136_364, 1_130_000_080), hold("000099999826000002", "111111111", "E2E Other Co", 500_000, 26_000_000),
+    hold("000099999826000002", "333333333", "E2E New Co", 100_000, 30_000_000),
   ]);
   for (const job of ["moves:polymarket", "moves:kalshi"]) {
     await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: {} }).onConflictDoNothing();

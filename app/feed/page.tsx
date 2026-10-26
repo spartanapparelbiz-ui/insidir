@@ -64,7 +64,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
               <ul className="welcome__list">
                 {top.map(t => (
                   <li key={t.wallet} className="welcome__item">
-                    <span><a href={`/trader/${t.wallet}`} className="welcome__name">{walletLabel(t.wallet, t.name)}</a>
+                    <span><a href={`/p/${t.wallet}`} className="welcome__name">{walletLabel(t.wallet, t.name)}</a>
                       <span className="welcome__rec">Won {t.won} of {t.resolved} · {signedShort(t.profit)} all-time</span></span>
                     <FollowButton kind="trader" target={t.wallet} state={followsReady ? (follows?.includes(t.wallet) ? "on" : "off") : "soon"} trialHref={trial} />
                   </li>

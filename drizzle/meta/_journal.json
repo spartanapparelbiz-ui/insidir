@@ -43,6 +43,13 @@
       "when": 1793010705522,
       "tag": "0005_gaps",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793044103964,
+      "tag": "0006_profiles",
+      "breakpoints": true
     }
   ]
 }

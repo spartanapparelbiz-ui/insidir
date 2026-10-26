@@ -76,7 +76,7 @@ Code comments cite sections of this file as `docs/INSIDIR-V2.md §N`.
 - A card is an open-market purchase (code P, acquired) of non-derivative stock, summed per filing, of $100,000 or more.
 - Value is shares × the reported price, exact to the cent. Nothing is estimated.
 - Amendments (4/A) are not shown.
-- The card names the filed relationship (the CEO, a director, a 10% owner), not the person.
+- The card names the person as filed and their filed relationship: "Jen Hsun Huang, CEO of Nvidia" (§3a).
 
 **Stocks: big fund adds (13F)**
 - Source: each tracked fund's (`INSIDIR_13F_MANAGER_CIKS`) latest 13F-HR compared with its previous 13F-HR, checked every 6 hours.
@@ -88,6 +88,76 @@ Code comments cite sections of this file as `docs/INSIDIR-V2.md §N`.
 - Links to the SEC filing itself.
 - Is dated when the filing became public.
 
+## §3a Who: names and profiles (October 26, 2026)
+
+**Every card names who moved, when the data allows it.** Tapping the name opens their profile at `/p/[id]`.
+- SEC Form 4: the person's name as filed (EDGAR's "LAST FIRST MIDDLE", put in normal order), their title and the company.
+  Example: "Jen Hsun Huang, CEO of Nvidia".
+- 13F: the fund's name.
+- Polymarket: the public Polymarket username, else the short wallet (0x12…ab).
+  - Never the auto-made pseudonym, and never a username the trader hid.
+  - Never anything that tries to identify the real person behind a wallet.
+- Kalshi: "Someone". Kalshi is anonymous by design; there is no profile link.
+- A Polymarket wallet with no activity at all before the move gets a "New wallet" label and the sentence "A brand-new wallet just put $200,000 on …".
+  - The poller checks once per move.
+  - It never implies inside information.
+
+**Profiles** (`/p/0x…`, `/p/insider-<cik>`, `/p/fund-<cik>`)
+
+Polymarket trader:
+- Stats come from the wallet's resolved positions (Data API `/closed-positions`), one result per market:
+  - win rate (won X of Y)
+  - all-time profit
+  - return on money in (shares bought × average price)
+  - biggest win
+  - best category (5+ markets, profit above zero)
+  - last 30 days
+  - current streak
+  - average bet
+  - a profit-over-time chart
+  - wins and losses by category
+- Plus open positions and recent moves.
+- Stats show only with 20+ resolved markets; otherwise "Not enough history yet."
+- The Polymarket profile is linked for viewers outside the US only.
+
+Insider:
+- Every open-market buy and sale of stock on their Form 4s (`terminal.insider_trades`), with totals bought and sold.
+- Each row shows the price paid and links to its filing.
+- History is read from EDGAR up to 10 years back for every $100k+ buyer and their company.
+- **Price changes after a buy (3, 6, 12 months) are not shown.** We found no free daily price source licensed for commercial display. Free tiers (Tiingo, Alpha Vantage, Twelve Data, Marketstack, Polygon/Massive, Finnhub, EODHD) are personal, internal or non-display use only. Adding this needs a paid display license.
+
+Fund:
+- Top 10 holdings of the latest complete 13F-HR.
+- Biggest adds and cuts per quarter versus the quarter before.
+- Quarters on file (EDGAR's count).
+- Each section links to its filing.
+
+**Free plan:**
+- Names are visible everywhere.
+- Stats are locked behind "See their full record for $1." and are never sent to a free viewer's browser.
+
+**`/top`**
+- The top 50 Polymarket wallets by profit.
+  - Only wallets with 20+ resolved markets all-time.
+  - Profit is over markets that resolved this week, this month or all time; Sports or Markets.
+- Each row has win rate, profit, best category and Follow.
+- Wallets come from those seen moving plus Polymarket's public leaderboard (`/v1/leaderboard`, every 6 h). Every number comes from the wallet's own positions.
+
+**Why this matters**
+- At most one line under a card, from data rules, never AI. The first rule that applies wins. See lib/profiles/why.ts and its tests.
+- Prediction markets, in order:
+  1. "Biggest bet on this [game/market] today."
+  2. "Biggest bet this trader has ever made." Members only.
+  3. "[N] top traders are on the same side." N ≥ 2, last 24 h, members only.
+  4. "This price moved from paying $182 to $161 on $100 in the last hour." Only for a move of 10% or more.
+- Stocks:
+  - "First buy by [name] in [N] years." N ≥ 2, inside a fully read history.
+  - "[N] [Company] insiders bought this month."
+  - "Biggest insider buy at [Company] since [year]."
+- Funds:
+  - "New position: they didn't own it last quarter."
+  - "They doubled their stake."
+
 ## §4 Copy rules
 
 - Prediction markets:
@@ -95,8 +165,12 @@ Code comments cite sections of this file as `docs/INSIDIR-V2.md §N`.
   - "Pays $161 on every $100 if the Chiefs win."
   - "Won 41 of 63 · +$1.2M all-time"
   - "2 min ago"
+- Names (§3a):
+  - "kch123 just put $412,000 on the Chiefs to win."
+  - "kch123, a top trader, just put …" (members)
+  - "A brand-new wallet just put $200,000 on …"
 - Stocks:
-  - Insider buy: "The CEO of [Company] just bought $1.4M of [Company] stock."
+  - Insider buy: "[Name], CEO of [Company], just bought $1.4M of [Company] stock."
   - Fund add: "[Fund] added $250M of [Company] last quarter."
   - Fund add filing line: "Filed Nov 14 for the quarter ending Sep 30. 13F data can be up to 45 days old."
 - Banned words: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider info, lock, guaranteed, risk-free, free money, sure thing.
@@ -138,7 +212,7 @@ Code comments cite sections of this file as `docs/INSIDIR-V2.md §N`.
 - Free viewers see moves 30 minutes late, with the upsell card. Records are hidden and Follow is locked.
 
 **Other pages**
-- `/trader/[wallet]`, `/market/[id]`, Following, Results.
+- `/p/[id]` profiles (§3a; `/trader/[wallet]` redirects there), `/top`, `/market/[id]`, Following, Results.
 - `/gaps` (Pro, with a preview).
 - Pricing.
 - After payment, the welcome card.
@@ -193,4 +267,7 @@ Code comments cite sections of this file as `docs/INSIDIR-V2.md §N`.
 - Screenshots of every page at 390×844 and 1440×900, with 2 review rounds.
 - Lighthouse on landing and feed: Performance 90+, Accessibility 95+.
 - Production verification.
-- The 20-move accuracy check (`npm run check:moves`): 20 random prediction-market moves and 20 random Stocks moves, each re-read from the source (Polymarket, Kalshi, SEC EDGAR).
+- The 20-move accuracy check (`npm run check:moves`), each item re-read from its source (Polymarket, Kalshi, SEC EDGAR):
+  - 20 random prediction-market moves
+  - 20 random Stocks moves
+  - 20 random profile facts: a trader's resolved position, an insider's trade line, a fund's holding, plus each sampled trader's record checked against its positions

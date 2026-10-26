@@ -97,8 +97,13 @@ describe("Kalshi moves", () => {
 describe("Polymarket Data API rows", () => {
   it("reads trades with wallet, outcome side and name", () => {
     const f = readPolymarketFills([{ proxyWallet: "0xABC", side: "BUY", conditionId: "C1", size: 1000, price: 0.4, timestamp: 1792998000, title: "Fed rate cut in December?",
-      outcome: "No", outcomeIndex: 1, pseudonym: "Quiet-Fox", transactionHash: "0x1", eventSlug: "fed", slug: "fed-dec" }]);
-    expect(f[0]).toMatchObject({ wallet: "0xabc", outcome: "No", outcomeSide: "no", walletName: "Quiet-Fox", at: 1792998000_000, url: "https://polymarket.com/event/fed/fed-dec" });
+      outcome: "No", outcomeIndex: 1, name: "kch123", pseudonym: "Quiet-Fox", transactionHash: "0x1", eventSlug: "fed", slug: "fed-dec" }]);
+    expect(f[0]).toMatchObject({ wallet: "0xabc", outcome: "No", outcomeSide: "no", walletName: "kch123", at: 1792998000_000, url: "https://polymarket.com/event/fed/fed-dec" });
+    // The public username only: an auto-made pseudonym, a hidden username or an address is no name.
+    const row = { proxyWallet: "0xABC", side: "BUY", conditionId: "C1", size: 1000, price: 0.4, timestamp: 1792998000, title: "T", outcomeIndex: 0 };
+    expect(readPolymarketFills([{ ...row, pseudonym: "Quiet-Fox" }])[0]!.walletName).toBeNull();
+    expect(readPolymarketFills([{ ...row, name: "kch123", displayUsernamePublic: false }])[0]!.walletName).toBeNull();
+    expect(readPolymarketFills([{ ...row, name: "0xabc1234567" }])[0]!.walletName).toBeNull();
   });
   it("reads closed positions", () => {
     expect(readClosedPositions([{ conditionId: "C1", realizedPnl: 120.5 }, { conditionId: "C2" }])).toEqual([{ marketId: "C1", realizedPnl: 120.5 }]);
@@ -134,10 +139,14 @@ describe("trader records", () => {
 describe("plain-English copy", () => {
   const base = polymarketMoves([fill({ contracts: 664_516, price: 0.62 })], info)[0]!;
   const top = recordFrom(W, null, Array.from({ length: 63 }, (_, i) => ({ marketId: `M${i}`, realizedPnl: i < 41 ? 50_000 : -40_000 })), T0);
-  it("top trader, wallet and Kalshi sentences", () => {
-    expect(moveSentence({ ...base, amount: 412_000 }, top)).toBe("A top trader just put $412,000 on Chiefs to win.");
+  it("name the trader: username, short address, brand-new wallet, Kalshi's someone", () => {
+    expect(moveSentence({ ...base, amount: 412_000 }, top)).toBe("0xab…01, a top trader, just put $412,000 on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, top)).toBe("kch123, a top trader, just put $412,000 on Chiefs to win.");
+    // Free viewers get no record, so nobody is called a top trader; the name is for everyone.
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, null)).toBe("kch123 just put $412,000 on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 200_000, newWallet: true }, null)).toBe("A brand-new wallet just put $200,000 on Chiefs to win.");
     const fed: Move = { ...base, tab: "markets", outcome: "Yes", marketTitle: "Fed rate cut in December?", amount: 85_000 };
-    expect(moveSentence(fed, null)).toBe('A wallet just put $85,000 on "Yes" in "Fed rate cut in December?".');
+    expect(moveSentence(fed, null)).toBe('0xab…01 just put $85,000 on "Yes" in "Fed rate cut in December?".');
     expect(moveSentence({ ...base, source: "kalshi", outcome: "Lakers", amount: 48_000 }, null)).toBe("Someone just put $48,000 on Lakers to win.");
   });
   it("payout in dollars per $100, record line, time", () => {
@@ -256,7 +265,7 @@ describe("move alerts", () => {
   });
   it("the message says what happened, links to the market, uses no banned words", () => {
     const msg = alertMessage(base, null, "trader", "https://insidir.com", base.at);
-    expect(msg.body).toBe("A wallet just put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(msg.body).toBe("0xaa just put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
     expect(msg.url).toBe("https://insidir.com/market/mkt1?from=alert");
     for (const re of BANNED) expect(`${msg.title} ${msg.body}`).not.toMatch(re);
   });
@@ -274,7 +283,7 @@ describe("move alerts", () => {
     const e = dailyEmail([base], [{ ...base, result: "won" }, { ...base, id: "x", result: "lost" }], new Map(), "https://insidir.com");
     const text = e.lines.map(l => l.text).join("\n");
     expect(e.subject).toBe("$60,000 on Chiefs to win, and more");
-    expect(text).toContain("A wallet put $60,000 on Chiefs to win.");
+    expect(text).toContain("0xaa put $60,000 on Chiefs to win.");
     expect(text).toContain("How yesterday's top-trader moves settled: 1 won, 1 lost.");
     for (const re of BANNED) expect(`${e.subject}\n${text}`).not.toMatch(re);
     expect(dailyEmail([], [], new Map(), "x").lines[0]!.text).toBe("No moves of $10,000 or more in the last 24 hours.");
@@ -285,7 +294,7 @@ describe("move alerts", () => {
     expect(t.on).toBe("on Chiefs to win");
     expect(t.result).toBe("It won.");
     const cap = postCaption(base, null);
-    expect(cap.split("\n")[0]).toBe("A wallet put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(cap.split("\n")[0]).toBe("0xaa put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
     expect(cap).toContain("Not financial advice.");
     for (const re of BANNED) { expect(cap).not.toMatch(re); expect(Object.values(t).join(" ")).not.toMatch(re); }
   });
