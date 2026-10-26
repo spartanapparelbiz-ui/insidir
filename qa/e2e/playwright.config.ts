@@ -16,8 +16,9 @@ export default defineConfig({
   reporter: [["list"], ["json", { outputFile: ".out/results.json" }]],
   use: {
     baseURL: APP_URL, trace: "retain-on-failure",
-    // Use the sandbox's preinstalled Chromium when the pinned @playwright/test expects another build.
-    ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : {}),
+    // Full Chromium in new headless mode, not the stripped headless shell: the push test needs real notifications.
+    // In the sandbox, use its preinstalled Chromium when the pinned @playwright/test expects another build.
+    ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : { channel: "chromium" }),
   },
   outputDir: ".out/artifacts",
   projects: [
