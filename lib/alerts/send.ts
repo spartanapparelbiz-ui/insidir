@@ -1,7 +1,7 @@
 /* Delivery: web push (VAPID, free) and email through Resend (free tier to start). Server/worker only.
  *
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…)   web push
- *   RESEND_API_KEY, EMAIL_FROM ("Insidir <alerts@insidir.com>")                 email
+ *   RESEND_API_KEY, EMAIL_FROM ("Insidir <hello@aethric.llc>")                 email
  *   EMAIL_UNSUBSCRIBE_SECRET                                                     signs one-click unsubscribe links
  *
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
@@ -69,7 +69,7 @@ export async function sendEmail(e: Email): Promise<SendResult> {
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 
-export const EMAIL_FOOTER = "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
+export const EMAIL_FOOTER = "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available where you live.";
 
 /** A plain, fast email: black on white for every mail client, monospace, no images. */
 export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {

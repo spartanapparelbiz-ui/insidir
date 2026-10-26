@@ -57,7 +57,7 @@ export function DealTable({ rows, now, motion = {}, selected = null, compact = f
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
-            <th scope="col" className="dt-c-rules" data-tip="rules">Rules</th>
+            <th scope="col" className="dt-c-rules" data-tip="rules">Same rules?</th>
             <th scope="col" className="dt-c-event">Event</th>
             <th scope="col" className="dt-c-play">The play</th>
             <th scope="col" className="dt-r dt-c-profit" data-tip="profit">Profit after fees</th>
@@ -81,7 +81,7 @@ export function DealTable({ rows, now, motion = {}, selected = null, compact = f
             return (
               <tr key={r.id} className={`dt-row${stale ? " dt-row--stale" : ""}${r.locked ? " dt-row--locked" : ""}${m ? ` dt-row--${m}` : ""}`}
                 data-deal={r.id} tabIndex={sel === r.id ? 0 : -1} aria-selected={sel === r.id}>
-                <td className="dt-c-rules"><SafetyLight safety={r.safety} /></td>
+                <td className="dt-c-rules"><SafetyLight safety={r.safety} bare /></td>
                 <th scope="row" className="dt-c-event">
                   {linkRows ? <a className="dt-link" href={href} tabIndex={-1}>{r.title}</a> : <span className="dt-link">{r.title}</span>}
                   <span className="dt-sub dt-sub--sm">{playShort(r)}</span>
@@ -89,7 +89,7 @@ export function DealTable({ rows, now, motion = {}, selected = null, compact = f
                 <td className="dt-c-play">
                   <span className="dt-play">{playShort(r)}</span>
                   <span className="dt-viz">
-                    {lock && r.legs.length >= 2 ? <span className="dt-bar"><DollarBar legs={legs} feesCents={feesPerDollar(r)} /></span> : null}
+                    {lock && r.legs.length >= 2 ? <span className="dt-bar"><DollarBar legs={legs} feesCents={feesPerDollar(r)} size="inline" /></span> : null}
                     {r.spark ? <Sparkline points={r.spark} label={`Gap over the last 30 minutes, now ${r.spark[r.spark.length - 1]!.v}`} /> : null}
                     {pays ? <span className="dt-chip">{pays}</span> : null}
                   </span>

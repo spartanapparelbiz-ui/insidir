@@ -48,7 +48,7 @@ export default async function TermsPage() {
           <p>We may update these terms; when we make a material change we will say so on the site or by email before it applies.</p>
 
           <h2>Contact</h2>
-          <p>Aethric LLC · support@insidir.com</p>
+          <p>Aethric LLC · hello@aethric.llc</p>
           <p className="small muted">{FOOTER}</p>
         </article>
         <div className="lp-legal__next">

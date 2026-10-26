@@ -3,7 +3,7 @@ import { FOOTER } from "@/lib/copy";
 
 /** Every page's footer: who builds Insidir and how to reach a person, the links that prove what we say (Receipts,
  *  Privacy, Terms, About), and the risk disclaimer. */
-export const SUPPORT_EMAIL = "support@insidir.com";
+export const SUPPORT_EMAIL = "hello@aethric.llc";
 
 export function SiteFooter() {
   return (
@@ -18,9 +18,10 @@ export function SiteFooter() {
             </p>
           </div>
           <nav className="foot__links" aria-label="Footer">
+            <Link href="/terminal">Terminal</Link>
             <Link href="/receipts">Receipts</Link>
-            <Link href="/about">About</Link>
             <Link href="/pricing">Pricing</Link>
+            <Link href="/about">About</Link>
             <Link href="/#faq">FAQ</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>

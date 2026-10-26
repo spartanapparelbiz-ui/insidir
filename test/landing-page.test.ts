@@ -104,7 +104,9 @@ describe("landing page", () => {
       // the light band (Paper #F5F5F2) and its flipped greys
       "#f5f5f2", "#ebebe6", "#d4d4cd", "#0a0a0a", "#55595f", "#8a8d92",
       // the accent, and the same hue deepened for text on Paper; color-mix() lightens/darkens it with white/black
-      "#8b7cff", "#5546d6", "#fff", "#000"]);
+      "#8b7cff", "#5546d6", "#fff", "#000",
+      // docs/BRIEF.md §3.1: Surface-2 and Violet-press
+      "#1c1c1c", "#7a6af0"]);
     const SAFETY = ["--green", "--amber", "--red"];
     for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/app/terminal.css", "app/receipts/receipts.css", "components/app/ios.css"]) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");

@@ -41,7 +41,7 @@ test("Terminal drawer opens on click and closes from its button", async ({ page,
   await page.locator("tr[data-deal]").first().click();
   const drawer = page.getByRole("dialog");
   await expect(drawer).toBeVisible();
-  await expect(drawer.getByRole("img", { name: /Out of \$1/ }).first()).toBeVisible(); // the $1 bar
+  await expect(drawer.getByRole("img", { name: /^Spend .* get 1 dollar back/ }).first()).toBeVisible(); // the $1 bar
   await drawer.getByRole("button", { name: "Close" }).click();
   await expect(drawer).toHaveCount(0);
 });

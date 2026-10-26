@@ -53,10 +53,10 @@ export default async function PrivacyPage() {
           </ul>
 
           <h2>Your choices</h2>
-          <p>Turn alerts off in Settings, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email support@insidir.com.</p>
+          <p>Turn alerts off in Settings, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email hello@aethric.llc.</p>
 
           <h2>Contact</h2>
-          <p>Aethric LLC · support@insidir.com</p>
+          <p>Aethric LLC · hello@aethric.llc</p>
         </article>
         <div className="lp-legal__next">
           <p>Questions about how it works? The Terminal shows today&apos;s deals, free.</p>

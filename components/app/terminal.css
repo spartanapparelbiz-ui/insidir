@@ -3,9 +3,9 @@
  * fees); everything else Steel. Strict 8px grid. Motion: a new row slides in and its profit cell flashes white; a
  * closed row greys for 5 seconds, then collapses. Reduced motion: none of it. */
 .dt-wrap { position: relative; }
-.dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--t14); line-height: 20px; table-layout: fixed; }
+.dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--t15); line-height: 20px; table-layout: fixed; }
 .dt th, .dt td { padding: 0 8px; height: 44px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--line); font-weight: 400; }
-.dt thead th { position: sticky; top: 60px; z-index: 2; height: 40px; background: var(--ink); color: var(--steel); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.dt thead th { position: sticky; top: 60px; z-index: 2; height: 40px; background: var(--ink); color: var(--steel); font-size: var(--t13); line-height: 16px; white-space: nowrap; }
 .dt-r { text-align: right !important; }
 .dt-num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--steel); white-space: nowrap; }
 .dt-time { color: var(--steel); }
@@ -22,10 +22,10 @@
 .dt-play { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--steel); }
 .dt-viz { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--paper); }
 .dt-bar { width: 72px; flex: none; }
-.dt-chip { flex: none; font: 400 12px/16px var(--sans); color: var(--steel); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.dt-chip { flex: none; font: 400 var(--t13)/16px var(--sans); color: var(--steel); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
 .dt-profit { font: 700 var(--t17)/20px var(--mono); font-variant-numeric: tabular-nums; color: var(--paper); letter-spacing: -0.02em; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
 .dt-sub { display: none; }
-.dt .light { font-size: 12px; }
+.dt .light { font-size: var(--t13); }
 /* rows */
 .dt-row { cursor: pointer; transition: background-color .12s; }
 .dt-row:hover td, .dt-row:hover th { background: var(--surface); }
@@ -65,7 +65,7 @@
   .dt th, .dt td { height: auto; padding-top: 10px; padding-bottom: 10px; }
   .dt tbody th { white-space: normal; }
   .dt-link { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .dt-sub { display: block; color: var(--steel); font-weight: 400; font-size: 12px; line-height: 16px; margin-top: 2px; }
+  .dt-sub { display: block; color: var(--steel); font-weight: 400; font-size: var(--t13); line-height: 16px; margin-top: 2px; }
   .dt-c-event .dt-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
@@ -73,21 +73,21 @@
 .tbar { display: grid; gap: 8px; }
 .tbar__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
 .tbar__h { font-size: var(--t32); line-height: 40px; }
-.tbar__beat { display: inline-flex; align-items: center; gap: 8px; color: var(--steel); font-size: var(--t14); }
+.tbar__beat { display: inline-flex; align-items: center; gap: 8px; color: var(--steel); font-size: var(--t15); }
 .tbar__beat::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .tbar__beat--paused::before { background: var(--steel); }
 @media (prefers-reduced-motion: no-preference) { .tbar__beat:not(.tbar__beat--paused)::before { animation: beat 1.6s ease-in-out infinite; } }
 .tbar__totals { display: flex; flex-wrap: wrap; gap: 0; margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .tbar__total { display: grid; gap: 0; padding: 8px 24px 8px 0; min-width: 120px; }
-.tbar__total dt { color: var(--steel); font-size: 12px; line-height: 16px; }
+.tbar__total dt { color: var(--steel); font-size: var(--t13); line-height: 16px; }
 .tbar__total dd { margin: 0; font: 700 var(--t17)/24px var(--mono); font-variant-numeric: tabular-nums; }
 .tbar__controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
-.tbar__field { display: grid; gap: 4px; font-size: 12px; color: var(--steel); }
-.tbar__field .input { min-height: 40px; height: 40px; padding: 0 12px; font-size: var(--t14); background: var(--surface); }
+.tbar__field { display: grid; gap: 4px; font-size: var(--t13); color: var(--steel); }
+.tbar__field .input { min-height: 40px; height: 40px; padding: 0 12px; font-size: var(--t15); background: var(--surface); }
 .tbar__field select.input { padding-right: 8px; }
 .tbar__num { width: 96px; }
 .tbar__search { flex: 1 1 200px; min-width: 160px; }
-.tbar__toggle { min-height: 40px; height: 40px; padding: 0 16px; font-size: var(--t14); }
+.tbar__toggle { min-height: 40px; height: 40px; padding: 0 16px; font-size: var(--t15); }
 .tbar__toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); color: var(--paper); }
 /* filters: always shown on desktop; on phones behind one "Filters and sort" button */
 .tbar__filters { display: grid; gap: 8px; }
@@ -95,23 +95,23 @@
 @media (min-width: 900px) { .tbar__more { display: none; } }
 @media (max-width: 899px) {
   .tbar__filters:not(.tbar__filters--open) > .tbar__controls { display: none; }
-  .tbar__h { font-size: var(--t22); line-height: 32px; }
+  .tbar__h { font-size: var(--t24); line-height: 32px; }
 }
 
 /* the free plan's one bar, pinned at the top of the table */
 .freebar { position: sticky; top: 60px; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap;
-  padding: 8px 8px 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); font-size: var(--t14); }
+  padding: 8px 8px 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); font-size: var(--t15); }
 .freebar p { margin: 0; }
 .freebar strong { font-family: var(--mono); }
 .freebar + .dt-wrap .dt thead th { top: 116px; }
 @media (max-width: 899px) { .freebar + .dt-wrap .dt thead th { top: 140px; } }
 
 /* first-visit tips */
-.ttip { position: absolute; z-index: 5; max-width: 280px; padding: 12px 16px; border-radius: var(--r-row); background: var(--paper); color: var(--ink); font-size: var(--t14); line-height: 20px; box-shadow: 0 0 0 1px var(--ink); }
+.ttip { position: absolute; z-index: 5; max-width: 280px; padding: 12px 16px; border-radius: var(--r-row); background: var(--paper); color: var(--ink); font-size: var(--t15); line-height: 20px; box-shadow: 0 0 0 1px var(--ink); }
 .ttip p { margin: 0 0 8px; }
 .ttip__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.ttip__step { color: var(--ink); opacity: .75; font-size: 12px; }
-.ttip .btn { min-height: 36px; padding: 0 14px; font-size: var(--t14); background: var(--ink); color: var(--paper); }
+.ttip__step { color: var(--ink); opacity: .75; font-size: var(--t13); }
+.ttip .btn { min-height: 36px; padding: 0 14px; font-size: var(--t15); background: var(--ink); color: var(--paper); }
 .ttip::after { content: ""; position: absolute; top: -6px; left: 24px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--paper); }
 
 /* empty table */

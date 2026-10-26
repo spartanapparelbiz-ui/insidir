@@ -56,7 +56,7 @@ export function ReceiptItem({ r }: { r: ReceiptRow }) {
     <li className={`rcpt${settled && !won ? " rcpt--miss" : ""}`}>
       <time className="rcpt__when mono" dateTime={new Date(r.detectedAt).toISOString()}>{stampText(r.detectedAt)}</time>
       <span className="rcpt__title">{o.title}</span>
-      <span className="rcpt__light"><SafetyLight safety={o.safety} /></span>
+      <span className="rcpt__light"><SafetyLight safety={o.safety} bare /></span>
       <span className="rcpt__roi mono"><span className="sr-only">ROI when found: </span>{pct(o.roi)}</span>
       <span className={`rcpt__result mono${won && (r.realizedProfit ?? 0) > 0 ? " profit" : ""}`}><span className="sr-only">Result: </span>{result}</span>
     </li>

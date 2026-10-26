@@ -2,7 +2,7 @@
 
 /** On every page. */
 export const FOOTER =
-  "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.";
+  "Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available where you live.";
 
 /** How a lock is described everywhere. */
 export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";

@@ -70,7 +70,7 @@ export async function noHorizontalScroll(page: Page): Promise<void> {
 
 export async function footerOk(page: Page): Promise<void> {
   const footer = page.locator("footer").last();
-  await expect(footer).toContainText("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available to you.");
+  await expect(footer).toContainText("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available where you live.");
   await expect(footer.locator('a[href="/privacy"]')).toHaveCount(1);
   await expect(footer.locator('a[href="/terms"]')).toHaveCount(1);
 }
