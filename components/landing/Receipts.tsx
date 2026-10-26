@@ -41,7 +41,7 @@ export function ReceiptItem({ r, showSize }: { r: ReceiptRow; showSize: boolean 
   const o = r.snapshot;
   const settled = isSettled(r);
   const sizeVisible = showSize || settled;
-  const blur = <span className="blur" aria-label="Locked" />;
+  const blur = <span className="blur" role="img" aria-label="Locked" />;
   return (
     <li className="lp-rcpt">
       <div className="lp-rcpt__top">

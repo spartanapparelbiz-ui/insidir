@@ -7,7 +7,7 @@ import { Ago } from "./Ago";
 import { SafetyLight } from "./SafetyLight";
 
 function Num({ k, v }: { k: string; v: string | null }) {
-  return <span><span className="num__k">{k}</span><span className="num__v">{v ?? <span className="blur" aria-label="Locked" />}</span></span>;
+  return <span><span className="num__k">{k}</span><span className="num__v">{v ?? <span className="blur" role="img" aria-label="Locked" />}</span></span>;
 }
 
 export function DealRow({ row, now, unlockHref }: { row: FeedRow; now: number; unlockHref: string }) {

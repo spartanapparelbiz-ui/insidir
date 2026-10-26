@@ -5,7 +5,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Privacy" };
+export const metadata: Metadata = { title: "Privacy", description: "What Insidir stores and why. We never store your Kalshi API keys or touch your money." };
 
 export default async function PrivacyPage() {
   const viewer = await getViewer();

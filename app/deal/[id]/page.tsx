@@ -30,7 +30,7 @@ const safeDecode = (s: string): string => { try { return decodeURIComponent(s); 
 const date = (ms: number | null): string => (ms ? new Date(ms).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC" : "Not stated");
 
 function Num({ k, v, cls }: { k: string; v: string | null; cls?: string }) {
-  return <div className="bignum"><span className="num__k">{k}</span><span className={`bignum__v ${cls ?? ""}`}>{v ?? <span className="blur" aria-label="Locked" />}</span></div>;
+  return <div className="bignum"><span className="num__k">{k}</span><span className={`bignum__v ${cls ?? ""}`}>{v ?? <span className="blur" role="img" aria-label="Locked" />}</span></div>;
 }
 
 function Rules({ m, fallback }: { m: VMarket | null; fallback: string }) {

@@ -6,7 +6,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Terms" };
+export const metadata: Metadata = { title: "Terms", description: "The terms for using Insidir: information only, not financial advice, and how plans, billing and cancellation work." };
 
 export default async function TermsPage() {
   const viewer = await getViewer();

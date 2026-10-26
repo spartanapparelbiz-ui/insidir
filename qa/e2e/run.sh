@@ -21,6 +21,8 @@ if [ "${E2E_SKIP_BUILD:-0}" != "1" ]; then
   ( set -a; . "$OUT/env.sh"; cd "$APP" && npx next build >"$OUT/build.log" 2>&1 ) || { tail -40 "$OUT/build.log"; exit 1; }
 fi
 
+[ "${E2E_BUILD_ONLY:-0}" = "1" ] && exit 0
+
 cd "$ROOT"
 if [ -z "${PW_CHROMIUM:-}" ] && [ -x /opt/pw-browsers/chromium ]; then export PW_CHROMIUM=/opt/pw-browsers/chromium; fi
 E2E_APP_DIR="$APP" npx playwright test -c qa/e2e/playwright.config.ts "$@"

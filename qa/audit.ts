@@ -3,13 +3,14 @@
  *   - axe-core at 390×844 and 1440×900: zero serious or critical violations
  * Writes qa/reports/lighthouse-<page>.json, qa/reports/audit.json and prints a pass/fail table. Exit 1 on any failure.
  * Usage: AUDIT_URL=http://localhost:3100 AUDIT_COOKIE="insidir_session=…" npx tsx qa/audit.ts */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { AxeBuilder } from "@axe-core/playwright";
-import lighthouse from "lighthouse";
 import { chromium } from "playwright";
 
 const BASE = (process.env.AUDIT_URL ?? "http://localhost:3100").replace(/\/$/, "");
 const PRO_COOKIE = process.env.AUDIT_COOKIE ?? "";
+/** Signed-in pages are noindex on purpose (private), so the SEO gate applies to public pages only. */
 const PAGES: Array<{ name: string; path: string; signedIn: boolean }> = [
   { name: "landing", path: "/", signedIn: false },
   { name: "terminal-free", path: "/terminal", signedIn: false },
@@ -31,18 +32,17 @@ interface Row { page: string; performance: number; accessibility: number; seo: n
 
 async function main(): Promise<void> {
   mkdirSync("qa/reports", { recursive: true });
-  const port = 9222 + Math.floor(Math.random() * 500);
-  const browser = await chromium.launch({ args: [`--remote-debugging-port=${port}`] });
+  const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
   const rows: Row[] = [];
   for (const p of PAGES) {
     const url = BASE + p.path;
-    const lh = await lighthouse(url, {
-      port, output: "json", logLevel: "error", onlyCategories: ["performance", "accessibility", "seo"],
-      extraHeaders: p.signedIn ? { Cookie: PRO_COOKIE } : undefined,
-    }, undefined);
-    if (!lh) throw new Error(`lighthouse returned nothing for ${url}`);
-    writeFileSync(`qa/reports/lighthouse-${p.name}.json`, typeof lh.report === "string" ? lh.report : JSON.stringify(lh.report));
-    const c = lh.lhr.categories;
+    // The Lighthouse CLI (mobile preset by default) with its own headless Chromium. Run as a CLI because its in-page
+    // functions break when bundled through tsx.
+    const out = `qa/reports/lighthouse-${p.name}.json`;
+    execFileSync("npx", ["lighthouse", url, "--chrome-flags=--headless=new --no-sandbox", "--output=json", `--output-path=${out}`, "--only-categories=performance,accessibility,seo", "--quiet",
+      ...(p.signedIn ? [`--extra-headers=${JSON.stringify({ Cookie: PRO_COOKIE })}`] : [])], { stdio: "inherit", env: { ...process.env, CHROME_PATH: process.env.PW_CHROMIUM ?? process.env.CHROME_PATH } });
+    const lhr = JSON.parse(readFileSync(out, "utf8")) as { categories: Record<string, { score: number | null } | undefined>; audits: Record<string, { numericValue?: number } | undefined> };
+    const c = lhr.categories;
     const axe: Record<number, string[]> = {};
     for (const width of [390, 1440]) {
       const ctx = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
@@ -52,6 +52,13 @@ async function main(): Promise<void> {
       }
       const page = await ctx.newPage();
       await page.goto(url, { waitUntil: "networkidle" });
+      // Scroll through so scroll-revealed sections play, then let every animation finish: axe checks the page at
+      // rest, not halfway through a fade-in.
+      await page.evaluate(async () => {
+        for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); }
+        window.scrollTo(0, 0);
+      });
+      await page.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished.catch(() => undefined))));
       const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]).analyze();
       axe[width] = res.violations.filter(v => v.impact === "serious" || v.impact === "critical").map(v => `${v.id} (${v.nodes.length})`);
       await ctx.close();
@@ -59,11 +66,11 @@ async function main(): Promise<void> {
     const row: Row = {
       page: p.name,
       performance: c.performance?.score ?? 0, accessibility: c.accessibility?.score ?? 0, seo: c.seo?.score ?? 0,
-      lcpMs: Math.round(Number(lh.lhr.audits["largest-contentful-paint"]?.numericValue ?? 0)),
-      cls: Number(lh.lhr.audits["cumulative-layout-shift"]?.numericValue ?? 0),
+      lcpMs: Math.round(Number(lhr.audits["largest-contentful-paint"]?.numericValue ?? 0)),
+      cls: Number(lhr.audits["cumulative-layout-shift"]?.numericValue ?? 0),
       axe390: axe[390] ?? [], axe1440: axe[1440] ?? [], pass: false,
     };
-    row.pass = row.performance >= GATES.performance && row.accessibility >= GATES.accessibility && row.seo >= GATES.seo && !row.axe390.length && !row.axe1440.length;
+    row.pass = row.performance >= GATES.performance && row.accessibility >= GATES.accessibility && (p.signedIn || row.seo >= GATES.seo) && !row.axe390.length && !row.axe1440.length;
     rows.push(row);
     console.log(`${row.pass ? "PASS" : "FAIL"}  ${p.name.padEnd(14)} perf ${Math.round(row.performance * 100)}  a11y ${Math.round(row.accessibility * 100)}  seo ${Math.round(row.seo * 100)}  LCP ${row.lcpMs}ms  CLS ${row.cls.toFixed(3)}  axe ${[...row.axe390, ...row.axe1440].join(", ") || "0 serious"}`);
   }
