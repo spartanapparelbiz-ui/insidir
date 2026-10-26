@@ -1,5 +1,5 @@
 /* Fire-and-forget funnel events to POST /api/events (names in lib/analytics.ts CLIENT_EVENTS). Browser only. */
-export type BeaconName = "unlock_click" | "checkout_start" | "onboarding_done" | "onboarding_skip" | "hero_cta_click" | "ticker_click" | "feed_preview_view";
+export type BeaconName = "unlock_click" | "checkout_start" | "onboarding_done" | "onboarding_skip" | "hero_cta_click" | "ticker_click" | "feed_preview_view" | "lock_view";
 
 export function beacon(name: BeaconName, where: string): void {
   try {

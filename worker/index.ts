@@ -6,6 +6,7 @@
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
+ *   emails:lifecycle every 10 min: day 0 welcome, day 2 "your trial ends tomorrow", Monday results (lib/emails/lifecycle.ts)
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h (lib/moves/jobs.ts)
@@ -36,6 +37,7 @@ import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/s
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, accuracyEmail, runAccuracyCheck } from "@/lib/accuracy/check";
+import { lifecycleOnce } from "@/lib/emails/lifecycle";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import type { VMarket, Venue } from "@/lib/types";
@@ -220,6 +222,13 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
     every("moves:daily", DIGEST_CHECK_MS, dailyOnce),
+    every("emails:lifecycle", DIGEST_CHECK_MS, async () => {
+      const n = await lifecycleOnce(getDb(), Date.now(), appUrl(), async (to, userId, e) => {
+        const unsub = unsubscribeUrl(appUrl(), userId);
+        return (await sendEmail({ to, subject: e.subject, ...renderEmail({ heading: e.heading, lines: e.lines, cta: e.cta, unsubscribe: unsub }), unsubscribe: unsub })) === "sent";
+      });
+      if (n) log(`emails: ${n} welcome, trial and weekly emails sent`);
+    }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [

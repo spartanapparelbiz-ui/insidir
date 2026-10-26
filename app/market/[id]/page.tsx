@@ -67,7 +67,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const points = [...moves].filter(m => m.outcomeSide === "yes").sort((a, b) => a.at - b.at).map(m => ({ at: m.at, price: m.avgPrice }));
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/market" />
       <main className="wrap app2 market">
         <header className="market__head">
           {event && event !== title ? <p className="trader__kicker">{event}</p> : null}

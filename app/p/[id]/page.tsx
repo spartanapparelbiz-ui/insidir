@@ -55,7 +55,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   else body = <FundProfile db={db} cik={ref.cik} viewer={viewer} trial={trial} />;
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/p" />
       <main className="wrap app2 trader profile">{body}</main>
     </>
   );

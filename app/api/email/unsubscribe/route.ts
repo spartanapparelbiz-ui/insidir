@@ -11,7 +11,7 @@ async function unsubscribe(req: NextRequest): Promise<boolean> {
   const db = getDb();
   const row = (await db.select({ settings: users.settings }).from(users).where(eq(users.id, u)).limit(1))[0];
   if (!row) return false;
-  await db.update(users).set({ settings: { ...DEFAULT_SETTINGS, ...row.settings, alertEmail: false, emailDigest: false } }).where(eq(users.id, u));
+  await db.update(users).set({ settings: { ...DEFAULT_SETTINGS, ...row.settings, alertEmail: false, emailDigest: false, noLifecycle: true } }).where(eq(users.id, u));
   return true;
 }
 

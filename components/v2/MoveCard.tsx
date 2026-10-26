@@ -5,6 +5,7 @@
  * and region (lib/moves/feed.ts). */
 import Link from "next/link";
 import { TimeAgo } from "@/components/TimeAgo";
+import { LockButton } from "@/components/lock/Lock";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import { FollowButton, type FollowState } from "./FollowButton";
@@ -28,7 +29,9 @@ function Sentence({ m }: { m: FeedItem }) {
   return <><Link className="move__name" href={href}>{name}</Link>{m.sentence.slice(name.length)}</>;
 }
 
-export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean }) {
+export function MoveCard({ m, follow, trialHref, fresh = false, compact = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
+  /** No buttons (the home preview, where the one action is "See the live feed"). */
+  compact?: boolean }) {
   const tag = TAG[m.tab]!;
   const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.league && m.league !== "other" ? m.league : null;
   return (
@@ -41,10 +44,10 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}
-      {m.record ? <p className="move__record">{m.record}</p> : null}
+      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow === "locked" && !compact ? <LockButton where="record-card" className="lockline">See this trader&apos;s win record</LockButton> : null}
       {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
-      {m.source === "sec" ? (
+      {compact ? null : m.source === "sec" ? (
         <div className="move__actions">
           {m.link ? <a className="btn btn--secondary" href={m.link.href} target="_blank" rel="noopener noreferrer">{m.link.label}</a> : null}
         </div>
@@ -55,7 +58,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
         {m.who.href && !m.sentence.startsWith(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
       </div>
       )}
-      {m.sourceLink && m.source !== "sec" ? <SourceA link={m.sourceLink} /> : null}
+      {m.sourceLink && (m.source !== "sec" || compact) ? <SourceA link={m.sourceLink} /> : null}
     </article>
   );
 }

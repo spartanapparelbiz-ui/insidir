@@ -1,7 +1,8 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
  * hero (components/home/Hero.tsx: six black-and-white photos, "Follow the big money.", one real big move per photo on
  * a solid card, the ticker strip of real moves); then clean white sections: a real feed preview (3 live cards and a
- * profile snippet), How it works, Results ("Real past moves. Not a promise."), Pricing, FAQ.
+ * profile snippet), How it works, Results ("Real past moves. Not a promise."), where the data comes from (the trust
+ * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
 import Link from "next/link";
@@ -13,6 +14,8 @@ import { Hero, PreviewSeen } from "@/components/home/Hero";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { MoveCard, SourceA } from "@/components/v2/MoveCard";
+import { TrustBlock } from "@/components/TrustBlock";
+import { trustFacts, type TrustFacts } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
@@ -71,6 +74,7 @@ export default async function Home() {
   const until = now - plan.delayMs;
   let hero: FeedItem[] = [], recent: FeedItem[] = [], results: Move[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
   let ticker: TickerItem[] = [];
+  let trust: TrustFacts | null = null;
   if (hasDatabase()) {
     const db = getDb();
     const [big, latest, settled, st] = await Promise.all([
@@ -88,6 +92,7 @@ export default async function Home() {
     const resultRecs = await recordsFor(db, settled.map(m => m.wallet ?? "")).catch(() => new Map<string, TraderRecord>());
     results = settled.filter(m => m.wallet && isTopTrader(resultRecs.get(m.wallet))).slice(0, 10);
     status = st;
+    trust = await trustFacts(db).catch(() => null);
   }
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -98,7 +103,7 @@ export default async function Home() {
 
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
         <Hero moves={hero} ticker={ticker} late={!paid} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
@@ -111,7 +116,7 @@ export default async function Home() {
                 {status ? <p className={`status status--${status.state}`}><span className="status__dot" aria-hidden="true" />{status.text}{!paid ? " · 30 min late on free" : ""}</p> : null}
               </div>
               <div className="preview__grid">
-                {preview.map(m => <MoveCard key={m.id} m={m} follow={follow} trialHref={trial} />)}
+                {preview.map(m => <MoveCard key={m.id} m={m} follow={follow} trialHref={trial} compact />)}
                 {snippet ? (
                   <aside className="psnip" aria-labelledby="psnip-h">
                     <p className="psnip__kicker">{snippet.top ? "Top trader" : "Trader"} profile</p>
@@ -122,7 +127,7 @@ export default async function Home() {
                       <div><dt>Biggest</dt><dd>{dollars(snippet.biggest)}</dd></div>
                     </dl>
                     <p className="psnip__line">{snippet.record ?? (paid ? "Not enough settled markets for a record yet." : "Their win record is for members.")}</p>
-                    <Link className="btn btn--onDark" href={`/p/${snippet.wallet}`}>See their profile</Link>
+                    <Link className="psnip__link" href={`/p/${snippet.wallet}`}>See their profile</Link>
                   </aside>
                 ) : null}
               </div>
@@ -188,8 +193,18 @@ export default async function Home() {
           </section>
         ) : null}
 
-        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={pro} />
+        <TrustBlock facts={trust} />
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={pro} actions={false} />
         <FaqV2 />
+        {!paid ? (
+          <section className="band2" aria-labelledby="band-h">
+            <div className="wrap band2__in">
+              <h2 id="band-h" className="band2__h">Follow the big money for $1.</h2>
+              <p className="band2__p">{TRIAL_LINE}</p>
+              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">Try it for $1</a>
+            </div>
+          </section>
+        ) : null}
       </main>
     </>
   );

@@ -6,12 +6,12 @@ import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LockButton } from "@/components/lock/Lock";
 import { AlertsForm } from "@/components/account/AlertsForm";
 import { unlockHref, vapidPublicKey } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { alertHistory } from "@/lib/alerts/history";
 import { getViewer } from "@/lib/auth/viewer";
-import { TRY_CTA } from "@/lib/copy";
 import { movePlan } from "@/lib/moves/gate";
 import "../app.css";
 import "../account.css";
@@ -44,7 +44,7 @@ export default async function AlertsPage() {
                 <li>Every $50,000+ move in a market you follow.</li>
                 <li>Quiet hours, so nothing wakes you up.</li>
               </ul>
-              <div className="row-gap"><a className="btn btn--primary" href="/pricing" data-unlock="alerts">{TRY_CTA}</a></div>
+              <div className="row-gap"><LockButton where="alerts" className="btn btn--primary">Turn on alerts</LockButton></div>
             </div>
           </section>
         </main>

@@ -47,7 +47,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
   };
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/top" />
       <main className="wrap app2 top">
         <h1 className="trader__name">Top traders</h1>
         <p className="note">Polymarket wallets ranked by profit on markets that resolved {window === "all" ? "so far" : window === "week" ? "in the last 7 days" : "in the last 30 days"}. Only wallets with 20 or more resolved markets. Past results, not a promise.</p>

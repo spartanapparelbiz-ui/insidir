@@ -6,6 +6,9 @@ import { RegisterSW } from "@/components/app/RegisterSW";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
+import { LockProvider } from "@/components/lock/Lock";
+import { unlockHref } from "@/components/app/links";
+import { insidirUnlocks } from "@/components/v2/Pricing";
 import "./tokens.css";
 import "./globals.css";
 import "./v2.css";
@@ -16,6 +19,9 @@ export const metadata: Metadata = {
   description: "Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.",
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
+  // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
+  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black" },
+  formatDetection: { telephone: false },
 };
 
 /** Schibsted Grotesk for everything; Rufina (the closest match to the logo's wordmark) for headlines. Both self-hosted
@@ -31,8 +37,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${schibsted.variable} ${serif.variable}`}>
       <body>
         <ToastProvider>
-          {children}
-          <SiteFooter />
+          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref("insidir")}>
+            {children}
+            <SiteFooter />
+          </LockProvider>
         </ToastProvider>
         <RegisterSW />
         <Beacons />

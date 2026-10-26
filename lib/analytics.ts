@@ -5,12 +5,20 @@ import { gte, sql } from "drizzle-orm";
 import { getDb, hasDatabase } from "./db";
 import { events } from "./db/schema";
 
-export const FUNNEL = ["landing_view", "feed_view", "unlock_click", "checkout_start", "paid", "alert_opened"] as const;
+/** The funnel: Home → the free feed (no sign-up) → a lock → checkout → paid → first follow → first alert opened; and
+ *  cancel, to see who leaves. Each person counts once per step, on the day they first got there. */
+export const FUNNEL = ["landing_view", "feed_view", "lock_view", "checkout_start", "paid", "first_follow", "alert_opened", "cancel"] as const;
+export const FUNNEL_LABEL: Record<(typeof FUNNEL)[number], string> = {
+  landing_view: "Home", feed_view: "Viewed the feed", lock_view: "Hit a lock", checkout_start: "Started checkout", paid: "Paid",
+  first_follow: "First follow", alert_opened: "First alert opened", cancel: "Cancelled",
+};
 export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
 export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip",
   // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
-  "hero_cta_click", "ticker_click", "feed_preview_view"]);
+  "hero_cta_click", "ticker_click", "feed_preview_view",
+  // A lock opened (its sheet: what you get, the price, one button); where says which (live, record, follow, alerts).
+  "lock_view"]);
 
 export const UTM_COOKIE = "insidir_utm";
 export const AB_COOKIE = "insidir_ab";
@@ -57,6 +65,25 @@ export async function funnelStats(since: Date): Promise<FunnelRow[]> {
   const rows = await getDb().select({ name: events.name, visitors: sql<number>`count(distinct coalesce(${events.userId}, ${events.visitorId}))::int` })
     .from(events).where(gte(events.at, since)).groupBy(events.name);
   return FUNNEL.map(name => ({ name, visitors: rows.find(r => r.name === name)?.visitors ?? 0 }));
+}
+
+export interface FunnelDay { day: string; counts: Record<string, number> }
+
+/** People reaching each funnel step per day (Eastern days), counted on the day they first reached it. */
+export async function funnelByDay(since: Date): Promise<FunnelDay[]> {
+  const res = await getDb().execute(sql`
+    with firsts as (
+      select name, coalesce(user_id, visitor_id) as who, min(at) as at from terminal.events
+      where name in (${sql.join(FUNNEL.map(n => sql`${n}`), sql`, `)}) group by name, coalesce(user_id, visitor_id))
+    select to_char(at at time zone 'America/New_York', 'YYYY-MM-DD') as day, name, count(*)::int as n
+    from firsts where at >= ${since} group by 1, 2 order by 1 desc`);
+  const days = new Map<string, Record<string, number>>();
+  for (const r of res.rows as Array<{ day: string; name: string; n: number }>) {
+    const d = days.get(r.day) ?? Object.fromEntries(FUNNEL.map(n => [n, 0]));
+    d[r.name] = Number(r.n);
+    days.set(r.day, d);
+  }
+  return [...days].map(([day, counts]) => ({ day, counts }));
 }
 
 /** Conversion per hero variant: visitors who saw the landing page with that variant, and how far they got. */

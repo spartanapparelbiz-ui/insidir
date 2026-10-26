@@ -40,6 +40,8 @@ export interface UserSettings {
   moveRules?: Array<{ tab: "sports" | "markets" | "crypto" | "stocks" | null; league: string | null; min: number }>;
   /** The user's IANA time zone (from their browser), for quiet hours. */
   timeZone: string | null;
+  /** Set by the one-click unsubscribe: no welcome, trial or weekly emails either (lib/emails/lifecycle.ts). */
+  noLifecycle?: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
