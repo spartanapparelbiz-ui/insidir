@@ -1,7 +1,7 @@
 /* Draft — have counsel review. */
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
-import { FOOTER, LOCK_LINE } from "@/lib/copy";
+import { FOOTER, LOCK_LINE, SUPPORT_EMAIL } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -47,7 +47,7 @@ export default async function TermsPage() {
           <p>We may update these terms; when we make a material change we will say so on the site or by email before it applies.</p>
 
           <h2>Contact</h2>
-          <p>Aethric LLC · support@insidir.com</p>
+          <p>Aethric LLC · <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
           <p className="small dim">{FOOTER}</p>
         </article>
       </main>

@@ -22,7 +22,7 @@ export default async function PricingPage() {
       <main className="wrap lp">
         <Pricing current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={checkoutHref(checkoutUrl("insidir"))} proHref={checkoutHref(checkoutUrl("pro"))}
           freeCta={LANDING_CTA} refund={refund} level={1} />
-        <Faq ids={["what", "risk", "trade", "fees", "iphone", "cancel"]} />
+        <Faq ids={["what", "risk", "trade", "fees", "iphone", "cancel", "contact"]} />
       </main>
       <Beacons />
     </>

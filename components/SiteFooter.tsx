@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FOOTER } from "@/lib/copy";
+import { FOOTER, SUPPORT_EMAIL } from "@/lib/copy";
 
 export function SiteFooter() {
   return (
@@ -13,7 +13,7 @@ export function SiteFooter() {
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
         </nav>
-        <p className="dim" style={{ marginTop: 8 }}>© 2026 Aethric LLC · insidir.com</p>
+        <p className="dim" style={{ marginTop: 8 }}>© 2026 Aethric LLC · insidir.com · <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
       </div>
     </footer>
   );

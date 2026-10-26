@@ -7,6 +7,7 @@
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
+import { SUPPORT_EMAIL } from "@/lib/copy";
 
 export interface PushTarget { endpoint: string; p256dh: string; auth: string }
 export type SendResult = "sent" | "gone" | "failed";
@@ -16,7 +17,7 @@ function vapid(): boolean {
   if (vapidReady) return true;
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
   if (!pub || !priv) return false;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:hello@aethric.llc", pub, priv);
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || `mailto:${SUPPORT_EMAIL}`, pub, priv);
   vapidReady = true;
   return true;
 }
@@ -59,7 +60,7 @@ export async function sendEmail(e: Email): Promise<SendResult> {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [e.to], subject: e.subject, text: e.text, html: e.html,
+      body: JSON.stringify({ from, to: [e.to], reply_to: SUPPORT_EMAIL, subject: e.subject, text: e.text, html: e.html,
         headers: { "List-Unsubscribe": `<${e.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
     });
     if (res.status === 422) return "gone"; // invalid recipient
@@ -74,11 +75,11 @@ export const EMAIL_FOOTER = "Information only, not financial advice. Not affilia
 /** A plain, fast email: black on white for every mail client, monospace, no images. */
 export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {
   const text = [opts.heading, "", ...opts.lines.map(l => (l.url ? `${l.text}\n${l.url}` : l.text)), "", ...(opts.cta ? [`${opts.cta.label}: ${opts.cta.url}`, ""] : []),
-    EMAIL_FOOTER, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
+    EMAIL_FOOTER, `Questions: ${SUPPORT_EMAIL}`, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
   const html = `<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.5;color:#111;max-width:560px">` +
     `<p style="font-size:18px;font-weight:700;margin:0 0 16px">${esc(opts.heading)}</p>` +
     opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#111">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
     (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
-    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a></p></div>`;
+    `<p style="color:#666;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br>Questions: <a href="mailto:${SUPPORT_EMAIL}" style="color:#666">${SUPPORT_EMAIL}</a> · <a href="${esc(opts.unsubscribe)}" style="color:#666">Unsubscribe</a></p></div>`;
   return { text, html };
 }

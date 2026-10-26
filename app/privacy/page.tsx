@@ -1,6 +1,7 @@
 /* Draft — have counsel review. */
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SUPPORT_EMAIL } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -51,10 +52,10 @@ export default async function PrivacyPage() {
           </ul>
 
           <h2>Your choices</h2>
-          <p>Turn alerts off in Settings, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email support@insidir.com.</p>
+          <p>Turn alerts off in Settings, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email {SUPPORT_EMAIL}.</p>
 
           <h2>Contact</h2>
-          <p>Aethric LLC · support@insidir.com</p>
+          <p>Aethric LLC · <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
         </article>
       </main>
     </>

@@ -1,9 +1,10 @@
 /* 8. FAQ, as <details>. Honest answers; shared (a subset) with /pricing. */
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL } from "@/lib/copy";
 import { RISK_QUESTION } from "./model";
 
-export type FaqId = "what" | "risk" | "trade" | "fees" | "settle" | "where" | "iphone" | "cancel";
+export type FaqId = "what" | "risk" | "trade" | "fees" | "settle" | "where" | "iphone" | "cancel" | "contact";
 
 
 export const FAQ: Array<{ id: FaqId; q: string; a: ReactNode }> = [
@@ -30,6 +31,7 @@ export const FAQ: Array<{ id: FaqId; q: string; a: ReactNode }> = [
   { id: "where", q: "Can I use Polymarket where I live?", a: <p>If you are in the US, Insidir only shows Kalshi and Polymarket US, the venues available to US users. Outside the US, check your local rules before you trade.</p> },
   { id: "iphone", q: "How do alerts work on iPhone?", a: <p>Add Insidir to your Home Screen: tap Share, then Add to Home Screen. Open it from the new icon and turn on alerts. iOS only allows web push for home-screen apps.</p> },
   { id: "cancel", q: "Can I cancel anytime?", a: <p>Yes. One click in Settings, handled through Whop. You keep access until the end of the period you paid for.</p> },
+  { id: "contact", q: "How do I reach you?", a: <p>Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. A person reads every message.</p> },
 ];
 
 export function Faq({ ids, title = "Questions" }: { ids?: readonly FaqId[]; title?: string }) {
