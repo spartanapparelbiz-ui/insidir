@@ -11,9 +11,9 @@ export const contentType = "image/png";
 export default function OpengraphImage() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: "#000", color: "#f2f0ea", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72 }}>
+      <div style={{ width: "100%", height: "100%", background: "#000", color: "#f5f5f5", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72 }}>
         <div style={{ display: "flex" }}>
-          <svg width="241" height="80" viewBox={LOGO.viewBox} fill="#f2f0ea">
+          <svg width="241" height="80" viewBox={LOGO.viewBox} fill="#f5f5f5">
             <circle cx={LOGO.dot.cx} cy={LOGO.dot.cy} r={LOGO.dot.r} />
             <path d={LOGO.bar} />
             <path d={LOGO.text} />
@@ -21,7 +21,7 @@ export default function OpengraphImage() {
           </svg>
         </div>
         <div style={{ display: "flex", fontSize: 68, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>{AB_TESTS.hero.a.headline}</div>
-        <div style={{ display: "flex", fontSize: 28, color: "#8e8c86" }}>Prices that lock in a profit after fees, if both sides fill and both markets settle the same way.</div>
+        <div style={{ display: "flex", fontSize: 28, color: "#8c9099" }}>Prices that lock in a profit after fees, if both sides fill and both markets settle the same way.</div>
       </div>
     ),
     size,

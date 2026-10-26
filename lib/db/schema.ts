@@ -1,5 +1,6 @@
 /* Insidir Terminal's tables, in their own PostgreSQL schema ("terminal") so they never collide with the old
  * stock product's tables in the same Railway database (those are left untouched). Drizzle ORM. */
+import type { NearMiss } from "@/lib/engines/near-miss";
 import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, WhaleTrade } from "@/lib/types";
 
@@ -26,11 +27,13 @@ export interface UserSettings {
   emailDigest: boolean;
   /** Only alert for plays at or above this ROI. */
   alertMinRoi: number;
+  /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
+  soundOnGreen: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
-  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01,
+  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
 };
 
 export const users = terminal.table("users", {
@@ -183,6 +186,26 @@ export const llmUsage = terminal.table("llm_usage", {
   month: text("month").primaryKey(),
   usd: doublePrecision("usd").notNull().default(0),
   calls: integer("calls").notNull().default(0),
+});
+
+/** Everything the worker sees happen, in order: the live pipe the site streams over Server-Sent Events. Every toast,
+ *  tape item and live counter on the site comes from a row here (never invented). `venues` lets the stream apply
+ *  the viewer's region. Pruned after 7 days by the worker. */
+export const liveEvents = terminal.table("live_events", {
+  id: serial("id").primaryKey(),
+  type: text("type").$type<"deal_found" | "deal_closed" | "price_tick" | "whale">().notNull(),
+  oppId: text("opp_id"),
+  venues: text("venues").array().$type<Venue[]>().notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("live_events_at_idx").on(t.at)]);
+
+/** The closest matched market per venue pair at the last scan (lib/engines/near-miss.ts): what the landing page
+ *  shows, labelled "Not a deal yet", when there is no deal. Key: the two venues, sorted, joined by "|". */
+export const nearMisses = terminal.table("near_misses", {
+  venues: text("venues").primaryKey(),
+  data: jsonb("data").$type<NearMiss>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
 });
 
 export const workerHeartbeats = terminal.table("worker_heartbeats", {

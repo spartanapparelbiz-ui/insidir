@@ -19,7 +19,17 @@ export function WhopCheckout({ planId, plan, customerId, buyerEmail, affiliateCo
     setElements(loadWhop());
     beacon("checkout_start", `embed-${plan}`);
   }, [plan]);
+  // The safety switch, for a page left open: if live data stays paused (/api/health says checkoutOpen: false), the
+  // element is removed so nothing can be paid until the feed is back.
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    const check = () => void fetch("/api/health", { cache: "no-store" }).then(r => r.json())
+      .then((h: { checkoutOpen?: boolean }) => { if (h.checkoutOpen === false) setClosed(true); }).catch(() => undefined);
+    const t = setInterval(check, 30_000);
+    return () => clearInterval(t);
+  }, []);
 
+  if (closed) return <p className="banner banner--err" role="status" data-testid="checkout-paused">Checkout opens when live data is back.</p>;
   if (failed) return <CheckoutFallback plan={plan} note="The checkout didn't load here." />;
   return (
     <div className="whopcheckout" data-testid="whop-checkout">

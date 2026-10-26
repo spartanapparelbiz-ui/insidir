@@ -30,19 +30,20 @@ export default async function WhalesPage() {
       <main className="wrap app">
         <Beacons where="whales" />
         <h1 className="page__h">Whales</h1>
+        {allowed ? <p className="muted small">Large trades on the venues you can use, newest first.</p> : null}
         {!allowed ? (
-          <Locked title="Whales" text="The latest large trades as they happen: wallet, market, side, size, price and cash." href={unlockHref("pro", "/whales")} plan="pro" where="whales" />
+          <Locked title="Whales" text="See the latest large trades as they happen: who traded, which market, which side, how much and at what price." href={unlockHref("pro", "/whales")} plan="pro" where="whales" />
         ) : trades.length ? (
           <div className="scroll-x">
             <table className="table whales">
-              <thead><tr><th>Time</th><th>Wallet</th><th>Market</th><th>Side</th><th className="r">Size</th><th className="r">Price</th><th className="r">Cash</th></tr></thead>
+              <thead><tr><th>When</th><th>Wallet</th><th>Market</th><th>Trade</th><th className="r">Size</th><th className="r">Price</th><th className="r">Cash</th></tr></thead>
               <tbody>
                 {trades.map((t, i) => (
                   <tr key={`${t.txHash ?? t.wallet}-${i}`}>
                     <td className="nowrap"><Ago at={t.timestamp} now={now} /></td>
                     <td className="nowrap" title={t.wallet}>{t.name ?? short(t.wallet)}</td>
                     <td>{t.url ? <a href={t.url} target="_blank" rel="noopener noreferrer">{t.marketTitle}</a> : t.marketTitle}<span className="dim tiny calc__lbl">{VENUE_NAME[t.venue]}</span></td>
-                    <td className="nowrap">{t.side} {t.outcome}</td>
+                    <td className="nowrap whales__side">{t.side === "SELL" ? "Sold" : "Bought"} {t.outcome}</td>
                     <td className="r">{Math.round(t.contracts).toLocaleString("en-US")}</td>
                     <td className="r">{centsText(Math.round(t.price * 1000) / 10)}</td>
                     <td className="r">{usd(t.cash)}</td>
@@ -52,7 +53,7 @@ export default async function WhalesPage() {
             </table>
           </div>
         ) : (
-          <div className="empty"><p className="empty__h">No large trades yet</p><p className="muted small">Large trades show up here as the scanner records them.</p></div>
+          <div className="empty"><p className="empty__h">No large trades yet</p><p className="muted small">Large trades show up here as the scanner records them. Leave this page open, or check back later.</p></div>
         )}
       </main>
     </>

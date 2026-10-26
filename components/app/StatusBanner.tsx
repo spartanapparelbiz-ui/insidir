@@ -16,5 +16,5 @@ export function statusText(status: DataStatus, venues: readonly Venue[], offline
 export function StatusBanner({ status, venues, offline = false }: { status: DataStatus; venues: readonly Venue[]; offline?: boolean }) {
   const text = statusText(status, venues, offline);
   if (!text) return null;
-  return <p className="banner banner--warn" role="status"><span className="banner__dot" aria-hidden="true" />{text}</p>;
+  return <p className="banner banner--warn" role="status">{text}</p>;
 }

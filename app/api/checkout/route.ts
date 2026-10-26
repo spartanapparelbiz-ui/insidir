@@ -6,6 +6,7 @@ import { recordEvent } from "@/lib/analytics";
 import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
 import { createCheckout, type PaidPlan } from "@/lib/whop/billing";
 import { appUrl } from "@/lib/whop/config";
+import { checkoutOpen } from "@/lib/status";
 
 export async function POST(req: NextRequest) {
   const form = await req.formData().catch(() => null);
@@ -14,6 +15,8 @@ export async function POST(req: NextRequest) {
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.redirect(new URL(`/auth/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`, appUrl()), 303);
   if (user.plan === plan || user.plan === "pro") return NextResponse.redirect(new URL("/settings", appUrl()), 303);
+  // Safety switch: no checkout while live data has been paused for over 10 minutes.
+  if (!(await checkoutOpen())) return NextResponse.redirect(new URL(`/pricing?plan=${plan}`, appUrl()), 303);
   try {
     const url = await createCheckout(plan, user.id, req.cookies.get("insidir_aff")?.value ?? null);
     await recordEvent({ name: "checkout_start", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: user.id, props: { plan, where: "redirect" } })

@@ -31,11 +31,11 @@ const LANDING_FILES = [
 describe("landing page", () => {
   it("renders its sections in the required order", () => {
     const src = read("app/page.tsx");
-    const markers = ["<Hero ", "<ProofStrip ", "<HowItWorks ", "<TerminalPreview ", 'data-section="receipts"', "<SafetySection ", "<Pricing ", "<Faq ", "<FinalCta ", "<Sticky "];
+    const markers = ["<Hero ", "<LiveStrip ", "<TerminalPreview ", 'data-section="receipts"', "<SafetySection ", "<Pricing ", "<Faq ", "<FinalCta ", "<Sticky "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const [file, sec] of [["Hero", "hero"], ["ProofStrip", "proof"], ["HowItWorks", "how"], ["TerminalPreview", "preview"], ["Safety", "safety"],
+    for (const [file, sec] of [["Hero", "hero"], ["LiveStrip", "live"], ["TerminalPreview", "preview"], ["Safety", "safety"],
       ["Pricing", "pricing"], ["Faq", "faq"], ["Cta", "final"]] as const) {
       expect(read(`components/landing/${file}.tsx`)).toContain(`data-section="${sec}"`);
     }
@@ -45,7 +45,7 @@ describe("landing page", () => {
     const src = read("app/page.tsx");
     expect(src).toContain('export const dynamic = "force-dynamic"');
     expect(src).toMatch(/recordEvent\(\{ name: "landing_view"/);
-    expect(src).toContain("AB_TESTS.hero[variant]");
+    expect(src).toContain("AB_TESTS.hero[heroVariant(abRaw)]");
   });
 
   it("uses no banned phrases (the owner's FAQ question is answered with an explicit No)", () => {
@@ -97,6 +97,20 @@ describe("landing page", () => {
     const page = read("app/page.tsx");
     expect(page.match(/cta=\{LANDING_CTA\}/g)?.length).toBeGreaterThanOrEqual(3);
     expect(page).toContain('<Sticky label={LANDING_CTA} href="/terminal" />');
+  });
+
+  it("is monochrome: no colour in the styles except the three safety lights", () => {
+    const PALETTE = new Set(["#000000", "#141414", "#262626", "#f5f5f5", "#8c9099", "#5a5f66", "#ffffff", "#30d158", "#ff9f0a", "#ff453a"]);
+    const SAFETY = ["--green", "--amber", "--red"];
+    for (const f of ["app/globals.css", "app/landing.css", "app/app.css", "components/deal-row.css", "components/app/ios.css"]) {
+      const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
+      for (const hex of css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) expect(PALETTE.has(hex.toLowerCase()), `${f}: ${hex}`).toBe(true);
+      expect(css, f).not.toMatch(/gold|ffc53d|rgba?\((?!0, 0, 0)/i);
+      // The safety colours appear only as a dot's background, never as text, buttons or borders.
+      for (const line of css.split("\n").filter(l => SAFETY.some(v => l.includes(`var(${v})`)))) {
+        expect(line, `${f}: ${line}`).toMatch(/--dot: var\(--(green|amber|red)\)|::before[^{]*\{[^}]*background: var\(--(green|amber|red)\)|^\s*--(green|amber|red): #/);
+      }
+    }
   });
 
   it("only offers the refund when the log averages a green deal a day, and shows the objection lines", () => {

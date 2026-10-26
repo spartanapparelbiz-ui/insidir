@@ -2,13 +2,15 @@
  * heartbeats, whales and alert bookkeeping. */
 import { and, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, opportunities, pairs, pushSubscriptions, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { AlertUser } from "@/lib/alerts/fanout";
 import type { MatchCache, MatchDecision } from "@/lib/matching/cache";
 import type { LlmUsageStore } from "@/lib/matching/llm";
 import type { Override } from "@/lib/matching";
+import type { NearMiss } from "@/lib/engines/near-miss";
 import type { MarketPair, Opportunity, VMarket, WhaleTrade } from "@/lib/types";
+import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 
 /** An opportunity not re-found for this long is marked inactive. */
 export const DEACTIVATE_AFTER_MS = 90_000;
@@ -70,10 +72,15 @@ export async function savePairs(db: Db, list: readonly MarketPair[]): Promise<vo
   }
 }
 
-/** Stores a scan. New opportunities get a receipt (the snapshot at detection, never changed). Returns the new ids. */
-export async function saveOpportunities(db: Db, opps: readonly Opportunity[], now: Date): Promise<string[]> {
+/** Stores a scan. New opportunities get a receipt (the snapshot at detection, never changed) and a live "deal found"
+ *  event; a price that moved on a known deal gets a live "price tick" (at most one per deal per TICK_MIN_MS, tracked
+ *  in `lastTickAt`). Returns the new ids. */
+export async function saveOpportunities(db: Db, opps: readonly Opportunity[], now: Date, lastTickAt: Map<string, number> = new Map()): Promise<string[]> {
   if (!opps.length) return [];
-  const existing = new Set((await db.select({ id: opportunities.id }).from(opportunities).where(inArray(opportunities.id, opps.map(o => o.id)))).map(r => r.id));
+  const prior = await db.select({ id: opportunities.id, data: opportunities.data, firstSeenAt: opportunities.firstSeenAt, active: opportunities.active })
+    .from(opportunities).where(inArray(opportunities.id, opps.map(o => o.id)));
+  const existing = new Set(prior.map(r => r.id));
+  const priorById = new Map(prior.map(r => [r.id, r]));
   for (const o of opps) {
     const venues = [...new Set(o.legs.map(l => l.venue))];
     await db.insert(opportunities).values({ id: o.id, kind: o.kind, data: o, venues, safety: o.safety, roi: o.roi, profitPerDay: o.profitPerDay, firstSeenAt: now, lastSeenAt: now, active: true })
@@ -83,13 +90,24 @@ export async function saveOpportunities(db: Db, opps: readonly Opportunity[], no
   for (const o of fresh) {
     await db.insert(receipts).values({ oppId: o.id, kind: o.kind, safety: o.safety, detectedAt: now, snapshot: o }).onConflictDoNothing();
   }
+  const live: LiveRowInput[] = fresh.map(o => dealFound(o, now));
+  for (const o of opps) {
+    const p = priorById.get(o.id);
+    // A deal that had closed and came back counts as found again.
+    if (p && !p.active) { live.push(dealFound(o, p.firstSeenAt, now)); continue; }
+    const tick = p ? priceTick(p.data, o, p.firstSeenAt, now, lastTickAt) : null;
+    if (tick) { live.push(tick); lastTickAt.set(o.id, now.getTime()); }
+  }
+  await publish(db, live);
   return fresh.map(o => o.id);
 }
 
-/** Deals not re-found recently are no longer live. */
+/** Deals not re-found recently are no longer live; each one gets a live "deal closed" event with how long it lasted. */
 export async function deactivateStale(db: Db, now: Date): Promise<number> {
   const res = await db.update(opportunities).set({ active: false })
-    .where(and(eq(opportunities.active, true), lt(opportunities.lastSeenAt, new Date(now.getTime() - DEACTIVATE_AFTER_MS)))).returning({ id: opportunities.id });
+    .where(and(eq(opportunities.active, true), lt(opportunities.lastSeenAt, new Date(now.getTime() - DEACTIVATE_AFTER_MS))))
+    .returning({ id: opportunities.id, data: opportunities.data, firstSeenAt: opportunities.firstSeenAt, lastSeenAt: opportunities.lastSeenAt });
+  await publish(db, res.map(r => dealClosed(r.data, r.firstSeenAt, r.lastSeenAt, now)));
   return res.length;
 }
 
@@ -98,10 +116,24 @@ export async function heartbeat(db: Db, job: string, ok: boolean, error: string 
   await db.insert(workerHeartbeats).values(row).onConflictDoUpdate({ target: workerHeartbeats.job, set: { lastRunAt: row.lastRunAt, ok, error, stats } });
 }
 
-export async function saveWhales(db: Db, trades: readonly WhaleTrade[]): Promise<void> {
-  for (const t of trades) {
-    await db.insert(whaleTrades).values({ key: `${t.txHash ?? ""}:${t.wallet}:${t.marketId}:${t.outcome}`, data: t, at: new Date(t.timestamp) }).onConflictDoNothing();
+/** Stores big trades; each one not seen before gets a live "whale" event. */
+/** The closest matched market per venue pair, replacing the last scan's. Pairs that vanish keep their last row
+ *  (with its time), so the landing page can still show the last known prices. */
+export async function saveNearMisses(db: Db, list: readonly NearMiss[]): Promise<void> {
+  for (const n of list) {
+    const row = { venues: n.venues.join("|"), data: n, at: new Date(n.at) };
+    await db.insert(nearMisses).values(row).onConflictDoUpdate({ target: nearMisses.venues, set: { data: row.data, at: row.at } });
   }
+}
+
+export async function saveWhales(db: Db, trades: readonly WhaleTrade[]): Promise<void> {
+  const added: WhaleTrade[] = [];
+  for (const t of trades) {
+    const r = await db.insert(whaleTrades).values({ key: `${t.txHash ?? ""}:${t.wallet}:${t.marketId}:${t.outcome}`, data: t, at: new Date(t.timestamp) })
+      .onConflictDoNothing().returning({ key: whaleTrades.key });
+    if (r.length) added.push(t);
+  }
+  await publish(db, added.map(whale));
 }
 
 /** Active deals first seen within the alert window, with their first-seen time. */

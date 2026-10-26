@@ -51,7 +51,7 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="ob-h">
       <div className="sheet" ref={box}>
         <div className="sheet__top">
-          <span className="dim small">Step {step + 1} of 3</span>
+          <span className="muted small">Step {step + 1} of 3</span>
           <button type="button" className="btn btn--ghost" onClick={() => void finish(true)} disabled={busy}>Skip</button>
         </div>
         <h2 id="ob-h" className="sheet__h" tabIndex={-1}>{titles[step]}</h2>
@@ -72,9 +72,9 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
         {step === 1 ? (
           <>
             <p className="muted small">Hide deals below these numbers. You can change them any time in Settings.</p>
-            <div className="field"><label htmlFor="ob-roi">Min ROI (%)</label>
+            <div className="field"><label htmlFor="ob-roi">Lowest return (%)</label>
               <input id="ob-roi" className="input" inputMode="decimal" value={minRoi} onChange={e => setMinRoi(e.target.value)} /></div>
-            <div className="field"><label htmlFor="ob-size">Min size ($)</label>
+            <div className="field"><label htmlFor="ob-size">Smallest size ($)</label>
               <input id="ob-size" className="input" inputMode="decimal" value={minSize} onChange={e => setMinSize(e.target.value)} /></div>
           </>
         ) : null}
@@ -82,11 +82,11 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
         {step === 2 ? (
           <>
             {paid ? <PushButton vapidKey={vapidKey} /> : (
-              <p className="muted small">Push alerts come with Insidir. <a href={unlockHref} data-unlock="onboarding">Unlock</a></p>
+              <p className="muted small">Push alerts come with Insidir. <a href={unlockHref} data-unlock="onboarding">Start Insidir</a></p>
             )}
             <label className="check"><input type="checkbox" checked={digest} onChange={e => setDigest(e.target.checked)} />Email me a daily summary</label>
             {paid ? <label className="check"><input type="checkbox" checked={alertEmail} onChange={e => setAlertEmail(e.target.checked)} />Email me alerts when push isn&apos;t on</label> : null}
-            <p className="dim small">{email ? <>Emails go to <span className="muted">{email}</span> (from your Whop account).</> : "Your Whop account has no email, so email alerts can't be sent."}</p>
+            <p className="muted small">{email ? <>Emails go to <span className="num">{email}</span>, the address on your Whop account.</> : "Your Whop account has no email, so we can't send email. Add one on Whop to get it."}</p>
           </>
         ) : null}
 

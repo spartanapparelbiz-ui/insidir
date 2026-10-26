@@ -27,14 +27,14 @@ export function Calculator({ legs, payoutPerSet, maxSets }: { legs: CalcLeg[]; p
         <label htmlFor={`${id}-a`}>Amount ($)</label>
         <input id={`${id}-a`} className="input input--big" inputMode="decimal" placeholder="0.00" value={raw} onChange={e => setRaw(e.target.value)} autoComplete="off" />
       </div>
-      {r.reason !== "ok" ? <p className="muted small" role="status">{raw.trim() ? REASON[r.reason] : "Type an amount to see the numbers."}</p> : (
+      {r.reason !== "ok" ? <p className="muted small" role="status">{raw.trim() ? REASON[r.reason] : "Type how much you want to put in. You'll see the contracts per side, the fees and the profit."}</p> : (
         <div role="status">
           <div className="scroll-x">
             <table className="table calc__t">
               <thead><tr><th>Side</th><th className="r">Contracts</th><th className="r">Cost</th><th className="r">Fees</th></tr></thead>
               <tbody>
                 {r.legs.map((l, i) => (
-                  <tr key={i}><td>{l.side.toUpperCase()} · {VENUE_NAME[l.venue]}<span className="dim tiny calc__lbl">{l.label}</span></td>
+                  <tr key={i}><td>{l.side.toUpperCase()} on {VENUE_NAME[l.venue]}<span className="dim tiny calc__lbl">{l.label}</span></td>
                     <td className="r">{l.contracts.toLocaleString("en-US")}</td><td className="r">{money(l.cost)}</td><td className="r">{money(l.fee)}</td></tr>
                 ))}
               </tbody>
@@ -44,7 +44,7 @@ export function Calculator({ legs, payoutPerSet, maxSets }: { legs: CalcLeg[]; p
             <div><dt>Total cost</dt><dd>{money(r.total)}</dd></div>
             <div><dt>Payout</dt><dd>{money(r.payout)}</dd></div>
             <div><dt>Profit</dt><dd className="profit">{money(r.profit)}</dd></div>
-            <div><dt>ROI</dt><dd>{pct(r.roi, 2)}</dd></div>
+            <div><dt>Return</dt><dd>{pct(r.roi, 2)}</dd></div>
           </dl>
           {r.capped ? <p className="muted small">Capped at the {r.sets.toLocaleString("en-US")} sets the order books can fill right now.</p> : null}
         </div>

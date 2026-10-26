@@ -2,11 +2,12 @@
  * Every deal is computed by the real engines from synthetic books, and every title says "E2E fixture", so nothing
  * here can be mistaken for live data. Run: DATABASE_URL=…/terminal_e2e tsx qa/e2e/seed.ts */
 import { createHash } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { DEFAULT_SETTINGS, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { DEFAULT_SETTINGS, nearMisses, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
+import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarket, Venue } from "@/lib/types";
 
 const MIN = 60_000, DAY = 86_400_000;
@@ -72,7 +73,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses CASCADE`);
   const u = universe(now);
   const { opps } = scan(u, u.books, now);
   // Second opinions double the cross-venue rows; the feed shows the lock, which is what the tests check.
@@ -91,12 +92,40 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     const at = new Date(now - d * DAY);
     await db.insert(receipts).values({ oppId: snap.id, kind: snap.kind, safety: "green", detectedAt: at, snapshot: snap, settledAt: new Date(at.getTime() + DAY), results: {}, sameWay: true, realizedProfit: snap.profit });
   }
+  // The live log, written by the same functions the worker uses: a "deal found" for each deal; one deal that closed
+  // (found 20 minutes ago, gone 12 minutes later); a real price move on the Jets deal 40 minutes ago (the live state
+  // follows it); and the big trade below.
+  const live: LiveRowInput[] = deals.map(o => dealFound(o, new Date(now - ageOf(o))));
+  const closed: Opportunity = { ...hist, id: "cross_arb-e2e-closed", title: "E2E fixture: Will the Bulls win on Nov 2?" };
+  const cFirst = new Date(now - 20 * MIN), cLast = new Date(now - 8 * MIN);
+  await db.insert(opportunities).values({ id: closed.id, kind: closed.kind, data: closed, venues: [...new Set(closed.legs.map(l => l.venue))], safety: closed.safety, roi: closed.roi, profitPerDay: closed.profitPerDay, firstSeenAt: cFirst, lastSeenAt: cLast, active: false });
+  await db.insert(receipts).values({ oppId: closed.id, kind: closed.kind, safety: closed.safety, detectedAt: cFirst, snapshot: closed });
+  live.push(dealFound(closed, cFirst), dealClosed(closed, cFirst, cLast, new Date(now - 7 * MIN)));
+  const jets = deals.find(o => o.title.includes("Jets"))!;
+  const moved: Opportunity = { ...jets, legs: jets.legs.map((l, i) => (i === 1 ? { ...l, avgPrice: l.avgPrice - 0.01, cost: l.cost - 0.01 * l.contracts } : l)),
+    cost: jets.cost - 0.01 * jets.sets, profit: jets.profit + 0.01 * jets.sets };
+  moved.roi = moved.profit / (moved.cost + moved.fees);
+  moved.profitPerDay = moved.profit / moved.days;
+  live.push(priceTick(jets, moved, new Date(now - 45 * MIN), new Date(now - 40 * MIN), new Map())!);
+  await db.update(opportunities).set({ data: moved, roi: moved.roi, profitPerDay: moved.profitPerDay }).where(eq(opportunities.id, jets.id));
   for (const job of ["scan:kalshi", "scan:polymarket", "scan:polymarket_us"]) {
     await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: { books: 4 } });
   }
-  await db.insert(whaleTrades).values({ key: "e2e-whale-1", at: new Date(now - 5 * MIN), data: {
-    venue: "polymarket", wallet: "0xe2e0000000000000000000000000000000000001", name: null, marketId: "0xe2e", marketTitle: "E2E fixture: whale market",
-    outcome: "Yes", side: "BUY", contracts: 25_000, price: 0.62, cash: 15_500, timestamp: now - 5 * MIN, txHash: "0xe2e1", url: "https://example.test/whale",
+  const bigTrade = {
+    venue: "polymarket" as const, wallet: "0xe2e0000000000000000000000000000000000001", name: null, marketId: "0xe2e", marketTitle: "E2E fixture: whale market",
+    outcome: "Yes", side: "BUY" as const, contracts: 25_000, price: 0.62, cash: 15_500, timestamp: now - 35 * MIN, txHash: "0xe2e1", url: "https://example.test/whale",
+  };
+  await db.insert(whaleTrades).values({ key: "e2e-whale-1", at: new Date(bigTrade.timestamp), data: bigTrade });
+  live.push(whale(bigTrade));
+  await publish(db, live);
+  // The closest matched market that isn't a deal (what the hero shows when there is no deal): 52¢ + 49¢ = 101¢.
+  await db.insert(nearMisses).values({ venues: "kalshi|polymarket_us", at: new Date(now - 2 * MIN), data: {
+    venues: ["kalshi", "polymarket_us"], pairId: "kalshi:E2E-KNICKS|polymarket_us:e2e-knicks", title: "E2E fixture: Will the Knicks win on Nov 6?",
+    legs: [
+      { venue: "kalshi", marketId: "E2E-KNICKS", side: "yes", label: "YES on Kalshi", priceCents: 52 },
+      { venue: "polymarket_us", marketId: "e2e-knicks", side: "no", label: "NO on Polymarket US", priceCents: 49 },
+    ],
+    totalCents: 101, at: now - 2 * MIN,
   } });
   for (const x of Object.values(E2E_USERS)) {
     // Seeded paid users also get a membership in the mock Whop (global-setup.ts): every request asks users.checkAccess.

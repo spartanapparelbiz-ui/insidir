@@ -28,3 +28,15 @@ describe("health report", () => {
     expect(h.jobs.sweep!.error).toHaveLength(200);
   });
 });
+
+describe("checkout safety switch", () => {
+  it("stays open through the 2-minute pause and the next 10 minutes, then closes; never open without a scan", async () => {
+    const { checkoutOpenAt, CHECKOUT_CLOSE_AFTER_PAUSED_MS } = await import("@/lib/status");
+    expect(checkoutOpenAt(NOW - 5_000, NOW)).toBe(true);
+    expect(checkoutOpenAt(NOW - STALE_MS - CHECKOUT_CLOSE_AFTER_PAUSED_MS, NOW)).toBe(true);
+    expect(checkoutOpenAt(NOW - STALE_MS - CHECKOUT_CLOSE_AFTER_PAUSED_MS - 1, NOW)).toBe(false);
+    expect(checkoutOpenAt(null, NOW)).toBe(false);
+    expect(healthFrom([], NOW).checkoutOpen).toBe(false);
+    expect(healthFrom([{ job: "scan:kalshi", lastRunAt: NOW - 1_000, ok: true, error: null }], NOW).checkoutOpen).toBe(true);
+  });
+});

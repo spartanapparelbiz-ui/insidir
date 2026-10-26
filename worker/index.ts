@@ -22,11 +22,12 @@ import { closeDb, getDb } from "@/lib/db";
 import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
 import { marketsToBook, scan, type Universe } from "@/lib/scanner";
+import { pruneLive } from "@/lib/live/publish";
 import { pct, usd } from "@/lib/format";
 import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, dbMatchCache, dbUsageStore, deactivateStale, dropPush, heartbeat, loadOverrides, markDigestSent,
-  pushTargets, saveMarkets, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
+  pushTargets, saveMarkets, saveNearMisses, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
 } from "@/lib/worker/store";
 
 const n = (k: string, d: number) => { const v = Number(process.env[k]); return Number.isFinite(v) && v > 0 ? v : d; };
@@ -41,7 +42,7 @@ export const DIGEST_CHECK_MS = 10 * 60_000;
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-interface State { universe: Universe; lastFull: number; hot: Set<string> }
+interface State { universe: Universe; lastFull: number; hot: Set<string>; lastTickAt: Map<string, number> }
 
 async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise<void> {
   const db = getDb();
@@ -100,8 +101,9 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   }
   if (full) state.lastFull = now;
   if (!books.size) return;
-  const { opps, counts } = scan(state.universe, books, now);
-  const fresh = await saveOpportunities(db, opps, new Date(now));
+  const { opps, counts, nearMisses } = scan(state.universe, books, now);
+  const fresh = await saveOpportunities(db, opps, new Date(now), state.lastTickAt);
+  await saveNearMisses(db, nearMisses);
   const dropped = full ? await deactivateStale(db, new Date(now)) : 0;
   state.hot = new Set(opps.flatMap(o => o.legs.map(l => marketKey(l.venue, l.marketId))));
   if (full || fresh.length) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${dropped} gone`);
@@ -165,6 +167,7 @@ async function whalesOnce(clients: Record<Venue, VenueClient>): Promise<void> {
 async function settleOnce(clients: Record<Venue, VenueClient>): Promise<void> {
   const db = getDb();
   const now = new Date();
+  await pruneLive(db, now);
   const due = await unsettledReceipts(db, now);
   if (!due.length) return;
   const ids = new Map<Venue, Set<string>>();
@@ -205,7 +208,7 @@ function every(name: string, ms: number, fn: () => Promise<void>): () => void {
 
 export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const clients = createVenueClients();
-  const state: State = { universe: { markets: [], events: [], pairs: [] }, lastFull: 0, hot: new Set() };
+  const state: State = { universe: { markets: [], events: [], pairs: [] }, lastFull: 0, hot: new Set(), lastTickAt: new Map() };
   log("worker starting");
   await sweep(clients, state).catch(e => log("first sweep failed:", errMsg(e)));
   const stops = [

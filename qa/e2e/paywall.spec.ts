@@ -38,6 +38,9 @@ for (const who of ["visitor", "free member"] as const) {
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
+    // The live stream was read too, and it carried events (so an empty stream can't pass by accident).
+    const live = bodies.find(b => b.url.endsWith("/api/live"))?.body ?? "";
+    expect(live).toContain("event: hello");
     const found: string[] = [];
     // Static JS/CSS is the same file for every visitor, so it can't carry anyone's data.
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
