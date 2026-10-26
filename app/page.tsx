@@ -4,6 +4,7 @@
  * preview, receipts, safety, pricing, faq, final. Client JS: the "found X ago" ticker, the sticky bar and the
  * funnel beacon. */
 import { IosInstallGuide } from "@/components/app/IosInstallGuide";
+import { checkoutPath } from "@/components/app/links";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -20,13 +21,12 @@ import { SafetySection } from "@/components/landing/Safety";
 import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
 import {
-  checkoutHref, DAY_MS, followLine, LANDING_CTA, landingReceipts, outsideDelay, PREVIEW_ROWS, publicFeedViewer, RECEIPTS_PUBLIC_DAYS,
+  DAY_MS, followLine, LANDING_CTA, landingReceipts, outsideDelay, PREVIEW_ROWS, publicFeedViewer, RECEIPTS_PUBLIC_DAYS,
   REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, tally, visibleReceipts,
 } from "@/components/landing/model";
 import { AB_COOKIE, AB_TESTS, heroVariant, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
-import { checkoutUrl } from "@/lib/auth/whop";
 import { feedFor } from "@/lib/feed";
 import { entitlements, isPaid } from "@/lib/plans";
 import { greenPerDay, heroDeal, leftOnTable, proofStats, receiptRows, storedOpps } from "@/lib/queries";
@@ -46,8 +46,8 @@ export default async function Landing() {
 
   const paid = isPaid(viewer.plan);
   const ent = entitlements(paid ? viewer.plan : "free");
-  const insidir = checkoutHref(checkoutUrl("insidir"));
-  const pro = checkoutHref(checkoutUrl("pro"));
+  const insidir = checkoutPath("insidir");
+  const pro = checkoutPath("pro");
   const rows = feedFor(opps, publicFeedViewer(viewer.region), now);
 
   // The receipts log, cut to the venues this visitor's region may see (US / not chosen: never international

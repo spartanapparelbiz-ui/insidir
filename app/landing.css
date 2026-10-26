@@ -121,3 +121,10 @@
 .lp-legal ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 
 @media (min-width: 560px) { .lp .sec > .btn { justify-self: start; } }
+
+/* /pricing?plan=…: the embedded Whop checkout and its server-side fallback */
+.checkout { display: grid; gap: 12px; padding: 20px; margin-bottom: 24px; }
+.whopcheckout { display: grid; gap: 12px; min-height: 320px; }
+.checkout-fallback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.checkout-fallback--quiet { justify-content: center; }
+.checkout .banner--err { border: 1px solid var(--red); border-radius: 8px; padding: 8px 10px; font-size: 13px; }

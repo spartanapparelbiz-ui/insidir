@@ -1,6 +1,6 @@
 /* Starts "Sign in with Whop". `next` is where to land afterwards (same-site paths only). */
 import { NextResponse, type NextRequest } from "next/server";
-import { startAuthorize } from "@/lib/auth/whop";
+import { startAuthorize } from "@/lib/whop/oauth";
 
 export function GET(req: NextRequest) {
   const next = req.nextUrl.searchParams.get("next") ?? "/terminal";

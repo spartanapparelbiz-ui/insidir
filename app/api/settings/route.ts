@@ -1,6 +1,6 @@
 /* Saves the signed-in user's settings (JSON or a form post). Form posts come back to /settings; JSON gets JSON.
  * Unknown fields (a bankroll, say) are ignored, never stored. The region also goes in its cookie. */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/whop/config";
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { REGION_COOKIE, SESSION_COOKIE, userForToken } from "@/lib/auth/session";

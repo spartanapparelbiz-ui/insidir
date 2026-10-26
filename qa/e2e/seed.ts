@@ -99,8 +99,9 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     outcome: "Yes", side: "BUY", contracts: 25_000, price: 0.62, cash: 15_500, timestamp: now - 5 * MIN, txHash: "0xe2e1", url: "https://example.test/whale",
   } });
   for (const x of Object.values(E2E_USERS)) {
-    await db.insert(users).values({ id: x.id, email: `${x.id}@example.test`, name: x.id, plan: x.plan, region: x.region, settings: DEFAULT_SETTINGS, // Plan already verified: no Whop call for seeded users (the checkout test covers the real Whop path).
-      planCheckedAt: new Date(now + 365 * DAY), onboardedAt: new Date(now), membershipId: x.plan === "free" ? null : `mem_${x.id}` });
+    // Seeded paid users also get a membership in the mock Whop (global-setup.ts): every request asks users.checkAccess.
+    await db.insert(users).values({ id: x.id, whopUserId: x.id, whopUsername: x.id.replace(/^user_/, ""), email: `${x.id}@example.test`, name: x.id, plan: x.plan,
+      region: x.region, settings: DEFAULT_SETTINGS, planCheckedAt: new Date(now), onboardedAt: new Date(now) });
     await db.insert(sessions).values({ tokenHash: createHash("sha256").update(x.token).digest("hex"), userId: x.id, expiresAt: new Date(now + 30 * DAY) });
   }
   return { opps: deals };

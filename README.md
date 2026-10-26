@@ -17,7 +17,7 @@ worker (npm run worker) ──► venues: Kalshi, Polymarket (Gamma, CLOB, Data 
 Postgres (schema "terminal", Drizzle)
    ▲
 web (Next.js App Router) ── /terminal, /deal/[id], /settings, /pnl, /whales, /receipts, /pricing, /admin
-   └─ Whop for sign-in and billing; plan checked on the server; paid fields never sent to free users
+   └─ Whop (@whop/sdk) for sign-in, checkout and access: users.checkAccess on every paid request; paid fields never sent to free users
 ```
 
 | Path | What |
@@ -29,6 +29,7 @@ web (Next.js App Router) ── /terminal, /deal/[id], /settings, /pnl, /whales,
 | `lib/scanner.ts` | Which books a scan needs, and every engine over them |
 | `worker/index.ts` | The worker loop |
 | `lib/feed.ts` | Plan and region filtering, done on the server (free: 30 min delay, top 3, sizes removed) |
+| `lib/whop/` | Whop: `WHOP_ENV` switch, SDK client, OAuth, access checks (60 s cache), checkout, webhook handlers |
 | `config/implications.ts` | Curated "if A then B" rules |
 
 ## Local setup
@@ -51,6 +52,9 @@ Other scripts:
 | `npm run scan` | One live scan without a database: top 10 deals with the math, pairs matched and their lights, false positives caught, rate-limit headroom, monthly cost (`--top N`, `--json`) |
 | `npm run check:endpoints` | Calls every venue endpoint and fails loudly if a field the parsers rely on changed |
 | `npm run db:generate` | New migration after editing `lib/db/schema.ts` |
+| `npx tsx scripts/whop-setup.ts` | Creates the Insidir and Insidir Pro products and plans in the `WHOP_ENV` environment, prints their env lines |
+| `npx tsx scripts/whop-growth.ts` | Marketplace listing (dry run unless `--apply`; `--submit` sends it for review) |
+| `npx tsx scripts/legacy-billing-check.ts` | Read-only: lists anyone the old stock product's Stripe billing may still charge |
 
 ## Environment variables
 
@@ -59,12 +63,15 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | Variable | Service | Needed for |
 |---|---|---|
 | `DATABASE_URL` | both | everything |
-| `APP_URL` | both | Whop redirect, links in alerts and unsubscribe links |
-| `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET`, `WHOP_API_KEY`, `WHOP_COMPANY_ID` | web | sign-in, reading and cancelling memberships |
-| `WHOP_PRODUCT_INSIDIR`, `WHOP_PRODUCT_PRO`, `WHOP_PLAN_INSIDIR`, `WHOP_PLAN_PRO` | web | which product grants which plan; checkout links |
-| `WHOP_WEBHOOK_SECRET` | web | `/api/whop/webhook` signature check |
+| `APP_URL` | both | Whop OAuth and after-checkout redirects, links in alerts and unsubscribe links |
+| `WHOP_ENV` | both | `sandbox` (default) or `production`: picks which set of Whop variables below is used |
+| `WHOP_API_KEY`, `WHOP_COMPANY_ID`, `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET` (and `WHOP_SANDBOX_…`) | both | access checks, memberships, checkout; sign-in |
+| `WHOP_PRODUCT_INSIDIR`, `WHOP_PRODUCT_PRO`, `WHOP_PLAN_INSIDIR`, `WHOP_PLAN_PRO` (and `WHOP_SANDBOX_…`) | both | which product grants which plan; what checkout sells |
+| `WHOP_WEBHOOK_SECRET` (and `WHOP_SANDBOX_…`) | web | `/api/webhooks/whop` signature check |
+| `WHOP_ALERT_EMAIL` | web | where dispute alerts go |
+| `WHOP_EMBED_CHECKOUT`, `WHOP_AFFILIATES_ENABLED`, `WHOP_AFFILIATE_*_PERCENT` | web | embedded checkout on/off; "Refer and earn" in Settings |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | email backup alerts and daily summaries |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | email backup alerts, daily summaries, failed-payment notices, dispute alerts |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | worker | LLM second check on unsure matches (optional, capped per month) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
@@ -113,16 +120,17 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
    (`npm run db:migrate`), the start command and the `/api/health` health check. Attach your domain.
 3. Add a **worker** service from the same repo with start command `npm run worker` (no domain, no health check).
 4. Set `DATABASE_URL` on both services (reference the Postgres service variable), and the variables above.
-5. **Whop:**
-   - Create an OAuth app. Its redirect URI is `https://YOUR_DOMAIN/auth/callback`.
-   - Create two products, Insidir ($39/mo) and Pro ($99/mo). Set each product's redirect after purchase to
-     `https://YOUR_DOMAIN/auth/login?next=/terminal`, so a buyer lands on the live Terminal.
-   - Add a webhook to `https://YOUR_DOMAIN/api/whop/webhook` for membership events
-     (`membership.activated`, `membership.deactivated`, `membership.cancel_at_period_end_changed`, `payment.succeeded`).
-     Put its secret in `WHOP_WEBHOOK_SECRET`.
+5. **Whop:** follow [`docs/WHOP-LAUNCH.md`](docs/WHOP-LAUNCH.md). In short, for each environment (sandbox first):
+   - Create an OAuth app with redirect URI `https://YOUR_DOMAIN/auth/callback` and scopes `openid profile email`.
+   - `npx tsx scripts/whop-setup.ts` creates Insidir ($39/mo) and Insidir Pro ($99/mo) and prints their ids.
+   - Add a webhook to `https://YOUR_DOMAIN/api/webhooks/whop` for `membership.activated`, `membership.updated`,
+     `payment.failed`, `refund.created` and `dispute.created`. Put its `ws_…` secret in `WHOP_WEBHOOK_SECRET`
+     (or `WHOP_SANDBOX_WEBHOOK_SECRET`).
+   - `WHOP_ENV=production` switches everything to the live set at once.
 6. **Network:** the worker must reach `api.elections.kalshi.com`, `gamma-api.polymarket.com`, `clob.polymarket.com`,
    `data-api.polymarket.com` (and `api.polymarket.us` if enabled), `openrouter.ai` and `api.resend.com`; the web
-   service needs `api.whop.com` and `api.resend.com`.
+   service needs `api.whop.com` (`sandbox-api.whop.com` in the sandbox) and `api.resend.com`; the worker also needs
+   the Whop API for its access checks. Buyers' browsers load the Checkout element from `cdn.whop.com`.
 7. After the first deploy, run `npm run check:endpoints` once (Railway shell) and fix anything it flags.
 
 ## Adding an implication rule
@@ -146,8 +154,8 @@ also be fixed at once from `/admin` (match, block, or force a safety light).
 
 | What | How |
 |---|---|
-| Unit tests | `npm test` (fees, arb math both ways, book walking, multi-outcome, ladders, implications, matching, paywall, alerts, the hand-checked 55¢ + 40¢ example) |
-| End to end | `./qa/e2e/run.sh` builds a copy of the app with test settings and runs Playwright at 390×844 and 1440×900 against a seeded `terminal_e2e` database, a local mock of Whop (OAuth, memberships, signed webhooks, a test-mode checkout) and a stand-in push service. Needs local Postgres; create and migrate the database first (`DATABASE_URL=…/terminal_e2e npm run db:migrate`). |
+| Unit tests | `npm test` (fees, arb math both ways, book walking, multi-outcome, ladders, implications, matching, paywall, alerts, Whop access checks and webhooks, the hand-checked 55¢ + 40¢ example) |
+| End to end | `./qa/e2e/run.sh` builds a copy of the app with test settings and runs Playwright at 390×844 and 1440×900 against a seeded `terminal_e2e` database, a local mock of Whop's sandbox that answers the SDK's requests (OAuth, `users.checkAccess`, memberships, checkout configurations, test cards, signed webhooks) and a stand-in push service. Needs local Postgres; create and migrate the database first (`DATABASE_URL=…/terminal_e2e npm run db:migrate`). |
 | Lighthouse and axe | Start the e2e build (`npx next start -p 3100` in its folder), then `npx tsx qa/audit.ts`. Gates: Performance ≥ 90, Accessibility ≥ 95, SEO ≥ 95 (mobile); zero serious axe issues. Reports in `qa/reports/`. |
 | iPhone push | By hand: [`qa/IPHONE-CHECKLIST.md`](qa/IPHONE-CHECKLIST.md) |
 | Screenshots | Written by the e2e run to `qa/screenshots/<page>-390.png` and `-1440.png` |

@@ -12,7 +12,7 @@ import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { APP_URL, E2E_DB, OUT, PUSH_PORT, VAPID } from "./env";
+import { APP_URL, E2E_DB, OUT, PUSH_PORT, SERVER_ENV, VAPID } from "./env";
 import { dealId, q, signIn } from "./helpers";
 import { E2E_USERS } from "./seed";
 
@@ -25,7 +25,8 @@ const b64u = (b: Buffer) => b.toString("base64url");
 function runWorker(ms: number): Promise<string> {
   return new Promise((ok, fail) => {
     const p = spawn("npx", ["tsx", "worker/index.ts"], {
-      env: { ...process.env, DATABASE_URL: E2E_DB, APP_URL, NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey, VAPID_PRIVATE_KEY: VAPID.privateKey, VAPID_SUBJECT: "mailto:qa@insidir.com",
+      // SERVER_ENV carries the sandbox Whop settings: the worker asks users.checkAccess before any paid alert.
+      env: { ...process.env, ...SERVER_ENV, DATABASE_URL: E2E_DB, APP_URL, NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey, VAPID_PRIVATE_KEY: VAPID.privateKey, VAPID_SUBJECT: "mailto:qa@insidir.com",
         NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"), WORKER_RUN_FOR_MS: String(ms), ALERT_MS: "1000", SWEEP_MS: "3600000", SCAN_MS: "3600000", FULL_SCAN_MS: "3600000",
         WHALE_MS: "3600000", SETTLE_MS: "3600000", KALSHI_API_URL: "http://127.0.0.1:9", POLYMARKET_GAMMA_URL: "http://127.0.0.1:9", POLYMARKET_CLOB_URL: "http://127.0.0.1:9",
         POLYMARKET_DATA_URL: "http://127.0.0.1:9", POLYMARKET_US_ENABLED: "0" },

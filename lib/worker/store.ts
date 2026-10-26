@@ -120,7 +120,7 @@ export async function alertUsers(db: Db, now: Date): Promise<AlertUser[]> {
     .where(and(eq(alertsSent.channel, "email"), gte(alertsSent.sentAt, hourAgo))).groupBy(alertsSent.userId);
   const emailCount = new Map(emails.map(e => [e.userId, e.n]));
   return rows.map(u => ({
-    id: u.id, email: u.email, plan: u.plan, region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings }, hasPush: withPush.has(u.id),
+    id: u.id, whopUserId: u.whopUserId, email: u.email, plan: u.plan, region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings }, hasPush: withPush.has(u.id),
     emailsLastHour: emailCount.get(u.id) ?? 0, lastDigestAt: u.lastDigestAt?.getTime() ?? null,
   }));
 }

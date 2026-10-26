@@ -11,6 +11,7 @@
 .banner { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--s1); font-size: 13px; line-height: 19px; }
 .banner--warn { border-color: var(--amber); color: var(--amber); }
 .banner--err { border-color: var(--red); color: var(--text); }
+.banner--ok { border-color: var(--green); color: var(--text); font-weight: 700; }
 .banner__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .3; } }
 
@@ -135,3 +136,4 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 .calc, .fs, .pnl, .sec2, .feed, .upload, .locked { grid-template-columns: minmax(0, 1fr); }
 .rules > *, .legs > * { min-width: 0; }
 .calc__t td:first-child { white-space: normal; }
+.refer__link { overflow-wrap: anywhere; user-select: all; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--s1); }

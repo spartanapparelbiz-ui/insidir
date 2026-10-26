@@ -23,7 +23,7 @@ export default async function PrivacyPage() {
 
           <h2>What we store about you</h2>
           <ul>
-            <li>Your Whop user id and the email address Whop gives us when you sign in. Whop handles sign-in and payment; we never see your card details.</li>
+            <li>Your Whop user id, username and the email address Whop gives us when you sign in. Whop handles sign-in and payment; we never see your card details.</li>
             <li>Your plan, your region (US or outside the US) and your settings: filters, and which alerts you turned on.</li>
             <li>Push subscriptions for the devices where you turned on alerts, so we can send them.</li>
             <li>First-party events (for example: viewed the landing page, opened the feed, started checkout), tied to a random visitor id kept in a cookie. It is not derived from anything personal, and these events are not sent to third parties.</li>
@@ -31,7 +31,7 @@ export default async function PrivacyPage() {
           </ul>
 
           <h2>Email</h2>
-          <p>We use your email to send only the alerts and digests you turn on, and messages about your account. Every email has a one-click unsubscribe. Email is sent through Resend.</p>
+          <p>We use your email to send only the alerts and digests you turn on, and messages about your account, such as a payment that didn&apos;t go through. Alerts and digests have a one-click unsubscribe. Email is sent through Resend.</p>
 
           <h2>Your Kalshi CSV</h2>
           <p>If you upload a Kalshi CSV on the P&amp;L page, it is processed to compute your P&amp;L and is not stored.</p>

@@ -56,8 +56,6 @@ export const publicFeedViewer = (region: Region | null): FeedViewer => ({
 });
 
 /** Where "Start for $39" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
-export const checkoutHref = (url: string | null): string => url ?? "/auth/login?next=/terminal";
-
 /** A real two-leg green cross-venue row from the feed, or null. */
 export const realCrossArb = (rows: readonly FeedRow[]): FeedRow | null =>
   rows.find(r => r.kind === "cross_arb" && r.safety === "green" && r.legs.length === 2) ?? null;

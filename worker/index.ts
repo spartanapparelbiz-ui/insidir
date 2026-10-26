@@ -14,9 +14,10 @@ import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient 
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
-import { alertText, digestDue, digestRows, dueAlerts } from "@/lib/alerts/fanout";
+import { alertText, digestDue, digestRows, dueAlerts, type AlertUser } from "@/lib/alerts/fanout";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
-import { appUrl } from "@/lib/auth/whop";
+import { planFor } from "@/lib/whop/access";
+import { appUrl } from "@/lib/whop/config";
 import { closeDb, getDb } from "@/lib/db";
 import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
@@ -106,12 +107,18 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   if (full || fresh.length) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${dropped} gone`);
 }
 
+/** Alerts and summaries for paid users carry paid data, so each one's plan is asked of Whop again first
+ *  (users.checkAccess, cached 60 s). users.plan is only the last answer, kept for this first pass. */
+async function withLivePlans(users: AlertUser[]): Promise<AlertUser[]> {
+  return Promise.all(users.map(async u => (u.plan === "free" || !u.whopUserId ? u : { ...u, plan: await planFor(u.whopUserId) })));
+}
+
 async function alertsOnce(): Promise<void> {
   const db = getDb();
   const now = Date.now();
   const deals = await alertableDeals(db, new Date(now - 15 * 60_000));
   if (!deals.length) return;
-  const users = await alertUsers(db, new Date(now));
+  const users = await withLivePlans(await alertUsers(db, new Date(now)));
   const byId = new Map(deals.map(d => [d.opp.id, d.opp]));
   const userById = new Map(users.map(u => [u.id, u]));
   for (const job of dueAlerts(users, deals, now)) {
@@ -134,7 +141,7 @@ async function alertsOnce(): Promise<void> {
 async function digestsOnce(): Promise<void> {
   const db = getDb();
   const now = Date.now();
-  const users = (await alertUsers(db, new Date(now))).filter(u => digestDue(u, now));
+  const users = await withLivePlans((await alertUsers(db, new Date(now))).filter(u => digestDue(u, now)));
   if (!users.length) return;
   const opps = await storedOpps();
   for (const u of users) {

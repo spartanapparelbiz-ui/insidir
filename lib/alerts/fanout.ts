@@ -28,6 +28,8 @@ export const DIGEST_ROWS = 5;
 
 export interface AlertUser {
   id: string;
+  /** For the worker's users.checkAccess before anything paid goes out. */
+  whopUserId?: string;
   email: string | null;
   plan: Plan;
   region: Region | null;
