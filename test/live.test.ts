@@ -49,6 +49,18 @@ describe("who sees a live event, and when", () => {
     expect(e?.type === "deal_closed" && e.data.lifeMs).toBe(10 * MIN);
     expect(delayFor(closed, viewer())).toBe(0);
   });
+  it("a closing of a deal newer than the free delay is anonymous for free viewers: no id, title or ROI", () => {
+    const closed = raw(dealClosed(opp("F"), new Date(NOW - 20 * MIN), new Date(NOW - 8 * MIN), new Date(NOW - 7 * MIN)));
+    const free = viewEvent(closed, viewer(), NOW);
+    expect(free?.type === "deal_closed" && [free.oppId, free.data.title, free.data.roi]).toEqual(["", null, null]);
+    expect(JSON.stringify(free)).not.toContain("Deal F");
+    expect(free?.type === "deal_closed" && free.data.lifeMs).toBe(12 * MIN);
+    // Members get it in full; and once the free clock passes the find, free viewers do too.
+    const pro = viewEvent(closed, viewer({ plan: "pro" }), NOW);
+    expect(pro?.type === "deal_closed" && [pro.oppId, pro.data.title]).toEqual(["F", "Deal F"]);
+    const later = viewEvent(closed, viewer(), NOW + 11 * MIN);
+    expect(later?.type === "deal_closed" && later.data.title).toBe("Deal F");
+  });
   it("price ticks: free gets prices and ROI, never dollars", () => {
     const prev = opp("D");
     const next = opp("D", undefined, { legs: prev.legs.map((l, i) => ({ ...l, avgPrice: i ? 0.41 : 0.55 })), roi: 0.019 });

@@ -28,7 +28,8 @@ export interface RawLiveEvent {
 /* ---------- what a viewer receives ---------- */
 
 export interface LiveDealFound { row: FeedRow }
-export interface LiveDealClosed { title: string; safety: Safety; roi: number; firstSeenAt: number; closedAt: number; lifeMs: number }
+/** title and roi are null (and the event's oppId empty) when the deal is newer than the viewer's feed delay. */
+export interface LiveDealClosed { title: string | null; safety: Safety; roi: number | null; firstSeenAt: number; closedAt: number; lifeMs: number }
 export interface LivePriceTick {
   legs: Array<{ venue: Venue; side: Side; priceCents: number }>;
   roi: number;

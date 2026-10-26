@@ -3,7 +3,9 @@
  *   - Region: an event about a venue the viewer can't use is never sent (US never sees international Polymarket).
  *   - Free plan: deals, price ticks and big trades arrive on the same 30-minute-delayed clock as the free feed, with
  *     the same redaction (no sizes or dollar profit). A deal that has CLOSED is history, so its closing is sent at
- *     once to everyone in the region: that is the "members got it at…" moment, and it can't be traded any more.
+ *     once to everyone in the region: that is the "members got it at…" moment, and it can't be traded any more. But
+ *     if the deal is newer than the viewer's delay (the free feed hasn't shown it yet), the closing is anonymous: no
+ *     id, title or ROI, only when it was found and how long it lasted. Paid deals never reach a free browser early.
  *   - Paid plans: everything as it happens. Big trades (whales) are a Pro feature: other plans get them delayed. */
 import { feedFor, type FeedViewer } from "@/lib/feed";
 import { entitlements } from "@/lib/plans";
@@ -34,7 +36,10 @@ export function viewEvent(e: RawLiveEvent, viewer: FeedViewer, now: number): Liv
     case "deal_closed": {
       const d = e.data as RawDealClosed;
       if (d.safety === "red" && !viewer.showRed) return null;
-      return { id: e.id, type: "deal_closed", at: e.at, oppId: e.oppId ?? "", data: { title: d.title, safety: d.safety, roi: d.roi, firstSeenAt: d.firstSeenAt, closedAt: d.closedAt, lifeMs: d.lifeMs } };
+      const unseen = d.firstSeenAt > now - entitlements(viewer.plan).feedDelayMinutes * 60_000;
+      return unseen
+        ? { id: e.id, type: "deal_closed", at: e.at, oppId: "", data: { title: null, safety: d.safety, roi: null, firstSeenAt: d.firstSeenAt, closedAt: d.closedAt, lifeMs: d.lifeMs } }
+        : { id: e.id, type: "deal_closed", at: e.at, oppId: e.oppId ?? "", data: { title: d.title, safety: d.safety, roi: d.roi, firstSeenAt: d.firstSeenAt, closedAt: d.closedAt, lifeMs: d.lifeMs } };
     }
     case "price_tick": {
       const d = e.data as RawPriceTick;

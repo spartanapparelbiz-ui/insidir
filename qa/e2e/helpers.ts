@@ -27,14 +27,36 @@ export async function captureBodies(page: Page, fn: () => Promise<void>): Promis
   const pending: Promise<void>[] = [];
   const on = (r: Response) => {
     if (!r.url().startsWith(APP_URL) || /\.(png|svg|woff2?|ico|css)(\?|$)/.test(r.url())) return;
+    // The live stream never ends, so its body never resolves: it's read separately below.
+    if ((r.headers()["content-type"] ?? "").includes("text/event-stream")) return;
     pending.push(r.text().then(body => { out.push({ url: r.url(), body }); }, () => undefined));
   };
   page.on("response", on);
   await fn();
-  await page.waitForLoadState("networkidle").catch(() => undefined);
+  // The page keeps the live stream open, so the network never goes idle; give late requests a moment instead.
+  await page.waitForTimeout(500);
   page.off("response", on);
   await Promise.all(pending);
+  out.push({ url: `${APP_URL}/api/live`, body: await readLive(page) });
   return out;
+}
+
+/** What the live stream sends this browser in its first few seconds (hello, status and the backlog of events), as
+ *  raw text, so tests can scan it like any other response. */
+export async function readLive(page: Page, ms = 3000): Promise<string> {
+  return page.evaluate(async (wait) => {
+    const ctl = new AbortController();
+    const res = await fetch("/api/live", { signal: ctl.signal, headers: { Accept: "text/event-stream" } });
+    const reader = res.body!.getReader();
+    const dec = new TextDecoder();
+    let text = "";
+    const stop = setTimeout(() => ctl.abort(), wait);
+    try {
+      for (;;) { const { done, value } = await reader.read(); if (done) break; text += dec.decode(value, { stream: true }); }
+    } catch { /* aborted after `wait` ms */ }
+    clearTimeout(stop);
+    return text;
+  }, ms);
 }
 
 /** Pages every visitor can open, and the ones a signed-in Pro member adds. */
