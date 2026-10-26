@@ -2,12 +2,13 @@
  * heartbeats, whales and alert bookkeeping. */
 import { and, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, opportunities, pairs, pushSubscriptions, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { AlertUser } from "@/lib/alerts/fanout";
 import type { MatchCache, MatchDecision } from "@/lib/matching/cache";
 import type { LlmUsageStore } from "@/lib/matching/llm";
 import type { Override } from "@/lib/matching";
+import type { NearMiss } from "@/lib/engines/near-miss";
 import type { MarketPair, Opportunity, VMarket, WhaleTrade } from "@/lib/types";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 
@@ -116,6 +117,15 @@ export async function heartbeat(db: Db, job: string, ok: boolean, error: string 
 }
 
 /** Stores big trades; each one not seen before gets a live "whale" event. */
+/** The closest matched market per venue pair, replacing the last scan's. Pairs that vanish keep their last row
+ *  (with its time), so the landing page can still show the last known prices. */
+export async function saveNearMisses(db: Db, list: readonly NearMiss[]): Promise<void> {
+  for (const n of list) {
+    const row = { venues: n.venues.join("|"), data: n, at: new Date(n.at) };
+    await db.insert(nearMisses).values(row).onConflictDoUpdate({ target: nearMisses.venues, set: { data: row.data, at: row.at } });
+  }
+}
+
 export async function saveWhales(db: Db, trades: readonly WhaleTrade[]): Promise<void> {
   const added: WhaleTrade[] = [];
   for (const t of trades) {

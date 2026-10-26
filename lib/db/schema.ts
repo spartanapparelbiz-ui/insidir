@@ -1,5 +1,6 @@
 /* Insidir Terminal's tables, in their own PostgreSQL schema ("terminal") so they never collide with the old
  * stock product's tables in the same Railway database (those are left untouched). Drizzle ORM. */
+import type { NearMiss } from "@/lib/engines/near-miss";
 import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, WhaleTrade } from "@/lib/types";
 
@@ -188,6 +189,14 @@ export const liveEvents = terminal.table("live_events", {
   data: jsonb("data").$type<Record<string, unknown>>().notNull(),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("live_events_at_idx").on(t.at)]);
+
+/** The closest matched market per venue pair at the last scan (lib/engines/near-miss.ts): what the landing page
+ *  shows, labelled "Not a deal yet", when there is no deal. Key: the two venues, sorted, joined by "|". */
+export const nearMisses = terminal.table("near_misses", {
+  venues: text("venues").primaryKey(),
+  data: jsonb("data").$type<NearMiss>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});
 
 export const workerHeartbeats = terminal.table("worker_heartbeats", {
   job: text("job").primaryKey(),

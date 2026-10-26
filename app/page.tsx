@@ -3,7 +3,9 @@
  * Server-Sent Events stream (components/live): the hero's prices tick, the scanner heartbeat and "open for" timer count
  * real time, today's count rolls up, the tape and toasts show real events. Everything runs on the viewer's clock:
  * free visitors see deals 30 minutes late, like the feed. A section without a real number is hidden, never filled.
- * Order: the split hero, the live strip, the Terminal, receipts, safety lights, pricing, FAQ, final CTA. */
+ * Order: the hero (headline, the split, the pitch), the live strip, the Terminal, receipts, safety lights, pricing,
+ * FAQ, final CTA. The hero never looks empty: a live deal, else the last real deal, else the closest market's real
+ * prices (components/landing/model.ts heroView). The scanner heartbeat sits small in the header. */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -13,6 +15,7 @@ import { LiveProvider } from "@/components/live/LiveProvider";
 import { Beacons } from "@/components/landing/Beacons";
 import { FinalCta } from "@/components/landing/Cta";
 import { Faq } from "@/components/landing/Faq";
+import { HeaderBeat } from "@/components/landing/HeaderBeat";
 import { Hero } from "@/components/landing/Hero";
 import { LiveStrip } from "@/components/landing/LiveStrip";
 import { Pricing } from "@/components/landing/Pricing";
@@ -22,7 +25,7 @@ import { Sticky } from "@/components/landing/Sticky";
 import { TerminalPreview } from "@/components/landing/TerminalPreview";
 import { Toasts } from "@/components/landing/Toasts";
 import {
-  checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
+  checkoutHref, DAY_MS, followLine, HERO_SUB, heroSplit, heroView, lastDeal, nearestMarket, LANDING_CTA, landingReceipts, liveHiddenCount, outsideDelay, publicFeedViewer,
   RECEIPTS_PUBLIC_DAYS, REFUND_MIN_GREEN_PER_DAY, REFUND_WINDOW_DAYS, startOfTodayUTC, visibleReceipts,
 } from "@/components/landing/model";
 import { AB_COOKIE, AB_TESTS, heroVariant, recordEvent } from "@/lib/analytics";
@@ -30,6 +33,7 @@ import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { feedViewer, getViewer } from "@/lib/auth/viewer";
 import { checkoutUrl } from "@/lib/auth/whop";
 import { feedFor } from "@/lib/feed";
+import { closedDeals, nearMisses } from "@/lib/hero";
 import { latestTick, recentFor } from "@/lib/live/queries";
 import { liveStats } from "@/lib/live/stats";
 import { entitlements, isPaid } from "@/lib/plans";
@@ -48,8 +52,9 @@ export default async function Landing() {
   const ent = entitlements(paid ? viewer.plan : "free");
   const delayMs = ent.feedDelayMinutes * 60_000;
   const fv = paid ? feedViewer(viewer) : publicFeedViewer(viewer.region);
-  const [opps, month, status, stats, initialTape] = await Promise.all([
+  const [opps, month, status, stats, initialTape, closed, near] = await Promise.all([
     storedOpps(), receiptRows(REFUND_WINDOW_DAYS), dataStatus(now), liveStats(viewer.region, delayMs, now), recentFor(fv, now),
+    closedDeals(now), nearMisses(),
   ]);
 
   const abRaw = jar.get(AB_COOKIE)?.value;
@@ -68,7 +73,12 @@ export default async function Landing() {
   const mine = visibleReceipts(month, viewer.region);
   const log = outsideDelay(mine.filter(r => r.detectedAt >= now - RECEIPTS_PUBLIC_DAYS * DAY_MS), ent, now);
   const todayStart = startOfTodayUTC(now - delayMs);
-  const proof = proofStats(log, todayStart);
+  const weekStart = now - delayMs - RECEIPTS_PUBLIC_DAYS * DAY_MS;
+  const today = proofStats(log, todayStart);
+  const week = proofStats(log, weekStart);
+  const proof = today?.found ? today : week;
+  const period = today?.found ? "today" : "week";
+  const view = heroView(split, split ? null : lastDeal(closed, viewer.region, delayMs, now), nearestMarket(near, viewer.region));
   const refund = greenPerDay(mine, REFUND_WINDOW_DAYS, now) >= REFUND_MIN_GREEN_PER_DAY;
   const recent = landingReceipts(log, LANDING_RECEIPTS);
   const insidir = checkoutHref(checkoutUrl("insidir"));
@@ -76,19 +86,20 @@ export default async function Landing() {
 
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/" />
+      <LiveProvider>
+      <SiteHeader plan={viewer.plan} signedIn={Boolean(viewer.user)} current="/"
+        status={<HeaderBeat serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />} />
       <main className="lp">
-        <LiveProvider>
           <div className="wrap">
-            <Hero split={split} delayMs={delayMs} medianLifeMin={stats.medianLifeMin} headline={hero.headline} sub={HERO_SUB} cta={LANDING_CTA}
+            <Hero view={view} delayMs={delayMs} medianLifeMin={stats.medianLifeMin} headline={hero.headline} sub={HERO_SUB} cta={LANDING_CTA}
               serverNow={now} scanner={{ live: status.live, lastScanAt: status.lastScanAt }} />
             <LiveStrip serverNow={now} initialTape={initialTape} stats={{
-              foundToday: proof?.found ?? 0, biggestRoi: proof?.biggestRoi ?? null, medianRoi: proof?.medianRoi ?? null,
-              left: leftOnTable(log, todayStart), flagged: stats.flagged, medianGapMin: stats.medianGapMin, todayStart,
+              foundToday: today?.found ?? 0, foundWeek: week?.found ?? 0, period,
+              biggestRoi: proof?.biggestRoi ?? null, medianRoi: proof?.medianRoi ?? null,
+              left: leftOnTable(log, period === "today" ? todayStart : weekStart), flagged: stats.flagged, medianGapMin: stats.medianGapMin, todayStart, weekStart,
             }} />
           </div>
           <Toasts serverNow={now} />
-        </LiveProvider>
         <div className="wrap">
           <TerminalPreview rows={feedFor(opps, fv, now)} hidden={liveHiddenCount(opps, viewer.region, delayMs, now)} now={now} unlockHref={insidir} cta={LANDING_CTA} />
           {recent.length ? (
@@ -107,6 +118,7 @@ export default async function Landing() {
           <FinalCta cta={LANDING_CTA} />
         </div>
       </main>
+      </LiveProvider>
       <Sticky label={LANDING_CTA} href="/terminal" />
       <Beacons />
     </>

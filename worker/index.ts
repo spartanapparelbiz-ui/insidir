@@ -26,7 +26,7 @@ import { pct, usd } from "@/lib/format";
 import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, dbMatchCache, dbUsageStore, deactivateStale, dropPush, heartbeat, loadOverrides, markDigestSent,
-  pushTargets, saveMarkets, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
+  pushTargets, saveMarkets, saveNearMisses, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
 } from "@/lib/worker/store";
 
 const n = (k: string, d: number) => { const v = Number(process.env[k]); return Number.isFinite(v) && v > 0 ? v : d; };
@@ -100,8 +100,9 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   }
   if (full) state.lastFull = now;
   if (!books.size) return;
-  const { opps, counts } = scan(state.universe, books, now);
+  const { opps, counts, nearMisses } = scan(state.universe, books, now);
   const fresh = await saveOpportunities(db, opps, new Date(now), state.lastTickAt);
+  await saveNearMisses(db, nearMisses);
   const dropped = full ? await deactivateStale(db, new Date(now)) : 0;
   state.hot = new Set(opps.flatMap(o => o.legs.map(l => marketKey(l.venue, l.marketId))));
   if (full || fresh.length) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${dropped} gone`);

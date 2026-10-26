@@ -1,6 +1,7 @@
 /* One scan: which markets need order books, and every engine run over them. Pure (the worker fetches and stores;
  * scripts/scan.ts prints). Engines: cross-venue locks and second opinions over matched pairs, multi-outcome sets,
  * threshold ladders, and the curated implication rules (config/implications.ts). */
+import { findNearMisses, type NearMiss } from "./engines/near-miss";
 import { findCrossArbs, type ArbInput } from "./engines/arb";
 import { marketKey } from "./engines/common";
 import { findImplications, findRuleImplications } from "./engines/implication";
@@ -41,7 +42,7 @@ export function marketsToBook(u: Universe): Map<Venue, VMarket[]> {
 }
 
 /** Runs every engine. `books` is keyed by marketKey(venue, id). */
-export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number): { opps: Opportunity[]; counts: ScanCounts } {
+export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number): { opps: Opportunity[]; counts: ScanCounts; nearMisses: NearMiss[] } {
   const idx = byKey(u.markets);
   const arbInputs: ArbInput[] = [];
   for (const pair of u.pairs) {
@@ -64,6 +65,7 @@ export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number)
   }
   return {
     opps: [...best.values()].sort((a, b) => b.profitPerDay - a.profitPerDay),
+    nearMisses: findNearMisses(arbInputs),
     counts: { crossArb: crossArb.length, secondOpinion: secondOpinion.length, multi: multi.length, ladder: ladder.length, implication: implication.length },
   };
 }

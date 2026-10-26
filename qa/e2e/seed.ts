@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { DEFAULT_SETTINGS, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { DEFAULT_SETTINGS, nearMisses, opportunities, receipts, sessions, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
@@ -73,7 +73,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses CASCADE`);
   const u = universe(now);
   const { opps } = scan(u, u.books, now);
   // Second opinions double the cross-venue rows; the feed shows the lock, which is what the tests check.
@@ -118,6 +118,15 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   await db.insert(whaleTrades).values({ key: "e2e-whale-1", at: new Date(bigTrade.timestamp), data: bigTrade });
   live.push(whale(bigTrade));
   await publish(db, live);
+  // The closest matched market that isn't a deal (what the hero shows when there is no deal): 52¢ + 49¢ = 101¢.
+  await db.insert(nearMisses).values({ venues: "kalshi|polymarket_us", at: new Date(now - 2 * MIN), data: {
+    venues: ["kalshi", "polymarket_us"], pairId: "kalshi:E2E-KNICKS|polymarket_us:e2e-knicks", title: "E2E fixture: Will the Knicks win on Nov 6?",
+    legs: [
+      { venue: "kalshi", marketId: "E2E-KNICKS", side: "yes", label: "YES on Kalshi", priceCents: 52 },
+      { venue: "polymarket_us", marketId: "e2e-knicks", side: "no", label: "NO on Polymarket US", priceCents: 49 },
+    ],
+    totalCents: 101, at: now - 2 * MIN,
+  } });
   for (const x of Object.values(E2E_USERS)) {
     await db.insert(users).values({ id: x.id, email: `${x.id}@example.test`, name: x.id, plan: x.plan, region: x.region, settings: DEFAULT_SETTINGS, // Plan already verified: no Whop call for seeded users (the checkout test covers the real Whop path).
       planCheckedAt: new Date(now + 365 * DAY), onboardedAt: new Date(now), membershipId: x.plan === "free" ? null : `mem_${x.id}` });
