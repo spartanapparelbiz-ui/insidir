@@ -36,6 +36,10 @@ export function noisyWallet(trades: readonly WalletTrade[], marketId: string, no
 /** Classification and link for a market, from the stored market (or the fill alone). */
 export interface MarketInfo { category: string; labels: string[]; url: string | null }
 
+/** The Polygon transaction hashes in Polymarket fill ids ("<hash>:<wallet>:…"), each once. */
+export const txHashes = (fills: readonly Pick<Fill, "id">[]): string[] =>
+  [...new Set(fills.map(f => f.id.split(":")[0]!).filter(h => /^0x[0-9a-fA-F]{64}$/.test(h)))];
+
 function toMove(id: string, fills: readonly Fill[], info: MarketInfo | undefined): Move {
   const f0 = fills[0]!;
   const amount = fills.reduce((s, f) => s + f.contracts * f.price, 0);
@@ -47,6 +51,7 @@ function toMove(id: string, fills: readonly Fill[], info: MarketInfo | undefined
     amount: Math.round(amount * 100) / 100, avgPrice: contracts > 0 ? amount / contracts : f0.price,
     wallet: f0.wallet, walletName: f0.walletName, at: f0.at, lastAt: fills[fills.length - 1]!.at, fills: fills.length,
     tab: tab as Tab, league, category: info?.category ?? "other", url: info?.url ?? f0.url, result: null, settledAt: null,
+    sourceRefs: f0.source === "polymarket" ? txHashes(fills) : null,
   };
 }
 

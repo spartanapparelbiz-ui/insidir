@@ -85,13 +85,13 @@ describe("copy rules on every V2 page", () => {
 });
 
 describe("home hero ticker", () => {
-  it("reads 'Someone · $48,000 on Lakers · 2 min ago' from a feed item", async () => {
+  it("reads 'Someone · $48,000 on Lakers · 2m ago' from a feed item", async () => {
     const { tickerItem } = await import("@/lib/moves/ticker");
     const base = { id: "ks:1", source: "kalshi", tab: "sports", league: "NBA", sentence: "", payout: null, record: null, topTrader: false, amount: 48_000, at: 0,
-      ago: "2 min ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
-      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, why: null } as const;
+      ago: "2m ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
+      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, why: null, sourceLink: null } as const;
     const t = tickerItem({ ...base });
-    expect(`${t.who} · ${t.amount} ${t.what} · ${t.ago}`).toBe("Someone · $48,000 on Lakers · 2 min ago");
+    expect(`${t.who} · ${t.amount} ${t.what} · ${t.ago}`).toBe("Someone · $48,000 on Lakers · 2m ago");
     expect(t.href).toBe("/market/KX-LAL");
     expect(tickerItem({ ...base, outcome: "Yes", tab: "markets", marketTitle: "Fed cut in December?" }).what).toBe("on Yes · Fed cut in December?");
     expect(tickerItem({ ...base, source: "sec", tab: "stocks", eventTitle: "Nvidia" }).what).toBe("of Nvidia");

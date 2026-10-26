@@ -4,7 +4,8 @@
  *   crossfading (1.2 s) into the next; it loops, each round ending on photo 6. Photo 1 loads with the page (preloaded,
  *   high priority); the other five load once the page is idle, and a photo only comes up once it has loaded. Under
  *   prefers-reduced-motion: photo 1 only, still.
- *   The fintech layer, readable at a glance: the "LIVE · big money moves" label, the headline, the button, and one
+ *   The fintech layer, readable at a glance: the "LIVE · big money moves" label (only while every source is current;
+ *   otherwise "Catching up · last update 6m ago"), the headline, the button, and one
  *   real recent big move per photo (Sports, Markets and Stocks mixed) on a solid white card, never a made-up one.
  *   Below, the ticker strip: real moves scrolling on solid black, paused on hover.
  *   A dark scrim sits behind the words only; the card and the ticker are solid (photos never sit behind numbers).
@@ -14,7 +15,9 @@ import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { beacon } from "@/components/app/beacon";
 import { Photo, PHOTO_WIDE, type PhotoN } from "@/components/Photo";
-import type { FeedItem } from "@/lib/moves/feed";
+import { TimeAgo } from "@/components/TimeAgo";
+import { dollars } from "@/lib/moves/copy";
+import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { TickerItem } from "@/lib/moves/ticker";
 
 const PHOTOS: PhotoN[] = [1, 2, 3, 4, 5, 6];
@@ -31,18 +34,21 @@ function MoveCard({ m, late }: { m: FeedItem; late: boolean }) {
     <article className="hcard">
       <div className="hcard__top">
         <span className="hcard__tag">{tagText(m)}</span>
-        <time className="hcard__ago" dateTime={new Date(m.at).toISOString()}>{m.ago}{late ? " · 30 min late" : ""}</time>
+        <TimeAgo className="hcard__ago" at={m.at} initial={m.ago} suffix={late ? " · 30 min late" : ""} />
       </div>
-      <p className="hcard__amt">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(m.amount)}</p>
+      <p className="hcard__amt">{dollars(m.amount)}</p>
       <p className="hcard__sentence">{m.sentence}</p>
       {m.payout ? <p className="hcard__payout">{m.payout}</p> : m.note ? <p className="hcard__note">{m.note}</p> : null}
     </article>
   );
 }
 
-export function Hero({ moves, ticker, late, trialLine, cta }: {
+export function Hero({ moves, ticker, late, trialLine, cta, status }: {
   moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string;
+  /** The sources' freshness (lib/moves/feed.ts): "LIVE" only while every source is current. */
+  status: FeedStatus | null;
 }) {
+  const live = status?.state === "live";
   const [at, setAt] = useState(0);
   const [more, setMore] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -93,7 +99,7 @@ export function Hero({ moves, ticker, late, trialLine, cta }: {
       <div className="cine__scrim" aria-hidden="true" />
       <div className="wrap cine__in">
         <div className="cine__copy">
-          <p className="cine__label"><span className="cine__dot" aria-hidden="true" />LIVE · big money moves</p>
+          <p className={`cine__label${live ? "" : " cine__label--behind"}`}><span className="cine__dot" aria-hidden="true" />{live ? "LIVE · big money moves" : status?.text ?? "Catching up"}</p>
           <h1 id="hero-h" className="cine__h">Follow the big money.</h1>
           <p className="cine__sub">The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.</p>
           <div className="cine__cta">

@@ -50,14 +50,15 @@ describe("Form 4 insider buys", () => {
     expect(roleWord({ ...base, isOfficer: false, isDirector: true, officerTitle: null })).toBe("A director");
     expect(roleWord({ ...base, isOfficer: false, isTenPercentOwner: true, officerTitle: null })).toBe("A 10% owner");
   });
-  it("company names read like people say them", () => {
-    expect(companyName("NVIDIA CORP")).toBe("Nvidia");
+  it("company names are spelled as filed, without the legal suffix or share-class notes", () => {
+    expect(companyName("NVIDIA CORP")).toBe("NVIDIA");
     expect(companyName("Apple Inc.")).toBe("Apple");
     expect(companyName("AT&T INC.")).toBe("AT&T");
-    expect(companyName("TESLA, INC. /DE/")).toBe("Tesla");
-    expect(companyName("BERKSHIRE HATHAWAY INC")).toBe("Berkshire Hathaway");
-    expect(companyName("CHEVRON CORP NEW")).toBe("Chevron");
-    expect(companyName("ALPHABET INC CAP STK CL A")).toBe("Alphabet");
+    expect(companyName("TESLA, INC. /DE/")).toBe("TESLA");
+    expect(companyName("JPMORGAN CHASE & CO")).toBe("JPMORGAN CHASE");
+    expect(companyName("BERKSHIRE HATHAWAY INC")).toBe("BERKSHIRE HATHAWAY");
+    expect(companyName("CHEVRON CORP NEW")).toBe("CHEVRON");
+    expect(companyName("ALPHABET INC CAP STK CL A")).toBe("ALPHABET");
   });
   it("reads the current-filings feed: Form 4 and 4/A only, sec.gov links only, once per accession", () => {
     const list = parseAtom(fx("atom-current.xml"));
@@ -84,7 +85,7 @@ describe("13F fund adds", () => {
   });
   it("compares share positions with the previous filing: adds and new positions, options left out", () => {
     const adds = fundAdds(positions(prev, "2026-08-14"), positions(cur, "2026-11-14"));
-    expect(adds.map(a => [a.company, a.added, a.newPosition])).toEqual([["Chevron", 600_000_000, true], ["Example Devices", 220_000_000, false]]);
+    expect(adds.map(a => [a.company, a.added, a.newPosition])).toEqual([["CHEVRON", 600_000_000, true], ["EXAMPLE DEVICES", 220_000_000, false]]);
   });
   it("values filed before 2023-01-03 are in thousands", () => {
     expect(positions(prev, "2022-11-14").get("037833100")!.value).toBe(800_000_000_000);
@@ -110,7 +111,7 @@ describe("stock cards", () => {
   const fund = fundMove(add, "Berkshire Hathaway", "0001067983", f13, prevF, "https://www.sec.gov/Archives/edgar/data/1067983/000106798326000002/0001067983-26-000002-index.htm");
   it("say it the way the brief does", () => {
     expect(moveSentence(insider, null, true)).toBe("Jane Doe, CEO of Example Devices, just bought $1.4M of Example Devices stock.");
-    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of Example Devices last quarter.");
+    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of EXAMPLE DEVICES last quarter.");
     expect(stockNote(insider.detail!)).toBe("Bought Oct 22 at $182.65 a share. Filed with the SEC Oct 26.");
     expect(stockNote(fund.detail!)).toBe("Filed Nov 14 for the quarter ending Sep 30. 13F data can be up to 45 days old.");
     for (const t of [moveSentence(insider, null), moveSentence(fund, null), stockNote(insider.detail!), stockNote(fund.detail!)]) for (const re of BANNED_WORDS) expect(t).not.toMatch(re);

@@ -92,15 +92,22 @@ export function recordLine(r: TraderRecord | null): string | null {
   return `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time`;
 }
 
-/** "just now", "2 min ago", "3 h ago", "2 days ago". */
+const CLOCK_ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+const DATE_ET = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+/** "3:14 PM ET": every clock time on the site is Eastern. */
+export const clockET = (ms: number): string => `${CLOCK_ET.format(new Date(ms))} ET`;
+/** "Oct 26, 2026, 3:14 PM ET" (titles and tooltips on times). */
+export const dateTimeET = (ms: number): string => `${DATE_ET.format(new Date(ms))} ET`;
+
+/** "just now", "2m ago", "3h ago", "2d ago" (components/TimeAgo keeps it ticking in the browser). */
 export function agoText(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
   if (s < 45) return "just now";
   const m = Math.round(s / 60);
-  if (m < 60) return `${m} min ago`;
+  if (m < 60) return `${m}m ago`;
   const h = Math.round(m / 60);
-  if (h < 48) return `${h} h ago`;
-  return `${Math.round(h / 24)} days ago`;
+  if (h < 48) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
 }
 
 /** Words never shown in the UI (checked over every page's copy by the tests). */

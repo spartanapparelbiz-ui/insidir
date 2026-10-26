@@ -11,8 +11,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Hero, PreviewSeen } from "@/components/home/Hero";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
-import { MoveCard } from "@/components/v2/MoveCard";
 import { PricingCards } from "@/components/v2/Pricing";
+import { MoveCard, SourceA } from "@/components/v2/MoveCard";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
@@ -24,6 +24,7 @@ import { feedItems, feedStatus, type FeedItem, type FeedStatus } from "@/lib/mov
 import { movePlan } from "@/lib/moves/gate";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
+import { moveSource } from "@/lib/moves/source";
 import { tickerItem, type TickerItem } from "@/lib/moves/ticker";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
@@ -100,7 +101,7 @@ export default async function Home() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
-        <Hero moves={hero} ticker={ticker} late={!paid} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" />
+        <Hero moves={hero} ticker={ticker} late={!paid} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
 
         {preview.length ? (
           <PreviewSeen className="sec2 preview" labelledBy="preview-h">
@@ -177,7 +178,8 @@ export default async function Home() {
                     <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
                     <span className="rlist__what"><span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {r.marketTitle}
                       <span className="rlist__who">Top trader {walletLabel(r.wallet!, r.walletName)}</span></span>
-                    <time className="rlist__when" dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                    <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                      {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}</span>
                   </li>
                 ))}
               </ol>

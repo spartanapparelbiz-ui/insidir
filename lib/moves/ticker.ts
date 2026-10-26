@@ -1,4 +1,4 @@
-/* One line per move for the home hero's ticker strip: "Someone · $48,000 on Lakers · 2 min ago". Built only from
+/* One line per move for the home hero's ticker strip: "Someone · $48,000 on Lakers · 2m ago". Built only from
  * what the feed already sent this viewer (lib/moves/feed.ts), so it follows the same plan and region rules. */
 import { dollars } from "./copy";
 import type { FeedItem } from "./feed";

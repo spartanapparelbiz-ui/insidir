@@ -7,6 +7,8 @@ import { isPaid } from "@/lib/plans";
 import { quarterChanges, topHoldings, type Change } from "@/lib/profiles/sec";
 import { fundOf, fundQuarters } from "@/lib/profiles/store";
 import { calDate, exactDollars, Locked, pct } from "./shared";
+import { profileSource } from "@/lib/moves/source";
+import { SourceA } from "../MoveCard";
 
 const KIND: Record<Change["kind"], string> = { new: "New position", added: "Added", cut: "Cut", sold: "Sold all" };
 const shares = (v: number) => Math.round(v).toLocaleString("en-US");
@@ -35,6 +37,7 @@ export async function FundProfile({ db, cik, viewer, trial }: { db: Db; cik: str
         <div>
           <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
           <h1 className="trader__name">{fund.name}</h1>
+          <SourceA link={profileSource({ kind: "fund", cik })} className="source source--dark" />
         </div>
       </header>
       <p className="note">{fund.quartersOnFile} {fund.quartersOnFile === 1 ? "quarter" : "quarters"} on file with the SEC. 13F data can be up to 45 days old.</p>

@@ -134,8 +134,9 @@ export async function deactivateStale(db: Db, now: Date): Promise<number> {
 }
 
 export async function heartbeat(db: Db, job: string, ok: boolean, error: string | null, stats: Record<string, number | string> = {}): Promise<void> {
-  const row = { job, lastRunAt: new Date(), ok, error, stats };
-  await db.insert(workerHeartbeats).values(row).onConflictDoUpdate({ target: workerHeartbeats.job, set: { lastRunAt: row.lastRunAt, ok, error, stats } });
+  const now = new Date();
+  const row = { job, lastRunAt: now, ok, error, stats, ...(ok ? { lastOkAt: now } : {}) };
+  await db.insert(workerHeartbeats).values(row).onConflictDoUpdate({ target: workerHeartbeats.job, set: { lastRunAt: now, ok, error, stats, ...(ok ? { lastOkAt: now } : {}) } });
 }
 
 /** Stores big trades; each one not seen before gets a live "whale" event. */

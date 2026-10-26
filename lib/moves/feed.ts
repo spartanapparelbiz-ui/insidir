@@ -4,13 +4,14 @@
  *   - Links follow the location rules (lib/moves/links.ts): a US or unknown-region viewer never gets an
  *     international Polymarket link.
  * The status line reads the worker's move heartbeats: "Live · updated 8s ago", or "Catching up" when they're behind. */
-import { like } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
 import type { Plan, Region } from "@/lib/types";
 import { agoText, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
 import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
+import { moveSource, type SourceLink } from "./source";
 import { hasRecord, isTopTrader, walletLabel } from "./records";
 import { personName, profileHref } from "@/lib/profiles/name";
 import { whyLines } from "@/lib/profiles/why-facts";
@@ -46,21 +47,44 @@ export interface FeedItem {
   who: { name: string; href: string | null; badge: "New wallet" | null };
   /** "Why this matters": at most one fact (lib/profiles/why.ts). */
   why: string | null;
+  /** The public record behind the move: the Polygon transaction, Kalshi's trade record or the SEC filing (./source.ts). */
+  sourceLink: SourceLink | null;
 }
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
 
-/** Behind when the newest successful poll of either source is older than this. */
-export const BEHIND_AFTER_MS = 60_000;
+/** A tab is "Catching up" when any of its sources hasn't had a successful update for this long. Data from then on
+ *  is never presented as live. */
+export const BEHIND_AFTER_MS = 5 * 60_000;
+/** The worker jobs (heartbeats) that feed each tab. */
+export const TAB_SOURCES: Record<Tab, string[]> = {
+  sports: ["moves:polymarket", "moves:kalshi"],
+  markets: ["moves:polymarket", "moves:kalshi"],
+  stocks: ["stocks:form4"],
+  crypto: ["moves:polymarket", "moves:kalshi"],
+};
 
-export async function feedStatus(db: Db, now: number): Promise<FeedStatus> {
-  const beats = await db.select().from(workerHeartbeats).where(like(workerHeartbeats.job, "moves:%"));
-  const ok = beats.filter(b => (b.job === "moves:polymarket" || b.job === "moves:kalshi") && b.ok).map(b => b.lastRunAt.getTime());
-  const lastAt = ok.length ? Math.max(...ok) : null;
-  if (lastAt !== null && now - lastAt <= BEHIND_AFTER_MS) {
-    return { state: "live", lastAt, text: `Live · updated ${Math.max(0, Math.round((now - lastAt) / 1000))}s ago` };
+/** "Live · updated 8s ago", or "Catching up · last update 6m ago" when a source of this tab (all of Sports and
+ *  Markets' sources without a tab) is 5+ minutes behind. "Last update" is the oldest of the tab's last good updates. */
+export function statusOf(lastOk: ReadonlyArray<number | null>, now: number): FeedStatus {
+  const known = lastOk.filter((t): t is number => t !== null);
+  const oldest = known.length === lastOk.length && known.length ? Math.min(...known) : null;
+  if (oldest !== null && now - oldest <= BEHIND_AFTER_MS) {
+    const newest = Math.max(...known);
+    return { state: "live", lastAt: newest, text: `Live · updated ${Math.max(0, Math.round((now - newest) / 1000))}s ago` };
   }
-  return { state: "behind", lastAt, text: "Catching up. Showing the latest moves we have." };
+  const last = known.length ? Math.min(...known) : null;
+  return { state: "behind", lastAt: last, text: last !== null ? `Catching up · last update ${agoText(last, now)}` : "Catching up · waiting for the first update" };
+}
+
+export async function feedStatus(db: Db, now: number, tab?: Tab): Promise<FeedStatus> {
+  const jobs = tab ? TAB_SOURCES[tab] : TAB_SOURCES.sports;
+  const beats = await db.select().from(workerHeartbeats).where(inArray(workerHeartbeats.job, jobs));
+  const okAt = (job: string): number | null => {
+    const b = beats.find(x => x.job === job);
+    return b ? (b.lastOkAt?.getTime() ?? (b.ok ? b.lastRunAt.getTime() : null)) : null;
+  };
+  return statusOf(jobs.map(okAt), now);
 }
 
 /** Who moved, for the card: the name the sentence uses and where tapping it goes. */
@@ -88,7 +112,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
-      who: whoOf(m), why: why.get(m.id) ?? null,
+      who: whoOf(m), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
     };
   });
 }

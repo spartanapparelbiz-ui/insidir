@@ -43,7 +43,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     const db = getDb();
     [items, status, follows, top] = await Promise.all([
       feedFor(db, viewer.plan, viewer.region, { tab, min: 10_000, limit: 30 }, now).catch(() => []),
-      feedStatus(db, now).catch(() => null),
+      feedStatus(db, now, tab).catch(() => null),
       viewer.user ? followList(db, viewer.user.id).then(l => l.filter(f => f.kind === "trader").map(f => f.target)).catch(() => []) : Promise.resolve(null),
       welcome ? topTraders(db, 3).catch(() => []) : Promise.resolve([]),
     ]);

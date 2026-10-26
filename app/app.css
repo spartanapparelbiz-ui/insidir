@@ -197,3 +197,4 @@ fieldset.fs > legend.fs__h + * { clear: both; }
 @container (min-width: 560px) { .dd-viz { grid-template-columns: minmax(0, 1fr) auto; } }
 mark.rdiff { background: var(--text); color: var(--bg); border-radius: 2px; padding: 0 1px; }
 .legs--skel { grid-template-columns: 1fr 1fr; }
+.adm__h3 { font-size: var(--t20); margin: 24px 0 8px; }

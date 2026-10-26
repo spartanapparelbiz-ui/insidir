@@ -452,3 +452,13 @@
 .inband__rec { color: var(--muted); font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
 .inband :focus-visible { outline-color: var(--paper); }
 .inband__card :focus-visible { outline-color: var(--ink); }
+
+/* the public record behind a number: small, always there, opens the source */
+.source { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; color: var(--muted); font-size: var(--t13); font-weight: 700; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.source:hover { color: var(--text); text-decoration-color: currentColor; }
+.source--dark { color: var(--grey-2); text-decoration-color: var(--grey-3); margin-top: 6px; }
+.source--dark:hover { color: var(--paper); }
+.rlist__when { display: grid; justify-items: end; gap: 2px; }
+.rlist__src { min-height: 24px; }
+.cine__label--behind { text-transform: none; letter-spacing: 0; font-size: var(--t15); }
+.cine__label--behind .cine__dot { background: none; box-shadow: inset 0 0 0 1.5px var(--paper); animation: none; }

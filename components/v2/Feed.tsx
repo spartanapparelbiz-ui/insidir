@@ -1,7 +1,7 @@
 "use client";
 /* The feed (docs/INSIDIR-V2.md §6): tabs (Sports, Markets, Crypto soon, Stocks soon), size chips, league chips on Sports,
  * newest first. It asks /api/moves every 10 seconds; new moves slide in at the top. A status line instead of scary
- * errors: "Live · updated 8s ago", or "Catching up. Showing the latest moves we have." with timestamps. Never "Connection
+ * errors: "Live · updated 8s ago", or "Catching up · last update 6m ago" (per tab, 5+ minutes behind) with timestamps. Never "Connection
  * lost", never fake activity. Free viewers see moves 30 minutes late with one upsell card on top. */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
@@ -10,6 +10,7 @@ import { Photo } from "@/components/Photo";
 import { ComingSoon } from "./ComingSoon";
 import type { FollowState } from "./FollowButton";
 import { MoveCard } from "./MoveCard";
+import { agoText, clockET } from "@/lib/moves/copy";
 
 const SIZES = [{ min: 10_000, label: "$10k+" }, { min: 50_000, label: "$50k+" }, { min: 100_000, label: "$100k+" }] as const;
 const SPORT_LEAGUES: League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf"];
@@ -38,7 +39,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
     const q = new URLSearchParams({ tab, min: String(min), limit: "30" });
     if (tab === "sports" && league) q.set("league", league);
     const res = await fetch(`/api/moves?${q}`, { cache: "no-store" }).catch(() => null);
-    if (!res?.ok) { setStatus(s => s ? { ...s, state: "behind", text: "Catching up. Showing the latest moves we have." } : s); return; }
+    if (!res?.ok) { setStatus(s => s ? { ...s, state: "behind", text: s.lastAt ? `Catching up · last update ${agoText(s.lastAt, Date.now())}` : "Catching up · waiting for the first update" } : s); return; }
     const body = (await res.json()) as { items: FeedItem[]; status: FeedStatus | null };
     const isNew = reset ? new Set<string>() : new Set(body.items.filter(i => !seen.current.has(i.id)).map(i => i.id));
     for (const i of body.items) seen.current.add(i.id);
@@ -104,7 +105,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           <a className="btn btn--secondary" href="/results">See past moves</a>
         </div>
       )}
-      {status?.state === "behind" && status.lastAt ? <p className="feed2__note">Last update from the source: {new Date(status.lastAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.</p> : null}
+      {status?.state === "behind" && status.lastAt ? <p className="feed2__note">Last update from the source: {clockET(status.lastAt)}. Nothing below is live until it catches up.</p> : null}
     </section>
   );
 }

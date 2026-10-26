@@ -4,7 +4,9 @@
  * the SEC filing itself. Everything on it was sent by the server for this viewer's plan
  * and region (lib/moves/feed.ts). */
 import Link from "next/link";
+import { TimeAgo } from "@/components/TimeAgo";
 import type { FeedItem } from "@/lib/moves/feed";
+import type { SourceLink } from "@/lib/moves/source";
 import { FollowButton, type FollowState } from "./FollowButton";
 
 const TAG: Record<string, { text: string; tint: string }> = {
@@ -13,6 +15,11 @@ const TAG: Record<string, { text: string; tint: string }> = {
   crypto: { text: "Crypto", tint: "peach" },
   stocks: { text: "Stocks", tint: "blue" },
 };
+
+/** "Source: Polygon transaction ↗": the public record every number on the card comes from. */
+export function SourceA({ link, className = "source" }: { link: SourceLink; className?: string }) {
+  return <a className={className} href={link.href} target="_blank" rel="noopener noreferrer">{link.label}<span aria-hidden="true"> ↗</span><span className="sr-only"> (opens in a new tab)</span></a>;
+}
 
 /** The sentence with the name at its start as a link to the profile. */
 function Sentence({ m }: { m: FeedItem }) {
@@ -28,7 +35,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
     <article className={`move${fresh ? " move--fresh" : ""}`} data-move={m.id}>
       <div className="move__top">
         <span className={`tag tag--${tag.tint}`}>{tag.text}{sub ? ` · ${sub}` : ""}</span>
-        <time className="move__time" dateTime={new Date(m.at).toISOString()}>{m.ago}</time>
+        <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
       <p className="move__sentence"><Sentence m={m} /></p>
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
@@ -48,6 +55,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false }: { m: FeedItem;
         {m.who.href && !m.sentence.startsWith(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
       </div>
       )}
+      {m.sourceLink && m.source !== "sec" ? <SourceA link={m.sourceLink} /> : null}
     </article>
   );
 }

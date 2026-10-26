@@ -32,14 +32,16 @@ test("error: a deal that doesn't exist says so and points to the Terminal; the A
 
 test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page }) => {
   try {
-    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
+    await q("insert into terminal.worker_heartbeats (job, last_run_at, ok) values ('e2e:pause', now(), true) on conflict do nothing");
+    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', last_ok_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
     await page.goto("/feed");
-    await expect(page.getByText("Catching up. Showing the latest moves we have.")).toBeVisible();
+    await expect(page.getByText("Catching up · last update 10m ago")).toBeVisible();
     await expect(page.getByText(/Last update from the source/)).toBeVisible();
     await expect(page.getByText(/Connection lost|Live data paused/)).toHaveCount(0);
     await expect(page.locator(".move").first()).toBeVisible();
   } finally {
-    await q("update terminal.worker_heartbeats set last_run_at = now(), ok = true, error = null where job like 'moves:%'");
+    await q("delete from terminal.worker_heartbeats where job = 'e2e:pause'");
+    await q("update terminal.worker_heartbeats set last_run_at = now(), last_ok_at = now(), ok = true, error = null where job like 'moves:%'");
   }
 });
 

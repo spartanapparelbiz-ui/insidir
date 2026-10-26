@@ -230,6 +230,32 @@ export const events = terminal.table("events", {
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("events_name_at_idx").on(t.name, t.at), index("events_visitor_idx").on(t.visitorId)]);
 
+/** One line per thing the hourly accuracy check re-read from its source (lib/accuracy/check.ts). */
+export const accuracyChecks = terminal.table("accuracy_checks", {
+  id: serial("id").primaryKey(),
+  runAt: timestamp("run_at", { withTimezone: true }).notNull(),
+  /** "move" (a move re-read) or "profile" (a profile fact: resolved position, record, insider trade, fund holding). */
+  kind: text("kind").$type<"move" | "profile">().notNull(),
+  /** What was checked, e.g. "polymarket", "kalshi", "sec", "position", "record", "insider", "fund". */
+  what: text("what").notNull(),
+  /** The move id, wallet, or filing line. */
+  target: text("target").notNull(),
+  label: text("label").notNull(),
+  /** ok: matches; mismatch: differs from the source; skipped: couldn't be checked (no SEC user agent). */
+  status: text("status").$type<"ok" | "mismatch" | "skipped">().notNull(),
+  problems: jsonb("problems").$type<string[]>().notNull(),
+}, t => [index("accuracy_checks_run_idx").on(t.runAt), index("accuracy_checks_status_idx").on(t.status, t.runAt)]);
+
+/** Lifecycle emails sent (day 0 welcome, day 2 trial ending, weekly results), one row per user, kind and period, so
+ *  each is sent once (lib/emails/lifecycle.ts). */
+export const lifecycleEmails = terminal.table("lifecycle_emails", {
+  userId: text("user_id").notNull(),
+  kind: text("kind").$type<"welcome" | "trial_ending" | "weekly">().notNull(),
+  /** "once" for welcome and trial_ending; the ISO week ("2026-W44") for weekly. */
+  period: text("period").notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.kind, t.period] })]);
+
 /** Whop webhook ids already processed (deliveries are at-least-once). */
 export const webhookEvents = terminal.table("webhook_events", {
   id: text("id").primaryKey(),
@@ -266,6 +292,8 @@ export const nearMisses = terminal.table("near_misses", {
 export const workerHeartbeats = terminal.table("worker_heartbeats", {
   job: text("job").primaryKey(),
   lastRunAt: timestamp("last_run_at", { withTimezone: true }).notNull(),
+  /** The last run that succeeded (kept when a later run fails): what "last update 6m ago" reads. */
+  lastOkAt: timestamp("last_ok_at", { withTimezone: true }),
   ok: boolean("ok").notNull(),
   error: text("error"),
   stats: jsonb("stats").$type<Record<string, number | string>>(),
@@ -307,6 +335,13 @@ export const moves = terminal.table("moves", {
   detail: jsonb("detail").$type<Record<string, unknown>>(),
   /** Polymarket only: true when the wallet had no activity at all before this move; null when not checked. */
   newWallet: boolean("new_wallet"),
+  /** The source records behind the move: Polymarket transaction hashes (Polygon); Kalshi's trade id is in the move id
+   *  and an SEC filing's accession in `detail`. */
+  sourceRefs: jsonb("source_refs").$type<string[]>(),
+  /** Set when the hourly accuracy check (lib/accuracy) found the move doesn't match its source; hidden everywhere
+   *  until a later check passes. */
+  hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+  hiddenReason: text("hidden_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),

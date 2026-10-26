@@ -35,6 +35,8 @@ export default async function globalSetup() {
     const paused = await pool.query("select 1 from terminal.worker_heartbeats where job = 'e2e:pause'");
     if (paused.rowCount) return;
     await pool.query("update terminal.worker_heartbeats set last_run_at = now(), ok = true, error = null where job like 'scan:%'");
+    // The feed's sources (lib/moves/feed.ts TAB_SOURCES): "Catching up" after 5 minutes without a good update.
+    await pool.query("update terminal.worker_heartbeats set last_run_at = now(), last_ok_at = now(), ok = true, error = null where job like 'moves:%' or job = 'stocks:form4'");
     await pool.query("update terminal.opportunities set last_seen_at = now() where active");
   };
   const timer = setInterval(() => void keep().catch(() => undefined), 15_000);

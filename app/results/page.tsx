@@ -2,6 +2,8 @@
  * only". Won or lost, the amount, and when. Our proof page: complete and honest, losses included. */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SourceA } from "@/components/v2/MoveCard";
+import { moveSource } from "@/lib/moves/source";
 import { Photo } from "@/components/Photo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
@@ -63,7 +65,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link>
                     <span className="rlist__who">{r.source === "kalshi" ? "Someone on Kalshi" : isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>
                   </span>
-                  <time className="rlist__when" dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                  <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                      {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}</span>
                 </li>
               ))}
             </ol>

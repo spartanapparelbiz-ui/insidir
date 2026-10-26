@@ -43,6 +43,8 @@ export interface Move {
   detail?: StockDetail | null;
   /** Polymarket: true when the wallet had no activity at all before this move ("A brand-new wallet"); null unknown. */
   newWallet?: boolean | null;
+  /** Polymarket: the transaction hashes of the fills behind the move (each one a public Polygon record). */
+  sourceRefs?: string[] | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */

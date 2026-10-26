@@ -1,5 +1,5 @@
 /* The database side of move alerts and the daily email: who can be alerted, and what each email lists. Server only. */
-import { and, desc, gte, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, gte, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { DEFAULT_SETTINGS, follows, moves, pushSubscriptions, users } from "@/lib/db/schema";
@@ -34,14 +34,14 @@ export async function moveAlertUsers(db: Db): Promise<MoveAlertUser[]> {
 
 /** Moves first seen since `since` (the alert window). */
 export async function recentMoves(db: Db, since: Date): Promise<Move[]> {
-  return (await db.select().from(moves).where(and(gte(moves.at, since), inArray(moves.tab, liveTabs()))).orderBy(desc(moves.at)).limit(500)).map(fromRow);
+  return (await db.select().from(moves).where(and(gte(moves.at, since), inArray(moves.tab, liveTabs()), isNull(moves.hiddenAt))).orderBy(desc(moves.at)).limit(500)).map(fromRow);
 }
 
 /** The daily email's two lists: the biggest moves of the last 24h, and top-trader moves settled in the last 24h. */
 export async function dailyLists(db: Db, now: number) {
   const since = new Date(now - 86_400_000);
-  const top = (await db.select().from(moves).where(and(gte(moves.at, since), inArray(moves.tab, liveTabs()))).orderBy(desc(moves.amount)).limit(5)).map(fromRow);
-  const settledAll = (await db.select().from(moves).where(and(isNotNull(moves.result), gte(moves.settledAt, since))).orderBy(desc(moves.amount)).limit(200)).map(fromRow);
+  const top = (await db.select().from(moves).where(and(gte(moves.at, since), inArray(moves.tab, liveTabs()), isNull(moves.hiddenAt))).orderBy(desc(moves.amount)).limit(5)).map(fromRow);
+  const settledAll = (await db.select().from(moves).where(and(isNotNull(moves.result), gte(moves.settledAt, since), isNull(moves.hiddenAt))).orderBy(desc(moves.amount)).limit(200)).map(fromRow);
   const records = await recordsFor(db, [...top, ...settledAll].map(m => m.wallet ?? ""));
   const settled = settledAll.filter(m => m.wallet && isTopTrader(records.get(m.wallet) ?? null));
   return { top, settled, records };

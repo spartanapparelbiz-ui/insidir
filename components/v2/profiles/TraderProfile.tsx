@@ -4,6 +4,8 @@
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
 import { polymarketProfileUrl } from "@/lib/exchanges/polymarket";
+import { SourceA } from "../MoveCard";
+import { profileSource } from "@/lib/moves/source";
 import { isPaid } from "@/lib/plans";
 import { dollars, signedShort } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
@@ -41,6 +43,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
         <div>
           <p className="trader__kicker">Polymarket trader</p>
           <h1 className="trader__name">{name}</h1>
+          <SourceA link={profileSource({ kind: "trader", wallet })} className="source source--dark" />
         </div>
         <FollowButton kind="trader" target={wallet} state={followState(viewer, following)} trialHref={trial} />
       </header>
