@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3100",
-  "at": "2026-10-26T07:08:27.539Z",
+  "at": "2026-10-26T07:20:53.963Z",
   "gates": {
     "performance": 0.9,
     "accessibility": 0.95,
@@ -10,57 +10,44 @@
     {
       "page": "landing",
       "performance": 0.98,
-      "accessibility": 0.96,
+      "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1844,
+      "lcpMs": 2190,
       "cls": 0,
-      "axe390": [
-        "color-contrast (2)"
-      ],
+      "axe390": [],
       "axe1440": [
-        "aria-hidden-focus (1)",
-        "color-contrast (2)"
+        "aria-hidden-focus (1)"
       ],
       "pass": false
     },
     {
       "page": "feed-free",
-      "performance": 1,
-      "accessibility": 0.91,
+      "performance": 0.96,
+      "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1711,
+      "lcpMs": 2296,
       "cls": 0,
-      "axe390": [
-        "aria-required-children (1)",
-        "color-contrast (1)"
-      ],
-      "axe1440": [
-        "aria-required-children (1)",
-        "color-contrast (2)"
-      ],
-      "pass": false
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
     },
     {
       "page": "results",
-      "performance": 0.99,
-      "accessibility": 0.94,
+      "performance": 1,
+      "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1721,
+      "lcpMs": 1755,
       "cls": 0,
-      "axe390": [
-        "aria-allowed-attr (7)"
-      ],
-      "axe1440": [
-        "aria-allowed-attr (7)"
-      ],
-      "pass": false
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
     },
     {
       "page": "pricing",
       "performance": 0.99,
       "accessibility": 0.98,
       "seo": 1,
-      "lcpMs": 1744,
+      "lcpMs": 1726,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -68,10 +55,10 @@
     },
     {
       "page": "terms",
-      "performance": 0.99,
+      "performance": 0.98,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1857,
+      "lcpMs": 1851,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -79,38 +66,32 @@
     },
     {
       "page": "privacy",
-      "performance": 0.82,
+      "performance": 0.98,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 2429,
+      "lcpMs": 2168,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
-      "pass": false
+      "pass": true
     },
     {
       "page": "feed-member",
-      "performance": 1,
-      "accessibility": 0.91,
+      "performance": 0.99,
+      "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1860,
+      "lcpMs": 1875,
       "cls": 0,
-      "axe390": [
-        "aria-required-children (1)",
-        "color-contrast (1)"
-      ],
-      "axe1440": [
-        "aria-required-children (1)",
-        "color-contrast (2)"
-      ],
-      "pass": false
+      "axe390": [],
+      "axe1440": [],
+      "pass": true
     },
     {
       "page": "following",
-      "performance": 1,
+      "performance": 0.99,
       "accessibility": 1,
       "seo": 1,
-      "lcpMs": 1719,
+      "lcpMs": 1587,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -118,10 +99,10 @@
     },
     {
       "page": "settings",
-      "performance": 0.98,
+      "performance": 0.99,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 1816,
+      "lcpMs": 1818,
       "cls": 0,
       "axe390": [],
       "axe1440": [],
@@ -129,10 +110,10 @@
     },
     {
       "page": "alerts",
-      "performance": 0.99,
+      "performance": 0.98,
       "accessibility": 1,
       "seo": 0.6,
-      "lcpMs": 1901,
+      "lcpMs": 2267,
       "cls": 0.008610194552454445,
       "axe390": [],
       "axe1440": [],
