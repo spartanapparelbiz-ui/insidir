@@ -10,7 +10,7 @@
 import { createVenueClients, rateLimitStats, type VenueClient } from "@/lib/exchanges";
 import { marketKey } from "@/lib/engines/common";
 import { createMemoryCache, createMemoryUsageStore, createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets, type MatchStats } from "@/lib/matching";
-import { marketsToBook, scan } from "@/lib/scanner";
+import { marketsToBook, scan, scanOptionsFromEnv } from "@/lib/scanner";
 import { playText } from "@/lib/feed";
 import { days, pct, usd } from "@/lib/format";
 import { VENUE_NAME, type Book, type MarketPair, type Opportunity, type VEvent, type VMarket, type Venue } from "@/lib/types";
@@ -71,12 +71,13 @@ async function main(): Promise<void> {
 
   const universe = { markets, events, pairs };
   const books = new Map<string, Book>();
-  for (const [venue, list] of marketsToBook(universe)) {
+  const opts = scanOptionsFromEnv();
+  for (const [venue, list] of marketsToBook(universe, Date.now(), opts)) {
     try {
       for (const [id, b] of await clients[venue].getBooks(list, { priority: "normal" })) books.set(marketKey(venue, id), b);
     } catch (e) { venueErrors[`${venue}:books`] = errMsg(e); }
   }
-  const { opps, counts } = scan(universe, books, Date.now());
+  const { opps, counts } = scan(universe, books, Date.now(), opts);
   const top = opps.slice(0, TOP);
   const redPairs = pairs.filter(p => p.safety === "red");
   const limits = rateLimitStats();

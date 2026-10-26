@@ -1,8 +1,10 @@
 /* Insidir Terminal worker (Railway service "worker": `npm run worker`).
  *
- *   sweep     every SWEEP_MS:  list markets and events on every venue, match Kalshi ↔ Polymarket (and ↔ Polymarket US),
- *                              store markets and pairs
- *   scan      every SCAN_MS:   fetch the books the engines need ("hot" priority for markets with live deals, the rest
+ *   sweep     every SWEEP_MS:  list markets and events on every venue, match Kalshi ↔ Polymarket (and ↔ Polymarket US)
+ *                              in the match thread (worker/match-thread.ts: only new or changed markets are re-matched),
+ *                              store changed markets and the pairs
+ *   scan      every SCAN_MS:   fetch the books the engines need (matched pairs, plus traded markets closing within
+ *                              BOOK_MAX_DAYS: lib/scanner.ts) ("hot" priority for markets with live deals, the rest
  *                              on the full-scan cadence), run every engine, store deals and their receipts, write a
  *                              heartbeat per venue (the site shows "Live data paused, retrying" when they go quiet)
  *   alerts    every ALERT_MS:  web push (Pro instant, Insidir within 60s), email backup, daily summaries
@@ -10,6 +12,7 @@
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
+import { monitorEventLoopDelay } from "node:perf_hooks";
 import { createVenueClients, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
@@ -18,13 +21,16 @@ import { alertText, digestDue, digestRows, dueAlerts } from "@/lib/alerts/fanout
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
-import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
+import { hiddenKinds } from "@/lib/flags";
+import { MatchThread } from "./match-client";
+import { quarantineReasons } from "@/lib/quarantine";
+import { matchFingerprint } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
-import { marketsToBook, scan, type Universe } from "@/lib/scanner";
+import { marketsToBook, scan, scanOptionsFromEnv, type Universe } from "@/lib/scanner";
 import { pct, usd } from "@/lib/format";
-import type { Book, MarketPair, VEvent, VMarket, Venue } from "@/lib/types";
+import type { Book, Opportunity, VEvent, VMarket, Venue } from "@/lib/types";
 import {
-  alertableDeals, alertUsers, claimAlert, dbMatchCache, dbUsageStore, deactivateStale, dropPush, heartbeat, loadOverrides, markDigestSent,
+  alertableDeals, alertUsers, claimAlert, deactivateKinds, saveQuarantined, deactivateStale, dropPush, heartbeat, markDigestSent,
   pushTargets, saveMarkets, saveOpportunities, savePairs, saveWhales, settleReceipt, unsettledReceipts,
 } from "@/lib/worker/store";
 
@@ -36,23 +42,40 @@ export const ALERT_MS = n("ALERT_MS", 5_000);
 export const WHALE_MS = n("WHALE_MS", 15_000);
 export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
 export const DIGEST_CHECK_MS = 10 * 60_000;
+const SCAN_OPTIONS = scanOptionsFromEnv();
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 /** push(...xs) overflows the stack past ~100K items (Kalshi lists 130K+ markets), so append in a loop. */
 const append = <T>(to: T[], xs: readonly T[]) => { for (const x of xs) to.push(x); };
 
-interface State { universe: Universe; lastFull: number; hot: Set<string> }
+/** `need`: the markets whose books a scan fetches, recomputed with each sweep. */
+/** `savedFp`: match fingerprints of the markets last stored, by venue and id. */
+interface State { universe: Universe; byKey: Map<string, VMarket>; need: Map<Venue, VMarket[]>; savedFp: Map<Venue, Map<string, string>>; lastFull: number; hot: Set<string> }
 
-async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise<void> {
+/** Each market's matchFingerprint by venue and id, computed in slices so the scan loop keeps running. */
+async function fingerprints(byVenue: ReadonlyMap<Venue, readonly VMarket[]>): Promise<Map<Venue, Map<string, string>>> {
+  const out = new Map<Venue, Map<string, string>>();
+  for (const [venue, list] of byVenue) {
+    const fps = new Map<string, string>();
+    for (let i = 0; i < list.length; i++) {
+      fps.set(list[i]!.id, matchFingerprint(list[i]!));
+      if (i % 5_000 === 4_999) await new Promise<void>(ok => setImmediate(ok));
+    }
+    out.set(venue, fps);
+  }
+  return out;
+}
+
+async function sweep(clients: Record<Venue, VenueClient>, state: State, matcher: MatchThread): Promise<void> {
   const db = getDb();
   const markets: VMarket[] = [], events: VEvent[] = [];
   const byVenue = new Map<Venue, VMarket[]>();
+  const fresh = new Set<Venue>();
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
       const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      append(markets, m); append(events, e); byVenue.set(venue, m);
-      await saveMarkets(db, m);
+      append(markets, m); append(events, e); byVenue.set(venue, m); fresh.add(venue);
       log(`sweep ${venue}: ${m.length} markets, ${e.length} events`);
     } catch (e) {
       log(`sweep ${venue} failed: ${errMsg(e)}`);
@@ -63,29 +86,52 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
       append(events, state.universe.events.filter(x => x.venue === venue));
     }
   }
-  const kalshi = byVenue.get("kalshi") ?? [];
-  const env = llmEnv(process.env);
-  const deps = {
-    cache: dbMatchCache(db), overrides: await loadOverrides(db), now: Date.now(), config: matchConfigFromEnv(process.env),
-    llm: env.apiKey ? createOpenRouterConfirm({ apiKey: env.apiKey, model: env.model, monthlyCapUsd: env.monthlyCapUsd, usage: dbUsageStore(db), now: () => Date.now(), appUrl: appUrl() }) : undefined,
-  };
-  const pairs: MarketPair[] = [];
-  for (const other of ["polymarket", "polymarket_us"] as const) {
-    const list = byVenue.get(other) ?? [];
-    if (!kalshi.length || !list.length) continue;
-    const { pairs: p, stats } = await matchMarkets(kalshi, list, deps);
-    append(pairs, p);
-    log(`match kalshi↔${other}: ${p.length} pairs (green ${stats.green}, yellow ${stats.yellow}, red ${stats.red}), candidates ${stats.candidates}, llm asked ${stats.llmAsked}, rejected ${stats.rejected}`);
+  const fps = await fingerprints(byVenue);
+  // Store only markets whose matching fields changed (titles, rules, close): ~370K rows every sweep was most of
+  // the database's write load.
+  let saved = 0;
+  for (const venue of fresh) {
+    const prev = state.savedFp.get(venue) ?? new Map<string, string>();
+    const next = fps.get(venue) ?? new Map<string, string>();
+    const changed = (byVenue.get(venue) ?? []).filter(m => prev.get(m.id) !== next.get(m.id));
+    await saveMarkets(db, changed);
+    state.savedFp.set(venue, next);
+    saved += changed.length;
   }
-  await savePairs(db, pairs);
+  const t = Date.now();
+  let pairs = state.universe.pairs;
+  try {
+    const r = await matcher.match(byVenue, fps);
+    pairs = r.pairs;
+    for (const line of r.log) log(line);
+    await savePairs(db, pairs);
+  } catch (e) {
+    log(`match failed (keeping ${pairs.length} pairs from the last sweep): ${errMsg(e)}`);
+  }
   state.universe = { markets, events, pairs };
+  state.byKey = new Map(markets.map(m => [marketKey(m.venue, m.id), m]));
+  state.need = marketsToBook(state.universe, Date.now(), SCAN_OPTIONS);
+  log(`sweep done: ${saved} markets stored, match ${((Date.now() - t) / 1000).toFixed(1)}s; books per scan: ${[...state.need].map(([v, l]) => `${v} ${l.length}`).join(", ") || "none"}`);
+}
+
+/** Deals that may be shown, and those held back (lib/quarantine.ts). */
+function splitQuarantine(found: readonly Opportunity[], state: State): { shown: Opportunity[]; held: Array<{ opp: Opportunity; reasons: string[] }> } {
+  const pairs = new Map(state.universe.pairs.map(p => [p.id, p]));
+  const fee = (venue: Venue, id: string) => state.byKey.get(marketKey(venue, id))?.fee;
+  const shown: Opportunity[] = [], held: Array<{ opp: Opportunity; reasons: string[] }> = [];
+  for (const opp of found) {
+    const reasons = quarantineReasons(opp, { pair: opp.pairId ? pairs.get(opp.pairId) : undefined, fee });
+    if (reasons.length) held.push({ opp, reasons });
+    else shown.push(opp);
+  }
+  return { shown, held };
 }
 
 async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Promise<void> {
   const db = getDb();
   const now = Date.now();
   const full = now - state.lastFull >= FULL_SCAN_MS;
-  const need = marketsToBook(state.universe);
+  const need = state.need;
   const books = new Map<string, Book>();
   for (const [venue, list] of need) {
     const targets = full ? list : list.filter(m => state.hot.has(marketKey(m.venue, m.id)));
@@ -101,11 +147,14 @@ async function scanOnce(clients: Record<Venue, VenueClient>, state: State): Prom
   }
   if (full) state.lastFull = now;
   if (!books.size) return;
-  const { opps, counts } = scan(state.universe, books, now);
+  const { opps: found, counts } = scan(state.universe, books, now, SCAN_OPTIONS);
+  const { shown: opps, held } = splitQuarantine(found, state);
   const fresh = await saveOpportunities(db, opps, new Date(now));
+  const newlyHeld = new Set(await saveQuarantined(db, held, new Date(now)));
+  for (const q of held) if (newlyHeld.has(q.opp.id)) log(`quarantined ${q.opp.kind} "${q.opp.title}" (${q.opp.id}): ${q.reasons.join("; ")}`);
   const dropped = full ? await deactivateStale(db, new Date(now)) : 0;
   state.hot = new Set(opps.flatMap(o => o.legs.map(l => marketKey(l.venue, l.marketId))));
-  if (full || fresh.length) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${dropped} gone`);
+  if (full || fresh.length || newlyHeld.size) log(`scan${full ? " (full)" : ""}: ${books.size} books, ${opps.length} deals (${JSON.stringify(counts)}), ${fresh.length} new, ${held.length} quarantined (${newlyHeld.size} new), ${dropped} gone`);
 }
 
 async function alertsOnce(): Promise<void> {
@@ -185,7 +234,7 @@ async function settleOnce(clients: Record<Venue, VenueClient>): Promise<void> {
 }
 
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
-function every(name: string, ms: number, fn: () => Promise<void>): () => void {
+function every(name: string, ms: number, fn: () => Promise<void>, opts: { immediate?: boolean } = {}): () => void {
   let running = false, stopped = false;
   const tick = async () => {
     if (running || stopped) return;
@@ -193,18 +242,24 @@ function every(name: string, ms: number, fn: () => Promise<void>): () => void {
     try { await fn(); } catch (e) { log(`${name} failed: ${errMsg(e)}`); await heartbeat(getDb(), name, false, errMsg(e)).catch(() => undefined); }
     finally { running = false; }
   };
-  void tick();
+  if (opts.immediate !== false) void tick();
   const t = setInterval(() => void tick(), ms);
   return () => { stopped = true; clearInterval(t); };
 }
 
 export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const clients = createVenueClients();
-  const state: State = { universe: { markets: [], events: [], pairs: [] }, lastFull: 0, hot: new Set() };
-  log("worker starting");
-  await sweep(clients, state).catch(e => log("first sweep failed:", errMsg(e)));
+  const state: State = { universe: { markets: [], events: [], pairs: [] }, byKey: new Map(), need: new Map(), savedFp: new Map(), lastFull: 0, hot: new Set() };
+  log(`worker starting (ladders ${SCAN_OPTIONS.ladders ? "on" : "off"}, books: 24h volume ≥ ${SCAN_OPTIONS.minVolume24h}, closing within ${SCAN_OPTIONS.maxDays} days, plus matched pairs)`);
+  const off = await deactivateKinds(getDb(), hiddenKinds()).catch(e => { log("deactivating hidden kinds failed:", errMsg(e)); return 0; });
+  if (off) log(`switched off ${off} live deals of hidden kinds (${hiddenKinds().join(", ")})`);
+  const matcher = new MatchThread(log);
+  const loopDelay = monitorEventLoopDelay({ resolution: 20 });
+  loopDelay.enable();
+  await sweep(clients, state, matcher).catch(e => log("first sweep failed:", errMsg(e)));
   const stops = [
-    every("sweep", SWEEP_MS, () => sweep(clients, state)),
+    // The first sweep just ran: the next is due one interval from now, not immediately.
+    every("sweep", SWEEP_MS, () => sweep(clients, state, matcher), { immediate: false }),
     every("scan", SCAN_MS, () => scanOnce(clients, state)),
     every("alerts", ALERT_MS, alertsOnce),
     every("digests", DIGEST_CHECK_MS, digestsOnce),
@@ -212,11 +267,14 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     every("ratelimits", 60_000, async () => {
       const s = rateLimitStats();
+      // The longest the event loop was blocked this minute: matching runs in its own thread, so this stays small.
+      log(`event loop: max ${Math.round(loopDelay.max / 1e6)}ms, p99 ${Math.round(loopDelay.percentile(99) / 1e6)}ms`);
+      loopDelay.reset();
       log("rate limits:", Object.entries(s).map(([k, v]) => `${k} ${v.requests} req, ${v.rateLimited} 429s, ${v.retries} retries`).join(" | "));
       await heartbeat(getDb(), "ratelimits", true, null, Object.fromEntries(Object.entries(s).flatMap(([k, v]) => [[k + ":requests", v.requests], [k + ":429", v.rateLimited]])));
     }),
   ];
-  const stop = async () => { stops.forEach(s => s()); await closeDb(); log("worker stopped"); };
+  const stop = async () => { stops.forEach(s => s()); await matcher.stop(); await closeDb(); log("worker stopped"); };
   process.on("SIGTERM", () => void stop().then(() => process.exit(0)));
   process.on("SIGINT", () => void stop().then(() => process.exit(0)));
   if (opts.runForMs) { await new Promise(r => setTimeout(r, opts.runForMs)); await stop(); }

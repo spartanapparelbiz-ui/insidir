@@ -5,16 +5,17 @@
  * one A market per orientation, so Kalshi's two per-team game markets can both pair with Polymarket's one), then
  * given a safety light (safety.ts). Admin overrides force a match, block one, or force the light. */
 import type { MarketPair, Safety, VMarket } from "@/lib/types";
-import { createMemoryCache, createMemoryUsageStore, type MatchCache, type MatchDecision } from "./cache";
+import { createLayeredCache, createMemoryCache, createMemoryUsageStore, type MatchCache, type MatchDecision } from "./cache";
 import { DEFAULT_MATCH_CONFIG, findCandidates, pairKey, type Candidate, type MatchConfig } from "./candidates";
 import type { LlmConfirm, LlmVerdict } from "./llm";
 import { assessSafety } from "./safety";
 
 export type { MatchCache, MatchDecision } from "./cache";
-export { createMemoryCache, createMemoryUsageStore };
+export { createLayeredCache, createMemoryCache, createMemoryUsageStore };
 export type { LlmConfirm, LlmUsageStore, LlmVerdict } from "./llm";
 export { createOpenRouterConfirm, llmEnv, DEFAULT_MODEL } from "./llm";
 export { DEFAULT_MATCH_CONFIG, matchConfigFromEnv, findCandidates, pairKey, type MatchConfig, type Candidate } from "./candidates";
+export { IncrementalCandidates, matchFingerprint, type IncrementalStats } from "./incremental";
 export { assessSafety, extractRuleFacts } from "./safety";
 export { extractEntities } from "./entities";
 
@@ -127,6 +128,8 @@ export async function matchMarkets(
   kalshi: readonly VMarket[],
   poly: readonly VMarket[],
   deps: MatchDeps,
+  /** Precomputed candidates for these lists (IncrementalCandidates); computed from scratch when absent. */
+  precomputed?: Candidate[],
 ): Promise<{ pairs: MarketPair[]; stats: MatchStats }> {
   const cfg: MatchConfig = { ...DEFAULT_MATCH_CONFIG, ...deps.config };
   const { now } = deps;
@@ -134,7 +137,7 @@ export async function matchMarkets(
     candidates: 0, deterministic: 0, llmAsked: 0, llmAccepted: 0, rejected: 0, green: 0, yellow: 0, red: 0,
     cacheHits: 0, unsure: 0, skipped: 0, blocked: 0, admin: 0, llmCostUsd: 0,
   };
-  const candidates = findCandidates(kalshi, poly, cfg).sort((x, y) => y.score - x.score || (x.key < y.key ? -1 : 1));
+  const candidates = (precomputed ?? findCandidates(kalshi, poly, cfg)).sort((x, y) => y.score - x.score || (x.key < y.key ? -1 : 1));
   stats.candidates = candidates.length;
   const cached = await readCache(deps.cache, candidates.map(c => c.key));
   const writes: Array<[string, MatchDecision]> = [];
@@ -263,6 +266,7 @@ export async function matchMarkets(
       confidence: Math.round(d.confidence * 1000) / 1000,
       safety: ov?.safety ?? s.safety,
       safetyNotes: ov?.safety ? ov.notes ?? s.notes : s.notes,
+      ruleMismatch: s.mismatch,
       blocked: false,
     });
   }

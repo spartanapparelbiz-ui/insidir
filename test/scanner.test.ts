@@ -1,22 +1,24 @@
 /* The scan over a SYNTHETIC universe: one matched pair with a lock, a multi-outcome event, a ladder. */
 import { describe, expect, it } from "vitest";
-import { marketsToBook, scan } from "@/lib/scanner";
+import { DEFAULT_SCAN_OPTIONS, marketsToBook, scan, scanOptionsFromEnv } from "@/lib/scanner";
 import type { VEvent } from "@/lib/types";
 import { book, DAY, key, L, market, NOW, pair } from "./engines-fixtures";
 
+const V = { volume24h: 5_000 };
 const k = market({ id: "K", venue: "kalshi", category: "sports" });
 const p = market({ id: "P", venue: "polymarket", category: "sports", fee: { venue: "polymarket", rate: 0.05 } });
-const e1 = market({ id: "E1", venue: "kalshi", eventId: "EV1" }), e2 = market({ id: "E2", venue: "kalshi", eventId: "EV1" }), e3 = market({ id: "E3", venue: "kalshi", eventId: "EV1" });
+const e1 = market({ id: "E1", venue: "kalshi", eventId: "EV1", ...V }), e2 = market({ id: "E2", venue: "kalshi", eventId: "EV1" }), e3 = market({ id: "E3", venue: "kalshi", eventId: "EV1" });
 const ev: VEvent = { venue: "kalshi", id: "EV1", title: "Who wins", category: "politics", marketIds: ["E1", "E2", "E3"], mutuallyExclusive: true, exhaustive: true, closeTime: NOW + 30 * DAY };
-const hi = market({ id: "HI", eventId: "BTC", title: "BTC above 100k", strike: { kind: "above", value: 100_000, upper: null, subject: "btc" } });
-const lo = market({ id: "LO", eventId: "BTC", title: "BTC above 90k", strike: { kind: "above", value: 90_000, upper: null, subject: "btc" } });
+const hi = market({ id: "HI", eventId: "BTC", title: "BTC above 100k", strike: { kind: "above", value: 100_000, upper: null, subject: "btc" }, ...V });
+const lo = market({ id: "LO", eventId: "BTC", title: "BTC above 90k", strike: { kind: "above", value: 90_000, upper: null, subject: "btc" }, ...V });
 const unrelated = market({ id: "U" });
 
 const u = { markets: [k, p, e1, e2, e3, hi, lo, unrelated], events: [ev], pairs: [pair(k, p)] };
+const LADDERS = { ...DEFAULT_SCAN_OPTIONS, ladders: true };
 
 describe("scan", () => {
   it("books only the markets an engine can use", () => {
-    const need = marketsToBook(u);
+    const need = marketsToBook(u, NOW, LADDERS);
     expect(need.get("kalshi")?.map(m => m.id).sort()).toEqual(["E1", "E2", "E3", "HI", "K", "LO"]);
     expect(need.get("polymarket")?.map(m => m.id)).toEqual(["P"]);
   });
@@ -32,7 +34,7 @@ describe("scan", () => {
       [key("kalshi", "LO"), book({ yesAsks: [L(0.4, 20)], noAsks: [L(0.65, 20)] })],
       [key("kalshi", "HI"), book({ yesAsks: [L(0.55, 20)], noAsks: [L(0.5, 20)] })],
     ]);
-    const { opps, counts } = scan(u, books, NOW);
+    const { opps, counts } = scan(u, books, NOW, LADDERS);
     expect(counts.crossArb).toBe(1);
     expect(counts.multi).toBeGreaterThanOrEqual(1);
     expect(counts.ladder).toBe(1);
@@ -44,6 +46,23 @@ describe("scan", () => {
   it("finds nothing without books, and skips blocked pairs", () => {
     expect(scan(u, new Map(), NOW).opps).toEqual([]);
     const blocked = { ...u, pairs: [pair(k, p, { blocked: true })] };
-    expect(marketsToBook(blocked).get("polymarket")).toBeUndefined();
+    expect(marketsToBook(blocked, NOW).get("polymarket")).toBeUndefined();
+  });
+
+  it("leaves ladders off unless LADDERS_ENABLED=1", () => {
+    expect(scanOptionsFromEnv({}).ladders).toBe(false);
+    expect(scanOptionsFromEnv({ LADDERS_ENABLED: "0" }).ladders).toBe(false);
+    expect(scanOptionsFromEnv({ LADDERS_ENABLED: "1" }).ladders).toBe(true);
+    expect(marketsToBook(u, NOW).get("kalshi")?.map(m => m.id).sort()).toEqual(["E1", "E2", "E3", "K"]);
+    const books = new Map([[key("kalshi", "LO"), book({ yesAsks: [L(0.4, 20)], noAsks: [L(0.65, 20)] })], [key("kalshi", "HI"), book({ yesAsks: [L(0.55, 20)], noAsks: [L(0.5, 20)] })]]);
+    expect(scan(u, books, NOW).counts.ladder).toBe(0);
+  });
+
+  it("books matched pairs always, other markets only when they trade and close within the window", () => {
+    const quiet = { ...u, markets: u.markets.map(m => ({ ...m, volume24h: 10 })) };
+    expect(marketsToBook(quiet, NOW, LADDERS).get("kalshi")?.map(m => m.id)).toEqual(["K"]);
+    const far = { ...u, markets: u.markets.map(m => ({ ...m, closeTime: NOW + 60 * DAY })), events: [{ ...ev, closeTime: NOW + 60 * DAY }] };
+    expect(marketsToBook(far, NOW, LADDERS).get("kalshi")?.map(m => m.id)).toEqual(["K"]);
+    expect(scanOptionsFromEnv({ BOOK_MIN_VOLUME_24H: "50", BOOK_MAX_DAYS: "7" })).toMatchObject({ minVolume24h: 50, maxDays: 7 });
   });
 });

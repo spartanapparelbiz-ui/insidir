@@ -1,4 +1,5 @@
-/* Admin: matches (both titles and rule texts side by side, with override actions), the funnel, the hero A/B test
+/* Admin: quarantined deals (held back as too good to be true or from pairs whose rules differ, never shown to users),
+ * matches (both titles and rule texts side by side, with override actions), the funnel, the hero A/B test
  * and UTM results. Behind ADMIN_TOKEN + a TOTP code (lib/admin.ts). Read-only numbers straight from the database. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -6,8 +7,8 @@ import { SafetyLight } from "@/components/SafetyLight";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
 import { abStats, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { hasDatabase } from "@/lib/db";
-import { pct } from "@/lib/format";
-import { pairViews, type PairView } from "@/lib/queries";
+import { pct, usd } from "@/lib/format";
+import { pairViews, quarantineCount, quarantineViews, type PairView, type QuarantineView } from "@/lib/queries";
 import type { VMarket } from "@/lib/types";
 import { VENUE_NAME } from "@/lib/types";
 import "../app.css";
@@ -62,6 +63,31 @@ function PairCard({ p }: { p: PairView }) {
   );
 }
 
+const when = (ms: number): string => new Date(ms).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+
+function QuarantineCard({ q }: { q: QuarantineView }) {
+  const o = q.opp;
+  return (
+    <article className="card adm-pair">
+      <div className="adm-pair__top">
+        <SafetyLight safety={o.safety} />
+        <span className="dim tiny">{o.kind} · return {pct(o.roi)} · {usd(o.profit)} on {usd(o.cost + o.fees)} · first {when(q.firstSeenAt)} · last {when(q.lastSeenAt)}</span>
+      </div>
+      <p className="rule__h">{o.title}</p>
+      <ul className="notes">{q.reasons.map((r, i) => <li key={i}><b>{r}</b></li>)}</ul>
+      {o.safetyNotes.length ? <ul className="notes">{o.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}</ul> : null}
+      <ul className="small">{o.legs.map((l, i) => (
+        <li key={i}>{l.side.toUpperCase()} {l.label} on {VENUE_NAME[l.venue]} at {(l.avgPrice * 100).toFixed(1)}¢ × {l.contracts.toLocaleString("en-US")} {l.url ? <a href={l.url} target="_blank" rel="noreferrer">open</a> : null}</li>
+      ))}</ul>
+      {q.markets.length <= 4 ? (
+        <div className={`rules${q.markets.length === 2 ? " rules--two" : ""}`}>
+          {q.markets.map((m, i) => <Side key={i} m={m} fallback={`${o.legs[i]?.venue}:${o.legs[i]?.marketId}`} />)}
+        </div>
+      ) : <p className="dim tiny">{q.markets.length} outcome markets; rules not shown.</p>}
+    </article>
+  );
+}
+
 function Funnel({ rows }: { rows: FunnelRow[] }) {
   return (
     <table className="table">
@@ -111,24 +137,32 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const days = q.days === "30" ? 30 : 7;
   const since = sinceDays(days);
-  const [pairs, funnel, ab, utm] = await Promise.all([
+  const [held, heldTotal, pairs, funnel, ab, utm] = await Promise.all([
+    load<QuarantineView[]>([], () => quarantineViews(100)),
+    load<number>(0, () => quarantineCount()),
     load<PairView[]>([], () => pairViews(200)),
     load<FunnelRow[]>([], () => funnelStats(since)),
     load<AbRow[]>([], () => abStats(since)),
     load<Awaited<ReturnType<typeof utmStats>>>([], () => utmStats()),
   ]);
-  const anyError = pairs.error || funnel.error || ab.error || utm.error;
+  const anyError = held.error || pairs.error || funnel.error || ab.error || utm.error;
   return (
     <main className="wrap app adm">
       <div className="adm__top">
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database (DATABASE_URL is not set).</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
       {error ? <p className="banner banner--err" role="alert">{error}</p> : null}
+
+      <section id="quarantine" className="sec2">
+        <h2 className="sec2__h">Quarantine <span className="dim small">({heldTotal.v}{heldTotal.v > held.v.length ? `, latest ${held.v.length} shown` : ""})</span></h2>
+        <p className="muted small">Held back from users, alerts and the public log: a return above 15%, more than $50 kept at $500, or a pair whose rules differ in date, threshold or source.</p>
+        {held.v.length ? <div className="adm-pairs">{held.v.map(q => <QuarantineCard key={q.opp.id} q={q} />)}</div> : <p className="muted small">Nothing quarantined.</p>}
+      </section>
 
       <section id="matches" className="sec2">
         <h2 className="sec2__h">Matches <span className="dim small">({pairs.v.length})</span></h2>

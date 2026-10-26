@@ -75,3 +75,32 @@ export function createMemoryUsageStore(initial?: Record<string, number>): Memory
     },
   };
 }
+
+/** Keeps every decision read or written in memory in front of `inner` (a database), so repeated runs over the same
+ *  candidates read the database only for keys they have not seen. */
+export function createLayeredCache(inner: MatchCache): MatchCache {
+  const mem = new Map<string, MatchDecision>();
+  return {
+    async get(key) {
+      const hit = mem.get(key);
+      if (hit) return hit;
+      const d = await inner.get(key);
+      if (d) mem.set(key, d);
+      return d;
+    },
+    async getMany(keys) {
+      const out = new Map<string, MatchDecision>();
+      const missing: string[] = [];
+      for (const k of keys) { const d = mem.get(k); if (d) out.set(k, d); else missing.push(k); }
+      if (missing.length) {
+        const got = inner.getMany ? await inner.getMany(missing) : new Map((await Promise.all(missing.map(async k => [k, await inner.get(k)] as const))).filter((x): x is readonly [string, MatchDecision] => x[1] !== null));
+        for (const [k, d] of got) { mem.set(k, d); out.set(k, d); }
+      }
+      return out;
+    },
+    async set(key, decision) {
+      mem.set(key, decision);
+      await inner.set(key, decision);
+    },
+  };
+}
