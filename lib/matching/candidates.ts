@@ -95,15 +95,15 @@ const SAME_EVENT_GAP_HOURS = 14;
 /** Two times of day are the same cutoff within this many minutes (ET is treated as UTC−5 for comparison). */
 const TIME_EQ_MINUTES = 60;
 /** Blocking: posting lists longer than this (per key and day) are too generic to use. */
-const MAX_POSTING = 500;
+export const MAX_POSTING = 500;
 /** Blocking: rare title words used as extra keys (document frequency at most this, at most this many per market). */
-const RARE_TOKEN_MAX_DF = 30;
-const RARE_TOKENS_PER_MARKET = 3;
-const RARE_TOKEN_MIN_LEN = 4;
+export const RARE_TOKEN_MAX_DF = 30;
+export const RARE_TOKENS_PER_MARKET = 3;
+export const RARE_TOKEN_MIN_LEN = 4;
 /** Blocking: at most this many B markets are fully scored per A market (pre-ranked by shared keys, then close
  *  proximity). */
 const MAX_SCORED_PER_MARKET = 60;
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
 /** Market types that may be the same market (0.5) — everything else that differs is a hard conflict. */

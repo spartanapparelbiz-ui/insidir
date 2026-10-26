@@ -83,8 +83,50 @@ export const markets = terminal.table("markets", {
   venue: text("venue").$type<Venue>().notNull(),
   id: text("id").notNull(),
   data: jsonb("data").$type<VMarket>().notNull(),
+  /** Fingerprint of the fields matching reads (lib/matching/incremental.ts matchFingerprint); null before the cron matcher. */
+  fp: text("fp"),
+  /** The last matcher run that saw this market open and trading (lib/gaps/matcher.ts). */
+  seenRun: integer("seen_run"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, t => [primaryKey({ columns: [t.venue, t.id] })]);
+}, t => [primaryKey({ columns: [t.venue, t.id] }), index("markets_seen_run_idx").on(t.venue, t.seenRun)]);
+
+/** The matcher's candidate index (lib/gaps/matcher.ts): each market's blocking keys, with its close day. A market's
+ *  candidates are the other venue's markets sharing a key within the close-time window. */
+export const matchKeys = terminal.table("match_keys", {
+  venue: text("venue").$type<Venue>().notNull(),
+  marketId: text("market_id").notNull(),
+  key: text("key").notNull(),
+  /** Close day (epoch days); null when the market has no close time. */
+  day: integer("day"),
+}, t => [primaryKey({ columns: [t.venue, t.marketId, t.key] }), index("match_keys_key_idx").on(t.key, t.venue, t.day)]);
+
+/** Each Kalshi market's current candidates (pair keys), replaced whenever it is re-scored. Pairs are assigned only
+ *  from these, so a cached decision for a pair that is no longer a candidate never comes back. */
+export const matchCandidates = terminal.table("match_candidates", {
+  key: text("key").primaryKey(),
+  aId: text("a_id").notNull(),
+  bVenue: text("b_venue").$type<Venue>().notNull(),
+}, t => [index("match_candidates_a_idx").on(t.aId, t.bVenue)]);
+
+/** What the live scanner books (lib/gaps/live.ts): matched pairs and multi-outcome sets, written by the matcher. */
+export const gapTargets = terminal.table("gap_targets", {
+  id: text("id").primaryKey(),
+  kind: text("kind").$type<"pair" | "multi">().notNull(),
+  /** "venue:id" of every market the target needs a book for. */
+  marketKeys: jsonb("market_keys").$type<string[]>().notNull(),
+  /** The MarketPair, or the VEvent for a multi-outcome set. */
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One row per cron matcher run: timings, counts and peak memory. */
+export const matchRuns = terminal.table("match_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  stats: jsonb("stats").$type<Record<string, unknown>>(),
+  error: text("error"),
+});
 
 /** Accepted (and blocked) cross-venue pairs. */
 export const pairs = terminal.table("pairs", {

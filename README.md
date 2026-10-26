@@ -9,10 +9,12 @@ Information only, not financial advice. Not affiliated with Polymarket or Kalshi
 ## How it fits together
 
 ```
-worker (npm run worker) ──► venues: Kalshi, Polymarket (Gamma, CLOB, Data API), Polymarket US
-   │  sweep: list markets/events, match Kalshi ↔ Polymarket, store pairs
-   │  scan:  fetch order books, run every engine, store deals + receipts, heartbeats
-   │  alerts / digests / whales / settle
+match (npm run match, Railway cron every 6 h, only with GAPS_ENABLED=1) ──► venues, page by page
+   │  stream markets, index keys in Postgres, re-score only what changed, write pairs + gap_targets, exit
+worker (npm run worker) ──► venues: Kalshi, Polymarket (Gamma, CLOB, Data API), Polymarket US, SEC EDGAR
+   │  moves: big money moves (feed), alerts, daily email, settle, trader records
+   │  gaps:  (GAPS_ENABLED=1) books for gap_targets every 10 s, every engine, quarantine, deals + receipts
+   │  whales / settle
    ▼
 Postgres (schema "terminal", Drizzle)
    ▲
@@ -65,11 +67,13 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_WEBHOOK_SECRET` | web | `/api/whop/webhook` signature check |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | email backup alerts and daily summaries |
-| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | worker | LLM second check on unsure matches (optional, capped per month) |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | match | LLM second check on unsure matches (optional, capped per month; default $3) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
 | `*_RATE_PER_SEC` | worker | request budget per bucket |
-| `SWEEP_MS`, `SCAN_MS`, `FULL_SCAN_MS`, `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
+| `GAPS_ENABLED` | worker + match | `1` turns Price gaps on (the cron matcher and the worker's live scanner); default off |
+| `SWEEP_MIN_VOLUME_USD`, `SWEEP_MIN_OPEN_INTEREST` | match | activity floor: markets below it are not matched (default $100 24h volume on Polymarket, 100 open interest on Kalshi) |
+| `ALERT_MS`, `WHALE_MS`, `SETTLE_MS` | worker | cadence |
 | `LADDERS_ENABLED` | worker | `1` turns threshold ladders on; anything else (production: `0`) leaves them off |
 | `FEATURES_READY` | web + worker | comma list of live V2 features (feed, records, follows, alerts_push, alerts_email, daily_email, custom_rules, price_gaps); anything missing shows "Coming soon" and its worker job stays off. Default `feed,records,follows` |
 | `POSTS_ADMIN_EMAILS` | web | comma list of Whop account emails allowed to open `/admin/posts` |
@@ -84,8 +88,7 @@ is processed and not stored.
 
 | Job | Every | What |
 |---|---|---|
-| sweep | 5 min | List open markets and events on each venue (keeps the last good list if a venue fails), match Kalshi ↔ Polymarket and Kalshi ↔ Polymarket US, save pairs |
-| scan | 5 s | Refresh books for markets with live deals ("hot"); every 60 s refresh all of them. Run every engine, save deals, write a receipt the first time a deal is seen, mark deals inactive after 90 s unseen, write a heartbeat per venue |
+| gaps | 10 s | Only with `GAPS_ENABLED=1`. Re-reads `gap_targets` every 10 min; books only those markets (Kalshi batch orderbooks, 100 tickers per request; Polymarket `POST /books`, 500 tokens per request); runs every engine; quarantines deals that look too good or come from pairs whose rules differ; saves deals and receipts; marks deals inactive after 90 s unseen; a heartbeat per venue |
 | alerts | 5 s | Pro: push at once. Insidir: push within 60 s. Email backup for paid users without push (max 6 an hour) |
 | digests | 10 min | Daily summary email at 13:00 UTC for users who opted in (the free plan's alert) |
 | whales | 15 s | Polymarket trades over $10K |
@@ -115,12 +118,15 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
 1. Create a project with a **Postgres** database.
 2. Add a **web** service from this repo. `railway.json` sets the build (`npm run build`), the pre-deploy migration
    (`npm run db:migrate`), the start command and the `/api/health` health check. Attach your domain.
-3. Add a **worker** service from the same repo. In its Settings → Config-as-code, set the Railway config file to
+3. Price gaps only (when `GAPS_ENABLED=1`): add a **match** service from the same repo with the Railway config file
+   `/railway.match.json`. It runs `npm run match` on the cron schedule `17 */6 * * *` and exits; nothing runs between
+   runs. Set `DATABASE_URL`, `GAPS_ENABLED=1` and the matching variables on it.
+4. Add a **worker** service from the same repo. In its Settings → Config-as-code, set the Railway config file to
    `/railway.worker.json` (start command `npm run worker`, no domain, no health check). Without this the worker
    service picks up `railway.json`, whose start command overrides the dashboard and runs the web app instead, so no
    scan runs and the site shows "Live data paused, retrying".
-4. Set `DATABASE_URL` on both services (reference the Postgres service variable), and the variables above.
-5. **Whop:**
+5. Set `DATABASE_URL` on every service (reference the Postgres service variable), and the variables above.
+6. **Whop:**
    - Create an OAuth app. Its redirect URI is `https://YOUR_DOMAIN/auth/callback`.
    - Create two products, Insidir ($39/mo) and Pro ($99/mo). Set each product's redirect after purchase to
      `https://YOUR_DOMAIN/auth/login?next=/terminal`, so a buyer lands on the live Terminal.

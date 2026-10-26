@@ -19,6 +19,9 @@ export const NOISE_CHECKS_PER_POLL = 10;
 const POLY_PAGES = 6;
 const KALSHI_PAGES = 10;
 
+/** Market details for the given ids (lib/moves/directory.ts). */
+export type MarketLookup = (ids: string[]) => Promise<ReadonlyMap<string, VMarket>>;
+
 export interface MoveSources {
   polyTradesPage(offset: number): Promise<unknown>;
   /** The wallet's trades over the last day (for the noise checks). */
@@ -41,7 +44,8 @@ export class MovesPoller {
     return out;
   }
 
-  async pollPolymarket(now: number, info: ReadonlyMap<string, MarketInfo>): Promise<Move[]> {
+  /** `info` is a map, or a lookup called with the market ids of this poll's candidate moves (lib/moves/directory.ts). */
+  async pollPolymarket(now: number, infoOrLookup: ReadonlyMap<string, MarketInfo> | MarketLookup): Promise<Move[]> {
     for (let page = 0; page < POLY_PAGES; page++) {
       const raw = await this.src.polyTradesPage(page * 500);
       const fills = readPolymarketFills(raw);
@@ -50,7 +54,11 @@ export class MovesPoller {
       if (rows(raw).length < 500 || oldest < now - LOOKBACK_MS) break;
     }
     for (const [k, f] of this.polyFills) if (f.at < now - LOOKBACK_MS) this.polyFills.delete(k);
-    const candidates = polymarketMoves([...this.polyFills.values()], info);
+    const fills = [...this.polyFills.values()];
+    const info = typeof infoOrLookup === "function"
+      ? MovesPoller.infoFrom([...(await infoOrLookup([...new Set(polymarketMoves(fills, new Map()).map(m => m.marketId))])).values()])
+      : infoOrLookup;
+    const candidates = polymarketMoves(fills, info);
     const out: Move[] = [];
     let checks = 0;
     for (const m of candidates) {
@@ -69,17 +77,27 @@ export class MovesPoller {
     return out;
   }
 
-  async pollKalshi(now: number, markets: ReadonlyMap<string, VMarket>, info: ReadonlyMap<string, MarketInfo>): Promise<Move[]> {
+  /** `markets` is a map of known markets, or a lookup called with the tickers this poll's trades name. */
+  async pollKalshi(now: number, marketsOrLookup: ReadonlyMap<string, VMarket> | MarketLookup, infoIn?: ReadonlyMap<string, MarketInfo>): Promise<Move[]> {
     const since = this.kalshiSince ?? now - 15 * 60_000;
     const fills: Fill[] = [];
+    const pages: unknown[] = [];
     let cursor: string | undefined;
     for (let page = 0; page < KALSHI_PAGES; page++) {
       const raw = await this.src.kalshiTradesPage(Math.floor(since / 1000) - 5, cursor);
-      for (const f of readKalshiFills(raw, markets)) if (!this.kalshiSeen.has(f.id)) { this.kalshiSeen.set(f.id, f.at); fills.push(f); }
+      pages.push(raw);
       const next = isObject(raw) ? str(raw.cursor) : null;
       if (!next || next === cursor) break;
       cursor = next;
     }
+    let markets: ReadonlyMap<string, VMarket>;
+    if (typeof marketsOrLookup === "function") {
+      const tickers = new Set<string>();
+      for (const raw of pages) for (const t of rows(raw, ["trades"])) { const k = str(t.ticker); if (k) tickers.add(k); }
+      markets = tickers.size ? await marketsOrLookup([...tickers]) : new Map();
+    } else markets = marketsOrLookup;
+    const info = infoIn ?? MovesPoller.infoFrom([...markets.values()]);
+    for (const raw of pages) for (const f of readKalshiFills(raw, markets)) if (!this.kalshiSeen.has(f.id)) { this.kalshiSeen.set(f.id, f.at); fills.push(f); }
     this.kalshiSince = Math.max(since, ...fills.map(f => f.at));
     for (const [k, at] of this.kalshiSeen) if (at < now - 2 * 3_600_000) this.kalshiSeen.delete(k);
     return kalshiMoves(fills, info);

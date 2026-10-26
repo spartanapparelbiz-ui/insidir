@@ -508,6 +508,20 @@ export class PolymarketClient implements VenueClient {
     return out;
   }
 
+  /** Open events one keyset page at a time (100 events with their markets), normalised (lib/gaps/matcher.ts). */
+  async *eventPages(priority: Priority = "normal"): AsyncGenerator<Array<{ event: VEvent; markets: VMarket[] }>> {
+    let cursor: string | undefined;
+    for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
+      const params = { active: true, closed: false, archived: false, limit: GAMMA_EVENTS_PAGE_LIMIT, after_cursor: cursor };
+      const body = await this.gamma.json(`${this.gammaUrl}/events/keyset${qs(params)}`, { priority });
+      const got = rows(body, ["events"]);
+      yield got.map(e => readGammaEvent(e)).filter((x): x is { event: VEvent; markets: VMarket[] } => x !== null);
+      const next = body && typeof body === "object" && !Array.isArray(body) ? (body as JsonObject).next_cursor : undefined;
+      if (typeof next !== "string" || !next || got.length === 0) break;
+      cursor = next;
+    }
+  }
+
   private async eachEventsPage(onPage: (rawEvents: JsonObject[]) => void, priority: Priority): Promise<void> {
     let cursor: string | undefined;
     for (let page = 0; page < GAMMA_MAX_PAGES; page++) {

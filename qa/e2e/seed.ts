@@ -55,7 +55,7 @@ export function universe(now: number) {
   // A Kalshi-only multi-outcome set (all YES for 90¢).
   const ids = ["A", "B", "C"].map(x => `K-multi-${x}`);
   events.push({ venue: "kalshi", id: "EV-multi", title: "E2E fixture: Who wins the award?", category: "culture", marketIds: ids, mutuallyExclusive: true, exhaustive: true, closeTime: now + 15 * DAY });
-  for (const id of ids) add(market("kalshi", id, { eventId: "EV-multi", title: `E2E fixture: Who wins the award? ${id.slice(-1)}`, closeTime: now + 15 * DAY, category: "culture" }), book([L(0.29, 80)], [L(0.75, 80)], now));
+  for (const id of ids) add(market("kalshi", id, { eventId: "EV-multi", title: `E2E fixture: Who wins the award? ${id.slice(-1)}`, closeTime: now + 15 * DAY, category: "culture", volume24h: 2_000 }), book([L(0.29, 80)], [L(0.75, 80)], now));
   return { markets: m, events, pairs, books };
 }
 

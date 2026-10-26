@@ -7,3 +7,7 @@ export const laddersEnabled = (env: Readonly<Record<string, string | undefined>>
 
 /** Kinds that must never reach users right now. */
 export const hiddenKinds = (env: Readonly<Record<string, string | undefined>> = process.env): OppKind[] => (laddersEnabled(env) ? [] : ["ladder"]);
+
+/** Price gaps (the cron matcher and the worker's live scanner) stay off until GAPS_ENABLED=1: the feature is a Pro
+ *  extra with no Pro customer yet, and both parts cost money to run. */
+export const gapsEnabled = (env: Readonly<Record<string, string | undefined>> = process.env): boolean => env.GAPS_ENABLED === "1";

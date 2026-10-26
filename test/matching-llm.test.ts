@@ -93,8 +93,8 @@ describe("createOpenRouterConfirm", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
   it("reads env", () => {
-    expect(llmEnv({})).toEqual({ apiKey: null, model: DEFAULT_MODEL, monthlyCapUsd: 10 });
-    expect(llmEnv({ OPENROUTER_API_KEY: " sk ", OPENROUTER_MODEL: "google/gemini-2.0-flash-lite-001", MATCH_LLM_MONTHLY_USD: "3" })).toEqual({ apiKey: "sk", model: "google/gemini-2.0-flash-lite-001", monthlyCapUsd: 3 });
-    expect(llmEnv({ MATCH_LLM_MONTHLY_USD: "-1" }).monthlyCapUsd).toBe(10);
+    expect(llmEnv({})).toEqual({ apiKey: null, model: DEFAULT_MODEL, monthlyCapUsd: 3 });
+    expect(llmEnv({ OPENROUTER_API_KEY: " sk ", OPENROUTER_MODEL: "google/gemini-2.0-flash-lite-001", MATCH_LLM_MONTHLY_USD: "5" })).toEqual({ apiKey: "sk", model: "google/gemini-2.0-flash-lite-001", monthlyCapUsd: 5 });
+    expect(llmEnv({ MATCH_LLM_MONTHLY_USD: "-1" }).monthlyCapUsd).toBe(3);
   });
 });
