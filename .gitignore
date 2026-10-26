@@ -7,3 +7,4 @@ next-env.d.ts
 qa/e2e/.out/
 qa/reports/lighthouse-*.json
 qa/reports/audit.log
+__pycache__/
