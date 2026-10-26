@@ -70,14 +70,7 @@
 .lp-out { display: grid; gap: 2px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
 .lp-out b { color: var(--profit); }
 .lp-lock { font-weight: 700; }
-/* CSS-only entrance as each step scrolls into view, where the browser supports scroll-driven animation. */
-@keyframes lp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@supports (animation-timeline: view()) {
-  .lp-step, .lp-out { animation: lp-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
-  .lp-step:nth-child(2) { animation-range: entry 10% entry 70%; }
-  .lp-step:nth-child(3) { animation-range: entry 20% entry 80%; }
-}
-@media (prefers-reduced-motion: reduce) { .lp-step, .lp-out { animation: none !important; opacity: 1; transform: none; } }
+/* No scroll-triggered fade: the steps are always fully readable (an off-screen fade sits below AA contrast). */
 
 /* 5. receipts */
 .lp-follow { font-size: 17px; }

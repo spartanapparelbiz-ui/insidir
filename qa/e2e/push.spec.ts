@@ -83,12 +83,18 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
 
     // The real service worker shows it.
     const cdp = await context.newCDPSession(page);
-    const regs: Array<{ registrationId: string; scopeURL: string }> = [];
-    cdp.on("ServiceWorker.workerRegistrationUpdated", e => regs.push(...(e as { registrations: Array<{ registrationId: string; scopeURL: string }> }).registrations));
+    type Reg = { registrationId: string; scopeURL: string; isDeleted: boolean };
+    const regs = new Map<string, Reg>();
+    cdp.on("ServiceWorker.workerRegistrationUpdated", e => { for (const r of (e as { registrations: Reg[] }).registrations) regs.set(r.registrationId, r); });
     await cdp.send("ServiceWorker.enable");
-    await expect.poll(() => regs.length).toBeGreaterThan(0);
-    await cdp.send("ServiceWorker.deliverPushMessage", { origin: APP_URL, registrationId: regs[0]!.registrationId, data: JSON.stringify(payload) });
-    await expect.poll(() => page.evaluate(async () => (await (await navigator.serviceWorker.ready).getNotifications()).map(n => n.title))).toContain(payload.title);
+    // The live registration for this site (an earlier, replaced one can still be listed).
+    const live = () => [...regs.values()].filter(r => !r.isDeleted && r.scopeURL === `${APP_URL}/`).at(-1);
+    await expect.poll(() => Boolean(live())).toBe(true);
+    const shown = () => page.evaluate(async () => (await (await navigator.serviceWorker.ready).getNotifications()).map(n => n.title));
+    await expect(async () => {
+      await cdp.send("ServiceWorker.deliverPushMessage", { origin: APP_URL, registrationId: live()!.registrationId, data: JSON.stringify(payload) });
+      await expect.poll(shown, { timeout: 3_000 }).toContain(payload.title);
+    }).toPass({ timeout: 20_000 });
 
     // Opening the alert records alert_opened and lands on the deal.
     await page.goto(payload.url);
