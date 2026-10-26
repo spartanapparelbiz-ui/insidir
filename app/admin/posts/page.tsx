@@ -9,6 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { dollars, onWhat } from "@/lib/moves/copy";
 import { postCaption, postsAllowed } from "@/lib/moves/posts";
 import { listMoves, recordsFor } from "@/lib/moves/store";
+import "../../app.css";
 import "../../account.css";
 
 export const dynamic = "force-dynamic";

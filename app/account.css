@@ -65,5 +65,5 @@
 .post__body { display: grid; gap: 16px; align-content: start; justify-items: start; }
 .post__h { font-weight: 800; font-size: var(--t20); }
 .post__caption { display: grid; gap: 8px; width: 100%; }
-.post__text { width: 100%; min-height: 140px; resize: vertical; font-family: var(--font); line-height: 1.4; padding: 12px; }
+.post__text { width: 100%; min-height: 200px; resize: vertical; font-family: var(--font); line-height: 1.4; padding: 12px; }
 @media (min-width: 800px) { .post { grid-template-columns: 270px minmax(0, 1fr); } }

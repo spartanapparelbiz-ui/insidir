@@ -28,6 +28,9 @@ export function moveCardText(m: Move, record: TraderRecord | null) {
 export async function moveCardImage(m: Move, record: TraderRecord | null): Promise<ImageResponse> {
   const t = moveCardText(m, record);
   const won = m.result === "won";
+  // The card's inner width is 744px; Plus Jakarta 800 digits run about 0.64em wide.
+  const amountSize = Math.min(180, Math.floor(744 / (t.amount.length * 0.64)));
+  const onSize = t.on.length > 60 ? 56 : t.on.length > 32 ? 64 : 76;
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", background: C.soft, color: C.text, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 88, fontFamily: "Plus Jakarta Sans" }}>
@@ -37,13 +40,13 @@ export async function moveCardImage(m: Move, record: TraderRecord | null): Promi
             {m.tab === "sports" ? (m.league && m.league !== "other" ? m.league : "Sports") : "Markets"}
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", background: C.bg, borderRadius: 48, padding: 72, gap: 36, boxShadow: "0 2px 4px rgba(11,11,18,.06), 0 16px 48px rgba(11,11,18,.08)" }}>
-          <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: C.muted }}>{t.who}</div>
-          <div style={{ display: "flex", fontSize: 168, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{t.amount}</div>
-          <div style={{ display: "flex", fontSize: 60, fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.02em" }}>{t.on}</div>
-          {t.pays ? <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: C.money, background: C.moneyTint, padding: "20px 28px", borderRadius: 24 }}>{t.pays}</div> : null}
+        <div style={{ display: "flex", flexDirection: "column", background: C.bg, borderRadius: 56, padding: 80, gap: 44, boxShadow: "0 2px 4px rgba(11,11,18,.06), 0 16px 48px rgba(11,11,18,.08)" }}>
+          <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: C.muted }}>{t.who}</div>
+          <div style={{ display: "flex", fontSize: amountSize, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{t.amount}</div>
+          <div style={{ display: "flex", fontSize: onSize, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{t.on}</div>
+          {t.pays ? <div style={{ display: "flex", fontSize: 46, fontWeight: 700, color: C.money, background: C.moneyTint, padding: "24px 32px", borderRadius: 24 }}>{t.pays}</div> : null}
           <div style={{ display: "flex", height: 2, background: C.line }} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 36, fontWeight: 700, color: C.muted }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 42, fontWeight: 700, color: C.muted }}>
             {t.record ? <div style={{ display: "flex", color: C.text }}>{t.record}</div> : null}
             <div style={{ display: "flex" }}>{t.when}</div>
           </div>
