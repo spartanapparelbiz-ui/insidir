@@ -5,4 +5,5 @@ next-env.d.ts
 .env*.local
 .env
 qa/e2e/.out/
-qa/reports/*.json
+qa/reports/lighthouse-*.json
+qa/reports/audit.log
