@@ -5,15 +5,10 @@
 
 .lp { padding-bottom: 24px; }
 
-/* ---------- 1. the split hero ---------- */
+/* ---------- 1. the hero: headline, then the split (the centrepiece, full width), then the pitch ---------- */
 .hero { display: grid; gap: 16px; padding: 24px 0 0; }
-.beat { display: flex; align-items: center; gap: 10px; color: var(--steel); font-size: var(--t14); line-height: 1.4; min-height: 20px; }
-.beat__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper); flex: none; }
-.beat--paused .beat__dot { background: var(--steel); }
-@media (prefers-reduced-motion: no-preference) {
-  .beat:not(.beat--paused) .beat__dot { animation: beat 1.6s ease-in-out infinite; }
-}
-@keyframes beat { 50% { opacity: .25; } }
+.hero__h { font-size: var(--t32); line-height: 1.1; text-wrap: balance; }
+.hero__deal-wrap { margin: 8px 0 0; display: grid; gap: 12px; }
 
 .split { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "a b" "seam seam"; gap: 2px; border-radius: 0; }
 .split__side--a { grid-area: a; }
@@ -24,40 +19,36 @@
 .split__price { display: grid; gap: 0; min-width: 0; }
 .split__dir { font: 500 var(--t17)/1.3 var(--sans); color: var(--paper); }
 .split__num { font: 700 var(--t72)/1 var(--mono); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.split__price--none { color: var(--steel); font-size: var(--t17); padding-top: 8px; }
 .split__seam { background: var(--ink); padding: 16px 0 0; display: grid; gap: 8px; }
 .split__math { font-size: var(--t17); line-height: 1.4; color: var(--paper); }
 .split__profit { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
 /* the profit: Paper, mono, bold, the largest number in the seam (emphasis by size, never colour) */
 .split__win { font: 700 var(--t48)/1 var(--mono); color: var(--paper); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+/* not a deal: the same place, in grey */
+.split__win--none { color: var(--steel); }
 .split__per { color: var(--steel); font-size: var(--t14); }
-.split--empty .split__math { color: var(--steel); }
+/* paused: the last known prices, greyed, never empty boxes */
+.split--paused .split__num, .split--paused .split__dir, .split--paused .split__win, .split--paused .split__math { color: var(--dim); }
+.hero__updated { color: var(--paper); }
 @media (max-width: 380px) { .split__num { font-size: var(--t48); } }
 
-.hero__deal { color: var(--steel); font-size: var(--t14); line-height: 1.5; max-width: 60ch; }
+.hero__deal { color: var(--steel); font-size: var(--t14); line-height: 1.5; max-width: 72ch; }
 .hero__title { color: var(--paper); font-weight: 500; }
-/* the pitch: its own group, 32px under the live deal */
-.hero__copy { display: grid; gap: 16px; padding-top: 16px; }
-.hero__h { font-size: var(--t32); line-height: 1.12; max-width: 18ch; }
-.hero__sub { color: var(--steel); font-size: var(--t17); max-width: 52ch; }
-.hero__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 8px; }
+.hero__sub { color: var(--steel); font-size: var(--t17); max-width: 56ch; padding-top: 8px; }
+.hero__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .hero__note { color: var(--steel); font-size: var(--t14); }
 
 @media (min-width: 900px) {
-  .hero { padding-top: 24px; gap: 20px; }
-  .split { grid-template-columns: 1fr minmax(300px, 340px) 1fr; grid-template-areas: "a seam b"; }
-  .hero { padding-top: 32px; gap: 24px; }
+  .hero { padding-top: 32px; gap: 20px; }
+  .hero__h { font-size: var(--t72); line-height: 1; letter-spacing: -0.03em; }
+  .hero__deal-wrap { margin-top: 12px; }
+  .split { grid-template-columns: 1fr minmax(300px, 360px) 1fr; grid-template-areas: "a seam b"; }
   .split__side { padding: 32px; gap: 8px; }
   .split__seam { padding: 32px 24px; align-content: center; text-align: center; justify-items: center; }
   .split__num { font-size: var(--t120); }
-  .split__math { font-size: var(--t17); }
   .split__win { font-size: var(--t72); }
   .split__profit { justify-content: center; flex-direction: column; align-items: center; }
-  /* the pitch fills the width: headline left, sub and CTA right, bottoms aligned */
-  .hero__copy { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: 1fr auto; grid-template-areas: "h sub" "h cta"; column-gap: 48px; row-gap: 16px; padding-top: 24px; }
-  .hero__h { grid-area: h; align-self: end; font-size: var(--t48); line-height: 1.05; max-width: 20ch; }
-  .hero__sub { grid-area: sub; align-self: end; font-size: var(--t17); line-height: 1.5; }
-  .hero__cta { grid-area: cta; padding-top: 0; }
+  .hero__sub { font-size: var(--t22); line-height: 1.4; }
 }
 @media (min-width: 900px) and (max-width: 1180px) { .split__num { font-size: var(--t72); } }
 
@@ -128,7 +119,7 @@
   .rcpts__head { display: grid; gap: 12px; padding: 0 16px; color: var(--steel); font-size: var(--t14); }
   .rcpts__head span:nth-child(4), .rcpts__head span:nth-child(5) { text-align: right; }
 }
-.lp-week { display: grid; gap: 16px; padding-top: 48px; }
+.lp-week { display: grid; gap: 16px; padding-top: 32px; }
 .lp-week__h { font-size: var(--t22); }
 
 /* ---------- 5. safety lights ---------- */
