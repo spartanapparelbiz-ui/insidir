@@ -41,7 +41,7 @@ The scripts refuse production unless the owner sets their `…_ALLOW_PRODUCTION=
 2. Developer → OAuth app: redirect URI `https://YOUR_STAGING_DOMAIN/auth/callback`, scopes `openid profile email` only.
 3. `WHOP_SANDBOX_API_KEY=… WHOP_SANDBOX_COMPANY_ID=biz_… npx tsx scripts/whop-setup.ts` creates Insidir ($39 / 30 days)
    and Insidir Pro ($99 / 30 days) and prints `WHOP_SANDBOX_PRODUCT_*` and `WHOP_SANDBOX_PLAN_*`.
-4. Developer → Webhooks → Create: `https://YOUR_STAGING_DOMAIN/api/webhooks/whop`, events `membership.activated`,
+4. Developer → Webhooks → Create: `https://YOUR_STAGING_DOMAIN/api/billing/webhook`, events `membership.activated`,
    `membership.updated`, `payment.failed`, `refund.created`, `dispute.created`, API version `v1`. Put the `ws_…`
    secret in `WHOP_SANDBOX_WEBHOOK_SECRET`.
 5. Set `WHOP_ALERT_EMAIL`, `RESEND_API_KEY`, `EMAIL_FROM` and the sandbox variables on the web **and** worker services.
@@ -61,8 +61,10 @@ Each item needs the owner. The first few create real things on Whop.
 - [ ] **API key** on whop.com → Developer, with the permissions the sandbox key ended up needing → `WHOP_API_KEY`; `WHOP_COMPANY_ID`.
 - [ ] **OAuth app**: redirect URI `https://insidir.com/auth/callback` exactly, scopes `openid profile email` →
       `WHOP_CLIENT_ID` (and `WHOP_CLIENT_SECRET` if the app has one).
-- [ ] **Webhook** to `https://insidir.com/api/webhooks/whop`, the five events above, API version `v1` →
-      `WHOP_WEBHOOK_SECRET`. Delete the old webhook that points at `/api/whop/webhook` (that route is gone).
+- [ ] **Webhook** to `https://insidir.com/api/billing/webhook`, the five events above, API version `v1` →
+      `WHOP_WEBHOOK_SECRET`. Create it before this deploy goes out: the old `/api/whop/webhook` route is gone, so
+      the old webhook only gets 404s from then on. Delete it once the new one answers 200 to a test event.
+      No URL on insidir.com contains "whop" (test/routes.test.ts checks).
 - [ ] `WHOP_ALERT_EMAIL` is your address, and `RESEND_API_KEY` / `EMAIL_FROM` send from a verified domain.
 - [ ] All of the above are set on **both** Railway services (the worker checks access before paid alerts).
 - [ ] Set `WHOP_ENV=production` on both services and redeploy. `WHOP_EMBED_CHECKOUT` can stay unset (on in production).

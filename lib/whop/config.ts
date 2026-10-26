@@ -6,7 +6,7 @@
  *   WHOP_API_KEY                            WHOP_SANDBOX_API_KEY            account API key, server only
  *   WHOP_COMPANY_ID                         WHOP_SANDBOX_COMPANY_ID         biz_…
  *   WHOP_CLIENT_ID, WHOP_CLIENT_SECRET      WHOP_SANDBOX_CLIENT_ID, …       OAuth app (app_…)
- *   WHOP_WEBHOOK_SECRET                     WHOP_SANDBOX_WEBHOOK_SECRET     ws_… for /api/webhooks/whop
+ *   WHOP_WEBHOOK_SECRET                     WHOP_SANDBOX_WEBHOOK_SECRET     ws_… for /api/billing/webhook
  *   WHOP_PRODUCT_INSIDIR, WHOP_PRODUCT_PRO  WHOP_SANDBOX_PRODUCT_…          prod_… that grant each plan
  *   WHOP_PLAN_INSIDIR, WHOP_PLAN_PRO        WHOP_SANDBOX_PLAN_…             plan_… sold at checkout
  *

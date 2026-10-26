@@ -67,7 +67,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_ENV` | both | `sandbox` (default) or `production`: picks which set of Whop variables below is used |
 | `WHOP_API_KEY`, `WHOP_COMPANY_ID`, `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET` (and `WHOP_SANDBOX_…`) | both | access checks, memberships, checkout; sign-in |
 | `WHOP_PRODUCT_INSIDIR`, `WHOP_PRODUCT_PRO`, `WHOP_PLAN_INSIDIR`, `WHOP_PLAN_PRO` (and `WHOP_SANDBOX_…`) | both | which product grants which plan; what checkout sells |
-| `WHOP_WEBHOOK_SECRET` (and `WHOP_SANDBOX_…`) | web | `/api/webhooks/whop` signature check |
+| `WHOP_WEBHOOK_SECRET` (and `WHOP_SANDBOX_…`) | web | `/api/billing/webhook` signature check |
 | `WHOP_ALERT_EMAIL` | web | where dispute alerts go |
 | `WHOP_EMBED_CHECKOUT`, `WHOP_AFFILIATES_ENABLED`, `WHOP_AFFILIATE_*_PERCENT` | web | embedded checkout on/off; "Refer and earn" in Settings |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
@@ -127,7 +127,7 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
 5. **Whop:** follow [`docs/WHOP-LAUNCH.md`](docs/WHOP-LAUNCH.md). In short, for each environment (sandbox first):
    - Create an OAuth app with redirect URI `https://YOUR_DOMAIN/auth/callback` and scopes `openid profile email`.
    - `npx tsx scripts/whop-setup.ts` creates Insidir ($39/mo) and Insidir Pro ($99/mo) and prints their ids.
-   - Add a webhook to `https://YOUR_DOMAIN/api/webhooks/whop` for `membership.activated`, `membership.updated`,
+   - Add a webhook to `https://YOUR_DOMAIN/api/billing/webhook` for `membership.activated`, `membership.updated`,
      `payment.failed`, `refund.created` and `dispute.created`. Put its `ws_…` secret in `WHOP_WEBHOOK_SECRET`
      (or `WHOP_SANDBOX_WEBHOOK_SECRET`).
    - `WHOP_ENV=production` switches everything to the live set at once.

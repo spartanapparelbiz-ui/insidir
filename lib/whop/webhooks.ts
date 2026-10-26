@@ -1,5 +1,5 @@
 /* What each Whop webhook does. Pure apart from the injected `deps`, so every branch is unit-tested
- * (test/whop-webhooks.test.ts). The route (app/api/webhooks/whop) verifies the signature, logs the event once per
+ * (test/whop-webhooks.test.ts). The route (app/api/billing/webhook) verifies the signature, logs the event once per
  * webhook-id and calls this. Throwing means "not done": the event is marked failed, the route answers 500, and Whop
  * retries it (each retry carries the same webhook-id, and a failed id is processed again).
  *

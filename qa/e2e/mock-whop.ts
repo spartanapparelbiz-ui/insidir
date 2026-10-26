@@ -57,7 +57,7 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
     const payload = JSON.stringify({ id, type, api_version: "v1", timestamp: new Date().toISOString(), account_id: "biz_e2e", data });
     const ts = String(Math.floor(Date.now() / 1000));
     const sig = sign(id, ts, payload, opts.badSignature ? "ws_not_the_secret" : o.webhookSecret);
-    const r = await fetch(`${o.appUrl}/api/webhooks/whop`, { method: "POST", body: payload,
+    const r = await fetch(`${o.appUrl}/api/billing/webhook`, { method: "POST", body: payload,
       headers: { "content-type": "application/json", "webhook-id": id, "webhook-timestamp": ts, "webhook-signature": `v1,${sig}` } });
     const d = { id, type, status: r.status, body: await r.text() };
     deliveries.push(d);
