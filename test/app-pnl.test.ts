@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isWallet, kalshiPnlFromCsv, money, parseCsv, polymarketPnlFromRaw, readKalshiCsv } from "@/lib/pnl";
+import { isWallet, kalshiPnl, kalshiPnlFromCsv, polymarketPnlFromRaw } from "@/lib/pnl";
 
 const W = "0x1111111111111111111111111111111111111111";
 
@@ -50,31 +50,20 @@ describe("P&L: Polymarket wallet", () => {
 });
 
 describe("P&L: Kalshi CSV", () => {
-  it("parses quoted CSV with a BOM and CRLF", () => {
-    expect(parseCsv('﻿a,b\r\n"x, y","say ""hi"""\r\n\r\n1,2')).toEqual([["a", "b"], ["x, y", 'say "hi"'], ["1", "2"]]);
-  });
-
-  it("reads money in dollars, cents and accounting negatives", () => {
-    expect(money("$1,234.50")).toBe(1234.5);
-    expect(money("(12.00)")).toBe(-12);
-    expect(money("45¢")).toBeCloseTo(0.45, 12);
-    expect(money("")).toBeNull();
-    expect(money("n/a")).toBeNull();
-  });
-
   it("computes realized P&L from trades and settlements (average cost), prices in cents", () => {
     const csv = [
-      "Ticker,Market Title,Type,Side,Contracts,Price,Fees,Created",
-      "KXFED-25DEC-T4.00,Fed above 4%?,Buy,Yes,100,40,0.84,2025-10-01",
-      "KXFED-25DEC-T4.00,Fed above 4%?,Sell,Yes,40,55,0.70,2025-10-02",
-      "KXFED-25DEC-T4.00,Fed above 4%?,Settlement,Yes,60,100,0,2025-12-10",
-      "KXBTC-25OCT-B100,BTC above 100k?,Buy,No,10,$0.30,0.15,2025-10-03",
-      ",,,,,,,",
+      "\uFEFFTicker,Market Title,Type,Side,Contracts,Price,Fees,Revenue,Created",
+      "KXFED-25DEC-T4.00,\"Fed above 4%, December?\",Buy,Yes,100,40,0.84,,2025-10-01",
+      "KXFED-25DEC-T4.00,\"Fed above 4%, December?\",Sell,Yes,40,55,0.70,,2025-10-02",
+      "KXFED-25DEC-T4.00,\"Fed above 4%, December?\",Settlement,,60,,0,$60.00,2025-12-10",
+      "KXBTC-25OCT-B100,BTC above 100k?,Buy,No,10,$0.30,0.15,,2025-10-03",
+      ",,,,,,,,",
     ].join("\n");
     const { summary, error } = kalshiPnlFromCsv(csv);
     expect(error).toBeNull();
     if (!summary) return;
     const fed = summary.markets.find(m => m.key === "KXFED-25DEC-T4.00");
+    expect(fed?.title).toBe("Fed above 4%, December?");
     // Cost 40; sell 40 @ .55 = 22 − 16 cost − .70 fee = 5.30; settle 60 @ $1 = 60 − 24 cost = 36; buy fee −.84 → 40.46
     expect(fed?.realized).toBeCloseTo(40.46, 9);
     expect(fed?.openContracts).toBe(0);
@@ -93,8 +82,18 @@ describe("P&L: Kalshi CSV", () => {
     expect(summary?.markets.find(m => m.key === "A")?.realized).toBeCloseTo(10, 9);
   });
 
-  it("explains a file without a ticker column", () => {
-    expect(readKalshiCsv("foo,bar\n1,2").error).toMatch(/ticker/);
+  it("explains a file without a ticker column, or an empty file", () => {
+    expect(kalshiPnlFromCsv("foo,bar\n1,2").error).toMatch(/ticker/);
     expect(kalshiPnlFromCsv("").error).toMatch(/empty/);
+  });
+
+  it("a settlement closes every side held in the market", () => {
+    const s = kalshiPnl([
+      { ticker: "T", title: null, kind: "buy", side: "yes", contracts: 10, price: 0.4, amount: null, fee: 0, pnl: null },
+      { ticker: "T", title: null, kind: "buy", side: "no", contracts: 5, price: 0.5, amount: null, fee: 0, pnl: null },
+      { ticker: "T", title: null, kind: "settlement", side: null, contracts: null, price: null, amount: 10, fee: 0, pnl: null },
+    ]);
+    expect(s.realized).toBeCloseTo(10 - 4 - 2.5, 9);
+    expect(s.openPositions).toBe(0);
   });
 });

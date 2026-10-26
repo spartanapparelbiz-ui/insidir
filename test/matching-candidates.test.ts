@@ -57,6 +57,12 @@ describe("scorePair: never the same market", () => {
   it("same strike measured at a different time of day", () => {
     expect(score(kBtc100, pBtc100Noon).conflicts).toContain("different times of day");
   });
+  it("only one title states the time: the rules' time decides", () => {
+    const untimed = { ...pBtc100, id: "untimed", title: "Will Bitcoin be above $100,000 on November 5?" };
+    expect(score(kBtc100, untimed).decision).toBe("accept"); // both rules say 5 PM ET
+    const noon = { ...untimed, rules: untimed.rules.replace("5:00 PM ET", "12:00 PM ET") };
+    expect(score(kBtc100, noon).conflicts).toContain("measured at different times of day");
+  });
   it("weather strikes 60 vs 62", () => {
     expect(score(kWx60, pWx62).decision).toBe("reject");
   });
@@ -92,6 +98,24 @@ describe("scorePair: never the same market", () => {
     const a = mk("kalshi", "a", { title: "Will Trump say 'tariff' during the Nov 4 rally?" });
     const b = mk("polymarket", "b", { title: "Will Trump say 'crypto' during the Nov 4 rally?" });
     expect(score(a, b).decision).toBe("reject");
+  });
+});
+
+describe("orientation from label words", () => {
+  it("soccer outcome markets: the label's team before the win verb is the same side", () => {
+    const k = mk("kalshi", "k", { title: "Liverpool vs Arsenal Winner?", yesLabel: "Liverpool", noLabel: "Liverpool", category: "sports", rules: "Match scheduled for Nov 7, 2026." });
+    const same = mk("polymarket", "p1", { title: "Will Liverpool beat Arsenal on November 7?", category: "sports", rules: "Match scheduled for November 7, 2026." });
+    const other = mk("polymarket", "p2", { title: "Will Arsenal beat Liverpool on November 7?", category: "sports", rules: "Match scheduled for November 7, 2026." });
+    expect(score(k, same).orientation).toBe("same");
+    expect(score(k, other).orientation).toBe("unknown");
+    expect(score(k, other).decision).not.toBe("accept");
+  });
+  it("a one-word surname label in politics", () => {
+    const k = mk("kalshi", "k", { title: "Who will win the 2027 Kentucky governor race?", yesLabel: "Halvorsen", noLabel: "Halvorsen", category: "politics", closeTime: at(2027, 11, 3) });
+    const p = mk("polymarket", "p", { title: "Will Erik Halvorsen win the 2027 Kentucky governor race?", category: "politics", closeTime: at(2027, 11, 3) });
+    const s = score(k, p);
+    expect(s.orientation).toBe("same");
+    expect(s.decision).toBe("accept");
   });
 });
 

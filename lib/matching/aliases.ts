@@ -254,6 +254,7 @@ export const WORD_MAP: Readonly<Record<string, string>> = {
   degree: "deg", degrees: "deg", fahrenheit: "f",
   pts: "points", point: "points",
   nominee: "nomination", nominated: "nomination",
+  presidential: "president", presidents: "president",
 };
 
 /** Groups of mutually exclusive condition words. A market that says one and a market that says another from the
@@ -262,7 +263,7 @@ export const WORD_MAP: Readonly<Record<string, string>> = {
 export const CONFLICT_GROUPS: ReadonlyArray<readonly string[]> = [
   ["democratic", "republican", "independent", "libertarian", "green"],
   ["cut", "hike", "hold"],
-  ["house", "senate", "governor", "mayor", "president", "presidential"],
+  ["house", "senate", "governor", "mayor", "president"],
   ["men", "women", "womens", "mens"],
   ["popular", "electoral"],
   ["primary", "general"],

@@ -6,6 +6,7 @@
  * LLM instead). Pure. */
 import type { VMarket } from "@/lib/types";
 import {
+  WIN_VERBS,
   compatibleDates,
   entityKeys,
   extractEntities,
@@ -235,6 +236,16 @@ export function hardConflicts(ea: Entities, eb: Entities): string[] {
   return out;
 }
 
+/** A YES label's words all appear in the other market's plain-Yes title, before its win verb if it has one
+ *  ("Liverpool" vs "Will Liverpool beat Arsenal?" is the same side; vs "Will Arsenal beat Liverpool?" it is not). */
+function labelCovered(s: Entities["yesSubject"], other: Entities): boolean {
+  if (!s || s.text.length === 0) return false;
+  const tt = other.titleTokens;
+  if (!s.text.every(t => tt.includes(t))) return false;
+  const verb = tt.findIndex(t => WIN_VERBS.has(t));
+  return verb < 0 || s.text.every(t => tt.indexOf(t) < verb);
+}
+
 /** Which side of B matches YES on A. */
 export function orient(ea: Entities, eb: Entities): { orientation: Orientation; conflict: string | null; reason: string } {
   // Subjects (teams, people).
@@ -258,10 +269,10 @@ export function orient(ea: Entities, eb: Entities): { orientation: Orientation; 
     // A plain "Yes" on a market about exactly that one entity is the same side ("Will Vance win?").
     const otherIds = [...other.teams.map(t => `team:${t}`), ...other.people.map(p => `person:${p}`)];
     if (other.genericYes && otherIds.length === 1 && named.ids.includes(otherIds[0]!)) subj = "same";
+    else if (other.genericYes && labelCovered(named, other)) subj = "same";
     else subj = null;
   } else if (sa?.text.length || sb?.text.length) {
-    const covered = (s: typeof sa, other: Entities) => !!s && s.text.length > 0 && s.text.every(t => other.tokens.includes(t) || (other.yesSubject?.text ?? []).includes(t));
-    if (covered(sa, eb) || covered(sb, ea)) subj = "same";
+    if ((eb.genericYes && labelCovered(sa, eb)) || (ea.genericYes && labelCovered(sb, ea))) subj = "same";
   }
   // Threshold direction.
   let dir: Orientation | null = null;
@@ -354,7 +365,15 @@ export function scorePair(pa: MarketProfile, pb: MarketProfile, cfg: MatchConfig
     caps.push("only one market states a number");
   }
   if ((ea.thresholds.length > 0) !== (eb.thresholds.length > 0) && qa.length && qb.length) caps.push("only one market states a direction (above/below)");
-  if ((ea.times.length > 0) !== (eb.times.length > 0)) caps.push("only one title states a time of day");
+  if ((ea.times.length > 0) !== (eb.times.length > 0)) {
+    // Only one title states a time: fall back to the times in the rules.
+    const ta = ea.times.length ? ea.times : ea.ruleTimes;
+    const tb = eb.times.length ? eb.times : eb.ruleTimes;
+    if (ta.length && tb.length && ta.some(x => tb.some(y => sameTime(x, y)))) reasons.push("same time of day (title and rules)");
+    else if (ta.length && tb.length && (ea.type === "threshold" || eb.type === "threshold") && (ea.assets.length || eb.assets.length))
+      conflicts.push("measured at different times of day");
+    else caps.push("only one title states a time of day");
+  }
   if ((ea.quotes.length > 0) !== (eb.quotes.length > 0)) caps.push("only one title quotes a word");
   if ((ea.counters.length > 0) !== (eb.counters.length > 0)) caps.push("only one title states a week or game number");
 

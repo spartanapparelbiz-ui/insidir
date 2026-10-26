@@ -18,7 +18,7 @@ import { alertText, digestDue, digestRows, dueAlerts } from "@/lib/alerts/fanout
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
-import { createOpenRouterConfirm, llmEnv, matchMarkets } from "@/lib/matching";
+import { createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets } from "@/lib/matching";
 import { storedOpps } from "@/lib/queries";
 import { marketsToBook, scan, type Universe } from "@/lib/scanner";
 import { pct, usd } from "@/lib/format";
@@ -64,7 +64,7 @@ async function sweep(clients: Record<Venue, VenueClient>, state: State): Promise
   const kalshi = byVenue.get("kalshi") ?? [];
   const env = llmEnv(process.env);
   const deps = {
-    cache: dbMatchCache(db), overrides: await loadOverrides(db), now: Date.now(),
+    cache: dbMatchCache(db), overrides: await loadOverrides(db), now: Date.now(), config: matchConfigFromEnv(process.env),
     llm: env.apiKey ? createOpenRouterConfirm({ apiKey: env.apiKey, model: env.model, monthlyCapUsd: env.monthlyCapUsd, usage: dbUsageStore(db), now: () => Date.now(), appUrl: appUrl() }) : undefined,
   };
   const pairs: MarketPair[] = [];

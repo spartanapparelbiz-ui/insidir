@@ -1,18 +1,17 @@
 /* P&L from the user's own public records: a Polymarket wallet's positions and history (public Data API, read
  * through lib/exchanges/polymarket.ts) and a Kalshi account-history CSV the user downloads and uploads (never API
- * keys). The parsers and the totals are pure; only fetchPolymarketPnl does I/O. It shows the user's own numbers and
+ * keys), parsed by lib/exchanges/kalshi-csv.ts. The parsers and the totals are pure; only fetchPolymarketPnl does I/O. It shows the user's own numbers and
  * nothing else: no suggestions.
  *
  * Realized P&L is cash out minus cash in, using average cost for what is still held:
  *   per market, realized = (sells + redemptions + merges + rewards) − (buys + splits) − fees + cost basis still held.
  * Open positions are valued at the venue's current price when it gives one (Polymarket); Kalshi's CSV has no
  * current prices, so open Kalshi positions show their cost. */
+import { parseKalshiCsv, type KalshiCsvResult, type KalshiCsvSettlement } from "./exchanges/kalshi-csv";
 import { PolymarketClient, readActivity, readPositions, type PolymarketActivity, type PolymarketPosition } from "./exchanges/polymarket";
 
 /** Largest Kalshi CSV accepted, in characters. */
 export const MAX_CSV_CHARS = 5_000_000;
-/** Largest number of CSV rows read. */
-export const MAX_CSV_ROWS = 50_000;
 /** History pages read for a wallet (500 rows each). */
 export const ACTIVITY_MAX_PAGES = 20;
 /** Positions smaller than this many contracts are treated as closed (dust). */
@@ -125,134 +124,60 @@ export async function fetchPolymarketPnl(wallet: string, client = new Polymarket
 
 /* ---------- Kalshi CSV ---------- */
 
-/** RFC 4180 CSV: quoted fields, doubled quotes, CRLF or LF, a leading BOM. */
-export function parseCsv(text: string, maxRows = MAX_CSV_ROWS): string[][] {
-  const out: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  const s = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (quoted) {
-      if (c === '"') { if (s[i + 1] === '"') { field += '"'; i++; } else quoted = false; }
-      else field += c;
-      continue;
-    }
-    if (c === '"') quoted = true;
-    else if (c === ",") { row.push(field); field = ""; }
-    else if (c === "\n" || c === "\r") {
-      if (c === "\r" && s[i + 1] === "\n") i++;
-      row.push(field); field = "";
-      if (row.some(f => f.trim() !== "")) out.push(row);
-      row = [];
-      if (out.length > maxRows) break;
-    } else field += c;
-  }
-  if (field !== "" || row.length) { row.push(field); if (row.some(f => f.trim() !== "")) out.push(row); }
-  return out;
-}
-
-const norm = (h: string): string => h.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-/** Header aliases for each field (normalised: lower case, letters and digits only). Kalshi's export format is not
- *  documented publicly; these cover the names seen in its trade, settlement and account-history downloads. */
-export const KALSHI_COLUMNS = {
-  ticker: ["ticker", "marketticker", "market", "contractticker", "markettickerid"],
-  title: ["title", "markettitle", "eventtitle", "event", "description", "marketname"],
-  type: ["type", "transactiontype", "activitytype", "kind", "category"],
-  action: ["action", "buysell", "tradeaction", "ordertype", "orderaction"],
-  side: ["side", "direction", "position", "outcome", "contractside"],
-  contracts: ["contracts", "count", "quantity", "qty", "size", "filledcount", "contractcount"],
-  price: ["price", "averageprice", "avgprice", "fillprice", "pricecents", "priceperc", "yesprice", "tradeprice"],
-  amount: ["amount", "total", "totalcost", "cost", "value", "proceeds", "cash", "revenue", "realizedrevenue", "payout", "notional"],
-  fee: ["fee", "fees", "tradingfee", "tradingfees", "feecost", "feescost"],
-  pnl: ["realizedpnl", "realizedprofit", "pnl", "profit", "profitloss", "realizedprofitloss", "netprofit"],
-} as const;
-type Col = keyof typeof KALSHI_COLUMNS;
-
-/** A dollar or cent amount: "$1,234.50", "(12.00)", "-3", "45¢". */
-export function money(raw: string | undefined): number | null {
-  if (raw === undefined) return null;
-  let s = raw.trim();
-  if (!s) return null;
-  const neg = /^\(.*\)$/.test(s) || s.startsWith("-") || s.startsWith("−");
-  const cents = /¢|c$/i.test(s);
-  s = s.replace(/[()$,¢\s−+-]/g, "").replace(/c$/i, "");
-  const v = Number(s);
-  if (!Number.isFinite(v)) return null;
-  return (neg ? -v : v) / (cents ? 100 : 1);
-}
-
-/** A price per contract as dollars 0..1: values above 1 are cents. */
-const priceDollars = (v: number | null): number | null => (v === null ? null : v > 1 ? v / 100 : v);
-
+/** One Kalshi record in the shape the totals need, from lib/exchanges/kalshi-csv.ts rows. */
 export interface KalshiRow {
   ticker: string;
   title: string | null;
-  kind: "buy" | "sell" | "settlement" | "other";
+  kind: "buy" | "sell" | "settlement";
+  /** The side traded; null for a settlement (it closes every side of the market). */
   side: "yes" | "no" | null;
   contracts: number | null;
+  /** Dollars per contract, 0..1. */
   price: number | null;
-  /** Cash amount in the row (absolute), dollars. */
+  /** Cash received (settlement revenue), dollars. */
   amount: number | null;
   fee: number;
+  /** Realized profit as the file states it (settlement exports), dollars. */
   pnl: number | null;
 }
 
-function kindOf(type: string, action: string): KalshiRow["kind"] {
-  const t = `${type} ${action}`.toLowerCase();
-  if (/settle|payout|resolution|redeem|expir/.test(t)) return "settlement";
-  if (/\bsell|\bsold|close/.test(t)) return "sell";
-  if (/\bbuy|\bbought|open|trade|fill|order/.test(t)) return "buy";
-  return "other";
+/** Settlement revenue when the file states only the result and the contracts held: $1 per winning contract. */
+function settlementRevenue(s: KalshiCsvSettlement): number | null {
+  if (s.revenue !== null) return s.revenue;
+  if (s.result === "yes" && s.yesContracts !== null) return s.yesContracts;
+  if (s.result === "no" && s.noContracts !== null) return s.noContracts;
+  return null;
 }
 
-/** The rows of a Kalshi CSV. Pure. */
-export function readKalshiCsv(text: string): { rows: KalshiRow[]; skipped: number; error: string | null } {
-  if (text.length > MAX_CSV_CHARS) return { rows: [], skipped: 0, error: "That file is too large." };
-  const table = parseCsv(text);
-  const header = table[0];
-  if (!header) return { rows: [], skipped: 0, error: "The file is empty." };
-  const idx: Partial<Record<Col, number>> = {};
-  const names = header.map(norm);
-  for (const col of Object.keys(KALSHI_COLUMNS) as Col[]) {
-    const i = names.findIndex(n => (KALSHI_COLUMNS[col] as readonly string[]).includes(n));
-    if (i >= 0) idx[col] = i;
-  }
-  if (idx.ticker === undefined) return { rows: [], skipped: 0, error: "No market ticker column found. Upload the CSV Kalshi exports from your account history." };
-  const cell = (r: string[], c: Col): string | undefined => (idx[c] === undefined ? undefined : r[idx[c] as number]?.trim());
-  const rows: KalshiRow[] = [];
-  let skipped = 0;
-  for (const r of table.slice(1)) {
-    const ticker = cell(r, "ticker");
-    if (!ticker) { skipped++; continue; }
-    const sideRaw = (cell(r, "side") ?? "").toLowerCase();
-    const amount = money(cell(r, "amount"));
-    rows.push({
-      ticker,
-      title: cell(r, "title") || null,
-      kind: kindOf(cell(r, "type") ?? "", cell(r, "action") ?? (idx.type === undefined && idx.action === undefined ? "trade" : "")),
-      side: /^y/.test(sideRaw) ? "yes" : /^n/.test(sideRaw) ? "no" : null,
-      contracts: (() => { const c = money(cell(r, "contracts")); return c === null ? null : Math.abs(c); })(),
-      price: priceDollars(money(cell(r, "price"))),
-      amount: amount === null ? null : Math.abs(amount),
-      fee: Math.abs(money(cell(r, "fee")) ?? 0),
-      pnl: money(cell(r, "pnl")),
-    });
-  }
-  return { rows, skipped, error: rows.length ? null : "No rows with a market ticker were found." };
+/** Kalshi CSV rows → KalshiRow[]. Pure. */
+export function kalshiRows(parsed: KalshiCsvResult): KalshiRow[] {
+  const rows: Array<KalshiRow & { line: number }> = [
+    ...parsed.trades.map(t => ({ line: t.line, ticker: t.ticker, title: t.title, kind: t.action, side: t.side, contracts: t.contracts, price: t.price, amount: null, fee: t.fee ?? 0, pnl: null })),
+    ...parsed.settlements.map(s => ({ line: s.line, ticker: s.ticker, title: s.title, kind: "settlement" as const, side: null, contracts: s.contracts, price: null,
+      amount: settlementRevenue(s), fee: s.fee ?? 0, pnl: s.profit })),
+  ];
+  // File order: a settlement must come after the trades it closes.
+  return rows.sort((a, b) => a.line - b.line).map(({ line: _line, ...r }) => r);
 }
 
-/** Totals from Kalshi rows. When the file has a realized P&L column, that column is summed as written; otherwise
- *  realized is computed from the cash flows with average cost. Pure. */
+/** Totals from Kalshi rows. When the file states realized profit (settlement exports), that is summed as written;
+ *  otherwise realized is computed from the cash flows with average cost. Pure. */
 export function kalshiPnl(rows: readonly KalshiRow[], skipped = 0): PnlSummary {
   const hasPnl = rows.some(r => r.pnl !== null);
-  const by = new Map<string, PnlMarket & { pos: Map<string, { contracts: number; cost: number }> }>();
+  type Pos = { contracts: number; cost: number };
+  const by = new Map<string, PnlMarket & { pos: Map<"yes" | "no", Pos> }>();
   for (const r of rows) {
     let m = by.get(r.ticker);
     if (!m) { m = { key: r.ticker, title: r.title ?? r.ticker, outcome: null, realized: 0, openContracts: 0, openCost: 0, openValue: null, pos: new Map() }; by.set(r.ticker, m); }
     if (r.title && m.title === r.ticker) m.title = r.title;
+    if (r.kind === "settlement") {
+      // Everything still held in the market is closed: revenue in, cost basis out.
+      const basis = [...m.pos.values()].reduce((a, p) => a + p.cost, 0);
+      if (hasPnl) m.realized += r.pnl ?? 0;
+      else m.realized += (r.amount ?? 0) - basis - r.fee;
+      m.pos.clear();
+      continue;
+    }
     const side = r.side ?? "yes";
     const p = m.pos.get(side) ?? { contracts: 0, cost: 0 };
     const n = r.contracts ?? 0;
@@ -260,14 +185,12 @@ export function kalshiPnl(rows: readonly KalshiRow[], skipped = 0): PnlSummary {
     if (r.kind === "buy") {
       p.contracts += n; p.cost += cash;
       if (!hasPnl) m.realized -= r.fee;
-    } else if (r.kind === "sell" || r.kind === "settlement") {
-      const sold = r.kind === "settlement" ? (r.contracts ?? p.contracts) : n;
+    } else {
       const avg = p.contracts > 0 ? p.cost / p.contracts : 0;
-      const take = Math.min(sold, p.contracts);
+      const take = Math.min(n, p.contracts);
       if (!hasPnl) m.realized += cash - avg * take - r.fee;
       p.contracts -= take; p.cost -= avg * take;
     }
-    if (hasPnl && r.pnl !== null) m.realized += r.pnl;
     m.pos.set(side, p);
   }
   const markets: PnlMarket[] = [...by.values()].map(({ pos, ...m }) => {
@@ -278,7 +201,13 @@ export function kalshiPnl(rows: readonly KalshiRow[], skipped = 0): PnlSummary {
   return finish("kalshi", markets, rows.length, skipped, false);
 }
 
+/** CSV text → totals, or a reason the file couldn't be read. */
 export function kalshiPnlFromCsv(text: string): { summary: PnlSummary | null; error: string | null } {
-  const { rows, skipped, error } = readKalshiCsv(text);
-  return error ? { summary: null, error } : { summary: kalshiPnl(rows, skipped), error: null };
+  if (text.length > MAX_CSV_CHARS) return { summary: null, error: "That file is too large." };
+  if (!text.trim()) return { summary: null, error: "The file is empty." };
+  const parsed = parseKalshiCsv(text);
+  if (parsed.columns.ticker === null) return { summary: null, error: "No market ticker column found. Upload the CSV Kalshi exports from your account history." };
+  const rows = kalshiRows(parsed);
+  if (!rows.length) return { summary: null, error: "No trades or settlements were found in that file." };
+  return { summary: kalshiPnl(rows, parsed.skipped.length), error: null };
 }

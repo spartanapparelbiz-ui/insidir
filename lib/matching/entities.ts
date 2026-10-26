@@ -63,6 +63,8 @@ export interface Entities {
   dates: DateMention[];
   /** Full dates (with a day) near the start of the rules ("originally scheduled for Nov 5, 2026"). */
   ruleDates: DateMention[];
+  /** Times of day near the start of the rules ("before 5 PM EST"). */
+  ruleTimes: TimeMention[];
   years: number[];
   times: TimeMention[];
   /** Quantities that are not thresholds and not counters. */
@@ -84,6 +86,8 @@ export interface Entities {
   genericYes: boolean;
   /** Content tokens (title + YES label) for similarity, with entity phrases removed. */
   tokens: string[];
+  /** The title's normalised tokens in order (for "is the label's team before the win verb"). */
+  titleTokens: string[];
 }
 
 export type MatchInput = Pick<VMarket, "title" | "eventTitle" | "yesLabel" | "noLabel" | "category" | "seriesId" | "closeTime" | "strike" | "rules">;
@@ -109,10 +113,14 @@ const NON_NAME_WORDS: ReadonlySet<string> = new Set([
   "album", "song", "movie", "film", "show", "tour", "box", "office", "global", "box", "temperature", "high", "low",
   "nfl", "nba", "mlb", "nhl", "wnba", "ncaa", "afc", "nfc", "mvp", "the", "most", "first", "next", "new", "north",
   "south", "east", "west", "central", "republic", "kingdom", "union", "european", "american", "america", "time",
-  "person", "year", "trophy", "medal", "olympics", "olympic", "gold", "silver", "bronze",
+  "person", "year", "trophy", "medal", "olympics", "olympic", "gold", "silver", "bronze", "tie", "draw", "none",
+  "other", "another", "someone", "nobody", "neither", "both", "either",
 ]);
 
-const WIN_VERBS: ReadonlySet<string> = new Set(["win", "beat", "defeat", "nomination", "elected", "champion"]);
+/** Categories where a one-word YES label is usually a surname. */
+const SURNAME_LABEL_CATEGORIES: ReadonlySet<string> = new Set(["politics", "geopolitics", "culture", "mentions"]);
+
+export const WIN_VERBS: ReadonlySet<string> = new Set(["win", "beat", "defeat", "nomination", "elected", "champion"]);
 
 const DIR_BEFORE: ReadonlyArray<readonly [readonly string[], "above" | "below", boolean]> = [
   [["at", "least"], "above", true],
@@ -385,6 +393,12 @@ export function extractEntities(m: MatchInput): Entities {
   const namesFrom = (s: string | null) => (s ? genericNames(s) : []);
   const titleNames = namesFrom(m.title);
   const yesNames = genericYes ? [] : namesFrom(m.yesLabel);
+  // A one-word surname label in a politics-like market ("Beshear") names a person.
+  if (!genericYes && yesNames.length === 0 && SURNAME_LABEL_CATEGORIES.has(m.category.toLowerCase())) {
+    const w = m.yesLabel.trim();
+    const l = normalizePhrase(w);
+    if (/^[A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)*$/.test(w) && !NON_NAME_WORDS.has(l) && !CONFLICT_WORDS.includes(l) && !findAliases([l]).length) yesNames.push(l);
+  }
   const noNames = genericNo ? [] : namesFrom(m.noLabel);
   const people = uniq([...aliasPeople, ...titleNames, ...yesNames, ...namesFrom(m.eventTitle)]);
   const assets = of("asset");
@@ -444,6 +458,7 @@ export function extractEntities(m: MatchInput): Entities {
   ]).filter(t => !nameWords.has(t));
 
   const dates = dedupeDates([...title.dates, ...(event?.dates ?? []), ...(yes?.dates ?? [])]);
+  const rulesHead = normalize((m.rules ?? "").slice(0, RULES_DATE_SCAN_CHARS), { refTime: ref });
   const years = uniq([...title.years, ...(event?.years ?? []), ...(yes?.years ?? [])]);
   return {
     teams,
@@ -453,7 +468,8 @@ export function extractEntities(m: MatchInput): Entities {
     places,
     league,
     dates,
-    ruleDates: dedupeDates(normalize((m.rules ?? "").slice(0, RULES_DATE_SCAN_CHARS), { refTime: ref }).dates.filter(d => d.day !== null)),
+    ruleDates: dedupeDates(rulesHead.dates.filter(d => d.day !== null)),
+    ruleTimes: rulesHead.times,
     years,
     times: [...title.times, ...(yes?.times ?? [])],
     numbers,
@@ -468,6 +484,7 @@ export function extractEntities(m: MatchInput): Entities {
     noSubject,
     genericYes,
     tokens,
+    titleTokens: title.tokens,
   };
 }
 

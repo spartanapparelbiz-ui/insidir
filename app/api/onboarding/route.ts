@@ -6,6 +6,7 @@ import { recordEvent } from "@/lib/analytics";
 import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { isPaid } from "@/lib/plans";
 import { parseSettings, type SettingsInput } from "../settings/validate";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest) {
   const skipped = body.skipped === true;
   const r = skipped ? null : parseSettings(body, user.settings, user.region);
   if (r?.errors.length) return NextResponse.json({ errors: r.errors }, { status: 400 });
+  // Push and email alerts are paid features; the daily summary is open to everyone.
+  if (r && !isPaid(user.plan)) { r.settings.alertPush = false; r.settings.alertEmail = false; }
   await getDb().update(users).set({ onboardedAt: new Date(), ...(r ? { settings: r.settings } : {}) }).where(eq(users.id, user.id));
   await recordEvent({ name: skipped ? "onboarding_skip" : "onboarding_done", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: user.id })
     .catch(() => undefined);
