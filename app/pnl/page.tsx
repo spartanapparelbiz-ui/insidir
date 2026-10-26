@@ -38,7 +38,7 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
         <Beacons where="pnl" />
         <h1 className="page__h">Your P&amp;L</h1>
         {!allowed ? (
-          <Locked title="P&L" text="Your own realized P&L, open positions and per-market results from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref("pro", "/pnl")} plan="pro" where="pnl" />
+          <Locked title="P&L" text="See your own realized P&L, open positions and results per market, from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref("pro", "/pnl")} plan="pro" where="pnl" />
         ) : (
           <>
             <section className="card fs" aria-labelledby="pm-h">
@@ -50,7 +50,7 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
                 </div>
                 <button type="submit" className="btn btn--primary">Show P&amp;L</button>
               </form>
-              <p className="dim tiny">Positions and history are public on-chain data. Nothing is stored.</p>
+              <p className="muted small">Positions and history are public on-chain data. Nothing is stored.</p>
               {error ? <p className="err small" role="alert">{error}</p> : null}
               {summary ? <PnlTable summary={summary} label="Polymarket P&L" /> : null}
             </section>

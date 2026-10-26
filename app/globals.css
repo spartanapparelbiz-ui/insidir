@@ -1,17 +1,22 @@
-/* Insidir design tokens. One idea: two apps disagree on a price, and the gap is money.
- *   Ink (true black) background, Graphite raised surfaces, Paper text, Steel secondary text.
- *   Gold is money: used ONLY for profit numbers and the primary CTA.
- *   Safety lights (green / amber / red) always carry a text label: Same rules / Check rules / Skip.
+/* Insidir design tokens. Monochrome: 95%+ of every screen is black, white or grey.
+ *   Ink #000 page, Surface #141414 rows/cards/inputs, Line #262626 dividers (only where truly needed),
+ *   Paper #F5F5F5 text and profit numbers, Steel #8C9099 secondary text, Dim #5A5F66 timestamps and stale or closed deals.
+ *   The only colours on the site are the safety lights, as small dots next to a text label (Same rules / Check rules / Skip):
+ *   Green #30D158, Amber #FF9F0A, Red #FF453A. No coloured text, buttons, flashes or backgrounds anywhere.
+ *   Money gets emphasis by size and weight, not colour: profit numbers are JetBrains Mono bold, one step larger.
+ *   Buttons: primary solid Paper with Ink text; secondary transparent with a 1px Steel outline. Both fully round.
+ *   Live updates flash white (#FFFFFF fading to the normal colour), never a colour.
  *   JetBrains Mono for every price and number (tabular); General Sans for headlines and prose.
- *   Type scale: 14 / 17 / 22 / 32 / 48 / 72 / 120. Nothing in between.
- *   Radius: 0 on the hero split, 10px on rows and inputs, round buttons. No shadows; surfaces, not borders.
- * No gradients, glows, blur, emojis or ALL-CAPS labels. Mobile first (390px), tap targets 44px+. */
+ *   Type scale: 14 / 17 / 22 / 32 / 48 / 72 / 120. Spacing on a 4px grid: 8 / 16 / 24 / 32 / 48 / 64 / 96.
+ *   Content is never wider than 1200px. Mobile first (390px), tap targets 44px+. No gradients, glows, blur or shadows. */
 :root {
   --ink: #000000;
-  --graphite: #161616;
-  --paper: #ededed;
+  --surface: #141414;
+  --line: #262626;
+  --paper: #f5f5f5;
   --steel: #8c9099;
-  --gold: #ffc53d;
+  --dim: #5a5f66;
+  --flash: #ffffff;
   --green: #30d158;
   --amber: #ff9f0a;
   --red: #ff453a;
@@ -21,15 +26,20 @@
 
   --t14: 14px; --t17: 17px; --t22: 22px; --t32: 32px; --t48: 48px; --t72: 72px; --t120: 120px;
 
+  /* section rhythm: one value per breakpoint, used by every section on every page */
+  --sec: 64px;
+  --max: 1200px;
+
   --r-row: 10px;
   --r-pill: 999px;
   --tap: 44px;
 
   /* Older names, kept as aliases so every page shares the same palette. */
-  --bg: var(--ink); --s1: var(--graphite); --s2: var(--graphite); --text: var(--paper); --muted: var(--steel); --dim: var(--steel);
-  --profit: var(--gold); --line: var(--graphite); --line-2: var(--graphite); --r: var(--r-row);
+  --bg: var(--ink); --s1: var(--surface); --s2: var(--surface); --text: var(--paper); --muted: var(--steel);
+  --profit: var(--paper); --line-2: var(--line); --r: var(--r-row);
   color-scheme: dark;
 }
+@media (min-width: 900px) { :root { --sec: 96px; } }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--ink); color: var(--paper); }
 body { font: 400 var(--t17)/1.5 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -44,22 +54,25 @@ button { font: inherit; color: inherit; }
 /* numbers: always mono, always tabular */
 .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
-.wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-@media (min-width: 900px) { .wrap { padding: 0 32px; } }
+/* one content width for every page (header, footer and app included): 1200px of content plus the side padding */
+.wrap { width: 100%; max-width: calc(var(--max) + 32px); margin: 0 auto; padding: 0 16px; }
+@media (min-width: 900px) { .wrap { max-width: calc(var(--max) + 64px); padding: 0 32px; } }
 .prose { max-width: 66ch; }
-.muted, .dim { color: var(--steel); }
+.muted { color: var(--steel); }
+.dim { color: var(--dim); }
 .small, .tiny { font-size: var(--t14); line-height: 1.45; }
-.profit { color: var(--gold); }
+/* profit: Paper, mono, bold, one step larger than the text around it (elements with their own size keep it) */
+.profit { color: var(--paper); font-family: var(--mono); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; font-size: 1.2em; line-height: 1; }
 .big { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: var(--t48); line-height: 1; font-weight: 700; letter-spacing: -0.04em; }
 @media (min-width: 900px) { .big { font-size: var(--t72); } }
 
-/* buttons: round, 44px minimum; gold is the one primary action */
+/* buttons: fully round, 44px minimum. Primary: solid Paper, Ink text. Secondary: transparent, 1px Steel outline. */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 22px; border-radius: var(--r-pill);
   font: 600 var(--t17)/1 var(--sans); text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
-.btn--primary { background: var(--gold); color: var(--ink); }
-.btn--primary:hover { background: #ffd166; }
-.btn--secondary { background: var(--graphite); color: var(--paper); }
-.btn--secondary:hover { background: #1f1f1f; }
+.btn--primary { background: var(--paper); color: var(--ink); }
+.btn--primary:hover { background: var(--flash); }
+.btn--secondary { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 1px var(--steel); }
+.btn--secondary:hover { box-shadow: inset 0 0 0 1px var(--paper); }
 .btn--ghost { background: transparent; color: var(--steel); }
 .btn--ghost:hover { color: var(--paper); }
 .btn--block { width: 100%; }
@@ -79,24 +92,23 @@ button { font: inherit; color: inherit; }
   .hdr__nav--app { width: 100%; justify-content: space-between; margin: 0 -8px; width: calc(100% + 16px); font-size: var(--t14); }
   .hdr__nav--app a { padding: 0 8px; }
 }
-.foot { margin-top: 96px; padding: 32px 0 120px; background: var(--graphite); color: var(--steel); font-size: var(--t14); line-height: 1.5; }
+.foot { margin-top: var(--sec); padding: 32px 0 120px; border-top: 1px solid var(--line); color: var(--steel); font-size: var(--t14); line-height: 1.5; }
 .foot__links { display: flex; flex-wrap: wrap; gap: 0 20px; margin-top: 12px; }
 .foot__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
 
-/* safety light: colour + text label, never colour alone */
-.light { display: inline-flex; align-items: center; gap: 8px; font: 500 var(--t14)/1 var(--sans); white-space: nowrap; }
-.light::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
-.light--green { color: var(--green); }
-.light--yellow { color: var(--amber); }
-.light--red { color: var(--red); }
+/* safety light: a small coloured dot next to a Paper label, never colour alone. The only colour on the site. */
+.light { display: inline-flex; align-items: center; gap: 8px; color: var(--paper); font: 500 var(--t14)/1 var(--sans); white-space: nowrap; }
+.light::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--steel)); flex: none; }
+.light--green { --dot: var(--green); }
+.light--yellow { --dot: var(--amber); }
+.light--red { --dot: var(--red); }
 
 /* deal rows (the Terminal row lives in app/app.css; this is the shared base) */
 .deals { display: grid; gap: 8px; }
-.deal { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--r-row); background: var(--graphite); text-decoration: none; color: inherit; }
-.deal:hover { background: #1c1c1c; }
+.deal { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--r-row); background: var(--surface); text-decoration: none; color: inherit; }
+.deal:hover { background: var(--line); }
 /* not re-confirmed by a recent scan, or delayed: never presented as live */
-.deal--stale { filter: grayscale(1); }
-.deal--stale .deal__play, .deal--stale .num__k, .deal--stale .num__v, .deal--stale .profit { color: var(--steel); }
+.deal--stale .deal__title, .deal--stale .deal__play, .deal--stale .num__k, .deal--stale .num__v, .deal--stale .profit { color: var(--dim); }
 .deal__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .deal__title { font-weight: 600; overflow-wrap: anywhere; }
 .deal__play { color: var(--steel); font-size: var(--t14); line-height: 1.45; }
@@ -104,30 +116,33 @@ button { font: inherit; color: inherit; }
 .num__k { display: block; color: var(--steel); font-size: var(--t14); line-height: 1.3; }
 .num__v { display: block; font: 700 var(--t17)/1.3 var(--mono); font-variant-numeric: tabular-nums; }
 /* a locked value: a solid bar that says so, not a loading skeleton */
-.blur { display: inline-block; min-width: 64px; height: 14px; border-radius: 3px; background: #2a2a2a; vertical-align: middle; }
+.blur { display: inline-block; min-width: 64px; height: 14px; border-radius: 3px; background: var(--line); vertical-align: middle; }
 .deal__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 
 /* cards and forms */
-.card { border-radius: var(--r-row); background: var(--graphite); padding: 20px; }
+/* every surface (cards, legs, rules, number panels) pads 16px on phones, 24px on desktop */
+:root { --pad: 16px; }
+@media (min-width: 900px) { :root { --pad: 24px; } }
+.card { border-radius: var(--r-row); background: var(--surface); padding: var(--pad); }
 .field { display: grid; gap: 6px; }
 .field label { color: var(--steel); font-size: var(--t14); }
-.input { width: 100%; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-row); border: 0; background: var(--graphite); color: var(--paper); font: inherit; }
+.input { width: 100%; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-row); border: 0; background: var(--surface); color: var(--paper); font: inherit; }
 .card .input { background: var(--ink); }
 .check { display: flex; align-items: center; gap: 10px; min-height: var(--tap); }
-.check input { width: 20px; height: 20px; accent-color: var(--gold); }
+.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--paper); }
 
 /* sticky bottom CTA on phones */
 .stickycta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--ink); display: flex; gap: 8px; }
 .stickycta .btn { flex: 1; }
 @media (min-width: 900px) { .stickycta { display: none; } .foot { padding-bottom: 32px; } }
 
-.sec { padding: 96px 0 0; display: grid; gap: 24px; }
+.sec { padding: var(--sec) 0 0; display: grid; gap: 24px; }
 .sec__h { font-size: var(--t32); line-height: 1.15; }
 @media (min-width: 900px) { .sec__h { font-size: var(--t48); line-height: 1.05; } }
 .sec__p { color: var(--steel); max-width: 62ch; }
 .table { width: 100%; border-collapse: collapse; font-size: var(--t14); }
 .table th, .table td { text-align: left; padding: 10px 12px 10px 0; vertical-align: top; }
-.table tbody tr + tr td { border-top: 1px solid var(--graphite); }
+.table tbody tr + tr td { border-top: 1px solid var(--line); }
 .table th { color: var(--steel); font-weight: 400; }
 .table td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .r { text-align: right !important; }

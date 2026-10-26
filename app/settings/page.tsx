@@ -23,7 +23,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const one = (k: string): string | null => { const v = q[k]; return typeof v === "string" ? v : null; };
   const paid = isPaid(viewer.plan);
   const notice = one("saved") ? "Saved." : one("cancel") === "done" ? "Your subscription is cancelled. You keep access until the end of the paid period."
-    : one("cancel") === "failed" ? "Couldn't cancel right now. Try again, or use Manage on Whop below." : null;
+    : one("cancel") === "failed" ? "Couldn't cancel right now. Try again in a minute, or use Manage on Whop below." : null;
   const error = one("error");
 
   return (
@@ -33,26 +33,26 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <Beacons where="settings" />
         <h1 className="page__h">Settings</h1>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
-        {error ? <p className="banner banner--err" role="alert">{error.slice(0, 300)}</p> : null}
+        {error ? <p className="banner banner--err" role="alert">Settings not saved. {error.slice(0, 300)}</p> : null}
         <IosInstallGuide />
 
         <SettingsForm settings={user.settings} region={viewer.region} paid={paid} vapidKey={vapidPublicKey()} email={user.email} />
 
         <section className="card fs" aria-labelledby="plan-h">
           <h2 id="plan-h" className="fs__h">Plan</h2>
-          <p className="plan__now"><span className="big">{PLANS[viewer.plan].name}</span>{paid ? <span className="muted"> · ${PLANS[viewer.plan].price}/mo</span> : null}</p>
-          <p className="muted small">{PLANS[viewer.plan].tagline}</p>
-          {user.cancelAtPeriodEnd ? <p className="notlive">Cancels at period end</p> : null}
+          <p className="plan__now"><span className="plan__name">{PLANS[viewer.plan].name}</span>{paid ? <span className="plan__price">${PLANS[viewer.plan].price} a month</span> : null}
+            {user.cancelAtPeriodEnd ? <span className="tag">Cancels at period end</span> : null}</p>
+          <p className="muted small">{PLANS[viewer.plan].tagline}.</p>
           <div className="row-gap">
-            {viewer.plan === "free" ? <a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Upgrade to Insidir · ${PLANS.insidir.price}/mo</a> : null}
-            {viewer.plan !== "pro" ? <a className="btn btn--secondary" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">Upgrade to Pro · ${PLANS.pro.price}/mo</a> : null}
+            {viewer.plan === "free" ? <a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Start Insidir for ${PLANS.insidir.price} a month</a> : null}
+            {viewer.plan !== "pro" ? <a className="btn btn--secondary" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">{viewer.plan === "free" ? "Or Pro" : "Upgrade to Pro"} for ${PLANS.pro.price} a month</a> : null}
             {viewer.plan === "pro" ? <Link className="btn btn--secondary" href="/pnl">Your P&amp;L</Link> : null}
             {user.manageUrl ? <a className="btn btn--ghost" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage on Whop</a> : null}
           </div>
           {paid && !user.cancelAtPeriodEnd ? (
             <form method="post" action="/api/account/cancel" className="cancel">
               <button type="submit" className="btn btn--secondary btn--block">Cancel subscription</button>
-              <p className="dim tiny">One click. You keep access until the end of the period you paid for.</p>
+              <p className="muted small">One click, no forms. You keep access until the end of the period you paid for.</p>
             </form>
           ) : null}
         </section>

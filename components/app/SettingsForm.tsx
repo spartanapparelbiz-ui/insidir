@@ -25,7 +25,7 @@ export function SettingsForm({ settings, region, paid, vapidKey, email }: {
         <legend className="fs__h">Where are you?</legend>
         <label className="check"><input type="radio" name="region" value="us" checked={reg === "us"} onChange={() => setReg("us")} />In the US</label>
         <label className="check"><input type="radio" name="region" value="non_us" checked={reg === "non_us"} onChange={() => setReg("non_us")} />Outside the US</label>
-        <p className="dim small">{reg === "us" ? "US users see Kalshi and Polymarket US only." : "You see Kalshi and Polymarket."}</p>
+        <p className="muted small">{reg === "us" ? "In the US you see Kalshi and Polymarket US only." : "Outside the US you see Kalshi and Polymarket."}</p>
       </fieldset>
 
       <fieldset className="card fs">
@@ -37,17 +37,17 @@ export function SettingsForm({ settings, region, paid, vapidKey, email }: {
       <fieldset className="card fs">
         <legend className="fs__h">Filters</legend>
         <div className="fs__row">
-          <div className="field"><label htmlFor="s-roi">Min ROI (%)</label><input id="s-roi" className="input" name="minRoiPct" inputMode="decimal" defaultValue={pct(settings.minRoi)} /></div>
-          <div className="field"><label htmlFor="s-size">Min size ($)</label><input id="s-size" className="input" name="minSizeUsd" inputMode="decimal" defaultValue={String(settings.minSizeUsd)} /></div>
+          <div className="field"><label htmlFor="s-roi">Lowest return (%)</label><input id="s-roi" className="input" name="minRoiPct" inputMode="decimal" defaultValue={pct(settings.minRoi)} /></div>
+          <div className="field"><label htmlFor="s-size">Smallest size ($)</label><input id="s-size" className="input" name="minSizeUsd" inputMode="decimal" defaultValue={String(settings.minSizeUsd)} /></div>
         </div>
-        <p className="fs__sub">Categories <span className="dim">(none ticked = all)</span></p>
+        <p className="fs__sub">Categories. Leave them all off to see every category.</p>
         <div className="chips">
           {CATEGORIES.map(c => (
             <label key={c} className="chip"><input type="checkbox" name="categories" value={c} defaultChecked={settings.categories.includes(c)} />{CATEGORY_LABEL[c]}</label>
           ))}
         </div>
-        <label className="check"><input type="checkbox" name="showYellow" defaultChecked={settings.showYellow} />Show yellow deals (minor rule differences)</label>
-        <label className="check"><input type="checkbox" name="showRed" defaultChecked={settings.showRed} />Show red deals (the rules differ)</label>
+        <label className="check"><input type="checkbox" name="showYellow" defaultChecked={settings.showYellow} />Show &ldquo;Check rules&rdquo; deals (small differences in the rules)</label>
+        <label className="check"><input type="checkbox" name="showRed" defaultChecked={settings.showRed} />Show &ldquo;Skip&rdquo; deals (the rules differ, so both sides could lose)</label>
       </fieldset>
 
       <fieldset className="card fs" id="alerts">
@@ -57,7 +57,8 @@ export function SettingsForm({ settings, region, paid, vapidKey, email }: {
             <label className="check"><input type="checkbox" name="alertPush" defaultChecked={settings.alertPush} />Push alerts</label>
             <PushButton vapidKey={vapidKey} />
             <label className="check"><input type="checkbox" name="alertEmail" defaultChecked={settings.alertEmail} />Email me alerts when push isn&apos;t on</label>
-            <div className="field"><label htmlFor="s-aroi">Alert only at or above ROI (%)</label><input id="s-aroi" className="input" name="alertMinRoiPct" inputMode="decimal" defaultValue={pct(settings.alertMinRoi)} /></div>
+            <div className="field"><label htmlFor="s-aroi">Alert only at or above this return (%)</label><input id="s-aroi" className="input" name="alertMinRoiPct" inputMode="decimal" defaultValue={pct(settings.alertMinRoi)} /></div>
+            <label className="check"><input type="checkbox" name="soundOnGreen" defaultChecked={settings.soundOnGreen} />Play a short sound in the Terminal when a &ldquo;Same rules&rdquo; deal shows up</label>
           </>
         ) : <p className="muted small">Push and email alerts come with Insidir and Insidir Pro.</p>}
         <label className="check"><input type="checkbox" name="emailDigest" defaultChecked={settings.emailDigest} />Email me a daily summary</label>

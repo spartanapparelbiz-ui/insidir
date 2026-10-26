@@ -46,7 +46,7 @@ const venueFilter = (region: Region | null) => {
   const allowed = new Set<Venue>(allowedVenues(region));
   const banned = (["kalshi", "polymarket", "polymarket_us"] as Venue[]).filter(v => !allowed.has(v));
   return banned.length
-    ? sql`and not exists (select 1 from jsonb_array_elements(r.snapshot->'legs') l where l->>'venue' = any(${banned}))`
+    ? sql`and not exists (select 1 from jsonb_array_elements(r.snapshot->'legs') l where l->>'venue' in (${sql.join(banned.map(b => sql`${b}`), sql`, `)}))`
     : sql``;
 };
 

@@ -1,68 +1,116 @@
-/* 1. Hero: the A/B headline, one CTA into the feed, and a REAL deal from the last 24 hours, animated with CSS only:
- * the two prices, what they add up to, the $1 back, and what's left per $1. Free visitors get the per-$1 math only
- * (no dollar size or total profit) and only deals older than the free feed's delay. When the scanner isn't live,
- * the widget says so rather than looking live. */
+"use client";
+/* 1. The split. Left: one app's price. Right: the other's. In the seam the math resolves: what you pay, $1 back
+ * either way, and the profit in large white numbers. The deal is real (the last 24 hours, on the viewer's clock: free visitors see it
+ * 30 minutes late, like the feed); its prices tick when the worker sees them move. On load the prices roll in, the
+ * seam closes and the profit lands (CSS, app/landing.css): the page's one orchestrated motion. Reduced motion:
+ * everything is simply there, and ticks swap the number without moving it.
+ * Also here: the scanner heartbeat (real last-scan time) and how long this gap has been open (real elapsed time). */
 import Link from "next/link";
-import { SafetyLight } from "@/components/SafetyLight";
-import { centsText, pct } from "@/lib/format";
-import type { ReceiptRow } from "@/lib/queries";
-import { VENUE_NAME } from "@/lib/types";
-import { Ago } from "./Ago";
-import { perDollar } from "./model";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLiveContext, useServerNow } from "@/components/live/LiveProvider";
+import { centsText, clockText, span } from "@/lib/format";
+import { profitCentsPerDollar, type HeroSplit } from "./model";
 
-export const HERO_SUB = "Insidir checks both apps every few seconds for prices that lock in a profit, after fees.";
-
-export function Hero({ headline, cta, deal, delayed, live, now }: {
-  headline: string; cta: string; deal: ReceiptRow | null; delayed: boolean; live: boolean; now: number;
-}) {
-  return (
-    <section className="lp-hero" data-section="hero" aria-labelledby="hero-h">
-      <div className="lp-hero__copy">
-        <h1 id="hero-h" className="lp-hero__h">{headline}</h1>
-        <p className="lp-hero__sub">{HERO_SUB}</p>
-      </div>
-      <div className="lp-hero__deal">
-        {!live ? <p className="lp-paused tiny" role="status">Live data paused, retrying</p> : null}
-        {deal ? <HeroDeal r={deal} delayed={delayed} now={now} /> : null}
-      </div>
-      <div className="lp-hero__cta">
-        <Link className="btn btn--primary btn--block lp-cta" href="/terminal">{cta}</Link>
-        <p className="dim tiny">Free to look. No signup.</p>
-      </div>
-    </section>
-  );
+/** A number that rolls to each new value with a brief highlight (the load-time roll-in is CSS, in app/landing.css). */
+function Rolling({ value, format, className }: { value: number; format: (v: number) => string; className?: string }) {
+  const [ticks, setTicks] = useState(0);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    setTicks(t => t + 1);
+  }, [value]);
+  return <span key={ticks} className={`roll${ticks ? " roll--tick" : ""}${className ? ` ${className}` : ""}`}>{format(value)}</span>;
 }
 
-function HeroDeal({ r, delayed, now }: { r: ReceiptRow; delayed: boolean; now: number }) {
-  const o = r.snapshot;
-  const m = perDollar(o);
-  const [a, b] = o.legs;
-  if (!m || !a || !b) return null;
-  // The bar is $1 wide: side A, side B, fees, and the green profit that's left.
-  const w = (c: number) => `${Math.max(0, Math.min(100, c))}%`;
+export interface HeroProps {
+  split: HeroSplit | null;
+  delayMs: number;
+  medianLifeMin: number | null;
+  headline: string;
+  sub: string;
+  cta: string;
+  serverNow: number;
+  scanner: { live: boolean; lastScanAt: number | null };
+}
+
+export function Hero({ split: initial, delayMs, medianLifeMin, headline, sub, cta, serverNow, scanner: initialScanner }: HeroProps) {
+  const live = useLiveContext();
+  const now = useServerNow(serverNow);
+  const [split, setSplit] = useState(initial);
+  const [closed, setClosed] = useState<{ firstSeenAt: number; closedAt: number } | null>(null);
+
+  useEffect(() => {
+    if (!initial) return;
+    const offTick = live.on("price_tick", e => {
+      if (e.oppId !== initial.oppId) return;
+      setSplit(s => s && { ...s, roi: e.data.roi, legs: s.legs.map((l, i) => ({ ...l, priceCents: e.data.legs[i]?.priceCents ?? l.priceCents })) });
+    });
+    const offClose = live.on("deal_closed", e => {
+      if (e.oppId === initial.oppId) setClosed({ firstSeenAt: e.data.firstSeenAt, closedAt: e.data.closedAt });
+    });
+    return () => { offTick(); offClose(); };
+  }, [live, initial]);
+
+  const scan = live.scanner ?? { ...initialScanner };
+  const beat = scan.live && scan.lastScanAt !== null
+    ? <>Scanning live. Last scan <span className="mono">{Math.max(0, Math.floor((now - scan.lastScanAt) / 1000))}s</span> ago.</>
+    : <>Live data paused, retrying.</>;
+
+  const a = split?.legs[0], b = split?.legs[1];
+  const inCents = a && b ? Math.round((a.priceCents + b.priceCents) * 10) / 10 : null;
+  const profit = split ? profitCentsPerDollar(split.roi) : null;
+  const clock = now - delayMs;
+
+  let open: ReactNode = null;
+  if (split) {
+    const closedAt = closed?.closedAt ?? split.closedAt;
+    if (closed && delayMs > 0) {
+      open = <>This gap has now closed. Members got it at <span className="mono">{clockText(split.firstSeenAt)}</span>; free viewers see deals 30 minutes later.</>;
+    } else if (closedAt !== null && closedAt <= clock) {
+      open = <>This gap closed after <span className="mono">{span(closedAt - split.firstSeenAt)}</span>.</>;
+    } else {
+      const t = <span className="mono">{span(clock - split.firstSeenAt)}</span>;
+      const most = medianLifeMin !== null ? <> Most close within {Math.max(1, Math.round(medianLifeMin))} min.</> : null;
+      open = delayMs > 0
+        ? <>Shown 30 minutes late. By then this gap had been open {t}.{most}</>
+        : <>This gap has been open {t}.{most}</>;
+    }
+  }
+
   return (
-    <figure className="lp-deal card" aria-label="A real deal Insidir found">
-      <figcaption className="lp-deal__top">
-        <span className="tiny muted">Real deal · found <Ago at={r.detectedAt} now={now} />{delayed ? " · 30 min delay" : ""}</span>
-        <SafetyLight safety={o.safety} />
-      </figcaption>
-      <p className="lp-deal__title">{o.title}</p>
-      <div className="lp-deal__legs">
-        <p className="lp-deal__leg lp-d1"><span className="dim">Buy {a.side.toUpperCase()} on {VENUE_NAME[a.venue]}</span><b>{centsText(m.aCents)}</b></p>
-        <p className="lp-deal__leg lp-d2"><span className="dim">Buy {b.side.toUpperCase()} on {VENUE_NAME[b.venue]}</span><b>{centsText(m.bCents)}</b></p>
-        <p className="lp-deal__leg lp-d3"><span className="dim">You pay</span><b>{centsText(m.inCents)}</b></p>
-        <p className="lp-deal__leg lp-d4"><span className="dim">You get back, either way</span><b>$1</b></p>
+    <section className="hero" data-section="hero" aria-labelledby="hero-h">
+      <p className={`beat${scan.live ? "" : " beat--paused"}`} role="status"><span className="beat__dot" aria-hidden="true" />{beat}</p>
+      {split && a && b ? (
+        <div className="split" data-opp={split.oppId} aria-label={`${split.title}: buy ${a.side} on ${a.venueName} at ${centsText(a.priceCents)} and ${b.side} on ${b.venueName} at ${centsText(b.priceCents)}.`}>
+          <div className="split__side split__side--a">
+            <p className="split__venue">{a.venueName}</p>
+            <p className="split__price"><span className="split__dir">{a.side}</span><Rolling value={a.priceCents} format={centsText} className="split__num" /></p>
+          </div>
+          <div className="split__seam">
+            <p className="split__math"><span className="mono">{inCents !== null ? centsText(inCents) : ""}</span> in. <span className="mono">$1</span> back. Either way.</p>
+            <p className="split__profit"><Rolling value={profit ?? 0} format={v => `${v.toFixed(1)}¢`} className="split__win" /><span className="split__per">profit per $1, after fees</span></p>
+          </div>
+          <div className="split__side split__side--b">
+            <p className="split__venue">{b.venueName}</p>
+            <p className="split__price"><span className="split__dir">{b.side}</span><Rolling value={b.priceCents} format={centsText} className="split__num" /></p>
+          </div>
+        </div>
+      ) : (
+        <div className="split split--empty">
+          <div className="split__side split__side--a"><p className="split__venue">Kalshi</p><p className="split__price split__price--none">No deal yet</p></div>
+          <div className="split__seam"><p className="split__math">No green deal in the last 24 hours. The next one shows up here.</p></div>
+          <div className="split__side split__side--b"><p className="split__venue">Polymarket</p><p className="split__price split__price--none">No deal yet</p></div>
+        </div>
+      )}
+      {split ? <p className="hero__deal"><span className="hero__title">{split.title}</span> <span className="hero__open">{open}</span></p> : null}
+      <div className="hero__copy">
+        <h1 id="hero-h" className="hero__h">{headline}</h1>
+        <p className="hero__sub">{sub}</p>
+        <div className="hero__cta">
+          <Link className="btn btn--primary btn--big" href="/terminal">{cta}</Link>
+          <span className="hero__note">Free to look. No signup.</span>
+        </div>
       </div>
-      <div className="lp-bar" aria-hidden="true">
-        <span className="lp-bar__a" style={{ width: w(m.aCents) }} />
-        <span className="lp-bar__b" style={{ width: w(m.bCents) }} />
-        <span className="lp-bar__f" style={{ width: w(m.feeCents) }} />
-        <span className="lp-bar__p" style={{ width: w(m.profitCents) }} />
-      </div>
-      <p className="lp-deal__profit">
-        <span className="dim small">After {centsText(m.feeCents)} in fees, you keep</span>
-        <span><b className="lp-deal__big profit">{centsText(m.profitCents)}</b> <span className="muted small">per $1 ({pct(m.roi)})</span></span>
-      </p>
-    </figure>
+    </section>
   );
 }

@@ -1,23 +1,24 @@
-/* 6. Safety lights: how the two rule texts are compared. The trust builder. */
+/* 5. Safety lights: one short section. Three lights, what each means. */
 import Link from "next/link";
-import { SafetyLight } from "@/components/SafetyLight";
+import { SAFETY_MEANING, SafetyLight } from "@/components/SafetyLight";
 import type { Safety } from "@/lib/types";
 
-const LIGHTS: Array<{ s: Safety; what: string }> = [
-  { s: "green", what: "Same event, same date, same resolution source. Shown in the feed." },
-  { s: "yellow", what: "Minor differences in the wording or timing. Shown, with the differences spelled out so you can read both rules." },
-  { s: "red", what: "The rules differ in a way that could settle the two sides differently. Hidden by default." },
-];
+const ORDER: Safety[] = ["green", "yellow", "red"];
 
 export function SafetySection() {
   return (
     <section className="sec" data-section="safety" aria-labelledby="safety-h">
-      <h2 id="safety-h" className="sec__h">Every pair gets a safety light</h2>
-      <p className="sec__p">A lock only works if both markets settle the same way. So for every pair we compare both rule texts side by side: the event, the date and time it resolves, and the source each one resolves on.</p>
-      <ul className="lp-lights">
-        {LIGHTS.map(l => <li key={l.s} className="card"><SafetyLight safety={l.s} /><p className="small muted">{l.what}</p></li>)}
-      </ul>
-      <p className="small muted">The light is our reading of the rules, not a promise. When two markets did settle differently, it shows in the <Link href="/receipts">receipts log</Link>.</p>
+      <h2 id="safety-h" className="sec__h">Same question, same rules?</h2>
+      <p className="sec__p">A deal only pays if both apps settle it the same way. We read both rule texts for every pair and give it a light.</p>
+      <dl className="lights">
+        {ORDER.map(s => (
+          <div key={s} className="lights__row">
+            <dt><SafetyLight safety={s} /></dt>
+            <dd>{SAFETY_MEANING[s]}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="small muted">The light is our reading of the rules, not a promise. When two apps did settle differently, it&apos;s in the <Link href="/receipts">receipts</Link>.</p>
     </section>
   );
 }
