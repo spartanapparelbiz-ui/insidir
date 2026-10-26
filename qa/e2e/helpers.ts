@@ -60,8 +60,8 @@ export async function readLive(page: Page, ms = 3000): Promise<string> {
 }
 
 /** Pages every visitor can open, and the ones a signed-in Pro member adds. */
-export const PUBLIC_PAGES = ["/", "/terminal", "/receipts", "/pricing", "/terms", "/privacy", "/about"];
-export const PRO_PAGES = ["/terminal", "/settings", "/pnl", "/whales"];
+export const PUBLIC_PAGES = ["/", "/feed", "/results", "/pricing", "/terms", "/privacy", "/about", "/signin", "/trader/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1"];
+export const PRO_PAGES = ["/feed", "/following", "/gaps", "/settings", "/alerts", "/pnl", "/whales"];
 
 export async function noHorizontalScroll(page: Page): Promise<void> {
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -70,7 +70,9 @@ export async function noHorizontalScroll(page: Page): Promise<void> {
 
 export async function footerOk(page: Page): Promise<void> {
   const footer = page.locator("footer").last();
-  await expect(footer).toContainText("Information only, not financial advice. Not affiliated with Polymarket or Kalshi. Prices move and fills aren't guaranteed. Check that prediction markets are available where you live.");
+  await expect(footer).toContainText("Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.");
+  await expect(footer).toContainText("Insidir is built by Aethric LLC, Pompano Beach, FL.");
+  await expect(footer.locator('a[href="mailto:hello@aethric.llc"]')).toHaveCount(1);
   await expect(footer.locator('a[href="/privacy"]')).toHaveCount(1);
   await expect(footer.locator('a[href="/terms"]')).toHaveCount(1);
 }

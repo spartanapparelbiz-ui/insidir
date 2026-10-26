@@ -31,11 +31,11 @@ for (const who of ["visitor", "free member"] as const) {
     const { fresh, old } = await seeded();
     expect(fresh.length).toBeGreaterThan(0);
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/terminal", "/receipts", "/pricing", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`, `/deal/${await dealId("award")}`]) {
+      for (const path of ["/", "/gaps", "/receipts", "/pricing", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`, `/deal/${await dealId("award")}`]) {
         await page.goto(path);
         await page.waitForTimeout(300);
       }
-      await page.goto("/terminal");
+      await page.goto("/gaps");
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);

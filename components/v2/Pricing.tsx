@@ -51,7 +51,7 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
                 </ul>
                 {mine ? <Link className="btn btn--secondary btn--block" href="/settings">Your plan</Link>
                   : p === "free" ? <Link className="btn btn--secondary btn--block" href="/feed">See the live feed</Link>
-                  : <a className={`btn btn--block ${p === "insidir" && primary ? "btn--primary" : p === "insidir" ? "btn--primary" : "btn--secondary"}`}
+                  : <a className={`btn btn--block ${p === "insidir" && primary ? "btn--primary" : "btn--secondary"}`}
                       href={p === "pro" ? proHref : insidirHref} data-checkout={`pricing-${p}`}>{p === "pro" ? "Go Pro" : `Try it for $${TRIAL.price}`}</a>}
               </article>
             );

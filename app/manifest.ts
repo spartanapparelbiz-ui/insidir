@@ -3,14 +3,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Insidir Terminal",
+    name: "Insidir",
     short_name: "Insidir",
-    description: "Prices on Polymarket and Kalshi that lock in a profit after fees, if both sides fill and both markets settle the same way.",
-    start_url: "/terminal",
+    description: "The biggest bets on sports and prediction markets the second they happen, in plain English.",
+    start_url: "/feed",
     scope: "/",
     display: "standalone",
-    background_color: "#000000",
-    theme_color: "#000000",
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

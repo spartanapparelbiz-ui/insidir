@@ -17,7 +17,7 @@ export function Beacons() {
   // The two pages a visitor goes to next, fetched while the browser is idle so the tap feels instant.
   const router = useRouter();
   useEffect(() => {
-    const go = () => { router.prefetch("/terminal"); router.prefetch("/receipts"); };
+    const go = () => { router.prefetch("/feed"); router.prefetch("/pricing"); };
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
     if (w.requestIdleCallback) w.requestIdleCallback(go); else window.setTimeout(go, 1500);
   }, [router]);

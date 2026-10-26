@@ -1,17 +1,18 @@
-/* Account (/settings): Alerts (a summary, the settings live on /alerts), Filters, Region, Billing, Account. Every
+/* Account (/settings): Alerts (a summary; the switches live on /alerts and /following), Location, Billing, Account. Every
  * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
  * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage billing (Whop's own
  * page) and one-click cancel (at the end of the period you paid for). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CancelButton, FiltersForm, RegionForm } from "@/components/account/AccountForms";
-import { Beacons } from "@/components/app/Beacons";
+import { CancelButton } from "@/components/account/AccountForms";
+import { ComingSoon } from "@/components/v2/ComingSoon";
+import { LocationPill } from "@/components/v2/LocationPill";
+import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
 import { fetchMemberships, type MembershipLite } from "@/lib/auth/whop";
-import { UNLOCK, UNLOCK_PRO } from "@/lib/copy";
 import { getDb, hasDatabase } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
@@ -44,6 +45,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const [mem, devices] = await Promise.all([paid ? membership(user.id, user.membershipId) : Promise.resolve(null), deviceCount(user.id)]);
   const m = mem === "error" ? null : mem;
   const s = user.settings;
+  const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (cancel, saved).
   const notice = q.cancel === "done" ? "Subscription cancelled. You keep access until the end of this billing period."
     : q.cancel === "failed" ? "Couldn't reach Whop to cancel. Try again in a minute, or use Manage billing." : q.saved ? "Saved." : null;
@@ -52,40 +54,42 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/settings" />
       <main className="wrap app acct">
-        <Beacons where="settings" />
         <h1 className="page__h">Account</h1>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
 
         <section className="agroup" aria-labelledby="g-alerts">
           <h2 id="g-alerts" className="agroup__h">Alerts</h2>
           <div className="agroup__body">
-            {paid ? (
+            {!alertsReady ? (
+              <div className="soonrow">
+                <ComingSoon feature="alerts_push" className="btn btn--secondary">Phone alerts</ComingSoon>
+                <ComingSoon feature="alerts_email" className="btn btn--secondary">Email alerts</ComingSoon>
+              </div>
+            ) : paid ? (
               <>
                 <p className="asum">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email alerts on" : "Off"}
-                  <span className="asum__sub"> · deals at {Math.round(s.alertMinRoi * 10_000) / 100}% or more{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</span></p>
+                  <span className="asum__sub">{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</span></p>
                 <Link className="btn btn--primary" href="/alerts">Alert settings</Link>
               </>
             ) : (
-              <p className="asum">Alerts come with Insidir. You&apos;d get a push the moment a deal shows up.</p>
+              <p className="asum">Alerts come with Insidir. We ping you when a trader or market you follow moves.</p>
             )}
           </div>
         </section>
 
-        <section className="agroup" aria-labelledby="g-filters">
-          <h2 id="g-filters" className="agroup__h">Filters</h2>
-          <FiltersForm settings={s} />
-        </section>
-
         <section className="agroup" aria-labelledby="g-region">
-          <h2 id="g-region" className="agroup__h">Region</h2>
-          <RegionForm region={viewer.region} venues={s.venues} />
+          <h2 id="g-region" className="agroup__h">Location</h2>
+          <div className="agroup__body">
+            <p className="asum">We only link you to apps that work where you are. Every move shows either way.</p>
+            <LocationPill region={viewer.region} />
+          </div>
         </section>
 
         <section className="agroup" aria-labelledby="g-billing" id="billing">
           <h2 id="g-billing" className="agroup__h">Billing</h2>
           <div className="agroup__body">
             <dl className="akv">
-              <div><dt>Plan</dt><dd>{PLANS[viewer.plan].name}{paid ? <span className="akv__sub"> · ${PLANS[viewer.plan].price} a month</span> : null}</dd></div>
+              <div><dt>Plan</dt><dd>{PLANS[viewer.plan].name}{paid ? <span className="akv__sub"> · ${PLANS[viewer.plan].price}/mo</span> : null}</dd></div>
               {paid ? (
                 <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : "Next charge"}</dt>
                   <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.renewalPrice}</span> : null}</>
@@ -98,14 +102,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <div className="row-gap">
                   {user.manageUrl ? <a className="btn btn--secondary" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage billing</a> : null}
                   {!user.cancelAtPeriodEnd ? <CancelButton /> : null}
-                  {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">{UNLOCK_PRO}</a> : null}
+                  {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
                 {!user.cancelAtPeriodEnd ? <p className="afield__hint">One tap, no forms. You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}. No refund for the current month.</p> : null}
               </>
             ) : (
               <>
-                <p className="asum">You see the top 3 deals, 30 minutes late. Insidir shows every deal the moment it&apos;s found, with sizes and profit.</p>
-                <div className="row-gap"><a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">{UNLOCK}</a></div>
+                <p className="asum">You see big moves 30 minutes late. Insidir shows every move live, with trader records and alerts.</p>
+                <div className="row-gap"><a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Try it for $1</a></div>
               </>
             )}
           </div>

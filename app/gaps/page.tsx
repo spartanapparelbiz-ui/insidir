@@ -5,7 +5,6 @@
  * computed here from real rows. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Beacons } from "@/components/app/Beacons";
 import { LiveFeed } from "@/components/app/LiveFeed";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -62,7 +61,6 @@ export default async function GapsPage() {
     <>
       <SiteHeader signedIn={Boolean(user)} plan={real.plan} current="/gaps" />
       <main className="wrap app term-page">
-        <Beacons where="terminal" />
         {real.plan !== "pro" ? (
           <aside className="upsell">
             <p className="upsell__text">Price gaps are part of Pro. This is a preview: 30 minutes late, top 3, sizes hidden.</p>

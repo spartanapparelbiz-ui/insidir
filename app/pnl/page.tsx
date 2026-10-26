@@ -1,7 +1,6 @@
 /* P&L (Pro): the user's own totals from public records: a Polymarket wallet address (public Data API) and a Kalshi
  * CSV they upload. Their numbers only; no suggestions. No links to polymarket.com. */
 import type { Metadata } from "next";
-import { Beacons } from "@/components/app/Beacons";
 import { KalshiUpload } from "@/components/app/KalshiUpload";
 import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
@@ -36,7 +35,6 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} current="/pnl" />
       <main className="wrap app">
-        <Beacons where="pnl" />
         <h1 className="page__h">Your P&amp;L</h1>
         {!allowed ? (
           <Locked title="P&L" text="See your own realized P&L, open positions and results per market, from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref("pro", "/pnl")} plan="pro" where="pnl" />

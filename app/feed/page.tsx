@@ -2,7 +2,10 @@
  * (lib/moves/feed.ts), then components/v2/Feed keeps it live. After checkout (?welcome=1) a member sees "You're in.
  * Follow your first 3 top traders." with one-tap suggestions: the top 3 traders by all-time profit. */
 import type { Metadata } from "next";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { after } from "next/server";
+import { users } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Feed } from "@/components/v2/Feed";
 import { FollowButton } from "@/components/v2/FollowButton";
@@ -30,6 +33,8 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
   const jar = await cookies();
   const paid = isPaid(viewer.plan);
   const tab = sp.tab === "markets" ? "markets" : "sports";
+  // The welcome shows once: after checkout (?welcome=1), or the first time a new paying member opens the feed.
+  const welcome = paid && Boolean(viewer.user) && (Boolean(sp.welcome) || !viewer.user!.onboarded);
   let items: FeedItem[] = [], status: FeedStatus | null = null, follows: string[] | null = null, top: TraderRecord[] = [];
   if (hasDatabase()) {
     const db = getDb();
@@ -37,8 +42,12 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
       feedFor(db, viewer.plan, viewer.region, { tab, min: 10_000, limit: 30 }, now).catch(() => []),
       feedStatus(db, now).catch(() => null),
       viewer.user ? followList(db, viewer.user.id).then(l => l.filter(f => f.kind === "trader").map(f => f.target)).catch(() => []) : Promise.resolve(null),
-      sp.welcome && paid ? topTraders(db, 3).catch(() => []) : Promise.resolve([]),
+      welcome ? topTraders(db, 3).catch(() => []) : Promise.resolve([]),
     ]);
+    if (welcome && !viewer.user!.onboarded) {
+      const id = viewer.user!.id;
+      after(() => db.update(users).set({ onboardedAt: new Date() }).where(eq(users.id, id)).then(() => undefined, () => undefined));
+    }
   }
   void recordEvent({ name: "feed_view", visitorId: jar.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined);
   const trial = unlockHref("insidir");
@@ -47,7 +56,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/feed" trialHref={trial} />
       <main className="wrap app2">
-        {sp.welcome && paid ? (
+        {welcome ? (
           <section className="welcome" aria-labelledby="welcome-h">
             <h2 id="welcome-h" className="welcome__h">You&apos;re in. Follow your first 3 top traders.</h2>
             {top.length ? (

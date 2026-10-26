@@ -1,11 +1,12 @@
 /* Alerts: turn them on for this device, choose what sends one (return, safety lights, categories), quiet hours,
  * a test alert, and the last 20 alerts actually sent. Signed-in only; alerts are a paid feature, so free members
  * see what they'd get and one way to get it. */
+import { ComingSoonPage } from "@/components/v2/ComingSoonPage";
+import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertsForm } from "@/components/account/AlertsForm";
-import { Beacons } from "@/components/app/Beacons";
 import { unlockHref, vapidPublicKey } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { alertHistory } from "@/lib/alerts/history";
@@ -22,6 +23,9 @@ const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", 
 
 export default async function AlertsPage() {
   const viewer = await getViewer();
+  if (!isReady("alerts_push")) {
+    return <ComingSoonPage feature="alerts_push" title="Alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
+  }
   const user = viewer.user;
   if (!user) redirect("/auth/login?next=/alerts");
   const delay = entitlements(viewer.plan).alertDelaySeconds;
@@ -53,7 +57,6 @@ export default async function AlertsPage() {
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
       <main className="wrap app acct">
-        <Beacons where="alerts" />
         <h1 className="page__h">Alerts</h1>
         <p className="asum asum--lead">{viewer.plan === "pro" ? "Pro alerts go out the moment a deal is found." : `Insidir alerts go out within ${delay} seconds of a deal being found.`}</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} />

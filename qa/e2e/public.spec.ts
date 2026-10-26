@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 import { dealId, footerOk, noHorizontalScroll, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
 
 test("the Terminal works without signing in: delayed, top 3, sizes hidden", async ({ page }) => {
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   const rows = page.locator("tr[data-deal]");
   await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeLessThanOrEqual(3);
@@ -22,7 +22,7 @@ test("every page: footer disclaimer, privacy and terms links, no sideways scroll
     expect(res?.status(), path).toBeLessThan(400);
     await footerOk(page);
     await noHorizontalScroll(page);
-    const name = path === "/" ? "landing" : path.startsWith("/deal/") ? "deal-free" : path.slice(1) + (path === "/terminal" ? "-free" : path === "/admin" ? "-login" : "");
+    const name = path === "/" ? "landing" : path.startsWith("/deal/") ? "deal-free" : path.slice(1) + (path === "/gaps" ? "-free" : path === "/admin" ? "-login" : "");
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   await signIn(context, "pro");
@@ -31,7 +31,7 @@ test("every page: footer disclaimer, privacy and terms links, no sideways scroll
     expect(res?.status(), path).toBeLessThan(400);
     await footerOk(page);
     await noHorizontalScroll(page);
-    const name = path.startsWith("/deal/") ? "deal-pro" : path.slice(1) + (path === "/terminal" ? "-pro" : "");
+    const name = path.startsWith("/deal/") ? "deal-pro" : path.slice(1) + (path === "/gaps" ? "-pro" : "");
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   const missing = await page.goto("/this-page-does-not-exist");

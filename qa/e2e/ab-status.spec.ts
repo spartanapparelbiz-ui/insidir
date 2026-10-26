@@ -1,30 +1,11 @@
-/* The A/B split assigns both hero variants (and renders the one assigned), and the failure states:
+/* The Price gaps failure states (V2 has one hero, so the old A/B headline test is gone):
  * "Live data paused, retrying" when the scanner stops, stale deals greyed out, and "found X ago" everywhere. */
 import { expect, test } from "@playwright/test";
-import { AB_TESTS } from "@/lib/analytics";
 import { q, signIn } from "./helpers";
-
-test("A/B: new visitors get both variants, each sees its own headline, landing_view records it", async ({ browser }) => {
-  const seen: Record<string, number> = { a: 0, b: 0 };
-  for (let i = 0; i < 16; i++) {
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
-    await page.goto("/");
-    const cookie = decodeURIComponent((await ctx.cookies()).find(c => c.name === "insidir_ab")!.value);
-    const v = cookie.split(":")[1] as "a" | "b";
-    seen[v]!++;
-    await expect(page.locator("h1")).toHaveText(AB_TESTS.hero[v].headline);
-    const vid = (await ctx.cookies()).find(c => c.name === "insidir_vid")!.value;
-    await expect.poll(async () => (await q<{ variant: string }>("select variant from terminal.events where visitor_id = $1 and name = 'landing_view'", [vid]))[0]?.variant).toBe(cookie);
-    await ctx.close();
-  }
-  expect(seen.a).toBeGreaterThan(0);
-  expect(seen.b).toBeGreaterThan(0);
-});
 
 test("scanner stopped: 'Live data paused, retrying', deals greyed out, nothing called live", async ({ page, context }) => {
   await signIn(context, "pro");
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   await expect(page.locator("tr[data-deal]").first()).toBeVisible();
   await expect(page.getByText("Live data paused, retrying")).toHaveCount(0);
   try {

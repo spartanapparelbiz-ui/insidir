@@ -12,7 +12,7 @@ const noTips = (page: Page) => page.addInitScript(() => { try { localStorage.set
 test("Terminal keyboard: J/K move, Enter opens the drawer, Esc closes it, / jumps to search", async ({ page, context }) => {
   await signIn(context, "pro");
   await noTips(page);
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   const rows = page.locator("tr[data-deal]");
   await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeGreaterThan(1);
@@ -37,7 +37,7 @@ test("Terminal keyboard: J/K move, Enter opens the drawer, Esc closes it, / jump
 test("Terminal drawer opens on click and closes from its button", async ({ page, context }) => {
   await signIn(context, "pro");
   await noTips(page);
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   await page.locator("tr[data-deal]").first().click();
   const drawer = page.getByRole("dialog");
   await expect(drawer).toBeVisible();
@@ -49,7 +49,7 @@ test("Terminal drawer opens on click and closes from its button", async ({ page,
 test("Terminal timers count from when the deal was found: a refresh doesn't reset them", async ({ page, context }) => {
   await signIn(context, "pro");
   await noTips(page);
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   const cell = page.locator("tr[data-deal] td.dt-c-open").first();
   const secs = async () => { const m = (await cell.innerText()).match(/(\d+)m (\d+)s/); return m ? Number(m[1]) * 60 + Number(m[2]) : -1; };
   test.skip((await cell.isVisible()) === false, "Open for column is hidden on phones");
@@ -62,7 +62,7 @@ test("Terminal timers count from when the deal was found: a refresh doesn't rese
 test("free Terminal: paid cells are lock bars with no real values anywhere in the DOM", async ({ page, context }) => {
   await signIn(context, "freeUs");
   await noTips(page);
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   await expect(page.locator(".freebar")).toContainText("You're seeing deals 30 min late");
   await expect(page.locator(".freebar [data-unlock]")).toBeVisible();
   const rows = page.locator("tr[data-deal]");

@@ -4,6 +4,8 @@
  * data). Then the ledger with filters (result, category, dates) and Export CSV, both from the same rows under the same
  * paywall (lib/ledger.ts loadLedger): visitors and free members see the public 7 days on their delayed clock; Pro sees
  * everything. Filters are plain links and a GET form, so they work without JS. */
+import { redirect } from "next/navigation";
+import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -48,6 +50,8 @@ function item(r: LedgerRow, sizesHidden: boolean): LedgerItem {
 export default async function ReceiptsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
   const params = await searchParams;
+  // Receipts were the price-gap log; V2's proof page is Results. Price gaps (Pro) bring their log back when ready.
+  if (!isReady("price_gaps")) redirect("/results");
   const viewer = await getViewer();
   const [ledger, since] = await Promise.all([loadLedger(viewer.plan, viewer.region, params, now), dataSince()]);
   const s = summary(ledger.periodRows);

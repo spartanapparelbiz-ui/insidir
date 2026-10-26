@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./tokens.css";
 import "./globals.css";
@@ -10,8 +11,8 @@ import "./v2.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
-  title: { default: "Insidir Terminal", template: "%s | Insidir" },
-  description: "Polymarket and Kalshi disagree. Insidir scans both every few seconds for prices that lock in a profit after fees, if both sides fill and both markets settle the same way.",
+  title: { default: "Insidir: follow the big money", template: "%s | Insidir" },
+  description: "Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.",
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
 };
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <SiteFooter />
         </ToastProvider>
         <RegisterSW />
+        <Beacons />
       </body>
     </html>
   );

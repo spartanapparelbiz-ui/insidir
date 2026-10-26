@@ -12,7 +12,7 @@ for (const who of ["pro", "freeUs", "visitor"] as const) {
     // A visitor who hasn't picked a region gets the US set.
     const intlFresh = await dealId("Fed cut"), intlOld = await dealId("BTC close");
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/terminal", "/receipts", "/pricing", "/whales", "/settings", `/deal/${intlFresh}`, `/deal/${intlOld}`]) {
+      for (const path of ["/", "/gaps", "/receipts", "/pricing", "/whales", "/settings", `/deal/${intlFresh}`, `/deal/${intlOld}`]) {
         await page.goto(path);
         const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).href));
         expect(hrefs.filter(h => /polymarket\.com/.test(h)), path).toEqual([]);
@@ -29,7 +29,7 @@ for (const who of ["pro", "freeUs", "visitor"] as const) {
 
 test("a non-US member sees international Polymarket deals, US venues stay too", async ({ page, context }) => {
   await signIn(context, "proIntl");
-  await page.goto("/terminal");
+  await page.goto("/gaps");
   await expect(page.getByText("Will the Fed cut").first()).toBeVisible();
   // Venue links live on the deal page.
   await page.goto(`/deal/${await dealId("Fed cut")}`);

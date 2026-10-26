@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
-import { OPEN_TERMINAL } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -13,20 +12,21 @@ export default async function PrivacyPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} />
       {/* Draft — have counsel review. */}
       <main className="wrap lp">
         <article className="lp-legal">
           <h1>Privacy</h1>
           <p className="small muted">Insidir is run by Aethric LLC. This page says what we collect, why, and what we never do.</p>
 
-          <h2>Market data</h2>
-          <p>The prices, order books and rules we show come from Kalshi&apos;s, Polymarket&apos;s and Polymarket US&apos;s public APIs. That data is about markets, not about you.</p>
+          <h2>Trading data</h2>
+          <p>The bets, prices and wallet records we show come from Kalshi&apos;s and Polymarket&apos;s public APIs. Polymarket wallets are shown by their public name or a short address; we never try to work out who is behind a wallet. Kalshi trades are anonymous.</p>
 
           <h2>What we store about you</h2>
           <ul>
             <li>Your Whop user id and the email address Whop gives us when you sign in. Whop handles sign-in and payment; we never see your card details.</li>
-            <li>Your plan, your region (US or outside the US) and your settings: filters, and which alerts you turned on.</li>
+            <li>Your plan, your location answer (US or outside the US), the traders and markets you follow, and which alerts you turned on.</li>
+            <li>If you sign up for a heads-up about a feature that is coming soon, your email and that feature, so we can tell you once when it&apos;s live.</li>
             <li>Push subscriptions for the devices where you turned on alerts, so we can send them.</li>
             <li>First-party events (for example: viewed the landing page, opened the feed, started checkout), tied to a random visitor id kept in a cookie. It is not derived from anything personal, and these events are not sent to third parties.</li>
             <li>Which version of the page you saw, and the campaign tags (utm) of the link that brought you, in cookies.</li>
@@ -40,7 +40,7 @@ export default async function PrivacyPage() {
 
           <h2>What we never do</h2>
           <ul>
-            <li>We never ask for, or store, your exchange passwords or API keys.</li>
+            <li>We never request or store your exchange passwords or API keys.</li>
             <li>We never sell your data, and we don&apos;t use third-party ad trackers.</li>
           </ul>
 
@@ -53,14 +53,13 @@ export default async function PrivacyPage() {
           </ul>
 
           <h2>Your choices</h2>
-          <p>Turn alerts off in Settings, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email hello@aethric.llc.</p>
+          <p>Turn alerts off in Account, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email hello@aethric.llc.</p>
 
           <h2>Contact</h2>
           <p>Aethric LLC · hello@aethric.llc</p>
         </article>
         <div className="lp-legal__next">
-          <p>Questions about how it works? The Terminal shows today&apos;s deals, free.</p>
-          <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
         </div>
       </main>
     </>

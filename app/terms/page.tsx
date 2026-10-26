@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
-import { FOOTER, LOCK_LINE, OPEN_TERMINAL } from "@/lib/copy";
+import { FOOTER } from "@/lib/copy";
 import { getViewer } from "@/lib/auth/viewer";
 import "../landing.css";
 
@@ -13,7 +13,7 @@ export default async function TermsPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} />
       {/* Draft — have counsel review. */}
       <main className="wrap lp">
         <article className="lp-legal">
@@ -21,22 +21,21 @@ export default async function TermsPage() {
           <p className="small muted">Insidir is run by Aethric LLC. By using insidir.com you agree to these terms.</p>
 
           <h2>What Insidir is</h2>
-          <p>Insidir is an information service. It reads public market data from Kalshi, Polymarket and Polymarket US through their public APIs, and shows where their prices, after fees, add up to less than the payout. {LOCK_LINE}</p>
+          <p>Insidir is an information service. It reads public trading data from Kalshi and Polymarket through their public APIs and shows the biggest bets as they happen, in plain English, with the public records of the wallets behind them where the data allows.</p>
           <p>Insidir is not a broker, an exchange or an adviser. We do not place trades, hold money or hold positions for you, and nothing on the site is a recommendation to buy or sell anything. You decide what to do, and you place every trade yourself on each venue, under that venue&apos;s own terms.</p>
 
           <h2>No promise of results</h2>
           <ul>
             <li>Prices move, and the data we show can be delayed, incomplete or wrong. The venues&apos; own pages are the source of truth.</li>
-            <li>An order can fail to fill or fill only in part. Two markets that look alike can settle differently. Fees can change.</li>
-            <li>The safety light is our reading of two rule texts, not a promise about how either market will settle.</li>
-            <li>Past results in the receipts log do not mean future deals will work the same way.</li>
+            <li>Big traders lose too. A wallet&apos;s record shows what happened, not what will happen.</li>
+            <li>Past results on the Results page do not predict future ones.</li>
           </ul>
 
           <h2>Your eligibility</h2>
-          <p>You are responsible for checking that prediction markets, and each venue, are available to you where you live, and for following each venue&apos;s rules. If you tell us you are in the US, Insidir shows only Kalshi and Polymarket US.</p>
+          <p>You are responsible for checking that prediction markets, and each venue, are available to you where you live, and for following each venue&apos;s rules. If you tell us you are in the US, Insidir only links you to apps available in the US.</p>
 
           <h2>Accounts and payment</h2>
-          <p>Sign-in and payment are handled by Whop. Paid plans renew monthly until cancelled. You can cancel in one click in Settings; access continues to the end of the period you paid for. Refunds follow Whop&apos;s process and the law where you live.</p>
+          <p>Sign-in and payment are handled by Whop. Paid plans renew monthly until cancelled. You can cancel in one click in Account; access continues to the end of the period you paid for. Refunds follow Whop&apos;s process and the law where you live.</p>
 
           <h2>Fair use</h2>
           <p>Your plan is for you. Don&apos;t resell or republish the feed, scrape the site, share your account, or try to get around the free plan&apos;s delay. We can suspend accounts that do.</p>
@@ -52,8 +51,7 @@ export default async function TermsPage() {
           <p className="small muted">{FOOTER}</p>
         </article>
         <div className="lp-legal__next">
-          <p>Questions about how it works? The Terminal shows today&apos;s deals, free.</p>
-          <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
         </div>
       </main>
     </>

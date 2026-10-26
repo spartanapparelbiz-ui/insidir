@@ -2,12 +2,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Ago } from "@/components/app/Ago";
-import { Beacons } from "@/components/app/Beacons";
 import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
-import { OPEN_TERMINAL } from "@/lib/copy";
 import { centsText, usd } from "@/lib/format";
 import { entitlements } from "@/lib/plans";
 import { whales } from "@/lib/queries";
@@ -31,7 +29,6 @@ export default async function WhalesPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} current="/whales" />
       <main className="wrap app">
-        <Beacons where="whales" />
         <h1 className="page__h">Whales</h1>
         {allowed ? <p className="muted small">Large trades on the venues you can use, newest first.</p> : null}
         {!allowed ? (
@@ -59,7 +56,7 @@ export default async function WhalesPage() {
           <div className="empty" data-empty="whales">
             <p className="empty__h">No large trades yet</p>
             <p className="muted small">Trades of $10,000 or more show up here as the scanner records them. Until then, the live deals are on the Terminal.</p>
-            <Link className="btn btn--primary" href="/terminal">{OPEN_TERMINAL}</Link>
+            <Link className="btn btn--primary" href="/feed">See the live feed</Link>
           </div>
         )}
       </main>

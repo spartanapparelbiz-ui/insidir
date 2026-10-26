@@ -1,9 +1,10 @@
 /* One deal: the play, both legs with deep links, the numbers, the calculator (paid) and both markets' rule texts side
  * by side. What the viewer may see comes from lib/deal-view.ts, the same function behind the Terminal's detail sheet
  * (GET /api/deal/[id]): free viewers get the delayed, redacted deal, or "This deal is still live" when it's too new. */
+import { ComingSoonPage } from "@/components/v2/ComingSoonPage";
+import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Beacons } from "@/components/app/Beacons";
 import { DealDetail } from "@/components/app/DealDetail";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -22,13 +23,15 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const id = safeDecode((await params).id);
   const now = Date.now();
   const viewer = await getViewer();
+  if (!isReady("price_gaps")) {
+    return <ComingSoonPage feature="price_gaps" title="Price gaps" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Sometimes Kalshi and Polymarket price the same event differently. Price gaps will show those, with the math, for Pro members." />;
+  }
   const view = await dealView(id, viewer, now);
   const unlock = unlockHref("insidir", `/deal/${encodeURIComponent(id)}`);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} current="/terminal" />
       <main className="wrap app deal-page">
-        <Beacons where="deal" />
         <Link href="/terminal" className="backlink">Back to the Terminal</Link>
         {view.state === "ok" ? <DealDetail view={view} now={now} unlockHref={unlock} /> : (
           <section className="empty">
