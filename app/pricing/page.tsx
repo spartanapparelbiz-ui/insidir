@@ -4,6 +4,7 @@
  * straight to Whop checkout. */
 import type { Metadata } from "next";
 import { Photo } from "@/components/Photo";
+import { BAND } from "@/lib/photos";
 import { TrustBlock } from "@/components/TrustBlock";
 import { getDb, hasDatabase } from "@/lib/db";
 import { trustFacts } from "@/lib/trust";
@@ -26,7 +27,7 @@ export default async function PricingPage() {
       <main>
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={unlockHref("pro")} level={1} primary />
         <TrustBlock facts={trust} />
-        <Photo n={4} className="band-photo" wideOnly />
+        <Photo n={BAND.pricing} className="band-photo" wideOnly />
         <FaqV2 />
       </main>
     </>

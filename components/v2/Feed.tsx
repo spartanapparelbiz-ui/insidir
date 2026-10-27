@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { League, Tab } from "@/lib/moves/types";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { LockButton } from "@/components/lock/Lock";
 import { ComingSoon } from "./ComingSoon";
 import type { FollowState } from "./FollowButton";
@@ -122,7 +123,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
         </ol>
       ) : (
         <div className="empty">
-          <Photo n={1} className="empty__photo" wideOnly />
+          <Photo n={SPOT.feedEmpty} className="empty__photo" wideOnly />
           <p className="empty__h">Quiet right now. The next big move is coming.</p>
           <p className="empty__p">Follow a few top traders and we&apos;ll ping you when they move.</p>
           <a className="btn btn--secondary" href="/results">See past moves</a>

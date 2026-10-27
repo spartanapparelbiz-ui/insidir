@@ -1,8 +1,8 @@
 "use client";
 /* The home hero: "serious type, wild world".
- *   Photos: the six black-and-white photos (public/hero), each zooming slowly from 100% to 108% over 6 s, then
- *   crossfading (1.2 s) into the next; it loops, each round ending on photo 6. Photo 1 loads with the page (preloaded,
- *   high priority); the other five load once the page is idle, and a photo only comes up once it has loaded. Under
+ *   Photos: eight of the sixteen graded photos (public/hero, lib/photos.ts HERO_PHOTOS), each zooming slowly from 100%
+ *   to 108% over 6 s, then crossfading (1.2 s) into the next; it loops, each round ending on the summit. Photo 1 loads
+ *   with the page (preloaded, high priority); the others load once the page is idle, and a photo only comes up once it has loaded. Under
  *   prefers-reduced-motion: photo 1 only, still.
  *   The fintech layer, readable at a glance: the "LIVE · big money moves" label (only while every source is current;
  *   otherwise "Catching up · last update 6m ago"), the headline, the button, and one
@@ -14,13 +14,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { beacon } from "@/components/app/beacon";
-import { Photo, PHOTO_WIDE, type PhotoN } from "@/components/Photo";
+import { Photo, PHOTO_WIDE } from "@/components/Photo";
+import { HERO_PHOTOS } from "@/lib/photos";
 import { TimeAgo } from "@/components/TimeAgo";
 import { dollars } from "@/lib/moves/copy";
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { TickerItem } from "@/lib/moves/ticker";
 
-const PHOTOS: PhotoN[] = [1, 2, 3, 4, 5, 6];
+const PHOTOS = HERO_PHOTOS;
 const HOLD_MS = 6000;
 const TAG: Record<string, string> = { sports: "Sports", markets: "Markets", stocks: "Stocks", crypto: "Crypto" };
 
@@ -58,7 +59,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
   preload("/hero/1-m.avif", { as: "image", type: "image/avif", media: "(max-width: 899px)", fetchPriority: "high" });
   preload("/hero/1-d.avif", { as: "image", type: "image/avif", media: PHOTO_WIDE, fetchPriority: "high" });
 
-  // The other five once the page is idle, and only without reduced motion.
+  // The others once the page is idle, and only without reduced motion.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const go = () => setMore(true);

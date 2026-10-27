@@ -6,6 +6,7 @@ import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { DealDetail } from "@/components/app/DealDetail";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -36,7 +37,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
         <Link href="/terminal" className="backlink">Back to the Terminal</Link>
         {view.state === "ok" ? <DealDetail view={view} now={now} unlockHref={unlock} /> : (
           <section className="empty">
-            <Photo n={3} className="empty__photo" wideOnly />
+            <Photo n={SPOT.pageEmpty} className="empty__photo" wideOnly />
             <h1 className="empty__h">{view.state === "too_new" ? "This deal is still live" : "Deal not found"}</h1>
             <p className="muted small">{view.state === "too_new"
               ? "Deals reach the free feed 30 minutes after they're found. Members see them as they happen."

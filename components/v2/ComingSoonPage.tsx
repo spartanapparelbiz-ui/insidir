@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import type { Feature } from "@/lib/features";
 import type { Plan } from "@/lib/types";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { SoonBadge, SoonForm } from "./ComingSoon";
 
 export function ComingSoonPage({ feature, title, text, signedIn, plan, visual }: { feature: Feature; title: string; text: string; signedIn: boolean; plan: Plan; visual?: ReactNode }) {
@@ -12,7 +13,7 @@ export function ComingSoonPage({ feature, title, text, signedIn, plan, visual }:
     <>
       <SiteHeader signedIn={signedIn} plan={plan} />
       <main className="wrap soonpage">
-        <Photo n={4} className="soonpage__photo" wideOnly />
+        <Photo n={SPOT.comingSoonPage} className="soonpage__photo" wideOnly />
         <p><SoonBadge /></p>
         <h1 className="soonpage__h">{title}</h1>
         <p className="soonpage__p">{text}</p>

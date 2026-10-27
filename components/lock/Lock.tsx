@@ -7,6 +7,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { TRIAL_LINE } from "@/lib/copy";
 
 interface LockApi { open: (where: string) => void }
@@ -49,7 +50,7 @@ function LockSheet({ where, unlocks, trialHref, onClose }: { where: string; unlo
   return (
     <div className="sheet" role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet__panel lock" role="dialog" aria-modal="true" aria-labelledby={id} data-lock={where}>
-        <Photo n={3} className="sheet__photo" wideOnly />
+        <Photo n={SPOT.lock} className="sheet__photo" wideOnly />
         <h2 id={id} className="sheet__h">{HEADINGS[kind]}</h2>
         <ul className="lock__list">{unlocks.map(u => <li key={u}>{u}</li>)}</ul>
         <p className="lock__price">{TRIAL_LINE}</p>

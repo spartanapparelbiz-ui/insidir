@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FOOTER } from "@/lib/copy";
-import { PHOTO_CREDITS } from "./Photo";
+import { PHOTOGRAPHERS } from "./Photo";
 import { Wordmark } from "./Wordmark";
 
 /** Every page's footer (docs/INSIDIR-V2.md §6): the logo, who builds Insidir, how to reach a person, Terms, Privacy, the
@@ -26,8 +26,8 @@ export function SiteFooter() {
         </nav>
         <p className="foot__legal">{FOOTER}</p>
         <p className="foot__credits">Photos on Unsplash by{" "}
-          {PHOTO_CREDITS.map((c, i) => (
-            <span key={c.user}><a href={`https://unsplash.com/@${c.user}?utm_source=insidir&utm_medium=referral`} rel="noopener noreferrer" target="_blank">{c.name}</a>{i < PHOTO_CREDITS.length - 2 ? ", " : i === PHOTO_CREDITS.length - 2 ? " and " : "."}</span>
+          {PHOTOGRAPHERS.map((c, i) => (
+            <span key={c.user}><a href={`https://unsplash.com/@${c.user}?utm_source=insidir&utm_medium=referral`} rel="noopener noreferrer" target="_blank">{c.name}</a>{i < PHOTOGRAPHERS.length - 2 ? ", " : i === PHOTOGRAPHERS.length - 2 ? " and " : "."}</span>
           ))}
         </p>
       </div>

@@ -278,8 +278,12 @@
 @keyframes cine-zoom { from { transform: scale(1); } to { transform: scale(1.08); } }
 @keyframes cine-in { from { opacity: 0; } to { opacity: 1; } }
 /* The scrim behind the words: dark enough that white text stays above 4.5:1 on the brightest photo (snow). */
-.cine__scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 18, .72) 0%, rgba(11, 11, 18, .72) 55%, rgba(11, 11, 18, .5) 100%); }
-@media (min-width: 900px) { .cine__scrim { background: linear-gradient(90deg, rgba(11, 11, 18, .82) 0%, rgba(11, 11, 18, .74) 42%, rgba(11, 11, 18, .3) 70%, rgba(11, 11, 18, .2) 100%); } }
+/* 55% at most behind the words (the graded photos never go past ~95% white, so white text stays above 4.5:1), lighter
+ * where only the solid card sits, so the photos keep their colour. */
+.cine__scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 18, .55) 0%, rgba(11, 11, 18, .55) 55%, rgba(11, 11, 18, .4) 100%); }
+@media (min-width: 900px) { .cine__scrim { background: linear-gradient(90deg, rgba(11, 11, 18, .55) 0%, rgba(11, 11, 18, .55) 42%, rgba(11, 11, 18, .2) 70%, rgba(11, 11, 18, .1) 100%); } }
+/* phones: room for the tallest card, so the ticker and the page below don't jump as the cards change */
+@media (max-width: 899px) { .cine__card { min-height: 280px; } }
 .cine__in { display: grid; gap: 28px; align-content: start; padding-top: 28px; padding-bottom: 28px; }
 @media (min-width: 900px) { .cine__in { grid-template-columns: minmax(0, 1fr) 420px; align-items: center; align-content: center; gap: 64px; padding-top: 64px; padding-bottom: 64px; } }
 .cine__copy { display: grid; justify-items: start; }

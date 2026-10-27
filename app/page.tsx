@@ -1,5 +1,5 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: six black-and-white photos, "Follow the big money.", one real big move per photo on
+ * hero (components/home/Hero.tsx: eight graded photos, "Follow the big money.", one real big move per photo on
  * a solid card, the ticker strip of real moves); then clean white sections: a real feed preview (3 live cards and a
  * profile snippet), How it works, Results ("Real past moves. Not a promise."), where the data comes from (the trust
  * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
@@ -11,6 +11,7 @@ import { after } from "next/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Hero, PreviewSeen } from "@/components/home/Hero";
+import { HERO_PHOTOS } from "@/lib/photos";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { MoveCard, SourceA } from "@/components/v2/MoveCard";
@@ -37,15 +38,15 @@ export const dynamic = "force-dynamic";
 const WEEK = 7 * 86_400_000;
 
 /** The hero's moves: the biggest recent ones from each live tab (Sports, Markets, Stocks), taken in turn so they mix.
- *  A tab with nothing in the last week gives its latest moves instead. Up to six, one per photo. */
+ *  A tab with nothing in the last week gives its latest moves instead. Up to eight, one per photo. */
 async function heroMoves(db: Db, until: number, now: number): Promise<Move[]> {
   const tabs = liveTabs().filter(t => t !== "crypto");
   const per = await Promise.all(tabs.map(async tab => {
-    const big = await listMoves(db, { tab, since: now - WEEK, until, byAmount: true, limit: 2 });
-    return big.length ? big : listMoves(db, { tab, until, limit: 2 });
+    const big = await listMoves(db, { tab, since: now - WEEK, until, byAmount: true, limit: 3 });
+    return big.length ? big : listMoves(db, { tab, until, limit: 3 });
   }));
   const out: Move[] = [];
-  for (let i = 0; i < 2; i++) for (const list of per) if (list[i] && out.length < 6) out.push(list[i]!);
+  for (let i = 0; i < 3; i++) for (const list of per) if (list[i] && out.length < HERO_PHOTOS.length) out.push(list[i]!);
   return out;
 }
 

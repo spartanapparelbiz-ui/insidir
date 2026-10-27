@@ -5,6 +5,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Photo } from "@/components/Photo";
+import { BAND } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       <SiteHeader signedIn={false} minimal />
       <main className="split">
         <div className="split__photo">
-          <Photo n={6} eager />
+          <Photo n={BAND.signin} eager />
           <p className="split__line serif">Follow the big money.</p>
         </div>
         <div className="split__form">

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Photo } from "./Photo";
+import { BAND } from "@/lib/photos";
 
 export function WrongTrail({ code, text, children }: { code: string; text: string; children?: ReactNode }) {
   return (
     <main className="trail">
-      <Photo n={1} className="trail__photo" eager />
+      <Photo n={BAND.notFound} className="trail__photo" eager />
       <div className="wrap trail__in">
         <p className="trail__code">{code}</p>
         <h1 className="trail__h">Wrong trail.</h1>

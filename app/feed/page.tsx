@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { users } from "@/lib/db/schema";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Feed } from "@/components/v2/Feed";
 import { FollowButton } from "@/components/v2/FollowButton";
@@ -60,7 +61,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/feed" trialHref={trial} />
       {welcome ? (
         <section className="inband" aria-labelledby="welcome-h">
-          <Photo n={6} className="inband__photo" eager />
+          <Photo n={SPOT.youreIn} className="inband__photo" eager />
           <div className="wrap inband__in">
             <h2 id="welcome-h" className="inband__h">You&apos;re in.</h2>
             <p className="inband__p">Follow your first 3 traders. We&apos;ll ping you the moment they make a big move.</p>

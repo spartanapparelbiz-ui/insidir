@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SourceA } from "@/components/v2/MoveCard";
 import { moveSource } from "@/lib/moves/source";
 import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { getViewer } from "@/lib/auth/viewer";
@@ -73,7 +74,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           </>
         ) : (
           <div className="empty">
-            <Photo n={2} className="empty__photo" wideOnly />
+            <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
             <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
             <Link className="btn btn--secondary" href="/feed">See the live feed</Link>
