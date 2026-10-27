@@ -1,9 +1,11 @@
 "use client";
 /* The Coming soon rule (docs/INSIDIR-V2.md §2): an item that isn't live is visible but can't be used. It shows one badge
- * style everywhere (violet tint pill, "Coming soon"), and tapping it opens a small sheet: "Coming soon. Want a
+ * style everywhere (an outlined pill, "Coming soon"), and tapping it opens a small sheet: "Coming soon. Want a
  * heads-up when it's live?" with an email field saved to the waitlist for that feature. */
 import { useEffect, useId, useState, type ReactNode } from "react";
 import type { Feature } from "@/lib/features";
+import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 
 export function SoonBadge() {
   return <span className="soon">Coming soon</span>;
@@ -54,6 +56,7 @@ export function SoonSheet({ feature, onClose }: { feature: Feature; onClose: () 
   return (
     <div className="sheet" role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet__panel" role="dialog" aria-modal="true" aria-labelledby={id}>
+        <Photo n={SPOT.comingSoon} className="sheet__photo" wideOnly />
         <h2 id={id} className="sheet__h">Coming soon.</h2>
         <SoonForm feature={feature} autoFocus />
         <button type="button" className="btn btn--secondary btn--block" onClick={onClose}>Close</button>

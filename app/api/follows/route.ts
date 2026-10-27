@@ -5,6 +5,8 @@ import { getViewer } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { canFollow } from "@/lib/moves/gate";
+import { recordEvent } from "@/lib/analytics";
+import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { follow, followList, unfollow } from "@/lib/moves/store";
 
 async function parse(req: NextRequest) {
@@ -26,6 +28,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: viewer.plan === "free" ? "Following is for members. Try it for $1." : "You're following 50 already. Pro has no limit." }, { status: 403 });
   }
   await follow(db, viewer.user.id, f.kind, f.target);
+  // The funnel's "first follow" (lib/analytics.ts FUNNEL): the member's first trader or market.
+  if (!mine.length) await recordEvent({ name: "first_follow", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user.id, props: { kind: f.kind } }).catch(() => undefined);
   return NextResponse.json({ ok: true, message: "Following." });
 }
 

@@ -11,14 +11,14 @@
 
 .rx-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
 .rx-tab { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.rx-tab[aria-current="page"] { color: var(--text); border-bottom-color: var(--brand); }
+.rx-tab[aria-current="page"] { color: var(--text); border-bottom-color: var(--text); }
 .rx-tab:hover { color: var(--text); }
 .rx-tab__pro { font-size: var(--t13); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--muted); }
 
 .rx-sum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .rx-sum > div { display: grid; gap: 4px; padding: 16px 16px 16px 0; }
 .rx-sum dt { color: var(--muted); font-size: var(--t13); line-height: 16px; }
-.rx-sum dd { margin: 0; font: 700 var(--t24)/28px var(--font); font-variant-numeric: tabular-nums; color: var(--muted); }
+.rx-sum dd { margin: 0; font: 700 var(--t24)/28px var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); }
 .rx-sum dd.rx-sum__main { color: var(--text); }
 @media (min-width: 900px) { .rx-sum { grid-template-columns: repeat(5, minmax(0, 1fr)); } .rx-h { font-size: var(--t44); line-height: 1.05; } }
 
@@ -37,7 +37,7 @@
 .rx-chart__cursor { stroke: var(--muted); stroke-width: 1; }
 .rx-chart__dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--text); pointer-events: none; }
 .rx-chart__axis { grid-column: 2; display: flex; justify-content: space-between; font-size: var(--t13); color: var(--muted); }
-.rx-chart__axis-t { color: var(--muted); font-family: var(--font); }
+.rx-chart__axis-t { color: var(--muted); font-family: var(--sans); }
 .rx-viz { margin: 0; display: grid; gap: 8px; min-width: 0; }
 .rx-viz__cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
 .rx-viz__h { font-weight: 600; }
@@ -50,8 +50,8 @@
 .rx-axis { stroke: var(--border); }
 .rx-bar { fill: var(--muted); }
 .rx-bar--med { fill: var(--text); }
-.rx-t { fill: var(--muted); font: 400 var(--t13) var(--font); }
-.rx-t--n { fill: var(--text); font-family: var(--font); }
+.rx-t { fill: var(--muted); font: 400 var(--t13) var(--sans); }
+.rx-t--n { fill: var(--text); font-family: var(--sans); }
 .rx-t--med { fill: var(--text); }
 
 /* ledger */
@@ -88,7 +88,7 @@
 .rx-leg__label, .rx-leg__k { color: var(--muted); font-size: var(--t15); font-weight: 400; }
 .rx-kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin: 0; }
 .rx-kv dt { color: var(--muted); font-size: var(--t13); }
-.rx-kv dd { margin: 0; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.rx-kv dd { margin: 0; font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .rx-rule { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; display: grid; gap: 8px; }
 .rx-open { justify-self: start; min-height: 40px; }
 .rx-more__note { color: var(--muted); font-size: var(--t13); }

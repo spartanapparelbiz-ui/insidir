@@ -6,12 +6,15 @@
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
+ *   emails:lifecycle every 10 min: day 0 welcome, day 2 "your trial ends tomorrow", Monday results (lib/emails/lifecycle.ts)
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h (lib/moves/jobs.ts)
  *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts);
  *             for profiles, buyers' and companies' Form 4 histories every 5 min and funds' quarters every 30 min
  *   settle    every SETTLE_MS: record how each logged deal resolved
+ *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
+ *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
@@ -33,6 +36,8 @@ import { isReady } from "@/lib/features";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/auth/whop";
 import { closeDb, getDb } from "@/lib/db";
+import { ACCURACY_MS, accuracyEmail, runAccuracyCheck } from "@/lib/accuracy/check";
+import { lifecycleOnce } from "@/lib/emails/lifecycle";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import type { VMarket, Venue } from "@/lib/types";
@@ -172,6 +177,22 @@ async function settleOnce(clients: Record<Venue, VenueClient>): Promise<void> {
   if (settled) log(`settled ${settled} receipts`);
 }
 
+/** The hourly accuracy check, its heartbeat (read on /admin), and an email to OWNER_EMAIL when anything is off. */
+async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: SecClient | null): Promise<void> {
+  const db = getDb();
+  const run = await runAccuracyCheck(db, { poly, kalshi, sec });
+  const count = (s: string) => run.lines.filter(l => l.status === s).length;
+  const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), hidden: run.hidden.length, restored: run.restored.length };
+  await heartbeat(db, "accuracy", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
+  log(`accuracy: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped; ${stats.hidden} moves hidden, ${stats.restored} restored`);
+  const to = process.env.OWNER_EMAIL;
+  const e = accuracyEmail(run, appUrl());
+  if (e && to) {
+    const unsub = `${appUrl()}/admin`;
+    await sendEmail({ to, subject: e.subject, ...renderEmail({ heading: e.heading, lines: e.lines, unsubscribe: unsub }), unsubscribe: unsub });
+  }
+}
+
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
 function every(name: string, ms: number, fn: () => Promise<void>): () => void {
   let running = false, stopped = false;
@@ -201,6 +222,13 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
     every("moves:daily", DIGEST_CHECK_MS, dailyOnce),
+    every("emails:lifecycle", DIGEST_CHECK_MS, async () => {
+      const n = await lifecycleOnce(getDb(), Date.now(), appUrl(), async (to, userId, e) => {
+        const unsub = unsubscribeUrl(appUrl(), userId);
+        return (await sendEmail({ to, subject: e.subject, ...renderEmail({ heading: e.heading, lines: e.lines, cta: e.cta, unsubscribe: unsub }), unsubscribe: unsub })) === "sent";
+      });
+      if (n) log(`emails: ${n} welcome, trial and weekly emails sent`);
+    }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [
@@ -216,6 +244,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader records refreshed`);
       }),
+      every("accuracy", ACCURACY_MS, () => accuracyOnce(clients.polymarket as PolymarketClient, clients.kalshi as KalshiClient, sec)),
       every("moves:leaderboard", 6 * 3_600_000, async () => {
         const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
         log(`moves: ${n} leaderboard wallets tracked`);
@@ -261,5 +290,6 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
 
 if (process.argv[1]?.endsWith("worker/index.ts")) {
   const runFor = Number(process.env.WORKER_RUN_FOR_MS) || undefined;
-  main({ runForMs: runFor }).catch(e => { console.error(e); process.exit(1); });
+  // A timed run (WORKER_RUN_FOR_MS) ends when its time is up, even with source requests still retrying.
+  main({ runForMs: runFor }).then(() => { if (runFor) process.exit(0); }, e => { console.error(e); process.exit(1); });
 }

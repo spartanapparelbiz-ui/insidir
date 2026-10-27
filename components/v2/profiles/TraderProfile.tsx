@@ -4,6 +4,8 @@
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
 import { polymarketProfileUrl } from "@/lib/exchanges/polymarket";
+import { SourceA } from "../MoveCard";
+import { profileSource } from "@/lib/moves/source";
 import { isPaid } from "@/lib/plans";
 import { dollars, signedShort } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
@@ -17,6 +19,9 @@ import { showStats, traderStats } from "@/lib/profiles/trader";
 import { FollowButton } from "../FollowButton";
 import { MoveCard } from "../MoveCard";
 import { calDate, exactDollars, followState, Locked, pct, signedPct } from "./shared";
+import { Photo } from "@/components/Photo";
+import { BAND } from "@/lib/photos";
+import Link from "next/link";
 
 export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db | null; wallet: string; viewer: Viewer; trial: string; now: number }) {
   const paid = isPaid(viewer.plan);
@@ -35,15 +40,21 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
   const s = paid ? traderStats(markets, now) : null;
   const chart = s ? profitPath(s.series) : null;
   const source = viewer.region === "non_us" ? polymarketProfileUrl(wallet) : null;
+  // The band's photo: the trader's best category for members; for free viewers (who never get the record), the
+  // category of their latest move, which is public.
+  const best = s?.best ? (s.best.category === "Markets" || s.best.category === "Crypto" ? "markets" : "sports") : moves[0]?.tab === "sports" ? "sports" : "markets";
   return (
     <>
       <header className="trader__head">
+        <Photo n={BAND.profile[best]} className="trader__photo" band eager />
         <div>
-          <p className="trader__kicker">Polymarket trader</p>
+          <p className="trader__kicker">Polymarket wallet</p>
           <h1 className="trader__name">{name}</h1>
+          <SourceA link={profileSource({ kind: "trader", wallet })} className="source source--dark" />
         </div>
         <FollowButton kind="trader" target={wallet} state={followState(viewer, following)} trialHref={trial} />
       </header>
+      <p className="note pnote">One trader can use several wallets; this record covers this wallet only. <Link href="/data">About our data</Link></p>
       {!paid ? <Locked trial={trial} what="Their record is for members: won and lost, profit, return, best category, streak and every move." />
         : s && showStats(s) ? (
           <>

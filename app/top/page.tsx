@@ -15,6 +15,8 @@ import { walletLabel } from "@/lib/moves/records";
 import { followList } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
 import { topRanking, type TopRow, type TopWindow } from "@/lib/profiles/store";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Top traders", description: "The top Polymarket traders by profit, from their public record. 20+ resolved markets only." };
@@ -47,9 +49,9 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
   };
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} />
-      <main className="wrap app2 top">
-        <h1 className="trader__name">Top traders</h1>
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/top" />
+      <main className="wrap app2 top dark">
+        <PageBand n={BAND.top} title="Top traders" />
         <p className="note">Polymarket wallets ranked by profit on markets that resolved {window === "all" ? "so far" : window === "week" ? "in the last 7 days" : "in the last 30 days"}. Only wallets with 20 or more resolved markets. Past results, not a promise.</p>
         <nav className="chips" aria-label="Time">
           {WINDOWS.map(([w, label]) => <Link key={w} className="chip2" href={q({ window: w })} aria-current={w === window ? "true" : undefined}>{label}</Link>)}

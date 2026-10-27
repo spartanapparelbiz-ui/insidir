@@ -177,7 +177,7 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
     for (let i = 0; i < 4; i++) await fundHistoryOnce(db, sec, "1067983", NOW, read);
     const q = await fundQuarters(db, "1067983");
     expect(q.map(x => x.accession)).toEqual(["000095012326000003", "000095012326000001"]);
-    expect(q[0]!.holdings).toEqual([{ cusip: "037833100", company: "Apple", shares: 1000, value: 230_000 }]);
-    expect((await db.select().from(schema.funds))[0]).toMatchObject({ name: "Berkshire Hathaway", quartersOnFile: 3 });
+    expect(q[0]!.holdings).toEqual([{ cusip: "037833100", company: "APPLE", shares: 1000, value: 230_000 }]);
+    expect((await db.select().from(schema.funds))[0]).toMatchObject({ name: "BERKSHIRE HATHAWAY", quartersOnFile: 3 });
   });
 });

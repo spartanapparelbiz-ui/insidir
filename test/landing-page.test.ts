@@ -25,13 +25,14 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", ...tree("components/v2"), "lib/moves/copy.ts",
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Hero.tsx", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: hero, tab strip, how it works, results, pricing, FAQ, the dark band", () => {
+  it("renders its sections in order: the cinematic hero, the feed preview, how it works, results, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero2"', 'className="wrap tabstrip"', 'id="how"', 'id="res-h"', "<PricingCards ", "<FaqV2 ", 'className="band2"'];
+    const markers = ["<Hero ", "<PreviewSeen ", 'id="how"', 'id="res-h"', "<PricingCards ", "<FaqV2 "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -39,10 +40,12 @@ describe("V2 landing page", () => {
 
   it("says the brief's words", () => {
     const src = read("app/page.tsx");
-    expect(src).toContain("Follow the big money.");
-    expect(src).toContain("Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.");
+    const hero = read("components/home/Hero.tsx");
+    expect(hero).toContain("LIVE · big money moves");
+    expect(hero).toContain("Follow the big money.");
+    expect(hero).toContain("The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.");
+    expect(hero).toContain("Public data. Not financial advice.");
     expect(src).toContain("See the live feed");
-    expect(src).toContain("The next big bet is happening right now.");
     expect(src).toContain("Real past moves. Not a promise.");
     expect(read("lib/copy.ts")).toContain("Try Insidir for $1 for 3 days. Cancel anytime.");
     expect(read("lib/copy.ts")).toContain("$1 for 3 days, then $39/mo. Cancel anytime.");
@@ -81,28 +84,44 @@ describe("copy rules on every V2 page", () => {
   });
 });
 
+describe("home hero ticker", () => {
+  it("reads 'Someone · $48,000 on Lakers · 2m ago' from a feed item", async () => {
+    const { tickerItem } = await import("@/lib/moves/ticker");
+    const base = { id: "ks:1", source: "kalshi", tab: "sports", league: "NBA", sentence: "", payout: null, record: null, topTrader: false, amount: 48_000, at: 0,
+      ago: "2m ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
+      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, why: null, sourceLink: null } as const;
+    const t = tickerItem({ ...base });
+    expect(`${t.who} · ${t.amount} ${t.what} · ${t.ago}`).toBe("Someone · $48,000 on Lakers · 2m ago");
+    expect(t.href).toBe("/market/KX-LAL");
+    expect(tickerItem({ ...base, outcome: "Yes", tab: "markets", marketTitle: "Fed cut in December?" }).what).toBe("on Yes · Fed cut in December?");
+    expect(tickerItem({ ...base, source: "sec", tab: "stocks", eventTitle: "Nvidia" }).what).toBe("of Nvidia");
+  });
+});
+
 describe("design system", () => {
-  it("defines every colour in app/tokens.css; other stylesheets use tokens only", () => {
-    const tokens = read("app/tokens.css");
-    for (const hex of ["#ffffff", "#f6f7fb", "#e6e8ef", "#0b0b12", "#5b6070", "#5b4bff", "#4a3af0", "#f1eeff", "#087a55", "#e8f8f1", "#c2410c", "#fff1e6", "#eaf4ff"]) {
-      expect(tokens.toLowerCase(), hex).toContain(hex);
-    }
+  it("defines every colour in app/tokens.css, only black, white, greys, money green and the loss colour (plus the dark app's surfaces and lifted data colours); other stylesheets use tokens only", () => {
+    const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
+    const palette = ["#0b0b12", "#ffffff", "#f2f2f4", "#e6e6ea", "#5b6070", "#087a55", "#c2410c",
+      "#141418", "#1c1c22", "#26262c", "#a1a1aa", "#2bb07f", "#f0703a"];
+    expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
     }
   });
 
-  it("uses Plus Jakarta Sans only: General Sans and JetBrains Mono are gone", () => {
-    expect(read("app/layout.tsx")).toMatch(/Plus_Jakarta_Sans\(/);
+  it("uses Rufina for headlines and Schibsted Grotesk for everything else; older fonts are gone", () => {
+    const layout = read("app/layout.tsx");
+    expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
+    expect(layout).toMatch(/Rufina\(/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|--font-mono/);
+      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|--font-mono|Plus.Jakarta/);
     }
   });
 
-  it("the manifest opens the feed in the bright theme", async () => {
+  it("the manifest opens the feed, white page under the black bar", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/feed", background_color: "#ffffff", theme_color: "#ffffff" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/feed", background_color: "#ffffff", theme_color: "#0b0b12" });
   });
 });

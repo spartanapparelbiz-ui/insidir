@@ -1,4 +1,5 @@
 /* Pieces every profile shares: the members-only lock and the follow state. Server components. */
+import { LockButton } from "@/components/lock/Lock";
 import type { Viewer } from "@/lib/auth/viewer";
 import { isReady } from "@/lib/features";
 import { isPaid } from "@/lib/plans";
@@ -9,7 +10,7 @@ export function Locked({ trial, what }: { trial: string; what: string }) {
   return (
     <aside className="upsell upsell--big" data-locked="profile">
       <p className="upsell__text">{what}</p>
-      <a className="btn btn--primary" href={trial} data-unlock="profile">See their full record for $1</a>
+      <LockButton where="record-profile" className="btn btn--primary">See their full record</LockButton>
     </aside>
   );
 }

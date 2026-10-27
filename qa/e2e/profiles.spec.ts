@@ -50,7 +50,15 @@ test("a trader's profile: every stat from their resolved positions, for members"
 test("free viewers see names, never the numbers: not on the page, not in any response", async ({ page }) => {
   const bodies = await captureBodies(page, async () => { await page.goto(`/p/${TOP}`); });
   await expect(page.getByRole("heading", { level: 1, name: "E2E-Top" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "See their full record for $1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "See their full record" })).toBeVisible();
+  // Every lock opens the same sheet: what you get, the price, one button to checkout.
+  await page.getByRole("button", { name: "See their full record" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("$1 for 3 days, then $39/mo. Cancel anytime.")).toBeVisible();
+  await expect(sheet.getByRole("link")).toHaveCount(1);
+  await expect(sheet.getByRole("link", { name: "Try it for $1" })).toHaveAttribute("data-unlock", "record-profile");
+  await sheet.getByRole("button", { name: "Not now" }).click();
+  await expect(sheet).toHaveCount(0);
   for (const b of bodies) {
     expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Profit over time/);
   }
@@ -87,7 +95,7 @@ test("an insider: the card names them and says why it matters; the profile lists
   await expect(page).toHaveURL("/p/insider-888888");
   await expect(page.getByRole("heading", { level: 1, name: "Jane Fixture" })).toBeVisible();
   await expect(page.getByText("CEO of E2E Fixture Devices")).toBeVisible();
-  await expect(page.getByRole("link", { name: "See their full record for $1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "See their full record" })).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
   await signIn(context, "insidir");
   await page.reload();

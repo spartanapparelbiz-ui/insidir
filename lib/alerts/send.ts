@@ -7,6 +7,7 @@
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
+import { appUrl } from "@/lib/auth/whop";
 
 export interface PushTarget { endpoint: string; p256dh: string; auth: string }
 export type SendResult = "sent" | "gone" | "failed";
@@ -71,14 +72,23 @@ const esc = (s: string): string => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "
 
 export const EMAIL_FOOTER = "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones. Insidir is built by Aethric LLC, Pompano Beach, FL. Not affiliated with Polymarket or Kalshi.";
 
-/** A plain, fast email: dark on white for every mail client, system sans, no images. */
+/** The email layout: a thin photo strip on top (public/brand/email-strip.jpg, scripts/og-strips.sh), then a black body:
+ *  the logo, the headline in the serif (Rufina where the mail client loads it, Georgia otherwise) in white, light grey
+ *  text, a white button. Tables and inline styles so it holds up in every mail client; the strip is decorative (empty
+ *  alt) and the logo's alt text says "Insidir", so the email reads the same with images off. */
 export function renderEmail(opts: { heading: string; lines: Array<{ text: string; url?: string }>; cta?: { label: string; url: string }; unsubscribe: string }): { text: string; html: string } {
   const text = [opts.heading, "", ...opts.lines.map(l => (l.url ? `${l.text}\n${l.url}` : l.text)), "", ...(opts.cta ? [`${opts.cta.label}: ${opts.cta.url}`, ""] : []),
     EMAIL_FOOTER, `Unsubscribe: ${opts.unsubscribe}`].join("\n");
-  const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0B0B12;max-width:560px">` +
-    `<p style="font-size:18px;font-weight:700;margin:0 0 16px">${esc(opts.heading)}</p>` +
-    opts.lines.map(l => `<p style="margin:0 0 12px">${l.url ? `<a href="${esc(l.url)}" style="color:#0B0B12">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
-    (opts.cta ? `<p style="margin:20px 0"><a href="${esc(opts.cta.url)}" style="background:#5B4BFF;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:700">${esc(opts.cta.label)}</a></p>` : "") +
-    `<p style="color:#5B6070;font-size:12px;margin-top:24px">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#5B6070">Unsubscribe</a></p></div>`;
+  const sans = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+  const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0B0B12"><tr><td align="center" style="padding:24px 12px">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;border:1px solid #26262C;border-radius:16px;overflow:hidden;background:#0B0B12">` +
+    `<tr><td style="padding:0;line-height:0"><img src="${esc(appUrl())}/brand/email-strip.jpg" width="560" height="120" alt="" style="display:block;width:100%;height:auto;border:0"></td></tr>` +
+    `<tr><td style="padding:24px 28px 0"><a href="${esc(appUrl())}"><img src="${esc(appUrl())}/brand/insidir-logo-email.png" width="120" height="36" alt="Insidir" style="display:block;border:0;color:#FFFFFF;font:700 20px ${sans}"></a></td></tr>` +
+    `<tr><td style="padding:20px 28px 8px;font-family:${sans};font-size:16px;line-height:1.55;color:#E6E6EA">` +
+    `<h1 style="margin:0 0 16px;font-family:Rufina,Georgia,'Times New Roman',serif;font-size:28px;line-height:1.15;font-weight:700;color:#FFFFFF">${esc(opts.heading)}</h1>` +
+    opts.lines.map(l => `<p style="margin:0 0 12px;font-variant-numeric:tabular-nums">${l.url ? `<a href="${esc(l.url)}" style="color:#FFFFFF;text-decoration:underline">${esc(l.text)}</a>` : esc(l.text)}</p>`).join("") +
+    (opts.cta ? `<p style="margin:24px 0 8px"><a href="${esc(opts.cta.url)}" style="display:inline-block;background:#FFFFFF;color:#0B0B12;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:700;font-family:${sans}">${esc(opts.cta.label)}</a></p>` : "") +
+    `</td></tr><tr><td style="padding:16px 28px 28px;font-family:${sans};color:#A1A1AA;font-size:12px;line-height:1.5;border-top:1px solid #26262C">${esc(EMAIL_FOOTER)}<br><a href="${esc(opts.unsubscribe)}" style="color:#A1A1AA">Unsubscribe</a></td></tr>` +
+    `</table></td></tr></table>`;
   return { text, html };
 }

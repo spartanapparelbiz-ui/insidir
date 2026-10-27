@@ -1,6 +1,8 @@
 /* Whales (Pro): the latest large trades, as recorded by the worker. Only venues the viewer's region allows. */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { Ago } from "@/components/app/Ago";
 import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
@@ -54,6 +56,7 @@ export default async function WhalesPage() {
           </div>
         ) : (
           <div className="empty" data-empty="whales">
+            <Photo n={SPOT.pageEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">No large trades yet</p>
             <p className="muted small">Trades of $10,000 or more show up here as the scanner records them. Until then, the live deals are on the Terminal.</p>
             <Link className="btn btn--primary" href="/feed">See the live feed</Link>

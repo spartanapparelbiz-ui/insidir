@@ -7,6 +7,11 @@ import { isPaid } from "@/lib/plans";
 import { quarterChanges, topHoldings, type Change } from "@/lib/profiles/sec";
 import { fundOf, fundQuarters } from "@/lib/profiles/store";
 import { calDate, exactDollars, Locked, pct } from "./shared";
+import { profileSource } from "@/lib/moves/source";
+import { SourceA } from "../MoveCard";
+import { Photo } from "@/components/Photo";
+import { BAND } from "@/lib/photos";
+import Link from "next/link";
 
 const KIND: Record<Change["kind"], string> = { new: "New position", added: "Added", cut: "Cut", sold: "Sold all" };
 const shares = (v: number) => Math.round(v).toLocaleString("en-US");
@@ -32,12 +37,14 @@ export async function FundProfile({ db, cik, viewer, trial }: { db: Db; cik: str
   return (
     <>
       <header className="trader__head">
+        <Photo n={BAND.profile.stocks} className="trader__photo" band eager />
         <div>
           <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
           <h1 className="trader__name">{fund.name}</h1>
+          <SourceA link={profileSource({ kind: "fund", cik })} className="source source--dark" />
         </div>
       </header>
-      <p className="note">{fund.quartersOnFile} {fund.quartersOnFile === 1 ? "quarter" : "quarters"} on file with the SEC. 13F data can be up to 45 days old.</p>
+      <p className="note pnote">{fund.quartersOnFile} {fund.quartersOnFile === 1 ? "quarter" : "quarters"} on file with the SEC. 13F data can be up to 45 days old. <Link href="/data">About our data</Link></p>
       {!paid ? <Locked trial={trial} what="Their full record is for members: top 10 holdings and the biggest adds and cuts every quarter." />
         : latest ? (
           <>

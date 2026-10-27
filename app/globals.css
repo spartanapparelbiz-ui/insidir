@@ -1,19 +1,24 @@
-/* Insidir base styles (docs/V2.md §10). Every colour, size, radius and shadow comes from app/tokens.css.
- * Plus Jakarta Sans everywhere: headlines 800 at -0.03em, body 500, buttons 700; money in tabular numbers.
- * Cards: 16px radius and the soft card shadow. Buttons: pills, primary 52px. Inputs: 12px radius. Tap targets 44px+.
- * Motion is subtle and off under prefers-reduced-motion. */
+/* Insidir base styles. Every colour, size and radius comes from app/tokens.css.
+ * Headlines (h1, h2) in the serif; everything else in Schibsted Grotesk; money in tabular numbers.
+ * Cards: white, a 1px --border hairline, 16px radius, no shadow. Buttons: primary black with white text, secondary
+ * white with a hairline. Inputs: 12px radius. Tap targets 44px+. Motion is subtle and off under prefers-reduced-motion. */
 :root { --body: 17px; --read: 680px; }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); }
-body { font: 500 var(--body)/1.55 var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+html, body { margin: 0; background: var(--page); color: var(--text); }
+body { overflow-x: clip; }
+body { font: 500 var(--body)/1.55 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--muted); }
 a:hover { text-decoration-color: var(--text); }
-/* links in running text are the accent */
-:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn), a.link { color: var(--brand); text-decoration-color: color-mix(in srgb, var(--brand) 45%, transparent); }
-:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn):hover, a.link:hover { text-decoration-color: var(--brand); }
-:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* links in running text: black, underlined */
+:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn), a.link { color: var(--text); text-decoration-color: var(--muted); }
+:where(p, li, dd, td, figcaption, .lp-faq__a) a:not(.btn):hover, a.link:hover { text-decoration-color: var(--text); }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.ondark :focus-visible, .ondark:focus-visible { outline-color: var(--paper); }
 h1, h2, h3, p { margin: 0; }
-h1, h2, h3 { font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; text-wrap: balance; }
+h1, h2 { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; line-height: 1.08; text-wrap: balance; }
+h3 { font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
+/* a page title or headline that isn't an h1/h2 */
+.serif { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; }
 button { font: inherit; color: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -31,16 +36,16 @@ button { font: inherit; color: inherit; }
 .small, .tiny { font-size: var(--t15); line-height: 1.45; }
 /* profit: Paper, mono, bold, one step larger than the text around it (elements with their own size keep it) */
 .profit { color: var(--money); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; font-size: 1.15em; line-height: 1.1; }
-.big { font-family: var(--font); font-variant-numeric: tabular-nums; font-size: var(--t44); line-height: 1; font-weight: 700; letter-spacing: -0.04em; }
+.big { font-family: var(--sans); font-variant-numeric: tabular-nums; font-size: var(--t44); line-height: 1; font-weight: 700; letter-spacing: -0.04em; }
 @media (min-width: 900px) { .big { font-size: var(--t56); } }
 
-/* buttons: fully round, 44px minimum. Primary: solid Paper, Ink text. Secondary: transparent, 1px Steel outline. */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 22px; border-radius: var(--r-pill);
-  font: 700 var(--t17)/1 var(--font); text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
-.btn--primary { min-height: var(--btn-h); padding: 0 28px; background: var(--brand); color: var(--on-brand); }
-.btn--primary:hover { background: var(--brand-hover); }
+/* buttons: 44px minimum. Primary: black, white text. Secondary: white, 1px hairline. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 22px; border-radius: var(--r-btn);
+  font: 700 var(--t17)/1 var(--sans); text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
+.btn--primary { min-height: var(--btn-h); padding: 0 28px; background: var(--text); color: var(--page); }
+.btn--primary:hover { background: var(--press); }
 .btn--secondary { background: var(--bg); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
-.btn--secondary:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.btn--secondary:hover { box-shadow: inset 0 0 0 1px var(--text); }
 .btn--ghost { background: transparent; color: var(--muted); }
 .btn--ghost:hover { color: var(--text); }
 .btn--block { width: 100%; }
@@ -52,15 +57,15 @@ button { font: inherit; color: inherit; }
 @keyframes beat { 50% { opacity: .25; } }
 
 /* safety light: a small coloured dot next to a Paper label, never colour alone. The only colour on the site. */
-.light { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font: 500 var(--t15)/1 var(--font); white-space: nowrap; }
+.light { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font: 500 var(--t15)/1 var(--sans); white-space: nowrap; }
 .light::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--muted)); flex: none; }
 .light--green { --dot: var(--money); }
-.light--yellow { --dot: var(--caution); }
+.light--yellow { --dot: var(--muted); }
 .light--red { --dot: var(--loss); }
 
 /* deal rows (the Terminal row lives in app/app.css; this is the shared base) */
 .deals { display: grid; gap: 8px; }
-.deal { display: grid; gap: 8px; padding: 16px; border-radius: var(--r-card); background: var(--bg); box-shadow: var(--shadow-card); text-decoration: none; color: inherit; }
+.deal { display: grid; gap: 8px; padding: 16px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: inherit; }
 .deal:hover { background: var(--border); }
 /* not re-confirmed by a recent scan, or delayed: never presented as live */
 .deal--stale .deal__title, .deal--stale .deal__play, .deal--stale .num__k, .deal--stale .num__v, .deal--stale .profit { color: var(--muted); }
@@ -69,7 +74,7 @@ button { font: inherit; color: inherit; }
 .deal__play { color: var(--muted); font-size: var(--t15); line-height: 1.45; }
 .deal__nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .num__k { display: block; color: var(--muted); font-size: var(--t15); line-height: 1.3; }
-.num__v { display: block; font: 700 var(--t17)/1.3 var(--font); font-variant-numeric: tabular-nums; }
+.num__v { display: block; font: 700 var(--t17)/1.3 var(--sans); font-variant-numeric: tabular-nums; }
 /* a locked value: a solid bar that says so, not a loading skeleton */
 .blur { display: inline-block; min-width: 64px; height: 14px; border-radius: 3px; background: var(--border); vertical-align: middle; }
 .deal__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -78,17 +83,17 @@ button { font: inherit; color: inherit; }
 /* every surface (cards, legs, rules, number panels) pads 16px on phones, 24px on desktop */
 :root { --pad: 16px; }
 @media (min-width: 900px) { :root { --pad: 24px; } }
-.card { border-radius: var(--r-card); background: var(--bg); box-shadow: var(--shadow-card); padding: var(--pad); }
+.card { border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); padding: var(--pad); }
 .field { display: grid; gap: 6px; }
 .field label { color: var(--muted); font-size: var(--t15); }
 .input { width: 100%; min-height: var(--tap); padding: 0 14px; border-radius: var(--r-input); border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
 .card .input { background: var(--bg); }
 .check { display: flex; align-items: center; gap: 10px; min-height: var(--tap); }
-.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
+.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--text); }
 .input { transition: box-shadow var(--dur-press); }
 .input:hover { box-shadow: inset 0 0 0 1px var(--border); }
 /* a filter that is set (not its default) */
-.input--on, .input--on:hover { box-shadow: inset 0 0 0 1px var(--brand); }
+.input--on, .input--on:hover { box-shadow: inset 0 0 0 1px var(--text); }
 
 /* sticky bottom CTA on phones */
 .stickycta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); display: flex; gap: 8px; }
@@ -103,7 +108,7 @@ button { font: inherit; color: inherit; }
 .table th, .table td { text-align: left; padding: 10px 12px 10px 0; vertical-align: top; }
 .table tbody tr + tr td { border-top: 1px solid var(--border); }
 .table th { color: var(--muted); font-weight: 400; }
-.table td { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.table td { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .r { text-align: right !important; }
 .scroll-x { overflow-x: auto; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
@@ -115,7 +120,7 @@ button { font: inherit; color: inherit; }
 .uitoast { pointer-events: auto; display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 4px 4px 4px 16px; border-radius: var(--r-card);
   background: var(--text); color: var(--bg); font-size: var(--t15); font-weight: 500; }
 .uitoast--err { background: var(--bg-alt); color: var(--text); box-shadow: inset 0 0 0 1px var(--muted); }
-.uitoast--err::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--loss); margin-left: -4px; }
+.uitoast--err::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text); margin-left: -4px; }
 .uitoast__x { min-height: var(--tap); padding: 0 12px; border: 0; background: none; color: inherit; font-size: var(--t15); opacity: .7; cursor: pointer; }
 @media (prefers-reduced-motion: no-preference) { .uitoast { animation: uitoast-in .18s ease-out; } }
 @keyframes uitoast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -155,13 +160,13 @@ button { font: inherit; color: inherit; }
 .dbar__seg--a { background: var(--border); }
 .dbar__seg--b { background: var(--muted); }
 .dbar__in { font-size: var(--t15); font-weight: 700; white-space: nowrap; }
-.dbar__gap { position: relative; display: flex; justify-content: flex-end; background: var(--brand); min-width: 2px; }
+.dbar__gap { position: relative; display: flex; justify-content: flex-end; background: var(--text); min-width: 2px; }
 /* fees: a thin hatched slice at the end of the gap (dark stripes over the violet) */
 .dbar__fees { height: 100%; min-width: 2px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--bg) 60%, transparent) 0 2px, transparent 2px 5px); }
-.dbar__legend { display: flex; font: 400 var(--t13)/1.35 var(--font); color: var(--muted); }
-.dbar__key { flex: 0 1 auto; padding-right: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font); }
+.dbar__legend { display: flex; font: 400 var(--t13)/1.35 var(--sans); color: var(--muted); }
+.dbar__key { flex: 0 1 auto; padding-right: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--sans); }
 /* "You keep" is never squeezed into the gap's width: it takes what it needs and the purchase labels give way */
-.dbar__key--keep { flex: none; width: auto !important; margin-left: auto; text-align: right; color: var(--brand); font-weight: 700; padding-right: 0; }
+.dbar__key--keep { flex: none; width: auto !important; margin-left: auto; text-align: right; color: var(--text); font-weight: 700; padding-right: 0; }
 .dbar--card .dbar__key--keep .dbar__feenote { display: none; }
 @media (max-width: 560px) { .dbar__key--keep .dbar__feenote { display: none; } }
 .dbar__feenote { color: var(--muted); font-weight: 400; }
@@ -187,8 +192,8 @@ button { font: inherit; color: inherit; }
   .rolln__d--new { animation: rolln 600ms var(--ease-enter); }
 }
 @keyframes rolln {
-  0% { transform: translateY(-40%); opacity: 0; color: var(--brand); text-shadow: 0 0 10px color-mix(in srgb, var(--brand) 70%, transparent); }
-  35% { transform: none; opacity: 1; color: var(--brand); text-shadow: 0 0 8px color-mix(in srgb, var(--brand) 55%, transparent); }
+  0% { transform: translateY(-40%); opacity: 0; color: var(--text); text-shadow: 0 0 10px color-mix(in srgb, var(--text) 70%, transparent); }
+  35% { transform: none; opacity: 1; color: var(--text); text-shadow: 0 0 8px color-mix(in srgb, var(--text) 55%, transparent); }
   100% { color: inherit; text-shadow: none; }
 }
 
@@ -202,8 +207,8 @@ summary:active, .foot__links a:active { opacity: .7; }
 /* price ticket: a neutral app card. Square-cornered (the hero split has radius 0). */
 .ticket { background: var(--bg-alt); padding: 16px; display: grid; gap: 4px; align-content: start; min-width: 0; border-radius: 0; }
 .ticket__venue { color: var(--muted); font-size: var(--t15); }
-.ticket__side { font: 600 var(--t17)/1.2 var(--font); }
-.ticket__price { font: 700 var(--t72)/1 var(--font); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ticket__side { font: 600 var(--t17)/1.2 var(--sans); }
+.ticket__price { font: 700 var(--t72)/1 var(--sans); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ticket__note { color: var(--muted); font-size: var(--t13); }
 .ticket--grey .ticket__price, .ticket--grey .ticket__side { color: var(--muted); }
 @media (min-width: 900px) { .ticket { padding: 32px; gap: 8px; } }
@@ -216,7 +221,7 @@ summary:active, .foot__links a:active { opacity: .7; }
 
 /* live heartbeat */
 .beat { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--t15); line-height: 1.3; }
-.beat__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex: none; }
+.beat__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text); flex: none; }
 .beat--stale .beat__dot, .beat--paused .beat__dot { background: var(--muted); }
 .beat--paused { color: var(--text); }
 .beat--compact { font-size: var(--t13); }
@@ -224,12 +229,12 @@ summary:active, .foot__links a:active { opacity: .7; }
 
 /* stat block */
 .stat { display: grid; gap: 4px; }
-.stat__n { font: 700 var(--t44)/1 var(--font); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.stat__n { font: 700 var(--t44)/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 .stat__line { color: var(--muted); font-size: var(--t15); }
 @media (min-width: 900px) { .stat__n { font-size: var(--t56); } }
 
 /* deal card (Simple view) */
-.dcard { container-type: inline-size; display: grid; gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--bg); box-shadow: var(--shadow-card); transition: background-color var(--dur-press), opacity var(--dur-small); }
+.dcard { container-type: inline-size; display: grid; gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); transition: background-color var(--dur-press), opacity var(--dur-small); }
 .dcard:hover { background: var(--bg-alt); }
 .dcard__head { display: grid; gap: 2px; }
 .dcard__title { font-size: var(--t20); line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
@@ -250,7 +255,7 @@ summary:active, .foot__links a:active { opacity: .7; }
 /* "Same rules?" tappable badge and its sheet */
 .samerules { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0; border: 0; background: none; cursor: pointer; border-radius: var(--r-pill); }
 .samerules .light { text-decoration: underline dotted; text-underline-offset: 4px; text-decoration-color: var(--muted); }
-.samerules:hover .light { text-decoration-color: var(--brand); }
+.samerules:hover .light { text-decoration-color: var(--text); }
 .samerules__sheet { margin-top: 8px; display: grid; gap: 16px; padding: 16px; border-radius: var(--r-card); background: var(--bg-alt); outline: none; }
 .samerules__top { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
 .samerules__meaning { color: var(--muted); font-size: var(--t15); max-width: var(--read); }
@@ -267,15 +272,15 @@ mark.rdiff { background: var(--text); color: var(--bg); border-radius: 2px; padd
 .walk__amount { display: grid; gap: 8px; }
 .walk__q { font-size: var(--t17); font-weight: 600; }
 .walk__field { position: relative; display: block; max-width: 320px; }
-.walk__cur { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font: 700 var(--t32)/1 var(--font); color: var(--muted); }
-.walk__input { min-height: 64px; padding-left: 44px; font: 700 var(--t32)/1 var(--font); font-variant-numeric: tabular-nums; }
+.walk__cur { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font: 700 var(--t32)/1 var(--sans); color: var(--muted); }
+.walk__input { min-height: 64px; padding-left: 44px; font: 700 var(--t32)/1 var(--sans); font-variant-numeric: tabular-nums; }
 .walk__warn { color: var(--text); font-size: var(--t15); }
 .walk__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .walk__step { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--bg-alt); }
-.walk__n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 700 var(--t15)/1 var(--font); box-shadow: inset 0 0 0 1.5px var(--muted); }
+.walk__n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 700 var(--t15)/1 var(--sans); box-shadow: inset 0 0 0 1.5px var(--muted); }
 .walk__body { display: grid; gap: 8px; justify-items: start; }
 .walk__do { font-size: var(--t17); line-height: 1.45; }
-.walk__moved { font-size: var(--t15); color: var(--text); padding-left: 10px; box-shadow: inset 2px 0 0 var(--brand); }
+.walk__moved { font-size: var(--t15); color: var(--text); padding-left: 10px; box-shadow: inset 2px 0 0 var(--text); }
 .walk__fine { color: var(--muted); font-size: var(--t13); }
 .walk__locked { display: grid; gap: 8px; }
 
@@ -284,8 +289,8 @@ mark.rdiff { background: var(--text); color: var(--bg); border-radius: 2px; padd
 .kept__line { font-size: var(--t24); line-height: 1.3; font-weight: 500; }
 @media (min-width: 900px) { .kept__line { font-size: var(--t32); line-height: 1.2; } }
 .kept__stake { font-weight: 700; }
-.kept__n { font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; }
-.kept__range { width: 100%; min-height: var(--tap); accent-color: var(--brand); cursor: pointer; }
+.kept__n { font-family: var(--sans); font-weight: 700; font-variant-numeric: tabular-nums; }
+.kept__range { width: 100%; min-height: var(--tap); accent-color: var(--text); cursor: pointer; }
 .kept__ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--t13); margin-top: -12px; }
 .kept__fine { color: var(--muted); font-size: var(--t13); max-width: var(--read); }
 

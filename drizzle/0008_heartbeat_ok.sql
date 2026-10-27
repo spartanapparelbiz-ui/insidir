@@ -1,0 +1,1 @@
+ALTER TABLE "terminal"."worker_heartbeats" ADD COLUMN "last_ok_at" timestamp with time zone;

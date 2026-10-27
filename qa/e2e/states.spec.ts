@@ -4,14 +4,16 @@
 import { expect, test } from "@playwright/test";
 import { footerOk, noHorizontalScroll, q, signIn } from "./helpers";
 
-test("404: on-brand, says what happened, links back to the feed and home", async ({ page }) => {
+test("404: on-brand, says what happened, links back to the feed", async ({ page }) => {
   const res = await page.goto("/no-such-page-anywhere");
   expect(res?.status()).toBe(404);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("This page doesn't exist.");
-  await expect(page.getByRole("link", { name: "See the live feed" })).toHaveAttribute("href", "/feed");
-  await expect(page.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
-  // The site's own page in the bright theme (Plus Jakarta Sans), not the framework's default.
-  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toMatch(/Plus Jakarta Sans/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Wrong trail.");
+  await expect(page.getByText("This page doesn't exist.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to the feed" })).toHaveAttribute("href", "/feed");
+  // The site's own page (Schibsted Grotesk), not the framework's default.
+  const [body, sans] = await page.evaluate(() => [getComputedStyle(document.body).fontFamily, getComputedStyle(document.documentElement).getPropertyValue("--font-schibsted")]);
+  expect(sans.trim()).not.toBe("");
+  expect(body.replace(/["']/g, "")).toContain(sans.split(",")[0]!.trim().replace(/["']/g, ""));
   await footerOk(page);
   await noHorizontalScroll(page);
 });
@@ -30,14 +32,16 @@ test("error: a deal that doesn't exist says so and points to the Terminal; the A
 
 test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page }) => {
   try {
-    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
+    await q("insert into terminal.worker_heartbeats (job, last_run_at, ok) values ('e2e:pause', now(), true) on conflict do nothing");
+    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', last_ok_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
     await page.goto("/feed");
-    await expect(page.getByText("Catching up. Showing the latest moves we have.")).toBeVisible();
+    await expect(page.getByText("Catching up · last update 10m ago")).toBeVisible();
     await expect(page.getByText(/Last update from the source/)).toBeVisible();
     await expect(page.getByText(/Connection lost|Live data paused/)).toHaveCount(0);
     await expect(page.locator(".move").first()).toBeVisible();
   } finally {
-    await q("update terminal.worker_heartbeats set last_run_at = now(), ok = true, error = null where job like 'moves:%'");
+    await q("delete from terminal.worker_heartbeats where job = 'e2e:pause'");
+    await q("update terminal.worker_heartbeats set last_run_at = now(), last_ok_at = now(), ok = true, error = null where job like 'moves:%'");
   }
 });
 

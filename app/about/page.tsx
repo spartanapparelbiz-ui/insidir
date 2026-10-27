@@ -14,7 +14,7 @@ export default async function AboutPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/about" />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/about" tone="light" />
       <main className="wrap lp">
         <article className="lp-legal lp-about">
           <h1>About Insidir</h1>
@@ -30,6 +30,7 @@ export default async function AboutPage() {
             {isReady("stocks") ? <li><strong>SEC EDGAR</strong>: Form 4 filings, where company insiders report buying their own company&apos;s stock, and Form 13F filings, where big funds report what they held at the end of each quarter (up to 45 days later). Every stock card links to the filing.</li> : null}
             <li>Every move, amount and record on the site comes from that data. When a market settles, we mark each move won or lost on the <Link href="/results">Results</Link> page, losses included.</li>
           </ul>
+          <p>How late each source can be, and what it can&apos;t tell you: <Link href="/data">About our data</Link>.</p>
 
           <h2>What we will never do</h2>
           <ul>

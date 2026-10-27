@@ -141,16 +141,14 @@ export function roleWord(o: Owner | undefined): string {
 }
 
 const SUFFIX = /[\s,]+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|lp|l\.p|n\.v|s\.a|ag|se|holdings?|\/[a-z]{2}\/?)\.?$/i;
-const KEEP_UPPER = /^(?:[A-Z]{1,3}|[A-Z]+&[A-Z]+|[A-Z]\.[A-Z.]+)$/;
-/** "NVIDIA CORP" → "Nvidia", "Apple Inc." → "Apple", "AT&T INC." → "AT&T", "JPMORGAN CHASE & CO" → "Jpmorgan Chase". */
+/** The company as the filing spells it, without the legal suffix: "NVIDIA CORP" → "NVIDIA", "Apple Inc." → "Apple",
+ *  "AT&T INC." → "AT&T", "JPMORGAN CHASE & CO" → "JPMORGAN CHASE". Letters and case are never changed. */
 /** 13F issuer names carry share-class and listing notes: "CHEVRON CORP NEW", "ALPHABET INC CAP STK CL A". */
 const NOISE = /[\s,]+(new|del|com|cap stk|class [a-c]|cl [a-c]|ord|shs|sponsored adr|adr)\.?$/i;
 export function companyName(raw: string): string {
   let s = raw.replace(/\s+/g, " ").trim();
   for (let i = 0; i < 5 && (SUFFIX.test(s) || NOISE.test(s)); i++) s = s.replace(NOISE, "").replace(SUFFIX, "").replace(/[\s,&]+$/, "").trim();
-  if (!s) return raw.trim();
-  if (/[a-z]/.test(s)) return s;
-  return s.split(" ").map(w => (KEEP_UPPER.test(w) ? w : w.charAt(0) + w.slice(1).toLowerCase())).join(" ");
+  return s || raw.trim();
 }
 
 export interface InsiderBuy {

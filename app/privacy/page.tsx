@@ -12,7 +12,7 @@ export default async function PrivacyPage() {
   const viewer = await getViewer();
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} tone="light" />
       {/* Draft — have counsel review. */}
       <main className="wrap lp">
         <article className="lp-legal">

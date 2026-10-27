@@ -24,7 +24,7 @@ describe("names", () => {
     expect(personName("MCDONALD RONALD A JR")).toBe("Ronald A. McDonald Jr.");
     expect(personName("O'BRIEN MARY-KATE")).toBe("Mary-Kate O'Brien");
     expect(personName("Smith, John A.")).toBe("John A. Smith");
-    expect(personName("BERKSHIRE HATHAWAY INC")).toBe("Berkshire Hathaway");
+    expect(personName("BERKSHIRE HATHAWAY INC")).toBe("BERKSHIRE HATHAWAY");
     expect(personName("Elliott Investment Management L.P.")).toBe("Elliott Investment Management");
   });
   it("the role without its article, and the card's who", () => {
@@ -135,7 +135,7 @@ describe("insider history", () => {
   it("keeps every open-market buy and sale of stock, nothing else, with its filing", () => {
     const rows = tradeRows(own(), "000119764726000001", NOW, url);
     expect(rows.map(r => [r.code, r.line, r.value])).toEqual([["P", 0, 140_500], ["S", 1, 75_000]]);
-    expect(rows[0]).toMatchObject({ ownerCik: "1197647", issuerCik: "1045810", company: "Nvidia", ticker: "NVDA", role: "The CEO", url });
+    expect(rows[0]).toMatchObject({ ownerCik: "1197647", issuerCik: "1045810", company: "NVIDIA", ticker: "NVDA", role: "The CEO", url });
     expect(tradeRows(own({ documentType: "4/A" }), "x", NOW, url)).toEqual([]);
   });
   it("a jointly filed line is stored for each owner with a CIK", () => {

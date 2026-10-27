@@ -20,12 +20,12 @@ export async function GET(req: NextRequest) {
   const min = Math.max(0, Number(p.get("min")) || 0);
   const before = Number(p.get("before")) || undefined;
   const limit = Math.min(50, Math.max(1, Number(p.get("limit")) || 30));
-  if (!hasDatabase()) return NextResponse.json({ items: [], status: { state: "behind", lastAt: null, text: "Catching up. Showing the latest moves we have." } });
+  if (!hasDatabase()) return NextResponse.json({ items: [], status: { state: "behind", lastAt: null, text: "Catching up · waiting for the first update" } });
   const viewer = await getViewer();
   const db = getDb();
   const [items, status] = await Promise.all([
     feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, before, limit }, now),
-    feedStatus(db, now),
+    feedStatus(db, now, tab ?? undefined),
   ]);
   return NextResponse.json({ items, status }, { headers: { "Cache-Control": "no-store" } });
 }
