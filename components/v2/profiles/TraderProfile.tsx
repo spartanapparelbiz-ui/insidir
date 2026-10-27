@@ -46,7 +46,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
   return (
     <>
       <header className="trader__head">
-        <Photo n={BAND.profile[best]} className="trader__photo" band eager />
+        <Photo n={BAND.profile[best]} className="trader__photo" band par eager />
         <div>
           <p className="trader__kicker">Polymarket wallet</p>
           <h1 className="trader__name">{name}</h1>
@@ -59,14 +59,14 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
         : s && showStats(s) ? (
           <>
             <dl className="record record--wide">
-              <div><dt>Win rate</dt><dd>{pct(s.won / s.resolved)}</dd><span className="record__sub">Won {s.won} of {s.resolved} resolved</span></div>
-              <div><dt>All-time profit</dt><dd className={s.profit >= 0 ? "money" : "loss"}>{signedShort(s.profit)}</dd></div>
+              <div><dt>Win rate</dt><dd data-count={Math.round((s.won / s.resolved) * 100)} data-fmt="pct">{pct(s.won / s.resolved)}</dd><span className="record__sub">Won {s.won} of {s.resolved} resolved</span></div>
+              <div><dt>All-time profit</dt><dd className={s.profit >= 0 ? "money" : "loss"} data-count={s.profit} data-fmt="signed">{signedShort(s.profit)}</dd></div>
               <div><dt>Return on money in</dt><dd className={(s.roi ?? 0) >= 0 ? "money" : "loss"}>{s.roi === null ? "—" : signedPct(s.roi)}</dd><span className="record__sub">{exactDollars(s.moneyIn)} put in</span></div>
-              <div><dt>Biggest win</dt><dd className="money">{dollars(s.biggestWin)}</dd></div>
+              <div><dt>Biggest win</dt><dd className="money" data-count={s.biggestWin} data-fmt="dollars">{dollars(s.biggestWin)}</dd></div>
               <div><dt>Best category</dt><dd className="record__text">{s.best ? s.best.category : "—"}</dd>{s.best ? <span className="record__sub">{signedShort(s.best.profit)} over {s.best.won + s.best.lost} markets</span> : null}</div>
               <div><dt>Last 30 days</dt><dd>{s.last30.resolved ? `${s.last30.won} of ${s.last30.resolved}` : "—"}</dd>{s.last30.resolved ? <span className="record__sub">{signedShort(s.last30.profit)}</span> : null}</div>
               <div><dt>Current streak</dt><dd>{s.streak ? `${s.streak.n} ${s.streak.kind === "won" ? (s.streak.n === 1 ? "win" : "wins") : (s.streak.n === 1 ? "loss" : "losses")}` : "—"}</dd></div>
-              <div><dt>Average bet</dt><dd>{dollars(s.avgBet)}</dd></div>
+              <div><dt>Average bet</dt><dd data-count={s.avgBet} data-fmt="dollars">{dollars(s.avgBet)}</dd></div>
             </dl>
             {chart ? (
               <section className="block" aria-labelledby="chart-h">

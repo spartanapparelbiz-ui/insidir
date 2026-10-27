@@ -19,7 +19,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       <SiteHeader signedIn={false} minimal />
       <main className="split">
         <div className="split__photo">
-          <Photo n={BAND.signin} eager />
+          <Photo n={BAND.signin} par eager />
           <p className="split__line serif">Follow the big money.</p>
         </div>
         <div className="split__form">

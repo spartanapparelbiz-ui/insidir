@@ -5,6 +5,10 @@ export const FOOTER =
   "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.";
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
+/** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
+export const WHAT_IS = "Insidir is a live tracker for sports bets, prediction markets and insider stock trades: it shows you the biggest ones the moment they happen, who made them, how much, and whether they usually win.";
+/** The same thing as a title (the home page's <title>, the link preview headline). */
+export const WHAT_IS_TITLE = "Insidir: live tracker for sports bets, prediction markets and insider stock trades";
 export const TRIAL_BAR = "Try Insidir for $1 for 3 days. Cancel anytime.";
 export const TRY_CTA = "Try it for $1";
 export const TRIAL_LINE = "$1 for 3 days, then $39/mo. Cancel anytime.";

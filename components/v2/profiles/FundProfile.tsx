@@ -37,7 +37,7 @@ export async function FundProfile({ db, cik, viewer, trial }: { db: Db; cik: str
   return (
     <>
       <header className="trader__head">
-        <Photo n={BAND.profile.stocks} className="trader__photo" band eager />
+        <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
         <div>
           <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
           <h1 className="trader__name">{fund.name}</h1>

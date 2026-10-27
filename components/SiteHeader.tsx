@@ -25,6 +25,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
     return (
       <header className="nav nav--light">
         <div className="wrap nav__in"><Link className="wordmark" href="/" aria-label="Insidir home"><Wordmark /></Link></div>
+        <span className="nav__prog" aria-hidden="true" />
       </header>
     );
   }
@@ -50,6 +51,8 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/pric
           </details>
         </div>
         {status ? <div className="wrap nav__status">{status}</div> : null}
+        {/* how far down the page you are (app/v2.css, components/motion/Motion.tsx) */}
+        <span className="nav__prog" aria-hidden="true" />
       </header>
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">

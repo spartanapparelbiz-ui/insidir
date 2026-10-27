@@ -30,7 +30,7 @@ export async function InsiderProfile({ db, cik, viewer, trial }: { db: Db; cik: 
   return (
     <>
       <header className="trader__head">
-        <Photo n={BAND.profile.stocks} className="trader__photo" band eager />
+        <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
         <div>
           <p className="trader__kicker">{latest ? `${roleOf(latest.role).replace(/^./, c => c.toUpperCase())} of ${latest.company}` : "SEC filer"}</p>
           <h1 className="trader__name">{name}</h1>

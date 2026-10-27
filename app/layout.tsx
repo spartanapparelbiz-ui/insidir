@@ -3,20 +3,24 @@ import { Rufina } from "next/font/google";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
+import { Motion } from "@/components/motion/Motion";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
 import { LockProvider } from "@/components/lock/Lock";
 import { unlockHref } from "@/components/app/links";
 import { insidirUnlocks } from "@/components/v2/Pricing";
+import { WHAT_IS, WHAT_IS_TITLE } from "@/lib/copy";
 import "./tokens.css";
 import "./globals.css";
 import "./v2.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
-  title: { default: "Insidir: follow the big money", template: "%s | Insidir" },
-  description: "Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.",
+  title: { default: WHAT_IS_TITLE, template: "%s | Insidir" },
+  description: WHAT_IS,
+  openGraph: { title: WHAT_IS_TITLE, description: WHAT_IS, siteName: "Insidir", type: "website" },
+  twitter: { card: "summary_large_image", title: WHAT_IS_TITLE, description: WHAT_IS },
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
   // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
@@ -34,7 +38,11 @@ export const viewport: Viewport = { themeColor: "#0b0b12", width: "device-width"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${schibsted.variable} ${serif.variable}`}>
+    <html lang="en" className={`${schibsted.variable} ${serif.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Before first paint: lets scroll reveals start hidden only when JS will show them (components/motion/Motion.tsx). */}
+        <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js')" }} />
+      </head>
       <body>
         <ToastProvider>
           <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref("insidir")}>
@@ -43,6 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </LockProvider>
         </ToastProvider>
         <RegisterSW />
+        <Motion />
         <Beacons />
       </body>
     </html>

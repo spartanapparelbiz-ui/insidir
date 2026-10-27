@@ -1,7 +1,8 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: eight graded photos, "Follow the big money.", one real big move per photo on
- * a solid card, the ticker strip of real moves); then clean white sections: a real feed preview (3 live cards and a
- * profile snippet), How it works, Results ("Real past moves. Not a promise."), where the data comes from (the trust
+ * hero (components/home/Hero.tsx: eight graded photos, what Insidir is in one line, "Follow the big money.", one real big
+ * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
+ * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
+ * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
  * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
@@ -11,6 +12,8 @@ import { after } from "next/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Hero, PreviewSeen } from "@/components/home/Hero";
+import { Story } from "@/components/home/Story";
+import { storyFor, type Story as StoryData } from "@/lib/home/story";
 import { HERO_PHOTOS } from "@/lib/photos";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
@@ -76,6 +79,7 @@ export default async function Home() {
   let hero: FeedItem[] = [], recent: FeedItem[] = [], results: Move[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
   let ticker: TickerItem[] = [];
   let trust: TrustFacts | null = null;
+  let story: StoryData | null = null;
   if (hasDatabase()) {
     const db = getDb();
     const [big, latest, settled, st] = await Promise.all([
@@ -93,7 +97,10 @@ export default async function Home() {
     const resultRecs = await recordsFor(db, settled.map(m => m.wallet ?? "")).catch(() => new Map<string, TraderRecord>());
     results = settled.filter(m => m.wallet && isTopTrader(resultRecs.get(m.wallet))).slice(0, 10);
     status = st;
-    trust = await trustFacts(db).catch(() => null);
+    [trust, story] = await Promise.all([
+      trustFacts(db).catch(() => null),
+      storyFor(db, viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
+    ]);
   }
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -108,81 +115,46 @@ export default async function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
         <Hero moves={hero} ticker={ticker} late={!paid} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
+        {story ? <Story data={story} /> : null}
 
         {preview.length ? (
           <PreviewSeen className="sec2 preview" labelledBy="preview-h">
             <div className="wrap">
               <div className="preview__head">
-                <h2 id="preview-h" className="sec2__h">Right now on the feed</h2>
+                <h2 id="preview-h" className="sec2__h rv">Right now on the feed</h2>
                 {status ? <p className={`status status--${status.state}`}><span className="status__dot" aria-hidden="true" />{status.text}{!paid ? " · 30 min late on free" : ""}</p> : null}
               </div>
               <div className="preview__grid">
-                {preview.map(m => <MoveCard key={m.id} m={m} follow={follow} trialHref={trial} compact />)}
+                {preview.map((m, i) => <div key={m.id} className="rv rv--card" style={{ ["--i" as string]: i }}><MoveCard m={m} follow={follow} trialHref={trial} compact /></div>)}
                 {snippet ? (
-                  <aside className="psnip" aria-labelledby="psnip-h">
+                  <aside className="psnip rv rv--card" style={{ ["--i" as string]: 3 }} aria-labelledby="psnip-h">
                     <p className="psnip__kicker">{snippet.top ? "Top trader" : "Trader"} profile</p>
                     <h3 id="psnip-h" className="psnip__name serif">{snippet.name}</h3>
                     <dl className="psnip__stats">
-                      <div><dt>Big moves</dt><dd>{snippet.moves}</dd></div>
-                      <div><dt>Total in</dt><dd>{dollars(snippet.total)}</dd></div>
-                      <div><dt>Biggest</dt><dd>{dollars(snippet.biggest)}</dd></div>
+                      <div><dt>Big moves</dt><dd data-count={snippet.moves}>{snippet.moves}</dd></div>
+                      <div><dt>Total in</dt><dd data-count={snippet.total} data-fmt="dollars">{dollars(snippet.total)}</dd></div>
+                      <div><dt>Biggest</dt><dd data-count={snippet.biggest} data-fmt="dollars">{dollars(snippet.biggest)}</dd></div>
                     </dl>
                     <p className="psnip__line">{snippet.record ?? (paid ? "Not enough settled markets for a record yet." : "Their win record is for members.")}</p>
                     <Link className="psnip__link" href={`/p/${snippet.wallet}`}>See their profile</Link>
                   </aside>
                 ) : null}
               </div>
-              <Link className="btn btn--primary preview__more" href="/feed">See the live feed</Link>
+              <Link className="btn btn--secondary preview__more" href="/feed">See the live feed</Link>
             </div>
           </PreviewSeen>
         ) : null}
 
-        <section className="sec2 sec2--alt" id="how" aria-labelledby="how-h">
-          <div className="wrap">
-            <h2 id="how-h" className="sec2__h">How it works</h2>
-            <ol className="how2">
-              <li className="how2__step">
-                <p className="how2__n">1</p>
-                <h3 className="how2__h">We watch every big bet and trade</h3>
-                <p className="how2__p">Every few seconds we check Polymarket and Kalshi for bets of $10,000 or more, and the SEC for insider buys and big fund adds.</p>
-                <div className="how2__mock" aria-hidden="true">
-                  <p className={`status status--${status?.state ?? "behind"}`}><span className="status__dot" />{status?.state === "live" ? "Live" : "Catching up"}</p>
-                  {recent.length ? recent.slice(0, 3).map(m => <p key={m.id} className="how2__amt"><span>{dollars(m.amount)}</span><span className="how2__ago">{agoText(m.at, now)}</span></p>)
-                    : [0, 1, 2].map(i => <p key={i} className="how2__skel" />)}
-                </div>
-              </li>
-              <li className="how2__step">
-                <p className="how2__n">2</p>
-                <h3 className="how2__h">You see it in plain English</h3>
-                <p className="how2__p">No charts to read. One sentence: who put how much on what, and what it pays.</p>
-                <div className="how2__mock" aria-hidden="true">
-                  {recent[0] ? <><p className="how2__sentence">{recent[0].sentence}</p>{recent[0].payout ? <p className="how2__payout">{recent[0].payout}</p> : null}</>
-                    : <><p className="how2__skel how2__skel--wide" /><p className="how2__skel" /></>}
-                </div>
-              </li>
-              <li className="how2__step">
-                <p className="how2__n">3</p>
-                <h3 className="how2__h">You get pinged when your traders move</h3>
-                <p className="how2__p">Follow a trader or a market. We send a push or an email the moment they make a big move.</p>
-                <div className="how2__mock how2__mock--push" aria-hidden="true">
-                  <p className="push__app">Insidir · now</p>
-                  <p className="push__text">{recent[0] ? recent[0].sentence : "A trader you follow just made a big move."}</p>
-                </div>
-              </li>
-            </ol>
-          </div>
-        </section>
-
         {results.length ? (
           <section className="sec2" aria-labelledby="res-h">
             <div className="wrap">
-              <h2 id="res-h" className="sec2__h">Results</h2>
-              <p className="results__label">Real past moves. Not a promise.</p>
+              <h2 id="res-h" className="sec2__h rv">Results</h2>
+              <p className="results__label rv" style={{ ["--i" as string]: 1 }}>Real past moves. Not a promise.</p>
               <ol className="rlist">
-                {results.map(r => (
-                  <li key={r.id} className="rlist__row">
+                {results.map((r, i) => (
+                  <li key={r.id} className="rlist__row rv" style={{ ["--i" as string]: Math.min(i, 6) }}>
                     <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
-                    <span className="rlist__what"><span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {r.marketTitle}
+                    <span className="rlist__what"><span className="rlist__amt" data-count={r.amount} data-fmt="dollars">{dollars(r.amount)}</span> on {r.outcome} · {r.marketTitle}
                       <span className="rlist__who">Top trader {walletLabel(r.wallet!, r.walletName)}</span>
                       {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}</span>
                     <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
@@ -200,7 +172,7 @@ export default async function Home() {
         {!paid ? (
           <section className="band2" aria-labelledby="band-h">
             <div className="wrap band2__in">
-              <h2 id="band-h" className="band2__h">Follow the big money for $1.</h2>
+              <h2 id="band-h" className="band2__h rv">Follow the big money for $1.</h2>
               <p className="band2__p">{TRIAL_LINE}</p>
               <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">Try it for $1</a>
             </div>

@@ -30,9 +30,9 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: the cinematic hero, the feed preview, how it works, results, pricing, FAQ", () => {
+  it("renders its sections in order: the cinematic hero, the scroll story (how it works), the feed preview, results, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ["<Hero ", "<PreviewSeen ", 'id="how"', 'id="res-h"', "<PricingCards ", "<FaqV2 "];
+    const markers = ["<Hero ", "<Story ", "<PreviewSeen ", 'id="res-h"', "<PricingCards ", "<FaqV2 "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -43,12 +43,27 @@ describe("V2 landing page", () => {
     const hero = read("components/home/Hero.tsx");
     expect(hero).toContain("LIVE · big money moves");
     expect(hero).toContain("Follow the big money.");
-    expect(hero).toContain("The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.");
+    expect(hero).toContain("Live tracker for sports bets, prediction markets and insider stock trades");
+    expect(hero).toContain("Insidir shows you the biggest bets and stock trades the moment they happen: who made them, how much, and whether they usually win.");
+    for (const p of ["Sports · Prediction markets · Stocks", "Real public data", "Alerts to your phone"]) expect(hero).toContain(p);
+    const story = read("components/home/Story.tsx");
+    expect(story).toContain('id="how"');
+    for (const c of ["A big bet happens.", "Insidir catches it in seconds.", "See who it is and if they usually win.", "Get pinged next time they move."]) expect(story).toContain(c);
     expect(hero).toContain("Public data. Not financial advice.");
     expect(src).toContain("See the live feed");
     expect(src).toContain("Real past moves. Not a promise.");
     expect(read("lib/copy.ts")).toContain("Try Insidir for $1 for 3 days. Cancel anytime.");
     expect(read("lib/copy.ts")).toContain("$1 for 3 days, then $39/mo. Cancel anytime.");
+  });
+
+  it("says what Insidir is in one plain sentence: the first FAQ answer, the title and the meta description", async () => {
+    const { FAQ_V2 } = await import("@/components/v2/Faq");
+    const { WHAT_IS, WHAT_IS_TITLE } = await import("@/lib/copy");
+    expect(FAQ_V2[0]).toMatchObject({ q: "What is Insidir?", a: WHAT_IS });
+    expect(WHAT_IS.split(/[.!?](\s|$)/).filter(x => x && x.trim()).length).toBe(1);
+    const layout = read("app/layout.tsx");
+    expect(layout).toMatch(/title: \{ default: WHAT_IS_TITLE/);
+    expect(layout).toContain("description: WHAT_IS,");
   });
 
   it("is dynamic and records landing_view", () => {

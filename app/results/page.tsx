@@ -59,10 +59,10 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         </div>
         {shown.length ? (
           <>
-            <p className="results__sum">{shown.length} settled: <span className="money">{won} won</span>, <span className="loss">{lost} lost</span>{shown.length - won - lost ? `, ${shown.length - won - lost} refunded` : ""}.</p>
+            <p className="results__sum rv"><span data-count={shown.length}>{shown.length}</span> settled: <span className="money"><span data-count={won}>{won}</span> won</span>, <span className="loss"><span data-count={lost}>{lost}</span> lost</span>{shown.length - won - lost ? `, ${shown.length - won - lost} refunded` : ""}.</p>
             <ol className="rlist">
-              {shown.map(r => (
-                <li key={r.id} className="rlist__row">
+              {shown.map((r, i) => (
+                <li key={r.id} className="rlist__row rv" style={{ ["--i" as string]: Math.min(i, 6) }}>
                   <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
                   <span className="rlist__what">
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link>

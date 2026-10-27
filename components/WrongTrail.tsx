@@ -8,7 +8,7 @@ import { BAND } from "@/lib/photos";
 export function WrongTrail({ code, text, children }: { code: string; text: string; children?: ReactNode }) {
   return (
     <main className="trail">
-      <Photo n={BAND.notFound} className="trail__photo" eager />
+      <Photo n={BAND.notFound} className="trail__photo" par eager />
       <div className="wrap trail__in">
         <p className="trail__code">{code}</p>
         <h1 className="trail__h">Wrong trail.</h1>

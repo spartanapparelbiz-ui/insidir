@@ -30,15 +30,17 @@ export const PHOTOGRAPHERS = PHOTO_CREDITS.filter((c, i) => PHOTO_CREDITS.findIn
 /** Where the mobile crop switches to the wide one. */
 export const PHOTO_WIDE = "(min-width: 900px)";
 
-export function Photo({ n, className, eager = false, wideOnly = false, band = false, onLoad }: {
+export function Photo({ n, className, eager = false, wideOnly = false, band = false, par = false, onLoad }: {
   n: PhotoN; className?: string; eager?: boolean; wideOnly?: boolean;
+  /** Drifts at 0.85x scroll speed with a gentle zoom (app/v2.css [data-par], components/motion/Motion.tsx). */
+  par?: boolean;
   /** A header band's 4:1 strip (1600×400 wide, 780×280 on phones) instead of a whole photo. */
   band?: boolean; onLoad?: () => void;
 }) {
   if (band) {
     const b = (c: "b" | "bm", ext: string) => `/hero/${n}-${c}.${ext}`;
     return (
-      <picture className={className}>
+      <picture className={className} data-par={par ? "" : undefined}>
         <source media={PHOTO_WIDE} type="image/avif" srcSet={b("b", "avif")} />
         <source type="image/avif" srcSet={b("bm", "avif")} />
         <source media={PHOTO_WIDE} type="image/webp" srcSet={b("b", "webp")} />
@@ -48,7 +50,7 @@ export function Photo({ n, className, eager = false, wideOnly = false, band = fa
   }
   const crop = (c: "d" | "m", ext: string) => `/hero/${n}-${c}.${ext}`;
   return (
-    <picture className={className}>
+    <picture className={className} data-par={par ? "" : undefined}>
       <source media={wideOnly ? undefined : PHOTO_WIDE} type="image/avif" srcSet={crop("d", "avif")} />
       {wideOnly ? null : <source type="image/avif" srcSet={crop("m", "avif")} />}
       <source media={wideOnly ? undefined : PHOTO_WIDE} type="image/webp" srcSet={crop("d", "webp")} />
