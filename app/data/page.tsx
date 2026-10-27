@@ -32,7 +32,7 @@ export default async function DataPage() {
 
           <h2>How late it can be</h2>
           <ul>
-            <li><strong>Polymarket and Kalshi</strong>: we check every 15 seconds, so a big move usually shows within a minute. On the free plan, moves show 30 minutes after they happen.</li>
+            <li><strong>Polymarket and Kalshi</strong>: we check every 15 seconds, so a big move usually shows within a minute. The public preview on our home page shows moves 30 minutes after they happen.</li>
             <li><strong>Form 4 (insider trades)</strong>: insiders have up to 2 business days after a trade to file. We check EDGAR every 2 minutes, so a card shows both dates: the day they traded and the day they filed. We never say &ldquo;just bought&rdquo;.</li>
             <li><strong>13F (fund holdings)</strong>: funds file up to 45 days after the quarter ends, so a 13F card can describe holdings more than six weeks old. Each card says which quarter it covers and the day it was filed, for example &ldquo;Q3 2026 holdings · filed Nov 14&rdquo;.</li>
             <li>When a source is more than 5 minutes behind, the feed says &ldquo;Catching up&rdquo; with the time of the last update, instead of &ldquo;Live&rdquo;.</li>

@@ -64,6 +64,13 @@
       "when": 1793056594235,
       "tag": "0008_heartbeat_ok",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793141404040,
+      "tag": "0009_own_login",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 /* Who is looking: a signed-in user, or an anonymous visitor with an optional region cookie. Server components only. */
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { FeedViewer } from "@/lib/feed";
@@ -25,4 +26,19 @@ export function feedViewer(v: Viewer): FeedViewer {
   const s = v.user?.settings ?? DEFAULT_SETTINGS;
   return { plan: v.plan, region: v.region, minRoi: v.user ? s.minRoi : 0, minSizeUsd: s.minSizeUsd, categories: v.user ? s.categories : [],
     venues: s.venues, showYellow: s.showYellow, showRed: s.showRed };
+}
+
+/** The app is for members only (feed, profiles, Top, Results, Following, alerts, markets): someone logged out goes to
+ *  log in and comes back; someone logged in without an active plan goes to "Get Insidir". */
+export async function requireMember(next: string): Promise<Viewer> {
+  const v = await getViewer();
+  if (!v.user) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (v.plan === "free") redirect("/start");
+  return v;
+}
+
+/** For API routes: the member behind the session cookie, or null. */
+export async function memberOrNull(): Promise<Viewer | null> {
+  const v = await getViewer();
+  return v.user && v.plan !== "free" ? v : null;
 }

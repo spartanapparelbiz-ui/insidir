@@ -1,6 +1,6 @@
 /* 7. Pricing: three cards whose prices and features come from PLANS (lib/plans.ts). Shared with /pricing. */
 import Link from "next/link";
-import { UNLOCK, UNLOCK_PRO } from "@/lib/copy";
+import { UNLOCK } from "@/lib/copy";
 import type { Plan } from "@/lib/types";
 import { COMPETITOR_PRICE_LINE, OBJECTIONS, planCards, REFUND_LINE } from "./model";
 
@@ -18,8 +18,8 @@ export function Pricing({ current, signedIn, insidirHref, proHref, freeCta, refu
       <div className="lp-plans">
         {cards.map(c => {
           const mine = signedIn && c.plan === current;
-          const href = c.plan === "free" ? "/terminal" : c.plan === "pro" ? proHref : insidirHref;
-          const label = c.plan === "free" ? freeCta : c.plan === "pro" ? UNLOCK_PRO : UNLOCK;
+          const href = c.plan === "free" ? "/terminal" : insidirHref;
+          const label = c.plan === "free" ? freeCta : UNLOCK;
           return (
             <article key={c.plan} className={`lp-plan card${c.plan === "insidir" ? " lp-plan--main" : ""}`} data-plan={c.plan} data-price={c.price}>
               <h3 className="lp-plan__name">{c.name}</h3>

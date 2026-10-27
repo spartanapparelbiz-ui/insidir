@@ -1,11 +1,10 @@
 /* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the sentence (its name opens the profile, /p/[id]), a
  * "New wallet" label, the payout line, the record line, at most one "why this matters" fact, the time,
- * and two buttons: Follow (traders) and See market. Stock cards (SEC filings) carry the filing line and one button,
+ * and a footer row: Follow (traders), See market and the source link. Stock cards (SEC filings) carry the filing line and one button,
  * the SEC filing itself. Everything on it was sent by the server for this viewer's plan
  * and region (lib/moves/feed.ts). */
 import Link from "next/link";
 import { TimeAgo } from "@/components/TimeAgo";
-import { LockButton } from "@/components/lock/Lock";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import { FollowButton, type FollowState } from "./FollowButton";
@@ -38,7 +37,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
   return (
     <article className={`move${fresh ? " move--fresh" : ""}`} data-move={m.id}>
       <div className="move__top">
-        <span className={`tag tag--${tag.tint}`}>{tag.text}{sub ? ` · ${sub}` : ""}</span>
+        <span className={`tag tag--${tag.tint}`}><span className="tag__dot" aria-hidden="true" />{tag.text}{sub ? ` · ${sub}` : ""}</span>
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
       <p className="move__sentence"><Sentence m={m} /></p>
@@ -46,21 +45,26 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}
-      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow === "locked" && !compact ? <LockButton where="record-card" className="lockline">See this trader&apos;s win record</LockButton> : null}
+      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow !== "on" && follow !== "off" ? (
+        // The public preview: the record is there, blurred, for members (the real numbers never reach this page).
+        <p className="move__record move__record--blur"><span aria-hidden="true">Won 00 of 00 · +$00K all-time</span><span className="sr-only">Trader record for members</span></p>
+      ) : null}
       {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
-      {compact ? null : m.source === "sec" ? (
-        <div className="move__actions">
-          {m.link ? <a className="btn btn--secondary" href={m.link.href} target="_blank" rel="noopener noreferrer">{m.link.label}</a> : null}
+      {compact ? (m.sourceLink ? <SourceA link={m.sourceLink} /> : null) : (
+        <div className="move__foot">
+          {m.source === "sec" ? (
+            m.link ? <a className="btn btn--secondary" href={m.link.href} target="_blank" rel="noopener noreferrer">{m.link.label}</a> : null
+          ) : (
+            <>
+              {m.wallet ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}
+              <Link className="btn btn--secondary" href={`/market/${encodeURIComponent(m.marketId)}`}>See market</Link>
+              {m.who.href && !m.sentence.includes(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
+            </>
+          )}
+          {m.sourceLink ? <SourceA link={m.sourceLink} className="source move__src" /> : null}
         </div>
-      ) : (
-      <div className="move__actions">
-        {m.wallet ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}
-        <Link className="btn btn--secondary" href={`/market/${encodeURIComponent(m.marketId)}`}>See market</Link>
-        {m.who.href && !m.sentence.includes(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
-      </div>
       )}
-      {m.sourceLink ? <SourceA link={m.sourceLink} /> : null}
     </article>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FOOTER } from "@/lib/copy";
 import { PHOTOGRAPHERS } from "./Photo";
 import { Wordmark } from "./Wordmark";
+import { isReady } from "@/lib/features";
 
 /** Every page's footer (docs/INSIDIR-V2.md §6): the logo, who builds Insidir, how to reach a person, Terms, Privacy, the
  * disclaimer, and the photographers whose Unsplash photos set the scene. */
@@ -17,13 +18,17 @@ export function SiteFooter() {
           <p><a className="link" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
         </div>
         <nav className="foot__links" aria-label="Footer">
-          {/* No prefetch: five dynamic pages rendered on every page view would slow the tap the visitor makes. */}
-          <Link href="/results" prefetch={false}>Results</Link>
-          <Link href="/pricing" prefetch={false}>Pricing</Link>
-          <Link href="/about" prefetch={false}>About</Link>
-          <Link href="/data" prefetch={false}>About our data</Link>
-          <Link href="/terms" prefetch={false}>Terms</Link>
-          <Link href="/privacy" prefetch={false}>Privacy</Link>
+          <Link href="/sports">Sports</Link>
+          <Link href="/markets">Markets</Link>
+          {isReady("stocks") ? <Link href="/stocks">Stocks</Link> : null}
+          <Link href="/how-it-works">How it works</Link>
+          <Link href="/results">Results</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/faq">FAQ</Link>
+          <Link href="/about">About</Link>
+          <Link href="/data">About our data</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/privacy">Privacy</Link>
         </nav>
         <p className="foot__legal">{FOOTER}</p>
         <p className="foot__credits">Photos on Unsplash by{" "}

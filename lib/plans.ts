@@ -19,21 +19,17 @@ export interface Entitlements {
 
 export const PLANS: Record<Plan, { name: string; price: number; tagline: string; entitlements: Entitlements }> = {
   free: {
-    name: "Free", price: 0, tagline: "The feed, 30 minutes late",
+    name: "No plan", price: 0, tagline: "The public preview",
     entitlements: { feedDelayMinutes: 30, maxRows: 3, sizesHidden: true, calculator: false, alertDelaySeconds: null, whales: false, pnl: false, fullHistory: false },
   },
   insidir: {
-    name: "Insidir", price: 39, tagline: "The live feed and alerts",
-    entitlements: { feedDelayMinutes: 0, maxRows: null, sizesHidden: false, calculator: true, alertDelaySeconds: 60, whales: false, pnl: false, fullHistory: false },
-  },
-  pro: {
-    name: "Insidir Pro", price: 99, tagline: "For active traders",
+    name: "Insidir", price: 39, tagline: "Everything, live",
     entitlements: { feedDelayMinutes: 0, maxRows: null, sizesHidden: false, calculator: true, alertDelaySeconds: 0, whales: true, pnl: true, fullHistory: true },
   },
 };
 
-/** The Insidir trial (docs/INSIDIR-V2.md §0): $1 for 3 days, then the monthly price. Whop's plan charges it. */
-export const TRIAL = { price: 1, days: 3 } as const;
+/** The one plan, as every button and price line says it. */
+export const PRICE = `$${PLANS.insidir.price}/mo`;
 
 export const entitlements = (plan: Plan): Entitlements => PLANS[plan].entitlements;
 export const isPaid = (plan: Plan): boolean => plan !== "free";

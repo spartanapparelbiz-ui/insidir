@@ -15,7 +15,7 @@ fi
 
 if [ "${E2E_SKIP_BUILD:-0}" != "1" ]; then
   find "$APP" -mindepth 1 -maxdepth 1 ! -name .next -exec rm -rf {} +
-  tar -C "$ROOT" --exclude=./node_modules --exclude=./.next --exclude=./qa --exclude=./.git --exclude=./xray -cf - . | tar -C "$APP" -xf -
+  tar -C "$ROOT" --exclude=./node_modules --exclude=./.next --exclude=./qa --exclude=./.git --exclude=./xray --exclude=./.cache -cf - . | tar -C "$APP" -xf -
   ln -sfn "$ROOT/node_modules" "$APP/node_modules"
   ( cd "$ROOT" && npx tsx -e 'import { SERVER_ENV } from "./qa/e2e/env"; for (const [k, v] of Object.entries(SERVER_ENV)) console.log(`export ${k}=${JSON.stringify(v)}`)' ) > "$OUT/env.sh"
   ( set -a; . "$OUT/env.sh"; cd "$APP" && npx next build >"$OUT/build.log" 2>&1 ) || { tail -40 "$OUT/build.log"; exit 1; }

@@ -2,18 +2,20 @@
  * markets, this week, this month or all time, Sports or Markets (lib/profiles/store.ts topRanking). Win rate, profit
  * and best category are over the same markets. Names are for everyone; the numbers are for members and are never sent
  * to a free viewer's browser. */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { followState, pct } from "@/components/v2/profiles/shared";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { signedShort } from "@/lib/moves/copy";
 import { walletLabel } from "@/lib/moves/records";
 import { followList } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
+import { memo } from "@/lib/memo";
 import { topRanking, type TopRow, type TopWindow } from "@/lib/profiles/store";
 import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
@@ -28,15 +30,15 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const window: TopWindow = sp.window === "week" || sp.window === "month" ? sp.window : "all";
   const tab = sp.tab === "sports" || sp.tab === "markets" ? sp.tab : null;
-  const viewer = await getViewer();
+  const viewer = await requireMember("/top");
   const paid = isPaid(viewer.plan);
-  const trial = unlockHref("insidir", "/top");
+  const trial = unlockHref();
   const now = Date.now();
   let rows: TopRow[] = [];
   let follows: Array<{ kind: string; target: string }> = [];
   if (hasDatabase()) {
     const db = getDb();
-    rows = await topRanking(db, window, tab, now).catch(() => []);
+    rows = await memo(`top:${window}:${tab ?? ""}`, 60_000, () => topRanking(db, window, tab, now)).catch(() => []);
     follows = viewer.user ? await followList(db, viewer.user.id).catch(() => []) : [];
   }
   const q = (o: { window?: string; tab?: string }) => {
@@ -62,7 +64,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
         {!paid && rows.length ? (
           <aside className="upsell" data-locked="top">
             <p className="upsell__text">Win rates, profit and best categories are for members.</p>
-            <a className="btn btn--primary" href={trial} data-unlock="top">See their full record for $1</a>
+            <a className="btn btn--primary" href={trial} data-unlock="top">{GET_CTA}</a>
           </aside>
         ) : null}
         {rows.length ? (

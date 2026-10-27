@@ -1,9 +1,10 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: eight graded photos, what Insidir is in one line, "Follow the big money.", one real big
+ * hero (components/home/Hero.tsx: seven graded photos, what Insidir is in one line, "Follow the big money.", one real big
  * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
  * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
  * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
- * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
+ * block), Pricing (one plan), FAQ, and "Get Insidir · $39/mo" at the end. Visitors see a public preview: real moves 30
+ * minutes late, records blurred.
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
 import Link from "next/link";
@@ -27,7 +28,7 @@ import { trustFacts, type TrustFacts } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
-import { TRIAL_LINE } from "@/lib/copy";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
 import { isReady, liveTabs } from "@/lib/features";
 import { agoText, dollars, recordLine } from "@/lib/moves/copy";
@@ -39,6 +40,8 @@ import { moveSource } from "@/lib/moves/source";
 import { tickerItem, type TickerItem } from "@/lib/moves/ticker";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
+import { memo } from "@/lib/memo";
+import type { Plan, Region } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +49,7 @@ const WEEK = 7 * 86_400_000;
 const MONTH = 30 * 86_400_000;
 
 /** The hero's moves: the biggest mainstream moves of the last week (lib/home/curate.ts), taking each live tab in turn
- *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to eight, one per photo. */
+ *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to seven, one per photo. */
 function heroPick(big: Move[], latest: Move[]): Move[] {
   const tabs = liveTabs().filter(t => t !== "crypto");
   const per = tabs.map(tab => big.filter(m => m.tab === tab));
@@ -89,49 +92,55 @@ async function snippetFor(db: Db, items: FeedItem[], until: number, records: boo
   };
 }
 
+interface HomeData { hero: FeedItem[]; recent: FeedItem[]; results: FeedItem[]; status: FeedStatus | null; snippet: Snippet | null; ticker: TickerItem[]; trust: TrustFacts | null; story: StoryData | null }
+const EMPTY: HomeData = { hero: [], recent: [], results: [], status: null, snippet: null, ticker: [], trust: null, story: null };
+
+async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number, records: boolean): Promise<HomeData> {
+  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
+  let ticker: TickerItem[] = [];
+  let trust: TrustFacts | null = null;
+  let story: StoryData | null = null;
+  // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
+  const [bigAll, latestAll, settledAll, st] = await Promise.all([
+    listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
+    listMoves(db, { until, limit: 200 }).catch(() => []),
+    listMoves(db, { settled: true, limit: 200 }).catch(() => []),
+    feedStatus(db, now).catch(() => null),
+  ]);
+  const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
+  const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
+  const [heroItems, recentItems] = await Promise.all([
+    feedItems(db, heroPick(big!, latest!), plan, region, now).catch(() => []),
+    feedItems(db, latest!.slice(0, 24), plan, region, now).catch(() => []),
+  ]);
+  hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
+  recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
+  ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
+  snippet = await snippetFor(db, recent.slice(0, 12), until, records).catch(() => null);
+  const picked = resultPick(settled!, now);
+  results = (await feedItems(db, picked, plan, region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
+  status = st;
+  [trust, story] = await Promise.all([
+    trustFacts(db).catch(() => null),
+    storyFor(db, plan, region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
+  ]);
+  return { hero, recent, results, status, snippet, ticker, trust, story };
+}
+
 export default async function Home() {
   const now = Date.now();
   const [jar, viewer] = await Promise.all([cookies(), getViewer()]);
   const paid = isPaid(viewer.plan);
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
-  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
-  let ticker: TickerItem[] = [];
-  let trust: TrustFacts | null = null;
-  let story: StoryData | null = null;
-  if (hasDatabase()) {
-    const db = getDb();
-    // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
-    const [bigAll, latestAll, settledAll, st] = await Promise.all([
-      listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
-      listMoves(db, { until, limit: 200 }).catch(() => []),
-      listMoves(db, { settled: true, limit: 200 }).catch(() => []),
-      feedStatus(db, now).catch(() => null),
-    ]);
-    const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
-    const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
-    const [heroItems, recentItems] = await Promise.all([
-      feedItems(db, heroPick(big!, latest!), viewer.plan, viewer.region, now).catch(() => []),
-      feedItems(db, latest!.slice(0, 24), viewer.plan, viewer.region, now).catch(() => []),
-    ]);
-    hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
-    recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
-    ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
-    snippet = await snippetFor(db, recent.slice(0, 12), until, plan.records).catch(() => null);
-    const picked = resultPick(settled!, now);
-    results = (await feedItems(db, picked, viewer.plan, viewer.region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
-    status = st;
-    [trust, story] = await Promise.all([
-      trustFacts(db).catch(() => null),
-      storyFor(db, viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
-    ]);
-    // The phones show the app exactly as it reads (full sentences), not the home page's short copy.
-  }
+  // Every visitor on the same plan and region sees the same home page data: computed once per 15 seconds.
+  const { hero, recent, results, status, snippet, ticker, trust, story } = hasDatabase()
+    ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now, plan.records))
+    : EMPTY;
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));
-  const trial = unlockHref("insidir");
-  const pro = unlockHref("pro");
+  const trial = unlockHref();
   const follow = !isReady("follows") ? "soon" as const : paid ? "off" as const : "locked" as const;
 
   const record = trust?.settled ?? null;
@@ -142,7 +151,7 @@ export default async function Home() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
-        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
+        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : CANCEL_LINE} cta={paid ? "See the live feed" : GET_CTA} ctaHref={paid ? "/feed" : trial} status={status} />
         {story ? <Story data={story} /> : null}
 
         <PhotoSection n={HOME_SECTIONS.seconds} id="ps-seconds" line="Big moves happen in seconds.">
@@ -172,7 +181,7 @@ export default async function Home() {
                   </aside>
                 ) : null}
               </div>
-              <div className="sec2__foot"><Link className="btn btn--secondary" href="/feed">See the live feed</Link></div>
+              <div className="sec2__foot"><Link className="btn btn--secondary" href={paid ? "/feed" : trial}>{paid ? "See the live feed" : GET_CTA}</Link></div>
             </div>
           </PreviewSeen>
         ) : null}
@@ -215,14 +224,14 @@ export default async function Home() {
         </PhotoSection>
 
         <TrustBlock facts={trust} />
-        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={pro} actions={false} />
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} />
         <FaqV2 />
 
         <PhotoSection n={HOME_SECTIONS.yourMove} id="ps-move" line="Your move.">
           {!paid ? (
             <div className="psec__cta">
-              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">Try it for $1</a>
-              <p className="psec__fine">{TRIAL_LINE}</p>
+              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">{GET_CTA}</a>
+              <p className="psec__fine">{CANCEL_LINE}</p>
             </div>
           ) : <Link className="btn btn--onDark btn--big" href="/feed">See the live feed</Link>}
         </PhotoSection>

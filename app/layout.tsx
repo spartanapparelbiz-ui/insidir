@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Rufina } from "next/font/google";
 import localFont from "next/font/local";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
 import { Motion } from "@/components/motion/Motion";
+import { NavProgress } from "@/components/motion/NavProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -45,13 +46,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ToastProvider>
-          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref("insidir")}>
+          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref()}>
             {children}
             <SiteFooter />
           </LockProvider>
         </ToastProvider>
         <RegisterSW />
         <Motion />
+        <Suspense fallback={null}><NavProgress /></Suspense>
         <Beacons />
       </body>
     </html>

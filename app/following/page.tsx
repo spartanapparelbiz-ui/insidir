@@ -1,13 +1,14 @@
 /* Following (docs/INSIDIR-V2.md §6): the traders and markets a member follows, the alert switches (push, email) and quiet
  * hours. Alert switches show Coming soon until alerts are live on production. Free viewers see what following does and
- * the $1 trial. */
+ * Get Insidir. */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { ComingSoon } from "@/components/v2/ComingSoon";
 import { FollowButton } from "@/components/v2/FollowButton";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { signedShort } from "@/lib/moves/copy";
@@ -22,9 +23,9 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Following" };
 
 export default async function FollowingPage() {
-  const viewer = await getViewer();
+  const viewer = await requireMember("/following");
   const paid = isPaid(viewer.plan);
-  const trial = unlockHref("insidir");
+  const trial = unlockHref();
   const list = viewer.user && hasDatabase() ? await followList(getDb(), viewer.user.id).catch(() => []) : [];
   const recs = hasDatabase() ? await recordsFor(getDb(), list.filter(f => f.kind === "trader").map(f => f.target)).catch(() => new Map()) : new Map();
   const max = movePlan(viewer.plan).maxFollows;
@@ -37,7 +38,7 @@ export default async function FollowingPage() {
         {!paid ? (
           <section className="upsell upsell--big">
             <p className="upsell__text">Follow top traders and markets, and get a ping on your phone when they move. Following is for members.</p>
-            <a className="btn btn--primary" href={trial} data-unlock="following">Try it for $1</a>
+            <a className="btn btn--primary" href={trial} data-unlock="following">{GET_CTA}</a>
           </section>
         ) : (
           <>

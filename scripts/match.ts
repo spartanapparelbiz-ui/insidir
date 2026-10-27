@@ -1,7 +1,7 @@
 /* The Price gaps matcher (lib/gaps/matcher.ts) as a one-shot job: Railway runs it on a cron schedule every 6 hours
  * (railway.match.json), it writes terminal.gap_targets and exits. Exits at once, doing nothing, unless GAPS_ENABLED=1.
  *   DATABASE_URL=... GAPS_ENABLED=1 npm run match */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { KalshiClient, PolymarketClient, PolymarketUsClient } from "@/lib/exchanges";
 import { activityFloorFromEnv } from "@/lib/exchanges/venue";

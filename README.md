@@ -62,11 +62,11 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 |---|---|---|
 | `DATABASE_URL` | both | everything |
 | `APP_URL` | both | Whop redirect, links in alerts and unsubscribe links |
-| `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET`, `WHOP_API_KEY`, `WHOP_COMPANY_ID` | web | sign-in, reading and cancelling memberships |
-| `WHOP_PRODUCT_INSIDIR`, `WHOP_PRODUCT_PRO`, `WHOP_PLAN_INSIDIR`, `WHOP_PLAN_PRO` | web | which product grants which plan; checkout links |
-| `WHOP_WEBHOOK_SECRET` | web | `/api/whop/webhook` signature check |
+| `WHOP_API_KEY`, `WHOP_COMPANY_ID` | web | reading memberships and payments, cancelling memberships |
+| `WHOP_PLAN_INSIDIR`, `WHOP_PRODUCT_INSIDIR` | web | the one plan (Insidir, $39/month) the embedded checkout on `/start` sells |
+| `WHOP_WEBHOOK_SECRET` | web | `/api/billing/webhook` signature check |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | email backup alerts and daily summaries |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | log-in codes (required to log in), email alerts and daily summaries |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | match | LLM second check on unsure matches (optional, capped per month; default $3) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
@@ -92,7 +92,7 @@ is processed and not stored.
 | Job | Every | What |
 |---|---|---|
 | gaps | 10 s | Only with `GAPS_ENABLED=1`. Re-reads `gap_targets` every 10 min; books only those markets (Kalshi batch orderbooks, 100 tickers per request; Polymarket `POST /books`, 500 tokens per request); runs every engine; quarantines deals that look too good or come from pairs whose rules differ; saves deals and receipts; marks deals inactive after 90 s unseen; a heartbeat per venue |
-| alerts | 5 s | Pro: push at once. Insidir: push within 60 s. Email backup for paid users without push (max 6 an hour) |
+| alerts | 5 s | Members: push at once. Email backup for paid users without push (max 6 an hour) |
 | digests | 10 min | Daily summary email at 13:00 UTC for users who opted in (the free plan's alert) |
 | whales | 15 s | Polymarket trades over $10K |
 | settle | 15 min | Record how each logged deal resolved, for the public receipts |
@@ -130,12 +130,14 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
    scan runs and the site shows "Live data paused, retrying".
 5. Set `DATABASE_URL` on every service (reference the Postgres service variable), and the variables above.
 6. **Whop:**
-   - Create an OAuth app. Its redirect URI is `https://YOUR_DOMAIN/auth/callback`.
-   - Create two products, Insidir ($39/mo) and Pro ($99/mo). Set each product's redirect after purchase to
-     `https://YOUR_DOMAIN/auth/login?next=/terminal`, so a buyer lands on the live Terminal.
-   - Add a webhook to `https://YOUR_DOMAIN/api/whop/webhook` for membership events
-     (`membership.activated`, `membership.deactivated`, `membership.cancel_at_period_end_changed`, `payment.succeeded`).
-     Put its secret in `WHOP_WEBHOOK_SECRET`.
+   - One product, Insidir, with one plan: $39/month, no trial. Put its ids in `WHOP_PLAN_INSIDIR` and
+     `WHOP_PRODUCT_INSIDIR`. The checkout is embedded on `/start`; no redirect URL or OAuth app is needed.
+   - Add a webhook to `https://YOUR_DOMAIN/api/billing/webhook` with the events `membership.activated`,
+     `membership.updated`, `payment.succeeded`, `payment.failed`, `refund.created`, `refund.updated` and
+     `dispute.created`. Put its secret in `WHOP_WEBHOOK_SECRET`.
+   - Apple Pay: `public/.well-known/apple-developer-merchantid-domain-association` is served as is; register the
+     domain under Websites → Fix Apple Pay in Whop.
+   - **Resend:** verify the sending domain and set `RESEND_API_KEY` and `EMAIL_FROM`; log-in codes need it.
 6. **Network:** the worker must reach `api.elections.kalshi.com`, `gamma-api.polymarket.com`, `clob.polymarket.com`,
    `data-api.polymarket.com` (and `api.polymarket.us` if enabled), `openrouter.ai` and `api.resend.com`; the web
    service needs `api.whop.com` and `api.resend.com`.

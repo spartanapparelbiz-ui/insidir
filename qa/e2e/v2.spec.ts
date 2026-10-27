@@ -1,15 +1,16 @@
 /* docs/INSIDIR-V2.md: the landing, the feed and its plan gating, location rules, Coming soon, following, results. Runs at
  * 390×844 and 1440×900 against the seeded fixtures (qa/e2e/seed.ts: E2E-Top has a 41-of-63 record). */
 import { expect, test } from "@playwright/test";
-import { q, signIn } from "./helpers";
+import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: the brief's hero, and on a phone the headline, button and top of the first card show without scrolling", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  const cta = page.getByRole("link", { name: "See the live feed" }).first();
-  await expect(cta).toHaveAttribute("href", "/feed");
-  await expect(page.getByText("$1 for 3 days, then $39/mo. Cancel anytime.").first()).toBeVisible();
+  const cta = page.locator('[data-cta="hero"]');
+  await expect(cta).toHaveText("Get Insidir · $39/mo");
+  await expect(cta).toHaveAttribute("href", "/start");
+  await expect(page.getByText("Cancel anytime.").first()).toBeVisible();
   // One real move per photo on a solid card (components/home/Hero.tsx).
   const card = page.locator(".cine__card .hcard");
   await expect(page.getByText("LIVE · big money moves")).toBeVisible();
@@ -36,7 +37,7 @@ test("home hero: the button, a ticker tap and the feed preview scrolled into vie
   await expect.poll(() => count("ticker_click")).toBe(before.ticker + 1);
   await page.goto("/");
   await page.locator(".cine__cta a").click();
-  await expect(page).toHaveURL(/\/feed/);
+  await expect(page).toHaveURL(/\/start/);
   await expect.poll(() => count("hero_cta_click")).toBe(before.cta + 1);
 });
 
@@ -58,20 +59,11 @@ test("headlines are in the serif (Rufina); body text, buttons and cards in Schib
   for (const f of [r.sans, r.serif]) expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(f.replace(/["']/g, ""));
 });
 
-test("free feed: moves 30 minutes late, no records anywhere in the response, follow locked, one upsell", async ({ page }) => {
-  const res = page.waitForResponse(r => r.url().includes("/api/moves"));
-  await page.goto("/feed");
-  await expect(page.getByText("You're seeing moves 30 minutes late. See them live for $1.")).toBeVisible();
-  await page.getByRole("button", { name: "$50k+" }).click();
-  const body = await (await res).json() as { items: Array<{ at: number; record: string | null; topTrader: boolean; sentence: string }> };
-  for (const m of body.items) {
-    expect(m.record).toBeNull();
-    expect(m.topTrader).toBe(false);
-    expect(Date.now() - m.at).toBeGreaterThan(29 * 60_000);
-    expect(m.sentence).not.toMatch(/top trader/i);
-  }
-  await expect(page.locator(".move__record")).toHaveCount(0);
-  await expect(page.locator(".follow--locked").first()).toBeVisible();
+test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
+  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/sports"); await page.goto("/markets"); });
+  await expect(page.locator(".move").first()).toBeVisible();
+  await expect(page.locator(".move__record--blur").first()).toBeVisible();
+  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63/);
 });
 
 test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
@@ -88,8 +80,8 @@ test("member feed: live moves with the record line; following a trader shows on 
   await q("delete from terminal.follows");
 });
 
-test("a US visitor never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
-  await context.addCookies([{ name: "insidir_region", value: "us", url: "http://localhost:3100" }]);
+test("a US member never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
+  await signIn(context, "insidir");
   for (const path of ["/", "/feed", "/market/0xe2emarket1", "/trader/0xe2e00000000000000000000000000000000000aa", "/p/0xe2e00000000000000000000000000000000000aa", "/top", "/results"]) {
     await page.goto(path);
     const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).href));
@@ -107,12 +99,15 @@ test("a US visitor never gets an international Polymarket link, and Coming soon 
 });
 
 test("outside the US, the market page links to the source market", async ({ page, context }) => {
-  await context.addCookies([{ name: "insidir_region", value: "non_us", url: "http://localhost:3100" }]);
+  await signIn(context, "proIntl");
   await page.goto("/market/0xe2emarket1");
   await expect(page.getByRole("link", { name: "See it on Polymarket" })).toHaveAttribute("href", /polymarket\.com/);
 });
 
-test("location is asked once, as a sheet, the first time a market link is tapped", async ({ page }) => {
+test("location is asked once, as a sheet, the first time a market link is tapped", async ({ page, context }) => {
+  await q("update terminal.users set region = null where id = 'user_e2e_pro'");
+  try {
+  await signIn(context, "pro");
   await page.goto("/market/0xe2emarket1");
   await page.getByRole("button", { name: "See market" }).click();
   const sheet = page.getByRole("dialog", { name: "Where are you?" });
@@ -122,9 +117,13 @@ test("location is asked once, as a sheet, the first time a market link is tapped
   await expect(page.getByRole("button", { name: /Location: Outside US/ })).toHaveCount(0); // the pill lives on the feed
   await page.goto("/feed");
   await expect(page.getByRole("button", { name: /Location: Outside US/ })).toBeVisible();
+  } finally {
+    await q("update terminal.users set region = 'us' where id = 'user_e2e_pro'");
+  }
 });
 
-test("results show wins and losses; /terminal goes to the feed", async ({ page }) => {
+test("results show wins and losses; /terminal goes to the feed", async ({ page, context }) => {
+  await signIn(context, "insidir");
   await page.goto("/results");
   await expect(page.getByText("Real past moves. Not a promise.")).toBeVisible();
   await expect(page.locator(".rlist__res--won").first()).toBeVisible();
@@ -159,7 +158,8 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
 });
 
-test("Stocks: insider buys and fund adds in plain words, each linking to its SEC filing", async ({ page }) => {
+test("Stocks: insider buys and fund adds in plain words, each linking to its SEC filing", async ({ page, context }) => {
+  await signIn(context, "insidir");
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");

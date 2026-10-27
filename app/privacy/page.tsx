@@ -24,7 +24,7 @@ export default async function PrivacyPage() {
 
           <h2>What we store about you</h2>
           <ul>
-            <li>Your Whop user id and the email address Whop gives us when you sign in. Whop handles sign-in and payment; we never see your card details.</li>
+            <li>Your email address, which is how you log in (we email you a 6-digit code), and your Whop user id, so we know your payment went through. Whop handles payment; we never see your card details.</li>
             <li>Your plan, your location answer (US or outside the US), the traders and markets you follow, and which alerts you turned on.</li>
             <li>If you sign up for a heads-up about a feature that is coming soon, your email and that feature, so we can tell you once when it&apos;s live.</li>
             <li>Push subscriptions for the devices where you turned on alerts, so we can send them.</li>
@@ -46,7 +46,7 @@ export default async function PrivacyPage() {
 
           <h2>Who else handles data</h2>
           <ul>
-            <li>Whop: sign-in, payments, memberships.</li>
+            <li>Whop: payments and memberships.</li><li>Resend: sends log-in codes and alert emails.</li>
             <li>Resend: sending email.</li>
             <li>Your browser&apos;s push service (Apple, Google or Mozilla): delivering push alerts.</li>
             <li>Our hosting and database providers, to run the service.</li>

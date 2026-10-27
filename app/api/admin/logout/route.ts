@@ -1,4 +1,4 @@
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin";
 

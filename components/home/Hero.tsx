@@ -1,6 +1,6 @@
 "use client";
 /* The home hero: "serious type, wild world".
- *   Photos: eight of the sixteen graded photos (public/hero, lib/photos.ts HERO_PHOTOS), each zooming slowly from 100%
+ *   Photos: seven of the sixteen graded photos (public/hero, lib/photos.ts HERO_PHOTOS), each zooming slowly from 100%
  *   to 108% over 6 s, then crossfading (1.2 s) into the next; it loops, each round ending on the summit. Photo 1 loads
  *   with the page (preloaded, high priority); the others load once the page is idle, and a photo only comes up once it has loaded. Under
  *   prefers-reduced-motion: photo 1 only, still.
@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { beacon } from "@/components/app/beacon";
-import { Photo, PHOTO_WIDE } from "@/components/Photo";
+import { Photo, PHOTO_WIDE, PHONE_SIZES, photoSet, photoSrc } from "@/components/Photo";
 import { HERO_PHOTOS } from "@/lib/photos";
 import { TimeAgo } from "@/components/TimeAgo";
 import { dollars } from "@/lib/moves/copy";
@@ -85,8 +85,8 @@ function LockGlyph() {
   return <svg className="hcard__lock" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
 }
 
-export function Hero({ moves, ticker, late, trialLine, cta, status }: {
-  moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string;
+export function Hero({ moves, ticker, late, trialLine, cta, ctaHref = "/feed", status }: {
+  moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string; ctaHref?: string;
   /** The sources' freshness (lib/moves/feed.ts): "LIVE" only while every source is current. */
   status: FeedStatus | null;
 }) {
@@ -96,9 +96,11 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
   const [paused, setPaused] = useState(false);
   const loaded = useRef<Set<number>>(new Set([0]));
 
-  // Photo 1 is fetched with the HTML, before anything else: the phone crop on phones, the wide one on wider screens.
-  preload("/hero/1-m.avif", { as: "image", type: "image/avif", media: "(max-width: 899px)", fetchPriority: "high" });
-  preload("/hero/1-d.avif", { as: "image", type: "image/avif", media: PHOTO_WIDE, fetchPriority: "high" });
+  // The first photo is fetched with the HTML, before anything else: the phone crop on phones, the wide one on wider
+  // screens, each in the size this screen needs.
+  const lead = HERO_PHOTOS[0]!;
+  preload(photoSrc(lead, "m", "avif"), { as: "image", type: "image/avif", media: "(max-width: 899px)", fetchPriority: "high", imageSrcSet: photoSet(lead, "m"), imageSizes: PHONE_SIZES });
+  preload(photoSrc(lead, "d", "avif"), { as: "image", type: "image/avif", media: PHOTO_WIDE, fetchPriority: "high", imageSrcSet: photoSet(lead, "d"), imageSizes: "100vw" });
 
   // The others once the page is idle, and only without reduced motion.
   useEffect(() => {
@@ -145,7 +147,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
           <h1 id="hero-h" className="cine__h">Follow the big money.</h1>
           <p className="cine__sub">Insidir shows you the biggest bets and stock trades the moment they happen: who made them, how much, and whether they usually win.</p>
           <div className="cine__cta">
-            <Link className="btn btn--onDark btn--big" href="/feed" data-cta="hero" onClick={() => beacon("hero_cta_click", "home")}>{cta}</Link>
+            <Link className="btn btn--onDark btn--big" href={ctaHref} data-cta="hero" onClick={() => beacon("hero_cta_click", "home")}>{cta}</Link>
             <ul className="cine__points">
               <li>Sports · Prediction markets · Stocks</li>
               <li>Real public data</li>

@@ -38,7 +38,7 @@ describe("trust claims", () => {
   });
 
   it("'Payments by Whop' and 'We never touch your money': checkout goes to Whop, and there's no deposit or order code", () => {
-    expect(read("lib/auth/whop.ts")).toMatch(/whop\.com/);
+    expect(read("lib/billing/whop.ts")).toMatch(/whop\.com/);
     for (const f of [...files("lib"), ...files("app")]) {
       expect(readFileSync(f, "utf8"), f).not.toMatch(/\b(createOrder|placeOrder|submitOrder|withdraw|deposit)\s*\(/);
     }

@@ -3,7 +3,7 @@
  *                    markets), profit over time, wins and losses by category, open positions and recent moves
  *   /p/insider-<cik> an SEC filer: every open-market buy and sale on their Form 4s, totals, and the price paid
  *   /p/fund-<cik>    a 13F filer: top 10 holdings, biggest adds and cuts per quarter, quarters on file
- * Names are for everyone; the numbers are for members ("See their full record for $1"), and are never sent to a free
+ * Names are for everyone; the numbers are for members ("Get Insidir · $39/mo"), and are never sent to a free
  * viewer's browser. Every number links to where it came from. Nothing about who is behind a wallet, ever. */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,7 +12,7 @@ import { unlockHref } from "@/components/app/links";
 import { FundProfile } from "@/components/v2/profiles/FundProfile";
 import { InsiderProfile } from "@/components/v2/profiles/InsiderProfile";
 import { TraderProfile } from "@/components/v2/profiles/TraderProfile";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { walletLabel } from "@/lib/moves/records";
 import { parseProfileId, personName } from "@/lib/profiles/name";
@@ -44,8 +44,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const ref = parseProfileId(id);
   if (!ref) notFound();
-  const viewer = await getViewer();
-  const trial = unlockHref("insidir");
+  const viewer = await requireMember(`/p/${id}`);
+  const trial = unlockHref();
   const db = hasDatabase() ? getDb() : null;
   const now = Date.now();
   let body: React.ReactNode;

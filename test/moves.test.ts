@@ -178,12 +178,10 @@ describe("gating per plan", () => {
     expect(movePlan("free")).toMatchObject({ delayMs: 30 * MIN, records: false, maxFollows: 0, alerts: false });
     expect(canFollow("free", 0)).toBe(false);
   });
-  it("Insidir: live, records, 50 follows, alerts, daily email; Pro adds custom rules, unlimited follows, Price gaps", () => {
-    expect(movePlan("insidir")).toMatchObject({ delayMs: 0, records: true, maxFollows: 50, alerts: true, dailyEmail: true, customRules: false, priceGaps: false });
-    expect(canFollow("insidir", 49)).toBe(true);
-    expect(canFollow("insidir", 50)).toBe(false);
-    expect(canFollow("pro", 10_000)).toBe(true);
-    expect(movePlan("pro")).toMatchObject({ customRules: true, priceGaps: true });
+  it("Insidir, the one plan: live, records, unlimited follows, alerts, daily email, custom rules, Price gaps", () => {
+    expect(movePlan("insidir")).toMatchObject({ delayMs: 0, records: true, maxFollows: null, alerts: true, dailyEmail: true, customRules: true, priceGaps: true });
+    expect(canFollow("insidir", 10_000)).toBe(true);
+    expect(canFollow("free", 0)).toBe(false);
   });
 });
 
@@ -253,10 +251,10 @@ describe("move alerts", () => {
     expect(reasonFor(user({ markets: new Set(["mkt1"]) }), base)).toBe("market");
     expect(reasonFor(user({ markets: new Set(["mkt1"]) }), { ...base, amount: 49_999 })).toBeNull();
   });
-  it("custom rules are Pro only and match tab, league and size", () => {
+  it("custom rules are for members and match tab, league and size", () => {
     const rules = [{ tab: "sports" as const, league: "NFL" as const, min: 50_000 }];
-    expect(reasonFor(user({ rules }), base)).toBeNull();
-    expect(reasonFor(user({ plan: "pro", rules }), base)).toBe("rule");
+    expect(reasonFor(user({ plan: "free", rules }), base)).toBeNull();
+    expect(reasonFor(user({ plan: "insidir", rules }), base)).toBe("rule");
     expect(ruleMatches(rules[0]!, { ...base, league: "NBA" })).toBe(false);
     expect(ruleMatches({ tab: null, league: null, min: 100_000 }, base)).toBe(false);
   });

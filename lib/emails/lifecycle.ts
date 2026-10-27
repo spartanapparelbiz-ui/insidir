@@ -18,7 +18,6 @@ import { isPaid } from "@/lib/plans";
 import type { Plan } from "@/lib/types";
 
 export type LifecycleKind = "welcome" | "trial_ending" | "weekly";
-export const TRIAL_DAYS = 3;
 const H = 3_600_000, DAY = 24 * H;
 export interface LifecycleEmail { kind: LifecycleKind; period: string; subject: string; heading: string; lines: Array<{ text: string; url?: string }>; cta: { label: string; url: string } }
 
@@ -47,8 +46,7 @@ export function dueKinds(u: { plan: Plan; email: string | null; paidAt: number |
   const age = now - u.paidAt;
   // Day 0 only (not to everyone already a member when this shipped).
   if (!sent.has("welcome:once") && age < DAY) out.push({ kind: "welcome", period: "once" });
-  // Day 2 of the Insidir trial, while it will renew.
-  if (u.plan === "insidir" && !u.cancelAtPeriodEnd && !sent.has("trial_ending:once") && age >= 2 * DAY && age < TRIAL_DAYS * DAY) out.push({ kind: "trial_ending", period: "once" });
+  // There is no trial any more (one plan, $39/month), so the "trial ends tomorrow" email is never due.
   const week = isoWeek(now);
   if (u.follows > 0 && mondayMorningET(now) && age >= 5 * DAY && !sent.has(`weekly:${week}`)) out.push({ kind: "weekly", period: week });
   return out;

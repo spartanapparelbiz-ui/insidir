@@ -16,7 +16,7 @@ import { LocationPill } from "@/components/v2/LocationPill";
 import { unlockHref } from "@/components/app/links";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { signedShort } from "@/lib/moves/copy";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady, liveTabs } from "@/lib/features";
@@ -32,7 +32,7 @@ export const metadata: Metadata = { title: "Live feed", description: "The bigges
 export default async function FeedPage({ searchParams }: { searchParams: Promise<{ welcome?: string; tab?: string }> }) {
   const now = Date.now();
   const sp = await searchParams;
-  const viewer = await getViewer();
+  const viewer = await requireMember("/feed");
   const jar = await cookies();
   const paid = isPaid(viewer.plan);
   const tabs = liveTabs();
@@ -54,7 +54,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     }
   }
   void recordEvent({ name: "feed_view", visitorId: jar.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined);
-  const trial = unlockHref("insidir");
+  const trial = unlockHref();
   const followsReady = isReady("follows");
   return (
     <>

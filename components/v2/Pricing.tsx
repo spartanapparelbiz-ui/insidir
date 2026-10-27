@@ -1,70 +1,98 @@
-/* Pricing (docs/INSIDIR-V2.md §8): Free / Insidir ($1 for 3 days, then $39/mo, "Recommended") / Pro ($99/mo). Each plan is a
- * plain list; anything not live on production says "(coming soon)" right in the bullet, so nobody pays for something
- * that isn't there yet (lib/features.ts). Billing itself is Whop's. */
+/* Pricing: one plan, Insidir, $39/month, cancel anytime. Its card lists everything that's live, then what's coming
+ * marked "(coming soon)", so nobody pays for something that isn't there yet (lib/features.ts). The button opens the
+ * checkout embedded on /start; billing itself is Whop's. */
 import Link from "next/link";
 import { isReady, type Feature } from "@/lib/features";
-import { PLANS, TRIAL } from "@/lib/plans";
+import { PLANS, PRICE } from "@/lib/plans";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import type { Plan } from "@/lib/types";
 
 interface Bullet { text: string; needs?: Feature }
-export const PLAN_BULLETS: Record<Plan, Bullet[]> = {
-  free: [{ text: "See big moves 30 minutes late" }, { text: "Sports and prediction markets" }, { text: "Every result, won or lost" }],
-  insidir: [
-    { text: "Every big move, live", needs: "feed" },
-    { text: "Trader records: won, lost, all-time profit", needs: "records" },
-    { text: "Follow up to 50 traders or markets", needs: "follows" },
-    { text: "Phone and email alerts when they move", needs: "alerts_push" },
-    { text: "A daily email of the biggest moves", needs: "daily_email" },
-  ],
-  pro: [
-    { text: "Everything in Insidir" },
-    { text: "Custom alert rules: any tab, league or size", needs: "custom_rules" },
-    { text: "Unlimited follows", needs: "follows" },
-    { text: "Price gaps between Kalshi and Polymarket", needs: "price_gaps" },
-  ],
-};
+/** Everything Insidir gives a member; the unready ones show as "(coming soon)". */
+export const FEATURES: Bullet[] = [
+  { text: "Every big move, live: sports, prediction markets and insider stock trades", needs: "feed" },
+  { text: "Insider stock trades from SEC filings", needs: "stocks" },
+  { text: "Trader records: won, lost, all-time profit", needs: "records" },
+  { text: "Top traders, this week, this month and all time", needs: "records" },
+  { text: "Every result, won or lost" },
+  { text: "Follow traders and markets", needs: "follows" },
+  { text: "Phone and email alerts when they move", needs: "alerts_push" },
+  { text: "A daily email of the biggest moves", needs: "daily_email" },
+  { text: "Custom alert rules: any tab, league or size", needs: "custom_rules" },
+  { text: "Price gaps between Kalshi and Polymarket", needs: "price_gaps" },
+  { text: "Crypto", needs: "crypto" },
+];
 
-/** What the $1 trial unlocks, ready features only (the lock sheet, components/lock). */
-export const insidirUnlocks = (): string[] => PLAN_BULLETS.insidir.filter(b => !b.needs || isReady(b.needs)).map(b => b.text);
+const ready = (b: Bullet) => !b.needs || isReady(b.needs);
+/** What the plan unlocks today (the lock sheet, components/lock). */
+export const insidirUnlocks = (): string[] => FEATURES.filter(ready).map(b => b.text);
 
-export function PricingCards({ current, signedIn, insidirHref, proHref, level = 2, primary = false, actions = true }: {
-  current: Plan; signedIn: boolean; insidirHref: string; proHref: string; level?: 1 | 2; primary?: boolean;
-  /** Buttons on the cards (off on home: one action there, and the $1 trial once at the end). */
+const Check = () => <svg className="plan2__check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+
+/** The plan's features as a list: ready ones first, then the coming-soon ones. */
+export function FeatureList({ className = "plan2__list" }: { className?: string }) {
+  const live = FEATURES.filter(ready), soon = FEATURES.filter(b => !ready(b));
+  return (
+    <ul className={className}>
+      {live.map(b => <li key={b.text}><Check />{b.text}</li>)}
+      {soon.map(b => <li key={b.text} className="plan2__soon"><Check />{b.text} (coming soon)</li>)}
+    </ul>
+  );
+}
+
+export function PricingCards({ current, signedIn, href, level = 2, actions = true, title = "One plan. Everything in it." }: {
+  current: Plan; signedIn: boolean; href: string; level?: 1 | 2;
+  /** The button on the card (off on home, where the action is once, at the end). */
   actions?: boolean;
+  /** The section title (null: none, when the page band already says it). */
+  title?: string | null;
 }) {
   const H = level === 1 ? "h1" : "h2";
-  // Plan names sit one level under the section title (h2 on /pricing, h3 inside the home page's sections).
   const PlanH = level === 1 ? "h2" : "h3";
-  const price: Record<Plan, string> = { free: "$0", insidir: `$${TRIAL.price} for ${TRIAL.days} days`, pro: `$${PLANS.pro.price}/mo` };
-  const sub: Record<Plan, string> = { free: "Free forever", insidir: `then $${PLANS.insidir.price}/mo. Cancel anytime.`, pro: "For people who follow a lot." };
+  const mine = signedIn && current === "insidir";
   return (
-    <section className="sec2 pricing2" id="pricing" aria-labelledby="pricing-h">
+    <section className="sec2 pricing2" id="pricing" aria-labelledby={title ? "pricing-h" : undefined} aria-label={title ? undefined : "Plan"}>
       <div className="wrap">
-        <H id="pricing-h" className="sec2__h">Pick how fast you see the big money.</H>
-        <div className="plans2">
-          {(["free", "insidir", "pro"] as const).map((p, i) => {
-            const mine = signedIn && p === current;
-            return (
-              <article key={p} className={`plan2 rv${p === "insidir" ? " plan2--main" : ""}`} style={{ ["--i" as string]: i }} data-plan={p}>
-                {p === "insidir" ? <p className="plan2__flag">Recommended</p> : null}
-                <PlanH className="plan2__name">{PLANS[p].name}</PlanH>
-                <p className="plan2__price">{price[p]}</p>
-                <p className="plan2__sub">{sub[p]}</p>
-                <ul className="plan2__list">
-                  {PLAN_BULLETS[p].map(b => {
-                    const soon = b.needs ? !isReady(b.needs) : false;
-                    return <li key={b.text} className={soon ? "plan2__soon" : undefined}>{b.text}{soon ? " (coming soon)" : ""}</li>;
-                  })}
-                </ul>
-                {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Your plan</Link>
-                  : p === "free" ? <Link className="btn btn--secondary btn--block" href="/feed">See the live feed</Link>
-                  : <a className={`btn btn--block ${p === "insidir" && primary ? "btn--primary" : "btn--secondary"}`}
-                      href={p === "pro" ? proHref : insidirHref} data-checkout={`pricing-${p}`}>{p === "pro" ? "Go Pro" : `Try it for $${TRIAL.price}`}</a>}
-              </article>
-            );
-          })}
-        </div>
+        {title ? <H id="pricing-h" className="sec2__h">{title}</H> : null}
+        <article className="plan2 plan2--main plan2--one rv" data-plan="insidir">
+          <div className="plan2__head">
+            <div className="plan2__top">
+              <PlanH className="plan2__name">{PLANS.insidir.name}</PlanH>
+              {mine ? <p className="plan2__flag plan2__flag--mine">Your plan</p> : null}
+            </div>
+            <p className="plan2__pitch">See every big move the moment it happens: who made it, how much, and whether they usually win.</p>
+            <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month</span></p>
+            <p className="plan2__sub">{CANCEL_LINE}</p>
+            {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
+              : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}
+          </div>
+          <FeatureList />
+        </article>
       </div>
     </section>
   );
 }
+
+/** Three plain promises under the plan. */
+export function PlanPromises() {
+  const items: Array<[string, string, string]> = [
+    ["M12 3v18M3 12h18", "Cancel in one tap", "In Account. No emails, no calls. You keep access until the month you paid for ends."],
+    ["M5 12l4 4L19 6", "Secure checkout", "Payments run through Whop, right on this site. We never see your card."],
+    ["M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "Real data, checked hourly", "Public records only, and every card links its source."],
+  ];
+  return (
+    <section className="sec2 promise" aria-label="Our promises">
+      <div className="wrap promise__grid">
+        {items.map(([d, h, p]) => (
+          <div key={h} className="promise__item">
+            <svg viewBox="0 0 24 24" className="promise__icon" aria-hidden="true"><path d={d} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <p className="promise__h">{h}</p>
+            <p className="promise__p">{p}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export { PRICE };

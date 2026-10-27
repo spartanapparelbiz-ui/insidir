@@ -1,7 +1,7 @@
 /* POST /api/follows {kind: "trader"|"market", target}: follow; DELETE: unfollow. Members only (docs/INSIDIR-V2.md §8):
  * Insidir up to 50, Pro unlimited, free none. */
 import { NextResponse, type NextRequest } from "next/server";
-import { getViewer } from "@/lib/auth/viewer";
+import { memberOrNull } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { canFollow } from "@/lib/moves/gate";
@@ -17,7 +17,8 @@ async function parse(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const viewer = await getViewer();
+  const viewer = await memberOrNull();
+  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
   if (!viewer.user) return NextResponse.json({ error: "Log in to follow traders." }, { status: 401 });
   if (!isReady("follows")) return NextResponse.json({ error: "Following is coming soon." }, { status: 409 });
   const f = await parse(req);
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const viewer = await getViewer();
+  const viewer = await memberOrNull();
+  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
   if (!viewer.user) return NextResponse.json({ error: "Log in first." }, { status: 401 });
   const f = await parse(req);
   if (!f) return NextResponse.json({ error: "Bad request." }, { status: 400 });

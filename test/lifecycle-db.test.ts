@@ -22,9 +22,9 @@ const move = (o: Partial<Move>): Move => ({
 });
 
 describe("which emails are due", () => {
-  it("welcome on day 0, the trial email on day 2 of the Insidir trial, weekly on Monday mornings ET", () => {
+  it("welcome on day 0, weekly on Monday mornings ET; no trial email (there is no trial)", () => {
     expect(dueKinds({ ...member, paidAt: MON - H }, new Set(), MON)).toEqual([{ kind: "welcome", period: "once" }]);
-    expect(dueKinds({ ...member, paidAt: MON - 2 * DAY - H }, new Set(["welcome:once"]), MON)).toEqual([{ kind: "trial_ending", period: "once" }]);
+    expect(dueKinds({ ...member, paidAt: MON - 2 * DAY - H }, new Set(["welcome:once"]), MON)).toEqual([]);
     expect(dueKinds({ ...member, paidAt: MON - 9 * DAY }, new Set(), MON)).toEqual([{ kind: "weekly", period: isoWeek(MON) }]);
     expect(isoWeek(MON)).toBe("2026-W44");
   });
@@ -67,18 +67,15 @@ describe.skipIf(!URL0)("lifecycle emails in Postgres", () => {
     await admin?.end();
   });
 
-  it("day 2: the moves of the traders they follow since they joined, sent once", async () => {
+  it("day 2: nothing (there is no trial any more); the welcome went out once", async () => {
     await db.insert(schema.users).values({ id: "u1", email: "u1@example.test", plan: "insidir" });
     await db.insert(schema.events).values({ name: "paid", visitorId: "v", userId: "u1", at: new Date(MON - 2 * DAY - H) });
     await db.insert(schema.follows).values({ userId: "u1", kind: "trader", target: W });
     await db.insert(schema.lifecycleEmails).values({ userId: "u1", kind: "welcome", period: "once" });
-    await upsertMoves(db, [move({ id: "pm:caught", at: MON - DAY }), move({ id: "pm:before", at: MON - 5 * DAY, amount: 999_000 })]);
+    await upsertMoves(db, [move({ id: "pm:caught", at: MON - DAY })]);
     const sent: LifecycleEmail[] = [];
     const send = async (_to: string, _id: string, e: LifecycleEmail) => { sent.push(e); return true; };
-    expect(await lifecycleOnce(db, MON, "https://insidir.com", send)).toBe(1);
-    expect(sent[0]!.kind).toBe("trial_ending");
-    expect(sent[0]!.lines.map(l => l.text).join("\n")).toContain("$412,000");
-    expect(sent[0]!.lines.map(l => l.text).join("\n")).not.toContain("$999,000"); // before they joined
-    expect(await lifecycleOnce(db, MON + 10 * 60_000, "https://insidir.com", send)).toBe(0);
+    expect(await lifecycleOnce(db, MON, "https://insidir.com", send)).toBe(0);
+    expect(sent).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-/* Paid data never reaches a free browser: every response body (HTML, React Server Component payloads, /api/feed
+/* Paid data never reaches someone without a plan (the app is members only): every response body (HTML, React Server Component payloads, /api/feed
  * JSON) is scanned while a signed-out visitor and a signed-in free member use the site. Fresh deals (under 30
  * minutes old) must not appear at all; delayed deals must not carry their size, cost, fees or profit. */
 import { expect, test } from "@playwright/test";
@@ -25,29 +25,25 @@ function leaks(body: string, field: string, v: number): string | null {
   return hit ? body.match(hit)![0] : null;
 }
 
-for (const who of ["visitor", "free member"] as const) {
+for (const who of ["visitor", "member without a plan"] as const) {
   test(`no paid fields reach a ${who}`, async ({ page, context }) => {
-    if (who === "free member") await signIn(context, "freeUs");
+    if (who === "member without a plan") await signIn(context, "freeUs");
     const { fresh, old } = await seeded();
     expect(fresh.length).toBeGreaterThan(0);
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/gaps", "/receipts", "/pricing", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`, `/deal/${await dealId("award")}`]) {
+      for (const path of ["/", "/pricing", "/sports", "/markets", "/gaps", "/receipts", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`]) {
         await page.goto(path);
         await page.waitForTimeout(300);
       }
-      await page.goto("/gaps");
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
-    // The live stream was read too, and it carried events (so an empty stream can't pass by accident).
-    const live = bodies.find(b => b.url.endsWith("/api/live"))?.body ?? "";
-    expect(live).toContain("event: hello");
+    // The live stream says no: members only.
+    expect(bodies.find(b => b.url.endsWith("/api/live"))?.body ?? "").toContain("Members only");
     const found: string[] = [];
-    // Static JS/CSS is the same file for every visitor, so it can't carry anyone's data.
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
       for (const f of fresh) {
-        // Its own page echoes the id from the URL the visitor typed; anywhere else the id would reveal the deal.
-        if (body.includes(f.id) && !url.includes(`/deal/${f.id}`)) found.push(`${url}: fresh deal id ${f.id}`);
+        if (body.includes(f.id) && !url.includes(`/deal/${f.id}`) && !url.includes("next=")) found.push(`${url}: fresh deal id ${f.id}`);
         if (body.includes(f.title.replace("E2E fixture: ", ""))) found.push(`${url}: fresh deal title ${f.title}`);
       }
       for (const o of old) {
@@ -58,10 +54,7 @@ for (const who of ["visitor", "free member"] as const) {
       }
     }
     expect(found).toEqual([]);
-    // And the API says so explicitly.
-    const feed = await (await page.request.get("/api/feed")).json() as { rows: Array<{ profit: unknown; cost: unknown; fees: unknown; sets: unknown; locked: boolean }> };
-    expect(feed.rows.length).toBeLessThanOrEqual(3);
-    for (const r of feed.rows) expect([r.profit, r.cost, r.fees, r.sets, r.locked]).toEqual([null, null, null, null, true]);
+    expect((await page.request.get("/api/feed")).status()).toBe(401);
   });
 }
 

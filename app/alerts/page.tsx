@@ -11,7 +11,7 @@ import { AlertsForm } from "@/components/account/AlertsForm";
 import { unlockHref, vapidPublicKey } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { alertHistory } from "@/lib/alerts/history";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { movePlan } from "@/lib/moves/gate";
 import "../app.css";
 import "../account.css";
@@ -24,13 +24,13 @@ export const metadata: Metadata = { title: "Alerts", robots: { index: false } };
 const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 
 export default async function AlertsPage() {
-  const viewer = await getViewer();
+  const viewer = await requireMember("/alerts");
   const ready = { push: isReady("alerts_push"), email: isReady("alerts_email"), daily: isReady("daily_email"), rules: isReady("custom_rules") };
   if (!ready.push && !ready.email) {
     return <ComingSoonPage feature="alerts_push" title="Alerts" band={BAND.alerts} current="/alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
   }
   const user = viewer.user;
-  if (!user) redirect("/auth/login?next=/alerts");
+  if (!user) redirect("/login?next=/alerts");
 
   if (!movePlan(viewer.plan).alerts) {
     return (
@@ -61,7 +61,7 @@ export default async function AlertsPage() {
       <main className="wrap app acct dark">
         <PageBand n={BAND.alerts} title="Alerts" />
         <p className="asum asum--lead">We ping you the moment a trader or market you follow makes a big move.</p>
-        <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "pro"} proHref={unlockHref("pro", "/alerts")} ready={ready} />
+        <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "insidir"} proHref={unlockHref()} ready={ready} />
 
         <section className="agroup" aria-labelledby="a-history">
           <h2 id="a-history" className="agroup__h">Last 20 alerts</h2>

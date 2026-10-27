@@ -8,7 +8,7 @@ import { unlockHref } from "@/components/app/links";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { MarketLinkButton } from "@/components/v2/LocationPill";
 import { MoveCard } from "@/components/v2/MoveCard";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { dollars, payoutLine } from "@/lib/moves/copy";
@@ -44,7 +44,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!/^[\w.\-:]{3,120}$/.test(id)) notFound();
   const source = id.startsWith("0x") ? "polymarket" : "kalshi";
   const now = Date.now();
-  const viewer = await getViewer();
+  const viewer = await requireMember(`/market/${id}`);
   const paid = isPaid(viewer.plan);
   if (!hasDatabase()) notFound();
   const db = getDb();
@@ -63,7 +63,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const price = await currentPrice(source, market, id);
   const link = marketLink({ source, url: market?.url ?? moves[0]?.url ?? null }, viewer.region, matches.get(id) ?? null);
   const items = await feedItems(db, moves, viewer.plan, viewer.region, now);
-  const trial = unlockHref("insidir");
+  const trial = unlockHref();
   const following = follows.some(f => f.kind === "market" && f.target === id);
   const big = bySide.filter(s => s.total > 0).sort((a, b) => b.total - a.total);
   const points = [...moves].filter(m => m.outcomeSide === "yes").sort((a, b) => a.at - b.at).map(m => ({ at: m.at, price: m.avgPrice }));

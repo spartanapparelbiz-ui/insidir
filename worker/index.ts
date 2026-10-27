@@ -34,7 +34,7 @@ import { dailyLists, moveAlertUsers, recentMoves } from "@/lib/moves/alert-store
 import { recordsFor } from "@/lib/moves/store";
 import { isReady } from "@/lib/features";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, accuracyEmail, runAccuracyCheck } from "@/lib/accuracy/check";
 import { lifecycleOnce } from "@/lib/emails/lifecycle";
@@ -80,8 +80,8 @@ async function alertsOnce(): Promise<void> {
   const now = Date.now();
   const deals = await alertableDeals(db, new Date(now - 15 * 60_000));
   if (!deals.length) return;
-  // Price gaps are a Pro extra in V2.
-  const users = (await alertUsers(db, new Date(now))).filter(u => u.plan === "pro");
+  // Price gaps are for members.
+  const users = (await alertUsers(db, new Date(now))).filter(u => u.plan === "insidir");
   const byId = new Map(deals.map(d => [d.opp.id, d.opp]));
   const userById = new Map(users.map(u => [u.id, u]));
   for (const job of dueAlerts(users, deals, now)) {

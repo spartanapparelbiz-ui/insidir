@@ -1,5 +1,5 @@
-/* The whole member journey, as one person: free → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
- *   A visitor lands, opens the free feed (30 minutes late), taps "Try it for $1", pays on Whop (the local mock),
+/* The whole member journey, as one person: visitor → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
+ *   A visitor lands, taps "Get Insidir · $39/mo", pays in the checkout embedded on /start (the local mock),
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
  *   charge in Billing and cancels in one tap. Run at both sizes; it resets everything it creates. */
@@ -9,13 +9,15 @@ import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { APP_URL, OUT, PUSH_PORT, WHOP_PORT } from "./env";
 import { q } from "./helpers";
-import { MOCK_USER } from "./mock-whop";
 
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
 const pushes = () => JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as Array<{ path: string }>;
 const toast = (page: Page, text: string | RegExp) => page.locator(".uitoast").filter({ hasText: text });
 
-async function reset() {
+const EMAIL = (w: number) => `journey-${w}@example.test`;
+const MOCK_USER = { sub: "" };
+async function reset(email: string) {
+  MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [email]))[0]?.id ?? "none";
   await whop("/__reset", { method: "POST" });
   await q("delete from terminal.push_subscriptions where user_id = $1", [MOCK_USER.sub]);
   await q("delete from terminal.alerts_sent where user_id = $1", [MOCK_USER.sub]);
@@ -24,11 +26,11 @@ async function reset() {
   await q("delete from terminal.users where id = $1", [MOCK_USER.sub]);
 }
 
-test("free → paid → alerts → cancel", async ({ page, context, browserName }) => {
+test("visitor → paid → alerts → cancel", async ({ page, context, browserName }) => {
   test.skip(browserName !== "chromium");
   test.setTimeout(120_000);
-  await reset();
   const w = page.viewportSize()!.width;
+  await reset(EMAIL(w));
   const shot = (name: string) => page.screenshot({ path: `qa/screenshots/ux-after/agent-b/journey-${name}-${w}.png` });
 
   // A stand-in for the browser's push subscription (its endpoint is our local push service), as in push.spec.ts.
@@ -43,17 +45,14 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
   }, { endpoint, p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") });
 
   try {
-    // Free: the landing page, then the feed without an account (30 minutes late).
+    // A visitor: the landing page, then "Get Insidir · $39/mo" → the embedded checkout → pay → logged in, welcome.
     await page.goto("/");
-    await page.getByRole("link", { name: "See the live feed" }).first().click();
-    await expect(page).toHaveURL(/\/feed/);
-    await expect(page.getByText("You're seeing moves 30 minutes late.")).toBeVisible();
-
-    // Paid: "Try it for $1" → Whop checkout → pay → back signed in on the live feed.
-    await page.locator("[data-unlock]").first().click();
-    await expect(page).toHaveURL(new RegExp(`localhost:${WHOP_PORT}/checkout/plan_e2e_`));
-    await page.getByRole("button", { name: "Pay (test mode)" }).click();
+    await page.locator('[data-cta="hero"]').click();
+    await expect(page).toHaveURL(/\/start$/);
+    await page.locator("[data-mock-checkout]").getByLabel("Email").fill(EMAIL(w));
+    await page.getByRole("button", { name: "Pay $39 (test mode)" }).click();
     await expect(page).toHaveURL(/\/feed/, { timeout: 20_000 });
+    MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
     // The welcome: follow the first top trader in one tap; it shows on Following.
     const welcome = page.locator(".inband");
@@ -80,8 +79,6 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     await q("insert into terminal.alerts_sent (user_id, opp_id, channel) values ($1, 'move:e2e:m1', 'push') on conflict do nothing", [MOCK_USER.sub]);
     await page.reload();
     await expect(page.locator(".atable").getByText("$412,000 on Chiefs to win")).toBeVisible();
-    // Insidir, not Pro: custom rules point to Pro.
-    await expect(page.locator("[data-unlock=rules]")).toHaveText("Go Pro");
     await shot("alerts");
 
     // Billing: the next charge, then cancel in one tap.
@@ -96,6 +93,6 @@ test("free → paid → alerts → cancel", async ({ page, context, browserName 
     const st = await (await whop("/__state")).json() as { memberships: Array<{ cancel_at_period_end: boolean }> };
     expect(st.memberships[0]?.cancel_at_period_end).toBe(true);
   } finally {
-    await reset();
+    await reset(EMAIL(w));
   }
 });

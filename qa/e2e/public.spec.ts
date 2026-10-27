@@ -1,28 +1,30 @@
-/* No sign-in needed: the feed shows (delayed, top 3, sizes hidden), every page has the footer and legal links,
+/* The app is members only (visitors are sent to log in); every page has the footer and legal links,
  * no internal link 404s, nothing scrolls sideways, and every page is screenshotted at both sizes. */
 import { expect, test } from "@playwright/test";
-import { dealId, footerOk, noHorizontalScroll, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
+import { dealId, footerOk, MEMBER_PAGES, noHorizontalScroll, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
 
-test("the Terminal works without signing in: delayed, top 3, sizes hidden", async ({ page }) => {
-  await page.goto("/gaps");
-  const rows = page.locator("tr[data-deal]");
-  await expect(rows.first()).toBeVisible();
-  expect(await rows.count()).toBeLessThanOrEqual(3);
-  await expect(page.getByText("30 min delay").first()).toBeVisible();
-  // Only deals found more than 30 minutes ago; the two fresh ones never appear.
-  await expect(page.getByText("Will the Hawks win")).toHaveCount(0);
-  await expect(page.getByText("Will the Fed cut")).toHaveCount(0);
-  await expect(page.locator("[data-unlock]").first()).toBeVisible();
+test("the app is for members only: visitors are sent to log in, members without a plan to Get Insidir, and the APIs say no", async ({ page, context }) => {
+  for (const path of MEMBER_PAGES) {
+    await page.goto(path);
+    await expect(page, path).toHaveURL(new RegExp(`/login\\?next=${encodeURIComponent(path).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  }
+  for (const api of ["/api/moves", "/api/feed", "/api/live", "/api/receipts/csv"]) expect((await page.request.get(api)).status(), api).toBe(401);
+  await signIn(context, "freeUs");
+  for (const path of ["/feed", "/top", "/results"]) {
+    await page.goto(path);
+    await expect(page, path).toHaveURL(/\/start$/);
+  }
+  expect((await page.request.get("/api/moves")).status()).toBe(401);
 });
 
 test("every page: footer disclaimer, privacy and terms links, no sideways scroll, screenshot", async ({ page, context }) => {
-  const handcheck = await dealId("Hawks"), old = await dealId("Jets");
-  for (const path of [...PUBLIC_PAGES, `/deal/${old}`, "/admin"]) {
+  const handcheck = await dealId("Hawks");
+  for (const path of [...PUBLIC_PAGES, "/admin"]) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBeLessThan(400);
     await footerOk(page);
     await noHorizontalScroll(page);
-    const name = path === "/" ? "landing" : path.startsWith("/deal/") ? "deal-free" : path.slice(1) + (path === "/gaps" ? "-free" : path === "/admin" ? "-login" : "");
+    const name = path === "/" ? "landing" : path.slice(1).replace(/\//g, "-") + (path === "/admin" ? "-login" : "");
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   await signIn(context, "pro");
@@ -31,7 +33,7 @@ test("every page: footer disclaimer, privacy and terms links, no sideways scroll
     expect(res?.status(), path).toBeLessThan(400);
     await footerOk(page);
     await noHorizontalScroll(page);
-    const name = path.startsWith("/deal/") ? "deal-pro" : path.slice(1) + (path === "/gaps" ? "-pro" : "");
+    const name = path.startsWith("/deal/") ? "deal-pro" : path.slice(1).replace(/\//g, "-") + (path === "/gaps" ? "-pro" : "");
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   const missing = await page.goto("/this-page-does-not-exist");
@@ -50,6 +52,7 @@ test("no internal link leads to a 404 (signed out and as Pro)", async ({ page, c
         const clean = h.split("#")[0]!;
         // Sign-in and API links leave for Whop or change state; they're covered by the checkout test.
         if (!clean || seen.has(clean) || clean.startsWith("/auth/") || clean.startsWith("/api/")) continue;
+        // Members-only pages answer a visitor with a redirect to log in: that's not a broken link.
         const r = await request.get(clean, { maxRedirects: 0, headers: { cookie: (await context.cookies()).map(c => `${c.name}=${c.value}`).join("; ") } });
         seen.set(clean, r.status());
       }

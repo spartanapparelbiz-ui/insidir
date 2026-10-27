@@ -51,15 +51,22 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export const users = terminal.table("users", {
-  /** Whop user id (user_...). */
+  /** Our own id ("usr_…"; accounts from before our own login kept their Whop user id). */
   id: text("id").primaryKey(),
+  /** Lower-case. One account per email: it is how members log in (lib/auth/login.ts). */
   email: text("email"),
+  /** The Whop user behind their membership (user_…), set by the billing webhook. */
+  whopUserId: text("whop_user_id"),
   name: text("name"),
   username: text("username"),
   region: text("region").$type<Region>(),
   plan: text("plan").$type<Plan>().notNull().default("free"),
   membershipId: text("membership_id"),
   manageUrl: text("manage_url"),
+  /** Whop's status for that membership (active, trialing, canceling, past_due, canceled, expired, …). */
+  membershipStatus: text("membership_status"),
+  /** The end of the period they paid for: access never runs past it unless Whop renews (lib/billing/access.ts). */
+  accessUntil: timestamp("access_until", { withTimezone: true }),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   planCheckedAt: timestamp("plan_checked_at", { withTimezone: true }),
   settings: jsonb("settings").$type<UserSettings>().notNull().default(DEFAULT_SETTINGS),
@@ -70,9 +77,32 @@ export const users = terminal.table("users", {
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId)]);
+
+/** Log-in codes (lib/auth/login.ts): 6 digits by email, stored only as a hash, 10 minutes, 5 tries. The rows also
+ *  count requests per email and per IP for the rate limits. */
+export const loginCodes = terminal.table("login_codes", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  codeHash: text("code_hash").notNull(),
+  ip: text("ip"),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("login_codes_email_idx").on(t.email, t.createdAt), index("login_codes_ip_idx").on(t.ip, t.createdAt)]);
+
+/** A checkout in progress: the browser holds the token in a cookie, Whop carries it in the payment's metadata, and the
+ *  billing webhook fills in the account it paid for, so the buyer is logged in the moment the payment lands. */
+export const checkoutClaims = terminal.table("checkout_claims", {
+  /** SHA-256 of the token. */
+  tokenHash: text("token_hash").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
 });
 
-/** Our own sessions. Whop tokens are never stored: after login the membership is read with the account API key. */
+/** Our own sessions: a random token in an httpOnly cookie, 30 days. */
 export const sessions = terminal.table("sessions", {
   /** SHA-256 of the cookie token. */
   tokenHash: text("token_hash").primaryKey(),

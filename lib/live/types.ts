@@ -48,4 +48,4 @@ export type LiveEvent =
 export interface LiveStatus { live: boolean; paused: Venue[]; lastScanAt: number | null; serverNow: number }
 
 /** Sent once when the stream opens. */
-export interface LiveHello { serverNow: number; delayMs: number; plan: "free" | "insidir" | "pro" }
+export interface LiveHello { serverNow: number; delayMs: number; plan: "free" | "insidir" }

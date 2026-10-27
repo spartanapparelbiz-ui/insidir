@@ -14,10 +14,10 @@ import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarke
 const MIN = 60_000, DAY = 86_400_000;
 
 export const E2E_USERS: Record<string, { id: string; plan: Plan; region: Region; token: string }> = {
-  pro: { id: "user_e2e_pro", plan: "pro", region: "us", token: "e2e-pro-session-token-0000000000000000" },
+  pro: { id: "user_e2e_pro", plan: "insidir", region: "us", token: "e2e-pro-session-token-0000000000000000" },
   insidir: { id: "user_e2e_insidir", plan: "insidir", region: "us", token: "e2e-insidir-session-token-00000000000000" },
   freeUs: { id: "user_e2e_free", plan: "free", region: "us", token: "e2e-free-session-token-000000000000000000" },
-  proIntl: { id: "user_e2e_pro_intl", plan: "pro", region: "non_us", token: "e2e-prointl-session-token-0000000000000" },
+  proIntl: { id: "user_e2e_pro_intl", plan: "insidir", region: "non_us", token: "e2e-prointl-session-token-0000000000000" },
 };
 
 const L = (price: number, size: number): Level => ({ price, size });

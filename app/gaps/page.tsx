@@ -12,7 +12,7 @@ import { ComingSoonPage } from "@/components/v2/ComingSoonPage";
 import { isReady } from "@/lib/features";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
-import { feedViewer, getViewer } from "@/lib/auth/viewer";
+import { feedViewer, requireMember } from "@/lib/auth/viewer";
 import { feedFor } from "@/lib/feed";
 import { entitlements, isPaid } from "@/lib/plans";
 import { receiptRows, storedOpps } from "@/lib/queries";
@@ -29,13 +29,13 @@ export const metadata: Metadata = { title: "Price gaps", description: "Live pred
 
 export default async function GapsPage() {
   const now = Date.now();
-  const real = await getViewer();
+  const real = await requireMember("/gaps");
   if (!isReady("price_gaps")) {
     return <ComingSoonPage feature="price_gaps" title="Price gaps" signedIn={Boolean(real.user)} plan={real.plan}
       text="Sometimes Kalshi and Polymarket price the same event differently. Price gaps will show those, with the math, for Pro members." />;
   }
   // Pro sees the live table; everyone else gets the free preview.
-  const viewer = real.plan === "pro" ? real : { ...real, plan: "free" as const };
+  const viewer = real.plan === "insidir" ? real : { ...real, plan: "free" as const };
   const jar = await cookies();
   const ent = entitlements(viewer.plan);
   const delayMs = ent.feedDelayMinutes * 60_000;
@@ -54,17 +54,17 @@ export default async function GapsPage() {
   const totals = todayTotals(log, todayStart, clock);
   const missed = paid ? 0 : missedToday(opps, viewer.region, delayMs, startOfTodayUTC(now), now);
 
-  const unlock = unlockHref("insidir");
+  const unlock = unlockHref();
   const user = viewer.user;
   const filtered = Boolean(user && (fv.minRoi > 0 || fv.minSizeUsd > 0 || fv.categories.length));
   return (
     <>
       <SiteHeader signedIn={Boolean(user)} plan={real.plan} current="/gaps" />
       <main className="wrap app term-page">
-        {real.plan !== "pro" ? (
+        {real.plan !== "insidir" ? (
           <aside className="upsell">
-            <p className="upsell__text">Price gaps are part of Pro. This is a preview: 30 minutes late, top 3, sizes hidden.</p>
-            <a className="btn btn--primary" href={unlockHref("pro")} data-unlock="gaps">Go Pro</a>
+            <p className="upsell__text">Price gaps are for members. This is a preview: 30 minutes late, top 3, sizes hidden.</p>
+            <a className="btn btn--primary" href={unlockHref()} data-unlock="gaps">{UNLOCK}</a>
           </aside>
         ) : null}
         <LiveFeed initialRows={rows} initialNow={now} initialStatus={status} plan={viewer.plan} maxRows={ent.maxRows} unlockHref={unlock} unlockLabel={UNLOCK}

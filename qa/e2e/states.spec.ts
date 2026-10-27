@@ -18,7 +18,8 @@ test("404: on-brand, says what happened, links back to the feed", async ({ page 
   await noHorizontalScroll(page);
 });
 
-test("error: a deal that doesn't exist says so and points to the Terminal; the API answers 404 with no data", async ({ page }) => {
+test("error: a deal that doesn't exist says so and points to the Terminal; the API answers 404 with no data", async ({ page, context }) => {
+  await signIn(context, "pro");
   const api = await page.request.get("/api/deal/no-such-deal");
   expect(api.status()).toBe(404);
   expect(await api.json()).toMatchObject({ view: { state: "not_found" } });
@@ -30,7 +31,8 @@ test("error: a deal that doesn't exist says so and points to the Terminal; the A
   await expect(go).toHaveText("See today's live deals");
 });
 
-test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page }) => {
+test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page, context }) => {
+  await signIn(context, "pro");
   try {
     await q("insert into terminal.worker_heartbeats (job, last_run_at, ok) values ('e2e:pause', now(), true) on conflict do nothing");
     await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', last_ok_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
@@ -45,7 +47,8 @@ test("behind: when the move polls stop, the feed says it's catching up (never 'C
   }
 });
 
-test("empty: a quiet feed says so and points to Results", async ({ page }) => {
+test("empty: a quiet feed says so and points to Results", async ({ page, context }) => {
+  await signIn(context, "pro");
   const saved = await q<Record<string, unknown>>("select * from terminal.moves");
   try {
     await q("delete from terminal.moves");

@@ -1,6 +1,6 @@
 "use client";
-/* Every lock on the site opens the same sheet (Part of the funnel: free feed → hit a lock → $1 trial): what you get
- * (the Insidir plan's ready features), "$1 for 3 days, then $39/mo. Cancel anytime.", and one button to the Whop
+/* Every lock on the site opens the same sheet (the funnel: the public preview → hit a lock → Get Insidir): what you get
+ * (the Insidir plan's ready features), "Get Insidir · $39/mo" and "Cancel anytime.", and one button to the
  * checkout. Locks sit where curiosity peaks: a trader's record, Follow, live (vs. 30 minutes late), alerts.
  * Opening one is recorded as lock_view with where it was; the button carries data-unlock, so components/landing/
  * Beacons records unlock_click and checkout_start. */
@@ -8,7 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useRef, useSt
 import { beacon } from "@/components/app/beacon";
 import { Photo } from "@/components/Photo";
 import { SPOT } from "@/lib/photos";
-import { TRIAL_LINE } from "@/lib/copy";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 
 interface LockApi { open: (where: string) => void }
 const Ctx = createContext<LockApi>({ open: () => undefined });
@@ -53,8 +53,8 @@ function LockSheet({ where, unlocks, trialHref, onClose }: { where: string; unlo
         <Photo n={SPOT.lock} className="sheet__photo" wideOnly />
         <h2 id={id} className="sheet__h">{HEADINGS[kind]}</h2>
         <ul className="lock__list">{unlocks.map(u => <li key={u}>{u}</li>)}</ul>
-        <p className="lock__price">{TRIAL_LINE}</p>
-        <a ref={btn} className="btn btn--primary btn--big btn--block" href={trialHref} data-unlock={where}>Try it for $1</a>
+        <a ref={btn} className="btn btn--primary btn--big btn--block" href={trialHref} data-unlock={where}>{GET_CTA}</a>
+        <p className="lock__price">{CANCEL_LINE}</p>
         <button type="button" className="lock__close" onClick={onClose}>Not now</button>
       </div>
     </div>

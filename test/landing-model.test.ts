@@ -79,24 +79,20 @@ describe("receipts helpers", () => {
 describe("pricing cards come from PLANS", () => {
   it("prices, names and taglines match", () => {
     const cards = planCards();
-    expect(cards.map(c => c.plan)).toEqual(["free", "insidir", "pro"]);
+    expect(cards.map(c => c.plan)).toEqual(["free", "insidir"]);
     for (const c of cards) {
       expect(c.price).toBe(PLANS[c.plan].price);
       expect(c.name).toBe(PLANS[c.plan].name);
       expect(c.tagline).toBe(PLANS[c.plan].tagline);
     }
-    expect(cards.map(c => c.price)).toEqual([0, 39, 99]);
-    expect(cards[2]!.tagline).toBe("For active traders");
+    expect(cards.map(c => c.price)).toEqual([0, 39]);
   });
 
   it("features follow the entitlements", () => {
     const free = planFeatures(PLANS.free.entitlements);
     expect(free).toEqual(expect.arrayContaining(["Feed delayed 30 min", "Top 3 deals", "Sizes and dollar profit hidden", "Daily email digest"]));
     const ins = planFeatures(PLANS.insidir.entitlements);
-    expect(ins).toEqual(expect.arrayContaining(["Full live feed", "Push alerts within 60 seconds", "Calculator"]));
-    const pro = planCards()[2]!.features;
-    expect(pro).toEqual(expect.arrayContaining(["Instant push alerts, in seconds", "Whale tracker", "Full receipts history"]));
-    expect(pro).not.toContain("Calculator"); // listed under "Everything in Insidir"
+    expect(ins).toEqual(expect.arrayContaining(["Full live feed", "Instant push alerts, in seconds", "Calculator", "Whale tracker", "Full receipts history"]));
   });
 });
 

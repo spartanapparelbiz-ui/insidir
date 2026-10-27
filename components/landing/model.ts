@@ -60,7 +60,7 @@ export const publicFeedViewer = (region: Region | null): FeedViewer => ({
 });
 
 /** Where "Unlock live deals" goes: Whop checkout when configured, else sign-in that lands on the Terminal. */
-export const checkoutHref = (url: string | null): string => url ?? "/auth/login?next=/terminal";
+export const checkoutHref = (url: string | null): string => url ?? "/login?next=/terminal";
 
 /** A real two-leg green cross-venue row from the feed, or null. */
 export const realCrossArb = (rows: readonly FeedRow[]): FeedRow | null =>
@@ -162,15 +162,13 @@ export function planFeatures(e: Entitlements): string[] {
 
 export interface PlanCard { plan: Plan; name: string; price: number; tagline: string; features: string[]; inherits: string | null }
 
-/** Free / Insidir / Pro. Pro lists only what it adds over Insidir. */
+/** The preview and the one plan (legacy Terminal pages). */
 export function planCards(): PlanCard[] {
   const free = planFeatures(PLANS.free.entitlements);
   const ins = planFeatures(PLANS.insidir.entitlements);
-  const pro = planFeatures(PLANS.pro.entitlements).filter(f => !ins.includes(f));
   return [
     { plan: "free", name: PLANS.free.name, price: PLANS.free.price, tagline: PLANS.free.tagline, features: free, inherits: null },
     { plan: "insidir", name: PLANS.insidir.name, price: PLANS.insidir.price, tagline: PLANS.insidir.tagline, features: ins, inherits: null },
-    { plan: "pro", name: PLANS.pro.name, price: PLANS.pro.price, tagline: PLANS.pro.tagline, features: pro, inherits: PLANS.insidir.name },
   ];
 }
 

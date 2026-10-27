@@ -1,5 +1,5 @@
 /* Sets the visitor's region (and the signed-in user's). US visitors only ever see Kalshi and Polymarket US. */
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { REGION_COOKIE, SESSION_COOKIE, userForToken } from "@/lib/auth/session";
