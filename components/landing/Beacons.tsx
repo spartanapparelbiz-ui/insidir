@@ -4,9 +4,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-function send(name: "unlock_click" | "checkout_start", where: string): void {
+/** One request per tap; `then` is a second event from the same tap, recorded right after (so the funnel's order holds). */
+function send(name: "unlock_click" | "checkout_start", where: string, then?: "checkout_start"): void {
   try {
-    const body = new Blob([JSON.stringify({ name, where })], { type: "application/json" });
+    const body = new Blob([JSON.stringify({ name, where, then })], { type: "application/json" });
     if (!navigator.sendBeacon?.("/api/events", body)) {
       void fetch("/api/events", { method: "POST", body, keepalive: true, headers: { "Content-Type": "application/json" } }).catch(() => undefined);
     }
@@ -28,10 +29,11 @@ export function Beacons() {
       const unlock = t.closest("[data-unlock]");
       const checkout = t.closest("[data-checkout]");
       const where = (unlock ?? checkout)?.getAttribute(unlock ? "data-unlock" : "data-checkout") ?? "";
-      if (unlock) send("unlock_click", where);
       // checkout_start only when the tap actually leaves for the Whop checkout (not the sign-in fallback).
       const href = (unlock ?? checkout)?.closest("a")?.getAttribute("href") ?? "";
-      if ((unlock || checkout) && /^https?:\/\/[^/]+\/checkout\//.test(href)) send("checkout_start", where);
+      const toCheckout = Boolean(unlock || checkout) && /^https?:\/\/[^/]+\/checkout\//.test(href);
+      if (unlock) send("unlock_click", where, toCheckout ? "checkout_start" : undefined);
+      else if (toCheckout) send("checkout_start", where);
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);

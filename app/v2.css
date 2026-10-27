@@ -180,6 +180,8 @@
 .record div { padding: 16px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); }
 .record dt { color: var(--muted); font-size: var(--t13); font-weight: 700; }
 .record dd { margin: 4px 0 0; font-size: var(--t24); font-weight: 800; font-variant-numeric: tabular-nums; }
+/* two tiles side by side on a phone: exact filing amounts ("$640,985,344") must fit their tile */
+@media (max-width: 639px) { .record dd { font-size: clamp(var(--t15), 4.6vw, var(--t24)); } .record div { padding: 14px; min-width: 0; } }
 .record--wide { max-width: 960px; }
 @media (min-width: 640px) { .record--wide { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .record__sub { display: block; margin-top: 4px; color: var(--muted); font-size: var(--t13); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -317,8 +319,9 @@
 @media (prefers-reduced-motion: reduce) { .ticker { overflow-x: auto; } .ticker__list[aria-hidden] { display: none; } }
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .ticker__list { display: flex; list-style: none; margin: 0; padding: 0; }
-.ticker__item { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 28px 0 0; margin-right: 28px; color: var(--paper); text-decoration: none; font-size: var(--t15); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: inset -1px 0 0 var(--grey-3); }
-.ticker__item:hover { text-decoration: underline; }
+/* .ticker scoped: the global "links in running text" rule (li a) would otherwise paint these black on black */
+.ticker .ticker__item { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 28px 0 0; margin-right: 28px; color: var(--paper); text-decoration: none; font-size: var(--t15); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: inset -1px 0 0 var(--grey-3); }
+.ticker .ticker__item:hover { text-decoration: underline; }
 .ticker__who, .ticker__amt { font-weight: 800; }
 .ticker__ago { color: var(--grey-2); }
 

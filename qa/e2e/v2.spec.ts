@@ -26,6 +26,8 @@ test("home hero: the button, a ticker tap and the feed preview scrolled into vie
   await page.locator("#preview").scrollIntoViewIfNeeded();
   await expect.poll(() => count("feed_preview_view")).toBe(before.preview + 1);
   await page.goto("/");
+  // White on the black strip (the global running-text link colour must not win here).
+  expect(await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().evaluate(e => getComputedStyle(e).color)).toBe("rgb(255, 255, 255)");
   await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().click({ force: true }); // it scrolls, so never "stable"
   await expect.poll(() => count("ticker_click")).toBe(before.ticker + 1);
   await page.goto("/");
