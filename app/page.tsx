@@ -125,7 +125,7 @@ export default async function Home() {
       trustFacts(db).catch(() => null),
       storyFor(db, viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
     ]);
-    if (story) story = { ...story, move: homeItem(story.move, undefined), feed: story.feed.map(f => homeItem(f, undefined)) };
+    // The phones show the app exactly as it reads (full sentences), not the home page's short copy.
   }
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
