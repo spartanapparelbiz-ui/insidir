@@ -18,6 +18,8 @@ export const BAND = {
 export const SPOT = {
   feedEmpty: 12, resultsEmpty: 14, pageEmpty: 13, followingEmpty: 16, youreIn: 16,
   lock: 15, comingSoon: 13, comingSoonPage: 11,
+  /* inside the home page's phone mockups: none of them is in the hero's slideshow above */
+  phoneFeed: 9, phoneProfile: 10, phoneWallpaper: 7,
 } as const satisfies Record<string, PhotoN>;
 
 /** The thin strip on top of share cards and emails. */
