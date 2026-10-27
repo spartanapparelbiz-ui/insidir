@@ -15,6 +15,8 @@ import { getViewer } from "@/lib/auth/viewer";
 import { movePlan } from "@/lib/moves/gate";
 import "../app.css";
 import "../account.css";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Alerts", robots: { index: false } };
@@ -34,8 +36,8 @@ export default async function AlertsPage() {
     return (
       <>
         <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-        <main className="wrap app acct">
-          <h1 className="page__h">Alerts</h1>
+        <main className="wrap app acct dark">
+          <PageBand n={BAND.alerts} title="Alerts" />
           <section className="agroup">
             <div className="agroup__body">
               <p className="asum">Alerts come with Insidir.</p>
@@ -56,8 +58,8 @@ export default async function AlertsPage() {
   return (
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-      <main className="wrap app acct">
-        <h1 className="page__h">Alerts</h1>
+      <main className="wrap app acct dark">
+        <PageBand n={BAND.alerts} title="Alerts" />
         <p className="asum asum--lead">We ping you the moment a trader or market you follow makes a big move.</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "pro"} proHref={unlockHref("pro", "/alerts")} ready={ready} />
 

@@ -48,13 +48,17 @@ export function loadFonts() {
   return fonts;
 }
 
-const textures = new Map<string, Promise<string>>();
-/** Photo 6 (the summit) in black and white, as a data URL, for a faint texture under share images. */
-export function texture(shape: "tall" | "wide"): Promise<string> {
-  const f = shape === "tall" ? "texture-6.jpg" : "texture-6-wide.jpg";
-  if (!textures.has(f)) textures.set(f, asset(f).then(b => `data:image/jpeg;base64,${b.toString("base64")}`));
-  return textures.get(f)!;
+const strips = new Map<string, Promise<string>>();
+/** The thin photo strip on top of a share image (scripts/og-strips.sh cuts them from the graded photos; lib/photos.ts
+ *  STRIP says which), as a data URL. "move": 1080×400 for move cards; "site": 1200×170 for the link preview and wide
+ *  receipts; "site-tall": 1080×400 for story receipts. */
+export function strip(which: "move" | "site" | "site-tall"): Promise<string> {
+  const f = `strip-${which}.jpg`;
+  if (!strips.has(f)) strips.set(f, asset(f).then(b => `data:image/jpeg;base64,${b.toString("base64")}`));
+  return strips.get(f)!;
 }
+/** Where the strip ends: a hairline between the photo and the black body. */
+export const STRIP_H = { move: 400, site: 170, "site-tall": 400 } as const;
 
 /** The logo in white (components/Wordmark.tsx), `height` px tall. */
 export function OgLogo({ height, color = OG.paper }: { height: number; color?: string }) {
@@ -73,11 +77,13 @@ export async function shareCardImage(d: ShareCardData, format: ShareFormat): Pro
   const gap = Math.max(0, 100 - spent);
   const pad = story ? 96 : 64;
   const big = story ? 120 : 76;
-  const bg = await texture(story ? "tall" : "wide");
+  const which = story ? "site-tall" : "site";
+  const top = await strip(which);
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "Sans", position: "relative" }}>
-        <img src={bg} width={size.width} height={size.height} style={{ position: "absolute", left: 0, top: 0, opacity: 0.14 }} />
+      <div style={{ width: "100%", height: "100%", background: C.ink, color: C.paper, display: "flex", flexDirection: "column" }}>
+      <img src={top} width={size.width} height={STRIP_H[which]} style={{ display: "flex" }} />
+      <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: pad, fontFamily: "Sans" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <OgLogo height={story ? 64 : 44} />
           <div style={{ display: "flex", fontSize: story ? 30 : 22, color: C.steel }}>Receipt</div>
@@ -108,6 +114,7 @@ export async function shareCardImage(d: ShareCardData, format: ShareFormat): Pro
           <span style={{ color: C.paper }}>insidir.com</span>
           <span>After fees. Not financial advice.</span>
         </div>
+      </div>
       </div>
     ),
     { ...size, fonts: await loadFonts() },

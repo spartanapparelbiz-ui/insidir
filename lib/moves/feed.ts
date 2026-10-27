@@ -107,7 +107,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
     const shown = p.records && hasRecord(rec) ? rec : null;
     return {
       id: m.id, source: m.source, tab: m.tab, league: m.league,
-      sentence: moveSentence(m, shown, now - m.at < 3_600_000), payout: payoutLine(m), record: recordLine(shown), topTrader: isTopTrader(shown),
+      sentence: moveSentence(m, shown, now - m.at < 3_600_000, now), payout: payoutLine(m), record: recordLine(shown), topTrader: isTopTrader(shown),
       amount: m.amount, at: m.at, ago: agoText(m.at, now), eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome, marketId: m.marketId,
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,

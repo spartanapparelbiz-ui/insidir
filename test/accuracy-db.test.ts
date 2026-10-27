@@ -24,10 +24,10 @@ const TX = `0x${"a".repeat(64)}`;
 describe("source links", () => {
   it("a Polymarket move links its Polygon transaction, else the wallet; Kalshi its trade record; SEC its filing", () => {
     const base = { id: "pm:x", source: "polymarket" as const, marketId: "0xc1", wallet: W, at: NOW, url: "https://polymarket.com/event/x" };
-    expect(moveSource({ ...base, sourceRefs: [TX] })).toEqual({ href: `https://polygonscan.com/tx/${TX}`, label: "Source: Polygon transaction" });
+    expect(moveSource({ ...base, sourceRefs: [TX] })).toEqual({ href: `https://polygonscan.com/tx/${TX}`, label: "Where this comes from: Polymarket trade on Polygon" });
     expect(moveSource({ ...base, sourceRefs: null })?.href).toBe(`https://polygonscan.com/address/${W}`);
     expect(moveSource({ ...base, id: "ks:t1", source: "kalshi", marketId: "KX-1", wallet: null })?.href).toMatch(/\/markets\/trades\?ticker=KX-1&min_ts=\d+&max_ts=\d+$/);
-    expect(moveSource({ ...base, source: "sec", url: "https://www.sec.gov/Archives/edgar/data/1/0001/" })?.label).toBe("Source: SEC filing");
+    expect(moveSource({ ...base, source: "sec", url: "https://www.sec.gov/Archives/edgar/data/1/0001/" })?.label).toBe("Where this comes from: SEC EDGAR filing");
     // Never an international Polymarket link: the source is the public chain.
     expect(moveSource({ ...base, sourceRefs: [TX] })?.href).not.toMatch(/polymarket\.com/);
     expect(profileSource({ kind: "insider", cik: "888888" }).href).toContain("CIK=0000888888&type=4");

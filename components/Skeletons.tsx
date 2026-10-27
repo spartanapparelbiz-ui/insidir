@@ -29,7 +29,7 @@ function Shell({ label, children }: { label: string; children: React.ReactNode }
   return (
     <>
       <Bar />
-      <main className="wrap app2 skel" aria-busy="true">
+      <main className="wrap app2 skel dark" aria-busy="true">
         <p className="sr-only" role="status">{label}</p>
         {children}
       </main>
@@ -40,7 +40,7 @@ function Shell({ label, children }: { label: string; children: React.ReactNode }
 export function FeedSkeleton({ title = 132 }: { title?: number }) {
   return (
     <Shell label="Loading the live feed">
-      <SkeletonLine w={title} h={36} />
+      <div className="pband" aria-hidden="true"><div className="wrap pband__in"><SkeletonLine w={title} h={36} /></div></div>
       <div className="chips">{[64, 64, 72].map((w, i) => <SkeletonLine key={i} w={w} h={40} />)}</div>
       <ol className="feed2__list">{[0, 1, 2].map(i => <li key={i}><MoveSkeleton /></li>)}</ol>
     </Shell>

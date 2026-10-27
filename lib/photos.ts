@@ -6,10 +6,12 @@ import type { PhotoN } from "@/components/Photo";
 /** The home hero's slideshow, in order: photo 1 first (it loads with the page), ending on the summit. */
 export const HERO_PHOTOS: PhotoN[] = [1, 2, 11, 3, 12, 5, 15, 6];
 
-/** Header bands, by page (the feed's switches with the tab). */
+/** Header bands, by page (the feed's and a market's follow the tab; a profile's, the trader's best category). */
 export const BAND = {
   feed: { sports: 2, markets: 9, stocks: 10 },
-  top: 6, results: 3, following: 7, account: 1, pricing: 8, signin: 6, about: 13, notFound: 1,
+  market: { sports: 12, markets: 15, stocks: 10 },
+  profile: { sports: 2, markets: 9, stocks: 10 },
+  top: 6, results: 3, following: 7, account: 1, alerts: 14, pricing: 8, signin: 6, about: 13, notFound: 1,
 } as const satisfies Record<string, PhotoN | Record<string, PhotoN>>;
 
 /** Small crops in empty states, sheets and in-page bands. */
@@ -19,4 +21,4 @@ export const SPOT = {
 } as const satisfies Record<string, PhotoN>;
 
 /** The thin strip on top of share cards and emails. */
-export const STRIP = { move: 11, profile: 13, site: 15, email: 4 } as const satisfies Record<string, PhotoN>;
+export const STRIP = { move: 11, site: 16, siteTall: 15, email: 4 } as const satisfies Record<string, PhotoN>;

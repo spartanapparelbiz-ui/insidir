@@ -159,15 +159,17 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
-  await expect(insider.getByText("Jane Fixture, CEO of E2E Fixture Devices, bought $1.4M of E2E Fixture Devices stock.")).toBeVisible();
-  await expect(insider.getByText("Bought Oct 22 at $182.65 a share.", { exact: false })).toBeVisible();
+  // Never "just bought": the filing day, then the trade date; the note carries both dates.
+  await expect(insider.getByText(/^Filed (today|[A-Z][a-z]{2} \d{1,2}): Jane Fixture, CEO of E2E Fixture Devices, bought \$1\.4M of E2E Fixture Devices stock on Oct 22\.$/)).toBeVisible();
+  await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
+  await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
   await expect(insider.locator(".tag")).toHaveText("Stocks · EXDV");
   const link = insider.getByRole("link", { name: "See the SEC filing" });
   await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
   await expect(link).toHaveAttribute("target", "_blank");
   const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
-  await expect(fund.getByText("E2E Fixture Capital added $250M of E2E Fixture Devices last quarter.")).toBeVisible();
-  await expect(fund.getByText("Filed Oct 21 for the quarter ending Sep 30. 13F data can be up to 45 days old.")).toBeVisible();
+  await expect(fund.getByText(/^E2E Fixture Capital added \$250M of E2E Fixture Devices in Q3 \d{4}\.$/)).toBeVisible();
+  await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
   // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
   await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Coming soon");

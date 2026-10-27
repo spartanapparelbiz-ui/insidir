@@ -1,12 +1,12 @@
-/* The move share card (docs/INSIDIR-V2.md §7): a 1080×1920 story image of one move. Black with a faint photo texture,
+/* The move share card (docs/INSIDIR-V2.md §7): a 1080×1920 story image of one move. Black with a faint photo strip, STRIP_H,
  * the logo, the move in white (who moved, the amount, on what, what it pays, the record when the viewer may see it,
  * when, and how it settled), and the serif headline. No logos of the apps, no advice. Rendered with next/og (satori);
  * fonts, logo and texture from lib/share-card.tsx. Server only. */
 import { ImageResponse } from "next/og";
 import { insiderWho } from "@/lib/profiles/name";
-import { dollars, onWhat, payoutLine, recordLine, stockNote, who } from "@/lib/moves/copy";
+import { calDay, dollars, onWhat, payoutLine, quarterOf, recordLine, stockNote, who } from "@/lib/moves/copy";
 import type { Move, TraderRecord } from "@/lib/moves/types";
-import { loadFonts, OG, OgLogo, texture } from "@/lib/share-card";
+import { loadFonts, OG, OgLogo, strip, STRIP_H } from "@/lib/share-card";
 
 export const MOVE_CARD = { width: 1080, height: 1920 } as const;
 
@@ -20,7 +20,7 @@ export function moveCardText(m: Move, record: TraderRecord | null) {
     return {
       who: d.kind === "insider" ? `${insiderWho(d.ownerName, d.role, d.company)}, bought` : `${d.fund} added`,
       amount: dollars(m.amount),
-      on: d.kind === "insider" ? `of ${d.company} stock` : `of ${d.company} last quarter`,
+      on: d.kind === "insider" ? `of ${d.company} stock${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}` : `of ${d.company} ${d.period ? `in ${quarterOf(d.period)}` : "last quarter"}`,
       pays: stockNote(d),
       record: null,
       when: `${WHEN.format(new Date(m.at))} ET`,
@@ -44,12 +44,13 @@ export async function moveCardImage(m: Move, record: TraderRecord | null): Promi
   // The inner width is 904px; Schibsted Grotesk 800 digits run about 0.62em wide.
   const amountSize = Math.min(200, Math.floor(904 / (t.amount.length * 0.62)));
   const onSize = t.on.length > 60 ? 52 : t.on.length > 32 ? 60 : 72;
-  const [fonts, bg] = await Promise.all([loadFonts(), texture("tall")]);
+  const [fonts, top] = await Promise.all([loadFonts(), strip("move")]);
   const tag = m.tab === "stocks" ? "Stocks" : m.tab === "sports" ? (m.league && m.league !== "other" ? m.league : "Sports") : "Markets";
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: OG.ink, color: OG.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 88, fontFamily: "Sans", position: "relative" }}>
-        <img src={bg} width={MOVE_CARD.width} height={MOVE_CARD.height} style={{ position: "absolute", left: 0, top: 0, opacity: 0.16 }} />
+      <div style={{ width: "100%", height: "100%", background: OG.ink, color: OG.paper, display: "flex", flexDirection: "column", fontFamily: "Sans" }}>
+      <img src={top} width={MOVE_CARD.width} height={STRIP_H.move} style={{ display: "flex" }} />
+      <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: "64px 88px 88px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <OgLogo height={72} />
           <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: OG.paper, border: `2px solid ${OG.grey3}`, padding: "12px 26px", borderRadius: 999 }}>{tag}</div>
@@ -75,6 +76,7 @@ export async function moveCardImage(m: Move, record: TraderRecord | null): Promi
             <span>Public trading data. Not financial advice.</span>
           </div>
         </div>
+      </div>
       </div>
     ),
     { ...MOVE_CARD, fonts },

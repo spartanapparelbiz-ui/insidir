@@ -11,6 +11,9 @@ import { historyOf, insiderTradesFor } from "@/lib/profiles/store";
 import { calDate, exactDollars, Locked } from "./shared";
 import { profileSource } from "@/lib/moves/source";
 import { SourceA } from "../MoveCard";
+import { Photo } from "@/components/Photo";
+import { BAND } from "@/lib/photos";
+import Link from "next/link";
 
 const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const shares = (v: number) => Math.round(v).toLocaleString("en-US");
@@ -27,12 +30,14 @@ export async function InsiderProfile({ db, cik, viewer, trial }: { db: Db; cik: 
   return (
     <>
       <header className="trader__head">
+        <Photo n={BAND.profile.stocks} className="trader__photo" wideOnly eager />
         <div>
           <p className="trader__kicker">{latest ? `${roleOf(latest.role).replace(/^./, c => c.toUpperCase())} of ${latest.company}` : "SEC filer"}</p>
           <h1 className="trader__name">{name}</h1>
           <SourceA link={profileSource({ kind: "insider", cik })} className="source source--dark" />
         </div>
       </header>
+      <p className="note pnote">Form 4s are filed up to 2 business days after the trade. <Link href="/data">About our data</Link></p>
       {!paid ? <Locked trial={trial} what={`Their full record is for members: every open-market buy and sale they filed with the SEC${companies.length ? ` (${companies.slice(0, 3).join(", ")})` : ""}, with totals.`} />
         : (
           <>

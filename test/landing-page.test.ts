@@ -99,9 +99,10 @@ describe("home hero ticker", () => {
 });
 
 describe("design system", () => {
-  it("defines every colour in app/tokens.css, only black, white, three greys, money green and the loss colour; other stylesheets use tokens only", () => {
+  it("defines every colour in app/tokens.css, only black, white, greys, money green and the loss colour (plus the dark app's surfaces and lifted data colours); other stylesheets use tokens only", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#0b0b12", "#ffffff", "#f2f2f4", "#e6e6ea", "#5b6070", "#087a55", "#c2410c"];
+    const palette = ["#0b0b12", "#ffffff", "#f2f2f4", "#e6e6ea", "#5b6070", "#087a55", "#c2410c",
+      "#141418", "#1c1c22", "#26262c", "#a1a1aa", "#2bb07f", "#f0703a"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");

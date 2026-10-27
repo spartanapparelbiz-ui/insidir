@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { League, Tab } from "@/lib/moves/types";
 import { Photo } from "@/components/Photo";
-import { SPOT } from "@/lib/photos";
+import { BAND, SPOT } from "@/lib/photos";
+import { PageBand } from "@/components/PageBand";
 import { LockButton } from "@/components/lock/Lock";
 import { ComingSoon } from "./ComingSoon";
 import type { FollowState } from "./FollowButton";
@@ -83,8 +84,8 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
 
   return (
     <section className="feed2" aria-labelledby="feed-h">
+      <PageBand n={BAND.feed[tab === "markets" || tab === "stocks" ? tab : "sports"]} title="Live feed" id="feed-h" />
       <div className="feed2__head">
-        <h1 id="feed-h" className="feed2__h">Live feed</h1>
         <div className="feed2__meta">
           {statusText ? <p className={`status status--${status?.state ?? "behind"}`} role="status"><span className="status__dot" aria-hidden="true" />{statusText}</p> : null}
           {pill}

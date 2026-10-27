@@ -79,7 +79,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
           </div>
         </section>
       ) : null}
-      <main className="wrap app2">
+      <main className="wrap app2 dark">
         <Feed pill={<LocationPill region={viewer.region} />} initial={items} status={status} initialTab={tab} stocks={tabs.includes("stocks")} free={!paid} follows={follows} followsReady={followsReady} trialHref={trial} serverNow={now} />
       </main>
     </>

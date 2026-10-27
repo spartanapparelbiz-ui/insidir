@@ -110,10 +110,13 @@ describe("stock cards", () => {
   const add = fundAdds(positions(parseInfoTable(fx("13f-info-prev.xml")), "2026-08-14"), positions(parseInfoTable(fx("13f-info-cur.xml")), "2026-11-14"))[1]!;
   const fund = fundMove(add, "Berkshire Hathaway", "0001067983", f13, prevF, "https://www.sec.gov/Archives/edgar/data/1067983/000106798326000002/0001067983-26-000002-index.htm");
   it("say it the way the brief does", () => {
-    expect(moveSentence(insider, null, true)).toBe("Jane Doe, CEO of Example Devices, just bought $1.4M of Example Devices stock.");
-    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of EXAMPLE DEVICES last quarter.");
-    expect(stockNote(insider.detail!)).toBe("Bought Oct 22 at $182.65 a share. Filed with the SEC Oct 26.");
-    expect(stockNote(fund.detail!)).toBe("Filed Nov 14 for the quarter ending Sep 30. 13F data can be up to 45 days old.");
+    // Never "just bought": the filing day ("today" on the day, Eastern), then the trade date.
+    expect(moveSentence(insider, null, true, Date.parse("2026-10-26T20:00:00Z"))).toBe("Filed today: Jane Doe, CEO of Example Devices, bought $1.4M of Example Devices stock on Oct 22.");
+    expect(moveSentence(insider, null, true, Date.parse("2026-10-28T15:00:00Z"))).toBe("Filed Oct 26: Jane Doe, CEO of Example Devices, bought $1.4M of Example Devices stock on Oct 22.");
+    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of EXAMPLE DEVICES in Q3 2026.");
+    expect(stockNote(insider.detail!)).toBe("Traded Oct 22 at $182.65 a share. Filed with the SEC Oct 26.");
+    expect(stockNote(fund.detail!)).toBe("Q3 2026 holdings · filed Nov 14. 13F data can be up to 45 days old.");
+    for (const t of [moveSentence(insider, null), stockNote(insider.detail!)]) expect(t).not.toMatch(/just bought/);
     for (const t of [moveSentence(insider, null), moveSentence(fund, null), stockNote(insider.detail!), stockNote(fund.detail!)]) for (const re of BANNED_WORDS) expect(t).not.toMatch(re);
   });
   it("link to the SEC filing itself, for everyone", () => {

@@ -17,7 +17,7 @@ const TAG: Record<string, { text: string; tint: string }> = {
   stocks: { text: "Stocks", tint: "blue" },
 };
 
-/** "Source: Polygon transaction ↗": the public record every number on the card comes from. */
+/** "Where this comes from: Polymarket trade on Polygon ↗": the original public record behind every number on a card. */
 export function SourceA({ link, className = "source" }: { link: SourceLink; className?: string }) {
   return <a className={className} href={link.href} target="_blank" rel="noopener noreferrer">{link.label}<span aria-hidden="true"> ↗</span><span className="sr-only"> (opens in a new tab)</span></a>;
 }
@@ -58,7 +58,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
         {m.who.href && !m.sentence.startsWith(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
       </div>
       )}
-      {m.sourceLink && (m.source !== "sec" || compact) ? <SourceA link={m.sourceLink} /> : null}
+      {m.sourceLink ? <SourceA link={m.sourceLink} /> : null}
     </article>
   );
 }

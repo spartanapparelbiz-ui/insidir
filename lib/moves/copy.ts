@@ -4,7 +4,8 @@
  *   "0x12…ab just put $85,000 on "Yes" in "Fed rate cut in December?""   (no username: the short address)
  *   "A brand-new wallet just put $200,000 on Chiefs to win."      (no activity at all before this move)
  *   "Someone just put $48,000 on Lakers to win."                   (Kalshi: anonymous by design)
- *   "Jen Hsun Huang, CEO of Nvidia, just bought $1.4M of Nvidia stock."   (SEC Form 4, as filed)
+ *   "Filed today: Jen Hsun Huang, CEO of Nvidia, bought $1.4M of Nvidia stock on Oct 22."   (SEC Form 4, as filed:
+ *   never "just bought", since the trade can be up to 2 business days older than the filing)
  *   "Pays $161 on every $100 if Chiefs win."      (payout = 100 ÷ price)
  *   "Won 41 of 63 · +$1.2M all-time"
  * Never: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider
@@ -50,8 +51,8 @@ export function who(m: Pick<Move, "source" | "wallet" | "walletName"> & { newWal
   return isTopTrader(record) ? `${label}, a top trader,` : label;
 }
 
-export function moveSentence(m: Move, record: TraderRecord | null, live = true): string {
-  if (m.source === "sec" && m.detail) return stockSentence(m.detail, m.amount, live);
+export function moveSentence(m: Move, record: TraderRecord | null, live = true, now = Date.now()): string {
+  if (m.source === "sec" && m.detail) return stockSentence(m.detail, m.amount, now);
   return `${who(m, record)} ${live ? "just put" : "put"} ${dollars(m.amount)} on ${onWhat(m)}.`;
 }
 
@@ -69,21 +70,32 @@ export function payoutLine(m: Pick<Move, "outcome" | "avgPrice" | "tab">): strin
 const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 const DAY_UTC = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 /** "2026-09-30" → "Sep 30" (a calendar date, no time zone shift). */
-const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
+export const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
 const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** "Tim Cook, CEO of Apple, just bought $1.4M of Apple stock." / "Berkshire Hathaway added $250M of Chevron last quarter." */
-export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, live = true): string {
-  if (d.kind === "insider") return `${insiderWho(d.ownerName, d.role, d.company)}, ${live ? "just bought" : "bought"} ${dollars(amount)} of ${d.company} stock.`;
-  return `${d.fund} added ${dollars(amount)} of ${d.company} last quarter${d.newPosition ? ", a new position" : ""}.`;
+const YMD_ET = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/New_York" });
+/** "Filed today" / "Filed Oct 24": the filing day, Eastern. */
+const filedWhen = (filedAt: number, now: number) => (YMD_ET.format(new Date(filedAt)) === YMD_ET.format(new Date(now)) ? "today" : DAY.format(new Date(filedAt)));
+/** "2026-09-30" → "Q3 2026": the calendar quarter a 13F's period ends. */
+export function quarterOf(period: string): string {
+  const [y, m] = period.split("-").map(Number);
+  return `Q${Math.ceil(m! / 3)} ${y}`;
 }
 
-/** The line under a stock card: when it was traded or filed, and how old 13F data can be. */
+/** "Filed today: Tim Cook, CEO of Apple, bought $1.4M of Apple stock on Oct 22." /
+ *  "Berkshire Hathaway added $250M of Chevron in Q3 2026." Never "just bought": a Form 4 reports a trade up to 2
+ *  business days old, and a 13F holdings up to 45 days after the quarter. */
+export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, now = Date.now()): string {
+  if (d.kind === "insider") return `Filed ${filedWhen(d.filedAt, now)}: ${insiderWho(d.ownerName, d.role, d.company)}, bought ${dollars(amount)} of ${d.company} stock${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}.`;
+  return `${d.fund} added ${dollars(amount)} of ${d.company} ${d.period ? `in ${quarterOf(d.period)}` : "last quarter"}${d.newPosition ? ", a new position" : ""}.`;
+}
+
+/** The line under a stock card. Form 4: both the trade date and the filing date. 13F: "Q3 2026 holdings · filed Nov 14." */
 export function stockNote(d: NonNullable<Move["detail"]>): string {
   if (d.kind === "insider") {
-    return `${d.tradeDate ? `Bought ${calDay(d.tradeDate)} at ${perShare(d.pricePerShare)} a share. ` : ""}Filed with the SEC ${DAY.format(new Date(d.filedAt))}.`;
+    return `${d.tradeDate ? `Traded ${calDay(d.tradeDate)} at ${perShare(d.pricePerShare)} a share.` : "Trade date not given in the filing."} Filed with the SEC ${DAY.format(new Date(d.filedAt))}.`;
   }
-  return `Filed ${calDay(d.filedOn)}${d.period ? ` for the quarter ending ${calDay(d.period)}` : ""}. 13F data can be up to 45 days old.`;
+  return `${d.period ? `${quarterOf(d.period)} holdings` : "Holdings"} · filed ${calDay(d.filedOn)}. 13F data can be up to 45 days old.`;
 }
 
 /** "Won 41 of 63 · +$1.2M all-time", only when the wallet has a record. */

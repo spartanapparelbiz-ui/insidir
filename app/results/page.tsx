@@ -14,6 +14,8 @@ import { agoText, dollars } from "@/lib/moves/copy";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
 import type { Move, Tab } from "@/lib/moves/types";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Results", description: "Every big move we've shown that has settled, won or lost. Real past moves. Not a promise." };
@@ -45,8 +47,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref("insidir")} />
-      <main className="wrap app2 results">
-        <h1 className="feed2__h">Results</h1>
+      <main className="wrap app2 results dark">
+        <PageBand n={BAND.results} title="Results" />
         <p className="results__label">Real past moves. Not a promise.</p>
         <div className="chips" aria-label="Filters">
           <Link className="chip2" aria-current={(!tab) ? "true" : undefined} href={q({ tab: null })}>All</Link>

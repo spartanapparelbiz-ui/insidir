@@ -1,5 +1,7 @@
 /* Insidir design tokens: "serious type, wild world". The only place colours, type, radii and motion are defined.
  * Black and white. Only data gets colour: --money for wins and money, --loss for losses. Nothing else.
+ * Two themes from the same roles: light (home, pricing, legal, sign-in) and dark (the app: feed, profiles, Top traders,
+ * markets, Results, Following, Account), switched on by <main class="dark"> (see the end of this file).
  * Headlines (h1, h2, page titles) are serif (Rufina, the closest match to the logo's wordmark); everything else is
  * Schibsted Grotesk, with money in tabular numbers. Photos (public/hero) are atmosphere only, never behind data. */
 :root {
@@ -11,14 +13,25 @@
   --grey-3: #5b6070;
   --money: #087a55;
   --loss: #c2410c;
+  /* the dark app's palette: page, raised inset, hairline, secondary text, and the data colours lifted to stay
+   * legible on dark surfaces (each 6:1 or better on --bg; #087a55 and #c2410c are only ~3.5:1 there) */
+  --night: #0b0b12;
+  --night-surface: #141418;
+  --night-inset: #1c1c22;
+  --night-line: #26262c;
+  --night-muted: #a1a1aa;
+  --night-money: #2bb07f;
+  --night-loss: #f0703a;
 
-  /* roles (all from the palette above) */
+  /* roles (all from the palette above). --page is the page itself; --bg is what cards sit on (the same white in light) */
+  --page: var(--paper);
   --bg: var(--paper);
   --bg-alt: var(--grey-1);
   --border: var(--grey-2);
   --text: var(--ink);
   /* nothing lighter than --muted is ever used for text on white (6.3:1); on black, text is --paper or --grey-2 */
   --muted: var(--grey-3);
+  --press: var(--grey-3);
 
   --sans: var(--font-schibsted), ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --serif: var(--font-rufina), Georgia, "Times New Roman", serif;
@@ -39,3 +52,18 @@
   color-scheme: light;
 }
 @media (min-width: 900px) { :root { --sec: 96px; } }
+
+/* The dark app. Solid surfaces (#141418) on #0b0b12, #26262c hairlines, white text, #a1a1aa secondary (7:1). Photos never
+ * sit behind numbers. Buttons invert: white with black text. */
+:root:has(main.dark) {
+  --page: var(--night);
+  --bg: var(--night-surface);
+  --bg-alt: var(--night-inset);
+  --border: var(--night-line);
+  --text: var(--paper);
+  --muted: var(--night-muted);
+  --press: var(--grey-2);
+  --money: var(--night-money);
+  --loss: var(--night-loss);
+  color-scheme: dark;
+}

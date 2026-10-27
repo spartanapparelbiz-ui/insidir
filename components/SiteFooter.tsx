@@ -21,6 +21,7 @@ export function SiteFooter() {
           <Link href="/results" prefetch={false}>Results</Link>
           <Link href="/pricing" prefetch={false}>Pricing</Link>
           <Link href="/about" prefetch={false}>About</Link>
+          <Link href="/data" prefetch={false}>About our data</Link>
           <Link href="/terms" prefetch={false}>Terms</Link>
           <Link href="/privacy" prefetch={false}>Privacy</Link>
         </nav>

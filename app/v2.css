@@ -31,7 +31,7 @@
 .nav .btn--primary { background: var(--paper); color: var(--ink); }
 .nav .btn--primary:hover { background: var(--grey-2); }
 .nav :focus-visible { outline-color: var(--paper); }
-.nav--light { background: var(--bg); color: var(--text); border-bottom: 1px solid var(--border); }
+.nav--light { background: var(--page); color: var(--text); border-bottom: 1px solid var(--border); }
 .nav--light .nav__links a { color: var(--muted); }
 .nav--light .nav__links a:hover, .nav--light .nav__links a[aria-current="page"] { color: var(--text); }
 .nav--light .btn--primary { background: var(--ink); color: var(--paper); }
@@ -52,7 +52,7 @@
 @media (max-width: 380px) { .nav__cta { padding: 0 14px; } }
 .nav__status { padding-bottom: 8px; }
 
-.foot { margin-top: 0; padding: 48px 0 120px; background: var(--bg); border-top: 1px solid var(--border); color: var(--muted); font-size: var(--t15); }
+.foot { margin-top: 0; padding: 48px 0 120px; background: var(--page); border-top: 1px solid var(--border); color: var(--muted); font-size: var(--t15); }
 .foot__in { display: grid; gap: 24px; }
 @media (min-width: 900px) { .foot__in { grid-template-columns: 1fr auto; } .foot { padding-bottom: 48px; } }
 .foot__company { color: var(--text); font-weight: 700; }
@@ -65,7 +65,7 @@
 .tabbar { display: none; }
 @media (max-width: 899px) {
   .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr);
-    background: var(--bg); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+    background: var(--page); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
   .tabbar__item { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; color: var(--muted); text-decoration: none; font-size: var(--t13); font-weight: 700; }
   .tabbar__item[aria-current="page"] { color: var(--text); }
   .tabbar__icon { width: 22px; height: 22px; }
@@ -114,7 +114,7 @@
 .chips--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
 .chip2 { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 700 var(--t15)/1 var(--sans); cursor: pointer; text-decoration: none; white-space: nowrap; }
 .chip2:hover { border-color: var(--muted); }
-.chip2[aria-pressed="true"], .chip2[aria-current="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.chip2[aria-pressed="true"], .chip2[aria-current="true"] { background: var(--text); border-color: var(--text); color: var(--page); }
 
 /* ---------- the move card ---------- */
 .move { display: grid; gap: 10px; padding: 20px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); }
@@ -165,14 +165,23 @@
 .trader__kicker { color: var(--muted); font-weight: 700; font-size: var(--t15); }
 /* Profile headers: a black band under the black nav, the name in the serif, the stats right under it as white tiles
  * (money colours stay on white, where they pass 4.5:1). Full bleed from inside .wrap. */
-.trader__head, .trader__head + .record { background: var(--ink); color: var(--paper); box-shadow: 0 0 0 100vmax var(--ink); clip-path: inset(0 -100vmax); }
-.trader__head { margin-top: -24px; padding: 40px 0 28px; }
-.trader__head + .record { margin-top: 0; padding-bottom: 32px; max-width: none; }
-.trader__head + .record > div { max-width: none; color: var(--text); }
+/* A profile's head is a header band (as components/PageBand.tsx): the photo of the trader's best category under a 55%
+ * overlay, the name in big serif white; the stats sit below it on solid cards. */
+.trader__head { position: relative; isolation: isolate; overflow: hidden; min-height: 140px; margin: -24px calc(50% - 50vw) 0; padding: 28px calc(50vw - 50%) 20px;
+  background: var(--ink); color: var(--paper); align-content: end; }
+@media (min-width: 900px) { .trader__head { min-height: 200px; padding-bottom: 28px; } }
+.trader__photo { position: absolute; inset: 0; z-index: -2; }
+.trader__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.trader__head::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .trader__photo img { height: 130%; animation: pband-drift linear both; animation-timeline: view(); animation-range: cover 50% exit 100%; }
+  }
+}
+.trader__head .trader__name { color: var(--paper); }
 .trader__head .trader__kicker { color: var(--grey-2); }
 .trader__head :focus-visible { outline-color: var(--paper); }
-.trader__head + .record + * { margin-top: 24px; }
-.trader__head + :not(.record) { margin-top: 24px; }
+.trader__head + * { margin-top: 24px; }
 .trader__name, .market__h { font-size: var(--t32); overflow-wrap: anywhere; }
 @media (min-width: 900px) { .trader__name, .market__h { font-size: var(--t44); } .trader__name { font-size: var(--t64); } }
 .record { margin: 24px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 720px; }
@@ -364,7 +373,7 @@
 @media (min-width: 900px) { .pricing2 .plans2 { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; } }
 .plan2 { display: grid; gap: 10px; padding: 24px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); }
 .plan2--main { border: 2px solid var(--text); }
-.plan2__flag { justify-self: start; padding: 4px 10px; border-radius: var(--r-pill); background: var(--text); color: var(--paper); font-size: var(--t13); font-weight: 800; }
+.plan2__flag { justify-self: start; padding: 4px 10px; border-radius: var(--r-pill); background: var(--text); color: var(--page); font-size: var(--t13); font-weight: 800; }
 .plan2__name { font-family: var(--serif); font-weight: 700; font-size: var(--t24); }
 .plan2__price { font-size: var(--t32); font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .plan2__sub { color: var(--muted); font-weight: 700; margin-top: -6px; }
@@ -426,7 +435,7 @@
 .split__photo::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 18, .25) 0%, rgba(11, 11, 18, .8) 100%); }
 .split__line { padding: 20px 16px; font-size: var(--t32); line-height: 1.05; max-width: 12ch; }
 @media (min-width: 900px) { .split__line { padding: 48px; font-size: var(--t64); } }
-.split__form { display: grid; align-items: start; padding: 32px 16px 64px; background: var(--bg); }
+.split__form { display: grid; align-items: start; padding: 32px 16px 64px; background: var(--page); }
 @media (min-width: 900px) { .split__form { align-items: center; padding: 64px; } }
 .split__box { display: grid; gap: 14px; width: 100%; max-width: 420px; justify-self: center; }
 .split__h { font-size: var(--t32); }
@@ -452,13 +461,13 @@
 .inband__list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; }
 @media (min-width: 900px) { .inband__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 /* solid cards: the numbers never sit on the photo */
-.inband__card { display: grid; gap: 8px; justify-items: start; padding: 20px; border-radius: var(--r-card); background: var(--paper); color: var(--ink); }
+.inband__card { display: grid; gap: 8px; justify-items: start; padding: 20px; border-radius: var(--r-card); background: var(--bg); color: var(--text); }
 .inband__card--note { margin-top: 12px; max-width: 560px; }
-.inband__name { font-family: var(--serif); font-size: var(--t24); font-weight: 700; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.inband__name { font-family: var(--serif); font-size: var(--t24); font-weight: 700; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
 .inband__name:hover { text-decoration: underline; }
 .inband__rec { color: var(--muted); font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
 .inband :focus-visible { outline-color: var(--paper); }
-.inband__card :focus-visible { outline-color: var(--ink); }
+.inband__card :focus-visible { outline-color: var(--text); }
 
 /* the public record behind a number: small, always there, opens the source */
 .source { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; color: var(--muted); font-size: var(--t13); font-weight: 700; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
@@ -474,7 +483,7 @@
 .skel .uiskel { display: block; }
 .skel .chips, .skel .move__top, .skel .move__actions { display: flex; }
 .move--skel { gap: 12px; }
-.skel__band .uiskel { background: var(--grey-3); }
+.skel__band .uiskel, .skel .pband .uiskel { background: var(--grey-3); }
 .skel__tiles > div { display: grid; }
 .skel__list .toplist__who { gap: 6px; }
 /* "3 new moves · Show": sticky under the nav, takes no space in the list (no layout shift) */
@@ -505,3 +514,38 @@
 .trust__link { justify-self: start; font-weight: 700; font-size: var(--t15); }
 .band2__p { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--grey-2); }
 .psnip__link { justify-self: start; color: var(--paper); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; min-height: var(--tap); display: inline-flex; align-items: center; }
+
+/* Header bands (components/PageBand.tsx): full bleed from inside or outside a .wrap, 140px on phones, 200px on desktop,
+ * a 55% black overlay, the title in large serif white. The photo drifts slower than the page (scroll-driven). */
+.pband { position: relative; isolation: isolate; display: grid; align-items: end; min-height: 140px; margin-inline: calc(50% - 50vw); overflow: hidden; background: var(--ink); color: var(--paper); }
+@media (min-width: 900px) { .pband { min-height: 200px; } }
+.pband__photo { position: absolute; inset: 0; z-index: -2; }
+.pband__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.pband::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
+.pband__in { width: 100%; padding-top: 20px; padding-bottom: 18px; }
+@media (min-width: 900px) { .pband__in { padding-bottom: 28px; } }
+.pband__kicker { color: var(--grey-2); font-weight: 700; font-size: var(--t15); }
+.pband__h { font-size: var(--t32); line-height: 1.05; overflow-wrap: anywhere; color: var(--paper); }
+@media (min-width: 900px) { .pband__h { font-size: var(--t56); } }
+.pband :focus-visible { outline-color: var(--paper); }
+.pband .source--dark { margin-top: 4px; }
+.app2 > .pband:first-child, .app > .pband:first-child { margin-top: -24px; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .pband__photo img { height: 130%; animation: pband-drift linear both; animation-timeline: view(); animation-range: cover 50% exit 100%; }
+  }
+}
+@keyframes pband-drift { from { transform: translateY(-12%); } to { transform: translateY(0); } }
+
+/* Pages fade in over 200 ms. Nothing bouncy. */
+@media (prefers-reduced-motion: no-preference) { main { animation: page-in var(--dur-small) ease-out; } }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* The dark app's nav sits on the same black as the page: a hairline separates them. */
+:root:has(main.dark) .nav { box-shadow: inset 0 -1px 0 var(--border); }
+
+/* Film grain over every page, 2.5%: a still texture under reduced motion, a slow shimmer otherwise. Never takes taps. */
+body::after { content: ""; position: fixed; inset: -50%; z-index: 100; pointer-events: none; opacity: .025;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+@media (prefers-reduced-motion: no-preference) { body::after { animation: grain 1.2s steps(6) infinite; } }
+@keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -4%); } 60% { transform: translate(-4%, -2%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); } }

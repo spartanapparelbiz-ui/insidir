@@ -17,20 +17,20 @@ const HASH = /^0x[0-9a-fA-F]{64}$/;
 const WALLET = /^0x[0-9a-fA-F]{40}$/;
 
 export function moveSource(m: Pick<Move, "id" | "source" | "marketId" | "wallet" | "at" | "url"> & { sourceRefs?: string[] | null }): SourceLink | null {
-  if (m.source === "sec") return m.url && /^https:\/\/www\.sec\.gov\//.test(m.url) ? { href: m.url, label: "Source: SEC filing" } : null;
+  if (m.source === "sec") return m.url && /^https:\/\/www\.sec\.gov\//.test(m.url) ? { href: m.url, label: "Where this comes from: SEC EDGAR filing" } : null;
   if (m.source === "kalshi") {
     const s = Math.floor(m.at / 1000);
-    return { href: `${KALSHI_API}/markets/trades?ticker=${encodeURIComponent(m.marketId)}&min_ts=${s}&max_ts=${s + 1}`, label: "Source: Kalshi trade record" };
+    return { href: `${KALSHI_API}/markets/trades?ticker=${encodeURIComponent(m.marketId)}&min_ts=${s}&max_ts=${s + 1}`, label: "Where this comes from: Kalshi trade record" };
   }
   const tx = m.sourceRefs?.find(h => HASH.test(h));
-  if (tx) return { href: `${POLYGONSCAN}/tx/${tx}`, label: "Source: Polygon transaction" };
-  return m.wallet && WALLET.test(m.wallet) ? { href: `${POLYGONSCAN}/address/${m.wallet.toLowerCase()}`, label: "Source: wallet on Polygon" } : null;
+  if (tx) return { href: `${POLYGONSCAN}/tx/${tx}`, label: "Where this comes from: Polymarket trade on Polygon" };
+  return m.wallet && WALLET.test(m.wallet) ? { href: `${POLYGONSCAN}/address/${m.wallet.toLowerCase()}`, label: "Where this comes from: Polymarket wallet on Polygon" } : null;
 }
 
 export function profileSource(ref: ProfileRef): SourceLink {
-  if (ref.kind === "trader") return { href: `${POLYGONSCAN}/address/${ref.wallet.toLowerCase()}`, label: "Source: this wallet on Polygon" };
+  if (ref.kind === "trader") return { href: `${POLYGONSCAN}/address/${ref.wallet.toLowerCase()}`, label: "Where this comes from: this Polymarket wallet on Polygon" };
   const cik = String(Number(ref.cik)).padStart(10, "0");
   return ref.kind === "insider"
-    ? { href: `${EDGAR}?action=getcompany&CIK=${cik}&type=4&owner=include`, label: "Source: their Form 4 filings on EDGAR" }
-    : { href: `${EDGAR}?action=getcompany&CIK=${cik}&type=13F-HR`, label: "Source: their 13F filings on EDGAR" };
+    ? { href: `${EDGAR}?action=getcompany&CIK=${cik}&type=4&owner=include`, label: "Where this comes from: their Form 4 filings on SEC EDGAR" }
+    : { href: `${EDGAR}?action=getcompany&CIK=${cik}&type=13F-HR`, label: "Where this comes from: their 13F filings on SEC EDGAR" };
 }
