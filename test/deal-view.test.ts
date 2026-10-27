@@ -44,11 +44,11 @@ describe("the deal paywall (lib/deal-view.ts, shared by the deal page and /api/d
 
   it("US viewers can't open an international Polymarket deal, on any plan", () => {
     const intl = stored(opp("intl", { legs: [leg("kalshi", "yes", 0.5), leg("polymarket", "no", 0.45)] }), 45);
-    for (const plan of ["free", "insidir", "pro"] as const) {
+    for (const plan of ["free", "insidir"] as const) {
       expect(dealViewFrom(intl, markets, { plan, region: "us" }, NOW)).toEqual({ state: "not_found" });
       expect(dealViewFrom(intl, markets, { plan, region: null }, NOW)).toEqual({ state: "not_found" });
     }
-    expect(dealViewFrom(intl, markets, { plan: "pro", region: "non_us" }, NOW).state).toBe("ok");
+    expect(dealViewFrom(intl, markets, { plan: "insidir", region: "non_us" }, NOW).state).toBe("ok");
   });
 
   it("paid viewer: live numbers, fills and the calculator; a closed deal keeps its numbers but no calculator", () => {
@@ -58,13 +58,13 @@ describe("the deal paywall (lib/deal-view.ts, shared by the deal page and /api/d
     expect(v.fills[0]).toEqual({ contracts: 123, worstPriceCents: 56, cost: 123 * 0.55, fee: 1.37 });
     expect(v.calc?.maxSets).toBe(123);
     expect(v.calc?.legs[0]?.fee).toEqual({ venue: "kalshi", multiplier: 1 });
-    const gone = dealViewFrom(stored(opp("gone"), 60, false), markets, { plan: "pro", region: "us" }, NOW);
+    const gone = dealViewFrom(stored(opp("gone"), 60, false), markets, { plan: "insidir", region: "us" }, NOW);
     if (gone.state !== "ok") throw new Error(gone.state);
     expect(gone.gone).toBe(true);
     expect(gone.calc).toBeNull();
   });
 
   it("unknown deal: not_found", () => {
-    expect(dealViewFrom(null, markets, { plan: "pro", region: "us" }, NOW)).toEqual({ state: "not_found" });
+    expect(dealViewFrom(null, markets, { plan: "insidir", region: "us" }, NOW)).toEqual({ state: "not_found" });
   });
 });

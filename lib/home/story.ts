@@ -5,11 +5,12 @@
  *   4. pinged next time       the push alert we would send for that move (lib/moves/alerts.ts)
  * The trader is a top trader (lib/moves/records.ts) with a recent big move; when none has moved this week, a top
  * trader's real past settled move. Nothing is invented: with no such trader, the story isn't shown. The home page
- * shows this one record as an example of what members get; records stay members-only everywhere else. */
+ * shows this record to members; visitors see it blurred (a placeholder, never the numbers). */
 import type { Db } from "@/lib/db";
 import { isMainstream } from "./curate";
 import { alertMessage } from "@/lib/moves/alerts";
 import { recordLine } from "@/lib/moves/copy";
+import { movePlan } from "@/lib/moves/gate";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
@@ -25,7 +26,7 @@ export interface Story {
   move: FeedItem;
   /** The feed the move slides into: the latest other real moves. */
   feed: FeedItem[];
-  trader: { name: string; wallet: string; record: string; chart: { path: string; width: number; height: number; zeroY: number } | null };
+  trader: { name: string; wallet: string; record: string; blurred: boolean; chart: { path: string; width: number; height: number; zeroY: number } | null };
   alert: { title: string; body: string };
   /** The move is a past settled one (nobody top-ranked moved this week). */
   past: boolean;
@@ -54,9 +55,11 @@ export async function storyFor(db: Db, plan: Plan, region: Region | null, until:
   const feed = await feedItems(db, latest.filter(x => x.id !== m.id).slice(0, 2), plan, region, now);
   const s = markets.length ? traderStats(markets, now) : null;
   const geom = s ? profitPath(s.series, 320, 120, 6) : null;
+  // Without a plan the record is a blurred placeholder: the real numbers never leave the server.
+  const shown = movePlan(plan).records;
   return {
     move: items[0]!, feed, past,
-    trader: { name: walletLabel(m.wallet!, rec.name ?? m.walletName), wallet: m.wallet!, record, chart: geom ? { path: geom.path, width: geom.width, height: geom.height, zeroY: geom.zeroY } : null },
+    trader: { name: walletLabel(m.wallet!, rec.name ?? m.walletName), wallet: m.wallet!, record: shown ? record : "Won 00 of 00 · +$00K all-time", blurred: !shown, chart: shown && geom ? { path: geom.path, width: geom.width, height: geom.height, zeroY: geom.zeroY } : null },
     alert: (({ title, body }) => ({ title, body }))(alertMessage(m, null, "trader", appUrl, now)),
   };
 }

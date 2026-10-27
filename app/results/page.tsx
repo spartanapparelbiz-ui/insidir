@@ -8,7 +8,7 @@ import { Photo } from "@/components/Photo";
 import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { agoText, dollars } from "@/lib/moves/copy";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
@@ -25,7 +25,7 @@ const SIZES = [10_000, 50_000, 100_000];
 export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ tab?: string; min?: string; top?: string }> }) {
   const now = Date.now();
   const sp = await searchParams;
-  const viewer = await getViewer();
+  const viewer = await requireMember("/results");
   const tab: Tab | null = sp.tab === "sports" || sp.tab === "markets" ? sp.tab : null;
   const min = SIZES.includes(Number(sp.min)) ? Number(sp.min) : 10_000;
   const topOnly = sp.top === "1";
@@ -46,7 +46,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   };
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref("insidir")} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref()} />
       <main className="wrap app2 results dark">
         <PageBand n={BAND.results} title="Results" />
         <p className="results__label">Real past moves. Not a promise.</p>

@@ -4,7 +4,7 @@
  * once: notified_at is set after a successful send, so a rerun only picks up the rest. */
 import { and, eq, isNull } from "drizzle-orm";
 import { renderEmail, sendEmail, unsubscribeSig } from "@/lib/alerts/send";
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { waitlist } from "@/lib/db/schema";
 import { FEATURES, isReady, type Feature } from "@/lib/features";

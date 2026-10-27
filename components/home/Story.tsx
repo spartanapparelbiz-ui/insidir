@@ -149,7 +149,7 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
           <div className="wrap">
             <p className="note pnote">One trader can use several wallets; this record covers this wallet only. <u>About our data</u></p>
             {r ? (
-              <dl className="record record--wide">
+              <dl className={`record record--wide${d.trader.blurred ? " record--blur" : ""}`} aria-hidden={d.trader.blurred || undefined}>
                 <div><dt>Win rate</dt><dd>{Math.round((r.won / r.of) * 100)}%</dd><span className="record__sub">Won {r.won} of {r.of} resolved</span></div>
                 <div><dt>All-time profit</dt><dd className={r.profit.startsWith("-") || r.profit.startsWith("−") ? "loss" : "money"}>{r.profit}</dd></div>
               </dl>

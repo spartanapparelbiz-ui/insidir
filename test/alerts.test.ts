@@ -12,18 +12,17 @@ const leg = (venue: Venue, side: "yes" | "no", p: number): Leg => ({ venue, mark
 const opp = (o: Partial<Opportunity> = {}): Opportunity => ({ id: "o1", kind: "cross_arb", title: "Example game", legs: [leg("kalshi", "yes", 0.55), leg("polymarket_us", "no", 0.4)],
   sets: 10, cost: 9.5, fees: 0.2, payout: 10, profit: 0.3, roi: 0.03, days: 2, profitPerDay: 0.15, safety: "green", safetyNotes: [], categories: ["sports"],
   closeTime: null, pairId: "p", gapCents: null, ...o });
-const user = (o: Partial<AlertUser> = {}): AlertUser => ({ id: "u", email: "member@example.invalid", plan: "pro", region: "us", hasPush: true, emailsLastHour: 0, lastDigestAt: null,
+const user = (o: Partial<AlertUser> = {}): AlertUser => ({ id: "u", email: "member@example.invalid", plan: "insidir", region: "us", hasPush: true, emailsLastHour: 0, lastDigestAt: null,
   settings: { ...DEFAULT_SETTINGS, alertPush: true, alertEmail: true, emailDigest: true, alertMinRoi: 0.01 }, ...o });
 const deal = (ageS: number, o: Partial<Opportunity> = {}): AlertDeal => ({ opp: opp(o), firstSeenAt: NOW - ageS * 1000, active: true });
 
 describe("alert fan-out", () => {
-  it("Pro: push immediately; email only as the backup when push isn't on", () => {
+  it("members: push immediately; email only as the backup when push isn't on", () => {
     expect(dueAlerts([user()], [deal(2)], NOW)).toEqual([{ userId: "u", oppId: "o1", channel: "push" }]);
     expect(dueAlerts([user({ hasPush: false })], [deal(2)], NOW)).toEqual([{ userId: "u", oppId: "o1", channel: "email" }]);
   });
-  it("Insidir: only after the 60 second delay; free: no per-deal alerts", () => {
-    expect(dueAlerts([user({ plan: "insidir" })], [deal(30)], NOW)).toEqual([]);
-    expect(dueAlerts([user({ plan: "insidir" })], [deal(61)], NOW)).toHaveLength(1);
+  it("members: at once; no plan: no per-deal alerts", () => {
+    expect(dueAlerts([user({ plan: "insidir" })], [deal(2)], NOW)).toHaveLength(1);
     expect(dueAlerts([user({ plan: "free" })], [deal(600)], NOW)).toEqual([]);
   });
   it("caps backup emails per hour, best deals first", () => {

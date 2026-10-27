@@ -10,7 +10,7 @@ import { SPOT } from "@/lib/photos";
 import { DealDetail } from "@/components/app/DealDetail";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { OPEN_TERMINAL, UNLOCK } from "@/lib/copy";
 import { dealView } from "@/lib/deal-view";
 import "../../app.css";
@@ -24,12 +24,12 @@ const safeDecode = (s: string): string => { try { return decodeURIComponent(s); 
 export default async function DealPage({ params }: { params: Promise<{ id: string }> }) {
   const id = safeDecode((await params).id);
   const now = Date.now();
-  const viewer = await getViewer();
+  const viewer = await requireMember(`/deal/${id}`);
   if (!isReady("price_gaps")) {
     return <ComingSoonPage feature="price_gaps" title="Price gaps" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Sometimes Kalshi and Polymarket price the same event differently. Price gaps will show those, with the math, for Pro members." />;
   }
   const view = await dealView(id, viewer, now);
-  const unlock = unlockHref("insidir", `/deal/${encodeURIComponent(id)}`);
+  const unlock = unlockHref();
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} current="/terminal" />

@@ -2,7 +2,7 @@
  * alerts), or a test email when email is their channel. The answer says exactly what happened, in plain words. */
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, userForToken } from "@/lib/auth/session";
-import { appUrl } from "@/lib/auth/whop";
+import { appUrl } from "@/lib/app-url";
 import { getDb } from "@/lib/db";
 import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
 import { movePlan } from "@/lib/moves/gate";

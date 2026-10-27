@@ -2,7 +2,7 @@
  * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
  * it is in FEATURES_READY) returns an empty list. */
 import { NextResponse, type NextRequest } from "next/server";
-import { getViewer } from "@/lib/auth/viewer";
+import { memberOrNull } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, feedStatus } from "@/lib/moves/feed";
 import { LEAGUES, type League, type Tab } from "@/lib/moves/types";
@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
   const before = Number(p.get("before")) || undefined;
   const limit = Math.min(50, Math.max(1, Number(p.get("limit")) || 30));
   if (!hasDatabase()) return NextResponse.json({ items: [], status: { state: "behind", lastAt: null, text: "Catching up · waiting for the first update" } });
-  const viewer = await getViewer();
+  const viewer = await memberOrNull();
+  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
   const db = getDb();
   const [items, status] = await Promise.all([
     feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, before, limit }, now),

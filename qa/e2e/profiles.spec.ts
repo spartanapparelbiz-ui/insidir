@@ -47,24 +47,14 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });
 
-test("free viewers see names, never the numbers: not on the page, not in any response", async ({ page }) => {
-  const bodies = await captureBodies(page, async () => { await page.goto(`/p/${TOP}`); });
-  await expect(page.getByRole("heading", { level: 1, name: "E2E-Top" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "See their full record" })).toBeVisible();
-  // Every lock opens the same sheet: what you get, the price, one button to checkout.
-  await page.getByRole("button", { name: "See their full record" }).click();
-  const sheet = page.getByRole("dialog");
-  await expect(sheet.getByText("$1 for 3 days, then $39/mo. Cancel anytime.")).toBeVisible();
-  await expect(sheet.getByRole("link")).toHaveCount(1);
-  await expect(sheet.getByRole("link", { name: "Try it for $1" })).toHaveAttribute("data-unlock", "record-profile");
-  await sheet.getByRole("button", { name: "Not now" }).click();
-  await expect(sheet).toHaveCount(0);
-  for (const b of bodies) {
-    expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Profit over time/);
-  }
-  const top = await captureBodies(page, async () => { await page.goto("/top"); });
-  await expect(page.getByRole("link", { name: "E2E-Top" })).toBeVisible();
-  for (const b of top) expect(b.body, b.url).not.toMatch(/\+\$1\.2M|Won 41 of 63/);
+test("profiles and Top are members only: a visitor is sent to log in, and no record reaches them", async ({ page }) => {
+  const bodies = await captureBodies(page, async () => {
+    await page.goto(`/p/${TOP}`);
+    await expect(page).toHaveURL(/\/login\?next=%2Fp%2F/);
+    await page.goto("/top");
+    await expect(page).toHaveURL(/\/login\?next=%2Ftop/);
+  });
+  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Profit over time/);
 });
 
 test("/top: 20+ resolved markets, ranked by profit, filtered by time and category, with Follow", async ({ page, context }) => {
@@ -79,7 +69,7 @@ test("/top: 20+ resolved markets, ranked by profit, filtered by time and categor
   await expect(row.getByRole("button", { name: "Follow" })).toBeVisible();
   // 7 resolved markets: never ranked.
   await expect(page.getByRole("link", { name: "0xe2…bb" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Markets" }).click();
+  await page.locator("main").getByRole("link", { name: "Markets" }).click();
   await expect(page).toHaveURL(/tab=markets/);
   await expect(page.locator(".toplist__row").first().getByText(/Won \d+ of 21/)).toBeVisible();
   await page.getByRole("link", { name: "This week" }).click();
@@ -88,6 +78,7 @@ test("/top: 20+ resolved markets, ranked by profit, filtered by time and categor
 });
 
 test("an insider: the card names them and says why it matters; the profile lists every trade with its filing", async ({ page, context }) => {
+  await signIn(context, "insidir");
   await page.goto("/feed?tab=stocks");
   const card = page.locator("[data-move='f4:000099999926000001']");
   await expect(card.locator(".move__why")).toHaveText("First buy by Jane Fixture in 3 years.");
@@ -95,8 +86,6 @@ test("an insider: the card names them and says why it matters; the profile lists
   await expect(page).toHaveURL("/p/insider-888888");
   await expect(page.getByRole("heading", { level: 1, name: "Jane Fixture" })).toBeVisible();
   await expect(page.getByText("CEO of E2E Fixture Devices")).toBeVisible();
-  await expect(page.getByRole("button", { name: "See their full record" })).toBeVisible();
-  await expect(page.getByRole("table")).toHaveCount(0);
   await signIn(context, "insidir");
   await page.reload();
   const rec = page.locator(".record");

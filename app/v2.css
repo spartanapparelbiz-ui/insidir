@@ -930,3 +930,52 @@ a, button, summary, [role="button"] { touch-action: manipulation; -webkit-tap-hi
 .dark .story__n { background: var(--paper); color: var(--ink); }
 /* Scrolling rows keep their screen-reader-only labels (position: absolute) inside, so the page never widens. */
 .cmp__scroll, .chips--scroll, .seg { position: relative; }
+
+/* ---------- Log in to Insidir (/login) and the $1 start (/start) ---------- */
+.login { display: grid; gap: 16px; }
+.login__h { font-size: var(--t32); line-height: 1.1; }
+@media (min-width: 900px) { .login__h { font-size: var(--t44); } }
+.login__form { display: grid; gap: 12px; }
+.login__p { color: var(--muted); }
+.login__p b { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+.login__label { font-weight: 700; font-size: var(--t15); margin-top: 4px; }
+.login__input { width: 100%; min-height: 56px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 600 var(--t17)/1 var(--sans); }
+.login__input:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 18%, transparent); }
+.login__input--code { font-size: 28px; font-weight: 800; letter-spacing: .4em; text-align: center; font-variant-numeric: tabular-nums; }
+.login__err { padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--night-loss) 14%, transparent); color: var(--text); font-weight: 600; font-size: var(--t15); }
+.login__err a { color: var(--text); font-weight: 800; }
+.login__row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.login__link { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--muted); font: 700 var(--t15)/1 var(--sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.login__link:hover { color: var(--text); }
+.login__fine { color: var(--muted); font-size: var(--t13); }
+.login__fine a { color: var(--text); }
+.dark.split .split__form { background: var(--page); }
+.btn:disabled { opacity: .5; cursor: default; transform: none; }
+.start { min-height: calc(100svh - 64px); padding: 32px 0 64px; }
+.start__in { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 960px) { .start__in { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; padding-top: 32px; } }
+.start__in--one { max-width: 480px; grid-template-columns: minmax(0, 1fr) !important; }
+.start__what { display: grid; gap: 12px; align-content: start; }
+.start__kicker { color: var(--muted); font-weight: 800; font-size: var(--t13); text-transform: uppercase; letter-spacing: .08em; }
+.start__h { font-size: var(--t44); line-height: 1.05; }
+@media (min-width: 900px) { .start__h { font-size: var(--t56); } }
+.start__price { display: flex; align-items: baseline; gap: 8px; }
+.start__then { color: var(--muted); font-weight: 700; margin-top: -6px; }
+.start__list { margin-top: 8px; }
+.start__switch a, .start__fine a { color: var(--text); font-weight: 700; }
+.start__fine { color: var(--muted); font-size: var(--t13); }
+.start__pay { display: grid; gap: 12px; min-height: 420px; padding: 8px; border-radius: 20px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); }
+.start__note { color: var(--muted); padding: 16px; }
+.start__frame { min-height: 380px; }
+.welcome__bar { display: block; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--night-money), transparent); background-size: 200% 100%; animation: welcome 1.2s linear infinite; }
+@keyframes welcome { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .welcome__bar { animation: none; background: var(--night-money); } }
+/* One plan */
+.plan2--one { max-width: 920px; margin-inline: auto; padding: 32px; }
+@media (min-width: 900px) { .plan2--one { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 40px; padding: 40px; } .plan2--one .plan2__list { margin: 0; padding: 0 0 0 40px; box-shadow: inset 1px 0 0 var(--border); } }
+.plan2__head { display: grid; gap: 14px; align-content: start; }
+.lp2 .plan2--one { text-align: left; }
+.mkt__fine { color: var(--muted); font-size: var(--t13); font-weight: 600; align-self: center; }
+.move__record--blur { filter: blur(5px); user-select: none; opacity: .8; }
+.dash__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.record--blur dd, .record--blur .record__sub { filter: blur(6px); user-select: none; }

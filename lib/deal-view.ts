@@ -76,7 +76,7 @@ function resolve(stored: StoredOpp | null, viewer: DealViewer, now: number): Res
   const row = feedFor([gone ? { ...stored, active: true } : stored], fv, now)[0];
   if (row) return { state: "ok", row, opp: paid ? stored.live : stored.snapshot, gone };
   // A free viewer asking for a deal a member could see right now: it's just too new for the delayed feed.
-  if (!paid && feedFor([stored], { ...fv, plan: "pro" }, now).length) return { state: "too_new" };
+  if (!paid && feedFor([stored], { ...fv, plan: "insidir" }, now).length) return { state: "too_new" };
   return { state: "not_found" };
 }
 

@@ -36,10 +36,10 @@ export default async function TermsPage() {
           <p>You are responsible for checking that prediction markets, and each venue, are available to you where you live, and for following each venue&apos;s rules. If you tell us you are in the US, Insidir only links you to apps available in the US.</p>
 
           <h2>Accounts and payment</h2>
-          <p>Sign-in and payment are handled by Whop. Paid plans renew monthly until cancelled. You can cancel in one click in Account; access continues to the end of the period you paid for. Refunds follow Whop&apos;s process and the law where you live.</p>
+          <p>Payment is handled by Whop, on our checkout page. Insidir is $39/month and renews monthly until cancelled. You can cancel in one click in Account; access continues to the end of the period you paid for. Refunds follow Whop&apos;s process and the law where you live.</p>
 
           <h2>Fair use</h2>
-          <p>Your plan is for you. Don&apos;t resell or republish the feed, scrape the site, share your account, or try to get around the free plan&apos;s delay. We can suspend accounts that do.</p>
+          <p>Your plan is for you. Don&apos;t resell or republish the feed, scrape the site, share your account, or try to get around the members-only pages. We can suspend accounts that do.</p>
 
           <h2>Liability</h2>
           <p>Insidir is provided as is. To the extent the law allows, Aethric LLC is not liable for trading losses or for decisions made using the service, and our total liability is limited to what you paid us in the last 3 months.</p>

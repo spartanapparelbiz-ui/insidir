@@ -13,7 +13,7 @@ import { storyFor } from "@/lib/home/story";
 import { memo } from "@/lib/memo";
 import { movePlan } from "@/lib/moves/gate";
 import { BAND } from "@/lib/photos";
-import { TRIAL } from "@/lib/plans";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { trustFacts } from "@/lib/trust";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ const DO: Array<[string, string, string]> = [
   ["/feed", "The live feed", "Every big move as it happens: Sports, Markets and Stocks."],
   ["/top", "Top traders", "The wallets with the best record, this week, this month and all time."],
   ["/results", "Results", "Every move we've shown, marked won or lost. Losses included."],
-  ["/pricing", "Pricing", `Free to look, $${TRIAL.price} for ${TRIAL.days} days to see it all live.`],
+  ["/pricing", "Pricing", "One plan, $39/month, everything live. Cancel anytime."],
 ];
 
 export default async function HowPage() {
@@ -40,7 +40,7 @@ export default async function HowPage() {
     memo(`story:${viewer.plan}:${viewer.region ?? ""}`, 30_000, () => storyFor(getDb(), viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com")).catch(() => null),
     memo("trust", 60_000, () => trustFacts(getDb())).catch(() => null),
   ]) : [null, null];
-  const trial = unlockHref("insidir");
+  const trial = unlockHref();
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/how-it-works" trialHref={trial} />
@@ -69,7 +69,8 @@ export default async function HowPage() {
         <section className="sec2">
           <div className="wrap mkt__endIn">
             <h2 className="sec2__h">Follow the big money.</h2>
-            <div className="mkt__ctas"><Link className="btn btn--primary" href="/feed">See the live feed</Link><a className="btn btn--secondary" href={trial} data-checkout="how-end">Try it for ${TRIAL.price}</a></div>
+            <div className="mkt__ctas"><Link className="btn btn--primary" href={trial} data-checkout="how-end">{GET_CTA}</Link></div>
+            <p className="mkt__fine">{CANCEL_LINE}</p>
           </div>
         </section>
       </main>

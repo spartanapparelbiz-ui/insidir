@@ -85,8 +85,8 @@ function LockGlyph() {
   return <svg className="hcard__lock" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
 }
 
-export function Hero({ moves, ticker, late, trialLine, cta, status }: {
-  moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string;
+export function Hero({ moves, ticker, late, trialLine, cta, ctaHref = "/feed", status }: {
+  moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string; ctaHref?: string;
   /** The sources' freshness (lib/moves/feed.ts): "LIVE" only while every source is current. */
   status: FeedStatus | null;
 }) {
@@ -147,7 +147,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
           <h1 id="hero-h" className="cine__h">Follow the big money.</h1>
           <p className="cine__sub">Insidir shows you the biggest bets and stock trades the moment they happen: who made them, how much, and whether they usually win.</p>
           <div className="cine__cta">
-            <Link className="btn btn--onDark btn--big" href="/feed" data-cta="hero" onClick={() => beacon("hero_cta_click", "home")}>{cta}</Link>
+            <Link className="btn btn--onDark btn--big" href={ctaHref} data-cta="hero" onClick={() => beacon("hero_cta_click", "home")}>{cta}</Link>
             <ul className="cine__points">
               <li>Sports · Prediction markets · Stocks</li>
               <li>Real public data</li>

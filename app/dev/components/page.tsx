@@ -1,5 +1,6 @@
 /* The component gallery (docs/BRIEF.md §12.1): all 16 signature components in every state, on dark and on Paper.
  * Example data only (lib/dev-fixtures.ts), and the page says so. Off in production (app/dev/gallery.ts). */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
@@ -42,7 +43,7 @@ function State({ label, children }: { label: string; children: ReactNode }) {
 
 const BAR = [{ label: "YES on Kalshi", cents: 48 }, { label: "NO on Polymarket US", cents: 46 }];
 const show = <a className="btn btn--primary" href="#c5">Show me how</a>;
-const unlock = <a className="btn btn--primary" href="#c12">Try it for $1</a>;
+const unlock = <a className="btn btn--primary" href="#c12">{GET_CTA}</a>;
 
 export default function Gallery() {
   if (!galleryOn()) notFound();

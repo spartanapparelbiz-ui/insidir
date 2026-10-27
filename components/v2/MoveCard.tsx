@@ -5,7 +5,6 @@
  * and region (lib/moves/feed.ts). */
 import Link from "next/link";
 import { TimeAgo } from "@/components/TimeAgo";
-import { LockButton } from "@/components/lock/Lock";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import { FollowButton, type FollowState } from "./FollowButton";
@@ -46,7 +45,10 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}
-      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow === "locked" && !compact ? <LockButton where="record-card" className="lockline">See this trader&apos;s win record</LockButton> : null}
+      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow !== "on" && follow !== "off" ? (
+        // The public preview: the record is there, blurred, for members (the real numbers never reach this page).
+        <p className="move__record move__record--blur"><span aria-hidden="true">Won 00 of 00 · +$00K all-time</span><span className="sr-only">Trader record for members</span></p>
+      ) : null}
       {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
       {compact ? (m.sourceLink ? <SourceA link={m.sourceLink} /> : null) : (

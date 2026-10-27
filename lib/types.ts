@@ -202,4 +202,5 @@ export interface WhaleTrade {
 }
 
 /** Plans. Entitlements per plan are in lib/plans.ts. */
-export type Plan = "free" | "insidir" | "pro";
+/** "insidir" is the one paid plan; "free" means no active plan (a visitor, or a member whose plan has ended). */
+export type Plan = "free" | "insidir";

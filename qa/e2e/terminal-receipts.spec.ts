@@ -59,22 +59,11 @@ test("Terminal timers count from when the deal was found: a refresh doesn't rese
   expect(await secs()).toBeGreaterThanOrEqual(before);
 });
 
-test("free Terminal: paid cells are lock bars with no real values anywhere in the DOM", async ({ page, context }) => {
+test("Terminal and Receipts are members only: a member without a plan is sent to Get Insidir", async ({ page, context }) => {
   await signIn(context, "freeUs");
-  await noTips(page);
-  await page.goto("/gaps");
-  await expect(page.locator(".freebar")).toContainText("You're seeing deals 30 min late");
-  await expect(page.locator(".freebar [data-unlock]")).toBeVisible();
-  const rows = page.locator("tr[data-deal]");
-  await expect(rows.first()).toBeVisible();
-  expect(await rows.locator(".lockbar").count()).toBeGreaterThan(0);
-  const html = await page.content();
-  const seeded = await q<{ id: string; data: { profit: number; cost: number; fees: number; profitPerDay: number } }>("select id, data from terminal.opportunities where active");
-  for (const s of seeded) {
-    for (const v of [s.data.profit, s.data.cost + s.data.fees, s.data.profitPerDay]) {
-      if (!(v > 0)) continue;
-      expect(html, `${s.id} leaks ${v}`).not.toContain(`$${v.toFixed(2)}`);
-    }
+  for (const path of ["/gaps", "/receipts"]) {
+    await page.goto(path);
+    await expect(page, path).toHaveURL(/\/start$/);
   }
 });
 
@@ -103,7 +92,8 @@ test("Receipts: CSV export downloads valid data that matches the table; rows exp
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
 });
 
-test("Receipts filters: a filter that matches nothing says so and offers to clear it", async ({ page }) => {
+test("Receipts filters: a filter that matches nothing says so and offers to clear it", async ({ page, context }) => {
+  await signIn(context, "pro");
   await page.goto("/receipts?result=differently&from=2001-01-01&to=2001-01-02");
   await expect(page.getByText("No receipts match these filters")).toBeVisible();
   await expect(page.getByRole("link", { name: "Clear filters" }).first()).toBeVisible();

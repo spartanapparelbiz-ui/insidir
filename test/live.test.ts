@@ -28,7 +28,7 @@ const raw = (r: { type: RawLiveEvent["type"]; oppId: string | null; venues: RawL
 describe("who sees a live event, and when", () => {
   const found = raw(dealFound(opp("A"), new Date(NOW)));
   it("paid viewers get a new deal at once, with the numbers", () => {
-    const e = viewEvent(found, viewer({ plan: "pro" }), NOW);
+    const e = viewEvent(found, viewer({ plan: "insidir" }), NOW);
     expect(e?.type).toBe("deal_found");
     expect(e?.type === "deal_found" && e.data.row.profit).toBeCloseTo(2.06);
   });
@@ -39,9 +39,9 @@ describe("who sees a live event, and when", () => {
   });
   it("a US viewer never gets international Polymarket, a non-US viewer does", () => {
     const intl = raw(dealFound(opp("B", ["kalshi", "polymarket"]), new Date(NOW)));
-    expect(viewEvent(intl, viewer({ plan: "pro", region: "us" }), NOW)).toBeNull();
-    expect(viewEvent(intl, viewer({ plan: "pro", region: null }), NOW)).toBeNull();
-    expect(viewEvent(intl, viewer({ plan: "pro", region: "non_us" }), NOW)).not.toBeNull();
+    expect(viewEvent(intl, viewer({ plan: "insidir", region: "us" }), NOW)).toBeNull();
+    expect(viewEvent(intl, viewer({ plan: "insidir", region: null }), NOW)).toBeNull();
+    expect(viewEvent(intl, viewer({ plan: "insidir", region: "non_us" }), NOW)).not.toBeNull();
   });
   it("a closed deal is history: everyone in the region sees it at once (the members-vs-you moment)", () => {
     const closed = raw(dealClosed(opp("C"), new Date(NOW - 12 * MIN), new Date(NOW - 2 * MIN), new Date(NOW)));
@@ -56,7 +56,7 @@ describe("who sees a live event, and when", () => {
     expect(JSON.stringify(free)).not.toContain("Deal F");
     expect(free?.type === "deal_closed" && free.data.lifeMs).toBe(12 * MIN);
     // Members get it in full; and once the free clock passes the find, free viewers do too.
-    const pro = viewEvent(closed, viewer({ plan: "pro" }), NOW);
+    const pro = viewEvent(closed, viewer({ plan: "insidir" }), NOW);
     expect(pro?.type === "deal_closed" && [pro.oppId, pro.data.title]).toEqual(["F", "Deal F"]);
     const later = viewEvent(closed, viewer(), NOW + 11 * MIN);
     expect(later?.type === "deal_closed" && later.data.title).toBe("Deal F");
@@ -70,13 +70,13 @@ describe("who sees a live event, and when", () => {
     expect(free?.type === "price_tick" && free.data).toMatchObject({ roi: 0.019, profit: null, cost: null, sets: null });
     expect(free?.type === "price_tick" && free.data.legs.map(l => l.priceCents)).toEqual([55, 41]);
   });
-  it("big trades are Pro's in real time; others get them 30 minutes late, and US never (international Polymarket)", () => {
+  it("big trades are members' in real time; the preview gets them 30 minutes late, and US never (international Polymarket)", () => {
     const w: WhaleTrade = { venue: "polymarket", wallet: "0x1", name: null, marketId: "m", marketTitle: "Market", outcome: "Yes", side: "BUY", contracts: 20_000, price: 0.6, cash: 12_000, timestamp: NOW, txHash: "0xa", url: "https://example.test" };
     const e = raw(whale(w));
-    expect(viewEvent(e, viewer({ plan: "pro", region: "non_us" }), NOW)).not.toBeNull();
-    expect(viewEvent(e, viewer({ plan: "insidir", region: "non_us" }), NOW)).toBeNull();
+    expect(viewEvent(e, viewer({ plan: "insidir", region: "non_us" }), NOW)).not.toBeNull();
+    expect(viewEvent(e, viewer({ plan: "free", region: "non_us" }), NOW)).toBeNull();
     expect(viewEvent(e, viewer({ plan: "free", region: "non_us" }), NOW + 30 * MIN)).not.toBeNull();
-    expect(viewEvent(e, viewer({ plan: "pro", region: "us" }), NOW)).toBeNull();
+    expect(viewEvent(e, viewer({ plan: "insidir", region: "us" }), NOW)).toBeNull();
   });
 });
 
@@ -103,12 +103,12 @@ describe("a stream's cursor", () => {
   it("coalesces price ticks to the latest per deal and caps a burst", () => {
     const base = opp("H");
     const ticks = [1, 2, 3].map(i => raw(priceTick(base, opp("H", undefined, { legs: base.legs.map(l => ({ ...l, avgPrice: l.avgPrice + i / 100 })) }), new Date(NOW), new Date(NOW + i), new Map())!));
-    const c = new ViewerCursor(viewer({ plan: "pro" }));
+    const c = new ViewerCursor(viewer({ plan: "insidir" }));
     const out = c.next(ticks, NOW + 10);
     expect(out).toHaveLength(1);
     expect(out[0]!.id).toBe(ticks[2]!.id);
     const burst = Array.from({ length: 30 }, (_, i) => raw(dealFound(opp(`B${i}`), new Date(NOW + i))));
-    expect(new ViewerCursor(viewer({ plan: "pro" })).next(burst, NOW + 100)).toHaveLength(MAX_PER_TICK);
+    expect(new ViewerCursor(viewer({ plan: "insidir" })).next(burst, NOW + 100)).toHaveLength(MAX_PER_TICK);
   });
 });
 

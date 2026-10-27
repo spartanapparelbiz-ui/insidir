@@ -2,6 +2,7 @@
  * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
  * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage billing (Whop's own
  * page) and one-click cancel (at the end of the period you paid for). */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -12,7 +13,7 @@ import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
-import { fetchMemberships, type MembershipLite } from "@/lib/auth/whop";
+import { fetchMemberships, type MembershipLite } from "@/lib/billing/whop";
 import { getDb, hasDatabase } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
@@ -28,9 +29,9 @@ export const metadata: Metadata = { title: "Account", robots: { index: false } }
 const DAY = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 const day = (ms: number): string => DAY.format(new Date(ms));
 
-async function membership(userId: string, id: string | null): Promise<MembershipLite | null | "error"> {
-  if (!id) return null;
-  try { return (await fetchMemberships(userId)).find(m => m.id === id) ?? null; } catch { return "error"; }
+async function membership(whopUserId: string | null, id: string | null): Promise<MembershipLite | null | "error"> {
+  if (!id || !whopUserId) return null;
+  try { return (await fetchMemberships(whopUserId)).find(m => m.id === id) ?? null; } catch { return "error"; }
 }
 
 async function deviceCount(userId: string): Promise<number> {
@@ -41,10 +42,10 @@ async function deviceCount(userId: string): Promise<number> {
 export default async function AccountPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const viewer = await getViewer();
   const user = viewer.user;
-  if (!user) redirect("/auth/login?next=/settings");
+  if (!user) redirect("/login?next=/settings");
   const q = await searchParams;
   const paid = isPaid(viewer.plan);
-  const [mem, devices] = await Promise.all([paid ? membership(user.id, user.membershipId) : Promise.resolve(null), deviceCount(user.id)]);
+  const [mem, devices] = await Promise.all([paid ? membership(user.whopUserId, user.membershipId) : Promise.resolve(null), deviceCount(user.id)]);
   const m = mem === "error" ? null : mem;
   const s = user.settings;
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
@@ -104,14 +105,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <div className="row-gap">
                   {user.manageUrl ? <a className="btn btn--secondary" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage billing</a> : null}
                   {!user.cancelAtPeriodEnd ? <CancelButton /> : null}
-                  {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref("pro", "/settings")} data-unlock="settings-pro">Go Pro</a> : null}
+                  {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
                 {!user.cancelAtPeriodEnd ? <p className="afield__hint">One tap, no forms. You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}. No refund for the current month.</p> : null}
               </>
             ) : (
               <>
                 <p className="asum">You see big moves 30 minutes late. Insidir shows every move live, with trader records and alerts.</p>
-                <div className="row-gap"><a className="btn btn--primary" href={unlockHref("insidir", "/settings")} data-unlock="settings-insidir">Try it for $1</a></div>
+                <div className="row-gap"><a className="btn btn--primary" href={unlockHref()} data-unlock="settings-insidir">{GET_CTA}</a></div>
               </>
             )}
           </div>
@@ -121,10 +122,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <h2 id="g-account" className="agroup__h">Account</h2>
           <div className="agroup__body">
             <dl className="akv">
-              <div><dt>Email</dt><dd>{user.email ?? <span className="akv__sub">None on your Whop account</span>}</dd></div>
+              <div><dt>Email</dt><dd>{user.email ?? <span className="akv__sub">None yet</span>}</dd></div>
             </dl>
-            {viewer.plan === "pro" ? (
-              <div className="row-gap" aria-label="Pro tools">
+            {viewer.plan === "insidir" ? (
+              <div className="row-gap" aria-label="More tools">
                 <Link className="btn btn--secondary" href="/whales">Whales</Link>
                 <Link className="btn btn--secondary" href="/pnl">Your P&amp;L</Link>
               </div>

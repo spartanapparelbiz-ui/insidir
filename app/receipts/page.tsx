@@ -13,9 +13,9 @@ import { LedgerTable, type LedgerItem } from "@/components/receipts/LedgerTable"
 import { LifeHistogram } from "@/components/receipts/LifeHistogram";
 import { ProfitChart, type ChartPoint } from "@/components/receipts/ProfitChart";
 import { WhenHeatmap } from "@/components/receipts/WhenHeatmap";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { unlockHref } from "@/components/app/links";
-import { UNLOCK_PRO } from "@/lib/copy";
+import { UNLOCK } from "@/lib/copy";
 import {
   CHART_MIN_DAYS, cents1, cumulative, DAY_MS, dataSince, hiddenFor, lifeHistogram, loadLedger, outcomeOf, outcomeText, outlayOf, PAGE_ROWS, PERIODS, pct2,
   pricesText, receiptId, rulesCheckText, summary, usd2, utcStamp, whenGrid, type LedgerRow,
@@ -52,7 +52,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   // Receipts were the price-gap log; V2's proof page is Results. Price gaps (Pro) bring their log back when ready.
   if (!isReady("price_gaps")) redirect("/results");
-  const viewer = await getViewer();
+  const viewer = await requireMember("/receipts");
   const [ledger, since] = await Promise.all([loadLedger(viewer.plan, viewer.region, params, now), dataSince()]);
   const s = summary(ledger.periodRows);
   const sizesHidden = entitlements(viewer.plan).sizesHidden;
@@ -86,7 +86,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
             const can = ledger.access.periods.includes(p.key);
             return can
               ? <Link key={p.key} href={`/receipts?${q({ period: p.key })}`} className="rx-tab" aria-current={ledger.period === p.key ? "page" : undefined} scroll={false}>{p.label}</Link>
-              : <a key={p.key} href={unlockHref("pro", "/receipts")} className="rx-tab rx-tab--locked" data-unlock={`receipts-${p.key}`} title="Pro members see the full history">{p.label} <span className="sr-only">(Pro)</span><span aria-hidden="true" className="rx-tab__pro">Pro</span></a>;
+              : <a key={p.key} href={unlockHref()} className="rx-tab rx-tab--locked" data-unlock={`receipts-${p.key}`} title="Members see the full history">{p.label} <span className="sr-only">(members)</span><span aria-hidden="true" className="rx-tab__pro">Members</span></a>;
           })}
         </nav>
 
@@ -144,7 +144,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
               {filtered ? <Link className="btn btn--secondary" href={`/receipts?period=${ledger.period}`}>Clear filters</Link> : <Link className="btn btn--secondary" href="/terminal">Open the Terminal</Link>}
             </div>
           )}
-          {!pro ? <p className="rx-note">Pro members see every receipt since launch. <a href={unlockHref("pro", "/receipts")} data-unlock="receipts-footer">{UNLOCK_PRO}</a></p> : null}
+          {!pro ? <p className="rx-note">Members see every receipt since launch. <a href={unlockHref()} data-unlock="receipts-footer">{UNLOCK}</a></p> : null}
         </section>
       </main>
     </>

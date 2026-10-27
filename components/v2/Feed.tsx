@@ -4,6 +4,7 @@
  * list never shifts under the reader) and slide in at the top when shown. A status line instead of scary
  * errors: "Live · updated 8s ago", or "Catching up · last update 6m ago" (per tab, 5+ minutes behind) with timestamps. Never "Connection
  * lost", never fake activity. Free viewers see moves 30 minutes late with one upsell card on top. */
+import { GET_CTA } from "@/lib/copy";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { League, Tab } from "@/lib/moves/types";
@@ -106,7 +107,10 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
               {stocks ? null : <ComingSoon feature="stocks" className="seg__btn seg__btn--soon">Stocks</ComingSoon>}
               <ComingSoon feature="crypto" className="seg__btn seg__btn--soon">Crypto</ComingSoon>
             </div>
-            {statusText ? <p className={`status status--${status?.state ?? "behind"}`} role="status"><span className="status__dot" aria-hidden="true" />{statusText}</p> : null}
+            <div className="dash__meta">
+              {statusText ? <p className={`status status--${status?.state ?? "behind"}`} role="status"><span className="status__dot" aria-hidden="true" />{statusText}</p> : null}
+              {pill}
+            </div>
           </div>
           <div className="dash__filters">
             <div className="seg seg--sm" role="group" aria-label="Size">
@@ -150,13 +154,12 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
               <div><dt>Total</dt><dd>{dollarsShort(total)}</dd></div>
               <div><dt>Biggest</dt><dd className="money">{biggest ? dollarsShort(biggest.amount) : "–"}</dd></div>
             </dl>
-            {pill ? <div className="side__pill">{pill}</div> : null}
           </div>
           {free ? (
             <div className="side side--offer">
               <p className="side__h">See every move live</p>
               <p className="side__p">Plus trader records and follows. $1 for 3 days, cancel anytime.</p>
-              <LockButton where="feed-side" className="btn btn--primary btn--block">Try it for $1</LockButton>
+              <LockButton where="feed-side" className="btn btn--primary btn--block">{GET_CTA}</LockButton>
             </div>
           ) : null}
           <nav className="side side--links" aria-label="More">

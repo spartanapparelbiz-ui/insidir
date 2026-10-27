@@ -6,7 +6,7 @@ import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
 import { PnlTable } from "@/components/app/PnlTable";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getViewer } from "@/lib/auth/viewer";
+import { requireMember } from "@/lib/auth/viewer";
 import { entitlements } from "@/lib/plans";
 import { fetchPolymarketPnl, isWallet, type PnlSummary } from "@/lib/pnl";
 import "../app.css";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "P&L", robots: { index: false } };
 
 export default async function PnlPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const viewer = await getViewer();
+  const viewer = await requireMember("/pnl");
   const allowed = entitlements(viewer.plan).pnl;
   const raw = (await searchParams).wallet;
   const wallet = typeof raw === "string" ? raw.trim() : "";
@@ -37,7 +37,7 @@ export default async function PnlPage({ searchParams }: { searchParams: Promise<
       <main className="wrap app">
         <h1 className="page__h">Your P&amp;L</h1>
         {!allowed ? (
-          <Locked title="P&L" text="See your own realized P&L, open positions and results per market, from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref("pro", "/pnl")} plan="pro" where="pnl" />
+          <Locked title="P&L" text="See your own realized P&L, open positions and results per market, from your Polymarket wallet and a Kalshi CSV. No API keys." href={unlockHref()} where="pnl" />
         ) : (
           <>
             {!summary && !wallet ? (

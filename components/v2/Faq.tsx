@@ -1,5 +1,5 @@
 /* The landing FAQ (docs/INSIDIR-V2.md §6), also on /pricing. Honest, short answers. */
-import { PLANS, TRIAL } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 import { WHAT_IS } from "@/lib/copy";
 
 export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
@@ -8,17 +8,16 @@ export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
   { id: "advice", q: "Is this financial advice?", a: "No. We show what happened: who put money on what, and how it ended. We never tell you what to buy. Big traders lose too." },
   { id: "us", q: "Can I use it in the US?", a: "Yes. Everyone sees every move. If you're in the US, we only link you to apps that work in the US, like Kalshi." },
   { id: "alerts", q: "How do alerts work?", a: "Follow a trader or a market and we send a push to your phone or an email when they make a big move. On iPhone, add Insidir to your Home Screen first, then turn alerts on." },
-  { id: "cancel", q: "How do I cancel?", a: `One click in Account. No emails, no calls. The trial is $${TRIAL.price} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo until you cancel.` },
+  { id: "cancel", q: "How do I cancel?", a: `One tap in Account. No emails, no calls. Insidir is $${PLANS.insidir.price}/month and you keep access until the month you paid for ends.` },
   { id: "who", q: "Who's behind it?", a: "Insidir is built by Aethric LLC, Pompano Beach, FL. Write to hello@aethric.llc and a person will answer." },
 ];
 
 /** Billing questions, for /pricing (with the most asked general ones). */
 export const FAQ_PRICING: Array<{ id: string; q: string; a: string }> = [
-  { id: "trial", q: "What do I get for $1?", a: `Everything in Insidir for ${TRIAL.days} days: every big move live, trader records and follows. After ${TRIAL.days} days it's $${PLANS.insidir.price}/mo until you cancel.` },
+  { id: "price", q: "How much is it?", a: `$${PLANS.insidir.price}/month for everything: every big move live, trader records, follows and alerts. One plan, no tiers. Cancel anytime.` },
   FAQ_V2.find(f => f.id === "cancel")!,
-  { id: "switch", q: "Can I go Pro later?", a: "Yes. Start with Insidir and tap Go Pro in Account whenever you want more." },
   { id: "pay", q: "How do I pay?", a: "Through Whop, our payment provider, on its secure checkout. We never see or store your card." },
-  { id: "free", q: "Is the free plan really free?", a: "Yes, no card needed. You see the same moves, 30 minutes late, and every result, won or lost." },
+  { id: "login", q: "How do I log in?", a: "Type the email you paid with and we send you a 6-digit code. No password." },
   FAQ_V2.find(f => f.id === "advice")!,
 ];
 

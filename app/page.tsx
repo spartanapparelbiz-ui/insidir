@@ -3,7 +3,8 @@
  * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
  * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
  * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
- * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
+ * block), Pricing (one plan), FAQ, and "Get Insidir · $39/mo" at the end. Visitors see a public preview: real moves 30
+ * minutes late, records blurred.
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
 import Link from "next/link";
@@ -27,7 +28,7 @@ import { trustFacts, type TrustFacts } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
-import { TRIAL_LINE } from "@/lib/copy";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
 import { isReady, liveTabs } from "@/lib/features";
 import { agoText, dollars, recordLine } from "@/lib/moves/copy";
@@ -139,8 +140,7 @@ export default async function Home() {
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));
-  const trial = unlockHref("insidir");
-  const pro = unlockHref("pro");
+  const trial = unlockHref();
   const follow = !isReady("follows") ? "soon" as const : paid ? "off" as const : "locked" as const;
 
   const record = trust?.settled ?? null;
@@ -151,7 +151,7 @@ export default async function Home() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
-        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
+        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : CANCEL_LINE} cta={paid ? "See the live feed" : GET_CTA} ctaHref={paid ? "/feed" : trial} status={status} />
         {story ? <Story data={story} /> : null}
 
         <PhotoSection n={HOME_SECTIONS.seconds} id="ps-seconds" line="Big moves happen in seconds.">
@@ -181,7 +181,7 @@ export default async function Home() {
                   </aside>
                 ) : null}
               </div>
-              <div className="sec2__foot"><Link className="btn btn--secondary" href="/feed">See the live feed</Link></div>
+              <div className="sec2__foot"><Link className="btn btn--secondary" href={paid ? "/feed" : trial}>{paid ? "See the live feed" : GET_CTA}</Link></div>
             </div>
           </PreviewSeen>
         ) : null}
@@ -224,14 +224,14 @@ export default async function Home() {
         </PhotoSection>
 
         <TrustBlock facts={trust} />
-        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={pro} actions={false} />
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} />
         <FaqV2 />
 
         <PhotoSection n={HOME_SECTIONS.yourMove} id="ps-move" line="Your move.">
           {!paid ? (
             <div className="psec__cta">
-              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">Try it for $1</a>
-              <p className="psec__fine">{TRIAL_LINE}</p>
+              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">{GET_CTA}</a>
+              <p className="psec__fine">{CANCEL_LINE}</p>
             </div>
           ) : <Link className="btn btn--onDark btn--big" href="/feed">See the live feed</Link>}
         </PhotoSection>

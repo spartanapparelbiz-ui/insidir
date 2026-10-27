@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { verifyWebhook, planFrom, readMemberships, webhookUserId, type PlanIds } from "@/lib/auth/whop";
+import { verifyWebhook, planFrom, readMemberships, webhookRef, type PlanIds } from "@/lib/billing/whop";
 import { feedFor, playText, type FeedViewer, type StoredOpp } from "@/lib/feed";
 import { allowedVenues } from "@/lib/region";
 import type { Leg, Opportunity, Venue } from "@/lib/types";
@@ -48,18 +48,18 @@ describe("the feed paywall (server-side redaction)", () => {
   });
 
   it("US viewers never see the international Polymarket site; anonymous visitors get the US set", () => {
-    expect(feedFor(opps, viewer({ plan: "pro", region: "us" }), NOW).some(r => r.id === "intl")).toBe(false);
-    expect(feedFor(opps, viewer({ plan: "pro", region: null }), NOW).some(r => r.id === "intl")).toBe(false);
-    expect(feedFor(opps, viewer({ plan: "pro", region: "non_us", venues: [] }), NOW).some(r => r.id === "intl")).toBe(true);
+    expect(feedFor(opps, viewer({ plan: "insidir", region: "us" }), NOW).some(r => r.id === "intl")).toBe(false);
+    expect(feedFor(opps, viewer({ plan: "insidir", region: null }), NOW).some(r => r.id === "intl")).toBe(false);
+    expect(feedFor(opps, viewer({ plan: "insidir", region: "non_us", venues: [] }), NOW).some(r => r.id === "intl")).toBe(true);
     expect(allowedVenues("us", ["polymarket", "kalshi"])).toEqual(["kalshi"]);
     expect(allowedVenues("non_us")).not.toContain("polymarket_us");
   });
 
   it("red is hidden unless the user opts in; filters apply", () => {
-    expect(feedFor(opps, viewer({ plan: "pro" }), NOW).some(r => r.id === "red")).toBe(false);
-    expect(feedFor(opps, viewer({ plan: "pro", showRed: true }), NOW).some(r => r.id === "red")).toBe(true);
-    expect(feedFor(opps, viewer({ plan: "pro", minSizeUsd: 1_000 }), NOW)).toEqual([]);
-    expect(feedFor(opps, viewer({ plan: "pro", categories: ["politics"] }), NOW)).toEqual([]);
+    expect(feedFor(opps, viewer({ plan: "insidir" }), NOW).some(r => r.id === "red")).toBe(false);
+    expect(feedFor(opps, viewer({ plan: "insidir", showRed: true }), NOW).some(r => r.id === "red")).toBe(true);
+    expect(feedFor(opps, viewer({ plan: "insidir", minSizeUsd: 1_000 }), NOW)).toEqual([]);
+    expect(feedFor(opps, viewer({ plan: "insidir", categories: ["politics"] }), NOW)).toEqual([]);
   });
 
   it("states the play in plain English without advice", () => {
@@ -69,24 +69,27 @@ describe("the feed paywall (server-side redaction)", () => {
 });
 
 describe("Whop membership → plan (verified on the server)", () => {
-  const ids: PlanIds = { insidirProduct: "prod_ins", proProduct: "prod_pro", insidirPlan: "", proPlan: "" };
+  const ids: PlanIds = { insidirProduct: "prod_ins", insidirPlan: "plan_ins" };
   const body = (rows: Array<Record<string, unknown>>) => ({ data: rows, page_info: {} });
-  it("pro wins over insidir; only active and trialing grant access", () => {
+  const NOW = Date.UTC(2026, 9, 27);
+  it("one plan: active, trialing and canceling give access; past_due only until the paid period ends; other products never", () => {
     const ms = readMemberships(body([
-      { id: "mem_1", status: "active", product: { id: "prod_ins" }, plan: { id: "plan_a" }, cancel_at_period_end: false, manage_url: "https://whop.com/m/1" },
-      { id: "mem_2", status: "trialing", product: { id: "prod_pro" }, plan: { id: "plan_b" }, cancel_at_period_end: true, manage_url: null },
+      { id: "mem_1", status: "canceled", product: { id: "prod_ins" }, plan: { id: "plan_ins" } },
+      { id: "mem_2", status: "active", product: { id: "prod_ins" }, plan: { id: "plan_ins" }, cancel_at_period_end: true, manage_url: null },
     ]));
-    expect(planFrom(ms, ids)).toMatchObject({ plan: "pro", membership: { id: "mem_2", cancelAtPeriodEnd: true } });
-    expect(planFrom(readMemberships(body([{ id: "mem_3", status: "past_due", product: { id: "prod_pro" } }])), ids).plan).toBe("free");
-    expect(planFrom(readMemberships(body([{ id: "mem_4", status: "canceled", product: { id: "prod_ins" } }])), ids).plan).toBe("free");
-    expect(planFrom([], ids).plan).toBe("free");
+    expect(planFrom(ms, ids, NOW)).toMatchObject({ plan: "insidir", membership: { id: "mem_2", cancelAtPeriodEnd: true } });
+    expect(planFrom(readMemberships(body([{ id: "mem_3", status: "canceling", plan: { id: "plan_ins" } }])), ids, NOW).plan).toBe("insidir");
+    expect(planFrom(readMemberships(body([{ id: "mem_4", status: "past_due", plan: { id: "plan_ins" }, renewal_period_end: new Date(NOW + 3_600_000).toISOString() }])), ids, NOW).plan).toBe("insidir");
+    expect(planFrom(readMemberships(body([{ id: "mem_5", status: "past_due", plan: { id: "plan_ins" }, renewal_period_end: new Date(NOW - 3_600_000).toISOString() }])), ids, NOW).plan).toBe("free");
+    expect(planFrom(readMemberships(body([{ id: "mem_6", status: "active", product: { id: "prod_other" }, plan: { id: "plan_other" } }])), ids, NOW).plan).toBe("free");
+    expect(planFrom([], ids, NOW).plan).toBe("free");
     expect(readMemberships({ nope: 1 })).toEqual([]);
   });
 });
 
 describe("Whop webhook signatures", () => {
   const secret = "ws_0123456789abcdef";
-  const body = JSON.stringify({ type: "membership.activated", data: { user: { id: "user_1" } } });
+  const body = JSON.stringify({ type: "membership.activated", data: { id: "mem_1", status: "active", user: { id: "user_1", email: "A@Example.test" } } });
   const sign = (id: string, ts: number, b: string, key = secret) => "v1," + createHmac("sha256", Buffer.from(key, "utf8")).update(`${id}.${ts}.${b}`).digest("base64");
   it("accepts a valid signature and rejects tampering, wrong secrets and stale timestamps", () => {
     const ts = 1_800_000_000;
@@ -96,6 +99,6 @@ describe("Whop webhook signatures", () => {
     expect(verifyWebhook(body, { id: "msg_1", timestamp: String(ts), signature: sign("msg_1", ts, body, "ws_other") }, secret, ts)).toBe(false);
     expect(verifyWebhook(body, { id: "msg_1", timestamp: String(ts), signature: sign("msg_1", ts, body) }, secret, ts + 301)).toBe(false);
     expect(verifyWebhook(body, { id: null, timestamp: String(ts), signature: sign("msg_1", ts, body) }, secret, ts)).toBe(false);
-    expect(webhookUserId(JSON.parse(body))).toBe("user_1");
+    expect(webhookRef("membership.activated", JSON.parse(body))).toMatchObject({ membershipId: "mem_1", whopUserId: "user_1", email: "a@example.test" });
   });
 });

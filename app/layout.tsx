@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ToastProvider>
-          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref("insidir")}>
+          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref()}>
             {children}
             <SiteFooter />
           </LockProvider>

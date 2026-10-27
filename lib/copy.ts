@@ -9,9 +9,11 @@ export const FOOTER =
 export const WHAT_IS = "Insidir is a live tracker for sports bets, prediction markets and insider stock trades: it shows you the biggest ones the moment they happen, who made them, how much, and whether they usually win.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
 export const WHAT_IS_TITLE = "Insidir: live tracker for sports bets, prediction markets and insider stock trades";
-export const TRIAL_BAR = "Try Insidir for $1 for 3 days. Cancel anytime.";
-export const TRY_CTA = "Try it for $1";
-export const TRIAL_LINE = "$1 for 3 days, then $39/mo. Cancel anytime.";
+/** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards). */
+export const GET_CTA = "Get Insidir · $39/mo";
+/** The small line under it. */
+export const CANCEL_LINE = "Cancel anytime.";
+export const OFFER_BAR = `${GET_CTA}. ${CANCEL_LINE}`;
 
 /** How a lock is described everywhere. */
 export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";
@@ -30,10 +32,8 @@ export function bannedPhrases(text: string): string[] {
 }
 
 /* One name per action, everywhere (buttons say exactly what happens). */
-/** Start the Insidir plan checkout (every upgrade button for a free user or visitor). */
-export const UNLOCK = "Unlock live deals";
-/** Start the Pro plan checkout. */
-export const UNLOCK_PRO = "Unlock Pro";
+/** Start the checkout (every upgrade button for a visitor). */
+export const UNLOCK = GET_CTA;
 /** Go to the live Terminal (no account needed). */
 export const OPEN_TERMINAL = "See today's live deals";
 /** Change any member setting: confirmed with this toast. */

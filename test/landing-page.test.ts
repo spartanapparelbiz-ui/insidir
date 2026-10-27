@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { bannedPhrases, FOOTER, TRIAL_BAR, TRIAL_LINE, TRY_CTA } from "@/lib/copy";
+import { bannedPhrases, CANCEL_LINE, FOOTER, GET_CTA, OFFER_BAR } from "@/lib/copy";
 import { BANNED_WORDS } from "@/lib/moves/copy";
 
 const ROOT = join(__dirname, "..");
@@ -52,8 +52,10 @@ describe("V2 landing page", () => {
     expect(hero).toContain("Public data. Not financial advice.");
     expect(src).toContain("See the live feed");
     expect(src).toContain("Real past moves. Not a promise.");
-    expect(read("lib/copy.ts")).toContain("Try Insidir for $1 for 3 days. Cancel anytime.");
-    expect(read("lib/copy.ts")).toContain("$1 for 3 days, then $39/mo. Cancel anytime.");
+    expect(read("lib/copy.ts")).toContain("Get Insidir · $39/mo");
+    expect(read("lib/copy.ts")).toContain("Cancel anytime.");
+    // One plan, no trial: no "$1" offer anywhere a visitor reads.
+    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "lib/copy.ts"]) expect(read(f), f).not.toMatch(/\$1 for|for \$1|Try it for|3 days|Pro\b/);
   });
 
   it("says what Insidir is in one plain sentence: the first FAQ answer, the title and the meta description", async () => {
@@ -81,7 +83,7 @@ describe("copy rules on every V2 page", () => {
       expect(bannedPhrases(text), f).toEqual([]);
     }
     // lib/copy.ts also holds the Price gaps lines (Pro, coming soon); the V2 strings in it are checked one by one.
-    for (const t of [FOOTER, TRIAL_BAR, TRY_CTA, TRIAL_LINE]) for (const b of BANNED_WORDS) expect(t).not.toMatch(b);
+    for (const t of [FOOTER, OFFER_BAR, GET_CTA, CANCEL_LINE]) for (const b of BANNED_WORDS) expect(t).not.toMatch(b);
   });
 
   it("never says bankroll, VPN or Telegram, and never hard-codes an international Polymarket link", () => {
