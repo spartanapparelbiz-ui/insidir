@@ -42,10 +42,10 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
       <div className="wrap">
         <H id="pricing-h" className="sec2__h">Pick how fast you see the big money.</H>
         <div className="plans2">
-          {(["free", "insidir", "pro"] as const).map(p => {
+          {(["free", "insidir", "pro"] as const).map((p, i) => {
             const mine = signedIn && p === current;
             return (
-              <article key={p} className={`plan2${p === "insidir" ? " plan2--main" : ""}`} data-plan={p}>
+              <article key={p} className={`plan2 rv${p === "insidir" ? " plan2--main" : ""}`} style={{ ["--i" as string]: i }} data-plan={p}>
                 {p === "insidir" ? <p className="plan2__flag">Recommended</p> : null}
                 <PlanH className="plan2__name">{PLANS[p].name}</PlanH>
                 <p className="plan2__price">{price[p]}</p>

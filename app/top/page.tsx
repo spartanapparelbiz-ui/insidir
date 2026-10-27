@@ -70,7 +70,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
             {rows.map((r, i) => {
               const following = follows.some(f => f.kind === "trader" && f.target === r.wallet);
               return (
-                <li key={r.wallet} className="toplist__row">
+                <li key={r.wallet} className="toplist__row rv" style={{ ["--i" as string]: Math.min(i, 6) }}>
                   <span className="toplist__rank">{i + 1}</span>
                   <span className="toplist__who">
                     <Link className="toplist__name" href={`/p/${r.wallet}`}>{walletLabel(r.wallet, r.name)}</Link>
@@ -79,7 +79,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
                       {r.best ? <span>Best: {r.best}</span> : null}
                     </span> : null}
                   </span>
-                  {paid ? <span className="toplist__profit money">{signedShort(r.profit)}</span> : null}
+                  {paid ? <span className="toplist__profit money" data-count={r.profit} data-fmt="signed">{signedShort(r.profit)}</span> : null}
                   <FollowButton kind="trader" target={r.wallet} state={followState(viewer, following)} trialHref={trial} />
                 </li>
               );

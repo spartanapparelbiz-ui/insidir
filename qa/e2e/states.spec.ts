@@ -87,7 +87,8 @@ test("empty: P&L before anything is loaded says what to do first", async ({ page
 test("one primary action: the landing (above the final band), pricing and legal pages each show exactly one", async ({ page }) => {
   for (const path of ["/", "/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
-    const primaries = await page.locator("main .btn--primary:not(.band2 .btn)").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null).length);
+    // Pictures of the app (the home page's phone mockups) are inert: what they show is not an action on this page.
+    const primaries = await page.locator("main .btn--primary:not(.band2 .btn)").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
     expect(primaries, path).toBe(1);
   }
 });

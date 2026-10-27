@@ -42,6 +42,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
       <p className="move__sentence"><Sentence m={m} /></p>
+      {m.context ? <p className="move__ctx">{m.context}</p> : null}
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}

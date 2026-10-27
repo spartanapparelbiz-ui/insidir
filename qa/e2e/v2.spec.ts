@@ -17,6 +17,10 @@ test("landing: the brief's hero, and on a phone the headline, button and top of 
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
   expect((await card.boundingBox())!.y + 24).toBeLessThan(vh);
+  // Home cards show only the time ago, never "30 min late" (the feed says it once, in its upsell).
+  await expect(page.locator("main").getByText(/30 min late/)).toHaveCount(0);
+  // What it is, in plain words, for a first-time visitor.
+  await expect(page.getByText("Live tracker for sports bets, prediction markets and insider stock trades", { exact: true })).toBeVisible();
 });
 
 test("home hero: the button, a ticker tap and the feed preview scrolled into view are each recorded", async ({ page }) => {

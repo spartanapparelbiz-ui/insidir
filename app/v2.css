@@ -172,17 +172,14 @@
 @media (min-width: 900px) { .trader__head { min-height: 200px; padding-bottom: 28px; } }
 .trader__photo { position: absolute; inset: 0; z-index: -2; }
 .trader__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
-.trader__head::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .trader__photo img { height: 130%; animation: pband-drift linear both; animation-timeline: view(); animation-range: cover 50% exit 100%; }
-  }
-}
+.trader__head::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(11, 11, 18, .75) 0%, rgba(11, 11, 18, .5) 50%, rgba(11, 11, 18, .1) 100%); }
 .trader__head .trader__name { color: var(--paper); }
 .trader__head .trader__kicker { color: var(--grey-2); }
 .trader__head :focus-visible { outline-color: var(--paper); }
 .trader__head + * { margin-top: 24px; }
 .trader__name, .market__h { font-size: var(--t32); overflow-wrap: anywhere; }
+/* people and wallets are names, not headlines: the sans */
+.trader__name, .psnip__name, .inband__name { font-family: var(--sans); font-weight: 800; letter-spacing: -0.02em; }
 @media (min-width: 900px) { .trader__name, .market__h { font-size: var(--t44); } .trader__name { font-size: var(--t64); } }
 .record { margin: 24px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 720px; }
 @media (min-width: 640px) { .record { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
@@ -289,26 +286,41 @@
 /* The scrim behind the words: dark enough that white text stays above 4.5:1 on the brightest photo (snow). */
 /* 55% at most behind the words (the graded photos never go past ~95% white, so white text stays above 4.5:1), lighter
  * where only the solid card sits, so the photos keep their colour. */
-.cine__scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 18, .55) 0%, rgba(11, 11, 18, .55) 55%, rgba(11, 11, 18, .4) 100%); }
-@media (min-width: 900px) { .cine__scrim { background: linear-gradient(90deg, rgba(11, 11, 18, .55) 0%, rgba(11, 11, 18, .55) 42%, rgba(11, 11, 18, .2) 70%, rgba(11, 11, 18, .1) 100%); } }
+/* No overlay on the photo itself: a soft dark glow sits only behind the text block (.cine__copy::before), so the
+ * person and the action stay bright. */
+.cine__scrim { display: none; }
 /* phones: room for the tallest card, so the ticker and the page below don't jump as the cards change */
-@media (max-width: 899px) { .cine__card { min-height: 280px; } }
+@media (max-width: 899px) { .cine__card { min-height: 340px; } }
 .cine__in { display: grid; gap: 28px; align-content: start; padding-top: 28px; padding-bottom: 28px; }
-@media (min-width: 900px) { .cine__in { grid-template-columns: minmax(0, 1fr) 420px; align-items: center; align-content: center; gap: 64px; padding-top: 64px; padding-bottom: 64px; } }
-.cine__copy { display: grid; justify-items: start; }
-.cine__label { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t13); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.cine__in { justify-items: center; }
+@media (min-width: 900px) { .cine__in { align-content: center; gap: 36px; padding-top: 48px; padding-bottom: 48px; } }
+.cine__copy { position: relative; display: grid; justify-items: center; text-align: center; }
+.cine__copy::before { content: ""; position: absolute; z-index: -1; inset: -22% -24%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(11, 11, 18, .8) 0%, rgba(11, 11, 18, .74) 60%, rgba(11, 11, 18, .4) 84%, rgba(11, 11, 18, 0) 100%); }
+.cine__copy { text-shadow: 0 1px 18px rgba(11, 11, 18, .45); }
+/* on its own dark pill, so it reads on the brightest photo (6:1 or better) */
+.cine__label { max-width: 34ch; padding: 6px 14px; border-radius: 16px; background: rgba(11, 11, 18, .62); color: var(--paper); font-size: var(--t13); font-weight: 700; line-height: 1.4; letter-spacing: .02em; }
+@media (min-width: 900px) { .cine__label { font-size: var(--t15); max-width: 44ch; } }
 .cine__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper); }
 @media (prefers-reduced-motion: no-preference) { .cine__dot { animation: pulse2 2s ease-in-out infinite; } }
 .cine__h { margin-top: 12px; font-size: var(--t44); line-height: 1.02; max-width: 12ch; }
+@media (min-width: 900px) { .cine__h { max-width: none; } }
 @media (min-width: 900px) { .cine__h { font-size: var(--t80); } }
 .cine__sub { margin-top: 14px; font-size: var(--t17); line-height: 1.45; max-width: 36ch; }
 @media (min-width: 900px) { .cine__sub { margin-top: 20px; font-size: var(--t20); } }
-.cine__cta { margin-top: 20px; }
+.cine__cta { margin-top: 20px; display: inline-grid; justify-items: center; gap: 12px; }
+.cine__points { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; margin: 0; padding: 0; list-style: none; color: var(--grey-2); font-size: var(--t13); font-weight: 700; text-align: center; }
+.cine__points li { display: inline-flex; align-items: center; gap: 6px; }
+.cine__points li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.cine__live { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: var(--t13); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.cine__live--behind { text-transform: none; letter-spacing: 0; font-weight: 700; }
+.cine__live--behind .cine__dot { background: none; box-shadow: inset 0 0 0 1.5px var(--paper); animation: none; }
 @media (min-width: 900px) { .cine__cta { margin-top: 32px; } }
 .cine__trial { margin-top: 12px; font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
 .cine__fine { margin-top: 4px; color: var(--grey-2); font-size: var(--t13); }
 .cine :focus-visible { outline-color: var(--paper); }
-.cine__card { min-width: 0; }
+.cine__card { min-width: 0; width: min(440px, 100%); justify-self: center; text-align: left; }
+.cine__card .cine__live { display: flex; justify-content: center; }
 .hcard__link { display: block; color: inherit; text-decoration: none; border-radius: var(--r-card); }
 .hcard__link:hover .hcard { box-shadow: inset 0 0 0 2px var(--ink); }
 .hcard { display: grid; gap: 8px; padding: 20px; border-radius: var(--r-card); background: var(--paper); color: var(--ink); }
@@ -322,6 +334,19 @@
 .hcard__payout { color: var(--money); font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
 .hcard__note { color: var(--muted); font-size: var(--t15); font-variant-numeric: tabular-nums; }
 .hcard--wait { animation: none; }
+/* The 3-second demo: the sentence types in (caret), then the payout, then the record line. Before hydration the
+ * typed parts wait (only when JS will run them), so they never flash in full and then retype. */
+.hcard__caret { display: inline-block; width: 2px; height: 1em; margin-left: 1px; vertical-align: -2px; background: currentColor; }
+@media (prefers-reduced-motion: no-preference) {
+  .hcard__caret { animation: caret 800ms steps(1) infinite; }
+  .js .hcard[data-demo="pending"] .hcard__sentence, .js .hcard[data-demo="pending"] .hcard__line { visibility: hidden; }
+  .hcard[data-demo="run"] .hcard__line { opacity: 0; transform: translate3d(0, 6px, 0); transition: opacity 320ms var(--ease-enter), transform 320ms var(--ease-enter); }
+  .hcard[data-demo="run"] .hcard__line.is-on { opacity: 1; transform: none; }
+}
+@keyframes caret { 50% { opacity: 0; } }
+.hcard__rec { display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-size: var(--t15); font-weight: 800; font-variant-numeric: tabular-nums; }
+.hcard__rec--locked { color: var(--muted); font-weight: 700; }
+.hcard__lock { flex: none; }
 /* The ticker strip: solid black, real moves, two copies side by side so the loop is seamless; paused on hover. */
 .ticker { position: relative; z-index: 1; background: var(--ink); border-top: 1px solid var(--grey-3); overflow: hidden; }
 .ticker__track { display: flex; width: max-content; }
@@ -463,7 +488,7 @@
 /* solid cards: the numbers never sit on the photo */
 .inband__card { display: grid; gap: 8px; justify-items: start; padding: 20px; border-radius: var(--r-card); background: var(--bg); color: var(--text); }
 .inband__card--note { margin-top: 12px; max-width: 560px; }
-.inband__name { font-family: var(--serif); font-size: var(--t24); font-weight: 700; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+.inband__name { font-size: var(--t24); color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
 .inband__name:hover { text-decoration: underline; }
 .inband__rec { color: var(--muted); font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
 .inband :focus-visible { outline-color: var(--paper); }
@@ -476,8 +501,6 @@
 .source--dark:hover { color: var(--paper); }
 .rlist__when { display: grid; justify-items: end; gap: 2px; }
 .rlist__src { display: block; width: fit-content; padding: 4px 0 0; }
-.cine__label--behind { text-transform: none; letter-spacing: 0; font-size: var(--t15); }
-.cine__label--behind .cine__dot { background: none; box-shadow: inset 0 0 0 1.5px var(--paper); animation: none; }
 
 /* ---------- loading skeletons (components/Skeletons.tsx) ---------- */
 .skel .uiskel { display: block; }
@@ -521,7 +544,7 @@
 @media (min-width: 900px) { .pband { min-height: 200px; } }
 .pband__photo { position: absolute; inset: 0; z-index: -2; }
 .pband__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
-.pband::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
+.pband::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(11, 11, 18, .72) 0%, rgba(11, 11, 18, .45) 45%, rgba(11, 11, 18, 0) 100%); }
 .pband__in { width: 100%; padding-top: 20px; padding-bottom: 18px; }
 @media (min-width: 900px) { .pband__in { padding-bottom: 28px; } }
 .pband__kicker { color: var(--grey-2); font-weight: 700; font-size: var(--t15); }
@@ -531,12 +554,6 @@
 .pband .source--dark { margin-top: 4px; }
 .app2 > .pband:first-child, .app > .pband:first-child { margin-top: -24px; }
 .soonpage > .pband:first-child { margin-top: -32px; }
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .pband__photo img { height: 130%; animation: pband-drift linear both; animation-timeline: view(); animation-range: cover 50% exit 100%; }
-  }
-}
-@keyframes pband-drift { from { transform: translateY(-12%); } to { transform: translateY(0); } }
 
 /* Pages fade in over 200 ms. Nothing bouncy. It starts at 1%, not 0: the same to the eye, but the browser counts the
  * first paint, so the fade never delays Largest Contentful Paint (from 0 it cost the home page ~1.8 s in Lighthouse). */
@@ -551,3 +568,227 @@ body::after { content: ""; position: fixed; inset: -50%; z-index: 100; pointer-e
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 @media (prefers-reduced-motion: no-preference) { body::after { animation: grain 1.2s steps(6) infinite; } }
 @keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -4%); } 60% { transform: translate(-4%, -2%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); } }
+
+/* ---------- Scroll motion (components/motion/Motion.tsx). Only transform and opacity; all of it off under
+ * prefers-reduced-motion, where everything is static and fully visible. ---------- */
+
+/* Reveal: fade up 16px as it enters, once; siblings stagger 80 ms by --i. Hidden only when JS will show it. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .rv { opacity: 0; transform: translate3d(0, 16px, 0); transition: opacity 600ms var(--ease-enter), transform 600ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js .rv.is-in { opacity: 1; transform: none; }
+  /* live cards come up from a little further, one by one */
+  .js .rv--card { transform: translate3d(0, 28px, 0); }
+}
+
+/* Photos: drift at 0.85x scroll speed with a gentle zoom-in (CSS scroll-driven where supported; Motion.tsx otherwise). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-par] { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  }
+}
+/* ±6% of the photo box as the section crosses the screen (≈ 0.85x scroll speed for a band), zooming 1.14 → 1.2 so the
+ * edges never show */
+@keyframes par-drift { from { transform: translate3d(0, -6%, 0) scale(1.14); } to { transform: translate3d(0, 6%, 0) scale(1.2); } }
+
+
+/* Reading progress: a thin line under the nav. */
+.nav { position: sticky; }
+.nav__prog { position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--paper); transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; will-change: transform; }
+.nav--light .nav__prog { background: var(--ink); }
+@supports (animation-timeline: scroll()) { .nav__prog { animation: prog linear both; animation-timeline: scroll(root); } }
+@keyframes prog { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .nav__prog { display: none; } }
+
+/* ---------- The scroll story (components/home/Story.tsx) ---------- */
+.story { padding: var(--sec) 0 0; background: var(--bg); }
+.story__head { text-align: center; display: grid; justify-items: center; gap: 8px; }
+.story__head .sec2__h { margin: 0; }
+.story__note { color: var(--muted); font-size: var(--t15); }
+.story__cap { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--serif); font-weight: 700; font-size: var(--t24); line-height: 1.15; text-align: center; text-wrap: balance; }
+@media (min-width: 900px) { .story__cap { font-size: var(--t32); } }
+.story__n { flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--paper); font-family: var(--sans); font-size: var(--t15); font-weight: 800; }
+
+/* The iPhone (components/home/Story.tsx), drawn to iPhone 15 Pro geometry in iOS points: --w is the device width,
+ * --pt one point (the 393 pt screen plus an 18 pt bezel each side = 429 pt across, 888 pt tall). */
+.iphone { --w: min(272px, 70vw); --pt: calc(var(--w) / 429); position: relative; width: var(--w); aspect-ratio: 429 / 888; flex: none; }
+.iphone__body { position: absolute; inset: 0; padding: calc(18 * var(--pt)); border-radius: calc(73 * var(--pt));
+  /* black titanium band: a lit edge, then the black bezel */
+  background: linear-gradient(145deg, rgba(120, 120, 128, .9), rgba(40, 40, 44, 1) 22%, rgba(28, 28, 30, 1) 60%, rgba(96, 96, 104, .9));
+  box-shadow: inset 0 0 0 calc(1 * var(--pt)) rgba(255, 255, 255, .22), inset 0 0 0 calc(3.5 * var(--pt)) rgba(0, 0, 0, .9), inset 0 0 0 calc(18 * var(--pt)) rgba(0, 0, 0, 1),
+    0 calc(30 * var(--pt)) calc(60 * var(--pt)) calc(-10 * var(--pt)) rgba(11, 11, 18, .45); }
+.iphone__screen { position: relative; height: 100%; overflow: hidden; border-radius: calc(55 * var(--pt)); background: var(--night); color: var(--paper); }
+.iphone__key { position: absolute; width: calc(4 * var(--pt)); border-radius: calc(2 * var(--pt)); background: linear-gradient(90deg, rgba(60, 60, 66, 1), rgba(120, 120, 128, 1)); }
+.iphone__key--action { left: calc(-3 * var(--pt)); top: calc(152 * var(--pt)); height: calc(30 * var(--pt)); }
+.iphone__key--up { left: calc(-3 * var(--pt)); top: calc(214 * var(--pt)); height: calc(56 * var(--pt)); }
+.iphone__key--down { left: calc(-3 * var(--pt)); top: calc(284 * var(--pt)); height: calc(56 * var(--pt)); }
+.iphone__key--side { right: calc(-3 * var(--pt)); top: calc(232 * var(--pt)); height: calc(90 * var(--pt)); background: linear-gradient(270deg, rgba(60, 60, 66, 1), rgba(120, 120, 128, 1)); }
+
+.iphone__island { position: absolute; z-index: 50; top: 11px; left: 50%; width: 126px; height: 37px; margin-left: -63px; border-radius: 19px; background: rgba(0, 0, 0, 1); }
+.iphone__home { position: absolute; z-index: 50; bottom: 8px; left: 50%; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: var(--paper); }
+
+/* The screen: the real app at an iPhone's 393 × 852 CSS px, scaled to the drawn screen (--s, set by Story.tsx). */
+.ios-vp { position: absolute; top: 0; left: 0; width: 393px; height: 852px; overflow: hidden; transform: scale(var(--s, .63)); transform-origin: 0 0; background: var(--night);
+  font: 500 17px/1.55 var(--sans); text-align: left; -webkit-font-smoothing: antialiased; }
+.story__screen { position: absolute; inset: 0; }
+
+/* The dark app's theme on any element (the same roles as :root:has(main.dark) in app/tokens.css). */
+.theme-night { color: var(--text); background: var(--page); }
+
+/* iOS status bar: 54 px; the time centred in the space left of the island, icons on the right. The installed web app
+ * sets it black (app/layout.tsx statusBarStyle), so it sits above the black nav. */
+.ios-sb { position: relative; z-index: 40; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 4px 30px 0 48px; background: var(--ink); color: var(--paper);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--sans); }
+.ios-sb--lock { position: absolute; top: 0; left: 0; right: 0; background: none; }
+.ios-sb__time { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.ios-sb__right { display: flex; align-items: center; gap: 6px; }
+.ios-sb svg { fill: currentColor; }
+
+.ios-app { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.ios-app__page { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ios-app__scroll { flex: 1; min-height: 0; overflow: hidden; }
+.ios-menu { display: inline-grid; place-items: center; width: 44px; height: 44px; color: var(--paper); }
+.ios-btn { min-height: 44px; justify-self: start; }
+.ios-block { margin-top: 24px; }
+.ios-list { margin-top: 12px; }
+.ios-new { display: flex; justify-content: center; margin: 12px 0 -2px; }
+.ios-new .btn { pointer-events: none; }
+.ios-chart { position: relative; overflow: hidden; border-radius: var(--r-card); }
+.ios-chart .pchart { height: 160px; }
+/* the curve draws in left to right: a cover the colour of the card slides away (transform only) */
+.ios-chart::after { content: ""; position: absolute; inset: 1px; border-radius: var(--r-card); background: var(--bg); transform: scaleX(0); transform-origin: 100% 50%; }
+
+/* What a phone-width page looks like, even when the home page around it is desktop width: the app's own rules for
+ * under 900px, and full-bleed bands relative to the phone, not the window. */
+.ios-vp .wrap { max-width: none; padding: 0 16px; }
+.ios-vp .nav__links { display: none; }
+.ios-vp .nav__menu { display: block; }
+.ios-vp .pband { min-height: 140px; margin-inline: 0; }
+.ios-vp .pband__in { padding-bottom: 18px; }
+.ios-vp .pband__h { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; font-size: var(--t32); }
+.ios-vp .app2 { padding-top: 0; }
+.ios-vp .app2 > .pband:first-child { margin-top: 0; }
+.ios-vp .trader__head { margin: 0; padding: 28px 16px 20px; min-height: 140px; }
+.ios-vp .trader__name { font-size: var(--t32); }
+.ios-vp .trader__head + * { margin-top: 20px; }
+.ios-vp .record, .ios-vp .record--wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ios-vp .record dd { font-size: 18px; }
+.ios-vp .record div { padding: 14px; min-width: 0; }
+.ios-vp .tabs__tab { padding: 0 10px; }
+.lp2 .ios-vp .move__sentence, .ios-vp .move__sentence { font-size: var(--t20); }
+.lp2 .ios-vp .move__payout, .ios-vp .move__payout { font-size: inherit; }
+.theme-night .nav { box-shadow: inset 0 -1px 0 var(--border); }
+.ios-vp .tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--page); border-top: 1px solid var(--border); padding-bottom: 34px; }
+.ios-vp .tabbar__item { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; color: var(--muted); font-size: var(--t13); font-weight: 700; }
+.ios-vp .tabbar__item[aria-current="page"] { color: var(--text); }
+.ios-vp .tabbar__icon { width: 22px; height: 22px; }
+
+/* The lock screen: wallpaper, padlock, date over the large clock, one notification, flashlight and camera. */
+.ios-lock { position: absolute; inset: 0; isolation: isolate; display: grid; justify-items: center; align-content: start; color: var(--paper); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--sans); }
+.ios-lock__wall { position: absolute; inset: 0; z-index: -1; }
+.ios-lock__wall img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ios-lock__pad { margin-top: 62px; fill: currentColor; }
+.ios-lock__date { margin-top: 10px; font-size: 20px; font-weight: 600; text-shadow: 0 1px 8px rgba(0, 0, 0, .25); }
+.ios-lock__time { margin-top: -6px; font-size: 96px; line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; text-shadow: 0 2px 20px rgba(0, 0, 0, .25); }
+.ios-note { width: calc(100% - 20px); margin-top: 210px; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 14px 12px 12px; border-radius: 22px;
+  background: rgba(38, 38, 44, .6); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); text-align: left; }
+.ios-note__icon img { display: block; width: 38px; height: 38px; border-radius: 9px; }
+.ios-note__head { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; line-height: 1.3; }
+.ios-note__head b { font-weight: 600; }
+.ios-note__head span { flex: none; color: rgba(255, 255, 255, .6); font-size: 13px; }
+.ios-note__text { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.ios-lock__btn { position: absolute; bottom: 46px; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: rgba(30, 30, 34, .5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.ios-lock__btn svg { width: 24px; height: 24px; }
+.ios-lock__btn--l { left: 46px; }
+.ios-lock__btn--r { right: 46px; }
+
+/* Desktop with motion: the pinned version. Phones and reduced motion: the stacked one. */
+.story__pin { display: none; }
+.story__stack { display: grid; gap: 56px; justify-items: center; margin: 32px auto 0; padding-bottom: var(--sec); list-style: none; }
+.story__item { display: grid; gap: 20px; justify-items: center; }
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .story__stack { display: none; }
+  .story__pin { display: grid; }
+  .story__stage, .story__steps { grid-area: 1 / 1; }
+  .story__head--stack { display: none; }
+  .story { padding-top: 0; }
+  .story__stage { position: sticky; top: 64px; height: calc(100vh - 64px); display: grid; grid-template-rows: auto auto 1fr auto; justify-items: center; align-items: center; gap: 16px; padding: 28px 0 28px; }
+  .story__stage .iphone { --w: calc(min(560px, 100vh - 320px) * 429 / 888); }
+  .story__step { height: 85vh; }
+  .story__steps { padding-bottom: 45vh; }
+  .story__caps { display: grid; }
+  .story__caps .story__cap { grid-area: 1 / 1; opacity: 0; transform: translate3d(0, 10px, 0); transition: opacity 360ms var(--ease-enter), transform 360ms var(--ease-enter); }
+  .story__caps .story__cap.is-on { opacity: 1; transform: none; }
+  .story__pin .story__screen { opacity: 0; transform: translate3d(0, 14px, 0) scale(.98); transition: opacity 420ms var(--ease-enter), transform 420ms var(--ease-enter); }
+  .story__pin .story__screen.is-on { opacity: 1; transform: none; }
+  .story__cta { opacity: 0; transform: translate3d(0, 10px, 0); transition: opacity 400ms var(--ease-enter), transform 400ms var(--ease-enter); pointer-events: none; }
+  .story__cta.is-on { opacity: 1; transform: none; pointer-events: auto; }
+}
+/* What plays inside the phone when a screen comes on (pinned: .is-on; stacked: when its step has entered, .is-in). */
+@media (prefers-reduced-motion: no-preference) {
+  .story__pin .story__screen.is-on .ios-lead, .story__stack .is-in .ios-lead { animation: ph-slide 600ms var(--ease-enter) both 250ms; }
+  .story__pin .story__screen.is-on .ios-new, .story__stack .is-in .ios-new { animation: ph-pop 420ms var(--ease-enter) both 80ms; }
+  .story__pin .story__screen.is-on .ios-chart::after, .story__stack .is-in .ios-chart::after { animation: ph-draw 1400ms ease-out both 250ms; }
+  .story__pin .story__screen.is-on .ios-note, .story__stack .is-in .ios-note { animation: ph-push 520ms var(--ease-enter) both 300ms; }
+}
+@keyframes ph-slide { from { opacity: 0; transform: translate3d(0, -24px, 0); } to { opacity: 1; transform: none; } }
+@keyframes ph-draw { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes ph-push { from { opacity: 0; transform: translate3d(0, -18px, 0) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes ph-pop { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+
+/* ---------- Home: one centred grid (content 1100px, body text 560px), one spacing scale (8 / 16 / 24 / 40 / --sec) ---------- */
+.lp2 { --max: 1100px; --read: 560px; }
+.lp2 .sec2__h { margin-inline: auto; text-align: center; }
+.sec2__head { display: grid; justify-items: center; gap: 16px; margin-bottom: 40px; text-align: center; }
+.sec2__head .sec2__h, .lp2 .sec2__head .sec2__h { margin-bottom: 0; }
+.sec2__sub { max-width: var(--read); color: var(--muted); font-size: var(--t17); }
+.sec2__foot { display: flex; justify-content: center; margin-top: 40px; }
+.lp2 .cine__label, .lp2 .cine__sub { margin-inline: auto; max-width: var(--read); }
+.lp2 .trust .sec2__h, .lp2 .faq2 .sec2__h { margin-inline: auto; text-align: center; }
+.lp2 .faq2 { max-width: calc(760px + 64px); }
+.lp2 .plan2__name, .lp2 .plan2__price, .lp2 .plan2__sub, .lp2 .plan2__flag { text-align: center; justify-self: center; }
+.lp2 .preview__grid { max-width: 1100px; margin: 0 auto; }
+.results__record { font-size: var(--t24); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* One type scale on every home card: the line 17/800, context 15 muted, payout 15 money, amounts 32 (44 in the hero). */
+.lp2 .move__sentence, .hcard__sentence, .rcard__line { font-size: var(--t17); line-height: 1.35; font-weight: 800; letter-spacing: -0.01em; }
+.move__ctx, .hcard__ctx, .rcard__ctx { color: var(--muted); font-size: var(--t15); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.hcard__ctx { color: var(--grey-3); }
+.lp2 .move__payout, .hcard__payout { font-size: var(--t15); }
+
+/* Results as clean cards */
+.rcards { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 640px) { .rcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 980px) { .rcards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rcard { display: grid; gap: 8px; align-content: start; padding: 20px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); }
+.rcard__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rcard__res { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-pill); font-size: var(--t13); font-weight: 800; }
+.rcard__res--won { color: var(--money); box-shadow: inset 0 0 0 1.5px var(--money); }
+.rcard__res--lost { color: var(--loss); box-shadow: inset 0 0 0 1.5px var(--loss); }
+.rcard__when { color: var(--muted); font-size: var(--t13); font-weight: 700; }
+.rcard__amt { font-size: var(--t32); line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+/* Full-bleed photo sections (components/home/PhotoSection.tsx): the photo bright, a soft scrim only behind the line. */
+.psec { position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center; min-height: clamp(460px, 74vh, 700px); background: var(--ink); color: var(--paper); }
+.psec__photo { position: absolute; inset: 0; z-index: -2; }
+.psec__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.psec__in { position: relative; display: grid; justify-items: center; gap: 28px; padding-top: 64px; padding-bottom: 64px; text-align: center; }
+.psec__line { position: relative; max-width: 16ch; font-size: var(--t44); line-height: 1.05; text-wrap: balance; }
+@media (min-width: 900px) { .psec__line { font-size: var(--t64); } }
+.psec__line { text-shadow: 0 1px 18px rgba(11, 11, 18, .45); }
+.psec__line::before { content: ""; position: absolute; z-index: -1; inset: -50% -30%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(11, 11, 18, .74) 0%, rgba(11, 11, 18, .64) 58%, rgba(11, 11, 18, .3) 84%, rgba(11, 11, 18, 0) 100%); }
+.psec__el { width: min(440px, 100%); display: grid; justify-items: center; }
+.psec__card { width: 100%; text-align: left; color: var(--text); }
+.psec__stat { display: inline-flex; gap: 10px; padding: 14px 24px; border-radius: var(--r-pill); background: var(--night); font-size: var(--t24); font-weight: 800; font-variant-numeric: tabular-nums; }
+.money-on-dark { color: var(--night-money); }
+.loss-on-dark { color: var(--night-loss); }
+.psec__note { width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: 22px; text-align: left;
+  background: rgba(28, 28, 32, .72); backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6); box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .6); }
+.psec__note-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: var(--ink); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .25); color: var(--paper); }
+.psec__note-icon svg { width: 62%; height: 62%; }
+.psec__note-head { display: flex; justify-content: space-between; gap: 8px; font-size: var(--t15); }
+.psec__note-head b { font-weight: 700; }
+.psec__note-head span { color: var(--grey-2); font-size: var(--t13); }
+.psec__note-text { font-size: var(--t15); line-height: 1.35; overflow-wrap: anywhere; }
+.psec__cta { display: grid; justify-items: center; gap: 12px; }
+.psec__fine { color: var(--grey-2); font-size: var(--t15); font-weight: 700; }

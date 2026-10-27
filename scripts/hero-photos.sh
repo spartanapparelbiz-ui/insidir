@@ -3,7 +3,8 @@
 # originals in public/hero/1.jpg … 16.jpg it writes, per photo, a desktop crop (16:9, 1600×900) and a mobile crop (2:3, 828×1242)
 # that keeps the person in frame, plus header-band crops (4:1 at 1600×400 for desktop, 780×280 for phones: the
 # band is 200px/140px tall, so it never downloads a full photo), each as AVIF and WebP, all in one grade: dark and cinematic, muted colour (not black
-# and white), cool blue-teal shadows that sink into the brand black #0B0B12, low-key exposure, a vignette and fine grain.
+# and white), cool blue-teal shadows that sink into the brand black #0B0B12, exposure a little under, a vignette and
+# fine grain. Bright enough that the person and the action read at a glance; text gets its own soft scrim in CSS.
 # Needs ImageMagick 6 (convert) and ffmpeg with libaom-av1. Run from the repo root: bash scripts/hero-photos.sh [n ...]
 # (no arguments: all sixteen; with numbers: only those).
 set -euo pipefail
@@ -22,7 +23,7 @@ declare -A LIFT=([7]=1.15 [13]=1.1 [16]=1.35)
 offset() { awk -v c="$1" -v size="$2" -v full="$3" 'BEGIN { o = int(c - size / 2); if (o < 0) o = 0; if (o > full - size) o = full - size; print o }'; }
 
 # The grade, at the final size so the vignette and grain look the same on every crop:
-#   saturation to ~36% · exposure −0.7 stops (×0.616 in linear light) · contrast up ~30% (sigmoidal) · per-channel black
+#   saturation to ~35% · exposure −0.3 stops (×0.812 in linear light) · contrast up ~30% (sigmoidal) · per-channel black
 #   and white points: shadows sit near 5% with a blue-teal cast, highlights stop short of white with a hint of warmth ·
 #   35% vignette · light sharpening · ~4% fine monochrome grain.
 grade() { # in out width height n
@@ -31,7 +32,7 @@ grade() { # in out width height n
   convert -size 160x90 xc: -fx 'r=hypot((i/w-0.5)*2,(j/h-0.5)*2)/1.4142; 1-0.35*pow(min(1,r),2.2)' -resize "${w}x${h}!" "$tmp/vig.png"
   convert -size "${w}x${h}" xc:gray50 -attenuate 0.28 +noise Gaussian -colorspace Gray "$tmp/grain.png"
   convert "$1" -resize "${w}x${h}^" -gravity center -extent "${w}x${h}" \
-    -modulate 100,36 -colorspace RGB -evaluate multiply 0.616 -colorspace sRGB -gamma "${LIFT[$5]:-1}" "${snow[@]}" \
+    -modulate 100,35 -colorspace RGB -evaluate multiply 0.812 -colorspace sRGB -gamma "${LIFT[$5]:-1}" "${snow[@]}" \
     -sigmoidal-contrast 7,36% \
     -channel R +level 3.6%,95% -channel G +level 4.6%,94% -channel B +level 6.6%,92% +channel \
     "$tmp/vig.png" -compose multiply -composite -unsharp 0x1+0.5+0.02 \

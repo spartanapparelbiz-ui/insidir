@@ -120,7 +120,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
       ) : null}
       {items.length ? (
         <ol className="feed2__list">
-          {items.map(m => <li key={m.id}><MoveCard m={m} follow={followState(m.wallet)} trialHref={trialHref} fresh={fresh.has(m.id)} /></li>)}
+          {items.map((m, i) => <li key={m.id} className="rv rv--card" style={{ ["--i" as string]: Math.min(i, 5) }}><MoveCard m={m} follow={followState(m.wallet)} trialHref={trialHref} fresh={fresh.has(m.id)} /></li>)}
         </ol>
       ) : (
         <div className="empty">

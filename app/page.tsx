@@ -1,7 +1,8 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: eight graded photos, "Follow the big money.", one real big move per photo on
- * a solid card, the ticker strip of real moves); then clean white sections: a real feed preview (3 live cards and a
- * profile snippet), How it works, Results ("Real past moves. Not a promise."), where the data comes from (the trust
+ * hero (components/home/Hero.tsx: eight graded photos, what Insidir is in one line, "Follow the big money.", one real big
+ * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
+ * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
+ * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
  * block), Pricing, FAQ, and "$1 for 3 days" once, at the end. One action everywhere above it: "See the live feed".
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
@@ -11,11 +12,17 @@ import { after } from "next/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Hero, PreviewSeen } from "@/components/home/Hero";
+import { Story } from "@/components/home/Story";
+import { storyFor, type Story as StoryData } from "@/lib/home/story";
+import { homeCopy, isMainstream } from "@/lib/home/curate";
+import { PhotoSection } from "@/components/home/PhotoSection";
+import { HOME_SECTIONS } from "@/lib/photos";
 import { HERO_PHOTOS } from "@/lib/photos";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { MoveCard, SourceA } from "@/components/v2/MoveCard";
 import { TrustBlock } from "@/components/TrustBlock";
+import { LOGO } from "@/components/Wordmark";
 import { trustFacts, type TrustFacts } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
@@ -36,18 +43,33 @@ import { isPaid } from "@/lib/plans";
 export const dynamic = "force-dynamic";
 
 const WEEK = 7 * 86_400_000;
+const MONTH = 30 * 86_400_000;
 
-/** The hero's moves: the biggest recent ones from each live tab (Sports, Markets, Stocks), taken in turn so they mix.
- *  A tab with nothing in the last week gives its latest moves instead. Up to eight, one per photo. */
-async function heroMoves(db: Db, until: number, now: number): Promise<Move[]> {
+/** The hero's moves: the biggest mainstream moves of the last week (lib/home/curate.ts), taking each live tab in turn
+ *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to eight, one per photo. */
+function heroPick(big: Move[], latest: Move[]): Move[] {
   const tabs = liveTabs().filter(t => t !== "crypto");
-  const per = await Promise.all(tabs.map(async tab => {
-    const big = await listMoves(db, { tab, since: now - WEEK, until, byAmount: true, limit: 3 });
-    return big.length ? big : listMoves(db, { tab, until, limit: 3 });
-  }));
+  const per = tabs.map(tab => big.filter(m => m.tab === tab));
   const out: Move[] = [];
-  for (let i = 0; i < 3; i++) for (const list of per) if (list[i] && out.length < HERO_PHOTOS.length) out.push(list[i]!);
+  for (let i = 0; out.length < HERO_PHOTOS.length && per.some(l => l[i]); i++) for (const l of per) if (l[i] && out.length < HERO_PHOTOS.length) out.push(l[i]!);
+  for (const m of latest) if (out.length < HERO_PHOTOS.length && !out.some(o => o.id === m.id)) out.push(m);
   return out;
+}
+
+/** A feed item said the home page's way: the short line, one line of context, no "30 min late"; a stock card's
+ *  dates move into the context line. */
+function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
+  const c = homeCopy({ ...fi, detail: m?.detail ?? null }, fi.who.name);
+  return { ...fi, sentence: c.line, context: c.context, note: fi.source === "sec" ? null : fi.note };
+}
+
+/** Results: the six best recent mainstream examples, three won and three lost when there are, biggest first. */
+function resultPick(settled: Move[], now: number): Move[] {
+  const pool = settled.filter(m => (m.settledAt ?? m.at) > now - MONTH && (m.result === "won" || m.result === "lost")).sort((a, b) => b.amount - a.amount);
+  const won = pool.filter(m => m.result === "won"), lost = pool.filter(m => m.result === "lost");
+  const w = Math.min(3, won.length), l = Math.min(3, lost.length);
+  const out = [...won.slice(0, 6 - Math.min(l, 3) > w ? Math.min(won.length, 6 - l) : w), ...lost.slice(0, l)];
+  return out.slice(0, 6).sort((a, b) => b.amount - a.amount);
 }
 
 /** The profile snippet: the trader behind the newest Polymarket move in the preview, from their moves we have
@@ -73,27 +95,37 @@ export default async function Home() {
   const paid = isPaid(viewer.plan);
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
-  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: Move[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
+  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
   let ticker: TickerItem[] = [];
   let trust: TrustFacts | null = null;
+  let story: StoryData | null = null;
   if (hasDatabase()) {
     const db = getDb();
-    const [big, latest, settled, st] = await Promise.all([
-      heroMoves(db, until, now).catch(() => []),
-      listMoves(db, { until, limit: 24 }).catch(() => []),
-      listMoves(db, { settled: true, limit: 120 }).catch(() => []),
+    // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
+    const [bigAll, latestAll, settledAll, st] = await Promise.all([
+      listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
+      listMoves(db, { until, limit: 200 }).catch(() => []),
+      listMoves(db, { settled: true, limit: 200 }).catch(() => []),
       feedStatus(db, now).catch(() => null),
     ]);
-    [hero, recent] = await Promise.all([
-      feedItems(db, big, viewer.plan, viewer.region, now).catch(() => []),
-      feedItems(db, latest, viewer.plan, viewer.region, now).catch(() => []),
+    const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
+    const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
+    const [heroItems, recentItems] = await Promise.all([
+      feedItems(db, heroPick(big!, latest!), viewer.plan, viewer.region, now).catch(() => []),
+      feedItems(db, latest!.slice(0, 24), viewer.plan, viewer.region, now).catch(() => []),
     ]);
-    ticker = recent.map(tickerItem);
+    hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
+    recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
+    ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
     snippet = await snippetFor(db, recent.slice(0, 12), until, plan.records).catch(() => null);
-    const resultRecs = await recordsFor(db, settled.map(m => m.wallet ?? "")).catch(() => new Map<string, TraderRecord>());
-    results = settled.filter(m => m.wallet && isTopTrader(resultRecs.get(m.wallet))).slice(0, 10);
+    const picked = resultPick(settled!, now);
+    results = (await feedItems(db, picked, viewer.plan, viewer.region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
     status = st;
-    trust = await trustFacts(db).catch(() => null);
+    [trust, story] = await Promise.all([
+      trustFacts(db).catch(() => null),
+      storyFor(db, viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
+    ]);
+    // The phones show the app exactly as it reads (full sentences), not the home page's short copy.
   }
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -102,110 +134,98 @@ export default async function Home() {
   const pro = unlockHref("pro");
   const follow = !isReady("follows") ? "soon" as const : paid ? "off" as const : "locked" as const;
 
+  const record = trust?.settled ?? null;
+  const cardIn = (i: number) => ({ ["--i" as string]: i });
+
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
-        <Hero moves={hero} ticker={ticker} late={!paid} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
+        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : TRIAL_LINE} cta="See the live feed" status={status} />
+        {story ? <Story data={story} /> : null}
+
+        <PhotoSection n={HOME_SECTIONS.seconds} id="ps-seconds" line="Big moves happen in seconds.">
+          {recent[0] ? <div className="psec__card"><MoveCard m={recent[0]} follow={follow} trialHref={trial} compact /></div> : null}
+        </PhotoSection>
 
         {preview.length ? (
           <PreviewSeen className="sec2 preview" labelledBy="preview-h">
             <div className="wrap">
-              <div className="preview__head">
-                <h2 id="preview-h" className="sec2__h">Right now on the feed</h2>
-                {status ? <p className={`status status--${status.state}`}><span className="status__dot" aria-hidden="true" />{status.text}{!paid ? " · 30 min late on free" : ""}</p> : null}
+              <div className="sec2__head">
+                <h2 id="preview-h" className="sec2__h rv">Right now on the feed</h2>
+                {status ? <p className={`status status--${status.state} rv`} style={cardIn(1)}><span className="status__dot" aria-hidden="true" />{status.text}</p> : null}
               </div>
               <div className="preview__grid">
-                {preview.map(m => <MoveCard key={m.id} m={m} follow={follow} trialHref={trial} compact />)}
+                {preview.map((m, i) => <div key={m.id} className="rv rv--card" style={cardIn(i)}><MoveCard m={m} follow={follow} trialHref={trial} compact /></div>)}
                 {snippet ? (
-                  <aside className="psnip" aria-labelledby="psnip-h">
+                  <aside className="psnip rv rv--card" style={cardIn(3)} aria-labelledby="psnip-h">
                     <p className="psnip__kicker">{snippet.top ? "Top trader" : "Trader"} profile</p>
-                    <h3 id="psnip-h" className="psnip__name serif">{snippet.name}</h3>
+                    <h3 id="psnip-h" className="psnip__name">{snippet.name}</h3>
                     <dl className="psnip__stats">
-                      <div><dt>Big moves</dt><dd>{snippet.moves}</dd></div>
-                      <div><dt>Total in</dt><dd>{dollars(snippet.total)}</dd></div>
-                      <div><dt>Biggest</dt><dd>{dollars(snippet.biggest)}</dd></div>
+                      <div><dt>Big moves</dt><dd data-count={snippet.moves}>{snippet.moves}</dd></div>
+                      <div><dt>Total in</dt><dd data-count={snippet.total} data-fmt="dollars">{dollars(snippet.total)}</dd></div>
+                      <div><dt>Biggest</dt><dd data-count={snippet.biggest} data-fmt="dollars">{dollars(snippet.biggest)}</dd></div>
                     </dl>
                     <p className="psnip__line">{snippet.record ?? (paid ? "Not enough settled markets for a record yet." : "Their win record is for members.")}</p>
                     <Link className="psnip__link" href={`/p/${snippet.wallet}`}>See their profile</Link>
                   </aside>
                 ) : null}
               </div>
-              <Link className="btn btn--primary preview__more" href="/feed">See the live feed</Link>
+              <div className="sec2__foot"><Link className="btn btn--secondary" href="/feed">See the live feed</Link></div>
             </div>
           </PreviewSeen>
         ) : null}
 
-        <section className="sec2 sec2--alt" id="how" aria-labelledby="how-h">
-          <div className="wrap">
-            <h2 id="how-h" className="sec2__h">How it works</h2>
-            <ol className="how2">
-              <li className="how2__step">
-                <p className="how2__n">1</p>
-                <h3 className="how2__h">We watch every big bet and trade</h3>
-                <p className="how2__p">Every few seconds we check Polymarket and Kalshi for bets of $10,000 or more, and the SEC for insider buys and big fund adds.</p>
-                <div className="how2__mock" aria-hidden="true">
-                  <p className={`status status--${status?.state ?? "behind"}`}><span className="status__dot" />{status?.state === "live" ? "Live" : "Catching up"}</p>
-                  {recent.length ? recent.slice(0, 3).map(m => <p key={m.id} className="how2__amt"><span>{dollars(m.amount)}</span><span className="how2__ago">{agoText(m.at, now)}</span></p>)
-                    : [0, 1, 2].map(i => <p key={i} className="how2__skel" />)}
-                </div>
-              </li>
-              <li className="how2__step">
-                <p className="how2__n">2</p>
-                <h3 className="how2__h">You see it in plain English</h3>
-                <p className="how2__p">No charts to read. One sentence: who put how much on what, and what it pays.</p>
-                <div className="how2__mock" aria-hidden="true">
-                  {recent[0] ? <><p className="how2__sentence">{recent[0].sentence}</p>{recent[0].payout ? <p className="how2__payout">{recent[0].payout}</p> : null}</>
-                    : <><p className="how2__skel how2__skel--wide" /><p className="how2__skel" /></>}
-                </div>
-              </li>
-              <li className="how2__step">
-                <p className="how2__n">3</p>
-                <h3 className="how2__h">You get pinged when your traders move</h3>
-                <p className="how2__p">Follow a trader or a market. We send a push or an email the moment they make a big move.</p>
-                <div className="how2__mock how2__mock--push" aria-hidden="true">
-                  <p className="push__app">Insidir · now</p>
-                  <p className="push__text">{recent[0] ? recent[0].sentence : "A trader you follow just made a big move."}</p>
-                </div>
-              </li>
-            </ol>
-          </div>
-        </section>
+        <PhotoSection n={HOME_SECTIONS.wins} id="ps-wins" line="See who actually wins.">
+          {record ? <p className="psec__stat"><span className="money-on-dark"><span data-count={record.won}>{record.won.toLocaleString("en-US")}</span> won</span> · <span className="loss-on-dark"><span data-count={record.lost}>{record.lost.toLocaleString("en-US")}</span> lost</span></p> : null}
+        </PhotoSection>
 
         {results.length ? (
           <section className="sec2" aria-labelledby="res-h">
             <div className="wrap">
-              <h2 id="res-h" className="sec2__h">Results</h2>
-              <p className="results__label">Real past moves. Not a promise.</p>
-              <ol className="rlist">
-                {results.map(r => (
-                  <li key={r.id} className="rlist__row">
-                    <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
-                    <span className="rlist__what"><span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {r.marketTitle}
-                      <span className="rlist__who">Top trader {walletLabel(r.wallet!, r.walletName)}</span>
-                      {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}</span>
-                    <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
+              <div className="sec2__head">
+                <h2 id="res-h" className="sec2__h rv">Results</h2>
+                <p className="sec2__sub rv" style={cardIn(1)}>Real past moves. Not a promise.</p>
+                {record ? <p className="results__record rv" style={cardIn(2)}><span className="money">{record.won.toLocaleString("en-US")} won</span> · <span className="loss">{record.lost.toLocaleString("en-US")} lost</span></p> : null}
+              </div>
+              <ol className="rcards">
+                {results.map((r, i) => (
+                  <li key={r.id} className="rcard rv rv--card" style={cardIn(i)}>
+                    <p className="rcard__top"><span className={`rcard__res rcard__res--${r.result}`}>{r.result === "won" ? "Won" : "Lost"}</span><span className="rcard__when">{r.ago}</span></p>
+                    <p className="rcard__amt" data-count={r.amount} data-fmt="dollars">{dollars(r.amount)}</p>
+                    <p className="rcard__line">{r.sentence}</p>
+                    {r.context ? <p className="rcard__ctx">{r.context}</p> : null}
+                    {r.sourceLink ? <SourceA link={r.sourceLink} /> : null}
                   </li>
                 ))}
               </ol>
-              <Link className="btn btn--secondary" href="/results">See every result</Link>
+              <div className="sec2__foot"><Link className="btn btn--secondary" href="/results">See every result</Link></div>
             </div>
           </section>
         ) : null}
 
+        <PhotoSection n={HOME_SECTIONS.alert} id="ps-alert" line="Get the alert before everyone else.">
+          {story ? (
+            <div className="psec__note" aria-hidden="true">
+              <span className="psec__note-icon"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
+              <div><p className="psec__note-head"><b>{story.alert.title}</b><span>now</span></p><p className="psec__note-text">{story.alert.body}</p></div>
+            </div>
+          ) : null}
+        </PhotoSection>
+
         <TrustBlock facts={trust} />
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} insidirHref={trial} proHref={pro} actions={false} />
         <FaqV2 />
-        {!paid ? (
-          <section className="band2" aria-labelledby="band-h">
-            <div className="wrap band2__in">
-              <h2 id="band-h" className="band2__h">Follow the big money for $1.</h2>
-              <p className="band2__p">{TRIAL_LINE}</p>
+
+        <PhotoSection n={HOME_SECTIONS.yourMove} id="ps-move" line="Your move.">
+          {!paid ? (
+            <div className="psec__cta">
               <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">Try it for $1</a>
+              <p className="psec__fine">{TRIAL_LINE}</p>
             </div>
-          </section>
-        ) : null}
+          ) : <Link className="btn btn--onDark btn--big" href="/feed">See the live feed</Link>}
+        </PhotoSection>
       </main>
     </>
   );

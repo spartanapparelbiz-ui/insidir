@@ -55,7 +55,7 @@
 
 /* The dark app. Solid surfaces (#141418) on #0b0b12, #26262c hairlines, white text, #a1a1aa secondary (7:1). Photos never
  * sit behind numbers. Buttons invert: white with black text. */
-:root:has(main.dark) {
+:root:has(main.dark), .theme-night {
   --page: var(--night);
   --bg: var(--night-surface);
   --bg-alt: var(--night-inset);

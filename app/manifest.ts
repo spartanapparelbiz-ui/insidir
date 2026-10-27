@@ -1,11 +1,12 @@
 /* The installable PWA manifest, served at /manifest.webmanifest (app/layout.tsx links it). */
 import type { MetadataRoute } from "next";
+import { WHAT_IS } from "@/lib/copy";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Insidir",
     short_name: "Insidir",
-    description: "The biggest bets on sports and prediction markets the second they happen, in plain English.",
+    description: WHAT_IS,
     start_url: "/feed",
     scope: "/",
     display: "standalone",

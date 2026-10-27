@@ -12,7 +12,7 @@ export function PageBand({ n, title, kicker, id, eager = true, children }: {
 }) {
   return (
     <header className="pband" data-photo={n}>
-      <Photo n={n} className="pband__photo" band eager={eager} />
+      <Photo n={n} className="pband__photo" band par eager={eager} />
       <div className="wrap pband__in">
         {kicker ? <p className="pband__kicker">{kicker}</p> : null}
         <h1 id={id} className="pband__h">{title}</h1>

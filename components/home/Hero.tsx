@@ -4,9 +4,11 @@
  *   to 108% over 6 s, then crossfading (1.2 s) into the next; it loops, each round ending on the summit. Photo 1 loads
  *   with the page (preloaded, high priority); the others load once the page is idle, and a photo only comes up once it has loaded. Under
  *   prefers-reduced-motion: photo 1 only, still.
- *   The fintech layer, readable at a glance: the "LIVE · big money moves" label (only while every source is current;
- *   otherwise "Catching up · last update 6m ago"), the headline, the button, and one
- *   real recent big move per photo (Sports, Markets and Stocks mixed) on a solid white card, never a made-up one.
+ *   Said plainly, for a first-time visitor in 5 seconds: what it is ("Live tracker for sports bets, prediction markets
+ *   and insider stock trades"), the headline, what it shows (who, how much, whether they usually win), the button and
+ *   three points. Over the card, "LIVE · big money moves" (only while every source is current; otherwise "Catching
+ *   up · last update 6m ago"). The card is one real recent big move per photo (Sports, Markets and Stocks mixed),
+ *   never a made-up one, playing as a 3-second demo: the sentence types in, then the payout, then the record line.
  *   Below, the ticker strip: real moves scrolling on solid black, paused on hover.
  *   A dark scrim sits behind the words only; the card and the ticker are solid (photos never sit behind numbers).
  * Tracked (components/app/beacon.ts): the button, ticker taps. */
@@ -30,18 +32,57 @@ function tagText(m: FeedItem): string {
   return `${TAG[m.tab] ?? ""}${sub ? ` · ${sub}` : ""}`;
 }
 
+/** The third line of the demo: the trader's record for members; for free visitors, that one exists (it's a members'
+ *  feature, so the number itself is never sent); Kalshi trades are anonymous, so they have none. */
+function recordText(m: FeedItem): string | null {
+  if (m.record) return m.record;
+  if (m.source === "polymarket" && m.wallet) return "Their win record is one tap away for members.";
+  return null;
+}
+
+/** One move as a 3-second demo of the product: the amount counts up and the sentence types in, then the payout (or the
+ *  filing dates) appears, then the record line. Without JS, or under reduced motion, it is simply all there. */
 function MoveCard({ m, late }: { m: FeedItem; late: boolean }) {
+  const [typed, setTyped] = useState<number | null>(null);
+  const [step, setStep] = useState(2);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const text = m.sentence, per = Math.max(14, Math.min(40, 1500 / text.length));
+    let i = 0, t2 = 0, t3 = 0;
+    setTyped(0); setStep(0);
+    const t = window.setInterval(() => {
+      i += 1; setTyped(i);
+      if (i >= text.length) {
+        window.clearInterval(t);
+        t2 = window.setTimeout(() => setStep(1), 180);
+        t3 = window.setTimeout(() => setStep(2), 760);
+      }
+    }, per);
+    return () => { window.clearInterval(t); window.clearTimeout(t2); window.clearTimeout(t3); };
+  }, [m.sentence]);
+  const typing = typed !== null && typed < m.sentence.length;
+  const second = m.payout ? <p className="hcard__payout">{m.payout}</p> : m.note && !m.context ? <p className="hcard__note">{m.note}</p> : null;
+  const rec = recordText(m);
   return (
-    <article className="hcard">
+    <article className="hcard" data-demo={typed === null ? "pending" : "run"}>
       <div className="hcard__top">
         <span className="hcard__tag">{tagText(m)}</span>
         <TimeAgo className="hcard__ago" at={m.at} initial={m.ago} suffix={late ? " · 30 min late" : ""} />
       </div>
-      <p className="hcard__amt">{dollars(m.amount)}</p>
-      <p className="hcard__sentence">{m.sentence}</p>
-      {m.payout ? <p className="hcard__payout">{m.payout}</p> : m.note ? <p className="hcard__note">{m.note}</p> : null}
+      <p className="hcard__amt" data-count={m.amount} data-fmt="dollars">{dollars(m.amount)}</p>
+      <p className="hcard__sentence">
+        <span className="sr-only">{m.sentence}</span>
+        <span aria-hidden="true">{typed === null ? m.sentence : m.sentence.slice(0, typed)}{typing ? <span className="hcard__caret" /> : null}</span>
+      </p>
+      {m.context ? <p className={`hcard__ctx hcard__line${step >= 1 ? " is-on" : ""}`}>{m.context}</p> : null}
+      <div className={`hcard__line${step >= 1 ? " is-on" : ""}`}>{second}</div>
+      {rec ? <p className={`hcard__rec hcard__line${step >= 2 ? " is-on" : ""}${m.record ? "" : " hcard__rec--locked"}`}>{m.record ? null : <LockGlyph />}{rec}</p> : null}
     </article>
   );
+}
+
+function LockGlyph() {
+  return <svg className="hcard__lock" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
 }
 
 export function Hero({ moves, ticker, late, trialLine, cta, status }: {
@@ -100,16 +141,22 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
       <div className="cine__scrim" aria-hidden="true" />
       <div className="wrap cine__in">
         <div className="cine__copy">
-          <p className={`cine__label${live ? "" : " cine__label--behind"}`}><span className="cine__dot" aria-hidden="true" />{live ? "LIVE · big money moves" : status?.text ?? "Catching up"}</p>
+          <p className="cine__label">Live tracker for sports bets, prediction markets and insider stock trades</p>
           <h1 id="hero-h" className="cine__h">Follow the big money.</h1>
-          <p className="cine__sub">The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.</p>
+          <p className="cine__sub">Insidir shows you the biggest bets and stock trades the moment they happen: who made them, how much, and whether they usually win.</p>
           <div className="cine__cta">
             <Link className="btn btn--onDark btn--big" href="/feed" data-cta="hero" onClick={() => beacon("hero_cta_click", "home")}>{cta}</Link>
+            <ul className="cine__points">
+              <li>Sports · Prediction markets · Stocks</li>
+              <li>Real public data</li>
+              <li>Alerts to your phone</li>
+            </ul>
           </div>
           {trialLine ? <p className="cine__trial">{trialLine}</p> : null}
           <p className="cine__fine">Public data. Not financial advice.</p>
         </div>
         <div className="cine__card" {...hold}>
+          <p className={`cine__live${live ? "" : " cine__live--behind"}`}><span className="cine__dot" aria-hidden="true" />{live ? "LIVE · big money moves" : status?.text ?? "Catching up"}</p>
           {move ? (
             <Link href={move.source === "sec" ? "/feed?tab=stocks" : `/market/${encodeURIComponent(move.marketId)}`} className="hcard__link" aria-label={`${move.sentence} See the market.`}>
               <MoveCard key={move.id} m={move} late={late} />
@@ -131,7 +178,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
                 {ticker.map(t => (
                   <li key={t.id}>
                     <Link className="ticker__item" href={t.href} tabIndex={copy === 1 ? -1 : undefined} onClick={() => beacon("ticker_click", t.tab)}>
-                      <span className="ticker__who">{t.who}</span> · <span className="ticker__amt">{t.amount}</span> {t.what} · <span className="ticker__ago">{t.ago}</span>
+                      <span className="ticker__amt">{t.amount}</span> {t.what} · <span className="ticker__ago">{t.ago}</span>
                     </Link>
                   </li>
                 ))}

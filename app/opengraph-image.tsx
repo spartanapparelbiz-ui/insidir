@@ -1,8 +1,9 @@
 /* The site's link preview: a thin photo strip on top (lib/share-card.tsx), then black with the logo and the serif headline. */
 import { ImageResponse } from "next/og";
 import { loadFonts, OG, OgLogo, strip, STRIP_H } from "@/lib/share-card";
+import { WHAT_IS_TITLE } from "@/lib/copy";
 
-export const alt = "Insidir: follow the big money";
+export const alt = WHAT_IS_TITLE;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -15,7 +16,7 @@ export default async function OpengraphImage() {
         <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: "40px 72px 56px" }}>
           <OgLogo height={56} />
           <div style={{ display: "flex", fontFamily: "Serif", fontSize: 88, lineHeight: 1.02 }}>Follow the big money.</div>
-          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>The biggest bets and trades on Kalshi, Polymarket and Wall Street, the second they happen. In plain English.</div>
+          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>Live tracker for sports bets, prediction markets and insider stock trades.</div>
         </div>
       </div>
     ),
