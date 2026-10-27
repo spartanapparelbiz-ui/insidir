@@ -57,8 +57,13 @@ export async function checkPoly(poly: PolymarketClient, m: Move): Promise<string
   return errs;
 }
 
-export async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket | null): Promise<string[]> {
-  if (!market) return ["market not in terminal.markets"];
+/** The parser wants the market only for its wording; the check compares the trade itself (amount, side, time), so a
+ *  stand-in built from the stored move is enough (Kalshi markets aren't necessarily kept in terminal.markets). */
+const kalshiStandIn = (m: Move): VMarket => ({ id: m.marketId, venue: "kalshi", title: m.marketTitle, eventTitle: m.eventTitle,
+  yesLabel: m.outcomeSide === "yes" ? m.outcome : "Yes", noLabel: m.outcomeSide === "no" ? m.outcome : "No", url: m.url } as unknown as VMarket);
+
+export async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket | null = null): Promise<string[]> {
+  market ??= kalshiStandIn(m);
   const tradeId = m.id.slice(3);
   const s = Math.floor(m.at / 1000);
   const raw = await source(() => kalshi.getTradesPage({ ticker: m.marketId, minTsSec: s - 1, maxTsSec: s + 1, limit: 1000, priority: "normal" }));
@@ -188,8 +193,7 @@ export async function checkMoves(db: Db, src: Sources, n: number): Promise<Array
     const res = await line(base, async () => {
       if (m.source === "sec") return src.sec ? checkSec(src.sec, m) : null;
       if (m.source === "polymarket") return checkPoly(src.poly, m);
-      const mk = (await db.execute(sql`select data from terminal.markets where venue = 'kalshi' and id = ${m.marketId}`)).rows[0] as { data: VMarket } | undefined;
-      return checkKalshi(src.kalshi, m, mk?.data ?? null);
+      return checkKalshi(src.kalshi, m);
     });
     out.push({ ...res, wasHidden: Boolean(r.was_hidden) });
   }

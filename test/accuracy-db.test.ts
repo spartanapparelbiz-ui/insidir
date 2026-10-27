@@ -95,6 +95,17 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
     expect((await listMoves(db, {})).map(m => m.id).sort()).toEqual(["pm:bad", "pm:good"]);
   });
 
+  it("checks a Kalshi trade by id, without needing the market stored, and restores it if it was hidden", async () => {
+    const at = NOW - 3_600_000;
+    const k: Move = { ...move("ks:T-1", "KX-CLE", 5_013), source: "kalshi", wallet: null, outcome: "No", outcomeSide: "no", at, lastAt: at, sourceRefs: null };
+    await upsertMoves(db, [k]);
+    await db.execute(`update terminal.moves set hidden_at = now(), hidden_reason = 'market not in terminal.markets' where id = 'ks:T-1'`);
+    const kalshi = { getTradesPage: async (o: { ticker?: string }) => ({ trades: [{ trade_id: "T-1", ticker: o.ticker, created_time: new Date(at).toISOString(), taker_side: "no", count: 10_026, no_price: 50, yes_price: 50 }] }) } as unknown as KalshiClient;
+    const run = await runAccuracyCheck(db, { poly: poly(), kalshi, sec: null }, { moves: 10, profiles: 0, now: NOW });
+    expect(run.lines.find(l => l.target === "ks:T-1")).toMatchObject({ status: "ok", problems: [] });
+    expect(run.restored).toEqual(["ks:T-1"]);
+  });
+
   it("a source that can't be reached is skipped, never hidden, and sends no email", async () => {
     await upsertMoves(db, [move("pm:good", "C1", 50_000)]);
     const run = await runAccuracyCheck(db, src(true), { moves: 10, profiles: 0, now: NOW });

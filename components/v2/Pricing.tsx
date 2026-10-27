@@ -33,6 +33,8 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
   actions?: boolean;
 }) {
   const H = level === 1 ? "h1" : "h2";
+  // Plan names sit one level under the section title (h2 on /pricing, h3 inside the home page's sections).
+  const PlanH = level === 1 ? "h2" : "h3";
   const price: Record<Plan, string> = { free: "$0", insidir: `$${TRIAL.price} for ${TRIAL.days} days`, pro: `$${PLANS.pro.price}/mo` };
   const sub: Record<Plan, string> = { free: "Free forever", insidir: `then $${PLANS.insidir.price}/mo. Cancel anytime.`, pro: "For people who follow a lot." };
   return (
@@ -45,7 +47,7 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
             return (
               <article key={p} className={`plan2${p === "insidir" ? " plan2--main" : ""}`} data-plan={p}>
                 {p === "insidir" ? <p className="plan2__flag">Recommended</p> : null}
-                <h3 className="plan2__name">{PLANS[p].name}</h3>
+                <PlanH className="plan2__name">{PLANS[p].name}</PlanH>
                 <p className="plan2__price">{price[p]}</p>
                 <p className="plan2__sub">{sub[p]}</p>
                 <ul className="plan2__list">
