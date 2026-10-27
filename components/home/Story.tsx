@@ -107,7 +107,7 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
     const r = recordParts(d.trader.record);
     return (
       <div className="ios-app">
-        <div className="ph-band ph-band--tall"><Photo n={SPOT.phoneProfile} band className="ph-band__photo" /><p className="ph-band__k">Polymarket wallet · Top trader</p><p className="ph-band__h">{d.trader.name}</p></div>
+        <div className="ph-band ph-band--tall"><Photo n={SPOT.phoneProfile} band className="ph-band__photo" /><p className="ph-band__k">Polymarket wallet · Top trader</p><p className="ph-band__h ph-band__name">{d.trader.name}</p></div>
         <StatusBar time={time} />
         <div className="ph-tiles">
           {r ? <><div><p>Won</p><p className="ph-tile__v">{r.won}</p></div><div><p>All-time profit</p><p className="ph-tile__v ph-money">{r.profit}</p></div></>

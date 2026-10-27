@@ -43,6 +43,9 @@ export interface FeedItem {
   /** Stocks: the line under the sentence (trade or filing date, 13F age) and the ticker for the tag. */
   note: string | null;
   ticker: string | null;
+  /** Home page only (lib/home/curate.ts): one line of context under the short sentence (the trimmed market title,
+   *  or a stock's trade and filing dates). */
+  context?: string | null;
   /** Who moved, as the sentence names them, and their profile (/p/[id]); Kalshi traders are anonymous (no link). */
   who: { name: string; href: string | null; badge: "New wallet" | null };
   /** "Why this matters": at most one fact (lib/profiles/why.ts). */

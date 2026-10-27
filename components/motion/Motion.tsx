@@ -21,7 +21,7 @@ const FORMAT: Record<string, (v: number) => string> = {
 
 function countUp(el: HTMLElement) {
   const target = Number(el.dataset.count), fmt = FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!;
-  const final = el.textContent ?? "";
+  const final = el.dataset.final ?? el.textContent ?? "";
   if (!Number.isFinite(target)) return;
   const t0 = performance.now(), dur = 900;
   const step = (t: number) => {
@@ -57,6 +57,7 @@ export function Motion() {
         seen.add(el);
         if (el.dataset.count !== undefined) {
           // Below the fold: show 0 until it counts up. Already on screen: leave the final value, count from 0 now.
+          el.dataset.final = el.textContent ?? "";
           const r = el.getBoundingClientRect();
           if (r.top > innerHeight) el.textContent = (FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!)(0);
         }
@@ -80,9 +81,7 @@ export function Motion() {
         const box = (el.parentElement ?? el).getBoundingClientRect();
         if (box.bottom < 0 || box.top > innerHeight) continue;
         const travelled = Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height)));
-        el.style.transform = el.classList.contains("cine__photos")
-          ? `translate3d(0, ${(Math.min(scrollY, innerHeight) * 0.15).toFixed(1)}px, 0) scale(${(1 + Math.min(1, scrollY / innerHeight) * 0.05).toFixed(3)})`
-          : `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(${(1.14 + travelled * 0.06).toFixed(3)})`;
+        el.style.transform = `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(${(1.14 + travelled * 0.06).toFixed(3)})`;
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(frame); };

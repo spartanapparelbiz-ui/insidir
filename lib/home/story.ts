@@ -7,6 +7,7 @@
  * trader's real past settled move. Nothing is invented: with no such trader, the story isn't shown. The home page
  * shows this one record as an example of what members get; records stay members-only everywhere else. */
 import type { Db } from "@/lib/db";
+import { isMainstream } from "./curate";
 import { alertMessage } from "@/lib/moves/alerts";
 import { recordLine } from "@/lib/moves/copy";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
@@ -32,13 +33,14 @@ export interface Story {
 
 export async function storyFor(db: Db, plan: Plan, region: Region | null, until: number, now: number, appUrl: string): Promise<Story | null> {
   const pick = async (ms: Move[]) => {
-    const withWallet = ms.filter(m => m.source === "polymarket" && m.wallet);
+    // A move a newcomer can read (lib/home/curate.ts): a major league, politics, the economy.
+    const withWallet = ms.filter(m => m.source === "polymarket" && m.wallet && isMainstream(m));
     const recs = await recordsFor(db, withWallet.map(m => m.wallet!));
     const m = withWallet.find(x => isTopTrader(recs.get(x.wallet!)));
     return m ? { m, rec: recs.get(m.wallet!)! } : null;
   };
   let past = false;
-  let hit = await pick(await listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 80 }));
+  let hit = await pick(await listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }));
   if (!hit) { hit = await pick(await listMoves(db, { settled: true, limit: 200 })); past = true; }
   if (!hit) return null;
   const { m, rec } = hit;
@@ -46,7 +48,7 @@ export async function storyFor(db: Db, plan: Plan, region: Region | null, until:
   if (!record) return null;
   const [items, latest, markets] = await Promise.all([
     feedItems(db, [m], plan, region, now),
-    listMoves(db, { until, limit: 6 }),
+    listMoves(db, { until, limit: 200 }).then(ms => ms.filter(isMainstream)),
     marketsFor(db, m.wallet!).catch(() => []),
   ]);
   const feed = await feedItems(db, latest.filter(x => x.id !== m.id).slice(0, 2), plan, region, now);

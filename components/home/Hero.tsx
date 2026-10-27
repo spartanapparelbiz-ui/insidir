@@ -61,7 +61,7 @@ function MoveCard({ m, late }: { m: FeedItem; late: boolean }) {
     return () => { window.clearInterval(t); window.clearTimeout(t2); window.clearTimeout(t3); };
   }, [m.sentence]);
   const typing = typed !== null && typed < m.sentence.length;
-  const second = m.payout ? <p className="hcard__payout">{m.payout}</p> : m.note ? <p className="hcard__note">{m.note}</p> : null;
+  const second = m.payout ? <p className="hcard__payout">{m.payout}</p> : m.note && !m.context ? <p className="hcard__note">{m.note}</p> : null;
   const rec = recordText(m);
   return (
     <article className="hcard" data-demo={typed === null ? "pending" : "run"}>
@@ -74,6 +74,7 @@ function MoveCard({ m, late }: { m: FeedItem; late: boolean }) {
         <span className="sr-only">{m.sentence}</span>
         <span aria-hidden="true">{typed === null ? m.sentence : m.sentence.slice(0, typed)}{typing ? <span className="hcard__caret" /> : null}</span>
       </p>
+      {m.context ? <p className={`hcard__ctx hcard__line${step >= 1 ? " is-on" : ""}`}>{m.context}</p> : null}
       <div className={`hcard__line${step >= 1 ? " is-on" : ""}`}>{second}</div>
       {rec ? <p className={`hcard__rec hcard__line${step >= 2 ? " is-on" : ""}${m.record ? "" : " hcard__rec--locked"}`}>{m.record ? null : <LockGlyph />}{rec}</p> : null}
     </article>
@@ -130,7 +131,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
 
   return (
     <section className="cine" aria-labelledby="hero-h" data-section="hero">
-      <div className="cine__photos" aria-hidden="true" data-par="" data-moved={last !== null ? "" : undefined}>
+      <div className="cine__photos" aria-hidden="true" data-moved={last !== null ? "" : undefined}>
         {PHOTOS.map((n, i) => (i === 0 || more) ? (
           <div key={n} className={`cine__slide${i === at ? " is-on" : i === last ? " is-prev" : ""}`}>
             <Photo n={n} eager={i === 0} onLoad={() => { loaded.current.add(i); }} />
@@ -177,7 +178,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
                 {ticker.map(t => (
                   <li key={t.id}>
                     <Link className="ticker__item" href={t.href} tabIndex={copy === 1 ? -1 : undefined} onClick={() => beacon("ticker_click", t.tab)}>
-                      <span className="ticker__who">{t.who}</span> · <span className="ticker__amt">{t.amount}</span> {t.what} · <span className="ticker__ago">{t.ago}</span>
+                      <span className="ticker__amt">{t.amount}</span> {t.what} · <span className="ticker__ago">{t.ago}</span>
                     </Link>
                   </li>
                 ))}
