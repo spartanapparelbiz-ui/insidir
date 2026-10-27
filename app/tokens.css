@@ -22,7 +22,7 @@
 
   --sans: var(--font-schibsted), ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --serif: var(--font-rufina), Georgia, "Times New Roman", serif;
-  --t13: 13px; --t15: 15px; --t17: 17px; --t20: 20px; --t24: 24px; --t32: 32px; --t44: 44px; --t56: 56px; --t72: 72px;
+  --t13: 13px; --t15: 15px; --t17: 17px; --t20: 20px; --t24: 24px; --t32: 32px; --t44: 44px; --t56: 56px; --t64: 64px; --t72: 72px; --t80: 80px; --t96: 96px;
 
   --r-card: 16px;
   --r-input: 12px;
