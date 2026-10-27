@@ -182,7 +182,8 @@ Fund:
 - US users:
   - see all moves
   - never get international Polymarket links, and never see any VPN mention
-  - get "See it on Kalshi" when the matching engine finds the same market, otherwise no trade link
+  - get no trade link on Polymarket moves for now, only the information. "See it on Kalshi" from the matching engine is
+    off at launch because the matcher can still pair the wrong markets (docs/TODO.md)
 - Non-US users get the source link.
 - SEC filing links go to sec.gov for everyone.
 

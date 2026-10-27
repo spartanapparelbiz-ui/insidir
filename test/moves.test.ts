@@ -189,17 +189,12 @@ describe("gating per plan", () => {
 
 describe("location rules", () => {
   const pm = { source: "polymarket" as const, url: "https://polymarket.com/event/x" };
-  it("a US (or unknown) viewer never gets an international Polymarket link", () => {
-    for (const region of ["us", null] as const) {
-      expect(marketLink(pm, region, null)).toBeNull();
-      const k = marketLink(pm, region, "https://kalshi.com/markets/kx");
-      expect(k).toEqual({ href: "https://kalshi.com/markets/kx", label: "See it on Kalshi" });
-      expect(isIntlPolymarket(k!.href)).toBe(false);
-    }
+  it("a US (or unknown) viewer gets no trade link on a Polymarket move, only the information", () => {
+    for (const region of ["us", null] as const) expect(marketLink(pm, region)).toBeNull();
   });
   it("outside the US: the source market; Kalshi moves link to Kalshi everywhere", () => {
-    expect(marketLink(pm, "non_us", null)).toEqual({ href: pm.url, label: "See it on Polymarket" });
-    expect(marketLink({ source: "kalshi", url: "https://kalshi.com/m" }, "us", null)?.href).toBe("https://kalshi.com/m");
+    expect(marketLink(pm, "non_us")).toEqual({ href: pm.url, label: "See it on Polymarket" });
+    expect(marketLink({ source: "kalshi", url: "https://kalshi.com/m" }, "us")?.href).toBe("https://kalshi.com/m");
     expect(isIntlPolymarket("https://polymarket.us/market/x")).toBe(false);
     expect(isIntlPolymarket("https://polymarket.com/event/x")).toBe(true);
   });

@@ -16,7 +16,7 @@ import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { marketLink } from "@/lib/moves/links";
 import { currentPrice } from "@/lib/moves/pages";
-import { followList, kalshiMatches, listMoves, moneyBySide, storedMarket } from "@/lib/moves/store";
+import { followList, listMoves, moneyBySide, storedMarket } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -47,10 +47,9 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!hasDatabase()) notFound();
   const db = getDb();
   const until = now - movePlan(viewer.plan).delayMs;
-  const [moves, market, bySide, follows, matches] = await Promise.all([
+  const [moves, market, bySide, follows] = await Promise.all([
     listMoves(db, { marketId: id, until, limit: 30 }), storedMarket(db, source, id), moneyBySide(db, id, new Date(now - 86_400_000)),
     viewer.user ? followList(db, viewer.user.id) : Promise.resolve([]),
-    source === "polymarket" && viewer.region !== "non_us" ? kalshiMatches(db, [id]) : Promise.resolve(new Map<string, string>()),
   ]);
   if (!moves.length && !market) notFound();
   const title = market?.title ?? moves[0]!.marketTitle;
@@ -59,7 +58,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? "No";
   const tab = moves[0]?.tab ?? (market?.category === "sports" ? "sports" : "markets");
   const price = await currentPrice(source, market, id);
-  const link = marketLink({ source, url: market?.url ?? moves[0]?.url ?? null }, viewer.region, matches.get(id) ?? null);
+  const link = marketLink({ source, url: market?.url ?? moves[0]?.url ?? null }, viewer.region);
   const items = await feedItems(db, moves, viewer.plan, viewer.region, now);
   const trial = unlockHref("insidir");
   const following = follows.some(f => f.kind === "market" && f.target === id);

@@ -14,7 +14,7 @@ import { marketLink, type MarketLink } from "./links";
 import { hasRecord, isTopTrader, walletLabel } from "./records";
 import { personName, profileHref } from "@/lib/profiles/name";
 import { whyLines } from "@/lib/profiles/why-facts";
-import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
+import { listMoves, recordsFor, type MoveQuery } from "./store";
 import type { League, Move, Tab } from "./types";
 
 export interface FeedItem {
@@ -76,7 +76,6 @@ export function whoOf(m: Move): FeedItem["who"] {
 export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {
   const p = movePlan(plan);
   const recs = p.records ? await recordsFor(db, moves.map(m => m.wallet ?? "")) : new Map();
-  const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));
   const why = await whyLines(db, moves, { records: p.records, until, now }).catch(() => new Map<string, string | null>());
   return moves.map(m => {
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
@@ -86,7 +85,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       sentence: moveSentence(m, shown, now - m.at < 3_600_000), payout: payoutLine(m), record: recordLine(shown), topTrader: isTopTrader(shown),
       amount: m.amount, at: m.at, ago: agoText(m.at, now), eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome, marketId: m.marketId,
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
-      link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
+      link: marketLink(m, region), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
       who: whoOf(m), why: why.get(m.id) ?? null,
     };

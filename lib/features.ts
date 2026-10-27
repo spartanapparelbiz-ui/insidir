@@ -4,7 +4,10 @@
  * Readiness is set per deploy with FEATURES_READY, a comma list of the keys below, after checking each one on
  * production. Unset means the launch default: the feed (with records and follows), which this deploy is checked
  * against. Stocks (SEC Form 4 and 13F) is ready once listed here, after its accuracy check on production. Crypto is
- * never ready before its own launch. */
+ * never ready before its own launch. Price gaps is never ready while its scanner is off (GAPS_ENABLED, lib/flags.ts),
+ * whatever FEATURES_READY says. */
+import { gapsEnabled } from "./flags";
+
 export const FEATURES = {
   feed: "The live feed",
   records: "Trader records",
@@ -25,7 +28,7 @@ const NEVER_YET: Feature[] = ["crypto"];
 export function readyFeatures(env: Record<string, string | undefined> = process.env): Set<Feature> {
   const raw = env.FEATURES_READY;
   const list = raw === undefined ? DEFAULT_READY : raw.split(",").map(s => s.trim()).filter((s): s is Feature => Object.hasOwn(FEATURES, s));
-  return new Set(list.filter(f => !NEVER_YET.includes(f)));
+  return new Set(list.filter(f => !NEVER_YET.includes(f) && (f !== "price_gaps" || gapsEnabled(env))));
 }
 
 export const isReady = (f: Feature, env?: Record<string, string | undefined>): boolean => readyFeatures(env).has(f);
