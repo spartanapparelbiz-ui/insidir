@@ -1,11 +1,11 @@
 /* Which photo (components/Photo.tsx, public/hero) goes where. One place, so no page shows the same photo twice in view:
  * each page's header band, its empty state and the sheets that can open over it all use different photos, and the
- * sixteen rotate through the hero, the bands, empty states and share cards. */
+ * fifteen rotate through the hero, the bands, empty states and share cards. */
 import type { PhotoN } from "@/components/Photo";
 
-/** The home hero's slideshow, in order: photo 1 first (it loads with the page). None of the home page's photo
+/** The home hero's slideshow, in order: the first loads with the page. None of the home page's photo
  *  sections (HOME_SECTIONS) or phone screens repeats one of these. */
-export const HERO_PHOTOS: PhotoN[] = [1, 2, 11, 4, 12, 5, 15, 14];
+export const HERO_PHOTOS: PhotoN[] = [5, 2, 11, 4, 12, 15, 14];
 
 /** The home page's full-bleed photo sections, top to bottom (components/home/PhotoSection.tsx). */
 export const HOME_SECTIONS = { seconds: 7, wins: 3, alert: 8, yourMove: 6 } as const satisfies Record<string, PhotoN>;
@@ -15,7 +15,9 @@ export const BAND = {
   feed: { sports: 2, markets: 9, stocks: 10 },
   market: { sports: 12, markets: 15, stocks: 10 },
   profile: { sports: 2, markets: 9, stocks: 10 },
-  top: 6, results: 3, following: 7, account: 1, alerts: 14, pricing: 8, signin: 6, about: 13, notFound: 1,
+  /* the product pages (/sports, /markets, /stocks, /how-it-works, /faq) */
+  product: { sports: 2, markets: 9, stocks: 10 }, how: 15, faq: 4,
+  top: 6, results: 3, following: 7, account: 5, alerts: 14, pricing: 8, signin: 6, about: 13, notFound: 5,
 } as const satisfies Record<string, PhotoN | Record<string, PhotoN>>;
 
 /** Small crops in empty states, sheets and in-page bands. */

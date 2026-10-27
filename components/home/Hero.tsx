@@ -1,6 +1,6 @@
 "use client";
 /* The home hero: "serious type, wild world".
- *   Photos: eight of the sixteen graded photos (public/hero, lib/photos.ts HERO_PHOTOS), each zooming slowly from 100%
+ *   Photos: seven of the sixteen graded photos (public/hero, lib/photos.ts HERO_PHOTOS), each zooming slowly from 100%
  *   to 108% over 6 s, then crossfading (1.2 s) into the next; it loops, each round ending on the summit. Photo 1 loads
  *   with the page (preloaded, high priority); the others load once the page is idle, and a photo only comes up once it has loaded. Under
  *   prefers-reduced-motion: photo 1 only, still.
@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { beacon } from "@/components/app/beacon";
-import { Photo, PHOTO_WIDE } from "@/components/Photo";
+import { Photo, PHOTO_WIDE, PHONE_SIZES, photoSet, photoSrc } from "@/components/Photo";
 import { HERO_PHOTOS } from "@/lib/photos";
 import { TimeAgo } from "@/components/TimeAgo";
 import { dollars } from "@/lib/moves/copy";
@@ -96,9 +96,11 @@ export function Hero({ moves, ticker, late, trialLine, cta, status }: {
   const [paused, setPaused] = useState(false);
   const loaded = useRef<Set<number>>(new Set([0]));
 
-  // Photo 1 is fetched with the HTML, before anything else: the phone crop on phones, the wide one on wider screens.
-  preload("/hero/1-m.avif", { as: "image", type: "image/avif", media: "(max-width: 899px)", fetchPriority: "high" });
-  preload("/hero/1-d.avif", { as: "image", type: "image/avif", media: PHOTO_WIDE, fetchPriority: "high" });
+  // The first photo is fetched with the HTML, before anything else: the phone crop on phones, the wide one on wider
+  // screens, each in the size this screen needs.
+  const lead = HERO_PHOTOS[0]!;
+  preload(photoSrc(lead, "m", "avif"), { as: "image", type: "image/avif", media: "(max-width: 899px)", fetchPriority: "high", imageSrcSet: photoSet(lead, "m"), imageSizes: PHONE_SIZES });
+  preload(photoSrc(lead, "d", "avif"), { as: "image", type: "image/avif", media: PHOTO_WIDE, fetchPriority: "high", imageSrcSet: photoSet(lead, "d"), imageSizes: "100vw" });
 
   // The others once the page is idle, and only without reduced motion.
   useEffect(() => {

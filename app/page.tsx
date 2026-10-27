@@ -1,5 +1,5 @@
 /* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: eight graded photos, what Insidir is in one line, "Follow the big money.", one real big
+ * hero (components/home/Hero.tsx: seven graded photos, what Insidir is in one line, "Follow the big money.", one real big
  * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
  * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
  * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
@@ -39,6 +39,8 @@ import { moveSource } from "@/lib/moves/source";
 import { tickerItem, type TickerItem } from "@/lib/moves/ticker";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
+import { memo } from "@/lib/memo";
+import type { Plan, Region } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +48,7 @@ const WEEK = 7 * 86_400_000;
 const MONTH = 30 * 86_400_000;
 
 /** The hero's moves: the biggest mainstream moves of the last week (lib/home/curate.ts), taking each live tab in turn
- *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to eight, one per photo. */
+ *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to seven, one per photo. */
 function heroPick(big: Move[], latest: Move[]): Move[] {
   const tabs = liveTabs().filter(t => t !== "crypto");
   const per = tabs.map(tab => big.filter(m => m.tab === tab));
@@ -89,44 +91,51 @@ async function snippetFor(db: Db, items: FeedItem[], until: number, records: boo
   };
 }
 
+interface HomeData { hero: FeedItem[]; recent: FeedItem[]; results: FeedItem[]; status: FeedStatus | null; snippet: Snippet | null; ticker: TickerItem[]; trust: TrustFacts | null; story: StoryData | null }
+const EMPTY: HomeData = { hero: [], recent: [], results: [], status: null, snippet: null, ticker: [], trust: null, story: null };
+
+async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number, records: boolean): Promise<HomeData> {
+  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
+  let ticker: TickerItem[] = [];
+  let trust: TrustFacts | null = null;
+  let story: StoryData | null = null;
+  // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
+  const [bigAll, latestAll, settledAll, st] = await Promise.all([
+    listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
+    listMoves(db, { until, limit: 200 }).catch(() => []),
+    listMoves(db, { settled: true, limit: 200 }).catch(() => []),
+    feedStatus(db, now).catch(() => null),
+  ]);
+  const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
+  const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
+  const [heroItems, recentItems] = await Promise.all([
+    feedItems(db, heroPick(big!, latest!), plan, region, now).catch(() => []),
+    feedItems(db, latest!.slice(0, 24), plan, region, now).catch(() => []),
+  ]);
+  hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
+  recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
+  ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
+  snippet = await snippetFor(db, recent.slice(0, 12), until, records).catch(() => null);
+  const picked = resultPick(settled!, now);
+  results = (await feedItems(db, picked, plan, region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
+  status = st;
+  [trust, story] = await Promise.all([
+    trustFacts(db).catch(() => null),
+    storyFor(db, plan, region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
+  ]);
+  return { hero, recent, results, status, snippet, ticker, trust, story };
+}
+
 export default async function Home() {
   const now = Date.now();
   const [jar, viewer] = await Promise.all([cookies(), getViewer()]);
   const paid = isPaid(viewer.plan);
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
-  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
-  let ticker: TickerItem[] = [];
-  let trust: TrustFacts | null = null;
-  let story: StoryData | null = null;
-  if (hasDatabase()) {
-    const db = getDb();
-    // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
-    const [bigAll, latestAll, settledAll, st] = await Promise.all([
-      listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
-      listMoves(db, { until, limit: 200 }).catch(() => []),
-      listMoves(db, { settled: true, limit: 200 }).catch(() => []),
-      feedStatus(db, now).catch(() => null),
-    ]);
-    const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
-    const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
-    const [heroItems, recentItems] = await Promise.all([
-      feedItems(db, heroPick(big!, latest!), viewer.plan, viewer.region, now).catch(() => []),
-      feedItems(db, latest!.slice(0, 24), viewer.plan, viewer.region, now).catch(() => []),
-    ]);
-    hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
-    recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
-    ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
-    snippet = await snippetFor(db, recent.slice(0, 12), until, plan.records).catch(() => null);
-    const picked = resultPick(settled!, now);
-    results = (await feedItems(db, picked, viewer.plan, viewer.region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
-    status = st;
-    [trust, story] = await Promise.all([
-      trustFacts(db).catch(() => null),
-      storyFor(db, viewer.plan, viewer.region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
-    ]);
-    // The phones show the app exactly as it reads (full sentences), not the home page's short copy.
-  }
+  // Every visitor on the same plan and region sees the same home page data: computed once per 15 seconds.
+  const { hero, recent, results, status, snippet, ticker, trust, story } = hasDatabase()
+    ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now, plan.records))
+    : EMPTY;
   const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));

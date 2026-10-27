@@ -45,10 +45,16 @@
 .nav__sheet a { display: flex; align-items: center; min-height: var(--tap); padding: 0 12px; border-radius: var(--r-input); color: var(--text); font-weight: 700; text-decoration: none; }
 .nav__sheet a[aria-current="page"] { background: var(--bg-alt); }
 .nav__sheet a:hover { background: var(--bg-alt); }
-@media (min-width: 900px) {
+/* Seven visitor links need the room: a menu below 1180px. Members have five and get them from 900px. */
+@media (min-width: 1180px) {
   .nav__links { display: flex; }
   .nav__menu { display: none; }
 }
+@media (min-width: 900px) and (max-width: 1179px) {
+  .nav__links--member { display: flex; }
+  .nav__menu--member { display: none; }
+}
+@media (min-width: 1180px) and (max-width: 1279px) { .nav__links a { padding: 0 9px; } }
 @media (max-width: 380px) { .nav__cta { padding: 0 14px; } }
 .nav__status { padding-bottom: 8px; }
 
@@ -504,7 +510,7 @@
 
 /* ---------- loading skeletons (components/Skeletons.tsx) ---------- */
 .skel .uiskel { display: block; }
-.skel .chips, .skel .move__top, .skel .move__actions { display: flex; }
+.skel .chips, .skel .move__top, .skel .move__foot { display: flex; }
 .move--skel { gap: 12px; }
 .skel__band .uiskel, .skel .pband .uiskel { background: var(--grey-3); }
 .skel__tiles > div { display: grid; }
@@ -555,29 +561,17 @@
 .app2 > .pband:first-child, .app > .pband:first-child { margin-top: -24px; }
 .soonpage > .pband:first-child { margin-top: -32px; }
 
-/* Pages fade in over 200 ms. Nothing bouncy. It starts at 1%, not 0: the same to the eye, but the browser counts the
- * first paint, so the fade never delays Largest Contentful Paint (from 0 it cost the home page ~1.8 s in Lighthouse). */
-@media (prefers-reduced-motion: no-preference) { main { animation: page-in var(--dur-small) ease-out; } }
-@keyframes page-in { from { opacity: .01; } to { opacity: 1; } }
-
 /* The dark app's nav sits on the same black as the page: a hairline separates them. */
 :root:has(main.dark) .nav { box-shadow: inset 0 -1px 0 var(--border); }
-
-/* Film grain over every page, 2.5%: a still texture under reduced motion, a slow shimmer otherwise. Never takes taps. */
-body::after { content: ""; position: fixed; inset: -50%; z-index: 100; pointer-events: none; opacity: .025;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-@media (prefers-reduced-motion: no-preference) { body::after { animation: grain 1.2s steps(6) infinite; } }
-@keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -4%); } 60% { transform: translate(-4%, -2%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); } }
 
 /* ---------- Scroll motion (components/motion/Motion.tsx). Only transform and opacity; all of it off under
  * prefers-reduced-motion, where everything is static and fully visible. ---------- */
 
-/* Reveal: fade up 16px as it enters, once; siblings stagger 80 ms by --i. Hidden only when JS will show it. */
+/* Reveal: a quick fade up 8px as it enters, once; siblings stagger 40 ms by --i. Fast enough that nothing ever waits
+ * on it. Hidden only when JS will show it. */
 @media (prefers-reduced-motion: no-preference) {
-  .js .rv { opacity: 0; transform: translate3d(0, 16px, 0); transition: opacity 600ms var(--ease-enter), transform 600ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js .rv { opacity: 0; transform: translate3d(0, 8px, 0); transition: opacity 260ms var(--ease-enter), transform 260ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 40ms); }
   .js .rv.is-in { opacity: 1; transform: none; }
-  /* live cards come up from a little further, one by one */
-  .js .rv--card { transform: translate3d(0, 28px, 0); }
 }
 
 /* Photos: drift at 0.85x scroll speed with a gentle zoom-in (CSS scroll-driven where supported; Motion.tsx otherwise). */
@@ -792,3 +786,147 @@ body::after { content: ""; position: fixed; inset: -50%; z-index: 100; pointer-e
 .psec__note-text { font-size: var(--t15); line-height: 1.35; overflow-wrap: anywhere; }
 .psec__cta { display: grid; justify-items: center; gap: 12px; }
 .psec__fine { color: var(--grey-2); font-size: var(--t15); font-weight: 700; }
+
+/* ---------- Speed you can feel ---------- */
+/* Every link to another page starts this bar the instant it is tapped (components/motion/NavProgress.tsx). */
+.navbar-prog { position: fixed; top: 0; left: 0; z-index: 200; width: 100%; height: 3px; background: var(--night-money); transform: scaleX(0); transform-origin: 0 50%; opacity: 0; pointer-events: none; }
+:root[data-nav="go"] .navbar-prog { opacity: 1; transform: scaleX(.85); transition: transform 2.4s cubic-bezier(.1, .7, .2, 1), opacity 80ms; }
+:root[data-nav="done"] .navbar-prog { opacity: 0; transform: scaleX(1); transition: transform 120ms ease-out, opacity 200ms 100ms; }
+/* Buttons, chips and tabs answer the finger at once: no tap delay, no grey flash, a quick press-down. */
+a, button, summary, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.btn, .chip2, .tabs__tab, .tabbar__item, .seg__btn { transition: transform 80ms ease-out, background-color 120ms, color 120ms, border-color 120ms; }
+.btn:active, .chip2:active, .tabs__tab:active, .seg__btn:active { transform: scale(.97); }
+.tabbar__item:active { opacity: .6; }
+
+/* ---------- The dashboard (/feed): one clean column of moves, and on wide screens a quiet rail beside it ---------- */
+.dash { display: grid; gap: 24px; margin-top: 20px; }
+@media (min-width: 1100px) { .dash { grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; } }
+.dash__main { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+.dash__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+.dash__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.dash__leagues { margin: 0; flex: 1 1 260px; min-width: 0; }
+.dash__upsell { margin: 0; max-width: none; }
+.dash .feed2__list { margin: 0; max-width: none; gap: 10px; }
+.dash .feed2__list[aria-busy] { opacity: .45; transition: opacity 120ms; pointer-events: none; }
+.dash .chip2 { min-height: 36px; padding: 0 12px; font-size: var(--t13); background: transparent; }
+.dash .chip2[aria-pressed="true"] { background: var(--text); }
+
+/* Segmented control: the category tabs and the size filter */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--bg-alt); box-shadow: inset 0 0 0 1px var(--border); overflow-x: auto; max-width: 100%; }
+.seg__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: 700 var(--t15)/1 var(--sans); cursor: pointer; white-space: nowrap; }
+.seg__btn:hover { color: var(--text); }
+.seg__btn[aria-pressed="true"] { background: var(--bg); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 0 0 1px var(--border); }
+.seg__btn--soon { opacity: .6; }
+.seg--sm .seg__btn { min-height: 34px; padding: 0 12px; font-size: var(--t13); }
+
+/* The rail */
+.dash__side { display: none; }
+@media (min-width: 1100px) { .dash__side { display: grid; gap: 12px; position: sticky; top: 92px; } }
+.side { display: grid; gap: 12px; padding: 18px; border-radius: var(--r-card); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); }
+.side__k { color: var(--muted); font-size: var(--t13); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.side__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.side__stats div { display: grid; gap: 4px; }
+.side__stats dt { color: var(--muted); font-size: var(--t13); font-weight: 600; }
+.side__stats dd { margin: 0; font-size: var(--t20); font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.side__h { font-family: var(--serif); font-size: var(--t24); line-height: 1.1; }
+.side__p { color: var(--muted); font-size: var(--t15); }
+.side--links { gap: 0; padding: 6px 18px; }
+.side--links a { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; color: var(--text); font-weight: 700; font-size: var(--t15); text-decoration: none; }
+.side--links a + a { box-shadow: inset 0 1px 0 var(--border); }
+.side--links a span { color: var(--muted); transition: transform 120ms; }
+.side--links a:hover span { transform: translateX(3px); color: var(--text); }
+
+/* Cards: calmer. No outline, a soft surface, the tag as a dot and a word, one footer row. */
+.dash .move, .ios-vp .move { gap: 8px; padding: 18px 20px; border: 0; box-shadow: inset 0 0 0 1px var(--border); }
+.dash .move:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.move .tag { height: auto; padding: 0; gap: 7px; background: none; box-shadow: none; color: var(--muted); font-size: var(--t13); }
+.tag__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.dash .move__sentence { font-size: var(--t17); }
+@media (min-width: 900px) { .dash .move__sentence { font-size: var(--t20); } }
+.move__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.move__foot .btn { min-height: var(--tap); padding: 0 16px; font-size: var(--t15); }
+.move__src { margin-left: auto; padding: 0; }
+@media (max-width: 520px) { .move__src { margin-left: 0; flex-basis: 100%; } }
+
+/* ---------- Product pages (pricing, how it works, Sports / Markets / Stocks, FAQ): the app's dark look ---------- */
+.pband__sub { margin-top: 8px; color: var(--grey-2); font-size: var(--t17); max-width: 52ch; }
+.mkt .sec2 { padding: 56px 0; }
+@media (min-width: 900px) { .mkt .sec2 { padding: 80px 0; } }
+.mkt .sec2 + .sec2 { padding-top: 0; }
+.mkt .sec2--alt { background: none; }
+.mkt__lead { color: var(--muted); font-size: var(--t17); max-width: 56ch; }
+.mkt__ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+.mkt__endIn { display: grid; justify-items: center; gap: 16px; text-align: center; }
+.mkt__endIn .sec2__h { margin: 0; }
+
+/* Plans */
+.pricing2 .plans2 { display: grid; gap: 16px; align-items: stretch; }
+@media (min-width: 900px) { .pricing2 .plans2 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.plan2 { align-content: start; gap: 14px; padding: 28px 24px; border: 0; box-shadow: inset 0 0 0 1px var(--border); }
+.plan2--main { border: 0; box-shadow: inset 0 0 0 2px var(--text); }
+.dark .plan2--main { box-shadow: inset 0 0 0 2px var(--night-money), 0 24px 60px -30px rgba(43, 176, 127, .55); }
+.plan2__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plan2__flag { padding: 5px 10px; }
+.dark .plan2__flag { background: var(--night-money); color: var(--ink); }
+.plan2__flag--mine, .dark .plan2__flag--mine { background: var(--bg-alt); color: var(--text); }
+.plan2__pitch { color: var(--muted); font-size: var(--t15); font-weight: 600; min-height: 2.6em; }
+.plan2__price { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.plan2__amt { font-size: var(--t56); line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.plan2__unit { color: var(--muted); font-size: var(--t17); font-weight: 700; }
+.plan2__sub { margin-top: -6px; font-size: var(--t15); }
+.plan2__list { margin: 6px 0 0; padding-top: 18px; box-shadow: inset 0 1px 0 var(--border); gap: 12px; }
+.plan2__list li { display: flex; align-items: flex-start; gap: 10px; padding-left: 0; font-size: var(--t15); line-height: 1.4; }
+.plan2__list li::before { content: none; }
+.plan2__check { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--night-money); }
+:root:not(:has(main.dark)) .plan2__check { color: var(--money); }
+.plan2__soon { color: var(--muted); }
+.plan2__soon .plan2__check { color: var(--border); }
+.plan2__badge { display: inline-flex; align-items: center; height: 20px; margin-left: 8px; padding: 0 8px; border-radius: var(--r-pill); background: var(--bg-alt); color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; white-space: nowrap; }
+
+/* Promises */
+.promise__grid { display: grid; gap: 12px; }
+@media (min-width: 900px) { .promise__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+.promise__item { display: grid; gap: 6px; padding: 20px; border-radius: var(--r-card); background: var(--bg-alt); }
+.promise__icon { width: 22px; height: 22px; color: var(--night-money); margin-bottom: 4px; }
+.promise__h { font-weight: 800; }
+.promise__p { color: var(--muted); font-size: var(--t15); }
+
+/* Compare */
+.cmp__scroll { overflow-x: auto; border-radius: var(--r-card); box-shadow: inset 0 0 0 1px var(--border); }
+.cmp__t { width: 100%; min-width: 640px; border-collapse: collapse; font-size: var(--t15); }
+.cmp__t th, .cmp__t td { padding: 14px 18px; text-align: center; box-shadow: inset 0 -1px 0 var(--border); }
+.cmp__t tbody tr:last-child th, .cmp__t tbody tr:last-child td { box-shadow: none; }
+.cmp__t thead th { font-family: var(--serif); font-size: var(--t20); padding-top: 20px; }
+.cmp__t tbody th { text-align: left; font-weight: 600; }
+.cmp__t td { font-weight: 700; font-variant-numeric: tabular-nums; }
+.cmp__t .plan2__check { display: inline-block; vertical-align: middle; }
+.cmp__main { background: color-mix(in srgb, var(--night-money) 8%, transparent); }
+.cmp__no { color: var(--muted); }
+.cmp__price th, .cmp__price td { font-weight: 800; }
+
+/* Product page blocks */
+.pband__link { color: var(--paper); }
+.prod__intro { display: grid; gap: 20px; }
+.prod__covers { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.prod__covers li { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill); background: var(--bg-alt); font-size: var(--t15); font-weight: 700; }
+.prod__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 24px; }
+.prod__head .sec2__h { margin: 0; }
+.prod__note { color: var(--muted); font-size: var(--t15); font-weight: 700; }
+.prod__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 900px) { .prod__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.prod__list .move { height: 100%; align-content: start; }
+.prod__more { margin-top: 20px; font-weight: 700; }
+.prod__more a { color: var(--text); text-decoration: none; }
+.prod__more a:hover { text-decoration: underline; }
+.prod__grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 700px) { .prod__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .prod__grid:not(.prod__grid--2) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.prod__tile { display: grid; gap: 8px; align-content: start; padding: 22px; border-radius: var(--r-card); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); color: var(--text); text-decoration: none; }
+.prod__tile--link:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.prod__n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--night-money); color: var(--ink); font-size: var(--t15); font-weight: 800; margin-bottom: 4px; }
+.prod__h { font-weight: 800; font-size: var(--t17); }
+.prod__p { color: var(--muted); font-size: var(--t15); line-height: 1.45; }
+.how .story { background: none; }
+.dark .story__n { background: var(--paper); color: var(--ink); }
+/* Scrolling rows keep their screen-reader-only labels (position: absolute) inside, so the page never widens. */
+.cmp__scroll, .chips--scroll, .seg { position: relative; }

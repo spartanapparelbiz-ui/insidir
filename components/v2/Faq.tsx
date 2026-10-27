@@ -12,13 +12,27 @@ export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
   { id: "who", q: "Who's behind it?", a: "Insidir is built by Aethric LLC, Pompano Beach, FL. Write to hello@aethric.llc and a person will answer." },
 ];
 
-export function FaqV2({ title = "Questions" }: { title?: string }) {
+/** Billing questions, for /pricing (with the most asked general ones). */
+export const FAQ_PRICING: Array<{ id: string; q: string; a: string }> = [
+  { id: "trial", q: "What do I get for $1?", a: `Everything in Insidir for ${TRIAL.days} days: every big move live, trader records and follows. After ${TRIAL.days} days it's $${PLANS.insidir.price}/mo until you cancel.` },
+  FAQ_V2.find(f => f.id === "cancel")!,
+  { id: "switch", q: "Can I go Pro later?", a: "Yes. Start with Insidir and tap Go Pro in Account whenever you want more." },
+  { id: "pay", q: "How do I pay?", a: "Through Whop, our payment provider, on its secure checkout. We never see or store your card." },
+  { id: "free", q: "Is the free plan really free?", a: "Yes, no card needed. You see the same moves, 30 minutes late, and every result, won or lost." },
+  FAQ_V2.find(f => f.id === "advice")!,
+];
+
+/** Every question in one place, for /faq. */
+export const FAQ_ALL = [...FAQ_V2, ...FAQ_PRICING.filter(f => !FAQ_V2.some(g => g.id === f.id))];
+
+export function FaqV2({ title = "Questions", items = FAQ_V2, level = 2 }: { title?: string; items?: Array<{ id: string; q: string; a: string }>; level?: 1 | 2 }) {
+  const H = level === 1 ? "h1" : "h2";
   return (
     <section className="sec2 sec2--alt" id="faq" aria-labelledby="faq-h">
       <div className="wrap faq2">
-        <h2 id="faq-h" className="sec2__h rv">{title}</h2>
+        <H id="faq-h" className="sec2__h rv">{title}</H>
         <div className="faq2__list">
-          {FAQ_V2.map((f, i) => (
+          {items.map((f, i) => (
             <details key={f.id} className="faq2__item rv" style={{ ["--i" as string]: Math.min(i, 5) }} id={`faq-${f.id}`}>
               <summary>{f.q}</summary>
               <p>{f.a}</p>
@@ -30,7 +44,7 @@ export function FaqV2({ title = "Questions" }: { title?: string }) {
   );
 }
 
-export const faqSchemaV2 = (): string => JSON.stringify({
+export const faqSchemaV2 = (items = FAQ_V2): string => JSON.stringify({
   "@context": "https://schema.org", "@type": "FAQPage",
-  mainEntity: FAQ_V2.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+  mainEntity: items.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
 });

@@ -6,9 +6,9 @@
 set -euo pipefail
 strip() { # photo width height y-centre(0..1) out
   local n=$1 w=$2 h=$3 cy=$4 out=$5 ch
-  ch=$(( 1600 * h / w ))
-  local y; y=$(awk -v c="$cy" -v ch="$ch" 'BEGIN { o = int(c * 900 - ch / 2); if (o < 0) o = 0; if (o > 900 - ch) o = 900 - ch; print o }')
-  convert "public/hero/$n-d.webp" -crop "1600x${ch}+0+${y}" +repage -resize "${w}x${h}!" -strip -quality 80 "$out"
+  ch=$(( 1920 * h / w ))
+  local y; y=$(awk -v c="$cy" -v ch="$ch" 'BEGIN { o = int(c * 1080 - ch / 2); if (o < 0) o = 0; if (o > 1080 - ch) o = 1080 - ch; print o }')
+  convert "public/hero/$n-d-1920.webp" -crop "1920x${ch}+0+${y}" +repage -resize "${w}x${h}!" -strip -quality 86 "$out"
 }
 strip 11 1080 400 0.55 lib/og-assets/strip-move.jpg       # move share card (1080×1920)
 strip 16 1200 170 0.44 lib/og-assets/strip-site.jpg       # link preview and receipt cards (1200×630)

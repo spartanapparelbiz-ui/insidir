@@ -20,7 +20,7 @@ export function MoveSkeleton() {
       <div className="move__top"><SkeletonLine w={110} h={26} /><SkeletonLine w={56} h={12} /></div>
       <SkeletonLine w="92%" h={20} /><SkeletonLine w="64%" h={20} />
       <SkeletonLine w="55%" h={14} />
-      <div className="move__actions"><SkeletonLine w={92} h={44} /><SkeletonLine w={110} h={44} /></div>
+      <div className="move__foot"><SkeletonLine w={92} h={40} /><SkeletonLine w={110} h={40} /></div>
     </div>
   );
 }

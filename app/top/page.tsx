@@ -14,6 +14,7 @@ import { signedShort } from "@/lib/moves/copy";
 import { walletLabel } from "@/lib/moves/records";
 import { followList } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
+import { memo } from "@/lib/memo";
 import { topRanking, type TopRow, type TopWindow } from "@/lib/profiles/store";
 import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
@@ -36,7 +37,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
   let follows: Array<{ kind: string; target: string }> = [];
   if (hasDatabase()) {
     const db = getDb();
-    rows = await topRanking(db, window, tab, now).catch(() => []);
+    rows = await memo(`top:${window}:${tab ?? ""}`, 60_000, () => topRanking(db, window, tab, now)).catch(() => []);
     follows = viewer.user ? await followList(db, viewer.user.id).catch(() => []) : [];
   }
   const q = (o: { window?: string; tab?: string }) => {
