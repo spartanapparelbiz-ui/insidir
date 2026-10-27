@@ -27,7 +27,7 @@ export default async function AlertsPage() {
   const viewer = await getViewer();
   const ready = { push: isReady("alerts_push"), email: isReady("alerts_email"), daily: isReady("daily_email"), rules: isReady("custom_rules") };
   if (!ready.push && !ready.email) {
-    return <ComingSoonPage feature="alerts_push" title="Alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
+    return <ComingSoonPage feature="alerts_push" title="Alerts" band={BAND.alerts} current="/alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
   }
   const user = viewer.user;
   if (!user) redirect("/auth/login?next=/alerts");

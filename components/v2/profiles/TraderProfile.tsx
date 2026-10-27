@@ -46,7 +46,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
   return (
     <>
       <header className="trader__head">
-        <Photo n={BAND.profile[best]} className="trader__photo" wideOnly eager />
+        <Photo n={BAND.profile[best]} className="trader__photo" band eager />
         <div>
           <p className="trader__kicker">Polymarket wallet</p>
           <h1 className="trader__name">{name}</h1>

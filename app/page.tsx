@@ -183,9 +183,9 @@ export default async function Home() {
                   <li key={r.id} className="rlist__row">
                     <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
                     <span className="rlist__what"><span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {r.marketTitle}
-                      <span className="rlist__who">Top trader {walletLabel(r.wallet!, r.walletName)}</span></span>
-                    <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                      <span className="rlist__who">Top trader {walletLabel(r.wallet!, r.walletName)}</span>
                       {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}</span>
+                    <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
                   </li>
                 ))}
               </ol>

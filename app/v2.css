@@ -171,7 +171,7 @@
   background: var(--ink); color: var(--paper); align-content: end; }
 @media (min-width: 900px) { .trader__head { min-height: 200px; padding-bottom: 28px; } }
 .trader__photo { position: absolute; inset: 0; z-index: -2; }
-.trader__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.trader__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
 .trader__head::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
@@ -470,12 +470,12 @@
 .inband__card :focus-visible { outline-color: var(--text); }
 
 /* the public record behind a number: small, always there, opens the source */
-.source { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; color: var(--muted); font-size: var(--t13); font-weight: 700; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.source { justify-self: start; display: inline-block; padding: 7px 0; line-height: 1.4; color: var(--muted); font-size: var(--t13); font-weight: 700; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
 .source:hover { color: var(--text); text-decoration-color: currentColor; }
 .source--dark { color: var(--grey-2); text-decoration-color: var(--grey-3); margin-top: 6px; }
 .source--dark:hover { color: var(--paper); }
 .rlist__when { display: grid; justify-items: end; gap: 2px; }
-.rlist__src { min-height: 24px; }
+.rlist__src { display: block; width: fit-content; padding: 4px 0 0; }
 .cine__label--behind { text-transform: none; letter-spacing: 0; font-size: var(--t15); }
 .cine__label--behind .cine__dot { background: none; box-shadow: inset 0 0 0 1.5px var(--paper); animation: none; }
 
@@ -517,10 +517,10 @@
 
 /* Header bands (components/PageBand.tsx): full bleed from inside or outside a .wrap, 140px on phones, 200px on desktop,
  * a 55% black overlay, the title in large serif white. The photo drifts slower than the page (scroll-driven). */
-.pband { position: relative; isolation: isolate; display: grid; align-items: end; min-height: 140px; margin-inline: calc(50% - 50vw); overflow: hidden; background: var(--ink); color: var(--paper); }
+.pband { position: relative; isolation: isolate; display: grid; justify-self: stretch; align-items: end; min-height: 140px; margin-inline: calc(50% - 50vw); overflow: hidden; background: var(--ink); color: var(--paper); }
 @media (min-width: 900px) { .pband { min-height: 200px; } }
 .pband__photo { position: absolute; inset: 0; z-index: -2; }
-.pband__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.pband__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
 .pband::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(11, 11, 18, .55); }
 .pband__in { width: 100%; padding-top: 20px; padding-bottom: 18px; }
 @media (min-width: 900px) { .pband__in { padding-bottom: 28px; } }
@@ -530,6 +530,7 @@
 .pband :focus-visible { outline-color: var(--paper); }
 .pband .source--dark { margin-top: 4px; }
 .app2 > .pband:first-child, .app > .pband:first-child { margin-top: -24px; }
+.soonpage > .pband:first-child { margin-top: -32px; }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     .pband__photo img { height: 130%; animation: pband-drift linear both; animation-timeline: view(); animation-range: cover 50% exit 100%; }
@@ -537,9 +538,10 @@
 }
 @keyframes pband-drift { from { transform: translateY(-12%); } to { transform: translateY(0); } }
 
-/* Pages fade in over 200 ms. Nothing bouncy. */
+/* Pages fade in over 200 ms. Nothing bouncy. It starts at 1%, not 0: the same to the eye, but the browser counts the
+ * first paint, so the fade never delays Largest Contentful Paint (from 0 it cost the home page ~1.8 s in Lighthouse). */
 @media (prefers-reduced-motion: no-preference) { main { animation: page-in var(--dur-small) ease-out; } }
-@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes page-in { from { opacity: .01; } to { opacity: 1; } }
 
 /* The dark app's nav sits on the same black as the page: a hairline separates them. */
 :root:has(main.dark) .nav { box-shadow: inset 0 -1px 0 var(--border); }

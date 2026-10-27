@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The site's photos (components/Photo.tsx: the home hero, page header bands, empty states). From the Unsplash
 # originals in public/hero/1.jpg … 16.jpg it writes, per photo, a desktop crop (16:9, 1600×900) and a mobile crop (2:3, 828×1242)
-# that keeps the person in frame, each as AVIF and WebP, all in one grade: dark and cinematic, muted colour (not black
+# that keeps the person in frame, plus header-band crops (4:1 at 1600×400 for desktop, 780×280 for phones: the
+# band is 200px/140px tall, so it never downloads a full photo), each as AVIF and WebP, all in one grade: dark and cinematic, muted colour (not black
 # and white), cool blue-teal shadows that sink into the brand black #0B0B12, low-key exposure, a vignette and fine grain.
 # Needs ImageMagick 6 (convert) and ffmpeg with libaom-av1. Run from the repo root: bash scripts/hero-photos.sh [n ...]
 # (no arguments: all sixteen; with numbers: only those).
@@ -60,6 +61,12 @@ for n in ${@:-$(seq 1 16)}; do
   convert "$n.jpg" -crop "${dw}x${dh}+${dx}+${dy}" +repage "$tmp/d.png"
   grade "$tmp/d.png" "$tmp/d-g.png" 1600 900 "$n"
   encode "$tmp/d-g.png" "$n-d"
+  # Header bands: a strip of the graded desktop crop, centred on the person.
+  by=$(awk -v f="${FY[$n]}" -v h="$H" -v dy="$dy" -v dh="$dh" 'BEGIN { c = (f * h - dy) / dh * 900; o = int(c - 200); if (o < 0) o = 0; if (o > 500) o = 500; print o }')
+  convert "$tmp/d-g.png" -crop "1600x400+0+${by}" +repage "$tmp/b.png"
+  encode "$tmp/b.png" "$n-b"
+  convert "$tmp/b.png" -resize 780x "$tmp/bm.png"
+  encode "$tmp/bm.png" "$n-bm"
   # Mobile: full height, 2:3, centred on the person.
   mw=$(( H * 2 / 3 ))
   mx=$(offset "$(awk -v f="${FX[$n]}" -v w="$W" 'BEGIN{print f*w}')" "$mw" "$W")
@@ -67,5 +74,5 @@ for n in ${@:-$(seq 1 16)}; do
   grade "$tmp/m.png" "$tmp/m-g.png" 828 1242 "$n"
   encode "$tmp/m-g.png" "$n-m"
 done
-ls -l ./*-d.* ./*-m.*
-for f in ./*-d.* ./*-m.*; do [ "$(stat -c%s "$f")" -lt "$LIMIT" ] || { echo "$f is over 250 KB" >&2; exit 1; }; done
+ls -l ./*-d.* ./*-m.* ./*-b.* ./*-bm.*
+for f in ./*-d.* ./*-m.* ./*-b.* ./*-bm.*; do [ "$(stat -c%s "$f")" -lt "$LIMIT" ] || { echo "$f is over 250 KB" >&2; exit 1; }; done
