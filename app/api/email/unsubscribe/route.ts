@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const ok = await unsubscribe(req).catch(() => false);
-  return new NextResponse(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="background:#000;color:#f2f0ea;font-family:ui-monospace,Menlo,monospace;padding:32px">` +
-    `<p>${ok ? "You're unsubscribed. Insidir won't email you again unless you turn emails back on in Settings." : "That unsubscribe link didn't work. Turn emails off in Settings instead."}</p><p><a style="color:#f2f0ea" href="/settings">Settings</a></p></body>`,
+  return new NextResponse(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="background:#000;color:#f5f5f5;font-family:ui-monospace,Menlo,monospace;padding:32px">` +
+    `<p>${ok ? "You're unsubscribed. Insidir won't email you again unless you turn emails back on in Settings." : "That unsubscribe link didn't work. Turn emails off in Settings instead."}</p><p><a style="color:#f5f5f5" href="/settings">Settings</a></p></body>`,
     { status: ok ? 200 : 400, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }

@@ -1,6 +1,6 @@
 /* The scan over a SYNTHETIC universe: one matched pair with a lock, a multi-outcome event, a ladder. */
-import { describe, expect, it } from "vitest";
-import { DEFAULT_SCAN_OPTIONS, marketsToBook, scan, scanOptionsFromEnv } from "@/lib/scanner";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { DEFAULT_SCAN_OPTIONS, laddersEnabled, marketsToBook, scan, scanOptionsFromEnv } from "@/lib/scanner";
 import type { VEvent } from "@/lib/types";
 import { book, DAY, key, L, market, NOW, pair } from "./engines-fixtures";
 
@@ -16,7 +16,18 @@ const unrelated = market({ id: "U" });
 const u = { markets: [k, p, e1, e2, e3, hi, lo, unrelated], events: [ev], pairs: [pair(k, p)] };
 const LADDERS = { ...DEFAULT_SCAN_OPTIONS, ladders: true };
 
+describe("LADDERS_ENABLED", () => {
+  it("ladders are off unless it is exactly 1", () => {
+    expect(laddersEnabled({})).toBe(false);
+    expect(laddersEnabled({ LADDERS_ENABLED: "0" })).toBe(false);
+    expect(laddersEnabled({ LADDERS_ENABLED: "1" })).toBe(true);
+  });
+});
+
 describe("scan", () => {
+  // These cases cover every engine, ladders included.
+  beforeAll(() => { process.env.LADDERS_ENABLED = "1"; });
+  afterAll(() => { delete process.env.LADDERS_ENABLED; });
   it("books only the markets an engine can use", () => {
     const need = marketsToBook(u, NOW, LADDERS);
     expect(need.get("kalshi")?.map(m => m.id).sort()).toEqual(["E1", "E2", "E3", "HI", "K", "LO"]);
@@ -65,4 +76,5 @@ describe("scan", () => {
     expect(marketsToBook(far, NOW, LADDERS).get("kalshi")?.map(m => m.id)).toEqual(["K"]);
     expect(scanOptionsFromEnv({ BOOK_MIN_VOLUME_24H: "50", BOOK_MAX_DAYS: "7" })).toMatchObject({ minVolume24h: 50, maxDays: 7 });
   });
+
 });

@@ -1,5 +1,5 @@
 /* Web push end to end, minus Google's/Apple's push servers (unreachable here):
- *   1. A Pro member taps "Turn on push alerts" in Settings. The browser's PushManager is replaced by a stand-in
+ *   1. A Pro member taps "Turn on alerts" on the Alerts page. The browser's PushManager is replaced by a stand-in
  *      whose endpoint is our local push service and whose keys we hold, so the real flow runs: permission → service
  *      worker → subscription → POST /api/push/subscribe.
  *   2. The real worker runs its alert job and sends a VAPID-signed, encrypted push to that endpoint.
@@ -12,7 +12,7 @@ import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { APP_URL, E2E_DB, OUT, PUSH_PORT, VAPID } from "./env";
+import { APP_URL, E2E_DB, OUT, PUSH_PORT, SERVER_ENV, VAPID } from "./env";
 import { dealId, q, signIn } from "./helpers";
 import { E2E_USERS } from "./seed";
 
@@ -26,9 +26,9 @@ function runWorker(ms: number): Promise<string> {
   return new Promise((ok, fail) => {
     const p = spawn("npx", ["tsx", "worker/index.ts"], {
       env: { ...process.env, DATABASE_URL: E2E_DB, APP_URL, NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey, VAPID_PRIVATE_KEY: VAPID.privateKey, VAPID_SUBJECT: "mailto:qa@insidir.com",
-        NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"), WORKER_RUN_FOR_MS: String(ms), ALERT_MS: "1000", SWEEP_MS: "3600000", SCAN_MS: "3600000", FULL_SCAN_MS: "3600000",
+        NODE_EXTRA_CA_CERTS: join(OUT, "push-cert.pem"), WORKER_RUN_FOR_MS: String(ms), ALERT_MS: "1000", GAPS_ENABLED: "1",
         WHALE_MS: "3600000", SETTLE_MS: "3600000", KALSHI_API_URL: "http://127.0.0.1:9", POLYMARKET_GAMMA_URL: "http://127.0.0.1:9", POLYMARKET_CLOB_URL: "http://127.0.0.1:9",
-        POLYMARKET_DATA_URL: "http://127.0.0.1:9", POLYMARKET_US_ENABLED: "0" },
+        POLYMARKET_DATA_URL: "http://127.0.0.1:9", POLYMARKET_US_ENABLED: "0", FEATURES_READY: SERVER_ENV.FEATURES_READY },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let log = "";
@@ -57,9 +57,9 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
   }, { endpoint, p256dh: b64u(ecdh.getPublicKey()), auth: b64u(auth) });
 
   await signIn(context, "pro");
-  await page.goto("/settings");
-  await page.getByRole("button", { name: "Turn on push alerts" }).click();
-  await expect(page.getByRole("button", { name: "Turn off push on this device" })).toBeVisible();
+  await page.goto("/alerts");
+  await page.getByRole("button", { name: "Turn on alerts" }).click();
+  await expect(page.getByRole("button", { name: "Turn off alerts on this device" })).toBeVisible();
   const subs = await q<{ endpoint: string }>("select endpoint from terminal.push_subscriptions where user_id = $1", [pro.id]);
   expect(subs.map(s => s.endpoint)).toEqual([endpoint]);
 
@@ -103,6 +103,48 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
     expect(opened.length).toBeGreaterThan(0);
   } finally {
     // The worker couldn't reach any venue (by design here); put the scanner heartbeats back so later tests see live data.
-    await q("update terminal.worker_heartbeats set ok = true, error = null, last_run_at = now() where job like 'scan:%'");
+    await q("update terminal.worker_heartbeats set ok = true, error = null, last_run_at = now() where job like 'scan:%' or job like 'moves:%'");
+  }
+});
+
+test("move alert: the worker pushes a followed trader's new move, once, in plain words", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium");
+  const ins = E2E_USERS.insidir!;
+  const TOP = "0xe2e00000000000000000000000000000000000aa";
+  const id = `e2e:alert-${page.viewportSize()!.width}`;
+  const ecdh = createECDH("prime256v1"); ecdh.generateKeys();
+  const auth = randomBytes(16);
+  const endpoint = `https://localhost:${PUSH_PORT}/push/move-${page.viewportSize()!.width}`;
+  const cleanup = async () => {
+    await q("delete from terminal.alerts_sent where user_id = $1", [ins.id]);
+    await q("delete from terminal.push_subscriptions where user_id = $1", [ins.id]);
+    await q("delete from terminal.follows where user_id = $1", [ins.id]);
+    await q("delete from terminal.moves where id = $1", [id]);
+    await q("update terminal.users set settings = settings || '{\"alertPush\": false}'::jsonb where id = $1", [ins.id]);
+    await q("update terminal.worker_heartbeats set ok = true, error = null, last_run_at = now() where job like 'scan:%' or job like 'moves:%'");
+  };
+  await cleanup();
+  try {
+    await q("insert into terminal.push_subscriptions (endpoint, user_id, p256dh, auth) values ($1, $2, $3, $4)", [endpoint, ins.id, b64u(ecdh.getPublicKey()), b64u(auth)]);
+    await q("update terminal.users set settings = settings || '{\"alertPush\": true}'::jsonb where id = $1", [ins.id]);
+    await q("insert into terminal.follows (user_id, kind, target) values ($1, 'trader', $2)", [ins.id, TOP]);
+    await q(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, wallet_name, at, last_at, fills, tab, league, category)
+      values ($1, 'polymarket', '0xe2emarket9', 'E2E fixture: Ravens vs. Steelers', 'E2E fixture: Ravens vs. Steelers', 'Ravens', 'yes', 230000, 0.5, $2, 'E2E-Top', now(), now(), 2, 'sports', 'NFL', 'sports')`, [id, TOP]);
+    const before = (JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as unknown[]).length;
+    const log = await runWorker(8_000);
+    const pushes = JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as Array<{ path: string; body: string }>;
+    const mine = pushes.slice(before).filter(p => endpoint.endsWith(p.path));
+    // Every recent move by the followed trader alerts (the seeded fixture from a few minutes ago too); this one once.
+    const payloads = mine.map(m => JSON.parse(ece.decrypt(Buffer.from(m.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { title: string; body: string; url: string });
+    const ravens = payloads.filter(p => p.body.includes("Ravens"));
+    expect(ravens.length, log).toBe(1);
+    const payload = ravens[0]!;
+    expect(payload.title).toBe("A trader you follow just moved");
+    expect(payload.body).toBe("E2E-Top, a top trader, just put $230,000 on Ravens to win. Pays $200 on every $100 if Ravens win.");
+    expect(payload.url).toBe(`${APP_URL}/market/0xe2emarket9?from=alert`);
+    const sent = await q("select 1 from terminal.alerts_sent where user_id = $1 and opp_id = $2", [ins.id, `move:${id}`]);
+    expect(sent.length).toBe(1);
+  } finally {
+    await cleanup();
   }
 });

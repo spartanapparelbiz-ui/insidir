@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edgarSubmission xmlns="http://www.sec.gov/edgar/thirteenffiler" xmlns:com="http://www.sec.gov/edgar/common">
+  <headerData><submissionType>13F-HR</submissionType><filerInfo><periodOfReport>09-30-2026</periodOfReport></filerInfo></headerData>
+  <formData>
+    <coverPage><reportCalendarOrQuarter>09-30-2026</reportCalendarOrQuarter><isAmendment>false</isAmendment>
+      <filingManager><name>EXAMPLE CAPITAL MANAGEMENT LP</name></filingManager><reportType>13F HOLDINGS REPORT</reportType></coverPage>
+    <summaryPage><otherIncludedManagersCount>0</otherIncludedManagersCount><tableEntryTotal>4</tableEntryTotal><tableValueTotal>1915000000</tableValueTotal><isConfidentialOmitted>false</isConfidentialOmitted></summaryPage>
+  </formData>
+</edgarSubmission>

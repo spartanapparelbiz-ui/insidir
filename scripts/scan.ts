@@ -8,6 +8,7 @@
  *   - an estimated monthly running cost
  * Flags: --top N (default 10), --json (machine-readable). Set OPENROUTER_API_KEY to let unsure matches ask the LLM. */
 import { createVenueClients, rateLimitStats, type VenueClient } from "@/lib/exchanges";
+import { appendAll } from "@/lib/exchanges/venue";
 import { marketKey } from "@/lib/engines/common";
 import { createMemoryCache, createMemoryUsageStore, createOpenRouterConfirm, llmEnv, matchConfigFromEnv, matchMarkets, type MatchStats } from "@/lib/matching";
 import { marketsToBook, scan, scanOptionsFromEnv } from "@/lib/scanner";
@@ -44,7 +45,7 @@ async function main(): Promise<void> {
   for (const [venue, client] of Object.entries(clients) as Array<[Venue, VenueClient]>) {
     try {
       const [m, e] = await Promise.all([client.listMarkets({ refresh: true }), client.listEvents()]);
-      markets.push(...m); events.push(...e); byVenue.set(venue, m);
+      appendAll(markets, m); appendAll(events, e); byVenue.set(venue, m);
       say(`${VENUE_NAME[venue]}: ${m.length} open markets, ${e.length} events`);
     } catch (e) {
       venueErrors[venue] = errMsg(e);
@@ -65,7 +66,7 @@ async function main(): Promise<void> {
     const list = byVenue.get(other) ?? [];
     if (!kalshi.length || !list.length) continue;
     const r = await matchMarkets(kalshi, list, deps);
-    pairs.push(...r.pairs);
+    appendAll(pairs, r.pairs);
     matchStats[other] = r.stats;
   }
 

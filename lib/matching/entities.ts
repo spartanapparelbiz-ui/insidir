@@ -78,6 +78,9 @@ export interface Entities {
   conditions: string[];
   /** A season-level market (championship, MVP, playoffs). */
   futures: boolean;
+  /** How a price is measured: "any_time" (reaches / hits it at any point before the deadline) or "at_time" (its
+   *  level at a set time, such as 5pm ET or the close). Null when the text says neither. */
+  measure: "any_time" | "at_time" | null;
   negated: boolean;
   type: MarketType;
   yesSubject: Subject | null;
@@ -419,7 +422,7 @@ export function extractEntities(m: MatchInput): Entities {
 
   const allTokens = [...title.tokens, ...(yes?.tokens ?? []), ...(event?.tokens ?? [])];
   const tokenSet = new Set([...allTokens, ...words, ...orgs]);
-  const conditions = uniq(CONFLICT_WORDS.filter(w => tokenSet.has(w)));
+  const conditions = officeWords(uniq(CONFLICT_WORDS.filter(w => tokenSet.has(w))), `${m.title} ${m.eventTitle ?? ""} ${m.yesLabel}`);
   const phraseAll = ` ${normalizePhrase(`${m.title} ${m.eventTitle ?? ""}`)} `;
   const futures = FUTURES_N.some(w => phraseAll.includes(w));
   const negated = title.tokens.includes("not") || /\bwon'?t\b|\bfails? to\b/i.test(m.title);
@@ -478,6 +481,7 @@ export function extractEntities(m: MatchInput): Entities {
     quotes: quotes(m.title),
     conditions,
     futures,
+    measure: measureOf(m, title.times.length > 0),
     negated,
     type,
     yesSubject,
@@ -579,4 +583,28 @@ export function entityKeys(e: Entities): Map<string, number> {
   for (const y of e.years) out.set(`year:${y}`, ENTITY_WEIGHTS.year);
   for (const d of e.dates) if (d.day !== null) out.set(`date:${d.month}-${d.day}`, ENTITY_WEIGHTS.date);
   return out;
+}
+
+const VP_RE = /\b(?:vice[- ]president(?:ial)?|veep|vp)\b/gi;
+/** "Vice president" is its own office: a market about the VP never pairs with one about the president. The
+ *  "president" condition stays only when the text still names the presidency once VP phrases are removed. */
+export function officeWords(conditions: string[], text: string): string[] {
+  if (!VP_RE.test(text)) return conditions;
+  VP_RE.lastIndex = 0;
+  const rest = text.replace(VP_RE, " ");
+  const president = /\bpresiden(?:t|cy|tial)\b/i.test(rest);
+  return uniq([...conditions.filter(c => c !== "president" || president), "vice-president"]);
+}
+
+const ANY_TIME_TITLE = /\b(?:reach(?:es)?|hit(?:s)?|touch(?:es)?|at any (?:time|point)|all[- ]time high|ath)\b/i;
+const ANY_TIME_RULES = /\bat any (?:time|point)\b|\bany (?:one[- ]minute|1[- ]minute|1m|single) candle\b|\bintraday (?:high|low)\b|\bfinal ["“]?(?:high|low)["”]? price\b/i;
+const AT_TIME_TITLE = /\b(?:at (?:the )?close|closing price|close (?:above|below|at|over|under))\b/i;
+const AT_TIME_RULES = /\b(?:price|value|level|rate) (?:at|as of) \d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\bclosing price\b/i;
+/** "Reaches $100k by Friday" (any time) vs "above $100k at 5pm ET Friday" (at a set time): different outcomes. */
+export function measureOf(m: Pick<MatchInput, "title" | "yesLabel" | "rules">, titleHasTime: boolean): Entities["measure"] {
+  const head = `${m.title} ${m.yesLabel}`;
+  const rules = (m.rules ?? "").slice(0, 1500);
+  if (ANY_TIME_TITLE.test(head) || ANY_TIME_RULES.test(rules)) return "any_time";
+  if (titleHasTime || AT_TIME_TITLE.test(head) || AT_TIME_RULES.test(rules)) return "at_time";
+  return null;
 }

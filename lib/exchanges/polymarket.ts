@@ -108,6 +108,9 @@ export function readGammaEventContext(e: JsonObject): GammaEventContext | null {
 const isYes = (s: string) => s.trim().toLowerCase() === "yes";
 const isNo = (s: string) => s.trim().toLowerCase() === "no";
 
+/** A wallet's public profile on Polymarket (international: never for US viewers, lib/moves/links.ts). */
+export const polymarketProfileUrl = (wallet: string): string => `${POLYMARKET_WEB}/profile/${wallet.toLowerCase()}`;
+
 export function polymarketUrl(eventSlug: string | null, marketSlug: string | null): string {
   if (eventSlug && marketSlug) return `${POLYMARKET_WEB}/event/${eventSlug}/${marketSlug}`;
   if (eventSlug) return `${POLYMARKET_WEB}/event/${eventSlug}`;
@@ -508,6 +511,20 @@ export class PolymarketClient implements VenueClient {
     return out;
   }
 
+  /** Open events one keyset page at a time (100 events with their markets), normalised (lib/gaps/matcher.ts). */
+  async *eventPages(priority: Priority = "normal"): AsyncGenerator<Array<{ event: VEvent; markets: VMarket[] }>> {
+    let cursor: string | undefined;
+    for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
+      const params = { active: true, closed: false, archived: false, limit: GAMMA_EVENTS_PAGE_LIMIT, after_cursor: cursor };
+      const body = await this.gamma.json(`${this.gammaUrl}/events/keyset${qs(params)}`, { priority });
+      const got = rows(body, ["events"]);
+      yield got.map(e => readGammaEvent(e)).filter((x): x is { event: VEvent; markets: VMarket[] } => x !== null);
+      const next = body && typeof body === "object" && !Array.isArray(body) ? (body as JsonObject).next_cursor : undefined;
+      if (typeof next !== "string" || !next || got.length === 0) break;
+      cursor = next;
+    }
+  }
+
   private async eachEventsPage(onPage: (rawEvents: JsonObject[]) => void, priority: Priority): Promise<void> {
     let cursor: string | undefined;
     for (let page = 0; page < GAMMA_MAX_PAGES; page++) {
@@ -649,6 +666,24 @@ export class PolymarketClient implements VenueClient {
     return readWhaleTrades(await this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority }), minCash);
   }
 
+  /** One page of public trades, newest first (GET /trades). `filterAmount` with filterType=CASH keeps fills of at
+   *  least that many dollars. Raw rows: lib/moves/sources.ts reads them. */
+  async getTradesPage(opts: { filterAmount: number; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
+    const params = { filterType: "CASH", filterAmount: opts.filterAmount, limit: opts.limit ?? DATA_PAGE_LIMIT, offset: opts.offset, takerOnly: true };
+    return this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority });
+  }
+
+  /** A wallet's trades in one market (GET /trades?user=&market=), raw. For the accuracy check. */
+  async getWalletMarketTrades(user: string, market: string, priority: Priority = "normal"): Promise<unknown> {
+    return this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: true })}`, { priority });
+  }
+
+  /** One page of a wallet's closed (resolved) positions, with realized profit (GET /closed-positions). */
+  async getClosedPositionsPage(user: string, opts: { limit?: number; offset?: number; market?: string; priority?: Priority } = {}): Promise<unknown> {
+    const params = { user, market: opts.market, limit: opts.limit ?? 50, offset: opts.offset ?? 0, sortBy: "REALIZEDPNL", sortDirection: "DESC" };
+    return this.data.json(`${this.dataUrl}/closed-positions${qs(params)}`, { priority: opts.priority });
+  }
+
   /** A wallet's open positions (public). Paginates up to DATA_MAX_PAGES. */
   async getPositions(user: string, opts: { sizeThreshold?: number; priority?: Priority } = {}): Promise<PolymarketPosition[]> {
     const out: PolymarketPosition[] = [];
@@ -662,16 +697,23 @@ export class PolymarketClient implements VenueClient {
     return out;
   }
 
+  /** One page of the public leaderboard (GET /v1/leaderboard): rank, proxyWallet, userName, vol, pnl. Raw. */
+  async getLeaderboardPage(opts: { timePeriod: "DAY" | "WEEK" | "MONTH" | "ALL"; category?: string; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
+    const params = { timePeriod: opts.timePeriod, category: opts.category ?? "OVERALL", orderBy: "PNL", limit: opts.limit ?? 50, offset: opts.offset ?? 0 };
+    return this.data.json(`${this.dataUrl}/v1/leaderboard${qs(params)}`, { priority: opts.priority ?? "normal" });
+  }
+
   /** A wallet's history, newest first (GET /v2/activity, falling back to /activity if /v2 is gone). */
-  async getActivity(user: string, opts: { type?: string; start?: number; end?: number; maxPages?: number; priority?: Priority } = {}): Promise<PolymarketActivity[]> {
+  async getActivity(user: string, opts: { type?: string; start?: number; end?: number; maxPages?: number; limit?: number; priority?: Priority } = {}): Promise<PolymarketActivity[]> {
     const out: PolymarketActivity[] = [];
     let path = "/v2/activity";
     const maxPages = opts.maxPages ?? DATA_MAX_PAGES;
     for (let page = 0; page < maxPages; page++) {
+      const limit = opts.limit ?? DATA_PAGE_LIMIT;
       const params = {
         user,
-        limit: DATA_PAGE_LIMIT,
-        offset: page * DATA_PAGE_LIMIT,
+        limit,
+        offset: page * limit,
         type: opts.type,
         start: opts.start !== undefined ? Math.floor(opts.start / 1000) : undefined,
         end: opts.end !== undefined ? Math.floor(opts.end / 1000) : undefined,
@@ -685,7 +727,7 @@ export class PolymarketClient implements VenueClient {
       }
       const got = readActivity(raw);
       out.push(...got);
-      if (rows(raw).length < DATA_PAGE_LIMIT) break;
+      if (rows(raw).length < (opts.limit ?? DATA_PAGE_LIMIT)) break;
     }
     return out;
   }

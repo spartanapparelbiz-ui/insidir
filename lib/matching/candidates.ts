@@ -95,15 +95,15 @@ const SAME_EVENT_GAP_HOURS = 14;
 /** Two times of day are the same cutoff within this many minutes (ET is treated as UTC−5 for comparison). */
 const TIME_EQ_MINUTES = 60;
 /** Blocking: posting lists longer than this (per key and day) are too generic to use. */
-const MAX_POSTING = 500;
+export const MAX_POSTING = 500;
 /** Blocking: rare title words used as extra keys (document frequency at most this, at most this many per market). */
-const RARE_TOKEN_MAX_DF = 30;
-const RARE_TOKENS_PER_MARKET = 3;
-const RARE_TOKEN_MIN_LEN = 4;
+export const RARE_TOKEN_MAX_DF = 30;
+export const RARE_TOKENS_PER_MARKET = 3;
+export const RARE_TOKEN_MIN_LEN = 4;
 /** Blocking: at most this many B markets are fully scored per A market (pre-ranked by shared keys, then close
  *  proximity). */
 const MAX_SCORED_PER_MARKET = 60;
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
 /** Market types that may be the same market (0.5) — everything else that differs is a hard conflict. */
@@ -224,6 +224,8 @@ export function hardConflicts(ea: Entities, eb: Entities): string[] {
     out.push("the rules give different dates");
   if (ea.years.length && eb.years.length && inter(ea.years.map(String), eb.years.map(String)).length === 0) out.push("different years");
   if (ea.times.length && eb.times.length && !ea.times.some(x => eb.times.some(y => sameTime(x, y)))) out.push("different times of day");
+  // "Reaches $X any time before the deadline" is not "is above $X at 5pm": hitting it once is not holding it then.
+  if (ea.measure && eb.measure && ea.measure !== eb.measure) out.push("any time vs a set time");
   if (ea.counters.length && eb.counters.length && inter(ea.counters.map(String), eb.counters.map(String)).length === 0) out.push("different week or game numbers");
   // Words.
   if (ea.quotes.length && eb.quotes.length && !setEq(ea.quotes, eb.quotes)) out.push(`different quoted words (${ea.quotes.join(", ")} vs ${eb.quotes.join(", ")})`);

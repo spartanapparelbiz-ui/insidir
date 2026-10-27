@@ -1,5 +1,6 @@
 /* Insidir Terminal's tables, in their own PostgreSQL schema ("terminal") so they never collide with the old
  * stock product's tables in the same Railway database (those are left untouched). Drizzle ORM. */
+import type { NearMiss } from "@/lib/engines/near-miss";
 import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, WhaleTrade } from "@/lib/types";
 
@@ -26,11 +27,25 @@ export interface UserSettings {
   emailDigest: boolean;
   /** Only alert for plays at or above this ROI. */
   alertMinRoi: number;
+  /** A quiet tone in the open Terminal when a new green deal arrives. Off by default. */
+  soundOnGreen: boolean;
+  /** Which safety lights alert: "green" = Same rules only; "green_yellow" adds Check rules. Skip never alerts. */
+  alertSafety: "green" | "green_yellow";
+  /** Categories that alert; empty = every category. Separate from the feed's category filter. */
+  alertCategories: string[];
+  /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
+  quietStart: string | null;
+  quietEnd: string | null;
+  /** Pro custom alert rules for big money moves (docs/INSIDIR-V2.md §7): any tab, league or size. */
+  moveRules?: Array<{ tab: "sports" | "markets" | "crypto" | "stocks" | null; league: string | null; min: number }>;
+  /** The user's IANA time zone (from their browser), for quiet hours. */
+  timeZone: string | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   minRoi: 0.005, minSizeUsd: 0, categories: [], venues: ["kalshi", "polymarket", "polymarket_us"],
-  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01,
+  showYellow: true, showRed: false, alertPush: false, alertEmail: false, emailDigest: false, alertMinRoi: 0.01, soundOnGreen: false,
+  alertSafety: "green", alertCategories: [], quietStart: null, quietEnd: null, timeZone: null,
 };
 
 export const users = terminal.table("users", {
@@ -68,8 +83,50 @@ export const markets = terminal.table("markets", {
   venue: text("venue").$type<Venue>().notNull(),
   id: text("id").notNull(),
   data: jsonb("data").$type<VMarket>().notNull(),
+  /** Fingerprint of the fields matching reads (lib/matching/incremental.ts matchFingerprint); null before the cron matcher. */
+  fp: text("fp"),
+  /** The last matcher run that saw this market open and trading (lib/gaps/matcher.ts). */
+  seenRun: integer("seen_run"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, t => [primaryKey({ columns: [t.venue, t.id] })]);
+}, t => [primaryKey({ columns: [t.venue, t.id] }), index("markets_seen_run_idx").on(t.venue, t.seenRun)]);
+
+/** The matcher's candidate index (lib/gaps/matcher.ts): each market's blocking keys, with its close day. A market's
+ *  candidates are the other venue's markets sharing a key within the close-time window. */
+export const matchKeys = terminal.table("match_keys", {
+  venue: text("venue").$type<Venue>().notNull(),
+  marketId: text("market_id").notNull(),
+  key: text("key").notNull(),
+  /** Close day (epoch days); null when the market has no close time. */
+  day: integer("day"),
+}, t => [primaryKey({ columns: [t.venue, t.marketId, t.key] }), index("match_keys_key_idx").on(t.key, t.venue, t.day)]);
+
+/** Each Kalshi market's current candidates (pair keys), replaced whenever it is re-scored. Pairs are assigned only
+ *  from these, so a cached decision for a pair that is no longer a candidate never comes back. */
+export const matchCandidates = terminal.table("match_candidates", {
+  key: text("key").primaryKey(),
+  aId: text("a_id").notNull(),
+  bVenue: text("b_venue").$type<Venue>().notNull(),
+}, t => [index("match_candidates_a_idx").on(t.aId, t.bVenue)]);
+
+/** What the live scanner books (lib/gaps/live.ts): matched pairs and multi-outcome sets, written by the matcher. */
+export const gapTargets = terminal.table("gap_targets", {
+  id: text("id").primaryKey(),
+  kind: text("kind").$type<"pair" | "multi">().notNull(),
+  /** "venue:id" of every market the target needs a book for. */
+  marketKeys: jsonb("market_keys").$type<string[]>().notNull(),
+  /** The MarketPair, or the VEvent for a multi-outcome set. */
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One row per cron matcher run: timings, counts and peak memory. */
+export const matchRuns = terminal.table("match_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  stats: jsonb("stats").$type<Record<string, unknown>>(),
+  error: text("error"),
+});
 
 /** Accepted (and blocked) cross-venue pairs. */
 export const pairs = terminal.table("pairs", {
@@ -186,6 +243,26 @@ export const llmUsage = terminal.table("llm_usage", {
   calls: integer("calls").notNull().default(0),
 });
 
+/** Everything the worker sees happen, in order: the live pipe the site streams over Server-Sent Events. Every toast,
+ *  tape item and live counter on the site comes from a row here (never invented). `venues` lets the stream apply
+ *  the viewer's region. Pruned after 7 days by the worker. */
+export const liveEvents = terminal.table("live_events", {
+  id: serial("id").primaryKey(),
+  type: text("type").$type<"deal_found" | "deal_closed" | "price_tick" | "whale">().notNull(),
+  oppId: text("opp_id"),
+  venues: text("venues").array().$type<Venue[]>().notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("live_events_at_idx").on(t.at)]);
+
+/** The closest matched market per venue pair at the last scan (lib/engines/near-miss.ts): what the landing page
+ *  shows, labelled "Not a deal yet", when there is no deal. Key: the two venues, sorted, joined by "|". */
+export const nearMisses = terminal.table("near_misses", {
+  venues: text("venues").primaryKey(),
+  data: jsonb("data").$type<NearMiss>().notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});
+
 export const workerHeartbeats = terminal.table("worker_heartbeats", {
   job: text("job").primaryKey(),
   lastRunAt: timestamp("last_run_at", { withTimezone: true }).notNull(),
@@ -200,3 +277,171 @@ export const rateLimits = terminal.table("rate_limits", {
   count: integer("count").notNull().default(0),
 }, t => [primaryKey({ columns: [t.key, t.windowStart] })]);
 
+
+/* ---------- V2: big money moves (docs/INSIDIR-V2.md) ---------- */
+
+/** One big move (lib/moves/types.ts Move). Settled moves keep their result for Results and records. */
+export const moves = terminal.table("moves", {
+  id: text("id").primaryKey(),
+  source: text("source").$type<"polymarket" | "kalshi" | "sec">().notNull(),
+  marketId: text("market_id").notNull(),
+  eventTitle: text("event_title").notNull(),
+  marketTitle: text("market_title").notNull(),
+  outcome: text("outcome").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  /** Dollars put in. */
+  amount: doublePrecision("amount").notNull(),
+  avgPrice: doublePrecision("avg_price").notNull(),
+  wallet: text("wallet"),
+  walletName: text("wallet_name"),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
+  fills: integer("fills").notNull().default(1),
+  tab: text("tab").$type<"sports" | "markets" | "crypto" | "stocks">().notNull(),
+  league: text("league"),
+  category: text("category").notNull(),
+  url: text("url"),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  /** SEC moves only: the filing facts the card shows (lib/stocks/moves.ts StockDetail). */
+  detail: jsonb("detail").$type<Record<string, unknown>>(),
+  /** Polymarket only: true when the wallet had no activity at all before this move; null when not checked. */
+  newWallet: boolean("new_wallet"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("moves_at_idx").on(t.at),
+  index("moves_tab_at_idx").on(t.tab, t.at),
+  index("moves_wallet_idx").on(t.wallet),
+  index("moves_market_idx").on(t.marketId),
+]);
+
+/** A Polymarket wallet's record from its resolved positions (lib/moves/records.ts). */
+export const traderRecords = terminal.table("trader_records", {
+  wallet: text("wallet").primaryKey(),
+  name: text("name"),
+  resolved: integer("resolved").notNull(),
+  won: integer("won").notNull(),
+  lost: integer("lost").notNull(),
+  profit: doublePrecision("profit").notNull(),
+  biggestWin: doublePrecision("biggest_win").notNull(),
+  /** The most money the wallet has put into one market: closed positions' money in and open positions' initial value. */
+  biggestBet: doublePrecision("biggest_bet"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** A Polymarket wallet's resolved positions (Data API /closed-positions), one row per market and outcome, for the
+ *  profile stats (lib/profiles/trader.ts). Replaced whole each time the wallet's record is refreshed. */
+export const traderPositions = terminal.table("trader_positions", {
+  wallet: text("wallet").notNull(),
+  marketId: text("market_id").notNull(),
+  outcomeIndex: integer("outcome_index").notNull(),
+  title: text("title").notNull(),
+  outcome: text("outcome"),
+  eventSlug: text("event_slug"),
+  /** Profile category: a league for sports, "Crypto", or "Markets" (lib/profiles/trader.ts categoryOf). */
+  category: text("category").notNull(),
+  tab: text("tab").$type<"sports" | "markets" | "crypto">().notNull(),
+  /** Dollars put in: shares bought × average price. */
+  moneyIn: doublePrecision("money_in").notNull(),
+  pnl: doublePrecision("pnl").notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_positions_resolved_idx").on(t.resolvedAt)]);
+
+/** Wallets to keep a record for besides the ones seen moving: Polymarket's public leaderboard (for /top). */
+export const trackedWallets = terminal.table("tracked_wallets", {
+  wallet: text("wallet").primaryKey(),
+  name: text("name"),
+  reason: text("reason").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** What a member follows: a trader (wallet) or a market. */
+export const follows = terminal.table("follows", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"trader" | "market">().notNull(),
+  target: text("target").notNull(),
+  push: boolean("push").notNull().default(true),
+  email: boolean("email").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.kind, t.target] })]);
+
+/** "Tell me when it's live": one row per email per Coming soon feature. */
+export const waitlist = terminal.table("waitlist", {
+  email: text("email").notNull(),
+  feature: text("feature").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  notifiedAt: timestamp("notified_at", { withTimezone: true }),
+}, t => [primaryKey({ columns: [t.email, t.feature] })]);
+
+/** SEC filings the Stocks jobs have already read ("f4:<accession>", "13f:<accession>"), so each is read once. */
+export const secSeen = terminal.table("sec_seen", {
+  key: text("key").primaryKey(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Open-market buys (P) and sales (S) of stock from Form 4 filings, one row per filing line and reporting owner
+ *  (lib/stocks/history.ts). From every Form 4 the Stocks job reads, plus each insider's and company's EDGAR history. */
+export const insiderTrades = terminal.table("insider_trades", {
+  accession: text("accession").notNull(),
+  line: integer("line").notNull(),
+  ownerCik: text("owner_cik").notNull(),
+  ownerName: text("owner_name").notNull(),
+  role: text("role").notNull(),
+  issuerCik: text("issuer_cik").notNull(),
+  company: text("company").notNull(),
+  ticker: text("ticker"),
+  code: text("code").$type<"P" | "S">().notNull(),
+  tradeDate: text("trade_date"),
+  shares: doublePrecision("shares").notNull(),
+  price: doublePrecision("price").notNull(),
+  value: doublePrecision("value").notNull(),
+  filedAt: timestamp("filed_at", { withTimezone: true }).notNull(),
+  url: text("url").notNull(),
+}, t => [
+  primaryKey({ columns: [t.accession, t.ownerCik, t.line] }),
+  index("insider_trades_owner_idx").on(t.ownerCik, t.filedAt),
+  index("insider_trades_issuer_idx").on(t.issuerCik, t.filedAt),
+]);
+
+/** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
+ *  which date the history is complete. */
+export const secHistory = terminal.table("sec_history", {
+  kind: text("kind").$type<"owner" | "issuer">().notNull(),
+  cik: text("cik").notNull(),
+  name: text("name"),
+  /** Form 4 accessions still to read, newest first. */
+  pending: jsonb("pending").$type<Array<{ accession: string; filedOn: string }>>().notNull().default([]),
+  /** Every Form 4 filed on or after this date has been read; null until the first pass is done. */
+  completeSince: text("complete_since"),
+  queuedAt: timestamp("queued_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.kind, t.cik] })]);
+
+/** A tracked fund (13F manager): its EDGAR name and how many 13F-HR quarters EDGAR lists. */
+export const funds = terminal.table("funds", {
+  cik: text("cik").primaryKey(),
+  name: text("name").notNull(),
+  quartersOnFile: integer("quarters_on_file").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** A 13F-HR the fund history has read. */
+export const fundFilings = terminal.table("fund_filings", {
+  fundCik: text("fund_cik").notNull(),
+  accession: text("accession").notNull(),
+  period: text("period"),
+  filedOn: text("filed_on").notNull(),
+  url: text("url").notNull(),
+  /** False for a notice or a table that doesn't add up to its cover page: kept so it isn't read again, never shown. */
+  complete: boolean("complete").notNull(),
+}, t => [primaryKey({ columns: [t.fundCik, t.accession] })]);
+
+/** A 13F-HR's share positions per CUSIP (options left out), values in dollars. */
+export const fundHoldings = terminal.table("fund_holdings", {
+  fundCik: text("fund_cik").notNull(),
+  accession: text("accession").notNull(),
+  cusip: text("cusip").notNull(),
+  company: text("company").notNull(),
+  shares: doublePrecision("shares").notNull(),
+  value: doublePrecision("value").notNull(),
+}, t => [primaryKey({ columns: [t.fundCik, t.accession, t.cusip] })]);

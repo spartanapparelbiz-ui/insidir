@@ -238,6 +238,7 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     active: status === undefined || TRADING_STATUSES.has(status),
     result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
+    openInterest: num(pick(m, "open_interest_fp", "open_interest")),
   };
 }
 
@@ -343,6 +344,39 @@ export class KalshiClient implements VenueClient {
       cursor = next;
     }
     return out;
+  }
+
+  /** One page of public trades across all markets since `minTs` (GET /markets/trades; anonymous: size, price,
+   *  taker side, time). Raw: lib/moves/sources.ts reads it; the caller follows `cursor`. */
+  getTradesPage(opts: { minTsSec: number; cursor?: string; limit?: number; priority?: Priority }): Promise<unknown> {
+    return this.http.json(`${this.base}/markets/trades${qs({ min_ts: opts.minTsSec, limit: opts.limit ?? 1000, cursor: opts.cursor })}`, { priority: opts.priority ?? "hot" });
+  }
+
+  /** Open markets one page at a time (GET /markets?status=open, 1000 per page, Kalshi's cursor), normalised with
+   *  their event and series, so a caller never holds more than one page (lib/gaps/matcher.ts). */
+  async *marketPages(events: ReadonlyMap<string, KalshiEventInfo>, priority: Priority = "normal"): AsyncGenerator<{ markets: VMarket[]; raw: number; eventTickers: string[] }> {
+    let cursor: string | undefined;
+    const seen = new Set<string>();
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const raw = await this.http.json(`${this.base}/markets${qs({ status: "open", limit: MARKETS_PAGE_LIMIT, mve_filter: EXCLUDE_MULTIVARIATE ? "exclude" : undefined, cursor })}`, { priority });
+      const list = rows(raw, ["markets"]).filter(m => !(EXCLUDE_MULTIVARIATE && isMultivariate(m)));
+      const tickers = new Set<string>();
+      for (const m of list) { const et = str(m.event_ticker); const st = seriesTickerOf(m, et ? (events.get(et) ?? null) : null); if (st) tickers.add(st); }
+      const series = tickers.size ? await this.getSeriesMap(tickers, priority) : new Map<string, KalshiSeries>();
+      const markets: VMarket[] = [];
+      for (const m of list) {
+        const et = str(m.event_ticker);
+        const info = et ? (events.get(et) ?? null) : null;
+        const st = seriesTickerOf(m, info);
+        const v = readKalshiMarket(m, { event: info, series: st ? (series.get(st) ?? null) : null });
+        if (v && v.active) markets.push(v);
+      }
+      yield { markets, raw: list.length, eventTickers: list.map(m => str(m.event_ticker) ?? "") };
+      const next = isObject(raw) ? str(raw.cursor) : null;
+      if (!next || seen.has(next)) break;
+      seen.add(next);
+      cursor = next;
+    }
   }
 
   /** Raw open markets (GET /markets?status=open, limit 1000, cursor pagination). */

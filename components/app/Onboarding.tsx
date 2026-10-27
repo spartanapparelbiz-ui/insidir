@@ -1,24 +1,27 @@
 "use client";
-/* First session, signed-in members only: three skippable steps (categories, size filters, alerts), saved with
- * POST /api/onboarding. No bankroll: size filters are plain numbers the user types. */
+/* The first session, shown once: three steps, skippable at every one.
+ *   1. Pick the categories you trade.  2. Turn on alerts (with the iPhone "Add to Home Screen" steps when needed).
+ *   3. See today's deals.
+ * POST /api/onboarding marks the member onboarded whether they finish or skip (it is never shown again), saving the
+ * categories they picked so far. Focus moves to each step's heading; Escape skips. */
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, CATEGORY_LABEL } from "@/app/api/settings/validate";
+import { OPEN_TERMINAL, UNLOCK } from "@/lib/copy";
+import { IosInstallGuide } from "./IosInstallGuide";
 import { PushButton } from "./PushButton";
 
-export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
-  paid: boolean; vapidKey: string; email: string | null; unlockHref: string;
-  initial: { categories: string[]; minRoiPct: number; minSizeUsd: number; emailDigest: boolean; alertEmail: boolean };
+export function Onboarding({ paid, vapidKey, unlockHref, initial }: {
+  paid: boolean; vapidKey: string; email?: string | null; unlockHref: string;
+  /** Older callers pass more; only the categories are used. */
+  initial: { categories: string[] } & Record<string, unknown>;
 }) {
   const [open, setOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [cats, setCats] = useState<string[]>(initial.categories);
-  const [minRoi, setMinRoi] = useState(String(initial.minRoiPct));
-  const [minSize, setMinSize] = useState(String(initial.minSizeUsd));
-  const [digest, setDigest] = useState(initial.emailDigest);
-  const [alertEmail, setAlertEmail] = useState(initial.alertEmail);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const changed = cats.join() !== initial.categories.join();
 
   useEffect(() => { box.current?.querySelector<HTMLElement>("h2")?.focus(); }, [step]);
   useEffect(() => {
@@ -28,31 +31,25 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
   });
 
   const finish = async (skipped: boolean) => {
+    if (busy) return;
     setBusy(true); setError(null);
-    const body = skipped ? { skipped: true } : { categories: cats, minRoiPct: minRoi || "0", minSizeUsd: minSize || "0", emailDigest: digest, ...(paid ? { alertEmail } : {}) };
     try {
-      const res = await fetch("/api/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) {
-        const j: unknown = await res.json().catch(() => null);
-        const errs = typeof j === "object" && j !== null && Array.isArray((j as { errors?: unknown }).errors) ? (j as { errors: string[] }).errors : null;
-        setError(errs?.join(" ") ?? "Couldn't save. Try again."); setBusy(false);
-        if (errs) setStep(1);
-        return;
-      }
-    } catch { setError("Couldn't save. Try again."); setBusy(false); return; }
+      const res = await fetch("/api/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skipped, categories: cats }) });
+      if (!res.ok) { setError("Couldn't save that. Check your connection and try again."); setBusy(false); return; }
+    } catch { setError("Couldn't save that. Check your connection and try again."); setBusy(false); return; }
     setOpen(false);
-    if (!skipped) window.location.reload();
+    if (changed) window.location.reload();
   };
   if (!open) return null;
 
   const toggle = (c: string) => setCats(x => (x.includes(c) ? x.filter(y => y !== c) : [...x, c]));
-  const titles = ["What do you trade?", "Set your size filters", "Turn on alerts"];
+  const titles = ["What do you trade?", "Turn on alerts", "You're set"];
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="ob-h">
       <div className="sheet" ref={box}>
         <div className="sheet__top">
-          <span className="dim small">Step {step + 1} of 3</span>
-          <button type="button" className="btn btn--ghost" onClick={() => void finish(true)} disabled={busy}>Skip</button>
+          <span className="muted small">Step {step + 1} of 3</span>
+          {step < 2 ? <button type="button" className="btn btn--ghost" onClick={() => void finish(true)} disabled={busy}>Skip</button> : null}
         </div>
         <h2 id="ob-h" className="sheet__h" tabIndex={-1}>{titles[step]}</h2>
 
@@ -70,32 +67,27 @@ export function Onboarding({ paid, vapidKey, email, unlockHref, initial }: {
         ) : null}
 
         {step === 1 ? (
-          <>
-            <p className="muted small">Hide deals below these numbers. You can change them any time in Settings.</p>
-            <div className="field"><label htmlFor="ob-roi">Min ROI (%)</label>
-              <input id="ob-roi" className="input" inputMode="decimal" value={minRoi} onChange={e => setMinRoi(e.target.value)} /></div>
-            <div className="field"><label htmlFor="ob-size">Min size ($)</label>
-              <input id="ob-size" className="input" inputMode="decimal" value={minSize} onChange={e => setMinSize(e.target.value)} /></div>
-          </>
+          paid ? (
+            <>
+              <p className="muted small">Get a push the moment a deal shows up. You can change what sends one on the Alerts page.</p>
+              <IosInstallGuide inline />
+              <PushButton vapidKey={vapidKey} />
+            </>
+          ) : (
+            <p className="muted small">Alerts come with Insidir. <a href={unlockHref} data-unlock="onboarding">{UNLOCK}</a></p>
+          )
         ) : null}
 
-        {step === 2 ? (
-          <>
-            {paid ? <PushButton vapidKey={vapidKey} /> : (
-              <p className="muted small">Push alerts come with Insidir. <a href={unlockHref} data-unlock="onboarding">Unlock</a></p>
-            )}
-            <label className="check"><input type="checkbox" checked={digest} onChange={e => setDigest(e.target.checked)} />Email me a daily summary</label>
-            {paid ? <label className="check"><input type="checkbox" checked={alertEmail} onChange={e => setAlertEmail(e.target.checked)} />Email me alerts when push isn&apos;t on</label> : null}
-            <p className="dim small">{email ? <>Emails go to <span className="muted">{email}</span> (from your Whop account).</> : "Your Whop account has no email, so email alerts can't be sent."}</p>
-          </>
-        ) : null}
+        {step === 2 ? <p className="muted small">The Terminal shows every deal as the scanner finds it. Tap one to see both prices, the fees and both rule texts.</p> : null}
 
         {error ? <p className="err small" role="alert">{error}</p> : null}
         <div className="sheet__nav">
           {step > 0 ? <button type="button" className="btn btn--secondary" onClick={() => setStep(step - 1)} disabled={busy}>Back</button> : <span />}
           {step < 2
             ? <button type="button" className="btn btn--primary" onClick={() => setStep(step + 1)}>Next</button>
-            : <button type="button" className="btn btn--primary" onClick={() => void finish(false)} disabled={busy}>{busy ? "Saving…" : "Done"}</button>}
+            : <button type="button" className={`btn btn--primary uibtn${busy ? " uibtn--busy" : ""}`} onClick={() => void finish(false)} disabled={busy} aria-busy={busy}>
+                <span className="uibtn__label">{OPEN_TERMINAL}</span>{busy ? <span className="uibtn__spin" aria-hidden="true" /> : null}
+              </button>}
         </div>
       </div>
     </div>

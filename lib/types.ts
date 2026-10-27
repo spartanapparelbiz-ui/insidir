@@ -84,6 +84,8 @@ export interface VMarket {
   /** Settled result once resolved: which side paid out, or "void" (refunded / annulled). */
   result: Side | "void" | null;
   volume24h: number | null;
+  /** Contracts held open (Kalshi), when the venue reports it. */
+  openInterest?: number | null;
 }
 
 /** A group of markets on one venue that resolve together (Polymarket event, Kalshi event). */

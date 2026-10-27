@@ -7,13 +7,17 @@
  *   Paid, no push   the same alerts by email instead (a backup), capped per hour
  *   Everyone who opts in   a daily summary email; for Free it is the only alert, built from the delayed feed
  *
- * The open Terminal updates live by itself, so alerts are for when it isn't open. The same filters as the feed
- * apply: region venues, the user's venues, safety, minimum ROI and size, categories. Second opinions never alert. */
+ * The open Terminal updates live by itself, so alerts are for when it isn't open. What alerts is the user's own
+ * choice on the Alerts page: the safety lights (Same rules, or Same rules and Check rules; Skip never alerts), a
+ * minimum ROI (at least the feed's), the alert categories (empty = all), and quiet hours in their time zone (nothing
+ * is sent inside them; a deal found then isn't sent later either, its prices will have moved). The feed's region,
+ * venues and size filter apply too. Second opinions never alert. */
 import { feedFor, type FeedRow, type StoredOpp } from "@/lib/feed";
 import { usd } from "@/lib/format";
 import type { UserSettings } from "@/lib/db/schema";
 import { entitlements } from "@/lib/plans";
 import { allowedVenues, venuesOk } from "@/lib/region";
+import { inQuietHours } from "./quiet";
 import type { Opportunity, Plan, Region } from "@/lib/types";
 import { VENUE_NAME } from "@/lib/types";
 
@@ -51,6 +55,7 @@ export function dueAlerts(users: readonly AlertUser[], deals: readonly AlertDeal
     const s = u.settings;
     const channel: Channel | null = s.alertPush && u.hasPush ? "push" : s.alertEmail && u.email ? "email" : null;
     if (!channel) continue;
+    if (inQuietHours(now, s.quietStart, s.quietEnd, s.timeZone)) continue;
     let emailBudget = Math.max(0, EMAIL_ALERTS_PER_HOUR - u.emailsLastHour);
     const venues = allowedVenues(u.region, s.venues);
     const eligible = deals.filter(d => {
@@ -59,10 +64,11 @@ export function dueAlerts(users: readonly AlertUser[], deals: readonly AlertDeal
       const age = now - d.firstSeenAt;
       if (age < delay * 1000 || age > ALERT_MAX_AGE_MS + delay * 1000) return false;
       if (!venuesOk(o, venues)) return false;
-      if (!(o.safety === "green" || (o.safety === "yellow" && s.showYellow) || (o.safety === "red" && s.showRed))) return false;
+      if (!(o.safety === "green" || (o.safety === "yellow" && s.alertSafety === "green_yellow"))) return false;
       if (o.roi < Math.max(s.alertMinRoi, s.minRoi)) return false;
       if (s.minSizeUsd > 0 && o.cost + o.fees < s.minSizeUsd) return false;
-      if (s.categories.length && !o.categories.some(c => s.categories.includes(c))) return false;
+      const cats = s.alertCategories ?? [];
+      if (cats.length && !o.categories.some(c => cats.includes(c))) return false;
       return true;
     }).sort((a, b) => b.opp.profitPerDay - a.opp.profitPerDay);
     for (const d of eligible) {

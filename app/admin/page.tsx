@@ -26,9 +26,9 @@ async function load<T>(fallback: T, run: () => Promise<T>): Promise<{ v: T; erro
 function Side({ m, fallback }: { m: VMarket | null; fallback: string }) {
   return (
     <div className="rule">
-      <p className="rule__venue dim tiny">{m ? VENUE_NAME[m.venue] : fallback}</p>
+      <p className="rule__venue">{m ? VENUE_NAME[m.venue] : fallback}</p>
       <p className="rule__h">{m?.title ?? "Market not stored"}</p>
-      {m ? <div className="rule__text small">{m.rules || "No rule text."}</div> : null}
+      {m ? <div className="rule__text">{m.rules || "No rule text."}</div> : null}
     </div>
   );
 }
@@ -39,9 +39,9 @@ function PairCard({ p }: { p: PairView }) {
     <article className="card adm-pair">
       <div className="adm-pair__top">
         <SafetyLight safety={pair.safety} />
-        <span className="dim tiny">{pair.method} · confidence {pct(pair.confidence, 0)}{pair.inverted ? " · inverted" : ""}{pair.blocked ? " · blocked" : ""}</span>
+        <span className="row-gap"><span className="tag">Matched by {pair.method}</span><span className="tag">{pct(pair.confidence, 0)} sure</span>{pair.inverted ? <span className="tag">Inverted</span> : null}{pair.blocked ? <span className="tag">Blocked</span> : null}</span>
       </div>
-      {p.override ? <p className="small">Override: <b>{p.override.action}</b>{p.override.note ? ` · ${p.override.note}` : ""}</p> : null}
+      {p.override ? <p className="small">Override: <b>{p.override.action}</b>.{p.override.note ? ` Note: ${p.override.note}` : ""}</p> : null}
       {pair.safetyNotes.length ? <ul className="notes">{pair.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}</ul> : null}
       <div className="rules rules--two">
         <Side m={p.a} fallback={`${pair.a.venue}:${pair.a.id}`} />
@@ -53,7 +53,7 @@ function PairCard({ p }: { p: PairView }) {
         <button className="btn btn--secondary" name="action" value="match">Force match</button>
         <button className="btn btn--secondary" name="action" value="block">Block</button>
         <select name="safety" className="input adm-select" defaultValue="" aria-label="Safety light">
-          <option value="">Safety…</option><option value="green">Green</option><option value="yellow">Yellow</option><option value="red">Red</option>
+          <option value="">Safety light</option><option value="green">Green</option><option value="yellow">Yellow</option><option value="red">Red</option>
         </select>
         <button className="btn btn--secondary" name="action" value="safety">Set safety</button>
         <input name="note" className="input adm-note" placeholder="Note (optional)" maxLength={500} />
@@ -103,12 +103,12 @@ function Funnel({ rows }: { rows: FunnelRow[] }) {
 function Ab({ rows }: { rows: AbRow[] }) {
   return (
     <table className="table">
-      <thead><tr><th>Variant</th><th className="r">Landing</th><th className="r">→ Feed</th><th className="r">→ Checkout</th><th className="r">→ Paid</th></tr></thead>
+      <thead><tr><th>Variant</th><th className="r">Landing</th><th className="r">To feed</th><th className="r">To checkout</th><th className="r">Paid</th></tr></thead>
       <tbody>{rows.map(r => (
         <tr key={r.variant}><td>{r.variant}</td><td className="r">{r.landing}</td>
-          <td className="r">{r.feed} <span className="dim">({rate(r.feed, r.landing)})</span></td>
-          <td className="r">{r.checkout} <span className="dim">({rate(r.checkout, r.landing)})</span></td>
-          <td className="r">{r.paid} <span className="dim">({rate(r.paid, r.landing)})</span></td></tr>
+          <td className="r">{r.feed} <span className="muted">({rate(r.feed, r.landing)})</span></td>
+          <td className="r">{r.checkout} <span className="muted">({rate(r.checkout, r.landing)})</span></td>
+          <td className="r">{r.paid} <span className="muted">({rate(r.paid, r.landing)})</span></td></tr>
       ))}</tbody>
     </table>
   );
@@ -124,7 +124,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return (
       <main className="wrap app adm-login">
         <h1 className="page__h">Admin</h1>
-        {!adminConfigured() ? <p className="banner banner--err">Admin is not configured: set ADMIN_TOKEN (32+ characters) and ADMIN_TOTP_SECRET (base32).</p> : null}
+        {!adminConfigured() ? <p className="banner banner--err">Admin isn&apos;t set up. Set ADMIN_TOKEN (32 or more characters) and ADMIN_TOTP_SECRET (base32), then restart.</p> : null}
         <form method="post" action="/api/admin/login" className="card fs">
           <div className="field"><label htmlFor="a-token">Admin token</label><input id="a-token" name="token" type="password" className="input" autoComplete="current-password" required /></div>
           <div className="field"><label htmlFor="a-code">Authenticator code</label><input id="a-code" name="code" className="input" inputMode="numeric" pattern="[0-9 ]{6,7}" autoComplete="one-time-code" required /></div>
@@ -153,8 +153,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
       <nav className="adm__nav small" aria-label="Sections"><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a></nav>
-      {!hasDatabase() ? <p className="banner banner--err">No database (DATABASE_URL is not set).</p> : null}
-      {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database.</p> : null}
+      {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
+      {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
       {error ? <p className="banner banner--err" role="alert">{error}</p> : null}
 
@@ -165,25 +165,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section id="matches" className="sec2">
-        <h2 className="sec2__h">Matches <span className="dim small">({pairs.v.length})</span></h2>
-        {pairs.v.length ? <div className="adm-pairs">{pairs.v.map(p => <PairCard key={p.pair.id} p={p} />)}</div> : <p className="muted small">No pairs stored.</p>}
+        <h2 className="sec2__h">Matches <span className="muted small num">{pairs.v.length}</span></h2>
+        {pairs.v.length ? <div className="adm-pairs">{pairs.v.map(p => <PairCard key={p.pair.id} p={p} />)}</div> : <p className="muted small">No pairs stored yet. The worker stores them on its next sweep.</p>}
       </section>
 
       <section id="funnel" className="sec2">
         <div className="adm__top">
-          <h2 className="sec2__h">Funnel · last {days} days</h2>
+          <h2 className="sec2__h">Funnel, last {days} days</h2>
           <nav className="small adm__nav" aria-label="Window"><a href="/admin?days=7#funnel" aria-current={days === 7 ? "true" : undefined}>7d</a><a href="/admin?days=30#funnel" aria-current={days === 30 ? "true" : undefined}>30d</a></nav>
         </div>
         {funnel.v.length ? <div className="scroll-x"><Funnel rows={funnel.v} /></div> : <p className="muted small">No events.</p>}
       </section>
 
       <section id="ab" className="sec2">
-        <h2 className="sec2__h">Hero A/B · last {days} days</h2>
+        <h2 className="sec2__h">Hero A/B test, last {days} days</h2>
         {ab.v.length ? <div className="scroll-x"><Ab rows={ab.v} /></div> : <p className="muted small">No landing views with a variant.</p>}
       </section>
 
       <section id="utm" className="sec2">
-        <h2 className="sec2__h">UTM · all time</h2>
+        <h2 className="sec2__h">UTM sources, all time</h2>
         {utm.v.length ? (
           <div className="scroll-x">
             <table className="table">

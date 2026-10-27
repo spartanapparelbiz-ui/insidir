@@ -12,8 +12,43 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1792991245835,
-      "tag": "0001_quarantine",
+      "when": 1792979941981,
+      "tag": "0001_live_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792984269606,
+      "tag": "0002_near_misses",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792993506156,
+      "tag": "0003_moves",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793007120206,
+      "tag": "0004_stocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793010705522,
+      "tag": "0005_gaps",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793044103964,
+      "tag": "0006_profiles",
       "breakpoints": true
     }
   ]

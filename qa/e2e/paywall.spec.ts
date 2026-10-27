@@ -8,7 +8,8 @@ interface Paid { id: string; title: string; profit: number; cost: number; fees: 
 
 async function seeded(): Promise<{ fresh: Paid[]; old: Paid[] }> {
   const rows = await q<{ id: string; data: { title: string; profit: number; cost: number; fees: number; sets: number }; age: number }>(
-    "select id, data, extract(epoch from now() - first_seen_at)::int as age from terminal.opportunities");
+    // The deals in play (the last day). Older deals have settled: their results are the public receipts log.
+    "select id, data, extract(epoch from now() - first_seen_at)::int as age from terminal.opportunities where last_seen_at > now() - interval '1 day'");
   const all = rows.map(r => ({ id: r.id, title: r.data.title, profit: r.data.profit, cost: r.data.cost, fees: r.data.fees, sets: r.data.sets, age: r.age }));
   return { fresh: all.filter(r => r.age < 30 * 60), old: all.filter(r => r.age >= 30 * 60) };
 }
@@ -30,14 +31,17 @@ for (const who of ["visitor", "free member"] as const) {
     const { fresh, old } = await seeded();
     expect(fresh.length).toBeGreaterThan(0);
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/terminal", "/receipts", "/pricing", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`, `/deal/${await dealId("award")}`]) {
+      for (const path of ["/", "/gaps", "/receipts", "/pricing", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`, `/deal/${await dealId("award")}`]) {
         await page.goto(path);
         await page.waitForTimeout(300);
       }
-      await page.goto("/terminal");
+      await page.goto("/gaps");
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
+    // The live stream was read too, and it carried events (so an empty stream can't pass by accident).
+    const live = bodies.find(b => b.url.endsWith("/api/live"))?.body ?? "";
+    expect(live).toContain("event: hello");
     const found: string[] = [];
     // Static JS/CSS is the same file for every visitor, so it can't carry anyone's data.
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {

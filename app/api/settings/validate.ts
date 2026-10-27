@@ -3,7 +3,9 @@
  * Only the known fields are read; anything else (a "bankroll", say) is ignored and reported back, never stored.
  * Venues are always cut to the user's region: US users can only keep Kalshi and Polymarket US. ROI fields arrive
  * as percentages ("1.5" = 1.5%) and are stored as fractions. */
+import { LEAGUES } from "@/lib/moves/types";
 import type { UserSettings } from "@/lib/db/schema";
+import { minutesOf, validTimeZone } from "@/lib/alerts/quiet";
 import { REGION_VENUES } from "@/lib/region";
 import type { Region, Venue } from "@/lib/types";
 import { VENUES } from "@/lib/types";
@@ -16,13 +18,27 @@ export const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
 };
 /** Highest ROI filter accepted, percent. */
 export const MAX_ROI_PCT = 100;
+/** At most this many custom alert rules (Pro). */
+export const MAX_MOVE_RULES = 10;
+
 /** Highest size filter accepted, dollars. */
 export const MAX_SIZE_USD = 10_000_000;
 
-const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "alertMinRoiPct",
+const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
+
+/* Errors say what's wrong and how to fix it (shown inline as you type and returned by the API). */
+export const ROI_ERROR = `Enter a number from 0 to ${MAX_ROI_PCT}, like 1.5.`;
+export const SIZE_ERROR = "Enter a dollar amount of 0 or more, like 250.";
+export const TIME_ERROR = "Enter a time like 22:00.";
+
+/** Inline check for a percent field as the user types: null when fine. */
+export const checkRoiPct = (v: string): string | null => (number(v, 0, MAX_ROI_PCT) === null ? ROI_ERROR : null);
+/** Inline check for a dollar field as the user types: null when fine. */
+export const checkUsd = (v: string): string | null => (number(v, 0, MAX_SIZE_USD) === null ? SIZE_ERROR : null);
 
 export interface SettingsResult {
   settings: UserSettings;
@@ -67,7 +83,10 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   const s: UserSettings = {
     minRoi: current.minRoi, minSizeUsd: current.minSizeUsd, categories: [...current.categories], venues: [...current.venues],
     showYellow: current.showYellow, showRed: current.showRed, alertPush: current.alertPush, alertEmail: current.alertEmail,
-    emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi,
+    emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi, soundOnGreen: current.soundOnGreen ?? false,
+    alertSafety: current.alertSafety === "green_yellow" ? "green_yellow" : "green", alertCategories: [...(current.alertCategories ?? [])],
+    quietStart: current.quietStart ?? null, quietEnd: current.quietEnd ?? null, timeZone: current.timeZone ?? null,
+    ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -93,18 +112,45 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
 
   if (has("minRoiPct")) {
     const v = number(input.minRoiPct, 0, MAX_ROI_PCT);
-    if (v === null) errors.push(`Min ROI must be between 0 and ${MAX_ROI_PCT}%.`); else s.minRoi = v / 100;
+    if (v === null) errors.push(ROI_ERROR); else s.minRoi = v / 100;
   }
   if (has("alertMinRoiPct")) {
     const v = number(input.alertMinRoiPct, 0, MAX_ROI_PCT);
-    if (v === null) errors.push(`Alert min ROI must be between 0 and ${MAX_ROI_PCT}%.`); else s.alertMinRoi = v / 100;
+    if (v === null) errors.push(ROI_ERROR); else s.alertMinRoi = v / 100;
   }
   if (has("minSizeUsd")) {
     const v = number(input.minSizeUsd, 0, MAX_SIZE_USD);
-    if (v === null) errors.push("Min size must be a dollar amount of 0 or more."); else s.minSizeUsd = v;
+    if (v === null) errors.push(SIZE_ERROR); else s.minSizeUsd = v;
+  }
+  if (has("alertCategories")) s.alertCategories = [...new Set(list(input.alertCategories).filter(c => (CATEGORIES as readonly string[]).includes(c)))];
+  if (has("alertSafety")) {
+    if (input.alertSafety === "green" || input.alertSafety === "green_yellow") s.alertSafety = input.alertSafety;
+    else errors.push("Pick which safety lights send alerts.");
+  }
+  for (const k of ["quietStart", "quietEnd"] as const) {
+    if (!has(k)) continue;
+    const v = input[k];
+    if (v === null || v === "") s[k] = null;
+    else if (typeof v === "string" && minutesOf(v) !== null) s[k] = v.trim().padStart(5, "0");
+    else errors.push(TIME_ERROR);
+  }
+  if (has("timeZone")) {
+    if (input.timeZone === null || input.timeZone === "") s.timeZone = null;
+    else if (typeof input.timeZone === "string" && validTimeZone(input.timeZone)) s.timeZone = input.timeZone;
+    else errors.push("That time zone isn't recognized.");
   }
 
-  for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest"] as const) {
+  if (has("moveRules")) {
+    const raw = Array.isArray(input.moveRules) ? input.moveRules : null;
+    const rules = (raw ?? []).slice(0, MAX_MOVE_RULES).map(r => r as Record<string, unknown>).map(r => ({
+      tab: r.tab === "sports" || r.tab === "markets" ? (r.tab as "sports" | "markets") : null,
+      league: typeof r.league === "string" && (LEAGUES as readonly string[]).includes(r.league) ? r.league : null,
+      min: number(r.min, 10_000, MAX_SIZE_USD),
+    }));
+    if (!raw || rules.some(r => r.min === null)) errors.push("Each rule needs a size of $10,000 or more.");
+    else s.moveRules = rules.map(r => ({ tab: r.tab, league: r.league, min: r.min! }));
+  }
+  for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen"] as const) {
     if (has(k)) {
       const b = bool(input[k]);
       if (b === null) errors.push(`${k} must be on or off.`); else s[k] = b;

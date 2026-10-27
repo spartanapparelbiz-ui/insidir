@@ -1,6 +1,7 @@
 /* One scan: which markets need order books, and every engine run over them. Pure (the worker fetches and stores;
  * scripts/scan.ts prints). Engines: cross-venue locks and second opinions over matched pairs, multi-outcome sets,
  * threshold ladders, and the curated implication rules (config/implications.ts). */
+import { findNearMisses, type NearMiss } from "./engines/near-miss";
 import { findCrossArbs, type ArbInput } from "./engines/arb";
 import { marketKey } from "./engines/common";
 import { findImplications, findRuleImplications } from "./engines/implication";
@@ -8,6 +9,8 @@ import { findLadderImplications, findLadders } from "./engines/ladder";
 import { findMultiOutcome, type MultiInput } from "./engines/multi";
 import { findSecondOpinions } from "./engines/second-opinion";
 import { laddersEnabled } from "./flags";
+
+export { laddersEnabled };
 import type { Book, MarketPair, Opportunity, VEvent, VMarket, Venue } from "./types";
 
 /** What a scan looks at. Ladders are off unless LADDERS_ENABLED=1: their subject matching produced false
@@ -78,7 +81,7 @@ export function marketsToBook(u: Universe, now: number, o: ScanOptions = DEFAULT
 }
 
 /** Runs every engine. `books` is keyed by marketKey(venue, id). */
-export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number, o: ScanOptions = DEFAULT_SCAN_OPTIONS): { opps: Opportunity[]; counts: ScanCounts } {
+export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number, o: ScanOptions = DEFAULT_SCAN_OPTIONS): { opps: Opportunity[]; counts: ScanCounts; nearMisses: NearMiss[] } {
   const idx = byKey(u.markets);
   const arbInputs: ArbInput[] = [];
   for (const pair of u.pairs) {
@@ -102,6 +105,7 @@ export function scan(u: Universe, books: ReadonlyMap<string, Book>, now: number,
   }
   return {
     opps: [...best.values()].sort((a, b) => b.profitPerDay - a.profitPerDay),
+    nearMisses: findNearMisses(arbInputs),
     counts: { crossArb: crossArb.length, secondOpinion: secondOpinion.length, multi: multi.length, ladder: ladder.length, implication: implication.length },
   };
 }

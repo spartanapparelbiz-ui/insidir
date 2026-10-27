@@ -1,0 +1,49 @@
+/* Insidir design tokens (docs/V2.md §10). The only place colours, type, radii, shadows and motion are defined.
+ * Bright, friendly, trustworthy. One dark section only: the final band. */
+:root {
+  /* surfaces */
+  --bg: #ffffff;
+  --bg-alt: #f6f7fb;
+  --border: #e6e8ef;
+  /* text: nothing lighter than --muted is ever used for text */
+  --text: #0b0b12;
+  --muted: #5b6070;
+  /* brand */
+  --brand: #5b4bff;
+  --brand-hover: #4a3af0;
+  --brand-tint: #f1eeff;
+  --on-brand: #ffffff;
+  /* money and outcomes */
+  --money: #087a55;
+  --money-tint: #e8f8f1;
+  --loss: #c2410c;
+  --caution: #b45309;
+  --caution-bg: #fff4e5;
+  /* pastel tag tints */
+  --tint-violet: #f1eeff;
+  --tint-green: #e8f8f1;
+  --tint-peach: #fff1e6;
+  --tint-blue: #eaf4ff;
+  /* the one dark band */
+  --dark: #0b0b12;
+  --on-dark: #ffffff;
+  --on-dark-muted: #b8bccb;
+
+  --font: var(--font-jakarta), ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --t13: 13px; --t15: 15px; --t17: 17px; --t20: 20px; --t24: 24px; --t32: 32px; --t44: 44px; --t56: 56px; --t72: 72px;
+
+  --r-card: 16px;
+  --r-input: 12px;
+  --r-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(11, 11, 18, .06), 0 8px 24px rgba(11, 11, 18, .06);
+
+  --tap: 44px;
+  --btn-h: 52px;
+  --max: 1200px;
+  --sec: 64px;
+
+  --dur-press: 120ms; --dur-small: 200ms; --dur-panel: 320ms;
+  --ease-enter: cubic-bezier(.2, .8, .2, 1); --ease-exit: cubic-bezier(.4, 0, 1, 1);
+  color-scheme: light;
+}
+@media (min-width: 900px) { :root { --sec: 96px; } }

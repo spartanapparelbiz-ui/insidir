@@ -91,6 +91,17 @@ export interface MembershipLite {
   planId: string | null;
   cancelAtPeriodEnd: boolean;
   manageUrl: string | null;
+  /** End of the current billing period (the next charge, or the last day of access once cancelled), ms; null if not recurring. */
+  renewalPeriodEnd: number | null;
+  /** The recurring price as Whop formats it ("$39.00 / month"); null if not recurring. */
+  renewalPrice: string | null;
+}
+
+/** Whop sends dates as ISO strings or Unix timestamps (seconds). */
+function whopTime(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v < 1e12 ? v * 1000 : v;
+  if (typeof v === "string" && v) { const n = Number(v); if (Number.isFinite(n)) return n < 1e12 ? n * 1000 : n; const t = Date.parse(v); return Number.isFinite(t) ? t : null; }
+  return null;
 }
 
 /** Statuses that grant access. A membership set to cancel at period end stays "active" until then. */
@@ -106,6 +117,8 @@ export function readMemberships(body: unknown): MembershipLite[] {
     planId: str(obj(m.plan)?.id),
     cancelAtPeriodEnd: m.cancel_at_period_end === true,
     manageUrl: str(m.manage_url),
+    renewalPeriodEnd: whopTime(m.renewal_period_end),
+    renewalPrice: str(m.formatted_renewal_price),
   })).filter(m => m.id);
 }
 

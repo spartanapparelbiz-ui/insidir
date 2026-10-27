@@ -1,6 +1,7 @@
 "use client";
 /* The only funnel events the browser reports from the public pages: a tap on an Unlock button ([data-unlock]) or
  * a checkout CTA ([data-checkout]) that leaves for the Whop checkout. One delegated listener; navigation is never delayed (sendBeacon). */
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 function send(name: "unlock_click" | "checkout_start", where: string): void {
@@ -13,6 +14,13 @@ function send(name: "unlock_click" | "checkout_start", where: string): void {
 }
 
 export function Beacons() {
+  // The two pages a visitor goes to next, fetched while the browser is idle so the tap feels instant.
+  const router = useRouter();
+  useEffect(() => {
+    const go = () => { router.prefetch("/feed"); router.prefetch("/pricing"); };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(go); else window.setTimeout(go, 1500);
+  }, [router]);
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const t = e.target;

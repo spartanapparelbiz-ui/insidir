@@ -1,0 +1,1693 @@
+[
+  {
+    "route": "home",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 178,
+    "h1": "Two apps. Two prices. You keep the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 2,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 152,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 132,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [
+      "Unlock sizes and profit",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 159,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 154,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 200,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Save settings",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 18,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "visitor",
+    "w": 390,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 165,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 147,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 148,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 149,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 142,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "visitor",
+    "w": 390,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 162,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "visitor",
+    "w": 390,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 139,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "home",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 225,
+    "h1": "Two apps. Two prices. You keep the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 4,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 168,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 2,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 157,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [
+      "Unlock sizes and profit",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 140,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 150,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 175,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Save settings",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 18,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "visitor",
+    "w": 1440,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 129,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 159,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 198,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 147,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 161,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "visitor",
+    "w": 1440,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 127,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "visitor",
+    "w": 1440,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 143,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "home",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 205,
+    "h1": "Two apps. Two prices. You keep the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 2,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 195,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 192,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [
+      "Unlock sizes and profit",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 148,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 158,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 129,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Save settings",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 18,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "free",
+    "w": 390,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 154,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 125,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 145,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 126,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 150,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "free",
+    "w": 390,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 135,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "free",
+    "w": 390,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 142,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "home",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 219,
+    "h1": "Two apps. Two prices. You keep the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 4,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 147,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 2,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 181,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [
+      "Unlock sizes and profit",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 192,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 206,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 160,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Save settings",
+      "Start Insidir for $39 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 18,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "free",
+    "w": 1440,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 142,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 146,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 157,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [
+      "Start Pro for $99 a month"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 179,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 142,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "free",
+    "w": 1440,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 169,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "free",
+    "w": 1440,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 138,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "home",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 206,
+    "h1": "Polymarket and Kalshi disagree. You collect the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 2,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 166,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 155,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 154,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 182,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 153,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Turn on push alerts",
+      "Save settings"
+    ],
+    "sideways": 0,
+    "smallTargets": 21,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "pro",
+    "w": 390,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 137,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 159,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Show P&L"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 126,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 136,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 134,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "pro",
+    "w": 390,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 127,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "pro",
+    "w": 390,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 124,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "home",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/",
+    "loadMs": 252,
+    "h1": "Polymarket and Kalshi disagree. You collect the difference.",
+    "title": "Insidir Terminal",
+    "primaries": [
+      "See today's live deals",
+      "See today's live deals",
+      "Start for $39",
+      "See today's live deals"
+    ],
+    "sideways": 0,
+    "smallTargets": 5,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terminal",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terminal",
+    "loadMs": 181,
+    "h1": "Deals",
+    "title": "Terminal | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 3,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "deal",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/deal/cross_arb-2097f043ff3c521d",
+    "loadMs": 155,
+    "h1": "E2E fixture: Will the Jets win on Nov 9?",
+    "title": "Deal | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(2)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "receipts",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/receipts",
+    "loadMs": 162,
+    "h1": "Receipts",
+    "title": "Receipts | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pricing",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pricing",
+    "loadMs": 127,
+    "h1": "Pricing",
+    "title": "Pricing | Insidir",
+    "primaries": [
+      "Start for $39"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "settings",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/settings",
+    "loadMs": 133,
+    "h1": "Settings",
+    "title": "Settings | Insidir",
+    "primaries": [
+      "Turn on push alerts",
+      "Save settings"
+    ],
+    "sideways": 0,
+    "smallTargets": 21,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "alerts",
+    "who": "pro",
+    "w": 1440,
+    "status": 404,
+    "landed": "/alerts",
+    "loadMs": 133,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "pnl",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/pnl",
+    "loadMs": 154,
+    "h1": "Your P&L",
+    "title": "P&L | Insidir",
+    "primaries": [
+      "Show P&L"
+    ],
+    "sideways": 0,
+    "smallTargets": 1,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "whales",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/whales",
+    "loadMs": 134,
+    "h1": "Whales",
+    "title": "Whales | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "terms",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/terms",
+    "loadMs": 148,
+    "h1": "Terms of service",
+    "title": "Terms | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "privacy",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/privacy",
+    "loadMs": 144,
+    "h1": "Privacy",
+    "title": "Privacy | Insidir",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "admin",
+    "who": "pro",
+    "w": 1440,
+    "status": 200,
+    "landed": "/admin",
+    "loadMs": 158,
+    "h1": "Admin",
+    "title": "Admin | Insidir",
+    "primaries": [
+      "Sign in"
+    ],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(1)"
+    ],
+    "errors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  },
+  {
+    "route": "404",
+    "who": "pro",
+    "w": 1440,
+    "status": 404,
+    "landed": "/this-page-does-not-exist",
+    "loadMs": 146,
+    "h1": "404",
+    "title": "Insidir Terminal",
+    "primaries": [],
+    "sideways": 0,
+    "smallTargets": 0,
+    "axe": [
+      "color-contrast(6)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    ]
+  }
+]
