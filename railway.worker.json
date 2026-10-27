@@ -1,4 +1,5 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "deploy": { "startCommand": "npm run worker", "restartPolicyType": "ALWAYS" }
+  "deploy": { "startCommand": "npm run worker", "restartPolicyType": "ALWAYS" },
+  "$comment": "npm run worker applies pending migrations first (lib/db/migrate.ts), so a worker deployed from main never runs against an old schema."
 }
