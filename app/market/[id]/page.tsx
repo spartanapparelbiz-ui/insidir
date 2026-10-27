@@ -18,6 +18,8 @@ import { marketLink } from "@/lib/moves/links";
 import { currentPrice } from "@/lib/moves/pages";
 import { followList, listMoves, moneyBySide, storedMarket } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Market", robots: { index: false } };
@@ -66,11 +68,10 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const points = [...moves].filter(m => m.outcomeSide === "yes").sort((a, b) => a.at - b.at).map(m => ({ at: m.at, price: m.avgPrice }));
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} />
-      <main className="wrap app2 market">
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/market" />
+      <main className="wrap app2 market dark">
+        <PageBand n={BAND.market[tab === "markets" || tab === "stocks" ? tab : "sports"]} title={title} kicker={event && event !== title ? event : undefined} />
         <header className="market__head">
-          {event && event !== title ? <p className="trader__kicker">{event}</p> : null}
-          <h1 className="market__h">{title}</h1>
           {price !== null ? (
             <div className="market__pays">
               <p>{payoutLine({ outcome: yesLabel, avgPrice: price, tab })}</p>

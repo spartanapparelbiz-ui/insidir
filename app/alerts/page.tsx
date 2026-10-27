@@ -6,15 +6,17 @@ import { isReady } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LockButton } from "@/components/lock/Lock";
 import { AlertsForm } from "@/components/account/AlertsForm";
 import { unlockHref, vapidPublicKey } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { alertHistory } from "@/lib/alerts/history";
 import { getViewer } from "@/lib/auth/viewer";
-import { TRY_CTA } from "@/lib/copy";
 import { movePlan } from "@/lib/moves/gate";
 import "../app.css";
 import "../account.css";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Alerts", robots: { index: false } };
@@ -25,7 +27,7 @@ export default async function AlertsPage() {
   const viewer = await getViewer();
   const ready = { push: isReady("alerts_push"), email: isReady("alerts_email"), daily: isReady("daily_email"), rules: isReady("custom_rules") };
   if (!ready.push && !ready.email) {
-    return <ComingSoonPage feature="alerts_push" title="Alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
+    return <ComingSoonPage feature="alerts_push" title="Alerts" band={BAND.alerts} current="/alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they make a big move." />;
   }
   const user = viewer.user;
   if (!user) redirect("/auth/login?next=/alerts");
@@ -34,8 +36,8 @@ export default async function AlertsPage() {
     return (
       <>
         <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-        <main className="wrap app acct">
-          <h1 className="page__h">Alerts</h1>
+        <main className="wrap app acct dark">
+          <PageBand n={BAND.alerts} title="Alerts" />
           <section className="agroup">
             <div className="agroup__body">
               <p className="asum">Alerts come with Insidir.</p>
@@ -44,7 +46,7 @@ export default async function AlertsPage() {
                 <li>Every $50,000+ move in a market you follow.</li>
                 <li>Quiet hours, so nothing wakes you up.</li>
               </ul>
-              <div className="row-gap"><a className="btn btn--primary" href="/pricing" data-unlock="alerts">{TRY_CTA}</a></div>
+              <div className="row-gap"><LockButton where="alerts" className="btn btn--primary">Turn on alerts</LockButton></div>
             </div>
           </section>
         </main>
@@ -56,8 +58,8 @@ export default async function AlertsPage() {
   return (
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-      <main className="wrap app acct">
-        <h1 className="page__h">Alerts</h1>
+      <main className="wrap app acct dark">
+        <PageBand n={BAND.alerts} title="Alerts" />
         <p className="asum asum--lead">We ping you the moment a trader or market you follow makes a big move.</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "pro"} proHref={unlockHref("pro", "/alerts")} ready={ready} />
 

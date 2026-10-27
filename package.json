@@ -8,9 +8,10 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsx scripts/check-placeholders.ts && next build",
+    "check:placeholders": "tsx scripts/check-placeholders.ts",
     "start": "next start -p ${PORT:-3000}",
-    "worker": "NODE_OPTIONS=--max-old-space-size=512 tsx worker/index.ts",
+    "worker": "tsx lib/db/migrate.ts && NODE_OPTIONS=--max-old-space-size=512 tsx worker/index.ts",
     "scan": "tsx scripts/scan.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx lib/db/migrate.ts",

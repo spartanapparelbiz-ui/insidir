@@ -206,7 +206,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     hold("000099999826000002", "037833100", "E2E Fixture Devices", 5_136_364, 1_130_000_080), hold("000099999826000002", "111111111", "E2E Other Co", 500_000, 26_000_000),
     hold("000099999826000002", "333333333", "E2E New Co", 100_000, 30_000_000),
   ]);
-  for (const job of ["moves:polymarket", "moves:kalshi"]) {
+  for (const job of ["moves:polymarket", "moves:kalshi", "stocks:form4"]) {
     await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: {} }).onConflictDoNothing();
   }
   for (const x of Object.values(E2E_USERS)) {

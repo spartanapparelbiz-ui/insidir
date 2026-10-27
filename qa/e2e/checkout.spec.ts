@@ -30,11 +30,11 @@ test("try it for $1 → Whop checkout → live feed with the welcome, events in 
 
   // Back on Insidir, signed in, on the live feed: the welcome once, records on the cards, no delay notice.
   await expect(page).toHaveURL(/\/feed/, { timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "You're in. Follow your first 3 top traders." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
   await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
   await expect(page.getByText("You're seeing moves 30 minutes late.")).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "You're in. Follow your first 3 top traders." })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "You're in." })).toHaveCount(0);
   await page.screenshot({ path: `qa/screenshots/checkout-landed-${page.viewportSize()!.width}.png`, fullPage: true });
 
   const state = await (await whop("/__state")).json() as { webhooks: Array<{ type: string; status: number }> };

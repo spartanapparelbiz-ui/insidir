@@ -10,20 +10,48 @@ test("landing: the brief's hero, and on a phone the headline, button and top of 
   const cta = page.getByRole("link", { name: "See the live feed" }).first();
   await expect(cta).toHaveAttribute("href", "/feed");
   await expect(page.getByText("$1 for 3 days, then $39/mo. Cancel anytime.").first()).toBeVisible();
-  const card = page.locator(".stack__card--0 .move");
+  // One real move per photo on a solid card (components/home/Hero.tsx).
+  const card = page.locator(".cine__card .hcard");
+  await expect(page.getByText("LIVE · big money moves")).toBeVisible();
   await expect(card).toBeVisible();
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
   expect((await card.boundingBox())!.y + 24).toBeLessThan(vh);
 });
 
-test("Plus Jakarta Sans is the computed font on headings, body text and buttons", async ({ page }) => {
+test("home hero: the button, a ticker tap and the feed preview scrolled into view are each recorded", async ({ page }) => {
+  const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
+  const before = { cta: await count("hero_cta_click"), ticker: await count("ticker_click"), preview: await count("feed_preview_view") };
+  await page.goto("/");
+  await page.locator("#preview").scrollIntoViewIfNeeded();
+  await expect.poll(() => count("feed_preview_view")).toBe(before.preview + 1);
+  await page.goto("/");
+  // White on the black strip (the global running-text link colour must not win here).
+  expect(await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().evaluate(e => getComputedStyle(e).color)).toBe("rgb(255, 255, 255)");
+  await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().click({ force: true }); // it scrolls, so never "stable"
+  await expect.poll(() => count("ticker_click")).toBe(before.ticker + 1);
+  await page.goto("/");
+  await page.locator(".cine__cta a").click();
+  await expect(page).toHaveURL(/\/feed/);
+  await expect.poll(() => count("hero_cta_click")).toBe(before.cta + 1);
+});
+
+test("headlines are in the serif (Rufina); body text, buttons and cards in Schibsted Grotesk; both load", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  const fonts = await page.evaluate(() => ["h1", "body", ".btn--primary", ".move__sentence"].map(s => getComputedStyle(document.querySelector(s)!).fontFamily));
-  for (const f of fonts) expect(f).toMatch(/Plus Jakarta Sans/i);
-  const loaded = await page.evaluate(() => [...document.fonts].some(f => /Plus Jakarta Sans/i.test(f.family) && f.status === "loaded"));
-  expect(loaded).toBe(true);
+  const r = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const first = (v: string) => v.split(",")[0]!.trim().replace(/["']/g, "");
+    const font = (s: string) => first(getComputedStyle(document.querySelector(s)!).fontFamily);
+    return { sans: first(root.getPropertyValue("--font-schibsted")), serif: first(root.getPropertyValue("--font-rufina")),
+      h1: font("h1"), h2: font("h2"), body: font("body"), btn: font(".btn"), card: font(".move__sentence"),
+      loaded: [...document.fonts].filter(f => f.status === "loaded").map(f => f.family) };
+  });
+  expect(r.sans).not.toBe("");
+  expect(r.serif).not.toBe("");
+  expect([r.h1, r.h2]).toEqual([r.serif, r.serif]);
+  expect([r.body, r.btn, r.card]).toEqual([r.sans, r.sans, r.sans]);
+  for (const f of [r.sans, r.serif]) expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(f.replace(/["']/g, ""));
 });
 
 test("free feed: moves 30 minutes late, no records anywhere in the response, follow locked, one upsell", async ({ page }) => {
@@ -131,15 +159,17 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
-  await expect(insider.getByText("Jane Fixture, CEO of E2E Fixture Devices, bought $1.4M of E2E Fixture Devices stock.")).toBeVisible();
-  await expect(insider.getByText("Bought Oct 22 at $182.65 a share.", { exact: false })).toBeVisible();
+  // Never "just bought": the filing day, then the trade date; the note carries both dates.
+  await expect(insider.getByText(/^Filed (today|[A-Z][a-z]{2} \d{1,2}): Jane Fixture, CEO of E2E Fixture Devices, bought \$1\.4M of E2E Fixture Devices stock on Oct 22\.$/)).toBeVisible();
+  await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
+  await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
   await expect(insider.locator(".tag")).toHaveText("Stocks · EXDV");
   const link = insider.getByRole("link", { name: "See the SEC filing" });
   await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
   await expect(link).toHaveAttribute("target", "_blank");
   const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
-  await expect(fund.getByText("E2E Fixture Capital added $250M of E2E Fixture Devices last quarter.")).toBeVisible();
-  await expect(fund.getByText("Filed Oct 21 for the quarter ending Sep 30. 13F data can be up to 45 days old.")).toBeVisible();
+  await expect(fund.getByText(/^E2E Fixture Capital added \$250M of E2E Fixture Devices in Q3 \d{4}\.$/)).toBeVisible();
+  await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
   // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
   await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Coming soon");

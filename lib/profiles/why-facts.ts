@@ -1,7 +1,7 @@
 /* The facts behind "why this matters" (lib/profiles/why.ts) for a page of moves, in a handful of batched queries.
  * `until` is the viewer's clock (a free viewer's is 30 minutes behind), so no line uses moves they can't see yet.
  * Server only. */
-import { and, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { moves as movesTable } from "@/lib/db/schema";
 import { hasRecord, isTopTrader } from "@/lib/moves/records";
@@ -30,12 +30,12 @@ export async function whyFacts(db: Db, list: readonly Move[], { records, until, 
     const from = Math.min(...markets.map(m => m.at)) - 24 * H;
     const sib = await db.select({ id: movesTable.id, marketId: movesTable.marketId, side: movesTable.outcomeSide, amount: movesTable.amount,
       avgPrice: movesTable.avgPrice, wallet: movesTable.wallet, at: movesTable.at }).from(movesTable)
-      .where(and(inArray(movesTable.marketId, [...new Set(markets.map(m => m.marketId))]), gte(movesTable.at, new Date(from)), lte(movesTable.at, new Date(until))));
+      .where(and(inArray(movesTable.marketId, [...new Set(markets.map(m => m.marketId))]), gte(movesTable.at, new Date(from)), lte(movesTable.at, new Date(until)), isNull(movesTable.hiddenAt)));
     const recs: Map<string, TraderRecord> = records ? await recordsFor(db, [...sib.map(s => s.wallet ?? ""), ...markets.map(m => m.wallet ?? "")]) : new Map();
     // Each wallet's earlier big moves (for "biggest bet ever").
     const wallets = [...new Set(markets.map(m => m.wallet).filter((w): w is string => Boolean(w)))];
     const prior = records && wallets.length ? await db.select({ wallet: movesTable.wallet, at: movesTable.at, amount: movesTable.amount, id: movesTable.id }).from(movesTable)
-      .where(and(inArray(movesTable.wallet, wallets), gte(movesTable.amount, Math.min(...markets.map(m => m.amount))))) : [];
+      .where(and(inArray(movesTable.wallet, wallets), gte(movesTable.amount, Math.min(...markets.map(m => m.amount))), isNull(movesTable.hiddenAt))) : [];
     for (const m of markets) {
       const f = out.get(m.id)!;
       const same = sib.filter(s => s.marketId === m.marketId && s.id !== m.id);

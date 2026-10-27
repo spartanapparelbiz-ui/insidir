@@ -2,6 +2,10 @@
  * only". Won or lost, the amount, and when. Our proof page: complete and honest, losses included. */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SourceA } from "@/components/v2/MoveCard";
+import { moveSource } from "@/lib/moves/source";
+import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { getViewer } from "@/lib/auth/viewer";
@@ -10,6 +14,8 @@ import { agoText, dollars } from "@/lib/moves/copy";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
 import type { Move, Tab } from "@/lib/moves/types";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Results", description: "Every big move we've shown that has settled, won or lost. Real past moves. Not a promise." };
@@ -41,8 +47,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref("insidir")} />
-      <main className="wrap app2 results">
-        <h1 className="feed2__h">Results</h1>
+      <main className="wrap app2 results dark">
+        <PageBand n={BAND.results} title="Results" />
         <p className="results__label">Real past moves. Not a promise.</p>
         <div className="chips" aria-label="Filters">
           <Link className="chip2" aria-current={(!tab) ? "true" : undefined} href={q({ tab: null })}>All</Link>
@@ -61,14 +67,16 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                   <span className="rlist__what">
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link>
                     <span className="rlist__who">{r.source === "kalshi" ? "Someone on Kalshi" : isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>
+                    {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}
                   </span>
-                  <time className="rlist__when" dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time>
+                  <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
                 </li>
               ))}
             </ol>
           </>
         ) : (
           <div className="empty">
+            <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
             <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
             <Link className="btn btn--secondary" href="/feed">See the live feed</Link>

@@ -15,6 +15,8 @@ import { movePlan } from "@/lib/moves/gate";
 import { hasRecord, walletLabel } from "@/lib/moves/records";
 import { followList, recordsFor } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
+import { PageBand } from "@/components/PageBand";
+import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Following" };
@@ -30,8 +32,8 @@ export default async function FollowingPage() {
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/following" trialHref={trial} />
-      <main className="wrap app2 following">
-        <h1 className="feed2__h">Following</h1>
+      <main className="wrap app2 following dark">
+        <PageBand n={BAND.following} title="Following" />
         {!paid ? (
           <section className="upsell upsell--big">
             <p className="upsell__text">Follow top traders and markets, and get a ping on your phone when they move. Following is for members.</p>

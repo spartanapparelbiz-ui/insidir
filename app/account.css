@@ -20,12 +20,12 @@
 .afield { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; width: 100%; }
 .afield__label { padding: 0; color: var(--text); font-size: var(--t15); font-weight: 600; }
 .afield__box { position: relative; display: flex; align-items: center; }
-.afield__box .input { min-height: 48px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.afield__box .input { min-height: 48px; font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .afield__box .input:has(+ .afield__suffix) { padding-right: 40px; }
-.afield__suffix { position: absolute; right: 14px; color: var(--muted); font-family: var(--font); pointer-events: none; }
+.afield__suffix { position: absolute; right: 14px; color: var(--muted); font-family: var(--sans); pointer-events: none; }
 .afield__hint { color: var(--muted); font-size: var(--t15); line-height: 1.4; }
 .afield__err { color: var(--text); font-size: var(--t15); line-height: 1.4; }
-.afield__err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--loss); vertical-align: 1px; }
+.afield__err::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--text); vertical-align: 1px; }
 .input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--text); }
 .afields2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; }
 @media (min-width: 600px) { .afields2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -34,7 +34,7 @@
 .achip { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); cursor: pointer; font-size: var(--t15); }
 .achip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .achip:has(input:focus-visible) { outline: 2px solid var(--text); outline-offset: 2px; }
-.achip--on { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--brand); }
+.achip--on { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--text); }
 
 .akv { display: grid; gap: 0; margin: 0; width: 100%; }
 .akv > div { display: flex; justify-content: space-between; gap: 16px; min-height: var(--tap); align-items: center; border-bottom: 1px solid var(--border); }
@@ -65,5 +65,5 @@
 .post__body { display: grid; gap: 16px; align-content: start; justify-items: start; }
 .post__h { font-weight: 800; font-size: var(--t20); }
 .post__caption { display: grid; gap: 8px; width: 100%; }
-.post__text { width: 100%; min-height: 200px; resize: vertical; font-family: var(--font); line-height: 1.4; padding: 12px; }
+.post__text { width: 100%; min-height: 200px; resize: vertical; font-family: var(--sans); line-height: 1.4; padding: 12px; }
 @media (min-width: 800px) { .post { grid-template-columns: 270px minmax(0, 1fr); } }

@@ -21,13 +21,13 @@
 .split__seam .split__per { text-align: inherit; }
 .split__venue { color: var(--muted); font-size: var(--t15); line-height: 1.3; }
 .split__price { display: grid; gap: 0; min-width: 0; }
-.split__dir { font: 500 var(--t17)/1.3 var(--font); color: var(--text); }
-.split__num { font: 700 var(--t72)/1 var(--font); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.split__dir { font: 500 var(--t17)/1.3 var(--sans); color: var(--text); }
+.split__num { font: 700 var(--t72)/1 var(--sans); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .split__seam { background: var(--bg); padding: 16px 0 0; display: grid; gap: 8px; }
 .split__math { font-size: var(--t17); line-height: 1.4; color: var(--text); }
 .split__profit { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
 /* the profit: Paper, mono, bold, the largest number in the seam (emphasis by size, never colour) */
-.split__win { font: 700 var(--t44)/1 var(--font); color: var(--text); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.split__win { font: 700 var(--t44)/1 var(--sans); color: var(--text); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 /* not a deal: the same place, in grey */
 .split__win--none { color: var(--muted); }
 .split__per { color: var(--muted); font-size: var(--t15); }
@@ -64,7 +64,7 @@
   .roll--tick { display: inline-block; animation: tick 700ms cubic-bezier(.2, .8, .2, 1); }
 }
 /* a live tick: the number glows violet for a moment and settles back to its normal colour */
-@keyframes tick { 0%, 25% { transform: translateY(-12%); color: var(--brand); text-shadow: 0 0 8px color-mix(in srgb, var(--brand) 60%, transparent); } 100% { transform: none; color: inherit; text-shadow: none; } }
+@keyframes tick { 0%, 25% { transform: translateY(-12%); color: var(--text); text-shadow: 0 0 8px color-mix(in srgb, var(--text) 60%, transparent); } 100% { transform: none; color: inherit; text-shadow: none; } }
 .roll--tick { border-radius: 6px; }
 
 /* ---------- 2. the live strip ---------- */
@@ -72,7 +72,7 @@
 .strip__nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; margin: 0; }
 .strip__num { background: var(--bg-alt); padding: 16px; display: grid; gap: 8px; }
 .strip__num dt { color: var(--muted); font-size: var(--t15); }
-.strip__num dd { margin: 0; font: 700 var(--t32)/1.1 var(--font); letter-spacing: -0.04em; color: var(--text); }
+.strip__num dd { margin: 0; font: 700 var(--t32)/1.1 var(--sans); letter-spacing: -0.04em; color: var(--text); }
 .strip__flagged { font-size: var(--t17); max-width: 66ch; }
 .strip__foot { color: var(--muted); font-size: var(--t15); }
 @media (min-width: 900px) {
@@ -86,7 +86,7 @@
 .tape__quiet { color: var(--muted); font-size: var(--t15); }
 .tape__list { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; }
 .tape__item { flex: none; max-width: min(80vw, 420px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  background: var(--bg-alt); border-radius: var(--r-card); padding: 12px 16px; font: 400 var(--t15)/1.4 var(--font); color: var(--text); }
+  background: var(--bg-alt); border-radius: var(--r-card); padding: 12px 16px; font: 400 var(--t15)/1.4 var(--sans); color: var(--text); }
 .tape__item--deal_closed { color: var(--muted); }
 .tape__item--whale { color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) { .tape__item--fresh { animation: tr-hi .9s ease-out both; } }
@@ -96,7 +96,7 @@
 .deal--hidden { grid-template-columns: 1fr auto; align-items: center; color: var(--muted); }
 .deal--hidden .deal__title { color: var(--text); font-weight: 500; }
 .deal--hidden .deal__play { grid-column: 1; }
-.deal__unlock { grid-row: 1 / span 2; grid-column: 2; font: 600 var(--t15)/1 var(--font); color: var(--text); background: transparent; box-shadow: inset 0 0 0 1px var(--muted); border-radius: var(--r-pill); padding: 10px 16px; }
+.deal__unlock { grid-row: 1 / span 2; grid-column: 2; font: 600 var(--t15)/1 var(--sans); color: var(--text); background: transparent; box-shadow: inset 0 0 0 1px var(--muted); border-radius: var(--r-pill); padding: 10px 16px; }
 
 /* ---------- 4. receipts ---------- */
 .lp-follow { display: grid; gap: 8px; }
@@ -151,7 +151,7 @@
 .lp-faq__item { background: var(--bg-alt); border-radius: var(--r-card); }
 .lp-faq__item summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; align-items: center; min-height: 56px; padding: 0 16px; font-weight: 500; }
 .lp-faq__item summary::-webkit-details-marker { display: none; }
-.lp-faq__item summary::after { content: "+"; font-family: var(--font); color: var(--muted); }
+.lp-faq__item summary::after { content: "+"; font-family: var(--sans); color: var(--muted); }
 .lp-faq__item[open] summary::after { content: "−"; }
 .lp-faq__a { padding: 0 16px 16px; color: var(--muted); display: grid; gap: 10px; max-width: 66ch; }
 .lp-faq__a ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
@@ -176,14 +176,16 @@
 /* ---------- legal pages ---------- */
 .lp-legal { display: grid; gap: 16px; max-width: 70ch; padding-top: 24px; }
 @media (min-width: 900px) { .lp-legal { padding-top: 48px; } }
-.lp-legal h1 { font-size: var(--t32); line-height: 1.15; }
+.lp-legal h1 { font-size: var(--t44); line-height: 1.08; }
 .lp-legal h2 { font-size: var(--t24); padding-top: 16px; }
-.lp-legal p, .lp-legal li { color: var(--muted); }
+/* legal and about: plain white, serif titles, body text in full black at a comfortable measure */
+.lp-legal p, .lp-legal li { color: var(--text); line-height: 1.65; }
+.lp-legal > p.small.muted { color: var(--muted); }
 .lp-legal ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 /* the way onward at the end of a legal page */
 .lp-legal__next { display: grid; gap: 16px; justify-items: start; max-width: 70ch; padding-top: var(--sec); }
 .lp-legal__next p { color: var(--muted); }
-@media (min-width: 900px) { .lp-legal h1 { font-size: var(--t44); } }
+@media (min-width: 900px) { .lp-legal h1 { font-size: var(--t56); } }
 
 /* ---------- how it works: three line drawings ---------- */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
@@ -192,10 +194,10 @@
 .steps__art { width: 100%; max-width: 360px; height: auto; color: var(--muted); }
 .steps__art .st-line { color: var(--muted); }
 .steps__art .st-strong { color: var(--text); }
-.steps__art text { fill: var(--text); font-family: var(--font); }
+.steps__art text { fill: var(--text); font-family: var(--sans); }
 .steps__art .st-small { fill: var(--muted); font-size: 11px; }
 .steps__art .st-text { font-size: 13px; }
-.steps__art .st-num { font-family: var(--font); font-size: 14px; font-weight: 700; }
+.steps__art .st-num { font-family: var(--sans); font-size: 14px; font-weight: 700; }
 .steps__art .st-keep { font-size: 16px; }
 .steps__h { font-size: var(--t17); display: flex; gap: 8px; align-items: baseline; }
 .steps__n { color: var(--muted); font-size: var(--t15); }
@@ -280,9 +282,9 @@
 @media (min-width: 900px) { .trust__row { display: flex; flex-wrap: wrap; gap: 8px 32px; } }
 .trust__item { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: var(--t15); line-height: 1.3; }
 .trust__icon { width: 20px; height: 20px; flex: none; color: var(--muted); }
-.trust__item a { color: var(--brand); }
+.trust__item a { color: var(--text); }
 .trust__scale { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--t15); }
-.trust__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex: none; }
+.trust__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text); flex: none; }
 @media (prefers-reduced-motion: no-preference) { .trust__dot { animation: beat 1.6s ease-in-out infinite; } }
 
 /* ---------- how Insidir makes money ---------- */
@@ -292,11 +294,11 @@
 /* ---------- the receipts statement (light band): an audited ledger, ruled lines, exact times ---------- */
 .stmt { display: grid; gap: 0; border-top: 2px solid var(--text); border-bottom: 2px solid var(--text); padding: 16px 0; }
 .stmt__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.stmt__brand { font: 700 var(--t15)/1.3 var(--font);  }
+.stmt__brand { font: 700 var(--t15)/1.3 var(--sans);  }
 .stmt__period { color: var(--muted); font-size: var(--t15); }
 .stmt__tally { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .stmt__tally dt { color: var(--muted); font-size: var(--t13); line-height: 16px; }
-.stmt__tally dd { margin: 0; font: 700 var(--t24)/1.2 var(--font); }
+.stmt__tally dd { margin: 0; font: 700 var(--t24)/1.2 var(--sans); }
 .stmt__foot { padding-top: 12px; color: var(--muted); font-size: var(--t13); line-height: 1.5; }
 .stmt .rcpts { gap: 0; }
 .stmt .rcpts__head { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: var(--t13); }
@@ -317,8 +319,8 @@
 .band--paper .lp-faq__item summary { padding: 0; }
 .band--paper .lp-faq__a { padding: 0 0 16px; }
 .lp-faq__item summary { transition: color var(--dur-press); }
-.lp-faq__item summary:hover { color: var(--brand); }
-.lp-faq__item summary:hover::after { color: var(--brand); }
+.lp-faq__item summary:hover { color: var(--text); }
+.lp-faq__item summary:hover::after { color: var(--text); }
 .lp-legal ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
 .lp-legal ol li strong, .lp-legal ul li strong { color: var(--text); }
 .lp-about__lead { color: var(--text) !important; font-size: var(--t24); line-height: 1.4; }

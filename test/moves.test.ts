@@ -153,7 +153,7 @@ describe("plain-English copy", () => {
     expect(payoutLine({ outcome: "Chiefs", avgPrice: 0.62, tab: "sports" })).toBe("Pays $161 on every $100 if Chiefs win.");
     expect(payoutLine({ outcome: "Yes", avgPrice: 0.25, tab: "markets" })).toBe("Pays $400 on every $100 if the answer is Yes.");
     expect(recordLine(top)).toBe("Won 41 of 63 · +$1.2M all-time");
-    expect(agoText(T0 - 2 * MIN, T0)).toBe("2 min ago");
+    expect(agoText(T0 - 2 * MIN, T0)).toBe("2m ago");
     expect(dollars(1_234_567)).toBe("$1.2M");
   });
   it("never uses the banned words", () => {

@@ -58,7 +58,7 @@ export function alertJobs(users: readonly AlertUser[], moves: readonly Move[], n
 
 export function alertMessage(m: Move, record: TraderRecord | null, reason: AlertReason, appUrl: string, now: number): { title: string; body: string; url: string } {
   const title = reason === "trader" ? "A trader you follow just moved" : reason === "market" ? "Big money in a market you follow" : "A big move matched your rule";
-  const body = [moveSentence(m, record), payoutLine(m), agoText(m.at, now) === "just now" ? null : agoText(m.at, now)].filter(Boolean).join(" ");
+  const body = [moveSentence(m, record, true, now), payoutLine(m), agoText(m.at, now) === "just now" ? null : agoText(m.at, now)].filter(Boolean).join(" ");
   return { title, body, url: `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=alert` };
 }
 

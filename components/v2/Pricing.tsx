@@ -7,7 +7,7 @@ import { PLANS, TRIAL } from "@/lib/plans";
 import type { Plan } from "@/lib/types";
 
 interface Bullet { text: string; needs?: Feature }
-const PLAN_BULLETS: Record<Plan, Bullet[]> = {
+export const PLAN_BULLETS: Record<Plan, Bullet[]> = {
   free: [{ text: "See big moves 30 minutes late" }, { text: "Sports and prediction markets" }, { text: "Every result, won or lost" }],
   insidir: [
     { text: "Every big move, live", needs: "feed" },
@@ -24,10 +24,17 @@ const PLAN_BULLETS: Record<Plan, Bullet[]> = {
   ],
 };
 
-export function PricingCards({ current, signedIn, insidirHref, proHref, level = 2, primary = false }: {
+/** What the $1 trial unlocks, ready features only (the lock sheet, components/lock). */
+export const insidirUnlocks = (): string[] => PLAN_BULLETS.insidir.filter(b => !b.needs || isReady(b.needs)).map(b => b.text);
+
+export function PricingCards({ current, signedIn, insidirHref, proHref, level = 2, primary = false, actions = true }: {
   current: Plan; signedIn: boolean; insidirHref: string; proHref: string; level?: 1 | 2; primary?: boolean;
+  /** Buttons on the cards (off on home: one action there, and the $1 trial once at the end). */
+  actions?: boolean;
 }) {
   const H = level === 1 ? "h1" : "h2";
+  // Plan names sit one level under the section title (h2 on /pricing, h3 inside the home page's sections).
+  const PlanH = level === 1 ? "h2" : "h3";
   const price: Record<Plan, string> = { free: "$0", insidir: `$${TRIAL.price} for ${TRIAL.days} days`, pro: `$${PLANS.pro.price}/mo` };
   const sub: Record<Plan, string> = { free: "Free forever", insidir: `then $${PLANS.insidir.price}/mo. Cancel anytime.`, pro: "For people who follow a lot." };
   return (
@@ -40,7 +47,7 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
             return (
               <article key={p} className={`plan2${p === "insidir" ? " plan2--main" : ""}`} data-plan={p}>
                 {p === "insidir" ? <p className="plan2__flag">Recommended</p> : null}
-                <h3 className="plan2__name">{PLANS[p].name}</h3>
+                <PlanH className="plan2__name">{PLANS[p].name}</PlanH>
                 <p className="plan2__price">{price[p]}</p>
                 <p className="plan2__sub">{sub[p]}</p>
                 <ul className="plan2__list">
@@ -49,7 +56,7 @@ export function PricingCards({ current, signedIn, insidirHref, proHref, level = 
                     return <li key={b.text} className={soon ? "plan2__soon" : undefined}>{b.text}{soon ? " (coming soon)" : ""}</li>;
                   })}
                 </ul>
-                {mine ? <Link className="btn btn--secondary btn--block" href="/settings">Your plan</Link>
+                {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Your plan</Link>
                   : p === "free" ? <Link className="btn btn--secondary btn--block" href="/feed">See the live feed</Link>
                   : <a className={`btn btn--block ${p === "insidir" && primary ? "btn--primary" : "btn--secondary"}`}
                       href={p === "pro" ? proHref : insidirHref} data-checkout={`pricing-${p}`}>{p === "pro" ? "Go Pro" : `Try it for $${TRIAL.price}`}</a>}

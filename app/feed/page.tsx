@@ -1,11 +1,14 @@
 /* The feed (/feed; /terminal redirects here). Server-renders the first page of moves for this viewer's plan and region
- * (lib/moves/feed.ts), then components/v2/Feed keeps it live. After checkout (?welcome=1) a member sees "You're in.
- * Follow your first 3 top traders." with one-tap suggestions: the top 3 traders by all-time profit. */
+ * (lib/moves/feed.ts), then components/v2/Feed keeps it live. After checkout (?welcome=1) a member first sees the
+ * summit (photo 6) full bleed with "You're in." in the serif and their first 3 traders to follow on solid cards: the
+ * top 3 traders by all-time profit, one tap each. */
 import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { users } from "@/lib/db/schema";
+import { Photo } from "@/components/Photo";
+import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Feed } from "@/components/v2/Feed";
 import { FollowButton } from "@/components/v2/FollowButton";
@@ -41,7 +44,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     const db = getDb();
     [items, status, follows, top] = await Promise.all([
       feedFor(db, viewer.plan, viewer.region, { tab, min: 10_000, limit: 30 }, now).catch(() => []),
-      feedStatus(db, now).catch(() => null),
+      feedStatus(db, now, tab).catch(() => null),
       viewer.user ? followList(db, viewer.user.id).then(l => l.filter(f => f.kind === "trader").map(f => f.target)).catch(() => []) : Promise.resolve(null),
       welcome ? topTraders(db, 3).catch(() => []) : Promise.resolve([]),
     ]);
@@ -56,23 +59,27 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/feed" trialHref={trial} />
-      <main className="wrap app2">
-        {welcome ? (
-          <section className="welcome" aria-labelledby="welcome-h">
-            <h2 id="welcome-h" className="welcome__h">You&apos;re in. Follow your first 3 top traders.</h2>
+      {welcome ? (
+        <section className="inband" aria-labelledby="welcome-h">
+          <Photo n={SPOT.youreIn} className="inband__photo" eager />
+          <div className="wrap inband__in">
+            <h2 id="welcome-h" className="inband__h">You&apos;re in.</h2>
+            <p className="inband__p">Follow your first 3 traders. We&apos;ll ping you the moment they make a big move.</p>
             {top.length ? (
-              <ul className="welcome__list">
+              <ul className="inband__list">
                 {top.map(t => (
-                  <li key={t.wallet} className="welcome__item">
-                    <span><a href={`/p/${t.wallet}`} className="welcome__name">{walletLabel(t.wallet, t.name)}</a>
-                      <span className="welcome__rec">Won {t.won} of {t.resolved} · {signedShort(t.profit)} all-time</span></span>
+                  <li key={t.wallet} className="inband__card">
+                    <a href={`/p/${t.wallet}`} className="inband__name">{walletLabel(t.wallet, t.name)}</a>
+                    <span className="inband__rec">Won {t.won} of {t.resolved} · <span className={t.profit >= 0 ? "money" : "loss"}>{signedShort(t.profit)}</span> all-time</span>
                     <FollowButton kind="trader" target={t.wallet} state={followsReady ? (follows?.includes(t.wallet) ? "on" : "off") : "soon"} trialHref={trial} />
                   </li>
                 ))}
               </ul>
-            ) : <p className="welcome__p">Top traders show up here once we have 20 settled markets for them. Tap Follow on any card below in the meantime.</p>}
-          </section>
-        ) : null}
+            ) : <p className="inband__card inband__card--note">Top traders show up here once we have 20 settled markets for them. Tap Follow on any card in the feed in the meantime.</p>}
+          </div>
+        </section>
+      ) : null}
+      <main className="wrap app2 dark">
         <Feed pill={<LocationPill region={viewer.region} />} initial={items} status={status} initialTab={tab} stocks={tabs.includes("stocks")} free={!paid} follows={follows} followsReady={followsReady} trialHref={trial} serverNow={now} />
       </main>
     </>

@@ -12,7 +12,7 @@ export const fromRow = (r: Row): Move => ({
   outcomeSide: r.outcomeSide, amount: r.amount, avgPrice: r.avgPrice, wallet: r.wallet, walletName: r.walletName,
   at: r.at.getTime(), lastAt: r.lastAt.getTime(), fills: r.fills, tab: r.tab, league: (r.league as League | null) ?? null,
   category: r.category, url: r.url, result: r.result ?? null, settledAt: r.settledAt?.getTime() ?? null,
-  detail: (r.detail as Move["detail"]) ?? null, newWallet: r.newWallet ?? null,
+  detail: (r.detail as Move["detail"]) ?? null, newWallet: r.newWallet ?? null, sourceRefs: r.sourceRefs ?? null,
 });
 
 /** Inserts new moves; a move seen again (more fills merged in) gets its new total. Returns the ids that are new. */
@@ -23,10 +23,10 @@ export async function upsertMoves(db: Db, list: readonly Move[]): Promise<string
       id: m.id, source: m.source, marketId: m.marketId, eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome,
       outcomeSide: m.outcomeSide, amount: m.amount, avgPrice: m.avgPrice, wallet: m.wallet, walletName: m.walletName,
       at: new Date(m.at), lastAt: new Date(m.lastAt), fills: m.fills, tab: m.tab, league: m.league, category: m.category, url: m.url,
-      detail: (m.detail ?? null) as Record<string, unknown> | null, newWallet: m.newWallet ?? null,
+      detail: (m.detail ?? null) as Record<string, unknown> | null, newWallet: m.newWallet ?? null, sourceRefs: m.sourceRefs ?? null,
     }).onConflictDoUpdate({
       target: moves.id,
-      set: { amount: m.amount, avgPrice: m.avgPrice, lastAt: new Date(m.lastAt), fills: m.fills, walletName: m.walletName },
+      set: { amount: m.amount, avgPrice: m.avgPrice, lastAt: new Date(m.lastAt), fills: m.fills, walletName: m.walletName, sourceRefs: m.sourceRefs ?? null },
       setWhere: sql`${moves.fills} < ${m.fills}`,
     }).returning({ id: moves.id, inserted: sql<boolean>`(xmax = 0)` });
     if (r[0]?.inserted) fresh.push(m.id);
@@ -90,6 +90,8 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
   // Tabs that aren't live yet (Coming soon) never reach a page, whatever the query asks for.
   const w = [
     inArray(moves.tab, q.tab ? liveTabs().filter(t => t === q.tab) : liveTabs()),
+    // A move the accuracy check found wrong is hidden until a later check passes (lib/accuracy).
+    isNull(moves.hiddenAt),
     q.min ? gte(moves.amount, q.min) : undefined,
     q.league ? eq(moves.league, q.league) : undefined,
     q.wallet ? eq(moves.wallet, q.wallet) : undefined,
@@ -105,7 +107,7 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
 }
 
 export async function moveById(db: Db, id: string): Promise<Move | null> {
-  const r = await db.select().from(moves).where(eq(moves.id, id)).limit(1);
+  const r = await db.select().from(moves).where(and(eq(moves.id, id), isNull(moves.hiddenAt))).limit(1);
   return r[0] ? fromRow(r[0]) : null;
 }
 

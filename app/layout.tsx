@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Rufina } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
+import { LockProvider } from "@/components/lock/Lock";
+import { unlockHref } from "@/components/app/links";
+import { insidirUnlocks } from "@/components/v2/Pricing";
 import "./tokens.css";
 import "./globals.css";
 import "./v2.css";
@@ -15,20 +19,28 @@ export const metadata: Metadata = {
   description: "Insidir shows you the biggest bets on sports and prediction markets the second they happen. In plain English. With alerts.",
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
+  // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
+  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black" },
+  formatDetection: { telephone: false },
 };
 
-/** Plus Jakarta Sans for everything (docs/INSIDIR-V2.md §10), self-hosted by next/font: no third-party request at runtime. */
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-jakarta", display: "swap" });
+/** Schibsted Grotesk for everything; Rufina (the closest match to the logo's wordmark) for headlines. Both self-hosted
+ * by next/font: no third-party request at runtime. Schibsted is the variable font (400–900) with one change
+ * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
+const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
+const serif = Rufina({ subsets: ["latin"], weight: ["700"], variable: "--font-rufina", display: "swap" });
 
-export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#0b0b12", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={jakarta.variable}>
+    <html lang="en" className={`${schibsted.variable} ${serif.variable}`}>
       <body>
         <ToastProvider>
-          {children}
-          <SiteFooter />
+          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref("insidir")}>
+            {children}
+            <SiteFooter />
+          </LockProvider>
         </ToastProvider>
         <RegisterSW />
         <Beacons />
