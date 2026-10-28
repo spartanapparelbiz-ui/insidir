@@ -34,7 +34,7 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
   /** No buttons (the home preview, where the one action is "See the live feed"). */
   compact?: boolean }) {
   const tag = TAG[m.tab]!;
-  const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.league && m.league !== "other" ? m.league : null;
+  const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.leagueLabel ?? (m.league && m.league !== "other" ? m.league : null);
   return (
     <article className={`move${fresh ? " move--fresh" : ""}`} data-move={m.id}>
       <div className="move__top">

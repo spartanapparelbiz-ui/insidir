@@ -25,7 +25,7 @@ import { PricingCards } from "@/components/v2/Pricing";
 import { MoveCard, SourceA } from "@/components/v2/MoveCard";
 import { TrustBlock } from "@/components/TrustBlock";
 import { LOGO } from "@/components/Wordmark";
-import { trustFacts, type TrustFacts } from "@/lib/trust";
+import { countsToRecord, trustFacts, type TrustFacts } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
@@ -67,9 +67,10 @@ function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
   return { ...fi, sentence: c.line, context: c.context, note: fi.source === "sec" ? null : fi.note };
 }
 
-/** Results: the six best recent mainstream examples, three won and three lost when there are, biggest first. */
+/** Results: the six best recent mainstream examples, three won and three lost when there are, biggest first. Only
+ *  bets that count toward the record shown above them (Polymarket, not sold early), so the two always agree. */
 function resultPick(settled: Move[], now: number): Move[] {
-  const pool = settled.filter(m => (m.settledAt ?? m.at) > now - MONTH && (m.result === "won" || m.result === "lost")).sort((a, b) => b.amount - a.amount);
+  const pool = settled.filter(m => (m.settledAt ?? m.at) > now - MONTH && countsToRecord(m)).sort((a, b) => b.amount - a.amount);
   const won = pool.filter(m => m.result === "won"), lost = pool.filter(m => m.result === "lost");
   const w = Math.min(3, won.length), l = Math.min(3, lost.length);
   const out = [...won.slice(0, 6 - Math.min(l, 3) > w ? Math.min(won.length, 6 - l) : w), ...lost.slice(0, l)];
@@ -105,7 +106,7 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   const [bigAll, latestAll, settledAll, st] = await Promise.all([
     listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
     listMoves(db, { until, limit: 200 }).catch(() => []),
-    listMoves(db, { settled: true, limit: 200 }).catch(() => []),
+    listMoves(db, { settled: true, source: "polymarket", limit: 200 }).catch(() => []),
     feedStatus(db, now).catch(() => null),
   ]);
   const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));

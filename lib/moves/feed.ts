@@ -4,6 +4,7 @@
  *   - Links follow the location rules (lib/moves/links.ts): a US or unknown-region viewer never gets an
  *     international Polymarket link.
  * The status line reads the worker's move heartbeats: "Live · updated 8s ago", or "Catching up" when they're behind. */
+import { leagueLabel } from "./leagues";
 import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
@@ -23,6 +24,8 @@ export interface FeedItem {
   source: Move["source"];
   tab: Tab;
   league: League | null;
+  /** What a sports card says after "Sports · " (lib/moves/leagues.ts): "Serie A", "NBA", "Dota 2". */
+  leagueLabel?: string | null;
   sentence: string;
   payout: string | null;
   /** "Won 41 of 63 · +$1.2M all-time"; members only. */
@@ -109,7 +112,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
     const shown = p.records && hasRecord(rec) ? rec : null;
     return {
-      id: m.id, source: m.source, tab: m.tab, league: m.league,
+      id: m.id, source: m.source, tab: m.tab, league: m.league, leagueLabel: leagueLabel(m),
       sentence: moveSentence(m, shown, now - m.at < 3_600_000, now), payout: payoutLine(m), record: recordLine(shown), topTrader: isTopTrader(shown),
       amount: m.amount, at: m.at, ago: agoText(m.at, now), eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome, marketId: m.marketId,
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,

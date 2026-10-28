@@ -21,7 +21,7 @@ import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, typ
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
-import { dedupeOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
+import { dedupeOnce, leagueBackfillOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
 import { SecClient } from "@/lib/stocks/sec";
@@ -206,6 +206,10 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves:reclassify", 60 * 60_000, async () => {
         const n = await reclassifyOnce(getDb(), clients.polymarket as PolymarketClient);
         if (n) log(`moves: ${n} Polymarket markets moved to Sports`);
+      }),
+      every("moves:leagues", 10 * 60_000, async () => {
+        const n = await leagueBackfillOnce(getDb());
+        if (n) log(`moves: ${n} sports moves got their league`);
       }),
       every("moves:dedupe", 10 * 60_000, async () => {
         const n = await dedupeOnce(getDb(), clients.polymarket as PolymarketClient);

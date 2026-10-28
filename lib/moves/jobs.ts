@@ -18,8 +18,8 @@ import { readWalletFills, realizeMove } from "./realize";
 import { MERGE_WINDOW_MS } from "./detect";
 import { readPolymarketFills } from "./sources";
 import { moves } from "@/lib/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
-import { classify } from "./classify";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { classify, sportsLeagueOf } from "./classify";
 import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
@@ -91,6 +91,24 @@ export async function reclassifyOnce(db: Db, poly: PolymarketClient, perRun = 20
     await db.update(moves).set({ tab: "sports", league: c.league, category: "sports" }).where(and(eq(moves.source, "polymarket"), eq(moves.marketId, r.marketId)));
     n++;
   }
+  return n;
+}
+
+let leagueOffset = 0;
+/** Sports moves saved without a league (or "other") get one from their titles: a competition or club they name
+ *  (lib/moves/leagues.ts). Walks them a page per run, then starts over. */
+export async function leagueBackfillOnce(db: Db, perRun = 500): Promise<number> {
+  const rows = await db.select({ id: moves.id, eventTitle: moves.eventTitle, marketTitle: moves.marketTitle, marketId: moves.marketId }).from(moves)
+    .where(and(eq(moves.tab, "sports"), or(isNull(moves.league), eq(moves.league, "other")))).orderBy(moves.id).limit(perRun).offset(leagueOffset);
+  let n = 0;
+  for (const r of rows) {
+    const league = sportsLeagueOf([r.eventTitle, r.marketTitle, r.marketId]);
+    if (league === "other") continue;
+    await db.update(moves).set({ league }).where(eq(moves.id, r.id));
+    n++;
+  }
+  // Updated rows leave the set this walks, so the next page skips only the ones still without a league.
+  leagueOffset = rows.length < perRun ? 0 : leagueOffset + rows.length - n;
   return n;
 }
 

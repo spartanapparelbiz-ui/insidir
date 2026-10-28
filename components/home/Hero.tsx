@@ -28,7 +28,7 @@ const HOLD_MS = 6000;
 const TAG: Record<string, string> = { sports: "Sports", markets: "Markets", stocks: "Stocks", crypto: "Crypto" };
 
 function tagText(m: FeedItem): string {
-  const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.league && m.league !== "other" ? m.league : null;
+  const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.leagueLabel ?? (m.league && m.league !== "other" ? m.league : null);
   return `${TAG[m.tab] ?? ""}${sub ? ` · ${sub}` : ""}`;
 }
 
