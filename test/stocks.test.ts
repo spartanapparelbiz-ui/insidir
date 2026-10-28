@@ -121,8 +121,8 @@ describe("stock cards", () => {
   });
   it("link to the SEC filing itself, for everyone", () => {
     expect(insider.url).toBe("https://www.sec.gov/Archives/edgar/data/320193/000032019326000101/0000320193-26-000101-index.htm");
-    expect(marketLink(insider, "us", null)).toEqual({ href: insider.url, label: "See the SEC filing" });
-    expect(marketLink({ source: "sec", url: "https://evil.example/x" }, "us", null)).toBeNull();
+    expect(marketLink(insider, "us")).toEqual({ href: insider.url, label: "See the SEC filing" });
+    expect(marketLink({ source: "sec", url: "https://evil.example/x" }, "us")).toBeNull();
   });
   it("are dated when the filing was public, and stay in the Stocks tab", () => {
     expect(insider).toMatchObject({ id: `f4:${ACC}`, tab: "stocks", source: "sec", at: Date.parse("2026-10-26T14:12:44Z"), wallet: null });
@@ -132,6 +132,10 @@ describe("stock cards", () => {
     expect(liveTabs({})).toEqual(["sports", "markets"]);
     expect(liveTabs({ FEATURES_READY: "feed,stocks,crypto" })).toEqual(["sports", "markets", "stocks"]);
     expect(readyFeatures({ FEATURES_READY: "crypto" }).has("crypto")).toBe(false);
+    // Price gaps shows Coming soon while its scanner is off, even if someone lists it as ready.
+    expect(readyFeatures({}).has("price_gaps")).toBe(false);
+    expect(readyFeatures({ FEATURES_READY: "feed,price_gaps", GAPS_ENABLED: "0" }).has("price_gaps")).toBe(false);
+    expect(readyFeatures({ FEATURES_READY: "feed,price_gaps", GAPS_ENABLED: "1" }).has("price_gaps")).toBe(true);
   });
 });
 
