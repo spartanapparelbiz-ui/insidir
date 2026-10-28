@@ -87,7 +87,7 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 7 days, initial fee $1.");
     expect(w.s.webhooks).toHaveLength(1);
     expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
-    expect(w.s.apps).toEqual([expect.objectContaining({ name: "Insidir", redirect_uris: ["https://insidir.com/reset/callback"], account_id: "biz_1" })]);
+    expect(w.s.apps).toEqual([expect.objectContaining({ name: "Insidir", redirect_uris: ["https://insidir.com/login/callback"], account_id: "biz_1" })]);
     const stored = await readConfig(db);
     expect(stored.plan_id).toBe("plan_good");
     expect(stored.app_id).toBe(w.s.apps[0]!.id);
@@ -124,7 +124,7 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     expect(w.s.webhooks.map(x => x.id)).toEqual(["hook_1"]);
     expect(logs).toContain("Whop webhook: the existing one's secret wasn't stored, so it was replaced.");
     expect(w.s.apps).toHaveLength(1);
-    expect(w.s.apps[0]!.redirect_uris).toEqual(["https://example.com/cb", "https://insidir.com/reset/callback"]);
+    expect(w.s.apps[0]!.redirect_uris).toEqual(["https://example.com/cb", "https://insidir.com/login/callback"]);
     expect((await readConfig(db)).app_id).toBe("app_existing");
     // With the secret known (env), an existing webhook is kept and only gets the missing events.
     w.s.webhooks = [{ id: "hook_env", url: "https://insidir.com/api/billing/webhook", events: ["payment.succeeded"], enabled: true }];

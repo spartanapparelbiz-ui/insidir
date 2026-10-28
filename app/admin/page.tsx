@@ -244,7 +244,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         {free.v.length ? (
           <div className="scroll-x"><table className="table" data-testid="free-access">
             <thead><tr><th>Email</th><th>Account</th><th>Access</th></tr></thead>
-            <tbody>{free.v.map(r => <tr key={r.email}><td>{r.email}</td><td>{r.userId ? "Created" : "Not yet (they confirm it's them on Log in → Forgot password)"}</td><td><span className="pill">Free access</span></td></tr>)}</tbody>
+            <tbody>{free.v.map(r => <tr key={r.email}><td>{r.email}</td><td>{r.userId ? "Created" : "Not yet (made the first time they log in)"}</td><td><span className="pill">Free access</span></td></tr>)}</tbody>
           </table></div>
         ) : <p className="muted small">No emails on the list.</p>}
       </section>

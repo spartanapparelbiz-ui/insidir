@@ -1,14 +1,14 @@
-/* Opens the checkout on /start. Someone new sends the email and password they want (at least 8 characters): they're
- * kept with a claim token (the password only as its scrypt hash) until the payment lands and the billing webhook
- * makes the account from them. A logged-in member whose plan ended just needs the token. The token goes into an
- * httpOnly cookie and back to the page, which hands it to the checkout as metadata. */
+/* Opens the checkout on /start. Someone new sends their email: it's kept with a claim token until the payment lands
+ * and the billing webhook makes the account (linked to the Whop account they pay with, which is how they log in
+ * after). A logged-in member whose plan ended just needs the token. The token goes into an httpOnly cookie and back
+ * to the page, which hands it to the checkout as metadata; /welcome trades it for a session. No passwords. */
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { CLAIM_COOKIE, CLAIM_MAX_AGE_S, newClaim } from "@/lib/billing/claims";
 import { checkoutPlanId } from "@/lib/billing/whop";
 import { normEmail } from "@/lib/billing/access";
 import { appUrl } from "@/lib/app-url";
-import { hashPassword, passwordProblem, validEmail } from "@/lib/auth/password";
+import { validEmail } from "@/lib/auth/next";
 import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
 import { getDb, hasDatabase } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -31,11 +31,9 @@ export async function POST(req: NextRequest) {
     const b = await readBody(req);
     email = normEmail(b.email ?? "");
     if (!validEmail(email)) return NextResponse.json({ error: "email", message: "That doesn't look like an email address." }, { status: 400 });
-    const problem = passwordProblem(b.password ?? "");
-    if (problem) return NextResponse.json({ error: "password", message: problem }, { status: 400 });
-    const existing = (await db.select({ id: users.id, hasPassword: users.passwordHash }).from(users).where(eq(users.email, email)).limit(1))[0];
-    if (existing?.hasPassword) return NextResponse.json({ error: "exists", message: "You already have an account. Log in, then come back to restart your plan." }, { status: 409 });
-    claim = await newClaim(db, { email, passwordHash: await hashPassword(b.password!) });
+    const existing = (await db.select({ plan: users.plan }).from(users).where(eq(users.email, email)).limit(1))[0];
+    if (existing && existing.plan !== "free") return NextResponse.json({ error: "exists", message: "You already have Insidir. Log in with the account you paid with." }, { status: 409 });
+    claim = await newClaim(db, { email });
   }
   const metadata: Record<string, string> = { insidir_claim: claim, ...(user ? { insidir_user_id: user.id } : {}) };
   const res = NextResponse.json({ planId, metadata, email, returnUrl: `${appUrl()}/welcome` });

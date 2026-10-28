@@ -1,6 +1,6 @@
 /* The owner's free-access list and the sign-up funnel:
- *   free access: an email on FREE_ACCESS_EMAILS with no account confirms it's them (Forgot password?) → an account and
- *   a password → a full member with no payment, never sent to /start, no pop-up, a View as Member / Visitor switch;
+ *   free access: an email on FREE_ACCESS_EMAILS with no account logs in through Whop → an account, a full member with
+ *   no payment, never sent to /start, no pop-up, a View as Member / Visitor switch;
  *   /admin marks them "Free access" and leaves them out of the numbers.
  *   /start: five live lines at most and one "More coming" line, a real move with its record locked, the payment
  *   line; an unpaid sign-up comes back to "Finish getting Insidir" (on /start and /login) with the email in.
@@ -31,20 +31,16 @@ async function adminIn(page: Page) {
   throw new Error("couldn't sign in to /admin");
 }
 
-test("free access: confirm it's you makes the account; a full member with no payment, View as Member / Visitor, marked in /admin", async ({ page }) => {
+test("free access: logging in through Whop makes the account; a full member with no payment, View as Member / Visitor, marked in /admin", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = w < 900 ? "friend.free@example.test" : "owner.free@example.test";
   await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.login_attempts");
 
-  // No account yet: Log in → Forgot password? → Confirm it's you (the payment account says who they are).
+  // No account yet: Log in → Continue (Whop says who they are).
   await page.goto("/login");
-  await page.getByRole("link", { name: "Forgot password?" }).click();
   await post("/__oauth_user", { id: `user_free_${w}`, email: email.toUpperCase() });
-  await page.getByRole("link", { name: "Confirm it's you" }).click();
-  await expect(page.getByRole("heading", { name: "New password" })).toBeVisible();
-  await page.getByLabel("New password", { exact: true }).fill("free-access-password");
-  await page.getByRole("button", { name: "Save and log in" }).click();
+  await page.getByTestId("login-continue").click();
   await expect(page).toHaveURL(/\/(feed|onboarding)/, { timeout: 15_000 });
   const u = (await q<{ id: string; plan: string; membership_id: string | null }>("select id, plan, membership_id from terminal.users where email = $1", [email]))[0]!;
   expect(u.membership_id).toBeNull();
@@ -77,21 +73,20 @@ test("free access: confirm it's you makes the account; a full member with no pay
   await page.goto("/feed");
   await expect(page).toHaveURL(/\/feed$/);
 
-  // Log in with the new password works too.
+  // Logging in again is the same account.
   await page.context().clearCookies();
   await page.goto("/login");
-  await page.getByLabel("Email").fill(`  ${email.toUpperCase()} `);
-  await page.getByLabel("Password", { exact: true }).fill("free-access-password");
-  await page.getByRole("button", { name: "Log in" }).click();
+  await page.getByTestId("login-continue").click();
   await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(1);
 
-  // Someone not on the list can't make an account this way.
+  // Someone not on the list (and with no membership) can't make an account this way.
   await page.context().clearCookies();
-  await post("/__oauth_user", { id: `user_stranger_${w}`, email: `stranger-${w}@example.test` });
-  await page.goto("/reset");
-  await page.getByRole("link", { name: "Confirm it's you" }).click();
-  await expect(page).toHaveURL(/\/reset\?error=no_account/);
-  expect(await q("select 1 from terminal.users where email = $1", [`stranger-${w}@example.test`])).toHaveLength(0);
+  await post("/__oauth_user", { id: `user_nolist_${w}`, email: `nolist-${w}@example.test` });
+  await page.goto("/login");
+  await page.getByTestId("login-continue").click();
+  await expect(page).toHaveURL(/\/login\?error=no_membership/);
+  expect(await q("select 1 from terminal.users where email = $1", [`nolist-${w}@example.test`])).toHaveLength(0);
 
   // /admin: marked Free access, and left out of the funnel.
   await adminIn(page);
@@ -116,13 +111,12 @@ test("/start: five live lines, one 'More coming' line, a real move with its reco
   await page.screenshot({ path: `qa/screenshots/start-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
-test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /login, email filled in; funnel events are recorded", async ({ page }) => {
+test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /login, with their email; funnel events are recorded", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `unpaid-${w}@example.test`;
   await q("delete from terminal.events where name in ('start_view', 'account_created', 'checkout_start')");
   await page.goto("/start");
   await page.locator("#start-email").fill(email);
-  await page.locator("#start-password").fill("unpaid-password");
   const go = page.getByRole("button", { name: "Continue to payment" });
   await go.scrollIntoViewIfNeeded();
   const y = await page.evaluate(() => scrollY);
@@ -137,7 +131,6 @@ test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /lo
   await expect(page.locator("#start-email")).toHaveValue(email);
   await page.goto("/login");
   await expect(page.getByTestId("finish-insidir")).toContainText(email);
-  await expect(page.getByLabel("Email")).toHaveValue(email);
   await page.screenshot({ path: `qa/screenshots/login-finish-${w}.png` });
   await expect.poll(async () => (await q<{ name: string }>("select distinct name from terminal.events where name in ('start_view', 'account_created', 'checkout_start')")).map(r => r.name).sort())
     .toEqual(["account_created", "checkout_start", "start_view"]);

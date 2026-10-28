@@ -1,7 +1,7 @@
-/* Sign-up is paying: /start takes an email and a password, keeps them (the password only as its scrypt hash) next to
- * a random token, puts the token in an httpOnly cookie and in the checkout's metadata (Whop copies it onto the
- * payment). The billing webhook makes the account from them once the payment lands and writes it next to the
- * token's hash; /welcome asks /api/checkout/claim, which trades the cookie for a session once, and only once. */
+/* Sign-up is paying: /start takes an email, keeps it next to a random token, puts the token in an httpOnly cookie and
+ * in the checkout's metadata (Whop copies it onto the payment). The billing webhook makes the account once the
+ * payment lands and writes it next to the token's hash; /welcome asks /api/checkout/claim, which trades the cookie
+ * for a session once, and only once. */
 import { randomBytes } from "node:crypto";
 import { and, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import type { Db } from "@/lib/db";
@@ -11,15 +11,15 @@ import { sha256 } from "@/lib/hash";
 export const CLAIM_COOKIE = "insidir_claim";
 export const CLAIM_MAX_AGE_S = 2 * 3600;
 
-export async function newClaim(db: Db, signup: { email?: string | null; passwordHash?: string | null } = {}): Promise<string> {
+export async function newClaim(db: Db, signup: { email?: string | null } = {}): Promise<string> {
   const token = randomBytes(24).toString("base64url");
-  await db.insert(checkoutClaims).values({ tokenHash: sha256(token), email: signup.email ?? null, passwordHash: signup.passwordHash ?? null });
+  await db.insert(checkoutClaims).values({ tokenHash: sha256(token), email: signup.email ?? null });
   return token;
 }
 
-/** What /start kept for a checkout (the email and password hash it will make the account with). */
-export async function claimSignup(db: Db, token: string): Promise<{ email: string | null; passwordHash: string | null } | null> {
-  const r = (await db.select({ email: checkoutClaims.email, passwordHash: checkoutClaims.passwordHash }).from(checkoutClaims).where(eq(checkoutClaims.tokenHash, sha256(token))).limit(1))[0];
+/** What /start kept for a checkout (the email it will make the account with). */
+export async function claimSignup(db: Db, token: string): Promise<{ email: string | null } | null> {
+  const r = (await db.select({ email: checkoutClaims.email }).from(checkoutClaims).where(eq(checkoutClaims.tokenHash, sha256(token))).limit(1))[0];
   return r ?? null;
 }
 

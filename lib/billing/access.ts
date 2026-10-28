@@ -75,7 +75,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
     Object.assign(metadata, { ...membership.metadata, ...metadata });
   }
 
-  // What they typed on /start: the account is made with that email and password.
+  // What they typed on /start: the account is made with that email.
   const signup = metadata.insidir_claim ? await claimSignup(db, metadata.insidir_claim) : null;
   if (signup?.email) email = signup.email;
   let user = await findUser(db, { userId: metadata.insidir_user_id, whopUserId, email });
@@ -83,7 +83,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   // A new account only for someone who has just paid and whose email we know.
   if (!user && email && membership && grants(membership, now)) {
     const id = newUserId();
-    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, passwordHash: signup?.passwordHash ?? null, settings: DEFAULT_SETTINGS })
+    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS })
       .onConflictDoNothing().returning();
     user = rows[0] ?? await findUser(db, { email });
     created = Boolean(rows[0]);
@@ -94,7 +94,6 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   const patch: Partial<UserRow> = {};
   if (whopUserId && !user.whopUserId) patch.whopUserId = whopUserId;
   if (email && !user.email) patch.email = normEmail(email);
-  if (signup?.passwordHash && !user.passwordHash) patch.passwordHash = signup.passwordHash;
   if (Object.keys(patch).length) await db.update(users).set(patch).where(eq(users.id, user.id)).catch(() => undefined);
 
   const whop = whopUserId ?? user.whopUserId;

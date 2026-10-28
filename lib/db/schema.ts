@@ -55,11 +55,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const users = terminal.table("users", {
   /** Our own id ("usr_…"; accounts from before our own login kept their Whop user id). */
   id: text("id").primaryKey(),
-  /** Lower-case. One account per email: it is how members log in (lib/auth/password.ts). */
+  /** Lower-case. One account per email. */
   email: text("email"),
-  /** scrypt hash of their password ("scrypt$N$r$p$salt$hash", lib/auth/password.ts); null until they set one. */
-  passwordHash: text("password_hash"),
-  /** The Whop user behind their membership (user_…), set by the billing webhook. */
+  /** The Whop user behind their membership (user_…), set by the billing webhook: how they log in (lib/auth/whop-login.ts). */
   whopUserId: text("whop_user_id"),
   name: text("name"),
   username: text("username"),
@@ -83,7 +81,7 @@ export const users = terminal.table("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId)]);
 
-/** Every log-in try (lib/auth/password.ts), for the rate limits per email and per IP. */
+/** Every sign-in (lib/auth/whop-login.ts), for the rate limit per IP address. */
 export const loginAttempts = terminal.table("login_attempts", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
@@ -92,24 +90,14 @@ export const loginAttempts = terminal.table("login_attempts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("login_attempts_email_idx").on(t.email, t.createdAt), index("login_attempts_ip_idx").on(t.ip, t.createdAt)]);
 
-/** "Forgot password?": after the buyer confirms it's them (lib/auth/reset.ts), a one-time token (only its hash here,
- *  the token in an httpOnly cookie) lets them set a new password on /reset for 15 minutes. */
-export const passwordResets = terminal.table("password_resets", {
-  tokenHash: text("token_hash").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  usedAt: timestamp("used_at", { withTimezone: true }),
-});
-
 /** A checkout in progress: the browser holds the token in a cookie, Whop carries it in the payment's metadata, and the
  *  billing webhook fills in the account it paid for, so the buyer is logged in the moment the payment lands. */
 export const checkoutClaims = terminal.table("checkout_claims", {
   /** SHA-256 of the token. */
   tokenHash: text("token_hash").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  /** What they typed on /start before paying: the account is made with these once the payment lands. */
+  /** What they typed on /start before paying: the account is made with it once the payment lands. */
   email: text("email"),
-  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   usedAt: timestamp("used_at", { withTimezone: true }),
 });

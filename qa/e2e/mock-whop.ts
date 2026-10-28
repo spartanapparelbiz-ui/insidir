@@ -7,7 +7,7 @@
  *                                  and `payment.succeeded` webhooks (the payment carries the checkout's metadata)
  *   POST /__refund                 ends a membership and sends `refund.created`
  *   GET  /api/v1/memberships, GET /api/v1/memberships/:id, POST /api/v1/memberships/:id/cancel, GET /api/v1/payments/:id
- *   GET  /oauth/authorize          "Confirm it's you" (Forgot password?): signs in as whoever POST /__oauth_user set,
+ *   GET  /oauth/authorize          Log in (Whop's sign-in): signs in as whoever POST /__oauth_user set,
  *                                  and redirects back with a code; POST /oauth/token, GET /oauth/userinfo, POST /oauth/revoke
  *   GET  /__state, POST /__reset   test helpers
  * The app is pointed at it with WHOP_API_ORIGIN and WHOP_ELEMENTS_URL. */
@@ -117,8 +117,9 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         return res.end();
       }
       if (req.method === "POST" && p === "/oauth/token") {
-        const b = JSON.parse(await body(req)) as { code?: string; code_verifier?: string };
-        if (!b.code || !codes.has(b.code) || !b.code_verifier) return send(res, 400, { error: "invalid_grant" });
+        const b = JSON.parse(await body(req)) as { code?: string; code_verifier?: string; client_secret?: string };
+        if (b.client_secret !== "e2e_client_secret") return send(res, 401, { error: "invalid_client", error_description: "Client authentication failed" });
+        if (!b.code || !codes.has(b.code) || !b.code_verifier) return send(res, 400, { error: "invalid_grant", error_description: "Authorization code is invalid" });
         codes.delete(b.code);
         return send(res, 200, { access_token: "at_" + randomUUID(), refresh_token: "rt_" + randomUUID(), token_type: "Bearer", expires_in: 3600 });
       }
