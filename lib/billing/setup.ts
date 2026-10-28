@@ -125,7 +125,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
       await writeConfig(db, "webhook_id", str(keep.id)!);
       webhook = "ok";
     } else {
-      const c = await call("POST", "/webhooks", { url: hookUrl, events: [...EVENTS], enabled: true, api_version: "v1", ...(company ? { resource_id: company } : {}) });
+      const c = await call("POST", "/webhooks", { url: hookUrl, events: [...EVENTS], enabled: true, ...(company ? { resource_id: company } : {}) });
       const secret = str(c.json.webhook_secret);
       if (!c.ok || !str(c.json.id)) throw new Error(`couldn't create the webhook (${why(c)})`);
       if (!secret) throw new Error("Whop didn't return the webhook's secret");
