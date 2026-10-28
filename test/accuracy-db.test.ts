@@ -100,6 +100,8 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
     await db.execute(`update terminal.moves set hidden_at = now(), hidden_reason = 'amount 80000 vs source 50000.00' where id = 'pm:hid'`);
     await db.execute(`update terminal.moves set hidden_at = now(), hidden_reason = 'Not a new bet: the wallet was selling or closing a position' where id = 'pm:sell'`);
     await db.execute(`update terminal.moves set realized_at = now(), pnl = 1 where id = 'pm:short'`);
+    // Stored as starting half a second after its real first fill: no fills in the stored window, still rebuilt.
+    await db.execute(`update terminal.moves set at = at + interval '500 milliseconds', last_at = at + interval '500 milliseconds' where id = 'pm:hid'`);
     const run = await runAccuracyCheck(db, src(), { moves: 10, profiles: 0, now: NOW });
     const by = new Map(run.lines.map(l => [l.target, l]));
     expect(by.get("pm:short")).toMatchObject({ status: "ok", problems: ["rebuilt from the source (amount 30000 vs source 50000.00)"] });

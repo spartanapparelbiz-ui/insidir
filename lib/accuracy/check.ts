@@ -59,8 +59,10 @@ export async function checkPoly(poly: PolymarketClient, m: Move): Promise<string
   return errs;
 }
 
-/** Problems a rebuild from the source can fix: the position's size and start, not which wallet or outcome it is. */
-const rebuildable = (problems: readonly string[]) => problems.length > 0 && problems.every(p => p.startsWith("amount ") || p.startsWith("time "));
+/** Problems a rebuild from the source can fix: the position's size and start (including a stored start after its
+ *  real first fill, which leaves no fills in the stored window), not which wallet or outcome it is. */
+const rebuildable = (problems: readonly string[]) => problems.length > 0
+  && problems.every(p => p.startsWith("amount ") || p.startsWith("time ") || p === "no matching fills at the source");
 
 /** Rebuilds a Polymarket position from the wallet's own BUY fills of that outcome (maker and taker), from its first
  *  fill to MERGE_WINDOW_MS after its last, the same window the dedupe uses. Its record is worked out again
