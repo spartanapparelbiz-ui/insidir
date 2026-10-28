@@ -100,6 +100,22 @@ is processed and not stored.
 The site shows "Live data paused, retrying" when no venue heartbeat is newer than 2 minutes, "found X seconds
 ago" on every deal, and greys out deals not re-seen in the last minute.
 
+## Insiders, companies and funds
+
+Public pages built from the SEC filings the Stocks jobs store (`terminal.insider_trades`, `terminal.funds`):
+
+| Page | What |
+|---|---|
+| `/insiders/<cik>-<slug>` | The person, their role(s), every Form 4 buy and sale we hold, totals, and how the stock did after their buys (only when `terminal.stock_closes` has a recent close for the ticker; nothing fills that table yet, so the line is left out) |
+| `/insider-trading/<TICKER>` | Every insider trade at the company, newest first, and "X insiders bought this month" |
+| `/funds/<cik>-<slug>` | The latest 13F, its biggest adds and new positions (members: top 10 holdings and every quarter) |
+
+Anyone sees the last 30 days (`lib/profiles/sec.ts` `FREE_DAYS`); older rows are never sent to a free viewer. The full
+history and Follow are for members. Follow kinds (`lib/follows.ts`): `trader`, `market`, `insider` (reporting-owner
+CIK), `company` (issuer CIK) and `fund` (13F filer CIK); following an insider or company queues its EDGAR history.
+Their new filings show on `/following` (`lib/following-feed.ts`). `/sitemap.xml` lists these pages; `/robots.txt`
+keeps crawlers out of the app. Congress trades are not a source (a test fails if one is added).
+
 ## Rate limits
 
 Every request goes through a per-bucket token bucket set to about 80% of the published limit:

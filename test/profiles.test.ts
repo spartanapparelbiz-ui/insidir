@@ -34,10 +34,11 @@ describe("names", () => {
     expect(roleOf("A 10% owner")).toBe("a 10% owner");
     expect(insiderWho("HUANG JEN HSUN", "The CEO", "Nvidia")).toBe("Jen Hsun Huang, CEO of Nvidia");
   });
-  it("profile ids: a wallet, an insider, a fund; nothing else", () => {
+  it("profile ids: a wallet, an insider, a fund; nothing else (insiders and funds have public pages)", () => {
     expect(profileHref({ kind: "trader", wallet: W.toUpperCase().replace("0X", "0x") })).toBe(`/p/${W}`);
-    expect(profileHref({ kind: "insider", cik: "0001045810" })).toBe("/p/insider-1045810");
-    expect(profileHref({ kind: "fund", cik: "0001067983" })).toBe("/p/fund-1067983");
+    expect(profileHref({ kind: "insider", cik: "0001045810" })).toBe("/insiders/1045810");
+    expect(profileHref({ kind: "insider", cik: "0001045810", name: "HUANG JEN HSUN" })).toBe("/insiders/1045810-jen-hsun-huang");
+    expect(profileHref({ kind: "fund", cik: "0001067983", name: "Berkshire Hathaway" })).toBe("/funds/1067983-berkshire-hathaway");
     expect(parseProfileId(W)).toEqual({ kind: "trader", wallet: W });
     expect(parseProfileId("insider-1045810")).toEqual({ kind: "insider", cik: "1045810" });
     expect(parseProfileId("fund-0001067983")).toEqual({ kind: "fund", cik: "1067983" });

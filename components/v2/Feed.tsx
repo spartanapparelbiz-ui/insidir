@@ -31,7 +31,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   pill?: ReactNode; initial: FeedItem[]; status: FeedStatus | null; initialTab: Tab; free: boolean;
   /** Stocks is live (FEATURES_READY); otherwise it is a Coming soon item. */
   stocks?: boolean;
-  /** Wallets this member follows (null: not a member). */
+  /** What this member follows, as "kind:target" ("trader:0x…", "insider:1045810"; null: not a member). */
   follows: string[] | null; followsReady: boolean; trialHref: string; serverNow: number;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -103,7 +103,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   };
   const now = Date.now() + skew;
   const statusText = status?.state === "live" && status.lastAt ? `Live · updated ${Math.max(0, Math.round((now - status.lastAt) / 1000))}s ago` : status?.text ?? null;
-  const followState = (wallet: string | null): FollowState => !followsReady ? "soon" : follows === null || free ? "locked" : wallet && followed.has(wallet) ? "on" : "off";
+  const followFor = (kind: string, target: string | null): FollowState => !followsReady ? "soon" : follows === null || free ? "locked" : target && followed.has(`${kind}:${target}`) ? "on" : "off";
 
   const tabs = stocks ? (["sports", "markets", "stocks"] as const) : (["sports", "markets"] as const);
   const pick = (f: () => void) => { setBusy(true); f(); };
@@ -162,7 +162,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
               {items.map((m, i) => (
                 <li key={m.id}>
                   {hint && i === 0 ? <p className="hint" role="note" data-testid="first-hint">This is a big move. Tap anyone to see their record.<button type="button" onClick={() => setHint(false)}>Got it</button></p> : null}
-                  <MoveCard m={m} follow={followState(m.wallet)} trialHref={trialHref} fresh={fresh.has(m.id)} />
+                  <MoveCard m={m} follow={followFor("trader", m.wallet)} followFor={followFor} trialHref={trialHref} fresh={fresh.has(m.id)} />
                 </li>
               ))}
             </ol>

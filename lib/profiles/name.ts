@@ -57,16 +57,48 @@ export function roleOf(roleWord: string): string {
 /** "Jen Hsun Huang, CEO of Nvidia" */
 export const insiderWho = (ownerName: string, roleWord: string, company: string): string => `${personName(ownerName)}, ${roleOf(roleWord)} of ${company}`;
 
-/* ---------- profile ids (/p/[id]) ---------- */
+/* ---------- profile ids ---------- */
 
-export type ProfileRef = { kind: "trader"; wallet: string } | { kind: "insider"; cik: string } | { kind: "fund"; cik: string };
+export type ProfileRef = { kind: "trader"; wallet: string } | { kind: "insider"; cik: string; name?: string | null } | { kind: "fund"; cik: string; name?: string | null };
 
-export function profileHref(ref: ProfileRef): string {
-  if (ref.kind === "trader") return `/p/${ref.wallet.toLowerCase()}`;
-  return `/p/${ref.kind}-${Number(ref.cik)}`;
+/** "Jen Hsun Huang" → "jen-hsun-huang" (ASCII letters and digits, at most 60 characters). */
+export function slugify(s: string): string {
+  return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "");
 }
 
-/** "/p/0xabc…" (a Polymarket wallet), "/p/insider-1045810", "/p/fund-1067983"; null when it is none of these. */
+/** The public SEC pages: /insiders/1045810-jen-hsun-huang, /funds/1067983-berkshire-hathaway, /insider-trading/NVDA.
+ *  `name` is the filed name (an insider's is put in normal order first). Without one the page redirects to its slug. */
+export function insiderHref(cik: string, name?: string | null): string {
+  const slug = name ? slugify(personName(name)) : "";
+  return `/insiders/${Number(cik)}${slug ? `-${slug}` : ""}`;
+}
+export function fundHref(cik: string, name?: string | null): string {
+  const slug = name ? slugify(name) : "";
+  return `/funds/${Number(cik)}${slug ? `-${slug}` : ""}`;
+}
+export const companyHref = (ticker: string): string => `/insider-trading/${encodeURIComponent(ticker.toUpperCase())}`;
+
+/** "1045810-jen-hsun-huang" → { cik: "1045810", slug: "jen-hsun-huang" }; null when it doesn't start with a CIK. */
+export function parseCikSlug(id: string): { cik: string; slug: string } | null {
+  const m = /^0*(\d{1,10})(?:-([a-z0-9-]*))?$/.exec(decodeURIComponent(id).trim().toLowerCase());
+  if (!m || Number(m[1]) <= 0) return null;
+  return { cik: String(Number(m[1])), slug: m[2] ?? "" };
+}
+
+/** A ticker as the company page takes it ("brk.b" → "BRK.B"); null when it can't be one. */
+export function parseTicker(raw: string): string | null {
+  const t = decodeURIComponent(raw).trim().toUpperCase();
+  return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(t) ? t : null;
+}
+
+/** Where a name on a card goes: a trader's profile (/p/0x…), or an insider's or fund's public page. */
+export function profileHref(ref: ProfileRef): string {
+  if (ref.kind === "trader") return `/p/${ref.wallet.toLowerCase()}`;
+  return ref.kind === "insider" ? insiderHref(ref.cik, ref.name) : fundHref(ref.cik, ref.name);
+}
+
+/** "/p/0xabc…" (a Polymarket wallet), and the older "/p/insider-1045810", "/p/fund-1067983" (now redirects to the
+ *  public pages); null when it is none of these. */
 export function parseProfileId(id: string): ProfileRef | null {
   const s = decodeURIComponent(id).trim().toLowerCase();
   if (/^0x[0-9a-f]{40}$/.test(s)) return { kind: "trader", wallet: s };
