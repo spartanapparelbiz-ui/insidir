@@ -1,6 +1,7 @@
-/* Get Insidir (/start): what you get on the left, Whop's checkout embedded on the right
- * (components/auth/StartCheckout.tsx): email and card, Apple Pay where the device has it. $39/month, cancel anytime.
- * Paying makes the account; the buyer lands on "You're in." already logged in. Members go straight to the feed. */
+/* Get Insidir (/start) = sign up: what you get on the left; on the right the email and password they'll log in with,
+ * then Whop's checkout embedded below (components/auth/StartCheckout.tsx): card, Apple Pay where the device has it.
+ * $39/month, cancel anytime. Paying makes the account; the buyer lands on "You're in." already logged in. Members go
+ * straight to the feed. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -31,9 +32,9 @@ export default async function StartPage() {
             <FeatureList className="plan2__list start__list" />
             <p className="start__fine">Payments are handled by Whop on this page. We never see your card. Already a member? <Link href="/login">Log in</Link>.</p>
           </section>
-          <section className="start__checkout" aria-label="Checkout">
-            <StartCheckout elementsUrl={ELEMENTS_URL} />
-          </section>
+          <div className="start__checkout">
+            <StartCheckout elementsUrl={ELEMENTS_URL} signedInEmail={viewer.user?.email ?? null} />
+          </div>
         </div>
       </main>
     </>

@@ -1,0 +1,1 @@
+DROP TABLE "terminal"."login_codes" CASCADE;

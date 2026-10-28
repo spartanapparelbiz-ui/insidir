@@ -1,22 +1,42 @@
-/* Opens a checkout on /start: a claim token in an httpOnly cookie (and back to the page, which hands it to Whop as
- * metadata) so the buyer is logged in the moment the payment lands, plus our account id when they're logged in. */
+/* Opens the checkout on /start. Someone new sends the email and password they want (at least 8 characters): they're
+ * kept with a claim token (the password only as its scrypt hash) until the payment lands and the billing webhook
+ * makes the account from them. A logged-in member whose plan ended just needs the token. The token goes into an
+ * httpOnly cookie and back to the page, which hands it to the checkout as metadata. */
+import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { CLAIM_COOKIE, CLAIM_MAX_AGE_S, newClaim } from "@/lib/billing/claims";
 import { checkoutPlanId } from "@/lib/billing/whop";
+import { normEmail } from "@/lib/billing/access";
 import { appUrl } from "@/lib/app-url";
+import { hashPassword, passwordProblem, validEmail } from "@/lib/auth/password";
 import { SESSION_COOKIE, userForToken } from "@/lib/auth/session";
 import { getDb, hasDatabase } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { readBody } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const planId = checkoutPlanId();
-  if (!planId || !hasDatabase()) return NextResponse.json({ error: "not_configured" }, { status: 503 });
+  if (!planId || !hasDatabase()) return NextResponse.json({ error: "not_configured", message: "Checkout isn't open yet. Check back soon." }, { status: 503 });
   const db = getDb();
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
-  const claim = await newClaim(db);
+  let claim: string, email: string;
+  if (user?.email) {
+    email = user.email;
+    claim = await newClaim(db, { email });
+  } else {
+    const b = await readBody(req);
+    email = normEmail(b.email ?? "");
+    if (!validEmail(email)) return NextResponse.json({ error: "email", message: "That doesn't look like an email address." }, { status: 400 });
+    const problem = passwordProblem(b.password ?? "");
+    if (problem) return NextResponse.json({ error: "password", message: problem }, { status: 400 });
+    const existing = (await db.select({ id: users.id, hasPassword: users.passwordHash }).from(users).where(eq(users.email, email)).limit(1))[0];
+    if (existing?.hasPassword) return NextResponse.json({ error: "exists", message: "You already have an account. Log in, then come back to restart your plan." }, { status: 409 });
+    claim = await newClaim(db, { email, passwordHash: await hashPassword(b.password!) });
+  }
   const metadata: Record<string, string> = { insidir_claim: claim, ...(user ? { insidir_user_id: user.id } : {}) };
-  const res = NextResponse.json({ planId, metadata, email: user?.email ?? "", returnUrl: `${appUrl()}/welcome` });
+  const res = NextResponse.json({ planId, metadata, email, returnUrl: `${appUrl()}/welcome` });
   res.cookies.set(CLAIM_COOKIE, claim, { httpOnly: true, secure: appUrl().startsWith("https:"), sameSite: "lax", path: "/", maxAge: CLAIM_MAX_AGE_S });
   return res;
 }

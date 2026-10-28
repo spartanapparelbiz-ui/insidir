@@ -7,7 +7,7 @@ export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
   { id: "data", q: "Where does the data come from?", a: "Public records only: Polymarket trades (public on the Polygon blockchain), Kalshi's public trade feed (trades there are anonymous), and for Stocks, SEC EDGAR filings. Every card links its source, and every hour we re-read random moves and trader stats from the source; anything that doesn't match is hidden until it does." },
   { id: "advice", q: "Is this financial advice?", a: "No. We show what happened: who put money on what, and how it ended. We never tell you what to buy. Big traders lose too." },
   { id: "us", q: "Can I use it in the US?", a: "Yes. Everyone sees every move. If you're in the US, we only link you to apps that work in the US, like Kalshi." },
-  { id: "alerts", q: "How do alerts work?", a: "Follow a trader or a market and we send a push to your phone or an email when they make a big move. On iPhone, add Insidir to your Home Screen first, then turn alerts on." },
+  { id: "alerts", q: "How do alerts work?", a: "Follow a trader or a market and we send a push to your phone when they make a big move. On iPhone, add Insidir to your Home Screen first, then turn alerts on." },
   { id: "cancel", q: "How do I cancel?", a: `One tap in Account. No emails, no calls. Insidir is $${PLANS.insidir.price}/month and you keep access until the month you paid for ends.` },
   { id: "who", q: "Who's behind it?", a: "Insidir is built by Aethric LLC, Pompano Beach, FL. Write to hello@aethric.llc and a person will answer." },
 ];
@@ -17,7 +17,7 @@ export const FAQ_PRICING: Array<{ id: string; q: string; a: string }> = [
   { id: "price", q: "How much is it?", a: `$${PLANS.insidir.price}/month for everything: every big move live, trader records, follows and alerts. One plan, no tiers. Cancel anytime.` },
   FAQ_V2.find(f => f.id === "cancel")!,
   { id: "pay", q: "How do I pay?", a: "Through Whop, our payment provider, on its secure checkout. We never see or store your card." },
-  { id: "login", q: "How do I log in?", a: "Type the email you paid with and we send you a 6-digit code. No password." },
+  { id: "login", q: "How do I log in?", a: "With the email and password you chose when you signed up. Forgot it? Tap \"Forgot password?\" on the log-in page, confirm it's you, and choose a new one. No email needed." },
   FAQ_V2.find(f => f.id === "advice")!,
 ];
 

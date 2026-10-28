@@ -1,4 +1,4 @@
-/* Activation and retention emails (Resend, through lib/alerts/send.ts), run by the worker every 10 minutes:
+/* Activation and retention emails: written, never sent (Insidir sends no email; nothing calls them any more):
  *   welcome       day 0, once: you're in, follow 3 traders, set up your first alert.
  *   trial_ending  day 2 of the $1 three-day trial, once: "Your trial ends tomorrow, here's what you caught", with
  *                 real moves from the traders they follow since they joined (or the biggest moves since then).

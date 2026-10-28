@@ -20,7 +20,8 @@ export const FEATURES = {
 export type Feature = keyof typeof FEATURES;
 
 const DEFAULT_READY: Feature[] = ["feed", "records", "follows"];
-const NEVER_YET: Feature[] = ["crypto"];
+/** Insidir sends no email, so the email features never switch on; Crypto waits for its own launch. */
+const NEVER_YET: Feature[] = ["crypto", "alerts_email", "daily_email"];
 
 export function readyFeatures(env: Record<string, string | undefined> = process.env): Set<Feature> {
   const raw = env.FEATURES_READY;
