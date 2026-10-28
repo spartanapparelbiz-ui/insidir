@@ -7,8 +7,9 @@
  *                                  and `payment.succeeded` webhooks (the payment carries the checkout's metadata)
  *   POST /__refund                 ends a membership and sends `refund.created`
  *   GET  /api/v1/memberships, GET /api/v1/memberships/:id, POST /api/v1/memberships/:id/cancel, GET /api/v1/payments/:id
- *   GET  /oauth/authorize          Log in (Whop's sign-in): signs in as whoever POST /__oauth_user set,
- *                                  and redirects back with a code; POST /oauth/token, GET /oauth/userinfo, POST /oauth/revoke
+ *   GET  /google/auth              "Continue with Google": signs in as whoever POST /__google_user set ({ sub, email,
+ *                                  email_verified }) and redirects back with a code; POST /google/token (needs the
+ *                                  client secret, form-encoded), GET /google/userinfo
  *   GET  /__state, POST /__reset   test helpers
  * The app is pointed at it with WHOP_API_ORIGIN and WHOP_ELEMENTS_URL. */
 import { createHash, createHmac, randomUUID } from "node:crypto";
@@ -40,7 +41,7 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
   let memberships: Membership[] = [];
   let payments: Payment[] = [];
   const webhooks: Array<{ type: string; status: number }> = [];
-  let oauthUser: { id: string; email: string } | null = null;
+  let googleUser: { sub: string; email: string; email_verified: boolean } | null = null;
   const codes = new Set<string>();
 
   const body = (req: IncomingMessage): Promise<string> => new Promise(ok => { let b = ""; req.on("data", c => (b += c)); req.on("end", () => ok(b)); });
@@ -105,10 +106,10 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         const pay = payments.find(x => x.id === decodeURIComponent(m![1]!));
         return pay ? send(res, 200, pay) : send(res, 404, { error: "not found" });
       }
-      if (req.method === "POST" && p === "/__oauth_user") { oauthUser = JSON.parse(await body(req)) as { id: string; email: string }; return send(res, 200, {}); }
-      if (req.method === "GET" && p === "/oauth/authorize") {
-        if (!oauthUser || !url.searchParams.get("code_challenge")) return send(res, 400, { error: "no user" });
-        const code = "code_" + randomUUID().slice(0, 8);
+      if (req.method === "POST" && p === "/__google_user") { googleUser = JSON.parse(await body(req)) as typeof googleUser; return send(res, 200, {}); }
+      if (req.method === "GET" && p === "/google/auth") {
+        if (!googleUser || !url.searchParams.get("code_challenge") || url.searchParams.get("scope") !== "openid email profile") return send(res, 400, { error: "invalid_request" });
+        const code = "gcode_" + randomUUID().slice(0, 8);
         codes.add(code);
         const back = new URL(url.searchParams.get("redirect_uri") ?? "");
         back.searchParams.set("code", code);
@@ -116,17 +117,17 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         res.writeHead(302, { location: back.toString() });
         return res.end();
       }
-      if (req.method === "POST" && p === "/oauth/token") {
-        const b = JSON.parse(await body(req)) as { code?: string; code_verifier?: string; client_secret?: string };
-        if (b.client_secret !== "e2e_client_secret") return send(res, 401, { error: "invalid_client", error_description: "Client authentication failed" });
-        if (!b.code || !codes.has(b.code) || !b.code_verifier) return send(res, 400, { error: "invalid_grant", error_description: "Authorization code is invalid" });
-        codes.delete(b.code);
-        return send(res, 200, { access_token: "at_" + randomUUID(), refresh_token: "rt_" + randomUUID(), token_type: "Bearer", expires_in: 3600 });
+      if (req.method === "POST" && p === "/google/token") {
+        const b = new URLSearchParams(await body(req));
+        if (b.get("client_secret") !== "e2e_google_secret") return send(res, 401, { error: "invalid_client", error_description: "The OAuth client was not found." });
+        const code = b.get("code") ?? "";
+        if (!codes.has(code) || !b.get("code_verifier")) return send(res, 400, { error: "invalid_grant", error_description: "Bad Request" });
+        codes.delete(code);
+        return send(res, 200, { access_token: "ya29." + randomUUID(), token_type: "Bearer", expires_in: 3599, id_token: "x" });
       }
-      if (req.method === "GET" && p === "/oauth/userinfo") return oauthUser ? send(res, 200, { sub: oauthUser.id, email: oauthUser.email }) : send(res, 401, {});
-      if (req.method === "POST" && p === "/oauth/revoke") return send(res, 200, {});
+      if (req.method === "GET" && p === "/google/userinfo") return googleUser ? send(res, 200, googleUser) : send(res, 401, {});
       if (p === "/__state") return send(res, 200, { memberships, payments, webhooks });
-      if (p === "/__reset") { memberships = []; payments = []; webhooks.length = 0; oauthUser = null; codes.clear(); return send(res, 200, {}); }
+      if (p === "/__reset") { memberships = []; payments = []; webhooks.length = 0; googleUser = null; codes.clear(); return send(res, 200, {}); }
       return send(res, 404, { error: "not found", path: p });
     } catch (e) {
       return send(res, 500, { error: e instanceof Error ? e.message : String(e) });

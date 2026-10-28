@@ -102,7 +102,7 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
 export function PlanPromises() {
   const items: Array<[string, string, string]> = [
     ["M12 3v18M3 12h18", "Cancel in one tap", "In Account. No emails, no calls. You keep access until the month you paid for ends."],
-    ["M5 12l4 4L19 6", "Secure checkout", "Payments run through Whop, right on this site. We never see your card."],
+    ["M5 12l4 4L19 6", "Secure checkout", "Payments run right on this site. We never see your card."],
     ["M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "Real data, checked hourly", "Public records only, and every card links its source."],
   ];
   return (

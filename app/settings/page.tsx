@@ -51,7 +51,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (cancel, saved).
   const notice = q.cancel === "done" ? "Subscription cancelled. You keep access until the end of this billing period."
-    : q.cancel === "failed" ? "Couldn't reach Whop to cancel. Try again in a minute, or use Manage billing." : q.saved ? "Saved." : null;
+    : q.cancel === "failed" ? "Couldn't reach our payment provider to cancel. Try again in a minute, or use Manage billing." : q.saved ? "Saved." : null;
 
   return (
     <>
@@ -96,7 +96,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {paid ? (
                 <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? "Your $1 week ends" : "Next charge"}</dt>
                   <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
-                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it from Whop just now. Manage billing shows it.</span> : <span className="akv__sub">Shown on Whop</span>}</dd></div>
+                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it just now. Manage billing shows it.</span> : <span className="akv__sub">Shown in Manage billing</span>}</dd></div>
               ) : null}
             </dl>
             {paid ? (
