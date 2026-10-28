@@ -1,5 +1,5 @@
 {
-  "id": "777f738f-13af-4bb6-88c9-b680d4015bff",
+  "id": "c30c227d-4760-4c13-86e9-a1355a80c5a9",
   "prevId": "91d8d717-62c4-46fe-ae25-8a6fd55e81be",
   "version": "7",
   "dialect": "postgresql",
@@ -173,6 +173,18 @@
         },
         "email": {
           "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_id": {
+          "name": "google_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2207,66 +2219,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "terminal.trader_avatars": {
-      "name": "trader_avatars",
-      "schema": "terminal",
-      "columns": {
-        "wallet": {
-          "name": "wallet",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "blocked": {
-          "name": "blocked",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "checked_at": {
-          "name": "checked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "hidden_at": {
-          "name": "hidden_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "trader_avatars_checked_idx": {
-          "name": "trader_avatars_checked_idx",
-          "columns": [
-            {
-              "expression": "checked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "terminal.trader_positions": {
       "name": "trader_positions",
       "schema": "terminal",
@@ -2454,6 +2406,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_id": {
+          "name": "google_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "whop_user_id": {
           "name": "whop_user_id",
           "type": "text",
@@ -2582,6 +2546,21 @@
           "columns": [
             {
               "expression": "whop_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_google_idx": {
+          "name": "users_google_idx",
+          "columns": [
+            {
+              "expression": "google_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

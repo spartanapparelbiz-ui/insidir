@@ -29,7 +29,7 @@ export const FAQ: Array<{ id: FaqId; q: string; a: ReactNode }> = [
   { id: "settle", q: "What if the markets settle differently?", a: <p>That is the main risk. Two venues can word the same event differently, use a different deadline, or resolve on a different source. The safety light compares both rule texts for exactly that, and red pairs are hidden by default. The <Link href="/receipts">receipts log</Link> shows every case, including the ones that settled differently.</p> },
   { id: "where", q: "Can I use Polymarket where I live?", a: <p>If you are in the US, Insidir only shows Kalshi and Polymarket US, the venues available to US users. Outside the US, check your local rules before you trade.</p> },
   { id: "iphone", q: "How do alerts work on iPhone?", a: <p>Add Insidir to your Home Screen: tap Share, then Add to Home Screen. Open it from the new icon and turn on alerts. iOS only allows web push for home-screen apps.</p> },
-  { id: "cancel", q: "Can I cancel anytime?", a: <p>Yes. One click in Settings, handled through Whop. You keep access until the end of the period you paid for.</p> },
+  { id: "cancel", q: "Can I cancel anytime?", a: <p>Yes. One click in Settings. You keep access until the end of the period you paid for.</p> },
 ];
 
 export function Faq({ ids, title = "Questions" }: { ids?: readonly FaqId[]; title?: string }) {

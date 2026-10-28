@@ -6,15 +6,13 @@
  *   2. Webhook: one for <APP_URL>/api/billing/webhook with EVENTS. Created when missing, its secret (only in the
  *      create response) stored encrypted. Never a second one: an existing webhook gets missing events added; one
  *      whose secret we don't hold (and isn't in WHOP_WEBHOOK_SECRET) is replaced, delete first, then create.
- *   3. Login app: a Whop app named "Insidir" whose redirect URIs include <APP_URL>/login/callback (log in); created or updated, its app_ id stored.
- * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed, login app ok|failed". */
+ * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed". (Log-in is our own: email and password, or Google.) */
 import type { Db } from "@/lib/db";
 import { TRIAL, PLANS } from "@/lib/plans";
 import { encryptSecret, decryptSecret, readConfig, writeConfig, clearConfig } from "./config";
 
 export const EVENTS = ["membership.activated", "membership.updated", "membership.deactivated", "membership.trial_ending_soon", "payment.succeeded",
   "payment.failed", "refund.created", "refund.updated", "dispute.created"] as const;
-export const APP_NAME = "Insidir";
 const MONTH_DAYS = [28, 29, 30, 31];
 
 type Json = Record<string, unknown>;
@@ -25,7 +23,7 @@ export interface SetupDeps {
   fetch: typeof fetch;
   log: (line: string) => void;
 }
-export interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; app: "ok" | "failed"; line: string }
+export interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; line: string }
 
 const num = (v: unknown): number | null => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
@@ -51,7 +49,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
   const api = `${(env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "")}/api/v1`;
   const key = env.WHOP_API_KEY ?? "", company = env.WHOP_COMPANY_ID ?? "", product = env.WHOP_PRODUCT_INSIDIR ?? "";
   const appUrl = (env.APP_URL ?? "https://insidir.com").replace(/\/+$/, "");
-  const hookUrl = `${appUrl}/api/billing/webhook`, redirect = `${appUrl}/login/callback`;
+  const hookUrl = `${appUrl}/api/billing/webhook`;
   const call = async (method: string, path: string, body?: Json): Promise<{ ok: boolean; status: number; json: Json }> => {
     const res = await d.fetch(`${api}${path}`, {
       method, headers: { Authorization: `Bearer ${key}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
@@ -137,35 +135,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
     log(`Whop webhook: ${e instanceof Error ? e.message : String(e)}.`);
   }
 
-  // 3. The login app (Log in, Whop's sign-in).
-  let app: SetupResult["app"] = "failed";
-  try {
-    const q = new URLSearchParams({ first: "100", query: APP_NAME });
-    if (company) q.set("account_id", company);
-    const r = await call("GET", `/apps?${q}`);
-    if (!r.ok) throw new Error(`couldn't list apps (${why(r)})`);
-    const mine = list(r.json).filter(a => str(a.name) === APP_NAME && (!company || str((a.company as Json | undefined)?.id) === company || !a.company));
-    let found = mine.find(a => str(a.id) === stored.app_id) ?? mine[0] ?? null;
-    if (found) {
-      const uris = Array.isArray(found.redirect_uris) ? (found.redirect_uris as string[]) : [];
-      if (!uris.includes(redirect)) {
-        const u = await call("PATCH", `/apps/${encodeURIComponent(str(found.id)!)}`, { redirect_uris: [...uris, redirect] });
-        if (!u.ok) throw new Error(`couldn't add the redirect URI (${why(u)})`);
-        log(`Whop login app: added ${redirect}.`);
-      }
-    } else {
-      const c = await call("POST", "/apps", { account_id: company, name: APP_NAME, base_url: appUrl, redirect_uris: [redirect] });
-      if (!c.ok || !str(c.json.id)) throw new Error(`couldn't create the app (${why(c)})`);
-      found = c.json;
-      log(`Whop login app created.`);
-    }
-    await writeConfig(db, "app_id", str(found.id)!);
-    app = "ok";
-  } catch (e) {
-    log(`Whop login app: ${e instanceof Error ? e.message : String(e)}.`);
-  }
-
-  const line = `Whop setup: plan ${plan}, webhook ${webhook}, login app ${app}`;
+  const line = `Whop setup: plan ${plan}, webhook ${webhook}`;
   log(line);
-  return { plan, webhook, app, line };
+  return { plan, webhook, line };
 }

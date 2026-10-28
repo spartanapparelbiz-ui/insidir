@@ -1129,3 +1129,10 @@ h2:not(.ios-vp *):not(.sheet h2):not([role="dialog"] h2) { font-family: var(--se
 .adm-avatars { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .adm-avatar { display: flex; align-items: center; gap: 12px; padding: 12px; }
 .adm-avatar__w { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+/* "Continue with Google" (components/auth/GoogleButton.tsx) and the "or" line under it. */
+.btn--google { gap: 10px; background: var(--paper); color: var(--ink); border: 1px solid var(--grey-2); }
+.btn--google:hover { background: var(--grey-1); }
+.login__or { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--muted); font-size: var(--t13); }
+.login__or::before, .login__or::after { content: ""; flex: 1; height: 1px; background: var(--night-line); }
+.login__help { margin: 4px 0 12px; color: var(--muted); font-size: var(--t13); line-height: 1.5; }
+.login__help a { color: var(--text); }

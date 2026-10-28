@@ -28,7 +28,7 @@ export const TRUST: ReadonlyArray<{ icon: string; text: string; link?: { href: s
   { icon: "money", text: "We never touch your money" },
   { icon: "ledger", text: "Every deal we flag goes in", link: { href: "/receipts", label: "Receipts" } },
   { icon: "cancel", text: "Cancel in one click" },
-  { icon: "lock", text: "Payments by Whop" },
+  { icon: "lock", text: "Secure checkout" },
 ];
 
 export function TrustRow({ scale }: { scale: Scale | null }) {

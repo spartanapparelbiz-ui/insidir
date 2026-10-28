@@ -1,7 +1,7 @@
 /* `npm run whop:setup` (lib/billing/setup.ts) against a stand-in Whop API and a throwaway Postgres next to
  * E2E_DATABASE_URL: picks the right plan and keeps checkout closed when it isn't exactly 7 days for $1 then
  * $39/month; creates the webhook once and stores its secret encrypted; never duplicates; finds or creates the
- * login app; env vars override; no secret in the logs. The crypto and plan checks run without a database. */
+ * env vars override; no secret in the logs. The crypto and plan checks run without a database. */
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
@@ -83,23 +83,22 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     const w = fakeWhop([{ ...GOOD, id: "plan_annual", renewal_price: 390, billing_period: 365 }, { ...GOOD, id: "plan_hidden", visibility: "hidden" }, GOOD]);
     const logs: string[] = [];
     const r1 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r1.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
+    expect(r1.line).toBe("Whop setup: plan ok, webhook ok");
     expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 7 days, initial fee $1.");
     expect(w.s.webhooks).toHaveLength(1);
     expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
-    expect(w.s.apps).toEqual([expect.objectContaining({ name: "Insidir", redirect_uris: ["https://insidir.com/login/callback"], account_id: "biz_1" })]);
+    // Log-in is our own now: no login app is made.
+    expect(w.s.apps).toEqual([]);
     const stored = await readConfig(db);
     expect(stored.plan_id).toBe("plan_good");
-    expect(stored.app_id).toBe(w.s.apps[0]!.id);
     expect(stored.webhook_secret).not.toContain("whsec_");
     expect(decryptSecret(stored.webhook_secret!, KEY)).toBe("whsec_secret1");
-    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: w.s.apps[0]!.id });
+    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: null });
 
     const before = w.s.calls.length;
     const r2 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r2.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
+    expect(r2.line).toBe("Whop setup: plan ok, webhook ok");
     expect(w.s.webhooks).toHaveLength(1);
-    expect(w.s.apps).toHaveLength(1);
     expect(w.s.calls.slice(before).filter(c => !c.startsWith("GET"))).toEqual([]);
     for (const l of logs) expect(l).not.toMatch(/whsec_|apik_/);
   });
@@ -109,23 +108,19 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     const w = fakeWhop([{ ...GOOD, trial_period_days: 3, initial_price: 0 }]);
     const logs: string[] = [];
     const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r.line).toBe("Whop setup: plan wrong, webhook ok, login app ok");
+    expect(r.line).toBe("Whop setup: plan wrong, webhook ok");
     expect(logs.join("\n")).toContain("Whop plan plan_good is not what the site says (7 days for $1, then $39/month): trial is 3 days, not 7; initial fee is $0, not $1. Checkout stays closed.");
     expect((await readConfig(db)).plan_id).toBeUndefined();
   });
 
-  it("an existing webhook: adds missing events; one whose secret we don't hold is replaced, never duplicated; an existing app gets the redirect", async () => {
+  it("an existing webhook: adds missing events; one whose secret we don't hold is replaced, never duplicated", async () => {
     const w = fakeWhop([GOOD]);
     w.s.webhooks.push({ id: "hook_old", url: "https://insidir.com/api/billing/webhook", events: ["payment.succeeded"], enabled: true });
-    w.s.apps.push({ id: "app_existing", name: "Insidir", company: { id: "biz_1" }, redirect_uris: ["https://example.com/cb"] });
     const logs: string[] = [];
     // No secret stored and none in env: replaced (deleted, then one created).
     await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
     expect(w.s.webhooks.map(x => x.id)).toEqual(["hook_1"]);
     expect(logs).toContain("Whop webhook: the existing one's secret wasn't stored, so it was replaced.");
-    expect(w.s.apps).toHaveLength(1);
-    expect(w.s.apps[0]!.redirect_uris).toEqual(["https://example.com/cb", "https://insidir.com/login/callback"]);
-    expect((await readConfig(db)).app_id).toBe("app_existing");
     // With the secret known (env), an existing webhook is kept and only gets the missing events.
     w.s.webhooks = [{ id: "hook_env", url: "https://insidir.com/api/billing/webhook", events: ["payment.succeeded"], enabled: true }];
     await runWhopSetup({ db, env: { ...ENV, WHOP_WEBHOOK_SECRET: "whsec_env" }, fetch: w.f, log: l => logs.push(l) });
