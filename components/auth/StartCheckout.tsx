@@ -9,6 +9,7 @@
  * itself only ever comes from the webhook, never from this page. */
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { beacon } from "@/components/app/beacon";
 
 interface Elements { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } }
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => Elements } }
@@ -28,10 +29,12 @@ function loadScript(src: string): Promise<void> {
 
 type State = "form" | "opening" | "ready" | "error" | "unconfigured";
 
-export function StartCheckout({ elementsUrl, signedInEmail }: { elementsUrl: string; signedInEmail: string | null }) {
+export function StartCheckout({ elementsUrl, signedInEmail, pendingEmail = null }: { elementsUrl: string; signedInEmail: string | null;
+  /** Made their account here before but didn't pay: their email, filled in. */
+  pendingEmail?: string | null }) {
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<State>(signedInEmail ? "opening" : "form");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(pendingEmail ?? "");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<{ message: string; exists?: boolean } | null>(null);
@@ -52,8 +55,10 @@ export function StartCheckout({ elementsUrl, signedInEmail }: { elementsUrl: str
       plan: o.planId, metadata: o.metadata, returnUrl: o.returnUrl,
       onComplete: (c: { result?: string }) => { if (c.result === "payment") location.assign("/welcome?status=succeeded"); },
     });
+    // The payment form opens in place, right under the account step: the page doesn't jump (its slot keeps its height).
     checkout.create("checkout", { buyerEmail: o.email, lockBuyerEmail: true }).mount(box.current);
     setState("ready");
+    beacon("checkout_start", "start");
   }, [elementsUrl, signedInEmail]);
 
   useEffect(() => { if (signedInEmail) void open({}).catch(() => setState("error")); }, [signedInEmail, open]);
@@ -70,7 +75,7 @@ export function StartCheckout({ elementsUrl, signedInEmail }: { elementsUrl: str
         <p className="start__who">Restarting Insidir for <b>{signedInEmail}</b>.</p>
       ) : (
         <form className="login__form start__signup" onSubmit={submit} noValidate aria-label="Create your account">
-          <p className="start__step"><span className="start__n">1</span> Create your account</p>
+          <p className="start__step"><span className="start__n">1</span> {pendingEmail ? "Finish getting Insidir" : "Create your account"}</p>
           <label className="login__label" htmlFor="start-email">Email</label>
           <input id="start-email" className="login__input" type="email" name="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false}
             required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" disabled={state === "ready" || state === "opening"} />
@@ -84,6 +89,7 @@ export function StartCheckout({ elementsUrl, signedInEmail }: { elementsUrl: str
           {error ? <p className="login__err" role="alert">{error.message}{error.exists ? <> <Link href="/login?next=%2Fstart">Log in</Link></> : null}</p> : null}
           {state === "ready" || state === "opening" ? null
             : <button className="btn btn--primary btn--big btn--block" type="submit" disabled={!email.includes("@") || !password}>Continue to payment</button>}
+          <p className="start__trust">Cancel anytime in 2 clicks. Secure payment by Whop.</p>
         </form>
       )}
       <section className="start__pay" aria-label="Payment">
@@ -93,6 +99,7 @@ export function StartCheckout({ elementsUrl, signedInEmail }: { elementsUrl: str
         {state === "error" ? <p className="login__err" role="alert">{error?.message ?? "The checkout didn't load. Refresh the page; if it keeps happening, write to hello@aethric.llc."}</p> : null}
         {state === "unconfigured" ? <p className="login__err" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
         <div ref={box} className="start__frame" hidden={state !== "ready"} />
+        {state === "ready" ? <p className="start__trust">Cancel anytime in 2 clicks. Secure payment by Whop.</p> : null}
       </section>
     </div>
   );

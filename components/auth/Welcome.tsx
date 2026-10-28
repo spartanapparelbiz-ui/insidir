@@ -1,6 +1,7 @@
 "use client";
-/* Right after paying: asks /api/checkout/claim every second until the billing webhook has made the account, then
- * lands on the feed's "You're in." Whop sends the buyer back here with ?status=failed|canceled when an off-site step
+/* Right after paying: "Setting up your account…" while it asks /api/checkout/claim every second until the billing
+ * webhook has made the account (it can lag), then straight into onboarding. After 30 seconds: "Payment received,
+ * finishing up" with a refresh button and our email; it keeps asking in the background. Whop sends the buyer back here with ?status=failed|canceled when an off-site step
  * (3-D Secure, a bank page) didn't go through: then nothing was charged and they can try again. */
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ export function Welcome({ status }: { status: string | null }) {
       if (gone) return;
       const r = await fetch("/api/checkout/claim", { method: "POST" }).then(x => x.json() as Promise<{ ready: boolean; next?: string }>).catch(() => ({ ready: false } as { ready: boolean; next?: string }));
       if (r.ready) { location.replace(r.next ?? "/feed?welcome=1"); return; }
-      if (++n === 20) setSlow(true);
+      if (++n === 30) setSlow(true);
       setTimeout(tick, n < 30 ? 1000 : 3000);
     };
     void tick();
@@ -29,11 +30,11 @@ export function Welcome({ status }: { status: string | null }) {
     </div>
   );
   return (
-    <div className="login" aria-live="polite">
-      <h1 className="login__h">You&apos;re in.</h1>
-      <p className="login__p">{slow ? "Your payment went through. We're still setting up your account; this can take a minute. You can also log in with the email and password you chose." : "Setting up your account…"}</p>
+    <div className="login" aria-live="polite" data-testid="setting-up">
+      <h1 className="login__h">{slow ? "Payment received, finishing up" : "Setting up your account…"}</h1>
+      {slow ? <p className="login__p">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : null}
       <span className="welcome__bar" aria-hidden="true" />
-      {slow ? <Link className="btn btn--secondary btn--block" href="/login">Log in with your email</Link> : null}
+      {slow ? <button type="button" className="btn btn--primary btn--block" onClick={() => location.reload()}>Refresh</button> : null}
     </div>
   );
 }

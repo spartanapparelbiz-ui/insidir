@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
-import { abStats, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
+import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
 import { pct, usd } from "@/lib/format";
@@ -130,7 +130,7 @@ function Funnel({ rows }: { rows: FunnelRow[] }) {
     <table className="table">
       <thead><tr><th>Step</th><th className="r">Visitors</th><th className="r">From previous</th><th className="r">From first</th></tr></thead>
       <tbody>{rows.map((r, i) => (
-        <tr key={r.name}><td>{r.name}</td><td className="r">{r.visitors.toLocaleString("en-US")}</td>
+        <tr key={r.name}><td>{FUNNEL_LABEL[r.name] ?? r.name}</td><td className="r">{r.visitors.toLocaleString("en-US")}</td>
           <td className="r">{i ? rate(r.visitors, rows[i - 1]?.visitors ?? 0) : "—"}</td><td className="r">{i ? rate(r.visitors, rows[0]?.visitors ?? 0) : "—"}</td></tr>
       ))}</tbody>
     </table>
@@ -174,7 +174,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const days = q.days === "30" ? 30 : 7;
   const since = sinceDays(days);
-  const [accuracy, held, heldTotal, pairs, funnel, ab, utm] = await Promise.all([
+  const [accuracy, held, heldTotal, pairs, funnel, ab, utm, free] = await Promise.all([
     load<Awaited<ReturnType<typeof accuracyOverview>>>({ runs: [], mismatches: [], hidden: [] }, () => accuracyOverview(getDb())),
     load<QuarantineView[]>([], () => quarantineViews(100)),
     load<number>(0, () => quarantineCount()),
@@ -182,6 +182,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     load<FunnelRow[]>([], () => funnelStats(since)),
     load<AbRow[]>([], () => abStats(since)),
     load<Awaited<ReturnType<typeof utmStats>>>([], () => utmStats()),
+    load<Awaited<ReturnType<typeof freeAccessAccounts>>>([], () => freeAccessAccounts()),
   ]);
   const anyError = accuracy.error || held.error || pairs.error || funnel.error || ab.error || utm.error;
   return (
@@ -190,7 +191,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
@@ -236,6 +237,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </table>
           </div>
         ) : <p className="muted small">No signups.</p>}
+      </section>
+      <section id="free" className="sec2">
+        <h2 className="sec2__h">Free access</h2>
+        <p className="muted small">Emails on FREE_ACCESS_EMAILS: full members with no payment, left out of every signup, paid and conversion number above and on the funnel.</p>
+        {free.v.length ? (
+          <div className="scroll-x"><table className="table" data-testid="free-access">
+            <thead><tr><th>Email</th><th>Account</th><th>Access</th></tr></thead>
+            <tbody>{free.v.map(r => <tr key={r.email}><td>{r.email}</td><td>{r.userId ? "Created" : "Not yet (they confirm it's them on Log in → Forgot password)"}</td><td><span className="pill">Free access</span></td></tr>)}</tbody>
+          </table></div>
+        ) : <p className="muted small">No emails on the list.</p>}
       </section>
     </main>
   );

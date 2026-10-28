@@ -78,6 +78,24 @@ export async function topTraders(db: Db, limit: number): Promise<TraderRecord[]>
   return rs.map(r => ({ wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, updatedAt: r.updatedAt.getTime() }));
 }
 
+/** Top traders (as topTraders) who have made moves in what a member picked: their tabs, leagues and market
+ *  categories. Topped up from the overall list when fewer qualify. */
+export async function topTradersFor(db: Db, p: { tabs: string[]; leagues: string[]; categories: string[] }, limit: number): Promise<TraderRecord[]> {
+  const tabs = p.tabs.filter(t => liveTabs().includes(t as Tab));
+  const pickIn = sql.join([
+    p.leagues.length ? sql`(m.tab = 'sports' and m.league in (${sql.join(p.leagues.map(l => sql`${l}`), sql`, `)}))` : tabs.includes("sports") ? sql`m.tab = 'sports'` : null,
+    p.categories.length ? sql`(m.tab = 'markets' and m.category in (${sql.join(p.categories.map(c => sql`${c}`), sql`, `)}))` : tabs.includes("markets") ? sql`m.tab = 'markets'` : null,
+  ].filter((x): x is ReturnType<typeof sql> => x !== null), sql` or `);
+  const picked = tabs.some(t => t === "sports" || t === "markets")
+    ? (await db.select().from(traderRecords).where(and(gte(traderRecords.resolved, 20), sql`${traderRecords.profit} > 0`,
+        sql`exists (select 1 from terminal.moves m where m.wallet = ${traderRecords.wallet} and m.hidden_at is null and (${pickIn}))`))
+        .orderBy(desc(traderRecords.profit)).limit(limit))
+    : [];
+  const out = picked.map(r => ({ wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, updatedAt: r.updatedAt.getTime() }));
+  if (out.length < limit) for (const t of await topTraders(db, limit * 2)) if (out.length < limit && !out.some(o => o.wallet === t.wallet)) out.push(t);
+  return out;
+}
+
 export interface MoveQuery {
   tab?: Tab | null; min?: number; league?: League | null; wallet?: string | null; marketId?: string | null;
   /** Only moves at or before this time (a free viewer's clock), ms. */
@@ -86,6 +104,8 @@ export interface MoveQuery {
   offset?: number;
   /** Biggest first instead of newest first. */
   byAmount?: boolean;
+  /** Any of these leagues / venue categories (a member's picks). */
+  leagues?: League[]; categories?: string[];
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
@@ -96,6 +116,8 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     isNull(moves.hiddenAt),
     q.min ? gte(moves.amount, q.min) : undefined,
     q.league ? eq(moves.league, q.league) : undefined,
+    q.leagues?.length ? inArray(moves.league, q.leagues) : undefined,
+    q.categories?.length ? inArray(moves.category, q.categories) : undefined,
     q.wallet ? eq(moves.wallet, q.wallet) : undefined,
     q.marketId ? eq(moves.marketId, q.marketId) : undefined,
     q.until !== undefined ? lte(moves.at, new Date(q.until)) : undefined,

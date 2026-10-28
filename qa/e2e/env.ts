@@ -31,4 +31,6 @@ export const SERVER_ENV: Record<string, string> = {
   // Every built feature is switched on in tests, so each is tested for real; Crypto stays Coming soon.
   FEATURES_READY: "feed,records,follows,alerts_push,alerts_email,daily_email,custom_rules,price_gaps,stocks",
   POSTS_ADMIN_EMAILS: "user_e2e_pro@example.test",
+  // The owner's free-access list: spaces and capitals on purpose (compared trimmed, case-insensitively).
+  FREE_ACCESS_EMAILS: " Owner.Free@Example.test , friend.free@example.test",
 };

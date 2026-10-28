@@ -10,7 +10,9 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { passwordResets, users } from "@/lib/db/schema";
 import { appUrl } from "@/lib/app-url";
-import { normEmail, sha256 } from "@/lib/billing/access";
+import { newUserId, normEmail, sha256 } from "@/lib/billing/access";
+import { isFreeAccess } from "@/lib/billing/free";
+import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 
 const OAUTH = `${(process.env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "")}/oauth`;
 const env = (k: string): string => process.env[k] ?? "";
@@ -62,7 +64,13 @@ export async function accountFor(db: Db, who: { id: string; email: string | null
   if (!who.email) return null;
   const byEmail = (await db.select({ id: users.id, whop: users.whopUserId }).from(users).where(eq(users.email, normEmail(who.email))).limit(1))[0];
   // An account already linked to a different payment account is not theirs to reset.
-  return byEmail && !byEmail.whop ? byEmail.id : null;
+  if (byEmail) return byEmail.whop ? null : byEmail.id;
+  // No account yet, but the confirmed email is on the owner's free-access list: make one (they set a password next).
+  // Only an email the payment provider has just confirmed can get here, so nobody can claim someone else's.
+  if (!isFreeAccess(who.email)) return null;
+  const made = await db.insert(users).values({ id: newUserId(), email: normEmail(who.email), whopUserId: who.id, settings: DEFAULT_SETTINGS })
+    .onConflictDoNothing().returning({ id: users.id });
+  return made[0]?.id ?? (await db.select({ id: users.id }).from(users).where(eq(users.email, normEmail(who.email))).limit(1))[0]?.id ?? null;
 }
 
 export async function newReset(db: Db, userId: string, now = Date.now()): Promise<string> {
