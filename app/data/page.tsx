@@ -1,6 +1,7 @@
 /* About our data (/data): where every number comes from, how late each source can be, and what it can't tell you.
  * Linked from the footer and from every profile. Plain words; every claim here matches what the worker actually does
  * (worker/index.ts, lib/accuracy/check.ts). */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageBand } from "@/components/PageBand";
@@ -51,7 +52,7 @@ export default async function DataPage() {
           <p>Every hour we re-read 20 random moves and 20 profile numbers from their sources. Anything that doesn&apos;t match is hidden until it does, and we get an email. Spotted something wrong? Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
         </article>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
+          <Link className="btn btn--primary" href="/start">{GET_CTA}</Link>
         </div>
       </main>
     </>

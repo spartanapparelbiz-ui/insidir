@@ -62,8 +62,12 @@ test("headlines are in the serif (Rufina); body text, buttons and cards in Schib
 test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
   const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/sports"); await page.goto("/markets"); });
   await expect(page.locator(".move").first()).toBeVisible();
-  await expect(page.locator(".move__record--blur").first()).toBeVisible();
-  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63/);
+  const locked = page.getByTestId("locked-record").first();
+  await expect(locked).toBeVisible();
+  await expect(locked).toContainText("Win rate · All-time profit");
+  await expect(locked).toContainText("members only");
+  expect(await locked.innerText()).not.toMatch(/\d|NaN/);
+  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|Won 00 of 00|NaN%/);
 });
 
 test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
@@ -80,36 +84,74 @@ test("member feed: live moves with the record line; following a trader shows on 
   await q("delete from terminal.follows");
 });
 
-test("scroll card: after ~60% of the page, once per visit, closes; never for members", async ({ page, context }) => {
-  for (const path of ["/", "/sports"]) {
-    await page.goto(path);
-    const card = page.getByRole("complementary", { name: "Get Insidir" });
-    await expect(card).toHaveCount(0);
-    await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.3));
-    await page.waitForTimeout(300);
-    await expect(card).toHaveCount(path === "/" ? 0 : 0);
-    if (path !== "/") continue; // once per visit: the home card already showed below
-    await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.65));
-    await expect(card).toBeVisible();
-    await expect(card).toContainText("See every big move live.");
-    await expect(card).toContainText("$39/mo, cancel anytime.");
-    await expect(card.getByRole("link", { name: "Get Insidir" })).toHaveAttribute("href", "/start");
-    await page.screenshot({ path: `qa/screenshots/scroll-offer-${page.viewportSize()!.width}.png` });
-    await card.getByRole("button", { name: "Close" }).click();
-    await expect(card).toHaveCount(0);
+test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on ×, Esc and outside; never for members", async ({ page, context }) => {
+  const popup = page.getByRole("dialog", { name: "See the biggest bets the moment they happen." });
+  await page.goto("/");
+  await expect(popup).toHaveCount(0);
+  await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.3));
+  await page.waitForTimeout(300);
+  await expect(popup).toHaveCount(0);
+  await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.65));
+  await expect(popup).toBeVisible();
+  await expect(popup).toContainText("$39/mo · Cancel anytime");
+  await expect(popup.getByRole("link", { name: "Get Insidir" })).toHaveAttribute("href", "/start");
+  await expect(popup.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+  await expect(popup.locator("img")).toHaveCount(1);
+  await expect(popup.locator("svg").first()).toBeVisible();
+  // Focus starts on Get Insidir and Tab never leaves the pop-up.
+  await expect(popup.getByRole("link", { name: "Get Insidir" })).toBeFocused();
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press("Tab");
+    expect(await popup.evaluate(el => el.contains(document.activeElement))).toBe(true);
   }
-  // The same visit: the Sports page never shows it again.
+  await page.screenshot({ path: `qa/screenshots/signup-popup-${page.viewportSize()!.width}.png` });
+  await page.keyboard.press("Escape");
+  await expect(popup).toHaveCount(0);
+  // Once per visit: no other public page shows it again.
   await page.goto("/sports");
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(400);
-  await expect(page.getByRole("complementary", { name: "Get Insidir" })).toHaveCount(0);
+  await expect(popup).toHaveCount(0);
+
+  // A new visit: × closes it, and a tap outside the card closes it.
+  for (const close of ["x", "outside"] as const) {
+    const p2 = await context.newPage();
+    await p2.goto("/results");
+    await p2.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    const d = p2.getByRole("dialog", { name: "See the biggest bets the moment they happen." });
+    if (await p2.evaluate(() => document.documentElement.scrollHeight - innerHeight <= 0)) await p2.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientY: -1, bubbles: true })));
+    await expect(d).toBeVisible();
+    if (close === "x") await d.getByRole("button", { name: "Close" }).click();
+    else await p2.mouse.click(5, 5);
+    await expect(d).toHaveCount(0);
+    await p2.close();
+  }
+
+  // Never on /start or /login, whatever the scroll.
+  for (const path of ["/start", "/login"]) {
+    const p3 = await context.newPage();
+    await p3.goto(path);
+    await p3.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await p3.waitForTimeout(400);
+    await expect(p3.getByTestId("signup-popup")).toHaveCount(0);
+    await p3.close();
+  }
+
   // Members never see it.
   await signIn(context, "insidir");
   const fresh = await context.newPage();
   await fresh.goto("/");
   await fresh.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await fresh.waitForTimeout(400);
-  await expect(fresh.getByRole("complementary", { name: "Get Insidir" })).toHaveCount(0);
+  await expect(fresh.getByTestId("signup-popup")).toHaveCount(0);
+});
+
+test("sign-up pop-up: exit intent on a desktop opens it before any scrolling", async ({ page }) => {
+  test.skip(page.viewportSize()!.width < 900, "desktop only");
+  await page.goto("/sports");
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientY: -1, bubbles: true })));
+  await expect(page.getByTestId("signup-popup")).toBeVisible();
 });
 
 test("a US member never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
@@ -152,6 +194,25 @@ test("location is asked once, as a sheet, the first time a market link is tapped
   } finally {
     await q("update terminal.users set region = 'us' where id = 'user_e2e_pro'");
   }
+});
+
+test("results are public: totals match the home trust block, refunds labelled, pages instead of a cap", async ({ page }) => {
+  await page.goto("/results");
+  await expect(page).toHaveURL(/\/results$/);
+  await expect(page.locator(".rlist__res--won").first()).toBeVisible();
+  const total = page.getByTestId("results-total");
+  await expect(total).toContainText(/won, \d+ lost/);
+  await expect(total).toContainText("Average odds when they bet:");
+  await expect(total).toContainText("Net for these traders:");
+  const totalText = await total.innerText();
+  await page.goto("/");
+  const home = await page.getByTestId("trust-record").innerText();
+  for (const line of totalText.split("\n").filter(l => /Average odds|Net for/.test(l))) expect(home).toContain(line.trim());
+  const check = page.getByTestId("trust-check");
+  await expect(check).toContainText(/matched/);
+  await expect(check.getByRole("link", { name: "How we check" })).toHaveAttribute("href", "/data");
+  await page.goto("/results?page=99");
+  expect((await page.goto("/results?page=99"))?.status()).toBeLessThan(400);
 });
 
 test("results show wins and losses; /terminal goes to the feed", async ({ page, context }) => {
@@ -208,7 +269,8 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
   // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
   await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Coming soon");
+  await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Soon");
+  await expect(page.getByRole("button", { name: /Crypto/ })).not.toContainText("Coming soon");
   // Stocks never mixes into the Sports tab.
   const sports = await (await page.request.get("/api/moves?tab=sports&min=10000")).json() as { items: Array<{ tab: string }> };
   expect(sports.items.every(i => i.tab === "sports")).toBe(true);

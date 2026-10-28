@@ -8,6 +8,7 @@ import { TimeAgo } from "@/components/TimeAgo";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import { FollowButton, type FollowState } from "./FollowButton";
+import { LockedRecord } from "./LockedRecord";
 
 const TAG: Record<string, { text: string; tint: string }> = {
   sports: { text: "Sports", tint: "green" },
@@ -46,8 +47,8 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}
       {m.note ? <p className="move__record">{m.note}</p> : null}
       {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow !== "on" && follow !== "off" ? (
-        // The public preview: the record is there, blurred, for members (the real numbers never reach this page).
-        <p className="move__record move__record--blur"><span aria-hidden="true">Won 00 of 00 · +$00K all-time</span><span className="sr-only">Trader record for members</span></p>
+        // The public preview: a locked row where the record goes; the numbers never reach this page.
+        <LockedRecord compact />
       ) : null}
       {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}

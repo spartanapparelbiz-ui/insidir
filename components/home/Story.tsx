@@ -11,6 +11,7 @@ import { beacon } from "@/components/app/beacon";
 import { Photo, type PhotoN } from "@/components/Photo";
 import { Wordmark } from "@/components/Wordmark";
 import { MoveCard } from "@/components/v2/MoveCard";
+import { LockedRecord } from "@/components/v2/LockedRecord";
 import { TabIcon } from "@/components/SiteHeader";
 import { BAND, SPOT } from "@/lib/photos";
 import type { Story as StoryData } from "@/lib/home/story";
@@ -128,7 +129,7 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
         <Band n={TAB_PHOTO(d.move.tab)} title="Live feed" />
         <div className="wrap">
           <div className="feed2__head"><div className="feed2__meta"><p className="status status--live"><span className="status__dot" />Live · updated 2s ago</p></div></div>
-          <div className="tabs">{["Sports", "Markets", "Stocks"].map(t => <span key={t} className="tabs__tab" aria-pressed={t.toLowerCase() === d.move.tab}>{t}</span>)}<span className="tabs__tab tabs__tab--soon">Crypto <span className="soon">Coming soon</span></span></div>
+          <div className="tabs">{["Sports", "Markets", "Stocks"].map(t => <span key={t} className="tabs__tab" aria-pressed={t.toLowerCase() === d.move.tab}>{t}</span>)}<span className="tabs__tab tabs__tab--soon">Crypto <span className="soon soon--short">Soon</span></span></div>
           <div className="chips">{["$10k+", "$50k+", "$100k+"].map((c, k) => <span key={c} className="chip2" aria-pressed={k === 0}>{c}</span>)}</div>
           <div className="ios-new"><span className="btn btn--primary newmoves__btn">1 new move · Show</span></div>
           <ol className="feed2__list ios-list">{[card(d.move, true), ...d.feed.map(m => card(m))]}</ol>
@@ -148,12 +149,12 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
           </div>
           <div className="wrap">
             <p className="note pnote">One trader can use several wallets; this record covers this wallet only. <u>About our data</u></p>
-            {r ? (
-              <dl className={`record record--wide${d.trader.blurred ? " record--blur" : ""}`} aria-hidden={d.trader.blurred || undefined}>
+            {d.trader.blurred ? <LockedRecord /> : r ? (
+              <dl className="record record--wide">
                 <div><dt>Win rate</dt><dd>{Math.round((r.won / r.of) * 100)}%</dd><span className="record__sub">Won {r.won} of {r.of} resolved</span></div>
                 <div><dt>All-time profit</dt><dd className={r.profit.startsWith("-") || r.profit.startsWith("−") ? "loss" : "money"}>{r.profit}</dd></div>
               </dl>
-            ) : <p className="note">{d.trader.record}</p>}
+            ) : null}
             {d.trader.chart ? (
               <section className="block">
                 <p className="block__h">Profit over time</p>

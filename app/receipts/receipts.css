@@ -3,7 +3,7 @@
  * number per row, timestamps Steel. 8px grid. */
 .rx { display: grid; gap: 24px; padding-top: 24px; }
 .rx-head { display: grid; gap: 8px; }
-.rx-h { font-size: var(--t32); line-height: 1.15; max-width: 24ch; }
+.rx-h { font-size: var(--t32); line-height: 1.1; max-width: 24ch; }
 .rx-sub { color: var(--muted); max-width: 64ch; }
 .rx-h2 { font-size: var(--t24); }
 .rx-note { color: var(--muted); font-size: var(--t15); max-width: 72ch; }
@@ -18,9 +18,9 @@
 .rx-sum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .rx-sum > div { display: grid; gap: 4px; padding: 16px 16px 16px 0; }
 .rx-sum dt { color: var(--muted); font-size: var(--t13); line-height: 16px; }
-.rx-sum dd { margin: 0; font: 700 var(--t24)/28px var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); }
+.rx-sum dd { margin: 0; font: 600 var(--t24)/28px var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); }
 .rx-sum dd.rx-sum__main { color: var(--text); }
-@media (min-width: 900px) { .rx-sum { grid-template-columns: repeat(5, minmax(0, 1fr)); } .rx-h { font-size: var(--t44); line-height: 1.05; } }
+@media (min-width: 900px) { .rx-sum { grid-template-columns: repeat(5, minmax(0, 1fr)); } .rx-h { font-size: var(--t44); line-height: 1.1; } }
 
 /* charts */
 .rx-charts { display: grid; gap: 32px; }

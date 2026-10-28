@@ -30,7 +30,7 @@ export default async function ResetPage({ searchParams }: { searchParams: Promis
   const email = userId && db ? (await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1))[0]?.email ?? null : null;
   return (
     <>
-      <SiteHeader signedIn={false} minimal />
+      <SiteHeader signedIn={false} offer={false} />
       <main className="split dark">
         <div className="split__photo">
           <Photo n={BAND.signin} par eager />

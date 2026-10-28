@@ -2,7 +2,8 @@
  *   Polymarket move: the Polygon transaction of its first fill (polygonscan.com), or the wallet's on-chain history
  *     when the move predates stored hashes. A public blockchain record, not a trading site, so it is shown in every
  *     region (the location rules in ./links.ts are about trade links).
- *   Kalshi move: Kalshi's own public trade record (GET /markets/trades for that market, filtered to that second).
+ *   Kalshi move: the market on kalshi.com (its page lists the market's public trades); the trade record on Kalshi's
+ *     public API only when the move has no market link.
  *   SEC move: the filing on sec.gov.
  *   Profiles: a trader's wallet on polygonscan; an insider's or a fund's filing list on EDGAR. */
 import type { Move } from "./types";
@@ -19,6 +20,7 @@ const WALLET = /^0x[0-9a-fA-F]{40}$/;
 export function moveSource(m: Pick<Move, "id" | "source" | "marketId" | "wallet" | "at" | "url"> & { sourceRefs?: string[] | null }): SourceLink | null {
   if (m.source === "sec") return m.url && /^https:\/\/www\.sec\.gov\//.test(m.url) ? { href: m.url, label: "Where this comes from: SEC EDGAR filing" } : null;
   if (m.source === "kalshi") {
+    if (m.url && /^https:\/\/kalshi\.com\/markets\/[a-z0-9-]+/i.test(m.url)) return { href: m.url, label: "Where this comes from: the market on Kalshi" };
     const s = Math.floor(m.at / 1000);
     return { href: `${KALSHI_API}/markets/trades?ticker=${encodeURIComponent(m.marketId)}&min_ts=${s}&max_ts=${s + 1}`, label: "Where this comes from: Kalshi trade record" };
   }

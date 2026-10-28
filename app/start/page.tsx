@@ -21,7 +21,7 @@ export default async function StartPage() {
   if (viewer.user && isPaid(viewer.plan)) redirect("/feed");
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} minimal />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/start" offer={false} />
       <main className="dark start">
         <div className="wrap start__in">
           <section className="start__what" aria-labelledby="start-h">
