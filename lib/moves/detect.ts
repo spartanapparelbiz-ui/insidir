@@ -65,11 +65,15 @@ export function mergeParts(...lists: ReadonlyArray<readonly FillPart[] | null | 
 }
 
 /** A move's money and times from its fills. */
+/** Fills in time order (the Data API lists them newest first). */
+export const sortParts = (parts: readonly FillPart[]): FillPart[] => [...parts].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+
 export function fromParts(parts: readonly FillPart[]): Pick<Move, "amount" | "avgPrice" | "at" | "lastAt" | "fills" | "sourceRefs"> {
-  const amount = parts.reduce((s, p) => s + p.c * p.p, 0), contracts = parts.reduce((s, p) => s + p.c, 0);
+  const sorted = sortParts(parts);
+  const amount = sorted.reduce((s, p) => s + p.c * p.p, 0), contracts = sorted.reduce((s, p) => s + p.c, 0);
   return {
     amount: Math.round(amount * 100) / 100, avgPrice: contracts > 0 ? amount / contracts : 0,
-    at: parts[0]!.at, lastAt: parts[parts.length - 1]!.at, fills: parts.length, sourceRefs: txHashes(parts),
+    at: sorted[0]!.at, lastAt: sorted[sorted.length - 1]!.at, fills: sorted.length, sourceRefs: txHashes(sorted),
   };
 }
 

@@ -70,7 +70,7 @@ const rebuildable = (problems: readonly string[]) => problems.length > 0
 export async function rebuildPoly(db: Db, poly: PolymarketClient, m: Move): Promise<Move | null> {
   const raw = await source(() => poly.getWalletMarketTradesAll(m.wallet!, m.marketId));
   const parts = readPolymarketFills(raw)
-    .filter(f => f.wallet === m.wallet && f.side === "BUY" && f.outcomeSide === m.outcomeSide && f.at >= m.at - 1000 && f.at <= m.lastAt + MERGE_WINDOW_MS)
+    .filter(f => f.wallet === m.wallet && f.side === "BUY" && f.outcomeSide === m.outcomeSide && f.at >= Math.min(m.at, m.lastAt) - 1000 && f.at <= Math.max(m.at, m.lastAt) + MERGE_WINDOW_MS)
     .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))
     .map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at }));
   if (!parts.length) return null;
