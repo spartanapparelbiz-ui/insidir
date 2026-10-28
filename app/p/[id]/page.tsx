@@ -3,7 +3,7 @@
  *                    markets), profit over time, wins and losses by category, open positions and recent moves
  *   /p/insider-<cik> an SEC filer: every open-market buy and sale on their Form 4s, totals, and the price paid
  *   /p/fund-<cik>    a 13F filer: top 10 holdings, biggest adds and cuts per quarter, quarters on file
- * Names are for everyone; the numbers are for members ("Get Insidir · $39/mo"), and are never sent to a free
+ * Names are for everyone; the numbers are for members ("Try 7 days for $1"), and are never sent to a free
  * viewer's browser. Every number links to where it came from. Nothing about who is behind a wallet, ever. */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

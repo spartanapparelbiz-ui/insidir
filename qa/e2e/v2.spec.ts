@@ -8,9 +8,9 @@ test("landing: the brief's hero, and on a phone the headline, button and top of 
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toHaveText("Get Insidir · $39/mo");
+  await expect(cta).toHaveText("Try 7 days for $1");
   await expect(cta).toHaveAttribute("href", "/start");
-  await expect(page.getByText("Cancel anytime.").first()).toBeVisible();
+  await expect(page.getByText("Then $39/mo, cancel anytime.").first()).toBeVisible();
   // One real move per photo on a solid card (components/home/Hero.tsx).
   const card = page.locator(".cine__card .hcard");
   await expect(page.getByText("LIVE · big money moves")).toBeVisible();
@@ -93,13 +93,13 @@ test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on
   await expect(popup).toHaveCount(0);
   await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.65));
   await expect(popup).toBeVisible();
-  await expect(popup).toContainText("$39/mo · Cancel anytime");
-  await expect(popup.getByRole("link", { name: "Get Insidir" })).toHaveAttribute("href", "/start");
+  await expect(popup).toContainText("Then $39/mo, cancel anytime.");
+  await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toHaveAttribute("href", "/start");
   await expect(popup.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   await expect(popup.locator("img")).toHaveCount(1);
   await expect(popup.locator("svg").first()).toBeVisible();
   // Focus starts on Get Insidir and Tab never leaves the pop-up.
-  await expect(popup.getByRole("link", { name: "Get Insidir" })).toBeFocused();
+  await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toBeFocused();
   for (let i = 0; i < 5; i++) {
     await page.keyboard.press("Tab");
     expect(await popup.evaluate(el => el.contains(document.activeElement))).toBe(true);

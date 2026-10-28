@@ -9,11 +9,21 @@ export const FOOTER =
 export const WHAT_IS = "Insidir is a live tracker for sports bets, prediction markets and insider stock trades: it shows you the biggest ones the moment they happen, who made them, how much, and whether they usually win.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
 export const WHAT_IS_TITLE = "Insidir: live tracker for sports bets, prediction markets and insider stock trades";
-/** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards). */
-export const GET_CTA = "Get Insidir · $39/mo";
-/** The small line under it. */
-export const CANCEL_LINE = "Cancel anytime.";
-export const OFFER_BAR = `${GET_CTA}. ${CANCEL_LINE}`;
+/** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
+ *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
+export const GET_CTA = "Try 7 days for $1";
+/** What comes after, said next to every price. */
+export const THEN_LINE = "then $39/mo, cancel anytime";
+/** The small line under a button. */
+export const CANCEL_LINE = "Then $39/mo, cancel anytime.";
+export const OFFER_BAR = `${GET_CTA}, ${THEN_LINE}.`;
+/** What the members-only APIs say to someone without a plan. */
+export const MEMBERS_ONLY = `Members only. ${GET_CTA}, ${THEN_LINE}.`;
+/** "$1 today. $39 on Nov 4 unless you cancel." (/start, under the button): the date is 7 days from `now`, US Eastern. */
+export function chargeLine(now: number): string {
+  const d = new Date(now + 7 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+  return `$1 today. $39 on ${d} unless you cancel.`;
+}
 
 /** How a lock is described everywhere. */
 export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";

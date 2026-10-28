@@ -1,7 +1,7 @@
 /* A local stand-in for Whop and Resend, for end-to-end tests only (the real ones need network access the CI sandbox
  * lacks). It implements just what the app calls, with the same shapes:
  *   GET  /elements.js              a stand-in for Whop's Elements script: window.WhopElements().checkout.create(…)
- *                                  mounts a test-mode checkout (email + "Pay $39 (test mode)") that posts to /__pay
+ *                                  mounts a test-mode checkout (email + "Pay $1 (test mode)") that posts to /__pay
  *                                  and then calls onComplete, as the real embedded checkout does
  *   POST /__pay                    creates an active membership for that email, sends signed `membership.activated`
  *                                  and `payment.succeeded` webhooks (the payment carries the checkout's metadata)
@@ -25,7 +25,7 @@ const ELEMENTS = (origin: string) => `window.WhopElements = function () {
   return { checkout: { create: function (opts) {
     return { create: function (kind, props) { return { mount: function (el) {
       var box = typeof el === "string" ? document.querySelector(el) : el;
-      box.innerHTML = '<form data-mock-checkout style="display:grid;gap:12px;padding:16px"><label>Email <input name="email" type="email" required></label><button type="submit" style="min-height:44px">Pay $39 (test mode)</button></form>';
+      box.innerHTML = '<form data-mock-checkout style="display:grid;gap:12px;padding:16px"><label>Email <input name="email" type="email" required></label><button type="submit" style="min-height:44px">Pay $1 (test mode)</button></form>';
       var f = box.querySelector("form"); f.email.value = (props && props.buyerEmail) || ""; f.email.readOnly = Boolean(props && props.lockBuyerEmail);
       f.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -69,8 +69,8 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         if (!product) return send(res, 404, { error: "unknown plan" });
         const email = b.email.trim().toLowerCase();
         const user = { id: whopUserFor(email), email, name: null };
-        const mem: Membership = { id: "mem_" + randomUUID().slice(0, 8), status: "active", product: { id: product }, plan: { id: b.plan }, cancel_at_period_end: false,
-          manage_url: `http://localhost:${o.port}/manage`, user, renewal_period_end: new Date(Date.now() + 30 * 86_400_000).toISOString(), formatted_renewal_price: "$39.00 / month", metadata: {} };
+        const mem: Membership = { id: "mem_" + randomUUID().slice(0, 8), status: "trialing", product: { id: product }, plan: { id: b.plan }, cancel_at_period_end: false,
+          manage_url: `http://localhost:${o.port}/manage`, user, renewal_period_end: new Date(Date.now() + 7 * 86_400_000).toISOString(), formatted_renewal_price: "$39.00 / month", metadata: {} };
         const pay: Payment = { id: "pay_" + randomUUID().slice(0, 8), membership: { id: mem.id }, user: { id: user.id, email }, metadata: b.metadata };
         memberships = memberships.filter(x => x.user.id !== user.id).concat(mem);
         payments.push(pay);

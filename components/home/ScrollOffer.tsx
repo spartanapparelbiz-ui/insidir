@@ -10,6 +10,7 @@ import { beacon } from "@/components/app/beacon";
 import { Photo } from "@/components/Photo";
 import { Wordmark } from "@/components/Wordmark";
 import { SPOT } from "@/lib/photos";
+import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 
 const KEY = "insidir_offer_seen";
 
@@ -84,8 +85,8 @@ export function ScrollOffer({ where }: { where: string }) {
         <div className="popup__body">
           <span className="popup__logo"><Wordmark /></span>
           <h2 id="popup-h" className="popup__h">See the biggest bets the moment they happen.</h2>
-          <p className="popup__p">$39/mo · Cancel anytime</p>
-          <Link className="btn btn--primary btn--block popup__btn" href="/start" data-unlock={`popup-${where}`}>Get Insidir</Link>
+          <p className="popup__p">{CANCEL_LINE}</p>
+          <Link className="btn btn--primary btn--block popup__btn" href="/start" data-unlock={`popup-${where}`}>{GET_CTA}</Link>
           <p className="popup__login">Already a member? <Link href="/login">Log in</Link></p>
         </div>
         <button type="button" className="popup__x" onClick={() => setOpen(false)} aria-label="Close">×</button>

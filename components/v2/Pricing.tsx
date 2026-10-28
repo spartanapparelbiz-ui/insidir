@@ -1,9 +1,9 @@
-/* Pricing: one plan, Insidir, $39/month, cancel anytime. Its card lists everything that's live, then what's coming
+/* Pricing: one plan, Insidir: 7 days for $1, then $39/month, cancel anytime. Its card lists everything that's live, then what's coming
  * marked "(coming soon)", so nobody pays for something that isn't there yet (lib/features.ts). The button opens the
  * checkout embedded on /start; billing itself is Whop's. */
 import Link from "next/link";
 import { isReady, type Feature } from "@/lib/features";
-import { PLANS, PRICE } from "@/lib/plans";
+import { PLANS, PRICE, TRIAL } from "@/lib/plans";
 import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import type { Plan } from "@/lib/types";
 
@@ -85,7 +85,7 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
               {mine ? <p className="plan2__flag plan2__flag--mine">Your plan</p> : null}
             </div>
             <p className="plan2__pitch">See every big move the moment it happens: who made it, how much, and whether they usually win.</p>
-            <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month</span></p>
+            <p className="plan2__price"><span className="plan2__amt">${TRIAL.fee}</span> <span className="plan2__unit">for {TRIAL.days} days</span></p>
             <p className="plan2__sub">{CANCEL_LINE}</p>
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
               : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}

@@ -13,7 +13,7 @@ const MESSAGE = {
   rate_limited: "Too many tries. Wait 15 minutes and try again.",
   wrong: "That email and password don't match.",
   no_password: "Set a password first: tap \"Forgot password?\" below.",
-  no_plan: "No active plan for this email. Get Insidir · $39/mo.",
+  no_plan: "No active plan for this email. Try 7 days for $1, then $39/mo.",
 } as const;
 
 export async function POST(req: NextRequest) {

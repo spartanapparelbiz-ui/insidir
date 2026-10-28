@@ -1107,3 +1107,4 @@ h2:not(.ios-vp *):not(.sheet h2):not([role="dialog"] h2) { font-family: var(--se
 .finish__h { font-weight: 600; font-size: var(--t17); }
 .finish__p { color: var(--muted); }
 .finish__p b { color: var(--text); }
+.start__charge { font-weight: 600; text-align: center; }

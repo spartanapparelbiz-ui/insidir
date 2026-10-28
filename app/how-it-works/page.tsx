@@ -29,7 +29,7 @@ const DO: Array<[string, string, string]> = [
   ["/feed", "The live feed", "Every big move as it happens: Sports, Markets and Stocks."],
   ["/top", "Top traders", "The wallets with the best record, this week, this month and all time."],
   ["/results", "Results", "Every move we've shown, marked won or lost. Losses included."],
-  ["/pricing", "Pricing", "One plan, $39/month, everything live. Cancel anytime."],
+  ["/pricing", "Pricing", "Try 7 days for $1, then $39/month, everything live. Cancel anytime."],
 ];
 
 export default async function HowPage() {
