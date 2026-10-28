@@ -15,7 +15,6 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { accuracyChecks } from "@/lib/db/schema";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
-import { MERGE_WINDOW_MS } from "@/lib/moves/detect";
 import { readKalshiFills, readPolymarketFills } from "@/lib/moves/sources";
 import { fromRow } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
@@ -43,7 +42,8 @@ async function source<T>(read: () => Promise<T>): Promise<T> {
 }
 
 export async function checkPoly(poly: PolymarketClient, m: Move): Promise<string[]> {
-  const raw = await source(() => poly.getWalletMarketTrades(m.wallet!, m.marketId));
+  // Every fill of the wallet in that market, maker and taker: a move is a whole position (lib/moves/store.ts).
+  const raw = await source(() => poly.getWalletMarketTradesAll(m.wallet!, m.marketId));
   const fills = readPolymarketFills(raw).filter(f => f.side === "BUY" && f.outcomeSide === m.outcomeSide && f.at >= m.at && f.at <= m.lastAt)
     .sort((a, b) => a.at - b.at);
   if (!fills.length) return ["no matching fills at the source"];
@@ -53,7 +53,6 @@ export async function checkPoly(poly: PolymarketClient, m: Move): Promise<string
   if (fills[0]!.at !== m.at) errs.push(`time ${new Date(m.at).toISOString()} vs ${new Date(fills[0]!.at).toISOString()}`);
   if (fills.some(f => f.wallet !== m.wallet)) errs.push("wallet differs");
   if (fills[0]!.outcome !== m.outcome) errs.push(`outcome ${m.outcome} vs ${fills[0]!.outcome}`);
-  for (let i = 1; i < fills.length; i++) if (fills[i]!.at - fills[i - 1]!.at > MERGE_WINDOW_MS) errs.push("fills further apart than the merge window");
   return errs;
 }
 

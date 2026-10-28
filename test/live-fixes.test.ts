@@ -8,6 +8,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
+import { checkPoly } from "@/lib/accuracy/check";
 import * as schema from "@/lib/db/schema";
 import { gammaCategory } from "@/lib/exchanges/polymarket";
 import { trimTitle } from "@/lib/home/curate";
@@ -49,6 +50,18 @@ describe("Polymarket sports land on Sports", () => {
       expect(classify("politics", [t]).tab, t).toBe("markets");
     }
     expect(classify("other", ["Will Arsenal FC win on 2026-10-27?"]).league).toBe("soccer");
+  });
+});
+
+describe("the hourly accuracy check and positions", () => {
+  it("a whole position (maker fills, buys more than 10 minutes apart) matches its source", async () => {
+    const trades = [
+      { proxyWallet: W, side: "BUY", size: 2000, price: 0.5, timestamp: T / 1000, conditionId: C, outcomeIndex: 0, outcome: "PARIVISION", transactionHash: `0x${"1".repeat(64)}` },
+      { proxyWallet: W, side: "BUY", size: 4000, price: 0.5, timestamp: (T + 25 * 60_000) / 1000, conditionId: C, outcomeIndex: 0, outcome: "PARIVISION", transactionHash: `0x${"2".repeat(64)}` },
+    ];
+    const poly = { getWalletMarketTradesAll: async () => trades } as unknown as Parameters<typeof checkPoly>[0];
+    const m = { id: "pm:x", source: "polymarket", marketId: C, wallet: W, outcomeSide: "yes", outcome: "PARIVISION", amount: 3000, at: T, lastAt: T + 25 * 60_000 } as unknown as Move;
+    expect(await checkPoly(poly, m)).toEqual([]);
   });
 });
 
