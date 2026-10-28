@@ -14,6 +14,8 @@ import { movePlan } from "@/lib/moves/gate";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
+import { walletFace, type Face } from "@/lib/moves/avatar";
+import { avatarsOrNone } from "@/lib/moves/avatar-store";
 import type { Move } from "@/lib/moves/types";
 import type { Plan, Region } from "@/lib/types";
 import { profitPath } from "@/lib/profiles/chart";
@@ -26,7 +28,7 @@ export interface Story {
   move: FeedItem;
   /** The feed the move slides into: the latest other real moves. */
   feed: FeedItem[];
-  trader: { name: string; wallet: string; record: string; blurred: boolean; chart: { path: string; width: number; height: number; zeroY: number } | null };
+  trader: { name: string; wallet: string; face: Face; record: string; blurred: boolean; chart: { path: string; width: number; height: number; zeroY: number } | null };
   alert: { title: string; body: string };
   /** The move is a past settled one (nobody top-ranked moved this week). */
   past: boolean;
@@ -47,10 +49,11 @@ export async function storyFor(db: Db, plan: Plan, region: Region | null, until:
   const { m, rec } = hit;
   const record = recordLine(rec);
   if (!record) return null;
-  const [items, latest, markets] = await Promise.all([
+  const [items, latest, markets, avatars] = await Promise.all([
     feedItems(db, [m], plan, region, now),
     listMoves(db, { until, limit: 200 }).then(ms => ms.filter(isMainstream)),
     marketsFor(db, m.wallet!).catch(() => []),
+    avatarsOrNone(db, [m.wallet!]),
   ]);
   const feed = await feedItems(db, latest.filter(x => x.id !== m.id).slice(0, 2), plan, region, now);
   const s = markets.length ? traderStats(markets, now) : null;
@@ -59,7 +62,7 @@ export async function storyFor(db: Db, plan: Plan, region: Region | null, until:
   const shown = movePlan(plan).records;
   return {
     move: items[0]!, feed, past,
-    trader: { name: walletLabel(m.wallet!, rec.name ?? m.walletName), wallet: m.wallet!, record: shown ? record : "", blurred: !shown, chart: shown && geom ? { path: geom.path, width: geom.width, height: geom.height, zeroY: geom.zeroY } : null },
+    trader: { name: walletLabel(m.wallet!, rec.name ?? m.walletName), wallet: m.wallet!, face: walletFace(m.wallet!, rec.name ?? m.walletName, avatars), record: shown ? record : "", blurred: !shown, chart: shown && geom ? { path: geom.path, width: geom.width, height: geom.height, zeroY: geom.zeroY } : null },
     alert: (({ title, body }) => ({ title, body }))(alertMessage(m, null, "trader", appUrl, now)),
   };
 }

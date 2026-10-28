@@ -12,6 +12,9 @@ import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { openPositions } from "@/lib/moves/pages";
 import { walletLabel } from "@/lib/moves/records";
+import { walletFace } from "@/lib/moves/avatar";
+import { avatarsOrNone } from "@/lib/moves/avatar-store";
+import { Avatar } from "../Avatar";
 import { followList, listMoves } from "@/lib/moves/store";
 import { profitPath } from "@/lib/profiles/chart";
 import { marketsFor, recordOf } from "@/lib/profiles/store";
@@ -26,15 +29,17 @@ import Link from "next/link";
 export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db | null; wallet: string; viewer: Viewer; trial: string; now: number }) {
   const paid = isPaid(viewer.plan);
   const plan = movePlan(viewer.plan);
-  const [moves, rec, follows, positions, markets] = await Promise.all([
+  const [moves, rec, follows, positions, markets, avatars] = await Promise.all([
     db ? listMoves(db, { wallet, until: now - plan.delayMs, limit: 20 }).catch(() => []) : Promise.resolve([]),
     db ? recordOf(db, wallet).catch(() => null) : Promise.resolve(null),
     db && viewer.user ? followList(db, viewer.user.id) : Promise.resolve([]),
     openPositions(wallet),
     // Members only: a free viewer's page never holds the numbers.
     db && paid ? marketsFor(db, wallet).catch(() => []) : Promise.resolve([]),
+    avatarsOrNone(db, [wallet]),
   ]);
-  const name = walletLabel(wallet, rec?.name ?? moves.find(m => m.walletName)?.walletName ?? null);
+  const rawName = rec?.name ?? moves.find(m => m.walletName)?.walletName ?? null;
+  const name = walletLabel(wallet, rawName);
   const items = db ? await feedItems(db, moves, viewer.plan, viewer.region, now) : [];
   const following = follows.some(f => f.kind === "trader" && f.target === wallet);
   const s = paid ? traderStats(markets, now) : null;
@@ -47,10 +52,13 @@ export async function TraderProfile({ db, wallet, viewer, trial, now }: { db: Db
     <>
       <header className="trader__head">
         <Photo n={BAND.profile[best]} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">Polymarket wallet</p>
-          <h1 className="trader__name">{name}</h1>
-          <SourceA link={profileSource({ kind: "trader", wallet })} className="source source--dark" />
+        <div className="trader__id">
+          <Avatar face={walletFace(wallet, rawName, avatars)} size="profile" eager />
+          <div>
+            <p className="trader__kicker">Polymarket wallet</p>
+            <h1 className="trader__name">{name}</h1>
+            <SourceA link={profileSource({ kind: "trader", wallet })} className="source source--dark" />
+          </div>
         </div>
         <FollowButton kind="trader" target={wallet} state={followState(viewer, following)} trialHref={trial} />
       </header>

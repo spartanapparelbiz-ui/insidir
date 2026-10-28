@@ -12,6 +12,7 @@
  *   Below, the ticker strip: real moves scrolling on solid black, paused on hover.
  *   A dark scrim sits behind the words only; the card and the ticker are solid (photos never sit behind numbers).
  * Tracked (components/app/beacon.ts): the button, ticker taps. */
+import { Avatar } from "@/components/v2/Avatar";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
@@ -66,7 +67,7 @@ function MoveCard({ m, late }: { m: FeedItem; late: boolean }) {
   return (
     <article className="hcard" data-demo={typed === null ? "pending" : "run"}>
       <div className="hcard__top">
-        <span className="hcard__tag">{tagText(m)}</span>
+        <span className="hcard__who"><Avatar face={m.face} /><span className="hcard__tag">{tagText(m)}</span></span>
         <TimeAgo className="hcard__ago" at={m.at} initial={m.ago} suffix={late ? " · 30 min late" : ""} />
       </div>
       <p className="hcard__amt" data-count={m.amount} data-fmt="dollars">{dollars(m.amount)}</p>
