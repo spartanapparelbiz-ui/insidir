@@ -386,6 +386,12 @@ export const moves = terminal.table("moves", {
    *  until a later check passes. */
   hiddenAt: timestamp("hidden_at", { withTimezone: true }),
   hiddenReason: text("hidden_reason"),
+  /** Polymarket only, once settled (lib/moves/realize.ts): what the bet really made from the wallet's own trades
+   *  (sales before the result + payout on what was still held − cost), and the share sold before the result. Null
+   *  until checked; Kalshi trades are anonymous and never get one. */
+  pnl: doublePrecision("pnl"),
+  soldShare: doublePrecision("sold_share"),
+  realizedAt: timestamp("realized_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),

@@ -13,7 +13,8 @@ import { unlockHref } from "@/components/app/links";
 import { getViewer } from "@/lib/auth/viewer";
 import { memo } from "@/lib/memo";
 import { trustFacts } from "@/lib/trust";
-import { RecordLines } from "@/components/TrustBlock";
+import { RecordCount, RecordLines } from "@/components/TrustBlock";
+import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
 import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { isPaid } from "@/lib/plans";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -69,9 +70,9 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <p className="results__label">Real past moves. Not a promise.</p>
         {total ? (
           <section className="results__total" aria-label="Every settled move" data-testid="results-total">
-            <p className="trust__big num"><span className="money">{total.won.toLocaleString("en-US")} won</span>, <span className="loss">{total.lost.toLocaleString("en-US")} lost</span>{total.refunded ? <span className="trust__ref">, {total.refunded.toLocaleString("en-US")} refunded</span> : null}</p>
-            <RecordLines r={total} />
-            <p className="trust__fine">Every settled move we&apos;ve shown, all tabs and sizes. The list below is filtered.</p>
+            <RecordCount r={total} />
+            <RecordLines r={total} net />
+            <p className="trust__fine">Polymarket wallets, every settled bet of every size. Kalshi trades are anonymous, so we can&apos;t tell a new bet from someone closing one: they&apos;re listed below but not counted.</p>
           </section>
         ) : null}
         <div className="chips" aria-label="Filters">
@@ -86,7 +87,9 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
             <ol className="rlist">
               {shown.map(r => (
                 <li key={r.id} className="rlist__row">
-                  <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
+                  {(r.soldShare ?? 0) > SOLD_EARLY_SHARE && r.result !== "void"
+                    ? <span className="rlist__res rlist__res--sold">Sold early</span>
+                    : <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>}
                   <span className="rlist__what">
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {member ? <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link> : r.marketTitle}
                     <span className="rlist__who">{r.source === "kalshi" ? "Someone on Kalshi" : member && isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>

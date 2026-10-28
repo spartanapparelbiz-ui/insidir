@@ -679,6 +679,18 @@ export class PolymarketClient implements VenueClient {
     return this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: true })}`, { priority });
   }
 
+  /** Every trade a wallet made in one market, as maker or taker (for what a settled bet really made). Up to 4 pages. */
+  async getWalletMarketTradesAll(user: string, market: string, priority: Priority = "normal"): Promise<unknown[]> {
+    const out: unknown[] = [];
+    for (let page = 0; page < 4; page++) {
+      const rows = await this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, offset: page * DATA_PAGE_LIMIT, takerOnly: false })}`, { priority });
+      if (!Array.isArray(rows)) break;
+      out.push(...rows);
+      if (rows.length < DATA_PAGE_LIMIT) break;
+    }
+    return out;
+  }
+
   /** One page of a wallet's closed (resolved) positions, with realized profit (GET /closed-positions). */
   async getClosedPositionsPage(user: string, opts: { limit?: number; offset?: number; market?: string; priority?: Priority } = {}): Promise<unknown> {
     const params = { user, market: opts.market, limit: opts.limit ?? 50, offset: opts.offset ?? 0, sortBy: "REALIZEDPNL", sortDirection: "DESC" };

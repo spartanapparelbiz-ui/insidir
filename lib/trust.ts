@@ -4,12 +4,16 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
+import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
 
-/** The settled record: every settled move we've shown (the same rows as /results), with the money behind it.
- *  oddsPct: the average price paid, weighted by amount, over won and lost moves (what the market said their chance
- *  was, in %). net: what those bets made together: a win pays amount / avgPrice − amount, a loss is −amount, a
- *  refund 0. */
-export interface SettledRecord { won: number; lost: number; refunded: number; oddsPct: number | null; net: number }
+/** The settled record, from Polymarket wallets only (Kalshi trades are anonymous: a trade can't be told apart from
+ *  someone closing a position, so Kalshi isn't in it). Every settled move checked against the wallet's own trades
+ *  (lib/moves/realize.ts):
+ *    won / lost   bets still held at the result (at most half sold before it), by the market's result
+ *    soldEarly    bets mostly sold before the result: not won or lost, but their money is in the net
+ *    oddsPct      the average price paid on won and lost bets, weighted by amount (the market's chance, in %)
+ *    net          what all those bets really made: sales before the result + payout on what was held − cost */
+export interface SettledRecord { won: number; lost: number; refunded: number; soldEarly: number; oddsPct: number | null; net: number }
 
 export interface TrustFacts {
   settled: SettledRecord | null;
@@ -17,31 +21,35 @@ export interface TrustFacts {
 }
 
 /** Pure: the record from rows (used by tests to check the SQL). */
-export function recordOf(rows: ReadonlyArray<{ result: string | null; amount: number; avgPrice: number }>): SettledRecord {
-  let won = 0, lost = 0, refunded = 0, w = 0, wp = 0, net = 0;
+export function recordOf(rows: ReadonlyArray<{ source?: string; result: string | null; amount: number; avgPrice: number; pnl?: number | null; soldShare?: number | null }>): SettledRecord {
+  let won = 0, lost = 0, refunded = 0, soldEarly = 0, w = 0, wp = 0, net = 0;
   for (const r of rows) {
-    if (r.result === "won") { won++; if (r.avgPrice > 0 && r.avgPrice < 1) net += r.amount / r.avgPrice - r.amount; }
-    else if (r.result === "lost") { lost++; net -= r.amount; }
-    else if (r.result === "void") refunded++;
-    else continue;
-    if ((r.result === "won" || r.result === "lost") && r.avgPrice > 0 && r.avgPrice < 1) { w += r.amount; wp += r.amount * r.avgPrice; }
+    if ((r.source ?? "polymarket") !== "polymarket" || r.result === null || r.pnl == null) continue;
+    net += r.pnl;
+    if (r.result === "void") { refunded++; continue; }
+    if ((r.soldShare ?? 0) > SOLD_EARLY_SHARE) { soldEarly++; continue; }
+    if (r.result === "won") won++; else if (r.result === "lost") lost++; else continue;
+    if (r.avgPrice > 0 && r.avgPrice < 1) { w += r.amount; wp += r.amount * r.avgPrice; }
   }
-  return { won, lost, refunded, oddsPct: w > 0 ? (wp / w) * 100 : null, net };
+  return { won, lost, refunded, soldEarly, oddsPct: w > 0 ? (wp / w) * 100 : null, net };
 }
 
-const RECORD_SQL = (tabs: string[]) => sql`select count(*) filter (where result = 'won')::int as won, count(*) filter (where result = 'lost')::int as lost,
-    count(*) filter (where result = 'void')::int as refunded,
-    sum(amount * avg_price) filter (where result in ('won', 'lost') and avg_price > 0 and avg_price < 1)::float as wp,
-    sum(amount) filter (where result in ('won', 'lost') and avg_price > 0 and avg_price < 1)::float as w,
-    coalesce(sum(case when result = 'won' and avg_price > 0 and avg_price < 1 then amount / avg_price - amount when result = 'lost' then -amount else 0 end), 0)::float as net
-  from terminal.moves where result is not null and hidden_at is null and tab in (${sql.join(tabs.map(t => sql`${t}`), sql`, `)})`;
+const RECORD_SQL = (tabs: string[]) => sql`with m as (
+    select result, amount, avg_price, pnl, coalesce(sold_share, 0) > ${SOLD_EARLY_SHARE} as early from terminal.moves
+    where source = 'polymarket' and result is not null and pnl is not null and hidden_at is null and tab in (${sql.join(tabs.map(t => sql`${t}`), sql`, `)}))
+  select count(*) filter (where result = 'won' and not early)::int as won, count(*) filter (where result = 'lost' and not early)::int as lost,
+    count(*) filter (where result = 'void')::int as refunded, count(*) filter (where result <> 'void' and early)::int as sold_early,
+    sum(amount * avg_price) filter (where result in ('won', 'lost') and not early and avg_price > 0 and avg_price < 1)::float as wp,
+    sum(amount) filter (where result in ('won', 'lost') and not early and avg_price > 0 and avg_price < 1)::float as w,
+    coalesce(sum(pnl), 0)::float as net
+  from m`;
 
 /** The settled record, from the database: one query, used by the home trust block, pricing and the top of /results,
  *  so the numbers always match. */
 export async function settledRecord(db: Db): Promise<SettledRecord | null> {
-  const r = (await db.execute(RECORD_SQL(liveTabs()))).rows[0] as { won: number; lost: number; refunded: number; wp: number | null; w: number | null; net: number } | undefined;
-  if (!r || Number(r.won) + Number(r.lost) + Number(r.refunded) === 0) return null;
-  return { won: Number(r.won), lost: Number(r.lost), refunded: Number(r.refunded), oddsPct: r.w ? (Number(r.wp) / Number(r.w)) * 100 : null, net: Number(r.net) };
+  const r = (await db.execute(RECORD_SQL(liveTabs()))).rows[0] as { won: number; lost: number; refunded: number; sold_early: number; wp: number | null; w: number | null; net: number } | undefined;
+  if (!r || Number(r.won) + Number(r.lost) + Number(r.refunded) + Number(r.sold_early) === 0) return null;
+  return { won: Number(r.won), lost: Number(r.lost), refunded: Number(r.refunded), soldEarly: Number(r.sold_early), oddsPct: r.w ? (Number(r.wp) / Number(r.w)) * 100 : null, net: Number(r.net) };
 }
 
 export async function trustFacts(db: Db): Promise<TrustFacts> {

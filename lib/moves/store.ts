@@ -4,6 +4,7 @@ import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { follows, markets, moves, traderRecords, waitlist } from "@/lib/db/schema";
 import type { League, Move, Tab, TraderRecord } from "./types";
+import type { Realized } from "./realize";
 
 type Row = typeof moves.$inferSelect;
 
@@ -13,6 +14,7 @@ export const fromRow = (r: Row): Move => ({
   at: r.at.getTime(), lastAt: r.lastAt.getTime(), fills: r.fills, tab: r.tab, league: (r.league as League | null) ?? null,
   category: r.category, url: r.url, result: r.result ?? null, settledAt: r.settledAt?.getTime() ?? null,
   detail: (r.detail as Move["detail"]) ?? null, newWallet: r.newWallet ?? null, sourceRefs: r.sourceRefs ?? null,
+  pnl: r.pnl ?? null, soldShare: r.soldShare ?? null,
 });
 
 /** Inserts new moves; a move seen again (more fills merged in) gets its new total. Returns the ids that are new. */
@@ -46,6 +48,25 @@ export async function settleMarket(db: Db, source: "polymarket" | "kalshi", mark
   const w = and(eq(moves.source, source), eq(moves.marketId, marketId), isNull(moves.result));
   if (result === "void") { await db.update(moves).set({ result: "void", settledAt: at }).where(w); return; }
   await db.update(moves).set({ result: sql`case when ${moves.outcomeSide} = ${result} then 'won' else 'lost' end`, settledAt: at }).where(w);
+}
+
+/** Settled Polymarket moves not yet checked against the wallet's own trades (biggest first). */
+export async function movesToRealize(db: Db, limit: number): Promise<Move[]> {
+  const rs = await db.select().from(moves).where(and(eq(moves.source, "polymarket"), isNotNull(moves.result), isNull(moves.realizedAt), isNotNull(moves.wallet)))
+    .orderBy(desc(moves.amount)).limit(limit);
+  return rs.map(fromRow);
+}
+
+/** Stores what a settled Polymarket move really made (lib/moves/realize.ts). A move that turns out not to be a buy
+ *  (a sell or a position being closed) is hidden everywhere and left out of the record. */
+export async function saveRealized(db: Db, id: string, r: Realized, now: Date): Promise<void> {
+  if (r.ok) {
+    await db.update(moves).set({ pnl: r.pnl, soldShare: r.soldShare, amount: Math.round(r.amount * 100) / 100, avgPrice: r.avgPrice, realizedAt: now }).where(eq(moves.id, id));
+  } else if (r.reason === "not_a_buy") {
+    await db.update(moves).set({ realizedAt: now, hiddenAt: now, hiddenReason: "Not a new bet: the wallet was selling or closing a position" }).where(eq(moves.id, id));
+  } else {
+    await db.update(moves).set({ realizedAt: now }).where(eq(moves.id, id));
+  }
 }
 
 /** Polymarket wallets seen moving in the last week whose record is missing or older than `staleMs`. */
