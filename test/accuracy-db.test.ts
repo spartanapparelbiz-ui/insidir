@@ -65,7 +65,7 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
   });
   /** The Data API's trades for a wallet in a market: one $50,000 buy of Chiefs at 50¢ in each market. */
   const poly = (fail = false) => ({
-    getWalletMarketTrades: async (_user: string, market: string) => {
+    getWalletMarketTradesAll: async (_user: string, market: string) => {
       if (fail) throw new Error("ECONNRESET");
       return [{ proxyWallet: W, side: "BUY", size: 100_000, price: 0.5, timestamp: (NOW - 3_600_000) / 1000, conditionId: market, outcomeIndex: 0, outcome: "Chiefs", transactionHash: TX, title: "Chiefs vs Bills" }];
     },
