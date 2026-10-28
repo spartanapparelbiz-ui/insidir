@@ -8,6 +8,7 @@
  *   WHOP_PLAN_INSIDIR       plan_… the embedded checkout sells (Insidir, $39/month)
  *   WHOP_PRODUCT_INSIDIR    prod_… (optional; any membership on this product also counts)
  *   WHOP_WEBHOOK_SECRET     ws_… signing secret of the webhook pointed at /api/billing/webhook */
+import { whopRuntime } from "./config";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Plan } from "@/lib/types";
 
@@ -146,7 +147,9 @@ export async function cancelMembership(membershipId: string): Promise<void> {
 }
 
 /** The Whop plan the embedded checkout sells, if configured. */
-export const checkoutPlanId = (): string | null => env("WHOP_PLAN_INSIDIR") || null;
+/** The plan the checkout sells: WHOP_PLAN_INSIDIR, else the one `npm run whop:setup` checked is exactly 7 days for $1,
+ *  then $39/month (lib/billing/setup.ts). Null keeps checkout closed. */
+export const checkoutPlanId = async (): Promise<string | null> => (await whopRuntime()).planId;
 
 /* ---------- webhooks (Standard Webhooks) ---------- */
 

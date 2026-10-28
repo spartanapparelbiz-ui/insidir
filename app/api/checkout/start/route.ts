@@ -19,7 +19,7 @@ import { PENDING_COOKIE, PENDING_MAX_AGE_S } from "@/lib/billing/pending";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const planId = checkoutPlanId();
+  const planId = await checkoutPlanId();
   if (!planId || !hasDatabase()) return NextResponse.json({ error: "not_configured", message: "Checkout isn't open yet. Check back soon." }, { status: 503 });
   const db = getDb();
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);

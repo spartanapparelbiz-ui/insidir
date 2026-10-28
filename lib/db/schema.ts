@@ -530,3 +530,12 @@ export const fundHoldings = terminal.table("fund_holdings", {
   shares: doublePrecision("shares").notNull(),
   value: doublePrecision("value").notNull(),
 }, t => [primaryKey({ columns: [t.fundCik, t.accession, t.cusip] })]);
+
+/** What `npm run whop:setup` found or made in Whop (lib/billing/setup.ts), read by the site at runtime
+ *  (lib/billing/config.ts): plan_id (only when the plan is exactly what the site says), plan_status, webhook_id,
+ *  webhook_secret (encrypted with a key derived from WHOP_API_KEY), app_id. */
+export const whopConfig = terminal.table("whop_config", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
