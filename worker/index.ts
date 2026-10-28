@@ -21,7 +21,7 @@ import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, typ
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
-import { dedupeOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
+import { dedupeOnce, leagueBackfillOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
 import { SecClient } from "@/lib/stocks/sec";
@@ -160,6 +160,8 @@ async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: S
   const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), hidden: run.hidden.length, restored: run.restored.length };
   await heartbeat(db, "accuracy", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
   log(`accuracy: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped; ${stats.hidden} moves hidden, ${stats.restored} restored`);
+  // Each mismatch on its own line (public data only: what was checked and how it differs), so it can be read from the logs.
+  for (const l of run.lines.filter(x => x.status === "mismatch")) log(`accuracy mismatch: ${l.kind}/${l.what} ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
 }
 
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
@@ -204,6 +206,10 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves:reclassify", 60 * 60_000, async () => {
         const n = await reclassifyOnce(getDb(), clients.polymarket as PolymarketClient);
         if (n) log(`moves: ${n} Polymarket markets moved to Sports`);
+      }),
+      every("moves:leagues", 10 * 60_000, async () => {
+        const n = await leagueBackfillOnce(getDb());
+        if (n) log(`moves: ${n} sports moves got their league`);
       }),
       every("moves:dedupe", 10 * 60_000, async () => {
         const n = await dedupeOnce(getDb(), clients.polymarket as PolymarketClient);

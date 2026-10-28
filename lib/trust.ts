@@ -5,7 +5,8 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
-import { notComboSql } from "@/lib/moves/combos";
+import { isCombo, notComboSql } from "@/lib/moves/combos";
+import type { Move } from "@/lib/moves/types";
 
 /** The settled record, from Polymarket wallets only (Kalshi trades are anonymous: a trade can't be told apart from
  *  someone closing a position, so Kalshi isn't in it). Every settled move checked against the wallet's own trades
@@ -44,6 +45,15 @@ const RECORD_SQL = (tabs: string[]) => sql`with m as (
     sum(amount) filter (where result in ('won', 'lost') and not early and avg_price > 0 and avg_price < 1)::float as w,
     coalesce(sum(pnl), 0)::float as net
   from m`;
+
+/** A settled move that counts toward the record: the same rule as RECORD_SQL, won or lost (Polymarket only, its
+ *  real result worked out, not sold before the result, not a combo, in a live tab). Kalshi trades are anonymous,
+ *  so they're never in it. */
+export function countsToRecord(m: Pick<Move, "source" | "result" | "pnl" | "soldShare" | "tab" | "marketId" | "marketTitle" | "outcome" | "eventTitle">,
+  tabs: readonly string[] = liveTabs()): boolean {
+  return m.source === "polymarket" && (m.result === "won" || m.result === "lost") && m.pnl !== null && m.pnl !== undefined
+    && (m.soldShare ?? 0) <= SOLD_EARLY_SHARE && tabs.includes(m.tab) && !isCombo(m);
+}
 
 /** The settled record, from the database: one query, used by the home trust block, pricing and the top of /results,
  *  so the numbers always match. */

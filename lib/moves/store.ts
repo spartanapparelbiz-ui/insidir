@@ -175,6 +175,8 @@ export interface MoveQuery {
   byAmount?: boolean;
   /** Any of these leagues / venue categories (a member's picks). */
   leagues?: League[]; categories?: string[];
+  /** Only this venue (the home Results preview: Polymarket, the bets in the record). */
+  source?: Move["source"];
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
@@ -195,6 +197,7 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     q.since !== undefined ? gte(moves.at, new Date(q.since)) : undefined,
     q.before !== undefined ? lt(moves.at, new Date(q.before)) : undefined,
     q.settled ? isNotNull(moves.result) : undefined,
+    q.source ? eq(moves.source, q.source) : undefined,
   ].filter(Boolean);
   const rs = await db.select().from(moves).where(w.length ? and(...w) : undefined)
     // Stocks: insiders' Form 4 buys (days old) before funds' 13F adds (up to months old), each newest first.
