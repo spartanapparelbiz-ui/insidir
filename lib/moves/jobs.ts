@@ -15,10 +15,10 @@ import { recordFrom } from "./records";
 import { readLeaderboard } from "./sources";
 import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
 import { readWalletFills, realizeMove } from "./realize";
-import { MERGE_WINDOW_MS } from "./detect";
+import { fromParts, MERGE_WINDOW_MS, sortParts } from "./detect";
 import { readPolymarketFills } from "./sources";
 import { moves } from "@/lib/db/schema";
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { classify, sportsLeagueOf } from "./classify";
 import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
@@ -126,11 +126,28 @@ export async function dedupeOnce(db: Db, poly: PolymarketClient, perRun = 20): P
       parts = readPolymarketFills(await poly.getWalletMarketTradesAll(g.wallet, g.marketId))
         .filter(f => f.wallet === g.wallet && f.marketId === g.marketId && f.side === "BUY" && (f.outcomeSide === "no" ? 1 : 0) === idx && f.at >= from && f.at <= to)
         .map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at }));
+      parts = sortParts(parts);
     } catch { parts = null; }
     await collapsePosition(db, g.ids, parts);
     n++;
   }
   return n;
+}
+
+/** Moves merged before their fills were put in time order (the dedupe of 2026-10-28 kept the Data API's newest-first
+ *  order): their start and end came out swapped, so the record job counted only the last buy and the accuracy
+ *  check found no fills between them. Each is rebuilt from its own fills in order, its record worked out again
+ *  (realized_at cleared), and it's shown again if that bug is what hid it. Nothing to do once all are fixed. */
+export async function repairSwappedOnce(db: Db, perRun = 200): Promise<number> {
+  const rows = (await db.execute(sql`select id, parts, hidden_reason from terminal.moves where parts is not null and jsonb_array_length(parts) > 1 and last_at < at limit ${perRun}`)).rows as Array<{ id: string; parts: FillPart[]; hidden_reason: string | null }>;
+  for (const r of rows) {
+    const parts = sortParts(r.parts), f = fromParts(parts);
+    const unhide = r.hidden_reason === "no matching fills at the source" || (r.hidden_reason ?? "").startsWith("Not a new bet") || (r.hidden_reason ?? "").startsWith("amount ");
+    await db.update(moves).set({ amount: f.amount, avgPrice: f.avgPrice, at: new Date(f.at), lastAt: new Date(f.lastAt), fills: f.fills,
+      sourceRefs: sql`${JSON.stringify(f.sourceRefs ?? [])}::jsonb`, parts: sql`${JSON.stringify(parts)}::jsonb`, realizedAt: null, pnl: null, soldShare: null,
+      ...(unhide ? { hiddenAt: null, hiddenReason: null } : {}) }).where(eq(moves.id, r.id));
+  }
+  return rows.length;
 }
 
 /** Settled Polymarket moves → what each really made, from the wallet's own trades in that market (sells before the

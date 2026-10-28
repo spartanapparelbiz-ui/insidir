@@ -11,6 +11,8 @@ import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { txHashes } from "@/lib/moves/detect";
+import { repairSwappedOnce } from "@/lib/moves/jobs";
+import { sql } from "drizzle-orm";
 import { moveSource, profileSource } from "@/lib/moves/source";
 import { listMoves, moveById, upsertMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
@@ -117,6 +119,27 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
     expect(row("pm:sell")).toMatchObject({ amount: 80_000 });
     expect(row("pm:sell").hidden_at).not.toBeNull();
     expect((await listMoves(db, {})).map(m => m.id).sort()).toEqual(["pm:hid", "pm:short"]);
+  });
+
+  it("a position merged out of time order (start and end swapped) is rebuilt in order, shown again, and then matches", async () => {
+    const t0 = NOW - 3_600_000;
+    const two = async (_u: string, market: string) => [
+      { proxyWallet: W, side: "BUY", size: 30_000, price: 0.5, timestamp: (t0 + 20 * 60_000) / 1000, conditionId: market, outcomeIndex: 0, outcome: "Chiefs", transactionHash: TX, title: "Chiefs vs Bills" },
+      { proxyWallet: W, side: "BUY", size: 100_000, price: 0.5, timestamp: t0 / 1000, conditionId: market, outcomeIndex: 0, outcome: "Chiefs", transactionHash: TX, title: "Chiefs vs Bills" },
+    ];
+    // What the dedupe stored: the Data API's newest-first order kept, so at = the last buy and last_at = the first.
+    const parts = [{ id: `${TX}:b`, c: 30_000, p: 0.5, at: t0 + 20 * 60_000 }, { id: `${TX}:a`, c: 100_000, p: 0.5, at: t0 }];
+    await upsertMoves(db, [{ ...move("pm:swapped", "C9", 15_000), at: t0 + 20 * 60_000, lastAt: t0 }]);
+    await db.execute(sql`update terminal.moves set parts = ${JSON.stringify(parts)}::jsonb, realized_at = now(), pnl = 1, hidden_at = now(), hidden_reason = 'no matching fills at the source' where id = 'pm:swapped'`);
+    const s = { poly: { getWalletMarketTradesAll: two } as unknown as PolymarketClient, kalshi: {} as KalshiClient, sec: null };
+    expect(await repairSwappedOnce(db)).toBe(1);
+    expect(await repairSwappedOnce(db)).toBe(0);
+    const r = (await db.execute(`select amount, at, last_at, hidden_at, realized_at, pnl from terminal.moves where id = 'pm:swapped'`)).rows[0] as Record<string, unknown>;
+    expect(r).toMatchObject({ amount: 65_000, hidden_at: null, realized_at: null, pnl: null });
+    expect(new Date(r.at as string).getTime()).toBe(t0);
+    expect(new Date(r.last_at as string).getTime()).toBe(t0 + 20 * 60_000);
+    const run = await runAccuracyCheck(db, s, { moves: 10, profiles: 0, now: NOW + 1 });
+    expect(run.lines.map(l => [l.target, l.status, l.problems])).toEqual([["pm:swapped", "ok", []]]);
   });
 
   it("checks a Kalshi trade by id, without needing the market stored, and restores it if it was hidden", async () => {

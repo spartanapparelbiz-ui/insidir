@@ -21,7 +21,7 @@ import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, typ
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
-import { dedupeOnce, leagueBackfillOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
+import { dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
 import { SecClient } from "@/lib/stocks/sec";
@@ -155,6 +155,8 @@ async function settleOnce(clients: Record<Venue, VenueClient>): Promise<void> {
 /** The hourly accuracy check and its heartbeat (read on /admin). */
 async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: SecClient | null): Promise<void> {
   const db = getDb();
+  // Moves merged out of time order are put right first, so the check reads them as they really are.
+  while (await repairSwappedOnce(db) > 0) { /* a page at a time */ }
   const run = await runAccuracyCheck(db, { poly, kalshi, sec });
   const count = (s: string) => run.lines.filter(l => l.status === s).length;
   const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), hidden: run.hidden.length, restored: run.restored.length };
@@ -212,6 +214,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         if (n) log(`moves: ${n} sports moves got their league`);
       }),
       every("moves:dedupe", 10 * 60_000, async () => {
+        const fixed = await repairSwappedOnce(getDb());
+        if (fixed) log(`moves: ${fixed} merged positions rebuilt in time order`);
         const n = await dedupeOnce(getDb(), clients.polymarket as PolymarketClient);
         if (n) log(`moves: ${n} duplicate positions merged`);
       }),
