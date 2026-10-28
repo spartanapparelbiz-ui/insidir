@@ -18,10 +18,11 @@ import { PENDING_COOKIE, readPending } from "@/lib/billing/pending";
 import { ELEMENTS_URL } from "@/lib/billing/whop";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, type FeedItem } from "@/lib/moves/feed";
-import { PLANS, isPaid } from "@/lib/plans";
+import { PLANS, TRIAL, isPaid } from "@/lib/plans";
+import { CANCEL_LINE } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Get Insidir", description: `Insidir is $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
+export const metadata: Metadata = { title: "Get Insidir", description: `Try Insidir 7 days for $${TRIAL.fee}, then $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
 
 const DAY = 86_400_000;
 
@@ -44,8 +45,9 @@ export default async function StartPage() {
         <div className="wrap start__in">
           <section className="start__what" aria-labelledby="start-h">
             <p className="start__kicker">Insidir</p>
-            <h1 id="start-h" className="start__h">{pending ? "Finish getting Insidir." : "Get Insidir."}</h1>
-            <p className="start__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month</span></p>
+            <h1 id="start-h" className="start__h">{pending ? "Finish getting Insidir." : "Try Insidir 7 days for $1."}</h1>
+            <p className="start__price"><span className="plan2__amt">${TRIAL.fee}</span> <span className="plan2__unit">for {TRIAL.days} days</span></p>
+            <p className="start__then">{CANCEL_LINE}</p>
             <StartList />
             <p className="start__fine">Already a member? <Link href="/login">Log in</Link>.</p>
           </section>

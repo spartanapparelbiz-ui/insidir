@@ -1,6 +1,6 @@
-/* The top of every page (docs/INSIDIR-V2.md §6): a thin grey offer bar ("Get Insidir · $39/mo. Cancel anytime."), then the nav: a black bar with the white logo,
+/* The top of every page (docs/INSIDIR-V2.md §6): a thin grey offer bar ("Try 7 days for $1, then $39/mo, cancel anytime."), then the nav: a black bar with the white logo,
  * or white with a hairline on the plain white pages (tone="light": legal, about). Visitors: logo, Sports, Markets,
- * Stocks, How it works, Pricing, FAQ (each its own page), Log in, and "Get Insidir · $39/mo". Members: logo, Feed, Following, Results, Account. On phones: logo, the
+ * Stocks, How it works, Pricing, FAQ (each its own page), Log in, and "Try 7 days for $1". Members: logo, Feed, Following, Results, Account. On phones: logo, the
  * button and a menu; on the app pages (feed, top, profiles, markets, results, following, account), members and
  * visitors get a bottom tab bar within thumb reach: Feed, Top, Following, Account.
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
@@ -19,7 +19,7 @@ const APP_SECTIONS = new Set(["/feed", "/top", "/following", "/results", "/accou
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
-  /** The offer bar and "Get Insidir · $39/mo" button (off on home, where the one action is "See the live feed"). */
+  /** The offer bar and "Try 7 days for $1" button (off on home, where the one action is "See the live feed"). */
   offer?: boolean;
   /** Just the logo on white (sign-in): nothing to distract from the one thing on the page. */
   minimal?: boolean;

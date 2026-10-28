@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { beacon } from "@/components/app/beacon";
+import { chargeLine } from "@/lib/copy";
 
 interface Elements { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } }
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => Elements } }
@@ -89,17 +90,21 @@ export function StartCheckout({ elementsUrl, signedInEmail, pendingEmail = null 
           {error ? <p className="login__err" role="alert">{error.message}{error.exists ? <> <Link href="/login?next=%2Fstart">Log in</Link></> : null}</p> : null}
           {state === "ready" || state === "opening" ? null
             : <button className="btn btn--primary btn--big btn--block" type="submit" disabled={!email.includes("@") || !password}>Continue to payment</button>}
+          <p className="start__charge" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
           <p className="start__trust">Cancel anytime in 2 clicks. Secure payment by Whop.</p>
         </form>
       )}
       <section className="start__pay" aria-label="Payment">
-        <p className="start__step"><span className="start__n">{signedInEmail ? 1 : 2}</span> Pay $39/month · Cancel anytime</p>
+        <p className="start__step"><span className="start__n">{signedInEmail ? 1 : 2}</span> Pay $1 today · then $39/mo, cancel anytime</p>
         {state === "form" ? <p className="start__note">The secure payment form opens here once you&apos;ve chosen a password.</p> : null}
         {state === "opening" ? <p className="start__note" role="status">Opening secure checkout…</p> : null}
         {state === "error" ? <p className="login__err" role="alert">{error?.message ?? "The checkout didn't load. Refresh the page; if it keeps happening, write to hello@aethric.llc."}</p> : null}
         {state === "unconfigured" ? <p className="login__err" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
         <div ref={box} className="start__frame" hidden={state !== "ready"} />
-        {state === "ready" ? <p className="start__trust">Cancel anytime in 2 clicks. Secure payment by Whop.</p> : null}
+        {state === "ready" ? <>
+          <p className="start__charge" suppressHydrationWarning>{chargeLine(Date.now())}</p>
+          <p className="start__trust">Cancel anytime in 2 clicks. Secure payment by Whop.</p>
+        </> : null}
       </section>
     </div>
   );

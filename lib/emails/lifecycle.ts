@@ -80,7 +80,7 @@ export function trialEndingEmail(caught: readonly Move[], fromFollows: boolean, 
     kind: "trial_ending", period: "once",
     subject: "Your trial ends tomorrow, here's what you caught",
     heading: "Your trial ends tomorrow.",
-    lines: [...lines, { text: `Your Insidir plan continues at $39/mo after tomorrow. Cancel anytime in one tap on your Account page.`, url: `${appUrl}/settings?from=trial` }],
+    lines: [...lines, { text: `Your $1 week ends tomorrow, then Insidir is $39/mo. Cancel anytime in one tap on your Account page.`, url: `${appUrl}/settings?from=trial` }],
     cta: { label: "See the live feed", url: `${appUrl}/feed?from=trial` },
   };
 }

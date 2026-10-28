@@ -94,8 +94,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <dl className="akv">
               <div><dt>Plan</dt><dd>{PLANS[viewer.plan].name}{paid ? <span className="akv__sub"> · ${PLANS[viewer.plan].price}/mo</span> : null}</dd></div>
               {paid ? (
-                <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : "Next charge"}</dt>
-                  <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.renewalPrice}</span> : null}</>
+                <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? "Your $1 week ends" : "Next charge"}</dt>
+                  <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
                     : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it from Whop just now. Manage billing shows it.</span> : <span className="akv__sub">Shown on Whop</span>}</dd></div>
               ) : null}
             </dl>

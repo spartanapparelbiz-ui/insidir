@@ -1,4 +1,4 @@
-/* Pricing: one plan, Insidir, $39/month, cancel anytime. The header band, the plan card (everything that's live, then
+/* Pricing: one plan, Insidir: 7 days for $1, then $39/month, cancel anytime. The header band, the plan card (everything that's live, then
  * what's coming soon), three plain promises, where the data comes from, then billing questions. The button opens the
  * checkout embedded on /start; billing is Whop's. */
 import type { Metadata } from "next";
@@ -18,7 +18,7 @@ import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { PLANS, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month for everything: every big move live, trader records, follows and alerts. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Try Insidir 7 days for $1, then $${PLANS.insidir.price}/month for everything: every big move live, trader records, follows and alerts. Cancel anytime.` };
 
 export default async function PricingPage() {
   const viewer = await getViewer();
@@ -28,7 +28,7 @@ export default async function PricingPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={href} />
       <main className="dark mkt">
-        <PageBand n={BAND.pricing} title="One plan. $39 a month." kicker="Pricing">
+        <PageBand n={BAND.pricing} title="7 days for $1. Then $39 a month." kicker="Pricing">
           <p className="pband__sub">Everything Insidir does, live. {CANCEL_LINE}</p>
         </PageBand>
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={href} title={null} />

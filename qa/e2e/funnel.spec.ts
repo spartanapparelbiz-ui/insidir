@@ -4,7 +4,7 @@
  *   /admin marks them "Free access" and leaves them out of the numbers.
  *   /start: five live lines at most and one "More coming" line, a real move with its record locked, the payment
  *   line; an unpaid sign-up comes back to "Finish getting Insidir" (on /start and /login) with the email in.
- *   The sticky "Get Insidir · $39/mo" bar on phones; "Setting up your account…" and its 30-second fallback; the
+ *   The sticky "Try 7 days for $1" bar on phones; "Setting up your account…" and its 30-second fallback; the
  *   funnel's steps and drop-off on /admin/funnel. */
 import { expect, test, type Page } from "@playwright/test";
 import { base32Decode, stepAt, totpCode } from "@/lib/admin";
@@ -150,7 +150,7 @@ test("the sticky Get Insidir bar: phones only, every public page, never on /star
     const bar = page.getByTestId("sticky-cta");
     if (phone) {
       await expect(bar, path).toBeVisible();
-      await expect(bar.getByRole("link", { name: "Get Insidir · $39/mo" })).toHaveAttribute("href", "/start");
+      await expect(bar.getByRole("link", { name: "Try 7 days for $1" })).toHaveAttribute("href", "/start");
     } else await expect(bar, path).toBeHidden();
   }
   if (phone) await page.screenshot({ path: `qa/screenshots/sticky-cta-${page.viewportSize()!.width}.png` });

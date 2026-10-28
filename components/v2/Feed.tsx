@@ -153,7 +153,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           ) : null}
           {free ? (
             <aside className="upsell dash__upsell">
-              <p className="upsell__text">You&apos;re seeing moves 30 minutes late. See them live for $1.</p>
+              <p className="upsell__text">You&apos;re seeing moves 30 minutes late. Try 7 days for $1, then $39/mo.</p>
               <LockButton where="live-feed" className="btn btn--primary">See them live</LockButton>
             </aside>
           ) : null}
@@ -188,7 +188,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           {free ? (
             <div className="side side--offer">
               <p className="side__h">See every move live</p>
-              <p className="side__p">Plus trader records and follows. $1 for 3 days, cancel anytime.</p>
+              <p className="side__p">Plus trader records and follows. Try 7 days for $1, then $39/mo, cancel anytime.</p>
               <LockButton where="feed-side" className="btn btn--primary btn--block">{GET_CTA}</LockButton>
             </div>
           ) : null}

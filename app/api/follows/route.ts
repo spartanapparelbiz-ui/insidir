@@ -1,5 +1,6 @@
 /* POST /api/follows {kind: "trader"|"market", target}: follow; DELETE: unfollow. Members only (docs/INSIDIR-V2.md §8):
  * Insidir up to 50, Pro unlimited, free none. */
+import { MEMBERS_ONLY } from "@/lib/copy";
 import { NextResponse, type NextRequest } from "next/server";
 import { memberOrNull } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
@@ -18,7 +19,7 @@ async function parse(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const viewer = await memberOrNull();
-  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
+  if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
   if (!viewer.user) return NextResponse.json({ error: "Log in to follow traders." }, { status: 401 });
   if (!isReady("follows")) return NextResponse.json({ error: "Following is coming soon." }, { status: 409 });
   const f = await parse(req);
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   const db = getDb();
   const mine = await followList(db, viewer.user.id);
   if (!mine.some(x => x.kind === f.kind && x.target === f.target) && !canFollow(viewer.plan, mine.length)) {
-    return NextResponse.json({ error: viewer.plan === "free" ? "Following is for members. Try it for $1." : "You're following 50 already. Pro has no limit." }, { status: 403 });
+    return NextResponse.json({ error: viewer.plan === "free" ? "Following is for members. Try 7 days for $1." : "You're following 50 already. Pro has no limit." }, { status: 403 });
   }
   await follow(db, viewer.user.id, f.kind, f.target);
   // The funnel's "first follow" (lib/analytics.ts FUNNEL): the member's first trader or market.
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const viewer = await memberOrNull();
-  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
+  if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
   if (!viewer.user) return NextResponse.json({ error: "Log in first." }, { status: 401 });
   const f = await parse(req);
   if (!f) return NextResponse.json({ error: "Bad request." }, { status: 400 });

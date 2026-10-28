@@ -3,7 +3,7 @@
  * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
  * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
  * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
- * block), Pricing (one plan), FAQ, and "Get Insidir · $39/mo" at the end. Visitors see a public preview: real moves 30
+ * block), Pricing (one plan), FAQ, and "Try 7 days for $1" at the end. Visitors see a public preview: real moves 30
  * minutes late, records blurred.
  * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
  * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */

@@ -1,5 +1,5 @@
 /* Log in to Insidir (/login): email and password (components/auth/LoginForm.tsx). Members only; anyone else is
- * offered "Get Insidir · $39/mo". Already logged in: straight on to where they were going. */
+ * offered "Try 7 days for $1". Already logged in: straight on to where they were going. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";

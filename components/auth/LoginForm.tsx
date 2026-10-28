@@ -38,10 +38,10 @@ export function LoginForm({ next, initialEmail = "" }: { next: string; initialEm
             autoFocus={Boolean(initialEmail)} value={password} onChange={e => setPassword(e.target.value)} />
           <button type="button" className="login__show" onClick={() => setShow(s => !s)} aria-pressed={show}>{show ? "Hide" : "Show"}</button>
         </div>
-        {error ? <p className="login__err" role="alert">{error.noPlan ? <>No active plan for this email. <Link href="/start">Get Insidir · $39/mo</Link>.</> : error.message}</p> : null}
+        {error ? <p className="login__err" role="alert">{error.noPlan ? <>No active plan for this email. <Link href="/start">Try 7 days for $1</Link>.</> : error.message}</p> : null}
         <button className="btn btn--primary btn--big btn--block" type="submit" disabled={busy || !email.includes("@") || !password}>{busy ? "Logging in…" : "Log in"}</button>
       </form>
-      <p className="login__fine">New here? <Link href="/start">Get Insidir · $39/mo</Link>. By logging in you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy</Link>.</p>
+      <p className="login__fine">New here? <Link href="/start">Try 7 days for $1</Link>, then $39/mo. By logging in you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy</Link>.</p>
     </div>
   );
 }

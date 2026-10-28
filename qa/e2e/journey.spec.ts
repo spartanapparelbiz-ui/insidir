@@ -1,5 +1,5 @@
 /* The whole member journey, as one person: visitor → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
- *   A visitor lands, taps "Get Insidir · $39/mo", chooses an email and password and pays in the checkout embedded
+ *   A visitor lands, taps "Try 7 days for $1", chooses an email and password and pays in the checkout embedded
  *   on /start (the local mock),
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
@@ -46,14 +46,14 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
   }, { endpoint, p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") });
 
   try {
-    // A visitor: the landing page, then "Get Insidir · $39/mo" → the embedded checkout → pay → logged in, welcome.
+    // A visitor: the landing page, then "Try 7 days for $1" → the embedded checkout → pay → logged in, welcome.
     await page.goto("/");
     await page.locator('[data-cta="hero"]').click();
     await expect(page).toHaveURL(/\/start$/);
     await page.locator("#start-email").fill(EMAIL(w));
     await page.locator("#start-password").fill("journey-password");
     await page.getByRole("button", { name: "Continue to payment" }).click();
-    await page.getByRole("button", { name: "Pay $39 (test mode)" }).click();
+    await page.getByRole("button", { name: "Pay $1 (test mode)" }).click();
     await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
@@ -112,8 +112,9 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // Billing: the next charge, then cancel in one tap.
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
-    await expect(page.getByText("Next charge")).toBeVisible();
-    await expect(page.getByText("$39.00 / month")).toBeVisible();
+    // Access started with the $1: the account shows when the $39 starts.
+    await expect(page.getByText("Your $1 week ends")).toBeVisible();
+    await expect(page.getByText("then $39.00 / month unless you cancel")).toBeVisible();
     await page.getByRole("button", { name: "Cancel subscription" }).click();
     await expect(toast(page, "Subscription cancelled.")).toBeVisible();
     await expect(page.getByTestId("cancels-on")).toContainText("Cancels on");

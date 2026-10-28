@@ -1,6 +1,6 @@
 "use client";
 /* Every lock on the site opens the same sheet (the funnel: the public preview → hit a lock → Get Insidir): what you get
- * (the Insidir plan's ready features), "Get Insidir · $39/mo" and "Cancel anytime.", and one button to the
+ * (the Insidir plan's ready features), "Try 7 days for $1" and "Then $39/mo, cancel anytime.", and one button to the
  * checkout. Locks sit where curiosity peaks: a trader's record, Follow, live (vs. 30 minutes late), alerts.
  * Opening one is recorded as lock_view with where it was; the button carries data-unlock, so components/landing/
  * Beacons records unlock_click and checkout_start. */

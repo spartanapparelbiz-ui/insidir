@@ -52,10 +52,12 @@ describe("V2 landing page", () => {
     expect(hero).toContain("Public data. Not financial advice.");
     expect(src).toContain("See the live feed");
     expect(src).toContain("Real past moves. Not a promise.");
-    expect(read("lib/copy.ts")).toContain("Get Insidir · $39/mo");
-    expect(read("lib/copy.ts")).toContain("Cancel anytime.");
-    // One plan, no trial: no "$1" offer anywhere a visitor reads.
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "lib/copy.ts"]) expect(read(f), f).not.toMatch(/\$1 for|for \$1|Try it for|3 days|Pro\b/);
+    // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
+    expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
+    expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
+    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/home/ScrollOffer.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+      expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|3 days|Pro\b/);
+    }
   });
 
   it("says what Insidir is in one plain sentence: the first FAQ answer, the title and the meta description", async () => {

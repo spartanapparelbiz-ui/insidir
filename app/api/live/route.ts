@@ -1,3 +1,4 @@
+import { MEMBERS_ONLY } from "@/lib/copy";
 import { NextResponse } from "next/server";
 /* The live stream (Server-Sent Events). Each connection gets the events its viewer may see, when they may see them
  * (lib/live/view.ts: the free plan's 30-minute delay, the region, redaction), plus the scanner's real status every
@@ -15,7 +16,7 @@ const STATUS_EVERY_MS = 2_000;
 
 export async function GET(req: Request) {
   const viewer = await memberOrNull();
-  if (!viewer) return NextResponse.json({ error: "Members only. Get Insidir · $39/mo." }, { status: 401 });
+  if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
   const fv = feedViewer(viewer);
   const h = hub();
   await h.ready();

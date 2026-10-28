@@ -19,6 +19,7 @@ import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { isPaid } from "@/lib/plans";
 import { getDb, hasDatabase } from "@/lib/db";
 import { agoText, dollars } from "@/lib/moves/copy";
+import { GET_CTA } from "@/lib/copy";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
 import { listMoves, recordsFor } from "@/lib/moves/store";
 import type { Move, Tab } from "@/lib/moves/types";
@@ -110,7 +111,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
             <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
             <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
-            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "See the live feed" : "Get Insidir · $39/mo"}</Link>
+            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "See the live feed" : GET_CTA}</Link>
           </div>
         )}
       </main>

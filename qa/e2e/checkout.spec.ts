@@ -1,5 +1,5 @@
 /* The money path, end to end, with Whop stood in by a local mock (qa/e2e/mock-whop.ts):
- *   home → "Get Insidir · $39/mo" → /start: email + password on top, the embedded checkout below → pay → "You're in."
+ *   home → "Try 7 days for $1" → /start: email + password on top, the embedded checkout below → pay → "You're in."
  *   on the feed, logged in, the account made with that email and password; log out → the app is members only → log in
  *   with email and password (a wrong one is refused); "Forgot password?" → "Confirm it's you" → a new password, no
  *   email sent; a refund ends access. */
@@ -22,7 +22,11 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await expect(page.locator("h1")).toBeVisible();
   await page.locator('[data-cta="hero"]').click();
   await expect(page).toHaveURL(/\/start$/);
-  await expect(page.getByRole("heading", { name: "Get Insidir." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Try Insidir 7 days for $1." })).toBeVisible();
+  await expect(page.getByText("Then $39/mo, cancel anytime.").first()).toBeVisible();
+  // The charge date: 7 days from today.
+  const due = new Date(Date.now() + 7 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+  await expect(page.getByTestId("charge-line")).toHaveText(`$1 today. $39 on ${due} unless you cancel.`);
   await expect(page.getByText("Cancel anytime in 2 clicks. Secure payment by Whop.")).toBeVisible();
 
   // Sign-up on top: a short password is refused before anything is sent.
@@ -38,7 +42,7 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await expect(form.getByLabel("Email")).toHaveValue(email);
   await expect(form.getByLabel("Email")).not.toBeEditable();
   await page.screenshot({ path: `qa/screenshots/checkout-${w}.png`, fullPage: true });
-  await form.getByRole("button", { name: "Pay $39 (test mode)" }).click();
+  await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
 
   // Logged in the moment the payment lands, straight into onboarding; skipping it opens the feed.
   await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
