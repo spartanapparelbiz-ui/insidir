@@ -73,7 +73,7 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
   const src = (fail = false): Sources => ({ poly: poly(fail), kalshi: {} as KalshiClient, sec: null });
 
   it("hides a move that doesn't match, keeps one that does, stores every line, and shows it again once it matches", async () => {
-    await upsertMoves(db, [move("pm:good", "C1", 50_000), move("pm:bad", "C2", 80_000)]);
+    await upsertMoves(db, [move("pm:good", "C1", 50_000), { ...move("pm:bad", "C2", 50_000), outcome: "Bills" }]);
     const run = await runAccuracyCheck(db, src(), { moves: 10, profiles: 0, now: NOW });
     expect(run.lines.map(l => [l.target, l.status]).sort()).toEqual([["pm:bad", "mismatch"], ["pm:good", "ok"]]);
     expect(run.hidden).toEqual(["pm:bad"]);
@@ -81,18 +81,40 @@ describe.skipIf(!URL0)("the accuracy check in Postgres", () => {
     expect(await moveById(db, "pm:bad")).toBeNull();
     const stored = (await db.execute(`select target, status, problems from terminal.accuracy_checks order by target`)).rows;
     expect(stored).toEqual([
-      { target: "pm:bad", status: "mismatch", problems: ["amount 80000 vs source 50000.00"] },
+      { target: "pm:bad", status: "mismatch", problems: ["outcome Bills vs Chiefs"] },
       { target: "pm:good", status: "ok", problems: [] },
     ]);
     const email = accuracyEmail(run, "https://insidir.com");
     expect(email?.subject).toBe("Insidir accuracy check: 1 thing doesn't match the source");
-    expect(email?.lines.some(l => l.text.includes("amount 80000 vs source 50000.00"))).toBe(true);
+    expect(email?.lines.some(l => l.text.includes("outcome Bills vs Chiefs"))).toBe(true);
 
-    // The source record is fixed (here: the stored amount is corrected); the next run shows it again.
-    await db.execute(`update terminal.moves set amount = 50000 where id = 'pm:bad'`);
+    // The stored move is corrected; the next run shows it again.
+    await db.execute(`update terminal.moves set outcome = 'Chiefs' where id = 'pm:bad'`);
     const again = await runAccuracyCheck(db, src(), { moves: 10, profiles: 0, now: NOW + 3_600_000 });
     expect(again.restored).toEqual(["pm:bad"]);
     expect((await listMoves(db, {})).map(m => m.id).sort()).toEqual(["pm:bad", "pm:good"]);
+  });
+
+  it("a Polymarket position off in size is rebuilt from the wallet's fills, not hidden; a hidden one comes back rebuilt; a sell stays hidden", async () => {
+    await upsertMoves(db, [move("pm:short", "C1", 30_000), move("pm:hid", "C2", 80_000), move("pm:sell", "C3", 80_000)]);
+    await db.execute(`update terminal.moves set hidden_at = now(), hidden_reason = 'amount 80000 vs source 50000.00' where id = 'pm:hid'`);
+    await db.execute(`update terminal.moves set hidden_at = now(), hidden_reason = 'Not a new bet: the wallet was selling or closing a position' where id = 'pm:sell'`);
+    await db.execute(`update terminal.moves set realized_at = now(), pnl = 1 where id = 'pm:short'`);
+    const run = await runAccuracyCheck(db, src(), { moves: 10, profiles: 0, now: NOW });
+    const by = new Map(run.lines.map(l => [l.target, l]));
+    expect(by.get("pm:short")).toMatchObject({ status: "ok", problems: ["rebuilt from the source (amount 30000 vs source 50000.00)"] });
+    expect(by.get("pm:hid")?.status).toBe("ok");
+    expect(by.get("pm:sell")?.status).toBe("mismatch");
+    expect(run.hidden).toEqual([]);
+    expect(run.restored).toEqual(["pm:hid"]);
+    const rows = (await db.execute(`select id, amount, fills, realized_at, pnl, parts, hidden_at from terminal.moves order by id`)).rows as Array<Record<string, unknown>>;
+    const row = (id: string) => rows.find(r => r.id === id)!;
+    expect(row("pm:short")).toMatchObject({ amount: 50_000, fills: 1, realized_at: null, pnl: null, hidden_at: null });
+    expect(row("pm:short").parts).toEqual([{ id: expect.stringContaining(TX), c: 100_000, p: 0.5, at: NOW - 3_600_000 }]);
+    expect(row("pm:hid")).toMatchObject({ amount: 50_000, hidden_at: null });
+    expect(row("pm:sell")).toMatchObject({ amount: 80_000 });
+    expect(row("pm:sell").hidden_at).not.toBeNull();
+    expect((await listMoves(db, {})).map(m => m.id).sort()).toEqual(["pm:hid", "pm:short"]);
   });
 
   it("checks a Kalshi trade by id, without needing the market stored, and restores it if it was hidden", async () => {
