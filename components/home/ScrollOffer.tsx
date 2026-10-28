@@ -48,6 +48,7 @@ export function ScrollOffer({ where }: { where: string }) {
       if (raf) cancelAnimationFrame(raf);
     };
     addEventListener("scroll", onScroll, { passive: true });
+    check(); // already past 60% when the page came in (a reload or a jump link)
     if (desktop) document.addEventListener("mouseout", onLeave);
     return stop;
   }, [where]);
