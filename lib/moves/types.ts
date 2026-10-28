@@ -45,6 +45,10 @@ export interface Move {
   newWallet?: boolean | null;
   /** Polymarket: the transaction hashes of the fills behind the move (each one a public Polygon record). */
   sourceRefs?: string[] | null;
+  /** Polymarket, once settled and checked against the wallet's own trades (lib/moves/realize.ts): what the bet made,
+   *  and the share of it sold before the result. */
+  pnl?: number | null;
+  soldShare?: number | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */

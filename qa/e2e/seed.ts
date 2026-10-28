@@ -156,8 +156,11 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     // A wallet with no activity at all before this move.
     mv({ id: "e2e:m5", at: now - 40 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket3", eventTitle: "E2E fixture: Rate hike in March?",
       marketTitle: "E2E fixture: Rate hike in March?", outcome: "Yes", amount: 200_000, avgPrice: 0.2, wallet: BRAND, walletName: null, newWallet: true }),
-    mv({ id: "e2e:s1", at: now - 3 * DAY, amount: 120_000, avgPrice: 0.4, result: "won", settledAt: new Date(now - 2 * DAY) }),
-    mv({ id: "e2e:s2", at: now - 4 * DAY, amount: 64_000, avgPrice: 0.7, outcome: "Bills", outcomeSide: "no", result: "lost", settledAt: new Date(now - 3 * DAY) }),
+    // Settled and checked against the wallet's trades (lib/moves/realize.ts): held to the result, won (+$180K) and lost
+    // (−$64K); and one sold before the result (lost market, but the wallet sold out at 60¢ for +$10K).
+    mv({ id: "e2e:s1", at: now - 3 * DAY, amount: 120_000, avgPrice: 0.4, result: "won", settledAt: new Date(now - 2 * DAY), pnl: 180_000, soldShare: 0, realizedAt: new Date(now - 2 * DAY) }),
+    mv({ id: "e2e:s2", at: now - 4 * DAY, amount: 64_000, avgPrice: 0.7, outcome: "Bills", outcomeSide: "no", result: "lost", settledAt: new Date(now - 3 * DAY), pnl: -64_000, soldShare: 0, realizedAt: new Date(now - 3 * DAY) }),
+    mv({ id: "e2e:s3", at: now - 5 * DAY, marketId: "0xe2emarket9", amount: 50_000, avgPrice: 0.5, result: "lost", settledAt: new Date(now - 4 * DAY), pnl: 10_000, soldShare: 1, realizedAt: new Date(now - 4 * DAY) }),
     // Stocks (lib/stocks): a Form 4 insider buy and a 13F fund add, in the shapes the SEC jobs store.
     mv({ id: "f4:000099999926000001", at: now - 2 * DAY, source: "sec", marketId: "sec:0000999999", eventTitle: "E2E Fixture Devices", marketTitle: "EXDV",
       outcome: "Bought", amount: 1_401_811, avgPrice: 182.6464, wallet: null, walletName: null, fills: 2, tab: "stocks", league: null, category: "insider",

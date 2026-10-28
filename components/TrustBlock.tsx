@@ -10,13 +10,25 @@ import type { SettledRecord, TrustFacts } from "@/lib/trust";
 /** An accuracy check older than this isn't "every hour" any more: we just say when it last ran. */
 export const STALE_CHECK_MS = 2 * 3_600_000;
 
-/** "Average odds when they bet: 41%" and "Net for these traders: +$1.2M": the same lines on home and /results. */
-export function RecordLines({ r }: { r: SettledRecord }) {
+/** "Average odds when they bet: 41%" (home and /results), and on /results only "Net for these traders: +$1.2M" with
+ *  what it means. */
+export function RecordLines({ r, net = false }: { r: SettledRecord; net?: boolean }) {
   return (
     <>
       {r.oddsPct !== null ? <p className="trust__p">Average odds when they bet: <b className="num">{Math.round(r.oddsPct)}%</b></p> : null}
-      <p className="trust__p">Net for these traders: <b className={`num ${r.net >= 0 ? "money" : "loss"}`}>{signedShort(r.net)}</b></p>
+      {net ? <>
+        <p className="trust__p" data-testid="record-net">Net for these traders: <b className={`num ${r.net >= 0 ? "money" : "loss"}`}>{signedShort(r.net)}</b></p>
+        <p className="trust__fine">What these bets really made, from each wallet&apos;s own trades: sales before the result plus payouts, minus what they paid.</p>
+      </> : null}
     </>
+  );
+}
+
+/** "877 won, 298 lost" (and refunded, sold before the result): the same line on home and /results. */
+export function RecordCount({ r }: { r: SettledRecord }) {
+  const extra = [r.refunded ? `${r.refunded.toLocaleString("en-US")} refunded` : null, r.soldEarly ? `${r.soldEarly.toLocaleString("en-US")} sold before the result` : null].filter(Boolean);
+  return (
+    <p className="trust__big num"><span className="money">{r.won.toLocaleString("en-US")} won</span>, <span className="loss">{r.lost.toLocaleString("en-US")} lost</span>{extra.length ? <span className="trust__ref">, {extra.join(", ")}</span> : null}</p>
   );
 }
 
@@ -43,10 +55,10 @@ export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | nu
           <article className="trust__card" data-testid="trust-record">
             <h3 className="trust__h">The real record</h3>
             {s ? <>
-              <p className="trust__big num"><span className="money">{s.won.toLocaleString("en-US")} won</span>, <span className="loss">{s.lost.toLocaleString("en-US")} lost</span>{s.refunded ? <span className="trust__ref">, {s.refunded.toLocaleString("en-US")} refunded</span> : null}</p>
+              <RecordCount r={s} />
               <RecordLines r={s} />
             </> : <p className="trust__p">Moves show up on Results, won or lost, as their markets settle.</p>}
-            <p className="trust__fine">Every settled move we&apos;ve shown, losses included. Not a promise.</p>
+            <p className="trust__fine">Every settled bet by the Polymarket wallets we&apos;ve shown, losses included. Not a promise.</p>
             <Link className="trust__link" href="/results">See every result</Link>
           </article>
           <article className="trust__card" data-testid="trust-check">

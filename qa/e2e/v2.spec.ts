@@ -203,11 +203,17 @@ test("results are public: totals match the home trust block, refunds labelled, p
   const total = page.getByTestId("results-total");
   await expect(total).toContainText(/won, \d+ lost/);
   await expect(total).toContainText("Average odds when they bet:");
-  await expect(total).toContainText("Net for these traders:");
+  // Polymarket wallets only, checked against their own trades: 1 won, 1 lost, 1 sold before the result; net
+  // +$180K − $64K + $10K = +$126K, explained in one line.
+  await expect(total).toContainText("1 won, 1 lost, 1 sold before the result");
+  await expect(page.getByTestId("record-net")).toContainText("Net for these traders: +$126K");
+  await expect(total).toContainText("What these bets really made");
+  await expect(page.locator(".rlist__res--sold").first()).toHaveText("Sold early");
   const totalText = await total.innerText();
   await page.goto("/");
   const home = await page.getByTestId("trust-record").innerText();
-  for (const line of totalText.split("\n").filter(l => /Average odds|Net for/.test(l))) expect(home).toContain(line.trim());
+  for (const line of totalText.split("\n").filter(l => /Average odds|won, \d+ lost/.test(l))) expect(home).toContain(line.trim());
+  expect(home).not.toContain("Net for");
   const check = page.getByTestId("trust-check");
   await expect(check).toContainText(/matched/);
   await expect(check.getByRole("link", { name: "How we check" })).toHaveAttribute("href", "/data");

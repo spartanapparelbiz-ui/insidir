@@ -257,7 +257,7 @@
 .rlist__res { font-weight: 600; }
 .rlist__res--won { color: var(--money); }
 .rlist__res--lost { color: var(--loss); }
-.rlist__res--void { color: var(--muted); }
+.rlist__res--void, .rlist__res--sold { color: var(--muted); }
 .rlist__what { overflow-wrap: anywhere; }
 .rlist__what a { color: var(--text); }
 .rlist__amt { font-weight: 800; font-variant-numeric: tabular-nums; }

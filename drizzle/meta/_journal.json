@@ -85,6 +85,13 @@
       "when": 1793147657041,
       "tag": "0011_drop_login_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793154551252,
+      "tag": "0012_realized_pnl",
+      "breakpoints": true
     }
   ]
 }

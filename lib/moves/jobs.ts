@@ -13,7 +13,8 @@ import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
 import { readLeaderboard } from "./sources";
-import { saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
+import { movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
+import { readWalletFills, realizeMove } from "./realize";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
 import { rows } from "@/lib/exchanges/parse";
@@ -61,6 +62,25 @@ export async function settleMovesOnce(db: Db, clients: { polymarket: PolymarketC
     if (!ids.length) continue;
     const got = await clients[source].getMarketsById(ids);
     for (const [id, m] of got) if (m.result) { await settleMarket(db, source, id, m.result, new Date(now)); n++; }
+  }
+  return n;
+}
+
+/** Settled Polymarket moves → what each really made, from the wallet's own trades in that market (sells before the
+ *  result included). Runs after settling; also catches up moves settled before this existed, biggest first. */
+export async function realizeOnce(db: Db, poly: PolymarketClient, now: number, perRun = 30): Promise<number> {
+  const due = await movesToRealize(db, perRun);
+  const fills = new Map<string, ReturnType<typeof readWalletFills>>();
+  let n = 0;
+  for (const m of due) {
+    if (!m.wallet || !m.result) continue;
+    const key = `${m.wallet}|${m.marketId}`;
+    if (!fills.has(key)) {
+      try { fills.set(key, readWalletFills(await poly.getWalletMarketTradesAll(m.wallet, m.marketId))); } catch { continue; }
+    }
+    const result = m.result === "void" ? "void" : m.result === "won" ? m.outcomeSide : m.outcomeSide === "yes" ? "no" : "yes";
+    await saveRealized(db, m.id, realizeMove(m, fills.get(key)!, result, m.settledAt ?? now), new Date(now));
+    n++;
   }
   return n;
 }
