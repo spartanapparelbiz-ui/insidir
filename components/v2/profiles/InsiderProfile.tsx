@@ -10,6 +10,8 @@ import { insiderTotals, tradesByFiling } from "@/lib/profiles/sec";
 import { historyOf, insiderTradesFor } from "@/lib/profiles/store";
 import { calDate, exactDollars, Locked } from "./shared";
 import { profileSource } from "@/lib/moves/source";
+import { tickerMonogram } from "@/lib/moves/avatar";
+import { Avatar } from "../Avatar";
 import { SourceA } from "../MoveCard";
 import { Photo } from "@/components/Photo";
 import { BAND } from "@/lib/photos";
@@ -31,10 +33,13 @@ export async function InsiderProfile({ db, cik, viewer, trial }: { db: Db; cik: 
     <>
       <header className="trader__head">
         <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">{latest ? `${roleOf(latest.role).replace(/^./, c => c.toUpperCase())} of ${latest.company}` : "SEC filer"}</p>
-          <h1 className="trader__name">{name}</h1>
-          <SourceA link={profileSource({ kind: "insider", cik })} className="source source--dark" />
+        <div className="trader__id">
+          <Avatar face={{ src: null, mono: tickerMonogram(latest?.ticker ?? trades.find(x => x.ticker)?.ticker, latest?.company ?? name) }} size="profile" />
+          <div>
+            <p className="trader__kicker">{latest ? `${roleOf(latest.role).replace(/^./, c => c.toUpperCase())} of ${latest.company}` : "SEC filer"}</p>
+            <h1 className="trader__name">{name}</h1>
+            <SourceA link={profileSource({ kind: "insider", cik })} className="source source--dark" />
+          </div>
         </div>
       </header>
       <p className="note pnote">Form 4s are filed up to 2 business days after the trade. <Link href="/data">About our data</Link></p>

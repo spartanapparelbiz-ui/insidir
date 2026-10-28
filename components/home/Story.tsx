@@ -12,6 +12,7 @@ import { Photo, type PhotoN } from "@/components/Photo";
 import { Wordmark } from "@/components/Wordmark";
 import { MoveCard } from "@/components/v2/MoveCard";
 import { LockedRecord } from "@/components/v2/LockedRecord";
+import { Avatar } from "@/components/v2/Avatar";
 import { TabIcon } from "@/components/TabIcon";
 import { BAND, SPOT } from "@/lib/photos";
 import type { Story as StoryData } from "@/lib/home/story";
@@ -144,7 +145,7 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
         <div className="app2 trader profile">
           <div className="trader__head">
             <Photo n={SPOT.phoneProfile} className="trader__photo" band />
-            <div><p className="trader__kicker">Polymarket wallet</p><p className="trader__name">{d.trader.name}</p><p className="source source--dark">Where this comes from: this Polymarket wallet on Polygon{"\u00a0↗"}</p></div>
+            <div className="trader__id"><Avatar face={d.trader.face} size="profile" /><div><p className="trader__kicker">Polymarket wallet</p><p className="trader__name">{d.trader.name}</p><p className="source source--dark">Where this comes from: this Polymarket wallet on Polygon{"\u00a0↗"}</p></div></div>
             <span className="btn btn--secondary">Follow</span>
           </div>
           <div className="wrap">

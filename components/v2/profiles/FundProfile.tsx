@@ -9,6 +9,8 @@ import { fundOf, fundQuarters } from "@/lib/profiles/store";
 import { calDate, exactDollars, Locked, pct } from "./shared";
 import { profileSource } from "@/lib/moves/source";
 import { SourceA } from "../MoveCard";
+import { monogram } from "@/lib/moves/avatar";
+import { Avatar } from "../Avatar";
 import { Photo } from "@/components/Photo";
 import { BAND } from "@/lib/photos";
 import Link from "next/link";
@@ -38,10 +40,13 @@ export async function FundProfile({ db, cik, viewer, trial }: { db: Db; cik: str
     <>
       <header className="trader__head">
         <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
-          <h1 className="trader__name">{fund.name}</h1>
-          <SourceA link={profileSource({ kind: "fund", cik })} className="source source--dark" />
+        <div className="trader__id">
+          <Avatar face={{ src: null, mono: monogram(fund.name) }} size="profile" />
+          <div>
+            <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
+            <h1 className="trader__name">{fund.name}</h1>
+            <SourceA link={profileSource({ kind: "fund", cik })} className="source source--dark" />
+          </div>
         </div>
       </header>
       <p className="note pnote">{fund.quartersOnFile} {fund.quartersOnFile === 1 ? "quarter" : "quarters"} on file with the SEC. 13F data can be up to 45 days old. <Link href="/data">About our data</Link></p>

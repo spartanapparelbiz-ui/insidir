@@ -120,6 +120,13 @@
       "when": 1793223522375,
       "tag": "0016_google_and_passwords",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793225499177,
+      "tag": "0017_trader_avatars",
+      "breakpoints": true
     }
   ]
 }

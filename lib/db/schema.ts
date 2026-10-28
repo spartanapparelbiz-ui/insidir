@@ -412,6 +412,17 @@ export const traderRecords = terminal.table("trader_records", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+/** A Polymarket wallet's public profile picture (lib/moves/avatar.ts), re-read from Polymarket once a day. url is null
+ *  when the wallet has none (or it isn't on Polymarket's own image host); blocked when its public username is blocked
+ *  (lib/moves/names.ts), so the picture is never shown; hidden_at when an admin hid it (/admin). */
+export const traderAvatars = terminal.table("trader_avatars", {
+  wallet: text("wallet").primaryKey(),
+  url: text("url"),
+  blocked: boolean("blocked").notNull().default(false),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+  hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+}, t => [index("trader_avatars_checked_idx").on(t.checkedAt)]);
+
 /** A Polymarket wallet's resolved positions (Data API /closed-positions), one row per market and outcome, for the
  *  profile stats (lib/profiles/trader.ts). Replaced whole each time the wallet's record is refreshed. */
 export const traderPositions = terminal.table("trader_positions", {

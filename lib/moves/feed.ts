@@ -17,6 +17,8 @@ import { hasRecord, isTopTrader, walletLabel } from "./records";
 import { personName, profileHref } from "@/lib/profiles/name";
 import { whyLines } from "@/lib/profiles/why-facts";
 import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
+import { moveFace, type Face } from "./avatar";
+import { avatarsOrNone } from "./avatar-store";
 import type { League, Move, Tab } from "./types";
 
 export interface FeedItem {
@@ -51,6 +53,8 @@ export interface FeedItem {
   context?: string | null;
   /** Who moved, as the sentence names them, and their profile (/p/[id]); Kalshi traders are anonymous (no link). */
   who: { name: string; href: string | null; badge: "New wallet" | null };
+  /** Their Polymarket picture, or the monogram (lib/moves/avatar.ts). */
+  face: Face;
   /** "Why this matters": at most one fact (lib/profiles/why.ts). */
   why: string | null;
   /** The public record behind the move: the Polygon transaction, Kalshi's trade record or the SEC filing (./source.ts). */
@@ -108,6 +112,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
   const recs = p.records ? await recordsFor(db, moves.map(m => m.wallet ?? "")) : new Map();
   const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));
   const why = await whyLines(db, moves, { records: p.records, until, now }).catch(() => new Map<string, string | null>());
+  const avatars = await avatarsOrNone(db, moves.map(m => m.wallet ?? ""));
   return moves.map(m => {
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
     const shown = p.records && hasRecord(rec) ? rec : null;
@@ -118,7 +123,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
-      who: whoOf(m), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
+      who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
     };
   });
 }
