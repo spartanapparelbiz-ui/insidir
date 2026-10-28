@@ -23,7 +23,7 @@
 .dt-viz { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--text); }
 .dt-bar { width: 72px; flex: none; }
 .dt-chip { flex: none; font: 400 var(--t13)/16px var(--sans); color: var(--muted); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
-.dt-profit { font: 700 var(--t17)/20px var(--sans); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: -0.02em; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
+.dt-profit { font: 600 var(--t17)/20px var(--sans); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: -0.02em; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
 .dt-sub { display: none; }
 .dt .light { font-size: var(--t13); }
 /* rows */
@@ -80,7 +80,7 @@
 .tbar__totals { display: flex; flex-wrap: wrap; gap: 0; margin: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .tbar__total { display: grid; gap: 0; padding: 8px 24px 8px 0; min-width: 120px; }
 .tbar__total dt { color: var(--muted); font-size: var(--t13); line-height: 16px; }
-.tbar__total dd { margin: 0; font: 700 var(--t17)/24px var(--sans); font-variant-numeric: tabular-nums; }
+.tbar__total dd { margin: 0; font: 600 var(--t17)/24px var(--sans); font-variant-numeric: tabular-nums; }
 .tbar__controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
 .tbar__field { display: grid; gap: 4px; font-size: var(--t13); color: var(--muted); }
 .tbar__field .input { min-height: 40px; height: 40px; padding: 0 12px; font-size: var(--t15); background: var(--bg-alt); }

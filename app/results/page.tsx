@@ -1,5 +1,7 @@
-/* Results (docs/INSIDIR-V2.md §6): every settled move, newest settlement first, filterable by tab, size and "top traders
- * only". Won or lost, the amount, and when. Our proof page: complete and honest, losses included. */
+/* Results: every settled move, newest settlement first, 50 a page, filterable by tab and size. Won, lost or refunded,
+ * the amount, when, and the public record behind it. Public, no log-in: our proof page, complete and honest, losses
+ * included (the live feed stays for members). The totals at the top are the home trust block's (lib/trust.ts, one
+ * query, one cache), so the two always match. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SourceA } from "@/components/v2/MoveCard";
@@ -8,7 +10,12 @@ import { Photo } from "@/components/Photo";
 import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
+import { memo } from "@/lib/memo";
+import { trustFacts } from "@/lib/trust";
+import { RecordLines } from "@/components/TrustBlock";
+import { ScrollOffer } from "@/components/home/ScrollOffer";
+import { isPaid } from "@/lib/plans";
 import { getDb, hasDatabase } from "@/lib/db";
 import { agoText, dollars } from "@/lib/moves/copy";
 import { isTopTrader, walletLabel } from "@/lib/moves/records";
@@ -21,26 +28,36 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Results", description: "Every big move we've shown that has settled, won or lost. Real past moves. Not a promise." };
 
 const SIZES = [10_000, 50_000, 100_000];
+const PER_PAGE = 50;
 
-export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ tab?: string; min?: string; top?: string }> }) {
+export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ tab?: string; min?: string; top?: string; page?: string }> }) {
   const now = Date.now();
   const sp = await searchParams;
-  const viewer = await requireMember("/results");
+  const viewer = await getViewer();
+  const member = Boolean(viewer.user) && isPaid(viewer.plan);
+  const page = Math.max(1, Math.min(1000, Math.floor(Number(sp.page) || 1)));
   const tab: Tab | null = sp.tab === "sports" || sp.tab === "markets" ? sp.tab : null;
   const min = SIZES.includes(Number(sp.min)) ? Number(sp.min) : 10_000;
-  const topOnly = sp.top === "1";
+  const topOnly = member && sp.top === "1";
   let rows: Move[] = [];
+  let more = false;
+  let total: Awaited<ReturnType<typeof trustFacts>>["settled"] = null;
   let recs = new Map<string, Parameters<typeof isTopTrader>[0] & object>();
   if (hasDatabase()) {
     const db = getDb();
-    rows = await listMoves(db, { settled: true, tab, min, limit: 200 }).catch(() => []);
-    recs = await recordsFor(db, rows.map(r => r.wallet ?? "")).catch(() => new Map());
+    const [page1, facts] = await Promise.all([
+      listMoves(db, { settled: true, tab, min, limit: PER_PAGE + 1, offset: (page - 1) * PER_PAGE }).catch(() => []),
+      memo("trust", 60_000, () => trustFacts(db)).catch(() => null),
+    ]);
+    more = page1.length > PER_PAGE;
+    rows = page1.slice(0, PER_PAGE);
+    total = facts?.settled ?? null;
+    if (member) recs = await recordsFor(db, rows.map(r => r.wallet ?? "")).catch(() => new Map());
   }
   const shown = topOnly ? rows.filter(r => r.wallet && isTopTrader(recs.get(r.wallet))) : rows;
-  const won = shown.filter(r => r.result === "won").length, lost = shown.filter(r => r.result === "lost").length;
   const q = (o: Record<string, string | null>) => {
     const p = new URLSearchParams();
-    const v = { tab: tab ?? "", min: String(min), top: topOnly ? "1" : "", ...o };
+    const v = { tab: tab ?? "", min: String(min), top: topOnly ? "1" : "", page: "", ...o };
     for (const [k, x] of Object.entries(v)) if (x) p.set(k, x);
     return `/results?${p}`;
   };
@@ -50,39 +67,51 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <main className="wrap app2 results dark">
         <PageBand n={BAND.results} title="Results" />
         <p className="results__label">Real past moves. Not a promise.</p>
+        {total ? (
+          <section className="results__total" aria-label="Every settled move" data-testid="results-total">
+            <p className="trust__big num"><span className="money">{total.won.toLocaleString("en-US")} won</span>, <span className="loss">{total.lost.toLocaleString("en-US")} lost</span>{total.refunded ? <span className="trust__ref">, {total.refunded.toLocaleString("en-US")} refunded</span> : null}</p>
+            <RecordLines r={total} />
+            <p className="trust__fine">Every settled move we&apos;ve shown, all tabs and sizes. The list below is filtered.</p>
+          </section>
+        ) : null}
         <div className="chips" aria-label="Filters">
           <Link className="chip2" aria-current={(!tab) ? "true" : undefined} href={q({ tab: null })}>All</Link>
           <Link className="chip2" aria-current={(tab === "sports") ? "true" : undefined} href={q({ tab: "sports" })}>Sports</Link>
           <Link className="chip2" aria-current={(tab === "markets") ? "true" : undefined} href={q({ tab: "markets" })}>Markets</Link>
           {SIZES.map(s => <Link key={s} className="chip2" aria-current={(min === s) ? "true" : undefined} href={q({ min: String(s) })}>{dollars(s).replace(",000", "k")}+</Link>)}
-          <Link className="chip2" aria-current={(topOnly) ? "true" : undefined} href={q({ top: topOnly ? null : "1" })}>Top traders only</Link>
+          {member ? <Link className="chip2" aria-current={(topOnly) ? "true" : undefined} href={q({ top: topOnly ? null : "1" })}>Top traders only</Link> : null}
         </div>
         {shown.length ? (
           <>
-            <p className="results__sum rv"><span data-count={shown.length}>{shown.length}</span> settled: <span className="money"><span data-count={won}>{won}</span> won</span>, <span className="loss"><span data-count={lost}>{lost}</span> lost</span>{shown.length - won - lost ? `, ${shown.length - won - lost} refunded` : ""}.</p>
             <ol className="rlist">
-              {shown.map((r, i) => (
-                <li key={r.id} className="rlist__row rv" style={{ ["--i" as string]: Math.min(i, 6) }}>
+              {shown.map(r => (
+                <li key={r.id} className="rlist__row">
                   <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>
                   <span className="rlist__what">
-                    <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link>
-                    <span className="rlist__who">{r.source === "kalshi" ? "Someone on Kalshi" : isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>
+                    <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {member ? <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link> : r.marketTitle}
+                    <span className="rlist__who">{r.source === "kalshi" ? "Someone on Kalshi" : member && isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>
                     {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}
                   </span>
                   <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
                 </li>
               ))}
             </ol>
+            <nav className="pager" aria-label="Pages">
+              {page > 1 ? <Link className="btn btn--secondary" href={q({ page: page === 2 ? null : String(page - 1) })} rel="prev">Newer</Link> : <span />}
+              <span className="pager__n">Page {page}</span>
+              {more ? <Link className="btn btn--secondary" href={q({ page: String(page + 1) })} rel="next">Older</Link> : <span />}
+            </nav>
           </>
         ) : (
           <div className="empty">
             <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
             <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
-            <Link className="btn btn--secondary" href="/feed">See the live feed</Link>
+            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "See the live feed" : "Get Insidir · $39/mo"}</Link>
           </div>
         )}
       </main>
+      {member ? null : <ScrollOffer where="results" />}
     </>
   );
 }

@@ -1,4 +1,5 @@
 /* Draft — have counsel review. */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -52,7 +53,7 @@ export default async function TermsPage() {
           <p className="small muted">{FOOTER}</p>
         </article>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
+          <Link className="btn btn--primary" href="/start">{GET_CTA}</Link>
         </div>
       </main>
     </>

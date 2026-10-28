@@ -122,7 +122,7 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   results = (await feedItems(db, picked, plan, region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
   status = st;
   [trust, story] = await Promise.all([
-    trustFacts(db).catch(() => null),
+    memo("trust", 60_000, () => trustFacts(db)).catch(() => null),
     storyFor(db, plan, region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
   ]);
   return { hero, recent, results, status, snippet, ticker, trust, story };

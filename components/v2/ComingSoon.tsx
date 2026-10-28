@@ -7,8 +7,10 @@ import type { Feature } from "@/lib/features";
 import { Photo } from "@/components/Photo";
 import { SPOT } from "@/lib/photos";
 
-export function SoonBadge() {
-  return <span className="soon">Coming soon</span>;
+/** The badge. Crypto's tab says just "Soon" (a small outlined pill that fits inside the tab on one line on any
+ *  phone); everything else says "Coming soon". */
+export function SoonBadge({ short = false }: { short?: boolean }) {
+  return <span className={short ? "soon soon--short" : "soon"}>{short ? "Soon" : "Coming soon"}</span>;
 }
 
 export function ComingSoon({ feature, children, className = "" }: { feature: Feature; children: ReactNode; className?: string }) {
@@ -16,7 +18,7 @@ export function ComingSoon({ feature, children, className = "" }: { feature: Fea
   return (
     <>
       <button type="button" className={`soonitem ${className}`} aria-haspopup="dialog" onClick={() => setOpen(true)}>
-        <span className="soonitem__label">{children}</span> <SoonBadge />
+        <span className="soonitem__label">{children}</span> <SoonBadge short={feature === "crypto"} />
       </button>
       {open ? <SoonSheet feature={feature} onClose={() => setOpen(false)} /> : null}
     </>

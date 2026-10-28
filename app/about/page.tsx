@@ -1,4 +1,5 @@
 /* About: what Insidir is, where the data comes from, what we will never do, and who is behind it. */
+import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -44,7 +45,7 @@ export default async function AboutPage() {
           <p>Insidir is built by Aethric LLC, Pompano Beach, FL. Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
         </article>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/feed">See the live feed</Link>
+          <Link className="btn btn--primary" href="/start">{GET_CTA}</Link>
         </div>
       </main>
     </>

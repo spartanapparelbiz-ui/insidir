@@ -11,7 +11,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   return (
     <>
-      <SiteHeader signedIn={false} minimal />
+      <SiteHeader signedIn={false} offer={false} />
       <main className="dark start start--welcome">
         <div className="wrap start__in start__in--one"><Welcome status={sp.status ?? null} /></div>
       </main>

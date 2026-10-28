@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (viewer.user && isPaid(viewer.plan)) redirect(next);
   return (
     <>
-      <SiteHeader signedIn={false} minimal />
+      <SiteHeader signedIn={false} offer={false} />
       <main className="split dark">
         <div className="split__photo">
           <Photo n={BAND.signin} par eager />

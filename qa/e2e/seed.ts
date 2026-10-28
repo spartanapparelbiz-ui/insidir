@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { DEFAULT_SETTINGS, fundFilings, fundHoldings, funds, insiderTrades, moves, nearMisses, opportunities, receipts, secHistory, sessions, traderPositions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { accuracyChecks, DEFAULT_SETTINGS, fundFilings, fundHoldings, funds, insiderTrades, moves, nearMisses, opportunities, receipts, secHistory, sessions, traderPositions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
 import { scan } from "@/lib/scanner";
 import { saveMarkets } from "@/lib/worker/store";
@@ -74,7 +74,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);
@@ -209,6 +209,10 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   for (const job of ["moves:polymarket", "moves:kalshi", "stocks:form4"]) {
     await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: {} }).onConflictDoNothing();
   }
+  // The latest hourly accuracy check, ten minutes ago: 3 of 4 matched, the 4th (a fixture id, not a seeded move) hidden.
+  const runAt = new Date(now - 10 * MIN);
+  await db.insert(accuracyChecks).values([0, 1, 2, 3].map(i => ({ runAt, kind: "move" as const, what: "polymarket", target: `e2e:check${i}`, label: `E2E check ${i}`,
+    status: i === 3 ? "mismatch" as const : "ok" as const, problems: [] })));
   for (const x of Object.values(E2E_USERS)) {
     await db.insert(users).values({ id: x.id, email: `${x.id}@example.test`, name: x.id, plan: x.plan, region: x.region, settings: DEFAULT_SETTINGS, // Plan already verified: no Whop call for seeded users (the checkout test covers the real Whop path).
       planCheckedAt: new Date(now + 365 * DAY), onboardedAt: new Date(now), membershipId: x.plan === "free" ? null : `mem_${x.id}` });
