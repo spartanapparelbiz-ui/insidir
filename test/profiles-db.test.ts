@@ -12,8 +12,11 @@ import * as schema from "@/lib/db/schema";
 import type { PolymarketClient } from "@/lib/exchanges";
 import { recordsOnce } from "@/lib/moves/jobs";
 import { saveRecord, upsertMoves } from "@/lib/moves/store";
+import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { Move, TraderRecord } from "@/lib/moves/types";
-import { fundQuarters, marketsFor, topRanking } from "@/lib/profiles/store";
+import { followedTrades, fundQuarters, issuerForTicker, issuersByCik, issuerTradesFor, latestCloses, marketsFor, ownersByCik, sitemapSec, stockSuggestions, topRanking } from "@/lib/profiles/store";
+import { followingFeed } from "@/lib/following-feed";
+import { follow, followList, listMoves } from "@/lib/moves/store";
 import { traderStats } from "@/lib/profiles/trader";
 import { whyLines } from "@/lib/profiles/why-facts";
 import { fundHistoryOnce, historyOnce, queueHistory, saveTrades } from "@/lib/stocks/history";
@@ -44,7 +47,7 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
   });
   beforeEach(async () => {
     await db.execute(`truncate terminal.moves, terminal.trader_records, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades,
-      terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings`);
+      terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.stock_closes, terminal.follows, terminal.users cascade`);
   });
 
   const move = (o: Partial<Move>): Move => ({
@@ -179,5 +182,62 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
     expect(q.map(x => x.accession)).toEqual(["000095012326000003", "000095012326000001"]);
     expect(q[0]!.holdings).toEqual([{ cusip: "037833100", company: "APPLE", shares: 1000, value: 230_000 }]);
     expect((await db.select().from(schema.funds))[0]).toMatchObject({ name: "BERKSHIRE HATHAWAY", quartersOnFile: 3 });
+  });
+
+  describe("the public SEC pages and the Following feed", () => {
+    const base = { role: "The CEO", company: "E2E Fixture Devices", ticker: "EXDV", issuerCik: "999999", url: "https://www.sec.gov/x", price: 100 };
+    const t = (acc: string, owner: string, name: string, date: string, value: number, code: "P" | "S" = "P", line = 0) =>
+      ({ ...base, accession: acc, line, ownerCik: owner, ownerName: name, code, tradeDate: date, shares: value / 100, value, filedAt: new Date(`${date}T21:00:00Z`) });
+    const seed = async () => {
+      await saveTrades(db, [t("a1", "888888", "FIXTURE JANE", "2026-10-22", 1_000_000), t("a1", "888888", "FIXTURE JANE", "2026-10-22", 401_811, "P", 1),
+        t("a2", "777", "DOE JOHN", "2026-10-05", 300_000), t("a3", "777", "DOE JOHN", "2026-08-01", 450_000, "S"),
+        { ...t("b1", "555", "ROE RICHARD", "2026-10-10", 90_000), issuerCik: "111", company: "Other Co", ticker: "OTH" }]);
+    };
+
+    it("a company by ticker, its trades newest first, owners and companies by CIK", async () => {
+      await seed();
+      expect(await issuerForTicker(db, "exdv")).toEqual({ issuerCik: "999999", company: "E2E Fixture Devices", ticker: "EXDV" });
+      expect(await issuerForTicker(db, "NOPE")).toBeNull();
+      expect((await issuerTradesFor(db, "0000999999")).map(r => r.accession)).toEqual(["a1", "a1", "a2", "a3"]);
+      expect((await ownersByCik(db, ["777"])).get("777")).toEqual({ name: "DOE JOHN", role: "The CEO", company: "E2E Fixture Devices" });
+      expect((await issuersByCik(db, ["111"])).get("111")).toEqual({ company: "Other Co", ticker: "OTH" });
+    });
+
+    it("the latest close per ticker, only when we hold one", async () => {
+      expect((await latestCloses(db, ["EXDV"])).size).toBe(0);
+      await db.execute(`insert into terminal.stock_closes (ticker, date, close) values ('EXDV', '2026-10-26', 110), ('EXDV', '2026-10-27', 120)`);
+      expect((await latestCloses(db, ["exdv", "OTH"])).get("EXDV")).toEqual({ ticker: "EXDV", date: "2026-10-27", close: 120 });
+    });
+
+    it("the sitemap lists insiders and companies with a recent trade, and every fund", async () => {
+      await seed();
+      await db.insert(schema.funds).values({ cik: "999998", name: "E2E Fixture Capital", quartersOnFile: 48, updatedAt: new Date(NOW) });
+      const s = await sitemapSec(db, new Date(NOW - 60 * DAY));
+      expect(s.insiders.map(i => i.cik).sort()).toEqual(["555", "777", "888888"]);
+      expect(s.companies.map(c => c.ticker).sort()).toEqual(["EXDV", "OTH"]);
+      expect(s.funds.map(f => f.name)).toEqual(["E2E Fixture Capital"]);
+      // John Doe last filed Oct 5: past a 20-day window.
+      expect((await sitemapSec(db, new Date(NOW - 20 * DAY))).insiders.map(i => i.cik).sort()).toEqual(["555", "888888"]);
+    });
+
+    it("onboarding's suggestions: most buying in 30 days", async () => {
+      await seed();
+      const s = await stockSuggestions(db, new Date(NOW - 30 * DAY));
+      expect(s.insiders[0]).toMatchObject({ cik: "888888", bought: 1_401_811 });
+      expect(s.companies[0]).toMatchObject({ cik: "999999", insiders: 2 });
+    });
+
+    it("following an insider and a company: their filings in the member's feed, with moves of followed traders", async () => {
+      await seed();
+      await db.insert(schema.users).values({ id: "u1", email: "u1@example.com", plan: "insidir", settings: DEFAULT_SETTINGS });
+      await follow(db, "u1", "insider", "777");
+      await follow(db, "u1", "company", "111");
+      await follow(db, "u1", "trader", wallet(5));
+      expect((await followedTrades(db, ["777"], [], new Date(NOW - 30 * DAY))).map(r => r.accession)).toEqual(["a2"]);
+      await upsertMoves(db, [move({ id: "pm:f", wallet: wallet(5), at: NOW - 2 * H }), move({ id: "pm:g", wallet: wallet(6), at: NOW - H })]);
+      expect((await listMoves(db, { followed: { wallets: [], marketIds: [] } })).length).toBe(0);
+      const feed = await followingFeed(db, await followList(db, "u1"), "insidir", "us", NOW);
+      expect(feed.map(e => (e.type === "move" ? e.item.id : e.item.key))).toEqual(["pm:f", "f4:b1:555:P", "f4:a2:777:P"]);
+    });
   });
 });

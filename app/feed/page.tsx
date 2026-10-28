@@ -41,7 +41,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     [items, status, follows] = await Promise.all([
       feedFor(db, viewer.plan, viewer.region, { tab, min: 10_000, limit: 30, ...pickFilter }, now).catch(() => []),
       feedStatus(db, now, tab).catch(() => null),
-      viewer.user ? followList(db, viewer.user.id).then(l => l.filter(f => f.kind === "trader").map(f => f.target)).catch(() => []) : Promise.resolve(null),
+      viewer.user ? followList(db, viewer.user.id).then(l => l.map(f => `${f.kind}:${f.target}`)).catch(() => []) : Promise.resolve(null),
     ]);
   }
   void recordEvent({ name: "feed_view", visitorId: jar.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined);

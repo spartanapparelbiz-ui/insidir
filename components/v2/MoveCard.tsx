@@ -1,12 +1,13 @@
 /* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the trader's picture or monogram (./Avatar.tsx) and the sentence (its name opens the profile, /p/[id]), a
  * "New wallet" label, the payout line, the record line, at most one "why this matters" fact, the time,
- * and a footer row: Follow (traders), See market and the source link. Stock cards (SEC filings) carry the filing line and one button,
- * the SEC filing itself. Everything on it was sent by the server for this viewer's plan
+ * and a footer row: Follow (traders), See market and the source link. Stock cards (SEC filings) carry the filing line,
+ * Follow insider and Follow company (or Follow fund), the company's insider page and the SEC filing itself. Everything on it was sent by the server for this viewer's plan
  * and region (lib/moves/feed.ts). */
 import Link from "next/link";
 import { TimeAgo } from "@/components/TimeAgo";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
+import type { FollowKind } from "@/lib/db/schema";
 import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
 import { Avatar } from "./Avatar";
@@ -31,7 +32,10 @@ function Sentence({ m }: { m: FeedItem }) {
   return <>{m.sentence.slice(0, at)}<Link className="move__name" href={href}>{name}</Link>{m.sentence.slice(at + name.length)}</>;
 }
 
-export function MoveCard({ m, follow, trialHref, fresh = false, compact = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
+export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compact = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
+  /** Per-target follow state for SEC cards (the insider, the company, the fund); without it they start from `follow`
+   *  (a member's "on" becomes "off": following again is harmless). */
+  followFor?: (kind: FollowKind, target: string) => FollowState;
   /** No buttons (the home preview, where the one action is "See the live feed"). */
   compact?: boolean }) {
   const tag = TAG[m.tab]!;
@@ -59,7 +63,14 @@ export function MoveCard({ m, follow, trialHref, fresh = false, compact = false 
       {compact ? (m.sourceLink ? <SourceA link={m.sourceLink} /> : null) : (
         <div className="move__foot">
           {m.source === "sec" ? (
-            m.link ? <a className="btn btn--secondary" href={m.link.href} target="_blank" rel="noopener noreferrer">{m.link.label}</a> : null
+            <>
+              {(m.secFollows ?? []).map(f => (
+                <FollowButton key={`${f.kind}:${f.target}`} kind={f.kind} target={f.target} label={f.label} trialHref={trialHref}
+                  state={followFor ? followFor(f.kind, f.target) : follow === "on" ? "off" : follow} />
+              ))}
+              {m.companyHref && m.ticker ? <Link className="btn btn--secondary" href={m.companyHref}>{`${m.ticker} insiders`}</Link> : null}
+              {m.link ? <a className="btn btn--secondary" href={m.link.href} target="_blank" rel="noopener noreferrer">{m.link.label}</a> : null}
+            </>
           ) : (
             <>
               {m.wallet ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}

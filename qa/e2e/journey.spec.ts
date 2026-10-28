@@ -63,13 +63,17 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await page.getByRole("button", { name: /^Sports/ }).click();
     await page.getByRole("button", { name: "NFL", exact: true }).click();
     await page.getByRole("button", { name: "Next" }).click();
-    await expect(page.getByRole("heading", { name: "Follow 3 top traders" })).toBeVisible();
-    const boxes = page.locator(".first__trader input");
+    // Top traders first, then insiders, companies and funds from SEC filings (none ticked: Stocks wasn't picked).
+    await expect(page.getByRole("heading", { name: "Who to follow" })).toBeVisible();
+    await expect(page.locator("[data-group='insider'] .first__tname").first()).toHaveText("Jane Fixture");
+    await expect(page.locator("[data-group='fund'] .first__tname").first()).toHaveText("E2E Fixture Capital");
+    await expect(page.locator("[data-group='insider'] input:checked, [data-group='company'] input:checked, [data-group='fund'] input:checked")).toHaveCount(0);
+    const boxes = page.locator("[data-group='trader'] .first__trader input");
     await expect(boxes.first()).toBeVisible();
     const shown = await boxes.count();
     expect(shown).toBeGreaterThan(0);
     expect(shown).toBeLessThanOrEqual(5);
-    await expect(page.locator(".first__trader input:checked")).toHaveCount(Math.min(3, shown));
+    await expect(page.locator("[data-group='trader'] .first__trader input:checked")).toHaveCount(Math.min(3, shown));
     await expect(page.locator(".first__trec").first()).toContainText(/Won \d+ of \d+/);
     await shot("onboarding-2");
     await page.getByRole("button", { name: /^Follow \d/ }).click();

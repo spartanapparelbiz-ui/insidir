@@ -1,8 +1,8 @@
 /* Moves, trader records, follows and the waitlist in Postgres (terminal schema). Server only. */
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
-import { follows, markets, moves, traderRecords, waitlist } from "@/lib/db/schema";
+import { follows, markets, moves, traderRecords, waitlist, type FollowKind } from "@/lib/db/schema";
 import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
 import { fromParts, mergeParts } from "./detect";
 import { notComboSql } from "./combos";
@@ -177,6 +177,8 @@ export interface MoveQuery {
   leagues?: League[]; categories?: string[];
   /** Only this venue (the home Results preview: Polymarket, the bets in the record). */
   source?: Move["source"];
+  /** Only moves by these wallets or in these markets (a member's Following feed); nothing when both are empty. */
+  followed?: { wallets: string[]; marketIds: string[] };
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
@@ -198,6 +200,10 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     q.before !== undefined ? lt(moves.at, new Date(q.before)) : undefined,
     q.settled ? isNotNull(moves.result) : undefined,
     q.source ? eq(moves.source, q.source) : undefined,
+    q.followed ? or(
+      q.followed.wallets.length ? inArray(moves.wallet, q.followed.wallets) : undefined,
+      q.followed.marketIds.length ? inArray(moves.marketId, q.followed.marketIds) : undefined,
+      sql`false`) : undefined,
   ].filter(Boolean);
   const rs = await db.select().from(moves).where(w.length ? and(...w) : undefined)
     // Stocks: insiders' Form 4 buys (days old) before funds' 13F adds (up to months old), each newest first.
@@ -236,13 +242,13 @@ export async function addWaitlist(db: Db, email: string, feature: string): Promi
   await db.insert(waitlist).values({ email: email.toLowerCase(), feature }).onConflictDoNothing();
 }
 
-export async function followList(db: Db, userId: string): Promise<Array<{ kind: "trader" | "market"; target: string; push: boolean; email: boolean }>> {
+export async function followList(db: Db, userId: string): Promise<Array<{ kind: FollowKind; target: string; push: boolean; email: boolean }>> {
   return db.select({ kind: follows.kind, target: follows.target, push: follows.push, email: follows.email }).from(follows).where(eq(follows.userId, userId));
 }
-export async function follow(db: Db, userId: string, kind: "trader" | "market", target: string): Promise<void> {
+export async function follow(db: Db, userId: string, kind: FollowKind, target: string): Promise<void> {
   await db.insert(follows).values({ userId, kind, target }).onConflictDoNothing();
 }
-export async function unfollow(db: Db, userId: string, kind: "trader" | "market", target: string): Promise<void> {
+export async function unfollow(db: Db, userId: string, kind: FollowKind, target: string): Promise<void> {
   await db.delete(follows).where(and(eq(follows.userId, userId), eq(follows.kind, kind), eq(follows.target, target)));
 }
 

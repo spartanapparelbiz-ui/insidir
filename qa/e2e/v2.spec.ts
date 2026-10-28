@@ -80,7 +80,9 @@ test("member feed: live moves with the record line; following a trader shows on 
   await page.locator(".move").first().getByRole("button", { name: "Follow" }).click();
   await expect(page.locator(".move").first().getByRole("button", { name: "Following" })).toBeVisible();
   await page.goto("/following");
-  await expect(page.getByRole("link", { name: "E2E-Top" })).toBeVisible();
+  await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
+  // Their recent moves are in the Following feed too.
+  await expect(page.getByTestId("following-feed").getByText("E2E-Top, a top trader, just put $412,000 on Chiefs to win.").first()).toBeVisible();
   await q("delete from terminal.follows");
 });
 

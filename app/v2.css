@@ -1136,3 +1136,12 @@ h2:not(.ios-vp *):not(.sheet h2):not([role="dialog"] h2) { font-family: var(--se
 .login__or::before, .login__or::after { content: ""; flex: 1; height: 1px; background: var(--night-line); }
 .login__help { margin: 4px 0 12px; color: var(--muted); font-size: var(--t13); line-height: 1.5; }
 .login__help a { color: var(--text); }
+
+/* The public SEC pages (/insiders, /insider-trading, /funds; components/v2/sec). */
+.trader__acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sec__month { margin-top: 8px; color: var(--paper); font-weight: 700; font-size: var(--t17); }
+.sec__roles { display: grid; gap: 6px; padding: 0; list-style: none; }
+.sec__after { margin-top: 16px; max-width: 720px; }
+.feedlist { display: grid; gap: 12px; padding: 0; list-style: none; max-width: 720px; }
+.filing__because { color: var(--muted); font-size: var(--t13); font-weight: 600; }
+.first__group { margin: 16px 0 8px; font-size: var(--t15); font-weight: 700; }

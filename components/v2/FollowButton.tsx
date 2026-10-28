@@ -1,13 +1,14 @@
 "use client";
-/* Follow / Following on a trader or market. Free viewers see it locked (lock icon); tapping opens the lock sheet; when following
+/* Follow / Following on a trader, market, insider, company or fund (lib/follows.ts). Free viewers see it locked (lock icon); tapping opens the lock sheet; when following
  * isn't ready on production it is the Coming soon item instead. */
 import { useState } from "react";
 import { LockButton } from "@/components/lock/Lock";
+import type { FollowKind } from "@/lib/db/schema";
 import { ComingSoon } from "./ComingSoon";
 
 export type FollowState = "locked" | "soon" | "off" | "on";
 
-export function FollowButton({ kind, target, state: initial, trialHref, label = "Follow" }: { kind: "trader" | "market"; target: string; state: FollowState; trialHref: string; label?: string }) {
+export function FollowButton({ kind, target, state: initial, trialHref, label = "Follow" }: { kind: FollowKind; target: string; state: FollowState; trialHref: string; label?: string }) {
   const [state, setState] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);

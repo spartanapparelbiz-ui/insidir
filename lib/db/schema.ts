@@ -449,10 +449,14 @@ export const trackedWallets = terminal.table("tracked_wallets", {
   addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** What a member follows: a trader (wallet) or a market. */
+/** What a member can follow (lib/follows.ts): a trader (wallet), a market, an insider (SEC reporting-owner CIK), a
+ *  company (issuer CIK) or a fund (13F filer CIK). CIKs are stored without leading zeros. */
+export type FollowKind = "trader" | "market" | "insider" | "company" | "fund";
+
+/** What a member follows. */
 export const follows = terminal.table("follows", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  kind: text("kind").$type<"trader" | "market">().notNull(),
+  kind: text("kind").$type<FollowKind>().notNull(),
   target: text("target").notNull(),
   push: boolean("push").notNull().default(true),
   email: boolean("email").notNull().default(true),
@@ -495,7 +499,19 @@ export const insiderTrades = terminal.table("insider_trades", {
   primaryKey({ columns: [t.accession, t.ownerCik, t.line] }),
   index("insider_trades_owner_idx").on(t.ownerCik, t.filedAt),
   index("insider_trades_issuer_idx").on(t.issuerCik, t.filedAt),
+  index("insider_trades_ticker_idx").on(t.ticker),
+  index("insider_trades_filed_idx").on(t.filedAt),
 ]);
+
+/** A stock's daily closing price, when we have one (ticker upper-case, date "YYYY-MM-DD"). Nothing fills it yet: we
+ *  found no free daily price source licensed for display. The insider page's "how the stock did after their buys"
+ *  line reads it and is left out when a ticker has no recent close (lib/profiles/sec.ts afterBuys). */
+export const stockCloses = terminal.table("stock_closes", {
+  ticker: text("ticker").notNull(),
+  date: text("date").notNull(),
+  close: doublePrecision("close").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.ticker, t.date] })]);
 
 /** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
  *  which date the history is complete. */

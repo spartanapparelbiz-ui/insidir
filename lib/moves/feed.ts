@@ -14,7 +14,8 @@ import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
 import { moveSource, type SourceLink } from "./source";
 import { hasRecord, isTopTrader, walletLabel } from "./records";
-import { personName, profileHref } from "@/lib/profiles/name";
+import { companyHref, personName, profileHref } from "@/lib/profiles/name";
+import type { FollowKind } from "@/lib/db/schema";
 import { whyLines } from "@/lib/profiles/why-facts";
 import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
 import { moveFace, type Face } from "./avatar";
@@ -59,6 +60,10 @@ export interface FeedItem {
   why: string | null;
   /** The public record behind the move: the Polygon transaction, Kalshi's trade record or the SEC filing (./source.ts). */
   sourceLink: SourceLink | null;
+  /** SEC cards: who can be followed from it (the insider and their company, or the fund; lib/follows.ts). */
+  secFollows?: Array<{ kind: FollowKind; target: string; label: string }>;
+  /** Insider cards: every insider trade at the company (/insider-trading/<ticker>). */
+  companyHref?: string | null;
 }
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
@@ -97,11 +102,22 @@ export async function feedStatus(db: Db, now: number, tab?: Tab): Promise<FeedSt
   return statusOf(jobs.map(okAt), now);
 }
 
+/** What an SEC card lets a member follow: the insider and their company, or the fund. */
+export function secFollowsOf(m: Move): NonNullable<FeedItem["secFollows"]> {
+  const d = m.detail;
+  if (d?.kind === "insider") return [
+    ...(d.ownerCik ? [{ kind: "insider" as const, target: String(Number(d.ownerCik)), label: "Follow insider" }] : []),
+    { kind: "company" as const, target: String(Number(d.issuerCik)), label: "Follow company" },
+  ];
+  if (d?.kind === "fund") return [{ kind: "fund", target: String(Number(d.fundCik)), label: "Follow fund" }];
+  return [];
+}
+
 /** Who moved, for the card: the name the sentence uses and where tapping it goes. */
 export function whoOf(m: Move): FeedItem["who"] {
   const d = m.detail;
-  if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik }) : null, badge: null };
-  if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik }), badge: null };
+  if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik, name: d.ownerName }) : null, badge: null };
+  if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik, name: d.fund }), badge: null };
   if (m.source === "kalshi" || !m.wallet) return { name: "Someone", href: null, badge: null };
   return { name: walletLabel(m.wallet, m.walletName), href: profileHref({ kind: "trader", wallet: m.wallet }),
     badge: m.newWallet ? "New wallet" : null };
@@ -124,6 +140,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
       who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
+      ...(m.source === "sec" ? { secFollows: secFollowsOf(m), companyHref: m.detail?.kind === "insider" && m.detail.ticker ? companyHref(m.detail.ticker) : null } : {}),
     };
   });
 }

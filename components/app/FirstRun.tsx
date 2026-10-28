@@ -2,8 +2,9 @@
 /* The three onboarding screens (app/onboarding), each skippable:
  *   1. "What do you want to follow?" Big tap tiles: Sports (then its leagues), Markets (politics, economy, world),
  *      Stocks.
- *   2. "Follow 3 top traders": five real top traders from those picks (/api/onboarding/traders) with their real
- *      record, the first three already ticked.
+ *   2. "Who to follow": five real top traders from those picks (/api/onboarding/traders) with their real record, the
+ *      first three already ticked; then insiders, companies and funds from SEC filings (most insider buying this month,
+ *      the funds we track), the first insider and company ticked when they picked Stocks.
  *   3. "Get it on your phone": the iPhone Add to Home Screen steps (alerts need it), or skip.
  * The end (or a skip at any step) saves the picks (POST /api/onboarding, which marks them onboarded) and opens the
  * feed filtered to them, with a one-time hint on the first card. */
@@ -11,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { signedShort } from "@/lib/moves/copy";
 import { PICK_LEAGUES, TOPICS, type Picks, type Topic } from "@/lib/picks";
 import type { League } from "@/lib/moves/types";
+import type { StockPick } from "@/lib/follows";
 
 interface Trader { wallet: string; name: string; won: number; resolved: number; profit: number }
 type TabPick = Picks["tabs"][number];
@@ -22,6 +24,9 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
   const [topics, setTopics] = useState<Topic[]>([]);
   const [traders, setTraders] = useState<Trader[] | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [stockPicks, setStockPicks] = useState<StockPick[]>([]);
+  /** "kind:target" of the insiders, companies and funds ticked. */
+  const [chosenStocks, setChosenStocks] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const head = useRef<HTMLHeadingElement>(null);
   useEffect(() => { head.current?.focus(); }, [step]);
@@ -34,11 +39,14 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
     const p = picks();
     const q = new URLSearchParams({ tabs: p.tabs.join(","), leagues: p.leagues.join(","), topics: p.topics.join(",") });
     let gone = false;
-    void fetch(`/api/onboarding/traders?${q}`).then(r => r.json() as Promise<{ traders?: Trader[] }>).then(b => {
+    void fetch(`/api/onboarding/traders?${q}`).then(r => r.json() as Promise<{ traders?: Trader[]; stocks?: StockPick[] }>).then(b => {
       if (gone) return;
       const list = b.traders ?? [];
       setTraders(list);
       setChosen(new Set(list.slice(0, 3).map(t => t.wallet)));
+      const sp = b.stocks ?? [];
+      setStockPicks(sp);
+      if (p.tabs.includes("stocks")) setChosenStocks(new Set((["insider", "company"] as const).flatMap(k => { const f = sp.find(x => x.kind === k); return f ? [`${k}:${f.target}`] : []; })));
     }).catch(() => { if (!gone) setTraders([]); });
     return () => { gone = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,7 +62,8 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
   };
   const followChosen = async () => {
     setBusy(true);
-    await Promise.all([...chosen].map(w => fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "trader", target: w }) }).catch(() => null)));
+    const all = [...[...chosen].map(w => ({ kind: "trader", target: w })), ...[...chosenStocks].map(k => ({ kind: k.slice(0, k.indexOf(":")), target: k.slice(k.indexOf(":") + 1) }))];
+    await Promise.all(all.map(f => fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).catch(() => null)));
     setBusy(false);
     setStep(2);
   };
@@ -87,25 +96,54 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
     </section>
   );
 
+  const count = chosen.size + chosenStocks.size;
+  const flip = (set: (f: (c: Set<string>) => Set<string>) => void, k: string) => set(c => { const n = new Set(c); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+  const GROUP: Record<StockPick["kind"], string> = { insider: "Insiders buying", company: "Companies insiders are buying", fund: "Big funds" };
   if (step === 1) return (
     <section className="first" aria-labelledby="first-h" data-step="2">
       {dots}
-      <h1 id="first-h" ref={head} tabIndex={-1} className="first__h">Follow 3 top traders</h1>
-      <p className="first__p">We&apos;ll show you the moment they make a big move.</p>
+      <h1 id="first-h" ref={head} tabIndex={-1} className="first__h">{stockPicks.length ? "Who to follow" : "Follow 3 top traders"}</h1>
+      <p className="first__p">We&apos;ll show you the moment they make a big move{stockPicks.length ? " or file with the SEC" : ""}.</p>
       {traders === null ? <p className="first__p" role="status">Finding top traders…</p> : traders.length ? (
-        <ul className="first__traders">
-          {traders.map(t => (
-            <li key={t.wallet}>
-              <label className="first__trader">
-                <input type="checkbox" checked={chosen.has(t.wallet)} onChange={() => setChosen(c => { const n = new Set(c); if (n.has(t.wallet)) n.delete(t.wallet); else n.add(t.wallet); return n; })} />
-                <span className="first__tname">{t.name}</span>
-                <span className="first__trec num">Won {t.won} of {t.resolved} · <span className={t.profit >= 0 ? "money" : "loss"}>{signedShort(t.profit)}</span> all-time</span>
-              </label>
-            </li>
-          ))}
-        </ul>
+        <>
+          {stockPicks.length ? <h2 className="first__group">Top traders</h2> : null}
+          <ul className="first__traders" data-group="trader">
+            {traders.map(t => (
+              <li key={t.wallet}>
+                <label className="first__trader">
+                  <input type="checkbox" checked={chosen.has(t.wallet)} onChange={() => flip(setChosen, t.wallet)} />
+                  <span className="first__tname">{t.name}</span>
+                  <span className="first__trec num">Won {t.won} of {t.resolved} · <span className={t.profit >= 0 ? "money" : "loss"}>{signedShort(t.profit)}</span> all-time</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : <p className="first__p">Top traders show up once they have 20 settled markets. Tap Follow on any card in the feed for now.</p>}
-      <button type="button" className="btn btn--primary btn--block" onClick={() => void followChosen()} disabled={busy || traders === null}>{chosen.size ? `Follow ${chosen.size}` : "Next"}</button>
+      {(["insider", "company", "fund"] as const).map(kind => {
+        const group = stockPicks.filter(x => x.kind === kind);
+        if (!group.length) return null;
+        return (
+          <div key={kind} data-group={kind}>
+            <h2 className="first__group">{GROUP[kind]}</h2>
+            <ul className="first__traders">
+              {group.map(x => {
+                const k = `${x.kind}:${x.target}`;
+                return (
+                  <li key={k}>
+                    <label className="first__trader">
+                      <input type="checkbox" checked={chosenStocks.has(k)} onChange={() => flip(setChosenStocks, k)} />
+                      <span className="first__tname">{x.name}</span>
+                      <span className="first__trec">{x.line}</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+      <button type="button" className="btn btn--primary btn--block" onClick={() => void followChosen()} disabled={busy || traders === null}>{count ? `Follow ${count}` : "Next"}</button>
       {skip(() => setStep(2))}
     </section>
   );
