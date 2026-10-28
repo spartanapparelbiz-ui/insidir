@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       await recordEvent({ name: "cancel", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: user.id, props: { plan: user.plan } }).catch(() => undefined);
     }
     catch {
-      return json ? NextResponse.json({ error: "Couldn't reach Whop to cancel. Try again in a minute, or use Manage billing." }, { status: 502 })
+      return json ? NextResponse.json({ error: "Couldn't reach our payment provider to cancel. Try again in a minute, or use Manage billing." }, { status: 502 })
         : NextResponse.redirect(new URL("/settings?cancel=failed", appUrl()), 303);
     }
   }

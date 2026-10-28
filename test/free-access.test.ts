@@ -6,7 +6,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { dropOff, FUNNEL_LABEL, FUNNEL } from "@/lib/analytics";
-import { signInAs } from "@/lib/auth/whop-login";
+import { signInWithGoogle } from "@/lib/auth/google";
 import { effectivePlan } from "@/lib/billing/access";
 import { freeAccessEmails, isFreeAccess } from "@/lib/billing/free";
 import { readPending } from "@/lib/billing/pending";
@@ -86,14 +86,14 @@ describe.skipIf(!URL0)("free access accounts in Postgres", () => {
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("a Whop-confirmed email on the list gets an account (once) and signs in; one not on the list doesn't", async () => {
+  it("a Google-verified email on the list gets an account (once) and signs in; one not on the list doesn't", async () => {
     process.env.FREE_ACCESS_EMAILS = "Owner@Insidir.com";
-    const r = await signInAs(db, { id: "user_owner", email: " owner@insidir.com" }, null);
+    const r = await signInWithGoogle(db, { id: "g_owner", email: " owner@insidir.com", verified: true }, null);
     expect(r.ok && r.userId).toMatch(/^usr_/);
-    expect(await signInAs(db, { id: "user_owner", email: "owner@insidir.com" }, null)).toEqual(r);
+    expect(await signInWithGoogle(db, { id: "g_owner", email: "owner@insidir.com", verified: true }, null)).toEqual(r);
     expect((await pool.query("select count(*)::int as n from terminal.users where email = 'owner@insidir.com'")).rows[0].n).toBe(1);
-    expect((await signInAs(db, { id: "user_x", email: "stranger@insidir.com" }, null)).ok).toBe(false);
-    // Without Whop's confirmed email, nothing.
-    expect((await signInAs(db, { id: "user_y", email: null }, null)).ok).toBe(false);
+    expect((await signInWithGoogle(db, { id: "g_x", email: "stranger@insidir.com", verified: true }, null)).ok).toBe(false);
+    // An email Google hasn't verified: nothing.
+    expect((await signInWithGoogle(db, { id: "g_y", email: "owner@insidir.com", verified: false }, null)).ok).toBe(false);
   });
 });

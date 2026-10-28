@@ -1,6 +1,6 @@
 /* Get Insidir (/start) = sign up and pay on one screen. Left: what you get (only what's live, five lines at most, and
  * one quiet line for what's coming) and one real big move from the last 24 hours, its trader's record locked. Right:
- * their email, then Whop's checkout opens in place under it (components/auth/
+ * "Continue with Google" or an email and password, then the secure checkout opens in place under them (components/auth/
  * StartCheckout.tsx): Apple Pay and Google Pay first where the device has them, then card. Someone who made their
  * account but didn't pay sees "Finish getting Insidir" with their email filled in. Members go straight to the feed. */
 import type { Metadata } from "next";
@@ -15,6 +15,7 @@ import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { PENDING_COOKIE, readPending } from "@/lib/billing/pending";
+import { CLAIM_COOKIE, claimSignup } from "@/lib/billing/claims";
 import { ELEMENTS_URL } from "@/lib/billing/whop";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, type FeedItem } from "@/lib/moves/feed";
@@ -33,6 +34,13 @@ export default async function StartPage() {
   const pending = viewer.user ? null : readPending(jar.get(PENDING_COOKIE)?.value);
   const now = Date.now();
   let move: FeedItem | null = null;
+  // Back from "Continue with Google" without a membership: their Google account is waiting in a checkout claim.
+  let googleEmail: string | null = null;
+  const claim = viewer.user ? undefined : jar.get(CLAIM_COOKIE)?.value;
+  if (claim && hasDatabase()) {
+    const c = await claimSignup(getDb(), claim).catch(() => null);
+    if (c?.googleId && c.email) googleEmail = c.email;
+  }
   if (hasDatabase()) {
     // The biggest real move of the last 24 hours that a visitor may see (30 minutes late, the record locked).
     move = (await feedFor(getDb(), "free", viewer.region, { byAmount: true, since: now - DAY, limit: 1 }, now).catch(() => []))[0] ?? null;
@@ -58,7 +66,7 @@ export default async function StartPage() {
                 <MoveCard m={move} follow="locked" trialHref="/start" compact />
               </div>
             ) : null}
-            <StartCheckout elementsUrl={ELEMENTS_URL} signedInEmail={viewer.user?.email ?? null} pendingEmail={pending} />
+            <StartCheckout elementsUrl={ELEMENTS_URL} signedInEmail={viewer.user?.email ?? null} pendingEmail={pending} googleEmail={googleEmail} />
           </div>
         </div>
       </main>
