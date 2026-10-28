@@ -1,11 +1,12 @@
-/* /admin/funnel: the funnel by day (lib/analytics.ts FUNNEL): Home → viewed the feed → hit a lock → started checkout →
- * paid → first follow → first alert opened, and cancels. Each person counts once per step, on the (Eastern) day they
+/* /admin/funnel: the sign-up funnel by day (lib/analytics.ts FUNNEL_STEPS): landing view → CTA click → /start view →
+ * account created → payment started → paid → onboarding done → first follow, with the drop-off between each step.
+ * Free-access accounts are left out. Each person counts once per step, on the (Eastern) day they
  * first got there; totals and step-to-step rates on top. Behind the admin sign-in, like /admin. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin";
-import { FUNNEL, FUNNEL_LABEL, funnelByDay, sinceDays, type FunnelDay } from "@/lib/analytics";
+import { dropOff, FUNNEL, FUNNEL_LABEL, funnelByDay, sinceDays, type FunnelDay } from "@/lib/analytics";
 import { hasDatabase } from "@/lib/db";
 import { pct } from "@/lib/format";
 import "../../app.css";
@@ -46,7 +47,8 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
           <thead><tr><th>Day</th>{FUNNEL.map(n => <th key={n} className="r">{FUNNEL_LABEL[n]}</th>)}</tr></thead>
           <tbody>
             <tr className="funnel__total"><th scope="row">Total</th>{FUNNEL.map(n => <td key={n} className="r">{total[n]!.toLocaleString("en-US")}</td>)}</tr>
-            <tr className="funnel__rate"><th scope="row">From previous step</th>{FUNNEL.map((n, i) => <td key={n} className="r muted">{i === 0 || n === "cancel" ? "—" : rate(total[n]!, total[FUNNEL[i - 1]!]!)}</td>)}</tr>
+            <tr className="funnel__rate"><th scope="row">From previous step</th>{FUNNEL.map((n, i) => <td key={n} className="r muted">{i === 0 ? "—" : rate(total[n]!, total[FUNNEL[i - 1]!]!)}</td>)}</tr>
+            <tr className="funnel__drop" data-testid="funnel-drop"><th scope="row">Drop-off</th>{FUNNEL.map((n, i) => { const d = i === 0 ? null : dropOff(total[n]!, total[FUNNEL[i - 1]!]!); return <td key={n} className="r">{d === null ? "—" : pct(d)}</td>; })}</tr>
             {rows.length ? rows.map(r => (
               <tr key={r.day}><th scope="row">{r.day}</th>{FUNNEL.map(n => <td key={n} className="r">{(r.counts[n] ?? 0).toLocaleString("en-US")}</td>)}</tr>
             )) : <tr><td colSpan={FUNNEL.length + 1} className="muted">No events in this window yet.</td></tr>}

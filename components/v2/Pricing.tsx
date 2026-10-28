@@ -28,6 +28,31 @@ export const insidirUnlocks = (): string[] => FEATURES.filter(ready).map(b => b.
 
 const Check = () => <svg className="plan2__check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 
+/** /start's list: at most five live things, no repeats; everything not live yet goes in one quiet line under it. */
+const START_LIST: Bullet[] = [
+  { text: "Every big move, live: sports bets, prediction markets and insider stock trades", needs: "feed" },
+  { text: "Trader records: won, lost, all-time profit", needs: "records" },
+  { text: "Top traders this week, this month and all time", needs: "records" },
+  { text: "Every result, won or lost" },
+  { text: "Follow traders and markets", needs: "follows" },
+];
+const SOON_NAME: Record<string, string> = { alerts_push: "phone alerts", custom_rules: "custom alert rules", price_gaps: "price gaps", crypto: "crypto" };
+export const startList = (): string[] => START_LIST.filter(ready).map(b => b.text).slice(0, 5);
+export const comingSoonLine = (): string | null => {
+  const soon = FEATURES.filter(b => !ready(b)).map(b => SOON_NAME[b.needs ?? ""]).filter((x): x is string => Boolean(x));
+  return soon.length ? `More coming: ${soon.join(", ")}.` : null;
+};
+
+export function StartList() {
+  const more = comingSoonLine();
+  return (
+    <>
+      <ul className="plan2__list start__list" data-testid="start-list">{startList().map(t => <li key={t}><Check />{t}</li>)}</ul>
+      {more ? <p className="start__more">{more}</p> : null}
+    </>
+  );
+}
+
 /** The plan's features as a list: ready ones first, then the coming-soon ones. */
 export function FeatureList({ className = "plan2__list" }: { className?: string }) {
   const live = FEATURES.filter(ready), soon = FEATURES.filter(b => !ready(b));

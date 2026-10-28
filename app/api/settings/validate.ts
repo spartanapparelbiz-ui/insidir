@@ -81,7 +81,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   const ignored = Object.keys(input).filter(k => !KNOWN.has(k));
   // Rebuilt field by field so nothing but the known settings is ever written back.
   const s: UserSettings = {
-    minRoi: current.minRoi, minSizeUsd: current.minSizeUsd, categories: [...current.categories], venues: [...current.venues],
+    ...(current.picks ? { picks: current.picks } : {}), minRoi: current.minRoi, minSizeUsd: current.minSizeUsd, categories: [...current.categories], venues: [...current.venues],
     showYellow: current.showYellow, showRed: current.showRed, alertPush: current.alertPush, alertEmail: current.alertEmail,
     emailDigest: current.emailDigest, alertMinRoi: current.alertMinRoi, soundOnGreen: current.soundOnGreen ?? false,
     alertSafety: current.alertSafety === "green_yellow" ? "green_yellow" : "green", alertCategories: [...(current.alertCategories ?? [])],

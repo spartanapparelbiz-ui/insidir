@@ -4,17 +4,45 @@
 import { gte, sql } from "drizzle-orm";
 import { getDb, hasDatabase } from "./db";
 import { events } from "./db/schema";
+import { freeAccessEmails } from "./billing/free";
 
-/** The funnel: Home → the free feed (no sign-up) → a lock → checkout → paid → first follow → first alert opened; and
- *  cancel, to see who leaves. Each person counts once per step, on the day they first got there. */
-export const FUNNEL = ["landing_view", "feed_view", "lock_view", "checkout_start", "paid", "first_follow", "alert_opened", "cancel"] as const;
-export const FUNNEL_LABEL: Record<(typeof FUNNEL)[number], string> = {
-  landing_view: "Home", feed_view: "Viewed the feed", lock_view: "Hit a lock", checkout_start: "Started checkout", paid: "Paid",
-  first_follow: "First follow", alert_opened: "First alert opened", cancel: "Cancelled",
-};
+/** The sign-up funnel, in order: each step is the events that count for it. Each person counts once per step, on the
+ *  day they first got there. Free-access accounts (lib/billing/free.ts) are left out of every number. */
+export const FUNNEL_STEPS = [
+  { key: "landing_view", label: "Landing view", names: ["landing_view"] },
+  { key: "cta_click", label: "CTA click", names: ["unlock_click", "hero_cta_click"] },
+  { key: "start_view", label: "/start view", names: ["start_view"] },
+  { key: "account_created", label: "Account created", names: ["account_created"] },
+  { key: "checkout_start", label: "Payment started", names: ["checkout_start"] },
+  { key: "paid", label: "Paid", names: ["paid"] },
+  { key: "onboarding_done", label: "Onboarding done", names: ["onboarding_done", "onboarding_skip"] },
+  { key: "first_follow", label: "First follow", names: ["first_follow"] },
+] as const;
+export const FUNNEL = FUNNEL_STEPS.map(s => s.key);
+export const FUNNEL_LABEL: Record<string, string> = Object.fromEntries(FUNNEL_STEPS.map(s => [s.key, s.label]));
+const STEP_OF = sql.raw(`case name ${FUNNEL_STEPS.flatMap(s => s.names.map(n => `when '${n}' then '${s.key}'`)).join(" ")} end`);
+const STEP_NAMES = FUNNEL_STEPS.flatMap(s => [...s.names]);
+
+/** SQL: this event isn't from a free-access account (by its account, or the visitor id that account signed up from). */
+function notFreeAccess(): ReturnType<typeof sql> {
+  const list = [...freeAccessEmails()];
+  if (!list.length) return sql`true`;
+  const emails = sql.join(list.map(e => sql`${e}`), sql`, `);
+  return sql`not exists (select 1 from terminal.users fu where lower(fu.email) in (${emails})
+    and (fu.id = terminal.events.user_id or (fu.visitor_id is not null and fu.visitor_id = terminal.events.visitor_id)))`;
+}
+
+/** SQL: a user isn't on the free-access list (signups, paid and conversion numbers). */
+export function userNotFree(col = sql`email`): ReturnType<typeof sql> {
+  const list = [...freeAccessEmails()];
+  return list.length ? sql`coalesce(lower(${col}), '') not in (${sql.join(list.map(e => sql`${e}`), sql`, `)})` : sql`true`;
+}
+
+/** Drop-off between two steps: the share of the previous step that didn't reach this one. */
+export const dropOff = (cur: number, prev: number): number | null => (prev > 0 ? Math.max(0, 1 - cur / prev) : null);
 export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
-export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip",
+export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip", "first_feed_hint",
   // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
   "hero_cta_click", "ticker_click", "feed_preview_view", "offer_view",
   // A lock opened (its sheet: what you get, the price, one button); where says which (live, record, follow, alerts).
@@ -60,11 +88,12 @@ export async function recordEvent(e: { name: string; visitorId?: string | null; 
 export interface FunnelRow { name: string; visitors: number }
 export interface AbRow { variant: string; landing: number; feed: number; checkout: number; paid: number }
 
-/** Distinct visitors (or users, for server events) reaching each funnel step since `since`. */
+/** Distinct people (the account, else the visitor) reaching each funnel step since `since`. */
 export async function funnelStats(since: Date): Promise<FunnelRow[]> {
-  const rows = await getDb().select({ name: events.name, visitors: sql<number>`count(distinct coalesce(${events.userId}, ${events.visitorId}))::int` })
-    .from(events).where(gte(events.at, since)).groupBy(events.name);
-  return FUNNEL.map(name => ({ name, visitors: rows.find(r => r.name === name)?.visitors ?? 0 }));
+  const res = await getDb().execute(sql`select ${STEP_OF} as step, count(distinct coalesce(user_id, visitor_id))::int as n from terminal.events
+    where at >= ${since} and name in (${sql.join(STEP_NAMES.map(n => sql`${n}`), sql`, `)}) and ${notFreeAccess()} group by 1`);
+  const rows = res.rows as Array<{ step: string; n: number }>;
+  return FUNNEL.map(name => ({ name, visitors: Number(rows.find(r => r.step === name)?.n ?? 0) }));
 }
 
 export interface FunnelDay { day: string; counts: Record<string, number> }
@@ -73,8 +102,8 @@ export interface FunnelDay { day: string; counts: Record<string, number> }
 export async function funnelByDay(since: Date): Promise<FunnelDay[]> {
   const res = await getDb().execute(sql`
     with firsts as (
-      select name, coalesce(user_id, visitor_id) as who, min(at) as at from terminal.events
-      where name in (${sql.join(FUNNEL.map(n => sql`${n}`), sql`, `)}) group by name, coalesce(user_id, visitor_id))
+      select ${STEP_OF} as name, coalesce(user_id, visitor_id) as who, min(at) as at from terminal.events
+      where name in (${sql.join(STEP_NAMES.map(n => sql`${n}`), sql`, `)}) and ${notFreeAccess()} group by 1, 2)
     select to_char(at at time zone 'America/New_York', 'YYYY-MM-DD') as day, name, count(*)::int as n
     from firsts where at >= ${since} group by 1, 2 order by 1 desc`);
   const days = new Map<string, Record<string, number>>();
@@ -94,7 +123,7 @@ export async function abStats(since: Date): Promise<AbRow[]> {
       count(distinct s.visitor_id)::int as landing,
       count(distinct e.visitor_id) filter (where e.name = 'feed_view')::int as feed,
       count(distinct e.visitor_id) filter (where e.name = 'checkout_start')::int as checkout,
-      count(distinct u.id) filter (where u.plan <> 'free')::int as paid
+      count(distinct u.id) filter (where u.plan <> 'free' and ${userNotFree(sql`u.email`)})::int as paid
     from seen s
     left join terminal.events e on e.visitor_id = s.visitor_id and e.at >= ${since}
     left join terminal.users u on u.visitor_id = s.visitor_id
@@ -107,8 +136,17 @@ export async function utmStats(): Promise<Array<{ source: string; campaign: stri
   const res = await getDb().execute(sql`
     select coalesce(utm->>'utm_source','(none)') as source, coalesce(utm->>'utm_campaign','') as campaign, coalesce(utm->>'utm_content','') as content,
       count(*)::int as signups, count(*) filter (where plan <> 'free')::int as paid
-    from terminal.users group by 1,2,3 order by paid desc, signups desc limit 100`);
+    from terminal.users where ${userNotFree()} group by 1,2,3 order by paid desc, signups desc limit 100`);
   return (res.rows as Array<Record<string, unknown>>).map(r => ({ source: String(r.source), campaign: String(r.campaign), content: String(r.content), signups: Number(r.signups), paid: Number(r.paid) }));
+}
+
+/** Every email on the free-access list and whether it has an account yet (for /admin). */
+export async function freeAccessAccounts(): Promise<Array<{ email: string; userId: string | null }>> {
+  const list = [...freeAccessEmails()];
+  if (!list.length) return [];
+  const res = await getDb().execute(sql`select id, lower(email) as email from terminal.users where lower(email) in (${sql.join(list.map(e => sql`${e}`), sql`, `)})`);
+  const by = new Map((res.rows as Array<{ id: string; email: string }>).map(r => [r.email, r.id]));
+  return list.map(email => ({ email, userId: by.get(email) ?? null }));
 }
 
 export const sinceDays = (days: number): Date => new Date(Date.now() - days * 86_400_000);

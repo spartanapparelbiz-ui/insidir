@@ -8,6 +8,8 @@ export const terminal = pgSchema("terminal");
 
 /** User settings. No bankroll: size filters are plain numbers the user sets. */
 export interface UserSettings {
+  /** What they want to follow, from onboarding (lib/picks.ts): the feed opens filtered to it. */
+  picks?: { tabs: string[]; leagues: string[]; topics: string[] } | null;
   /** Hide plays under this ROI, as a fraction (0.01 = 1%). */
   minRoi: number;
   /** Hide plays whose fillable cost is under this many dollars. */

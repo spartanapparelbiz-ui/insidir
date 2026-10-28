@@ -15,6 +15,7 @@ import type { Db } from "@/lib/db";
 import { checkoutClaims, DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import type { Plan } from "@/lib/types";
 import { claimSignup } from "./claims";
+import { isFreeAccess } from "./free";
 import { fetchMembership, fetchMemberships, fetchPayment, grants, planFrom, planIds, type MembershipLite, type WebhookRef } from "./whop";
 
 export const newUserId = (): string => "usr_" + randomBytes(12).toString("base64url");
@@ -23,8 +24,10 @@ export { sha256 } from "@/lib/hash";
 
 type UserRow = typeof users.$inferSelect;
 
-/** The plan an account may use right now. A paid plan ends with its paid period unless Whop still says active. */
-export function effectivePlan(u: Pick<UserRow, "plan" | "accessUntil" | "membershipStatus">, now = Date.now()): Plan {
+/** The plan an account may use right now. A paid plan ends with its paid period unless Whop still says active. An
+ *  email on the owner's free-access list (./free.ts) is a full member whatever Whop says. */
+export function effectivePlan(u: Pick<UserRow, "plan" | "accessUntil" | "membershipStatus"> & { email?: string | null }, now = Date.now()): Plan {
+  if (isFreeAccess(u.email)) return "insidir";
   if (u.plan === "free") return "free";
   if (u.accessUntil && u.accessUntil.getTime() <= now && !(u.membershipStatus === "active" || u.membershipStatus === "trialing")) return "free";
   return u.plan;

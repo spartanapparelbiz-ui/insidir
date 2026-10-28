@@ -5,12 +5,14 @@ import { cache } from "react";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { FeedViewer } from "@/lib/feed";
 import type { Plan, Region } from "@/lib/types";
-import { REGION_COOKIE, SESSION_COOKIE, userForToken, type SessionUser } from "./session";
+import { REGION_COOKIE, SESSION_COOKIE, userForToken, VIEW_AS_COOKIE, type SessionUser } from "./session";
 
 export interface Viewer {
   user: SessionUser | null;
   plan: Plan;
   region: Region | null;
+  /** A free-access account looking at the site as a visitor: who they really are, for the header's View as switch. */
+  previewing?: SessionUser | null;
 }
 
 const readRegion = (v: string | undefined): Region | null => (v === "us" || v === "non_us" ? v : null);
@@ -19,7 +21,10 @@ export const getViewer = cache(async (): Promise<Viewer> => {
   const jar = await cookies();
   let user: SessionUser | null = null;
   try { user = await userForToken(jar.get(SESSION_COOKIE)?.value); } catch { user = null; }
-  return { user, plan: user?.plan ?? "free", region: user?.region ?? readRegion(jar.get(REGION_COOKIE)?.value) };
+  const region = user?.region ?? readRegion(jar.get(REGION_COOKIE)?.value);
+  // Free-access accounts can look at the site exactly as a logged-out visitor sees it.
+  if (user?.freeAccess && jar.get(VIEW_AS_COOKIE)?.value === "visitor") return { user: null, plan: "free", region, previewing: user };
+  return { user, plan: user?.plan ?? "free", region };
 });
 
 export function feedViewer(v: Viewer): FeedViewer {

@@ -23,7 +23,7 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await page.locator('[data-cta="hero"]').click();
   await expect(page).toHaveURL(/\/start$/);
   await expect(page.getByRole("heading", { name: "Get Insidir." })).toBeVisible();
-  await expect(page.getByText("Cancel anytime.").first()).toBeVisible();
+  await expect(page.getByText("Cancel anytime in 2 clicks. Secure payment by Whop.")).toBeVisible();
 
   // Sign-up on top: a short password is refused before anything is sent.
   await page.getByLabel("Email").fill(email);
@@ -40,9 +40,11 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await page.screenshot({ path: `qa/screenshots/checkout-${w}.png`, fullPage: true });
   await form.getByRole("button", { name: "Pay $39 (test mode)" }).click();
 
-  // Logged in the moment the payment lands, on the feed's welcome.
-  await expect(page).toHaveURL(/\/feed\?welcome=1/, { timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
+  // Logged in the moment the payment lands, straight into onboarding; skipping it opens the feed.
+  await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "What do you want to follow?" })).toBeVisible();
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page).toHaveURL(/\/feed\?first=1/);
   const user = (await q<{ id: string; plan: string; whop_user_id: string; password_hash: string }>("select id, plan, whop_user_id, password_hash from terminal.users where email = $1", [email]))[0]!;
   expect(user).toMatchObject({ plan: "insidir", whop_user_id: whopUserFor(email) });
   expect(user.password_hash).toMatch(/^scrypt\$/);

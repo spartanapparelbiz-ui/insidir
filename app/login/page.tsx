@@ -1,7 +1,10 @@
 /* Log in to Insidir (/login): email and password (components/auth/LoginForm.tsx). Members only; anyone else is
  * offered "Get Insidir · $39/mo". Already logged in: straight on to where they were going. */
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PENDING_COOKIE, readPending } from "@/lib/billing/pending";
 import { Photo } from "@/components/Photo";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -18,6 +21,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const next = safeNext(sp.next);
   const viewer = await getViewer();
   if (viewer.user && isPaid(viewer.plan)) redirect(next);
+  // Made an account on /start but didn't pay: offer to finish, their email filled in.
+  const pending = viewer.user ? null : readPending((await cookies()).get(PENDING_COOKIE)?.value);
   return (
     <>
       <SiteHeader signedIn={false} offer={false} />
@@ -28,7 +33,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="split__form">
           <div className="split__box">
-            <LoginForm next={next} initialEmail={sp.email ?? viewer.user?.email ?? ""} />
+            {pending ? (
+              <div className="finish" data-testid="finish-insidir">
+                <p className="finish__h">Finish getting Insidir</p>
+                <p className="finish__p">You started with <b>{pending}</b>. Pick up where you left off: one step left.</p>
+                <Link className="btn btn--primary btn--block" href="/start">Finish getting Insidir</Link>
+              </div>
+            ) : null}
+            <LoginForm next={next} initialEmail={sp.email ?? viewer.user?.email ?? pending ?? ""} />
           </div>
         </div>
       </main>

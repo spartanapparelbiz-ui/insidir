@@ -12,7 +12,7 @@ import { Photo, type PhotoN } from "@/components/Photo";
 import { Wordmark } from "@/components/Wordmark";
 import { MoveCard } from "@/components/v2/MoveCard";
 import { LockedRecord } from "@/components/v2/LockedRecord";
-import { TabIcon } from "@/components/SiteHeader";
+import { TabIcon } from "@/components/TabIcon";
 import { BAND, SPOT } from "@/lib/photos";
 import type { Story as StoryData } from "@/lib/home/story";
 import type { FeedItem } from "@/lib/moves/feed";

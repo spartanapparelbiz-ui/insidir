@@ -8,6 +8,7 @@ import { GET_CTA } from "@/lib/copy";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { League, Tab } from "@/lib/moves/types";
+import { topicCategories, type Picks } from "@/lib/picks";
 import { Photo } from "@/components/Photo";
 import { BAND, SPOT } from "@/lib/photos";
 import { PageBand } from "@/components/PageBand";
@@ -22,7 +23,11 @@ const SIZES = [{ min: 10_000, label: "$10k+" }, { min: 50_000, label: "$50k+" },
 const SPORT_LEAGUES: League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf"];
 const POLL_MS = 10_000;
 
-export function Feed({ pill, initial, status: initialStatus, initialTab, stocks = false, free, follows, followsReady, trialHref, serverNow }: {
+export function Feed({ pill, initial, status: initialStatus, initialTab, stocks = false, free, follows, followsReady, trialHref, serverNow, picks = null, firstHint = false }: {
+  /** What they picked in onboarding: the feed opens on "Your picks" (their leagues / market topics). */
+  picks?: Picks | null;
+  /** Just finished onboarding: a one-time hint on the first card. */
+  firstHint?: boolean;
   pill?: ReactNode; initial: FeedItem[]; status: FeedStatus | null; initialTab: Tab; free: boolean;
   /** Stocks is live (FEATURES_READY); otherwise it is a Coming soon item. */
   stocks?: boolean;
@@ -32,6 +37,16 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   const [tab, setTab] = useState<Tab>(initialTab);
   const [min, setMin] = useState(10_000);
   const [league, setLeague] = useState<League | null>(null);
+  /** "Your picks" on: only their leagues (Sports) or market topics (Markets). */
+  const [mine, setMine] = useState(Boolean(picks));
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    if (!firstHint) return;
+    try { if (localStorage.getItem("insidir_first_hint") === "1") return; localStorage.setItem("insidir_first_hint", "1"); } catch { /* show it this once */ }
+    setHint(true);
+  }, [firstHint]);
+  const myLeagues = picks?.leagues ?? [], myCats = topicCategories(picks?.topics ?? []);
+  const hasMine = (t: Tab) => (t === "sports" && myLeagues.length > 0) || (t === "markets" && myCats.length > 0);
   const [items, setItems] = useState(initial);
   const [status, setStatus] = useState(initialStatus);
   const [fresh, setFresh] = useState<Set<string>>(new Set());
@@ -48,6 +63,8 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   const load = useCallback(async (reset: boolean) => {
     const q = new URLSearchParams({ tab, min: String(min), limit: "30" });
     if (tab === "sports" && league) q.set("league", league);
+    else if (mine && tab === "sports" && myLeagues.length) q.set("leagues", myLeagues.join(","));
+    if (mine && tab === "markets" && myCats.length) q.set("cats", myCats.join(","));
     const res = await fetch(`/api/moves?${q}`, { cache: "no-store" }).catch(() => null);
     if (reset) setBusy(false);
     if (!res?.ok) { setStatus(s => s ? { ...s, state: "behind", text: s.lastAt ? `Catching up · last update ${agoText(s.lastAt, Date.now())}` : "Catching up · waiting for the first update" } : s); return; }
@@ -65,7 +82,8 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
       return;
     }
     setWaiting(body.items);
-  }, [tab, min, league]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, min, league, mine]);
 
   useEffect(() => {
     if (first.current) { first.current = false; } else void load(true);
@@ -116,9 +134,16 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
             <div className="seg seg--sm" role="group" aria-label="Size">
               {SIZES.map(s => <button key={s.min} type="button" className="seg__btn" aria-pressed={min === s.min} onClick={() => { if (s.min !== min) pick(() => setMin(s.min)); }}>{s.label}</button>)}
             </div>
+            {hasMine(tab) && tab === "markets" ? (
+              <div className="chips dash__leagues" role="group" aria-label="Topics">
+                <button type="button" className="chip2" aria-pressed={mine} onClick={() => { if (!mine) pick(() => setMine(true)); }}>Your picks</button>
+                <button type="button" className="chip2" aria-pressed={!mine} onClick={() => { if (mine) pick(() => setMine(false)); }}>All</button>
+              </div>
+            ) : null}
             {tab === "sports" ? (
               <div className="chips chips--scroll dash__leagues" role="group" aria-label="League">
-                <button type="button" className="chip2" aria-pressed={league === null} onClick={() => { if (league) pick(() => setLeague(null)); }}>All</button>
+                {hasMine("sports") ? <button type="button" className="chip2" aria-pressed={mine && league === null} onClick={() => { if (!mine || league) pick(() => { setMine(true); setLeague(null); }); }}>Your picks</button> : null}
+                <button type="button" className="chip2" aria-pressed={!(mine && hasMine("sports")) && league === null} onClick={() => { if (league || mine) pick(() => { setMine(false); setLeague(null); }); }}>All</button>
                 {SPORT_LEAGUES.map(l => <button key={l} type="button" className="chip2" aria-pressed={league === l} onClick={() => { if (league !== l) pick(() => setLeague(l)); }}>{l === "college" ? "College" : l}</button>)}
               </div>
             ) : null}
@@ -134,7 +159,12 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           ) : null}
           {items.length ? (
             <ol className="feed2__list" aria-busy={busy || undefined}>
-              {items.map(m => <li key={m.id}><MoveCard m={m} follow={followState(m.wallet)} trialHref={trialHref} fresh={fresh.has(m.id)} /></li>)}
+              {items.map((m, i) => (
+                <li key={m.id}>
+                  {hint && i === 0 ? <p className="hint" role="note" data-testid="first-hint">This is a big move. Tap anyone to see their record.<button type="button" onClick={() => setHint(false)}>Got it</button></p> : null}
+                  <MoveCard m={m} follow={followState(m.wallet)} trialHref={trialHref} fresh={fresh.has(m.id)} />
+                </li>
+              ))}
             </ol>
           ) : (
             <div className="empty">

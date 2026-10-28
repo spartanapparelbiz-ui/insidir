@@ -9,10 +9,12 @@ import { checkoutPlanId } from "@/lib/billing/whop";
 import { normEmail } from "@/lib/billing/access";
 import { appUrl } from "@/lib/app-url";
 import { hashPassword, passwordProblem, validEmail } from "@/lib/auth/password";
-import { SESSION_COOKIE, userForToken } from "@/lib/auth/session";
+import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
 import { getDb, hasDatabase } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { readBody } from "@/lib/http";
+import { recordEvent } from "@/lib/analytics";
+import { PENDING_COOKIE, PENDING_MAX_AGE_S } from "@/lib/billing/pending";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,11 @@ export async function POST(req: NextRequest) {
   }
   const metadata: Record<string, string> = { insidir_claim: claim, ...(user ? { insidir_user_id: user.id } : {}) };
   const res = NextResponse.json({ planId, metadata, email, returnUrl: `${appUrl()}/welcome` });
+  if (!user) {
+    // The account step is done (it's made for real once they pay): remembered so /start and /login can finish it.
+    res.cookies.set(PENDING_COOKIE, email, { httpOnly: true, secure: appUrl().startsWith("https:"), sameSite: "lax", path: "/", maxAge: PENDING_MAX_AGE_S });
+    await recordEvent({ name: "account_created", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null }).catch(() => undefined);
+  }
   res.cookies.set(CLAIM_COOKIE, claim, { httpOnly: true, secure: appUrl().startsWith("https:"), sameSite: "lax", path: "/", maxAge: CLAIM_MAX_AGE_S });
   return res;
 }

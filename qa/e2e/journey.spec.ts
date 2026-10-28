@@ -54,16 +54,41 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await page.locator("#start-password").fill("journey-password");
     await page.getByRole("button", { name: "Continue to payment" }).click();
     await page.getByRole("button", { name: "Pay $39 (test mode)" }).click();
-    await expect(page).toHaveURL(/\/feed/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
-    // The welcome: follow the first top trader in one tap; it shows on Following.
-    const welcome = page.locator(".inband");
-    await expect(welcome.getByRole("heading", { name: "You're in." })).toBeVisible();
-    await welcome.getByRole("button", { name: "Follow" }).first().click();
-    await expect(welcome.getByRole("button", { name: "Following" }).first()).toBeVisible();
-    await shot("welcome");
-    await expect.poll(async () => (await q<{ n: number }>("select count(*)::int as n from terminal.follows where user_id = $1 and kind = 'trader'", [MOCK_USER.sub]))[0]?.n).toBe(1);
+    // Onboarding: 1. pick Sports → NFL (big tap tiles); 2. top traders from those picks, 3 ticked; 3. the phone steps.
+    await expect(page.getByRole("heading", { name: "What do you want to follow?" })).toBeVisible();
+    await shot("onboarding-1");
+    await page.getByRole("button", { name: /^Sports/ }).click();
+    await page.getByRole("button", { name: "NFL", exact: true }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByRole("heading", { name: "Follow 3 top traders" })).toBeVisible();
+    const boxes = page.locator(".first__trader input");
+    await expect(boxes.first()).toBeVisible();
+    const shown = await boxes.count();
+    expect(shown).toBeGreaterThan(0);
+    expect(shown).toBeLessThanOrEqual(5);
+    await expect(page.locator(".first__trader input:checked")).toHaveCount(Math.min(3, shown));
+    await expect(page.locator(".first__trec").first()).toContainText(/Won \d+ of \d+/);
+    await shot("onboarding-2");
+    await page.getByRole("button", { name: /^Follow \d/ }).click();
+    await expect(page.getByRole("heading", { name: "Get it on your phone" })).toBeVisible();
+    await expect(page.getByText("Add to Home Screen")).toBeVisible();
+    await shot("onboarding-3");
+    await page.getByRole("button", { name: "Done" }).click();
+    // The feed, filtered to their picks, with the one-time hint on the first card.
+    await expect(page).toHaveURL(/\/feed\?first=1/);
+    await expect(page.getByRole("button", { name: "Your picks" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("first-hint")).toContainText("This is a big move. Tap anyone to see their record.");
+    await shot("feed-first");
+    const settings = (await q<{ settings: { picks?: { tabs: string[]; leagues: string[] } } }>("select settings from terminal.users where id = $1", [MOCK_USER.sub]))[0]!.settings;
+    expect(settings.picks).toMatchObject({ tabs: ["sports"], leagues: ["NFL"] });
+    await expect.poll(async () => (await q<{ n: number }>("select count(*)::int as n from terminal.follows where user_id = $1 and kind = 'trader'", [MOCK_USER.sub]))[0]?.n).toBe(Math.min(3, shown));
+    // Once only: the hint doesn't come back.
+    await page.goto("/feed?first=1");
+    await expect(page.locator(".move").first()).toBeVisible();
+    await expect(page.getByTestId("first-hint")).toHaveCount(0);
     await page.goto("/following");
     await expect(page.getByText("E2E-Top").first()).toBeVisible();
 

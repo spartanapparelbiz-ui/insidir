@@ -1,5 +1,6 @@
 /* The worker's database side: match cache, LLM spend, overrides, markets and pairs, opportunities and receipts,
  * heartbeats, whales and alert bookkeeping. */
+import { effectivePlan } from "@/lib/billing/access";
 import { and, eq, gte, inArray, isNull, lt, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, quarantinedDeals, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
@@ -176,7 +177,7 @@ export async function alertUsers(db: Db, now: Date): Promise<AlertUser[]> {
     .where(and(eq(alertsSent.channel, "email"), gte(alertsSent.sentAt, hourAgo))).groupBy(alertsSent.userId);
   const emailCount = new Map(emails.map(e => [e.userId, e.n]));
   return rows.map(u => ({
-    id: u.id, email: u.email, plan: u.plan, region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings }, hasPush: withPush.has(u.id),
+    id: u.id, email: u.email, plan: effectivePlan(u), region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings }, hasPush: withPush.has(u.id),
     emailsLastHour: emailCount.get(u.id) ?? 0, lastDigestAt: u.lastDigestAt?.getTime() ?? null,
   }));
 }

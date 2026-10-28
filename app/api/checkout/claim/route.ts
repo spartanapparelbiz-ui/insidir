@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
 import { CLAIM_COOKIE, redeemClaim } from "@/lib/billing/claims";
 import { getDb, hasDatabase } from "@/lib/db";
+import { PENDING_COOKIE } from "@/lib/billing/pending";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,9 @@ export async function POST(req: NextRequest) {
   const userId = await redeemClaim(getDb(), req.cookies.get(CLAIM_COOKIE)?.value);
   if (!userId) return NextResponse.json({ ready: false });
   const { token, expires } = await createSession(userId);
-  const res = NextResponse.json({ ready: true, next: "/feed?welcome=1" });
+  const res = NextResponse.json({ ready: true, next: "/onboarding" });
   setSessionCookie(res, token, expires);
   res.cookies.delete(CLAIM_COOKIE);
+  res.cookies.delete(PENDING_COOKIE);
   return res;
 }

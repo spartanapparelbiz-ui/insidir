@@ -8,12 +8,13 @@ import { movePlan } from "./gate";
 import { isTopTrader } from "./records";
 import { fromRow, recordsFor } from "./store";
 import type { Move } from "./types";
+import { effectivePlan } from "@/lib/billing/access";
 
 export interface MoveAlertUser extends AlertUser { emailDigest: boolean; lastDigestAt: number | null }
 
 /** Paid members (Free gets no alerts), with what they follow and their alert settings. */
 export async function moveAlertUsers(db: Db): Promise<MoveAlertUser[]> {
-  const rows = (await db.select().from(users)).filter(u => movePlan(u.plan).alerts);
+  const rows = (await db.select().from(users)).map(u => ({ ...u, plan: effectivePlan(u) })).filter(u => movePlan(u.plan).alerts);
   if (!rows.length) return [];
   const ids = rows.map(u => u.id);
   const fs = await db.select().from(follows).where(inArray(follows.userId, ids));

@@ -7,10 +7,13 @@ import type { Plan, Region } from "@/lib/types";
 import type { NextResponse } from "next/server";
 import { appUrl } from "@/lib/app-url";
 import { effectivePlan, refreshPlan } from "@/lib/billing/access";
+import { isFreeAccess } from "@/lib/billing/free";
 
 export const SESSION_COOKIE = "insidir_session";
 export const REGION_COOKIE = "insidir_region";
 export const VISITOR_COOKIE = "insidir_vid";
+/** A free-access account previewing the site as a logged-out visitor ("visitor"); unset means as themselves. */
+export const VIEW_AS_COOKIE = "insidir_view_as";
 export const SESSION_DAYS = 30;
 /** Re-read the plan from Whop at most this often (the billing webhook updates it in between). */
 export const PLAN_REFRESH_MS = 10 * 60_000;
@@ -30,6 +33,8 @@ export interface SessionUser {
   manageUrl: string | null;
   cancelAtPeriodEnd: boolean;
   onboarded: boolean;
+  /** On the owner's free-access list (lib/billing/free.ts). */
+  freeAccess: boolean;
 }
 
 export async function createSession(userId: string): Promise<{ token: string; expires: Date }> {
@@ -63,5 +68,6 @@ export async function userForToken(token: string | undefined): Promise<SessionUs
   return {
     id: u.id, name: u.name ?? u.username, email: u.email, plan: effectivePlan(u), region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings },
     membershipId: u.membershipId, whopUserId: u.whopUserId, manageUrl: u.manageUrl, cancelAtPeriodEnd: u.cancelAtPeriodEnd, onboarded: Boolean(u.onboardedAt),
+    freeAccess: isFreeAccess(u.email),
   };
 }
