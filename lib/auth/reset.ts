@@ -2,7 +2,7 @@
  * that holds their membership (Whop, OAuth 2.1 + PKCE, run on the server), and then sets a new password on /reset.
  * Our own addresses never name the provider: /reset/confirm starts it, /reset/callback finishes it.
  *
- *   Env: WHOP_CLIENT_ID (app_…; the OAuth app's redirect URI is https://insidir.com/reset/callback) and, optionally,
+ *   The login app: WHOP_CLIENT_ID, else the one `npm run whop:setup` made (redirect URI https://insidir.com/reset/callback); optionally
  *   WHOP_CLIENT_SECRET. Nothing from the provider is kept: the access token is used once to read who they are, and
  *   the refresh token is revoked straight away. */
 import { createHash, randomBytes } from "node:crypto";
@@ -10,6 +10,7 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { passwordResets, users } from "@/lib/db/schema";
 import { appUrl } from "@/lib/app-url";
+import { whopRuntime } from "@/lib/billing/config";
 import { newUserId, normEmail, sha256 } from "@/lib/billing/access";
 import { isFreeAccess } from "@/lib/billing/free";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
@@ -20,14 +21,16 @@ export const RESET_COOKIE = "insidir_reset";
 export const CONFIRM_COOKIE = "insidir_confirm";
 export const RESET_TTL_MS = 15 * 60_000;
 export const redirectUri = (): string => appUrl() + "/reset/callback";
-export const resetConfigured = (): boolean => Boolean(env("WHOP_CLIENT_ID"));
+/** The login app's id: WHOP_CLIENT_ID, else the one `npm run whop:setup` found or made (lib/billing/config.ts). */
+const clientId = async (): Promise<string> => (await whopRuntime()).clientId ?? "";
+export const resetConfigured = async (): Promise<boolean> => Boolean(await clientId());
 
 const b64url = (b: Buffer): string => b.toString("base64url");
 
-export function startConfirm(): { url: string; state: string; verifier: string } {
+export async function startConfirm(): Promise<{ url: string; state: string; verifier: string }> {
   const verifier = b64url(randomBytes(32)), state = b64url(randomBytes(16));
   const q = new URLSearchParams({
-    response_type: "code", client_id: env("WHOP_CLIENT_ID"), redirect_uri: redirectUri(), scope: "openid profile email", state,
+    response_type: "code", client_id: await clientId(), redirect_uri: redirectUri(), scope: "openid profile email", state,
     nonce: b64url(randomBytes(16)), code_challenge: b64url(createHash("sha256").update(verifier).digest()), code_challenge_method: "S256",
   });
   return { url: `${OAUTH}/authorize?${q}`, state, verifier };
@@ -43,7 +46,7 @@ async function json(res: Response): Promise<Record<string, unknown>> {
 export async function finishConfirm(code: string, verifier: string): Promise<{ id: string; email: string | null }> {
   const res = await fetch(`${OAUTH}/token`, {
     method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(10_000),
-    body: JSON.stringify({ grant_type: "authorization_code", code, redirect_uri: redirectUri(), client_id: env("WHOP_CLIENT_ID"), code_verifier: verifier,
+    body: JSON.stringify({ grant_type: "authorization_code", code, redirect_uri: redirectUri(), client_id: await clientId(), code_verifier: verifier,
       ...(env("WHOP_CLIENT_SECRET") ? { client_secret: env("WHOP_CLIENT_SECRET") } : {}) }),
   });
   const tokens = await json(res);
@@ -53,7 +56,7 @@ export async function finishConfirm(code: string, verifier: string): Promise<{ i
   const id = str(info.sub);
   if (!id) throw new Error("confirm returned no user");
   const refresh = str(tokens.refresh_token);
-  if (refresh) void fetch(`${OAUTH}/revoke`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: refresh, client_id: env("WHOP_CLIENT_ID") }), signal: AbortSignal.timeout(5_000) }).catch(() => undefined);
+  if (refresh) void fetch(`${OAUTH}/revoke`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: refresh, client_id: await clientId() }), signal: AbortSignal.timeout(5_000) }).catch(() => undefined);
   return { id, email: str(info.email) };
 }
 

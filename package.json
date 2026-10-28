@@ -15,6 +15,7 @@
     "scan": "tsx scripts/scan.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx lib/db/migrate.ts",
+    "whop:setup": "tsx scripts/whop-setup.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check:endpoints": "tsx scripts/check-endpoints.ts",

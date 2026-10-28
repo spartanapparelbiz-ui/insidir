@@ -92,6 +92,13 @@
       "when": 1793154551252,
       "tag": "0012_realized_pnl",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793161946294,
+      "tag": "0013_whop_config",
+      "breakpoints": true
     }
   ]
 }
