@@ -1,6 +1,6 @@
 /* Get Insidir (/start) = sign up and pay on one screen. Left: what you get (only what's live, five lines at most, and
  * one quiet line for what's coming) and one real big move from the last 24 hours, its trader's record locked. Right:
- * the email and password they'll log in with, then Whop's checkout opens in place under them (components/auth/
+ * their email, then Whop's checkout opens in place under it (components/auth/
  * StartCheckout.tsx): Apple Pay and Google Pay first where the device has them, then card. Someone who made their
  * account but didn't pay sees "Finish getting Insidir" with their email filled in. Members go straight to the feed. */
 import type { Metadata } from "next";

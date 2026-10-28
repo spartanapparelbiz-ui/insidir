@@ -6,7 +6,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { dropOff, FUNNEL_LABEL, FUNNEL } from "@/lib/analytics";
-import { accountFor } from "@/lib/auth/reset";
+import { signInAs } from "@/lib/auth/whop-login";
 import { effectivePlan } from "@/lib/billing/access";
 import { freeAccessEmails, isFreeAccess } from "@/lib/billing/free";
 import { readPending } from "@/lib/billing/pending";
@@ -86,14 +86,14 @@ describe.skipIf(!URL0)("free access accounts in Postgres", () => {
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("a confirmed email on the list gets an account (once); one not on the list doesn't", async () => {
+  it("a Whop-confirmed email on the list gets an account (once) and signs in; one not on the list doesn't", async () => {
     process.env.FREE_ACCESS_EMAILS = "Owner@Insidir.com";
-    const id = await accountFor(db, { id: "user_owner", email: " owner@insidir.com" });
-    expect(id).toMatch(/^usr_/);
-    expect(await accountFor(db, { id: "user_owner", email: "owner@insidir.com" })).toBe(id);
+    const r = await signInAs(db, { id: "user_owner", email: " owner@insidir.com" }, null);
+    expect(r.ok && r.userId).toMatch(/^usr_/);
+    expect(await signInAs(db, { id: "user_owner", email: "owner@insidir.com" }, null)).toEqual(r);
     expect((await pool.query("select count(*)::int as n from terminal.users where email = 'owner@insidir.com'")).rows[0].n).toBe(1);
-    expect(await accountFor(db, { id: "user_x", email: "stranger@insidir.com" })).toBeNull();
-    // Without the provider's confirmed email, nothing.
-    expect(await accountFor(db, { id: "user_y", email: null })).toBeNull();
+    expect((await signInAs(db, { id: "user_x", email: "stranger@insidir.com" }, null)).ok).toBe(false);
+    // Without Whop's confirmed email, nothing.
+    expect((await signInAs(db, { id: "user_y", email: null }, null)).ok).toBe(false);
   });
 });

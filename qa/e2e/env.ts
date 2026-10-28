@@ -15,6 +15,7 @@ export const SERVER_ENV: Record<string, string> = {
   WHOP_API_ORIGIN: `http://localhost:${WHOP_PORT}`,
   WHOP_ELEMENTS_URL: `http://localhost:${WHOP_PORT}/elements.js`,
   WHOP_CLIENT_ID: "app_e2e",
+  WHOP_CLIENT_SECRET: "e2e_client_secret",
   WHOP_API_KEY: "key_e2e",
   WHOP_COMPANY_ID: "biz_e2e",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",

@@ -6,8 +6,7 @@
  *   2. Webhook: one for <APP_URL>/api/billing/webhook with EVENTS. Created when missing, its secret (only in the
  *      create response) stored encrypted. Never a second one: an existing webhook gets missing events added; one
  *      whose secret we don't hold (and isn't in WHOP_WEBHOOK_SECRET) is replaced, delete first, then create.
- *   3. Login app: a Whop app named "Insidir" whose redirect URIs include <APP_URL>/reset/callback ("Confirm it's
- *      you"); created or updated, its app_ id stored.
+ *   3. Login app: a Whop app named "Insidir" whose redirect URIs include <APP_URL>/login/callback (log in); created or updated, its app_ id stored.
  * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed, login app ok|failed". */
 import type { Db } from "@/lib/db";
 import { TRIAL, PLANS } from "@/lib/plans";
@@ -52,7 +51,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
   const api = `${(env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "")}/api/v1`;
   const key = env.WHOP_API_KEY ?? "", company = env.WHOP_COMPANY_ID ?? "", product = env.WHOP_PRODUCT_INSIDIR ?? "";
   const appUrl = (env.APP_URL ?? "https://insidir.com").replace(/\/+$/, "");
-  const hookUrl = `${appUrl}/api/billing/webhook`, redirect = `${appUrl}/reset/callback`;
+  const hookUrl = `${appUrl}/api/billing/webhook`, redirect = `${appUrl}/login/callback`;
   const call = async (method: string, path: string, body?: Json): Promise<{ ok: boolean; status: number; json: Json }> => {
     const res = await d.fetch(`${api}${path}`, {
       method, headers: { Authorization: `Bearer ${key}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
@@ -138,7 +137,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
     log(`Whop webhook: ${e instanceof Error ? e.message : String(e)}.`);
   }
 
-  // 3. The login app ("Confirm it's you").
+  // 3. The login app (Log in, Whop's sign-in).
   let app: SetupResult["app"] = "failed";
   try {
     const q = new URLSearchParams({ first: "100", query: APP_NAME });

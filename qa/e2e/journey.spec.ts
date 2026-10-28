@@ -1,5 +1,5 @@
 /* The whole member journey, as one person: visitor → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
- *   A visitor lands, taps "Try 7 days for $1", chooses an email and password and pays in the checkout embedded
+ *   A visitor lands, taps "Try 7 days for $1", types an email and pays in the checkout embedded
  *   on /start (the local mock),
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
@@ -51,7 +51,6 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await page.locator('[data-cta="hero"]').click();
     await expect(page).toHaveURL(/\/start$/);
     await page.locator("#start-email").fill(EMAIL(w));
-    await page.locator("#start-password").fill("journey-password");
     await page.getByRole("button", { name: "Continue to payment" }).click();
     await page.getByRole("button", { name: "Pay $1 (test mode)" }).click();
     await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
