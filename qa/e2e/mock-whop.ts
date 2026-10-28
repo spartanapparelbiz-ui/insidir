@@ -7,9 +7,10 @@
  *                                  and `payment.succeeded` webhooks (the payment carries the checkout's metadata)
  *   POST /__refund                 ends a membership and sends `refund.created`
  *   GET  /api/v1/memberships, GET /api/v1/memberships/:id, POST /api/v1/memberships/:id/cancel, GET /api/v1/payments/:id
- *   POST /emails                   Resend's send endpoint: keeps the email (log-in codes) for the test to read
+ *   GET  /oauth/authorize          "Confirm it's you" (Forgot password?): signs in as whoever POST /__oauth_user set,
+ *                                  and redirects back with a code; POST /oauth/token, GET /oauth/userinfo, POST /oauth/revoke
  *   GET  /__state, POST /__reset   test helpers
- * The app is pointed at it with WHOP_API_ORIGIN, WHOP_ELEMENTS_URL and RESEND_API_ORIGIN. */
+ * The app is pointed at it with WHOP_API_ORIGIN and WHOP_ELEMENTS_URL. */
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 
@@ -25,7 +26,7 @@ const ELEMENTS = (origin: string) => `window.WhopElements = function () {
     return { create: function (kind, props) { return { mount: function (el) {
       var box = typeof el === "string" ? document.querySelector(el) : el;
       box.innerHTML = '<form data-mock-checkout style="display:grid;gap:12px;padding:16px"><label>Email <input name="email" type="email" required></label><button type="submit" style="min-height:44px">Pay $39 (test mode)</button></form>';
-      var f = box.querySelector("form"); f.email.value = (props && props.buyerEmail) || "";
+      var f = box.querySelector("form"); f.email.value = (props && props.buyerEmail) || ""; f.email.readOnly = Boolean(props && props.lockBuyerEmail);
       f.addEventListener("submit", function (e) {
         e.preventDefault();
         fetch("${origin}/__pay", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plan: opts.plan, email: f.email.value, metadata: opts.metadata || {} }) })
@@ -39,7 +40,8 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
   let memberships: Membership[] = [];
   let payments: Payment[] = [];
   const webhooks: Array<{ type: string; status: number }> = [];
-  const emails: Array<{ to: string; subject: string; text: string }> = [];
+  let oauthUser: { id: string; email: string } | null = null;
+  const codes = new Set<string>();
 
   const body = (req: IncomingMessage): Promise<string> => new Promise(ok => { let b = ""; req.on("data", c => (b += c)); req.on("end", () => ok(b)); });
   const send = (res: ServerResponse, status: number, data: unknown, type = "application/json") => {
@@ -103,13 +105,27 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         const pay = payments.find(x => x.id === decodeURIComponent(m![1]!));
         return pay ? send(res, 200, pay) : send(res, 404, { error: "not found" });
       }
-      if (req.method === "POST" && p === "/emails") {
-        const b = JSON.parse(await body(req)) as { to: string[]; subject: string; text: string };
-        emails.push({ to: b.to[0]!, subject: b.subject, text: b.text });
-        return send(res, 200, { id: "em_" + randomUUID().slice(0, 8) });
+      if (req.method === "POST" && p === "/__oauth_user") { oauthUser = JSON.parse(await body(req)) as { id: string; email: string }; return send(res, 200, {}); }
+      if (req.method === "GET" && p === "/oauth/authorize") {
+        if (!oauthUser || !url.searchParams.get("code_challenge")) return send(res, 400, { error: "no user" });
+        const code = "code_" + randomUUID().slice(0, 8);
+        codes.add(code);
+        const back = new URL(url.searchParams.get("redirect_uri") ?? "");
+        back.searchParams.set("code", code);
+        back.searchParams.set("state", url.searchParams.get("state") ?? "");
+        res.writeHead(302, { location: back.toString() });
+        return res.end();
       }
-      if (p === "/__state") return send(res, 200, { memberships, payments, webhooks, emails });
-      if (p === "/__reset") { memberships = []; payments = []; webhooks.length = 0; emails.length = 0; return send(res, 200, {}); }
+      if (req.method === "POST" && p === "/oauth/token") {
+        const b = JSON.parse(await body(req)) as { code?: string; code_verifier?: string };
+        if (!b.code || !codes.has(b.code) || !b.code_verifier) return send(res, 400, { error: "invalid_grant" });
+        codes.delete(b.code);
+        return send(res, 200, { access_token: "at_" + randomUUID(), refresh_token: "rt_" + randomUUID(), token_type: "Bearer", expires_in: 3600 });
+      }
+      if (req.method === "GET" && p === "/oauth/userinfo") return oauthUser ? send(res, 200, { sub: oauthUser.id, email: oauthUser.email }) : send(res, 401, {});
+      if (req.method === "POST" && p === "/oauth/revoke") return send(res, 200, {});
+      if (p === "/__state") return send(res, 200, { memberships, payments, webhooks });
+      if (p === "/__reset") { memberships = []; payments = []; webhooks.length = 0; oauthUser = null; codes.clear(); return send(res, 200, {}); }
       return send(res, 404, { error: "not found", path: p });
     } catch (e) {
       return send(res, 500, { error: e instanceof Error ? e.message : String(e) });

@@ -31,7 +31,7 @@ export function Welcome({ status }: { status: string | null }) {
   return (
     <div className="login" aria-live="polite">
       <h1 className="login__h">You&apos;re in.</h1>
-      <p className="login__p">{slow ? "Your payment went through. We're still setting up your account; this can take a minute. You can also log in with your email." : "Setting up your account…"}</p>
+      <p className="login__p">{slow ? "Your payment went through. We're still setting up your account; this can take a minute. You can also log in with the email and password you chose." : "Setting up your account…"}</p>
       <span className="welcome__bar" aria-hidden="true" />
       {slow ? <Link className="btn btn--secondary btn--block" href="/login">Log in with your email</Link> : null}
     </div>

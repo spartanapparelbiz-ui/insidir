@@ -66,7 +66,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_PLAN_INSIDIR`, `WHOP_PRODUCT_INSIDIR` | web | the one plan (Insidir, $39/month) the embedded checkout on `/start` sells |
 | `WHOP_WEBHOOK_SECRET` | web | `/api/billing/webhook` signature check |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_UNSUBSCRIBE_SECRET` | both | log-in codes (required to log in), email alerts and daily summaries |
+| `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET` (optional) | web | "Forgot password?": confirming it's the member through their Whop account (OAuth app, redirect URI `https://YOUR_DOMAIN/reset/callback`) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | match | LLM second check on unsure matches (optional, capped per month; default $3) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
@@ -137,7 +137,8 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
      `dispute.created`. Put its secret in `WHOP_WEBHOOK_SECRET`.
    - Apple Pay: `public/.well-known/apple-developer-merchantid-domain-association` is served as is; register the
      domain under Websites → Fix Apple Pay in Whop.
-   - **Resend:** verify the sending domain and set `RESEND_API_KEY` and `EMAIL_FROM`; log-in codes need it.
+   - For "Forgot password?": an OAuth app with redirect URI `https://YOUR_DOMAIN/reset/callback`; its id in `WHOP_CLIENT_ID`.
+   - Insidir sends no email: log-in is email and password (scrypt), and resets confirm through Whop.
 6. **Network:** the worker must reach `api.elections.kalshi.com`, `gamma-api.polymarket.com`, `clob.polymarket.com`,
    `data-api.polymarket.com` (and `api.polymarket.us` if enabled), `openrouter.ai` and `api.resend.com`; the web
    service needs `api.whop.com` and `api.resend.com`.

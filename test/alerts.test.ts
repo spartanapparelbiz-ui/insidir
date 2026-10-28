@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { alertText, digestDue, digestRows, dueAlerts, EMAIL_ALERTS_PER_HOUR, type AlertDeal, type AlertUser } from "@/lib/alerts/fanout";
-import { renderEmail, unsubscribeSig, verifyUnsubscribe } from "@/lib/alerts/send";
+import { unsubscribeSig, verifyUnsubscribe } from "@/lib/alerts/send";
 import { bannedPhrases } from "@/lib/copy";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { StoredOpp } from "@/lib/feed";
@@ -86,11 +86,5 @@ describe("email plumbing", () => {
     expect(verifyUnsubscribe("user_1", sig, "secret")).toBe(true);
     expect(verifyUnsubscribe("user_2", sig, "secret")).toBe(false);
     expect(verifyUnsubscribe("user_1", sig, "")).toBe(false);
-  });
-  it("renders text and HTML with the disclaimer and the unsubscribe link, escaped", () => {
-    const e = renderEmail({ heading: "Today on Insidir", lines: [{ text: "A <b> & c", url: "https://insidir.com/deal/x" }], unsubscribe: "https://insidir.com/u" });
-    expect(e.html).toContain("A &lt;b&gt; &amp; c");
-    expect(e.text).toContain("Unsubscribe: https://insidir.com/u");
-    expect(e.html).toContain("Not affiliated with Polymarket or Kalshi");
   });
 });

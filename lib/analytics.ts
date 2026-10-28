@@ -16,7 +16,7 @@ export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
 export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip",
   // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
-  "hero_cta_click", "ticker_click", "feed_preview_view",
+  "hero_cta_click", "ticker_click", "feed_preview_view", "offer_view",
   // A lock opened (its sheet: what you get, the price, one button); where says which (live, record, follow, alerts).
   "lock_view"]);
 

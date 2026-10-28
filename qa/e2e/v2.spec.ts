@@ -80,6 +80,38 @@ test("member feed: live moves with the record line; following a trader shows on 
   await q("delete from terminal.follows");
 });
 
+test("scroll card: after ~60% of the page, once per visit, closes; never for members", async ({ page, context }) => {
+  for (const path of ["/", "/sports"]) {
+    await page.goto(path);
+    const card = page.getByRole("complementary", { name: "Get Insidir" });
+    await expect(card).toHaveCount(0);
+    await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.3));
+    await page.waitForTimeout(300);
+    await expect(card).toHaveCount(path === "/" ? 0 : 0);
+    if (path !== "/") continue; // once per visit: the home card already showed below
+    await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.65));
+    await expect(card).toBeVisible();
+    await expect(card).toContainText("See every big move live.");
+    await expect(card).toContainText("$39/mo, cancel anytime.");
+    await expect(card.getByRole("link", { name: "Get Insidir" })).toHaveAttribute("href", "/start");
+    await page.screenshot({ path: `qa/screenshots/scroll-offer-${page.viewportSize()!.width}.png` });
+    await card.getByRole("button", { name: "Close" }).click();
+    await expect(card).toHaveCount(0);
+  }
+  // The same visit: the Sports page never shows it again.
+  await page.goto("/sports");
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(400);
+  await expect(page.getByRole("complementary", { name: "Get Insidir" })).toHaveCount(0);
+  // Members never see it.
+  await signIn(context, "insidir");
+  const fresh = await context.newPage();
+  await fresh.goto("/");
+  await fresh.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await fresh.waitForTimeout(400);
+  await expect(fresh.getByRole("complementary", { name: "Get Insidir" })).toHaveCount(0);
+});
+
 test("a US member never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
   await signIn(context, "insidir");
   for (const path of ["/", "/feed", "/market/0xe2emarket1", "/trader/0xe2e00000000000000000000000000000000000aa", "/p/0xe2e00000000000000000000000000000000000aa", "/top", "/results"]) {
@@ -94,7 +126,7 @@ test("a US member never gets an international Polymarket link, and Coming soon s
   await expect(sheet.getByRole("heading", { name: "Coming soon." })).toBeVisible();
   await sheet.getByRole("textbox").fill("waitlist@example.test");
   await sheet.getByRole("button", { name: "Tell me when it's live" }).click();
-  await expect(sheet.getByText("Thanks. We'll email you when it's live.")).toBeVisible();
+  await expect(sheet.getByText("Thanks. You're on the list.")).toBeVisible();
   expect(await q("select feature from terminal.waitlist where email = 'waitlist@example.test'")).toEqual([{ feature: "crypto" }]);
 });
 

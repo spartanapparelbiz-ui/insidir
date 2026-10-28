@@ -17,6 +17,7 @@ import { Story } from "@/components/home/Story";
 import { storyFor, type Story as StoryData } from "@/lib/home/story";
 import { homeCopy, isMainstream } from "@/lib/home/curate";
 import { PhotoSection } from "@/components/home/PhotoSection";
+import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { HOME_SECTIONS } from "@/lib/photos";
 import { HERO_PHOTOS } from "@/lib/photos";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
@@ -236,6 +237,7 @@ export default async function Home() {
           ) : <Link className="btn btn--onDark btn--big" href="/feed">See the live feed</Link>}
         </PhotoSection>
       </main>
+      {paid ? null : <ScrollOffer where="home" />}
     </>
   );
 }

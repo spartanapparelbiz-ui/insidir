@@ -1,19 +1,26 @@
-/* Logging a buyer in the moment their payment lands. /start puts a random token in an httpOnly cookie and in the
- * checkout's metadata (Whop copies it onto the payment); the billing webhook writes which account paid next to the
+/* Sign-up is paying: /start takes an email and a password, keeps them (the password only as its scrypt hash) next to
+ * a random token, puts the token in an httpOnly cookie and in the checkout's metadata (Whop copies it onto the
+ * payment). The billing webhook makes the account from them once the payment lands and writes it next to the
  * token's hash; /welcome asks /api/checkout/claim, which trades the cookie for a session once, and only once. */
 import { randomBytes } from "node:crypto";
 import { and, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { checkoutClaims } from "@/lib/db/schema";
-import { sha256 } from "./access";
+import { sha256 } from "@/lib/hash";
 
 export const CLAIM_COOKIE = "insidir_claim";
 export const CLAIM_MAX_AGE_S = 2 * 3600;
 
-export async function newClaim(db: Db): Promise<string> {
+export async function newClaim(db: Db, signup: { email?: string | null; passwordHash?: string | null } = {}): Promise<string> {
   const token = randomBytes(24).toString("base64url");
-  await db.insert(checkoutClaims).values({ tokenHash: sha256(token) });
+  await db.insert(checkoutClaims).values({ tokenHash: sha256(token), email: signup.email ?? null, passwordHash: signup.passwordHash ?? null });
   return token;
+}
+
+/** What /start kept for a checkout (the email and password hash it will make the account with). */
+export async function claimSignup(db: Db, token: string): Promise<{ email: string | null; passwordHash: string | null } | null> {
+  const r = (await db.select({ email: checkoutClaims.email, passwordHash: checkoutClaims.passwordHash }).from(checkoutClaims).where(eq(checkoutClaims.tokenHash, sha256(token))).limit(1))[0];
+  return r ?? null;
 }
 
 /** The account a finished checkout paid for, once: marks the claim used. Null until the webhook has arrived. */

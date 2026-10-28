@@ -33,7 +33,7 @@ export function SoonForm({ feature, autoFocus = false }: { feature: Feature; aut
     setState({ kind: "busy" });
     const res = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, feature }) }).catch(() => null);
     const body = (await res?.json().catch(() => null)) as { message?: string; error?: string } | null;
-    setState(res?.ok ? { kind: "done", text: body?.message ?? "Thanks. We'll email you when it's live." } : { kind: "error", text: body?.error ?? "Couldn't save that just now. Try again in a minute." });
+    setState(res?.ok ? { kind: "done", text: body?.message ?? "Thanks. You're on the list." } : { kind: "error", text: body?.error ?? "Couldn't save that just now. Try again in a minute." });
   }
   if (state.kind === "done") return <p className="sheet__p" role="status">{state.text}</p>;
   return (

@@ -8,6 +8,7 @@ import { PageBand } from "@/components/PageBand";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { MoveCard } from "@/components/v2/MoveCard";
+import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isMainstream } from "@/lib/home/curate";
@@ -99,6 +100,7 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
           </div>
         </section>
       </main>
+      {paid ? null : <ScrollOffer where={copy.tab} />}
     </>
   );
 }

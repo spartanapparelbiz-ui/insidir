@@ -8,16 +8,18 @@
  *   refreshPlan        the same re-read for one account (on log-in and every 10 minutes of use).
  *   effectivePlan      what a stored account may use right now: nothing once the paid period has ended, whatever the
  *                      last webhook said. */
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
+import { sha256 } from "@/lib/hash";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { checkoutClaims, DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import type { Plan } from "@/lib/types";
+import { claimSignup } from "./claims";
 import { fetchMembership, fetchMemberships, fetchPayment, grants, planFrom, planIds, type MembershipLite, type WebhookRef } from "./whop";
 
 export const newUserId = (): string => "usr_" + randomBytes(12).toString("base64url");
 export const normEmail = (e: string): string => e.trim().toLowerCase();
-export const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex");
+export { sha256 } from "@/lib/hash";
 
 type UserRow = typeof users.$inferSelect;
 
@@ -70,12 +72,15 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
     Object.assign(metadata, { ...membership.metadata, ...metadata });
   }
 
+  // What they typed on /start: the account is made with that email and password.
+  const signup = metadata.insidir_claim ? await claimSignup(db, metadata.insidir_claim) : null;
+  if (signup?.email) email = signup.email;
   let user = await findUser(db, { userId: metadata.insidir_user_id, whopUserId, email });
   let created = false;
   // A new account only for someone who has just paid and whose email we know.
   if (!user && email && membership && grants(membership, now)) {
     const id = newUserId();
-    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS })
+    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, passwordHash: signup?.passwordHash ?? null, settings: DEFAULT_SETTINGS })
       .onConflictDoNothing().returning();
     user = rows[0] ?? await findUser(db, { email });
     created = Boolean(rows[0]);
@@ -86,6 +91,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   const patch: Partial<UserRow> = {};
   if (whopUserId && !user.whopUserId) patch.whopUserId = whopUserId;
   if (email && !user.email) patch.email = normEmail(email);
+  if (signup?.passwordHash && !user.passwordHash) patch.passwordHash = signup.passwordHash;
   if (Object.keys(patch).length) await db.update(users).set(patch).where(eq(users.id, user.id)).catch(() => undefined);
 
   const whop = whopUserId ?? user.whopUserId;

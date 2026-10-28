@@ -29,20 +29,19 @@ import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
 import { alertText, dueAlerts } from "@/lib/alerts/fanout";
-import { ALERT_MAX_AGE_MS, alertJobs, alertMessage, dailyDue, dailyEmail } from "@/lib/moves/alerts";
-import { dailyLists, moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
+import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
+import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { recordsFor } from "@/lib/moves/store";
 import { isReady } from "@/lib/features";
-import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
+import { sendPush } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
-import { ACCURACY_MS, accuracyEmail, runAccuracyCheck } from "@/lib/accuracy/check";
-import { lifecycleOnce } from "@/lib/emails/lifecycle";
+import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import type { VMarket, Venue } from "@/lib/types";
 import {
-  alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat, markDigestSent,
+  alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat,
   pushTargets, saveOpportunities, saveQuarantined, saveWhales, settleReceipt, unsettledReceipts,
 } from "@/lib/worker/store";
 
@@ -50,7 +49,6 @@ const n = (k: string, d: number) => { const v = Number(process.env[k]); return N
 export const ALERT_MS = n("ALERT_MS", 5_000);
 export const WHALE_MS = n("WHALE_MS", 15_000);
 export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
-export const DIGEST_CHECK_MS = 10 * 60_000;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 /** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
@@ -93,23 +91,19 @@ async function alertsOnce(): Promise<void> {
         const r = await sendPush(t, msg);
         if (r === "gone") await dropPush(db, t.endpoint);
       }
-    } else if (user.email) {
-      const unsub = unsubscribeUrl(appUrl(), user.id);
-      const body = renderEmail({ heading: msg.title, lines: [{ text: msg.body }], cta: { label: "Open the deal", url: msg.url }, unsubscribe: unsub });
-      await sendEmail({ to: user.email, subject: msg.title, ...body, unsubscribe: unsub });
     }
   }
 }
 
-/** Push and email for new moves (docs/INSIDIR-V2.md §7). Each user, move and channel goes out once (alerts_sent, "move:<id>"). */
+/** Push alerts for new moves (docs/INSIDIR-V2.md §7). Insidir sends no email. Each user and move goes out once
+ *  (alerts_sent, "move:<id>"). */
 async function moveAlertsOnce(): Promise<void> {
-  const push = isReady("alerts_push"), email = isReady("alerts_email");
-  if (!push && !email) return;
+  if (!isReady("alerts_push")) return;
   const db = getDb();
   const now = Date.now();
   const fresh = await recentMoves(db, new Date(now - ALERT_MAX_AGE_MS));
   if (!fresh.length) return;
-  const users = (await moveAlertUsers(db)).map(u => ({ ...u, push: u.push && push, emailOn: u.emailOn && email }));
+  const users = (await moveAlertUsers(db)).map(u => ({ ...u, emailOn: false }));
   const jobs = alertJobs(users, fresh, now);
   if (!jobs.length) return;
   const byId = new Map(fresh.map(m => [m.id, m])), userById = new Map(users.map(u => [u.id, u]));
@@ -120,26 +114,7 @@ async function moveAlertsOnce(): Promise<void> {
     const msg = alertMessage(m, m.wallet ? records.get(m.wallet) ?? null : null, job.reason, appUrl(), now);
     if (job.channel === "push") {
       for (const t of await pushTargets(db, user.id)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
-    } else if (user.email) {
-      const unsub = unsubscribeUrl(appUrl(), user.id);
-      await sendEmail({ to: user.email, subject: msg.title, ...renderEmail({ heading: msg.title, lines: [{ text: msg.body }], cta: { label: "See the market", url: msg.url }, unsubscribe: unsub }), unsubscribe: unsub });
     }
-  }
-}
-
-/** The 8am ET daily email for members who keep it on. */
-async function dailyOnce(): Promise<void> {
-  if (!isReady("daily_email")) return;
-  const db = getDb();
-  const now = Date.now();
-  const due = (await moveAlertUsers(db)).filter(u => dailyDue(u, now));
-  if (!due.length) return;
-  const { top, settled, records } = await dailyLists(db, now);
-  const e = dailyEmail(top, settled, records, appUrl());
-  for (const u of due) {
-    const unsub = unsubscribeUrl(appUrl(), u.id);
-    const body = renderEmail({ heading: e.heading, lines: e.lines, cta: { label: "See the live feed", url: `${appUrl()}/feed?from=daily` }, unsubscribe: unsub });
-    if (u.email && (await sendEmail({ to: u.email, subject: e.subject, ...body, unsubscribe: unsub })) === "sent") await markDigestSent(db, u.id, new Date(now));
   }
 }
 
@@ -177,7 +152,7 @@ async function settleOnce(clients: Record<Venue, VenueClient>): Promise<void> {
   if (settled) log(`settled ${settled} receipts`);
 }
 
-/** The hourly accuracy check, its heartbeat (read on /admin), and an email to OWNER_EMAIL when anything is off. */
+/** The hourly accuracy check and its heartbeat (read on /admin). */
 async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: SecClient | null): Promise<void> {
   const db = getDb();
   const run = await runAccuracyCheck(db, { poly, kalshi, sec });
@@ -185,12 +160,6 @@ async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: S
   const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), hidden: run.hidden.length, restored: run.restored.length };
   await heartbeat(db, "accuracy", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
   log(`accuracy: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped; ${stats.hidden} moves hidden, ${stats.restored} restored`);
-  const to = process.env.OWNER_EMAIL;
-  const e = accuracyEmail(run, appUrl());
-  if (e && to) {
-    const unsub = `${appUrl()}/admin`;
-    await sendEmail({ to, subject: e.subject, ...renderEmail({ heading: e.heading, lines: e.lines, unsubscribe: unsub }), unsubscribe: unsub });
-  }
 }
 
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
@@ -221,14 +190,6 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
-    every("moves:daily", DIGEST_CHECK_MS, dailyOnce),
-    every("emails:lifecycle", DIGEST_CHECK_MS, async () => {
-      const n = await lifecycleOnce(getDb(), Date.now(), appUrl(), async (to, userId, e) => {
-        const unsub = unsubscribeUrl(appUrl(), userId);
-        return (await sendEmail({ to, subject: e.subject, ...renderEmail({ heading: e.heading, lines: e.lines, cta: e.cta, unsubscribe: unsub }), unsubscribe: unsub })) === "sent";
-      });
-      if (n) log(`emails: ${n} welcome, trial and weekly emails sent`);
-    }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [

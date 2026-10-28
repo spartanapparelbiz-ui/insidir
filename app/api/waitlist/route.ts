@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!isFeature(feature)) return NextResponse.json({ error: "Unknown feature." }, { status: 400 });
   if (!hasDatabase()) return NextResponse.json({ error: "Couldn't save that just now. Try again in a minute." }, { status: 503 });
   await addWaitlist(getDb(), email, feature);
-  return NextResponse.json({ ok: true, message: "Thanks. We'll email you when it's live." });
+  return NextResponse.json({ ok: true, message: "Thanks. You're on the list." });
 }
 
 export async function GET(req: NextRequest) {

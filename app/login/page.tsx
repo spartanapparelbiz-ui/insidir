@@ -1,11 +1,11 @@
-/* Log in to Insidir (/login): our own log-in, an email and a 6-digit code (components/auth/LoginForm.tsx). Members
- * only; anyone else is offered "Get Insidir · $39/mo". Already logged in: straight on to where they were going. */
+/* Log in to Insidir (/login): email and password (components/auth/LoginForm.tsx). Members only; anyone else is
+ * offered "Get Insidir · $39/mo". Already logged in: straight on to where they were going. */
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Photo } from "@/components/Photo";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SiteHeader } from "@/components/SiteHeader";
-import { safeNext } from "@/lib/auth/login";
+import { safeNext } from "@/lib/auth/password";
 import { getViewer } from "@/lib/auth/viewer";
 import { isPaid } from "@/lib/plans";
 import { BAND } from "@/lib/photos";
@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="split__form">
           <div className="split__box">
-            <LoginForm next={next} startHref="/start" initialEmail={sp.email ?? viewer.user?.email ?? ""} />
+            <LoginForm next={next} initialEmail={sp.email ?? viewer.user?.email ?? ""} />
           </div>
         </div>
       </main>

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, userForToken } from "@/lib/auth/session";
 import { appUrl } from "@/lib/app-url";
 import { getDb } from "@/lib/db";
-import { renderEmail, sendEmail, sendPush, unsubscribeUrl } from "@/lib/alerts/send";
+import { sendPush } from "@/lib/alerts/send";
 import { movePlan } from "@/lib/moves/gate";
 import { dropPush, pushTargets } from "@/lib/worker/store";
 
@@ -28,12 +28,6 @@ export async function POST(req: NextRequest) {
     if (sent) return NextResponse.json({ ok: true, sent, message: `Test alert sent to ${sent} ${sent === 1 ? "device" : "devices"}` });
     if (gone === targets.length) return NextResponse.json({ error: "This device's alert permission expired. Turn alerts off and on again, then retry." }, { status: 409 });
     return NextResponse.json({ error: "Couldn't reach the push service. Try again in a minute." }, { status: 502 });
-  }
-  if (user.settings.alertEmail && user.email) {
-    const unsubscribe = unsubscribeUrl(appUrl(), user.id);
-    const r = await sendEmail({ to: user.email, subject: TEST.title, ...renderEmail({ heading: TEST.title, lines: [{ text: TEST.body }], unsubscribe }), unsubscribe });
-    return r === "sent" ? NextResponse.json({ ok: true, sent: 1, message: `Test email sent to ${user.email}` })
-      : NextResponse.json({ error: "Couldn't send the test email just now. Try again in a minute." }, { status: 502 });
   }
   return NextResponse.json({ error: "No device has alerts on. Turn on alerts first." }, { status: 409 });
 }

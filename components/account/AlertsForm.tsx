@@ -1,6 +1,6 @@
 "use client";
-/* The Alerts page's controls (docs/INSIDIR-V2.md §7): this device on/off, email alerts, a test alert, quiet hours in the
- * user's own time zone, the 8am ET daily email, and (Pro) custom rules. Everything saves itself. Each control is
+/* The Alerts page's controls (docs/INSIDIR-V2.md §7): this device on/off (push only: Insidir sends no email), a test alert, quiet hours in the
+ * user's own time zone, and custom rules. Everything saves itself. Each control is
  * shown only when its feature is ready; the rest wear a Coming soon badge. */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,11 +28,7 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
         <h2 id="a-device" className="agroup__h">How we reach you</h2>
         <div className="agroup__body">
           {ready.push ? <PushButton vapidKey={vapidKey} onChange={() => router.refresh()} /> : <p className="afield__hint">Push alerts on this device <SoonBadge /></p>}
-          {ready.email ? (
-            <Toggle name="alertEmail" label="Email me alerts" checked={settings.alertEmail} save={save} onLabel="Email alerts on" offLabel="Email alerts off"
-              hint={email ? `They go to ${email}, the email on your Whop account.` : "Your Whop account has no email. Add one on Whop to get email alerts."} disabled={!email} />
-          ) : <p className="afield__hint">Email alerts <SoonBadge /></p>}
-          {ready.push || ready.email ? (
+          {ready.push ? (
             <div className="row-gap">
               <ActionButton data-testid="test-alert" action={async () => { const r = await postJson("/api/alerts/test", {}, "Test alert sent"); if (r.ok) router.refresh(); return r; }}>
                 Send test alert
@@ -87,14 +83,6 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
         </div>
       </section>
 
-      <section className="agroup" aria-labelledby="a-daily">
-        <h2 id="a-daily" className="agroup__h">Daily email {!ready.daily ? <SoonBadge /> : null}</h2>
-        <div className="agroup__body">
-          {ready.daily ? (
-            <Toggle name="emailDigest" label="Email me every morning" hint="At 8am ET: yesterday's 5 biggest money moves and how top traders' moves settled." checked={settings.emailDigest} save={save} disabled={!email} />
-          ) : <p className="afield__hint">Every morning at 8am ET: yesterday&apos;s 5 biggest money moves and how top traders&apos; moves settled.</p>}
-        </div>
-      </section>
     </>
   );
 }
