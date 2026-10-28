@@ -160,6 +160,8 @@ async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: S
   const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), hidden: run.hidden.length, restored: run.restored.length };
   await heartbeat(db, "accuracy", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
   log(`accuracy: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped; ${stats.hidden} moves hidden, ${stats.restored} restored`);
+  // Each mismatch on its own line (public data only: what was checked and how it differs), so it can be read from the logs.
+  for (const l of run.lines.filter(x => x.status === "mismatch")) log(`accuracy mismatch: ${l.kind}/${l.what} ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
 }
 
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
