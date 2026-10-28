@@ -16,7 +16,7 @@ import { polymarketRate } from "@/lib/fees";
 import type { Book, FeeModel, Level, Side, VEvent, Venue, VMarket, WhaleTrade } from "@/lib/types";
 import { bookDigest, complement, readLevels, sortAsks, sortBids } from "./book";
 import { normaliseCategory, type Category } from "./categories";
-import { baseUrls, qs, realClock, venueHttp, type Clock, type HttpClient, type Priority } from "./http";
+import { baseUrls, HttpError, qs, realClock, venueHttp, type Clock, type HttpClient, type Priority } from "./http";
 import { bool, boolOrNull, epochMs, isObject, list, num, objList, pick, rows, str, strList, type JsonObject } from "./parse";
 import { strikeFromText } from "./strike";
 import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type Sweep, type VenueClient } from "./venue";
@@ -714,6 +714,17 @@ export class PolymarketClient implements VenueClient {
       if (rows(raw).length < DATA_PAGE_LIMIT) break;
     }
     return out;
+  }
+
+  /** A wallet's public profile (Gamma GET /public-profile?address=): name, pseudonym, displayUsernamePublic,
+   *  profileImage, profileImageOptimized. Raw; null when Polymarket has no profile for it (404). */
+  async getPublicProfile(address: string, priority: Priority = "normal"): Promise<unknown> {
+    try {
+      return await this.gamma.json(`${this.gammaUrl}/public-profile${qs({ address: address.toLowerCase() })}`, { priority });
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) return null;
+      throw e;
+    }
   }
 
   /** One page of the public leaderboard (GET /v1/leaderboard): rank, proxyWallet, userName, vol, pnl. Raw. */

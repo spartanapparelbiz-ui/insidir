@@ -8,6 +8,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Photo } from "@/components/Photo";
 import { unlockHref } from "@/components/app/links";
 import { SourceA } from "@/components/v2/MoveCard";
+import { Avatar } from "@/components/v2/Avatar";
+import { tickerMonogram } from "@/lib/moves/avatar";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { calDate, exactDollars, followState, signedPct } from "@/components/v2/profiles/shared";
 import { OlderLocked, roleLine, SecFrame, TradesTable } from "@/components/v2/sec/shared";
@@ -65,10 +67,13 @@ export default async function InsiderPage({ params }: { params: Promise<{ id: st
     <SecFrame viewer={viewer} current="/insiders">
       <header className="trader__head">
         <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">{roles[0]?.line ?? "SEC filer"}</p>
-          <h1 className="trader__name">{x.name}</h1>
-          <SourceA link={profileSource({ kind: "insider", cik: x.ref.cik })} className="source source--dark" />
+        <div className="trader__id">
+          <Avatar face={{ src: null, mono: tickerMonogram(x.trades.find(r => r.ticker)?.ticker, x.trades[0]?.company ?? x.name) }} size="profile" />
+          <div>
+            <p className="trader__kicker">{roles[0]?.line ?? "SEC filer"}</p>
+            <h1 className="trader__name">{x.name}</h1>
+            <SourceA link={profileSource({ kind: "insider", cik: x.ref.cik })} className="source source--dark" />
+          </div>
         </div>
         <div className="trader__acts">
           <FollowButton kind="insider" target={x.ref.cik} state={followState(viewer, following)} trialHref={unlockHref()} label="Follow insider" />

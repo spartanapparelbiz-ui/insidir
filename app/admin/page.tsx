@@ -1,6 +1,6 @@
 /* Admin: the hourly accuracy check (every run, every mismatch, the moves hidden until their source agrees), quarantined deals (held back as too good to be true or from pairs whose rules differ, never shown to users),
- * matches (both titles and rule texts side by side, with override actions), the funnel, the hero A/B test
- * and UTM results. Behind ADMIN_TOKEN + a TOTP code (lib/admin.ts). Read-only numbers straight from the database. */
+ * matches (both titles and rule texts side by side, with override actions), trader pictures (Hide picture per
+ * wallet), the funnel, the hero A/B test and UTM results. Behind ADMIN_TOKEN + a TOTP code (lib/admin.ts). Read-only numbers straight from the database. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
@@ -8,6 +8,9 @@ import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
 import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
+import { adminAvatars, type AdminAvatar } from "@/lib/moves/avatar-store";
+import { monogram } from "@/lib/moves/avatar";
+import { Avatar } from "@/components/v2/Avatar";
 import { pct, usd } from "@/lib/format";
 import { pairViews, quarantineCount, quarantineViews, type PairView, type QuarantineView } from "@/lib/queries";
 import type { VMarket } from "@/lib/types";
@@ -125,6 +128,29 @@ function Accuracy({ data }: { data: Awaited<ReturnType<typeof accuracyOverview>>
   );
 }
 
+function Pictures({ list }: { list: AdminAvatar[] }) {
+  return (
+    <>
+      <form method="post" action="/api/admin/avatars" className="adm-actions">
+        <input name="wallet" className="input adm-note" placeholder="0x… wallet address" pattern="0x[0-9a-fA-F]{40}" required aria-label="Wallet address" />
+        <button className="btn btn--secondary" name="action" value="hide">Hide picture</button>
+        <button className="btn btn--ghost" name="action" value="show">Show picture</button>
+      </form>
+      {list.length ? (
+        <div className="adm-avatars">{list.map(a => (
+          <form key={a.wallet} method="post" action="/api/admin/avatars" className="card adm-avatar" data-wallet={a.wallet}>
+            <Avatar face={{ src: a.url, mono: monogram(a.wallet) }} />
+            <span className="adm-avatar__w tiny"><a href={`/p/${a.wallet}`}>{a.wallet}</a>{a.hiddenAt ? <><br /><b>Hidden</b> {when(a.hiddenAt)}</> : null}</span>
+            <input type="hidden" name="wallet" value={a.wallet} />
+            {a.hiddenAt ? <button className="btn btn--ghost" name="action" value="show">Show picture</button>
+              : <button className="btn btn--secondary" name="action" value="hide">Hide picture</button>}
+          </form>
+        ))}</div>
+      ) : <p className="muted small">No pictures stored yet. The worker reads them from Polymarket every few minutes.</p>}
+    </>
+  );
+}
+
 function Funnel({ rows }: { rows: FunnelRow[] }) {
   return (
     <table className="table">
@@ -174,7 +200,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const days = q.days === "30" ? 30 : 7;
   const since = sinceDays(days);
-  const [accuracy, held, heldTotal, pairs, funnel, ab, utm, free] = await Promise.all([
+  const [accuracy, held, heldTotal, pairs, funnel, ab, utm, free, pictures] = await Promise.all([
     load<Awaited<ReturnType<typeof accuracyOverview>>>({ runs: [], mismatches: [], hidden: [] }, () => accuracyOverview(getDb())),
     load<QuarantineView[]>([], () => quarantineViews(100)),
     load<number>(0, () => quarantineCount()),
@@ -183,18 +209,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     load<AbRow[]>([], () => abStats(since)),
     load<Awaited<ReturnType<typeof utmStats>>>([], () => utmStats()),
     load<Awaited<ReturnType<typeof freeAccessAccounts>>>([], () => freeAccessAccounts()),
+    load<AdminAvatar[]>([], () => adminAvatars(getDb())),
   ]);
-  const anyError = accuracy.error || held.error || pairs.error || funnel.error || ab.error || utm.error;
+  const anyError = accuracy.error || held.error || pairs.error || funnel.error || ab.error || utm.error || pictures.error;
   return (
     <main className="wrap app adm">
       <div className="adm__top">
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
+      {q.picture ? <p className="banner" role="status">{q.picture === "hidden" ? "Picture hidden. It's gone from every page now; the wallet shows its monogram." : "Picture shown again."}</p> : null}
       {error ? <p className="banner banner--err" role="alert">{error}</p> : null}
 
       <section id="accuracy" className="sec2">
@@ -212,6 +240,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <section id="matches" className="sec2">
         <h2 className="sec2__h">Matches <span className="muted small num">{pairs.v.length}</span></h2>
         {pairs.v.length ? <div className="adm-pairs">{pairs.v.map(p => <PairCard key={p.pair.id} p={p} />)}</div> : <p className="muted small">No pairs stored yet. The worker stores them on its next sweep.</p>}
+      </section>
+
+      <section id="pictures" className="sec2">
+        <h2 className="sec2__h">Trader pictures <span className="muted small num">{pictures.v.length}</span></h2>
+        <p className="muted small">Polymarket profile pictures, re-read daily, only from Polymarket&apos;s own image host. Wallets with a blocked username never show theirs. Hide picture removes one from every page at once (the wallet shows its monogram) and stays hidden through every re-read.</p>
+        <Pictures list={pictures.v} />
       </section>
 
       <section id="funnel" className="sec2">

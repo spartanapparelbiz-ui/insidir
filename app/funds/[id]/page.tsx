@@ -8,6 +8,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Photo } from "@/components/Photo";
 import { unlockHref } from "@/components/app/links";
 import { SourceA } from "@/components/v2/MoveCard";
+import { Avatar } from "@/components/v2/Avatar";
+import { monogram } from "@/lib/moves/avatar";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { calDate, exactDollars, followState, pct } from "@/components/v2/profiles/shared";
 import { OlderLocked, SecFrame, shareCount } from "@/components/v2/sec/shared";
@@ -76,10 +78,13 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
     <SecFrame viewer={viewer} current="/funds">
       <header className="trader__head">
         <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
-          <h1 className="trader__name">{x.fund.name}</h1>
-          <SourceA link={profileSource({ kind: "fund", cik: x.ref.cik })} className="source source--dark" />
+        <div className="trader__id">
+          <Avatar face={{ src: null, mono: monogram(x.fund.name) }} size="profile" />
+          <div>
+            <p className="trader__kicker">Fund · files 13F reports with the SEC</p>
+            <h1 className="trader__name">{x.fund.name}</h1>
+            <SourceA link={profileSource({ kind: "fund", cik: x.ref.cik })} className="source source--dark" />
+          </div>
         </div>
         <div className="trader__acts">
           <FollowButton kind="fund" target={x.ref.cik} state={followState(viewer, following)} trialHref={unlockHref()} label="Follow fund" />

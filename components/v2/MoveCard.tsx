@@ -1,4 +1,4 @@
-/* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the sentence (its name opens the profile, /p/[id]), a
+/* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the trader's picture or monogram (./Avatar.tsx) and the sentence (its name opens the profile, /p/[id]), a
  * "New wallet" label, the payout line, the record line, at most one "why this matters" fact, the time,
  * and a footer row: Follow (traders), See market and the source link. Stock cards (SEC filings) carry the filing line,
  * Follow insider and Follow company (or Follow fund), the company's insider page and the SEC filing itself. Everything on it was sent by the server for this viewer's plan
@@ -10,6 +10,7 @@ import type { SourceLink } from "@/lib/moves/source";
 import type { FollowKind } from "@/lib/db/schema";
 import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
+import { Avatar } from "./Avatar";
 
 const TAG: Record<string, { text: string; tint: string }> = {
   sports: { text: "Sports", tint: "green" },
@@ -45,7 +46,10 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         <span className={`tag tag--${tag.tint}`}><span className="tag__dot" aria-hidden="true" />{tag.text}{sub ? ` · ${sub}` : ""}</span>
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
-      <p className="move__sentence"><Sentence m={m} /></p>
+      <div className="move__lead">
+        <Avatar face={m.face} />
+        <p className="move__sentence"><Sentence m={m} /></p>
+      </div>
       {m.context ? <p className="move__ctx">{m.context}</p> : null}
       {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
       {m.payout ? <p className="move__payout">{m.payout}</p> : null}

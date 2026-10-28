@@ -1109,6 +1109,26 @@ h2:not(.ios-vp *):not(.sheet h2):not([role="dialog"] h2) { font-family: var(--se
 .finish__p b { color: var(--text); }
 .start__charge { font-weight: 600; text-align: center; }
 
+/* Trader pictures (components/v2/Avatar.tsx): round, 40px on cards and lists, 96px on profiles. A picture only from
+ * Polymarket's own host; otherwise a black-and-white monogram, the reverse of the theme: white on black on light pages,
+ * black on white in the dark app and on profile bands. */
+.avatar { flex: none; display: inline-grid; place-items: center; overflow: hidden; border-radius: 50%; width: 40px; height: 40px; background: var(--ink); color: var(--paper); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.avatar--profile { width: 96px; height: 96px; }
+.avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.avatar--mono { background: var(--text); color: var(--page); box-shadow: none; font-family: var(--sans); font-weight: 700; font-size: 15px; letter-spacing: .02em; line-height: 1; user-select: none; }
+.avatar--mono.avatar--long { font-size: 11px; letter-spacing: 0; }
+.avatar--profile.avatar--mono { font-size: 34px; }
+.avatar--profile.avatar--mono.avatar--long { font-size: 24px; }
+.trader__head .avatar--mono { background: var(--paper); color: var(--ink); }
+.move__lead { display: flex; align-items: flex-start; gap: 12px; }
+.move__lead .move__sentence { min-width: 0; margin: 0; }
+.facerow { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.trader__id { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.ios-vp .trader__id { gap: 12px; }
+.hcard__who { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.adm-avatars { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.adm-avatar { display: flex; align-items: center; gap: 12px; padding: 12px; }
+.adm-avatar__w { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 /* "Continue with Google" (components/auth/GoogleButton.tsx) and the "or" line under it. */
 .btn--google { gap: 10px; background: var(--paper); color: var(--ink); border: 1px solid var(--grey-2); }
 .btn--google:hover { background: var(--grey-1); }

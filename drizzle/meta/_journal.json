@@ -124,8 +124,15 @@
     {
       "idx": 17,
       "version": "7",
-      "when": 1793225006313,
-      "tag": "0017_sec_follows",
+      "when": 1793225499177,
+      "tag": "0017_trader_avatars",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793226428422,
+      "tag": "0018_sec_follows",
       "breakpoints": true
     }
   ]

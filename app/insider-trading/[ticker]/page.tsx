@@ -7,6 +7,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Photo } from "@/components/Photo";
 import { unlockHref } from "@/components/app/links";
 import { FollowButton } from "@/components/v2/FollowButton";
+import { Avatar } from "@/components/v2/Avatar";
+import { tickerMonogram } from "@/lib/moves/avatar";
 import { calDate, exactDollars, followState } from "@/components/v2/profiles/shared";
 import { OlderLocked, SecFrame, TradesTable } from "@/components/v2/sec/shared";
 import { getViewer } from "@/lib/auth/viewer";
@@ -59,10 +61,13 @@ export default async function CompanyPage({ params }: { params: Promise<{ ticker
     <SecFrame viewer={viewer} current="/insider-trading">
       <header className="trader__head">
         <Photo n={BAND.profile.stocks} className="trader__photo" band par eager />
-        <div>
-          <p className="trader__kicker">Insider trading · {co.ticker}</p>
-          <h1 className="trader__name">{co.company}</h1>
-          <p className="sec__month" data-testid="bought-this-month">{boughtThisMonthLine(month)}</p>
+        <div className="trader__id">
+          <Avatar face={{ src: null, mono: tickerMonogram(co.ticker, co.company) }} size="profile" />
+          <div>
+            <p className="trader__kicker">Insider trading · {co.ticker}</p>
+            <h1 className="trader__name">{co.company}</h1>
+            <p className="sec__month" data-testid="bought-this-month">{boughtThisMonthLine(month)}</p>
+          </div>
         </div>
         <div className="trader__acts">
           <FollowButton kind="company" target={co.issuerCik} state={followState(viewer, following)} trialHref={unlockHref()} label="Follow company" />

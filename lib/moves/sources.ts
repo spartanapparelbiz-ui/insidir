@@ -10,6 +10,7 @@ import type { VMarket } from "@/lib/types";
 import type { ResolvedPosition } from "./records";
 import type { Fill } from "./types";
 import { isBlockedName } from "./names";
+import { profileAvatar, profileBlocked } from "./avatar";
 
 export function readPolymarketFills(raw: unknown): Fill[] {
   const out: Fill[] = [];
@@ -68,13 +69,14 @@ export function readClosedPositions(raw: unknown): ResolvedPosition[] {
   return out;
 }
 
-/** Polymarket's public leaderboard rows (Data API /v1/leaderboard): proxyWallet and the public username. */
-export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: string | null }> {
-  const out: Array<{ wallet: string; name: string | null }> = [];
+/** Polymarket's public leaderboard rows (Data API /v1/leaderboard): proxyWallet, the public username and profile
+ *  picture (lib/moves/avatar.ts; null when it has none or the username is blocked). */
+export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: string | null; avatar: string | null; blocked: boolean }> {
+  const out: Array<{ wallet: string; name: string | null; avatar: string | null; blocked: boolean }> = [];
   for (const r of rows(raw)) {
     const w = (str(r.proxyWallet) ?? str(r.wallet) ?? "").toLowerCase();
     if (!/^0x[0-9a-f]{40}$/.test(w)) continue;
-    out.push({ wallet: w, name: publicUsername(r) });
+    out.push({ wallet: w, name: publicUsername(r), avatar: profileAvatar(r), blocked: profileBlocked(r) });
   }
   return out;
 }

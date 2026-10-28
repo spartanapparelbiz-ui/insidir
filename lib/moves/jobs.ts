@@ -3,7 +3,8 @@
  *   moves:settle  every 10 min: markets with unsettled moves → won / lost / void
  *   moves:records every 5 min: wallets seen moving this week (and the leaderboard's) → their record and resolved
  *                 positions (the profile stats)
- *   moves:leaderboard every 6 h: Polymarket's public leaderboard → wallets to record (for /top)
+ *   moves:leaderboard every 6 h: Polymarket's public leaderboard → wallets to record (for /top), and their pictures
+ *   moves:avatars every 5 min: wallets whose profile picture is missing or a day old → Polymarket's public profile
  * Each writes a heartbeat (moves:polymarket, moves:kalshi) that the feed's status line reads. */
 import type { Db } from "@/lib/db";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
@@ -13,6 +14,8 @@ import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
 import { readLeaderboard } from "./sources";
+import { profileAvatar, profileBlocked } from "./avatar";
+import { saveAvatar, walletsDueForAvatar } from "./avatar-store";
 import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
 import { readWalletFills, realizeMove } from "./realize";
 import { fromParts, MERGE_WINDOW_MS, sortParts } from "./detect";
@@ -23,7 +26,7 @@ import { classify, sportsLeagueOf } from "./classify";
 import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
-import { rows } from "@/lib/exchanges/parse";
+import { isObject, rows } from "@/lib/exchanges/parse";
 
 export const MOVES_MS = Number(process.env.MOVES_MS ?? 15_000);
 export const RECORD_STALE_MS = 12 * 3_600_000;
@@ -196,17 +199,34 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
  *  records are built from their own resolved positions like everyone else's. */
 export const LEADERBOARD_WALLETS = 100;
 export async function leaderboardOnce(db: Db, poly: PolymarketClient): Promise<number> {
-  const seen = new Map<string, string | null>();
+  const seen = new Map<string, ReturnType<typeof readLeaderboard>[number]>();
   for (const timePeriod of ["ALL", "MONTH", "WEEK"] as const) {
     for (const category of ["OVERALL", "SPORTS"]) {
       for (let offset = 0; offset < LEADERBOARD_WALLETS; offset += 50) {
         const raw = await poly.getLeaderboardPage({ timePeriod, category, limit: 50, offset });
         const got = readLeaderboard(raw);
-        for (const r of got) if (!seen.has(r.wallet)) seen.set(r.wallet, r.name);
+        for (const r of got) if (!seen.has(r.wallet)) seen.set(r.wallet, r);
         if (got.length < 50) break;
       }
     }
   }
-  if (seen.size) await trackWallets(db, [...seen].map(([wallet, name]) => ({ wallet, name })), "leaderboard");
+  if (seen.size) await trackWallets(db, [...seen.values()].map(({ wallet, name }) => ({ wallet, name })), "leaderboard");
+  const now = Date.now();
+  for (const r of seen.values()) await saveAvatar(db, r.wallet, { url: r.avatar, blocked: r.blocked }, now);
   return seen.size;
+}
+
+/** Wallets whose picture is missing or a day old (lib/moves/avatar-store.ts) → their public Polymarket profile's
+ *  picture, only from Polymarket's own image host and never for a blocked username. A wallet Polymarket has no
+ *  profile for is saved with none; a failed read is retried on the next run. */
+export async function avatarsOnce(db: Db, poly: PolymarketClient, now: number, perRun = 40): Promise<number> {
+  let n = 0;
+  for (const wallet of await walletsDueForAvatar(db, now, perRun)) {
+    let raw: unknown;
+    try { raw = await poly.getPublicProfile(wallet); } catch { continue; }
+    const r = isObject(raw) ? raw : {};
+    await saveAvatar(db, wallet, { url: profileAvatar(r), blocked: profileBlocked(r) }, now);
+    n++;
+  }
+  return n;
 }

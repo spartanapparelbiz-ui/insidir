@@ -49,7 +49,7 @@ describe("names", () => {
     expect(publicUsername({ userName: "kch123" })).toBe("kch123");
     expect(publicUsername({ pseudonym: "Quiet-Fox" })).toBeNull();
     expect(publicUsername({ name: "kch123", displayUsernamePublic: false })).toBeNull();
-    expect(readLeaderboard([{ proxyWallet: W.toUpperCase().replace("0X", "0x"), userName: "kch123", pnl: 1 }, { proxyWallet: "nope" }])).toEqual([{ wallet: W, name: "kch123" }]);
+    expect(readLeaderboard([{ proxyWallet: W.toUpperCase().replace("0X", "0x"), userName: "kch123", pnl: 1 }, { proxyWallet: "nope" }])).toEqual([{ wallet: W, name: "kch123", avatar: null, blocked: false }]);
   });
 });
 

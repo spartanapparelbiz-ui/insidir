@@ -3,7 +3,16 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  images: { unoptimized: true },
+  // next/image is only used for trader pictures (components/v2/Avatar.tsx): Polymarket's own image host and nothing
+  // else (lib/moves/avatar.ts AVATAR_HOST, checked by test/avatar.test.ts). Every other picture is a plain <img>.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "polymarket-upload.s3.us-east-2.amazonaws.com", port: "", pathname: "/**" }],
+    formats: ["image/webp"],
+    deviceSizes: [96, 192],
+    imageSizes: [40, 80],
+    minimumCacheTTL: 86_400,
+    dangerouslyAllowSVG: false,
+  },
   // The worker, the scan script and xray/ are not part of the web build.
   outputFileTracingExcludes: { "*": ["xray/**", "worker/**", "scripts/**", "qa/**"] },
   // The share cards' embedded fonts and photo texture (lib/share-card.tsx reads them from disk).

@@ -13,6 +13,9 @@ import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { signedShort } from "@/lib/moves/copy";
 import { walletLabel } from "@/lib/moves/records";
+import { walletFace } from "@/lib/moves/avatar";
+import { avatarsOrNone } from "@/lib/moves/avatar-store";
+import { Avatar } from "@/components/v2/Avatar";
 import { followList } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
@@ -36,10 +39,12 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
   const now = Date.now();
   let rows: TopRow[] = [];
   let follows: Array<{ kind: string; target: string }> = [];
+  let avatars = new Map<string, string>();
   if (hasDatabase()) {
     const db = getDb();
     rows = await memo(`top:${window}:${tab ?? ""}`, 60_000, () => topRanking(db, window, tab, now)).catch(() => []);
-    follows = viewer.user ? await followList(db, viewer.user.id).catch(() => []) : [];
+    // Pictures are read fresh (not memoized), so one hidden in /admin is gone on the next page view.
+    [follows, avatars] = await Promise.all([viewer.user ? followList(db, viewer.user.id).catch(() => []) : Promise.resolve([]), avatarsOrNone(db, rows.map(r => r.wallet))]);
   }
   const q = (o: { window?: string; tab?: string }) => {
     const p = new URLSearchParams();
@@ -74,12 +79,15 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
               return (
                 <li key={r.wallet} className="toplist__row rv" style={{ ["--i" as string]: Math.min(i, 6) }}>
                   <span className="toplist__rank">{i + 1}</span>
-                  <span className="toplist__who">
-                    <Link className="toplist__name" href={`/p/${r.wallet}`}>{walletLabel(r.wallet, r.name)}</Link>
-                    {paid ? <span className="toplist__stats">
-                      <span>Won {r.won} of {r.resolved} ({pct(r.won / r.resolved)})</span>
-                      {r.best ? <span>Best: {r.best}</span> : null}
-                    </span> : null}
+                  <span className="facerow">
+                    <Avatar face={walletFace(r.wallet, r.name, avatars)} />
+                    <span className="toplist__who">
+                      <Link className="toplist__name" href={`/p/${r.wallet}`}>{walletLabel(r.wallet, r.name)}</Link>
+                      {paid ? <span className="toplist__stats">
+                        <span>Won {r.won} of {r.resolved} ({pct(r.won / r.resolved)})</span>
+                        {r.best ? <span>Best: {r.best}</span> : null}
+                      </span> : null}
+                    </span>
                   </span>
                   {paid ? <span className="toplist__profit money" data-count={r.profit} data-fmt="signed">{signedShort(r.profit)}</span> : null}
                   <FollowButton kind="trader" target={r.wallet} state={followState(viewer, following)} trialHref={trial} />
