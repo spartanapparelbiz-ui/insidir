@@ -8,14 +8,17 @@
  *     trader's record against its positions, an insider's trade line (Form 4 re-read), a fund's holding (13F re-read).
  * What happens with the result:
  *   - every line is stored in terminal.accuracy_checks (shown on /admin);
+ *   - a Polymarket position whose amount or first-fill time differs is rebuilt from the wallet's own fills (the source
+ *     is the truth) and checked again; it is hidden only if it still doesn't match;
  *   - a move that doesn't match is hidden everywhere (moves.hidden_at) until a later check passes, then shown again;
  *   - a trader record or position that doesn't match is marked stale, so the records job rebuilds it from source;
  *   - a source that can't be reached is "skipped", never a mismatch: nothing is hidden on a network error. */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { accuracyChecks } from "@/lib/db/schema";
+import { accuracyChecks, moves } from "@/lib/db/schema";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { readKalshiFills, readPolymarketFills } from "@/lib/moves/sources";
+import { fromParts, MERGE_WINDOW_MS } from "@/lib/moves/detect";
 import { fromRow } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
 import { marketsFor } from "@/lib/profiles/store";
@@ -54,6 +57,26 @@ export async function checkPoly(poly: PolymarketClient, m: Move): Promise<string
   if (fills.some(f => f.wallet !== m.wallet)) errs.push("wallet differs");
   if (fills[0]!.outcome !== m.outcome) errs.push(`outcome ${m.outcome} vs ${fills[0]!.outcome}`);
   return errs;
+}
+
+/** Problems a rebuild from the source can fix: the position's size and start, not which wallet or outcome it is. */
+const rebuildable = (problems: readonly string[]) => problems.length > 0 && problems.every(p => p.startsWith("amount ") || p.startsWith("time "));
+
+/** Rebuilds a Polymarket position from the wallet's own BUY fills of that outcome (maker and taker), from its first
+ *  fill to MERGE_WINDOW_MS after its last, the same window the dedupe uses. Its record is worked out again
+ *  (realized_at cleared). The rebuilt move, or null when the source has no such fills. */
+export async function rebuildPoly(db: Db, poly: PolymarketClient, m: Move): Promise<Move | null> {
+  const raw = await source(() => poly.getWalletMarketTradesAll(m.wallet!, m.marketId));
+  const parts = readPolymarketFills(raw)
+    .filter(f => f.wallet === m.wallet && f.side === "BUY" && f.outcomeSide === m.outcomeSide && f.at >= m.at - 1000 && f.at <= m.lastAt + MERGE_WINDOW_MS)
+    .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))
+    .map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at }));
+  if (!parts.length) return null;
+  const f = fromParts(parts);
+  await db.update(moves).set({ amount: f.amount, avgPrice: f.avgPrice, at: new Date(f.at), lastAt: new Date(f.lastAt), fills: f.fills,
+    sourceRefs: sql`${JSON.stringify(f.sourceRefs ?? [])}::jsonb`, parts: sql`${JSON.stringify(parts)}::jsonb`, realizedAt: null, pnl: null, soldShare: null })
+    .where(eq(moves.id, m.id));
+  return { ...m, ...f, parts };
 }
 
 /** The parser wants the market only for its wording; the check compares the trade itself (amount, side, time), so a
@@ -189,11 +212,19 @@ export async function checkMoves(db: Db, src: Sources, n: number): Promise<Array
   for (const r of rows) {
     const m = moveRow(r);
     const base = { kind: "move" as const, what: m.source, target: m.id, label: `${m.source === "sec" ? m.eventTitle : m.marketTitle} · $${Math.round(m.amount).toLocaleString("en-US")} on ${m.outcome}`.slice(0, 160) };
-    const res = await line(base, async () => {
+    let res = await line(base, async () => {
       if (m.source === "sec") return src.sec ? checkSec(src.sec, m) : null;
       if (m.source === "polymarket") return checkPoly(src.poly, m);
       return checkKalshi(src.kalshi, m);
     });
+    // A Polymarket position off in size or start: the source wins. Rebuilt from it, then checked again. Never for a
+    // move hidden as a sell (realize), which has no buy to rebuild from.
+    const sell = String(r.hidden_reason ?? "").startsWith("Not a new bet");
+    if (res.status === "mismatch" && m.source === "polymarket" && m.wallet && !sell && rebuildable(res.problems)) {
+      const was = res.problems;
+      const again = await line(base, async () => { const fixed = await rebuildPoly(db, src.poly, m); return fixed ? checkPoly(src.poly, fixed) : ["no matching fills at the source"]; });
+      res = again.status === "ok" ? { ...again, problems: [`rebuilt from the source (${was.join("; ")})`] } : again;
+    }
     out.push({ ...res, wasHidden: Boolean(r.was_hidden) });
   }
   return out;
