@@ -80,6 +80,12 @@ function categoryLabels(o: JsonObject | null | undefined): string[] {
     const s = str(o[k]);
     if (s) out.push(s);
   }
+  // Polymarket's sports markets carry a game id, a sports market type (moneyline, spreads, totals…) or a sports
+  // series (nba, dota-2…), even when they have no "sports" tag.
+  if (str(o.sportsMarketType) || o.gameId != null || str(o.gameStartTime)) out.push("sports");
+  for (const s of list(o.series)) { const slug = isObject(s) ? str(s.slug) : str(s); if (slug) out.push(slug); }
+  const seriesSlug = str(o.seriesSlug);
+  if (seriesSlug) out.push(seriesSlug);
   return out;
 }
 
@@ -629,7 +635,7 @@ export class PolymarketClient implements VenueClient {
     await Promise.all(
       chunk([...wanted], GAMMA_IDS_BATCH).flatMap(group =>
         [true, false].map(async closed => {
-          const query = [...group.map(id => `condition_ids=${encodeURIComponent(id)}`), `closed=${closed}`, `limit=${group.length}`].join("&");
+          const query = [...group.map(id => `condition_ids=${encodeURIComponent(id)}`), `closed=${closed}`, `limit=${group.length}`, "include_tag=true"].join("&");
           try {
             const raw = await this.gamma.json(`${this.gammaUrl}/markets?${query}`, { priority: opts.priority });
             for (const r of rows(raw, ["markets", "data"])) {

@@ -90,7 +90,8 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
               : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}
           </div>
-          <FeatureList />
+          {/* The same list as /start: five live lines at most, then one "More coming" line. */}
+          <div className="plan2__features"><StartList /></div>
         </article>
       </div>
     </section>

@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
+import { notComboSql } from "@/lib/moves/combos";
 
 /** The settled record, from Polymarket wallets only (Kalshi trades are anonymous: a trade can't be told apart from
  *  someone closing a position, so Kalshi isn't in it). Every settled move checked against the wallet's own trades
@@ -36,7 +37,7 @@ export function recordOf(rows: ReadonlyArray<{ source?: string; result: string |
 
 const RECORD_SQL = (tabs: string[]) => sql`with m as (
     select result, amount, avg_price, pnl, coalesce(sold_share, 0) > ${SOLD_EARLY_SHARE} as early from terminal.moves
-    where source = 'polymarket' and result is not null and pnl is not null and hidden_at is null and tab in (${sql.join(tabs.map(t => sql`${t}`), sql`, `)}))
+    where source = 'polymarket' and result is not null and pnl is not null and hidden_at is null and ${notComboSql} and tab in (${sql.join(tabs.map(t => sql`${t}`), sql`, `)}))
   select count(*) filter (where result = 'won' and not early)::int as won, count(*) filter (where result = 'lost' and not early)::int as lost,
     count(*) filter (where result = 'void')::int as refunded, count(*) filter (where result <> 'void' and early)::int as sold_early,
     sum(amount * avg_price) filter (where result in ('won', 'lost') and not early and avg_price > 0 and avg_price < 1)::float as wp,

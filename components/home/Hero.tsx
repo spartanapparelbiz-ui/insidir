@@ -85,7 +85,9 @@ function LockGlyph() {
   return <svg className="hcard__lock" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
 }
 
-export function Hero({ moves, ticker, late, trialLine, cta, ctaHref = "/feed", status }: {
+export function Hero({ moves, ticker, late, trialLine, cta, ctaHref = "/feed", status, alerts = false }: {
+  /** Phone alerts are live (only then is "Alerts to your phone" said). */
+  alerts?: boolean;
   moves: FeedItem[]; ticker: TickerItem[]; late: boolean; trialLine: string | null; cta: string; ctaHref?: string;
   /** The sources' freshness (lib/moves/feed.ts): "LIVE" only while every source is current. */
   status: FeedStatus | null;
@@ -151,7 +153,7 @@ export function Hero({ moves, ticker, late, trialLine, cta, ctaHref = "/feed", s
             <ul className="cine__points">
               <li>Sports · Prediction markets · Stocks</li>
               <li>Real public data</li>
-              <li>Alerts to your phone</li>
+              {alerts ? <li>Alerts to your phone</li> : null}
             </ul>
           </div>
           {trialLine ? <p className="cine__trial">{trialLine}</p> : null}

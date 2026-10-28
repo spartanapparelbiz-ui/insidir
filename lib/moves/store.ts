@@ -3,7 +3,9 @@ import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "dr
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { follows, markets, moves, traderRecords, waitlist } from "@/lib/db/schema";
-import type { League, Move, Tab, TraderRecord } from "./types";
+import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
+import { fromParts, mergeParts } from "./detect";
+import { notComboSql } from "./combos";
 import type { Realized } from "./realize";
 
 type Row = typeof moves.$inferSelect;
@@ -21,19 +23,65 @@ export const fromRow = (r: Row): Move => ({
 export async function upsertMoves(db: Db, list: readonly Move[]): Promise<string[]> {
   const fresh: string[] = [];
   for (const m of list) {
+    // Polymarket: one move per open position (wallet, market, outcome). A position seen again (more buys, or earlier
+    // fills the feed delivered late) merges into the row that's already there, by fill id, and any duplicates go.
+    if (m.source === "polymarket" && m.wallet && m.parts?.length) {
+      const same = await db.select().from(moves).where(and(eq(moves.source, "polymarket"), eq(moves.wallet, m.wallet), eq(moves.marketId, m.marketId),
+        eq(moves.outcomeSide, m.outcomeSide), isNull(moves.result), isNull(moves.hiddenAt))).orderBy(moves.createdAt, moves.id);
+      if (same.length) {
+        const keep = same[0]!;
+        const parts = mergeParts(...same.map(r => r.parts), m.parts);
+        const merged = fromParts(parts);
+        // Rows from before fills were kept can't be added up exactly: never show less than the biggest of them.
+        const legacy = same.filter(r => !r.parts?.length).reduce((mx, r) => Math.max(mx, r.amount), 0);
+        const useLegacy = legacy > merged.amount;
+        await db.update(moves).set({
+          parts: sql`${JSON.stringify(parts)}::jsonb`, amount: useLegacy ? legacy : merged.amount, avgPrice: useLegacy ? keep.avgPrice : merged.avgPrice,
+          at: new Date(Math.min(merged.at, ...same.map(r => r.at.getTime()))), lastAt: new Date(Math.max(merged.lastAt, ...same.map(r => r.lastAt.getTime()))),
+          fills: merged.fills, sourceRefs: sql`${JSON.stringify(merged.sourceRefs ?? [])}::jsonb`, walletName: m.walletName ?? keep.walletName,
+        }).where(eq(moves.id, keep.id));
+        const extra = same.slice(1).map(r => r.id);
+        if (extra.length) await db.delete(moves).where(inArray(moves.id, extra));
+        continue;
+      }
+    }
     const r = await db.insert(moves).values({
       id: m.id, source: m.source, marketId: m.marketId, eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome,
       outcomeSide: m.outcomeSide, amount: m.amount, avgPrice: m.avgPrice, wallet: m.wallet, walletName: m.walletName,
       at: new Date(m.at), lastAt: new Date(m.lastAt), fills: m.fills, tab: m.tab, league: m.league, category: m.category, url: m.url,
-      detail: (m.detail ?? null) as Record<string, unknown> | null, newWallet: m.newWallet ?? null, sourceRefs: m.sourceRefs ?? null,
+      detail: (m.detail ?? null) as Record<string, unknown> | null, newWallet: m.newWallet ?? null, sourceRefs: m.sourceRefs ?? null, parts: m.parts ?? null,
     }).onConflictDoUpdate({
       target: moves.id,
-      set: { amount: m.amount, avgPrice: m.avgPrice, lastAt: new Date(m.lastAt), fills: m.fills, walletName: m.walletName, sourceRefs: m.sourceRefs ?? null },
+      set: { amount: m.amount, avgPrice: m.avgPrice, lastAt: new Date(m.lastAt), fills: m.fills, walletName: m.walletName, sourceRefs: m.sourceRefs ?? null, parts: m.parts ?? null },
       setWhere: sql`${moves.fills} < ${m.fills}`,
     }).returning({ id: moves.id, inserted: sql<boolean>`(xmax = 0)` });
     if (r[0]?.inserted) fresh.push(m.id);
   }
   return fresh;
+}
+
+/** Polymarket positions saved as more than one move (before moves merged by position): wallet, market, outcome and
+ *  every row's id, earliest first. */
+export async function duplicatePositions(db: Db, limit: number): Promise<Array<{ wallet: string; marketId: string; outcomeSide: "yes" | "no"; ids: string[] }>> {
+  const r = await db.execute(sql`select wallet, market_id, outcome_side, array_agg(id order by at, id) as ids from terminal.moves
+    where source = 'polymarket' and wallet is not null and hidden_at is null
+    group by wallet, market_id, outcome_side, (result is null) having count(*) > 1 limit ${limit}`);
+  return (r.rows as Array<{ wallet: string; market_id: string; outcome_side: "yes" | "no"; ids: string[] }>).map(x => ({ wallet: x.wallet, marketId: x.market_id, outcomeSide: x.outcome_side, ids: x.ids }));
+}
+
+/** Folds a duplicate group into its first row: the fills given (from the wallet's own trades) or, without them, the
+ *  biggest row's numbers. The record is worked out again for it (realized_at cleared). */
+export async function collapsePosition(db: Db, ids: string[], parts: FillPart[] | null): Promise<void> {
+  const rows = await db.select().from(moves).where(inArray(moves.id, ids)).orderBy(moves.at, moves.id);
+  if (rows.length < 2) return;
+  const keep = rows[0]!, biggest = rows.reduce((b, r) => (r.amount > b.amount ? r : b));
+  const set = parts?.length ? (() => { const f = fromParts(parts); return { parts, amount: f.amount, avgPrice: f.avgPrice, at: new Date(f.at), lastAt: new Date(f.lastAt), fills: f.fills, sourceRefs: f.sourceRefs }; })()
+    : { amount: biggest.amount, avgPrice: biggest.avgPrice, lastAt: new Date(Math.max(...rows.map(r => r.lastAt.getTime()))), fills: Math.max(...rows.map(r => r.fills)),
+        sourceRefs: [...new Set(rows.flatMap(r => (Array.isArray(r.sourceRefs) ? r.sourceRefs : [])))] };
+  // jsonb arrays as JSON text: a bare JS array would reach Postgres as an array literal ("{}").
+  await db.update(moves).set({ ...set, sourceRefs: sql`${JSON.stringify(set.sourceRefs ?? [])}::jsonb`, ...("parts" in set ? { parts: sql`${JSON.stringify(set.parts)}::jsonb` } : {}),
+    realizedAt: null, pnl: null, soldShare: null }).where(eq(moves.id, keep.id));
+  await db.delete(moves).where(inArray(moves.id, rows.slice(1).map(r => r.id)));
 }
 
 /** Markets with unsettled moves older than an hour, per source (for the settlement check). SEC filings never settle. */
@@ -135,6 +183,8 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     inArray(moves.tab, q.tab ? liveTabs().filter(t => t === q.tab) : liveTabs()),
     // A move the accuracy check found wrong is hidden until a later check passes (lib/accuracy).
     isNull(moves.hiddenAt),
+    // Multi-leg combos never reach a page (lib/moves/combos.ts).
+    notComboSql,
     q.min ? gte(moves.amount, q.min) : undefined,
     q.league ? eq(moves.league, q.league) : undefined,
     q.leagues?.length ? inArray(moves.league, q.leagues) : undefined,
@@ -147,7 +197,9 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
     q.settled ? isNotNull(moves.result) : undefined,
   ].filter(Boolean);
   const rs = await db.select().from(moves).where(w.length ? and(...w) : undefined)
-    .orderBy(q.byAmount ? desc(moves.amount) : q.settled ? desc(moves.settledAt) : desc(moves.at), desc(moves.id)).limit(Math.min(q.limit ?? 50, 200)).offset(q.offset ?? 0);
+    // Stocks: insiders' Form 4 buys (days old) before funds' 13F adds (up to months old), each newest first.
+    .orderBy(...(q.tab === "stocks" && !q.byAmount && !q.settled ? [sql`(${moves.category} = 'fund')`] : []),
+      q.byAmount ? desc(moves.amount) : q.settled ? desc(moves.settledAt) : desc(moves.at), desc(moves.id)).limit(Math.min(q.limit ?? 50, 200)).offset(q.offset ?? 0);
   return rs.map(fromRow);
 }
 

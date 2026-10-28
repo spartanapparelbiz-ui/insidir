@@ -11,7 +11,7 @@ const LEAGUE_WORDS: ReadonlyArray<readonly [League, readonly string[]]> = [
   ["UFC", ["ufc", "mma", "kxufc"]],
   ["tennis", ["tennis", "atp", "wta", "wimbledon", "us open tennis", "roland garros", "australian open"]],
   ["golf", ["golf", "pga", "masters", "ryder cup", "lpga"]],
-  ["soccer", ["soccer", "premier league", "epl", "la liga", "serie a", "bundesliga", "ligue 1", "champions league", "uefa", "mls", "fifa", "world cup"]],
+  ["soccer", ["soccer", "fc", "premier league", "epl", "la liga", "serie a", "bundesliga", "ligue 1", "champions league", "uefa", "mls", "fifa", "world cup"]],
 ];
 
 export function leagueOf(words: ReadonlyArray<string | null | undefined>): League {
@@ -24,8 +24,14 @@ export function leagueOf(words: ReadonlyArray<string | null | undefined>): Leagu
   return "other";
 }
 
+/** Titles that can only be a game, for a market whose venue category didn't say sports (Polymarket esports, totals,
+ *  spreads and "Will X win on <date>?" football markets). Never just "vs": elections use it too. */
+const SPORT_TITLE = /\b(o\/u \d+(?:\.\d+)?|over\/under|spread:|moneyline|map handicap|game \d+ winner|map \d+ winner|\(bo\d\)|counter-strike|dota 2|league of legends|valorant|rocket league|call of duty|nba|nfl|nhl|mlb|wnba|ufc|atp|wta|premier league|la liga|serie a|bundesliga|ligue 1|champions league|europa league|mls)(?![a-z0-9])|\bwill .{2,40} (fc|cf|afc|sc) win on \d{4}-\d{2}-\d{2}/i;
+
+export const looksLikeSport = (words: ReadonlyArray<string | null | undefined>): boolean => SPORT_TITLE.test(words.filter(Boolean).join(" \n "));
+
 export function classify(category: string, words: ReadonlyArray<string | null | undefined>): { tab: Tab; league: League | null } {
-  if (category === "sports") return { tab: "sports", league: leagueOf(words) };
+  if (category === "sports" || (category !== "crypto" && looksLikeSport(words))) return { tab: "sports", league: leagueOf(words) };
   if (category === "crypto") return { tab: "crypto", league: null };
   return { tab: "markets", league: null };
 }

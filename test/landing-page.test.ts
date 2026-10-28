@@ -112,7 +112,7 @@ describe("home hero ticker", () => {
     const t = tickerItem({ ...base });
     expect(`${t.amount} ${t.what} · ${t.ago}`).toBe("$48K on Lakers · 2m");
     expect(t.href).toBe("/market/KX-LAL");
-    expect(tickerItem({ ...base, outcome: "Yes", tab: "markets", marketTitle: "Will the Fed cut in December?" }).what).toBe("on Yes · Fed cut in December");
+    expect(tickerItem({ ...base, outcome: "Yes", tab: "markets", marketTitle: "Will the Fed cut in December?" }).what).toBe("on Yes · Will the Fed cut in December?");
     expect(tickerItem({ ...base, source: "sec", tab: "stocks", eventTitle: "NVIDIA CORP", company: "Nvidia (NVDA)" }).what).toBe("of Nvidia (NVDA)");
   });
 });

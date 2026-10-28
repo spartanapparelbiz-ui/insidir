@@ -152,8 +152,8 @@ export default async function Home() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp2">
-        <Hero moves={hero} ticker={ticker} late={false} trialLine={paid ? null : CANCEL_LINE} cta={paid ? "See the live feed" : GET_CTA} ctaHref={paid ? "/feed" : trial} status={status} />
-        {story ? <Story data={story} /> : null}
+        <Hero alerts={isReady("alerts_push")} moves={hero} ticker={ticker} late={false} trialLine={paid ? null : CANCEL_LINE} cta={paid ? "See the live feed" : GET_CTA} ctaHref={paid ? "/feed" : trial} status={status} />
+        {story ? <Story data={story} alerts={isReady("alerts_push")} /> : null}
 
         <PhotoSection n={HOME_SECTIONS.seconds} id="ps-seconds" line="Big moves happen in seconds.">
           {recent[0] ? <div className="psec__card"><MoveCard m={recent[0]} follow={follow} trialHref={trial} compact /></div> : null}
@@ -168,7 +168,7 @@ export default async function Home() {
               </div>
               <div className="preview__grid">
                 {preview.map((m, i) => <div key={m.id} className="rv rv--card" style={cardIn(i)}><MoveCard m={m} follow={follow} trialHref={trial} compact /></div>)}
-                {snippet ? (
+                {snippet && snippet.moves > 0 && snippet.total > 0 ? (
                   <aside className="psnip rv rv--card" style={cardIn(3)} aria-labelledby="psnip-h">
                     <p className="psnip__kicker">{snippet.top ? "Top trader" : "Trader"} profile</p>
                     <h3 id="psnip-h" className="psnip__name">{snippet.name}</h3>
@@ -188,7 +188,7 @@ export default async function Home() {
         ) : null}
 
         <PhotoSection n={HOME_SECTIONS.wins} id="ps-wins" line="See who actually wins.">
-          {record ? <p className="psec__stat"><span className="money-on-dark"><span data-count={record.won}>{record.won.toLocaleString("en-US")}</span> won</span> · <span className="loss-on-dark"><span data-count={record.lost}>{record.lost.toLocaleString("en-US")}</span> lost</span></p> : null}
+          {record && record.won + record.lost > 0 ? <p className="psec__stat"><span className="money-on-dark"><span data-count={record.won}>{record.won.toLocaleString("en-US")}</span> won</span> · <span className="loss-on-dark"><span data-count={record.lost}>{record.lost.toLocaleString("en-US")}</span> lost</span></p> : null}
         </PhotoSection>
 
         {results.length ? (
@@ -197,7 +197,7 @@ export default async function Home() {
               <div className="sec2__head">
                 <h2 id="res-h" className="sec2__h rv">Results</h2>
                 <p className="sec2__sub rv" style={cardIn(1)}>Real past moves. Not a promise.</p>
-                {record ? <p className="results__record rv" style={cardIn(2)}><span className="money">{record.won.toLocaleString("en-US")} won</span> · <span className="loss">{record.lost.toLocaleString("en-US")} lost</span></p> : null}
+                {record && record.won + record.lost > 0 ? <p className="results__record rv" style={cardIn(2)}><span className="money">{record.won.toLocaleString("en-US")} won</span> · <span className="loss">{record.lost.toLocaleString("en-US")} lost</span></p> : null}
               </div>
               <ol className="rcards">
                 {results.map((r, i) => (
@@ -215,14 +215,15 @@ export default async function Home() {
           </section>
         ) : null}
 
-        <PhotoSection n={HOME_SECTIONS.alert} id="ps-alert" line="Get the alert before everyone else.">
+        {/* Only once phone alerts are live (FEATURES_READY alerts_push). */}
+        {isReady("alerts_push") ? <PhotoSection n={HOME_SECTIONS.alert} id="ps-alert" line="Get the alert before everyone else.">
           {story ? (
             <div className="psec__note" aria-hidden="true">
               <span className="psec__note-icon"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
               <div><p className="psec__note-head"><b>{story.alert.title}</b><span>now</span></p><p className="psec__note-text">{story.alert.body}</p></div>
             </div>
           ) : null}
-        </PhotoSection>
+        </PhotoSection> : null}
 
         <TrustBlock facts={trust} />
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} />

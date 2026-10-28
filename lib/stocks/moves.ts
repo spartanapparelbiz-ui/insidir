@@ -1,5 +1,6 @@
 /* SEC filings as moves in the one moves table (docs/INSIDIR-V2.md, Stocks): an insider's open-market buy (Form 4)
  * and a big fund's quarterly add (13F versus its previous 13F). Pure. */
+import { shareClassOf } from "./names";
 import type { Move } from "@/lib/moves/types";
 import type { InsiderBuy } from "./form4";
 import type { FundAdd, ThirteenF } from "./form13f";
@@ -23,6 +24,7 @@ export function fundMove(a: FundAdd, fund: string, fundCik: string, cur: Thirtee
     outcome: "Added", outcomeSide: "yes", amount: a.added, avgPrice: Math.round(a.pricePerShare * 10_000) / 10_000, wallet: null, walletName: null,
     at, lastAt: at, fills: 1, tab: "stocks", league: null, category: "fund", url, result: null, settledAt: null,
     detail: { kind: "fund", company: a.company, cusip: a.cusip, fund, fundCik, period: cur.period, filedOn: cur.filedAt, addedShares: a.addedShares,
-      prevShares: a.prevShares, curShares: a.curShares, curValue: a.curValue, newPosition: a.newPosition, accession: cur.accession, prevAccession: prev.accession },
+      prevShares: a.prevShares, curShares: a.curShares, curValue: a.curValue, newPosition: a.newPosition, accession: cur.accession, prevAccession: prev.accession,
+      shareClass: shareClassOf(a.issuerName, a.cusip) },
   };
 }

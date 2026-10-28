@@ -281,3 +281,18 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   const sports = await (await page.request.get("/api/moves?tab=sports&min=10000")).json() as { items: Array<{ tab: string }> };
   expect(sports.items.every(i => i.tab === "sports")).toBe(true);
 });
+
+test("home: no zero trader box or 0 won · 0 lost, and the plan card lists what /start lists", async ({ page }) => {
+  await page.goto("/");
+  const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+  expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
+  const plan = page.locator(".plan2 .start__list li");
+  const n = await plan.count();
+  expect(n).toBeGreaterThan(0);
+  expect(n).toBeLessThanOrEqual(5);
+  await expect(page.locator(".plan2 .start__more")).toHaveText(/^More coming: /);
+  await page.goto("/start");
+  const start = await page.getByTestId("start-list").locator("li").allInnerTexts();
+  await page.goto("/");
+  expect(await plan.allInnerTexts()).toEqual(start);
+});

@@ -113,7 +113,7 @@ describe("stock cards", () => {
     // Never "just bought": the filing day ("today" on the day, Eastern), then the trade date.
     expect(moveSentence(insider, null, true, Date.parse("2026-10-26T20:00:00Z"))).toBe("Filed today: Jane Doe, CEO of Example Devices, bought $1.4M of Example Devices stock on Oct 22.");
     expect(moveSentence(insider, null, true, Date.parse("2026-10-28T15:00:00Z"))).toBe("Filed Oct 26: Jane Doe, CEO of Example Devices, bought $1.4M of Example Devices stock on Oct 22.");
-    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of EXAMPLE DEVICES in Q3 2026.");
+    expect(moveSentence(fund, null, false)).toBe("Berkshire Hathaway added $220M of Example Devices in Q3 2026.");
     expect(stockNote(insider.detail!)).toBe("Traded Oct 22 at $182.65 a share. Filed with the SEC Oct 26.");
     expect(stockNote(fund.detail!)).toBe("Q3 2026 holdings · filed Nov 14. 13F data can be up to 45 days old.");
     for (const t of [moveSentence(insider, null), stockNote(insider.detail!)]) expect(t).not.toMatch(/just bought/);

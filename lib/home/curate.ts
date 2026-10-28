@@ -43,18 +43,8 @@ export const KNOWN_STOCKS: Record<string, string> = {
 /** The same companies by the words of their SEC names (13F holdings carry a name, not a ticker). */
 const KNOWN_BY_NAME: Array<[RegExp, string]> = Object.entries(KNOWN_STOCKS).map(([t, n]) => [new RegExp(`^${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/&/g, "(&|and)")}\\b`, "i"), t]);
 
-const SUFFIX = /[,.]?\s+(inc|incorporated|corp|corporation|co|company|companies|ltd|limited|llc|l\.?l\.?c|lp|l\.?p|plc|n\.?v|s\.?a|ag|se|holdings?|group|financial|insurance|trust|bancorp|the)\.?$/i;
-const SMALL = new Set(["of", "and", "the", "&", "de", "for", "in"]);
-
-/** "NIPPON LIFE INSURANCE" → "Nippon Life"; "COREBRIDGE FINANCIAL, INC." → "Corebridge". Keeps short all-caps acronyms (IBM, AT&T). */
-export function niceName(raw: string): string {
-  let s = raw.replace(/\s+/g, " ").trim();
-  for (let i = 0; i < 4 && SUFFIX.test(s); i++) s = s.replace(SUFFIX, "").trim();
-  if (s === s.toUpperCase() && /[A-Z]{4,}/.test(s)) {
-    s = s.toLowerCase().split(" ").map((w, i) => (i > 0 && SMALL.has(w) ? w : w.length <= 3 && !/[aeiouy]/.test(w) ? w.toUpperCase() : w.replace(/(^|[-'.])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase()))).join(" ");
-  }
-  return s.replace(/,$/, "");
-}
+export { niceName } from "@/lib/stocks/names";
+import { niceName, shareClassOf } from "@/lib/stocks/names";
 
 /** The company and ticker of a stock move, when it is one a newcomer knows. */
 export function knownStock(m: Pick<Move, "detail">): { name: string; ticker: string } | null {
@@ -80,11 +70,10 @@ export function isMainstream(m: HomeMove): boolean {
   return MAJOR_CLUBS.test(words) || POLITICS.test(words) || ECONOMY.test(words);
 }
 
-/** "Will the Democratic Party control the House after the 2026 midterms?" → "Democratic Party control the House after
- *  the 2026 midterms"; drops dates like "on 2026-10-27", caps at about 48 characters on a word boundary. */
+/** A market's question, kept as a question ("Will Benjamin Netanyahu be the next…?" never loses its "Will"): drops
+ *  dates like "on 2026-10-27" and a "Full game:" prefix, and caps at about 48 characters on a word boundary. */
 export function trimTitle(t: string, max = 48): string {
   let s = t.replace(/\s+/g, " ").trim()
-    .replace(/^will (the )?/i, "").replace(/\?$/, "")
     .replace(/\s+(on|by|before|after)\s+\d{4}-\d{2}-\d{2}\b/gi, "").replace(/,?\s+\d{4}-\d{2}-\d{2}\b/g, "")
     .replace(/^full game:\s*/i, "");
   s = s.charAt(0).toUpperCase() + s.slice(1);
@@ -111,7 +100,8 @@ export function homeCopy(m: HomeMove, who: string): { line: string; context: str
       return { line: `${niceName(d.ownerName)} bought ${dollars(m.amount)} of ${what}`,
         context: `${d.tradeDate ? `Traded ${calDay(d.tradeDate)} · ` : ""}filed ${DAY_ET.format(new Date(d.filedAt))}` };
     }
-    return { line: `${niceName(d.fund)} added ${dollars(m.amount)} of ${what}`, context: `${d.period ? `${quarter(d.period)} holdings` : "Holdings"} · filed ${calDay(d.filedOn)}` };
+    const cls = shareClassOf(d.shareClass ? `class ${d.shareClass}` : null, d.cusip);
+    return { line: `${niceName(d.fund)} added ${dollars(m.amount)} of ${cls ? `${k ? k.name : niceName(d.company)} Class ${cls}` : what}`, context: `${d.period ? `${quarter(d.period)} holdings` : "Holdings"} · filed ${calDay(d.filedOn)}` };
   }
   const o = side(m.outcome);
   const title = trimTitle(m.marketTitle || m.eventTitle);
@@ -121,6 +111,7 @@ export function homeCopy(m: HomeMove, who: string): { line: string; context: str
 
 /** "$48K", "$1.2M": the ticker's amounts. */
 export function compactDollars(v: number): string {
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(2).replace(/\.?0+$/, "")}B`;
   if (v >= 1e6) return `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
   if (v >= 1e3) return `$${Math.round(v / 1e3)}K`;
   return `$${Math.round(v)}`;

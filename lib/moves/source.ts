@@ -24,7 +24,7 @@ export function moveSource(m: Pick<Move, "id" | "source" | "marketId" | "wallet"
     const s = Math.floor(m.at / 1000);
     return { href: `${KALSHI_API}/markets/trades?ticker=${encodeURIComponent(m.marketId)}&min_ts=${s}&max_ts=${s + 1}`, label: "Where this comes from: Kalshi trade record" };
   }
-  const tx = m.sourceRefs?.find(h => HASH.test(h));
+  const tx = Array.isArray(m.sourceRefs) ? m.sourceRefs.find(h => HASH.test(h)) : undefined;
   if (tx) return { href: `${POLYGONSCAN}/tx/${tx}`, label: "Where this comes from: Polymarket trade on Polygon" };
   return m.wallet && WALLET.test(m.wallet) ? { href: `${POLYGONSCAN}/address/${m.wallet.toLowerCase()}`, label: "Where this comes from: Polymarket wallet on Polygon" } : null;
 }
