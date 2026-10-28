@@ -45,6 +45,8 @@ function fakeWhop(plans: Array<Record<string, unknown>>) {
     const p = u.pathname.replace(/^\/api\/v1/, "");
     if (m === "GET" && p === "/plans") return json({ data: plans.filter(x => (x.product as { id: string }).id === u.searchParams.get("product_ids[]")) });
     if (m === "GET" && p === "/webhooks") return json({ data: s.webhooks.map(w => ({ ...w, webhook_secret: "" })) });
+    // Whop refuses api_version on new webhooks (they always use v1 events).
+    if (m === "POST" && p === "/webhooks" && "api_version" in body) return json({ error: { message: "api_version is no longer supported." } }, 400);
     if (m === "POST" && p === "/webhooks") { const w = { id: `hook_${++s.n}`, ...body, webhook_secret: `whsec_secret${s.n}` }; s.webhooks.push(w); return json(w); }
     const hook = p.match(/^\/webhooks\/(.+)$/);
     if (hook && m === "DELETE") { s.webhooks = s.webhooks.filter(w => w.id !== hook[1]); return json({}); }
@@ -84,7 +86,7 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     expect(r1.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
     expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 7 days, initial fee $1.");
     expect(w.s.webhooks).toHaveLength(1);
-    expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], api_version: "v1", resource_id: "biz_1" });
+    expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
     expect(w.s.apps).toEqual([expect.objectContaining({ name: "Insidir", redirect_uris: ["https://insidir.com/reset/callback"], account_id: "biz_1" })]);
     const stored = await readConfig(db);
     expect(stored.plan_id).toBe("plan_good");
