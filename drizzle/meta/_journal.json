@@ -99,6 +99,13 @@
       "when": 1793161946294,
       "tag": "0013_whop_config",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793187393897,
+      "tag": "0014_move_parts",
+      "breakpoints": true
     }
   ]
 }

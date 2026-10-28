@@ -1,6 +1,7 @@
 /* What a Polymarket move really made, from the wallet's own trades in that market (all of them, maker and taker,
  * from the Data API), once the market has settled. Pure.
- *   The bet: the wallet's BUY fills of the move's outcome from the move's first fill on, each within MERGE_WINDOW_MS
+ *   The bet: the wallet's BUY fills of the move's outcome from its first fill to MERGE_WINDOW_MS after its last (a
+ *     position bought over time is one bet); without a last fill, the run of fills each within MERGE_WINDOW_MS
  *     of the previous one (the same rule as detection, but with every fill, so a bet seen half-filled is counted
  *     in full).
  *   Sold before the result: that outcome's SELL fills after the bet and before `until` (the settle time; trading
@@ -19,7 +20,7 @@ export type Realized =
 /** The share of a bet sold before the result above which it counts as "sold before the result", not won or lost. */
 export const SOLD_EARLY_SHARE = 0.5;
 
-export function realizeMove(m: { at: number; outcomeSide: "yes" | "no" }, fills: readonly WalletFill[], result: "yes" | "no" | "void", until: number,
+export function realizeMove(m: { at: number; lastAt?: number; outcomeSide: "yes" | "no" }, fills: readonly WalletFill[], result: "yes" | "no" | "void", until: number,
   voidPrice = 0.5): Realized {
   const idx = m.outcomeSide === "no" ? 1 : 0;
   const mine = fills.filter(f => f.outcomeIndex === idx && f.at >= m.at - 1000 && f.at <= until).sort((a, b) => a.at - b.at);
@@ -27,9 +28,11 @@ export function realizeMove(m: { at: number; outcomeSide: "yes" | "no" }, fills:
   const first = mine.find(f => Math.abs(f.at - m.at) <= 1000);
   if (first && first.side !== "BUY" && !mine.some(f => f.side === "BUY" && Math.abs(f.at - m.at) <= 1000)) return { ok: false, reason: "not_a_buy" };
   let amount = 0, contracts = 0, last = -Infinity;
+  // The whole position: every BUY from its first fill to MERGE_WINDOW_MS after its last (when known), else one run.
+  const end = m.lastAt !== undefined ? m.lastAt + MERGE_WINDOW_MS : Infinity;
   for (const f of mine) {
     if (f.side !== "BUY") continue;
-    if (contracts > 0 && f.at - last > MERGE_WINDOW_MS) break;
+    if (f.at > end || (m.lastAt === undefined && contracts > 0 && f.at - last > MERGE_WINDOW_MS)) break;
     amount += f.size * f.price; contracts += f.size; last = f.at;
   }
   if (contracts <= 0) return { ok: false, reason: "not_a_buy" };

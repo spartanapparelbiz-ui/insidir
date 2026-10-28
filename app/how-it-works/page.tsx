@@ -14,16 +14,17 @@ import { memo } from "@/lib/memo";
 import { movePlan } from "@/lib/moves/gate";
 import { BAND } from "@/lib/photos";
 import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
+import { isReady } from "@/lib/features";
 import { trustFacts } from "@/lib/trust";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "How it works", description: "A big bet or insider trade happens, Insidir catches it in seconds, shows you who it is and whether they usually win, and pings you next time." };
+export const metadata: Metadata = { title: "How it works", description: "A big bet or insider trade happens, Insidir catches it in seconds and shows you who it is and whether they usually win." };
 
 const STEPS: Array<[string, string]> = [
   ["A big bet happens", "Someone puts $10,000 or more on a game, an election or the Fed, or a CEO files a trade in their own stock."],
   ["Insidir catches it in seconds", "We read Polymarket, Kalshi and SEC filings all day and write every big move in one plain sentence."],
   ["See who it is", "Tap the name: every bet they've made, how many they won and lost, and their all-time profit."],
-  ["Get pinged next time", "Follow the traders who usually win. When they make a big move, your phone buzzes."],
+  ...(isReady("alerts_push") ? [["Get pinged next time", "Follow the traders who usually win. When they make a big move, your phone buzzes."] as [string, string]] : []),
 ];
 const DO: Array<[string, string, string]> = [
   ["/feed", "The live feed", "Every big move as it happens: Sports, Markets and Stocks."],

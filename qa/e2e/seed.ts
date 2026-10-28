@@ -152,7 +152,8 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
       outcome: "Lakers", amount: 48_000, avgPrice: 0.55, wallet: null, walletName: null, fills: 1, league: "NBA", url: "https://kalshi.com/markets/kxe2e" }),
     mv({ id: "e2e:m3", at: now - 50 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket2", eventTitle: "E2E fixture: Fed rate cut in December?",
       marketTitle: "E2E fixture: Fed rate cut in December?", outcome: "Yes", amount: 85_000, avgPrice: 0.31, wallet: NEW, walletName: null }),
-    mv({ id: "e2e:m4", at: now - 3 * 60 * MIN, amount: 160_000, avgPrice: 0.48 }),
+    // Its own market: one move per position (wallet, market, outcome), so it never merges with e2e:m1.
+    mv({ id: "e2e:m4", at: now - 3 * 60 * MIN, amount: 160_000, avgPrice: 0.48, marketId: "0xe2emarket4" }),
     // A wallet with no activity at all before this move.
     mv({ id: "e2e:m5", at: now - 40 * MIN, tab: "markets", category: "economics", league: null, marketId: "0xe2emarket3", eventTitle: "E2E fixture: Rate hike in March?",
       marketTitle: "E2E fixture: Rate hike in March?", outcome: "Yes", amount: 200_000, avgPrice: 0.2, wallet: BRAND, walletName: null, newWallet: true }),

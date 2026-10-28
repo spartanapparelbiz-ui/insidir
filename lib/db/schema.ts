@@ -389,6 +389,9 @@ export const moves = terminal.table("moves", {
   /** Polymarket only, once settled (lib/moves/realize.ts): what the bet really made from the wallet's own trades
    *  (sales before the result + payout on what was still held − cost), and the share sold before the result. Null
    *  until checked; Kalshi trades are anonymous and never get one. */
+  /** Polymarket only: the fills behind the move ({id, c: contracts, p: price, at}), so a position seen again (more
+   *  buys, or earlier fills the feed delivered late) merges into this one row by fill id (lib/moves/detect.ts). */
+  parts: jsonb("parts").$type<Array<{ id: string; c: number; p: number; at: number }>>(),
   pnl: doublePrecision("pnl"),
   soldShare: doublePrecision("sold_share"),
   realizedAt: timestamp("realized_at", { withTimezone: true }),

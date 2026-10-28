@@ -1,0 +1,1 @@
+ALTER TABLE "terminal"."moves" ADD COLUMN "parts" jsonb;

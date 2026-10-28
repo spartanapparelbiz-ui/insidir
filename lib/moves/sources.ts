@@ -9,6 +9,7 @@ import { epochMs, num, rows, str } from "@/lib/exchanges/parse";
 import type { VMarket } from "@/lib/types";
 import type { ResolvedPosition } from "./records";
 import type { Fill } from "./types";
+import { isBlockedName } from "./names";
 
 export function readPolymarketFills(raw: unknown): Fill[] {
   const out: Fill[] = [];
@@ -81,6 +82,6 @@ export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: str
 /** A wallet's public Polymarket username (never the auto-made pseudonym); null when it has none. */
 export function publicUsername(r: Record<string, unknown>): string | null {
   const name = str(r.name) ?? str(r.userName) ?? str(r.username);
-  if (r.displayUsernamePublic === false || !name || /^0x[0-9a-f]{6,}/i.test(name)) return null;
+  if (r.displayUsernamePublic === false || !name || /^0x[0-9a-f]{6,}/i.test(name) || isBlockedName(name)) return null;
   return name.trim().slice(0, 60) || null;
 }

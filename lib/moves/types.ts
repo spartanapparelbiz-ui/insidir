@@ -7,6 +7,9 @@ export type Tab = "sports" | "markets" | "crypto" | "stocks";
 export type League = "NFL" | "NBA" | "MLB" | "NHL" | "college" | "soccer" | "UFC" | "tennis" | "golf" | "other";
 export const LEAGUES: readonly League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf", "other"];
 
+/** One fill inside a Polymarket move: fill id, contracts, price, time (ms). */
+export interface FillPart { id: string; c: number; p: number; at: number }
+
 export interface Move {
   /** Stable id: Polymarket `pm:<wallet>:<market>:<outcomeIndex>:<first fill ms>`, Kalshi `ks:<trade id>`. */
   id: string;
@@ -48,6 +51,8 @@ export interface Move {
   /** Polymarket, once settled and checked against the wallet's own trades (lib/moves/realize.ts): what the bet made,
    *  and the share of it sold before the result. */
   pnl?: number | null;
+  /** Polymarket: the fills behind it (lib/moves/detect.ts FillPart). */
+  parts?: FillPart[] | null;
   soldShare?: number | null;
 }
 
@@ -56,7 +61,9 @@ export type StockDetail =
   | { kind: "insider"; company: string; ticker: string | null; issuerCik: string; role: string; ownerName: string; ownerCik: string | null;
       shares: number; pricePerShare: number; tradeDate: string | null; filedAt: number; accession: string }
   | { kind: "fund"; company: string; cusip: string; fund: string; fundCik: string; period: string | null; filedOn: string;
-      addedShares: number; prevShares: number; curShares: number; curValue: number; newPosition: boolean; accession: string; prevAccession: string };
+      addedShares: number; prevShares: number; curShares: number; curValue: number; newPosition: boolean; accession: string; prevAccession: string;
+      /** "A" / "B" / "C" when the company lists more than one class (lib/stocks/names.ts). */
+      shareClass?: string | null };
 
 /** One fill as the detector sees it (normalised from either venue). */
 export interface Fill {

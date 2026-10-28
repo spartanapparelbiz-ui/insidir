@@ -4,8 +4,9 @@
  *   Kalshi: one trade of at least WHALE_MIN_KALSHI.
  *   Noise, skipped: average prices above 97¢ or below 3¢; wallets that bought both sides of the same market within
  *   an hour (market makers); wallets with more than 300 trades a day. Sells are not moves: they take money out. */
-import type { Fill, Move, Tab } from "./types";
+import type { Fill, FillPart, Move, Tab } from "./types";
 import { classify } from "./classify";
+import { isCombo } from "./combos";
 
 export const WHALE_MIN_POLY = Number(process.env.WHALE_MIN_POLY ?? 10_000);
 export const WHALE_MIN_KALSHI = Number(process.env.WHALE_MIN_KALSHI ?? 5_000);
@@ -37,7 +38,7 @@ export function noisyWallet(trades: readonly WalletTrade[], marketId: string, no
 export interface MarketInfo { category: string; labels: string[]; url: string | null }
 
 /** The Polygon transaction hashes in Polymarket fill ids ("<hash>:<wallet>:…"), each once. */
-export const txHashes = (fills: readonly Pick<Fill, "id">[]): string[] =>
+export const txHashes = (fills: readonly { id: string }[]): string[] =>
   [...new Set(fills.map(f => f.id.split(":")[0]!).filter(h => /^0x[0-9a-fA-F]{64}$/.test(h)))];
 
 function toMove(id: string, fills: readonly Fill[], info: MarketInfo | undefined): Move {
@@ -52,6 +53,23 @@ function toMove(id: string, fills: readonly Fill[], info: MarketInfo | undefined
     wallet: f0.wallet, walletName: f0.walletName, at: f0.at, lastAt: fills[fills.length - 1]!.at, fills: fills.length,
     tab: tab as Tab, league, category: info?.category ?? "other", url: info?.url ?? f0.url, result: null, settledAt: null,
     sourceRefs: f0.source === "polymarket" ? txHashes(fills) : null,
+    parts: f0.source === "polymarket" ? fills.map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at })) : null,
+  };
+}
+
+/** The union of two moves' fills, by fill id. */
+export function mergeParts(...lists: ReadonlyArray<readonly FillPart[] | null | undefined>): FillPart[] {
+  const by = new Map<string, FillPart>();
+  for (const l of lists) for (const p of l ?? []) by.set(p.id, p);
+  return [...by.values()].sort((a, b) => a.at - b.at);
+}
+
+/** A move's money and times from its fills. */
+export function fromParts(parts: readonly FillPart[]): Pick<Move, "amount" | "avgPrice" | "at" | "lastAt" | "fills" | "sourceRefs"> {
+  const amount = parts.reduce((s, p) => s + p.c * p.p, 0), contracts = parts.reduce((s, p) => s + p.c, 0);
+  return {
+    amount: Math.round(amount * 100) / 100, avgPrice: contracts > 0 ? amount / contracts : 0,
+    at: parts[0]!.at, lastAt: parts[parts.length - 1]!.at, fills: parts.length, sourceRefs: txHashes(parts),
   };
 }
 
@@ -72,7 +90,7 @@ export function polymarketMoves(fills: readonly Fill[], info: ReadonlyMap<string
     const flush = () => {
       if (!run.length) return;
       const m = toMove(`pm:${run[0]!.wallet}:${run[0]!.marketId}:${run[0]!.outcomeSide}:${run[0]!.at}`, run, info.get(run[0]!.marketId));
-      if (m.amount >= min && priceOk(m.avgPrice)) out.push(m);
+      if (m.amount >= min && priceOk(m.avgPrice) && !isCombo(m)) out.push(m);
       run = [];
     };
     for (const f of g) {
@@ -89,6 +107,7 @@ export function kalshiMoves(fills: readonly Fill[], info: ReadonlyMap<string, Ma
   return fills
     .filter(f => f.source === "kalshi" && f.contracts * f.price >= min && priceOk(f.price))
     .map(f => toMove(`ks:${f.id}`, [f], info.get(f.marketId)))
+    .filter(m => !isCombo(m))
     .sort((a, b) => b.at - a.at);
 }
 

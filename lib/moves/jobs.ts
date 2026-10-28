@@ -13,8 +13,14 @@ import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
 import { readLeaderboard } from "./sources";
-import { movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
+import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
 import { readWalletFills, realizeMove } from "./realize";
+import { MERGE_WINDOW_MS } from "./detect";
+import { readPolymarketFills } from "./sources";
+import { moves } from "@/lib/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
+import { classify } from "./classify";
+import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
 import { rows } from "@/lib/exchanges/parse";
@@ -62,6 +68,49 @@ export async function settleMovesOnce(db: Db, clients: { polymarket: PolymarketC
     if (!ids.length) continue;
     const got = await clients[source].getMarketsById(ids);
     for (const [id, m] of got) if (m.result) { await settleMarket(db, source, id, m.result, new Date(now)); n++; }
+  }
+  return n;
+}
+
+/** Polymarket moves filed under Markets that are really sports (esports, totals, spreads, football "Will X FC win"):
+ *  each market is read again with its tags and the moves are moved to Sports, with their league. Idempotent. */
+let reclassifyOffset = 0;
+export async function reclassifyOnce(db: Db, poly: PolymarketClient, perRun = 200): Promise<number> {
+  // Walks every Markets-tab Polymarket market a page per run (newest first), then starts over.
+  const rows = await db.selectDistinct({ marketId: moves.marketId, eventTitle: moves.eventTitle, marketTitle: moves.marketTitle }).from(moves)
+    .where(and(eq(moves.source, "polymarket"), eq(moves.tab, "markets"))).orderBy(moves.marketId).limit(perRun).offset(reclassifyOffset);
+  reclassifyOffset = rows.length < perRun ? 0 : reclassifyOffset + perRun;
+  if (!rows.length) return 0;
+  let fresh = new Map<string, VMarket>();
+  try { fresh = await poly.getMarketsById(rows.map(r => r.marketId)); } catch { /* words alone this time */ }
+  let n = 0;
+  for (const r of rows) {
+    const m = fresh.get(r.marketId);
+    const c = classify(m?.category ?? "other", [r.eventTitle, r.marketTitle, m?.eventTitle ?? null, m?.title ?? null, m?.seriesId ?? null]);
+    if (c.tab !== "sports") continue;
+    await db.update(moves).set({ tab: "sports", league: c.league, category: "sports" }).where(and(eq(moves.source, "polymarket"), eq(moves.marketId, r.marketId)));
+    n++;
+  }
+  return n;
+}
+
+/** Positions saved as several moves before moves merged by position: each group becomes one move, rebuilt from the
+ *  wallet's own BUY fills in that market and outcome over the group's time span (same fill ids as the live feed).
+ *  Idempotent: nothing to do once there are no duplicates. */
+export async function dedupeOnce(db: Db, poly: PolymarketClient, perRun = 20): Promise<number> {
+  let n = 0;
+  for (const g of await duplicatePositions(db, perRun)) {
+    let parts: FillPart[] | null = null;
+    try {
+      const rows = await db.select({ at: moves.at, lastAt: moves.lastAt }).from(moves).where(inArray(moves.id, g.ids));
+      const from = Math.min(...rows.map(r => r.at.getTime())) - 1000, to = Math.max(...rows.map(r => r.lastAt.getTime())) + MERGE_WINDOW_MS;
+      const idx = g.outcomeSide === "no" ? 1 : 0;
+      parts = readPolymarketFills(await poly.getWalletMarketTradesAll(g.wallet, g.marketId))
+        .filter(f => f.wallet === g.wallet && f.marketId === g.marketId && f.side === "BUY" && (f.outcomeSide === "no" ? 1 : 0) === idx && f.at >= from && f.at <= to)
+        .map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at }));
+    } catch { parts = null; }
+    await collapsePosition(db, g.ids, parts);
+    n++;
   }
   return n;
 }

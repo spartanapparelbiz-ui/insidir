@@ -55,12 +55,9 @@ export function Motion() {
       scope.querySelectorAll<HTMLElement>(".rv, [data-count]").forEach(el => {
         if (seen.has(el)) return;
         seen.add(el);
-        if (el.dataset.count !== undefined) {
-          // Below the fold: show 0 until it counts up. Already on screen: leave the final value, count from 0 now.
-          el.dataset.final = el.textContent ?? "";
-          const r = el.getBoundingClientRect();
-          if (r.top > innerHeight) el.textContent = (FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!)(0);
-        }
+        // The real value stays in the page until it counts up (from 0, once it enters view): never a placeholder 0,
+        // whether or not the animation ever runs (screenshots, a page read without scrolling, a slow observer).
+        if (el.dataset.count !== undefined) el.dataset.final = el.textContent ?? "";
         io.observe(el);
       });
       if (!scrollDriven) scope.querySelectorAll<HTMLElement>("[data-par]").forEach(el => parallax.add(el));

@@ -219,7 +219,11 @@ function useFitPhones(root: React.RefObject<HTMLElement | null>) {
   }, [root]);
 }
 
-export function Story({ data }: { data: StoryData }) {
+export function Story({ data, alerts = false }: { data: StoryData;
+  /** Phone alerts are live: the fourth step (the alert on the lock screen) shows. Until then, three steps. */
+  alerts?: boolean }) {
+  const caps = alerts ? CAPTIONS : CAPTIONS.slice(0, 3);
+  const idx = caps.map((_, i) => i), last = caps.length - 1;
   const [step, setStep] = useState(0);
   const root = useRef<HTMLElement>(null);
   useFitPhones(root);
@@ -248,19 +252,19 @@ export function Story({ data }: { data: StoryData }) {
             {data.past ? <p className="story__note">{PAST}</p> : null}
           </div>
           <div className="story__caps" aria-live="polite">
-            {CAPTIONS.map((c, i) => <p key={c} className={`story__cap${i === step ? " is-on" : ""}`} aria-hidden={i === step ? undefined : true}><span className="story__n">{i + 1}</span>{c}</p>)}
+            {caps.map((c, i) => <p key={c} className={`story__cap${i === step ? " is-on" : ""}`} aria-hidden={i === step ? undefined : true}><span className="story__n">{i + 1}</span>{c}</p>)}
           </div>
-          <Phone>{[0, 1, 2, 3].map(i => <div key={i} className={`story__screen${i === step ? " is-on" : ""}`}><Screen i={i} d={data} /></div>)}</Phone>
-          <div className={`story__cta${step === 3 ? " is-on" : ""}`}>{cta}</div>
+          <Phone>{idx.map(i => <div key={i} className={`story__screen${i === step ? " is-on" : ""}`}><Screen i={i} d={data} /></div>)}</Phone>
+          <div className={`story__cta${step === last ? " is-on" : ""}`}>{cta}</div>
         </div>
         <div className="story__steps">
-          {[0, 1, 2, 3].map(i => <div key={i} className="story__step" data-i={i} ref={el => { steps.current[i] = el; }} />)}
+          {idx.map(i => <div key={i} className="story__step" data-i={i} ref={el => { steps.current[i] = el; }} />)}
         </div>
       </div>
 
       {/* Phones (and reduced motion): the same four steps, stacked. */}
       <ol className="wrap story__stack">
-        {CAPTIONS.map((c, i) => (
+        {caps.map((c, i) => (
           <li key={c} className="story__item rv">
             <h3 className="story__cap is-on"><span className="story__n">{i + 1}</span>{c}</h3>
             <Phone><div className="story__screen is-on"><Screen i={i} d={data} /></div></Phone>

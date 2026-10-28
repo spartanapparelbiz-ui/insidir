@@ -11,14 +11,16 @@
  * Never: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider
  * info, lock, guaranteed, risk-free, free money, sure thing, "buy this", "copy this bet" (test/moves.test.ts). */
 import { insiderWho } from "@/lib/profiles/name";
+import { companyWithClass, niceName, shareClassOf } from "@/lib/stocks/names";
 import { isTopTrader, walletLabel } from "./records";
 import type { Move, TraderRecord } from "./types";
 
 const YES_NO = /^(yes|no)$/i;
 
-/** "$412,000", "$1.2M", "$48,000". */
+/** "$412,000", "$1.2M", "$98M", "$8.77B". */
 export function dollars(v: number): string {
   const a = Math.abs(v), s = v < 0 ? "−" : "";
+  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(2).replace(/\.?0+$/, "")}B`;
   if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
   if (a >= 1e3) return `${s}$${Math.round(a).toLocaleString("en-US")}`;
   return `${s}$${a.toFixed(0)}`;
@@ -86,8 +88,8 @@ export function quarterOf(period: string): string {
  *  "Berkshire Hathaway added $250M of Chevron in Q3 2026." Never "just bought": a Form 4 reports a trade up to 2
  *  business days old, and a 13F holdings up to 45 days after the quarter. */
 export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, now = Date.now()): string {
-  if (d.kind === "insider") return `Filed ${filedWhen(d.filedAt, now)}: ${insiderWho(d.ownerName, d.role, d.company)}, bought ${dollars(amount)} of ${d.company} stock${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}.`;
-  return `${d.fund} added ${dollars(amount)} of ${d.company} ${d.period ? `in ${quarterOf(d.period)}` : "last quarter"}${d.newPosition ? ", a new position" : ""}.`;
+  if (d.kind === "insider") return `Filed ${filedWhen(d.filedAt, now)}: ${insiderWho(d.ownerName, d.role, niceName(d.company))}, bought ${dollars(amount)} of ${niceName(d.company)} stock${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}.`;
+  return `${niceName(d.fund)} added ${dollars(amount)} of ${companyWithClass(d.company, shareClassOf(d.shareClass ? `class ${d.shareClass}` : null, d.cusip))} ${d.period ? `in ${quarterOf(d.period)}` : "last quarter"}${d.newPosition ? ", a new position" : ""}.`;
 }
 
 /** The line under a stock card. Form 4: both the trade date and the filing date. 13F: "Q3 2026 holdings · filed Nov 14." */
