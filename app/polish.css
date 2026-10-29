@@ -1,0 +1,206 @@
+/* The polish layer, loaded after everything else (app/layout.tsx), so it settles the older styles:
+ * - Weights: headlines and numbers 600, body 400/500; nothing heavier. H1 96px/-0.048em, H2 52px/-0.038em.
+ * - No pills or chips: a result is plain text on the right (components/ui/Result.tsx), filters and tabs are text.
+ * - Colour only on gains and losses; big stats and headline numbers are ink.
+ * - No grey section cards: white, separated by 1px #EAEAEE lines; a section header has a 1px ink line under it.
+ *   The live list and the position check sit in white "windows".
+ * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Get started".
+ * - Section spacing 168px on desktop, 112px on phones. */
+:root {
+  --line: var(--grey-2);
+  --border: var(--line);
+  --sec: 112px;
+  --w-num: 600;
+  --win-border: rgba(11, 11, 18, .06);
+  --win-shadow: 0 1px 2px rgba(11, 11, 18, .04), 0 10px 30px rgba(11, 11, 18, .06), 0 30px 80px rgba(11, 11, 18, .07);
+  --r-win: 22px;
+}
+@media (min-width: 900px) { :root { --sec: 168px; } }
+
+/* ---------- type ---------- */
+body { font-weight: 400; }
+b, strong { font-weight: 600; }
+h1, h2, h3, .num, [data-count] { font-weight: 600; }
+h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+  font-size: 52px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
+@media (min-width: 900px) {
+  h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+    font-size: 96px; line-height: 1; letter-spacing: -0.048em; }
+}
+h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h, .block__h {
+  font-size: 34px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 600; }
+@media (min-width: 900px) {
+  h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h, .block__h { font-size: 52px; line-height: 1.05; letter-spacing: -0.038em; }
+}
+/* long titles (a market's question) stay readable */
+.mhead__h { overflow-wrap: anywhere; }
+@media (min-width: 900px) { .mhead__h { font-size: 72px; } }
+
+/* section headers: a 1px ink line under them */
+.sec3__h, .tsec__h, .dsec__h, .tgroup__h, .sec2__h { padding-bottom: 20px; border-bottom: 1px solid var(--ink); margin-bottom: 32px; }
+.dsec__h + .dsec__note { margin-top: -16px; }
+
+/* ---------- colour: only on gains and losses; big numbers are ink ---------- */
+.tile dd, .tile dd.money, .tile dd.loss, .record dd, .record dd.money, .record dd.loss, .lchart__now, .lchart__now .money, .lchart__now .loss,
+.mhead__now, .hypo b, .hypo b .money, .hypo b .loss, .sbars__row dd b, .ticket__price { color: var(--ink); }
+.hypo b > span { color: inherit; }
+
+/* ---------- results: plain text on the right ---------- */
+.res { display: inline-grid; justify-items: end; text-align: right; gap: 2px; flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.res__amt { font-size: var(--t15); font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.res__amt--won { color: var(--money-text); }
+.res__amt--lost { color: var(--loss-text); }
+.res__st { font-size: 12px; font-weight: 500; color: var(--muted); }
+.res__st--only { font-size: var(--t13); }
+
+/* pills, badges and chips become plain text */
+.rpill, .rpill--won, .rpill--lost, .rpill--new, .rpill--sm, .tag, .badge, .soon, .cleg__v, .srow__gap, .srow__gap--big, .srow__gap--won, .srow__gap--lost,
+.cleg--with .cleg__v, .cleg--against .cleg__v {
+  display: inline; height: auto; padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; color: var(--muted);
+  font-size: var(--t13); font-weight: 500; }
+.cleg__v { color: var(--ink); font-size: var(--t15); font-weight: 600; text-align: right; }
+.srow__gap { color: var(--ink); font-size: var(--t15); font-weight: 600; text-align: right; }
+.srow__gap--won { color: var(--money-text); }
+.srow__gap--lost { color: var(--loss-text); }
+.tag__dot { display: none; }
+.move__kind { color: var(--muted); font-size: var(--t13); font-weight: 500; }
+.move__badge { color: var(--muted); }
+
+/* filters and tabs: text; the selected one ink with a 1px ink line under it */
+.chip2, .tlink, .seg__btn { display: inline-flex; align-items: center; min-height: var(--tap); height: auto; padding: 0; border: 0; border-radius: 0; background: none !important;
+  box-shadow: none !important; color: var(--muted); font: 500 var(--t15)/1 var(--sans); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.chip2:hover, .tlink:hover, .seg__btn:hover { color: var(--ink); }
+.chip2[aria-pressed="true"], .chip2[aria-current="true"], .tlink[aria-current="true"], .seg__btn[aria-selected="true"], .seg__btn[aria-pressed="true"] {
+  color: var(--ink); box-shadow: inset 0 -1px 0 var(--ink) !important; }
+.chips, .dfilters, .seg { gap: 24px; }
+.seg { display: inline-flex; padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.dash .chip2 { background: none; }
+.tgroups { padding: 0; box-shadow: inset 0 -1px 0 var(--line); }
+
+/* ---------- surfaces: white, 1px lines, no grey cards ---------- */
+.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .side, .deal, .start__signup, .start__pay,
+.inband__card, .psnip, .rcard, .promise__item, .tile, .dnote, .hypo, .tnew, .tempty, .lchart__empty, .cluster, .sbars__row, .sflag, .srow, .cleg,
+.checkf__err, .login__err, .cmp__scroll, .trialbar, .pm {
+  background: none !important; border-radius: 0; box-shadow: none !important; }
+.move:hover, .dash .move:hover, .prod__tile--link:hover, .deal:hover, .srow:hover { background: none; box-shadow: none !important; }
+.ptable tbody tr:hover, .table tbody tr:hover, .dtable tbody tr:hover, .trow:hover { background: none; }
+.trow:hover .trow__name { text-decoration: underline; text-underline-offset: 3px; }
+
+/* tiles: a 1px line over each, no box */
+.tiles { gap: 0 24px; }
+.tile { padding: 20px 0 24px; border-top: 1px solid var(--line); }
+.record { gap: 0 24px; }
+.record div { padding: 20px 0 24px; border-top: 1px solid var(--line); }
+.dnote, .tnew, .tempty, .lchart__empty, .hypo, .cluster, .sflag { padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.sflag { box-shadow: none !important; }
+.checkf__err, .login__err { padding: 16px 0; border-top: 1px solid var(--loss); border-bottom: 1px solid var(--line); }
+
+/* lists: rows separated by lines */
+.slist, .cres__legs, .feed2__list, .tmoves { gap: 0; }
+.srow { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.move { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.move2 { padding: 24px 0; }
+@media (min-width: 900px) { .move2 { padding: 28px 0; } }
+.sbars { gap: 0; }
+.sbars__row { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.sbars__track { background: var(--line); }
+.cleg { padding: 24px 0; border-bottom: 1px solid var(--line); }
+
+/* the windows: the live lists and the position check */
+.feed2__list, .slist, .cres__legs, .checkf, .tmoves {
+  background: var(--paper); border: 1px solid var(--win-border); border-radius: var(--r-win); box-shadow: var(--win-shadow); padding: 0 24px; }
+@media (min-width: 900px) { .feed2__list, .slist, .cres__legs, .checkf, .tmoves { padding: 0 32px; } }
+.feed2__list > li:last-child .move, .slist > li:last-child .srow, .cres__legs > li:last-child { border-bottom: 0; }
+.feed2__list > li:last-child > .move, .slist > li:last-child > .srow, .cres__legs > .cleg:last-child { border-bottom: 0; }
+.checkf { padding-top: 24px; padding-bottom: 24px; max-width: 680px; }
+@media (min-width: 900px) { .checkf { padding: 32px; } }
+.checkf__drop { background: none; border: 1px dashed var(--line); border-radius: 16px; box-shadow: none; }
+.checkf__drop:hover, .checkf__drop--over, .checkf__drop:focus-within, .checkf__drop--has { border-color: var(--ink); box-shadow: none; }
+.tmoves { grid-template-columns: none !important; max-width: 860px; }
+
+/* the move card: headline on the left, its result on the right */
+.move__hrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.move__hrow .move__head { margin-top: 0; min-width: 0; }
+.move__head b { font-weight: 600; }
+.move__pnl { font-weight: 600; }
+
+/* inputs: white with a line */
+.input, .login__input, .checkf__field .input { background: var(--paper); border: 1px solid var(--line); }
+.input:focus, .login__input:focus { border-color: var(--ink); }
+
+/* ---------- actions ---------- */
+.btn--primary, .nav .btn--primary { font-weight: 600; }
+/* secondary actions: a text link with an arrow */
+.btn--secondary, .trail .btn--secondary, .move .btn--secondary {
+  min-height: var(--tap); padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; color: var(--ink); font-weight: 600; }
+.btn--secondary:hover { background: none; text-decoration: underline; text-underline-offset: 3px; }
+.btn--secondary:not(:has(.arrow)):not(.follow--on):not([aria-pressed])::after { content: "→"; margin-left: 6px; display: inline-block; transition: transform var(--dur-small) var(--ease-enter); }
+.btn--secondary:hover::after { transform: translateX(3px); }
+.btn--secondary.btn--block { justify-content: flex-start; }
+.follow--on { box-shadow: none !important; color: var(--muted); }
+.tlink--go { color: var(--ink); font-weight: 600; }
+.tlink--go:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hero3__alt { text-decoration: none; color: var(--ink); font-weight: 600; }
+.hero3__alt:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* the nav's one button, 36px */
+.nav .nav__cta, .nav--light .nav__cta { min-height: 36px; height: 36px; padding: 0 16px; font-size: var(--t13); }
+
+/* ---------- spacing between sections ---------- */
+.sec3, .sec3--tight { padding-top: var(--sec); }
+.lp3 .pricing2, .lp3 .sec2 { padding: var(--sec) 0; }
+.tsec, .dsec { margin-top: var(--sec); }
+.fan { margin-top: 112px; }
+@media (min-width: 1100px) { .fan { margin-top: 120px; } }
+
+/* ---------- tracker covers (components/trackers/TrackerCover.tsx): 4:3, deep colour, a thin white curve ---------- */
+.tcover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-win); background: var(--tc); color: var(--paper); isolation: isolate; }
+.tcover__curve { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
+.tcover__curve path { fill: none; stroke: var(--paper); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
+.tcover__fig { position: absolute; left: 24px; top: 20px; display: grid; gap: 2px; }
+.tcover__n { font-size: 34px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--paper); }
+.tcover__l { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, .7); }
+.tcover--sm { aspect-ratio: 1; border-radius: 12px; }
+.tcover--sm .tcover__curve path { stroke-width: 1.25; }
+/* Featured: the name at the bottom of the cover */
+.tfeat { aspect-ratio: 4 / 3 !important; background: none; border-radius: var(--r-win); }
+.tfeat::after { display: none; }
+.tfeat__cover { position: absolute; inset: 0; aspect-ratio: auto; }
+.tfeat__copy { z-index: 1; }
+.tfeat__name { font-weight: 600; color: var(--paper); }
+.tfeat__by { color: rgba(255, 255, 255, .7); opacity: 1; }
+.tfeat:hover .tcover__curve path { opacity: 1; }
+/* rows and tiles */
+.trow__thumb.tcover { width: 48px; height: 48px; }
+.trow { grid-template-columns: auto 48px minmax(0, 1fr) auto 20px; }
+.ttile__cover.tcover { aspect-ratio: 4 / 3; border-radius: var(--r-win); }
+.ttile__link:hover .ttile__cover { box-shadow: none; }
+.ttile__link:hover .ttile__name { text-decoration: underline; text-underline-offset: 3px; }
+.ttile__name { font-weight: 600; }
+.thead__cover.tcover { aspect-ratio: 4 / 3; }
+.thead__cover .tcover__n { font-size: 52px; letter-spacing: -0.038em; }
+@media (min-width: 900px) { .thead__cover .tcover__fig { left: 32px; top: 28px; } }
+/* the phones */
+.ph__cover.tcover { margin: -16px -14px 0; aspect-ratio: 4 / 3; border-radius: 0; }
+.ph__cover .tcover__fig { left: 14px; top: 12px; }
+.ph__cover .tcover__n { font-size: 24px; }
+.ph__cover .tcover__l { font-size: 9px; }
+.ph__thumb.tcover { width: 32px; height: 32px; border-radius: 8px; }
+.ph__trow .res__amt { font-size: 11px; }
+.ph__trow .res__st { font-size: 9px; }
+.ph__row .res__amt { font-size: 13px; }
+.ph__row .res__st { font-size: 10px; }
+.pm { padding: 10px 0; border-radius: 0; border-bottom: 1px solid var(--line); }
+.pm--res { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.pm--res .res__amt { font-size: 13px; }
+.pm--res .res__st { font-size: 10px; }
+.ph__list { gap: 0; }
+.ph__lock { background: var(--paper); }
+.ph__note { box-shadow: var(--win-shadow); border: 1px solid var(--win-border); }
+
+/* ---------- motion: no auto-scrolling strips ---------- */
+.device__scroll, .devices--on .device--phone .device__scroll { animation: none !important; }
+/* the location control and other small controls: text, not pills */
+.pill { min-height: var(--tap); padding: 0; border: 0; border-radius: 0; background: none; color: var(--ink); font-weight: 600; }
+.pill:hover { border: 0; text-decoration: underline; text-underline-offset: 3px; }
+/* pricing: the plan card is a window, not a grey box */
+.plan2 { background: var(--paper) !important; border: 1px solid var(--win-border) !important; border-radius: var(--r-win); box-shadow: var(--win-shadow) !important; }

@@ -25,6 +25,9 @@ export interface TrackerStats {
   moves: number;
   lastAt: number | null;
   followers: number;
+  /** Its cover's curve, 26 weekly points: what its settled bets have made so far (cumulative, by settlement week);
+   *  for filings, which never settle, the money its moves have put in. Empty when nothing is in the window yet. */
+  curve: number[];
 }
 
 const DAY = 86_400_000;
@@ -41,7 +44,8 @@ function windowCols(key: string, since: Date | null, counted: ReturnType<typeof 
     count(*) filter (where ${w} and terminal.moves.result = 'lost')::int as ${sql.raw(`lost_${key}`)},
     sum(terminal.moves.amount * terminal.moves.avg_price) filter (where ${priced})::float as ${sql.raw(`wp_${key}`)},
     sum(terminal.moves.amount) filter (where ${priced})::float as ${sql.raw(`w_${key}`)},
-    coalesce(sum(terminal.moves.pnl) filter (where ${w}), 0)::float as ${sql.raw(`net_${key}`)}`;
+    coalesce(sum(terminal.moves.pnl) filter (where ${w}), 0)::float as ${sql.raw(`net_${key}`)},
+    coalesce(sum(terminal.moves.amount) filter (where ${w}), 0)::float as ${sql.raw(`st_${key}`)}`;
 }
 
 export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<TrackerStats> {
@@ -58,14 +62,40 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
     where terminal.moves.hidden_at is null and ${notComboSql} and terminal.moves.tab in (${sql.join(tabs.map(x => sql`${x}`), sql`, `)}) and ${trackerWhere(t)}`)).rows[0] as Record<string, unknown> | undefined;
   const rec = (k: string): TrackerRecord => {
     const w = n(r?.[`w_${k}`]);
-    return { won: n(r?.[`won_${k}`]), lost: n(r?.[`lost_${k}`]), oddsPct: w > 0 ? (n(r?.[`wp_${k}`]) / w) * 100 : null, net: n(r?.[`net_${k}`]) };
+    return { won: n(r?.[`won_${k}`]), lost: n(r?.[`lost_${k}`]), oddsPct: w > 0 ? (n(r?.[`wp_${k}`]) / w) * 100 : null, net: n(r?.[`net_${k}`]), staked: n(r?.[`st_${k}`]) };
   };
+  const curve = await trackerCurve(db, t, now, counted, tabs).catch(() => []);
   return {
     slug: t.slug,
     records: Object.fromEntries(windows.map(w => [w.key, rec(w.key)])) as Record<PeriodKey, TrackerRecord>,
     tracked30d: n(r?.tracked30), moves30d: n(r?.moves30), moves: n(r?.moves),
-    lastAt: r?.last_at ? new Date(r.last_at as string).getTime() : null, followers: n(r?.followers),
+    lastAt: r?.last_at ? new Date(r.last_at as string).getTime() : null, followers: n(r?.followers), curve,
   };
+}
+
+export const CURVE_WEEKS = 26;
+
+/** Weekly sums, oldest first, made cumulative; [] when every week is empty. */
+export function cumulative(weekly: ReadonlyArray<{ week: number; v: number }>, weeks = CURVE_WEEKS): number[] {
+  const by = new Array<number>(weeks).fill(0);
+  for (const { week, v } of weekly) if (week >= 0 && week < weeks) by[weeks - 1 - week]! += v;
+  if (by.every(v => v === 0)) return [];
+  let run = 0;
+  return by.map(v => (run += v));
+}
+
+async function trackerCurve(db: Db, t: Tracker, now: number, counted: ReturnType<typeof sql>, tabs: string[]): Promise<number[]> {
+  const since = new Date(now - CURVE_WEEKS * 7 * DAY);
+  const at = t.kind === "filings" ? sql`terminal.moves.at` : sql`terminal.moves.settled_at`;
+  const v = t.kind === "filings" ? sql`terminal.moves.amount` : sql`terminal.moves.pnl`;
+  const only = t.kind === "filings" ? sql`true` : counted;
+  const rows = (await db.execute(sql`select floor(extract(epoch from (${new Date(now)}::timestamptz - ${at})) / ${7 * 86_400})::int as week,
+      coalesce(sum(${v}), 0)::float as v
+    from terminal.moves
+    where terminal.moves.hidden_at is null and ${notComboSql} and terminal.moves.tab in (${sql.join(tabs.map(x => sql`${x}`), sql`, `)})
+      and ${trackerWhere(t)} and (${only}) and ${at} >= ${since} and ${at} <= ${new Date(now)}
+    group by 1`)).rows as Array<{ week: number; v: number }>;
+  return cumulative(rows.map(x => ({ week: n(x.week), v: n(x.v) })));
 }
 
 /** Every tracker's stats, shared by every visitor for a minute. */

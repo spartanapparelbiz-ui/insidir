@@ -12,6 +12,8 @@ export const WHAT_IS_TITLE = "Insidir: live tracker for sports bets, prediction 
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
  *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
 export const GET_CTA = "Try 7 days for $1";
+/** The nav's one button, for visitors on every page. */
+export const NAV_CTA = "Get started";
 /** What comes after, said next to every price. */
 export const THEN_LINE = "then $39/mo, cancel anytime";
 /** The small line under a button. */

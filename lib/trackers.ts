@@ -13,6 +13,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import type { PhotoN } from "@/components/Photo";
 import type { Feature } from "@/lib/features";
+import { signedShort } from "@/lib/moves/copy";
 import { leagueLabel } from "@/lib/moves/leagues";
 import type { Move } from "@/lib/moves/types";
 
@@ -156,7 +157,13 @@ export function coverVariant(slug: string): string {
 }
 
 /** The four on the home page's "Featured" row, in order. */
-export const FEATURED: readonly TrackerSlug[] = ["biggest-bets", "top-traders", "nba-big-money", "new-wallets"];
+export const FEATURED: readonly TrackerSlug[] = ["ceo-buys", "fed-and-rates", "biggest-bets", "nba-big-money"];
+
+/** Home lists lead with stocks, then prediction markets (topics, then the styles that span every market), then sports. */
+const HOME_ORDER: Record<TrackerGroup, number> = { Stocks: 0, Topics: 1, Styles: 2, Leagues: 3 };
+/** A list in the home order, keeping each group's own order (stable). */
+export const homeOrder = <T extends { t: Pick<Tracker, "group"> }>(rows: readonly T[]): T[] =>
+  rows.map((r, i) => ({ r, i })).sort((a, b) => HOME_ORDER[a.r.t.group] - HOME_ORDER[b.r.t.group] || a.i - b.i).map(x => x.r);
 
 export const isFixed = (t: Tracker): t is Tracker & { rule: { fixed: (m: TrackerMove) => boolean } } => "fixed" in t.rule;
 export const isObserved = (t: Tracker) => "observed" in t.rule;
@@ -213,7 +220,7 @@ export type PeriodKey = (typeof PERIODS)[number]["key"] | "all";
 
 /** A tracker's record over settled moves: won and lost, the average price paid (weighted by amount, in %), and what
  *  those bets really made (net, from the wallets' own trades). */
-export interface TrackerRecord { won: number; lost: number; oddsPct: number | null; net: number }
+export interface TrackerRecord { won: number; lost: number; oddsPct: number | null; net: number; /** Money in those bets. */ staked?: number }
 
 export const settledOf = (r: TrackerRecord | null | undefined) => (r ? r.won + r.lost : 0);
 export const hasTrackerRecord = (r: TrackerRecord | null | undefined): r is TrackerRecord => settledOf(r) >= TRACKER_MIN_SETTLED;
@@ -222,6 +229,20 @@ export const winPct = (r: TrackerRecord) => Math.round((r.won / Math.max(1, r.wo
 /** "Won 63%", or "New" under 20 settled moves. */
 export const recordPill = (r: TrackerRecord | null | undefined): { text: string; tone: "won" | "lost" | "new" } =>
   hasTrackerRecord(r) ? { text: `Won ${winPct(r)}%`, tone: winPct(r) >= 50 ? "won" : "lost" } : { text: "New", tone: "new" };
+
+/** The record as a result, plain text on the right: the net in green or red, the win rate in grey under it ("New" under
+ *  20 settled moves, with no amount). */
+export function recordResult(r: TrackerRecord | null | undefined): { amount: string | null; tone: "won" | "lost" | "none"; status: string } {
+  if (!hasTrackerRecord(r)) return { amount: null, tone: "none", status: "New" };
+  return { amount: signedShort(r.net), tone: r.net > 0 ? "won" : r.net < 0 ? "lost" : "none", status: `Won ${winPct(r)}%` };
+}
+
+/** "+12.4%": what the bets returned on the money in them, or null without a record. */
+export function returnPct(r: TrackerRecord | null | undefined): string | null {
+  if (!hasTrackerRecord(r) || !r.staked || r.staked <= 0) return null;
+  const p = (r.net / r.staked) * 100;
+  return `${p > 0 ? "+" : p < 0 ? "−" : ""}${Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1)}%`;
+}
 
 /** Ranks trackers for one window: only those with a record there, best win rate first, then most settled. */
 export function topPerformers<T extends { slug: string; record: TrackerRecord | null }>(rows: readonly T[]): T[] {

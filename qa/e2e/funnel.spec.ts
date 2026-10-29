@@ -138,16 +138,19 @@ test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /lo
     .toEqual(["account_created", "checkout_start", "start_view"]);
 });
 
-test("one action per page: no offer bar or sticky bar anywhere; the nav button on public pages but not home, /start or /login", async ({ page }) => {
+test("one action per page: no offer bar or sticky bar anywhere; the nav's 36px Get started on public pages, home included, but not /start or /login", async ({ page }) => {
   for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await expect(page.locator(".nav__cta")).toHaveText("Get started");
+  if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
   await page.goto("/pricing");
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
+  await page.goto("/login");
+  await expect(page.locator(".nav__cta")).toHaveCount(0);
 });
 
 test("/admin/funnel: the eight steps with the drop-off between each", async ({ page }) => {

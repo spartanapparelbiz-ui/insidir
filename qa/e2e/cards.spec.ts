@@ -51,7 +51,9 @@ test("settled cards say what the bet made; low-interest markets wait behind Show
   await page.goto("/feed");
   const won = page.locator(".move", { hasText: "E2E Jets vs. Bills" });
   await expect(won.locator(".move__head")).toHaveText("$120K says Bills win");
-  await expect(won.getByTestId("move-result")).toHaveText("Won · +$188K");
+  // The result on the right: the P&L in green, "Won" in grey under it.
+  await expect(won.getByTestId("move-result").locator(".res__amt--won")).toHaveText("+$188K");
+  await expect(won.getByTestId("move-result").locator(".res__st")).toHaveText("Won");
   await expect(page.locator(".move", { hasText: "E2E Liquid vs. Spirit" })).toHaveCount(0);
   await page.getByRole("button", { name: "Show all" }).click();
   await expect(page.locator(".move", { hasText: "E2E Liquid vs. Spirit" }).locator(".move__head")).toHaveText("$40K says Spirit win map 2");

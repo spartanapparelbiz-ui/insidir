@@ -2,14 +2,15 @@
  * White page, #0B0B12 text, #6E6E73 secondary, #F5F5F7 cards, #E8E8ED hairlines. Green only for gains and wins, red only
  * for losses; nothing else gets colour. One font, Schibsted Grotesk, tight headlines, tabular numbers. 8px grid.
  * Every page is light (the old dark app theme is gone: <main class="dark"> no longer changes anything).
- * Photos (public/hero) are atmosphere only, never behind data. */
+ * Photos (public/hero) are atmosphere only, never behind data. Tracker covers are the one place with deep colour (one
+ * family per group, components/trackers/TrackerCover.tsx), always under white text and a white curve. */
 :root {
   /* the palette */
   --ink: #0b0b12;
   --paper: #ffffff;
   --grey-1: #f5f5f7;
   --grey-1b: #ececf0;
-  --grey-2: #e8e8ed;
+  --grey-2: #eaeaee;
   --grey-3: #6e6e73;
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
    * readable (4.5:1 on white and on the cards). Losses likewise. */
@@ -17,6 +18,11 @@
   --money-text: #137a47;
   --loss: #d93a2b;
   --loss-text: #c0321f;
+  /* tracker covers: stocks navy, markets indigo, styles plum, sports ocean */
+  --cover-stocks-0: #13294b; --cover-stocks-1: #182f57; --cover-stocks-2: #0f2342;
+  --cover-topics-0: #23205a; --cover-topics-1: #2a2566; --cover-topics-2: #1d1a4d;
+  --cover-styles-0: #341c4a; --cover-styles-1: #3d2156; --cover-styles-2: #2c1740;
+  --cover-leagues-0: #0d3550; --cover-leagues-1: #103d5c; --cover-leagues-2: #0a2d45;
   /* kept for old names: the "night" palette now points at the light one */
   --night: var(--paper);
   --night-surface: var(--grey-1);
@@ -41,7 +47,7 @@
   /* Seven sizes: 13 labels · 15 body · 17 lead · 22 card titles · 32 h2 · 56 h1 · 80 display. Older names map onto them. */
   --t13: 13px; --t15: 15px; --t17: 17px; --t22: 22px; --t32: 32px; --t56: 56px; --t80: 80px;
   --t20: var(--t17); --t24: var(--t22); --t40: var(--t32); --t44: var(--t32); --t64: var(--t56); --t72: var(--t56); --t96: var(--t80);
-  --w-body: 400; --w-label: 600; --w-num: 700;
+  --w-body: 400; --w-label: 600; --w-num: 600;
   --tight: -0.03em;
 
   --r-card: 24px;

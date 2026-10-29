@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LineChart } from "@/components/charts/LineChart";
-import { Cover } from "@/components/Photo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { BreakdownTable, cents, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
 import { BY, TrackerRow } from "@/components/trackers/Tracker";
+import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
 import { FollowButton, type FollowState } from "@/components/v2/FollowButton";
 import { MoveCard } from "@/components/v2/MoveCard";
 import { getViewer } from "@/lib/auth/viewer";
@@ -34,7 +34,7 @@ import {
   activity, bestDay, biggestLoss, biggestWin, breakdown, CHART_WINDOWS, dayOf, leaders, NOT_ENOUGH, perf, pnlSeries, priceMove, sideOf, SIDES, sizeOf, SIZES,
   streak, topShare, WEEKDAYS,
 } from "@/lib/stats";
-import { coverVariant, trackerBySlug, TRACKERS } from "@/lib/trackers";
+import { trackerBySlug, TRACKERS } from "@/lib/trackers";
 import { trackerMoves, trackerPage, trackerStats, type TrackerPageData, type TrackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
@@ -98,7 +98,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/trackers" trialHref={trial} />
       <main className="wrap app2 tracker">
         <header className="thead">
-          <div className="thead__cover"><Cover n={t.photo} className={coverVariant(t.slug)} eager sizes="(min-width: 900px) 520px, 100vw" /></div>
+          <TrackerCover t={t} s={coverStats(stats)} className="thead__cover" />
           <div className="thead__copy">
             <p className="thead__by">{BY} · {t.group}</p>
             <h1 className="thead__h">{t.name}</h1>
@@ -169,7 +169,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           {t.kind === "bets" ? (
             <nav className="dfilters" aria-label="Show">
               {/* Plain links: a query-only change on the same page through the client router sometimes never lands (Next 15.5). */}
-              {SHOW.map(s => <a key={s} className="chip2" aria-current={show === s ? "true" : undefined} href={s === "all" ? `/trackers/${t.slug}#moves-h` : `/trackers/${t.slug}?show=${s}#moves-h`}>{s[0]!.toUpperCase() + s.slice(1)}</a>)}
+              {SHOW.map(s => <a key={s} className="tlink" aria-current={show === s ? "true" : undefined} href={s === "all" ? `/trackers/${t.slug}#moves-h` : `/trackers/${t.slug}?show=${s}#moves-h`}>{s[0]!.toUpperCase() + s.slice(1)}</a>)}
             </nav>
           ) : null}
           {list.length ? (
@@ -179,7 +179,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
 
         {similar.length ? (
           <Section id="more-h" title="Similar trackers">
-            <ol className="tlist tlist--grid">{similar.map(o => <TrackerRow key={o.slug} t={o} r={all?.get(o.slug)?.records.all ?? null} />)}</ol>
+            <ol className="tlist tlist--grid">{similar.map(o => <TrackerRow key={o.slug} t={o} r={all?.get(o.slug)?.records.all ?? null} s={coverStats(all?.get(o.slug))} />)}</ol>
             <p className="tsec__foot"><Link className="btn btn--secondary" href="/trackers">All trackers <span className="arrow" aria-hidden="true">→</span></Link></p>
           </Section>
         ) : null}

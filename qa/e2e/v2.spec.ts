@@ -11,11 +11,16 @@ test("landing: the centred hero, one button to Check your bet, the phones, then 
   const cta = page.locator('[data-cta="hero"]');
   await expect(cta).toContainText("Check your bet");
   await expect(cta).toHaveAttribute("href", "/check");
-  await expect(page.getByRole("link", { name: "or explore the trackers" })).toHaveAttribute("href", "/trackers");
-  // One action: no offer bar, no sticky bar, no nav button on home.
+  await expect(page.getByRole("link", { name: "Explore the trackers →" })).toHaveAttribute("href", "/trackers");
+  // One black button (plus the nav's Get started): no offer bar, no sticky bar.
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
   await expect(page.locator(".trialbar")).toHaveCount(0);
-  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await expect(page.locator("main .btn--primary")).toHaveCount(1);
+  // Featured leads with stocks, then prediction markets, then sports.
+  await expect(page.locator(".tfeat .tfeat__name")).toHaveText(["CEO Buys", "Fed & Rates", "Whales ($100K+)", "NBA Big Money"]);
+  // No pills, no 700 weights.
+  await expect(page.locator(".rpill")).toHaveCount(0);
+  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
   await expect(page.locator(".fan .phone--2")).toBeVisible();
@@ -35,14 +40,17 @@ test("home hero: Check your bet is recorded; the trackers link opens /trackers, 
   await expect(page).toHaveURL(/\/check$/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
   await page.goto("/");
-  await page.getByRole("link", { name: "or explore the trackers" }).click();
+  await page.getByRole("link", { name: "Explore the trackers →" }).click();
   await expect(page).toHaveURL(/\/trackers$/);
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
   await expect(page.locator(".ttile")).toHaveCount(32);
   for (const g of ["Styles", "Leagues", "Topics", "Stocks"]) await expect(page.getByRole("heading", { level: 2, name: g })).toBeVisible();
   // The seed has fewer than 20 settled moves in every tracker: each says New, never a made-up record.
-  for (const pill of await page.locator(".ttile .rpill").allInnerTexts()) expect(pill).toBe("New");
+  for (const r of await page.locator(".ttile .res").allInnerTexts()) expect(r).toBe("New");
+  // Each cover: 4:3, deep colour.
+  const box = (await page.locator(".ttile .tcover").first().boundingBox())!;
+  expect(box.width / box.height).toBeCloseTo(4 / 3, 1);
   await page.locator(`.ttile a[href="/trackers/biggest-bets"]`).click();
   await expect(page).toHaveURL(/\/trackers\/biggest-bets$/);
   await expect(page.getByRole("heading", { level: 1, name: "Whales ($100K+)" })).toBeVisible();

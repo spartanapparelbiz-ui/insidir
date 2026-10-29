@@ -45,7 +45,7 @@ describe("V2 landing page", () => {
     expect(src).toContain("<HeroCta />");
     expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/check" data-cta="hero"/);
     expect(read("components/home/HeroCta.tsx")).toContain("Check your bet <span");
-    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">or explore the trackers');
+    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore the trackers <span className="arrow"');
     for (const h of [">Featured</h2>", ">Top performers</h2>", ">Popular</h2>"]) expect(src).toContain(h);
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');
@@ -117,9 +117,10 @@ describe("home hero ticker", () => {
 });
 
 describe("design system", () => {
-  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text); other stylesheets use tokens only", () => {
+  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text) and the tracker covers' deep shades; other stylesheets use tokens only", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#0b0b12", "#ffffff", "#f5f5f7", "#ececf0", "#e8e8ed", "#6e6e73", "#2a2a33", "#1a9e5c", "#137a47", "#d93a2b", "#c0321f"];
+    const covers = ["#13294b", "#182f57", "#0f2342", "#23205a", "#2a2566", "#1d1a4d", "#341c4a", "#3d2156", "#2c1740", "#0d3550", "#103d5c", "#0a2d45"];
+    const palette = ["#0b0b12", "#ffffff", "#f5f5f7", "#ececf0", "#eaeaee", "#6e6e73", "#2a2a33", "#1a9e5c", "#137a47", "#d93a2b", "#c0321f", ...covers];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");

@@ -3,17 +3,19 @@
  * gets. A screen whose data isn't there yet is left out rather than filled in. The phones are pictures of the
  * product: inert and hidden from assistive tech. */
 import type { ReactNode } from "react";
-import { Cover, Thumb } from "@/components/Photo";
 import { Wordmark, LOGO } from "@/components/Wordmark";
-import { dollars } from "@/lib/moves/copy";
+import { RecordResult } from "@/components/trackers/Tracker";
+import { TrackerCover, type CoverStats } from "@/components/trackers/TrackerCover";
+import { Result } from "@/components/ui/Result";
+import { dollars, signedShort } from "@/lib/moves/copy";
 import type { FeedItem } from "@/lib/moves/feed";
-import { recordPill, type Tracker, type TrackerRecord } from "@/lib/trackers";
+import type { Tracker, TrackerRecord } from "@/lib/trackers";
 
 export interface PhoneData {
   feed: FeedItem[];
   results: FeedItem[];
-  tracker: { t: Tracker; record: TrackerRecord | null; moves: FeedItem[] } | null;
-  list: Array<{ t: Tracker; record: TrackerRecord | null }>;
+  tracker: { t: Tracker; record: TrackerRecord | null; cover: CoverStats | null; moves: FeedItem[] } | null;
+  list: Array<{ t: Tracker; record: TrackerRecord | null; cover: CoverStats | null }>;
   alert: { tracker: string; body: string; time: string } | null;
 }
 
@@ -43,35 +45,31 @@ export function Phones({ d }: { d: PhoneData }) {
   );
   if (d.results.length) screens.push(
     <><p className="ph__h">Results</p><div className="ph__list">{d.results.slice(0, 4).map(m => (
-      <div key={m.id} className="pm">
-        <p className={`pm__res pm__res--${m.result}`}>{m.result === "won" ? "Won" : "Lost"} · {dollars(m.amount)}</p>
+      <div key={m.id} className="pm pm--res">
         <p className="pm__line">{m.sentence}</p>
+        <Result amount={m.pnl !== null && m.pnl !== undefined ? signedShort(m.pnl) : dollars(m.amount)} tone={m.result === "won" ? "won" : "lost"} status={m.result === "won" ? "Won" : "Lost"} />
       </div>
     ))}</div></>,
   );
   if (d.tracker) {
-    const p = recordPill(d.tracker.record);
     screens.splice(Math.min(2, screens.length), 0,
       <>
-        <div className="ph__cover"><Cover n={d.tracker.t.photo} sizes="240px" /></div>
+        <TrackerCover t={d.tracker.t} s={d.tracker.cover} className="ph__cover" />
         <p className="ph__h ph__h--t">{d.tracker.t.name}</p>
         <p className="ph__by">by Insidir</p>
-        <div className="ph__row"><span className={`rpill rpill--${p.tone}`}>{p.text}</span><span className="ph__follow">Follow</span></div>
+        <div className="ph__row"><span className="ph__follow">Follow</span><RecordResult r={d.tracker.record} /></div>
         <div className="ph__list">{d.tracker.moves.slice(0, 3).map(m => <Row key={m.id} m={m} />)}</div>
       </>,
     );
   }
   if (d.list.length) screens.push(
-    <><p className="ph__h">Trackers</p><div className="ph__list ph__list--rows">{d.list.slice(0, 6).map(({ t, record }) => {
-      const p = recordPill(record);
-      return (
-        <div key={t.slug} className="ph__trow">
-          <Thumb n={t.photo} size={32} className="ph__thumb" />
-          <span className="ph__tname">{t.name}<span>by Insidir</span></span>
-          <span className={`rpill rpill--${p.tone} rpill--sm`}>{p.text}</span>
-        </div>
-      );
-    })}</div></>,
+    <><p className="ph__h">Trackers</p><div className="ph__list ph__list--rows">{d.list.slice(0, 6).map(({ t, record, cover }) => (
+      <div key={t.slug} className="ph__trow">
+        <TrackerCover t={t} s={cover} small className="ph__thumb" />
+        <span className="ph__tname">{t.name}<span>by Insidir</span></span>
+        <RecordResult r={record} />
+      </div>
+    ))}</div></>,
   );
   if (d.alert) screens.push(
     <div className="ph__lock">

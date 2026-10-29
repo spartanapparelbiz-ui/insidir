@@ -14,12 +14,13 @@ import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
 import { Avatar } from "./Avatar";
 import { short } from "@/lib/moves/headline";
+import { Result } from "@/components/ui/Result";
 
-const TAG: Record<string, { text: string; tint: string }> = {
-  sports: { text: "Sports", tint: "green" },
-  markets: { text: "Markets", tint: "violet" },
-  crypto: { text: "Crypto", tint: "peach" },
-  stocks: { text: "Stocks", tint: "blue" },
+const TAG: Record<string, { text: string }> = {
+  sports: { text: "Sports" },
+  markets: { text: "Markets" },
+  crypto: { text: "Crypto" },
+  stocks: { text: "Stocks" },
 };
 
 /** "Where this comes from: Polymarket trade on Polygon ↗": the original public record behind every number on a card. */
@@ -44,18 +45,21 @@ function Headline({ text }: { text: string }) {
   return <><b>{text.slice(0, i)}</b>{text.slice(i)}</>;
 }
 
-/** Open: "In at 45% · now 61% ↑"; settled: "Won · +$188K". */
-function Standing({ m, now }: { m: FeedItem; now: number | null }) {
+/** The result on the right: settled, the real P&L in green or red over "Won" / "Lost" ("Refunded" alone); open, the
+ *  money in over "Pending"; a filing, the money over "Purchase". */
+function CardResult({ m }: { m: FeedItem }) {
   if (m.result) {
-    const label = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded";
+    const status = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded";
     const v = m.pnl;
-    return (
-      <p className={`move__pnl move__pnl--${m.result}`} data-testid="move-result">
-        {label}{v !== null && m.result !== "void" ? ` · ${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : ""}
-      </p>
-    );
+    const amount = v !== null && m.result !== "void" ? `${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : null;
+    return <span data-testid="move-result"><Result amount={amount} tone={m.result === "won" ? "won" : m.result === "lost" ? "lost" : "none"} status={status} /></span>;
   }
-  if (!m.inAt) return null;
+  return <Result amount={short(m.amount)} status={m.source === "sec" ? "Purchase" : "Pending"} />;
+}
+
+/** Open: "In at 45% · now 61% ↑". */
+function Standing({ m, now }: { m: FeedItem; now: number | null }) {
+  if (m.result || !m.inAt) return null;
   const dir = now === null ? null : now > m.avgPrice + 0.005 ? "up" : now < m.avgPrice - 0.005 ? "down" : "flat";
   return (
     <p className="move__live" data-testid="move-live">
@@ -85,10 +89,13 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
   return (
     <article className={`move move2${fresh ? " move--fresh" : ""}${m.bets ? " move--group" : ""}`} data-move={m.id}>
       <div className="move__top">
-        <span className={`tag tag--${tag.tint}`}><span className="tag__dot" aria-hidden="true" />{tag.text}{sub ? ` · ${sub}` : ""}</span>
+        <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
-      <h3 className="move__head"><Headline text={m.headline} /></h3>
+      <div className="move__hrow">
+        <h3 className="move__head"><Headline text={m.headline} /></h3>
+        <CardResult m={m} />
+      </div>
       <p className="move__subl">{m.subline}</p>
       <Standing m={m} now={now} />
       {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
@@ -112,7 +119,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
           <p className="move__by">
             {m.who.href ? <Link className="move__name" href={m.who.href}>{m.who.name}</Link> : <span className="move__name">{m.who.name}</span>}
             {m.topTrader ? <span className="move__top-trader"> · a top trader</span> : null}
-            {m.who.badge ? <> <span className="badge">{m.who.badge}</span></> : null}
+            {m.who.badge ? <span className="move__badge"> · {m.who.badge}</span> : null}
             {m.record ? <span className="move__rec">{m.record}</span> : null}
           </p>
         </div>

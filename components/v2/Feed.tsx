@@ -224,7 +224,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
             <div className="side side--offer">
               <p className="side__h">See every move live</p>
               <p className="side__p">Plus trader records and follows. Try 7 days for $1, then $39/mo, cancel anytime.</p>
-              <LockButton where="feed-side" className="btn btn--primary btn--block">{GET_CTA}</LockButton>
+              <LockButton where="feed-side" className="btn btn--secondary btn--block">{GET_CTA}</LockButton>
             </div>
           ) : null}
           <nav className="side side--links" aria-label="More">

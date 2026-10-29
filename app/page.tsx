@@ -14,6 +14,7 @@ import { HeroCta } from "@/components/home/HeroCta";
 import { Phones, type PhoneData } from "@/components/home/Phones";
 import { PeriodTabs } from "@/components/trackers/PeriodTabs";
 import { TrackerFeature, TrackerRow } from "@/components/trackers/Tracker";
+import { coverStats } from "@/components/trackers/TrackerCover";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { LOGO } from "@/components/Wordmark";
@@ -30,7 +31,7 @@ import { listMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
-import { FEATURED, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
+import { FEATURED, homeOrder, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
 import { isReady } from "@/lib/features";
 import { trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
 import type { Plan, Region } from "@/lib/types";
@@ -38,6 +39,10 @@ import type { Plan, Region } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const MONTH = 30 * 86_400_000;
+
+/** Home lists lead with stocks, then prediction markets, then sports (each kind keeps its own order). */
+const KIND_ORDER: Record<string, number> = { stocks: 0, markets: 1, crypto: 1, sports: 2 };
+const moveOrder = (l: Move[]): Move[] => l.map((m, i) => ({ m, i })).sort((a, b) => (KIND_ORDER[a.m.tab] ?? 1) - (KIND_ORDER[b.m.tab] ?? 1) || a.i - b.i).map(x => x.m);
 
 /** A feed item said the home page's short way. */
 function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
@@ -63,7 +68,7 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
     trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>()),
     trackerMoves(db, lead, { until, limit: 3 }).catch(() => []),
   ]);
-  const latest = latestAll.filter(isMainstream).slice(0, 4);
+  const latest = moveOrder(latestAll.filter(isMainstream)).slice(0, 4);
   const picked = resultPick(settledAll, now);
   const byId = new Map([...latest, ...picked, ...leadMoves].map(m => [m.id, m]));
   const [feed, results, leadItems] = await Promise.all([
@@ -75,13 +80,13 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   const leadShort = short(leadItems);
   const shown = visibleTrackers(isReady);
   const ranked = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
-  const list = [...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))];
+  const list = homeOrder([...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))]);
   return {
     stats,
     phones: {
       feed: short(feed), results: short(results),
-      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, moves: leadShort } : null,
-      list: stats.size ? list : [],
+      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, cover: coverStats(stats.get(lead.slug)), moves: leadShort } : null,
+      list: stats.size ? list.map(x => ({ ...x, cover: coverStats(stats.get(x.slug)) })) : [],
       alert: leadShort[0] ? { tracker: lead.name, body: leadShort[0].sentence, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
     },
   };
@@ -112,18 +117,18 @@ export default async function Home() {
 
   const rows = visibleTrackers(isReady).map(t => ({ t, s: stats.get(t.slug) }));
   const periodTabs = PERIODS.map(p => {
-    const ranked = topPerformers(rows.map(({ t, s }) => ({ t, slug: t.slug, record: s?.records[p.key] ?? null })));
+    const ranked = homeOrder(topPerformers(rows.map(({ t, s }) => ({ t, s, slug: t.slug, record: s?.records[p.key] ?? null }))).slice(0, 6));
     return {
       key: p.key, label: p.label,
-      body: ranked.length ? <ol className="tlist">{ranked.slice(0, 6).map(({ t, record }) => <TrackerRow key={t.slug} t={t} r={record} />)}</ol>
+      body: ranked.length ? <ol className="tlist">{ranked.map(({ t, s, record }) => <TrackerRow key={t.slug} t={t} r={record} s={coverStats(s)} />)}</ol>
         : <p className="tlist__empty">No tracker has 20 settled moves in this window yet.</p>,
     };
   });
-  const pop = popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, followers: s!.followers, tracked30d: s!.tracked30d })));
+  const pop = homeOrder(popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, s, followers: s!.followers, tracked30d: s!.tracked30d }))).slice(0, 6));
 
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp3">
         <section className="hero3" aria-labelledby="hero-h">
@@ -140,7 +145,7 @@ export default async function Home() {
           <div className="wrap">
             <h2 id="feat-h" className="sec3__h">Featured</h2>
             <div className="tfeats">
-              {FEATURED.map((s, i) => <TrackerFeature key={s} t={trackerBySlug(s)!} i={i} />)}
+              {FEATURED.map((slug, i) => <TrackerFeature key={slug} t={trackerBySlug(slug)!} s={coverStats(stats.get(slug))} i={i} />)}
             </div>
           </div>
         </section>
@@ -156,15 +161,15 @@ export default async function Home() {
               <p className="tcol__note">By followers, then money tracked in the last 30 days.</p>
               {pop.length ? (
                 <ol className="tlist">
-                  {pop.slice(0, 6).map(({ t, followers, tracked30d }, i) => (
-                    <TrackerRow key={t.slug} t={t} rank={i + 1}
+                  {pop.map(({ t, s, followers, tracked30d }, i) => (
+                    <TrackerRow key={t.slug} t={t} rank={i + 1} s={coverStats(s)}
                       figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No moves yet"} />
                   ))}
                 </ol>
               ) : <p className="tlist__empty">Catching up: the trackers fill in as the first moves arrive.</p>}
             </div>
           </div>
-          <div className="wrap sec3__foot"><Link className="btn btn--secondary" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
+          <div className="wrap sec3__foot"><Link className="tlink tlink--go" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
         </section>
 
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} title="One plan. Every tracker." />
