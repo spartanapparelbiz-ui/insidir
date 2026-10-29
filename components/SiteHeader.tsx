@@ -14,7 +14,7 @@ import { ViewAs } from "./ViewAs";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
 /** Sections that get the bottom tab bar on phones, for members and visitors alike (the free feed needs no account). */
-const APP_SECTIONS = new Set(["/feed", "/trackers", "/top", "/following", "/results", "/account"]);
+const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/following", "/results", "/account"]);
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
@@ -37,7 +37,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   const links = signedIn
-    ? [link("/trackers", "Trackers"), link("/feed", "Feed"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
+    ? [...(paid ? [link("/", "Discover", "/discover")] : []), link("/trackers", "Trackers"), link("/feed", "Feed"), link("/following", "Following"), link("/settings", "Account", "/account")]
     : [link("/trackers", "Trackers"), link("/results", "Results"), link("/how-it-works", "How it works"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
   return (
     <>
@@ -58,7 +58,7 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
       </header>
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">
-          {[["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
+          {[...(paid ? [["/", "Discover", "/discover"]] : []), ["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
             <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>

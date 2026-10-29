@@ -12,7 +12,10 @@ import { Avatar } from "@/components/v2/Avatar";
 import { tickerMonogram } from "@/lib/moves/avatar";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { calDate, exactDollars, followState, signedPct } from "@/components/v2/profiles/shared";
-import { OlderLocked, roleLine, SecFrame, TradesTable } from "@/components/v2/sec/shared";
+import { OlderLocked, perShare, roleLine, SecFrame, TradesTable } from "@/components/v2/sec/shared";
+import { Section, Table, Tiles } from "@/components/stats/Stats";
+import { closesFor, SPY } from "@/lib/stocks/prices";
+import { AFTER_DAYS, afterBuy, averageAfter } from "@/lib/stocks/returns";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { followList } from "@/lib/moves/store";
@@ -62,6 +65,13 @@ export default async function InsiderPage({ params }: { params: Promise<{ id: st
   const t = insiderTotals(paid ? x.trades : freeWindow(x.trades, now).shown);
   const closes = await latestCloses(db, shown.flatMap(r => (r.code === "P" && r.ticker ? [r.ticker] : []))).catch(() => new Map());
   const after = afterBuys(shown, closes, now);
+  // 30 / 90 / 180 days after each buy against the S&P 500 (SPY), from daily closes (lib/stocks/prices.ts).
+  const buys = shown.filter(r => r.code === "P" && r.ticker && r.tradeDate);
+  const fromDate = buys.reduce((a, r) => (r.tradeDate! < a ? r.tradeDate! : a), "9999-12-31");
+  const series = buys.length ? await closesFor(db, [...new Set(buys.map(r => r.ticker!)), SPY], fromDate).catch(() => new Map()) : new Map();
+  const today = new Date(now).toISOString().slice(0, 10);
+  const perBuy = buys.filter(r => series.get(r.ticker!.toUpperCase())?.length).map(r => ({ r, after: AFTER_DAYS.map(d => afterBuy(series.get(r.ticker!.toUpperCase())!, series.get(SPY) ?? [], r.tradeDate!, d, today)) }));
+  const avg = averageAfter(perBuy.map(p => p.after));
   const roles = [...new Map(x.trades.map(r => [`${r.role}|${r.company}`, { line: roleLine(r.role, r.company), ticker: r.ticker }])).values()];
   return (
     <SecFrame viewer={viewer} current="/insiders">
@@ -101,6 +111,22 @@ export default async function InsiderPage({ params }: { params: Promise<{ id: st
           : x.hist ? `Still reading their SEC history (${x.hist.pending} filings to go). Open-market trades of stock only.`
           : "Open-market trades of stock from the Form 4s we've read."} Form 4s are filed up to 2 business days after the trade. <Link href="/data">About our data</Link>
       </p>
+      {perBuy.length ? (
+        <Section id="after-h" title="After their buys" note="How the stock did 30, 90 and 180 days after each open-market buy, from the first close on or after the trade date, against the S&P 500 (SPY) over the same days. Past results.">
+          <Tiles cols={3} label="Average after their buys" tiles={avg.map(a => ({
+            label: `${a.days} days after, average of ${a.n} ${a.n === 1 ? "buy" : "buys"}${a.vs !== null ? ` · ${a.vs >= 0 ? "+" : "−"}${Math.abs(a.vs).toFixed(1)} pts vs S&P 500` : ""}`,
+            value: a.pct === null ? "Not reached yet" : `${a.pct >= 0 ? "+" : "−"}${Math.abs(a.pct).toFixed(1)}%`, tone: a.pct === null ? undefined : a.pct >= 0 ? "money" : "loss",
+          }))} />
+          <div className="dsub">
+            <Table label="Each buy" head={["Buy", "30 days", "90 days", "180 days"]} numeric={[1, 2, 3]}
+              rows={perBuy.slice(0, 50).map(({ r, after }) => [
+                <span key="b">{r.ticker} · {calDate(r.tradeDate!)}<span className="dtable__sub">{exactDollars(r.value)} at {perShare(r.price)}</span></span>,
+                ...after.map((a, i) => a.pct === null ? <span key={i} className="tile__na">Not yet</span>
+                  : <span key={i} className={a.pct >= 0 ? "money" : "loss"}>{`${a.pct >= 0 ? "+" : "−"}${Math.abs(a.pct).toFixed(1)}%`}<span className="dtable__sub">{a.vs === null ? "" : `${a.vs >= 0 ? "+" : "−"}${Math.abs(a.vs).toFixed(1)} pts vs S&P`}</span></span>),
+              ])} />
+          </div>
+        </Section>
+      ) : null}
       <section className="block" aria-labelledby="trades-h">
         <h2 id="trades-h" className="block__h">{paid ? "Every trade" : "Trades in the last 30 days"}</h2>
         {shown.length ? <TradesTable rows={shown} show="company" since={after.perBuy} /> : <p className="note">{paid ? "No open-market buys or sales of stock on file yet." : "No trades filed in the last 30 days."}</p>}

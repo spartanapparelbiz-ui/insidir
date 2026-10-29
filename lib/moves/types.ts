@@ -54,6 +54,8 @@ export interface Move {
   /** Polymarket: the fills behind it (lib/moves/detect.ts FillPart). */
   parts?: FillPart[] | null;
   soldShare?: number | null;
+  /** The trackers whose fixed or observed rule it meets (lib/trackers.ts), as the worker stored them. */
+  trackers?: string[] | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */

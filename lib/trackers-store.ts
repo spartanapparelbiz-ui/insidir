@@ -1,14 +1,18 @@
 /* Trackers in the database (lib/trackers.ts): each tracker's record per window, money tracked, followers, and its
  * moves. One query per tracker, every number from terminal.moves and terminal.follows. Server only. */
-import { sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { moves as movesT, traderRecords } from "@/lib/db/schema";
+import { fromRow } from "@/lib/moves/store";
+import { countsToRecord } from "@/lib/trust";
+import { infoFor } from "@/lib/markets/info";
 import type { Db } from "@/lib/db";
-import { liveTabs } from "@/lib/features";
+import { isReady, liveTabs } from "@/lib/features";
 import { memo } from "@/lib/memo";
 import { notComboSql } from "@/lib/moves/combos";
 import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
 import { listMoves, type MoveQuery } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
-import { PERIODS, TRACKERS, type PeriodKey, type Tracker, type TrackerRecord, type TrackerSlug } from "./trackers";
+import { PERIODS, TRACKERS, trackerWhere, type PeriodKey, type Tracker, type TrackerRecord, type TrackerSlug } from "./trackers";
 
 export interface TrackerStats {
   slug: TrackerSlug;
@@ -51,7 +55,7 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
       count(*) filter (where terminal.moves.at >= ${since30})::int as moves30,
       (select count(*)::int from terminal.follows f where f.kind = 'tracker' and f.target = ${t.slug}) as followers
     from terminal.moves
-    where terminal.moves.hidden_at is null and ${notComboSql} and terminal.moves.tab in (${sql.join(tabs.map(x => sql`${x}`), sql`, `)}) and ${t.where()}`)).rows[0] as Record<string, unknown> | undefined;
+    where terminal.moves.hidden_at is null and ${notComboSql} and terminal.moves.tab in (${sql.join(tabs.map(x => sql`${x}`), sql`, `)}) and ${trackerWhere(t)}`)).rows[0] as Record<string, unknown> | undefined;
   const rec = (k: string): TrackerRecord => {
     const w = n(r?.[`w_${k}`]);
     return { won: n(r?.[`won_${k}`]), lost: n(r?.[`lost_${k}`]), oddsPct: w > 0 ? (n(r?.[`wp_${k}`]) / w) * 100 : null, net: n(r?.[`net_${k}`]) };
@@ -67,12 +71,60 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
 /** Every tracker's stats, shared by every visitor for a minute. */
 export function trackerStats(db: Db, now: number): Promise<Map<TrackerSlug, TrackerStats>> {
   return memo("trackers:stats", 60_000, async () => {
-    const all = await Promise.all(TRACKERS.map(t => trackerStatsOne(db, t, now).catch(() => null)));
+    const all = await Promise.all(TRACKERS.filter(t => !t.needs || isReady(t.needs)).map(t => trackerStatsOne(db, t, now).catch(() => null)));
     return new Map(all.filter((s): s is TrackerStats => s !== null).map(s => [s.slug, s]));
   });
 }
 
 /** A tracker's moves, newest first (or settled / biggest), on the viewer's clock. */
 export function trackerMoves(db: Db, t: Tracker, q: Omit<MoveQuery, "where">): Promise<Move[]> {
-  return listMoves(db, { ...q, where: t.where() });
+  return listMoves(db, { ...q, where: trackerWhere(t) });
+}
+
+/* ---------- a tracker's page (app/trackers/[slug]) ---------- */
+
+const tabsIn = () => inArray(movesT.tab, liveTabs());
+
+/** Wallets with a record and a profit (Top Traders), shared for 10 minutes. */
+export function topTraderSet(db: Db): Promise<Set<string>> {
+  return memo("trackers:top", 600_000, async () => new Set((await db.select({ w: traderRecords.wallet }).from(traderRecords)
+    .where(and(gte(traderRecords.resolved, 20), sql`${traderRecords.profit} > 0`))).map(r => r.w)));
+}
+
+export interface TrackerPageData {
+  /** Settled moves that count toward the record, newest settled first. */
+  settled: Move[];
+  /** Every move in the last year (activity, heatmap, top-trader share). */
+  year: Array<Pick<Move, "id" | "amount" | "wallet" | "at">>;
+  /** Unsettled moves from the last 60 days, with the price now (their side) when known. */
+  open: Array<{ m: Move; now: number | null }>;
+  top: Set<string>;
+}
+
+export function trackerPage(db: Db, t: Tracker, until: number, now: number): Promise<TrackerPageData> {
+  return memo(`tracker:${t.slug}:${Math.floor(until / 60_000)}`, 60_000, async () => {
+    const base = and(isNull(movesT.hiddenAt), notComboSql, tabsIn(), trackerWhere(t));
+    const [settledRows, yearRows, openRows, top] = await Promise.all([
+      db.select().from(movesT).where(and(base, isNotNull(movesT.result), eq(movesT.source, "polymarket"), isNotNull(movesT.pnl))).orderBy(desc(movesT.settledAt)).limit(5000),
+      db.select({ id: movesT.id, amount: movesT.amount, wallet: movesT.wallet, at: movesT.at }).from(movesT)
+        .where(and(base, gte(movesT.at, new Date(now - 365 * DAY)), lte(movesT.at, new Date(until)))).limit(50_000),
+      db.select().from(movesT).where(and(base, isNull(movesT.result), gte(movesT.at, new Date(now - 60 * DAY)), lte(movesT.at, new Date(until)))).orderBy(desc(movesT.amount)).limit(200),
+      topTraderSet(db),
+    ]);
+    const open = openRows.map(fromRow);
+    const infos = new Map<string, number | null>();
+    for (const source of ["polymarket", "kalshi"] as const) {
+      const got = await infoFor(db, source, open.filter(m => m.source === source).map(m => m.marketId)).catch(() => new Map());
+      for (const [id, i] of got) infos.set(`${source}:${id}`, i.yesPrice);
+    }
+    return {
+      settled: settledRows.map(fromRow).filter(m => countsToRecord(m)),
+      year: yearRows.map(r => ({ id: r.id, amount: r.amount, wallet: r.wallet, at: r.at.getTime() })),
+      open: open.map(m => {
+        const yes = infos.get(`${m.source}:${m.marketId}`) ?? null;
+        return { m, now: yes === null ? null : m.outcomeSide === "no" ? 1 - yes : yes };
+      }),
+      top,
+    };
+  });
 }

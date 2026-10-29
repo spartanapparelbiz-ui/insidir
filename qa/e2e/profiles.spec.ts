@@ -31,18 +31,18 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
 test("a trader's profile: every stat from their resolved positions, for members", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto(`/p/${TOP}`);
-  const rec = page.locator(".record");
-  await expect(rec.getByText("Won 41 of 63 resolved")).toBeVisible();
-  await expect(rec.locator("dd").first()).toHaveText("65%");
-  await expect(rec.getByText("+$1.2M").first()).toBeVisible();
-  await expect(rec.getByText("+95.2%")).toBeVisible(); // $1.2M on $1.26M put in
-  await expect(rec.getByText("$310,000")).toBeVisible();
-  await expect(rec.getByText("$1,260,000 put in")).toBeVisible();
-  await expect(rec.getByText("$20,000")).toBeVisible(); // average bet
-  await expect(page.getByRole("img", { name: /Profit over time, from \+\$310K to \+\$1\.2M/ })).toBeVisible();
-  const cats = page.getByRole("table");
-  await expect(cats.getByRole("row", { name: /NFL/ })).toBeVisible();
-  await expect(cats.getByRole("row", { name: /Markets/ })).toBeVisible();
+  // Stat tiles: a big number with its label (components/stats/Stats.tsx).
+  const tile = (label: string) => page.locator(".tile").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
+  await expect(tile("Record")).toHaveText("41–22");
+  await expect(tile("Win rate")).toHaveText("65%");
+  await expect(tile("All-time profit")).toHaveText("+$1.2M");
+  await expect(tile("ROI")).toHaveText("95.2%"); // $1.2M on $1.26M put in
+  await expect(tile("Biggest win")).toHaveText("+$310,000");
+  await expect(tile("Average bet")).toHaveText("$20,000");
+  await expect(page.getByRole("img", { name: /^Profit, every resolved market: \+\$310,000 to \+\$1,2\d\d,\d{3}$/ })).toBeVisible();
+  const cats = page.getByRole("table", { name: "By category" });
+  await expect(cats.getByRole("row", { name: /^NFL \d/ })).toBeVisible();
+  await expect(cats.getByRole("row", { name: /^Markets \d/ })).toBeVisible();
   // A US visitor gets no Polymarket profile link (international Polymarket is never linked for them).
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });

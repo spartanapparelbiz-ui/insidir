@@ -30,8 +30,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: name ?? "Profile", robots: { index: false } };
 }
 
-export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> }) {
   const { id } = await params;
+  const page = Math.max(1, Math.min(500, Number((await searchParams).page) || 1));
   const ref = parseProfileId(id);
   if (!ref) notFound();
   if (ref.kind === "insider") permanentRedirect(insiderHref(ref.cik));
@@ -39,7 +40,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const viewer = await requireMember(`/p/${id}`);
   const trial = unlockHref();
   const db = hasDatabase() ? getDb() : null;
-  const body = <TraderProfile db={db} wallet={ref.wallet} viewer={viewer} trial={trial} now={Date.now()} />;
+  const body = <TraderProfile db={db} wallet={ref.wallet} viewer={viewer} trial={trial} now={Date.now()} page={page} />;
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/p" />

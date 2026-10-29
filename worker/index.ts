@@ -17,6 +17,9 @@
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
+import { tagOnce } from "@/lib/trackers-tag";
+import { marketInfoOnce } from "@/lib/markets/info";
+import { stockPricesOnce } from "@/lib/stocks/prices";
 import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
@@ -234,6 +237,19 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const n = await avatarsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader pictures read`);
       }),
+      // Trackers (lib/trackers.ts): fixed tags on new moves (and every move after a rule change); what venues say now
+      // about markets with open moves (price, game start), which adds Steam / Early / Late money.
+      every("trackers:tag", 30_000, async () => {
+        // After a rule change every move is tagged again: a batch at a time until none are left.
+        let n = 0, k = 0;
+        do { k = await tagOnce(getDb()); n += k; } while (k > 0 && n < 200_000);
+        if (n) log(`trackers: ${n} moves tagged`);
+      }),
+      every("markets:info", 5 * 60_000, async () => {
+        const r = await marketInfoOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+        await heartbeat(getDb(), "markets:info", true, null, r);
+        if (r.read || r.tagged) log(`markets: ${r.read} markets read, ${r.tagged} moves got Steam / Early / Late tags`);
+      }),
       every("moves:leaderboard", 6 * 3_600_000, async () => {
         const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
         log(`moves: ${n} leaderboard wallets tracked`);
@@ -259,6 +275,12 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("stocks:history", 5 * 60_000, async () => {
         const r = await historyOnce(getDb(), sec, Date.now());
         if (r.read || r.errors) log(`stocks: ${r.read} history filings read, ${r.done} histories complete, ${r.errors} errors`);
+      }),
+      // Daily closes for the tickers insiders bought, and SPY (lib/stocks/prices.ts).
+      every("stocks:prices", 30 * 60_000, async () => {
+        const r = await stockPricesOnce(getDb(), Date.now());
+        await heartbeat(getDb(), "stocks:prices", r.missing < r.tickers || r.tickers === 0, r.missing ? `${r.missing} tickers had no closes` : null, r);
+        if (r.tickers) log(`stocks: ${r.closes} closes for ${r.tickers} tickers (${r.missing} missing)`);
       }),
       every("stocks:funds", 30 * 60_000, async () => {
         const r = await fundHistoriesOnce(getDb(), sec, Date.now());

@@ -102,16 +102,33 @@ ago" on every deal, and greys out deals not re-seen in the last minute.
 
 ## Trackers
 
-Followable packages of big moves (`lib/trackers.ts`), each a rule over `terminal.moves`, written twice: pure (alerts,
-tests) and in SQL (lists and records); `test/trackers.test.ts` checks the two pick the same moves. Biggest Bets ($100K+),
-Top Traders (wallets with 20+ resolved markets and a profit), NBA / NFL / Soccer Big Money, Fed & Rates, Elections
-2026, CEO Buys (Form 4), Big Funds (13F) and Brand-New Wallets.
+Followable packages of big moves (`lib/trackers.ts`): 33 in four groups. Styles (Whales $100K+, Top Traders, Top 1%
+Traders, Underdog Hunters under 40¢, Favorites Only over 75¢, Early Money 24h+ before the start, Late Money in the
+last hour, Steam: the price moved 5¢+ their way, Brand-New Wallets $25K+), Leagues (NFL, NBA, MLB, NHL, college
+football and basketball, soccer, Premier League, Champions League, La Liga, Serie A, UFC, tennis, golf, esports),
+Topics (Fed & rates, Elections 2026, Crypto prices (hidden until the Crypto tab is live), geopolitics, tech & AI,
+culture) and Stocks (CEO buys, cluster buys: 3+ insiders at one company within 30 days, big funds' new positions).
+
+Three kinds of rule, each tested against its SQL in `test/trackers.test.ts`:
+
+| Kind | How | Where |
+|---|---|---|
+| fixed | from the move alone; stored on the move (`terminal.moves.trackers`), re-tagged when `TRACKER_RULES_V` changes | worker `trackers:tag`, `lib/trackers-tag.ts` |
+| observed | from what the venue says later (price now, game start); added and kept | worker `markets:info`, `lib/markets/info.ts` (`terminal.market_info`) |
+| live | from changing data (records, other filings); SQL at read time | `lib/trackers.ts` `rule.sql` |
 
 A tracker's record (`lib/trackers-store.ts`) is its settled moves under the same rule as `/results` (`lib/trust.ts`
-`countsToRecord`): won, lost, the average price paid and the net from the wallets' own trades, per window (1W 1M 3M
-6M 1Y, by settle date) and all-time. Under 20 settled moves it shows "New". Follow kind `tracker` (target: the slug):
-its moves join `/following`, and a new move alerts (`lib/moves/alerts.ts` reason `tracker`). Pages: `/trackers`,
-`/trackers/<slug>`; home shows Featured, Top performers and Popular (followers, then money tracked in 30 days).
+`countsToRecord`). Every performance number on tracker, trader and market pages goes through `lib/stats.ts` (win
+rate, average price paid, edge = win rate − price, net, ROI, "$100 on every move", streak, best day, breakdowns,
+leaderboards, heatmap) and needs 20 settled moves, else "Not enough data yet" (`test/stats.test.ts`). Follow kind
+`tracker`: its moves join `/following`, and a new move alerts. Pages: `/trackers`, `/trackers/<slug>`; members land
+on Discover (`/`, `/discover`: top performers, popular trackers, biggest bets today, trending markets, tonight's
+games; `lib/discover.ts`).
+
+Market pages chart the venue's price history (Polymarket CLOB `prices-history`, Kalshi candlesticks, read on request
+and cached 5 minutes) with every big move on it. Stock pages use daily closes (`terminal.stock_closes`, worker
+`stocks:prices`, `lib/stocks/prices.ts`: Stooq's free CSV, else Yahoo's chart API) for 30 / 90 / 180 days after each
+insider buy against SPY (`lib/stocks/returns.ts`) and the company price chart.
 
 ## Insiders, companies and funds
 

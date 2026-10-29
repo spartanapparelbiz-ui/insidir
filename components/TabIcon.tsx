@@ -1,6 +1,7 @@
 /** The app tab bar's icons (also drawn inside the home page's phone mockups, components/home/Story.tsx). */
 export function TabIcon({ name, className = "tabbar__icon" }: { name: string; className?: string }) {
   const d: Record<string, string> = {
+    Discover: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM15.5 8.5l-2 5-5 2 2-5z",
     Trackers: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
     Feed: "M4 6h16M4 12h16M4 18h10",
     Following: "M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z",

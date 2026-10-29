@@ -134,6 +134,13 @@
       "when": 1793226428422,
       "tag": "0018_sec_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793237621535,
+      "tag": "0019_trackers_and_market_info",
+      "breakpoints": true
     }
   ]
 }
