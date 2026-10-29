@@ -130,6 +130,19 @@ and cached 5 minutes) with every big move on it. Stock pages use daily closes (`
 `stocks:prices`, `lib/stocks/prices.ts`: Stooq's free CSV, else Yahoo's chart API) for 30 / 90 / 180 days after each
 insider buy against SPY (`lib/stocks/returns.ts`) and the company price chart.
 
+## Splits: smart money vs. the crowd
+
+`lib/smart` compares traders with a proven record against the crowd. Everything comes from real positions, prices and filings.
+
+- **Proven trader** (`lib/smart/proven.ts`): a Polymarket wallet with 20+ resolved markets and a win rate above the average price it paid, weighted by money in. The records job stores `trader_records.avg_price` and `proven`.
+- **Smart money**: the share of proven traders' open money on YES (`trader_open`, read from the Data API). It needs 2+ proven wallets and $1,000+ in. The `smart:open` job keeps proven wallets' positions under 30 minutes old.
+- **Crowd**: the market's price now. A gap of 10+ points is a live split; at 15+ points it is flagged, members get a push alert (setting `alertSplits`), and it goes on the scorecard.
+- **Games**: all big bets we track vs. proven traders only, flagged when they lean opposite ways.
+- **Stocks**: insiders buying (Form 4) while the stock is down 10%+ over 30 days, and funds adding (13F) in a quarter it fell 10%+. CUSIPs are mapped to tickers with OpenFIGI (`lib/stocks/cusip.ts`, optional `OPENFIGI_KEY`).
+- **Scoring**: markets are scored when they settle (smart money right if the side it leaned to won), stocks 90 days after the flag (right if the price is higher). `/splits/scorecard` keeps every call.
+
+Pages: `/splits` (live, biggest gap first; free viewers 30 minutes late), `/splits/scorecard` (public), and a "Smart money vs. the crowd" section on market pages and a line on move cards.
+
 ## Insiders, companies and funds
 
 Public pages built from the SEC filings the Stocks jobs store (`terminal.insider_trades`, `terminal.funds`):

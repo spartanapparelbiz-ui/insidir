@@ -44,6 +44,8 @@ export interface UserSettings {
   timeZone: string | null;
   /** Set by the one-click unsubscribe: no welcome, trial or weekly emails either (lib/emails/lifecycle.ts). */
   noLifecycle?: boolean;
+  /** Push alerts for new splits of SPLIT_ALERT_GAP+ points (lib/smart/splits.ts); on unless turned off. */
+  alertSplits?: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -415,8 +417,12 @@ export const traderRecords = terminal.table("trader_records", {
   biggestWin: doublePrecision("biggest_win").notNull(),
   /** The most money the wallet has put into one market: closed positions' money in and open positions' initial value. */
   biggestBet: doublePrecision("biggest_bet"),
+  /** The average price paid over the resolved markets, weighted by money in (0..1); null until read with prices. */
+  avgPrice: doublePrecision("avg_price"),
+  /** A proven trader (lib/smart/proven.ts): RECORD_MIN_RESOLVED+ resolved markets and a win rate above avg_price. */
+  proven: boolean("proven").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-});
+}, t => [index("trader_records_proven_idx").on(t.proven)]);
 
 /** A Polymarket wallet's public profile picture (lib/moves/avatar.ts), re-read from Polymarket once a day. url is null
  *  when the wallet has none (or it isn't on Polymarket's own image host); blocked when its public username is blocked
@@ -446,6 +452,79 @@ export const traderPositions = terminal.table("trader_positions", {
   pnl: doublePrecision("pnl").notNull(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_positions_resolved_idx").on(t.resolvedAt)]);
+
+/** A wallet's open positions (Data API /positions), replaced whole on each read: for the smart-money side of open
+ *  markets (lib/smart). outcome_index 0 is YES. money_in is what the position cost (shares × average price). */
+export const traderOpen = terminal.table("trader_open", {
+  wallet: text("wallet").notNull(),
+  marketId: text("market_id").notNull(),
+  outcomeIndex: integer("outcome_index").notNull(),
+  outcome: text("outcome"),
+  title: text("title").notNull(),
+  size: doublePrecision("size").notNull(),
+  avgPrice: doublePrecision("avg_price"),
+  moneyIn: doublePrecision("money_in").notNull(),
+  curPrice: doublePrecision("cur_price"),
+  endDate: timestamp("end_date", { withTimezone: true }),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+}, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_open_market_idx").on(t.marketId)]);
+
+/** When a wallet's open positions were last read (also for wallets holding none). */
+export const traderOpenRead = terminal.table("trader_open_read", {
+  wallet: text("wallet").primaryKey(),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+});
+
+export type SplitKind = "crowd" | "bigmoney" | "insider_dip" | "fund_add";
+
+/** A split we flagged (lib/smart/splits.ts): smart money against the crowd on an open market ("crowd"), proven traders
+ *  against all big money on a game ("bigmoney"), insiders buying a stock down 10%+ in 30 days ("insider_dip"), or big
+ *  funds adding while the price fell ("fund_add"). One row per kind and subject; `gap` and the sides are refreshed
+ *  while it's live, `flagged_at` is when it first crossed the alert line (null below it), and the result is set once
+ *  the market settles or the stock window ends, so the public scorecard keeps every call, wins and losses. */
+export const splits = terminal.table("splits", {
+  id: text("id").primaryKey(),
+  kind: text("kind").$type<SplitKind>().notNull(),
+  /** polymarket | kalshi | sec */
+  source: text("source").notNull(),
+  /** Market id, or the ticker for stocks. */
+  subject: text("subject").notNull(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  tab: text("tab").notNull(),
+  league: text("league"),
+  /** 0..1, YES side: the crowd (price, or all big money for "bigmoney") and smart money; null for stocks. */
+  crowd: doublePrecision("crowd"),
+  smart: doublePrecision("smart"),
+  /** Points apart (crowd vs smart ×100), or the stock's fall in percent. */
+  gap: doublePrecision("gap").notNull(),
+  /** What the smart side expects: "yes" | "no" for markets, "up" for stocks. */
+  smartSide: text("smart_side").notNull(),
+  detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+  live: boolean("live").notNull().default(true),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+  flaggedAt: timestamp("flagged_at", { withTimezone: true }),
+  /** The values when flagged (kept as they were, for the scorecard). */
+  flaggedCrowd: doublePrecision("flagged_crowd"),
+  flaggedSmart: doublePrecision("flagged_smart"),
+  flaggedGap: doublePrecision("flagged_gap"),
+  /** Market: the winning side; stock: "up" | "down" at the end of the window. */
+  outcome: text("outcome"),
+  smartRight: boolean("smart_right"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, t => [
+  uniqueIndex("splits_kind_subject_idx").on(t.kind, t.subject),
+  index("splits_live_gap_idx").on(t.live, t.gap),
+  index("splits_flagged_idx").on(t.flaggedAt),
+]);
+
+/** CUSIP → ticker (OpenFIGI), for the prices of what funds hold; ticker null when no US listing was found. */
+export const cusipTickers = terminal.table("cusip_tickers", {
+  cusip: text("cusip").primaryKey(),
+  ticker: text("ticker"),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+});
 
 /** Wallets to keep a record for besides the ones seen moving: Polymarket's public leaderboard (for /top). */
 export const trackedWallets = terminal.table("tracked_wallets", {

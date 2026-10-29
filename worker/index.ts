@@ -20,6 +20,10 @@
 import { tagOnce } from "@/lib/trackers-tag";
 import { marketInfoOnce } from "@/lib/markets/info";
 import { stockPricesOnce } from "@/lib/stocks/prices";
+import { cusipOnce } from "@/lib/stocks/cusip";
+import { marketSplitsOnce, newlyFlagged, provenOpenOnce, resolveSplitsOnce, stockSplitsOnce } from "@/lib/smart/store";
+import { splitMessage } from "@/lib/smart/text";
+import { inQuietHours } from "@/lib/alerts/quiet";
 import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, type VenueClient } from "@/lib/exchanges";
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
@@ -119,6 +123,24 @@ async function moveAlertsOnce(): Promise<void> {
     const msg = alertMessage(m, m.wallet ? records.get(m.wallet) ?? null : null, job.reason, appUrl(), now);
     if (job.channel === "push") {
       for (const t of await pushTargets(db, user.id)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
+    }
+  }
+}
+
+/** Push alerts for splits flagged in the last half hour ("split:<id>", once per member), to paid members with push on
+ *  who haven't turned split alerts off, outside their quiet hours. */
+async function splitAlertsOnce(): Promise<void> {
+  if (!isReady("alerts_push")) return;
+  const db = getDb();
+  const now = Date.now();
+  const fresh = await newlyFlagged(db, now - 30 * 60_000);
+  if (!fresh.length) return;
+  const users = (await moveAlertUsers(db)).filter(u => u.push && u.splits && !inQuietHours(now, u.quietStart, u.quietEnd, u.timeZone));
+  for (const s of fresh) {
+    const msg = splitMessage(s, appUrl());
+    for (const u of users) {
+      if (!(await claimAlert(db, u.id, `split:${s.id}`, "push"))) continue;
+      for (const t of await pushTargets(db, u.id)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
     }
   }
 }
@@ -250,6 +272,21 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         await heartbeat(getDb(), "markets:info", true, null, r);
         if (r.read || r.tagged) log(`markets: ${r.read} markets read, ${r.tagged} moves got Steam / Early / Late tags`);
       }),
+      // Smart money vs. the crowd (lib/smart): proven traders' open positions, then every split they make, scored
+      // when it ends; members are alerted to new ones of SPLIT_ALERT_GAP+ points.
+      every("smart:open", 2 * 60_000, async () => {
+        const n = await provenOpenOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
+        if (n) log(`smart: ${n} proven traders' open positions read`);
+      }),
+      every("smart:splits", 5 * 60_000, async () => {
+        const db = getDb(), now = Date.now();
+        const m = await marketSplitsOnce(db, clients.polymarket as PolymarketClient, now);
+        const s = await stockSplitsOnce(db, now);
+        const resolved = await resolveSplitsOnce(db, clients.polymarket as PolymarketClient, now);
+        await heartbeat(db, "smart:splits", true, null, { markets: m.markets, live: m.live + s.live, flagged: m.flagged.length + s.flagged.length, resolved });
+        if (m.live || s.live || resolved) log(`smart: ${m.markets} markets with smart money, ${m.live + s.live} live splits, ${m.flagged.length + s.flagged.length} new, ${resolved} scored`);
+        await splitAlertsOnce();
+      }),
       every("moves:leaderboard", 6 * 3_600_000, async () => {
         const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
         log(`moves: ${n} leaderboard wallets tracked`);
@@ -281,6 +318,11 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const r = await stockPricesOnce(getDb(), Date.now());
         await heartbeat(getDb(), "stocks:prices", r.missing < r.tickers || r.tickers === 0, r.missing ? `${r.missing} tickers had no closes` : null, r);
         if (r.tickers) log(`stocks: ${r.closes} closes for ${r.tickers} tickers (${r.missing} missing)`);
+      }),
+      // Tickers for the CUSIPs funds add (lib/stocks/cusip.ts), so their prices can be read.
+      every("stocks:cusips", 30 * 60_000, async () => {
+        const n = await cusipOnce(getDb(), Date.now());
+        if (n) log(`stocks: ${n} CUSIPs mapped to tickers`);
       }),
       every("stocks:funds", 30 * 60_000, async () => {
         const r = await fundHistoriesOnce(getDb(), sec, Date.now());

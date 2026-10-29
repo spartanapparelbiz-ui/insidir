@@ -58,6 +58,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         // The public preview: a locked row where the record goes; the numbers never reach this page.
         <LockedRecord compact />
       ) : null}
+      {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
       {m.why ? <p className="move__why">{m.why}</p> : null}
       {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
       {compact ? (m.sourceLink ? <SourceA link={m.sourceLink} /> : null) : (

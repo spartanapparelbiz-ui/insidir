@@ -25,7 +25,7 @@ export const MAX_MOVE_RULES = 10;
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -87,6 +87,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     alertSafety: current.alertSafety === "green_yellow" ? "green_yellow" : "green", alertCategories: [...(current.alertCategories ?? [])],
     quietStart: current.quietStart ?? null, quietEnd: current.quietEnd ?? null, timeZone: current.timeZone ?? null,
     ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
+    ...(current.alertSplits === false ? { alertSplits: false } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -155,6 +156,10 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
       const b = bool(input[k]);
       if (b === null) errors.push(`${k} must be on or off.`); else s[k] = b;
     } else if (complete) s[k] = false;
+  }
+  if (has("alertSplits")) {
+    const b = bool(input.alertSplits);
+    if (b === null) errors.push("alertSplits must be on or off."); else if (b) delete s.alertSplits; else s.alertSplits = false;
   }
   return { settings: s, region, errors, ignored };
 }

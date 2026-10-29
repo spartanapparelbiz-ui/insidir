@@ -62,7 +62,7 @@ describe("trader stats", () => {
   it("reads closed positions: money in = shares bought × average price", () => {
     const rows = readClosedRows([{ conditionId: "C1", outcomeIndex: 1, outcome: "No", title: "Lakers vs Celtics", eventSlug: "nba-lal-bos", avgPrice: 0.4, totalBought: 2500, realizedPnl: 1500, timestamp: 1792998000 },
       { conditionId: "C2" }]);
-    expect(rows).toEqual([{ marketId: "C1", outcomeIndex: 1, title: "Lakers vs Celtics", outcome: "No", eventSlug: "nba-lal-bos", slug: null, moneyIn: 1000, pnl: 1500, resolvedAt: 1792998000_000 }]);
+    expect(rows).toEqual([{ marketId: "C1", outcomeIndex: 1, title: "Lakers vs Celtics", outcome: "No", eventSlug: "nba-lal-bos", slug: null, moneyIn: 1000, pnl: 1500, avgPrice: 0.4, resolvedAt: 1792998000_000 }]);
   });
   it("categories from the market's words, or the feed's own tab", () => {
     expect(categoryOf(["Lakers vs Celtics", "nba-lal-bos"])).toEqual({ tab: "sports", category: "NBA" });

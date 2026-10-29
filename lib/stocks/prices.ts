@@ -1,4 +1,4 @@
-/* Daily closing prices for the tickers insiders bought, and SPY for the S&P 500 (terminal.stock_closes), from a free
+/* Daily closing prices for the tickers insiders bought and funds added, and SPY for the S&P 500 (terminal.stock_closes), from a free
  * daily source: Stooq's CSV (stooq.com/q/d/l), else Yahoo Finance's chart API. Read once a day per ticker, a few
  * a second. Used for "how the stock did 30 / 90 / 180 days after the buy" (lib/stocks/returns.ts) and the company
  * page's price chart. Server only. */
@@ -41,11 +41,13 @@ export async function fetchCloses(ticker: string): Promise<Close[]> {
   return b?.ok ? readYahoo(await b.json().catch(() => null)) : [];
 }
 
-/** Tickers with an insider buy in the last 400 days whose closes weren't read in the last 20 hours, plus SPY. */
+/** Tickers with an insider buy in the last 400 days or a fund add in the last 200 (lib/stocks/cusip.ts), whose closes weren't read in the last 20 hours, plus SPY. */
 async function dueTickers(db: Db, now: number, limit: number): Promise<string[]> {
   const r = await db.execute(sql`with t as (
       select distinct upper(detail->>'ticker') as ticker from terminal.moves
       where source = 'sec' and detail->>'kind' = 'insider' and detail->>'ticker' is not null and at > ${new Date(now - 400 * 86_400_000)}
+      union select distinct c.ticker from terminal.moves m join terminal.cusip_tickers c on c.cusip = m.detail->>'cusip'
+      where m.source = 'sec' and m.detail->>'kind' = 'fund' and c.ticker is not null and m.at > ${new Date(now - 200 * 86_400_000)}
       union select ${SPY})
     select t.ticker from t left join (select ticker, max(updated_at) as u from terminal.stock_closes group by ticker) c on c.ticker = t.ticker
     where c.u is null or c.u < ${new Date(now - 20 * 3_600_000)} order by (t.ticker = ${SPY}) desc, c.u asc nulls first limit ${limit}`);

@@ -28,6 +28,8 @@ export interface ClosedPosition {
   /** Dollars put in: shares bought × average price. */
   moneyIn: number;
   pnl: number;
+  /** Average price paid, 0..1; null when the row didn't say. */
+  avgPrice?: number | null;
   /** When the position closed (the row's timestamp, else the market's end date), ms. */
   resolvedAt: number | null;
 }
@@ -44,7 +46,7 @@ export function readClosedRows(raw: unknown): ClosedPosition[] {
       marketId, outcomeIndex: num(p.outcomeIndex) ?? 0, title: str(p.title) ?? marketId, outcome: str(p.outcome),
       eventSlug: str(p.eventSlug), slug: str(p.slug),
       moneyIn: avg !== null && bought !== null && avg > 0 && bought > 0 ? Math.round(avg * bought * 100) / 100 : 0,
-      pnl, resolvedAt: epochMs(p.timestamp) ?? epochMs(p.endDate),
+      pnl, avgPrice: avg !== null && avg > 0 && avg < 1 ? avg : null, resolvedAt: epochMs(p.timestamp) ?? epochMs(p.endDate),
     });
   }
   return out;

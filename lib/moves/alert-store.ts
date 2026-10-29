@@ -10,7 +10,7 @@ import { fromRow, recordsFor } from "./store";
 import type { Move } from "./types";
 import { effectivePlan } from "@/lib/billing/access";
 
-export interface MoveAlertUser extends AlertUser { emailDigest: boolean; lastDigestAt: number | null }
+export interface MoveAlertUser extends AlertUser { emailDigest: boolean; lastDigestAt: number | null; /** Split alerts on (the default). */ splits: boolean }
 
 /** Paid members (Free gets no alerts), with what they follow and their alert settings. */
 export async function moveAlertUsers(db: Db): Promise<MoveAlertUser[]> {
@@ -29,7 +29,7 @@ export async function moveAlertUsers(db: Db): Promise<MoveAlertUser[]> {
       markets: new Set(mine.filter(f => f.kind === "market").map(f => f.target)),
       trackers: new Set(mine.filter(f => f.kind === "tracker").map(f => f.target)),
       rules: (s.moveRules ?? []).map(r => ({ tab: r.tab, league: r.league as AlertUser["rules"][number]["league"], min: r.min })),
-      emailDigest: s.emailDigest, lastDigestAt: u.lastDigestAt?.getTime() ?? null,
+      emailDigest: s.emailDigest, lastDigestAt: u.lastDigestAt?.getTime() ?? null, splits: s.alertSplits !== false,
     };
   });
 }
