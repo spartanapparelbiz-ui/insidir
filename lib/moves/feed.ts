@@ -73,7 +73,7 @@ export interface FeedItem {
   companyHref?: string | null;
   /** The market's live split (lib/smart): "Crowd 62% · Smart money 81%", when there is one. */
   split?: string | null;
-  /** "$17K says no runs in the 1st inning" (lib/moves/headline.ts), and the grey line under it. */
+  /** "No runs in the 1st inning" (lib/moves/headline.ts outcomeOf), and the grey line under it. */
   headline: string;
   subline: string;
   /** The price paid, as a chance ("45%"); the price of their side now, 0..1, when known (refreshed every minute). */

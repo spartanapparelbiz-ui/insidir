@@ -91,7 +91,7 @@ test("the public preview: home and the product pages show real moves 30 minutes 
 test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
   await signIn(context, "pro");
   await page.goto("/feed");
-  await expect(page.locator(".move__head", { hasText: "$412K says Chiefs win" }).first()).toBeVisible();
+  await expect(page.locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
   await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
   await expect(page.locator(".move__live").first()).toContainText(/^In at \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
@@ -101,7 +101,7 @@ test("member feed: live moves with the record line; following a trader shows on 
   await page.goto("/following");
   await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
   // Their recent moves are in the Following feed too.
-  await expect(page.getByTestId("following-feed").locator(".move__head", { hasText: "$412K says Chiefs win" }).first()).toBeVisible();
+  await expect(page.getByTestId("following-feed").locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
   await q("delete from terminal.follows");
 });
 

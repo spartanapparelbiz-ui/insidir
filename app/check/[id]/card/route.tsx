@@ -8,7 +8,7 @@ import { verdictLabel } from "@/components/check/CheckResult";
 
 export const dynamic = "force-dynamic";
 const pct = (x: number) => `${Math.round(x * 100)}%`;
-const INK = "#0b0b12", MUTED = "#6e6e73", BG = "#f5f5f7", GREEN = "#137a47", RED = "#c0321f";
+const INK = "#0b0b12", MUTED = "#6b6b73", BG = "#f7f7f8", GREEN = "#0f7a45", RED = "#c4321f";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

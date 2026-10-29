@@ -1,5 +1,6 @@
 /* Insidir design tokens: light, Autopilot/Apple-quiet. The only place colours, type, radii and motion are defined.
- * White page, #0B0B12 text, #6E6E73 secondary, #F5F5F7 cards, #E8E8ED hairlines. Green only for gains and wins, red only
+ * White page, #0B0B12 ink, #6B6B73 muted, #F7F7F8 surface, #EAEAEE lines; money #0F7A45, loss #C4321F (both 4.5:1+
+ * on white, so one shade serves lines and small text). Green only for gains and wins, red only
  * for losses; nothing else gets colour. One font, Schibsted Grotesk, tight headlines, tabular numbers. 8px grid.
  * Every page is light (the old dark app theme is gone: <main class="dark"> no longer changes anything).
  * Photos (public/hero) are atmosphere only, never behind data. Tracker covers are the one place with deep colour (one
@@ -8,16 +9,16 @@
   /* the palette */
   --ink: #0b0b12;
   --paper: #ffffff;
-  --grey-1: #f5f5f7;
+  --grey-1: #f7f7f8;
   --grey-1b: #ececf0;
   --grey-2: #eaeaee;
-  --grey-3: #6e6e73;
+  --grey-3: #6b6b73;
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
    * readable (4.5:1 on white and on the cards). Losses likewise. */
-  --money: #1a9e5c;
-  --money-text: #137a47;
-  --loss: #d93a2b;
-  --loss-text: #c0321f;
+  --money: #0f7a45;
+  --money-text: #0f7a45;
+  --loss: #c4321f;
+  --loss-text: #c4321f;
   /* tracker covers: stocks navy, markets indigo, styles plum, sports ocean */
   --cover-stocks-0: #13294b; --cover-stocks-1: #182f57; --cover-stocks-2: #0f2342;
   --cover-topics-0: #23205a; --cover-topics-1: #2a2566; --cover-topics-2: #1d1a4d;

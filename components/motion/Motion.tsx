@@ -1,17 +1,22 @@
 "use client";
 /* The page's scroll motion, one small client component for the whole site (mounted once in app/layout.tsx).
- *   .rv           fades up 16px as it enters the screen, once; items stagger 80 ms by their --i (set in markup).
+ *   .rv           rises 24px as it enters the screen, once (app/motion.css); section headers, rows and cards get it
+ *                 here (RISE); items stagger 80 ms by their --i (set in markup).
+ *   [data-zoom]   a photo zooms 1.18 → 1 as it enters.
  *                 Hidden only when JS runs (html.js, set by an inline script before first paint), so without JS, or
  *                 under prefers-reduced-motion, everything is simply there.
  *   [data-count]  counts up once from 0 to its value when it enters view (its server-rendered text is the final
  *                 value, formatted the same way), over 900 ms, easing out.
  *   [data-par]    parallax fallback for browsers without CSS scroll-driven animations (app/v2.css does it in CSS
- *                 where animation-timeline is supported): the photo drifts at 0.85x scroll speed, with a gentle zoom.
+ *                 where animation-timeline is supported): the photo drifts ±7% as it crosses the screen.
  *   .nav__prog    the reading-progress line under the nav, same fallback.
  * Only transform and opacity change; one passive scroll listener, work done in requestAnimationFrame. Elements added
  * later (the live feed's new cards) are picked up by a MutationObserver. */
 import { useEffect } from "react";
 import { dollars, signedShort } from "@/lib/moves/copy";
+
+/** Section headers, rows and cards: each rises in as it scrolls into view (app/motion.css). */
+const RISE = ".sec3__h, .dsec__h, .tsec__h, .tgroup__h, .trow, .tfeat, .ttile, .tcard, .move, .srow, .cleg, .tile";
 
 const FORMAT: Record<string, (v: number) => string> = {
   dollars, signed: signedShort,
@@ -45,16 +50,19 @@ export function Motion() {
         if (!e.isIntersecting) continue;
         const el = e.target as HTMLElement;
         io.unobserve(el);
-        if (el.classList.contains("rv")) el.classList.add("is-in");
+        if (el.classList.contains("rv") || el.dataset.zoom !== undefined) el.classList.add("is-in");
         if (el.dataset.count !== undefined) countUp(el);
       }
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
 
     const parallax = new Set<HTMLElement>();
     const watch = (scope: ParentNode) => {
-      scope.querySelectorAll<HTMLElement>(".rv, [data-count]").forEach(el => {
+      scope.querySelectorAll<HTMLElement>(`.rv, [data-count], [data-zoom], ${RISE}`).forEach(el => {
         if (seen.has(el)) return;
         seen.add(el);
+        if (el.matches(RISE) && !el.classList.contains("rise")) el.classList.add("rv");
+        // Photos below the screen wait at 1.18 and zoom to 1 as they enter.
+        if (el.dataset.zoom !== undefined && el.getBoundingClientRect().top > innerHeight) el.classList.add("zoom--wait");
         // The real value stays in the page until it counts up (from 0, once it enters view): never a placeholder 0,
         // whether or not the animation ever runs (screenshots, a page read without scrolling, a slow observer).
         if (el.dataset.count !== undefined) el.dataset.final = el.textContent ?? "";
@@ -80,7 +88,7 @@ export function Motion() {
         const box = (el.parentElement ?? el).getBoundingClientRect();
         if (box.bottom < 0 || box.top > innerHeight) continue;
         const travelled = Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height)));
-        el.style.transform = `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(${(1.14 + travelled * 0.06).toFixed(3)})`;
+        el.style.transform = `translate3d(0, ${(-7 + travelled * 14).toFixed(2)}%, 0) scale(1.16)`;
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(frame); };

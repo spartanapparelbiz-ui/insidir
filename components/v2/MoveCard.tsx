@@ -38,13 +38,6 @@ function Sentence({ m }: { m: FeedItem }) {
 
 const pctOf = (p: number) => `${Math.round(p * 100)}%`;
 
-/** "$17K says …": the amount bold. */
-function Headline({ text }: { text: string }) {
-  const i = text.indexOf(" says ");
-  if (i < 0) return <>{text}</>;
-  return <><b>{text.slice(0, i)}</b>{text.slice(i)}</>;
-}
-
 /** The result on the right: settled, the real P&L in green or red over "Won" / "Lost" ("Refunded" alone); open, the
  *  money in over "Pending"; a filing, the money over "Purchase". */
 function CardResult({ m }: { m: FeedItem }) {
@@ -93,7 +86,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
       <div className="move__hrow">
-        <h3 className="move__head"><Headline text={m.headline} /></h3>
+        <h3 className="move__head">{m.headline}</h3>
         <CardResult m={m} />
       </div>
       <p className="move__subl">{m.subline}</p>

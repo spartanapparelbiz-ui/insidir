@@ -1,0 +1,44 @@
+/* Motion (components/motion/Motion.tsx marks the elements). Transform and opacity only, nothing that moves layout
+ * (CLS 0), and all of it off under prefers-reduced-motion, where everything is simply there.
+ *   .rise          hero text and the live list's first rows: rise 24px into place on load, 0.9s, 80ms apart (--i)
+ *   .rv            section headers, rows and cards: the same rise as they scroll into view, once
+ *                  (animation-timeline: view() where supported; an IntersectionObserver adds .is-in elsewhere)
+ *   [data-zoom]    photos: 1.18 → 1 as they enter
+ *   [data-par]     the full-width band: drifts ±7% as it crosses the screen (parallax)
+ *   [data-settle]  the tracker header photo: settles from 1.12 on load
+ * Hover: a card's photo scales to 1.04, buttons lift 1px, link arrows nudge 3px. */
+:root { --ease-rise: cubic-bezier(.2, .8, .2, 1); }
+
+@keyframes rise { from { opacity: 0; transform: translate3d(0, 24px, 0); } to { opacity: 1; transform: none; } }
+@keyframes zoom-in { from { transform: scale(1.18); } to { transform: none; } }
+@keyframes settle { from { transform: scale(1.12); } to { transform: none; } }
+@keyframes par-drift { from { transform: translate3d(0, -7%, 0) scale(1.16); } to { transform: translate3d(0, 7%, 0) scale(1.16); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise .9s var(--ease-rise) both; animation-delay: calc(var(--i, 0) * 80ms); }
+
+  .js .rv.rv--wait { opacity: 0; transform: translate3d(0, 24px, 0); transition: opacity .9s var(--ease-rise), transform .9s var(--ease-rise); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js .rv.rv--wait.is-in { opacity: 1; transform: none; }
+
+  .js [data-zoom].zoom--wait img, .js [data-zoom].zoom--wait > :not(picture) { transform: scale(1.18); transition: transform 1.4s var(--ease-rise); }
+  .js [data-zoom].zoom--wait.is-in img, .js [data-zoom].zoom--wait.is-in > :not(picture) { transform: none; }
+
+  [data-settle] img { animation: settle 1.6s var(--ease-rise) both; }
+
+  @supports (animation-timeline: view()) {
+    .js .rv.rv--wait { opacity: 1; transform: none; transition: none; animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+    .js [data-zoom].zoom--wait img { transform: none; transition: none; animation: zoom-in linear both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
+    [data-par] { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  }
+
+  /* hover */
+  .tfeat img, .ttile__cover img, .tcard img { transition: transform 600ms var(--ease-rise); }
+  .tfeat:hover img, .ttile__link:hover .ttile__cover img, .tcard:hover img { transform: scale(1.04); }
+  .btn { transition: transform var(--dur-small) var(--ease-rise), background-color var(--dur-small), color var(--dur-small); }
+  .btn:hover { transform: translateY(-1px); }
+  a:hover > .arrow, button:hover > .arrow, a:hover::after { transform: translateX(3px); }
+}
+.hero3__acts { display: grid; justify-items: center; }
+/* the phones keep their fanned transforms: they rise with opacity only */
+@media (prefers-reduced-motion: no-preference) { .phone.rise { animation-name: fade-in; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

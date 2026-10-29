@@ -25,6 +25,7 @@ import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
 import { clockET, dollars } from "@/lib/moves/copy";
+import { short as shortMoney } from "@/lib/moves/headline";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { listMoves } from "@/lib/moves/store";
@@ -87,7 +88,7 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
       feed: short(feed), results: short(results),
       tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, cover: coverStats(stats.get(lead.slug)), moves: leadShort } : null,
       list: stats.size ? list.map(x => ({ ...x, cover: coverStats(stats.get(x.slug)) })) : [],
-      alert: leadShort[0] ? { tracker: lead.name, body: leadShort[0].sentence, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
+      alert: leadShort[0] ? { tracker: lead.name, body: `${shortMoney(leadShort[0].amount)} on ${leadShort[0].headline.replace(/^\w/, c => c.toLowerCase())}. ${leadShort[0].subline}.`, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
     },
   };
 }
@@ -133,10 +134,10 @@ export default async function Home() {
       <main className="lp3">
         <section className="hero3" aria-labelledby="hero-h">
           <div className="wrap hero3__in">
-            <span className="hero3__mark" aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
-            <h1 id="hero-h" className="hero3__h">Follow the big money.</h1>
-            <p className="hero3__sub">Upload your slip and see where the big money is. Or pick a tracker and follow it.</p>
-            <HeroCta />
+            <span className="hero3__mark rise" style={{ ["--i" as string]: 0 }} aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
+            <h1 id="hero-h" className="hero3__h rise" style={{ ["--i" as string]: 1 }}>Follow the big money.</h1>
+            <p className="hero3__sub rise" style={{ ["--i" as string]: 2 }}>Upload your slip and see where the big money is. Or pick a tracker and follow it.</p>
+            <div className="hero3__acts rise" style={{ ["--i" as string]: 3 }}><HeroCta /></div>
           </div>
           <Phones d={phones} />
         </section>

@@ -167,6 +167,12 @@ describe("tracker records", () => {
     expect(topPerformers(rows).map(r => r.slug)).toEqual(["d", "a"]);
   });
 
+  it("Top performers rank by return (net on the money in), not win rate", () => {
+    const r = (won: number, lost: number, net: number, staked: number): TrackerRecord => ({ won, lost, oddsPct: 50, net, staked });
+    const rows = [{ slug: "wins-often", record: r(80, 20, 1_000, 100_000) }, { slug: "pays-best", record: r(11, 14, 30_000, 100_000) }, { slug: "loses", record: r(15, 15, -5_000, 50_000) }, { slug: "new", record: r(5, 5, 9e9, 1) }];
+    expect(topPerformers(rows).map(x => x.slug)).toEqual(["pays-best", "wins-often", "loses"]);
+  });
+
   it("Popular: followers first, then money tracked", () => {
     expect(popular([{ s: "a", followers: 0, tracked30d: 9e6 }, { s: "b", followers: 2, tracked30d: 1 }, { s: "c", followers: 0, tracked30d: 1e7 }]).map(r => r.s)).toEqual(["b", "c", "a"]);
   });

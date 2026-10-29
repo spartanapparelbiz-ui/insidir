@@ -21,7 +21,7 @@ export interface PhoneData {
 
 function Phone({ children, pos }: { children: ReactNode; pos: number }) {
   return (
-    <div className={`phone phone--${pos}`}>
+    <div className={`phone phone--${pos} rise`} style={{ ["--i" as string]: 4 + Math.abs(pos - 2) }}>
       <div className="phone__screen">
         <div className="phone__bar"><span className="phone__logo"><Wordmark /></span></div>
         <div className="phone__body">{children}</div>
@@ -30,11 +30,14 @@ function Phone({ children, pos }: { children: ReactNode; pos: number }) {
   );
 }
 
+const SOURCE: Record<FeedItem["source"], string> = { polymarket: "Polymarket", kalshi: "Kalshi", sec: "SEC" };
+
+/** A preview row: the outcome, the market, where it traded and when; never who (no wallet names on home). */
 const Row = ({ m }: { m: FeedItem }) => (
   <div className="pm">
     <p className="pm__amt">{dollars(m.amount)}</p>
-    <p className="pm__line">{m.sentence}</p>
-    <p className="pm__ago">{m.ago}</p>
+    <p className="pm__line">{m.headline}</p>
+    <p className="pm__ago">{m.subline} · {SOURCE[m.source]} · {m.ago}</p>
   </div>
 );
 
@@ -46,7 +49,7 @@ export function Phones({ d }: { d: PhoneData }) {
   if (d.results.length) screens.push(
     <><p className="ph__h">Results</p><div className="ph__list">{d.results.slice(0, 4).map(m => (
       <div key={m.id} className="pm pm--res">
-        <p className="pm__line">{m.sentence}</p>
+        <p className="pm__line">{m.headline}<span className="pm__ago">{SOURCE[m.source]} · {m.subline}</span></p>
         <Result amount={m.pnl !== null && m.pnl !== undefined ? signedShort(m.pnl) : dollars(m.amount)} tone={m.result === "won" ? "won" : "lost"} status={m.result === "won" ? "Won" : "Lost"} />
       </div>
     ))}</div></>,

@@ -117,8 +117,7 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
  * the first screen is never hidden, before or after JavaScript ---------- */
 .js .rv:not(.rv--wait) { transform: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .js .rv.rv--wait { opacity: 0; transform: translate3d(0, 8px, 0); transition: opacity 300ms var(--ease-enter), transform 300ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 40ms); }
-  .js .rv.rv--wait.is-in { opacity: 1; transform: none; }
+  /* the rise itself: app/motion.css */
 }
 
 /* ---------- home (app/page.tsx) ---------- */

@@ -244,9 +244,14 @@ export function returnPct(r: TrackerRecord | null | undefined): string | null {
   return `${p > 0 ? "+" : p < 0 ? "−" : ""}${Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1)}%`;
 }
 
-/** Ranks trackers for one window: only those with a record there, best win rate first, then most settled. */
+/** What a record returned on the money in it (net / staked), or −∞ without the money to tell. */
+export const returnOf = (r: TrackerRecord): number => (r.staked && r.staked > 0 ? r.net / r.staked : Number.NEGATIVE_INFINITY);
+
+/** Ranks trackers for one window: only those with a record there (20+ settled bets), best return first, then the
+ *  better win rate, then most settled. */
 export function topPerformers<T extends { slug: string; record: TrackerRecord | null }>(rows: readonly T[]): T[] {
-  return rows.filter(r => hasTrackerRecord(r.record)).sort((a, b) => winPct(b.record!) - winPct(a.record!) || settledOf(b.record) - settledOf(a.record));
+  return rows.filter(r => hasTrackerRecord(r.record)).sort((a, b) =>
+    (returnOf(b.record!) - returnOf(a.record!) || 0) || winPct(b.record!) - winPct(a.record!) || settledOf(b.record) - settledOf(a.record));
 }
 
 /** Popular: most followers first, then most money tracked in the last 30 days. */
