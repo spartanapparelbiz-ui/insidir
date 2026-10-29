@@ -13,7 +13,7 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   // The outcome in plain English; who moved under it.
   await expect(top.locator(".move__head")).toHaveText("Chiefs to beat the Bills");
   await expect(top.locator(".move__by")).toContainText("E2E-Top · a top trader");
-  await expect(top.locator(".badge")).toHaveCount(0);
+  await expect(top.locator(".move__badge")).toHaveCount(0);
   await top.getByRole("link", { name: "E2E-Top" }).click();
   await expect(page).toHaveURL(`/p/${TOP}`);
   await expect(page.getByRole("heading", { level: 1, name: "E2E-Top" })).toBeVisible();
@@ -27,7 +27,7 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   await page.goto("/feed?tab=markets");
   const fresh = page.locator("[data-move='e2e:m5']");
   await expect(fresh.locator(".move__head")).toHaveText("Yes on “E2E fixture: Rate hike in March?”");
-  await expect(fresh.locator(".badge")).toHaveText("New wallet");
+  await expect(fresh.locator(".move__badge")).toHaveText(" · New wallet");
   await expect(fresh.getByRole("link", { name: "0xe2…cc" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000cc");
 });
 

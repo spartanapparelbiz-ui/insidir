@@ -11,7 +11,7 @@ test("landing: the centred hero, one button to Check your bet, the phones, then 
   const cta = page.locator('[data-cta="hero"]');
   await expect(cta).toContainText("Check your bet");
   await expect(cta).toHaveAttribute("href", "/check");
-  await expect(page.getByRole("link", { name: "Explore the trackers →" })).toHaveAttribute("href", "/trackers");
+  await expect(page.getByRole("link", { name: "Explore the trackers" })).toHaveAttribute("href", "/trackers");
   // One black button (plus the nav's Get started): no offer bar, no sticky bar.
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
   await expect(page.locator(".trialbar")).toHaveCount(0);
@@ -40,7 +40,7 @@ test("home hero: Check your bet is recorded; the trackers link opens /trackers, 
   await expect(page).toHaveURL(/\/check$/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
   await page.goto("/");
-  await page.getByRole("link", { name: "Explore the trackers →" }).click();
+  await page.getByRole("link", { name: "Explore the trackers" }).click();
   await expect(page).toHaveURL(/\/trackers$/);
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
@@ -283,13 +283,16 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
-  await expect(insider.locator(".move__head")).toHaveText("$1.4M of E2E Fixture Devices stock, bought by its CEO");
+  await expect(insider.locator(".move__head")).toHaveText("E2E Fixture Devices stock, bought by its CEO");
+  // The amount is the card's result on the right, a purchase.
+  await expect(insider.locator(".res__amt")).toHaveText("$1.4M");
+  await expect(insider.locator(".res__st")).toHaveText("Purchase");
   // Never "just bought": the filing day, then the trade date; the note carries both dates (in Details).
   await insider.locator(".move__more summary").click();
   await expect(insider.getByText(/^Filed (today|[A-Z][a-z]{2} \d{1,2}): Jane Fixture, CEO of E2E Fixture Devices, bought \$1\.4M of E2E Fixture Devices stock on Oct 22\.$/)).toBeVisible();
   await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
   await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
-  await expect(insider.locator(".tag")).toHaveText("Stocks · EXDV");
+  await expect(insider.locator(".move__kind")).toHaveText("Stocks · EXDV");
   const link = insider.getByRole("link", { name: "See the SEC filing" });
   await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
   await expect(link).toHaveAttribute("target", "_blank");
