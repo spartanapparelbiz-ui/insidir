@@ -205,7 +205,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
             <div className="empty">
               <Photo n={SPOT.feedEmpty} className="empty__photo" wideOnly sizes="720px" />
               <p className="empty__h">Quiet right now. The next large position is coming.</p>
-              <p className="empty__p">Follow a few top-ranked traders and we&apos;ll ping you when they move.</p>
+              <p className="empty__p">Follow a few top-ranked traders to see their new positions in Following.</p>
               <a className="btn btn--secondary" href="/results">See past positions</a>
             </div>
           )}

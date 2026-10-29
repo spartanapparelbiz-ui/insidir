@@ -7,9 +7,9 @@ test("landing: the centred hero, one button to Check your bet, the phones, then 
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Upload your slip and see where the big money is. Or pick a tracker and follow it.")).toBeVisible();
+  await expect(page.getByText("Trackers follow large positions on Polymarket, Kalshi and SEC filings as they are opened and settled. Each one is a live portfolio with a public track record.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toContainText("Check your bet");
+  await expect(cta).toContainText("Explore trackers");
   await expect(cta).toHaveAttribute("href", "/check");
   await expect(page.getByRole("link", { name: "Explore the trackers" })).toHaveAttribute("href", "/trackers");
   // One black button (plus the nav's Get started): no offer bar, no sticky bar.
@@ -17,7 +17,7 @@ test("landing: the centred hero, one button to Check your bet, the phones, then 
   await expect(page.locator(".trialbar")).toHaveCount(0);
   await expect(page.locator("main .btn--primary")).toHaveCount(1);
   // Featured leads with stocks, then prediction markets, then sports.
-  await expect(page.locator(".tfeat .tfeat__name")).toHaveText(["CEO Buys", "Fed & Rates", "Whales ($100K+)", "NBA Big Money"]);
+  await expect(page.locator(".tfeat .tfeat__name")).toHaveText(["CEO Purchases", "Fed & Rates", "Whales ($100K+)", "NBA"]);
   // No pills, no 700 weights.
   await expect(page.locator(".rpill")).toHaveCount(0);
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
@@ -82,7 +82,7 @@ test("the public preview: home and the product pages show real moves 30 minutes 
   await expect(page.locator(".move").first()).toBeVisible();
   const locked = page.getByTestId("locked-record").first();
   await expect(locked).toBeVisible();
-  await expect(locked).toContainText("Win rate · All-time profit");
+  await expect(locked).toContainText("Win rate · All-time net P&L");
   await expect(locked).toContainText("members only");
   expect(await locked.innerText()).not.toMatch(/\d|NaN/);
   for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|Won 00 of 00|NaN%/);
@@ -93,7 +93,7 @@ test("member feed: live moves with the record line; following a trader shows on 
   await page.goto("/feed");
   await expect(page.locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
   await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
-  await expect(page.locator(".move__live").first()).toContainText(/^In at \d+%/);
+  await expect(page.locator(".move__live").first()).toContainText(/^Entry \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
   await page.locator(".move").first().getByRole("button", { name: "Follow" }).click();
@@ -106,7 +106,7 @@ test("member feed: live moves with the record line; following a trader shows on 
 });
 
 test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on ×, Esc and outside; never for members", async ({ page, context }) => {
-  const popup = page.getByRole("dialog", { name: "See the biggest bets the moment they happen." });
+  const popup = page.getByRole("dialog", { name: "See the largest positions the moment they happen." });
   await page.goto("/sports");
   await expect(popup).toHaveCount(0);
   await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.3));
@@ -139,7 +139,7 @@ test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on
     const p2 = await context.newPage();
     await p2.goto("/results");
     await p2.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-    const d = p2.getByRole("dialog", { name: "See the biggest bets the moment they happen." });
+    const d = p2.getByRole("dialog", { name: "See the largest positions the moment they happen." });
     if (await p2.evaluate(() => document.documentElement.scrollHeight - innerHeight <= 0)) await p2.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientY: -1, bubbles: true })));
     await expect(d).toBeVisible();
     if (close === "x") await d.getByRole("button", { name: "Close" }).click();
@@ -223,12 +223,12 @@ test("results are public: totals match the trust block on /pricing, refunds labe
   await expect(page.locator(".rlist__res--won").first()).toBeVisible();
   const total = page.getByTestId("results-total");
   await expect(total).toContainText(/won, \d+ lost/);
-  await expect(total).toContainText("Average odds when they bet:");
+  await expect(total).toContainText("Average entry:");
   // Polymarket wallets only, checked against their own trades: 1 won, 1 lost, 1 sold before the result; net
   // +$180K − $64K + $10K = +$126K, explained in one line.
-  await expect(total).toContainText("1 won, 1 lost, 1 sold before the result");
+  await expect(total).toContainText("1 won, 1 lost, 1 closed before settlement");
   await expect(page.getByTestId("record-net")).toContainText("Net for these traders: +$126K");
-  await expect(total).toContainText("What these bets really made");
+  await expect(total).toContainText("What these positions realized");
   await expect(page.locator(".rlist__res--sold").first()).toHaveText("Sold early");
   const totalText = await total.innerText();
   await page.goto("/pricing");
@@ -274,7 +274,7 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(page.getByRole("heading", { name: "Posts", level: 1 })).toBeVisible();
   const first = page.locator("[data-post]").first();
   await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
-  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top, a top trader, put \$412,000 on Chiefs to win\./);
+  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top · Top-ranked trader: \$412,000 position on Chiefs to win\./);
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
 });
 

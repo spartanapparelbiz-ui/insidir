@@ -85,7 +85,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // The feed, filtered to their picks, with the one-time hint on the first card.
     await expect(page).toHaveURL(/\/feed\?first=1/);
     await expect(page.getByRole("button", { name: "Your picks" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("first-hint")).toContainText("This is a big move. Tap anyone to see their record.");
+    await expect(page.getByTestId("first-hint")).toContainText("This is a large position. Tap anyone to see their record.");
     await shot("feed-first");
     const settings = (await q<{ settings: { picks?: { tabs: string[]; leagues: string[] } } }>("select settings from terminal.users where id = $1", [MOCK_USER.sub]))[0]!.settings;
     expect(settings.picks).toMatchObject({ tabs: ["sports"], leagues: ["NFL"] });

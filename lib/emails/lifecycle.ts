@@ -63,7 +63,7 @@ export function welcomeEmail(appUrl: string): LifecycleEmail {
     lines: [
       { text: "Three steps and Insidir works for you, even with the app closed:" },
       { text: "1. Follow 3 traders. The top-ranked traders by real net P&L are here.", url: `${appUrl}/top?from=welcome` },
-      { text: "2. Turn on alerts: we ping you when an account you follow opens a large position. On an iPhone, add Insidir to your Home Screen first (Share, then Add to Home Screen).", url: `${appUrl}/alerts?from=welcome` },
+      { text: "2. Turn on alerts for new large positions from accounts you follow. On an iPhone, add Insidir to your Home Screen first (Share, then Add to Home Screen).", url: `${appUrl}/alerts?from=welcome` },
       { text: "3. Activity: every large position and filing as it is opened.", url: `${appUrl}/feed?from=welcome` },
     ],
     cta: { label: "Set up your first alert", url: `${appUrl}/alerts?from=welcome` },
@@ -75,7 +75,7 @@ export function trialEndingEmail(caught: readonly Move[], fromFollows: boolean, 
   const lines: LifecycleEmail["lines"] = caught.length
     ? [{ text: fromFollows ? "Since you joined, the traders you follow made these large positions:" : "Since you joined, these were the largest positions on Insidir:" },
       ...caught.slice(0, 5).map(m => ({ text: line(m, m.wallet ? records.get(m.wallet) ?? null : null), url: `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=trial` }))]
-    : [{ text: "No large positions from the traders you follow yet. Follow a few more and we'll ping you when they move.", url: `${appUrl}/top?from=trial` }];
+    : [{ text: "No large positions from the traders you follow yet. Follow a few more for alerts on their new positions.", url: `${appUrl}/top?from=trial` }];
   return {
     kind: "trial_ending", period: "once",
     subject: "Your trial ends tomorrow, here's what you caught",

@@ -95,7 +95,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
       {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
       {m.bets ? (
         <details className="move__bets">
-          <summary>See all {m.bets.length} bets</summary>
+          <summary>See all {m.bets.length} positions</summary>
           <ol>
             {m.bets.map(b => (
               <li key={b.id}>

@@ -12,7 +12,7 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   const top = page.locator("[data-move='e2e:m1']");
   // The outcome in plain English; who moved under it.
   await expect(top.locator(".move__head")).toHaveText("Chiefs to beat the Bills");
-  await expect(top.locator(".move__by")).toContainText("E2E-Top · a top trader");
+  await expect(top.locator(".move__by")).toContainText("E2E-Top · Top-ranked trader");
   await expect(top.locator(".move__badge")).toHaveCount(0);
   await top.getByRole("link", { name: "E2E-Top" }).click();
   await expect(page).toHaveURL(`/p/${TOP}`);
@@ -21,13 +21,13 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   await page.goto("/feed");
   const kalshi = page.locator("[data-move='e2e:m2']");
   await expect(kalshi.locator(".move__head")).toHaveText("Lakers to beat the Celtics");
-  await expect(kalshi.locator(".move__by")).toHaveText("Someone");
+  await expect(kalshi.locator(".move__by")).toHaveText("Anonymous · Kalshi");
   await expect(kalshi.locator("a[href^='/p/']")).toHaveCount(0);
   // A wallet with no history before this move.
   await page.goto("/feed?tab=markets");
   const fresh = page.locator("[data-move='e2e:m5']");
   await expect(fresh.locator(".move__head")).toHaveText("Yes on “E2E fixture: Rate hike in March?”");
-  await expect(fresh.locator(".move__badge")).toHaveText(" · New wallet");
+  await expect(fresh.locator(".move__badge")).toHaveText(" · New account");
   await expect(fresh.getByRole("link", { name: "0xe2…cc" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000cc");
 });
 
@@ -38,10 +38,10 @@ test("a trader's profile: every stat from their resolved positions, for members"
   const tile = (label: string) => page.locator(".tile").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
   await expect(tile("Record")).toHaveText("41–22");
   await expect(tile("Win rate")).toHaveText("65%");
-  await expect(tile("All-time profit")).toHaveText("+$1.2M");
+  await expect(tile("All-time net P&L")).toHaveText("+$1.2M");
   await expect(tile("ROI")).toHaveText("95.2%"); // $1.2M on $1.26M put in
-  await expect(tile("Biggest win")).toHaveText("+$310,000");
-  await expect(tile("Average bet")).toHaveText("$20,000");
+  await expect(tile("Largest gain")).toHaveText("+$310,000");
+  await expect(tile("Average position size")).toHaveText("$20,000");
   await expect(page.getByRole("img", { name: /^Profit, every resolved market: \+\$310,000 to \+\$1,2\d\d,\d{3}$/ })).toBeVisible();
   const cats = page.getByRole("table", { name: "By category" });
   await expect(cats.getByRole("row", { name: /^NFL \d/ })).toBeVisible();

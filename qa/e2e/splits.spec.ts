@@ -44,10 +44,10 @@ test("free viewers see splits 30 minutes late; the scorecard is public and keeps
   await expect(page.locator(".srow", { hasText: "Fed cut in December" })).toBeVisible();
 
   await page.goto("/splits/scorecard");
-  await expect(page.getByRole("heading", { level: 1, name: "Splits scorecard" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Positioning scorecard" })).toBeVisible();
   const table = page.getByRole("table", { name: "Flagged splits" });
   await expect(table.getByRole("row", { name: /Senate race winner/ })).toContainText("Smart money right");
   await expect(table.getByRole("row", { name: /Fed cut in December/ })).toContainText("Open");
-  await expect(page.locator(".tile", { hasText: "Splits flagged" }).locator("dd")).toHaveText(/^\d+$/);
+  await expect(page.locator(".tile", { hasText: "Divergences flagged" }).locator("dd")).toHaveText(/^\d+$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

@@ -32,13 +32,13 @@ test("same-outcome bets within the hour are one card; it opens to each bet; open
   await signIn(context, "insidir");
   await page.goto("/feed");
   const g = page.locator(".move--group", { hasText: "E2E Brewers vs. Cubs" });
-  await expect(g.locator(".move__head")).toHaveText("4 big bets on Brewers · $78,765");
+  await expect(g.locator(".move__head")).toHaveText("4 large positions on Brewers · $78,765");
   await expect(g.locator(".move__subl")).toHaveText("E2E Brewers vs. Cubs · MLB");
-  await expect(g.locator(".move__live")).toContainText("In at 45% chance · now 61%");
+  await expect(g.locator(".move__live")).toContainText("Entry 45% · now 61%");
   await expect(g.getByLabel("up")).toBeVisible();
   await expect(g.locator(".move__bets li")).toHaveCount(4);
   await expect(g.locator(".move__bets li").first()).toBeHidden();
-  await g.getByText("See all 4 bets").click();
+  await g.getByText("See all 4 positions").click();
   await expect(g.locator(".move__bets li").first()).toContainText("$31K");
   // The payout is only in Details, never on the card face.
   await expect(page.locator(".move__payout:visible")).toHaveCount(0);

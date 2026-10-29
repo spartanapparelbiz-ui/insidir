@@ -27,7 +27,7 @@ export default async function AlertsPage() {
   const viewer = await requireMember("/alerts");
   const ready = { push: isReady("alerts_push"), email: isReady("alerts_email"), daily: isReady("daily_email"), rules: isReady("custom_rules") };
   if (!ready.push && !ready.email) {
-    return <ComingSoonPage feature="alerts_push" title="Alerts" band={BAND.alerts} current="/alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets, and we will ping your phone or email the moment they open a large position." />;
+    return <ComingSoonPage feature="alerts_push" title="Alerts" band={BAND.alerts} current="/alerts" signedIn={Boolean(viewer.user)} plan={viewer.plan} text="Follow traders and markets for an alert on your phone or by email when they open a large position." />;
   }
   const user = viewer.user;
   if (!user) redirect("/login?next=/alerts");
@@ -60,7 +60,7 @@ export default async function AlertsPage() {
       <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
       <main className="wrap app acct dark">
         <PageBand n={BAND.alerts} title="Alerts" />
-        <p className="asum asum--lead">We ping you the moment a trader or market you follow opens a large position.</p>
+        <p className="asum asum--lead">An alert follows when a trader or market you follow opens a large position.</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "insidir"} proHref={unlockHref()} ready={ready} />
 
         <section className="agroup" aria-labelledby="a-history">
