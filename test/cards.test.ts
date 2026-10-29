@@ -94,13 +94,13 @@ describe("bets on the same outcome within the hour are one card", () => {
     const l = [{ id: "a", at: 10 * H }, { id: "b", at: 9.6 * H }, { id: "c", at: 9.2 * H, outcome: "Cubs" }, { id: "d", at: 9.1 * H }, { id: "e", at: 8.9 * H }]
       .map(x => ({ marketId: "0xm", outcome: "Brewers", source: "polymarket", amount: 10, ...x }));
     expect(groupBets(l).map(g => g.map(x => x.id))).toEqual([["a", "b", "d"], ["c"], ["e"]]);
-    expect(groupTitle(4, "Brewers", 68_765)).toBe("4 large positions on Brewers · $68,765");
+    expect(groupTitle(4, "Brewers", 68_765)).toBe("4 large positions on Brewers · $69K");
   });
 
   it("a group card adds up its bets; settled P&L only when every bet's is known", () => {
     const item = (id: string, amount: number, at: number, o: Partial<FeedItem> = {}) => ({ id, source: "polymarket", marketId: "0xm", outcome: "Brewers", at, amount, avgPrice: 0.5, inAt: "50%", result: null, pnl: null, headline: "", ...o }) as FeedItem;
     const [g] = groupFeed([item("a", 30_000, 2 * H), item("b", 10_000, 1.5 * H, { avgPrice: 0.3 })]);
-    expect(g).toMatchObject({ id: "g:b", amount: 40_000, groupTitle: "2 large positions on Brewers · $40,000", inAt: "45%" });
+    expect(g).toMatchObject({ id: "g:b", amount: 40_000, groupTitle: "2 large positions on Brewers · $40K", inAt: "45%" });
     expect(g!.bets!.map(b => b.id)).toEqual(["a", "b"]);
     const [s] = groupFeed([item("a", 30_000, 2 * H, { result: "won", pnl: 30_000 }), item("b", 10_000, 1.5 * H, { result: "won", pnl: 5_000 })]);
     expect(s).toMatchObject({ result: "won", pnl: 35_000 });

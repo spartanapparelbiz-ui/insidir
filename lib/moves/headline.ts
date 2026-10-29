@@ -15,15 +15,11 @@
  * Facts only: what was bought, never a tip. */
 import type { Move } from "./types";
 import { niceName } from "@/lib/stocks/names";
-import { quarterOf } from "./copy";
+import { dollars, quarterOf } from "./copy";
 
 /** "$17K", "$1.4M", "$950". */
 export function short(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "";
-  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(a >= 1e10 ? 0 : 1).replace(/\.0$/, "")}B`;
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a / 1e3)}K`;
-  return `${s}$${Math.round(a)}`;
+  return dollars(v);
 }
 
 const clean = (t: string) => t.trim().replace(/\s+/g, " ").replace(/\s+([?!.,])/g, "$1");

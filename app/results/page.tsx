@@ -84,7 +84,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           <Link className="chip2" aria-current={(!tab) ? "true" : undefined} href={q({ tab: null })}>All</Link>
           <Link className="chip2" aria-current={(tab === "sports") ? "true" : undefined} href={q({ tab: "sports" })}>Sports</Link>
           <Link className="chip2" aria-current={(tab === "markets") ? "true" : undefined} href={q({ tab: "markets" })}>Markets</Link>
-          {SIZES.map(s => <Link key={s} className="chip2" aria-current={(min === s) ? "true" : undefined} href={q({ min: String(s) })}>{dollars(s).replace(",000", "k")}+</Link>)}
+          {SIZES.map(s => <Link key={s} className="chip2" aria-current={(min === s) ? "true" : undefined} href={q({ min: String(s) })}>{`${dollars(s)}+`}</Link>)}
           {member ? <Link className="chip2" aria-current={(topOnly) ? "true" : undefined} href={q({ top: topOnly ? null : "1" })}>Top traders only</Link> : null}
         </div>
         {shown.length ? (

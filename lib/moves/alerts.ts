@@ -100,7 +100,7 @@ export function dailyEmail(top: readonly Move[], settled: readonly Move[], recor
   if (top.length) {
     lines.push({ text: "The largest positions of the last 24 hours:" });
     for (const m of top.slice(0, DAILY_TOP)) lines.push({ text: [moveSentence(m, rec(m), false), payoutLine(m)].filter(Boolean).join(" "), url: link(m) });
-  } else lines.push({ text: "No positions of $10,000 or more in the last 24 hours." });
+  } else lines.push({ text: "No positions of $10K or more in the last 24 hours." });
   const done = settled.filter(m => m.result === "won" || m.result === "lost");
   if (done.length) {
     const won = done.filter(m => m.result === "won").length;

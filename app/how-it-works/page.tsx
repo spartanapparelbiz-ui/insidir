@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "How it works", description: "A big position or insider trade happens, Insidir catches it in seconds and shows you who it is and whether they usually win." };
 
 const STEPS: Array<[string, string]> = [
-  ["A large position is opened", "An account opens a position of $10,000 or more on a game, an election or the Fed, or a CEO files a trade in their own stock."],
+  ["A large position is opened", "An account opens a position of $10K or more on a game, an election or the Fed, or a CEO files a trade in their own stock."],
   ["Insidir catches it in seconds", "We read Polymarket, Kalshi and SEC filings all day and write every large position in one plain sentence."],
   ["See who it is", "Tap the name: every position they've made, how many they won and lost, and their all-time net P&L."],
   ...(isReady("alerts_push") ? [["An alert on the next one", "Follow accounts with a strong record. When one opens a large position, a push notification follows."] as [string, string]] : []),

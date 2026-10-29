@@ -2,20 +2,19 @@
  * cover, ROI and record, what it holds now (its largest open positions: size, outcome, entry, market and when) and its
  * latest settled results with their real P&L. Every row is from terminal.moves on the viewer's clock. */
 import Link from "next/link";
-import { RecordResult } from "@/components/trackers/Tracker";
 import { TrackerCover, type CoverStats } from "@/components/trackers/TrackerCover";
 import { Result } from "@/components/ui/Result";
 import { signedShort } from "@/lib/moves/copy";
 import type { FeedItem } from "@/lib/moves/feed";
 import { short } from "@/lib/moves/headline";
-import { returnPct, trackerHref, type Tracker, type TrackerRecord } from "@/lib/trackers";
+import { recordResult, returnPct, returnTone, trackerHref, type Tracker, type TrackerRecord } from "@/lib/trackers";
 
 export interface PortfolioData { t: Tracker; record: TrackerRecord | null; cover: CoverStats | null; open: FeedItem[]; results: FeedItem[]; openCount: number; openAmount: number }
 
 const SOURCE: Record<FeedItem["source"], string> = { polymarket: "Polymarket", kalshi: "Kalshi", sec: "SEC" };
 
 export function LivePortfolio({ d }: { d: PortfolioData }) {
-  const roi = returnPct(d.record);
+  const roi = returnPct(d.record), rec = recordResult(d.record);
   return (
     <section className="sec3 lport" aria-labelledby="lport-h">
       <div className="wrap">
@@ -27,8 +26,8 @@ export function LivePortfolio({ d }: { d: PortfolioData }) {
             <span className="lport__name">{d.t.name}</span>
             <span className="lport__line">{d.t.line}</span>
             <span className="lport__nums">
-              <span><b>{roi ?? "—"}</b> ROI</span>
-              <RecordResult r={d.record} />
+              <span className="lport__fig"><b className={`lport__v lport__v--${roi ? returnTone(d.record) : "nil"}`}>{roi ?? "—"}</b><span>ROI</span></span>
+              <span className="lport__fig"><b className={`lport__v lport__v--${rec.amount ? rec.tone : "nil"}`}>{rec.amount ?? "—"}</b><span>{rec.amount ? `Net P&L · ${rec.status}` : "Net P&L · under 20 settled"}</span></span>
             </span>
           </Link>
           <div className="lport__body">

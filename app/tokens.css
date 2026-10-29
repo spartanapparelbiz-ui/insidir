@@ -13,6 +13,7 @@
   --grey-1b: #ececf0;
   --grey-2: #eaeaee;
   --grey-3: #6b6b73;
+  --grey-4: #b4b4bb; /* a missing figure: the grey "—" */
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
    * readable (4.5:1 on white and on the cards). Losses likewise. */
   --money: #0f7a45;

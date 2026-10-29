@@ -18,20 +18,11 @@ import type { Move, TraderRecord } from "./types";
 
 const YES_NO = /^(yes|no)$/i;
 
-/** "$412,000", "$1.2M", "$98M", "$8.77B". */
-export function dollars(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "";
-  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(2).replace(/\.?0+$/, "")}B`;
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a).toLocaleString("en-US")}`;
-  return `${s}$${a.toFixed(0)}`;
-}
+export { dollars } from "@/lib/money";
+import { dollars } from "@/lib/money";
 /** "+$1.2M", "−$40K" for record lines. */
 export function signedShort(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "+";
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a / 1e3)}K`;
-  return `${s}$${Math.round(a)}`;
+  return `${v < 0 ? "−" : "+"}${dollars(Math.abs(v))}`;
 }
 
 const clean = (t: string) => t.trim().replace(/\s+/g, " ");

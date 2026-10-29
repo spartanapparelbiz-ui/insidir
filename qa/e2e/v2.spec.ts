@@ -277,7 +277,7 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(page.getByRole("heading", { name: "Posts", level: 1 })).toBeVisible();
   const first = page.locator("[data-post]").first();
   await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
-  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top · Top-ranked trader: \$412,000 position on Chiefs to win\./);
+  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top · Top-ranked trader: \$412K position on Chiefs to win\./);
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
 });
 
@@ -287,8 +287,8 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
   await expect(insider.locator(".move__head")).toHaveText("E2E Fixture Devices stock, bought by its CEO");
-  // The amount is the card's result on the right, a purchase.
-  await expect(insider.locator(".res__amt")).toHaveText("$1.4M");
+  // The amount is said once, under the headline; the right side says what it is: a purchase.
+  await expect(insider.locator(".move__meta")).toContainText("$1.4M");
   await expect(insider.locator(".res__st")).toHaveText("Purchase");
   // Never "just bought": the filing day, then the trade date; the note carries both dates (in Details).
   await insider.locator(".move__more summary").click();

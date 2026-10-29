@@ -15,7 +15,7 @@ import { notFound } from "next/navigation";
 import { LineChart } from "@/components/charts/LineChart";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
-import { BreakdownTable, cents, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
+import { BreakdownTable, cents, gatedTile, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
 import { BY, TrackerRow } from "@/components/trackers/Tracker";
 import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
 import { FollowButton, type FollowState } from "@/components/v2/FollowButton";
@@ -88,7 +88,6 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
   const windows = CHART_WINDOWS.map(w => ({ key: w.key, label: w.label, since: w.days === null ? null : now - w.days * 86_400_000 }));
   const st = streak(settled), bd = bestDay(settled), bw = biggestWin(settled), bl = biggestLoss(settled);
   const ok = p.winRate !== null;
-  const gate = (v: string) => (ok ? v : NOT_ENOUGH);
   const move = priceMove((d?.open ?? []).map(o => ({ avgPrice: o.m.avgPrice, now: o.now })));
   const share = topShare(d?.year ?? [], w => d?.top.has(w) ?? false);
   const similar = TRACKERS.filter(o => o.group === t.group && o.slug !== t.slug && (!o.needs || isReady(o.needs))).slice(0, 4);
@@ -142,11 +141,11 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
             { label: "Average position size", value: act.avgBet === null ? "—" : dollars(act.avgBet) },
             { label: "Largest position", value: act.biggestBet === null ? "—" : dollars(act.biggestBet) },
             ...(t.kind === "bets" ? [
-              { label: "Largest gain", value: gate(bw ? signed(bw.pnl ?? 0) : "—"), tone: ok && bw ? "money" as const : undefined },
-              { label: "Largest loss", value: gate(bl ? signed(bl.pnl ?? 0) : "—"), tone: ok && bl ? "loss" as const : undefined },
-              { label: "Current streak", value: gate(streakText), tone: ok && st ? (st.kind === "won" ? "money" as const : "loss" as const) : undefined },
-              { label: bd && ok ? `Best day, ${DAY_FMT.format(new Date(`${bd.day}T12:00:00Z`))}` : "Best day", value: gate(bd ? signed(bd.net) : "—"), tone: ok && bd ? tone(bd.net) : undefined },
-              { label: "Price since the position, open positions", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)} pts`, tone: tone(move) },
+              { label: "Largest gain", ...gatedTile(bw ? signed(bw.pnl ?? 0) : "—", ok), tone: ok && bw ? "money" as const : undefined },
+              { label: "Largest loss", ...gatedTile(bl ? signed(bl.pnl ?? 0) : "—", ok), tone: ok && bl ? "loss" as const : undefined },
+              { label: "Current streak", ...gatedTile(streakText, ok), tone: ok && st ? (st.kind === "won" ? "money" as const : "loss" as const) : undefined },
+              { label: bd && ok ? `Best day, ${DAY_FMT.format(new Date(`${bd.day}T12:00:00Z`))}` : "Best day", ...gatedTile(bd ? signed(bd.net) : "—", ok), tone: ok && bd ? tone(bd.net) : undefined },
+              { label: "Price change, open positions", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)} pts`, tone: tone(move) },
               { label: "From top-ranked traders", value: share === null ? "—" : pct(share) },
             ] : []),
           ]} />

@@ -1,0 +1,18 @@
+visitor 1440 /insider-trading/EXDV: invisible text "1 insider bought this month" in p.sec__month
+visitor 1440 /insider-trading/EXDV: long money "$1,401,811" in dd.money
+visitor 1440 /insider-trading/EXDV: long money "$1,401,811" in td.
+visitor 390 /insider-trading/EXDV: invisible text "1 insider bought this month" in p.sec__month
+visitor 390 /insider-trading/EXDV: long money "$1,401,811" in dd.money
+visitor 390 /insider-trading/EXDV: long money "$1,401,811" in td.
+member 1440 /market/0xe2emarket1: invisible text "Follow market" in button.btn.btn--secondary
+member 1440 /insider-trading/EXDV: invisible text "1 insider bought this month" in p.sec__month
+member 1440 /insider-trading/EXDV: long money "$1,401,811" in dd.money
+member 1440 /insider-trading/EXDV: long money "$1,401,811" in td.
+member 1440 /insider-trading/EXDV: long money "$450,000" in td.
+member 1440 /insider-trading/EXDV: long money "$240,000" in td.
+member 390 /market/0xe2emarket1: invisible text "Follow market" in button.btn.btn--secondary
+member 390 /insider-trading/EXDV: invisible text "1 insider bought this month" in p.sec__month
+member 390 /insider-trading/EXDV: long money "$1,401,811" in dd.money
+member 390 /insider-trading/EXDV: long money "$1,401,811" in td.
+member 390 /insider-trading/EXDV: long money "$450,000" in td.
+member 390 /insider-trading/EXDV: long money "$240,000" in td.

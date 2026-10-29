@@ -32,7 +32,7 @@ test("same-outcome bets within the hour are one card; it opens to each bet; open
   await signIn(context, "insidir");
   await page.goto("/feed");
   const g = page.locator(".move--group", { hasText: "E2E Brewers vs. Cubs" });
-  await expect(g.locator(".move__head")).toHaveText("4 large positions on Brewers · $78,765");
+  await expect(g.locator(".move__head")).toHaveText("4 large positions on Brewers · $79K");
   await expect(g.locator(".move__subl")).toHaveText("E2E Brewers vs. Cubs · MLB");
   await expect(g.locator(".move__live")).toContainText("Entry 45% · now 61%");
   await expect(g.getByLabel("up")).toBeVisible();

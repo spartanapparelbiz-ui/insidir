@@ -3,6 +3,7 @@
  * faint baseline and nothing else (no gridlines, no border). Hover or drag shows a crisp tooltip with the exact
  * value and date. Optional dots (a market's big moves, sized by amount). Draws in once (off under reduced motion).
  * Windows (1W 1M 3M 1Y All) re-cut the same points on the client; the points are all sent by the server. */
+import { dollars } from "@/lib/money";
 import { useId, useMemo, useRef, useState, type PointerEvent } from "react";
 
 export interface ChartPoint { t: number; v: number }
@@ -48,7 +49,7 @@ export function LineChart({ points, dots = [], windows, format, baseline = "zero
 
   const fmt = (v: number) => format === "cents" ? `${Math.round(v * 100)}%`
     : format === "usd" ? (v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-    : `${v < 0 ? "−" : v > 0 ? "+" : ""}$${Math.round(Math.abs(v)).toLocaleString("en-US")}`;
+    : `${v < 0 ? "−" : v > 0 ? "+" : ""}${dollars(Math.abs(v))}`;
   if (view.length < 2) {
     return (
       <div className="lchart">

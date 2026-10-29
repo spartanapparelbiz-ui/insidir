@@ -32,7 +32,7 @@ describe("home curation", () => {
     expect(homeCopy(mv({ tab: "stocks", source: "sec", amount: 8_700_000, detail: { kind: "insider", company: "Corebridge Financial, Inc.", ticker: "CRBG", ownerName: "NIPPON LIFE INSURANCE", tradeDate: "2026-10-22", filedAt: Date.parse("2026-10-24T15:00:00Z"), pricePerShare: 35 } as Move["detail"] }), "x"))
       .toEqual({ line: "Nippon Life bought $8.7M of Corebridge (CRBG)", context: "Traded Oct 22 · filed Oct 24" });
     expect(homeCopy(mv({ tab: "sports", league: "NBA", amount: 566_682, marketTitle: "Spread: Thunder (-8.5)", outcome: "Suns" }), "googleplay"))
-      .toEqual({ line: "googleplay put $566,682 on Suns", context: "Spread: Thunder (-8.5)" });
+      .toEqual({ line: "googleplay put $567K on Suns", context: "Spread: Thunder (-8.5)" });
     expect(trimTitle("Will the Democratic Party control the House after the 2026 midterm elections?")).toBe("Will the Democratic Party control the House…");
     expect(trimTitle("Will AS Roma win on 2026-10-27?")).toBe("Will AS Roma win?");
     expect(compactDollars(48_120)).toBe("$48K");

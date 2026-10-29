@@ -4,6 +4,9 @@
 import { expect, test } from "@playwright/test";
 import { q, signIn } from "./helpers";
 
+/** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
+const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
+
 test("members open the app on Trackers: every tracker ranked by ROI with what it holds now, then today's largest positions", async ({ page, context }) => {
   test.setTimeout(120_000);
   await signIn(context, "insidir");
@@ -19,7 +22,7 @@ test("members open the app on Trackers: every tracker ranked by ROI with what it
   const whales = page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold");
   // Worked out from the rows: everything open in the tracker over 60 days (other runs may have tagged more).
   const [h] = await q<{ n: number; total: number }>("select count(*)::int as n, coalesce(sum(amount), 0)::float as total from terminal.moves where 'biggest-bets' = any(trackers) and result is null and hidden_at is null and at > now() - interval '60 days'");
-  const line = `${h!.n.toLocaleString("en-US")} open · $${Math.round(h!.total).toLocaleString("en-US")} · largest: `;
+  const line = `${h!.n.toLocaleString("en-US")} open · ${money(h!.total)} · largest: `;
   await expect.poll(async () => { await page.reload(); return whales.innerText(); }, { timeout: 75_000, intervals: [5_000] }).toMatch(new RegExp(`^${line.replace(/[$.]/g, "\\$&")}`));
   expect(await whales.innerText()).toMatch(/largest: \S/);
   await q("update terminal.moves set trackers = null where id = 'e2e:m1'");

@@ -244,6 +244,12 @@ export function returnPct(r: TrackerRecord | null | undefined): string | null {
   return `${p > 0 ? "+" : p < 0 ? "−" : ""}${Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1)}%`;
 }
 
+/** ROI coloured like any gain or loss: green above zero, red below. */
+export function returnTone(r: TrackerRecord | null | undefined): "won" | "lost" | "none" {
+  const v = returnPct(r);
+  return v === null ? "none" : v.startsWith("+") ? "won" : v.startsWith("−") ? "lost" : "none";
+}
+
 /** What a record returned on the money in it (net / staked), or −∞ without the money to tell. */
 export const returnOf = (r: TrackerRecord): number => (r.staked && r.staked > 0 ? r.net / r.staked : Number.NEGATIVE_INFINITY);
 

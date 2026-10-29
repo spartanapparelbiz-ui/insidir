@@ -131,7 +131,7 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
         <div className="wrap">
           <div className="feed2__head"><div className="feed2__meta"><p className="status status--live"><span className="status__dot" />Live · updated 2s ago</p></div></div>
           <div className="tabs">{["Sports", "Markets", "Stocks"].map(t => <span key={t} className="tabs__tab" aria-pressed={t.toLowerCase() === d.move.tab}>{t}</span>)}<span className="tabs__tab tabs__tab--soon">Crypto <span className="soon soon--short">Soon</span></span></div>
-          <div className="chips">{["$10k+", "$50k+", "$100k+"].map((c, k) => <span key={c} className="chip2" aria-pressed={k === 0}>{c}</span>)}</div>
+          <div className="chips">{["$10K+", "$50K+", "$100K+"].map((c, k) => <span key={c} className="chip2" aria-pressed={k === 0}>{c}</span>)}</div>
           <div className="ios-new"><span className="btn btn--primary newmoves__btn">1 new position · Show</span></div>
           <ol className="feed2__list ios-list">{[card(d.move, true), ...d.feed.map(m => card(m))]}</ol>
         </div>

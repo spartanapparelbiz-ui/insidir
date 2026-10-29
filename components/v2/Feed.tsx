@@ -19,7 +19,7 @@ import { MoveCard } from "./MoveCard";
 import { agoText, clockET } from "@/lib/moves/copy";
 import { compactDollars as dollarsShort } from "@/lib/home/curate";
 
-const SIZES = [{ min: 10_000, label: "$10k+" }, { min: 50_000, label: "$50k+" }, { min: 100_000, label: "$100k+" }] as const;
+const SIZES = [{ min: 10_000, label: "$10K+" }, { min: 50_000, label: "$50K+" }, { min: 100_000, label: "$100K+" }] as const;
 const SPORT_LEAGUES: League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf"];
 const POLL_MS = 10_000;
 /** Open cards' "now" prices are read again this often (/api/moves/now). */

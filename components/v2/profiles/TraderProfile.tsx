@@ -120,7 +120,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
             <Section id="cat-h" title="By category">
               <Table label="By category" head={["Category", "Markets", "W–L", "Win rate", "Net P&L"]} numeric={[1, 2, 3, 4]}
                 rows={s.categories.map(c => [c.category, (c.won + c.lost).toLocaleString("en-US"), `${c.won}–${c.lost}`,
-                  c.won + c.lost >= 20 ? pct(c.won / (c.won + c.lost)) : <span key="n" className="tile__na">{NOT_ENOUGH}</span>, <span key="p" className={tone(c.profit)}>{signed(c.profit)}</span>])} />
+                  c.won + c.lost >= 20 ? pct(c.won / (c.won + c.lost)) : "—", <span key="p" className={tone(c.profit)}>{signed(c.profit)}</span>])} />
             </Section>
 
             <Section id="side-h" title="Favorite vs underdog" note="Their settled large positions, by their entry.">

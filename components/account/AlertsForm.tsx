@@ -43,7 +43,7 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
         <div className="agroup__body">
           <ul className="alist">
             <li>Every new position from a trader you follow.</li>
-            <li>Every position of $50,000 or more in a market you follow.</li>
+            <li>Every position of $50K or more in a market you follow.</li>
           </ul>
           <p className="afield__hint">Follow traders and markets from the feed, a trader&apos;s page or a market&apos;s page.</p>
           <Toggle name="alertSplits" label="New divergences of 15+ points" hint={<>When proven traders and the market diverge on a market, or insiders purchase a falling stock (<a href="/splits">Positioning</a>).</>}

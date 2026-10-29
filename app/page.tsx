@@ -187,7 +187,7 @@ export default async function Home() {
                 <ol className="tlist">
                   {pop.map(({ t, s, followers, tracked30d }, i) => (
                     <TrackerRow key={t.slug} t={t} rank={i + 1} s={coverStats(s)}
-                      figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No positions yet"} />
+                      figure={followers > 0 ? { value: followers.toLocaleString("en-US"), label: followers === 1 ? "follower" : "followers" } : tracked30d > 0 ? { value: dollars(tracked30d), label: "30-day volume" } : { value: null, label: "No positions yet" }} />
                   ))}
                 </ol>
               ) : <p className="tlist__empty">Catching up: the trackers fill in as the first positions arrive.</p>}

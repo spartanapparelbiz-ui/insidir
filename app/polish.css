@@ -221,8 +221,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .tbook__name { font-size: var(--t17); font-weight: 600; }
 .tbook__row:hover .tbook__name { text-decoration: underline; text-underline-offset: 3px; }
 .tbook__hold { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tbook__roi { grid-area: roi; display: grid; justify-items: end; font-size: var(--t17); font-weight: 600; font-variant-numeric: tabular-nums; }
-.tbook__roi span { color: var(--muted); font-size: 12px; font-weight: 500; }
+.tbook__row .tbook__roi { grid-area: roi; }
 .tbook__row .res { grid-area: res; }
 
 /* ---------- home: a live portfolio (components/home/LivePortfolio.tsx) ---------- */
@@ -235,8 +234,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .lport__name { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; }
 .lport__head:hover .lport__name { text-decoration: underline; text-underline-offset: 4px; }
 .lport__line { color: var(--muted); }
-.lport__nums { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: var(--t13); }
-.lport__nums b { color: var(--ink); font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; margin-right: 6px; }
 .lport__body { display: grid; border-top: 1px solid var(--line); }
 @media (min-width: 900px) { .lport__body { grid-template-columns: 1fr 1fr; } .lport__col + .lport__col { border-left: 1px solid var(--line); } }
 .lport__col { padding: 20px 24px; min-width: 0; }
@@ -252,3 +249,55 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .lport__none { color: var(--muted); padding: 14px 0; }
 .lport__foot { padding: 16px 24px 20px; border-top: 1px solid var(--line); }
 @media (min-width: 900px) { .lport__foot { padding: 16px 32px 24px; } }
+
+/* ---------- Numbers: one system ----------
+ * Money is one format ($9.4K, $412K, $1.2M; lib/moves/copy.ts dollars). Every figure is tabular and lining. Three sizes:
+ * a headline figure (32, tiles and the live portfolio), a row figure (15, the right-hand column of any list) and inline
+ * (the text size). A figure sits over its grey label; a missing one is a light grey "—" at the same size, so rows and
+ * tiles keep one height and columns line up. Colour only for gains and losses. */
+.res, .tile dd, .lport__v, .dtable td, .table td, .tbook__hold, .move__meta, .rlist__amt, .rlist__when { font-variant-numeric: tabular-nums lining-nums; }
+.res { min-width: 72px; }
+.res__amt--nil, .tile dd.tile__nil, .lport__v.lport__v--nil { color: var(--grey-4); font-weight: 500; }
+.res__st { line-height: 16px; }
+.res__amt { line-height: 20px; }
+
+/* Tiles: the figure on one line, the label under it, the note (why it's empty) under that. */
+.tile dd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
+.tile dt { line-height: 18px; }
+.tile dd.tile__note { order: 3; margin: 0; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0; line-height: 16px; white-space: normal; }
+.tile dd.tile__nil { letter-spacing: 0; }
+
+/* Trackers list: rank, cover, name and holdings, then two figure columns of the same build (ROI, Net P&L), right-aligned. */
+.tbook__row { grid-template-columns: 20px 44px minmax(0, 1fr) auto auto; grid-template-areas: "rank thumb who roi res"; column-gap: 12px; }
+.tbook__thumb { width: 44px; height: 44px; }
+@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 112px 112px; column-gap: 16px; } .tbook__thumb { width: 56px; height: 56px; } }
+.tbook__rank { font-size: var(--t13); font-weight: 500; text-align: right; }
+.tbook__row .res { min-width: 0; }
+
+/* The live portfolio: ROI and Net P&L as two headline figures over their labels. */
+.lport__nums { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-top: 20px; }
+.lport__fig { display: grid; gap: 4px; }
+.lport__fig > span { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 16px; }
+.lport__v { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+.lport__v--won { color: var(--money-text); }
+.lport__v--lost { color: var(--loss-text); }
+
+/* Track record: the list fills the column, the result in a fixed column, the time at the right edge. */
+.rlist { max-width: none; }
+.rlist__row { grid-template-columns: 96px minmax(0, 1fr) auto; column-gap: 24px; }
+@media (min-width: 700px) { .rlist__row { grid-template-columns: 184px minmax(0, 1fr) auto; } }
+.rlist__res { font-size: var(--t15); line-height: 20px; }
+@media (min-width: 700px) { .rlist__res { white-space: nowrap; } }
+
+/* The page's one black button: Follow on a tracker or a market (outlined once on). */
+.mhead__act .btn:first-child::after { content: none !important; }
+.mhead__act .btn:first-child { min-height: var(--btn-h); padding: 0 28px; border-radius: var(--r-btn); background: var(--ink) !important; color: var(--paper); gap: 8px; }
+.mhead__act .btn:first-child:hover { background: var(--press) !important; text-decoration: none; }
+.mhead__act .follow--on { background: var(--paper) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink) !important; }
+.thead__act .btn, .thead__act .btn--secondary { min-height: var(--btn-h); padding: 0 28px; border-radius: var(--r-btn); background: var(--ink) !important; color: var(--paper); gap: 8px; }
+.thead__act .btn:hover { background: var(--press) !important; text-decoration: none; }
+.thead__act .btn::after { content: none !important; }
+.thead__act .follow--on { background: var(--paper) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink) !important; }
+
+/* The insider page's month line sat on a dark band that the light theme removed. */
+.sec__month { color: var(--ink); }

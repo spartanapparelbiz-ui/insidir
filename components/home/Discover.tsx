@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RecordResult } from "@/components/trackers/Tracker";
 import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
 import { Section, Table } from "@/components/stats/Stats";
+import { Result } from "@/components/ui/Result";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
 import { isReady } from "@/lib/features";
@@ -15,10 +16,11 @@ import { agoText, clockET, dollars } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { headlineOf } from "@/lib/moves/headline";
-import { hasTrackerRecord, returnPct, topPerformers, trackerHref, visibleTrackers } from "@/lib/trackers";
+import { hasTrackerRecord, returnPct, returnTone, topPerformers, trackerHref, visibleTrackers } from "@/lib/trackers";
 import { trackerHoldings, trackerStats, type TrackerHolding } from "@/lib/trackers-store";
 
 const marketHref = (id: string) => `/market/${encodeURIComponent(id)}`;
+
 
 /** "12 open · $4.1M · largest: Warriors to beat the Timberwolves", or that it holds nothing right now. */
 export function holdingLine(h: TrackerHolding | undefined): string {
@@ -55,8 +57,10 @@ export async function Discover({ db, viewer, now }: { db: Db | null; viewer: Vie
                 <span className="tbook__name">{t.name}</span>
                 <span className="tbook__hold">{holdingLine(holdings.get(t.slug))}</span>
               </span>
-              <span className="tbook__roi">{returnPct(record) ?? "—"}<span>{t.kind === "filings" ? "filings don't settle" : "ROI"}</span></span>
-              <RecordResult r={record} />
+              {t.kind === "filings"
+                ? <Result className="tbook__roi" amount={s?.tracked30d ? dollars(s.tracked30d) : null} status="30-day volume" dash />
+                : <Result className="tbook__roi" amount={returnPct(record)} tone={returnTone(record)} status="ROI" dash />}
+              {t.kind === "filings" ? <Result amount={null} status="Filings" dash /> : <RecordResult r={record} dash />}
             </Link>
           </li>
         ))}

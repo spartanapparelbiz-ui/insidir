@@ -92,7 +92,7 @@ describe("display names", () => {
 
 describe("stocks", () => {
   it("money in B and M", () => {
-    expect(dollars(8_770_000_000)).toBe("$8.77B");
+    expect(dollars(8_770_000_000)).toBe("$8.8B");
     expect(dollars(98_000_000)).toBe("$98M");
     expect(dollars(1_400_000)).toBe("$1.4M");
     expect(dollars(2_000_000_000)).toBe("$2B");
@@ -104,7 +104,7 @@ describe("stocks", () => {
     expect(companyWithClass("ALPHABET", "C")).toBe("Alphabet Class C");
     const fund = { kind: "fund" as const, company: "ALPHABET", cusip: "02079K305", fund: "TIGER GLOBAL MANAGEMENT LLC", fundCik: "1", period: "2026-09-30", filedOn: "2026-10-20",
       addedShares: 1, prevShares: 1, curShares: 2, curValue: 1, newPosition: false, accession: "a", prevAccession: "b" };
-    expect(stockSentence(fund, 8_770_000_000)).toBe("13F · Q3 2026 · Tiger Global Management added $8.77B of Alphabet Class A.");
+    expect(stockSentence(fund, 8_770_000_000)).toBe("13F · Q3 2026 · Tiger Global Management added $8.8B of Alphabet Class A.");
   });
 });
 

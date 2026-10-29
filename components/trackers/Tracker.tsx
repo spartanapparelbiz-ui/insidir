@@ -10,9 +10,9 @@ import { TrackerCover, type CoverStats } from "./TrackerCover";
 export const BY = "by Insidir";
 
 /** The record on the right: the net in green or red, "Won 63%" in grey under it, or just "New". */
-export function RecordResult({ r }: { r: TrackerRecord | null | undefined }) {
+export function RecordResult({ r, dash = false }: { r: TrackerRecord | null | undefined; dash?: boolean }) {
   const p = recordResult(r);
-  return <Result amount={p.amount} tone={p.tone} status={p.status} />;
+  return <Result amount={p.amount} tone={p.tone} status={p.status} dash={dash} />;
 }
 
 /** "Won 63% · 412 settled · avg 41% chance · +$1.2M net", or why there's no record yet. */
@@ -41,8 +41,8 @@ export function TrackerFeature({ t, s, i = 0 }: { t: Tracker; s?: CoverStats | n
   );
 }
 
-/** A ranked row: the small cover, name, "by Insidir", the record (or a figure) on the right, chevron. */
-export function TrackerRow({ t, r, s, figure, rank }: { t: Tracker; r?: TrackerRecord | null; s?: CoverStats | null; figure?: string; rank?: number }) {
+/** A ranked row: the small cover, name, "by Insidir", the record (or a figure over its label) on the right, chevron. */
+export function TrackerRow({ t, r, s, figure, rank }: { t: Tracker; r?: TrackerRecord | null; s?: CoverStats | null; figure?: { value: string | null; label: string }; rank?: number }) {
   return (
     <li>
       <Link className="trow" href={trackerHref(t.slug)}>
@@ -52,7 +52,7 @@ export function TrackerRow({ t, r, s, figure, rank }: { t: Tracker; r?: TrackerR
           <span className="trow__name">{t.name}</span>
           <span className="trow__by">{BY}</span>
         </span>
-        {figure ? <span className="trow__fig">{figure}</span> : <RecordResult r={r} />}
+        {figure ? <Result amount={figure.value} status={figure.label} dash /> : <RecordResult r={r} dash />}
         <Chevron />
       </Link>
     </li>

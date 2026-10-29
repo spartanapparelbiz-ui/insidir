@@ -12,7 +12,7 @@ export default function SportsPage() {
     line: "Large positions on the games as they are opened: the account, the size, and its record.",
     covers: ["NFL", "NBA", "MLB", "NHL", "College", "Soccer", "UFC", "Tennis", "Golf"],
     card: [
-      ["How much, on what", "The position in one plain sentence: how much went on which side. $10,000 and up."],
+      ["How much, on what", "The position in one plain sentence: how much went on which side. $10K and up."],
       ["What it pays", "What every $100 pays if they're right, at the price they got."],
       ["Who it is", "The trader's name or wallet, with their record: games won, games lost, all-time net P&L."],
       ["How it ended", "Every position is marked won or lost when the game settles. Losses included."],

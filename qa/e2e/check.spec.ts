@@ -54,8 +54,8 @@ test("a visitor checks a 3-leg parlay: every leg matched with a verdict, a share
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("1 of 3 legs has smart money against you.");
   await expect(page.getByText("3-leg parlay")).toBeVisible();
   await expect(page.getByTestId("verdict-0")).toHaveText("Smart money against you");
-  await expect(page.getByTestId("leg-0")).toContainText("$70,000 on Brewers (70%) · $30,000 on Cubs");
-  await expect(page.getByTestId("leg-0")).toContainText("0% on Brewers · 2 traders, $6,000 in");
+  await expect(page.getByTestId("leg-0")).toContainText("$70K on Brewers (70%) · $30K on Cubs");
+  await expect(page.getByTestId("leg-0")).toContainText("0% on Brewers · 2 traders, $6K in");
   await expect(page.getByTestId("leg-0")).toContainText("your slip 54.5%");
   await expect(page.getByTestId("verdict-1")).toHaveText("Smart money with you");
   await expect(page.getByTestId("verdict-2")).toHaveText("No large positions yet");

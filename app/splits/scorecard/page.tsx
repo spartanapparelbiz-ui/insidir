@@ -44,8 +44,8 @@ export default async function ScorecardPage() {
         <Tiles cols={4} label="Scorecard" tiles={[
           { label: "Divergences flagged", value: rows.length.toLocaleString("en-US") },
           { label: "Scored so far", value: all.scored.toLocaleString("en-US") },
-          { label: "Proven traders right, markets", value: share(mk) ?? <span className="tile__na">None scored yet</span> },
-          { label: "Insiders and funds right, stocks", value: share(st) ?? <span className="tile__na">None scored yet</span> },
+          { label: "Proven traders right, markets", ...(share(mk) ? { value: share(mk) } : { value: "—", note: "None scored yet" }) },
+          { label: "Insiders and funds right, stocks", ...(share(st) ? { value: share(st) } : { value: "—", note: "None scored yet" }) },
         ]} />
         <Section id="sc-h" title="Every flagged divergence" note={`Markets are scored when they settle: proven traders were right if the side they leaned to, against the market, won. Stocks are scored ${STOCK_WINDOW_DAYS} days after the flag: right if the price is higher. Past results, not a promise.`}>
           {rows.length ? (

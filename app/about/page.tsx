@@ -22,7 +22,7 @@ export default async function AboutPage() {
           <p className="lp-about__lead">Insidir shows you the largest positions on sports and prediction markets the second they happen, in plain English.</p>
 
           <h2>Why it exists</h2>
-          <p>A $100,000 position on one side of a game or a question is worth knowing about. The data is public, but it&apos;s buried in raw trade logs. Insidir watches them all day and turns each big position into one sentence you can read in a second.</p>
+          <p>A $100K position on one side of a game or a question is worth knowing about. The data is public, but it&apos;s buried in raw trade logs. Insidir watches them all day and turns each big position into one sentence you can read in a second.</p>
 
           <h2>Where the data comes from</h2>
           <ul>

@@ -38,8 +38,8 @@ function Sentence({ m }: { m: FeedItem }) {
 
 const pctOf = (p: number) => `${Math.round(p * 100)}%`;
 
-/** The result on the right: settled, the real P&L in green or red over "Won" / "Lost" ("Refunded" alone); open, the
- *  money in over "Pending"; a filing, the money over "Purchase". */
+/** The result on the right: settled, the real P&L in green or red over "Won" / "Lost" ("Voided" alone); open, "Open";
+ *  a filing, "Purchase". The size is said once, in the line under the headline. */
 function CardResult({ m }: { m: FeedItem }) {
   if (m.result) {
     const status = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Voided";
@@ -47,7 +47,7 @@ function CardResult({ m }: { m: FeedItem }) {
     const amount = v !== null && m.result !== "void" ? `${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : null;
     return <span data-testid="move-result"><Result amount={amount} tone={m.result === "won" ? "won" : m.result === "lost" ? "lost" : "none"} status={status} /></span>;
   }
-  return <Result amount={short(m.amount)} status={m.source === "sec" ? "Purchase" : "Pending"} />;
+  return <Result status={m.source === "sec" ? "Purchase" : "Open"} />;
 }
 
 /** Open: "Entry 45% · now 61% ↑". */
@@ -83,7 +83,6 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
     <article className={`move move2${fresh ? " move--fresh" : ""}${m.bets ? " move--group" : ""}`} data-move={m.id}>
       <div className="move__top">
         <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
-        <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
       <div className="move__hrow">
         <h3 className="move__head">{m.headline}</h3>

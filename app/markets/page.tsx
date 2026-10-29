@@ -13,7 +13,7 @@ export default function MarketsPage() {
     line: "Large positions on elections, the Fed, the economy and world events, as they are opened.",
     covers: ["Elections", "The Fed", "Economy", "World events", "Companies", "Culture"],
     card: [
-      ["How much, on what", "The position in one plain sentence: how much went on which answer. $10,000 and up."],
+      ["How much, on what", "The position in one plain sentence: how much went on which answer. $10K and up."],
       ["What it pays", "What every $100 pays if they're right, at the price they got."],
       ["Who it is", "Polymarket traders by name or wallet, with their record and all-time net P&L."],
       ["How it ended", "Every market is marked won or lost when it resolves. Losses included."],
