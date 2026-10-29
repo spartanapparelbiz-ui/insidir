@@ -23,5 +23,5 @@ export function groupBets<T extends Groupable>(items: readonly T[], windowMs = G
 
 /** "4 big bets on Brewers · $68,765" */
 export function groupTitle(n: number, side: string, total: number): string {
-  return `${n} big bets on ${side} · $${Math.round(total).toLocaleString("en-US")}`;
+  return `${n} large positions on ${side} · $${Math.round(total).toLocaleString("en-US")}`;
 }

@@ -129,13 +129,13 @@ describe("the words", () => {
 
   it("card line, gap, link and alert", () => {
     const s = { ...base, kind: "crowd" as const, crowd: 0.62, smart: 0.81, detail: { yesLabel: "Yes", wallets: 4 } };
-    expect(splitLine(s)).toBe("Crowd 62% · Smart money 81%");
-    expect(splitLine({ ...s, kind: "bigmoney", crowd: 0.7, smart: 0.3, detail: { yesLabel: "Brewers" } })).toBe("Big bets 70% · Proven traders 30% on Brewers");
+    expect(splitLine(s)).toBe("Market 62% · Proven traders 81%");
+    expect(splitLine({ ...s, kind: "bigmoney", crowd: 0.7, smart: 0.3, detail: { yesLabel: "Brewers" } })).toBe("Large positions 70% · Proven traders 30% on Brewers");
     expect(gapLabel(s)).toBe("19 pts apart");
     expect(splitHref(s)).toBe("/market/0xa");
     const msg = splitMessage(s, "https://insidir.com");
-    expect(msg.title).toBe("Smart money vs. the crowd: 19 pts");
-    expect(msg.body).toBe("Will the Fed cut in December? Crowd 62% · Smart money 81% (4 proven traders). Data, not a recommendation.");
+    expect(msg.title).toBe("Proven traders vs. the market: 19 pts");
+    expect(msg.body).toBe("Will the Fed cut in December? Market 62% · Proven traders 81% (4 proven traders). Data, not a recommendation.");
     expect(msg.body).toContain("Data, not a recommendation.");
     expect(msg.url).toBe("https://insidir.com/market/0xa?from=split");
     expect(SPLIT_ALERT_GAP).toBe(15);

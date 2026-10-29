@@ -16,7 +16,7 @@ import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
 import type { Plan, Region } from "@/lib/types";
-import { agoText, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
+import { agoText, ANONYMOUS, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
 import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
 import { moveSource, type SourceLink } from "./source";
@@ -60,7 +60,7 @@ export interface FeedItem {
    *  or a stock's trade and filing dates). */
   context?: string | null;
   /** Who moved, as the sentence names them, and their profile (/p/[id]); Kalshi traders are anonymous (no link). */
-  who: { name: string; href: string | null; badge: "New wallet" | null };
+  who: { name: string; href: string | null; badge: "New account" | null };
   /** Their Polymarket picture, or the monogram (lib/moves/avatar.ts). */
   face: Face;
   /** "Why this matters": at most one fact (lib/profiles/why.ts). */
@@ -168,9 +168,9 @@ export function whoOf(m: Move): FeedItem["who"] {
   const d = m.detail;
   if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik, name: d.ownerName }) : null, badge: null };
   if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik, name: d.fund }), badge: null };
-  if (m.source === "kalshi" || !m.wallet) return { name: "Someone", href: null, badge: null };
+  if (m.source === "kalshi" || !m.wallet) return { name: ANONYMOUS, href: null, badge: null };
   return { name: walletLabel(m.wallet, m.walletName), href: profileHref({ kind: "trader", wallet: m.wallet }),
-    badge: m.newWallet ? "New wallet" : null };
+    badge: m.newWallet ? "New account" : null };
 }
 
 export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {

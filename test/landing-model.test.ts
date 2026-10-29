@@ -90,7 +90,7 @@ describe("pricing cards come from PLANS", () => {
 
   it("features follow the entitlements", () => {
     const free = planFeatures(PLANS.free.entitlements);
-    expect(free).toEqual(expect.arrayContaining(["Feed delayed 30 min", "Top 3 deals", "Sizes and dollar profit hidden", "Daily email digest"]));
+    expect(free).toEqual(expect.arrayContaining(["Feed delayed 30 min", "Top 3 deals", "Sizes and dollar net P&L hidden", "Daily email digest"]));
     const ins = planFeatures(PLANS.insidir.entitlements);
     expect(ins).toEqual(expect.arrayContaining(["Full live feed", "Instant push alerts, in seconds", "Calculator", "Whale tracker", "Full receipts history"]));
   });

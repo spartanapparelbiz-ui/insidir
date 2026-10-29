@@ -20,7 +20,7 @@ import { redirect } from "next/navigation";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Live feed", description: "The biggest bets on sports and prediction markets the second they happen, in plain English." };
+export const metadata: Metadata = { title: "Activity", description: "Large positions on sports and prediction markets as they are opened, with SEC insider filings." };
 
 export default async function FeedPage({ searchParams }: { searchParams: Promise<{ first?: string; welcome?: string; tab?: string }> }) {
   const now = Date.now();

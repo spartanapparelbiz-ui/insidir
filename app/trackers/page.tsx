@@ -12,7 +12,7 @@ import { GROUPS, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
 import { trackerStats, type TrackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Trackers", description: "Follow the big money by tracker: whales, top traders, underdogs and steam, every major league, the Fed, elections, CEO buys, cluster buys and big funds." };
+export const metadata: Metadata = { title: "Trackers", description: "Trackers of large positions: whales, top-ranked traders, long shots, momentum, every major league, the Fed, elections, CEO purchases, insider clusters and new fund positions." };
 
 export default async function TrackersPage() {
   const now = Date.now();
@@ -24,7 +24,7 @@ export default async function TrackersPage() {
       <main className="wrap app2 trackers">
         <header className="phead">
           <h1 className="phead__h">Trackers</h1>
-          <p className="phead__sub">Each one follows a kind of big money, built from public trades and filings. Follow one to get its moves in Following, and an alert when it moves.</p>
+          <p className="phead__sub">Each tracker is a live portfolio of large positions that fit one rule, built from public trades and filings. Follow one to see its new positions in Following.</p>
         </header>
         <nav className="dfilters tgroups" aria-label="Groups">{GROUPS.map(g => <a key={g} className="tlink" href={`#g-${g.toLowerCase()}`}>{g}</a>)}</nav>
         {GROUPS.map(g => (

@@ -28,7 +28,7 @@ const clock = (ms: number): string => new Date(ms).toLocaleTimeString("en-US", {
 /** "Closed 4 min ago. Members got it at 3:14 PM. You'd see it at 3:44 PM." From the event's own times only. */
 export function missedLine(d: Pick<LiveDealClosed, "firstSeenAt" | "closedAt">, delayMs: number, now: number): string {
   const min = Math.floor(Math.max(0, now - d.closedAt) / 60_000);
-  const closed = min < 1 ? "Closed just now." : `Closed ${min} min ago.`;
+  const closed = min < 1 ? "Closed now." : `Closed ${min} min ago.`;
   return `${closed} Members got it at ${clock(d.firstSeenAt)}. You'd see it at ${clock(d.firstSeenAt + delayMs)}.`;
 }
 

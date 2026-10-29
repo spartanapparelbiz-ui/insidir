@@ -31,7 +31,7 @@ function tapeText(e: LiveEvent, now: number): string | null {
   switch (e.type) {
     case "deal_found": return `New deal: ${e.data.row.title}, ${pct(e.data.row.roi)} after fees, ${agoOrNow(e.data.row.foundAt, now)}`;
     case "deal_closed": return e.data.title ? `Closed: ${e.data.title}, lasted ${span(e.data.lifeMs)}` : `Closed: a deal only members saw, lasted ${span(e.data.lifeMs)}`;
-    case "whale": return `Big bet: ${usd(e.data.cash)} on ${e.data.outcome}, ${e.data.marketTitle}`;
+    case "whale": return `Big position: ${usd(e.data.cash)} on ${e.data.outcome}, ${e.data.marketTitle}`;
     default: return null;
   }
 }

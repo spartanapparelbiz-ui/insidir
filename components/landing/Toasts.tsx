@@ -46,11 +46,11 @@ export function Toasts({ serverNow }: { serverNow: number }) {
       if (r.safety !== "green" || r.kind === "second_opinion") return;
       show(e.id, delayed
         ? `New green deal: ${pct(r.roi)} on ${r.title}. Members saw it ${ago(r.foundAt, nowRef.current)}.`
-        : `New green deal just found: ${pct(r.roi)} on ${r.title}.`);
+        : `New green deal found: ${pct(r.roi)} on ${r.title}.`);
     });
     const offClosed = live.on("deal_closed", e => {
       const n = Math.max(1, Math.round((nowRef.current - e.data.firstSeenAt) / 60_000));
-      show(e.id, `A deal just closed after ${span(e.data.lifeMs)}. Members caught it ${n} min ago.`);
+      show(e.id, `A deal closed after ${span(e.data.lifeMs)}. Members saw it ${n} min ago.`);
     });
     return () => { offFound(); offClosed(); };
   }, [live, delayed]);

@@ -18,8 +18,8 @@ export function RecordResult({ r }: { r: TrackerRecord | null | undefined }) {
 /** "Won 63% · 412 settled · avg 41% chance · +$1.2M net", or why there's no record yet. */
 export function recordText(r: TrackerRecord | null | undefined, kind: Tracker["kind"]): string {
   if (kind === "filings") return "Filings don't settle, so there's no win record.";
-  if (!hasTrackerRecord(r)) return "New: under 20 settled moves, no record yet.";
-  const price = r.oddsPct !== null ? ` · avg ${Math.round(r.oddsPct)}% chance` : "";
+  if (!hasTrackerRecord(r)) return "New: under 20 settled positions, no record yet.";
+  const price = r.oddsPct !== null ? ` · average entry ${Math.round(r.oddsPct)}%` : "";
   return `Won ${r.won}, lost ${r.lost} (${winPct(r)}%)${price} · ${signedShort(r.net)} net`;
 }
 
@@ -69,7 +69,7 @@ export function TrackerTile({ t, r, tracked30d, s, i = 0 }: { t: Tracker; r: Tra
           <span className="ttile__top"><span className="ttile__name">{t.name}</span>{t.kind === "bets" ? <RecordResult r={r} /> : null}</span>
           <span className="ttile__by">{BY}</span>
           <span className="ttile__line">{t.line}</span>
-          <span className="ttile__meta">{tracked30d > 0 ? `${dollars(tracked30d)} tracked in 30 days` : "No moves in the last 30 days"}</span>
+          <span className="ttile__meta">{tracked30d > 0 ? `${dollars(tracked30d)} 30-day volume` : "No positions in the last 30 days"}</span>
         </span>
       </Link>
     </li>

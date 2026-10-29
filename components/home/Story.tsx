@@ -20,12 +20,12 @@ import type { FeedItem } from "@/lib/moves/feed";
 import { clockET } from "@/lib/moves/copy";
 
 const TITLE = "How Insidir works in 10 seconds";
-const PAST = "A real past move by a top trader.";
+const PAST = "A real past position by a top-ranked trader.";
 const CAPTIONS = [
-  "A big bet happens.",
-  "Insidir catches it in seconds.",
-  "See who it is and if they usually win.",
-  "Get pinged next time they move.",
+  "A large position is opened.",
+  "Insidir records it within seconds.",
+  "The account and its record, in one view.",
+  "An alert on its next position.",
 ] as const;
 
 /* ---------- An iPhone 15 Pro showing Insidir exactly as it looks on iOS ----------
@@ -66,7 +66,7 @@ function AppNav() {
 function AppTabs({ on }: { on: string }) {
   return (
     <nav className="tabbar">
-      {["Feed", "Top", "Following", "Account"].map(t => (
+      {["Trackers", "Activity", "Following", "Account"].map(t => (
         <span key={t} className="tabbar__item" aria-current={t === on ? "page" : undefined}><TabIcon name={t} /><span>{t}</span></span>
       ))}
     </nav>
@@ -113,26 +113,26 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
     <div key={m.id} className={lead ? "ios-lead" : undefined}><MoveCard m={m} follow="off" trialHref={NOOP} /></div>
   );
   if (i === 0) return (
-    <AppScreen time={time} tab="Feed">
+    <AppScreen time={time} tab="Activity">
       <div className="app2 market">
         <Band n={TAB_PHOTO(d.move.tab)} title={d.move.marketTitle} kicker={d.move.eventTitle !== d.move.marketTitle ? d.move.eventTitle : undefined} />
         <div className="wrap">
           <div className="market__head">{d.move.payout ? <div className="market__pays"><p>{d.move.payout}</p></div> : null}<span className="btn btn--secondary ios-btn">Follow market</span></div>
-          <p className="block__h ios-block">Big moves in this market</p>
+          <p className="block__h ios-block">Large positions in this market</p>
           <div className="feed2__list ios-list">{card(d.move, true)}</div>
         </div>
       </div>
     </AppScreen>
   );
   if (i === 1) return (
-    <AppScreen time={time} tab="Feed">
+    <AppScreen time={time} tab="Activity">
       <div className="app2">
-        <Band n={TAB_PHOTO(d.move.tab)} title="Live feed" />
+        <Band n={TAB_PHOTO(d.move.tab)} title="Activity" />
         <div className="wrap">
           <div className="feed2__head"><div className="feed2__meta"><p className="status status--live"><span className="status__dot" />Live · updated 2s ago</p></div></div>
           <div className="tabs">{["Sports", "Markets", "Stocks"].map(t => <span key={t} className="tabs__tab" aria-pressed={t.toLowerCase() === d.move.tab}>{t}</span>)}<span className="tabs__tab tabs__tab--soon">Crypto <span className="soon soon--short">Soon</span></span></div>
           <div className="chips">{["$10k+", "$50k+", "$100k+"].map((c, k) => <span key={c} className="chip2" aria-pressed={k === 0}>{c}</span>)}</div>
-          <div className="ios-new"><span className="btn btn--primary newmoves__btn">1 new move · Show</span></div>
+          <div className="ios-new"><span className="btn btn--primary newmoves__btn">1 new position · Show</span></div>
           <ol className="feed2__list ios-list">{[card(d.move, true), ...d.feed.map(m => card(m))]}</ol>
         </div>
       </div>
@@ -153,12 +153,12 @@ function Screen({ i, d }: { i: number; d: StoryData }) {
             {d.trader.blurred ? <LockedRecord /> : r ? (
               <dl className="record record--wide">
                 <div><dt>Win rate</dt><dd>{Math.round((r.won / r.of) * 100)}%</dd><span className="record__sub">Won {r.won} of {r.of} resolved</span></div>
-                <div><dt>All-time profit</dt><dd className={r.profit.startsWith("-") || r.profit.startsWith("−") ? "loss" : "money"}>{r.profit}</dd></div>
+                <div><dt>All-time net P&L</dt><dd className={r.profit.startsWith("-") || r.profit.startsWith("−") ? "loss" : "money"}>{r.profit}</dd></div>
               </dl>
             ) : null}
             {d.trader.chart ? (
               <section className="block">
-                <p className="block__h">Profit over time</p>
+                <p className="block__h">Net P&L over time</p>
                 <div className="ios-chart">
                   <svg className="pchart" viewBox={`0 0 ${d.trader.chart.width} ${d.trader.chart.height}`} preserveAspectRatio="none">
                     <line x1="0" x2={d.trader.chart.width} y1={d.trader.chart.zeroY} y2={d.trader.chart.zeroY} className="pchart__zero" />
@@ -236,7 +236,7 @@ export function Story({ data, alerts = false }: { data: StoryData;
     for (const el of steps.current) if (el) io.observe(el);
     return () => io.disconnect();
   }, []);
-  const cta = <Link className="btn btn--primary btn--big" href="/feed" onClick={() => beacon("hero_cta_click", "story")}>See the live feed</Link>;
+  const cta = <Link className="btn btn--primary btn--big" href="/feed" onClick={() => beacon("hero_cta_click", "story")}>Open Activity</Link>;
   return (
     <section className="story" id="how" aria-labelledby="story-h" ref={root}>
       {/* The title: pinned with the phone on desktop, above the stacked steps on phones (one shows at a time). */}

@@ -19,17 +19,17 @@ export default async function AboutPage() {
       <main className="wrap lp">
         <article className="lp-legal lp-about">
           <h1>About Insidir</h1>
-          <p className="lp-about__lead">Insidir shows you the biggest bets on sports and prediction markets the second they happen, in plain English.</p>
+          <p className="lp-about__lead">Insidir shows you the largest positions on sports and prediction markets the second they happen, in plain English.</p>
 
           <h2>Why it exists</h2>
-          <p>When someone puts $100,000 on one side of a game or a question, that&apos;s worth knowing. The data is public, but it&apos;s buried in raw trade logs. Insidir watches them all day and turns each big bet into one sentence you can read in a second.</p>
+          <p>A $100,000 position on one side of a game or a question is worth knowing about. The data is public, but it&apos;s buried in raw trade logs. Insidir watches them all day and turns each big position into one sentence you can read in a second.</p>
 
           <h2>Where the data comes from</h2>
           <ul>
             <li><strong>Polymarket</strong>: public trades, with the wallet that made each one. We show a wallet&apos;s public name or a short address, and its record once it has 20 settled markets.</li>
-            <li><strong>Kalshi</strong>: public trades. They&apos;re anonymous, so we say &ldquo;someone&rdquo;.</li>
+            <li><strong>Kalshi</strong>: public trades. They&apos;re anonymous, shown as &ldquo;Anonymous · Kalshi&rdquo;.</li>
             {isReady("stocks") ? <li><strong>SEC EDGAR</strong>: Form 4 filings, where company insiders report buying their own company&apos;s stock, and Form 13F filings, where big funds report what they held at the end of each quarter (up to 45 days later). Every stock card links to the filing.</li> : null}
-            <li>Every move, amount and record on the site comes from that data. When a market settles, we mark each move won or lost on the <Link href="/results">Results</Link> page, losses included.</li>
+            <li>Every position, amount and record on the site comes from that data. When a market settles, we mark each position won or lost on the <Link href="/results">Results</Link> page, losses included.</li>
           </ul>
           <p>How late each source can be, and what it can&apos;t tell you: <Link href="/data">About our data</Link>.</p>
 

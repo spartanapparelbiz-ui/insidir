@@ -20,7 +20,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     (
       <div style={{ width: 1080, height: 1920, display: "flex", flexDirection: "column", background: "#ffffff", color: INK, padding: "120px 88px", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", fontSize: 40, fontWeight: 600, letterSpacing: -1 }}>insidir</div>
-        <div style={{ display: "flex", marginTop: 96, fontSize: 34, color: MUTED }}>{c.legs.length > 1 ? `${c.legs.length}-leg parlay, checked` : "Bet, checked"}</div>
+        <div style={{ display: "flex", marginTop: 96, fontSize: 34, color: MUTED }}>{c.legs.length > 1 ? `${c.legs.length}-leg parlay, checked` : "Position, checked"}</div>
         <div style={{ display: "flex", marginTop: 20, fontSize: 76, fontWeight: 600, lineHeight: 1.05, letterSpacing: -3 }}>{c.summary}</div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 72, gap: 24 }}>
           {legs.map((l, i) => {

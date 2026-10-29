@@ -7,7 +7,7 @@ import type { Safety } from "./types";
 
 export type SortKey = "perDay" | "profit" | "roi" | "newest";
 export const SORTS: ReadonlyArray<{ key: SortKey; label: string }> = [
-  { key: "perDay", label: "Profit per day" }, { key: "profit", label: "Profit after fees" }, { key: "roi", label: "ROI" }, { key: "newest", label: "Newest" },
+  { key: "perDay", label: "Net P&L per day" }, { key: "profit", label: "Net P&L after fees" }, { key: "roi", label: "ROI" }, { key: "newest", label: "Newest" },
 ];
 
 export interface TableFilter {

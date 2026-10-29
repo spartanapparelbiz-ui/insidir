@@ -36,7 +36,7 @@ export function CheckForm({ free, left }: { free: boolean; left: number }) {
         <span className="checkf__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="3" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
         </span>
-        <span className="checkf__h">{file ? file.name : "Upload or paste your bet slip"}</span>
+        <span className="checkf__h">{file ? file.name : "Upload or paste your position slip"}</span>
         <span className="checkf__p">{file ? "Ready. Check it below." : "A screenshot from DraftKings, FanDuel, BetMGM, Kalshi, Polymarket or Robinhood."}</span>
       </label>
       <p className="checkf__or"><span>or</span></p>
@@ -44,7 +44,7 @@ export function CheckForm({ free, left }: { free: boolean; left: number }) {
         <span className="sr-only">Market link or ticker</span>
         <input ref={textRef} name="text" className="input" placeholder="Paste a Polymarket or Kalshi link, or a ticker like NVDA" autoComplete="off" onChange={() => file && setFile(null)} />
       </label>
-      <button type="submit" className="btn btn--primary btn--block" disabled={busy}>{busy ? "Checking…" : "Check my bet"}</button>
+      <button type="submit" className="btn btn--primary btn--block" disabled={busy}>{busy ? "Checking…" : "Check my position"}</button>
       {busy ? <p className="checkf__wait" role="status">Reading the slip and matching each leg to the markets. This takes a few seconds.</p> : null}
       {error ? <p className="checkf__err" role="alert">{error.text} {error.href ? <a href={error.href} data-unlock="check">Get Insidir</a> : null}</p> : null}
       <p className="checkf__note">{free ? (left > 0 ? "Your first check is free. " : "") : ""}Data, not a recommendation. We never keep your screenshot.</p>

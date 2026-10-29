@@ -21,7 +21,7 @@ export default async function PrivacyPage() {
           <p className="small muted">Insidir is run by Aethric LLC. This page says what we collect, why, and what we never do.</p>
 
           <h2>Trading data</h2>
-          <p>The bets, prices and wallet records we show come from Kalshi&apos;s and Polymarket&apos;s public APIs. Polymarket wallets are shown by their public name or a short address; we never try to work out who is behind a wallet. Kalshi trades are anonymous.</p>
+          <p>The positions, prices and wallet records we show come from Kalshi&apos;s and Polymarket&apos;s public APIs. Polymarket wallets are shown by their public name or a short address; we never try to work out who is behind a wallet. Kalshi trades are anonymous.</p>
 
           <h2>What we store about you</h2>
           <ul>

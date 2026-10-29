@@ -18,7 +18,7 @@ import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { PLANS, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Try Insidir 7 days for $1, then $${PLANS.insidir.price}/month for everything: every big move live, trader records, follows and alerts. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Try Insidir 7 days for $1, then $${PLANS.insidir.price}/month for everything: every large position live, trader records, follows and alerts. Cancel anytime.` };
 
 export default async function PricingPage() {
   const viewer = await getViewer();

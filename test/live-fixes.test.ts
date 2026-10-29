@@ -104,7 +104,7 @@ describe("stocks", () => {
     expect(companyWithClass("ALPHABET", "C")).toBe("Alphabet Class C");
     const fund = { kind: "fund" as const, company: "ALPHABET", cusip: "02079K305", fund: "TIGER GLOBAL MANAGEMENT LLC", fundCik: "1", period: "2026-09-30", filedOn: "2026-10-20",
       addedShares: 1, prevShares: 1, curShares: 2, curValue: 1, newPosition: false, accession: "a", prevAccession: "b" };
-    expect(stockSentence(fund, 8_770_000_000)).toBe("Tiger Global Management added $8.77B of Alphabet Class A in Q3 2026.");
+    expect(stockSentence(fund, 8_770_000_000)).toBe("13F · Q3 2026 · Tiger Global Management added $8.77B of Alphabet Class A.");
   });
 });
 

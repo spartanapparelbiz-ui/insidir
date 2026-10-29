@@ -108,10 +108,10 @@ export function DealDetail({ view, now, unlockHref, closed = false, closedAt = n
       <dl className="dd-nums" aria-label="Numbers">
         {lock ? (
           <>
-            <Num k="Profit after fees" v={row.profit === null ? null : money2(row.profit)} cls="profit dd-big" />
+            <Num k="Net P&L after fees" v={row.profit === null ? null : money2(row.profit)} cls="profit dd-big" />
             <Num k="ROI" v={pct2(row.roi)} />
             <Num k="Max size" v={size} />
-            <Num k="Profit per day" v={row.profitPerDay === null ? null : money2(row.profitPerDay)} />
+            <Num k="Net P&L per day" v={row.profitPerDay === null ? null : money2(row.profitPerDay)} />
             <Num k="Fees" v={row.fees === null ? null : money2(row.fees)} />
             <Num k="Resolves in" v={days(row.days)} />
           </>
@@ -155,7 +155,7 @@ export function DealDetail({ view, now, unlockHref, closed = false, closedAt = n
       {lock ? (
         gone ? <p className="muted small">This deal is no longer live, so the calculator is off.</p>
           : view.calc ? <Calculator legs={view.calc.legs} payoutPerSet={view.calc.payoutPerSet} maxSets={view.calc.maxSets} />
-            : !paid ? <Locked title="Calculator" text="Members type an amount and see the contracts per side, cost, fees, payout and profit at today's prices." href={unlockHref} plan="insidir" where="deal-calc" quiet />
+            : !paid ? <Locked title="Calculator" text="Members type an amount and see the contracts per side, cost, fees, payout and net P&L at today's prices." href={unlockHref} plan="insidir" where="deal-calc" quiet />
               : null
       ) : null}
 

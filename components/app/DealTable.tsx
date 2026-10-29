@@ -60,7 +60,7 @@ export function DealTable({ rows, now, motion = {}, selected = null, compact = f
             <th scope="col" className="dt-c-rules" data-tip="rules">Same rules?</th>
             <th scope="col" className="dt-c-event">Event</th>
             <th scope="col" className="dt-c-play">The play</th>
-            <th scope="col" className="dt-r dt-c-profit" data-tip="profit">Profit after fees</th>
+            <th scope="col" className="dt-r dt-c-profit" data-tip="profit">Net P&L after fees</th>
             <th scope="col" className="dt-r dt-c-roi">ROI</th>
             <th scope="col" className="dt-r dt-c-size">Max size</th>
             <th scope="col" className="dt-r dt-c-day" data-tip="perday">Per day</th>

@@ -137,7 +137,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
 
   return (
     <section className="feed2" aria-labelledby="feed-h">
-      <PageBand n={BAND.feed[tab === "markets" || tab === "stocks" ? tab : "sports"]} title="Live feed" id="feed-h" />
+      <PageBand n={BAND.feed[tab === "markets" || tab === "stocks" ? tab : "sports"]} title="Activity" id="feed-h" />
       <div className="dash">
         <div className="dash__main">
           <div className="dash__bar">
@@ -188,7 +188,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           ) : null}
           {free ? (
             <aside className="upsell dash__upsell">
-              <p className="upsell__text">You&apos;re seeing moves 30 minutes late. Try 7 days for $1, then $39/mo.</p>
+              <p className="upsell__text">You&apos;re seeing positions 30 minutes late. Try 7 days for $1, then $39/mo.</p>
               <LockButton where="live-feed" className="btn btn--primary">See them live</LockButton>
             </aside>
           ) : null}
@@ -196,7 +196,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
             <ol className="feed2__list" aria-busy={busy || undefined}>
               {items.map((m, i) => (
                 <li key={m.id}>
-                  {hint && i === 0 ? <p className="hint" role="note" data-testid="first-hint">This is a big move. Tap anyone to see their record.<button type="button" onClick={() => setHint(false)}>Got it</button></p> : null}
+                  {hint && i === 0 ? <p className="hint" role="note" data-testid="first-hint">This is a large position. Tap anyone to see their record.<button type="button" onClick={() => setHint(false)}>Got it</button></p> : null}
                   <MoveCard m={m} follow={followFor("trader", m.wallet)} followFor={followFor} trialHref={trialHref} fresh={fresh.has(m.id)} nowYes={nowYes[`${m.source}:${m.marketId}`]} />
                 </li>
               ))}
@@ -204,9 +204,9 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           ) : (
             <div className="empty">
               <Photo n={SPOT.feedEmpty} className="empty__photo" wideOnly sizes="720px" />
-              <p className="empty__h">Quiet right now. The next big move is coming.</p>
-              <p className="empty__p">Follow a few top traders and we&apos;ll ping you when they move.</p>
-              <a className="btn btn--secondary" href="/results">See past moves</a>
+              <p className="empty__h">Quiet right now. The next large position is coming.</p>
+              <p className="empty__p">Follow a few top-ranked traders and we&apos;ll ping you when they move.</p>
+              <a className="btn btn--secondary" href="/results">See past positions</a>
             </div>
           )}
           {status?.state === "behind" && status.lastAt ? <p className="feed2__note">Last update from the source: {clockET(status.lastAt)}. Nothing below is live until it catches up.</p> : null}
@@ -215,21 +215,21 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           <div className="side">
             <p className="side__k">On this list</p>
             <dl className="side__stats">
-              <div><dt>Moves</dt><dd>{items.length}</dd></div>
+              <div><dt>Positions</dt><dd>{items.length}</dd></div>
               <div><dt>Total</dt><dd>{dollarsShort(total)}</dd></div>
               <div><dt>Biggest</dt><dd className="money">{biggest ? dollarsShort(biggest.amount) : "–"}</dd></div>
             </dl>
           </div>
           {free ? (
             <div className="side side--offer">
-              <p className="side__h">See every move live</p>
+              <p className="side__h">See every position live</p>
               <p className="side__p">Plus trader records and follows. Try 7 days for $1, then $39/mo, cancel anytime.</p>
               <LockButton where="feed-side" className="btn btn--secondary btn--block">{GET_CTA}</LockButton>
             </div>
           ) : null}
           <nav className="side side--links" aria-label="More">
             <a href="/top">Top traders<span aria-hidden="true">→</span></a>
-            <a href="/results">Results: every move, won or lost<span aria-hidden="true">→</span></a>
+            <a href="/results">Track record: every position, won or lost<span aria-hidden="true">→</span></a>
             <a href="/data">Where the data comes from<span aria-hidden="true">→</span></a>
           </nav>
         </aside>

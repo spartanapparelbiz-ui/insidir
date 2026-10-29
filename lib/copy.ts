@@ -6,9 +6,9 @@ export const FOOTER =
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
-export const WHAT_IS = "Insidir is a live tracker for sports bets, prediction markets and insider stock trades: it shows you the biggest ones the moment they happen, who made them, how much, and whether they usually win.";
+export const WHAT_IS = "Insidir tracks large positions on sports, prediction markets and insider stock trades as they are opened: the account, the size, and its record.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
-export const WHAT_IS_TITLE = "Insidir: live tracker for sports bets, prediction markets and insider stock trades";
+export const WHAT_IS_TITLE = "Insidir: live trackers of large positions on prediction markets and insider stock trades";
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
  *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
 export const GET_CTA = "Try 7 days for $1";
@@ -28,7 +28,7 @@ export function chargeLine(now: number): string {
 }
 
 /** How a lock is described everywhere. */
-export const LOCK_LINE = "Locks in a profit if both sides fill and both markets settle the same way.";
+export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets settle the same way.";
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */

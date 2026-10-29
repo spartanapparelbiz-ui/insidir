@@ -39,8 +39,8 @@ describe("which emails are due", () => {
   it("says only real things: what they caught, or that nothing has moved yet; no weekly email without results", () => {
     const e = trialEndingEmail([move({})], true, new Map(), "https://insidir.com");
     expect(e.subject).toBe("Your trial ends tomorrow, here's what you caught");
-    expect(e.lines[1]!.text).toBe("kch123 put $412,000 on Chiefs · Chiefs vs Bills · Oct 25");
-    expect(trialEndingEmail([], true, new Map(), "https://insidir.com").lines[0]!.text).toMatch(/^No big moves from the traders you follow yet/);
+    expect(e.lines[1]!.text).toBe("kch123: $412,000 position on Chiefs · Chiefs vs Bills · Oct 25");
+    expect(trialEndingEmail([], true, new Map(), "https://insidir.com").lines[0]!.text).toMatch(/^No large positions from the traders you follow yet/);
     expect(weeklyEmail([], new Map(), "2026-W44", "https://insidir.com")).toBeNull();
     expect(weeklyEmail([move({ result: "won", settledAt: MON - H })], new Map(), "2026-W44", "https://insidir.com")!.lines[0]!.text).toBe("kch123: 1 won, 0 lost this week");
   });

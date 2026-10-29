@@ -31,7 +31,7 @@ export function LockProvider({ unlocks, trialHref, children }: { unlocks: string
 }
 
 const HEADINGS: Record<string, string> = {
-  live: "See every move the second it happens.",
+  live: "See every position the second it happens.",
   record: "See who wins, and how often.",
   follow: "Follow the traders who win.",
   alerts: "Get pinged when they move.",

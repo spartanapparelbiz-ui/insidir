@@ -30,7 +30,7 @@ export function span(ms: number): string {
 }
 
 /** "just now" under 10 seconds, else ago(). */
-export const agoOrNow = (ms: number, now: number): string => (now - ms < 10_000 ? "just now" : ago(ms, now));
+export const agoOrNow = (ms: number, now: number): string => (now - ms < 10_000 ? "now" : ago(ms, now));
 
 const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
 /** "3:42 PM" in the viewer's own time zone (render on the client). */

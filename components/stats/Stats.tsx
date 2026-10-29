@@ -40,9 +40,9 @@ export function perfTiles(p: Perf): Tile[] {
   return [
     { label: "Record", value: `${p.won.toLocaleString("en-US")}–${p.lost.toLocaleString("en-US")}` },
     { label: "Win rate", value: gated(pct(p.winRate), ok), tone: ok && p.winRate! >= 0.5 ? "money" : ok ? "loss" : undefined },
-    { label: "Avg chance paid", value: gated(cents(p.avgPrice), ok) },
-    { label: "Edge (win rate − price)", value: gated(pts(p.edge), ok), tone: tone(p.edge) },
-    { label: "Net", value: gated(signed(p.net), ok), tone: tone(p.net) },
+    { label: "Average entry", value: gated(cents(p.avgPrice), ok) },
+    { label: "Edge vs. entry", value: gated(pts(p.edge), ok), tone: tone(p.edge) },
+    { label: "Net P&L", value: gated(signed(p.net), ok), tone: tone(p.net) },
     { label: "ROI", value: gated(pct(p.roi, 1), ok), tone: tone(p.roi) },
   ];
 }
@@ -65,7 +65,7 @@ export function BreakdownTable({ rows, label, first }: { rows: Row[]; label: str
   if (!rows.length) return <p className="dnote">{NOT_ENOUGH}</p>;
   const na = <span className="tile__na">{NOT_ENOUGH}</span>;
   return (
-    <Table label={label} head={[first, "Settled", "W–L", "Win rate", "Edge", "Net", "ROI"]} numeric={[1, 2, 3, 4, 5, 6]}
+    <Table label={label} head={[first, "Settled", "W–L", "Win rate", "Edge", "Net P&L", "ROI"]} numeric={[1, 2, 3, 4, 5, 6]}
       rows={rows.map(r => {
         const ok = r.perf.winRate !== null;
         return [r.key, r.moves.toLocaleString("en-US"), `${r.perf.won}–${r.perf.lost}`, ok ? pct(r.perf.winRate) : na,
@@ -78,7 +78,7 @@ export function BreakdownTable({ rows, label, first }: { rows: Row[]; label: str
 export function Leaderboard({ leaders, label }: { leaders: Leader[]; label: string }) {
   if (!leaders.length) return <p className="dnote">{NOT_ENOUGH}</p>;
   return (
-    <Table label={label} head={["Trader", "Settled", "W–L", "Win rate", "Net"]} numeric={[1, 2, 3, 4]}
+    <Table label={label} head={["Trader", "Settled", "W–L", "Win rate", "Net P&L"]} numeric={[1, 2, 3, 4]}
       rows={leaders.map(l => [
         <Link key="n" className="dtable__link" href={`/p/${l.wallet}`}>{walletLabel(l.wallet, l.name)}</Link>,
         l.moves.toLocaleString("en-US"), `${l.perf.won}–${l.perf.lost}`,

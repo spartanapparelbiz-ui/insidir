@@ -25,7 +25,7 @@ import { dataStatus } from "@/lib/status";
 import "../app.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Price gaps", description: "Live prediction-market deals found by math: prices on Polymarket and Kalshi that lock in a profit after fees if both sides fill and both markets settle the same way." };
+export const metadata: Metadata = { title: "Price gaps", description: "Live prediction-market deals found by math: prices on Polymarket and Kalshi that lock in a net P&L after fees if both sides fill and both markets settle the same way." };
 
 export default async function GapsPage() {
   const now = Date.now();

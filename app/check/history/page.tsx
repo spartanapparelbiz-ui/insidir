@@ -11,13 +11,13 @@ import { checksFor, settleCheck } from "@/lib/check/run";
 import { verdictLabel } from "@/components/check/CheckResult";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Your checked bets", robots: { index: false } };
+export const metadata: Metadata = { title: "Your checked positions", robots: { index: false } };
 const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
 function outcome(results: string[] | null): string {
   if (!results) return "Open";
   if (results.some(r => r === "lost")) return "Lost";
-  if (results.every(r => r === "won" || r === "void")) return results.every(r => r === "void") ? "Refunded" : "Won";
+  if (results.every(r => r === "won" || r === "void")) return results.every(r => r === "void") ? "Voided" : "Won";
   return "Open";
 }
 
@@ -33,7 +33,7 @@ export default async function HistoryPage() {
       <SiteHeader signedIn plan={viewer.plan} current="/check" trialHref={unlockHref()} />
       <main className="wrap app2 checkp">
         <header className="phead">
-          <h1 className="phead__h">Your checked bets</h1>
+          <h1 className="phead__h">Your checked positions</h1>
           <p className="phead__sub">Every slip you checked, what the data said, and how it settled.</p>
         </header>
         {list.length ? (
@@ -52,7 +52,7 @@ export default async function HistoryPage() {
               );
             })}
           </ol>
-        ) : <div className="tempty"><p className="tempty__h">No checked bets yet</p><p><Link href="/check">Check your first bet</Link>.</p></div>}
+        ) : <div className="tempty"><p className="tempty__h">No checked positions yet</p><p><Link href="/check">Check your first position</Link>.</p></div>}
       </main>
     </>
   );

@@ -115,7 +115,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           {event && event !== title ? <p className="mhead__kicker">{event}</p> : null}
           <h1 className="mhead__h">{title}</h1>
           {settled && resultSide ? <p className="mhead__result"><span className="rpill rpill--won">Settled</span> {resultSide === "yes" ? yesLabel : noLabel} won.</p>
-            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}% · {noLabel} {Math.round((1 - price) * 100)}% <span>chance now</span></p> : null}
+            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}% · {noLabel} {Math.round((1 - price) * 100)}% <span>now</span></p> : null}
           <div className="mhead__act">
             <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
             {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
@@ -129,38 +129,38 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
             <SplitBars side={yesLabel} rows={[
               { label: "Crowd", note: "the price now", value: crowdNow },
               { label: "Smart money", note: "proven traders' money", value: proven?.share ?? null, strong: true },
-              ...(tab === "sports" && bigShare !== null ? [{ label: "All big bets", note: "every big move we track", value: bigShare }] : []),
+              ...(tab === "sports" && bigShare !== null ? [{ label: "All large positions", note: "every large position we track", value: bigShare }] : []),
             ]} />
-            {opposite ? <p className="sflag" data-testid="split-opposite">Big bets and proven traders point opposite ways on this game.</p> : null}
+            {opposite ? <p className="sflag" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
             {split?.crowd ? <p className="dnote dnote--tight">{Math.round(split.crowd.gap)} points apart. <Link href="/splits">See every split</Link> · <Link href="/splits/scorecard">How past splits went</Link></p> : null}
           </Section>
         ) : null}
 
-        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The prices big moves paid for ${yesLabel} (the venue's full history isn't available right now)`}, with every big move on it: a dot per move, bigger for more money (a ${noLabel} bet sits at 100% minus its chance). Green won, red lost, grey open.`}>
+        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The entries of large positions on ${yesLabel} (the venue's full history isn't available right now)`}, with every large position on it: a dot per move, bigger for more money (a ${noLabel} position sits at 100% minus its entry). Green won, red lost, grey open.`}>
           <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}
             windows={[{ key: "1d", label: "1D", since: now - 86_400_000 }, { key: "1w", label: "1W", since: now - 7 * 86_400_000 }, { key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "all", label: "All", since: null }]}
             empty="Not enough prices for a chart yet." />
         </Section>
 
-        <Section id="side-h" title="Money by side" note="Every big move we've seen in this market.">
+        <Section id="side-h" title="Money by side" note="Every large position we've seen in this market.">
           <Tiles cols={4} label="Money by side" tiles={[
-            { label: `On ${yesLabel}, all big moves`, value: dollars(yes.total) },
-            { label: `On ${noLabel}, all big moves`, value: dollars(no.total) },
+            { label: `On ${yesLabel}, all large positions`, value: dollars(yes.total) },
+            { label: `On ${noLabel}, all large positions`, value: dollars(no.total) },
             { label: `On ${yesLabel}, last 24 hours`, value: dollars(yes24.total) },
             { label: `On ${noLabel}, last 24 hours`, value: dollars(no24.total) },
           ]} />
         </Section>
 
         {yes.top.length || no.top.length ? (
-          <Section id="top-h" title="Top traders on each side" note="By money in, from their big moves here.">
+          <Section id="top-h" title="Top traders on each side" note="By money in, from their large positions here.">
             <div className="dgrid2">
-              <div><h3 className="dsub__h">{yesLabel}</h3>{yes.top.length ? <Table label={`Top traders on ${yesLabel}`} head={["Trader", "Moves", "Money in"]} numeric={[1, 2]} rows={traderRows(yes.top)} /> : <p className="dnote">No big money on {yesLabel} yet.</p>}</div>
-              <div><h3 className="dsub__h">{noLabel}</h3>{no.top.length ? <Table label={`Top traders on ${noLabel}`} head={["Trader", "Moves", "Money in"]} numeric={[1, 2]} rows={traderRows(no.top)} /> : <p className="dnote">No big money on {noLabel} yet.</p>}</div>
+              <div><h3 className="dsub__h">{yesLabel}</h3>{yes.top.length ? <Table label={`Top traders on ${yesLabel}`} head={["Trader", "Positions", "Money in"]} numeric={[1, 2]} rows={traderRows(yes.top)} /> : <p className="dnote">No big money on {yesLabel} yet.</p>}</div>
+              <div><h3 className="dsub__h">{noLabel}</h3>{no.top.length ? <Table label={`Top traders on ${noLabel}`} head={["Trader", "Positions", "Money in"]} numeric={[1, 2]} rows={traderRows(no.top)} /> : <p className="dnote">No big money on {noLabel} yet.</p>}</div>
             </div>
           </Section>
         ) : null}
 
-        <Section id="mm-h" title={day.length ? "Big money in the last 24 hours" : "Big moves in this market"} note={!paid ? "You're seeing moves 30 minutes late." : undefined}>
+        <Section id="mm-h" title={day.length ? "Large positions in the last 24 hours" : "Large positions in this market"} note={!paid ? "You're seeing positions 30 minutes late." : undefined}>
           {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
             : <p className="dnote">No big moves here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         </Section>

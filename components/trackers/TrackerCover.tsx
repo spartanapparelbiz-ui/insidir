@@ -26,9 +26,9 @@ export const coverStats = (s: TrackerStats | null | undefined): CoverStats | nul
 
 /** The figure on the cover and its label: the return, money tracked for filings, or "New". */
 export function coverFigure(t: Pick<Tracker, "kind">, s: CoverStats | null | undefined): { figure: string; label: string | null } {
-  if (t.kind === "filings") return s && s.tracked30d > 0 ? { figure: dollars(s.tracked30d), label: "bought in 30 days" } : { figure: "New", label: null };
+  if (t.kind === "filings") return s && s.tracked30d > 0 ? { figure: dollars(s.tracked30d), label: "30-day volume" } : { figure: "New", label: null };
   const r = returnPct(s?.record);
-  return r ? { figure: r, label: "return, all settled bets" } : { figure: "New", label: null };
+  return r ? { figure: r, label: "ROI, all settled positions" } : { figure: "New", label: null };
 }
 
 export function TrackerCover({ t, s, small = false, className, children }: { t: Tracker; s?: CoverStats | null; small?: boolean; className?: string; children?: ReactNode }) {

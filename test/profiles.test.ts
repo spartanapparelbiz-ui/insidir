@@ -206,22 +206,22 @@ const fund = (d: StockDetail): Move => pm({ id: "13f:x", source: "sec", tab: "st
 
 describe("why this matters: prediction markets", () => {
   it("1. biggest bet on this game today: beat every other big move in the market today", () => {
-    expect(whyLine(pm(), facts({ sameMarketDay: { others: 2, max: 150_000 } }))).toBe("Biggest bet on this game today.");
-    expect(whyLine(pm({ tab: "markets" }), facts({ sameMarketDay: { others: 1, max: 10_000 } }))).toBe("Biggest bet on this market today.");
+    expect(whyLine(pm(), facts({ sameMarketDay: { others: 2, max: 150_000 } }))).toBe("Largest position on this game today.");
+    expect(whyLine(pm({ tab: "markets" }), facts({ sameMarketDay: { others: 1, max: 10_000 } }))).toBe("Largest position on this market today.");
     expect(whyLine(pm(), facts({ sameMarketDay: { others: 2, max: 250_000 } }))).toBeNull();
     expect(whyLine(pm(), facts({ sameMarketDay: { others: 0, max: 0 } }))).toBeNull(); // alone: nothing to beat
     expect(whyLine(pm(), facts({ sameMarketDay: { others: 2, max: 150_000 }, moveDay: "2026-10-25" }))).toBeNull(); // not today
   });
   it("2. biggest bet this trader has ever made: members, 20+ resolved, more than ever before", () => {
     const f = { traderHasRecord: true, traderBiggestBefore: 120_000 };
-    expect(whyLine(pm(), facts(f))).toBe("Biggest bet this trader has ever made.");
+    expect(whyLine(pm(), facts(f))).toBe("Largest position this trader has ever made.");
     expect(whyLine(pm(), facts({ ...f, traderBiggestBefore: 200_000 }))).toBeNull(); // a tie isn't bigger
     expect(whyLine(pm(), facts({ ...f, traderHasRecord: false }))).toBeNull();
     expect(whyLine(pm(), facts({ ...f, traderBiggestBefore: null }))).toBeNull();
     expect(whyLine(pm(), facts({ ...f, records: false }))).toBeNull(); // free viewers: no records
   });
   it("3. N top traders on the same side: at least 2, members only", () => {
-    expect(whyLine(pm(), facts({ topTradersSameSide: 3 }))).toBe("3 top traders are on the same side.");
+    expect(whyLine(pm(), facts({ topTradersSameSide: 3 }))).toBe("3 top-ranked traders are on the same side.");
     expect(whyLine(pm(), facts({ topTradersSameSide: 1 }))).toBeNull();
     expect(whyLine(pm(), facts({ topTradersSameSide: 3, records: false }))).toBeNull();
   });
@@ -232,9 +232,9 @@ describe("why this matters: prediction markets", () => {
   });
   it("the first rule that applies wins; nothing when none does", () => {
     const all = facts({ sameMarketDay: { others: 1, max: 1 }, traderHasRecord: true, traderBiggestBefore: 1, topTradersSameSide: 4, priceHourAgo: 0.3 });
-    expect(whyLine(pm(), all)).toBe("Biggest bet on this game today.");
-    expect(whyLine(pm(), { ...all, sameMarketDay: undefined })).toBe("Biggest bet this trader has ever made.");
-    expect(whyLine(pm(), { ...all, sameMarketDay: undefined, traderBiggestBefore: null })).toBe("4 top traders are on the same side.");
+    expect(whyLine(pm(), all)).toBe("Largest position on this game today.");
+    expect(whyLine(pm(), { ...all, sameMarketDay: undefined })).toBe("Largest position this trader has ever made.");
+    expect(whyLine(pm(), { ...all, sameMarketDay: undefined, traderBiggestBefore: null })).toBe("4 top-ranked traders are on the same side.");
     expect(whyLine(pm(), facts())).toBeNull();
     expect(whyLine(pm({ source: "kalshi", wallet: null }), facts({ priceHourAgo: 0.3 }))).toMatch(/^This price moved/);
   });
@@ -253,8 +253,8 @@ describe("why this matters: stocks", () => {
     expect(whyLine(insider(insiderDetail({ tradeDate: "2026-09-28" })), facts({ insidersThisMonth: 3 }))).toBeNull(); // not this month
   });
   it("7. biggest insider buy at the company since a year", () => {
-    expect(whyLine(insider(), facts({ issuerBiggerOn: "2019-05-02", issuerCompleteSince: "2016-11-01" }))).toBe("Biggest insider buy at Nvidia since 2019.");
-    expect(whyLine(insider(), facts({ issuerBiggerOn: null, issuerCompleteSince: "2016-11-01" }))).toBe("Biggest insider buy at Nvidia since 2016.");
+    expect(whyLine(insider(), facts({ issuerBiggerOn: "2019-05-02", issuerCompleteSince: "2016-11-01" }))).toBe("Largest insider purchase at Nvidia since 2019.");
+    expect(whyLine(insider(), facts({ issuerBiggerOn: null, issuerCompleteSince: "2016-11-01" }))).toBe("Largest insider purchase at Nvidia since 2016.");
     expect(whyLine(insider(), facts({ issuerBiggerOn: "2026-02-01", issuerCompleteSince: "2016-11-01" }))).toBeNull(); // bigger one this year
     expect(whyLine(insider(), facts({ issuerBiggerOn: null, issuerCompleteSince: null }))).toBeNull();
   });
@@ -262,7 +262,7 @@ describe("why this matters: stocks", () => {
     const all = facts({ ownerPrevBuy: "2020-01-01", ownerCompleteSince: "2016-11-01", insidersThisMonth: 2, issuerBiggerOn: null, issuerCompleteSince: "2016-11-01" });
     expect(whyLine(insider(), all)).toBe("First buy by Jen Hsun Huang in 6 years.");
     expect(whyLine(insider(), { ...all, ownerPrevBuy: null })).toBe("2 Nvidia insiders bought this month.");
-    expect(whyLine(insider(), { ...all, ownerPrevBuy: null, insidersThisMonth: 0 })).toBe("Biggest insider buy at Nvidia since 2016.");
+    expect(whyLine(insider(), { ...all, ownerPrevBuy: null, insidersThisMonth: 0 })).toBe("Largest insider purchase at Nvidia since 2016.");
   });
   it("8–9. funds: a new position, a doubled stake", () => {
     expect(whyLine(fund(fundDetail({ newPosition: true, prevShares: 0 })), facts())).toBe("New position: they didn't own it last quarter.");

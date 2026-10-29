@@ -16,7 +16,7 @@ export default async function OpengraphImage() {
         <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: "40px 72px 56px" }}>
           <OgLogo height={56} />
           <div style={{ display: "flex", fontFamily: "Serif", fontSize: 88, lineHeight: 1.02 }}>Follow the big money.</div>
-          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>Live tracker for sports bets, prediction markets and insider stock trades.</div>
+          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>Live tracker for sports positions, prediction markets and insider stock trades.</div>
         </div>
       </div>
     ),

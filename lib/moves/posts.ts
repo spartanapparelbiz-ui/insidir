@@ -16,7 +16,7 @@ export function postCaption(m: Move, record: TraderRecord | null): string {
     [moveSentence(m, record, false), payoutLine(m), m.detail ? stockNote(m.detail) : null, rec ? `${rec}.` : null, result].filter(Boolean).join(" "),
     ...(m.detail ? ["", `The filing: ${m.url}`] : []),
     "",
-    "See the big money as it moves: insidir.com",
+    "Large positions as they are opened: insidir.com",
     "Public trading data. Not financial advice.",
   ].join("\n");
 }

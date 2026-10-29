@@ -23,7 +23,8 @@ import { MoveCard } from "@/components/v2/MoveCard";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
-import { dollars } from "@/lib/moves/copy";
+import { dollars, who } from "@/lib/moves/copy";
+import { headlineOf } from "@/lib/moves/headline";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { leagueLabel } from "@/lib/moves/leagues";
@@ -111,61 +112,63 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
         </header>
 
         {t.kind === "bets" ? (
-          <Section id="perf-h" title="Performance" note={`From ${p.settled.toLocaleString("en-US")} settled Polymarket bets, each checked against the wallet's own trades. Past results, not a promise.`}>
-            {ok ? <LineChart points={series} windows={windows} format="money" label="Net on settled moves" empty="No settled moves in this window." />
-              : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled moves ({p.settled} so far).</div>}
-            <div className="dsub"><Tiles tiles={perfTiles(p)} cols={3} label="Record" /></div>
-            <p className="hypo">{p.hundred !== null
-              ? <><b>$100 on every move: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>Hypothetical: $100 at the price each was bought, on all {p.settled.toLocaleString("en-US")} settled moves. Past results.</span></>
-              : <><b>$100 on every move:</b> <span>{NOT_ENOUGH}.</span></>}</p>
+          <Section id="open-h" title="Holding now" note={d?.open.length ? `${d.open.length.toLocaleString("en-US")} open ${d.open.length === 1 ? "position" : "positions"}, ${dollars(d.open.reduce((a, o) => a + o.m.amount, 0))} in total. Entry is the price when the position was opened; Now is the price on their side, where the venue reports it. Largest first.` : undefined}>
+            {d?.open.length ? (
+              <Table label="Holding now" head={["Position", "Size", "Holder", "Entry", "Now", "Change"]} numeric={[1, 3, 4, 5]}
+                rows={d.open.map(({ m, now: px }) => [
+                  <Link key="m" className="dtable__link" href={`/market/${encodeURIComponent(m.marketId)}`}>{headlineOf(m)}<span className="dtable__sub">{m.marketTitle}</span></Link>,
+                  dollars(m.amount), who(m, null), cents(m.avgPrice), cents(px),
+                  px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))} pts`}</span>,
+                ])} />
+            ) : <p className="dnote">No open positions right now. New positions that fit this tracker are listed here as they are opened.</p>}
           </Section>
         ) : null}
 
-        <Section id="stats-h" title="Stats" note="Activity over the last 12 months; results from every settled move.">
+        {t.kind === "bets" ? (
+          <Section id="perf-h" title="Performance" note={`From ${p.settled.toLocaleString("en-US")} settled Polymarket positions, each checked against the wallet's own trades. Past results, not a promise.`}>
+            {ok ? <LineChart points={series} windows={windows} format="money" label="Net P&L on settled positions" empty="No settled positions in this window." />
+              : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled moves ({p.settled} so far).</div>}
+            <div className="dsub"><Tiles tiles={perfTiles(p)} cols={3} label="Record" /></div>
+            <p className="hypo">{p.hundred !== null
+              ? <><b>$100 on every position: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>Hypothetical: $100 at each position's entry, on all {p.settled.toLocaleString("en-US")} settled moves. Past results.</span></>
+              : <><b>$100 on every position:</b> <span>{NOT_ENOUGH}.</span></>}</p>
+          </Section>
+        ) : null}
+
+        <Section id="stats-h" title="Stats" note="Activity over the last 12 months; results from every settled position.">
           <Tiles cols={5} label="Stats" tiles={[
             { label: "Tracked, 12 months", value: dollars(act.tracked) },
-            { label: "Moves, 12 months", value: act.moves.toLocaleString("en-US") },
-            { label: "Average bet", value: act.avgBet === null ? "—" : dollars(act.avgBet) },
-            { label: "Biggest bet", value: act.biggestBet === null ? "—" : dollars(act.biggestBet) },
+            { label: "Positions, 12 months", value: act.moves.toLocaleString("en-US") },
+            { label: "Average position size", value: act.avgBet === null ? "—" : dollars(act.avgBet) },
+            { label: "Largest position", value: act.biggestBet === null ? "—" : dollars(act.biggestBet) },
             ...(t.kind === "bets" ? [
-              { label: "Biggest win", value: gate(bw ? signed(bw.pnl ?? 0) : "—"), tone: ok && bw ? "money" as const : undefined },
-              { label: "Biggest loss", value: gate(bl ? signed(bl.pnl ?? 0) : "—"), tone: ok && bl ? "loss" as const : undefined },
+              { label: "Largest gain", value: gate(bw ? signed(bw.pnl ?? 0) : "—"), tone: ok && bw ? "money" as const : undefined },
+              { label: "Largest loss", value: gate(bl ? signed(bl.pnl ?? 0) : "—"), tone: ok && bl ? "loss" as const : undefined },
               { label: "Current streak", value: gate(streakText), tone: ok && st ? (st.kind === "won" ? "money" as const : "loss" as const) : undefined },
               { label: bd && ok ? `Best day, ${DAY_FMT.format(new Date(`${bd.day}T12:00:00Z`))}` : "Best day", value: gate(bd ? signed(bd.net) : "—"), tone: ok && bd ? tone(bd.net) : undefined },
-              { label: "Price since the bet, open bets", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)} pts`, tone: tone(move) },
-              { label: "From top traders", value: share === null ? "—" : pct(share) },
+              { label: "Price since the position, open positions", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)} pts`, tone: tone(move) },
+              { label: "From top-ranked traders", value: share === null ? "—" : pct(share) },
             ] : []),
           ]} />
         </Section>
 
         {t.kind === "bets" ? (
-          <Section id="bd-h" title="Breakdowns" note="Settled moves only. Each row needs 20 settled moves for its rates.">
+          <Section id="bd-h" title="Breakdowns" note="Settled positions only. Each row needs 20 settled positions for its rates.">
             <div className="dsub"><h3 className="dsub__h">By league or topic</h3><BreakdownTable label="By league or topic" first="League or topic" rows={breakdown(settled, groupOf)} /></div>
-            <div className="dsub"><h3 className="dsub__h">By bet size</h3><BreakdownTable label="By bet size" first="Bet size" rows={breakdown(settled, m => sizeOf(m.amount), SIZES)} /></div>
-            <div className="dsub"><h3 className="dsub__h">Favorite vs underdog</h3><BreakdownTable label="Favorite vs underdog" first="Price paid" rows={breakdown(settled, m => sideOf(m.avgPrice), SIDES)} /></div>
+            <div className="dsub"><h3 className="dsub__h">By position size</h3><BreakdownTable label="By position size" first="Position size" rows={breakdown(settled, m => sizeOf(m.amount), SIZES)} /></div>
+            <div className="dsub"><h3 className="dsub__h">Favorite vs underdog</h3><BreakdownTable label="Favorite vs underdog" first="Entry" rows={breakdown(settled, m => sideOf(m.avgPrice), SIDES)} /></div>
             <div className="dsub"><h3 className="dsub__h">By day of the week</h3><BreakdownTable label="By day of the week" first="Placed on (ET)" rows={breakdown(settled, dayOf, WEEKDAYS)} /></div>
           </Section>
         ) : null}
 
-        {t.kind === "bets" && d?.open.length ? (
-          <Section id="open-h" title="Open now" note="Not settled yet: the price paid against the price now, on their side. Biggest first.">
-            <Table label="Open bets" head={["Market", "Bet", "Paid", "Now", "Change"]} numeric={[1, 2, 3, 4]}
-              rows={d.open.slice(0, 12).map(({ m, now: px }) => [
-                <Link key="m" className="dtable__link" href={`/market/${encodeURIComponent(m.marketId)}`}>{m.marketTitle}<span className="dtable__sub">{m.outcome}</span></Link>,
-                dollars(m.amount), cents(m.avgPrice), cents(px),
-                px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))} pts`}</span>,
-              ])} />
-          </Section>
-        ) : null}
-
         {t.kind === "bets" ? (
-          <Section id="lead-h" title="Top traders in this tracker" note="By net on their settled moves here.">
+          <Section id="lead-h" title="Top traders in this tracker" note="By net P&L on their settled positions here.">
             {paid ? <Leaderboard label="Top traders in this tracker" leaders={leaders(settled, 10)} />
               : <div className="dnote">Trader records are for members. <a href={trial} data-unlock="tracker-leaders">Try 7 days for $1</a>.</div>}
           </Section>
         ) : null}
 
-        <Section id="moves-h" title={t.kind === "filings" ? "Latest filings" : "Moves"} note={!paid ? <>You&apos;re seeing moves 30 minutes late. <a href={trial} data-unlock="tracker">Members see them live.</a></> : undefined}>
+        <Section id="moves-h" title={t.kind === "filings" ? "Latest filings" : "Latest positions"} note={!paid ? <>You&apos;re seeing moves 30 minutes late. <a href={trial} data-unlock="tracker">Members see them live.</a></> : undefined}>
           {t.kind === "bets" ? (
             <nav className="dfilters" aria-label="Show">
               {/* Plain links: a query-only change on the same page through the client router sometimes never lands (Next 15.5). */}
@@ -174,7 +177,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           ) : null}
           {list.length ? (
             <ol className="feed2__list tmoves">{list.map(m => <li key={m.id}><MoveCard m={m} follow={cardFollow} trialHref={trial} /></li>)}</ol>
-          ) : <div className="tempty"><p className="tempty__h">Nothing here yet</p><p>The next move that fits shows up here.</p></div>}
+          ) : <div className="tempty"><p className="tempty__h">Nothing here yet</p><p>The next position that fits shows up here.</p></div>}
         </Section>
 
         {similar.length ? (

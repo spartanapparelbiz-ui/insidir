@@ -62,7 +62,7 @@ export default async function StartPage() {
           <div className="start__checkout">
             {move ? (
               <div className="start__move" data-testid="start-move">
-                <p className="start__movelabel">A real move from the last 24 hours</p>
+                <p className="start__movelabel">A real position from the last 24 hours</p>
                 <MoveCard m={move} follow="locked" trialHref="/start" compact />
               </div>
             ) : null}

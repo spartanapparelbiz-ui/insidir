@@ -94,7 +94,7 @@ describe("monograms", () => {
     expect(monogram("_x")).toBe("X");
     expect(monogram("0xe1…30")).toBe("E1");
     expect(monogram(W)).toBe("AB");
-    expect(monogram("Someone")).toBe("SO");
+    expect(monogram("Anonymous · Kalshi")).toBe("AN");
     expect(monogram("Élan")).toBe("ÉL");
     expect(monogram("")).toBe("?");
     expect(monogram(null)).toBe("?");
@@ -113,7 +113,7 @@ describe("monograms", () => {
     // A blocked name: no picture even if one were stored, and the address's monogram (never the name's letters).
     expect(moveFace(move({ walletName: "Aryan88" }), pics)).toEqual({ src: null, mono: "AB" });
     expect(walletFace(W, "Aryan88", pics)).toEqual({ src: null, mono: "AB" });
-    expect(moveFace(move({ id: "ks:1", source: "kalshi", wallet: null, walletName: null }), pics)).toEqual({ src: null, mono: "SO" });
+    expect(moveFace(move({ id: "ks:1", source: "kalshi", wallet: null, walletName: null }), pics)).toEqual({ src: null, mono: "AN" });
     const insider = { kind: "insider", company: "NVIDIA Corp", ticker: "NVDA", issuerCik: "1", role: "director", ownerName: "HUANG JEN HSUN", ownerCik: "2",
       shares: 1, pricePerShare: 1, tradeDate: null, filedAt: 0, accession: "a" } as const;
     expect(moveFace(move({ source: "sec", wallet: null, walletName: null, detail: insider }), pics)).toEqual({ src: null, mono: "NVDA" });

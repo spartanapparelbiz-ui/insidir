@@ -66,13 +66,13 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
         <section className="sec2" aria-labelledby="latest-h">
           <div className="wrap">
             <div className="prod__head">
-              <h2 id="latest-h" className="sec2__h">Latest big moves</h2>
+              <h2 id="latest-h" className="sec2__h">Latest large positions</h2>
               {!paid ? <p className="prod__note">Preview: 30 minutes late</p> : null}
             </div>
             {items.length ? (
               <ol className="prod__list">{items.map((m, i) => <li key={m.id} className="rv" style={{ ["--i" as string]: i }}><MoveCard m={m} follow={paid ? "off" : "locked"} trialHref={trial} compact /></li>)}</ol>
-            ) : <p className="mkt__lead">Catching up with the source. The next big move shows up here the moment it lands.</p>}
-            <p className="prod__more"><Link href={paid ? feed : trial}>{paid ? "See every move on the live feed" : "See every move live with Insidir"} <span aria-hidden="true">→</span></Link></p>
+            ) : <p className="mkt__lead">Catching up with the source. The next large position shows up here the moment it lands.</p>}
+            <p className="prod__more"><Link href={paid ? feed : trial}>{paid ? "See every position in Activity" : "See every position live with Insidir"} <span aria-hidden="true">→</span></Link></p>
           </div>
         </section>
         <section className="sec2" aria-labelledby="card-h">
@@ -96,7 +96,7 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
           <div className="wrap mkt__endIn">
             <h2 className="sec2__h">Follow the big money.</h2>
             <p className="mkt__lead">{GET_CTA}. {CANCEL_LINE}</p>
-            <div className="mkt__ctas"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "See the live feed" : GET_CTA}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
+            <div className="mkt__ctas"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "Open Activity" : GET_CTA}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
           </div>
         </section>
       </main>

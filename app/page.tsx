@@ -141,7 +141,7 @@ export default async function Home() {
     return {
       key: p.key, label: p.label,
       body: ranked.length ? <ol className="tlist">{ranked.map(({ t, s, record }) => <TrackerRow key={t.slug} t={t} r={record} s={coverStats(s)} />)}</ol>
-        : <p className="tlist__empty">No tracker has 20 settled moves in this window yet.</p>,
+        : <p className="tlist__empty">No tracker has 20 settled positions in this window yet.</p>,
     };
   });
   const pop = homeOrder(popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, s, followers: s!.followers, tracked30d: s!.tracked30d }))).slice(0, 6));
@@ -185,10 +185,10 @@ export default async function Home() {
                 <ol className="tlist">
                   {pop.map(({ t, s, followers, tracked30d }, i) => (
                     <TrackerRow key={t.slug} t={t} rank={i + 1} s={coverStats(s)}
-                      figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No moves yet"} />
+                      figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No positions yet"} />
                   ))}
                 </ol>
-              ) : <p className="tlist__empty">Catching up: the trackers fill in as the first moves arrive.</p>}
+              ) : <p className="tlist__empty">Catching up: the trackers fill in as the first positions arrive.</p>}
             </div>
           </div>
           <div className="wrap sec3__foot"><Link className="tlink tlink--go" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>

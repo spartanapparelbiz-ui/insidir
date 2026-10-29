@@ -75,7 +75,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <Link className="btn btn--primary" href="/alerts">Alert settings</Link>
               </>
             ) : (
-              <p className="asum">Alerts come with Insidir. We ping you when a trader or market you follow moves.</p>
+              <p className="asum">Alerts come with Insidir. An alert follows when a trader or market you follow has a new large position.</p>
             )}
           </div>
         </section>
@@ -96,7 +96,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {paid ? (
                 <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? "Your $1 week ends" : "Next charge"}</dt>
                   <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
-                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it just now. Manage billing shows it.</span> : <span className="akv__sub">Shown in Manage billing</span>}</dd></div>
+                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it now. Manage billing shows it.</span> : <span className="akv__sub">Shown in Manage billing</span>}</dd></div>
               ) : null}
             </dl>
             {paid ? (
@@ -111,7 +111,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               </>
             ) : (
               <>
-                <p className="asum">You see big moves 30 minutes late. Insidir shows every move live, with trader records and alerts.</p>
+                <p className="asum">You see large positions 30 minutes late. Insidir shows every position live, with trader records and alerts.</p>
                 <div className="row-gap"><a className="btn btn--primary" href={unlockHref()} data-unlock="settings-insidir">{GET_CTA}</a></div>
               </>
             )}

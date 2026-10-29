@@ -10,9 +10,9 @@ import type { Plan } from "@/lib/types";
 interface Bullet { text: string; needs?: Feature }
 /** Everything Insidir gives a member; the unready ones show as "(coming soon)". */
 export const FEATURES: Bullet[] = [
-  { text: "Every big move, live: sports, prediction markets and insider stock trades", needs: "feed" },
+  { text: "Every large position, live: sports, prediction markets and insider stock trades", needs: "feed" },
   { text: "Insider stock trades from SEC filings", needs: "stocks" },
-  { text: "Trader records: won, lost, all-time profit", needs: "records" },
+  { text: "Trader records: won, lost, all-time net P&L", needs: "records" },
   { text: "Top traders, this week, this month and all time", needs: "records" },
   { text: "Every result, won or lost" },
   { text: "Follow traders and markets", needs: "follows" },
@@ -30,8 +30,8 @@ const Check = () => <svg className="plan2__check" viewBox="0 0 16 16" aria-hidde
 
 /** /start's list: at most five live things, no repeats; everything not live yet goes in one quiet line under it. */
 const START_LIST: Bullet[] = [
-  { text: "Every big move, live: sports bets, prediction markets and insider stock trades", needs: "feed" },
-  { text: "Trader records: won, lost, all-time profit", needs: "records" },
+  { text: "Every large position, live: sports positions, prediction markets and insider stock trades", needs: "feed" },
+  { text: "Trader records: won, lost, all-time net P&L", needs: "records" },
   { text: "Top traders this week, this month and all time", needs: "records" },
   { text: "Every result, won or lost" },
   { text: "Follow traders and markets", needs: "follows" },
@@ -84,7 +84,7 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
               <PlanH className="plan2__name">{PLANS.insidir.name}</PlanH>
               {mine ? <p className="plan2__flag plan2__flag--mine">Your plan</p> : null}
             </div>
-            <p className="plan2__pitch">See every big move the moment it happens: who made it, how much, and whether they usually win.</p>
+            <p className="plan2__pitch">See every large position the moment it happens: who made it, how much, and whether they usually win.</p>
             <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month</span></p>
             <p className="plan2__sub">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>

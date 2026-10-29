@@ -22,14 +22,14 @@ const MAX_LEGS = 12;
 const fail = (status: number, code: string, error: string, extra: Record<string, unknown> = {}) => NextResponse.json({ error, code, ...extra }, { status });
 
 export async function POST(req: NextRequest) {
-  if (!hasDatabase()) return fail(503, "unavailable", "Checking bets isn't available right now.");
+  if (!hasDatabase()) return fail(503, "unavailable", "Checking positions isn't available right now.");
   const db = getDb();
   const now = Date.now();
   const viewer = await getViewer();
   const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
   const userId = viewer.user?.id ?? null;
   if (!isPaid(viewer.plan) && (await checksUsed(db, { userId, visitorId })) >= FREE_CHECKS) {
-    return fail(402, "limit", "You've used your free check. Members check every bet.", { unlockHref: unlockHref() });
+    return fail(402, "limit", "You've used your free check. Members check every position.", { unlockHref: unlockHref() });
   }
   const form = await req.formData().catch(() => null);
   if (!form) return fail(400, "bad_input", "Upload a slip screenshot, or paste a market link or a ticker.");

@@ -23,7 +23,7 @@ export function SiteFooter() {
           <Link href="/markets">Markets</Link>
           {isReady("stocks") ? <Link href="/stocks">Stocks</Link> : null}
           <Link href="/how-it-works">How it works</Link>
-          <Link href="/results">Results</Link>
+          <Link href="/results">Track record</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/faq">FAQ</Link>
           <Link href="/about">About</Link>

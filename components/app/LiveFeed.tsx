@@ -253,7 +253,7 @@ export function LiveFeed({ initialRows, initialNow, initialStatus, plan, maxRows
         <dl className="tbar__totals" aria-label="Today">
           <div className="tbar__total"><dt>Deals found today</dt><dd>{totals.found}</dd></div>
           {totals.bestRoi !== null ? <div className="tbar__total"><dt>Best ROI today</dt><dd>{pct2(totals.bestRoi)}</dd></div> : null}
-          {available !== null && available > 0 ? <div className="tbar__total"><dt>Profit available now</dt><dd>{money2(available)}</dd></div> : null}
+          {available !== null && available > 0 ? <div className="tbar__total"><dt>Net P&L available now</dt><dd>{money2(available)}</dd></div> : null}
         </dl>
         <div className={`tbar__filters${filtersOpen ? " tbar__filters--open" : ""}`}>
           <button type="button" className="btn btn--secondary tbar__toggle tbar__more" aria-expanded={filtersOpen} aria-controls="tbar-controls"

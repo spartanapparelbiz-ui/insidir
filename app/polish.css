@@ -204,3 +204,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .pill:hover { border: 0; text-decoration: underline; text-underline-offset: 3px; }
 /* pricing: the plan card is a window, not a grey box */
 .plan2 { background: var(--paper) !important; border: 1px solid var(--win-border) !important; border-radius: var(--r-win); box-shadow: var(--win-shadow) !important; }
+/* under the headline: size · holder · when */
+.move__meta { color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.move__meta > span:first-child { color: var(--ink); font-weight: 600; }
+.move__subl { margin-top: -2px; }

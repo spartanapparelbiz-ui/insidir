@@ -44,10 +44,10 @@ const Row = ({ m }: { m: FeedItem }) => (
 export function Phones({ d }: { d: PhoneData }) {
   const screens: ReactNode[] = [];
   if (d.feed.length) screens.push(
-    <><p className="ph__h">Feed</p><div className="ph__list">{d.feed.slice(0, 4).map(m => <Row key={m.id} m={m} />)}</div></>,
+    <><p className="ph__h">Activity</p><div className="ph__list">{d.feed.slice(0, 4).map(m => <Row key={m.id} m={m} />)}</div></>,
   );
   if (d.results.length) screens.push(
-    <><p className="ph__h">Results</p><div className="ph__list">{d.results.slice(0, 4).map(m => (
+    <><p className="ph__h">Track record</p><div className="ph__list">{d.results.slice(0, 4).map(m => (
       <div key={m.id} className="pm pm--res">
         <p className="pm__line">{m.headline}<span className="pm__ago">{SOURCE[m.source]} · {m.subline}</span></p>
         <Result amount={m.pnl !== null && m.pnl !== undefined ? signedShort(m.pnl) : dollars(m.amount)} tone={m.result === "won" ? "won" : "lost"} status={m.result === "won" ? "Won" : "Lost"} />

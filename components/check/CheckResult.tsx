@@ -47,11 +47,11 @@ function Leg({ l, i, mine, result }: { l: LegResult; i: number; mine: boolean; r
           <div><dt>More</dt><dd><Link href={`/insider-trading/${encodeURIComponent(l.stock.ticker)}`}>{l.stock.ticker} insider trades</Link></dd></div>
         </dl>
       ) : !l.market ? (
-        <p className="cleg__none">We couldn&apos;t find this game or market on Polymarket or Kalshi, so there&apos;s no big money to compare yet.{l.slip !== null ? ` Your slip's price: ${asChance(l.slip)} chance.` : ""}</p>
+        <p className="cleg__none">We couldn&apos;t find this game or market on Polymarket or Kalshi, so there are no large positions to compare yet.{l.slip !== null ? ` Your slip's entry: ${asChance(l.slip)}.` : ""}</p>
       ) : (
         <dl className="cleg__facts">
           <div>
-            <dt>Big money</dt>
+            <dt>Large positions</dt>
             <dd>{bigTotal ? (onMine !== null ? `${dollars(onMine)} on ${sideName} (${pct(onMine / bigTotal)}) · ${dollars(bigTotal - onMine)} on ${other}` : `${dollars(l.big!.yes)} on ${l.market.yesLabel} · ${dollars(l.big!.no)} on ${l.market.noLabel}`) : "None yet"}</dd>
           </div>
           <div>
@@ -60,14 +60,14 @@ function Leg({ l, i, mine, result }: { l: LegResult; i: number; mine: boolean; r
           </div>
           <div>
             <dt>Crowd vs. your slip</dt>
-            <dd>{l.crowd !== null ? `${pct(l.crowd)} chance now` : "Price not available"}{l.slip !== null ? ` · your slip ${asChance(l.slip)}` : ""}</dd>
+            <dd>{l.crowd !== null ? `Market ${pct(l.crowd)} now` : "Price not available"}{l.slip !== null ? ` · your slip ${asChance(l.slip)}` : ""}</dd>
           </div>
           {mine && l.leg.stake ? <div><dt>Your stake</dt><dd>{dollars(l.leg.stake)}</dd></div> : null}
           <div><dt>Market</dt><dd><Link href={`/market/${encodeURIComponent(l.market.marketId)}`}>See the market</Link></dd></div>
         </dl>
       )}
-      {l.basis === "big" ? <p className="cleg__basis">Based on all big bets: no proven traders hold this one yet.</p> : null}
-      {result && result !== "open" && result !== "unmatched" ? <p className={`cleg__res cleg__res--${result}`}>{result === "won" ? "Won" : result === "lost" ? "Lost" : "Refunded"}</p> : null}
+      {l.basis === "big" ? <p className="cleg__basis">Based on all large positions: no proven traders hold this market yet.</p> : null}
+      {result && result !== "open" && result !== "unmatched" ? <p className={`cleg__res cleg__res--${result}`}>{result === "won" ? "Won" : result === "lost" ? "Lost" : "Voided"}</p> : null}
     </li>
   );
 }
@@ -75,10 +75,10 @@ function Leg({ l, i, mine, result }: { l: LegResult; i: number; mine: boolean; r
 export function CheckView({ c, mine }: { c: Check; mine: boolean }) {
   return (
     <section className="cres" aria-labelledby="cres-h">
-      <p className="cres__k">{c.legs.length > 1 ? `${c.legs.length}-leg parlay` : c.input === "ticker" ? "Stock" : "Single bet"}{mine && c.book ? ` · ${c.book}` : ""}</p>
+      <p className="cres__k">{c.legs.length > 1 ? `${c.legs.length}-leg parlay` : c.input === "ticker" ? "Stock" : "Single position"}{mine && c.book ? ` · ${c.book}` : ""}</p>
       <h1 id="cres-h" className="cres__h">{c.summary}</h1>
       <ol className="cres__legs">{c.legs.map((l, i) => <Leg key={i} l={l} i={i} mine={mine} result={c.results?.[i] ?? null} />)}</ol>
-      <p className="cres__note">Data, not a recommendation. Proven traders: 20+ settled markets on Polymarket and a win rate above the prices they paid. Big money: every big bet we track on Polymarket and Kalshi.</p>
+      <p className="cres__note">Data, not a recommendation. Proven traders: 20+ settled markets on Polymarket and a win rate above their average entry. Large positions: every position we track on Polymarket and Kalshi.</p>
     </section>
   );
 }

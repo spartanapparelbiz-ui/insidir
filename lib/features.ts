@@ -6,7 +6,7 @@
  * against. Stocks (SEC Form 4 and 13F) is ready once listed here, after its accuracy check on production. Crypto is
  * never ready before its own launch. */
 export const FEATURES = {
-  feed: "The live feed",
+  feed: "Activity",
   records: "Trader records",
   follows: "Following traders and markets",
   alerts_push: "Phone alerts",

@@ -46,8 +46,8 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
             <li>Every move of $50,000 or more in a market you follow.</li>
           </ul>
           <p className="afield__hint">Follow traders and markets from the feed, a trader&apos;s page or a market&apos;s page.</p>
-          <Toggle name="alertSplits" label="New splits of 15+ points" hint={<>When smart money and the crowd split on a market, or insiders buy a falling stock (<a href="/splits">Splits</a>).</>}
-            checked={settings.alertSplits !== false} save={save} onLabel="Split alerts on" offLabel="Split alerts off" />
+          <Toggle name="alertSplits" label="New divergences of 15+ points" hint={<>When proven traders and the market diverge on a market, or insiders purchase a falling stock (<a href="/splits">Splits</a>).</>}
+            checked={settings.alertSplits !== false} save={save} onLabel="Positioning alerts on" offLabel="Positioning alerts off" />
         </div>
       </section>
 

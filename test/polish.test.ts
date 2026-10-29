@@ -28,9 +28,9 @@ describe("polish", () => {
     expect(returnPct(rec(30, 10, -5_000, 100_000))).toBe("−5.0%");
     expect(returnPct(rec(30, 10, 5_000))).toBeNull();
     const whales = trackerBySlug("biggest-bets")!, ceo = trackerBySlug("ceo-buys")!;
-    expect(coverFigure(whales, { record: rec(30, 10, 12_400, 100_000), curve: [], tracked30d: 0 })).toEqual({ figure: "+12.4%", label: "return, all settled bets" });
+    expect(coverFigure(whales, { record: rec(30, 10, 12_400, 100_000), curve: [], tracked30d: 0 })).toEqual({ figure: "+12.4%", label: "ROI, all settled positions" });
     expect(coverFigure(whales, { record: rec(3, 1, 9, 10), curve: [], tracked30d: 0 }).figure).toBe("New");
-    expect(coverFigure(ceo, { record: null, curve: [], tracked30d: 2_400_000 })).toEqual({ figure: "$2.4M", label: "bought in 30 days" });
+    expect(coverFigure(ceo, { record: null, curve: [], tracked30d: 2_400_000 })).toEqual({ figure: "$2.4M", label: "30-day volume" });
     expect(coverFigure(ceo, null).figure).toBe("New");
   });
 

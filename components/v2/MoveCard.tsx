@@ -42,7 +42,7 @@ const pctOf = (p: number) => `${Math.round(p * 100)}%`;
  *  money in over "Pending"; a filing, the money over "Purchase". */
 function CardResult({ m }: { m: FeedItem }) {
   if (m.result) {
-    const status = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded";
+    const status = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Voided";
     const v = m.pnl;
     const amount = v !== null && m.result !== "void" ? `${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : null;
     return <span data-testid="move-result"><Result amount={amount} tone={m.result === "won" ? "won" : m.result === "lost" ? "lost" : "none"} status={status} /></span>;
@@ -50,13 +50,13 @@ function CardResult({ m }: { m: FeedItem }) {
   return <Result amount={short(m.amount)} status={m.source === "sec" ? "Purchase" : "Pending"} />;
 }
 
-/** Open: "In at 45% · now 61% ↑". */
+/** Open: "Entry 45% · now 61% ↑". */
 function Standing({ m, now }: { m: FeedItem; now: number | null }) {
   if (m.result || !m.inAt) return null;
   const dir = now === null ? null : now > m.avgPrice + 0.005 ? "up" : now < m.avgPrice - 0.005 ? "down" : "flat";
   return (
     <p className="move__live" data-testid="move-live">
-      In at {m.inAt}<span className="move__chance"> chance</span>{now !== null ? <> · now {pctOf(now)} {dir === "up" ? <span className="move__up" aria-label="up">↑</span> : dir === "down" ? <span className="move__down" aria-label="down">↓</span> : null}</> : null}
+      Entry {m.inAt}{now !== null ? <> · now {pctOf(now)} {dir === "up" ? <span className="move__up" aria-label="up">↑</span> : dir === "down" ? <span className="move__down" aria-label="down">↓</span> : null}</> : null}
     </p>
   );
 }
@@ -64,7 +64,7 @@ function Standing({ m, now }: { m: FeedItem; now: number | null }) {
 /** "Pays $161 per $100 if it hits." */
 function pays(m: FeedItem): string | null {
   if (m.source === "sec" || !(m.avgPrice > 0 && m.avgPrice < 1)) return null;
-  return `Pays $${Math.round(100 / m.avgPrice).toLocaleString("en-US")} per $100 if it hits.`;
+  return `Payout ${(1 / m.avgPrice).toFixed(2)}× if it settles their way.`;
 }
 
 export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compact = false, nowYes }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
@@ -89,6 +89,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         <h3 className="move__head">{m.headline}</h3>
         <CardResult m={m} />
       </div>
+      <p className="move__meta"><span>{short(m.amount)}</span> · <span>{m.who.name}</span> · <TimeAgo className="move__ago" at={m.at} initial={m.ago} /></p>
       <p className="move__subl">{m.subline}</p>
       <Standing m={m} now={now} />
       {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
@@ -100,7 +101,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
               <li key={b.id}>
                 <b>{short(b.amount)}</b>
                 <span className="move__betwho">{b.who.href ? <Link href={b.who.href}>{b.who.name}</Link> : b.who.name}</span>
-                {b.inAt ? <span>in at {b.inAt}</span> : null}
+                {b.inAt ? <span>entry {b.inAt}</span> : null}
                 <TimeAgo className="move__bettime" at={b.at} initial={b.ago} />
               </li>
             ))}
@@ -111,7 +112,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
           <Avatar face={m.face} />
           <p className="move__by">
             {m.who.href ? <Link className="move__name" href={m.who.href}>{m.who.name}</Link> : <span className="move__name">{m.who.name}</span>}
-            {m.topTrader ? <span className="move__top-trader"> · a top trader</span> : null}
+            {m.topTrader ? <span className="move__top-trader"> · Top-ranked trader</span> : null}
             {m.who.badge ? <span className="move__badge"> · {m.who.badge}</span> : null}
             {m.record ? <span className="move__rec">{m.record}</span> : null}
           </p>

@@ -30,14 +30,14 @@ export default async function TermsPage() {
           <ul>
             <li>Prices move, and the data we show can be delayed, incomplete or wrong. The venues&apos; own pages are the source of truth.</li>
             <li>Big traders lose too. A wallet&apos;s record shows what happened, not what will happen.</li>
-            <li>Past results on the Results page do not predict future ones.</li>
+            <li>Past results on the Track record page do not predict future ones.</li>
           </ul>
 
           <h2>Your eligibility</h2>
           <p>You are responsible for checking that prediction markets, and each venue, are available to you where you live, and for following each venue&apos;s rules. If you tell us you are in the US, Insidir only links you to apps available in the US.</p>
 
           <h2>Accounts and payment</h2>
-          <p>Payment is handled by Whop, on our checkout page. Insidir starts with a 7-day trial for $1, then $39/month, renewing monthly until cancelled. Access starts as soon as the $1 is paid; if you cancel during the 7 days you are not charged the $39. You can cancel in one click in Account; access continues to the end of the period you paid for. Refunds follow Whop&apos;s process and the law where you live.</p>
+          <p>Payment is handled by Whop, on our checkout page. Insidir starts with a 7-day trial for $1, then $39/month, renewing monthly until cancelled. Access starts as soon as the $1 is paid; if you cancel during the 7 days you are not charged the $39. You can cancel in one click in Account; access continues to the end of the period you paid for. Voids follow Whop&apos;s process and the law where you live.</p>
 
           <h2>Fair use</h2>
           <p>Your plan is for you. Don&apos;t resell or republish the feed, scrape the site, share your account, or try to get around the members-only pages. We can suspend accounts that do.</p>

@@ -90,7 +90,7 @@ export function fundItem(f: FundFilingIn, href: string): FilingItem {
     const { adds } = quarterChanges(f.prev, f.holdings, 100);
     const fresh = adds.filter(a => a.kind === "new").length;
     const top = adds[0];
-    detail = [top ? ` Biggest add: ${top.company} (${dollars(top.value)}).` : "", fresh ? ` ${fresh} new ${fresh === 1 ? "position" : "positions"}.` : ""].join("");
+    detail = [top ? ` Largest addition: ${top.company} (${dollars(top.value)}).` : "", fresh ? ` ${fresh} new ${fresh === 1 ? "position" : "positions"}.` : ""].join("");
   }
   const q = f.period ? ` for the quarter ending ${calDate(f.period)}` : "";
   return { key: `13f:${f.accession}`, kind: "fund", at: Date.parse(`${f.filedOn}T21:00:00Z`), sentence: `${f.fund} filed its 13F${q}.${detail}`,

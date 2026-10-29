@@ -53,7 +53,7 @@ export function dueKinds(u: { plan: Plan; email: string | null; paidAt: number |
 }
 
 const line = (m: Move, rec: TraderRecord | null) =>
-  `${m.wallet ? walletLabel(m.wallet, m.walletName) : "Someone"} put ${dollars(m.amount)} on ${m.outcome} · ${m.marketTitle} · ${DAY_ET.format(new Date(m.at))}${rec && recordLine(rec) ? ` (${recordLine(rec)})` : ""}`;
+  `${m.wallet ? walletLabel(m.wallet, m.walletName) : "Anonymous · Kalshi"}: ${dollars(m.amount)} position on ${m.outcome} · ${m.marketTitle} · ${DAY_ET.format(new Date(m.at))}${rec && recordLine(rec) ? ` (${recordLine(rec)})` : ""}`;
 
 export function welcomeEmail(appUrl: string): LifecycleEmail {
   return {
@@ -62,9 +62,9 @@ export function welcomeEmail(appUrl: string): LifecycleEmail {
     heading: "You're in.",
     lines: [
       { text: "Three steps and Insidir works for you, even with the app closed:" },
-      { text: "1. Follow 3 traders. The top traders by real profit are here.", url: `${appUrl}/top?from=welcome` },
-      { text: "2. Turn on alerts: we ping you the moment someone you follow makes a big move. On an iPhone, add Insidir to your Home Screen first (Share, then Add to Home Screen).", url: `${appUrl}/alerts?from=welcome` },
-      { text: "3. Keep an eye on the live feed: every big bet and trade, the second it happens.", url: `${appUrl}/feed?from=welcome` },
+      { text: "1. Follow 3 traders. The top-ranked traders by real net P&L are here.", url: `${appUrl}/top?from=welcome` },
+      { text: "2. Turn on alerts: we ping you when an account you follow opens a large position. On an iPhone, add Insidir to your Home Screen first (Share, then Add to Home Screen).", url: `${appUrl}/alerts?from=welcome` },
+      { text: "3. Activity: every large position and filing as it is opened.", url: `${appUrl}/feed?from=welcome` },
     ],
     cta: { label: "Set up your first alert", url: `${appUrl}/alerts?from=welcome` },
   };
@@ -73,15 +73,15 @@ export function welcomeEmail(appUrl: string): LifecycleEmail {
 /** `caught`: real moves since they joined, from traders they follow when there are any (else the biggest moves). */
 export function trialEndingEmail(caught: readonly Move[], fromFollows: boolean, records: ReadonlyMap<string, TraderRecord>, appUrl: string): LifecycleEmail {
   const lines: LifecycleEmail["lines"] = caught.length
-    ? [{ text: fromFollows ? "Since you joined, the traders you follow made these big moves:" : "Since you joined, these were the biggest moves on Insidir:" },
+    ? [{ text: fromFollows ? "Since you joined, the traders you follow made these large positions:" : "Since you joined, these were the largest positions on Insidir:" },
       ...caught.slice(0, 5).map(m => ({ text: line(m, m.wallet ? records.get(m.wallet) ?? null : null), url: `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=trial` }))]
-    : [{ text: "No big moves from the traders you follow yet. Follow a few more and we'll ping you when they move.", url: `${appUrl}/top?from=trial` }];
+    : [{ text: "No large positions from the traders you follow yet. Follow a few more and we'll ping you when they move.", url: `${appUrl}/top?from=trial` }];
   return {
     kind: "trial_ending", period: "once",
     subject: "Your trial ends tomorrow, here's what you caught",
     heading: "Your trial ends tomorrow.",
     lines: [...lines, { text: `Your $1 week ends tomorrow, then Insidir is $39/mo. Cancel anytime in one tap on your Account page.`, url: `${appUrl}/settings?from=trial` }],
-    cta: { label: "See the live feed", url: `${appUrl}/feed?from=trial` },
+    cta: { label: "Open Activity", url: `${appUrl}/feed?from=trial` },
   };
 }
 
@@ -95,14 +95,14 @@ export function weeklyEmail(settled: readonly Move[], records: ReadonlyMap<strin
     const won = ms.filter(m => m.result === "won").length, lost = ms.filter(m => m.result === "lost").length;
     const name = walletLabel(w, ms[0]!.walletName);
     lines.push({ text: `${name}: ${won} won, ${lost} lost this week${recordLine(records.get(w) ?? null) ? ` · ${recordLine(records.get(w) ?? null)}` : ""}`, url: `${appUrl}/p/${w}?from=weekly` });
-    for (const m of ms.slice(0, 3)) lines.push({ text: `${m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}: ${dollars(m.amount)} on ${m.outcome} · ${m.marketTitle}` });
+    for (const m of ms.slice(0, 3)) lines.push({ text: `${m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Voided"}: ${dollars(m.amount)} position on ${m.outcome} · ${m.marketTitle}` });
   }
   return {
     kind: "weekly", period: week,
     subject: "This week from the traders you follow",
     heading: "This week from the traders you follow.",
     lines: [...lines, { text: "Real results from public data. Big traders lose too; past results don't predict future ones." }],
-    cta: { label: "See the live feed", url: `${appUrl}/feed?from=weekly` },
+    cta: { label: "Open Activity", url: `${appUrl}/feed?from=weekly` },
   };
 }
 

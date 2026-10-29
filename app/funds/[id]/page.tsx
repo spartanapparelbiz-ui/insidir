@@ -110,7 +110,7 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
             <p className="note"><a href={latest.url} target="_blank" rel="noopener noreferrer">See the SEC filing</a></p>
             {changes ? (
               <div className="pq__grid">
-                <Changes title="Biggest adds" list={changes.adds.filter(c => c.kind === "added").slice(0, 10)} empty="No positions added to this quarter." />
+                <Changes title="Largest additions" list={changes.adds.filter(c => c.kind === "added").slice(0, 10)} empty="No positions added to this quarter." />
                 <Changes title="New positions" list={changes.adds.filter(c => c.kind === "new").slice(0, 10)} empty="No new positions this quarter." />
               </div>
             ) : <p className="note">We compare quarters once we hold two of their filings.</p>}
@@ -137,14 +137,14 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
                   })} />
               </Section>
               <section className="block" aria-labelledby="q-h">
-                <h2 id="q-h" className="block__h">Biggest adds and cuts, every quarter</h2>
+                <h2 id="q-h" className="block__h">Largest additions and reductions, every quarter</h2>
                 {quarters.slice(0, -1).map((q, i) => {
                   const { adds, cuts } = quarterChanges(quarters[i + 1]!.holdings, q.holdings);
                   return (
                     <article key={q.accession} className="pq">
                       <h3 className="pq__title">{q.period ? `Quarter ending ${calDate(q.period)}` : `Filed ${calDate(q.filedOn)}`}</h3>
                       <p className="note">Versus the quarter before. Filed {calDate(q.filedOn)}. <a href={q.url} target="_blank" rel="noopener noreferrer">See the SEC filing</a></p>
-                      <div className="pq__grid"><Changes title="Biggest adds" list={adds} /><Changes title="Biggest cuts" list={cuts} /></div>
+                      <div className="pq__grid"><Changes title="Largest additions" list={adds} /><Changes title="Largest reductions" list={cuts} /></div>
                     </article>
                   );
                 })}

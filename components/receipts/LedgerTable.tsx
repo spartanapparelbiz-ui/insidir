@@ -70,7 +70,7 @@ export function LedgerTable({ items }: { items: LedgerItem[] }) {
           <tr>
             <th scope="col" className="rx-c-id">Receipt</th><th scope="col" className="rx-c-at">Found at</th><th scope="col">Event</th>
             <th scope="col" className="rx-c-prices">Prices at detection</th><th scope="col" className="dt-r rx-c-num">Fillable size</th>
-            <th scope="col" className="dt-r rx-c-num">Profit after fees</th><th scope="col" className="rx-c-out">Settled outcome</th><th scope="col" className="rx-c-chk">Same rules</th>
+            <th scope="col" className="dt-r rx-c-num">Net P&L after fees</th><th scope="col" className="rx-c-out">Settled outcome</th><th scope="col" className="rx-c-chk">Same rules</th>
           </tr>
         </thead>
         {items.map(it => {

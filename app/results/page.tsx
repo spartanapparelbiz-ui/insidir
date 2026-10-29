@@ -30,7 +30,7 @@ import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Results", description: "Every big move we've shown that has settled, won or lost. Real past moves. Not a promise." };
+export const metadata: Metadata = { title: "Track record", description: "Every large position we've shown that has settled, won or lost. Real past positions. Not a promise." };
 
 const SIZES = [10_000, 50_000, 100_000];
 const PER_PAGE = 50;
@@ -71,13 +71,13 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref()} />
       <main className="wrap app2 results dark">
-        <PageBand n={BAND.results} title="Results" />
-        <p className="results__label">Real past moves. Not a promise.</p>
+        <PageBand n={BAND.results} title="Track record" />
+        <p className="results__label">Real past positions. Not a promise.</p>
         {total ? (
-          <section className="results__total" aria-label="Every settled move" data-testid="results-total">
+          <section className="results__total" aria-label="Every settled position" data-testid="results-total">
             <RecordCount r={total} />
             <RecordLines r={total} net />
-            <p className="trust__fine">Polymarket wallets, every settled bet of every size. Kalshi trades are anonymous, so we can&apos;t tell a new bet from someone closing one: they&apos;re listed below but not counted.</p>
+            <p className="trust__fine">Polymarket wallets, every settled position of every size. Kalshi trades are anonymous, so a new position can&apos;t be told apart from a closing trade: they&apos;re listed below but not counted.</p>
           </section>
         ) : null}
         <div className="chips" aria-label="Filters">
@@ -93,11 +93,11 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
               {shown.map(r => (
                 <li key={r.id} className="rlist__row">
                   {(r.soldShare ?? 0) > SOLD_EARLY_SHARE && r.result !== "void"
-                    ? <span className="rlist__res rlist__res--sold">Sold early</span>
-                    : <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Refunded"}</span>}
+                    ? <span className="rlist__res rlist__res--sold">Closed before settlement</span>
+                    : <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Voided"}</span>}
                   <span className="rlist__what">
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {member ? <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link> : r.marketTitle}
-                    <span className="rlist__who facerow"><Avatar face={moveFace(r, avatars)} />{r.source === "kalshi" ? "Someone on Kalshi" : member && isTopTrader(recs.get(r.wallet ?? "")) ? `Top trader ${walletLabel(r.wallet!, r.walletName)}` : walletLabel(r.wallet!, r.walletName)}</span>
+                    <span className="rlist__who facerow"><Avatar face={moveFace(r, avatars)} />{r.source === "kalshi" ? "Anonymous · Kalshi" : member && isTopTrader(recs.get(r.wallet ?? "")) ? `${walletLabel(r.wallet!, r.walletName)} · Top-ranked trader` : walletLabel(r.wallet!, r.walletName)}</span>
                     {moveSource(r) ? <SourceA link={moveSource(r)!} className="source rlist__src" /> : null}
                   </span>
                   <span className="rlist__when"><time dateTime={new Date(r.settledAt ?? r.at).toISOString()}>{agoText(r.settledAt ?? r.at, now)}</time></span>
@@ -113,9 +113,9 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         ) : (
           <div className="empty">
             <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
-            <p className="empty__h">Nothing settled yet{topOnly ? " from top traders" : ""}.</p>
-            <p className="empty__p">Moves show up here, won or lost, as their markets settle.</p>
-            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "See the live feed" : GET_CTA}</Link>
+            <p className="empty__h">Nothing settled yet{topOnly ? " from top-ranked traders" : ""}.</p>
+            <p className="empty__p">Positions show up here, won or lost, as their markets settle.</p>
+            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "Open Activity" : GET_CTA}</Link>
           </div>
         )}
       </main>

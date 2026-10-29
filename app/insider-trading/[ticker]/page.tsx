@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ ticker: s
   if (!co) return { title: "Insider trading", robots: { index: false } };
   return {
     title: `${co.company} (${co.ticker}) insider trading`,
-    description: `Every insider buy and sale at ${co.company} (${co.ticker}) reported to the SEC on Form 4: who traded, how much, the price and the filing.`,
+    description: `Every insider purchase and sale at ${co.company} (${co.ticker}) reported to the SEC on Form 4: who traded, how much, the price and the filing.`,
     alternates: { canonical: companyHref(co.ticker) },
   };
 }

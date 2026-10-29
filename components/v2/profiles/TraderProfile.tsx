@@ -81,18 +81,18 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
       </header>
       <p className="dsec__note">One trader can use several wallets; these numbers cover this wallet only. <Link href="/data">About our data</Link></p>
 
-      {!paid ? <Locked trial={trial} what="Their record is for members: profit over time, win rate, ROI, rank, edge, categories, open positions and every move." />
+      {!paid ? <Locked trial={trial} what="Their record is for members: net P&L over time, win rate, ROI, rank, edge, categories, open positions and every position." />
         : s && showStats(s) ? (
           <>
             <Section id="perf-h" title="Performance" note={`From ${s.resolved.toLocaleString("en-US")} resolved markets in Polymarket's public data${rec ? `, updated ${calDate(new Date(rec.updatedAt).toISOString().slice(0, 10))}` : ""}. Past results.`}>
-              <LineChart points={s.series.map(p => ({ t: p.at, v: p.profit }))} windows={windows} format="money" label="Profit, every resolved market" empty="No resolved markets in this window." />
+              <LineChart points={s.series.map(p => ({ t: p.at, v: p.profit }))} windows={windows} format="money" label="Net P&L, every resolved market" empty="No resolved markets in this window." />
               <div className="dsub"><Tiles cols={3} label="Record" tiles={[
                 { label: "Record", value: `${s.won.toLocaleString("en-US")}–${s.lost.toLocaleString("en-US")}` },
                 { label: "Win rate", value: pct(s.won / s.resolved), tone: s.won / s.resolved >= 0.5 ? "money" : "loss" },
-                { label: "All-time profit", value: signed(s.profit), tone: tone(s.profit) },
+                { label: "All-time net P&L", value: signed(s.profit), tone: tone(s.profit) },
                 { label: "ROI", value: s.roi === null ? "—" : pct(s.roi, 1), tone: tone(s.roi) },
-                { label: "Rank by profit", value: rank ? `#${rank.rank.toLocaleString("en-US")}` : "—" },
-                { label: "Edge on big moves (win rate − price)", value: bp.edge === null ? NOT_ENOUGH : pts(bp.edge), tone: tone(bp.edge) },
+                { label: "Rank by net P&L", value: rank ? `#${rank.rank.toLocaleString("en-US")}` : "—" },
+                { label: "Edge vs. entry", value: bp.edge === null ? NOT_ENOUGH : pts(bp.edge), tone: tone(bp.edge) },
               ]} /></div>
               {rank ? <p className="dsec__note dsub">Rank among {rank.of.toLocaleString("en-US")} traders with 20+ resolved markets. Edge from {bp.settled} settled big moves.</p> : null}
             </Section>
@@ -101,41 +101,41 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
               <Tiles cols={4} label="Stats" tiles={[
                 { label: "First seen", value: firstSeen ? DATE.format(new Date(firstSeen)) : "—" },
                 { label: "Markets traded", value: (s.resolved + (positions?.length ?? 0)).toLocaleString("en-US") },
-                { label: "Average bet", value: dollars(s.avgBet) },
-                { label: "Biggest win", value: signed(s.biggestWin), tone: "money" },
+                { label: "Average position size", value: dollars(s.avgBet) },
+                { label: "Largest gain", value: signed(s.biggestWin), tone: "money" },
                 { label: "Current streak", value: streakText, tone: s.streak ? (s.streak.kind === "won" ? "money" : "loss") : undefined },
                 { label: "Last 30 days", value: s.last30.resolved ? `${s.last30.won}–${s.last30.resolved - s.last30.won}` : "—" },
-                { label: "Last 30 days, profit", value: s.last30.resolved ? signed(s.last30.profit) : "—", tone: tone(s.last30.profit) },
-                { label: "Big moves we hold", value: hist.total.toLocaleString("en-US") },
+                { label: "Last 30 days, net P&L", value: s.last30.resolved ? signed(s.last30.profit) : "—", tone: tone(s.last30.profit) },
+                { label: "Large positions we hold", value: hist.total.toLocaleString("en-US") },
               ]} />
             </Section>
 
-            <Section id="wl-h" title="Biggest wins and losses">
+            <Section id="wl-h" title="Largest gains and losses">
               <div className="dgrid2">
-                <Table label="Biggest wins" head={["Market", "Profit"]} numeric={[1]} rows={wins.length ? wins.map(m => [m.title, <span key="p" className="money">{signed(m.pnl)}</span>]) : [["No winning markets", "—"]]} />
-                <Table label="Biggest losses" head={["Market", "Loss"]} numeric={[1]} rows={losses.length ? losses.map(m => [m.title, <span key="p" className="loss">{signed(m.pnl)}</span>]) : [["No losing markets", "—"]]} />
+                <Table label="Largest gains" head={["Market", "Net P&L"]} numeric={[1]} rows={wins.length ? wins.map(m => [m.title, <span key="p" className="money">{signed(m.pnl)}</span>]) : [["No winning markets", "—"]]} />
+                <Table label="Largest losses" head={["Market", "Loss"]} numeric={[1]} rows={losses.length ? losses.map(m => [m.title, <span key="p" className="loss">{signed(m.pnl)}</span>]) : [["No losing markets", "—"]]} />
               </div>
             </Section>
 
             <Section id="cat-h" title="By category">
-              <Table label="By category" head={["Category", "Markets", "W–L", "Win rate", "Profit"]} numeric={[1, 2, 3, 4]}
+              <Table label="By category" head={["Category", "Markets", "W–L", "Win rate", "Net P&L"]} numeric={[1, 2, 3, 4]}
                 rows={s.categories.map(c => [c.category, (c.won + c.lost).toLocaleString("en-US"), `${c.won}–${c.lost}`,
                   c.won + c.lost >= 20 ? pct(c.won / (c.won + c.lost)) : <span key="n" className="tile__na">{NOT_ENOUGH}</span>, <span key="p" className={tone(c.profit)}>{signed(c.profit)}</span>])} />
             </Section>
 
-            <Section id="side-h" title="Favorite vs underdog" note="Their settled big moves, by the price they paid.">
-              <BreakdownTable label="Favorite vs underdog" first="Price paid" rows={breakdown(settled, m => sideOf(m.avgPrice), SIDES)} />
+            <Section id="side-h" title="Favorite vs underdog" note="Their settled large positions, by their entry.">
+              <BreakdownTable label="Favorite vs underdog" first="Entry" rows={breakdown(settled, m => sideOf(m.avgPrice), SIDES)} />
             </Section>
 
-            <Section id="heat-h" title="When they trade" note={`Big moves over the last 12 months by day and hour, New York time (${year.length.toLocaleString("en-US")} moves).`}>
-              {year.length ? <Heatmap grid={heatmap(year.map(at => ({ at })))} label="Big moves by weekday and hour" /> : <p className="dnote">No big moves in the last 12 months.</p>}
+            <Section id="heat-h" title="When they trade" note={`Large positions over the last 12 months by day and hour, New York time (${year.length.toLocaleString("en-US")} positions).`}>
+              {year.length ? <Heatmap grid={heatmap(year.map(at => ({ at })))} label="Large positions by weekday and hour" /> : <p className="dnote">No large positions in the last 12 months.</p>}
             </Section>
             {source ? <p className="dsec__note dsub"><a href={source} target="_blank" rel="noopener noreferrer">See their Polymarket profile</a></p> : null}
           </>
         ) : <p className="dnote">{NOT_ENOUGH}: we show stats once a wallet has 20 resolved markets{s && s.resolved ? ` (this one has ${s.resolved})` : ""}.</p>}
 
       {positions && positions.length ? (
-        <Section id="pos-h" title="Open positions" note="From Polymarket's public data: what they hold now, the price they paid and the price since.">
+        <Section id="pos-h" title="Open positions" note="From Polymarket's public data: what they hold now, their entry and the price since.">
           <Table label="Open positions" head={["Market", "Value", "Paid", "Now", "Since"]} numeric={[1, 2, 3, 4]}
             rows={positions.map(p => [
               <span key="t">{p.title}<span className="dtable__sub">{p.outcome}</span></span>, dollars(p.value), cents(p.avgPrice), cents(p.curPrice),
@@ -144,7 +144,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
         </Section>
       ) : null}
 
-      <Section id="moves-h" title="Every big move" note={hist.total ? `${hist.total.toLocaleString("en-US")} big moves we've seen from this wallet${paid ? "" : " (30 minutes late)"}, newest first.` : undefined}>
+      <Section id="moves-h" title="Every large position" note={hist.total ? `${hist.total.toLocaleString("en-US")} large positions we've seen from this wallet${paid ? "" : " (30 minutes late)"}, newest first.` : undefined}>
         {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={followState(viewer, following)} trialHref={trial} /></li>)}</ol>
           : <p className="dnote">No big moves from this wallet{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         {pages > 1 ? (

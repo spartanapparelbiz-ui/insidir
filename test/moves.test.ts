@@ -139,20 +139,20 @@ describe("trader records", () => {
 describe("plain-English copy", () => {
   const base = polymarketMoves([fill({ contracts: 664_516, price: 0.62 })], info)[0]!;
   const top = recordFrom(W, null, Array.from({ length: 63 }, (_, i) => ({ marketId: `M${i}`, realizedPnl: i < 41 ? 50_000 : -40_000 })), T0);
-  it("name the trader: username, short address, brand-new wallet, Kalshi's someone", () => {
-    expect(moveSentence({ ...base, amount: 412_000 }, top)).toBe("0xab…01, a top trader, just put $412,000 on Chiefs to win.");
-    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, top)).toBe("kch123, a top trader, just put $412,000 on Chiefs to win.");
+  it("name the trader: username, short address, new account, Anonymous · Kalshi", () => {
+    expect(moveSentence({ ...base, amount: 412_000 }, top)).toBe("0xab…01 · Top-ranked trader: $412,000 position on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, top)).toBe("kch123 · Top-ranked trader: $412,000 position on Chiefs to win.");
     // Free viewers get no record, so nobody is called a top trader; the name is for everyone.
-    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, null)).toBe("kch123 just put $412,000 on Chiefs to win.");
-    expect(moveSentence({ ...base, amount: 200_000, newWallet: true }, null)).toBe("A brand-new wallet just put $200,000 on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, null)).toBe("kch123: $412,000 position on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 200_000, newWallet: true }, null)).toBe("New account: $200,000 position on Chiefs to win.");
     const fed: Move = { ...base, tab: "markets", outcome: "Yes", marketTitle: "Fed rate cut in December?", amount: 85_000 };
-    expect(moveSentence(fed, null)).toBe('0xab…01 just put $85,000 on "Yes" in "Fed rate cut in December?".');
-    expect(moveSentence({ ...base, source: "kalshi", outcome: "Lakers", amount: 48_000 }, null)).toBe("Someone just put $48,000 on Lakers to win.");
+    expect(moveSentence(fed, null)).toBe('0xab…01: $85,000 position on "Yes" in "Fed rate cut in December?".');
+    expect(moveSentence({ ...base, source: "kalshi", outcome: "Lakers", amount: 48_000 }, null)).toBe("Anonymous · Kalshi: $48,000 position on Lakers to win.");
   });
   it("payout in dollars per $100, record line, time", () => {
-    expect(payoutLine({ outcome: "Chiefs", avgPrice: 0.62, tab: "sports" })).toBe("Pays $161 on every $100 if Chiefs win.");
-    expect(payoutLine({ outcome: "Yes", avgPrice: 0.25, tab: "markets" })).toBe("Pays $400 on every $100 if the answer is Yes.");
-    expect(recordLine(top)).toBe("Won 41 of 63 · +$1.2M all-time");
+    expect(payoutLine({ outcome: "Chiefs", avgPrice: 0.62, tab: "sports" })).toBe("Payout 1.61× if Chiefs win.");
+    expect(payoutLine({ outcome: "Yes", avgPrice: 0.25, tab: "markets" })).toBe("Payout 4.00× if it settles Yes.");
+    expect(recordLine(top)).toBe("Won 41 of 63 · Net P&L +$1.2M");
     expect(agoText(T0 - 2 * MIN, T0)).toBe("2m ago");
     expect(dollars(1_234_567)).toBe("$1.2M");
   });
@@ -263,7 +263,7 @@ describe("move alerts", () => {
   });
   it("the message says what happened, links to the market, uses no banned words", () => {
     const msg = alertMessage(base, null, "trader", "https://insidir.com", base.at);
-    expect(msg.body).toBe("0xaa just put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(msg.body).toBe("0xaa: $60,000 position on Chiefs to win. Payout 1.61× if Chiefs win.");
     expect(msg.url).toBe("https://insidir.com/market/mkt1?from=alert");
     for (const re of BANNED) expect(`${msg.title} ${msg.body}`).not.toMatch(re);
   });
@@ -281,10 +281,10 @@ describe("move alerts", () => {
     const e = dailyEmail([base], [{ ...base, result: "won" }, { ...base, id: "x", result: "lost" }], new Map(), "https://insidir.com");
     const text = e.lines.map(l => l.text).join("\n");
     expect(e.subject).toBe("$60,000 on Chiefs to win, and more");
-    expect(text).toContain("0xaa put $60,000 on Chiefs to win.");
-    expect(text).toContain("How yesterday's top-trader moves settled: 1 won, 1 lost.");
+    expect(text).toContain("0xaa: $60,000 position on Chiefs to win.");
+    expect(text).toContain("How yesterday's top-ranked trader positions settled: 1 won, 1 lost.");
     for (const re of BANNED) expect(`${e.subject}\n${text}`).not.toMatch(re);
-    expect(dailyEmail([], [], new Map(), "x").lines[0]!.text).toBe("No moves of $10,000 or more in the last 24 hours.");
+    expect(dailyEmail([], [], new Map(), "x").lines[0]!.text).toBe("No positions of $10,000 or more in the last 24 hours.");
   });
   it("share card text and post captions never advise", () => {
     const t = moveCardText({ ...base, result: "won" }, null);
@@ -292,7 +292,7 @@ describe("move alerts", () => {
     expect(t.on).toBe("on Chiefs to win");
     expect(t.result).toBe("It won.");
     const cap = postCaption(base, null);
-    expect(cap.split("\n")[0]).toBe("0xaa put $60,000 on Chiefs to win. Pays $161 on every $100 if Chiefs win.");
+    expect(cap.split("\n")[0]).toBe("0xaa: $60,000 position on Chiefs to win. Payout 1.61× if Chiefs win.");
     expect(cap).toContain("Not financial advice.");
     for (const re of BANNED) { expect(cap).not.toMatch(re); expect(Object.values(t).join(" ")).not.toMatch(re); }
   });

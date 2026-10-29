@@ -11,7 +11,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { getCheck } from "@/lib/check/run";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Checked bet", robots: { index: false } };
+export const metadata: Metadata = { title: "Checked position", robots: { index: false } };
 
 export default async function CheckedPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,8 +26,8 @@ export default async function CheckedPage({ params }: { params: Promise<{ id: st
         <CheckView c={c} mine={mine} />
         <div className="cres__act">
           <a className="btn btn--primary" href={`/check/${c.id}/card`} download={`insidir-check-${c.id}.png`}>Save the card</a>
-          <Link className="btn btn--secondary" href="/check">Check another bet</Link>
-          {mine ? <Link className="btn btn--secondary" href="/check/history">Your checked bets</Link> : null}
+          <Link className="btn btn--secondary" href="/check">Check another position</Link>
+          {mine ? <Link className="btn btn--secondary" href="/check/history">Your checked positions</Link> : null}
         </div>
       </main>
     </>

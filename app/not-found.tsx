@@ -11,7 +11,7 @@ export default async function NotFound() {
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer?.user)} plan={viewer?.plan} />
-      <WrongTrail code="404" text="This page doesn't exist. The link may be old or mistyped. The big money is on the live feed." />
+      <WrongTrail code="404" text="This page doesn't exist. The link may be old or mistyped. Current positions are on Activity." />
     </>
   );
 }
