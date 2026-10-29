@@ -221,7 +221,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .tbook__name { font-size: var(--t17); font-weight: 600; }
 .tbook__row:hover .tbook__name { text-decoration: underline; text-underline-offset: 3px; }
 .tbook__hold { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tbook__row .tbook__roi { grid-area: roi; }
+.tbook__row .res.tbook__roi { grid-area: roi; }
 .tbook__row .res { grid-area: res; }
 
 /* ---------- home: a live portfolio (components/home/LivePortfolio.tsx) ---------- */
@@ -256,7 +256,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
  * (the text size). A figure sits over its grey label; a missing one is a light grey "—" at the same size, so rows and
  * tiles keep one height and columns line up. Colour only for gains and losses. */
 .res, .tile dd, .lport__v, .dtable td, .table td, .tbook__hold, .move__meta, .rlist__amt, .rlist__when { font-variant-numeric: tabular-nums lining-nums; }
-.res { min-width: 72px; }
 .res__amt--nil, .tile dd.tile__nil, .lport__v.lport__v--nil { color: var(--grey-4); font-weight: 500; }
 .res__st { line-height: 16px; }
 .res__amt { line-height: 20px; }
@@ -273,6 +272,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 @media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 112px 112px; column-gap: 16px; } .tbook__thumb { width: 56px; height: 56px; } }
 .tbook__rank { font-size: var(--t13); font-weight: 500; text-align: right; }
 .tbook__row .res { min-width: 0; }
+.tbook__row .res.tbook__roi { grid-area: roi; }
 
 /* The live portfolio: ROI and Net P&L as two headline figures over their labels. */
 .lport__nums { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-top: 20px; }
