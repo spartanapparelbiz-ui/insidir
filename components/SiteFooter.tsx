@@ -18,6 +18,7 @@ export function SiteFooter() {
           <p><a className="link" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
         </div>
         <nav className="foot__links" aria-label="Footer">
+          <Link href="/trackers">Trackers</Link>
           <Link href="/sports">Sports</Link>
           <Link href="/markets">Markets</Link>
           {isReady("stocks") ? <Link href="/stocks">Stocks</Link> : null}

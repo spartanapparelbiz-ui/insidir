@@ -100,6 +100,19 @@ is processed and not stored.
 The site shows "Live data paused, retrying" when no venue heartbeat is newer than 2 minutes, "found X seconds
 ago" on every deal, and greys out deals not re-seen in the last minute.
 
+## Trackers
+
+Followable packages of big moves (`lib/trackers.ts`), each a rule over `terminal.moves`, written twice: pure (alerts,
+tests) and in SQL (lists and records); `test/trackers.test.ts` checks the two pick the same moves. Biggest Bets ($100K+),
+Top Traders (wallets with 20+ resolved markets and a profit), NBA / NFL / Soccer Big Money, Fed & Rates, Elections
+2026, CEO Buys (Form 4), Big Funds (13F) and Brand-New Wallets.
+
+A tracker's record (`lib/trackers-store.ts`) is its settled moves under the same rule as `/results` (`lib/trust.ts`
+`countsToRecord`): won, lost, the average price paid and the net from the wallets' own trades, per window (1W 1M 3M
+6M 1Y, by settle date) and all-time. Under 20 settled moves it shows "New". Follow kind `tracker` (target: the slug):
+its moves join `/following`, and a new move alerts (`lib/moves/alerts.ts` reason `tracker`). Pages: `/trackers`,
+`/trackers/<slug>`; home shows Featured, Top performers and Popular (followers, then money tracked in 30 days).
+
 ## Insiders, companies and funds
 
 Public pages built from the SEC filings the Stocks jobs store (`terminal.insider_trades`, `terminal.funds`):

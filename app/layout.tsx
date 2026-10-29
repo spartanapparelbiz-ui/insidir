@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Rufina } from "next/font/google";
 import localFont from "next/font/local";
 import { Suspense, type ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
@@ -15,6 +14,7 @@ import { WHAT_IS, WHAT_IS_TITLE } from "@/lib/copy";
 import "./tokens.css";
 import "./globals.css";
 import "./v2.css";
+import "./light.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -25,21 +25,19 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
   // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
-  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black" },
+  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 };
 
-/** Schibsted Grotesk for everything; Rufina (the closest match to the logo's wordmark) for headlines. Both self-hosted
- * by next/font: no third-party request at runtime. Schibsted is the variable font (400–900) with one change
+/** Schibsted Grotesk for everything, self-hosted by next/font: no third-party request at runtime. It is the variable font (400–900) with one change
  * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
-const serif = Rufina({ subsets: ["latin"], weight: ["700"], variable: "--font-rufina", display: "swap" });
 
-export const viewport: Viewport = { themeColor: "#0b0b12", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${schibsted.variable} ${serif.variable}`} suppressHydrationWarning>
+    <html lang="en" className={schibsted.variable} suppressHydrationWarning>
       <head>
         {/* Before first paint: lets scroll reveals start hidden only when JS will show them (components/motion/Motion.tsx). */}
         <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js')" }} />

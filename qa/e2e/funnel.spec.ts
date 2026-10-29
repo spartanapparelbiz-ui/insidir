@@ -138,21 +138,16 @@ test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /lo
     .toEqual(["account_created", "checkout_start", "start_view"]);
 });
 
-test("the sticky Get Insidir bar: phones only, every public page, never on /start or /login", async ({ page }) => {
-  const phone = page.viewportSize()!.width < 900;
-  for (const path of ["/", "/sports", "/markets", "/results", "/pricing", "/faq"]) {
-    await page.goto(path);
-    const bar = page.getByTestId("sticky-cta");
-    if (phone) {
-      await expect(bar, path).toBeVisible();
-      await expect(bar.getByRole("link", { name: "Try 7 days for $1" })).toHaveAttribute("href", "/start");
-    } else await expect(bar, path).toBeHidden();
-  }
-  if (phone) await page.screenshot({ path: `qa/screenshots/sticky-cta-${page.viewportSize()!.width}.png` });
-  for (const path of ["/start", "/login"]) {
+test("one action per page: no offer bar or sticky bar anywhere; the nav button on public pages but not home, /start or /login", async ({ page }) => {
+  for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
+    await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
+  await page.goto("/");
+  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await page.goto("/pricing");
+  await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
 });
 
 test("/admin/funnel: the eight steps with the drop-off between each", async ({ page }) => {

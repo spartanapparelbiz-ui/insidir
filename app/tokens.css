@@ -1,75 +1,62 @@
-/* Insidir design tokens: "serious type, wild world". The only place colours, type, radii and motion are defined.
- * Black and white. Only data gets colour: --money for wins and money, --loss for losses. Nothing else.
- * Two themes from the same roles: light (home, pricing, legal, sign-in) and dark (the app: feed, profiles, Top traders,
- * markets, Results, Following, Account), switched on by <main class="dark"> (see the end of this file).
- * Headlines (h1, h2, page titles) are serif (Rufina, the closest match to the logo's wordmark); everything else is
- * Schibsted Grotesk, with money in tabular numbers. Photos (public/hero) are atmosphere only, never behind data. */
+/* Insidir design tokens: light, Autopilot/Apple-quiet. The only place colours, type, radii and motion are defined.
+ * White page, #0B0B12 text, #6E6E73 secondary, #F5F5F7 cards, #E8E8ED hairlines. Green only for gains and wins, red only
+ * for losses; nothing else gets colour. One font, Schibsted Grotesk, tight headlines, tabular numbers. 8px grid.
+ * Every page is light (the old dark app theme is gone: <main class="dark"> no longer changes anything).
+ * Photos (public/hero) are atmosphere only, never behind data. */
 :root {
   /* the palette */
   --ink: #0b0b12;
   --paper: #ffffff;
-  --grey-1: #f2f2f4;
-  --grey-2: #e6e6ea;
-  --grey-3: #5b6070;
-  --money: #087a55;
-  --loss: #c2410c;
-  /* the dark app's palette: page, raised inset, hairline, secondary text, and the data colours lifted to stay
-   * legible on dark surfaces (each 6:1 or better on --bg; #087a55 and #c2410c are only ~3.5:1 there) */
-  --night: #0b0b12;
-  --night-surface: #141418;
-  --night-inset: #1c1c22;
-  --night-line: #26262c;
-  --night-muted: #a1a1aa;
-  --night-money: #2bb07f;
-  --night-loss: #f0703a;
+  --grey-1: #f5f5f7;
+  --grey-1b: #ececf0;
+  --grey-2: #e8e8ed;
+  --grey-3: #6e6e73;
+  /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
+   * readable (4.5:1 on white and on the cards). Losses likewise. */
+  --money: #1a9e5c;
+  --money-text: #137a47;
+  --loss: #d93a2b;
+  --loss-text: #c0321f;
+  /* kept for old names: the "night" palette now points at the light one */
+  --night: var(--paper);
+  --night-surface: var(--grey-1);
+  --night-inset: var(--grey-1b);
+  --night-line: var(--grey-2);
+  --night-muted: var(--grey-3);
+  --night-money: var(--money);
+  --night-loss: var(--loss);
 
-  /* roles (all from the palette above). --page is the page itself; --bg is what cards sit on (the same white in light) */
+  /* roles. --page is the page; --bg is a card (light grey); --bg-alt is an inset inside a card */
   --page: var(--paper);
-  --bg: var(--paper);
-  --bg-alt: var(--grey-1);
+  --bg: var(--grey-1);
+  --bg-alt: var(--grey-1b);
   --border: var(--grey-2);
   --text: var(--ink);
-  /* nothing lighter than --muted is ever used for text on white (6.3:1); on black, text is --paper or --grey-2 */
   --muted: var(--grey-3);
-  --press: var(--grey-3);
+  --press: #2a2a33;
 
-  /* Two fonts only: Schibsted Grotesk for everything (numbers included), Rufina for page and section headlines. */
-  --sans: var(--font-schibsted), sans-serif;
-  --serif: var(--font-rufina), serif;
-  /* Six sizes only: 13 labels and fine print · 15 body · 17 lead and card titles · 24 h3 · 40 h2 · 64 h1 (40 on phones).
-   * The older names point at the nearest of the six, so nothing anywhere can be another size. */
-  --t13: 13px; --t15: 15px; --t17: 17px; --t24: 24px; --t40: 40px; --t64: 64px;
-  --t20: var(--t17); --t32: var(--t24); --t44: var(--t40); --t56: var(--t64); --t72: var(--t64); --t80: var(--t64); --t96: var(--t64);
-  /* Three weights: 400 body, 600 labels and buttons, 800 big numbers (Rufina headlines stay 700). */
-  --w-body: 400; --w-label: 600; --w-num: 800;
+  /* one font */
+  --sans: var(--font-schibsted), -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --serif: var(--sans);
+  /* Seven sizes: 13 labels · 15 body · 17 lead · 22 card titles · 32 h2 · 56 h1 · 80 display. Older names map onto them. */
+  --t13: 13px; --t15: 15px; --t17: 17px; --t22: 22px; --t32: 32px; --t56: 56px; --t80: 80px;
+  --t20: var(--t17); --t24: var(--t22); --t40: var(--t32); --t44: var(--t32); --t64: var(--t56); --t72: var(--t56); --t96: var(--t80);
+  --w-body: 400; --w-label: 600; --w-num: 700;
+  --tight: -0.03em;
 
-  --r-card: 16px;
+  --r-card: 24px;
   --r-input: 12px;
-  --r-btn: 12px;
+  --r-btn: 999px;
   --r-pill: 999px;
+  --shadow-hover: 0 12px 32px -12px rgba(11, 11, 18, .14);
 
   --tap: 44px;
-  --btn-h: 52px;
-  --max: 1120px;
-  --sec: 64px;
+  --btn-h: 48px;
+  --max: 1200px;
+  --sec: 72px;
 
-  --dur-press: 120ms; --dur-small: 200ms; --dur-panel: 320ms;
+  --dur-press: 200ms; --dur-small: 200ms; --dur-panel: 300ms;
   --ease-enter: cubic-bezier(.2, .8, .2, 1); --ease-exit: cubic-bezier(.4, 0, 1, 1);
   color-scheme: light;
 }
-@media (min-width: 900px) { :root { --sec: 96px; } }
-
-/* The dark app. Solid surfaces (#141418) on #0b0b12, #26262c hairlines, white text, #a1a1aa secondary (7:1). Photos never
- * sit behind numbers. Buttons invert: white with black text. */
-:root:has(main.dark), .theme-night {
-  --page: var(--night);
-  --bg: var(--night-surface);
-  --bg-alt: var(--night-inset);
-  --border: var(--night-line);
-  --text: var(--paper);
-  --muted: var(--night-muted);
-  --press: var(--grey-2);
-  --money: var(--night-money);
-  --loss: var(--night-loss);
-  color-scheme: dark;
-}
+@media (min-width: 900px) { :root { --sec: 120px; } }

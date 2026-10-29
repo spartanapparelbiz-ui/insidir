@@ -68,3 +68,41 @@ export function ListSkeleton({ label, rows = 8 }: { label: string; rows?: number
     </Shell>
   );
 }
+
+/** /trackers: the title, then cover cards. */
+export function TrackersSkeleton() {
+  return (
+    <>
+      <Bar />
+      <main className="wrap app2 trackers skel" aria-busy="true">
+        <p className="sr-only" role="status">Loading trackers</p>
+        <div className="phead" aria-hidden="true"><SkeletonLine w={260} h={56} /><SkeletonLine w="70%" h={16} /></div>
+        <ul className="tgrid" aria-hidden="true">
+          {Array.from({ length: 6 }, (_, i) => (
+            <li key={i} className="ttile"><span className="ttile__cover skel__cover" /><span className="ttile__body"><SkeletonLine w="50%" h={22} /><SkeletonLine w="80%" h={14} /></span></li>
+          ))}
+        </ul>
+      </main>
+    </>
+  );
+}
+
+/** A tracker: the cover and title, the record tiles, move cards. */
+export function TrackerSkeleton() {
+  return (
+    <>
+      <Bar />
+      <main className="wrap app2 tracker skel" aria-busy="true">
+        <p className="sr-only" role="status">Loading tracker</p>
+        <div className="thead" aria-hidden="true">
+          <span className="thead__cover skel__cover" />
+          <div className="thead__copy"><SkeletonLine w={90} h={14} /><SkeletonLine w="80%" h={48} /><SkeletonLine w="60%" h={16} /><SkeletonLine w={120} h={48} /></div>
+        </div>
+        <div className="tsec" aria-hidden="true">
+          <div className="record tstats">{Array.from({ length: 5 }, (_, i) => <div key={i}><SkeletonLine w="60%" h={28} /><SkeletonLine w="40%" h={12} /></div>)}</div>
+        </div>
+        <div className="tsec feed2__list tmoves" aria-hidden="true">{Array.from({ length: 4 }, (_, i) => <MoveSkeleton key={i} />)}</div>
+      </main>
+    </>
+  );
+}

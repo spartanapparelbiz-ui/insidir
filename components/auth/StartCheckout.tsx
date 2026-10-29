@@ -18,7 +18,7 @@ interface Elements { checkout: { create: (o: Record<string, unknown>) => { creat
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => Elements } }
 
 /** The checkout's dark theme, so it sits in the page without a white flash. */
-const APPEARANCE = { theme: { appearance: "dark" } };
+const APPEARANCE = { theme: { appearance: "light" } };
 
 function loadScript(src: string): Promise<void> {
   return new Promise((ok, fail) => {

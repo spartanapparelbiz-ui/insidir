@@ -4,14 +4,16 @@
  *   insider  an SEC reporting owner's CIK (Form 4)
  *   company  an issuer's CIK (every insider at it); its page is /insider-trading/<ticker>
  *   fund     a 13F filer's CIK
+ *   tracker  a tracker's slug (lib/trackers.ts): its moves in Following, and alerts when live
  * CIKs are kept without leading zeros. The Following feed puts, newest first, the moves of followed traders and
  * markets with each new filing by a followed insider, at a followed company, or by a followed fund. No politicians:
  * Congress trades are not a source and can't be followed. */
 import type { FollowKind } from "@/lib/db/schema";
 import { personName, roleOf } from "@/lib/profiles/name";
 import { quarterChanges } from "@/lib/profiles/sec";
+import { isTrackerSlug } from "@/lib/trackers";
 
-export const FOLLOW_KINDS: readonly FollowKind[] = ["trader", "market", "insider", "company", "fund"];
+export const FOLLOW_KINDS: readonly FollowKind[] = ["tracker", "trader", "market", "insider", "company", "fund"];
 export const SEC_KINDS: readonly FollowKind[] = ["insider", "company", "fund"];
 
 /** A follow request's kind and target, normalised; null when it isn't one. */
@@ -20,6 +22,7 @@ export function parseFollow(kind: unknown, target: unknown): { kind: FollowKind;
   if (typeof target !== "string" || !target.trim() || target.length > 200) return null;
   const k = kind as FollowKind, t = target.trim();
   if (k === "trader") return /^0x[0-9a-fA-F]{40}$/.test(t) ? { kind: k, target: t.toLowerCase() } : null;
+  if (k === "tracker") return isTrackerSlug(t) ? { kind: k, target: t } : null;
   if (k === "market") return { kind: k, target: t.toLowerCase().startsWith("0x") ? t.toLowerCase() : t };
   return /^\d{1,10}$/.test(t) && Number(t) > 0 ? { kind: k, target: String(Number(t)) } : null;
 }
@@ -28,7 +31,7 @@ export function parseFollow(kind: unknown, target: unknown): { kind: FollowKind;
 export interface StockPick { kind: "insider" | "company" | "fund"; target: string; name: string; line: string }
 
 /** "Follow insider", "Follow company", "Follow fund", "Follow market", "Follow". */
-export const followLabel = (kind: FollowKind): string => (kind === "trader" ? "Follow" : `Follow ${kind}`);
+export const followLabel = (kind: FollowKind): string => (kind === "trader" || kind === "tracker" ? "Follow" : `Follow ${kind}`);
 
 /* ---------- the Following feed's SEC entries ---------- */
 

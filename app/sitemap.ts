@@ -8,11 +8,12 @@ import { isReady } from "@/lib/features";
 import { memo } from "@/lib/memo";
 import { companyHref, fundHref, insiderHref } from "@/lib/profiles/name";
 import { sitemapSec } from "@/lib/profiles/store";
+import { trackerHref, TRACKERS } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
 
 /** Pages anyone can open (no log-in), newest content first in importance. */
-const PUBLIC_PATHS = ["/", "/sports", "/markets", "/results", "/how-it-works", "/pricing", "/faq", "/about", "/data", "/privacy", "/terms"];
+const PUBLIC_PATHS = ["/", "/trackers", ...TRACKERS.map(t => trackerHref(t.slug)), "/sports", "/markets", "/results", "/how-it-works", "/pricing", "/faq", "/about", "/data", "/privacy", "/terms"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = appUrl();

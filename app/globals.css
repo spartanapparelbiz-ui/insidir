@@ -15,10 +15,10 @@ a:hover { text-decoration-color: var(--text); }
 :focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .ondark :focus-visible, .ondark:focus-visible { outline-color: var(--paper); }
 h1, h2, h3, p { margin: 0; }
-h1, h2 { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance; }
+h1, h2 { font-family: var(--sans); font-weight: 700; letter-spacing: var(--tight); line-height: 1.05; text-wrap: balance; }
 h3 { font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance; }
 /* a page title or headline that isn't an h1/h2 */
-.serif { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; }
+.serif { font-family: var(--sans); font-weight: 700; letter-spacing: var(--tight); }
 button { font: inherit; color: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -35,7 +35,7 @@ button { font: inherit; color: inherit; }
 .dim { color: var(--muted); }
 .small, .tiny { font-size: var(--t15); line-height: 1.5; }
 /* profit: Paper, mono, bold, one step larger than the text around it (elements with their own size keep it) */
-.profit { color: var(--money); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; font-size: inherit; line-height: 1.1; }
+.profit { color: var(--money-text); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; font-size: inherit; line-height: 1.1; }
 .big { font-family: var(--sans); font-variant-numeric: tabular-nums; font-size: var(--t44); line-height: 1; font-weight: 600; letter-spacing: -0.04em; }
 @media (min-width: 900px) { .big { font-size: var(--t56); } }
 

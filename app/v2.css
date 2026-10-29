@@ -8,8 +8,8 @@
 .sec2--alt { background: var(--bg-alt); }
 .sec2__h { font-size: var(--t32); line-height: 1.1; margin-bottom: 24px; max-width: 22ch; }
 @media (min-width: 900px) { .sec2__h { font-size: var(--t44); margin-bottom: 40px; } }
-.money { color: var(--money); }
-.loss { color: var(--loss); }
+.money { color: var(--money-text); }
+.loss { color: var(--loss-text); }
 .note { color: var(--muted); }
 .link { color: var(--text); }
 
@@ -127,11 +127,11 @@
 .move__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .move__time { color: var(--muted); font-size: var(--t13); font-weight: 600; white-space: nowrap; }
 .move__sentence { font-size: var(--t20); line-height: 1.5; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
-.move__payout { color: var(--money); font-weight: 600; font-variant-numeric: tabular-nums; }
+.move__payout { color: var(--money-text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .move__record { color: var(--muted); font-size: var(--t15); font-weight: 600; font-variant-numeric: tabular-nums; }
 .move__result { font-weight: 600; }
-.move__result--won { color: var(--money); }
-.move__result--lost { color: var(--loss); }
+.move__result--won { color: var(--money-text); }
+.move__result--lost { color: var(--loss-text); }
 .move__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
 .move__actions .btn { min-height: var(--tap); padding: 0 16px; font-size: var(--t15); }
 .move__name { color: inherit; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--border); }
@@ -243,7 +243,7 @@
   .positions__row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title val" "out out"; row-gap: 2px; }
   .positions__title { grid-area: title; } .positions__val { grid-area: val; } .positions__out { grid-area: out; }
 }
-.market__pays { display: grid; gap: 4px; color: var(--money); font-weight: 600; }
+.market__pays { display: grid; gap: 4px; color: var(--money-text); font-weight: 600; }
 .market__big { font-weight: 600; font-variant-numeric: tabular-nums; }
 .market__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .pline { margin: 24px 0 0; max-width: 720px; padding: 16px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); color: var(--text); }
@@ -255,8 +255,8 @@
 .rlist { list-style: none; margin: 16px 0 24px; padding: 0; display: grid; max-width: 860px; border-top: 1px solid var(--border); }
 .rlist__row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .rlist__res { font-weight: 600; }
-.rlist__res--won { color: var(--money); }
-.rlist__res--lost { color: var(--loss); }
+.rlist__res--won { color: var(--money-text); }
+.rlist__res--lost { color: var(--loss-text); }
 .rlist__res--void, .rlist__res--sold { color: var(--muted); }
 .rlist__what { overflow-wrap: anywhere; }
 .rlist__what a { color: var(--text); }
@@ -271,103 +271,6 @@
 .soonpage__photo { height: 180px; border-radius: var(--r-card); overflow: hidden; margin-bottom: 8px; }
 .soonpage__h { font-size: var(--t44); }
 .soonpage__p { color: var(--muted); font-size: var(--t17); }
-
-/* ---------- home: the cinematic hero (components/home/Hero.tsx) ---------- */
-.cine { position: relative; isolation: isolate; overflow: hidden; background: var(--ink); color: var(--paper); display: grid; grid-template-rows: 1fr auto; }
-@media (min-width: 900px) { .cine { min-height: min(860px, calc(100svh - 100px)); } }
-.cine__photos { position: absolute; inset: 0; z-index: -2; }
-.cine__slide { position: absolute; inset: 0; opacity: 0; }
-.cine__slide picture, .cine__slide img { display: block; width: 100%; height: 100%; }
-.cine__slide img { object-fit: cover; transform-origin: 50% 45%; }
-.cine__slide.is-prev { opacity: 1; z-index: 1; }
-.cine__slide.is-prev img { transform: scale(1.08); }
-.cine__slide.is-on { opacity: 1; z-index: 2; }
-@media (prefers-reduced-motion: no-preference) {
-  .cine__slide.is-on img { animation: cine-zoom 6s linear forwards; }
-  /* photo 1 is there from the first paint; every later change crossfades in */
-  .cine__photos[data-moved] .cine__slide.is-on { animation: cine-in 1.2s ease-in-out; }
-}
-@keyframes cine-zoom { from { transform: scale(1); } to { transform: scale(1.08); } }
-@keyframes cine-in { from { opacity: 0; } to { opacity: 1; } }
-/* The scrim behind the words: dark enough that white text stays above 4.5:1 on the brightest photo (snow). */
-/* 55% at most behind the words (the graded photos never go past ~95% white, so white text stays above 4.5:1), lighter
- * where only the solid card sits, so the photos keep their colour. */
-/* No overlay on the photo itself: a soft dark glow sits only behind the text block (.cine__copy::before), so the
- * person and the action stay bright. */
-.cine__scrim { display: none; }
-/* phones: room for the tallest card, so the ticker and the page below don't jump as the cards change */
-@media (max-width: 899px) { .cine__card { min-height: 340px; } }
-.cine__in { display: grid; gap: 28px; align-content: start; padding-top: 28px; padding-bottom: 28px; }
-.cine__in { justify-items: center; }
-@media (min-width: 900px) { .cine__in { align-content: center; gap: 36px; padding-top: 48px; padding-bottom: 48px; } }
-.cine__copy { position: relative; display: grid; justify-items: center; text-align: center; }
-.cine__copy::before { content: ""; position: absolute; z-index: -1; inset: -22% -24%; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, rgba(11, 11, 18, .8) 0%, rgba(11, 11, 18, .74) 60%, rgba(11, 11, 18, .4) 84%, rgba(11, 11, 18, 0) 100%); }
-.cine__copy { text-shadow: 0 1px 18px rgba(11, 11, 18, .45); }
-/* on its own dark pill, so it reads on the brightest photo (6:1 or better) */
-.cine__label { max-width: 34ch; padding: 6px 14px; border-radius: 16px; background: rgba(11, 11, 18, .62); color: var(--paper); font-size: var(--t13); font-weight: 600; line-height: 1.5; letter-spacing: .02em; }
-@media (min-width: 900px) { .cine__label { font-size: var(--t15); max-width: 44ch; } }
-.cine__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper); }
-@media (prefers-reduced-motion: no-preference) { .cine__dot { animation: pulse2 2s ease-in-out infinite; } }
-.cine__h { margin-top: 12px; font-size: var(--t44); line-height: 1.1; max-width: 12ch; }
-@media (min-width: 900px) { .cine__h { max-width: none; } }
-@media (min-width: 900px) { .cine__h { font-size: var(--t80); } }
-.cine__sub { margin-top: 14px; font-size: var(--t17); line-height: 1.5; max-width: 36ch; }
-@media (min-width: 900px) { .cine__sub { margin-top: 20px; font-size: var(--t20); } }
-.cine__cta { margin-top: 20px; display: inline-grid; justify-items: center; gap: 12px; }
-.cine__points { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; margin: 0; padding: 0; list-style: none; color: var(--grey-2); font-size: var(--t13); font-weight: 600; text-align: center; }
-.cine__points li { display: inline-flex; align-items: center; gap: 6px; }
-.cine__points li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
-.cine__live { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: var(--t13); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-.cine__live--behind { text-transform: none; letter-spacing: 0; font-weight: 600; }
-.cine__live--behind .cine__dot { background: none; box-shadow: inset 0 0 0 1.5px var(--paper); animation: none; }
-@media (min-width: 900px) { .cine__cta { margin-top: 32px; } }
-.cine__trial { margin-top: 12px; font-size: var(--t15); font-weight: 600; font-variant-numeric: tabular-nums; }
-.cine__fine { margin-top: 4px; color: var(--grey-2); font-size: var(--t13); }
-.cine :focus-visible { outline-color: var(--paper); }
-.cine__card { min-width: 0; width: min(440px, 100%); justify-self: center; text-align: left; }
-.cine__card .cine__live { display: flex; justify-content: center; }
-.hcard__link { display: block; color: inherit; text-decoration: none; border-radius: var(--r-card); }
-.hcard__link:hover .hcard { box-shadow: inset 0 0 0 2px var(--ink); }
-.hcard { display: grid; gap: 8px; padding: 20px; border-radius: var(--r-card); background: var(--paper); color: var(--ink); }
-@media (prefers-reduced-motion: no-preference) { .hcard { animation: hcard-in 450ms var(--ease-enter); } }
-@keyframes hcard-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.hcard__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.hcard__tag { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); font-size: var(--t13); font-weight: 600; }
-.hcard__ago { color: var(--muted); font-size: var(--t13); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hcard__amt { font-size: var(--t44); line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.hcard__sentence { font-size: var(--t17); line-height: 1.5; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.hcard__payout { color: var(--money); font-size: var(--t15); font-weight: 600; font-variant-numeric: tabular-nums; }
-.hcard__note { color: var(--muted); font-size: var(--t15); font-variant-numeric: tabular-nums; }
-.hcard--wait { animation: none; }
-/* The 3-second demo: the sentence types in (caret), then the payout, then the record line. Before hydration the
- * typed parts wait (only when JS will run them), so they never flash in full and then retype. */
-.hcard__caret { display: inline-block; width: 2px; height: 1em; margin-left: 1px; vertical-align: -2px; background: currentColor; }
-@media (prefers-reduced-motion: no-preference) {
-  .hcard__caret { animation: caret 800ms steps(1) infinite; }
-  .js .hcard[data-demo="pending"] .hcard__sentence, .js .hcard[data-demo="pending"] .hcard__line { visibility: hidden; }
-  .hcard[data-demo="run"] .hcard__line { opacity: 0; transform: translate3d(0, 6px, 0); transition: opacity 320ms var(--ease-enter), transform 320ms var(--ease-enter); }
-  .hcard[data-demo="run"] .hcard__line.is-on { opacity: 1; transform: none; }
-}
-@keyframes caret { 50% { opacity: 0; } }
-.hcard__rec { display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-size: var(--t15); font-weight: 600; font-variant-numeric: tabular-nums; }
-.hcard__rec--locked { color: var(--muted); font-weight: 600; }
-.hcard__lock { flex: none; }
-/* The ticker strip: solid black, real moves, two copies side by side so the loop is seamless; paused on hover. */
-.ticker { position: relative; z-index: 1; background: var(--ink); border-top: 1px solid var(--grey-3); overflow: hidden; }
-.ticker__track { display: flex; width: max-content; }
-@media (prefers-reduced-motion: no-preference) {
-  .ticker__track { animation: ticker calc(var(--n) * 4.5s) linear infinite; }
-  .ticker:hover .ticker__track, .ticker:focus-within .ticker__track { animation-play-state: paused; }
-}
-@media (prefers-reduced-motion: reduce) { .ticker { overflow-x: auto; } .ticker__list[aria-hidden] { display: none; } }
-@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.ticker__list { display: flex; list-style: none; margin: 0; padding: 0; }
-/* .ticker scoped: the global "links in running text" rule (li a) would otherwise paint these black on black */
-.ticker .ticker__item { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 28px 0 0; margin-right: 28px; color: var(--paper); text-decoration: none; font-size: var(--t15); font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: inset -1px 0 0 var(--grey-3); }
-.ticker .ticker__item:hover { text-decoration: underline; }
-.ticker__who, .ticker__amt { font-weight: 800; }
-.ticker__ago { color: var(--grey-2); }
 
 /* ---------- home: the feed preview right after the hero ---------- */
 .preview__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 24px; }
@@ -396,7 +299,7 @@
 .how2__skel { height: 12px; width: 60%; border-radius: 6px; background: var(--border); }
 .how2__skel--wide { width: 90%; }
 .how2__sentence { font-weight: 600; line-height: 1.5; }
-.how2__payout { color: var(--money); font-weight: 600; font-size: var(--t15); }
+.how2__payout { color: var(--money-text); font-weight: 600; font-size: var(--t15); }
 .how2__mock--push { border-radius: var(--r-card); }
 .push__app { color: var(--muted); font-size: var(--t13); font-weight: 600; }
 .push__text { font-weight: 600; line-height: 1.5; }
@@ -757,8 +660,8 @@
 .rcard { display: grid; gap: 8px; align-content: start; padding: 20px; border-radius: var(--r-card); background: var(--bg); border: 1px solid var(--border); }
 .rcard__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .rcard__res { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-pill); font-size: var(--t13); font-weight: 600; }
-.rcard__res--won { color: var(--money); box-shadow: inset 0 0 0 1.5px var(--money); }
-.rcard__res--lost { color: var(--loss); box-shadow: inset 0 0 0 1.5px var(--loss); }
+.rcard__res--won { color: var(--money-text); box-shadow: inset 0 0 0 1.5px var(--money); }
+.rcard__res--lost { color: var(--loss-text); box-shadow: inset 0 0 0 1.5px var(--loss); }
 .rcard__when { color: var(--muted); font-size: var(--t13); font-weight: 600; }
 .rcard__amt { font-size: var(--t32); line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 
@@ -775,8 +678,8 @@
 .psec__el { width: min(440px, 100%); display: grid; justify-items: center; }
 .psec__card { width: 100%; text-align: left; color: var(--text); }
 .psec__stat { display: inline-flex; gap: 10px; padding: 14px 24px; border-radius: var(--r-pill); background: var(--night); font-size: var(--t24); font-weight: 800; font-variant-numeric: tabular-nums; }
-.money-on-dark { color: var(--night-money); }
-.loss-on-dark { color: var(--night-loss); }
+.money-on-dark { color: var(--money-text); }
+.loss-on-dark { color: var(--loss-text); }
 .psec__note { width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: 22px; text-align: left;
   background: rgba(28, 28, 32, .72); backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6); box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .6); }
 .psec__note-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: var(--ink); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .25); color: var(--paper); }
@@ -878,8 +781,8 @@ a, button, summary, [role="button"] { touch-action: manipulation; -webkit-tap-hi
 .plan2__list { margin: 6px 0 0; padding-top: 18px; box-shadow: inset 0 1px 0 var(--border); gap: 12px; }
 .plan2__list li { display: flex; align-items: flex-start; gap: 10px; padding-left: 0; font-size: var(--t15); line-height: 1.5; }
 .plan2__list li::before { content: none; }
-.plan2__check { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--night-money); }
-:root:not(:has(main.dark)) .plan2__check { color: var(--money); }
+.plan2__check { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--money-text); }
+:root:not(:has(main.dark)) .plan2__check { color: var(--money-text); }
 .plan2__soon { color: var(--muted); }
 .plan2__soon .plan2__check { color: var(--border); }
 .plan2__badge { display: inline-flex; align-items: center; height: 20px; margin-left: 8px; padding: 0 8px; border-radius: var(--r-pill); background: var(--bg-alt); color: var(--muted); font-size: var(--t13); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; white-space: nowrap; }
@@ -888,7 +791,7 @@ a, button, summary, [role="button"] { touch-action: manipulation; -webkit-tap-hi
 .promise__grid { display: grid; gap: 12px; }
 @media (min-width: 900px) { .promise__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
 .promise__item { display: grid; gap: 6px; padding: 20px; border-radius: var(--r-card); background: var(--bg-alt); }
-.promise__icon { width: 22px; height: 22px; color: var(--night-money); margin-bottom: 4px; }
+.promise__icon { width: 22px; height: 22px; color: var(--money-text); margin-bottom: 4px; }
 .promise__h { font-weight: 600; }
 .promise__p { color: var(--muted); font-size: var(--t15); }
 
@@ -1033,15 +936,11 @@ html.popup-open { overflow: hidden; }
 .seg__btn--soon { gap: 6px; }
 
 
-/* ---------- One type system, everywhere (app/tokens.css): Rufina 700 for page and section headlines, Schibsted
- * Grotesk for the rest; 64 h1 (40 on phones), 40 h2, 24 dialog titles; headlines 1.1, text 1.5. The phone pictures on
- * home (.ios-vp) keep the app's own phone-sized type, whatever the window size. ---------- */
-h1:not(.ios-vp *) { font-family: var(--serif); font-weight: 700; font-size: var(--t40) !important; line-height: 1.1 !important; }
-@media (min-width: 900px) { h1:not(.ios-vp *) { font-size: var(--t64) !important; } }
-h2:not(.ios-vp *):not(.sheet h2):not([role="dialog"] h2) { font-family: var(--serif); font-weight: 700; font-size: var(--t40) !important; line-height: 1.1 !important; }
-.sheet h2, [role="dialog"] h2 { font-family: var(--serif); font-weight: 700; font-size: var(--t24) !important; line-height: 1.1; }
-.ios-vp h1 { font-size: var(--t40); }
-.ios-vp h2 { font-size: var(--t24); }
+/* ---------- Headline sizes: 32 on phones, 56 from 900px; dialog titles 22 (the type scale is app/tokens.css) ---------- */
+:where(h1:not(.ios-vp *)) { font-size: var(--t32); line-height: 1.05; }
+@media (min-width: 900px) { :where(h1:not(.ios-vp *)) { font-size: var(--t56); } }
+:where(h2:not(.ios-vp *)) { font-size: var(--t32); line-height: 1.1; }
+.sheet h2, [role="dialog"] h2 { font-size: var(--t22); line-height: 1.2; }
 
 /* ---------- One layout, one button per job ---------- */
 /* Every section: a small label, the serif headline, one line under it, the content, one button, all centered. */

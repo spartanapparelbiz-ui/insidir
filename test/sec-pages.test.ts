@@ -97,7 +97,7 @@ describe("how the stock did after their buys", () => {
 
 describe("following insiders, companies and funds", () => {
   it("five kinds; CIKs without leading zeros; wallets lower-case; anything else refused", () => {
-    expect(FOLLOW_KINDS).toEqual(["trader", "market", "insider", "company", "fund"]);
+    expect(FOLLOW_KINDS).toEqual(["tracker", "trader", "market", "insider", "company", "fund"]);
     expect(parseFollow("insider", "0001045810")).toEqual({ kind: "insider", target: "1045810" });
     expect(parseFollow("company", "1045810")).toEqual({ kind: "company", target: "1045810" });
     expect(parseFollow("fund", "0001067983")).toEqual({ kind: "fund", target: "1067983" });
