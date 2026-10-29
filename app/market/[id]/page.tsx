@@ -136,7 +136,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           </Section>
         ) : null}
 
-        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The entries of large positions on ${yesLabel} (the venue's full history isn't available right now)`}, with every large position on it: a dot per move, bigger for more money (a ${noLabel} position sits at 100% minus its entry). Green won, red lost, grey open.`}>
+        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The entries of large positions on ${yesLabel} (the venue's full history isn't available right now)`}, with every large position on it: a dot per position, bigger for more money (a ${noLabel} position sits at 100% minus its entry). Green won, red lost, grey open.`}>
           <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}
             windows={[{ key: "1d", label: "1D", since: now - 86_400_000 }, { key: "1w", label: "1W", since: now - 7 * 86_400_000 }, { key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "all", label: "All", since: null }]}
             empty="Not enough prices for a chart yet." />
@@ -162,7 +162,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
 
         <Section id="mm-h" title={day.length ? "Large positions in the last 24 hours" : "Large positions in this market"} note={!paid ? "You're seeing positions 30 minutes late." : undefined}>
           {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
-            : <p className="dnote">No big moves here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
+            : <p className="dnote">No large positions here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         </Section>
       </main>
     </>

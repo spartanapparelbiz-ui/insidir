@@ -127,10 +127,10 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
         {t.kind === "bets" ? (
           <Section id="perf-h" title="Performance" note={`From ${p.settled.toLocaleString("en-US")} settled Polymarket positions, each checked against the wallet's own trades. Past results, not a promise.`}>
             {ok ? <LineChart points={series} windows={windows} format="money" label="Net P&L on settled positions" empty="No settled positions in this window." />
-              : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled moves ({p.settled} so far).</div>}
+              : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled positions ({p.settled} so far).</div>}
             <div className="dsub"><Tiles tiles={perfTiles(p)} cols={3} label="Record" /></div>
             <p className="hypo">{p.hundred !== null
-              ? <><b>$100 on every position: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>Hypothetical: $100 at each position's entry, on all {p.settled.toLocaleString("en-US")} settled moves. Past results.</span></>
+              ? <><b>$100 on every position: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>Hypothetical: $100 at each position's entry, on all {p.settled.toLocaleString("en-US")} settled positions. Past results.</span></>
               : <><b>$100 on every position:</b> <span>{NOT_ENOUGH}.</span></>}</p>
           </Section>
         ) : null}
@@ -168,7 +168,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           </Section>
         ) : null}
 
-        <Section id="moves-h" title={t.kind === "filings" ? "Latest filings" : "Latest positions"} note={!paid ? <>You&apos;re seeing moves 30 minutes late. <a href={trial} data-unlock="tracker">Members see them live.</a></> : undefined}>
+        <Section id="moves-h" title={t.kind === "filings" ? "Latest filings" : "Latest positions"} note={!paid ? <>You&apos;re seeing positions 30 minutes late. <a href={trial} data-unlock="tracker">Members see them live.</a></> : undefined}>
           {t.kind === "bets" ? (
             <nav className="dfilters" aria-label="Show">
               {/* Plain links: a query-only change on the same page through the client router sometimes never lands (Next 15.5). */}

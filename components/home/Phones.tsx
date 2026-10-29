@@ -79,7 +79,7 @@ export function Phones({ d }: { d: PhoneData }) {
       <p className="ph__clock">{d.alert.time}</p>
       <div className="ph__note">
         <span className="ph__icon"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
-        <div><p className="ph__nh"><b>New move in {d.alert.tracker}</b><span>now</span></p><p className="ph__nt">{d.alert.body}</p></div>
+        <div><p className="ph__nh"><b>New position in {d.alert.tracker}</b><span>now</span></p><p className="ph__nt">{d.alert.body}</p></div>
       </div>
     </div>,
   );

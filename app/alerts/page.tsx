@@ -43,7 +43,7 @@ export default async function AlertsPage() {
               <p className="asum">Alerts come with Insidir.</p>
               <ul className="alist">
                 <li>An alert when a trader you follow opens a large position.</li>
-                <li>Every $50,000+ move in a market you follow.</li>
+                <li>Every position of $50,000 or more in a market you follow.</li>
                 <li>Quiet hours, so nothing wakes you up.</li>
               </ul>
               <div className="row-gap"><LockButton where="alerts" className="btn btn--primary">Turn on alerts</LockButton></div>

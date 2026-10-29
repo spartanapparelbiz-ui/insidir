@@ -26,7 +26,7 @@ export default async function PostsPage() {
       <SiteHeader plan={viewer.plan} signedIn />
       <main className="wrap app acct">
         <h1 className="page__h">Posts</h1>
-        <p className="asum asum--lead">The 10 biggest moves of the last 24 hours, ready to post.</p>
+        <p className="asum asum--lead">The 10 largest positions of the last 24 hours, ready to post.</p>
         {top.length ? (
           <ol className="posts">
             {top.map((m, i) => {
@@ -44,7 +44,7 @@ export default async function PostsPage() {
               );
             })}
           </ol>
-        ) : <div className="aempty"><p>No moves in the last 24 hours yet.</p></div>}
+        ) : <div className="aempty"><p>No large positions in the last 24 hours yet.</p></div>}
       </main>
     </>
   );

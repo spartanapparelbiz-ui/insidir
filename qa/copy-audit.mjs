@@ -3,7 +3,7 @@
 // the house style retired (docs/INSIDIR-V2.md §4). Then screenshots home, a tracker, Activity, Track record and a
 // market page at 1440 and 390 into qa/screenshots/copy/.
 // Run against a started build (qa/e2e/run.sh's app with the e2e database): node qa/copy-audit.mjs http://localhost:3100
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 
 const BASE = process.argv[2] ?? "http://localhost:3100";
@@ -13,7 +13,7 @@ const PAGES = ["/", "/trackers", "/trackers/biggest-bets", "/trackers/nfl-big-mo
   "/insider-trading/EXDV", "/terms", "/privacy", "/login", "/start", "/alerts", "/settings", "/not-a-page"];
 // The retired wording. "big money" is allowed only in the H1 "Follow the big money." and the home section title.
 const OLD = [
-  [/\bbig moves?\b/i, "big move"], [/\bbig money\b/i, "big money"], [/\bbets?\b/i, "bet"], [/\bwagers?\b/i, "wager"], [/\bSomeone\b/, "Someone"],
+  [/\bmoves?\b/i, "move"], [/\bbig money\b/i, "big money"], [/\bbets?\b/i, "bet"], [/\bwagers?\b/i, "wager"], [/\bSomeone\b/, "Someone"],
   [/\bbrand-new wallet/i, "brand-new wallet"], [/\ba top trader\b/i, "a top trader"], [/\bchance\b/i, "chance"], [/\bIn at \d/, "In at"],
   [/\bPays \$/, "Pays $"], [/\bsold (early|before the result)\b/i, "sold early"], [/\brefunded\b/i, "refunded"], [/\btracked in 30 days\b/i, "tracked in 30 days"],
   [/\bBiggest (bet|win|loss)/, "Biggest"], [/\bAverage bet\b/i, "Average bet"], [/win rate − price/, "win rate − price"], [/\bSplits?\b/, "Splits"],
@@ -21,9 +21,9 @@ const OLD = [
   [/\b(Underdog Hunters|Favorites Only|Early Money|Late Money|Brand-New Wallets|Big Money|CEO Buys|Cluster Buys|Big Funds)\b/, "old tracker name"],
   [/(^|\n)Steam(\n|$)/, "Steam"], [/(^|\n)(Feed|Results)(\n|$)/, "Feed/Results label"],
 ];
-const ALLOWED = [/Follow the big money\./g, /A live portfolio of big money/g];
+const ALLOWED = [/Prices move,/g, /Follow the big money\./g, /A live portfolio of big money/g];
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_CHROMIUM || existsSync("/opt/pw-browsers/chromium") ? { executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" } : {});
 const hits = [];
 for (const who of ["visitor", "member"]) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

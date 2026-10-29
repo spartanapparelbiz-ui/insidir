@@ -208,3 +208,47 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .move__meta { color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
 .move__meta > span:first-child { color: var(--ink); font-weight: 600; }
 .move__subl { margin-top: -2px; }
+
+/* ---------- Trackers, the members' home (components/home/Discover.tsx): ranked by ROI, what each holds now ---------- */
+.tbook { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.tbook__row { display: grid; grid-template-columns: 24px 48px minmax(0, 1fr) auto; grid-template-areas: "rank thumb who roi" "rank thumb who res"; column-gap: 16px; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 96px 120px; grid-template-areas: "rank thumb who roi res"; } }
+.tbook__rank { grid-area: rank; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tbook__thumb { grid-area: thumb; width: 48px; height: 48px; }
+@media (min-width: 700px) { .tbook__thumb { width: 56px; height: 56px; } }
+.tbook__who { grid-area: who; display: grid; gap: 2px; min-width: 0; }
+.tbook__name { font-size: var(--t17); font-weight: 600; }
+.tbook__row:hover .tbook__name { text-decoration: underline; text-underline-offset: 3px; }
+.tbook__hold { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbook__roi { grid-area: roi; display: grid; justify-items: end; font-size: var(--t17); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tbook__roi span { color: var(--muted); font-size: 12px; font-weight: 500; }
+.tbook__row .res { grid-area: res; }
+
+/* ---------- home: a live portfolio (components/home/LivePortfolio.tsx) ---------- */
+.lport__sub { color: var(--muted); font-size: var(--t17); max-width: 60ch; margin: -12px 0 32px; }
+.lport__card { background: var(--paper); border: 1px solid var(--win-border); border-radius: var(--r-win); box-shadow: var(--win-shadow); overflow: hidden; }
+.lport__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 0 0 20px; color: var(--ink); text-decoration: none; }
+.lport__cover { aspect-ratio: 21 / 9; border-radius: 0; margin-bottom: 16px; }
+.lport__name, .lport__line, .lport__nums { padding: 0 24px; }
+@media (min-width: 900px) { .lport__name, .lport__line, .lport__nums { padding: 0 32px; } }
+.lport__name { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; }
+.lport__head:hover .lport__name { text-decoration: underline; text-underline-offset: 4px; }
+.lport__line { color: var(--muted); }
+.lport__nums { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: var(--t13); }
+.lport__nums b { color: var(--ink); font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; margin-right: 6px; }
+.lport__body { display: grid; border-top: 1px solid var(--line); }
+@media (min-width: 900px) { .lport__body { grid-template-columns: 1fr 1fr; } .lport__col + .lport__col { border-left: 1px solid var(--line); } }
+.lport__col { padding: 20px 24px; min-width: 0; }
+@media (min-width: 900px) { .lport__col { padding: 24px 32px; } }
+.lport__h { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--ink); font-size: var(--t15) !important; letter-spacing: 0 !important; }
+.lport__h span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.lport__list { list-style: none; margin: 0; padding: 0; }
+.lport__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.lport__row:last-child { border-bottom: 0; }
+.lport__what { display: grid; gap: 2px; min-width: 0; }
+.lport__out { font-weight: 600; }
+.lport__meta { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lport__none { color: var(--muted); padding: 14px 0; }
+.lport__foot { padding: 16px 24px 20px; border-top: 1px solid var(--line); }
+@media (min-width: 900px) { .lport__foot { padding: 16px 32px 24px; } }

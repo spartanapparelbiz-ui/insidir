@@ -55,7 +55,7 @@ export async function Discover({ db, viewer, now }: { db: Db | null; viewer: Vie
                 <span className="tbook__name">{t.name}</span>
                 <span className="tbook__hold">{holdingLine(holdings.get(t.slug))}</span>
               </span>
-              <span className="tbook__roi">{returnPct(record) ?? (t.kind === "filings" ? "Filings" : "New")}<span>{t.kind === "filings" ? "no settlement" : "ROI"}</span></span>
+              <span className="tbook__roi">{returnPct(record) ?? "—"}<span>{t.kind === "filings" ? "filings don't settle" : "ROI"}</span></span>
               <RecordResult r={record} />
             </Link>
           </li>

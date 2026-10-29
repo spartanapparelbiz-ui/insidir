@@ -65,7 +65,7 @@ export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | nu
             <h3 className="trust__h">{fresh ? "Checked every hour" : "Accuracy check"}</h3>
             {a ? (
               <p className="trust__p">Last check {fresh ? clockET(a.runAt) : dateTimeET(a.runAt)}: <b className="num">{a.ok} of {a.checked}</b> matched.{a.hidden ? ` ${a.hidden} hidden until ${a.hidden === 1 ? "it matches" : "they match"}.` : ""}</p>
-            ) : <p className="trust__p">We re-read random moves and trader stats from the source. Anything that doesn&apos;t match is hidden until it does.</p>}
+            ) : <p className="trust__p">We re-read random positions and trader stats from the source. Anything that doesn&apos;t match is hidden until it does.</p>}
             <Link className="trust__link" href="/data">How we check</Link>
           </article>
           <article className="trust__card">

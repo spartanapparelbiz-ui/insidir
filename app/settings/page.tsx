@@ -83,7 +83,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <section className="agroup" aria-labelledby="g-region">
           <h2 id="g-region" className="agroup__h">Location</h2>
           <div className="agroup__body">
-            <p className="asum">We only link you to apps that work where you are. Every move shows either way.</p>
+            <p className="asum">We only link you to apps that work where you are. Every position shows either way.</p>
             <LocationPill region={viewer.region} />
           </div>
         </section>

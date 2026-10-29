@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 import { q, signIn } from "./helpers";
 
 test("members open the app on Trackers: every tracker ranked by ROI with what it holds now, then today's largest positions", async ({ page, context }) => {
+  test.setTimeout(120_000);
   await signIn(context, "insidir");
   // The worker tags moves with their trackers; the seed doesn't, so tag the open $412K Chiefs position as Whales here.
   await q("update terminal.moves set trackers = array['biggest-bets'] where id = 'e2e:m1'");
@@ -14,7 +15,13 @@ test("members open the app on Trackers: every tracker ranked by ROI with what it
   const rows = page.locator(".tbook__row");
   expect(await rows.count()).toBeGreaterThan(20);
   for (const t of await page.locator(".tbook__hold").allInnerTexts()) expect(t).toMatch(/^(\d[\d,]* open · \$|No open positions)/);
-  await expect(page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold")).toHaveText(/^1 open · \$412,000 · largest: Chiefs to beat the Bills$/);
+  // Holdings are shared for a minute (lib/trackers-store.ts trackerHoldings), so an earlier visit can be cached: reload until it turns.
+  const whales = page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold");
+  // Worked out from the rows: everything open in the tracker over 60 days (other runs may have tagged more).
+  const [h] = await q<{ n: number; total: number }>("select count(*)::int as n, coalesce(sum(amount), 0)::float as total from terminal.moves where 'biggest-bets' = any(trackers) and result is null and hidden_at is null and at > now() - interval '60 days'");
+  const line = `${h!.n.toLocaleString("en-US")} open · $${Math.round(h!.total).toLocaleString("en-US")} · largest: `;
+  await expect.poll(async () => { await page.reload(); return whales.innerText(); }, { timeout: 75_000, intervals: [5_000] }).toMatch(new RegExp(`^${line.replace(/[$.]/g, "\\$&")}`));
+  expect(await whales.innerText()).toMatch(/largest: \S/);
   await q("update terminal.moves set trackers = null where id = 'e2e:m1'");
   for (const h of ["Largest positions today", "Most active markets", "Tonight's games"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
   await expect(page.getByRole("link", { name: "Trackers" }).first()).toHaveAttribute("aria-current", "page");

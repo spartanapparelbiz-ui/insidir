@@ -23,7 +23,7 @@ export default async function TermsPage() {
           <p className="small muted">Insidir is run by Aethric LLC. By using insidir.com you agree to these terms.</p>
 
           <h2>What Insidir is</h2>
-          <p>Insidir is an information service. It reads public trading data from Kalshi and Polymarket through their public APIs and shows the biggest bets as they happen, in plain English, with the public records of the wallets behind them where the data allows.{isReady("stocks") ? " It also shows insider purchases and quarterly fund holdings as reported in public SEC filings (Forms 4 and 13F), linking each to the filing; 13F data can be up to 45 days old." : ""}</p>
+          <p>Insidir is an information service. It reads public trading data from Kalshi and Polymarket through their public APIs and shows the largest positions as they are opened, in plain English, with the public records of the wallets behind them where the data allows.{isReady("stocks") ? " It also shows insider purchases and quarterly fund holdings as reported in public SEC filings (Forms 4 and 13F), linking each to the filing; 13F data can be up to 45 days old." : ""}</p>
           <p>Insidir is not a broker, an exchange or an adviser. We do not place trades, hold money or hold positions for you, and nothing on the site is a recommendation to buy or sell anything. You decide what to do, and you place every trade yourself on each venue, under that venue&apos;s own terms.</p>
 
           <h2>No promise of results</h2>

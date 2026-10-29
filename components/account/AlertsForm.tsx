@@ -42,11 +42,11 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
         <h2 id="a-what" className="agroup__h">What sends an alert</h2>
         <div className="agroup__body">
           <ul className="alist">
-            <li>Every move by a trader you follow.</li>
-            <li>Every move of $50,000 or more in a market you follow.</li>
+            <li>Every new position from a trader you follow.</li>
+            <li>Every position of $50,000 or more in a market you follow.</li>
           </ul>
           <p className="afield__hint">Follow traders and markets from the feed, a trader&apos;s page or a market&apos;s page.</p>
-          <Toggle name="alertSplits" label="New divergences of 15+ points" hint={<>When proven traders and the market diverge on a market, or insiders purchase a falling stock (<a href="/splits">Splits</a>).</>}
+          <Toggle name="alertSplits" label="New divergences of 15+ points" hint={<>When proven traders and the market diverge on a market, or insiders purchase a falling stock (<a href="/splits">Positioning</a>).</>}
             checked={settings.alertSplits !== false} save={save} onLabel="Positioning alerts on" offLabel="Positioning alerts off" />
         </div>
       </section>
@@ -68,7 +68,7 @@ export function AlertsForm({ settings, vapidKey, email, pro, proHref, ready }: {
       <section className="agroup" aria-labelledby="a-quiet">
         <h2 id="a-quiet" className="agroup__h">Quiet hours</h2>
         <div className="agroup__body" key={quietKey}>
-          <p className="afield__hint">No alerts between these times, in your time zone ({settings.timeZone ?? browserZone()}). Moves made then aren&apos;t sent later.</p>
+          <p className="afield__hint">No alerts between these times, in your time zone ({settings.timeZone ?? browserZone()}). Positions opened then aren&apos;t sent later.</p>
           <div className="afields2">
             <Field name="quietStart" label="From" type="time" value={settings.quietStart ?? ""} check={checkTime} save={save} extra={() => ({ timeZone: browserZone() })} width={200} />
             <Field name="quietEnd" label="Until" type="time" value={settings.quietEnd ?? ""} check={checkTime} save={save} extra={() => ({ timeZone: browserZone() })} width={200} />

@@ -94,7 +94,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
                 { label: "Rank by net P&L", value: rank ? `#${rank.rank.toLocaleString("en-US")}` : "—" },
                 { label: "Edge vs. entry", value: bp.edge === null ? NOT_ENOUGH : pts(bp.edge), tone: tone(bp.edge) },
               ]} /></div>
-              {rank ? <p className="dsec__note dsub">Rank among {rank.of.toLocaleString("en-US")} traders with 20+ resolved markets. Edge from {bp.settled} settled big moves.</p> : null}
+              {rank ? <p className="dsec__note dsub">Rank among {rank.of.toLocaleString("en-US")} traders with 20+ resolved markets. Edge from {bp.settled} settled large positions.</p> : null}
             </Section>
 
             <Section id="stats-h" title="Stats">
@@ -146,7 +146,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
 
       <Section id="moves-h" title="Every large position" note={hist.total ? `${hist.total.toLocaleString("en-US")} large positions we've seen from this wallet${paid ? "" : " (30 minutes late)"}, newest first.` : undefined}>
         {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={followState(viewer, following)} trialHref={trial} /></li>)}</ol>
-          : <p className="dnote">No big moves from this wallet{paid ? "" : " more than 30 minutes ago"} yet.</p>}
+          : <p className="dnote">No large positions from this wallet{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         {pages > 1 ? (
           <nav className="pager" aria-label="Pages">
             {page > 1 ? <a className="btn btn--secondary" href={`/p/${wallet}?page=${page - 1}#moves-h`}>Newer</a> : <span />}

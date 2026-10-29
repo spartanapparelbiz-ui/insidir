@@ -100,7 +100,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");
     await expect(page.getByRole("heading", { name: "Alerts", level: 1 })).toBeVisible();
-    await expect(page.getByText("Every move by a trader you follow.")).toBeVisible();
+    await expect(page.getByText("Every new position from a trader you follow.")).toBeVisible();
     await page.getByRole("button", { name: "Turn on alerts" }).click();
     await expect(toast(page, "Alerts on")).toBeVisible();
     const before = pushes().length;

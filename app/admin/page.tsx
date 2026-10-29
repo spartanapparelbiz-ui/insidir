@@ -123,7 +123,7 @@ function Accuracy({ data }: { data: Awaited<ReturnType<typeof accuracyOverview>>
           <thead><tr><th>Hidden</th><th>Move</th><th className="r">Amount</th><th>Why</th></tr></thead>
           <tbody>{data.hidden.map(h => <tr key={h.id}><td>{et(h.hiddenAt)}</td><td>{h.source} · {h.title}<br /><span className="muted tiny">{h.id}</span></td><td className="r">${Math.round(h.amount).toLocaleString("en-US")}</td><td>{h.reason}</td></tr>)}</tbody>
         </table></div>
-      ) : <p className="muted small">No moves hidden.</p>}
+      ) : <p className="muted small">No positions hidden.</p>}
     </>
   );
 }
@@ -227,7 +227,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
       <section id="accuracy" className="sec2">
         <h2 className="sec2__h">Accuracy</h2>
-        <p className="muted small">Every hour the worker re-reads 20 random moves and 20 profile facts from Polymarket, Kalshi and SEC EDGAR. A move that doesn&apos;t match is hidden everywhere until a later check passes; OWNER_EMAIL gets an email.</p>
+        <p className="muted small">Every hour the worker re-reads 20 random positions and 20 profile facts from Polymarket, Kalshi and SEC EDGAR. A position that doesn&apos;t match is hidden everywhere until a later check passes; OWNER_EMAIL gets an email.</p>
         <Accuracy data={accuracy.v} />
       </section>
 

@@ -27,7 +27,7 @@ export function LivePortfolio({ d }: { d: PortfolioData }) {
             <span className="lport__name">{d.t.name}</span>
             <span className="lport__line">{d.t.line}</span>
             <span className="lport__nums">
-              <span><b>{roi ?? "New"}</b> ROI</span>
+              <span><b>{roi ?? "—"}</b> ROI</span>
               <RecordResult r={d.record} />
             </span>
           </Link>
