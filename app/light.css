@@ -113,10 +113,12 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 @media (min-width: 900px) { .foot { padding: 80px 0 64px; } }
 .foot__links a { font-weight: 500; }
 
-/* ---------- motion: fade up 8px, once ---------- */
+/* ---------- motion: what enters from below the screen fades up 8px, once (components/motion/Motion.tsx marks it);
+ * the first screen is never hidden, before or after JavaScript ---------- */
+.js .rv:not(.rv--wait) { transform: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .js .rv { opacity: 0; transform: translate3d(0, 8px, 0); transition: opacity 300ms var(--ease-enter), transform 300ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 40ms); }
-  .js .rv.is-in { opacity: 1; transform: none; }
+  .js .rv.rv--wait { opacity: 0; transform: translate3d(0, 8px, 0); transition: opacity 300ms var(--ease-enter), transform 300ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 40ms); }
+  .js .rv.rv--wait.is-in { opacity: 1; transform: none; }
 }
 
 /* ---------- home (app/page.tsx) ---------- */

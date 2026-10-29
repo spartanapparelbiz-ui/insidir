@@ -25,7 +25,7 @@ test("a tracker page: performance, stats, breakdowns, top traders and filtered m
   for (const h of ["By league or topic", "By bet size", "Favorite vs underdog", "By day of the week"]) await expect(page.getByRole("heading", { level: 3, name: h })).toBeVisible();
   await expect(page.getByText("Hypothetical: $100", { exact: false }).or(page.getByText("$100 on every move:"))).toBeVisible();
   for (const label of ["Win rate", "Edge (win rate − price)", "Net", "ROI"]) await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: label }) }).first()).toContainText("Not enough data yet");
-  await page.getByRole("link", { name: "Open" }).click();
+  await page.getByRole("link", { name: "Open", exact: true }).click();
   await expect(page).toHaveURL(/\?show=open/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

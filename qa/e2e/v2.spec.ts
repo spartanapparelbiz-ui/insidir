@@ -44,7 +44,7 @@ test("home hero: Explore trackers is recorded and opens /trackers, every tracker
   await expect(page.getByRole("heading", { level: 1, name: "Whales ($100K+)" })).toBeVisible();
   // Fewer than 20 settled moves: every rate says so instead of a number.
   await expect(page.getByText(/Not enough data yet: the chart starts at 20 settled moves/)).toBeVisible();
-  await expect(page.locator(".tile").filter({ hasText: "Win rate" })).toContainText("Not enough data yet");
+  await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: /^Win rate$/ }) })).toContainText("Not enough data yet");
   await expect(page.getByRole("button", { name: /Follow/ }).first()).toBeVisible();
 });
 
