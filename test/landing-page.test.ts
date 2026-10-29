@@ -105,7 +105,8 @@ describe("home hero ticker", () => {
     const { tickerItem } = await import("@/lib/moves/ticker");
     const base = { id: "ks:1", source: "kalshi", tab: "sports", league: "NBA", sentence: "", payout: null, record: null, topTrader: false, amount: 48_000, at: 0,
       ago: "2m ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
-      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, face: { src: null, mono: "SO" }, why: null, sourceLink: null } as const;
+      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, face: { src: null, mono: "SO" }, why: null, sourceLink: null,
+      headline: "$48K says Lakers win", subline: "Lakers vs Celtics", inAt: "45%", avgPrice: 0.45, outcomeSide: "yes", nowPrice: null, pnl: null, low: null } as const;
     const t = tickerItem({ ...base });
     expect(`${t.amount} ${t.what} · ${t.ago}`).toBe("$48K on Lakers · 2m");
     expect(t.href).toBe("/market/KX-LAL");

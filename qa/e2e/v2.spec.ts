@@ -79,8 +79,9 @@ test("the public preview: home and the product pages show real moves 30 minutes 
 test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
   await signIn(context, "pro");
   await page.goto("/feed");
-  await expect(page.getByText("E2E-Top, a top trader, just put $412,000 on Chiefs to win.").first()).toBeVisible();
+  await expect(page.locator(".move__head", { hasText: "$412K says Chiefs win" }).first()).toBeVisible();
   await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
+  await expect(page.locator(".move__live").first()).toContainText(/^In at \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
   await page.locator(".move").first().getByRole("button", { name: "Follow" }).click();
@@ -88,7 +89,7 @@ test("member feed: live moves with the record line; following a trader shows on 
   await page.goto("/following");
   await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
   // Their recent moves are in the Following feed too.
-  await expect(page.getByTestId("following-feed").getByText("E2E-Top, a top trader, just put $412,000 on Chiefs to win.").first()).toBeVisible();
+  await expect(page.getByTestId("following-feed").locator(".move__head", { hasText: "$412K says Chiefs win" }).first()).toBeVisible();
   await q("delete from terminal.follows");
 });
 
@@ -270,7 +271,9 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await page.goto("/feed?tab=stocks");
   await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
   const insider = page.locator("[data-move='f4:000099999926000001']");
-  // Never "just bought": the filing day, then the trade date; the note carries both dates.
+  await expect(insider.locator(".move__head")).toHaveText("$1.4M of E2E Fixture Devices stock, bought by its CEO");
+  // Never "just bought": the filing day, then the trade date; the note carries both dates (in Details).
+  await insider.locator(".move__more summary").click();
   await expect(insider.getByText(/^Filed (today|[A-Z][a-z]{2} \d{1,2}): Jane Fixture, CEO of E2E Fixture Devices, bought \$1\.4M of E2E Fixture Devices stock on Oct 22\.$/)).toBeVisible();
   await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
   await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
@@ -279,6 +282,7 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
   await expect(link).toHaveAttribute("target", "_blank");
   const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
+  await fund.locator(".move__more summary").click();
   await expect(fund.getByText(/^E2E Fixture Capital added \$250M of E2E Fixture Devices in Q3 \d{4}\.$/)).toBeVisible();
   await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
   // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.

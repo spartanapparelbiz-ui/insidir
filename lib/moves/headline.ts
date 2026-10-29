@@ -1,0 +1,145 @@
+/* The card headline, pure: the amount first, then what the money says in plain English, and the market as a grey
+ * subline. "$17K says no runs in the 1st inning" over "Brewers vs. Cubs · MLB". One builder per kind of market:
+ *   moneyline   "$68K says Brewers win"                          a team as the outcome ("Brewers vs. Cubs")
+ *   draw        "$12K says Arsenal vs. Chelsea ends in a draw"
+ *   spread      "$40K says Brewers win by 2 or more"             "Spread: Brewers (-1.5)" (never the word spread)
+ *               "$40K says Cubs win or lose by 1 or less"        the +1.5 side
+ *   totals      "$25K says 9 or more runs"                       "O/U 8.5", Over/Under; runs, goals or points by league
+ *   props       "$17K says no runs in the 1st inning"            1st inning / period / half / quarter totals
+ *               "$30K says Mahomes over 275.5 passing yards"     player lines
+ *   yes/no      "$85K says the Fed will cut rates in December"   "Will …?" with Yes or No
+ *   multi       "$200K says Chiefs" on "Who will win the Super Bowl?"
+ *   stocks      "$1.4M of Nvidia stock, bought by its CEO" / "$250M more Chevron for Berkshire Hathaway"
+ * Facts only: what was bought, never a tip. */
+import type { Move } from "./types";
+import { niceName } from "@/lib/stocks/names";
+import { quarterOf } from "./copy";
+
+/** "$17K", "$1.4M", "$950". */
+export function short(v: number): string {
+  const a = Math.abs(v), s = v < 0 ? "−" : "";
+  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(a >= 1e10 ? 0 : 1).replace(/\.0$/, "")}B`;
+  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
+  if (a >= 1e3) return `${s}$${Math.round(a / 1e3)}K`;
+  return `${s}$${Math.round(a)}`;
+}
+
+const clean = (t: string) => t.trim().replace(/\s+/g, " ").replace(/\s+([?!.,])/g, "$1");
+const isYes = (o: string) => /^yes$/i.test(o.trim());
+const isNo = (o: string) => /^no$/i.test(o.trim());
+
+/** What one unit of score is called in a league. */
+function unit(league: string | null | undefined, words: string): string {
+  if (/\b(maps?)\b/i.test(words)) return "maps";
+  if (/\b(kills?)\b/i.test(words)) return "kills";
+  if (/\b(sets?)\b/i.test(words)) return "sets";
+  if (/\bgames?\b/i.test(words) && league === "tennis") return "games";
+  if (/\bruns?\b/i.test(words) || league === "MLB") return "runs";
+  if (/\bgoals?\b/i.test(words) || league === "NHL" || league === "soccer") return "goals";
+  return "points";
+}
+const one = (u: string) => u.replace(/s$/, "");
+
+/** Over/Under a line, in whole numbers where the line is a half: O 8.5 → "9 or more", U 8.5 → "8 or fewer";
+ *  U 0.5 → "no", O 0.5 → "at least one". */
+function overUnder(side: "over" | "under", line: number, u: string): string {
+  if (Number.isInteger(line * 2) && !Number.isInteger(line)) {
+    if (side === "under") return line === 0.5 ? `no ${u}` : `${Math.floor(line)} or fewer ${u}`;
+    return line === 0.5 ? `at least one ${one(u)}` : `${Math.ceil(line)} or more ${u}`;
+  }
+  return `${side} ${line} ${u}`;
+}
+
+const PERIOD = /\b(1st|2nd|3rd|4th|first|second|third|fourth|5th|6th|7th|8th|9th)\s+(inning|period|half|quarter|set|map)\b/i;
+
+/** "Will the Fed cut rates in December?" → "the Fed will cut rates in December" (Yes) / "won't" (No). */
+function fromQuestion(q: string, yes: boolean): string | null {
+  const m = /^will\s+(.+?)\s+(be|have|win|lose|beat|cut|raise|hike|hold|pass|reach|hit|close|end|say|announce|sign|leave|resign|become|go|get|make|stay|remain|happen|fall|rise|drop|launch|release|score|finish|qualify|advance|default|out|top|pause|lower|increase|decrease|keep|reduce)\b\s*(.*?)\??$/i.exec(q);
+  if (m) return `${m[1]} ${yes ? "will" : "won't"} ${m[2]!.toLowerCase()}${m[3] ? ` ${m[3]}` : ""}`;
+  // "Brewers win?" / "Team wins?": a statement asked as a question.
+  const won = /^(?!will |is |are |does |do |who |what |which )(.+?)\s+(wins?)\??$/i.exec(q);
+  if (won) return yes ? `${won[1]} ${won[2]!.toLowerCase()}` : `${won[1]} ${/s$/i.test(won[2]!) ? "doesn't" : "don't"} win`;
+  const there = /^will\s+there\s+be\s+(.+?)\??$/i.exec(q);
+  if (there) return yes ? `there will be ${there[1]}` : `there won't be ${there[1]}`;
+  // "Bitcoin above $100,000 on Friday?": a statement already; No puts "not" before the comparison.
+  const cmp = /^(?!is |are |does |do |did |has |have |who |what |which |when |how )(.+?)\s+(above|below|over|under|at least|at most|between|reach(?:es)?|hits?)\s+(.+?)\??$/i.exec(q);
+  if (cmp) return yes ? `${cmp[1]} ${cmp[2]} ${cmp[3]}` : `${cmp[1]} not ${cmp[2]} ${cmp[3]}`;
+  return null;
+}
+
+/** What the money says, after "says". */
+export function claimOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league">): string {
+  const o = clean(m.outcome), t = clean(m.marketTitle), words = `${t} ${m.eventTitle}`;
+  // Totals and props: "…: O/U 8.5", "1st Inning Runs O/U 0.5", "Mahomes: Passing Yards O/U 275.5"; Over/Under.
+  const ou = /(?:o\/u|over\/under|total[^0-9]*)\s*(\d+(?:\.\d+)?)/i.exec(t);
+  const side = /^over\b/i.test(o) ? "over" : /^under\b/i.test(o) ? "under" : null;
+  const lineInOutcome = /(?:over|under)\s+(\d+(?:\.\d+)?)/i.exec(o);
+  if (side && (ou || lineInOutcome)) {
+    const line = Number((ou ?? lineInOutcome)![1]);
+    const period = PERIOD.exec(words);
+    const player = /^([^:]+):\s*([a-z][a-z ]+?)\s*(?:o\/u|over\/under)/i.exec(t);
+    if (player && !/\bvs\.?\b/i.test(player[1]!) && !period) return `${player[1]!.trim()} ${side} ${line} ${player[2]!.trim().toLowerCase()}`;
+    const u = unit(m.league, words);
+    return `${overUnder(side, line, u)}${period ? ` in the ${period[0]!.toLowerCase().replace(/^first/, "1st").replace(/^second/, "2nd")}` : ""}`;
+  }
+  // Spreads: "Spread: Brewers (-1.5)" or "Brewers (-1.5)", the money on a team.
+  const sp = /(?:spread|handicap)?[:\s]*([^()]+?)\s*\(([-+−]\d+(?:\.\d+)?)\)/i.exec(t);
+  if (sp && !isYes(o) && !isNo(o)) {
+    const fav = sp[1]!.trim(), line = Math.abs(Number(sp[2]!.replace("−", "-"))), u = unit(m.league, words);
+    const minus = /^[-−]/.test(sp[2]!);
+    const onFav = o.toLowerCase() === fav.toLowerCase();
+    const giving = onFav === minus; // the team the money is on gives the points
+    const n = Number.isInteger(line) ? line : Math.ceil(line);
+    return giving ? `${o} win by ${n} or more` : `${o} win or lose by ${n - 1 || 0} or less`.replace("lose by 0 or less", "tie");
+  }
+  // Draws.
+  if (/\bdraw\b/i.test(o) || (/\bend in a draw\b/i.test(t) && isYes(o))) return `${m.eventTitle && /\bvs\.?\b/i.test(m.eventTitle) ? clean(m.eventTitle) : "it"} ends in a draw`;
+  if (/\bend in a draw\b/i.test(t) && isNo(o)) return "it doesn't end in a draw";
+  // "Will Arsenal FC win on 2026-10-30?" Yes / No.
+  const wins = /^will\s+(.+?)\s+win\b(.*?)\??$/i.exec(t);
+  if (wins && (isYes(o) || isNo(o)) && m.tab === "sports") return isYes(o) ? `${wins[1]} win` : `${wins[1]} don't win`;
+  // Yes / No on a question.
+  if (isYes(o) || isNo(o)) {
+    const q = fromQuestion(t, isYes(o));
+    if (q) return q;
+    return `${isYes(o) ? "Yes" : "No"} on “${t.replace(/\?$/, "")}?”`;
+  }
+  // A team or a name as the outcome: moneylines ("Brewers vs. Cubs") and multi-outcome markets.
+  if (m.tab !== "sports") return /\?$/.test(t) && !/^who\b/i.test(t) ? `“${o}” on ${t.replace(/\?$/, "")}` : o;
+  return `${o} win${/\b(map|game|set)\s*\d/i.test(t) ? ` ${t.match(/\b(map|game|set)\s*\d+/i)![0]!.replace(/^\w/, c => c.toLowerCase())}` : ""}`;
+}
+
+/** The grey line under the headline: the matchup or the question, then the league. */
+export function sublineOf(m: Pick<Move, "marketTitle" | "eventTitle" | "tab" | "league"> & { leagueLabel?: string | null }): string {
+  const t = clean(m.marketTitle), e = clean(m.eventTitle);
+  const main = m.tab === "sports" ? (/\bvs\.?\b/i.test(e) ? e : t) : (e && e !== t && t.length < 40 && !/\?$/.test(t) ? `${e}: ${t}` : t);
+  const lg = m.leagueLabel ?? (m.league && m.league !== "other" ? m.league : null);
+  return lg && !main.includes(lg) ? `${main} · ${lg}` : main;
+}
+
+/** Who at the company bought, for the headline: "its CEO", "a director", "a 10% owner", "an insider". */
+export function roleOf(role: string): string {
+  const r = role.replace(/^\s*the\s+/i, "").trim();
+  if (/\b(ceo|chief executive)\b/i.test(r)) return "its CEO";
+  if (/\b(cfo|chief financial)\b/i.test(r)) return "its CFO";
+  if (/\b(coo|chief operating)\b/i.test(r)) return "its COO";
+  if (/\bpresident\b/i.test(r)) return "its president";
+  if (/\bchair/i.test(r)) return "its chair";
+  if (/\bdirector\b/i.test(r)) return "a director";
+  if (/10\s*%/.test(r)) return "a 10% owner";
+  if (/\bofficer\b|\bvp\b|vice president|chief/i.test(r)) return "an officer";
+  return "an insider";
+}
+
+/** "$17K says no runs in the 1st inning"; stock cards say what was bought. */
+export function headlineOf(m: Move): string {
+  if (m.source === "sec" && m.detail) {
+    const d = m.detail;
+    if (d.kind === "insider") return `${short(m.amount)} of ${niceName(d.company)} stock, bought by ${roleOf(d.role)}`;
+    return `${short(m.amount)} more ${niceName(d.company)} for ${niceName(d.fund)}${d.period ? ` in ${quarterOf(d.period)}` : ""}`;
+  }
+  return `${short(m.amount)} says ${claimOf(m)}`;
+}
+
+/** "62% chance": the price paid, as the chance the market gave it then. */
+export const chance = (p: number): string | null => (p > 0 && p < 1 ? `${Math.round(p * 100)}%` : null);

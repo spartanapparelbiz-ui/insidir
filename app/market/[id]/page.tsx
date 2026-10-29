@@ -39,7 +39,7 @@ function dotsOf(moves: readonly Move[]): ChartDot[] {
   const max = Math.max(1, ...moves.map(m => m.amount));
   return moves.filter(m => m.avgPrice > 0 && m.avgPrice < 1).map(m => ({
     t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice, r: 3 + 9 * Math.sqrt(m.amount / max),
-    label: `${dollars(m.amount)} on ${m.outcome} at ${Math.round(m.avgPrice * 100)}¢`, tone: m.result === "won" ? "won" as const : m.result === "lost" ? "lost" as const : "open" as const,
+    label: `${dollars(m.amount)} on ${m.outcome} at ${Math.round(m.avgPrice * 100)}%`, tone: m.result === "won" ? "won" as const : m.result === "lost" ? "lost" as const : "open" as const,
   }));
 }
 
@@ -115,7 +115,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           {event && event !== title ? <p className="mhead__kicker">{event}</p> : null}
           <h1 className="mhead__h">{title}</h1>
           {settled && resultSide ? <p className="mhead__result"><span className="rpill rpill--won">Settled</span> {resultSide === "yes" ? yesLabel : noLabel} won.</p>
-            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}¢ · {noLabel} {Math.round((1 - price) * 100)}¢ <span>now</span></p> : null}
+            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}% · {noLabel} {Math.round((1 - price) * 100)}% <span>chance now</span></p> : null}
           <div className="mhead__act">
             <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
             {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
@@ -136,7 +136,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           </Section>
         ) : null}
 
-        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The prices big moves paid for ${yesLabel} (the venue's full history isn't available right now)`}, with every big move on it: a dot per move, bigger for more money (a ${noLabel} bet sits at 100¢ minus its price). Green won, red lost, grey open.`}>
+        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The prices big moves paid for ${yesLabel} (the venue's full history isn't available right now)`}, with every big move on it: a dot per move, bigger for more money (a ${noLabel} bet sits at 100% minus its chance). Green won, red lost, grey open.`}>
           <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}
             windows={[{ key: "1d", label: "1D", since: now - 86_400_000 }, { key: "1w", label: "1W", since: now - 7 * 86_400_000 }, { key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "all", label: "All", since: null }]}
             empty="Not enough prices for a chart yet." />

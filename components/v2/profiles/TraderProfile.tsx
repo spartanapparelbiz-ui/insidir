@@ -139,7 +139,7 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
           <Table label="Open positions" head={["Market", "Value", "Paid", "Now", "Since"]} numeric={[1, 2, 3, 4]}
             rows={positions.map(p => [
               <span key="t">{p.title}<span className="dtable__sub">{p.outcome}</span></span>, dollars(p.value), cents(p.avgPrice), cents(p.curPrice),
-              p.avgPrice !== null && p.curPrice !== null ? <span key="c" className={tone(p.curPrice - p.avgPrice)}>{`${p.curPrice - p.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((p.curPrice - p.avgPrice) * 100))}¢`}</span> : "—",
+              p.avgPrice !== null && p.curPrice !== null ? <span key="c" className={tone(p.curPrice - p.avgPrice)}>{`${p.curPrice - p.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((p.curPrice - p.avgPrice) * 100))} pts`}</span> : "—",
             ])} />
         </Section>
       ) : null}

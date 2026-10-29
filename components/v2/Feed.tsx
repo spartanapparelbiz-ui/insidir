@@ -22,6 +22,13 @@ import { compactDollars as dollarsShort } from "@/lib/home/curate";
 const SIZES = [{ min: 10_000, label: "$10k+" }, { min: 50_000, label: "$50k+" }, { min: 100_000, label: "$100k+" }] as const;
 const SPORT_LEAGUES: League[] = ["NFL", "NBA", "MLB", "NHL", "college", "soccer", "UFC", "tennis", "golf"];
 const POLL_MS = 10_000;
+/** Open cards' "now" prices are read again this often (/api/moves/now). */
+const PRICE_MS = 60_000;
+/** Topic chips (trackers, lib/trackers.ts): the big subjects first. */
+const TOPICS: Record<"markets" | "stocks", Array<{ slug: string; label: string }>> = {
+  markets: [{ slug: "fed-and-rates", label: "Fed & rates" }, { slug: "elections-2026", label: "Elections" }, { slug: "geopolitics", label: "World" }, { slug: "tech-and-ai", label: "Tech & AI" }, { slug: "culture", label: "Culture" }],
+  stocks: [{ slug: "ceo-buys", label: "CEO buys" }, { slug: "cluster-buys", label: "Cluster buys" }, { slug: "big-funds", label: "Big funds" }],
+};
 
 export function Feed({ pill, initial, status: initialStatus, initialTab, stocks = false, free, follows, followsReady, trialHref, serverNow, picks = null, firstHint = false }: {
   /** What they picked in onboarding: the feed opens on "Your picks" (their leagues / market topics). */
@@ -37,6 +44,10 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   const [tab, setTab] = useState<Tab>(initialTab);
   const [min, setMin] = useState(10_000);
   const [league, setLeague] = useState<League | null>(null);
+  /** "Show all": the low-interest markets the default feed leaves out (lib/moves/interest.ts). */
+  const [all, setAll] = useState(false);
+  const [topic, setTopic] = useState<string | null>(null);
+  const [nowYes, setNowYes] = useState<Record<string, number | null>>({});
   /** "Your picks" on: only their leagues (Sports) or market topics (Markets). */
   const [mine, setMine] = useState(Boolean(picks));
   const [hint, setHint] = useState(false);
@@ -64,7 +75,9 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
     const q = new URLSearchParams({ tab, min: String(min), limit: "30" });
     if (tab === "sports" && league) q.set("league", league);
     else if (mine && tab === "sports" && myLeagues.length) q.set("leagues", myLeagues.join(","));
-    if (mine && tab === "markets" && myCats.length) q.set("cats", myCats.join(","));
+    if (mine && tab === "markets" && myCats.length && !topic) q.set("cats", myCats.join(","));
+    if (all) q.set("all", "1");
+    if (topic && (tab === "markets" || tab === "stocks")) q.set("tracker", topic);
     const res = await fetch(`/api/moves?${q}`, { cache: "no-store" }).catch(() => null);
     if (reset) setBusy(false);
     if (!res?.ok) { setStatus(s => s ? { ...s, state: "behind", text: s.lastAt ? `Catching up · last update ${agoText(s.lastAt, Date.now())}` : "Catching up · waiting for the first update" } : s); return; }
@@ -83,7 +96,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
     }
     setWaiting(body.items);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, min, league, mine]);
+  }, [tab, min, league, mine, all, topic]);
 
   useEffect(() => {
     if (first.current) { first.current = false; } else void load(true);
@@ -92,6 +105,18 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
   }, [load]);
   useEffect(() => { const t = setInterval(() => tick(n => n + 1), 1000); return () => clearInterval(t); }, []);
   useEffect(() => { setFollowed(new Set(follows ?? [])); }, [follows]);
+  // Open cards: the price of each market now, every minute while the page is in view.
+  const openKeys = [...new Set(items.flatMap(i => (i.result || i.source === "sec" ? [] : [`${i.source}:${i.marketId}`])))].slice(0, 60).join(",");
+  useEffect(() => {
+    if (!openKeys) return;
+    const read = async () => {
+      if (document.visibilityState !== "visible") return;
+      const r = await fetch(`/api/moves/now?m=${encodeURIComponent(openKeys)}`, { cache: "no-store" }).catch(() => null);
+      if (r?.ok) { const b = (await r.json()) as { prices: Record<string, number | null> }; setNowYes(cur => ({ ...cur, ...b.prices })); }
+    };
+    const t = setInterval(() => void read(), PRICE_MS);
+    return () => clearInterval(t);
+  }, [openKeys]);
 
   const newCount = waiting ? waiting.filter(i => !seen.current.has(i.id)).length : 0;
   const showNew = () => {
@@ -118,7 +143,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
           <div className="dash__bar">
             <div className="seg" role="group" aria-label="Category">
               {tabs.map(t => (
-                <button key={t} type="button" aria-pressed={tab === t} className="seg__btn" onClick={() => { if (t !== tab) pick(() => { setTab(t); setLeague(null); }); }}>
+                <button key={t} type="button" aria-pressed={tab === t} className="seg__btn" onClick={() => { if (t !== tab) pick(() => { setTab(t); setLeague(null); setTopic(null); }); }}>
                   {t === "sports" ? "Sports" : t === "markets" ? "Markets" : "Stocks"}
                 </button>
               ))}
@@ -140,6 +165,12 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
                 <button type="button" className="chip2" aria-pressed={!mine} onClick={() => { if (mine) pick(() => setMine(false)); }}>All</button>
               </div>
             ) : null}
+            {tab === "markets" || tab === "stocks" ? (
+              <div className="chips chips--scroll dash__leagues" role="group" aria-label="Topic">
+                <button type="button" className="chip2" aria-pressed={topic === null} onClick={() => { if (topic) pick(() => setTopic(null)); }}>All</button>
+                {TOPICS[tab].map(t => <button key={t.slug} type="button" className="chip2" aria-pressed={topic === t.slug} onClick={() => { if (topic !== t.slug) pick(() => setTopic(t.slug)); }}>{t.label}</button>)}
+              </div>
+            ) : null}
             {tab === "sports" ? (
               <div className="chips chips--scroll dash__leagues" role="group" aria-label="League">
                 {hasMine("sports") ? <button type="button" className="chip2" aria-pressed={mine && league === null} onClick={() => { if (!mine || league) pick(() => { setMine(true); setLeague(null); }); }}>Your picks</button> : null}
@@ -148,6 +179,10 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
               </div>
             ) : null}
           </div>
+          <p className="feed2__scope">
+            {all ? "Showing every market." : "Major leagues and the big topics. Esports, single innings or periods, small leagues and low goal lines are left out."}{" "}
+            <button type="button" className="linkbtn" aria-pressed={all} onClick={() => pick(() => setAll(a => !a))}>{all ? "Show fewer" : "Show all"}</button>
+          </p>
           {newCount ? (
             <div className="newmoves"><button type="button" className="btn btn--primary newmoves__btn" onClick={showNew}>{newCount} new {newCount === 1 ? "move" : "moves"} · Show</button></div>
           ) : null}
@@ -162,7 +197,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
               {items.map((m, i) => (
                 <li key={m.id}>
                   {hint && i === 0 ? <p className="hint" role="note" data-testid="first-hint">This is a big move. Tap anyone to see their record.<button type="button" onClick={() => setHint(false)}>Got it</button></p> : null}
-                  <MoveCard m={m} follow={followFor("trader", m.wallet)} followFor={followFor} trialHref={trialHref} fresh={fresh.has(m.id)} />
+                  <MoveCard m={m} follow={followFor("trader", m.wallet)} followFor={followFor} trialHref={trialHref} fresh={fresh.has(m.id)} nowYes={nowYes[`${m.source}:${m.marketId}`]} />
                 </li>
               ))}
             </ol>

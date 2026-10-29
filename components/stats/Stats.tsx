@@ -12,7 +12,8 @@ import { MIN_SETTLED, NOT_ENOUGH, WEEKDAYS, type Leader, type Perf, type Row } f
 export const pct = (v: number | null, digits = 0) => (v === null ? "—" : `${(v * 100).toFixed(digits)}%`);
 export const pts = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)} pts`);
 export const signed = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${dollars(Math.abs(v))}`);
-export const cents = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}¢`);
+/** A price as the chance it stands for: 0.62 → "62%". */
+export const cents = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);
 export const tone = (v: number | null): "money" | "loss" | undefined => (v === null || v === 0 ? undefined : v > 0 ? "money" : "loss");
 
 /* ---------- tiles ---------- */
@@ -39,7 +40,7 @@ export function perfTiles(p: Perf): Tile[] {
   return [
     { label: "Record", value: `${p.won.toLocaleString("en-US")}–${p.lost.toLocaleString("en-US")}` },
     { label: "Win rate", value: gated(pct(p.winRate), ok), tone: ok && p.winRate! >= 0.5 ? "money" : ok ? "loss" : undefined },
-    { label: "Avg price paid", value: gated(cents(p.avgPrice), ok) },
+    { label: "Avg chance paid", value: gated(cents(p.avgPrice), ok) },
     { label: "Edge (win rate − price)", value: gated(pts(p.edge), ok), tone: tone(p.edge) },
     { label: "Net", value: gated(signed(p.net), ok), tone: tone(p.net) },
     { label: "ROI", value: gated(pct(p.roi, 1), ok), tone: tone(p.roi) },

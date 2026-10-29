@@ -132,7 +132,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
               { label: "Biggest loss", value: gate(bl ? signed(bl.pnl ?? 0) : "—"), tone: ok && bl ? "loss" as const : undefined },
               { label: "Current streak", value: gate(streakText), tone: ok && st ? (st.kind === "won" ? "money" as const : "loss" as const) : undefined },
               { label: bd && ok ? `Best day, ${DAY_FMT.format(new Date(`${bd.day}T12:00:00Z`))}` : "Best day", value: gate(bd ? signed(bd.net) : "—"), tone: ok && bd ? tone(bd.net) : undefined },
-              { label: "Price since the bet, open bets", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)}¢`, tone: tone(move) },
+              { label: "Price since the bet, open bets", value: move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move).toFixed(1)} pts`, tone: tone(move) },
               { label: "From top traders", value: share === null ? "—" : pct(share) },
             ] : []),
           ]} />
@@ -153,7 +153,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
               rows={d.open.slice(0, 12).map(({ m, now: px }) => [
                 <Link key="m" className="dtable__link" href={`/market/${encodeURIComponent(m.marketId)}`}>{m.marketTitle}<span className="dtable__sub">{m.outcome}</span></Link>,
                 dollars(m.amount), cents(m.avgPrice), cents(px),
-                px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))}¢`}</span>,
+                px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))} pts`}</span>,
               ])} />
           </Section>
         ) : null}

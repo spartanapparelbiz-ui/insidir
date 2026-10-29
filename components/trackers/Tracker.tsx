@@ -13,11 +13,11 @@ export function RecordPill({ r }: { r: TrackerRecord | null | undefined }) {
   return <span className={`rpill rpill--${p.tone}`}>{p.text}</span>;
 }
 
-/** "Won 63% · 412 settled · avg price 41¢ · +$1.2M net", or why there's no record yet. */
+/** "Won 63% · 412 settled · avg 41% chance · +$1.2M net", or why there's no record yet. */
 export function recordText(r: TrackerRecord | null | undefined, kind: Tracker["kind"]): string {
   if (kind === "filings") return "Filings don't settle, so there's no win record.";
   if (!hasTrackerRecord(r)) return "New: under 20 settled moves, no record yet.";
-  const price = r.oddsPct !== null ? ` · avg price ${Math.round(r.oddsPct)}¢` : "";
+  const price = r.oddsPct !== null ? ` · avg ${Math.round(r.oddsPct)}% chance` : "";
   return `Won ${r.won}, lost ${r.lost} (${winPct(r)}%)${price} · ${signedShort(r.net)} net`;
 }
 
