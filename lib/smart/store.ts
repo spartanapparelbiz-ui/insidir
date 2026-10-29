@@ -9,6 +9,7 @@ import type { PolymarketClient, PolymarketPosition } from "@/lib/exchanges/polym
 import { classify } from "@/lib/moves/classify";
 import { liveTabs } from "@/lib/features";
 import { closesFor } from "@/lib/stocks/prices";
+import { niceName } from "@/lib/stocks/names";
 import {
   bigMoneySplit, crowdSplit, fundAddsInFall, insiderDips, marketVerdict, smartOf, SPLIT_ALERT_GAP, SPLIT_MIN, stockVerdict,
   type FundAdd, type InsiderBuy, type Smart, type SmartPosition,
@@ -152,14 +153,14 @@ export async function stockSplitsOnce(db: Db, now: number): Promise<{ live: numb
   for (const x of r.rows as Array<{ detail: Record<string, unknown>; amount: number; at: string }>) {
     const d = x.detail;
     if (d.kind === "insider" && typeof d.ticker === "string" && d.ticker) {
-      ins.push({ ticker: d.ticker.toUpperCase(), company: String(d.company ?? d.ticker), owner: String(d.ownerName ?? ""), value: Number(x.amount), tradeDate: String(d.tradeDate ?? iso(new Date(x.at).getTime())) });
+      ins.push({ ticker: d.ticker.toUpperCase(), company: niceName(String(d.company ?? d.ticker)), owner: String(d.ownerName ?? ""), value: Number(x.amount), tradeDate: String(d.tradeDate ?? iso(new Date(x.at).getTime())) });
     } else if (d.kind === "fund" && typeof d.cusip === "string" && d.period) cusips.add(d.cusip);
   }
   const tickers = await tickersFor(db, [...cusips]);
   for (const x of r.rows as Array<{ detail: Record<string, unknown>; amount: number }>) {
     const d = x.detail;
     const t = d.kind === "fund" ? tickers.get(String(d.cusip)) : null;
-    if (t) adds.push({ ticker: t, company: String(d.company ?? t), fund: String(d.fund ?? ""), addedValue: Number(x.amount), period: String(d.period) });
+    if (t) adds.push({ ticker: t, company: niceName(String(d.company ?? t)), fund: String(d.fund ?? ""), addedValue: Number(x.amount), period: String(d.period) });
   }
   const closes = await closesFor(db, [...ins.map(b => b.ticker), ...adds.map(a => a.ticker)], iso(now - 400 * DAY));
   const open = await db.select({ subject: splits.subject, kind: splits.kind }).from(splits).where(and(inArray(splits.kind, ["insider_dip", "fund_add"]), isNull(splits.resolvedAt)));

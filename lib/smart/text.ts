@@ -53,5 +53,7 @@ export function splitHref(s: Pick<SplitLike, "kind" | "subject" | "detail">): st
 export function splitMessage(s: SplitLike, appUrl: string): { title: string; body: string; url: string } {
   const head = s.kind === "crowd" || s.kind === "bigmoney" ? `${KIND_NAME[s.kind]}: ${Math.round(s.gap)} pts` : `${KIND_NAME[s.kind]}: ${s.subtitle ?? ""}`.trim();
   const who = s.kind === "crowd" || s.kind === "bigmoney" ? ` (${Number(s.detail.wallets ?? 0)} proven traders)` : ` (−${s.gap}%)`;
-  return { title: head, body: `${s.title}. ${splitLine(s)}${who}. Data, not a recommendation.`, url: `${appUrl}${splitHref(s)}?from=split` };
+  // Stocks: the company (the title already says what kind of split); markets: the question.
+  const what = s.kind === "insider_dip" || s.kind === "fund_add" ? String(s.detail.company ?? s.title.replace(/^[^:]+:\s*/, "")) : s.title;
+  return { title: head, body: `${what}${/[?.!]$/.test(what) ? "" : "."} ${splitLine(s)}${who}. Data, not a recommendation.`, url: `${appUrl}${splitHref(s)}?from=split` };
 }

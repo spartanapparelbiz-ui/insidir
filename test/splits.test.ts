@@ -135,7 +135,7 @@ describe("the words", () => {
     expect(splitHref(s)).toBe("/market/0xa");
     const msg = splitMessage(s, "https://insidir.com");
     expect(msg.title).toBe("Smart money vs. the crowd: 19 pts");
-    expect(msg.body).toContain("Crowd 62% · Smart money 81% (4 proven traders)");
+    expect(msg.body).toBe("Will the Fed cut in December? Crowd 62% · Smart money 81% (4 proven traders). Data, not a recommendation.");
     expect(msg.body).toContain("Data, not a recommendation.");
     expect(msg.url).toBe("https://insidir.com/market/0xa?from=split");
     expect(SPLIT_ALERT_GAP).toBe(15);
@@ -145,6 +145,7 @@ describe("the words", () => {
     const s = { ...base, kind: "insider_dip" as const, subject: "ACME:2026-09-25", crowd: null, smart: null, gap: 20, smartSide: "up", detail: { ticker: "ACME", owners: ["A", "B"], value: 1_500_000 } };
     expect(splitLine(s)).toBe("2 insiders bought $1.5M after a 30-day fall");
     expect(gapLabel(s)).toBe("−20% in 30 days");
+    expect(splitMessage({ ...s, title: "Insiders buying the dip: Acme", detail: { ...s.detail, company: "Acme" } }, "").body).toBe("Acme. 2 insiders bought $1.5M after a 30-day fall (−20%). Data, not a recommendation.");
     expect(splitHref(s)).toBe("/insider-trading/ACME");
     expect(stockLine({ funds: ["F"], value: 40e6 }, "fund_add")).toBe("A big fund added $40M in a quarter it fell");
   });
