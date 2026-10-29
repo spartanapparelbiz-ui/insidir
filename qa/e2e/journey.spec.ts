@@ -85,7 +85,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // The feed, filtered to their picks, with the one-time hint on the first card.
     await expect(page).toHaveURL(/\/feed\?first=1/);
     await expect(page.getByRole("button", { name: "Your picks" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("first-hint")).toContainText("This is a big move. Tap anyone to see their record.");
+    await expect(page.getByTestId("first-hint")).toContainText("This is a large position. Tap anyone to see their record.");
     await shot("feed-first");
     const settings = (await q<{ settings: { picks?: { tabs: string[]; leagues: string[] } } }>("select settings from terminal.users where id = $1", [MOCK_USER.sub]))[0]!.settings;
     expect(settings.picks).toMatchObject({ tabs: ["sports"], leagues: ["NFL"] });
@@ -100,7 +100,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");
     await expect(page.getByRole("heading", { name: "Alerts", level: 1 })).toBeVisible();
-    await expect(page.getByText("Every move by a trader you follow.")).toBeVisible();
+    await expect(page.getByText("Every new position from a trader you follow.")).toBeVisible();
     await page.getByRole("button", { name: "Turn on alerts" }).click();
     await expect(toast(page, "Alerts on")).toBeVisible();
     const before = pushes().length;
@@ -108,10 +108,10 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await expect(toast(page, "Test alert sent to 1 device")).toBeVisible();
     expect(pushes().slice(before).some(p => endpoint.endsWith(p.path))).toBe(true);
 
-    await expect(page.getByText("No alerts yet. When someone you follow moves, it shows up here.")).toBeVisible();
+    await expect(page.getByText("No alerts yet. New positions from accounts you follow are listed here.")).toBeVisible();
     await q("insert into terminal.alerts_sent (user_id, opp_id, channel) values ($1, 'move:e2e:m1', 'push') on conflict do nothing", [MOCK_USER.sub]);
     await page.reload();
-    await expect(page.locator(".atable").getByText("$412,000 on Chiefs to win")).toBeVisible();
+    await expect(page.locator(".atable").getByText("$412K on Chiefs to win")).toBeVisible();
     await shot("alerts");
 
     // Billing: the next charge, then cancel in one tap.

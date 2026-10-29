@@ -54,7 +54,7 @@ test("empty: a quiet feed says so and points to Results", async ({ page, context
     await q("delete from terminal.moves");
     await page.goto("/feed");
     await expect(page.getByText("Quiet right now.")).toBeVisible();
-    await expect(page.getByText("Follow a few top traders and we'll ping you when they move.")).toBeVisible();
+    await expect(page.getByText("Follow a few top-ranked traders to see their new positions in Following.")).toBeVisible();
   } finally {
     for (const m of saved) {
       const cols = Object.keys(m);
@@ -72,7 +72,7 @@ test("empty: Whales with no large trades says what shows up there and offers the
     const empty = page.locator("[data-empty=whales]");
     await expect(empty).toBeVisible();
     await expect(empty.getByText("No large trades yet")).toBeVisible();
-    await expect(empty.getByRole("link", { name: "See the live feed" })).toHaveAttribute("href", "/feed");
+    await expect(empty.getByRole("link", { name: "Open Activity" })).toHaveAttribute("href", "/feed");
     await noHorizontalScroll(page);
   } finally {
     for (const w of saved) await q("insert into terminal.whale_trades (key, data, at) values ($1, $2, $3) on conflict do nothing", [w.key, w.data, w.at]);

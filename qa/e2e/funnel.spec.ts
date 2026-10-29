@@ -41,7 +41,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.goto("/login");
   await post("/__google_user", { sub: `g_free_${w}`, email: email.toUpperCase(), email_verified: true });
   await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/(feed|onboarding)/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/onboarding/, { timeout: 15_000 });
   const u = (await q<{ id: string; plan: string; membership_id: string | null }>("select id, plan, membership_id from terminal.users where email = $1", [email]))[0]!;
   expect(u.membership_id).toBeNull();
 
@@ -51,7 +51,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.getByRole("button", { name: "Skip" }).click();
   await expect(page).toHaveURL(/\/feed\?first=1/);
   await page.goto("/start");
-  await expect(page).toHaveURL(/\/feed$/);
+  await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(400);
@@ -77,7 +77,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.context().clearCookies();
   await page.goto("/login");
   await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(1);
 
   // Someone not on the list (and with no membership) can't make an account this way.
@@ -138,16 +138,19 @@ test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /lo
     .toEqual(["account_created", "checkout_start", "start_view"]);
 });
 
-test("one action per page: no offer bar or sticky bar anywhere; the nav button on public pages but not home, /start or /login", async ({ page }) => {
+test("one action per page: no offer bar or sticky bar anywhere; the nav's 36px Get started on public pages, home included, but not /start or /login", async ({ page }) => {
   for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await expect(page.locator(".nav__cta")).toHaveText("Get started");
+  if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
   await page.goto("/pricing");
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
+  await page.goto("/login");
+  await expect(page.locator(".nav__cta")).toHaveCount(0);
 });
 
 test("/admin/funnel: the eight steps with the drop-off between each", async ({ page }) => {

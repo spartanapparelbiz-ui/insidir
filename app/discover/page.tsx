@@ -1,4 +1,4 @@
-/* /discover: the members' home (components/home/Discover.tsx). Visitors get the public home page instead. */
+/* /discover: the members' home, Trackers (components/home/Discover.tsx). Visitors get the public home page instead. */
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -9,7 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Discover", robots: { index: false } };
+export const metadata: Metadata = { title: "Trackers", robots: { index: false } };
 
 export default async function DiscoverPage() {
   const viewer = await getViewer();

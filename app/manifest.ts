@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Insidir",
     short_name: "Insidir",
     description: WHAT_IS,
-    start_url: "/feed",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",

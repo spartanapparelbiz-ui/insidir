@@ -41,7 +41,7 @@ export function ProfitChart({ points, summary }: { points: ChartPoint[]; summary
   return (
     <figure className="rx-chart">
       <figcaption className="rx-chart__cap">
-        <span>Cumulative profit, $500 per green deal, after fees</span>
+        <span>Cumulative net P&L, $500 per green deal, after fees</span>
         <span className="mono rx-chart__now">{p ? `${p.dateText}  ${p.valueText}` : `${last.dateText}  ${last.valueText}`}</span>
       </figcaption>
       <div className="rx-chart__y mono" aria-hidden="true"><span>{fmtAxis(geo.hi)}</span><span className="rx-chart__axis-t">Cumulative, $</span><span>{fmtAxis(geo.lo)}</span></div>

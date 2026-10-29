@@ -40,10 +40,10 @@ const topic = (t: string, category: string) => mv({ tab: "markets", league: null
 
 describe("the catalogue", () => {
   it("every tracker the brief lists, unique slugs, a group and a cover each; four featured", () => {
-    for (const name of ["NFL Big Money", "NBA Big Money", "MLB Big Money", "NHL Big Money", "College Football", "College Basketball", "Premier League", "Champions League",
+    for (const name of ["NFL", "NBA", "MLB", "NHL", "College Football", "College Basketball", "Premier League", "Champions League",
       "La Liga", "Serie A", "UFC", "Tennis", "Golf", "Esports", "Fed & Rates", "Elections 2026", "Crypto Prices", "Geopolitics", "Tech & AI", "Culture",
-      "Whales ($100K+)", "Top 1% Traders", "Underdog Hunters", "Favorites Only", "Early Money", "Late Money", "Steam", "Brand-New Wallets", "CEO Buys", "Cluster Buys",
-      "Big Funds: New Positions", "Top Traders", "Soccer Big Money"]) expect(TRACKERS.map(t => t.name), name).toContain(name);
+      "Whales ($100K+)", "Top 1% Traders", "Long Shots", "Heavy Favorites", "Early Positions", "Late Positions", "Momentum", "New Accounts", "CEO Purchases", "Insider Clusters",
+      "New Fund Positions (13F)", "Top Traders", "Soccer"]) expect(TRACKERS.map(t => t.name), name).toContain(name);
     expect(new Set(TRACKERS.map(t => t.slug)).size).toBe(TRACKERS.length);
     for (const t of TRACKERS) { expect(GROUPS).toContain(t.group); expect(t.photo).toBeGreaterThanOrEqual(2); }
     expect(FEATURED.every(isTrackerSlug)).toBe(true);
@@ -167,6 +167,12 @@ describe("tracker records", () => {
     expect(topPerformers(rows).map(r => r.slug)).toEqual(["d", "a"]);
   });
 
+  it("Top performers rank by return (net on the money in), not win rate", () => {
+    const r = (won: number, lost: number, net: number, staked: number): TrackerRecord => ({ won, lost, oddsPct: 50, net, staked });
+    const rows = [{ slug: "wins-often", record: r(80, 20, 1_000, 100_000) }, { slug: "pays-best", record: r(11, 14, 30_000, 100_000) }, { slug: "loses", record: r(15, 15, -5_000, 50_000) }, { slug: "new", record: r(5, 5, 9e9, 1) }];
+    expect(topPerformers(rows).map(x => x.slug)).toEqual(["pays-best", "wins-often", "loses"]);
+  });
+
   it("Popular: followers first, then money tracked", () => {
     expect(popular([{ s: "a", followers: 0, tracked30d: 9e6 }, { s: "b", followers: 2, tracked30d: 1 }, { s: "c", followers: 0, tracked30d: 1e7 }]).map(r => r.s)).toEqual(["b", "c", "a"]);
   });
@@ -187,7 +193,7 @@ describe("following a tracker", () => {
     expect(reasonFor({ ...u, plan: "free" }, mv({ wallet: TOP }), ctx)).toBeNull();
     expect(trackersOf(mv({ trackers: ["steam"] }), ctx)).toContain("steam");
     expect(alertJobs([u], [mv({ wallet: TOP })], NOW, ctx)).toHaveLength(1);
-    expect(alertMessage(mv(), null, "tracker", "https://insidir.com", NOW).title).toBe("New move in a tracker you follow");
+    expect(alertMessage(mv(), null, "tracker", "https://insidir.com", NOW).title).toBe("New position in a tracker you follow");
   });
 });
 

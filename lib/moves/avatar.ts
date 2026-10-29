@@ -79,6 +79,6 @@ export function moveFace(m: Move, avatars: ReadonlyMap<string, string>): Face {
   const d = m.detail;
   if (d?.kind === "insider") return { src: null, mono: tickerMonogram(d.ticker, d.company) };
   if (d?.kind === "fund") return { src: null, mono: tickerMonogram(null, d.company) };
-  if (m.source !== "polymarket" || !m.wallet) return { src: null, mono: monogram("Someone") };
+  if (m.source !== "polymarket" || !m.wallet) return { src: null, mono: monogram("Anonymous") };
   return walletFace(m.wallet, m.walletName, avatars);
 }

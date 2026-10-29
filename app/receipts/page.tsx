@@ -35,7 +35,7 @@ function item(r: LedgerRow, sizesHidden: boolean): LedgerItem {
   const hide = hiddenFor(r, sizesHidden);
   const res = (venue: string, id: string) => {
     const v = r.results?.[`${venue}:${id}`];
-    return v === "yes" ? "YES won" : v === "no" ? "NO won" : v === "void" ? "Voided (refunded)" : "Not settled yet";
+    return v === "yes" ? "YES won" : v === "no" ? "NO won" : v === "void" ? "Voided" : "Not settled yet";
   };
   return {
     id: r.id, rid: receiptId(r.id), foundAt: utcStamp(r.detectedAt), title: o.title, safety: o.safety, prices: pricesText(o, VENUE_NAME),
@@ -101,7 +101,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
 
         {enough && (points.length >= 2 || life.n || when.n) ? (
           <section className="rx-charts" aria-label="Charts">
-            {points.length >= 2 ? <ProfitChart points={points} summary={`Cumulative profit following every green deal with $500, after fees: ${points.length} settled deals from ${points[0]!.dateText} to ${last!.dateText}, ending at ${last!.valueText}.`} /> : null}
+            {points.length >= 2 ? <ProfitChart points={points} summary={`Cumulative net P&L following every green deal with $500, after fees: ${points.length} settled deals from ${points[0]!.dateText} to ${last!.dateText}, ending at ${last!.valueText}.`} /> : null}
             <div className="rx-charts__two">
               {life.n ? <LifeHistogram counts={life.counts} medianMin={life.medianMin} n={life.n} /> : null}
               {when.n ? <WhenHeatmap grid={when.grid} max={when.max} n={when.n} /> : null}

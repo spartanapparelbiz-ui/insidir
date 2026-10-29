@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Welcome", robots: { index: false } }
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ again?: string }> }) {
   const viewer = await requireMember("/onboarding");
-  if (viewer.user?.onboarded && !(await searchParams).again) redirect("/feed");
+  if (viewer.user?.onboarded && !(await searchParams).again) redirect("/");
   return (
     <>
       <SiteHeader signedIn plan={viewer.plan} offer={false} />

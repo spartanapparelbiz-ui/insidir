@@ -20,7 +20,7 @@ export function yesName(d: Record<string, unknown>): string | null {
 export function splitLine(s: Pick<SplitLike, "kind" | "crowd" | "smart" | "detail">): string {
   if (s.crowd === null || s.smart === null) return stockLine(s.detail, s.kind);
   const on = yesName(s.detail);
-  const [a, b] = s.kind === "bigmoney" ? ["Big bets", "Proven traders"] : ["Crowd", "Smart money"];
+  const [a, b] = s.kind === "bigmoney" ? ["Large positions", "Proven traders"] : ["Market", "Proven traders"];
   return `${a} ${pct(s.crowd)} · ${b} ${pct(s.smart)}${on ? ` on ${on}` : ""}`;
 }
 
@@ -42,7 +42,7 @@ export function gapLabel(s: Pick<SplitLike, "kind" | "gap">): string {
   return `${Math.round(s.gap)} pts apart`;
 }
 
-export const KIND_NAME: Record<SplitKind, string> = { crowd: "Smart money vs. the crowd", bigmoney: "Big bets vs. proven traders", insider_dip: "Insiders buying the dip", fund_add: "Funds adding while it falls" };
+export const KIND_NAME: Record<SplitKind, string> = { crowd: "Proven traders vs. the market", bigmoney: "Large positions vs. proven traders", insider_dip: "Insider purchases after a decline", fund_add: "Fund additions during a decline" };
 
 export function splitHref(s: Pick<SplitLike, "kind" | "subject" | "detail">): string {
   if (s.kind === "insider_dip" || s.kind === "fund_add") return `/insider-trading/${encodeURIComponent(String(s.detail.ticker ?? s.subject.split(":")[0]))}`;

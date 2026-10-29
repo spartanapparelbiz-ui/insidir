@@ -1,0 +1,329 @@
+/* The polish layer, loaded after everything else (app/layout.tsx), so it settles the older styles:
+ * - Weights: headlines and numbers 600, body 400/500; nothing heavier. H1 96px/-0.048em, H2 52px/-0.038em.
+ * - No pills or chips: a result is plain text on the right (components/ui/Result.tsx), filters and tabs are text.
+ * - Colour only on gains and losses; big stats and headline numbers are ink.
+ * - No grey section cards: white, separated by 1px #EAEAEE lines; a section header has a 1px ink line under it.
+ *   The live list and the position check sit in white "windows".
+ * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Get started".
+ * - Section spacing 168px on desktop, 112px on phones. */
+:root {
+  --line: var(--grey-2);
+  --border: var(--line);
+  --sec: 112px;
+  --w-num: 600;
+  --win-border: rgba(11, 11, 18, .06);
+  --win-shadow: 0 1px 2px rgba(11, 11, 18, .04), 0 10px 30px rgba(11, 11, 18, .06), 0 30px 80px rgba(11, 11, 18, .07);
+  --r-win: 22px;
+}
+@media (min-width: 900px) { :root { --sec: 168px; } }
+
+/* ---------- type ---------- */
+body { font-weight: 400; }
+b, strong { font-weight: 600; }
+h1, h2, h3, .num, [data-count] { font-weight: 600; }
+h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+  font-size: 52px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
+@media (min-width: 900px) {
+  h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+    font-size: 96px; line-height: 1; letter-spacing: -0.048em; }
+}
+h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h, .block__h {
+  font-size: 34px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 600; }
+@media (min-width: 900px) {
+  h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h, .block__h { font-size: 52px; line-height: 1.05; letter-spacing: -0.038em; }
+}
+/* long titles (a market's question) stay readable */
+.mhead__h { overflow-wrap: anywhere; }
+@media (min-width: 900px) { .mhead__h { font-size: 72px; } }
+
+/* section headers: a 1px ink line under them */
+.sec3__h, .tsec__h, .dsec__h, .tgroup__h, .sec2__h { padding-bottom: 20px; border-bottom: 1px solid var(--ink); margin-bottom: 32px; }
+.dsec__h + .dsec__note { margin-top: -16px; }
+
+/* ---------- colour: only on gains and losses; big numbers are ink ---------- */
+.tile dd, .tile dd.money, .tile dd.loss, .record dd, .record dd.money, .record dd.loss, .lchart__now, .lchart__now .money, .lchart__now .loss,
+.mhead__now, .hypo b, .hypo b .money, .hypo b .loss, .sbars__row dd b, .ticket__price { color: var(--ink); }
+.hypo b > span { color: inherit; }
+
+/* ---------- results: plain text on the right ---------- */
+.res { display: inline-grid; justify-items: end; text-align: right; gap: 2px; flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.res__amt { font-size: var(--t15); font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.res__amt--won { color: var(--money-text); }
+.res__amt--lost { color: var(--loss-text); }
+.res__st { font-size: 12px; font-weight: 500; color: var(--muted); }
+.res__st--only { font-size: var(--t13); }
+
+/* pills, badges and chips become plain text */
+.rpill, .rpill--won, .rpill--lost, .rpill--new, .rpill--sm, .tag, .badge, .soon, .cleg__v, .srow__gap, .srow__gap--big, .srow__gap--won, .srow__gap--lost,
+.cleg--with .cleg__v, .cleg--against .cleg__v {
+  display: inline; height: auto; padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; color: var(--muted);
+  font-size: var(--t13); font-weight: 500; }
+.cleg__v { color: var(--ink); font-size: var(--t15); font-weight: 600; text-align: right; }
+.srow__gap { color: var(--ink); font-size: var(--t15); font-weight: 600; text-align: right; }
+.srow__gap--won { color: var(--money-text); }
+.srow__gap--lost { color: var(--loss-text); }
+.tag__dot { display: none; }
+.move__kind { color: var(--muted); font-size: var(--t13); font-weight: 500; }
+.move__badge { color: var(--muted); }
+
+/* filters and tabs: text; the selected one ink with a 1px ink line under it */
+.chip2, .tlink, .seg__btn { display: inline-flex; align-items: center; min-height: var(--tap); height: auto; padding: 0; border: 0; border-radius: 0; background: none !important;
+  box-shadow: none !important; color: var(--muted); font: 500 var(--t15)/1 var(--sans); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.chip2:hover, .tlink:hover, .seg__btn:hover { color: var(--ink); }
+.chip2[aria-pressed="true"], .chip2[aria-current="true"], .tlink[aria-current="true"], .seg__btn[aria-selected="true"], .seg__btn[aria-pressed="true"] {
+  color: var(--ink); box-shadow: inset 0 -1px 0 var(--ink) !important; }
+.chips, .dfilters, .seg { gap: 24px; }
+.seg { display: inline-flex; padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.dash .chip2 { background: none; }
+.tgroups { padding: 0; box-shadow: inset 0 -1px 0 var(--line); }
+
+/* ---------- surfaces: white, 1px lines, no grey cards ---------- */
+.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .side, .deal, .start__signup, .start__pay,
+.inband__card, .psnip, .rcard, .promise__item, .tile, .dnote, .hypo, .tnew, .tempty, .lchart__empty, .cluster, .sbars__row, .sflag, .srow, .cleg,
+.checkf__err, .login__err, .cmp__scroll, .trialbar, .pm {
+  background: none !important; border-radius: 0; box-shadow: none !important; }
+.move:hover, .dash .move:hover, .prod__tile--link:hover, .deal:hover, .srow:hover { background: none; box-shadow: none !important; }
+.ptable tbody tr:hover, .table tbody tr:hover, .dtable tbody tr:hover, .trow:hover { background: none; }
+.trow:hover .trow__name { text-decoration: underline; text-underline-offset: 3px; }
+
+/* tiles: a 1px line over each, no box */
+.tiles { gap: 0 24px; }
+.tile { padding: 20px 0 24px; border-top: 1px solid var(--line); }
+.record { gap: 0 24px; }
+.record div { padding: 20px 0 24px; border-top: 1px solid var(--line); }
+.dnote, .tnew, .tempty, .lchart__empty, .hypo, .cluster, .sflag { padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.sflag { box-shadow: none !important; }
+.checkf__err, .login__err { padding: 16px 0; border-top: 1px solid var(--loss); border-bottom: 1px solid var(--line); }
+
+/* lists: rows separated by lines */
+.slist, .cres__legs, .feed2__list, .tmoves { gap: 0; }
+.srow { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.move { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.move2 { padding: 24px 0; }
+@media (min-width: 900px) { .move2 { padding: 28px 0; } }
+.sbars { gap: 0; }
+.sbars__row { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.sbars__track { background: var(--line); }
+.cleg { padding: 24px 0; border-bottom: 1px solid var(--line); }
+
+/* the windows: the live lists and the position check */
+.feed2__list, .slist, .cres__legs, .checkf, .tmoves {
+  background: var(--paper); border: 1px solid var(--win-border); border-radius: var(--r-win); box-shadow: var(--win-shadow); padding: 0 24px; }
+@media (min-width: 900px) { .feed2__list, .slist, .cres__legs, .checkf, .tmoves { padding: 0 32px; } }
+.feed2__list > li:last-child .move, .slist > li:last-child .srow, .cres__legs > li:last-child { border-bottom: 0; }
+.feed2__list > li:last-child > .move, .slist > li:last-child > .srow, .cres__legs > .cleg:last-child { border-bottom: 0; }
+.checkf { padding-top: 24px; padding-bottom: 24px; max-width: 680px; }
+@media (min-width: 900px) { .checkf { padding: 32px; } }
+.checkf__drop { background: none; border: 1px dashed var(--line); border-radius: 16px; box-shadow: none; }
+.checkf__drop:hover, .checkf__drop--over, .checkf__drop:focus-within, .checkf__drop--has { border-color: var(--ink); box-shadow: none; }
+.tmoves { grid-template-columns: none !important; max-width: 860px; }
+
+/* the move card: headline on the left, its result on the right */
+.move__hrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.move__hrow .move__head { margin-top: 0; min-width: 0; }
+.move__head b { font-weight: 600; }
+.move__pnl { font-weight: 600; }
+
+/* inputs: white with a line */
+.input, .login__input, .checkf__field .input { background: var(--paper); border: 1px solid var(--line); }
+.input:focus, .login__input:focus { border-color: var(--ink); }
+
+/* ---------- actions ---------- */
+.btn--primary, .nav .btn--primary { font-weight: 600; }
+/* secondary actions: a text link with an arrow */
+.btn--secondary, .trail .btn--secondary, .move .btn--secondary {
+  min-height: var(--tap); padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; color: var(--ink); font-weight: 600; }
+.btn--secondary:hover { background: none; text-decoration: underline; text-underline-offset: 3px; }
+.btn--secondary:not(:has(.arrow)):not(.follow--on):not([aria-pressed])::after { content: "→"; margin-left: 6px; display: inline-block; transition: transform var(--dur-small) var(--ease-enter); }
+.btn--secondary:hover::after { transform: translateX(3px); }
+.btn--secondary.btn--block { justify-content: flex-start; }
+.follow--on { box-shadow: none !important; color: var(--muted); }
+.tlink--go { color: var(--ink); font-weight: 600; }
+.tlink--go:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hero3__alt { text-decoration: none; color: var(--ink); font-weight: 600; }
+.hero3__alt:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* the nav's one button, 36px */
+.nav .nav__cta, .nav--light .nav__cta { min-height: 36px; height: 36px; padding: 0 16px; font-size: var(--t13); }
+
+/* ---------- spacing between sections ---------- */
+.sec3, .sec3--tight { padding-top: var(--sec); }
+.lp3 .pricing2, .lp3 .sec2 { padding: var(--sec) 0; }
+.tsec, .dsec { margin-top: var(--sec); }
+.fan { margin-top: 112px; }
+@media (min-width: 1100px) { .fan { margin-top: 120px; } }
+
+/* ---------- tracker covers (components/trackers/TrackerCover.tsx): 4:3, deep colour, a thin white curve ---------- */
+.tcover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-win); background: var(--tc); color: var(--paper); isolation: isolate; }
+.tcover__curve { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
+.tcover__curve path { fill: none; stroke: var(--paper); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
+.tcover__fig { position: absolute; left: 24px; top: 20px; display: grid; gap: 2px; }
+.tcover__n { font-size: 34px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--paper); }
+.tcover__l { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, .7); }
+.tcover--sm { aspect-ratio: 1; border-radius: 12px; }
+.tcover--sm .tcover__curve path { stroke-width: 1.25; }
+/* Featured: the name at the bottom of the cover */
+.tfeat { aspect-ratio: 4 / 3 !important; background: none; border-radius: var(--r-win); }
+.tfeat::after { display: none; }
+.tfeat__cover { position: absolute; inset: 0; aspect-ratio: auto; }
+.tfeat__copy { z-index: 1; }
+.tfeat__name { font-weight: 600; color: var(--paper); }
+.tfeat__by { color: rgba(255, 255, 255, .7); opacity: 1; }
+.tfeat:hover .tcover__curve path { opacity: 1; }
+/* rows and tiles */
+.trow__thumb.tcover { width: 48px; height: 48px; }
+.trow { grid-template-columns: auto 48px minmax(0, 1fr) auto 20px; }
+.ttile__cover.tcover { aspect-ratio: 4 / 3; border-radius: var(--r-win); }
+.ttile__link:hover .ttile__cover { box-shadow: none; }
+.ttile__link:hover .ttile__name { text-decoration: underline; text-underline-offset: 3px; }
+.ttile__name { font-weight: 600; }
+.thead__cover.tcover { aspect-ratio: 4 / 3; }
+.thead__cover .tcover__n { font-size: 52px; letter-spacing: -0.038em; }
+@media (min-width: 900px) { .thead__cover .tcover__fig { left: 32px; top: 28px; } }
+/* the phones */
+.ph__cover.tcover { margin: -16px -14px 0; aspect-ratio: 4 / 3; border-radius: 0; }
+.ph__cover .tcover__fig { left: 14px; top: 12px; }
+.ph__cover .tcover__n { font-size: 24px; }
+.ph__cover .tcover__l { font-size: 9px; }
+.ph__thumb.tcover { width: 32px; height: 32px; border-radius: 8px; }
+.ph__trow .res__amt { font-size: 11px; }
+.ph__trow .res__st { font-size: 9px; }
+.ph__row .res__amt { font-size: 13px; }
+.ph__row .res__st { font-size: 10px; }
+.pm { padding: 10px 0; border-radius: 0; border-bottom: 1px solid var(--line); }
+.pm--res { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.pm--res .res__amt { font-size: 13px; }
+.pm--res .res__st { font-size: 10px; }
+.ph__list { gap: 0; }
+.ph__lock { background: var(--paper); }
+.ph__note { box-shadow: var(--win-shadow); border: 1px solid var(--win-border); }
+
+/* ---------- motion: no auto-scrolling strips ---------- */
+.device__scroll, .devices--on .device--phone .device__scroll { animation: none !important; }
+/* the location control and other small controls: text, not pills */
+.pill { min-height: var(--tap); padding: 0; border: 0; border-radius: 0; background: none; color: var(--ink); font-weight: 600; }
+.pill:hover { border: 0; text-decoration: underline; text-underline-offset: 3px; }
+/* pricing: the plan card is a window, not a grey box */
+.plan2 { background: var(--paper) !important; border: 1px solid var(--win-border) !important; border-radius: var(--r-win); box-shadow: var(--win-shadow) !important; }
+/* under the headline: size · holder · when */
+.move__meta { color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.move__meta > span:first-child { color: var(--ink); font-weight: 600; }
+.move__subl { margin-top: -2px; }
+
+/* ---------- Trackers, the members' home (components/home/Discover.tsx): ranked by ROI, what each holds now ---------- */
+.tbook { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.tbook__row { display: grid; grid-template-columns: 24px 48px minmax(0, 1fr) auto; grid-template-areas: "rank thumb who roi" "rank thumb who res"; column-gap: 16px; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 96px 120px; grid-template-areas: "rank thumb who roi res"; } }
+.tbook__rank { grid-area: rank; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tbook__thumb { grid-area: thumb; width: 48px; height: 48px; }
+@media (min-width: 700px) { .tbook__thumb { width: 56px; height: 56px; } }
+.tbook__who { grid-area: who; display: grid; gap: 2px; min-width: 0; }
+.tbook__name { font-size: var(--t17); font-weight: 600; }
+.tbook__row:hover .tbook__name { text-decoration: underline; text-underline-offset: 3px; }
+.tbook__hold { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbook__row .res.tbook__roi { grid-area: roi; }
+.tbook__row .res { grid-area: res; }
+
+/* ---------- home: a live portfolio (components/home/LivePortfolio.tsx) ---------- */
+.lport__sub { color: var(--muted); font-size: var(--t17); max-width: 60ch; margin: -12px 0 32px; }
+.lport__card { background: var(--paper); border: 1px solid var(--win-border); border-radius: var(--r-win); box-shadow: var(--win-shadow); overflow: hidden; }
+.lport__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 0 0 20px; color: var(--ink); text-decoration: none; }
+.lport__cover { aspect-ratio: 21 / 9; border-radius: 0; margin-bottom: 16px; }
+.lport__name, .lport__line, .lport__nums { padding: 0 24px; }
+@media (min-width: 900px) { .lport__name, .lport__line, .lport__nums { padding: 0 32px; } }
+.lport__name { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; }
+.lport__head:hover .lport__name { text-decoration: underline; text-underline-offset: 4px; }
+.lport__line { color: var(--muted); }
+.lport__body { display: grid; border-top: 1px solid var(--line); }
+@media (min-width: 900px) { .lport__body { grid-template-columns: 1fr 1fr; } .lport__col + .lport__col { border-left: 1px solid var(--line); } }
+.lport__col { padding: 20px 24px; min-width: 0; }
+@media (min-width: 900px) { .lport__col { padding: 24px 32px; } }
+.lport__h { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--ink); font-size: var(--t15) !important; letter-spacing: 0 !important; }
+.lport__h span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.lport__list { list-style: none; margin: 0; padding: 0; }
+.lport__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.lport__row:last-child { border-bottom: 0; }
+.lport__what { display: grid; gap: 2px; min-width: 0; }
+.lport__out { font-weight: 600; }
+.lport__meta { color: var(--muted); font-size: var(--t13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lport__none { color: var(--muted); padding: 14px 0; }
+.lport__foot { padding: 16px 24px 20px; border-top: 1px solid var(--line); }
+@media (min-width: 900px) { .lport__foot { padding: 16px 32px 24px; } }
+
+/* ---------- Numbers: one system ----------
+ * Money is one format ($9.4K, $412K, $1.2M; lib/moves/copy.ts dollars). Every figure is tabular and lining. Three sizes:
+ * a headline figure (32, tiles and the live portfolio), a row figure (15, the right-hand column of any list) and inline
+ * (the text size). A figure sits over its grey label; a missing one is a light grey "—" at the same size, so rows and
+ * tiles keep one height and columns line up. Colour only for gains and losses. */
+.res, .tile dd, .lport__v, .dtable td, .table td, .tbook__hold, .move__meta, .rlist__amt, .rlist__when { font-variant-numeric: tabular-nums lining-nums; }
+.res__amt--nil, .tile dd.tile__nil, .lport__v.lport__v--nil { color: var(--grey-4); font-weight: 500; }
+.res__st { line-height: 16px; }
+.res__amt { line-height: 20px; }
+
+/* Tiles: the figure on one line, the label under it, the note (why it's empty) under that. */
+.tile dd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
+.tile dt { line-height: 18px; }
+.tile dd.tile__note { order: 3; margin: 0; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0; line-height: 16px; white-space: normal; }
+.tile dd.tile__nil { letter-spacing: 0; }
+
+/* Trackers list: rank, cover, name and holdings, then two figure columns of the same build (ROI, Net P&L), right-aligned. */
+.tbook__row { grid-template-columns: 20px 44px minmax(0, 1fr) auto auto; grid-template-areas: "rank thumb who roi res"; column-gap: 12px; }
+.tbook__thumb { width: 44px; height: 44px; }
+@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 112px 112px; column-gap: 16px; } .tbook__thumb { width: 56px; height: 56px; } }
+.tbook__rank { font-size: var(--t13); font-weight: 500; text-align: right; }
+.tbook__row .res { min-width: 0; }
+.tbook__row .res.tbook__roi { grid-area: roi; }
+
+/* The live portfolio: ROI and Net P&L as two headline figures over their labels. */
+.lport__nums { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-top: 20px; }
+.lport__fig { display: grid; gap: 4px; }
+.lport__fig > span { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 16px; }
+.lport__v { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+.lport__v--won { color: var(--money-text); }
+.lport__v--lost { color: var(--loss-text); }
+
+/* Track record: the list fills the column, the result in a fixed column, the time at the right edge. */
+.rlist { max-width: none; }
+.rlist__row { grid-template-columns: 96px minmax(0, 1fr) auto; column-gap: 24px; }
+@media (min-width: 700px) { .rlist__row { grid-template-columns: 184px minmax(0, 1fr) auto; } }
+.rlist__res { font-size: var(--t15); line-height: 20px; }
+@media (min-width: 700px) { .rlist__res { white-space: nowrap; } }
+
+/* The page's one black button: Follow on a tracker or a market (outlined once on). */
+.mhead__act .btn:first-child::after { content: none !important; }
+.mhead__act .btn:first-child { min-height: var(--btn-h); padding: 0 28px; border-radius: var(--r-btn); background: var(--ink) !important; color: var(--paper); gap: 8px; }
+.mhead__act .btn:first-child:hover { background: var(--press) !important; text-decoration: none; }
+.mhead__act .follow--on { background: var(--paper) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink) !important; }
+.thead__act .btn, .thead__act .btn--secondary { min-height: var(--btn-h); padding: 0 28px; border-radius: var(--r-btn); background: var(--ink) !important; color: var(--paper); gap: 8px; }
+.thead__act .btn:hover { background: var(--press) !important; text-decoration: none; }
+.thead__act .btn::after { content: none !important; }
+.thead__act .follow--on { background: var(--paper) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink) !important; }
+
+/* The insider page's month line sat on a dark band that the light theme removed. */
+.sec__month { color: var(--ink); }
+
+/* ---------- Pictures: every image is its subject, drawn (components/SubjectArt) ---------- */
+.art { display: block; width: 100%; height: 100%; }
+.art * { vector-effect: non-scaling-stroke; }
+.tcover__art { position: absolute; inset: 0; z-index: -2; color: var(--paper); opacity: .3; }
+.tcover--sm .tcover__art { inset: 10%; width: 80%; height: 80%; opacity: .75; }
+.tfeat:hover .tcover__art { opacity: .42; transition: opacity var(--dur-small) var(--ease-enter); }
+.artpanel { position: relative; display: block; overflow: hidden; background: var(--cover-styles-1); color: var(--paper); }
+.artpanel .art { position: absolute; inset: 0; opacity: .4; }
+.move__top { align-items: center; gap: 12px; }
+.move__thumb { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--tc); color: var(--paper); padding: 5px; }
+.move__thumb .art { opacity: .85; }
+.move__kind { flex: 1; min-width: 0; }
+.tcover__art { inset: 14% 6% 6%; width: 88%; height: 80%; }
+.tfeat .tcover__art { opacity: .22; inset: 8% 8% 30%; width: 84%; height: 62%; }
+.lport__cover .tcover__art { inset: 12% 10%; width: 80%; height: 76%; }
+
+/* Real logos: on a white badge so every logo keeps its own colours, contained, never cropped. */
+.tcover__logo { position: absolute; left: 50%; top: 50%; z-index: -1; width: 40%; aspect-ratio: 1; transform: translate(-50%, -46%); display: grid; place-items: center;
+  border-radius: 22%; background: var(--paper); box-shadow: 0 12px 32px rgba(0, 0, 0, .22); }
+.tcover__logo img { width: 72%; height: 72%; object-fit: contain; }
+.tcover--sm .tcover__logo { width: 78%; transform: translate(-50%, -50%); box-shadow: none; border-radius: 18%; }
+.tfeat .tcover__logo { width: 34%; top: 44%; }
+.lport__cover .tcover__logo { width: auto; height: 56%; }
+.move__thumb--logo { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); padding: 4px; display: grid; place-items: center; }
+.move__thumb--logo img { width: 100%; height: 100%; object-fit: contain; }

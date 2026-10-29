@@ -84,7 +84,7 @@ export function ScrollOffer({ where }: { where: string }) {
         <Photo n={SPOT.popup} className="popup__photo" wideOnly sizes="(min-width: 640px) 440px, 100vw" />
         <div className="popup__body">
           <span className="popup__logo"><Wordmark /></span>
-          <h2 id="popup-h" className="popup__h">See the biggest bets the moment they happen.</h2>
+          <h2 id="popup-h" className="popup__h">See the largest positions the moment they happen.</h2>
           <p className="popup__p">{CANCEL_LINE}</p>
           <Link className="btn btn--primary btn--block popup__btn" href="/start" data-unlock={`popup-${where}`}>{GET_CTA}</Link>
           <p className="popup__login">Already a member? <Link href="/login">Log in</Link></p>

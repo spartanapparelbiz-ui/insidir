@@ -74,7 +74,7 @@ export default async function FollowingPage() {
         <PageBand n={BAND.following} title="Following" />
         {!paid ? (
           <section className="upsell upsell--big">
-            <p className="upsell__text">Follow top traders, markets, insiders, companies and funds, and see their moves and filings in one feed. Following is for members.</p>
+            <p className="upsell__text">Follow top-ranked traders, markets, insiders, companies and funds, and see their positions and filings in one feed. Following is for members.</p>
             <a className="btn btn--primary" href={trial} data-unlock="following">{GET_CTA}</a>
           </section>
         ) : (
@@ -88,7 +88,7 @@ export default async function FollowingPage() {
                     {e.type === "move" ? <MoveCard m={e.item} follow="on" trialHref={trial} /> : <FilingCard f={e.item} now={now} />}
                   </li>)}
                 </ol>
-              ) : <p className="note">{list.length ? `Nothing from who you follow in the last ${FOLLOWING_DAYS} days yet. Their next move or filing shows up here.` : "Follow a tracker, trader, insider, company or fund and their moves and filings show up here."}</p>}
+              ) : <p className="note">{list.length ? `Nothing from who you follow in the last ${FOLLOWING_DAYS} days yet. Their next position or filing shows up here.` : "Follow a tracker, trader, insider, company or fund and their positions and filings show up here."}</p>}
             </section>
             <section className="block" aria-labelledby="alerts-h">
               <h2 id="alerts-h" className="block__h">Alerts</h2>
@@ -122,7 +122,7 @@ export default async function FollowingPage() {
                       return (
                         <li key={f.target} className="flist__row">
                           <span><Link className="flist__name" href={`/p/${f.target}`}>{walletLabel(f.target, r?.name ?? null)}</Link>
-                            <span className="flist__rec">{hasRecord(r) ? `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time` : "Not enough history yet"}</span></span>
+                            <span className="flist__rec">{hasRecord(r) ? `Won ${r.won} of ${r.resolved} · Net P&L ${signedShort(r.profit)}` : "Not enough history yet"}</span></span>
                           <FollowButton kind="trader" target={f.target} state="on" trialHref={trial} />
                         </li>
                       );

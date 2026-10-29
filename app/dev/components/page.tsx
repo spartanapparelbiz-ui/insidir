@@ -135,7 +135,7 @@ export default function Gallery() {
       </Item>
 
       <Item n={13} name="Toast" note="Real events only: one per 10s at most, 4 per visit, gone after 5s.">
-        <div className="toast gal__toast"><p className="toast__text">New green deal just found: 4.9% on Will the Jets win on Nov 9?</p><button type="button" className="toast__x">Dismiss</button></div>
+        <div className="toast gal__toast"><p className="toast__text">New green deal found: 4.9% on Will the Jets win on Nov 9?</p><button type="button" className="toast__x">Dismiss</button></div>
       </Item>
 
       <Item n={14} name="Device frames" note="They render the real components, not screenshots.">

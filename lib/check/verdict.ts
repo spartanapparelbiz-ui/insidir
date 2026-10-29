@@ -8,7 +8,7 @@
  * cutting, for a buyer of the stock. */
 
 export type Verdict = "with" | "against" | "split" | "none";
-export const VERDICT_TEXT: Record<Verdict, string> = { with: "Smart money with you", against: "Smart money against you", split: "Split", none: "No big money yet" };
+export const VERDICT_TEXT: Record<Verdict, string> = { with: "Smart money with you", against: "Smart money against you", split: "Divergent", none: "No large positions yet" };
 export const BIG_MIN = 10_000;
 export const LEAN = 0.6;
 
@@ -39,8 +39,8 @@ export function parlaySummary(verdicts: readonly Verdict[]): string {
   if (!n) return "Nothing to check on this slip.";
   const c = (v: Verdict) => verdicts.filter(x => x === v).length;
   const legs = (k: number) => `${k} of ${n} ${n === 1 ? "leg" : "legs"}`;
-  if (n === 1) return verdicts[0] === "none" ? "No big money on this bet yet." : `${VERDICT_TEXT[verdicts[0]!]}.`;
-  if (c("none") === n) return "No big money on any leg yet.";
+  if (n === 1) return verdicts[0] === "none" ? "No large positions on this market yet." : `${VERDICT_TEXT[verdicts[0]!]}.`;
+  if (c("none") === n) return "No large positions on any leg yet.";
   if (c("with") === n) return "Smart money is with you on every leg.";
   if (c("against") === n) return "Smart money is against you on every leg.";
   const has = (k: number) => (k === 1 ? "has" : "have");

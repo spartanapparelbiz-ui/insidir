@@ -70,15 +70,15 @@ export function whyLine(m: Pick<Move, "source" | "tab" | "amount" | "avgPrice" |
     if ((f.insidersThisMonth ?? 0) >= 2 && on.slice(0, 7) === f.today.slice(0, 7)) return `${f.insidersThisMonth} ${d.company} insiders bought this month.`;
     if (f.issuerCompleteSince) {
       const since = f.issuerBiggerOn ? year(f.issuerBiggerOn) : year(f.issuerCompleteSince);
-      if (since < year(on)) return `Biggest insider buy at ${d.company} since ${since}.`;
+      if (since < year(on)) return `Largest insider purchase at ${d.company} since ${since}.`;
     }
     return null;
   }
   if (m.source === "sec") return null;
   const s = f.sameMarketDay;
-  if (s && s.others > 0 && m.amount > s.max && f.moveDay === f.today) return `Biggest bet on this ${m.tab === "sports" ? "game" : "market"} today.`;
-  if (f.records && f.traderHasRecord && f.traderBiggestBefore != null && f.traderBiggestBefore > 0 && m.amount > f.traderBiggestBefore) return "Biggest bet this trader has ever made.";
-  if (f.records && (f.topTradersSameSide ?? 0) >= 2) return `${f.topTradersSameSide} top traders are on the same side.`;
+  if (s && s.others > 0 && m.amount > s.max && f.moveDay === f.today) return `Largest position on this ${m.tab === "sports" ? "game" : "market"} today.`;
+  if (f.records && f.traderHasRecord && f.traderBiggestBefore != null && f.traderBiggestBefore > 0 && m.amount > f.traderBiggestBefore) return "Largest position this trader has ever made.";
+  if (f.records && (f.topTradersSameSide ?? 0) >= 2) return `${f.topTradersSameSide} top-ranked traders are on the same side.`;
   const p0 = f.priceHourAgo, p1 = m.avgPrice;
   if (p0 && p0 > 0 && p0 < 1 && p1 > 0 && p1 < 1 && Math.abs(p1 - p0) / p0 >= PRICE_MOVE_MIN && payout(p0) !== payout(p1)) {
     return `This price moved from paying $${payout(p0).toLocaleString("en-US")} to $${payout(p1).toLocaleString("en-US")} on $100 in the last hour.`;

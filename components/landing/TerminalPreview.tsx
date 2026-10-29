@@ -30,7 +30,7 @@ export function TerminalPreview({ rows, hidden, now, unlockHref, cta }: {
   return (
     <section className="sec" data-section="preview" aria-labelledby="preview-h">
       <h2 id="preview-h" className="sec__h">This is the Terminal</h2>
-      <p className="sec__p">Real rows from the free feed, shown 30 minutes late. Members see every deal the moment it&apos;s found, with sizes and profit in dollars.</p>
+      <p className="sec__p">Real rows from the free feed, shown 30 minutes late. Members see every deal the moment it&apos;s found, with sizes and net P&L in dollars.</p>
       <Devices phone={<div className="lp-preview">{table(true)}{hiddenRows.length ? <div className="deals">{hiddenRows}</div> : null}</div>}
         laptop={table(false)} loop={shown.length + extra.length >= 3} />
       <Link className="btn btn--secondary" href="/terminal">{cta}</Link>

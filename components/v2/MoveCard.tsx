@@ -6,7 +6,9 @@
  * say what was bought and by whom. Everything was sent by the server for this viewer's plan and region
  * (lib/moves/feed.ts). */
 import Link from "next/link";
+import { SubjectArt } from "@/components/SubjectArt";
 import { TimeAgo } from "@/components/TimeAgo";
+import { subjectPhoto } from "@/lib/photos";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import type { FollowKind } from "@/lib/db/schema";
@@ -14,12 +16,13 @@ import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
 import { Avatar } from "./Avatar";
 import { short } from "@/lib/moves/headline";
+import { Result } from "@/components/ui/Result";
 
-const TAG: Record<string, { text: string; tint: string }> = {
-  sports: { text: "Sports", tint: "green" },
-  markets: { text: "Markets", tint: "violet" },
-  crypto: { text: "Crypto", tint: "peach" },
-  stocks: { text: "Stocks", tint: "blue" },
+const TAG: Record<string, { text: string }> = {
+  sports: { text: "Sports" },
+  markets: { text: "Markets" },
+  crypto: { text: "Crypto" },
+  stocks: { text: "Stocks" },
 };
 
 /** "Where this comes from: Polymarket trade on Polygon ↗": the original public record behind every number on a card. */
@@ -37,29 +40,31 @@ function Sentence({ m }: { m: FeedItem }) {
 
 const pctOf = (p: number) => `${Math.round(p * 100)}%`;
 
-/** "$17K says …": the amount bold. */
-function Headline({ text }: { text: string }) {
-  const i = text.indexOf(" says ");
-  if (i < 0) return <>{text}</>;
-  return <><b>{text.slice(0, i)}</b>{text.slice(i)}</>;
+/** The result on the right: settled, the real P&L in green or red over "Won" / "Lost" ("Voided" alone); open, "Open";
+ *  a filing, "Purchase". The size is said once, in the line under the headline. */
+function CardResult({ m }: { m: FeedItem }) {
+  if (m.result) {
+    const status = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Voided";
+    const v = m.pnl;
+    const amount = v !== null && m.result !== "void" ? `${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : null;
+    return <span data-testid="move-result"><Result amount={amount} tone={m.result === "won" ? "won" : m.result === "lost" ? "lost" : "none"} status={status} /></span>;
+  }
+  return <Result status={m.source === "sec" ? "Purchase" : "Open"} />;
 }
 
-/** Open: "In at 45% · now 61% ↑"; settled: "Won · +$188K". */
+/** The card's thumbnail: the real logo of its team, league or company (FeedItem.logo, lib/logos.ts), else its subject
+ *  drawn (the league's field, the topic, the filing) on its column's deep colour. */
+const TAB_TONE: Record<string, string> = { sports: "var(--cover-leagues-1)", markets: "var(--cover-topics-1)", stocks: "var(--cover-stocks-1)", crypto: "var(--cover-topics-0)" };
+const subjectOf = (m: FeedItem) => subjectPhoto({ tab: m.tab, source: m.source, leagueLabel: m.leagueLabel, league: m.league,
+  text: `${m.eventTitle} ${m.marketTitle}`, detailKind: m.source === "sec" ? (m.note?.includes("13F") ? "fund" : "insider") : null });
+
+/** Open: "Entry 45% · now 61% ↑". */
 function Standing({ m, now }: { m: FeedItem; now: number | null }) {
-  if (m.result) {
-    const label = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded";
-    const v = m.pnl;
-    return (
-      <p className={`move__pnl move__pnl--${m.result}`} data-testid="move-result">
-        {label}{v !== null && m.result !== "void" ? ` · ${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : ""}
-      </p>
-    );
-  }
-  if (!m.inAt) return null;
+  if (m.result || !m.inAt) return null;
   const dir = now === null ? null : now > m.avgPrice + 0.005 ? "up" : now < m.avgPrice - 0.005 ? "down" : "flat";
   return (
     <p className="move__live" data-testid="move-live">
-      In at {m.inAt}<span className="move__chance"> chance</span>{now !== null ? <> · now {pctOf(now)} {dir === "up" ? <span className="move__up" aria-label="up">↑</span> : dir === "down" ? <span className="move__down" aria-label="down">↓</span> : null}</> : null}
+      Entry {m.inAt}{now !== null ? <> · now {pctOf(now)} {dir === "up" ? <span className="move__up" aria-label="up">↑</span> : dir === "down" ? <span className="move__down" aria-label="down">↓</span> : null}</> : null}
     </p>
   );
 }
@@ -67,7 +72,7 @@ function Standing({ m, now }: { m: FeedItem; now: number | null }) {
 /** "Pays $161 per $100 if it hits." */
 function pays(m: FeedItem): string | null {
   if (m.source === "sec" || !(m.avgPrice > 0 && m.avgPrice < 1)) return null;
-  return `Pays $${Math.round(100 / m.avgPrice).toLocaleString("en-US")} per $100 if it hits.`;
+  return `Payout ${(1 / m.avgPrice).toFixed(2)}× if it settles their way.`;
 }
 
 export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compact = false, nowYes }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
@@ -85,22 +90,27 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
   return (
     <article className={`move move2${fresh ? " move--fresh" : ""}${m.bets ? " move--group" : ""}`} data-move={m.id}>
       <div className="move__top">
-        <span className={`tag tag--${tag.tint}`}><span className="tag__dot" aria-hidden="true" />{tag.text}{sub ? ` · ${sub}` : ""}</span>
-        <TimeAgo className="move__time" at={m.at} initial={m.ago} />
+        {m.logo ? <span className="move__thumb move__thumb--logo"><img src={m.logo} alt="" decoding="async" /></span>
+          : <span className="move__thumb" style={{ ["--tc" as string]: TAB_TONE[m.tab] ?? TAB_TONE.markets }}><SubjectArt subject={subjectOf(m)} crop="contain" /></span>}
+        <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
       </div>
-      <h3 className="move__head"><Headline text={m.headline} /></h3>
+      <div className="move__hrow">
+        <h3 className="move__head">{m.headline}</h3>
+        <CardResult m={m} />
+      </div>
+      <p className="move__meta"><span>{short(m.amount)}</span> · <span>{m.who.name}</span> · <TimeAgo className="move__ago" at={m.at} initial={m.ago} /></p>
       <p className="move__subl">{m.subline}</p>
       <Standing m={m} now={now} />
       {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
       {m.bets ? (
         <details className="move__bets">
-          <summary>See all {m.bets.length} bets</summary>
+          <summary>See all {m.bets.length} positions</summary>
           <ol>
             {m.bets.map(b => (
               <li key={b.id}>
                 <b>{short(b.amount)}</b>
                 <span className="move__betwho">{b.who.href ? <Link href={b.who.href}>{b.who.name}</Link> : b.who.name}</span>
-                {b.inAt ? <span>in at {b.inAt}</span> : null}
+                {b.inAt ? <span>entry {b.inAt}</span> : null}
                 <TimeAgo className="move__bettime" at={b.at} initial={b.ago} />
               </li>
             ))}
@@ -111,8 +121,8 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
           <Avatar face={m.face} />
           <p className="move__by">
             {m.who.href ? <Link className="move__name" href={m.who.href}>{m.who.name}</Link> : <span className="move__name">{m.who.name}</span>}
-            {m.topTrader ? <span className="move__top-trader"> · a top trader</span> : null}
-            {m.who.badge ? <> <span className="badge">{m.who.badge}</span></> : null}
+            {m.topTrader ? <span className="move__top-trader"> · Top-ranked trader</span> : null}
+            {m.who.badge ? <span className="move__badge"> · {m.who.badge}</span> : null}
             {m.record ? <span className="move__rec">{m.record}</span> : null}
           </p>
         </div>

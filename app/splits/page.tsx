@@ -17,7 +17,7 @@ import { gapLabel, KIND_NAME, splitHref, splitLine } from "@/lib/smart/text";
 import { agoText } from "@/lib/moves/copy";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Splits: smart money vs. the crowd", description: "Where proven traders disagree with the market price, the big money on a game, or the stock chart. Every split we flag is scored on a public scorecard." };
+export const metadata: Metadata = { title: "Positioning: proven traders vs. the market", description: "Where proven traders are positioned against the market price, against large positions on a game, or against the stock chart. Every split we flag is scored on a public scorecard." };
 
 const SHOW = [
   { key: "all", label: "All", kinds: undefined },
@@ -42,14 +42,14 @@ export default async function SplitsPage({ searchParams }: { searchParams: Promi
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/splits" trialHref={unlockHref()} />
       <main className="wrap app2 splitsp">
         <header className="phead">
-          <h1 className="phead__h">Smart money vs. the crowd</h1>
-          <p className="phead__sub">Where traders with a proven record disagree with the price, the big money on a game, or the stock chart. Biggest gap first. Data, not a recommendation.</p>
+          <h1 className="phead__h">Positioning</h1>
+          <p className="phead__sub">Where accounts with a proven record are positioned against the market price, against large positions on a game, or against the stock chart. Largest gap first. Data, not a recommendation.</p>
         </header>
         <nav className="dfilters" aria-label="Show">
           {SHOW.map(s => <a key={s.key} className="chip2" aria-current={show.key === s.key ? "true" : undefined} href={s.key === "all" ? "/splits" : `/splits?show=${s.key}`}>{s.label}</a>)}
           <Link className="chip2 chip2--link" href="/splits/scorecard">Scorecard</Link>
         </nav>
-        {!paid ? <p className="dnote dnote--tight">You&apos;re seeing splits 30 minutes late. <a href={unlockHref()} data-unlock="splits">Members see them live, with a push alert for every new split of {SPLIT_ALERT_GAP}+ points.</a></p> : null}
+        {!paid ? <p className="dnote dnote--tight">Positioning is shown 30 minutes late. <a href={unlockHref()} data-unlock="splits">Members see them live, with a push alert for every new split of {SPLIT_ALERT_GAP}+ points.</a></p> : null}
         {list.length ? (
           <ol className="slist">
             {list.map(s => (
@@ -67,11 +67,11 @@ export default async function SplitsPage({ searchParams }: { searchParams: Promi
           </ol>
         ) : (
           <div className="tempty">
-            <p className="tempty__h">No splits right now</p>
-            <p>A split shows up when proven traders and the price, or the big money, are 10+ points apart, or insiders buy a stock that fell 10%+ in 30 days.</p>
+            <p className="tempty__h">No divergences right now</p>
+            <p>A divergence is listed when proven traders and the price, or large positions overall, are 10+ points apart, or when insiders purchase a stock that fell 10%+ in 30 days.</p>
           </div>
         )}
-        <p className="tsec__note">Proven traders: 20+ settled markets on Polymarket and a win rate above the prices they paid. Smart money is their open money on each side; the crowd is the price now. Every split of {SPLIT_ALERT_GAP}+ points goes on the <Link href="/splits/scorecard">public scorecard</Link>, wins and losses.</p>
+        <p className="tsec__note">Proven traders: 20+ settled markets on Polymarket and a win rate above their average entry. Their open money on each side is compared with the market price now. Every divergence of {SPLIT_ALERT_GAP}+ points goes on the <Link href="/splits/scorecard">public scorecard</Link>, wins and losses.</p>
       </main>
     </>
   );

@@ -58,8 +58,8 @@ export default async function WhalesPage() {
           <div className="empty" data-empty="whales">
             <Photo n={SPOT.pageEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">No large trades yet</p>
-            <p className="muted small">Trades of $10,000 or more show up here as the scanner records them. Until then, the live deals are on the Terminal.</p>
-            <Link className="btn btn--primary" href="/feed">See the live feed</Link>
+            <p className="muted small">Positions of $10K or more show up here as the scanner records them. Until then, the live deals are on the Terminal.</p>
+            <Link className="btn btn--primary" href="/feed">Open Activity</Link>
           </div>
         )}
       </main>

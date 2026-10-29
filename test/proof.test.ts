@@ -57,13 +57,13 @@ describe("the trust block", () => {
     expect(html).toContain('href="/data"');
     expect(html).toContain("How we check");
     expect(text).toContain("877 won, 298 lost");
-    expect(text).toContain("Average odds when they bet: 61%");
-    expect(text).toContain("12 sold before the result");
+    expect(text).toContain("Average entry: 61%");
+    expect(text).toContain("12 closed before settlement");
     // The net is on /results only, with what it means.
     expect(text).not.toContain("Net for");
     const res = renderToStaticMarkup(createElement(RecordLines, { r: facts(NOW).settled!, net: true })).replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
     expect(res).toMatch(/Net for these traders: \+\$1\.2M/);
-    expect(res).toContain("What these bets really made");
+    expect(res).toContain("What these positions realized");
   });
   it("a check more than 2 hours old never claims hourly", () => {
     const html = renderToStaticMarkup(createElement(TrustBlock, { facts: facts(NOW), now: NOW + 2 * 3_600_000 + 60_000 }));
@@ -77,7 +77,7 @@ describe("the trust block", () => {
 describe("the locked record", () => {
   it("says what's locked and shows no digits", () => {
     const html = renderToStaticMarkup(createElement(LockedRecord, {}));
-    expect(html).toContain("Win rate · All-time profit");
+    expect(html).toContain("Win rate · All-time net P&amp;L");
     expect(html).toContain("members only");
     expect(html.replace(/<[^>]+>/g, "")).not.toMatch(/\d|NaN/);
   });

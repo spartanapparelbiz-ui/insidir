@@ -1,5 +1,7 @@
 /* The card headline, pure: the amount first, then what the money says in plain English, and the market as a grey
- * subline. "$17K says no runs in the 1st inning" over "Brewers vs. Cubs · MLB". One builder per kind of market:
+ * subline. claimOf says what the money is on (below, with "$… says" as it reads in a sentence); outcomeOf turns it into
+ * the card's headline, the outcome in plain English with no amount ("Warriors to beat the Timberwolves", "No runs in
+ * the 1st inning"). One builder per kind of market:
  *   moneyline   "$68K says Brewers win"                          a team as the outcome ("Brewers vs. Cubs")
  *   draw        "$12K says Arsenal vs. Chelsea ends in a draw"
  *   spread      "$40K says Brewers win by 2 or more"             "Spread: Brewers (-1.5)" (never the word spread)
@@ -13,15 +15,11 @@
  * Facts only: what was bought, never a tip. */
 import type { Move } from "./types";
 import { niceName } from "@/lib/stocks/names";
-import { quarterOf } from "./copy";
+import { dollars, quarterOf } from "./copy";
 
 /** "$17K", "$1.4M", "$950". */
 export function short(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "";
-  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(a >= 1e10 ? 0 : 1).replace(/\.0$/, "")}B`;
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a / 1e3)}K`;
-  return `${s}$${Math.round(a)}`;
+  return dollars(v);
 }
 
 const clean = (t: string) => t.trim().replace(/\s+/g, " ").replace(/\s+([?!.,])/g, "$1");
@@ -131,14 +129,39 @@ export function roleOf(role: string): string {
   return "an insider";
 }
 
-/** "$17K says no runs in the 1st inning"; stock cards say what was bought. */
+const US_TEAMS = /^(NFL|NBA|WNBA|MLB|NHL|MLS|college|cfb|cbb|ncaaf|ncaab)$/i;
+const cap = (t: string) => t.replace(/^[a-z]/, c => c.toUpperCase());
+
+/** The outcome the money is on, in plain English: "Warriors to beat the Timberwolves", "Brewers to win by 2 or more",
+ *  "No runs in the 1st inning", "The Fed will cut rates in December". The amount is the card's result, not here. */
+export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league">): string {
+  const c = claimOf(m), o = clean(m.outcome);
+  if (m.tab === "sports") {
+    // A moneyline on one side of "A vs. B": "A to beat (the) B".
+    const vs = /^(.+?)\s+vs\.?\s+(.+?)$/i.exec(clean(m.eventTitle).replace(/^[^:]*:\s*/, ""));
+    if (vs && c === `${o} win`) {
+      const [a, b] = [vs[1]!.trim(), vs[2]!.trim()];
+      const other = a.toLowerCase() === o.toLowerCase() ? b : b.toLowerCase() === o.toLowerCase() ? a : null;
+      if (other) return `${o} to beat ${m.league && US_TEAMS.test(m.league) ? "the " : ""}${other}`;
+    }
+    const w = /^(.+?) (win|don't win|doesn't win)(.*)$/.exec(c);
+    if (w && w[1] === o || (w && /^will /i.test(m.marketTitle))) return cap(`${w![1]} ${w![2] === "win" ? "to win" : "not to win"}${w![3]}`);
+    if (/ tie$/.test(c)) return cap(c.replace(/ tie$/, " to win or tie"));
+  }
+  // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
+  const who = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
+  if (who && c === o) return cap(`${o} to ${who[1]!.toLowerCase()} ${who[2]}`);
+  return cap(c);
+}
+
+/** A card's headline: the outcome for a bet; for a filing, what was bought and by whom. */
 export function headlineOf(m: Move): string {
   if (m.source === "sec" && m.detail) {
     const d = m.detail;
-    if (d.kind === "insider") return `${short(m.amount)} of ${niceName(d.company)} stock, bought by ${roleOf(d.role)}`;
-    return `${short(m.amount)} more ${niceName(d.company)} for ${niceName(d.fund)}${d.period ? ` in ${quarterOf(d.period)}` : ""}`;
+    if (d.kind === "insider") return `${niceName(d.company)} stock, bought by ${roleOf(d.role)}`;
+    return `More ${niceName(d.company)} for ${niceName(d.fund)}${d.period ? ` in ${quarterOf(d.period)}` : ""}`;
   }
-  return `${short(m.amount)} says ${claimOf(m)}`;
+  return outcomeOf(m);
 }
 
 /** "62% chance": the price paid, as the chance the market gave it then. */

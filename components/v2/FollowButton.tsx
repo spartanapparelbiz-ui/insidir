@@ -21,7 +21,7 @@ export function FollowButton({ kind, target, state: initial, trialHref, label = 
     const on = state === "on";
     const res = await fetch("/api/follows", { method: on ? "DELETE" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, target }) }).catch(() => null);
     const body = (await res?.json().catch(() => null)) as { error?: string } | null;
-    if (res?.ok) setState(on ? "off" : "on"); else setErr(body?.error ?? "Couldn't do that just now. Try again.");
+    if (res?.ok) setState(on ? "off" : "on"); else setErr(body?.error ?? "Couldn't do that now. Try again.");
     setBusy(false);
   }
   return (

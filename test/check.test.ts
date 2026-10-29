@@ -83,7 +83,7 @@ describe("verdicts", () => {
     expect(parlaySummary(["against", "with", "against"])).toBe("2 of 3 legs have smart money against you.");
     expect(parlaySummary(["against", "with", "with"])).toBe("1 of 3 legs has smart money against you.");
     expect(parlaySummary(["with", "with"])).toBe("Smart money is with you on every leg.");
-    expect(parlaySummary(["none", "none"])).toBe("No big money on any leg yet.");
+    expect(parlaySummary(["none", "none"])).toBe("No large positions on any leg yet.");
     expect(parlaySummary(["split", "none"])).toBe("1 of 2 legs is split.");
     expect(parlaySummary(["with"])).toBe("Smart money with you.");
     for (const t of [...Object.values(VERDICT_TEXT), parlaySummary(["against", "with", "split"])]) for (const b of BANNED_WORDS) expect(t).not.toMatch(b);

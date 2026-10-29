@@ -27,7 +27,7 @@ export function Calculator({ legs, payoutPerSet, maxSets }: { legs: CalcLeg[]; p
         <label htmlFor={`${id}-a`}>Amount ($)</label>
         <input id={`${id}-a`} className="input input--big" inputMode="decimal" placeholder="0.00" value={raw} onChange={e => setRaw(e.target.value)} autoComplete="off" />
       </div>
-      {r.reason !== "ok" ? <p className="muted small" role="status">{raw.trim() ? REASON[r.reason] : "Type how much you want to put in. You'll see the contracts per side, the fees and the profit."}</p> : (
+      {r.reason !== "ok" ? <p className="muted small" role="status">{raw.trim() ? REASON[r.reason] : "Type how much you want to put in. You'll see the contracts per side, the fees and the net P&L."}</p> : (
         <div role="status">
           <div className="scroll-x">
             <table className="table calc__t">
@@ -43,8 +43,8 @@ export function Calculator({ legs, payoutPerSet, maxSets }: { legs: CalcLeg[]; p
           <dl className="kv">
             <div><dt>Total cost</dt><dd>{money(r.total)}</dd></div>
             <div><dt>Payout</dt><dd>{money(r.payout)}</dd></div>
-            <div><dt>Profit</dt><dd className="profit">{money(r.profit)}</dd></div>
-            <div><dt>Return</dt><dd>{pct(r.roi, 2)}</dd></div>
+            <div><dt>Net P&L</dt><dd className="profit">{money(r.profit)}</dd></div>
+            <div><dt>ROI</dt><dd>{pct(r.roi, 2)}</dd></div>
           </dl>
           {r.capped ? <p className="muted small">Capped at the {r.sets.toLocaleString("en-US")} sets the order books can fill right now.</p> : null}
         </div>

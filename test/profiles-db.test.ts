@@ -61,19 +61,19 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
   it("why: biggest bet on this game today, from the day's other moves up to the viewer's clock", async () => {
     const m = move({ id: "pm:big", amount: 300_000, wallet: wallet(9) });
     await upsertMoves(db, [m, move({ id: "pm:a", amount: 120_000, wallet: wallet(2), at: NOW - 2 * H }), move({ id: "pm:b", amount: 90_000, wallet: wallet(3), outcomeSide: "no", outcome: "Bills" })]);
-    expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("pm:big")).toBe("Biggest bet on this game today.");
+    expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("pm:big")).toBe("Largest position on this game today.");
     // A bigger move later today, visible on the viewer's clock, takes it away.
     await upsertMoves(db, [move({ id: "pm:later", amount: 400_000, wallet: wallet(4), at: NOW - 5 * 60_000 })]);
     expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("pm:big")).toBeNull();
     // A free viewer's clock is 30 minutes behind: the later move isn't theirs to see yet.
-    expect((await whyLines(db, [m], { records: false, until: NOW - 25 * 60_000, now: NOW })).get("pm:big")).toBe("Biggest bet on this game today.");
+    expect((await whyLines(db, [m], { records: false, until: NOW - 25 * 60_000, now: NOW })).get("pm:big")).toBe("Largest position on this game today.");
   });
 
   it("why: biggest bet this trader ever made, and top traders on the same side (members only)", async () => {
     const m = move({ id: "pm:t", amount: 150_000, wallet: wallet(1) });
     await upsertMoves(db, [m]);
     await saveRecord(db, record(wallet(1), { biggestBet: 100_000 }));
-    expect((await whyLines(db, [m], { records: true, until: NOW, now: NOW })).get("pm:t")).toBe("Biggest bet this trader has ever made.");
+    expect((await whyLines(db, [m], { records: true, until: NOW, now: NOW })).get("pm:t")).toBe("Largest position this trader has ever made.");
     expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("pm:t")).toBeNull();
     // An earlier move of theirs was bigger.
     await upsertMoves(db, [move({ id: "pm:old", amount: 160_000, wallet: wallet(1), marketId: "C9", at: NOW - 40 * DAY })]);
@@ -83,7 +83,7 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
     await upsertMoves(db, [move({ id: "pm:x", wallet: wallet(2), amount: 200_000, at: NOW - 5 * H }), move({ id: "pm:y", wallet: wallet(3), at: NOW - 20 * H }),
       move({ id: "pm:z", wallet: wallet(4), outcomeSide: "no", outcome: "Bills", at: NOW - 3 * H })]);
     for (const w of [2, 3, 4]) await saveRecord(db, record(wallet(w)));
-    expect((await whyLines(db, [m], { records: true, until: NOW, now: NOW })).get("pm:t")).toBe("3 top traders are on the same side.");
+    expect((await whyLines(db, [m], { records: true, until: NOW, now: NOW })).get("pm:t")).toBe("3 top-ranked traders are on the same side.");
   });
 
   it("why: the insider rules read the stored filings and how far back each history is complete", async () => {
@@ -99,7 +99,7 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
     expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("f4:new")).toBe("First buy by Jen Hsun Huang in 5 years.");
     // Without the owner's history complete, the next rule: the 2021 buy was bigger, so "since 2021".
     await db.execute(`update terminal.sec_history set complete_since = null where kind = 'owner'`);
-    expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("f4:new")).toBe("Biggest insider buy at Nvidia since 2021.");
+    expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("f4:new")).toBe("Largest insider purchase at Nvidia since 2021.");
     // Two insiders bought this month.
     await saveTrades(db, [t("m1", "1197647", "1045810", "2026-10-20", 1_400_000), t("m2", "77", "1045810", "2026-10-05", 300_000)]);
     expect((await whyLines(db, [m], { records: false, until: NOW, now: NOW })).get("f4:new")).toBe("2 Nvidia insiders bought this month.");

@@ -1,3 +1,4 @@
+import { dollars } from "@/lib/money";
 /* Bets on the same outcome within GROUP_MS of the group's first one become one card, pure: "4 big bets on Brewers ·
  * $68,765", opened to show each bet. Order is kept (newest first); a group sits where its newest bet is. */
 export const GROUP_MS = 60 * 60_000;
@@ -23,5 +24,5 @@ export function groupBets<T extends Groupable>(items: readonly T[], windowMs = G
 
 /** "4 big bets on Brewers · $68,765" */
 export function groupTitle(n: number, side: string, total: number): string {
-  return `${n} big bets on ${side} · $${Math.round(total).toLocaleString("en-US")}`;
+  return `${n} large positions on ${side} · ${dollars(total)}`;
 }

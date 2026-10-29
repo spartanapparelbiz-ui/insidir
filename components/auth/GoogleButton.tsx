@@ -1,6 +1,6 @@
 /* "Continue with Google": a plain link to /login/google (lib/auth/google.ts), with Google's "G". */
 export function GoogleButton({ next, testId = "google-continue" }: { next?: string; testId?: string }) {
-  const href = `/login/google${next && next !== "/feed" ? `?next=${encodeURIComponent(next)}` : ""}`;
+  const href = `/login/google${next && next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
   return (
     <a className="btn btn--google btn--big btn--block" href={href} data-testid={testId}>
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48">

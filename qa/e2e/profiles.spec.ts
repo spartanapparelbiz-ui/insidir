@@ -10,24 +10,24 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   await signIn(context, "insidir");
   await page.goto("/feed");
   const top = page.locator("[data-move='e2e:m1']");
-  // Amount first, what the money says; who moved under it.
-  await expect(top.locator(".move__head")).toHaveText("$412K says Chiefs win");
-  await expect(top.locator(".move__by")).toContainText("E2E-Top · a top trader");
-  await expect(top.locator(".badge")).toHaveCount(0);
+  // The outcome in plain English; who moved under it.
+  await expect(top.locator(".move__head")).toHaveText("Chiefs to beat the Bills");
+  await expect(top.locator(".move__by")).toContainText("E2E-Top · Top-ranked trader");
+  await expect(top.locator(".move__badge")).toHaveCount(0);
   await top.getByRole("link", { name: "E2E-Top" }).click();
   await expect(page).toHaveURL(`/p/${TOP}`);
   await expect(page.getByRole("heading", { level: 1, name: "E2E-Top" })).toBeVisible();
   // Kalshi is anonymous by design: "Someone", no profile link.
   await page.goto("/feed");
   const kalshi = page.locator("[data-move='e2e:m2']");
-  await expect(kalshi.locator(".move__head")).toHaveText("$48K says Lakers win");
-  await expect(kalshi.locator(".move__by")).toHaveText("Someone");
+  await expect(kalshi.locator(".move__head")).toHaveText("Lakers to beat the Celtics");
+  await expect(kalshi.locator(".move__by")).toHaveText("Anonymous · Kalshi");
   await expect(kalshi.locator("a[href^='/p/']")).toHaveCount(0);
   // A wallet with no history before this move.
   await page.goto("/feed?tab=markets");
   const fresh = page.locator("[data-move='e2e:m5']");
-  await expect(fresh.locator(".move__head")).toHaveText("$200K says Yes on “E2E fixture: Rate hike in March?”");
-  await expect(fresh.locator(".badge")).toHaveText("New wallet");
+  await expect(fresh.locator(".move__head")).toHaveText("Yes on “E2E fixture: Rate hike in March?”");
+  await expect(fresh.locator(".move__badge")).toHaveText(" · New account");
   await expect(fresh.getByRole("link", { name: "0xe2…cc" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000cc");
 });
 
@@ -38,11 +38,11 @@ test("a trader's profile: every stat from their resolved positions, for members"
   const tile = (label: string) => page.locator(".tile").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
   await expect(tile("Record")).toHaveText("41–22");
   await expect(tile("Win rate")).toHaveText("65%");
-  await expect(tile("All-time profit")).toHaveText("+$1.2M");
+  await expect(tile("All-time net P&L")).toHaveText("+$1.2M");
   await expect(tile("ROI")).toHaveText("95.2%"); // $1.2M on $1.26M put in
-  await expect(tile("Biggest win")).toHaveText("+$310,000");
-  await expect(tile("Average bet")).toHaveText("$20,000");
-  await expect(page.getByRole("img", { name: /^Profit, every resolved market: \+\$310,000 to \+\$1,2\d\d,\d{3}$/ })).toBeVisible();
+  await expect(tile("Largest gain")).toHaveText("+$310K");
+  await expect(tile("Average position size")).toHaveText("$20K");
+  await expect(page.getByRole("img", { name: /^Net P&L, every resolved market: \+\$310K to \+\$1\.2M$/ })).toBeVisible();
   const cats = page.getByRole("table", { name: "By category" });
   await expect(cats.getByRole("row", { name: /^NFL \d/ })).toBeVisible();
   await expect(cats.getByRole("row", { name: /^Markets \d/ })).toBeVisible();
@@ -57,7 +57,7 @@ test("profiles and Top are members only: a visitor is sent to log in, and no rec
     await page.goto("/top");
     await expect(page).toHaveURL(/\/login\?next=%2Ftop/);
   });
-  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Profit over time/);
+  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310K|Net P&L over time/);
 });
 
 test("/top: 20+ resolved markets, ranked by profit, filtered by time and category, with Follow", async ({ page, context }) => {
@@ -93,13 +93,13 @@ test("an insider: the card names them and says why it matters; their public page
   await expect(page.getByRole("heading", { level: 1, name: "Jane Fixture" })).toBeVisible();
   await expect(page.locator(".trader__kicker")).toHaveText("CEO of E2E Fixture Devices");
   const rec = page.locator(".record");
-  await expect(rec.getByText("$1,641,811")).toBeVisible(); // 1,401,811 this October + 240,000 in 2023
-  await expect(rec.getByText("$450,000")).toBeVisible();   // one sale
+  await expect(rec.getByText("$1.6M")).toBeVisible(); // 1,401,811 this October + 240,000 in 2023
+  await expect(rec.getByText("$450K")).toBeVisible();   // one sale
   await expect(page.getByText(/Every Form 4 they filed since Oct 27, 2016, open-market trades of stock only\./)).toBeVisible();
   const rows = page.getByRole("table").locator("tbody tr");
   await expect(rows).toHaveCount(3);
   await expect(rows.first()).toContainText("Oct 22, 2026");
-  await expect(rows.first()).toContainText("$1,401,811");
+  await expect(rows.first()).toContainText("$1.4M");
   await expect(rows.first()).toContainText("$182.65");
   await expect(rows.first().getByRole("link", { name: "Filing" })).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
   // No prices held: no "since their buys" line and no Since column.
@@ -121,8 +121,8 @@ test("an insider's page is public: the last 30 days for anyone, older trades onl
   await expect(page.getByRole("heading", { name: "Trades in the last 30 days" })).toBeVisible();
   const rows = page.getByRole("table").locator("tbody tr");
   await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText("$1,401,811");
-  await expect(page.locator(".record").getByText("$1,401,811")).toBeVisible();
+  await expect(rows.first()).toContainText("$1.4M");
+  await expect(page.locator(".record").getByText("$1.4M")).toBeVisible();
   await expect(page.getByText("2 older trades on file. Showing the last 30 days. The full history and Follow are for members.")).toBeVisible();
   await expect(page.getByRole("button", { name: /Follow insider/ })).toBeVisible();
   // The older trades never reach the browser.
@@ -167,7 +167,7 @@ test("a fund: its latest 13F, biggest adds and new positions; members also get t
   await expect(page.getByText(/48 quarters on file with the SEC\./)).toBeVisible();
   const top = page.locator("section", { has: page.getByRole("heading", { name: "Top 10 holdings" }) });
   await expect(top.locator(".positions__row").first()).toContainText("E2E Fixture Devices");
-  await expect(top.locator(".positions__row").first()).toContainText("$1,130,000,080");
+  await expect(top.locator(".positions__row").first()).toContainText("$1.1B");
   const q = page.locator(".pq").first();
   await expect(q.getByRole("heading", { name: "Quarter ending Sep 30, 2026" })).toBeVisible();
   await expect(q.getByText("Cut · 500,000 shares")).toBeVisible();
@@ -195,7 +195,7 @@ test("following an insider, a company and a fund: on the Following page, and the
   await expect(page.locator(".flist__row", { hasText: "EXDV · every insider trade" })).toBeVisible();
   await expect(page.locator(".flist__row", { hasText: "E2E Fixture Capital" })).toBeVisible();
   const feed = page.getByTestId("following-feed");
-  await expect(feed.getByText("Jane Fixture, CEO of E2E Fixture Devices, bought $1,401,811 of EXDV.")).toBeVisible();
+  await expect(feed.getByText("Jane Fixture, CEO of E2E Fixture Devices, bought $1.4M of EXDV.")).toBeVisible();
   await expect(feed.getByText("E2E Fixture Capital filed its 13F for the quarter ending Sep 30, 2026.", { exact: false })).toBeVisible();
   await noHorizontalScroll(page);
   await page.screenshot({ path: shotName("following-sec", page), fullPage: true });

@@ -1,11 +1,10 @@
 /* Display formats. */
+import { dollars } from "@/lib/money";
 export const pct = (v: number, digits = 1): string => (v * 100).toFixed(digits) + "%";
+/** Money in the one format (lib/money.ts), with cents under $100. */
 export function usd(v: number): string {
   const a = Math.abs(v), s = v < 0 ? "−" : "";
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(1)}M`;
-  if (a >= 10_000) return `${s}$${(a / 1e3).toFixed(1)}K`;
-  if (a >= 100) return `${s}$${Math.round(a).toLocaleString("en-US")}`;
-  return `${s}$${a.toFixed(2)}`;
+  return a >= 100 ? dollars(v) : `${s}$${a.toFixed(2)}`;
 }
 export const centsText = (c: number): string => (Number.isInteger(c) ? c : c.toFixed(1)) + "¢";
 export function ago(ms: number, now: number): string {
@@ -30,7 +29,7 @@ export function span(ms: number): string {
 }
 
 /** "just now" under 10 seconds, else ago(). */
-export const agoOrNow = (ms: number, now: number): string => (now - ms < 10_000 ? "just now" : ago(ms, now));
+export const agoOrNow = (ms: number, now: number): string => (now - ms < 10_000 ? "now" : ago(ms, now));
 
 const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
 /** "3:42 PM" in the viewer's own time zone (render on the client). */

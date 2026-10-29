@@ -24,7 +24,7 @@ import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Top traders", description: "The top Polymarket traders by profit, from their public record. 20+ resolved markets only." };
+export const metadata: Metadata = { title: "Top traders", description: "The top Polymarket traders by net P&L, from their public record. 20+ resolved markets only." };
 
 const WINDOWS: Array<[TopWindow, string]> = [["week", "This week"], ["month", "This month"], ["all", "All time"]];
 const TABS: Array<["" | "sports" | "markets", string]> = [["", "All"], ["sports", "Sports"], ["markets", "Markets"]];
@@ -68,7 +68,7 @@ export default async function TopPage({ searchParams }: { searchParams: Promise<
         </nav>
         {!paid && rows.length ? (
           <aside className="upsell" data-locked="top">
-            <p className="upsell__text">Win rates, profit and best categories are for members.</p>
+            <p className="upsell__text">Win rates, net P&L and best categories are for members.</p>
             <a className="btn btn--primary" href={trial} data-unlock="top">{GET_CTA}</a>
           </aside>
         ) : null}

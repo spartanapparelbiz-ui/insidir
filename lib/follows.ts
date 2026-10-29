@@ -8,6 +8,7 @@
  * CIKs are kept without leading zeros. The Following feed puts, newest first, the moves of followed traders and
  * markets with each new filing by a followed insider, at a followed company, or by a followed fund. No politicians:
  * Congress trades are not a source and can't be followed. */
+import { dollars } from "@/lib/money";
 import type { FollowKind } from "@/lib/db/schema";
 import { personName, roleOf } from "@/lib/profiles/name";
 import { quarterChanges } from "@/lib/profiles/sec";
@@ -53,7 +54,7 @@ export interface FilingItem {
   code?: "P" | "S";
 }
 
-const dollars = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
+
 const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 const calDate = (d: string): string => DAY.format(new Date(`${d}T12:00:00Z`));
 
@@ -90,7 +91,7 @@ export function fundItem(f: FundFilingIn, href: string): FilingItem {
     const { adds } = quarterChanges(f.prev, f.holdings, 100);
     const fresh = adds.filter(a => a.kind === "new").length;
     const top = adds[0];
-    detail = [top ? ` Biggest add: ${top.company} (${dollars(top.value)}).` : "", fresh ? ` ${fresh} new ${fresh === 1 ? "position" : "positions"}.` : ""].join("");
+    detail = [top ? ` Largest addition: ${top.company} (${dollars(top.value)}).` : "", fresh ? ` ${fresh} new ${fresh === 1 ? "position" : "positions"}.` : ""].join("");
   }
   const q = f.period ? ` for the quarter ending ${calDate(f.period)}` : "";
   return { key: `13f:${f.accession}`, kind: "fund", at: Date.parse(`${f.filedOn}T21:00:00Z`), sentence: `${f.fund} filed its 13F${q}.${detail}`,

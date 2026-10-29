@@ -41,15 +41,19 @@ describe("V2 landing page", () => {
   it("says the brief's words", () => {
     const src = read("app/page.tsx");
     expect(src).toContain("Follow the big money.");
-    expect(src).toContain("Upload your slip and see where the big money is. Or pick a tracker and follow it.");
+    expect(src).toContain("Each one is a live portfolio with a public track record.");
     expect(src).toContain("<HeroCta />");
-    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/check" data-cta="hero"/);
-    expect(read("components/home/HeroCta.tsx")).toContain("Check your bet <span");
-    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">or explore the trackers');
+    expect(src).toContain("<LivePortfolio ");
+    // Trackers are the product: the hero's one button opens them, and the position check is not on home at all.
+    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/trackers" data-cta="hero"/);
+    expect(read("components/home/HeroCta.tsx")).toContain("Explore trackers <span");
+    expect(read("components/home/HeroCta.tsx")).toContain('href="/results">See the track record <span className="arrow"');
+    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx", "components/home/LivePortfolio.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
+    expect(read("components/home/LivePortfolio.tsx")).toContain("A live portfolio of big money");
     for (const h of [">Featured</h2>", ">Top performers</h2>", ">Popular</h2>"]) expect(src).toContain(h);
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');
-    for (const c of ["A big bet happens.", "Insidir catches it in seconds.", "See who it is and if they usually win.", "Get pinged next time they move."]) expect(story).toContain(c);
+    for (const c of ["A large position is opened.", "Insidir records it within seconds.", "The account and its record, in one view.", "An alert on its next position."]) expect(story).toContain(c);
     // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
@@ -106,7 +110,7 @@ describe("home hero ticker", () => {
     const { tickerItem } = await import("@/lib/moves/ticker");
     const base = { id: "ks:1", source: "kalshi", tab: "sports", league: "NBA", sentence: "", payout: null, record: null, topTrader: false, amount: 48_000, at: 0,
       ago: "2m ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
-      link: null, result: null, note: null, ticker: null, who: { name: "Someone", href: null, badge: null }, face: { src: null, mono: "SO" }, why: null, sourceLink: null,
+      link: null, result: null, note: null, ticker: null, who: { name: "Anonymous · Kalshi", href: null, badge: null }, face: { src: null, mono: "AN" }, why: null, sourceLink: null,
       headline: "$48K says Lakers win", subline: "Lakers vs Celtics", inAt: "45%", avgPrice: 0.45, outcomeSide: "yes", nowPrice: null, pnl: null, low: null } as const;
     const t = tickerItem({ ...base });
     expect(`${t.amount} ${t.what} · ${t.ago}`).toBe("$48K on Lakers · 2m");
@@ -117,9 +121,10 @@ describe("home hero ticker", () => {
 });
 
 describe("design system", () => {
-  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text); other stylesheets use tokens only", () => {
+  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text) and the tracker covers' deep shades; other stylesheets use tokens only", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#0b0b12", "#ffffff", "#f5f5f7", "#ececf0", "#e8e8ed", "#6e6e73", "#2a2a33", "#1a9e5c", "#137a47", "#d93a2b", "#c0321f"];
+    const covers = ["#13294b", "#182f57", "#0f2342", "#23205a", "#2a2566", "#1d1a4d", "#341c4a", "#3d2156", "#2c1740", "#0d3550", "#103d5c", "#0a2d45"];
+    const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f", ...covers];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -138,8 +143,8 @@ describe("design system", () => {
     }
   });
 
-  it("the manifest opens the feed, all white", async () => {
+  it("the manifest opens the app on Trackers, all white", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/feed", background_color: "#ffffff", theme_color: "#ffffff" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#ffffff", theme_color: "#ffffff" });
   });
 });

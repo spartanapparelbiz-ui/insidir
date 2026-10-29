@@ -89,7 +89,7 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
             {TOPICS.map(t => <button key={t.key} type="button" className="chip2" aria-pressed={topics.includes(t.key)} onClick={() => toggle(topics, t.key, setTopics)}>{t.label}</button>)}
           </div>
         ) : null}
-        {stocks ? <button type="button" className="tile" aria-pressed={tabs.includes("stocks")} onClick={() => toggle(tabs, "stocks", setTabs)}><b>Stocks</b><span>Insider buys and big funds</span></button> : null}
+        {stocks ? <button type="button" className="tile" aria-pressed={tabs.includes("stocks")} onClick={() => toggle(tabs, "stocks", setTabs)}><b>Stocks</b><span>Insider purchases and big funds</span></button> : null}
       </div>
       <button type="button" className="btn btn--primary btn--block" onClick={() => setStep(follows ? 1 : 2)} disabled={busy}>Next</button>
       {skip(() => void finish(true))}
@@ -102,9 +102,9 @@ export function FirstRun({ stocks, follows }: { stocks: boolean; follows: boolea
   if (step === 1) return (
     <section className="first" aria-labelledby="first-h" data-step="2">
       {dots}
-      <h1 id="first-h" ref={head} tabIndex={-1} className="first__h">{stockPicks.length ? "Who to follow" : "Follow 3 top traders"}</h1>
+      <h1 id="first-h" ref={head} tabIndex={-1} className="first__h">{stockPicks.length ? "Who to follow" : "Follow 3 top-ranked traders"}</h1>
       <p className="first__p">We&apos;ll show you the moment they make a big move{stockPicks.length ? " or file with the SEC" : ""}.</p>
-      {traders === null ? <p className="first__p" role="status">Finding top traders…</p> : traders.length ? (
+      {traders === null ? <p className="first__p" role="status">Finding top-ranked traders…</p> : traders.length ? (
         <>
           {stockPicks.length ? <h2 className="first__group">Top traders</h2> : null}
           <ul className="first__traders" data-group="trader">

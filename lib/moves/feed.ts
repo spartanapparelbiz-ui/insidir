@@ -16,7 +16,7 @@ import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
 import type { Plan, Region } from "@/lib/types";
-import { agoText, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
+import { agoText, ANONYMOUS, moveSentence, payoutLine, recordLine, stockNote } from "./copy";
 import { movePlan } from "./gate";
 import { marketLink, type MarketLink } from "./links";
 import { moveSource, type SourceLink } from "./source";
@@ -25,6 +25,7 @@ import { companyHref, personName, profileHref } from "@/lib/profiles/name";
 import type { FollowKind } from "@/lib/db/schema";
 import { whyLines } from "@/lib/profiles/why-facts";
 import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
+import { moveLogo } from "@/lib/logos";
 import { moveFace, type Face } from "./avatar";
 import { avatarsOrNone } from "./avatar-store";
 import type { League, Move, Tab } from "./types";
@@ -56,11 +57,13 @@ export interface FeedItem {
   /** Stocks: the line under the sentence (trade or filing date, 13F age) and the ticker for the tag. */
   note: string | null;
   ticker: string | null;
+  /** The real logo of what it's about (lib/logos.ts): the team, the league, the company; null to show the drawn subject. */
+  logo?: string | null;
   /** Home page only (lib/home/curate.ts): one line of context under the short sentence (the trimmed market title,
    *  or a stock's trade and filing dates). */
   context?: string | null;
   /** Who moved, as the sentence names them, and their profile (/p/[id]); Kalshi traders are anonymous (no link). */
-  who: { name: string; href: string | null; badge: "New wallet" | null };
+  who: { name: string; href: string | null; badge: "New account" | null };
   /** Their Polymarket picture, or the monogram (lib/moves/avatar.ts). */
   face: Face;
   /** "Why this matters": at most one fact (lib/profiles/why.ts). */
@@ -73,7 +76,7 @@ export interface FeedItem {
   companyHref?: string | null;
   /** The market's live split (lib/smart): "Crowd 62% · Smart money 81%", when there is one. */
   split?: string | null;
-  /** "$17K says no runs in the 1st inning" (lib/moves/headline.ts), and the grey line under it. */
+  /** "No runs in the 1st inning" (lib/moves/headline.ts outcomeOf), and the grey line under it. */
   headline: string;
   subline: string;
   /** The price paid, as a chance ("45%"); the price of their side now, 0..1, when known (refreshed every minute). */
@@ -168,9 +171,9 @@ export function whoOf(m: Move): FeedItem["who"] {
   const d = m.detail;
   if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik, name: d.ownerName }) : null, badge: null };
   if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik, name: d.fund }), badge: null };
-  if (m.source === "kalshi" || !m.wallet) return { name: "Someone", href: null, badge: null };
+  if (m.source === "kalshi" || !m.wallet) return { name: ANONYMOUS, href: null, badge: null };
   return { name: walletLabel(m.wallet, m.walletName), href: profileHref({ kind: "trader", wallet: m.wallet }),
-    badge: m.newWallet ? "New wallet" : null };
+    badge: m.newWallet ? "New account" : null };
 }
 
 export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {
@@ -195,6 +198,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
+      logo: moveLogo({ ...m, leagueLabel: leagueLabel(m), ticker: m.detail?.kind === "insider" ? m.detail.ticker : null, company: m.detail?.company ?? null }),
       who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
       headline: headlineOf(m), subline: m.source === "sec" ? stockSub(m) : sublineOf({ ...m, leagueLabel: leagueLabel(m) }),
       inAt: m.source === "sec" ? null : chance(m.avgPrice), avgPrice: m.avgPrice, outcomeSide: m.outcomeSide,

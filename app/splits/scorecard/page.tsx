@@ -12,20 +12,20 @@ import { flaggedSplits, type SplitRec } from "@/lib/smart/store";
 import { KIND_NAME, pct, splitHref, yesName } from "@/lib/smart/text";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Splits scorecard", description: "Every split between smart money and the crowd we flagged, and which side was right. Losses included." };
+export const metadata: Metadata = { title: "Positioning scorecard", description: "Every divergence between proven traders and the market we flagged, and which side was right. Losses included." };
 
 const day = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 
 function called(s: SplitRec): string {
   if (s.kind === "insider_dip" || s.kind === "fund_add") return `${String(s.detail.ticker ?? "")} up in ${STOCK_WINDOW_DAYS} days`;
   const side = s.smartSide === "yes" ? yesName(s.detail) ?? "Yes" : String(s.detail.noLabel ?? "No");
-  return `${side} (${s.kind === "bigmoney" ? "big bets" : "crowd"} ${pct(s.flaggedCrowd ?? s.crowd ?? 0)}, smart ${pct(s.flaggedSmart ?? s.smart ?? 0)})`;
+  return `${side} (${s.kind === "bigmoney" ? "large positions" : "market"} ${pct(s.flaggedCrowd ?? s.crowd ?? 0)}, smart ${pct(s.flaggedSmart ?? s.smart ?? 0)})`;
 }
 
 function result(s: SplitRec): string {
   if (!s.resolvedAt) return "Open";
   if (s.smartRight === null) return "Void";
-  return s.smartRight ? "Smart money right" : "Smart money wrong";
+  return s.smartRight ? "Proven traders right" : "Proven traders wrong";
 }
 
 export default async function ScorecardPage() {
@@ -38,25 +38,25 @@ export default async function ScorecardPage() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/splits" trialHref={unlockHref()} />
       <main className="wrap app2">
         <header className="phead">
-          <h1 className="phead__h">Splits scorecard</h1>
-          <p className="phead__sub">Every split we flagged, and which side was right. Wins and losses, nothing left out.</p>
+          <h1 className="phead__h">Positioning scorecard</h1>
+          <p className="phead__sub">Every divergence we flagged, and which side was right. Gains and losses, all of them.</p>
         </header>
         <Tiles cols={4} label="Scorecard" tiles={[
-          { label: "Splits flagged", value: rows.length.toLocaleString("en-US") },
+          { label: "Divergences flagged", value: rows.length.toLocaleString("en-US") },
           { label: "Scored so far", value: all.scored.toLocaleString("en-US") },
-          { label: "Smart money right, markets", value: share(mk) ?? <span className="tile__na">None scored yet</span> },
-          { label: "Insiders and funds right, stocks", value: share(st) ?? <span className="tile__na">None scored yet</span> },
+          { label: "Proven traders right, markets", ...(share(mk) ? { value: share(mk) } : { value: "—", note: "None scored yet" }) },
+          { label: "Insiders and funds right, stocks", ...(share(st) ? { value: share(st) } : { value: "—", note: "None scored yet" }) },
         ]} />
-        <Section id="sc-h" title="Every flagged split" note={`Markets are scored when they settle: smart money was right if the side it leaned to, against the crowd, won. Stocks are scored ${STOCK_WINDOW_DAYS} days after the flag: right if the price is higher. Past results, not a promise.`}>
+        <Section id="sc-h" title="Every flagged divergence" note={`Markets are scored when they settle: proven traders were right if the side they leaned to, against the market, won. Stocks are scored ${STOCK_WINDOW_DAYS} days after the flag: right if the price is higher. Past results, not a promise.`}>
           {rows.length ? (
-            <Table label="Flagged splits" head={["Flagged", "Split", "Smart money said", "Gap", "Result"]} numeric={[3]} rows={rows.map(s => [
+            <Table label="Flagged divergences" head={["Flagged", "Market", "Proven traders", "Gap", "Result"]} numeric={[3]} rows={rows.map(s => [
               day(s.flaggedAt!),
               <Link key="t" className="dtable__link" href={splitHref(s)}>{s.kind === "insider_dip" || s.kind === "fund_add" ? String(s.detail.company ?? s.title) : s.title}<span className="dtable__sub">{KIND_NAME[s.kind]}</span></Link>,
               called(s),
               s.kind === "insider_dip" || s.kind === "fund_add" ? `−${s.flaggedGap ?? s.gap}%` : `${Math.round(s.flaggedGap ?? s.gap)} pts`,
               <span key="r" className={s.smartRight === true ? "money" : s.smartRight === false ? "loss" : undefined}>{result(s)}</span>,
             ])} />
-          ) : <p className="dnote">No split has been flagged yet. The first one of 15+ points goes here, and stays here, right or wrong.</p>}
+          ) : <p className="dnote">No divergence has been flagged yet. The first one of 15+ points is listed here and stays, right or wrong.</p>}
         </Section>
       </main>
     </>

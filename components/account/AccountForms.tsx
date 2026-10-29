@@ -61,7 +61,7 @@ export function CancelButton() {
     <ActionButton data-testid="cancel" action={async () => {
       const res = await fetch("/api/account/cancel", { method: "POST", headers: { Accept: "application/json" } });
       const body = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-      if (!res.ok) return { ok: false, message: body?.error ?? "Couldn't cancel just now. Try again in a minute, or use Manage billing." };
+      if (!res.ok) return { ok: false, message: body?.error ?? "Couldn't cancel now. Try again in a minute, or use Manage billing." };
       router.refresh();
       return { ok: true, message: body?.message ?? "Subscription cancelled." };
     }}>Cancel subscription</ActionButton>

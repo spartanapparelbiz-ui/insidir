@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 const KEY = "insidir_tips_done";
 const TIPS: Array<{ col: string; text: string }> = [
   { col: "rules", text: "Same rules means both apps settle this the same way. Check rules: read both. Skip: both sides could lose." },
-  { col: "profit", text: "Profit after fees is what's left of $1 per set after you buy both sides and pay both apps' fees." },
-  { col: "perday", text: "Per day spreads that profit over the days until it pays out, so quick deals rank higher." },
+  { col: "profit", text: "Net P&L after fees is what's left of $1 per set after you buy both sides and pay both apps' fees." },
+  { col: "perday", text: "Per day spreads that net P&L over the days until it pays out, so quick deals rank higher." },
 ];
 
 export function TerminalTips() {

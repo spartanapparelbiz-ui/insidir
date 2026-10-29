@@ -15,10 +15,10 @@ export const STALE_CHECK_MS = 2 * 3_600_000;
 export function RecordLines({ r, net = false }: { r: SettledRecord; net?: boolean }) {
   return (
     <>
-      {r.oddsPct !== null ? <p className="trust__p">Average odds when they bet: <b className="num">{Math.round(r.oddsPct)}%</b></p> : null}
+      {r.oddsPct !== null ? <p className="trust__p">Average entry: <b className="num">{Math.round(r.oddsPct)}%</b></p> : null}
       {net ? <>
         <p className="trust__p" data-testid="record-net">Net for these traders: <b className={`num ${r.net >= 0 ? "money" : "loss"}`}>{signedShort(r.net)}</b></p>
-        <p className="trust__fine">What these bets really made, from each wallet&apos;s own trades: sales before the result plus payouts, minus what they paid.</p>
+        <p className="trust__fine">What these positions realized, from each wallet&apos;s own trades: sales before settlement plus payouts, minus what they paid.</p>
       </> : null}
     </>
   );
@@ -26,7 +26,7 @@ export function RecordLines({ r, net = false }: { r: SettledRecord; net?: boolea
 
 /** "877 won, 298 lost" (and refunded, sold before the result): the same line on home and /results. */
 export function RecordCount({ r }: { r: SettledRecord }) {
-  const extra = [r.refunded ? `${r.refunded.toLocaleString("en-US")} refunded` : null, r.soldEarly ? `${r.soldEarly.toLocaleString("en-US")} sold before the result` : null].filter(Boolean);
+  const extra = [r.refunded ? `${r.refunded.toLocaleString("en-US")} voided` : null, r.soldEarly ? `${r.soldEarly.toLocaleString("en-US")} closed before settlement` : null].filter(Boolean);
   return (
     <p className="trust__big num"><span className="money">{r.won.toLocaleString("en-US")} won</span>, <span className="loss">{r.lost.toLocaleString("en-US")} lost</span>{extra.length ? <span className="trust__ref">, {extra.join(", ")}</span> : null}</p>
   );
@@ -48,7 +48,7 @@ export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | nu
             <h3 className="trust__h">Public records only</h3>
             <ul className="trust__list">
               <li><b>Polymarket</b>: every trade is public on the Polygon blockchain. Each row links its transaction.</li>
-              <li><b>Kalshi</b>: Kalshi&apos;s public trade feed. Trades are anonymous, so we say &quot;Someone&quot;. Each row links the market.</li>
+              <li><b>Kalshi</b>: Kalshi&apos;s public trade feed. Trades are anonymous, so we say &quot;Anonymous&quot;. Each row links the market.</li>
               {isReady("stocks") ? <li><b>SEC EDGAR</b>: insiders&apos; Form 4 filings and funds&apos; 13F holdings. Each row links its filing.</li> : null}
             </ul>
           </article>
@@ -57,15 +57,15 @@ export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | nu
             {s ? <>
               <RecordCount r={s} />
               <RecordLines r={s} />
-            </> : <p className="trust__p">Moves show up on Results, won or lost, as their markets settle.</p>}
-            <p className="trust__fine">Every settled bet by the Polymarket wallets we&apos;ve shown, losses included. Not a promise.</p>
+            </> : <p className="trust__p">Positions appear in the Track record, won or lost, as their markets settle.</p>}
+            <p className="trust__fine">Every settled position by the Polymarket wallets we&apos;ve shown, losses included. Not a promise.</p>
             <Link className="trust__link" href="/results">See every result</Link>
           </article>
           <article className="trust__card" data-testid="trust-check">
             <h3 className="trust__h">{fresh ? "Checked every hour" : "Accuracy check"}</h3>
             {a ? (
               <p className="trust__p">Last check {fresh ? clockET(a.runAt) : dateTimeET(a.runAt)}: <b className="num">{a.ok} of {a.checked}</b> matched.{a.hidden ? ` ${a.hidden} hidden until ${a.hidden === 1 ? "it matches" : "they match"}.` : ""}</p>
-            ) : <p className="trust__p">We re-read random moves and trader stats from the source. Anything that doesn&apos;t match is hidden until it does.</p>}
+            ) : <p className="trust__p">We re-read random positions and trader stats from the source. Anything that doesn&apos;t match is hidden until it does.</p>}
             <Link className="trust__link" href="/data">How we check</Link>
           </article>
           <article className="trust__card">

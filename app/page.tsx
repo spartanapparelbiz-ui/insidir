@@ -1,19 +1,23 @@
-/* The home page, Autopilot-style: one centred hero (the logo mark in a black rounded square, "Follow the big money.",
- * one line, one black pill "Check your bet →" with a quiet link to the trackers, then five real app screens in phone frames fanned across); "Featured"
- * (four wide photo cards); two columns, "Top performers" by window and "Popular"; pricing; FAQ.
+/* The home page: one centred hero (the logo mark, "Follow the big money.", one line, one black button "Explore
+ * trackers →" with a text link to the track record, then five real app screens in phone frames fanned across); "A live
+ * portfolio of big money" (one tracker: what it holds now and its latest results); "Featured"; two columns, "Top
+ * performers" by window and "Popular"; pricing; FAQ. Home lists lead with stocks, then prediction markets, then sports.
  * Every number is a row from terminal.moves on the viewer's clock (free: 30 minutes late), and a tracker's record is
- * its settled moves (lib/trackers-store.ts). Nothing is made up: a phone with nothing to show is left out, and a
- * tracker with under 20 settled moves says "New". */
+ * its settled positions (lib/trackers-store.ts). Nothing is made up: a phone with nothing to show is left out, and a
+ * tracker with under 20 settled positions says "New". */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Discover } from "@/components/home/Discover";
 import { HeroCta } from "@/components/home/HeroCta";
+import { LivePortfolio, type PortfolioData } from "@/components/home/LivePortfolio";
 import { Phones, type PhoneData } from "@/components/home/Phones";
 import { PeriodTabs } from "@/components/trackers/PeriodTabs";
 import { TrackerFeature, TrackerRow } from "@/components/trackers/Tracker";
+import { coverStats } from "@/components/trackers/TrackerCover";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { LOGO } from "@/components/Wordmark";
@@ -24,20 +28,25 @@ import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
 import { clockET, dollars } from "@/lib/moves/copy";
+import { short as shortMoney } from "@/lib/moves/headline";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { listMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
-import { FEATURED, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
+import { FEATURED, homeOrder, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
 import { isReady } from "@/lib/features";
-import { trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
+import { trackerHoldings, trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
 import type { Plan, Region } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const MONTH = 30 * 86_400_000;
+
+/** Home lists lead with stocks, then prediction markets, then sports (each kind keeps its own order). */
+const KIND_ORDER: Record<string, number> = { stocks: 0, markets: 1, crypto: 1, sports: 2 };
+const moveOrder = (l: Move[]): Move[] => l.map((m, i) => ({ m, i })).sort((a, b) => (KIND_ORDER[a.m.tab] ?? 1) - (KIND_ORDER[b.m.tab] ?? 1) || a.i - b.i).map(x => x.m);
 
 /** A feed item said the home page's short way. */
 function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
@@ -52,8 +61,24 @@ function resultPick(settled: Move[], now: number): Move[] {
   return [...won, ...lost].sort((a, b) => b.amount - a.amount);
 }
 
-interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats> }
-const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map() };
+interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats>; portfolio: PortfolioData | null }
+const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map(), portfolio: null };
+
+/** The live portfolio: the best tracker by ROI with a record (bets only), else Whales; its largest open positions and
+ *  its latest settled results. */
+async function portfolioData(db: Db, stats: Map<TrackerSlug, TrackerStats>, plan: Plan, region: Region | null, until: number, now: number): Promise<PortfolioData | null> {
+  const shown = visibleTrackers(isReady).filter(t => t.kind === "bets");
+  const best = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null })))[0]?.t ?? trackerBySlug("biggest-bets")!;
+  const [holdings, open, settled] = await Promise.all([
+    trackerHoldings(db, until, now).catch(() => new Map()),
+    trackerMoves(db, best, { until, since: now - 60 * 86_400_000, byAmount: true, limit: 12 }).then(l => l.filter(m => !m.result).slice(0, 4)).catch(() => []),
+    trackerMoves(db, best, { settled: true, source: "polymarket", limit: 20 }).then(l => l.filter(m => countsToRecord(m)).slice(0, 4)).catch(() => []),
+  ]);
+  const [o, r] = await Promise.all([feedItems(db, open, plan, region, now).catch(() => []), feedItems(db, settled, plan, region, now, now).catch(() => [])]);
+  const h = holdings.get(best.slug);
+  const s = stats.get(best.slug);
+  return { t: best, record: s?.records.all ?? null, cover: coverStats(s), open: o, results: r, openCount: h?.open ?? o.length, openAmount: h?.amount ?? o.reduce((a, m) => a + m.amount, 0) };
+}
 
 async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number): Promise<HomeData> {
   const lead = trackerBySlug("biggest-bets")!;
@@ -63,7 +88,7 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
     trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>()),
     trackerMoves(db, lead, { until, limit: 3 }).catch(() => []),
   ]);
-  const latest = latestAll.filter(isMainstream).slice(0, 4);
+  const latest = moveOrder(latestAll.filter(isMainstream)).slice(0, 4);
   const picked = resultPick(settledAll, now);
   const byId = new Map([...latest, ...picked, ...leadMoves].map(m => [m.id, m]));
   const [feed, results, leadItems] = await Promise.all([
@@ -75,14 +100,15 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   const leadShort = short(leadItems);
   const shown = visibleTrackers(isReady);
   const ranked = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
-  const list = [...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))];
+  const list = homeOrder([...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))]);
   return {
     stats,
+    portfolio: await portfolioData(db, stats, plan, region, until, now).catch(() => null),
     phones: {
       feed: short(feed), results: short(results),
-      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, moves: leadShort } : null,
-      list: stats.size ? list : [],
-      alert: leadShort[0] ? { tracker: lead.name, body: leadShort[0].sentence, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
+      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, cover: coverStats(stats.get(lead.slug)), moves: leadShort } : null,
+      list: stats.size ? list.map(x => ({ ...x, cover: coverStats(stats.get(x.slug)) })) : [],
+      alert: leadShort[0] ? { tracker: lead.name, body: `${shortMoney(leadShort[0].amount)} on ${leadShort[0].headline.replace(/^\w/, c => c.toLowerCase())}. ${leadShort[0].subline}.`, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
     },
   };
 }
@@ -91,7 +117,8 @@ export default async function Home() {
   const now = Date.now();
   const [jar, viewer] = await Promise.all([cookies(), getViewer()]);
   const paid = isPaid(viewer.plan);
-  // Members land on Discover.
+  // Members open the app on Trackers; a new member goes through onboarding first (three skippable screens), once.
+  if (paid && viewer.user && !viewer.user.onboarded) redirect("/onboarding");
   if (paid) {
     return (
       <>
@@ -103,7 +130,7 @@ export default async function Home() {
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
   // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
-  const { phones, stats } = hasDatabase()
+  const { phones, stats, portfolio } = hasDatabase()
     ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now))
     : EMPTY;
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -112,35 +139,37 @@ export default async function Home() {
 
   const rows = visibleTrackers(isReady).map(t => ({ t, s: stats.get(t.slug) }));
   const periodTabs = PERIODS.map(p => {
-    const ranked = topPerformers(rows.map(({ t, s }) => ({ t, slug: t.slug, record: s?.records[p.key] ?? null })));
+    const ranked = homeOrder(topPerformers(rows.map(({ t, s }) => ({ t, s, slug: t.slug, record: s?.records[p.key] ?? null }))).slice(0, 6));
     return {
       key: p.key, label: p.label,
-      body: ranked.length ? <ol className="tlist">{ranked.slice(0, 6).map(({ t, record }) => <TrackerRow key={t.slug} t={t} r={record} />)}</ol>
-        : <p className="tlist__empty">No tracker has 20 settled moves in this window yet.</p>,
+      body: ranked.length ? <ol className="tlist">{ranked.map(({ t, s, record }) => <TrackerRow key={t.slug} t={t} r={record} s={coverStats(s)} />)}</ol>
+        : <p className="tlist__empty">No tracker has 20 settled positions in this window yet.</p>,
     };
   });
-  const pop = popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, followers: s!.followers, tracked30d: s!.tracked30d })));
+  const pop = homeOrder(popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, s, followers: s!.followers, tracked30d: s!.tracked30d }))).slice(0, 6));
 
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
+      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp3">
         <section className="hero3" aria-labelledby="hero-h">
           <div className="wrap hero3__in">
-            <span className="hero3__mark" aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
-            <h1 id="hero-h" className="hero3__h">Follow the big money.</h1>
-            <p className="hero3__sub">Upload your slip and see where the big money is. Or pick a tracker and follow it.</p>
-            <HeroCta />
+            <span className="hero3__mark rise" style={{ ["--i" as string]: 0 }} aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
+            <h1 id="hero-h" className="hero3__h rise" style={{ ["--i" as string]: 1 }}>Follow the big money.</h1>
+            <p className="hero3__sub rise" style={{ ["--i" as string]: 2 }}>Trackers follow large positions on Polymarket, Kalshi and SEC filings as they are opened and settled. Each one is a live portfolio with a public track record.</p>
+            <div className="hero3__acts rise" style={{ ["--i" as string]: 3 }}><HeroCta /></div>
           </div>
           <Phones d={phones} />
         </section>
+
+        {portfolio ? <LivePortfolio d={portfolio} /> : null}
 
         <section className="sec3" aria-labelledby="feat-h">
           <div className="wrap">
             <h2 id="feat-h" className="sec3__h">Featured</h2>
             <div className="tfeats">
-              {FEATURED.map((s, i) => <TrackerFeature key={s} t={trackerBySlug(s)!} i={i} />)}
+              {FEATURED.map((slug, i) => <TrackerFeature key={slug} t={trackerBySlug(slug)!} s={coverStats(stats.get(slug))} i={i} />)}
             </div>
           </div>
         </section>
@@ -153,18 +182,18 @@ export default async function Home() {
             </div>
             <div className="tcol">
               <h2 className="sec3__h sec3__h--sm">Popular</h2>
-              <p className="tcol__note">By followers, then money tracked in the last 30 days.</p>
+              <p className="tcol__note">By followers, then money of 30-day volume.</p>
               {pop.length ? (
                 <ol className="tlist">
-                  {pop.slice(0, 6).map(({ t, followers, tracked30d }, i) => (
-                    <TrackerRow key={t.slug} t={t} rank={i + 1}
-                      figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No moves yet"} />
+                  {pop.map(({ t, s, followers, tracked30d }, i) => (
+                    <TrackerRow key={t.slug} t={t} rank={i + 1} s={coverStats(s)}
+                      figure={followers > 0 ? { value: followers.toLocaleString("en-US"), label: followers === 1 ? "follower" : "followers" } : tracked30d > 0 ? { value: dollars(tracked30d), label: "30-day volume" } : { value: null, label: "No positions yet" }} />
                   ))}
                 </ol>
-              ) : <p className="tlist__empty">Catching up: the trackers fill in as the first moves arrive.</p>}
+              ) : <p className="tlist__empty">Catching up: the trackers fill in as the first positions arrive.</p>}
             </div>
           </div>
-          <div className="wrap sec3__foot"><Link className="btn btn--secondary" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
+          <div className="wrap sec3__foot"><Link className="tlink tlink--go" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
         </section>
 
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} title="One plan. Every tracker." />

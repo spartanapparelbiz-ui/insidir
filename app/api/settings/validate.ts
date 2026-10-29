@@ -148,7 +148,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
       league: typeof r.league === "string" && (LEAGUES as readonly string[]).includes(r.league) ? r.league : null,
       min: number(r.min, 10_000, MAX_SIZE_USD),
     }));
-    if (!raw || rules.some(r => r.min === null)) errors.push("Each rule needs a size of $10,000 or more.");
+    if (!raw || rules.some(r => r.min === null)) errors.push("Each rule needs a size of $10K or more.");
     else s.moveRules = rules.map(r => ({ tab: r.tab, league: r.league, min: r.min! }));
   }
   for (const k of ["showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen"] as const) {

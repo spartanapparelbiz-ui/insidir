@@ -18,7 +18,7 @@ export default function StocksPage() {
     card: [
       ["Who traded", "The insider, their role and the company. Their name opens everything else they've filed."],
       ["How much, and when", "The dollar amount, the price, and the day of the trade, straight from the filing."],
-      ["Funds' moves", "Each quarter's holdings of the biggest funds, with what they added and sold."],
+      ["Fund holdings", "Each quarter's holdings of the biggest funds, with what they added and sold."],
       ["The filing itself", "Every card links the filing on sec.gov, so you can read it yourself."],
     ],
     sources: [

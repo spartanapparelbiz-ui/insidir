@@ -158,23 +158,34 @@ Fund:
   - "New position: they didn't own it last quarter."
   - "They doubled their stake."
 
-## §4 Copy rules
+## §4 Copy rules (house style, October 29, 2026)
 
+The tone of a financial terminal, written in plain English. Short, factual, no slang, no exclamation marks, no "just".
+Say what happened, never what to do.
+
+- Terms:
+  - large position (never "big move" or "big money", except the H1 "Follow the big money."); position (never bet or wager)
+  - Entry 62% (the implied probability when the position was opened); Average entry
+  - Payout 1.61× if the Chiefs win
+  - Won / Lost; Net P&L (+$637K realized); ROI; Open; Voided; Closed before settlement
+  - 30-day volume; Largest position / Largest gain / Largest loss; Average position size; Edge vs. entry; Current streak
+  - Pages: Trackers, Activity (the feed), Following, Positioning (/splits), Track record (/results), Position check
+    (/check, in the app menu only)
 - Prediction markets:
-  - "A top trader just put $412,000 on the Chiefs to win."
-  - "Pays $161 on every $100 if the Chiefs win."
-  - "Won 41 of 63 · +$1.2M all-time"
-  - "2 min ago"
+  - Headline: the outcome ("Warriors to beat the Timberwolves"), with "$461K · googleplay · 11h ago" under it
+  - Sentence: "kch123: $412,000 position on Chiefs to win."
+  - "Won 41 of 63 · Net P&L +$1.2M"
+  - "2m ago"
 - Names (§3a):
-  - "kch123 just put $412,000 on the Chiefs to win."
-  - "kch123, a top trader, just put …" (members)
-  - "A brand-new wallet just put $200,000 on …"
+  - "kch123 · Top-ranked trader" (members only)
+  - "New account" (no activity before this position); "Anonymous · Kalshi"
 - Stocks:
-  - Insider buy: "[Name], CEO of [Company], just bought $1.4M of [Company] stock."
-  - Fund add: "[Fund] added $250M of [Company] last quarter."
-  - Fund add filing line: "Filed Nov 14 for the quarter ending Sep 30. 13F data can be up to 45 days old."
-- Banned words: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider info, lock, guaranteed, risk-free, free money, sure thing.
-- Never "buy this" or "copy this bet".
+  - Insider purchase: "Form 4 · Filed Oct 24 · CEO Jen-Hsun Huang purchased $1.4M of NVDA"
+  - Fund addition: "13F · Q3 2026 · [Fund] added $250M of [Company]"
+  - Fund filing line: "Q3 2026 holdings · filed Nov 14. 13F data can be up to 45 days old."
+- Banned (test/moves.test.ts BANNED_WORDS): guaranteed, risk-free, free money, sure thing, lock in, insider info,
+  "buy this", "copy this bet", sharp; arb, orderbook, liquidity, spread, bid, ask, odds, contracts; and the old
+  wording so it can't come back: "just put", big move, Someone, chance.
 
 ## §5 Location rules
 

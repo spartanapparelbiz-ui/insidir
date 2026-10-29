@@ -19,9 +19,9 @@ test.afterAll(async () => { await q("delete from terminal.splits where subject l
 test("members see live splits biggest gap first, linked to the market, with the line both numbers make", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/splits");
-  await expect(page.getByRole("heading", { level: 1, name: "Smart money vs. the crowd" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Positioning" })).toBeVisible();
   const row = page.locator(".srow", { hasText: "E2E fixture: Fed cut in December?" });
-  await expect(row).toContainText("Crowd 62% · Smart money 81%");
+  await expect(row).toContainText("Market 62% · Proven traders 81%");
   await expect(row).toContainText("19 pts apart");
   await expect(row).toContainText("4 proven traders");
   // The scored one isn't live any more.
@@ -30,24 +30,24 @@ test("members see live splits biggest gap first, linked to the market, with the 
   await expect(page).toHaveURL(new RegExp(`/market/${ID}$`));
   await expect(page.getByRole("heading", { level: 1, name: "E2E fixture: Fed cut in December?" })).toBeVisible();
   const smart = page.locator("#smart-h").locator("xpath=..");
-  await expect(page.getByRole("heading", { level: 2, name: "Smart money vs. the crowd" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Proven traders vs. the market" })).toBeVisible();
   await expect(smart).toContainText("19 points apart");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("free viewers see splits 30 minutes late; the scorecard is public and keeps every call", async ({ page }) => {
   await page.goto("/splits");
-  await expect(page.getByText("You're seeing splits 30 minutes late.")).toBeVisible();
+  await expect(page.getByText("Positioning is shown 30 minutes late.")).toBeVisible();
   await expect(page.locator(".srow", { hasText: "Fed cut in December" })).toHaveCount(0);
   await q(`update terminal.splits set first_seen_at = now() - interval '40 minutes' where subject = '${ID}'`);
   await page.reload();
   await expect(page.locator(".srow", { hasText: "Fed cut in December" })).toBeVisible();
 
   await page.goto("/splits/scorecard");
-  await expect(page.getByRole("heading", { level: 1, name: "Splits scorecard" })).toBeVisible();
-  const table = page.getByRole("table", { name: "Flagged splits" });
-  await expect(table.getByRole("row", { name: /Senate race winner/ })).toContainText("Smart money right");
+  await expect(page.getByRole("heading", { level: 1, name: "Positioning scorecard" })).toBeVisible();
+  const table = page.getByRole("table", { name: "Flagged divergences" });
+  await expect(table.getByRole("row", { name: /Senate race winner/ })).toContainText("Proven traders right");
   await expect(table.getByRole("row", { name: /Fed cut in December/ })).toContainText("Open");
-  await expect(page.locator(".tile", { hasText: "Splits flagged" }).locator("dd")).toHaveText(/^\d+$/);
+  await expect(page.locator(".tile", { hasText: "Divergences flagged" }).locator("dd")).toHaveText(/^\d+$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

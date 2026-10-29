@@ -124,11 +124,11 @@ describe("following insiders, companies and funds", () => {
     ];
     const byInsider = tradeItems(ts, { insiders: new Set(["888888"]), companies: new Set() }, hrefs);
     expect(byInsider).toHaveLength(1);
-    expect(byInsider[0]).toMatchObject({ sentence: "Jane Fixture, CEO of E2E Fixture Devices, bought $150,000 of EXDV.", because: "You follow Jane Fixture",
+    expect(byInsider[0]).toMatchObject({ sentence: "Jane Fixture, CEO of E2E Fixture Devices, bought $150K of EXDV.", because: "You follow Jane Fixture",
       href: "/insiders/888888-jane-fixture", companyHref: "/insider-trading/EXDV" });
     const byCompany = tradeItems(ts, { insiders: new Set(), companies: new Set(["999999"]) }, hrefs);
     expect(byCompany.map(i => i.sentence)).toEqual([
-      "Jane Fixture, CEO of E2E Fixture Devices, bought $150,000 of EXDV.", "John Doe, a director of E2E Fixture Devices, sold $20,000 of EXDV."]);
+      "Jane Fixture, CEO of E2E Fixture Devices, bought $150K of EXDV.", "John Doe, a director of E2E Fixture Devices, sold $20K of EXDV."]);
     expect(byCompany[1]!.because).toBe("You follow E2E Fixture Devices");
   });
   it("a followed fund's new 13F: its biggest add and its new positions", () => {
@@ -136,7 +136,7 @@ describe("following insiders, companies and funds", () => {
     const item = fundItem({ fundCik: "999998", fund: "E2E Fixture Capital", accession: "q2", period: "2026-09-30", filedOn: "2026-10-21", url: "u",
       prev: [h("1", "Devices", 4_000_000, 880_000_000), h("2", "Other", 1_000_000, 50_000_000)],
       holdings: [h("1", "Devices", 5_136_364, 1_130_000_080), h("2", "Other", 500_000, 26_000_000), h("3", "New Co", 100_000, 30_000_000)] }, "/funds/999998-e2e-fixture-capital");
-    expect(item.sentence).toBe("E2E Fixture Capital filed its 13F for the quarter ending Sep 30, 2026. Biggest add: Devices ($250,000,080). 1 new position.");
+    expect(item.sentence).toBe("E2E Fixture Capital filed its 13F for the quarter ending Sep 30, 2026. Largest addition: Devices ($250M). 1 new position.");
     expect(item.at).toBe(Date.parse("2026-10-21T21:00:00Z"));
   });
 });

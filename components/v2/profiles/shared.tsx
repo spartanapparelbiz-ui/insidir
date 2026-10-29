@@ -1,4 +1,5 @@
 /* Pieces every profile shares: the members-only lock and the follow state. Server components. */
+import { dollars } from "@/lib/moves/copy";
 import { LockButton } from "@/components/lock/Lock";
 import type { Viewer } from "@/lib/auth/viewer";
 import { isReady } from "@/lib/features";
@@ -26,5 +27,5 @@ const DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", y
 export const calDate = (d: string): string => DAY.format(new Date(`${d}T12:00:00Z`));
 export const pct = (v: number): string => `${Math.round(v * 100)}%`;
 export const signedPct = (v: number): string => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1).replace(/\.0$/, "")}%`;
-/** Exact whole dollars for profile numbers ("$1,401,811"): the filing's figure, not a rounded "$1.4M". */
-export const exactDollars = (v: number): string => `${v < 0 ? "−" : ""}$${Math.round(Math.abs(v)).toLocaleString("en-US")}`;
+/** Profile money in the one format ("$1.4M", like every other figure); the filing itself carries the exact amount. */
+export const exactDollars = (v: number): string => dollars(v);

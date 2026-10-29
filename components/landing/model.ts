@@ -13,7 +13,7 @@ import { VENUE_NAME, type Opportunity, type Plan, type Region } from "@/lib/type
 export const COMPETITOR_PRICE_LINE = "Other tools that do this charge around $200/mo.";
 
 /** The hero's sub line. */
-export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that lock in a profit after fees.";
+export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that lock in a net P&L after fees.";
 
 /** The one call to action on the landing page: into the feed. */
 export const LANDING_CTA = "See today's live deals";
@@ -27,7 +27,7 @@ export const REFUND_MIN_GREEN_PER_DAY = 1;
 export const REFUND_WINDOW_DAYS = 30;
 
 /** Objection killers, right under the pricing cards. */
-export const OBJECTIONS = ["Not a prediction. Just math.", "We never touch your money.", "Cancel in one click."] as const;
+export const OBJECTIONS = ["Not a prediction. Arithmetic.", "We never touch your money.", "Cancel in one click."] as const;
 
 /** Stake per green deal in the "if you had followed every green deal" line, dollars. */
 export const FOLLOW_STAKE = 500;
@@ -146,7 +146,7 @@ export function planFeatures(e: Entitlements): string[] {
   const out: string[] = [];
   out.push(e.feedDelayMinutes > 0 ? `Feed delayed ${e.feedDelayMinutes} min` : "Full live feed");
   if (e.maxRows !== null) out.push(`Top ${e.maxRows} deals`);
-  out.push(e.sizesHidden ? "Sizes and dollar profit hidden" : "Sizes and dollar profit");
+  out.push(e.sizesHidden ? "Sizes and dollar net P&L hidden" : "Sizes and dollar net P&L");
   // Alerts: web push, with email as the backup; the free plan gets a daily email digest of the delayed feed.
   if (e.alertDelaySeconds === null) out.push("Daily email digest");
   else {

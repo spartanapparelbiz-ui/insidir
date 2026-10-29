@@ -64,8 +64,8 @@ export function alertJobs(users: readonly AlertUser[], moves: readonly Move[], n
 }
 
 export function alertMessage(m: Move, record: TraderRecord | null, reason: AlertReason, appUrl: string, now: number): { title: string; body: string; url: string } {
-  const title = reason === "trader" ? "A trader you follow just moved" : reason === "tracker" ? "New move in a tracker you follow" : reason === "market" ? "Big money in a market you follow" : "A big move matched your rule";
-  const body = [moveSentence(m, record, true, now), payoutLine(m), agoText(m.at, now) === "just now" ? null : agoText(m.at, now)].filter(Boolean).join(" ");
+  const title = reason === "trader" ? "New position from a trader you follow" : reason === "tracker" ? "New position in a tracker you follow" : reason === "market" ? "Large position in a market you follow" : "A large position matched your rule";
+  const body = [moveSentence(m, record, true, now), payoutLine(m), agoText(m.at, now) === "now" ? null : agoText(m.at, now)].filter(Boolean).join(" ");
   return { title, body, url: `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=alert` };
 }
 
@@ -98,16 +98,16 @@ export function dailyEmail(top: readonly Move[], settled: readonly Move[], recor
   const link = (m: Move) => `${appUrl}/market/${encodeURIComponent(m.marketId)}?from=daily`;
   const lines: DailyEmail["lines"] = [];
   if (top.length) {
-    lines.push({ text: "The biggest money moves of the last 24 hours:" });
+    lines.push({ text: "The largest positions of the last 24 hours:" });
     for (const m of top.slice(0, DAILY_TOP)) lines.push({ text: [moveSentence(m, rec(m), false), payoutLine(m)].filter(Boolean).join(" "), url: link(m) });
-  } else lines.push({ text: "No moves of $10,000 or more in the last 24 hours." });
+  } else lines.push({ text: "No positions of $10K or more in the last 24 hours." });
   const done = settled.filter(m => m.result === "won" || m.result === "lost");
   if (done.length) {
     const won = done.filter(m => m.result === "won").length;
-    lines.push({ text: `How yesterday's top-trader moves settled: ${won} won, ${done.length - won} lost.` });
+    lines.push({ text: `How yesterday's top-ranked trader positions settled: ${won} won, ${done.length - won} lost.` });
     for (const m of done.slice(0, DAILY_TOP)) lines.push({ text: `${m.result === "won" ? "Won" : "Lost"}: ${dollars(m.amount)} on ${onWhat(m)}.`, url: link(m) });
   }
   const biggest = top[0];
   const subject = biggest ? `${dollars(biggest.amount)} on ${onWhat(biggest)}, and more` : "Yesterday on Insidir";
-  return { subject: subject.length > 90 ? "Yesterday's biggest money moves" : subject, heading: "Yesterday's biggest money moves", lines };
+  return { subject: subject.length > 90 ? "Yesterday's largest positions" : subject, heading: "Yesterday's largest positions", lines };
 }

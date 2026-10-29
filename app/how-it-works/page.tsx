@@ -18,18 +18,18 @@ import { isReady } from "@/lib/features";
 import { trustFacts } from "@/lib/trust";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "How it works", description: "A big bet or insider trade happens, Insidir catches it in seconds and shows you who it is and whether they usually win." };
+export const metadata: Metadata = { title: "How it works", description: "A big position or insider trade happens, Insidir catches it in seconds and shows you who it is and whether they usually win." };
 
 const STEPS: Array<[string, string]> = [
-  ["A big bet happens", "Someone puts $10,000 or more on a game, an election or the Fed, or a CEO files a trade in their own stock."],
-  ["Insidir catches it in seconds", "We read Polymarket, Kalshi and SEC filings all day and write every big move in one plain sentence."],
-  ["See who it is", "Tap the name: every bet they've made, how many they won and lost, and their all-time profit."],
-  ...(isReady("alerts_push") ? [["Get pinged next time", "Follow the traders who usually win. When they make a big move, your phone buzzes."] as [string, string]] : []),
+  ["A large position is opened", "An account opens a position of $10K or more on a game, an election or the Fed, or a CEO files a trade in their own stock."],
+  ["Insidir catches it in seconds", "We read Polymarket, Kalshi and SEC filings all day and write every large position in one plain sentence."],
+  ["See who it is", "Tap the name: every position they've made, how many they won and lost, and their all-time net P&L."],
+  ...(isReady("alerts_push") ? [["An alert on the next one", "Follow accounts with a strong record. When one opens a large position, a push notification follows."] as [string, string]] : []),
 ];
 const DO: Array<[string, string, string]> = [
-  ["/feed", "The live feed", "Every big move as it happens: Sports, Markets and Stocks."],
+  ["/feed", "Activity", "Every large position as it is opened: Sports, Markets and Stocks."],
   ["/top", "Top traders", "The wallets with the best record, this week, this month and all time."],
-  ["/results", "Results", "Every move we've shown, marked won or lost. Losses included."],
+  ["/results", "Track record", "Every position we have shown, marked won or lost. Losses included."],
   ["/pricing", "Pricing", "Try 7 days for $1, then $39/month, everything live. Cancel anytime."],
 ];
 
@@ -47,7 +47,7 @@ export default async function HowPage() {
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/how-it-works" trialHref={trial} />
       <main className="dark mkt how">
         <PageBand n={BAND.how} title="How it works" kicker="Insidir in 10 seconds">
-          <p className="pband__sub">See the biggest bets and stock trades the moment they happen: who made them, how much, and whether they usually win.</p>
+          <p className="pband__sub">See the largest positions and stock trades the moment they happen: who made them, how much, and whether they usually win.</p>
         </PageBand>
         {story ? <Story data={story} /> : null}
         <section className="sec2" aria-labelledby="steps-h">

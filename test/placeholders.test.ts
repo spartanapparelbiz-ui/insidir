@@ -12,6 +12,6 @@ describe("no placeholders in production", () => {
     for (const s of ["Lorem ipsum dolor", "sample moves", "fake activity", "E2E fixture: Chiefs", "John Doe put $1,234", "Math.random()", "TODO wire up"]) {
       expect(caught(s), s).toBe(true);
     }
-    for (const s of ["Someone just put $48,000 on Lakers to win.", "you@example.com", "Real past moves. Not a promise."]) expect(caught(s), s).toBe(false);
+    for (const s of ["Anonymous · Kalshi: $48,000 position on Lakers to win.", "you@example.com", "Real past positions. Not a promise."]) expect(caught(s), s).toBe(false);
   });
 });

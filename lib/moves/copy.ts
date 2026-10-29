@@ -1,36 +1,28 @@
-/* One sentence per move that a 12-year-old gets (docs/INSIDIR-V2.md §4). We say what happened, never what to do.
- * Every sentence names who moved when the source says (lib/profiles/name.ts):
- *   "kch123, a top trader, just put $412,000 on Chiefs to win."   (public username; "a top trader" for members only)
- *   "0x12…ab just put $85,000 on "Yes" in "Fed rate cut in December?""   (no username: the short address)
- *   "A brand-new wallet just put $200,000 on Chiefs to win."      (no activity at all before this move)
- *   "Someone just put $48,000 on Lakers to win."                   (Kalshi: anonymous by design)
- *   "Filed today: Jen Hsun Huang, CEO of Nvidia, bought $1.4M of Nvidia stock on Oct 22."   (SEC Form 4, as filed:
- *   never "just bought", since the trade can be up to 2 business days older than the filing)
- *   "Pays $161 on every $100 if Chiefs win."      (payout = 100 ÷ price)
- *   "Won 41 of 63 · +$1.2M all-time"
- * Never: arb, arbitrage, orderbook, liquidity, spread, bid, ask, odds, implied probability, contracts, sharp, insider
- * info, lock, guaranteed, risk-free, free money, sure thing, "buy this", "copy this bet" (test/moves.test.ts). */
-import { insiderWho } from "@/lib/profiles/name";
+/* One line per position, in the house style (docs/INSIDIR-V2.md §4): the tone of a financial terminal written in plain
+ * English. Short and factual; no slang, no exclamation marks, no "just". Say what happened, never what to do.
+ * Every line names who opened the position when the source says (lib/profiles/name.ts):
+ *   "kch123 · Top-ranked trader: $412,000 position on Chiefs to win."   (public username; the rank for members only)
+ *   "0x12…ab: $85,000 position on "Yes" in "Fed rate cut in December?""   (no username: the short address)
+ *   "New account: $200,000 position on Chiefs to win."                (no activity at all before this position)
+ *   "Anonymous · Kalshi: $48,000 position on Lakers to win."          (Kalshi: anonymous by design)
+ *   "Form 4 · Filed Oct 24 · CEO Jen-Hsun Huang purchased $1.4M of NVDA on Oct 22."   (SEC Form 4, as filed: the
+ *   trade can be up to 2 business days older than the filing)
+ *   "Payout 1.61× if Chiefs win."      (payout = 1 ÷ entry)
+ *   "Won 41 of 63 · Net P&L +$1.2M"
+ * Never: guaranteed, risk-free, free money, sure thing, lock, insider info, "buy this", "copy this bet", sharp, and
+ * the old wording (big move, "just put", Someone, chance): test/moves.test.ts BANNED_WORDS. */
+import { personName, roleOf as insiderRole } from "@/lib/profiles/name";
 import { companyWithClass, niceName, shareClassOf } from "@/lib/stocks/names";
 import { isTopTrader, walletLabel } from "./records";
 import type { Move, TraderRecord } from "./types";
 
 const YES_NO = /^(yes|no)$/i;
 
-/** "$412,000", "$1.2M", "$98M", "$8.77B". */
-export function dollars(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "";
-  if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(2).replace(/\.?0+$/, "")}B`;
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a).toLocaleString("en-US")}`;
-  return `${s}$${a.toFixed(0)}`;
-}
+export { dollars } from "@/lib/money";
+import { dollars } from "@/lib/money";
 /** "+$1.2M", "−$40K" for record lines. */
 export function signedShort(v: number): string {
-  const a = Math.abs(v), s = v < 0 ? "−" : "+";
-  if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
-  if (a >= 1e3) return `${s}$${Math.round(a / 1e3)}K`;
-  return `${s}$${Math.round(a)}`;
+  return `${v < 0 ? "−" : "+"}${dollars(Math.abs(v))}`;
 }
 
 const clean = (t: string) => t.trim().replace(/\s+/g, " ");
@@ -44,27 +36,31 @@ export function onWhat(m: Pick<Move, "outcome" | "marketTitle" | "tab"> & { deta
   return m.tab === "sports" ? `${o} to win` : `"${o}" in "${clean(m.marketTitle)}"`;
 }
 
-/** Who moved: the wallet's public username or short address ("…, a top trader" when the viewer may see records and
- *  it is one), "A brand-new wallet", or "Someone" (Kalshi). Never anything about who is behind a wallet. */
+/** Anonymous by design: Kalshi never says who. */
+export const ANONYMOUS = "Anonymous · Kalshi";
+
+/** Who opened the position: the wallet's public username or short address ("· Top-ranked trader" when the viewer may
+ *  see records and it is one), "New account", or "Anonymous · Kalshi". Never anything about who is behind a wallet. */
 export function who(m: Pick<Move, "source" | "wallet" | "walletName"> & { newWallet?: boolean | null }, record: TraderRecord | null): string {
-  if (m.source === "kalshi" || !m.wallet) return "Someone";
-  if (m.newWallet) return "A brand-new wallet";
+  if (m.source === "kalshi" || !m.wallet) return ANONYMOUS;
+  if (m.newWallet) return "New account";
   const label = walletLabel(m.wallet, m.walletName);
-  return isTopTrader(record) ? `${label}, a top trader,` : label;
+  return isTopTrader(record) ? `${label} · Top-ranked trader` : label;
 }
 
-export function moveSentence(m: Move, record: TraderRecord | null, live = true, now = Date.now()): string {
+/** "kch123: $412,000 position on Chiefs to win." (`live` is kept for callers; the line reads the same either way.) */
+export function moveSentence(m: Move, record: TraderRecord | null, _live = true, now = Date.now()): string {
   if (m.source === "sec" && m.detail) return stockSentence(m.detail, m.amount, now);
-  return `${who(m, record)} ${live ? "just put" : "put"} ${dollars(m.amount)} on ${onWhat(m)}.`;
+  return `${who(m, record)}: ${dollars(m.amount)} position on ${onWhat(m)}.`;
 }
 
-/** "Pays $161 on every $100 if Chiefs win." Dollars only, never cents or odds. */
+/** "Payout 1.61× if Chiefs win." The multiple of the stake returned if the outcome settles their way (1 ÷ entry). */
 export function payoutLine(m: Pick<Move, "outcome" | "avgPrice" | "tab">): string | null {
   if (m.tab === "stocks" || !(m.avgPrice > 0 && m.avgPrice < 1)) return null;
-  const pays = Math.round(100 / m.avgPrice);
+  const x = 1 / m.avgPrice;
   const o = clean(m.outcome);
-  const cond = YES_NO.test(o) ? `if the answer is ${o[0]!.toUpperCase()}${o.slice(1).toLowerCase()}` : m.tab === "sports" ? `if ${o} win` : `if it's "${o}"`;
-  return `Pays $${pays.toLocaleString("en-US")} on every $100 ${cond}.`;
+  const cond = YES_NO.test(o) ? `if it settles ${o[0]!.toUpperCase()}${o.slice(1).toLowerCase()}` : m.tab === "sports" ? `if ${o} win` : `if it settles "${o}"`;
+  return `Payout ${x >= 10 ? x.toFixed(1) : x.toFixed(2)}× ${cond}.`;
 }
 
 /* ---------- Stocks (SEC filings) ---------- */
@@ -76,20 +72,25 @@ export const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
 const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const YMD_ET = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/New_York" });
-/** "Filed today" / "Filed Oct 24": the filing day, Eastern. */
-const filedWhen = (filedAt: number, now: number) => (YMD_ET.format(new Date(filedAt)) === YMD_ET.format(new Date(now)) ? "today" : DAY.format(new Date(filedAt)));
+/** "Filed Oct 24": the filing day, Eastern (today too: a date, never "today"). */
+const filedWhen = (filedAt: number, _now: number) => DAY.format(new Date(filedAt));
 /** "2026-09-30" → "Q3 2026": the calendar quarter a 13F's period ends. */
 export function quarterOf(period: string): string {
   const [y, m] = period.split("-").map(Number);
   return `Q${Math.ceil(m! / 3)} ${y}`;
 }
 
-/** "Filed today: Tim Cook, CEO of Apple, bought $1.4M of Apple stock on Oct 22." /
- *  "Berkshire Hathaway added $250M of Chevron in Q3 2026." Never "just bought": a Form 4 reports a trade up to 2
+/** "Form 4 · Filed Oct 24 · CEO Tim Cook purchased $1.4M of AAPL on Oct 22." /
+ *  "13F · Q3 2026 · Berkshire Hathaway added $250M of Chevron, a new position." A Form 4 reports a trade up to 2
  *  business days old, and a 13F holdings up to 45 days after the quarter. */
 export function stockSentence(d: NonNullable<Move["detail"]>, amount: number, now = Date.now()): string {
-  if (d.kind === "insider") return `Filed ${filedWhen(d.filedAt, now)}: ${insiderWho(d.ownerName, d.role, niceName(d.company))}, bought ${dollars(amount)} of ${niceName(d.company)} stock${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}.`;
-  return `${niceName(d.fund)} added ${dollars(amount)} of ${companyWithClass(d.company, shareClassOf(d.shareClass ? `class ${d.shareClass}` : null, d.cusip))} ${d.period ? `in ${quarterOf(d.period)}` : "last quarter"}${d.newPosition ? ", a new position" : ""}.`;
+  if (d.kind === "insider") {
+    const role = insiderRole(d.role).replace(/^(a|an|the)\s+/i, "");
+    const title = /^(ceo|cfo|coo|cto)$/i.test(role) ? role.toUpperCase() : role[0]!.toUpperCase() + role.slice(1);
+    const what = d.ticker ? d.ticker.toUpperCase() : `${niceName(d.company)} stock`;
+    return `Form 4 · Filed ${filedWhen(d.filedAt, now)} · ${title} ${personName(d.ownerName)} purchased ${dollars(amount)} of ${what}${d.tradeDate ? ` on ${calDay(d.tradeDate)}` : ""}.`;
+  }
+  return `13F · ${d.period ? quarterOf(d.period) : "Last quarter"} · ${niceName(d.fund)} added ${dollars(amount)} of ${companyWithClass(d.company, shareClassOf(d.shareClass ? `class ${d.shareClass}` : null, d.cusip))}${d.newPosition ? ", a new position" : ""}.`;
 }
 
 /** The line under a stock card. Form 4: both the trade date and the filing date. 13F: "Q3 2026 holdings · filed Nov 14." */
@@ -100,10 +101,10 @@ export function stockNote(d: NonNullable<Move["detail"]>): string {
   return `${d.period ? `${quarterOf(d.period)} holdings` : "Holdings"} · filed ${calDay(d.filedOn)}. 13F data can be up to 45 days old.`;
 }
 
-/** "Won 41 of 63 · +$1.2M all-time", only when the wallet has a record. */
+/** "Won 41 of 63 · Net P&L +$1.2M", only when the wallet has a record. */
 export function recordLine(r: TraderRecord | null): string | null {
   if (!r || r.resolved < 20) return null;
-  return `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time`;
+  return `Won ${r.won} of ${r.resolved} · Net P&L ${signedShort(r.profit)}`;
 }
 
 const CLOCK_ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
@@ -113,10 +114,10 @@ export const clockET = (ms: number): string => `${CLOCK_ET.format(new Date(ms))}
 /** "Oct 26, 2026, 3:14 PM ET" (titles and tooltips on times). */
 export const dateTimeET = (ms: number): string => `${DATE_ET.format(new Date(ms))} ET`;
 
-/** "just now", "2m ago", "3h ago", "2d ago" (components/TimeAgo keeps it ticking in the browser). */
+/** "now", "2m ago", "3h ago", "2d ago" (components/TimeAgo keeps it ticking in the browser). */
 export function agoText(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
-  if (s < 45) return "just now";
+  if (s < 45) return "now";
   const m = Math.round(s / 60);
   if (m < 60) return `${m}m ago`;
   const h = Math.round(m / 60);
@@ -126,7 +127,11 @@ export function agoText(ms: number, now: number): string {
 
 /** Words never shown in the UI (checked over every page's copy by the tests). */
 export const BANNED_WORDS = [
-  /\barb(itrage)?\b/i, /\border ?book\b/i, /\bliquidity\b/i, /\bspread\b/i, /\bbids?\b/i, /\basks?\b/i, /\bodds\b/i,
-  /\bimplied probability\b/i, /\bcontracts?\b/i, /\bsharps?\b/i, /\binsider info\b/i, /\block(s|ed)? in\b/i, /\bguaranteed\b/i,
-  /\brisk[- ]free\b/i, /\bfree money\b/i, /\bsure thing\b/i, /\bbuy this\b/i, /\bcopy this bet\b/i,
+  // compliance
+  /\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\bsure thing\b/i, /\block(s|ed)? in\b/i, /\binsider info\b/i,
+  /\bbuy this\b/i, /\bcopy this bet\b/i, /\bsharps?\b/i,
+  // jargon we still don't use
+  /\barb(itrage)?\b/i, /\border ?book\b/i, /\bliquidity\b/i, /\bspread\b/i, /\bbids?\b/i, /\basks?\b/i, /\bodds\b/i, /\bcontracts?\b/i,
+  // the old wording, so it can't come back
+  /\bjust put\b/i, /\bbig moves?\b/i, /\bsomeone\b/i, /\bchance\b/i,
 ];

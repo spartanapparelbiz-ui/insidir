@@ -96,7 +96,7 @@ export async function readSlip(image: { data: string; mediaType: "image/png" | "
   const text = res.content.flatMap(b => (b.type === "text" ? [b.text] : [])).join("");
   let parsed: Slip;
   try { parsed = SlipSchema.parse(JSON.parse(text)); } catch { throw new CheckError("unreadable", "We couldn't read that slip. Try a clearer screenshot."); }
-  if (!parsed.is_bet_slip || !parsed.legs.length) throw new CheckError("not_a_slip", "That doesn't look like a bet slip. Upload a screenshot of the slip, or paste a market link or a ticker.");
+  if (!parsed.is_bet_slip || !parsed.legs.length) throw new CheckError("not_a_slip", "That doesn't look like a slip. Upload a screenshot of the slip, or paste a market link or a ticker.");
   return parsed;
 }
 

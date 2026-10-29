@@ -24,7 +24,7 @@ test("calculator at $500 matches the unit math", async ({ page, context }) => {
   const kv = (k: string) => calc.locator("dl.kv div", { hasText: k }).locator("dd");
   await expect(kv("Total cost")).toHaveText("$97.94");
   await expect(kv("Payout")).toHaveText("$100.00");
-  await expect(kv("Profit")).toHaveText("$2.06");
+  await expect(kv("Net P&L")).toHaveText("$2.06");
   await expect(calc.getByText("Capped at the 100 sets")).toBeVisible();
   await expect(calc.locator("tbody tr")).toHaveCount(2);
   await expect(calc.locator("tbody tr").first()).toContainText("100");
