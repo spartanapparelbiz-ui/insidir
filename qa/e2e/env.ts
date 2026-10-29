@@ -1,7 +1,7 @@
 /* Shared settings for the end-to-end run: ports, the e2e database and the server environment. Test values only. */
 import { join } from "node:path";
 
-export const APP_PORT = 3100, WHOP_PORT = 4010, PUSH_PORT = 4011;
+export const APP_PORT = 3100, WHOP_PORT = 4010, PUSH_PORT = 4011, ANTHROPIC_PORT = 4012;
 export const APP_URL = `http://localhost:${APP_PORT}`;
 export const OUT = join(__dirname, ".out");
 export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgresql://insidir:insidir@localhost:5432/terminal_e2e";
@@ -20,6 +20,9 @@ export const SERVER_ENV: Record<string, string> = {
   GOOGLE_TOKEN_URL: `http://localhost:${WHOP_PORT}/google/token`,
   GOOGLE_USERINFO_URL: `http://localhost:${WHOP_PORT}/google/userinfo`,
   WHOP_API_KEY: "key_e2e",
+  // A stand-in for the Anthropic API (qa/e2e/global-setup.ts): Check my bet reads slips through it.
+  ANTHROPIC_API_KEY: "sk-ant-e2e",
+  ANTHROPIC_BASE_URL: `http://localhost:${ANTHROPIC_PORT}`,
   WHOP_COMPANY_ID: "biz_e2e",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",
   WHOP_PRODUCT_INSIDIR: "prod_e2e_insidir",

@@ -1,5 +1,5 @@
 /* The home page, Autopilot-style: one centred hero (the logo mark in a black rounded square, "Follow the big money.",
- * one line, one black pill "Explore trackers →", then five real app screens in phone frames fanned across); "Featured"
+ * one line, one black pill "Check your bet →" with a quiet link to the trackers, then five real app screens in phone frames fanned across); "Featured"
  * (four wide photo cards); two columns, "Top performers" by window and "Popular"; pricing; FAQ.
  * Every number is a row from terminal.moves on the viewer's clock (free: 30 minutes late), and a tracker's record is
  * its settled moves (lib/trackers-store.ts). Nothing is made up: a phone with nothing to show is left out, and a
@@ -130,7 +130,7 @@ export default async function Home() {
           <div className="wrap hero3__in">
             <span className="hero3__mark" aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
             <h1 id="hero-h" className="hero3__h">Follow the big money.</h1>
-            <p className="hero3__sub">Pick a tracker. See every big move. That&apos;s it.</p>
+            <p className="hero3__sub">Upload your slip and see where the big money is. Or pick a tracker and follow it.</p>
             <HeroCta />
           </div>
           <Phones d={phones} />

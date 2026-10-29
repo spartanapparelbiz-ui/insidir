@@ -112,7 +112,7 @@ describe.skipIf(!URL0)("splits in Postgres", () => {
     const r = await stockSplitsOnce(db, NOW);
     expect(r.flagged).toEqual(["insider_dip:ACME:2026-10-26"]);
     const s = (await flaggedSplits(db)).find(x => x.kind === "insider_dip")!;
-    expect(s).toMatchObject({ gap: 20, smartSide: "up", title: "Insiders buying the dip: Acme Corp", detail: { ticker: "ACME", owners: ["Jane Roe"], value: 800000 } });
+    expect(s).toMatchObject({ gap: 20, smartSide: "up", title: "Insiders buying the dip: Acme", detail: { ticker: "ACME", owners: ["Jane Roe"], value: 800000 } });
     expect(await resolveSplitsOnce(db, {} as PolymarketClient, NOW + 30 * DAY)).toBe(0); // too soon
     expect(await resolveSplitsOnce(db, {} as PolymarketClient, NOW + 91 * DAY)).toBe(1);
     // Flagged Oct 29 at 80 → 90 by late January: +12.5%, insiders right.

@@ -41,10 +41,11 @@ describe("V2 landing page", () => {
   it("says the brief's words", () => {
     const src = read("app/page.tsx");
     expect(src).toContain("Follow the big money.");
-    expect(src).toContain("Pick a tracker. See every big move. That&apos;s it.");
+    expect(src).toContain("Upload your slip and see where the big money is. Or pick a tracker and follow it.");
     expect(src).toContain("<HeroCta />");
-    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/trackers" data-cta="hero"/);
-    expect(read("components/home/HeroCta.tsx")).toContain("Explore trackers <span");
+    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/check" data-cta="hero"/);
+    expect(read("components/home/HeroCta.tsx")).toContain("Check your bet <span");
+    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">or explore the trackers');
     for (const h of [">Featured</h2>", ">Top performers</h2>", ">Popular</h2>"]) expect(src).toContain(h);
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');

@@ -570,6 +570,13 @@ export class PolymarketClient implements VenueClient {
     return readGammaEvent(await this.gamma.json(`${this.gammaUrl}/events/slug/${encodeURIComponent(slug)}`, { priority }));
   }
 
+  /** Open events matching words (GET /public-search?q=…&events_status=active), each with its markets: for matching a
+   *  bet slip's legs (lib/check). */
+  async searchEvents(q: string, priority: Priority = "normal"): Promise<Array<{ event: VEvent; markets: VMarket[] }>> {
+    const raw = await this.gamma.json(`${this.gammaUrl}/public-search?q=${encodeURIComponent(q)}&events_status=active&limit_per_type=10`, { priority });
+    return rows(raw, ["events"]).map(e => readGammaEvent(e)).filter((x): x is { event: VEvent; markets: VMarket[] } => x !== null);
+  }
+
   sweep(opts: ListOptions = {}): Promise<Sweep> {
     return this.sweepCache.get(async () => {
       const b = gammaSweepBuilder();

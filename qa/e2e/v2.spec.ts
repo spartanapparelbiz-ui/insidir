@@ -3,14 +3,15 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the centred hero, one button to the trackers, the phones, then Featured, Top performers and Popular", async ({ page }) => {
+test("landing: the centred hero, one button to Check your bet, the phones, then Featured, Top performers and Popular", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Pick a tracker. See every big move. That's it.")).toBeVisible();
+  await expect(page.getByText("Upload your slip and see where the big money is. Or pick a tracker and follow it.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toContainText("Explore trackers");
-  await expect(cta).toHaveAttribute("href", "/trackers");
+  await expect(cta).toContainText("Check your bet");
+  await expect(cta).toHaveAttribute("href", "/check");
+  await expect(page.getByRole("link", { name: "or explore the trackers" })).toHaveAttribute("href", "/trackers");
   // One action: no offer bar, no sticky bar, no nav button on home.
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
   await expect(page.locator(".trialbar")).toHaveCount(0);
@@ -26,13 +27,16 @@ test("landing: the centred hero, one button to the trackers, the phones, then Fe
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or New", async ({ page }) => {
+test("home hero: Check your bet is recorded; the trackers link opens /trackers, every tracker listed with its record or New", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("hero_cta_click");
   await page.goto("/");
   await page.locator('[data-cta="hero"]').click();
-  await expect(page).toHaveURL(/\/trackers$/);
+  await expect(page).toHaveURL(/\/check$/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
+  await page.goto("/");
+  await page.getByRole("link", { name: "or explore the trackers" }).click();
+  await expect(page).toHaveURL(/\/trackers$/);
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
   await expect(page.locator(".ttile")).toHaveCount(32);

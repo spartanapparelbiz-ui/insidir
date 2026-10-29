@@ -67,6 +67,8 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_WEBHOOK_SECRET` | web | `/api/billing/webhook` signature check |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
 | `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET` (optional) | web | "Forgot password?": confirming it's the member through their Whop account (OAuth app, redirect URI `https://YOUR_DOMAIN/reset/callback`) |
+| `ANTHROPIC_API_KEY`, `CHECK_MONTHLY_USD` (optional, default $50) | web | Check my bet: reading slip screenshots |
+| `OPENFIGI_KEY` (optional) | worker | more CUSIP → ticker lookups a minute for fund splits |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | match | LLM second check on unsure matches (optional, capped per month; default $3) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
 | `KALSHI_API_URL`, `POLYMARKET_*_URL`, `POLYMARKET_US_ENABLED` | worker | venue endpoints |
@@ -142,6 +144,26 @@ insider buy against SPY (`lib/stocks/returns.ts`) and the company price chart.
 - **Scoring**: markets are scored when they settle (smart money right if the side it leaned to won), stocks 90 days after the flag (right if the price is higher). `/splits/scorecard` keeps every call.
 
 Pages: `/splits` (live, biggest gap first; free viewers 30 minutes late), `/splits/scorecard` (public), and a "Smart money vs. the crowd" section on market pages and a line on move cards.
+
+## Check my bet
+
+`/check` takes a bet-slip screenshot (any book), a Polymarket or Kalshi link, or a stock ticker (`lib/check`). Data, never advice.
+
+- **Reading slips** (`lib/check/extract.ts`): Claude's vision, model `claude-sonnet-5-5`, needs `ANTHROPIC_API_KEY`.
+  - Each leg's event, pick, kind of market, line, price and stake come back as JSON in a fixed shape (structured outputs).
+  - Refusals fall back server-side (`fallbacks: "default"`).
+  - A monthly cap stops new reads: `CHECK_MONTHLY_USD`, default $50, tracked in `llm_usage` as `check:YYYY-MM`.
+  - The image is never stored.
+- **Matching** (`lib/check/match.ts`): each leg goes to the same market among those we hold big money on, then Polymarket's own search.
+  - A market is scored by shared teams or words, the kind of market, the line and the date.
+  - A leg that fits nothing well enough stays unmatched.
+- **Per leg:** big money on each side, proven traders' side (`lib/smart`), and the crowd's chance now against the chance the slip's price stands for. Then one verdict: with you, against you, split, or no big money yet.
+  - Stocks: insiders buying or selling in the last 90 days, and funds adding or cutting.
+- **Limits:** free viewers get one check (by account, else by the visitor cookie); members unlimited, with a history at `/check/history` that settles from the venue.
+- **Sharing:** `/check/<id>/card` is a 1080×1920 share card with no stake, book or account on it.
+- **Testing slip reading:** ten made-up test slips in different books' layouts are in `test/fixtures/slips` (rendered by `scripts/slips/render.mjs`).
+  - `npx tsx scripts/check-slips.ts` reads them with the real model and checks each reading (needs `ANTHROPIC_API_KEY`).
+  - The e2e suite uses a stand-in API that answers with the recorded reading.
 
 ## Insiders, companies and funds
 
