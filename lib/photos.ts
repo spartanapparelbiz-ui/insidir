@@ -21,6 +21,13 @@ export const SPOT = {
   phoneFeed: 9, phoneProfile: 10, phoneWallpaper: 16,
 } as const satisfies Record<string, PhotoN>;
 
+/** What each slot's picture shows (components/SubjectArt): the subject of the page or column it sits in; pages about
+ *  the product as a whole (account, pricing, track record, sign-in) show the product itself, a portfolio's rising line. */
+export const SLOT_SUBJECT: Record<PhotoN, PhotoName | "home"> = {
+  2: "home-sports", 3: "home", 4: "home", 5: "home", 6: "top-traders", 7: "home", 8: "home", 9: "home-markets", 10: "home-stocks",
+  11: "home", 12: "home-sports", 13: "home", 14: "home", 15: "home-markets", 16: "home",
+};
+
 /** The thin strip on top of share cards and emails. */
 export const STRIP = { move: 11, site: 16, siteTall: 15, email: 4 } as const satisfies Record<string, PhotoN>;
 
@@ -82,6 +89,15 @@ const LEAGUE_PHOTO: Array<[RegExp, PhotoName]> = [
   [/soccer|mls|bundesliga|ligue 1|world cup|fifa|uefa|football club/i, "soccer"],
 ];
 
+/** A topic from a market's own words, when the venue gave no category. */
+const TOPIC_TEXT: Array<[RegExp, PhotoName]> = [
+  [/bitcoin|ethereum|solana|crypto|\b(btc|eth|xrp|doge)\b/i, "crypto-prices"],
+  [/election|president|senate|house|governor|mayor|primary|nominee|democrat|republican|vote|ballot|poll/i, "elections-2026"],
+  [/war|ceasefire|invade|invasion|nato|russia|ukraine|china|taiwan|israel|iran|gaza|sanction|treaty|summit/i, "geopolitics"],
+  [/\bai\b|openai|gpt|nvidia|apple|google|microsoft|tesla|spacex|chip|iphone|launch|tech/i, "tech-and-ai"],
+  [/oscar|grammy|emmy|album|movie|box office|song|billboard|netflix|celebrity|award/i, "culture"],
+];
+
 /** The thumbnail for a move: its league's photo (sports), its topic's (politics → elections, world → geopolitics, the
  *  Fed, tech, culture, crypto), CEO Buys for a Form 4 and Big Funds for a 13F; else its column's home photo. */
 export function subjectPhoto(m: { tab: string; source?: string; category?: string | null; leagueLabel?: string | null; league?: string | null; text?: string; detailKind?: string | null }): PhotoName {
@@ -92,6 +108,7 @@ export function subjectPhoto(m: { tab: string; source?: string; category?: strin
     return "home-sports";
   }
   if (m.text && /(^|[^a-z])(fed|fomc|powell)([^a-z]|$)|interest rate|rate cut|rate hike|federal reserve/i.test(m.text)) return "fed-and-rates";
+  if (!m.category && m.text) for (const [re, p] of TOPIC_TEXT) if (re.test(m.text)) return p;
   const byCategory: Record<string, PhotoName> = { politics: "elections-2026", geopolitics: "geopolitics", world: "geopolitics", economy: "fed-and-rates", tech: "tech-and-ai", science: "tech-and-ai", culture: "culture", crypto: "crypto-prices" };
   return (m.category && byCategory[m.category]) || "home-markets";
 }

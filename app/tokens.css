@@ -3,7 +3,7 @@
  * on white, so one shade serves lines and small text). Green only for gains and wins, red only
  * for losses; nothing else gets colour. One font, Schibsted Grotesk, tight headlines, tabular numbers. 8px grid.
  * Every page is light (the old dark app theme is gone: <main class="dark"> no longer changes anything).
- * Photos (public/hero) are atmosphere only, never behind data. Tracker covers are the one place with deep colour (one
+ * Pictures are each subject drawn in white line on deep colour (components/SubjectArt), never behind data. Tracker covers (one
  * family per group, components/trackers/TrackerCover.tsx), always under white text and a white curve. */
 :root {
   /* the palette */

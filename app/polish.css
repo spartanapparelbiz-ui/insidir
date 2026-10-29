@@ -301,3 +301,19 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 
 /* The insider page's month line sat on a dark band that the light theme removed. */
 .sec__month { color: var(--ink); }
+
+/* ---------- Pictures: every image is its subject, drawn (components/SubjectArt) ---------- */
+.art { display: block; width: 100%; height: 100%; }
+.art * { vector-effect: non-scaling-stroke; }
+.tcover__art { position: absolute; inset: 0; z-index: -2; color: var(--paper); opacity: .3; }
+.tcover--sm .tcover__art { inset: 10%; width: 80%; height: 80%; opacity: .75; }
+.tfeat:hover .tcover__art { opacity: .42; transition: opacity var(--dur-small) var(--ease-enter); }
+.artpanel { position: relative; display: block; overflow: hidden; background: var(--cover-styles-1); color: var(--paper); }
+.artpanel .art { position: absolute; inset: 0; opacity: .4; }
+.move__top { align-items: center; gap: 12px; }
+.move__thumb { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--tc); color: var(--paper); padding: 5px; }
+.move__thumb .art { opacity: .85; }
+.move__kind { flex: 1; min-width: 0; }
+.tcover__art { inset: 14% 6% 6%; width: 88%; height: 80%; }
+.tfeat .tcover__art { opacity: .22; inset: 8% 8% 30%; width: 84%; height: 62%; }
+.lport__cover .tcover__art { inset: 12% 10%; width: 80%; height: 76%; }

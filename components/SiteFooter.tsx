@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { FOOTER } from "@/lib/copy";
-import { PHOTOGRAPHERS } from "./Photo";
 import { Wordmark } from "./Wordmark";
 import { isReady } from "@/lib/features";
 
 /** Every page's footer (docs/INSIDIR-V2.md §6): the logo, who builds Insidir, how to reach a person, Terms, Privacy, the
- * disclaimer, and the photographers whose Unsplash photos set the scene. */
+ * disclaimer. */
 export const SUPPORT_EMAIL = "hello@aethric.llc";
 
 export function SiteFooter() {
@@ -32,11 +31,6 @@ export function SiteFooter() {
           <Link href="/privacy">Privacy</Link>
         </nav>
         <p className="foot__legal">{FOOTER}</p>
-        <p className="foot__credits">Photos on Unsplash by{" "}
-          {PHOTOGRAPHERS.map((c, i) => (
-            <span key={c.user}><a href={`https://unsplash.com/@${c.user}?utm_source=insidir&utm_medium=referral`} rel="noopener noreferrer" target="_blank">{c.name}</a>{i < PHOTOGRAPHERS.length - 2 ? ", " : i === PHOTOGRAPHERS.length - 2 ? " and " : "."}</span>
-          ))}
-        </p>
       </div>
     </footer>
   );
