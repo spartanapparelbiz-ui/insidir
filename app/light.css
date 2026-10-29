@@ -336,11 +336,15 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .lchart--up .lchart__line { stroke: var(--money); }
 .lchart--down .lchart__line { stroke: var(--loss); }
 .lchart__cursor { stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: .25; }
-.lchart__knob { fill: var(--paper); stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.lchart__dot { fill-opacity: .35; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.lchart__dot--won { fill: var(--money); stroke: var(--money); }
-.lchart__dot--lost { fill: var(--loss); stroke: var(--loss); }
-.lchart__dot--open { fill: var(--ink); stroke: var(--ink); fill-opacity: .2; }
+.lchart__fig { position: relative; }
+.lchart__over { position: absolute; left: 0; right: 0; bottom: 0; height: 200px; pointer-events: none; }
+@media (min-width: 900px) { .lchart__over { height: 260px; } }
+.lchart__dot, .lchart__knob { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+.lchart__dot { opacity: .45; }
+.lchart__dot--won { background: var(--money); }
+.lchart__dot--lost { background: var(--loss); }
+.lchart__dot--open { background: var(--ink); opacity: .25; }
+.lchart__knob { width: 10px; height: 10px; background: var(--paper); box-shadow: 0 0 0 2px var(--ink); }
 .lchart__empty { display: grid; place-items: center; min-height: 200px; border-radius: var(--r-card); background: var(--bg); color: var(--muted); text-align: center; padding: 24px; }
 @media (prefers-reduced-motion: no-preference) {
   .lchart__svg { animation: lchart-draw 700ms var(--ease-enter) both; }

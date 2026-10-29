@@ -89,9 +89,14 @@ export function LineChart({ points, dots = [], windows, format, baseline = "zero
           onPointerMove={move} onPointerDown={move} onPointerLeave={() => setHover(null)}>
           <line className="lchart__base" x1="0" x2={W} y1={base} y2={base} />
           <path className="lchart__line" d={d} />
-          {vdots.map((p, i) => <circle key={i} className={`lchart__dot lchart__dot--${p.tone}`} cx={x(p.t)} cy={y(p.v)} r={p.r}><title>{p.label}</title></circle>)}
-          {h ? <><line className="lchart__cursor" x1={x(h.t)} x2={x(h.t)} y1="0" y2={H} /><circle className="lchart__knob" cx={x(h.t)} cy={y(h.v)} r="4" /></> : null}
+          {h ? <line className="lchart__cursor" x1={x(h.t)} x2={x(h.t)} y1="0" y2={H} /> : null}
         </svg>
+        {/* Dots and the hover knob as HTML over the line, so they stay round however the chart is stretched. */}
+        <div className="lchart__over" aria-hidden="true">
+          {vdots.map((p, i) => <span key={i} className={`lchart__dot lchart__dot--${p.tone}`} title={p.label}
+            style={{ left: `${(x(p.t) / W) * 100}%`, top: `${(y(p.v) / H) * 100}%`, width: p.r * 2, height: p.r * 2 }} />)}
+          {h ? <span className="lchart__knob" style={{ left: `${(x(h.t) / W) * 100}%`, top: `${(y(h.v) / H) * 100}%` }} /> : null}
+        </div>
       </figure>
     </div>
   );
