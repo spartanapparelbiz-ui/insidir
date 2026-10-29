@@ -98,5 +98,9 @@ export interface TraderRecord {
   biggestWin: number;
   /** The most money put into one market (closed and open positions), dollars; null when not read. */
   biggestBet?: number | null;
+  /** Average price paid over resolved markets (lib/smart/proven.ts), 0..1; null until read. */
+  avgPrice?: number | null;
+  /** 20+ resolved markets and a win rate above avgPrice. */
+  proven?: boolean;
   updatedAt: number;
 }

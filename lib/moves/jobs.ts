@@ -27,6 +27,8 @@ import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
 import { isObject, rows } from "@/lib/exchanges/parse";
+import { provenFrom } from "@/lib/smart/proven";
+import { saveOpen } from "@/lib/smart/store";
 
 export const MOVES_MS = Number(process.env.MOVES_MS ?? 15_000);
 export const RECORD_STALE_MS = 12 * 3_600_000;
@@ -188,8 +190,10 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
     const open = await poly.getPositions(w.wallet, { sizeThreshold: 0 });
     const biggestBet = Math.max(0, ...closed.map(p => p.moneyIn), ...open.map(p => p.initialValue ?? 0));
     const record = recordFrom(w.wallet, w.name, closed.map(p => ({ marketId: p.marketId, realizedPnl: p.pnl })), now);
+    const pv = provenFrom(closed.map(p => ({ marketId: p.marketId, moneyIn: p.moneyIn, pnl: p.pnl, avgPrice: p.avgPrice ?? null })));
     await savePositions(db, w.wallet, closed, await tabHints(db, closed.map(p => p.marketId)));
-    await saveRecord(db, { ...record, biggestBet: Math.round(biggestBet * 100) / 100 });
+    await saveRecord(db, { ...record, biggestBet: Math.round(biggestBet * 100) / 100, avgPrice: pv.avgPrice, proven: pv.proven });
+    await saveOpen(db, w.wallet, open, now);
     n++;
   }
   return n;

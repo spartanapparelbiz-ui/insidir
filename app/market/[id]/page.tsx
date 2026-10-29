@@ -27,6 +27,9 @@ import { infoFor, priceHistory } from "@/lib/markets/info";
 import { memo } from "@/lib/memo";
 import { walletLabel } from "@/lib/moves/records";
 import type { Move } from "@/lib/moves/types";
+import { SplitBars } from "@/components/smart/SplitBars";
+import { marketSmart, splitsFor } from "@/lib/smart/store";
+import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Market", robots: { index: false } };
@@ -65,13 +68,15 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
     source === "polymarket" && viewer.region !== "non_us" ? kalshiMatches(db, [id]) : Promise.resolve(new Map<string, string>()),
     infoFor(db, source, [id]).catch(() => new Map()),
   ]);
-  if (!moves.length && !market) notFound();
+  const [split, smart] = source === "polymarket" ? await Promise.all([splitsFor(db, [id]).then(m => m.get(id) ?? null), marketSmart(db, id, now)]) : [null, null];
+  const anySplit = split?.crowd ?? split?.bigmoney ?? null;
+  if (!moves.length && !market && !anySplit) notFound();
   const info = infos.get(id) ?? null;
-  const title = market?.title ?? moves[0]!.marketTitle;
-  const event = market?.eventTitle ?? moves[0]?.eventTitle ?? null;
-  const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? "Yes";
-  const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? "No";
-  const tab = moves[0]?.tab ?? (market?.category === "sports" ? "sports" : "markets");
+  const title = market?.title ?? moves[0]?.marketTitle ?? anySplit!.title;
+  const event = market?.eventTitle ?? moves[0]?.eventTitle ?? anySplit?.subtitle ?? null;
+  const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? (anySplit?.detail.yesLabel as string | undefined) ?? smart?.outcomes[0] ?? "Yes";
+  const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? (anySplit?.detail.noLabel as string | undefined) ?? smart?.outcomes[1] ?? "No";
+  const tab = moves[0]?.tab ?? anySplit?.tab ?? (market?.category === "sports" ? "sports" : "markets");
   const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
   const first = moves.length ? Math.min(...moves.map(m => m.at)) : now - 30 * 86_400_000;
   const [price, history] = await Promise.all([
@@ -92,6 +97,13 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const points = fromVenue ? history.map(p => ({ t: p.t, v: p.p }))
     : [...moves].filter(m => m.avgPrice > 0 && m.avgPrice < 1).sort((a, b) => a.at - b.at).map(m => ({ t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice }));
   const dots = dotsOf(moves);
+  // Smart money vs. the crowd: the price now against proven traders' money, both for YES; games also all big bets.
+  const crowdNow = price ?? smart?.cur ?? null;
+  const proven = smart?.smart ?? null;
+  const provenMoney = proven ? proven.yes + proven.no : 0;
+  const bigAll = smart?.big ?? null;
+  const bigShare = bigAll && bigAll.yes + bigAll.no > 0 ? bigAll.yes / (bigAll.yes + bigAll.no) : null;
+  const opposite = tab === "sports" && bigShare !== null && proven?.share != null && (bigShare - 0.5) * (proven.share - 0.5) < 0;
   const traderRows = (l: ReturnType<typeof side>["top"]) => l.map(x => [
     paid ? <Link key="n" className="dtable__link" href={`/p/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</Link> : walletLabel(x.wallet, x.name),
     x.n.toLocaleString("en-US"), dollars(x.amount)]);
@@ -109,6 +121,20 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
             {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
           </div>
         </header>
+
+        {source === "polymarket" && !settled ? (
+          <Section id="smart-h" title="Smart money vs. the crowd" note={proven && proven.wallets
+            ? `${proven.wallets.toLocaleString("en-US")} proven ${proven.wallets === 1 ? "trader holds" : "traders hold"} ${dollars(provenMoney)} here. Proven: 20+ settled markets and a win rate above the prices they paid. Data, not a recommendation.`
+            : `No proven trader holds this market right now (proven: 20+ settled markets and a win rate above the prices they paid). It needs ${SMART_MIN_WALLETS}+ of them and ${dollars(SMART_MIN_MONEY)}+ in.`}>
+            <SplitBars side={yesLabel} rows={[
+              { label: "Crowd", note: "the price now", value: crowdNow },
+              { label: "Smart money", note: "proven traders' money", value: proven?.share ?? null, strong: true },
+              ...(tab === "sports" && bigShare !== null ? [{ label: "All big bets", note: "every big move we track", value: bigShare }] : []),
+            ]} />
+            {opposite ? <p className="sflag" data-testid="split-opposite">Big bets and proven traders point opposite ways on this game.</p> : null}
+            {split?.crowd ? <p className="dnote dnote--tight">{Math.round(split.crowd.gap)} points apart. <Link href="/splits">See every split</Link> · <Link href="/splits/scorecard">How past splits went</Link></p> : null}
+          </Section>
+        ) : null}
 
         <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The prices big moves paid for ${yesLabel} (the venue's full history isn't available right now)`}, with every big move on it: a dot per move, bigger for more money (a ${noLabel} bet sits at 100¢ minus its price). Green won, red lost, grey open.`}>
           <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}

@@ -4,6 +4,8 @@
  *   - Links follow the location rules (lib/moves/links.ts): a US or unknown-region viewer never gets an
  *     international Polymarket link.
  * The status line reads the worker's move heartbeats: "Live · updated 8s ago", or "Catching up" when they're behind. */
+import { splitsFor } from "@/lib/smart/store";
+import { splitLine } from "@/lib/smart/text";
 import { leagueLabel } from "./leagues";
 import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
@@ -64,6 +66,8 @@ export interface FeedItem {
   secFollows?: Array<{ kind: FollowKind; target: string; label: string }>;
   /** Insider cards: every insider trade at the company (/insider-trading/<ticker>). */
   companyHref?: string | null;
+  /** The market's live split (lib/smart): "Crowd 62% · Smart money 81%", when there is one. */
+  split?: string | null;
 }
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
@@ -129,6 +133,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
   const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));
   const why = await whyLines(db, moves, { records: p.records, until, now }).catch(() => new Map<string, string | null>());
   const avatars = await avatarsOrNone(db, moves.map(m => m.wallet ?? ""));
+  const splitBy = await splitsFor(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId)).catch(() => new Map());
   return moves.map(m => {
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
     const shown = p.records && hasRecord(rec) ? rec : null;
@@ -140,6 +145,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
       who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
+      split: (() => { const s = splitBy.get(m.marketId); const x = s?.crowd ?? s?.bigmoney; return x ? splitLine(x) : null; })(),
       ...(m.source === "sec" ? { secFollows: secFollowsOf(m), companyHref: m.detail?.kind === "insider" && m.detail.ticker ? companyHref(m.detail.ticker) : null } : {}),
     };
   });

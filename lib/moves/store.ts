@@ -130,7 +130,7 @@ export async function walletsToRecord(db: Db, now: number, staleMs: number, limi
 }
 
 export async function saveRecord(db: Db, r: TraderRecord): Promise<void> {
-  const v = { name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet ?? null, updatedAt: new Date(r.updatedAt) };
+  const v = { name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet ?? null, avgPrice: r.avgPrice ?? null, proven: r.proven ?? false, updatedAt: new Date(r.updatedAt) };
   await db.insert(traderRecords).values({ wallet: r.wallet, ...v }).onConflictDoUpdate({ target: traderRecords.wallet, set: v });
 }
 
@@ -138,7 +138,7 @@ export async function recordsFor(db: Db, wallets: readonly string[]): Promise<Ma
   const ws = [...new Set(wallets)].filter(Boolean);
   if (!ws.length) return new Map();
   const rs = await db.select().from(traderRecords).where(inArray(traderRecords.wallet, ws));
-  return new Map(rs.map(r => [r.wallet, { wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet, updatedAt: r.updatedAt.getTime() }]));
+  return new Map(rs.map(r => [r.wallet, { wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet, avgPrice: r.avgPrice, proven: r.proven, updatedAt: r.updatedAt.getTime() }]));
 }
 
 /** Top traders by all-time profit (20+ resolved markets, profit > 0). */
