@@ -7,6 +7,11 @@
 import { splitsFor } from "@/lib/smart/store";
 import { splitLine } from "@/lib/smart/text";
 import { leagueLabel } from "./leagues";
+import { chance, claimOf, headlineOf, short, sublineOf } from "./headline";
+import { lowInterest, type LowReason } from "./interest";
+import { groupBets, groupTitle } from "./group";
+import { infoFor } from "@/lib/markets/info";
+import { trackerBySlug, trackerWhere } from "@/lib/trackers";
 import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
@@ -68,7 +73,48 @@ export interface FeedItem {
   companyHref?: string | null;
   /** The market's live split (lib/smart): "Crowd 62% · Smart money 81%", when there is one. */
   split?: string | null;
+  /** "$17K says no runs in the 1st inning" (lib/moves/headline.ts), and the grey line under it. */
+  headline: string;
+  subline: string;
+  /** The price paid, as a chance ("45%"); the price of their side now, 0..1, when known (refreshed every minute). */
+  inAt: string | null;
+  avgPrice: number;
+  outcomeSide: "yes" | "no";
+  nowPrice: number | null;
+  /** Settled: what the bet made or lost, dollars. Polymarket from the wallet's own trades (sales and payout); Kalshi
+   *  the settled contracts' payout less what they cost. Null until known. */
+  pnl: number | null;
+  /** Why the default feed leaves it out (lib/moves/interest.ts); null when it shows. */
+  low: LowReason | null;
+  /** A group card (lib/moves/group.ts): every bet in it, newest first, and its title. */
+  bets?: FeedItem[];
+  groupTitle?: string;
 }
+
+/** What a settled bet made: Polymarket's realized P&L from the wallet's trades; Kalshi's settled payout. */
+export function settledPnl(m: Pick<Move, "source" | "result" | "pnl" | "amount" | "avgPrice">): number | null {
+  if (!m.result || m.result === "void") return m.result === "void" ? 0 : null;
+  if (m.source === "polymarket") return m.pnl ?? null;
+  if (m.source === "kalshi" && m.avgPrice > 0 && m.avgPrice < 1) return m.result === "won" ? m.amount * (1 / m.avgPrice - 1) : -m.amount;
+  return null;
+}
+
+/** One card per group of bets on the same outcome within the hour; a group's numbers add up its bets. */
+export function groupFeed(items: readonly FeedItem[]): FeedItem[] {
+  return groupBets(items).map(g => {
+    if (g.length === 1) return g[0]!;
+    const total = g.reduce((a, b) => a + b.amount, 0);
+    const lead = g[0]!;
+    const side = /^(yes|no)$/i.test(lead.outcome) ? lead.outcome[0]!.toUpperCase() + lead.outcome.slice(1).toLowerCase() : lead.outcome;
+    const settled = g.every(b => b.result), pnls = g.map(b => b.pnl);
+    const cost = g.reduce((a, b) => a + b.amount * b.avgPrice, 0) / total;
+    return { ...lead, id: `g:${g[g.length - 1]!.id}`, amount: total, bets: [...g], groupTitle: groupTitle(g.length, side, total),
+      headline: groupTitle(g.length, side, total), avgPrice: cost, inAt: chance(cost),
+      pnl: settled && pnls.every(p => p !== null) ? pnls.reduce((a, b) => a! + b!, 0) : null, result: settled ? lead.result : null, at: lead.at };
+  });
+}
+
+export type { Move };
 
 export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
 
@@ -133,6 +179,11 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
   const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));
   const why = await whyLines(db, moves, { records: p.records, until, now }).catch(() => new Map<string, string | null>());
   const avatars = await avatarsOrNone(db, moves.map(m => m.wallet ?? ""));
+  const prices = new Map<string, number | null>();
+  for (const source of ["polymarket", "kalshi"] as const) {
+    const open = moves.filter(m => m.source === source && !m.result).map(m => m.marketId);
+    if (open.length) for (const [id, i] of await infoFor(db, source, open).catch(() => new Map())) prices.set(`${source}:${id}`, i.yesPrice);
+  }
   const splitBy = await splitsFor(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId)).catch(() => new Map());
   return moves.map(m => {
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
@@ -145,15 +196,34 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
       who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
+      headline: headlineOf(m), subline: m.source === "sec" ? stockSub(m) : sublineOf({ ...m, leagueLabel: leagueLabel(m) }),
+      inAt: m.source === "sec" ? null : chance(m.avgPrice), avgPrice: m.avgPrice, outcomeSide: m.outcomeSide,
+      nowPrice: (() => { const y = prices.get(`${m.source}:${m.marketId}`); return y === null || y === undefined ? null : m.outcomeSide === "yes" ? y : 1 - y; })(),
+      pnl: settledPnl(m), low: lowInterest(m),
       split: (() => { const s = splitBy.get(m.marketId); const x = s?.crowd ?? s?.bigmoney; return x ? splitLine(x) : null; })(),
       ...(m.source === "sec" ? { secFollows: secFollowsOf(m), companyHref: m.detail?.kind === "insider" && m.detail.ticker ? companyHref(m.detail.ticker) : null } : {}),
     };
   });
 }
 
-/** The feed query on the viewer's clock: a free viewer only gets moves older than the delay. */
-export async function feedFor(db: Db, plan: Plan, region: Region | null, q: MoveQuery, now: number): Promise<FeedItem[]> {
+/** "Jen-Hsun Huang, CEO · NVDA" / "Q3 2026 holdings · BRK" under a stock headline. */
+function stockSub(m: Move): string {
+  const d = m.detail;
+  if (!d) return m.marketTitle;
+  if (d.kind === "insider") return [personName(d.ownerName), d.ticker].filter(Boolean).join(" · ");
+  return d.period ? `13F, ${d.period.slice(0, 4)} holdings` : "13F holdings";
+}
+
+/** The feed query on the viewer's clock: a free viewer only gets moves older than the delay. By default the
+ *  low-interest markets are left out (lib/moves/interest.ts; `all` keeps them) and bets on the same outcome within
+ *  the hour are grouped (lib/moves/group.ts). `tracker` narrows to a tracker's moves (the Markets and Stocks chips). */
+export async function feedFor(db: Db, plan: Plan, region: Region | null, q: MoveQuery & { all?: boolean; tracker?: string | null; group?: boolean }, now: number): Promise<FeedItem[]> {
   const delay = movePlan(plan).delayMs;
   const until = Math.min(q.until ?? now, now - delay);
-  return feedItems(db, await listMoves(db, { ...q, until }), plan, region, now, until);
+  const t = q.tracker ? trackerBySlug(q.tracker) : null;
+  const want = q.limit ?? 30;
+  const got = await listMoves(db, { ...q, until, where: t ? trackerWhere(t) : q.where, limit: q.all ? want * 2 : want * 4 });
+  const kept = q.all ? got : got.filter(m => !lowInterest(m));
+  const items = await feedItems(db, kept.slice(0, want * 2), plan, region, now, until);
+  return (q.group === false ? items : groupFeed(items)).slice(0, want);
 }

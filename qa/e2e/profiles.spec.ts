@@ -10,7 +10,9 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   await signIn(context, "insidir");
   await page.goto("/feed");
   const top = page.locator("[data-move='e2e:m1']");
-  await expect(top.getByText("E2E-Top, a top trader, just put $412,000 on Chiefs to win.")).toBeVisible();
+  // Amount first, what the money says; who moved under it.
+  await expect(top.locator(".move__head")).toHaveText("$412K says Chiefs win");
+  await expect(top.locator(".move__by")).toContainText("E2E-Top · a top trader");
   await expect(top.locator(".badge")).toHaveCount(0);
   await top.getByRole("link", { name: "E2E-Top" }).click();
   await expect(page).toHaveURL(`/p/${TOP}`);
@@ -18,12 +20,13 @@ test("cards name who moved, and the name opens their profile", async ({ page, co
   // Kalshi is anonymous by design: "Someone", no profile link.
   await page.goto("/feed");
   const kalshi = page.locator("[data-move='e2e:m2']");
-  await expect(kalshi.getByText(/^Someone just put \$48,000/)).toBeVisible();
+  await expect(kalshi.locator(".move__head")).toHaveText("$48K says Lakers win");
+  await expect(kalshi.locator(".move__by")).toHaveText("Someone");
   await expect(kalshi.locator("a[href^='/p/']")).toHaveCount(0);
   // A wallet with no history before this move.
   await page.goto("/feed?tab=markets");
   const fresh = page.locator("[data-move='e2e:m5']");
-  await expect(fresh.getByText('A brand-new wallet just put $200,000 on "Yes" in "E2E fixture: Rate hike in March?".')).toBeVisible();
+  await expect(fresh.locator(".move__head")).toHaveText("$200K says Yes on “E2E fixture: Rate hike in March?”");
   await expect(fresh.locator(".badge")).toHaveText("New wallet");
   await expect(fresh.getByRole("link", { name: "0xe2…cc" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000cc");
 });

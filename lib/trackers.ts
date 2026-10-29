@@ -92,11 +92,11 @@ export const TRACKERS: readonly Tracker[] = [
     sql: () => sql`(terminal.moves.source = 'polymarket' and terminal.moves.wallet in (select wallet from (
       select wallet, percent_rank() over (order by profit desc) as pr from terminal.trader_records where resolved >= 20 and profit > 0) r where r.pr < 0.01))`,
   }),
-  style("underdog-hunters", "Underdog Hunters", "Big bets bought under 40¢: the long shots.", 9, { fixed: m => isBet(m) && m.avgPrice > 0 && m.avgPrice < UNDERDOG_MAX }),
-  style("favorites-only", "Favorites Only", "Big bets bought over 75¢: the heavy favorites.", 3, { fixed: m => isBet(m) && m.avgPrice > FAVORITE_MIN && m.avgPrice < 1 }),
+  style("underdog-hunters", "Underdog Hunters", "Big bets bought at under a 40% chance: the long shots.", 9, { fixed: m => isBet(m) && m.avgPrice > 0 && m.avgPrice < UNDERDOG_MAX }),
+  style("favorites-only", "Favorites Only", "Big bets bought at over a 75% chance: the heavy favorites.", 3, { fixed: m => isBet(m) && m.avgPrice > FAVORITE_MIN && m.avgPrice < 1 }),
   style("early-money", "Early Money", "Big bets placed 24 hours or more before the game.", 15, { observed: true }),
   style("late-money", "Late Money", "Big bets placed in the last hour before the game.", 11, { observed: true }),
-  style("steam", "Steam", "Big bets the price then moved 5¢ or more toward.", 14, { observed: true }),
+  style("steam", "Steam", "Big bets the price then moved 5 points or more toward.", 14, { observed: true }),
   style("new-wallets", "Brand-New Wallets", "Bets of $25K+ from wallets with no history at all.", 8, { fixed: m => m.source === "polymarket" && m.newWallet === true && m.amount >= NEW_WALLET_MIN }),
   /* Leagues */
   league("nfl-big-money", "NFL Big Money", "The biggest bets on NFL games and futures.", 12, m => m.league === "NFL"),

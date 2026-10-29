@@ -483,3 +483,42 @@ main.app2 > *, main.app > * { min-width: 0; }
 .move__split { margin-top: 8px; font-size: var(--t13); font-weight: 600; font-variant-numeric: tabular-nums; }
 .move__split a { color: var(--text); text-decoration: none; }
 .move__split a:hover { text-decoration: underline; }
+
+/* Move cards as a product: headline, grey subline, where it stands, Details. */
+.move2 { display: grid; gap: 8px; }
+.move__head { margin: 4px 0 0; font-size: var(--t17); line-height: 1.35; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; font-variant-numeric: tabular-nums; }
+.move__head b { font-weight: 800; }
+@media (min-width: 900px) { .move__head { font-size: var(--t22); letter-spacing: -.02em; } }
+.move__subl { color: var(--muted); font-size: var(--t13); line-height: 1.4; }
+.move__live { font-size: var(--t15); font-weight: 600; font-variant-numeric: tabular-nums; }
+.move__chance { color: var(--muted); font-weight: 500; }
+.move__up { color: var(--money-text); }
+.move__down { color: var(--loss-text); }
+.move__pnl { font-size: var(--t22); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.move__pnl--won { color: var(--money-text); }
+.move__pnl--lost { color: var(--loss-text); }
+.move__pnl--void { color: var(--muted); }
+.move2 .move__lead { align-items: center; gap: 10px; }
+.move2 .move__lead .avatar { width: 28px; height: 28px; font-size: 11px; }
+.move__by { font-size: var(--t13); color: var(--muted); }
+.move__by .move__name { color: var(--text); font-weight: 600; text-decoration: none; }
+.move__by .move__name:hover { text-decoration: underline; }
+.move__bets, .move__more { font-size: var(--t13); }
+.move__bets summary, .move__more summary { cursor: pointer; color: var(--muted); font-weight: 600; list-style: none; min-height: 32px; display: flex; align-items: center; }
+.move__bets summary::-webkit-details-marker, .move__more summary::-webkit-details-marker { display: none; }
+.move__bets summary::after, .move__more summary::after { content: "›"; margin-left: 6px; transition: transform var(--dur-small) var(--ease-enter); }
+.move__bets[open] summary::after, .move__more[open] summary::after { transform: rotate(90deg); }
+.move__bets ol { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.move__bets li { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; min-height: 40px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.move__bets li a { color: var(--text); font-weight: 600; text-decoration: none; }
+.move__betwho { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move__bettime { color: var(--muted); }
+.move__more { display: grid; gap: 6px; }
+.move__more > p { margin: 0; }
+.move__more .move__sentence { font-size: var(--t15); font-weight: 500; line-height: 1.5; }
+.feed2__scope { margin: 8px 0 16px; color: var(--muted); font-size: var(--t13); }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--text); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.move__rec { display: block; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.move2 { gap: 6px; padding: 20px 20px 16px; }
+.move2 .move__foot { margin-top: 4px; }
+@media (min-width: 900px) { .move2 { padding: 24px; } }

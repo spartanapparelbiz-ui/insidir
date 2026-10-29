@@ -46,7 +46,7 @@ export function LineChart({ points, dots = [], windows, format, baseline = "zero
   }, [points, since, format]);
   const vdots = since === null ? dots : dots.filter(d => d.t >= since);
 
-  const fmt = (v: number) => format === "cents" ? `${Math.round(v * 100)}¢`
+  const fmt = (v: number) => format === "cents" ? `${Math.round(v * 100)}%`
     : format === "usd" ? (v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
     : `${v < 0 ? "−" : v > 0 ? "+" : ""}$${Math.round(Math.abs(v)).toLocaleString("en-US")}`;
   if (view.length < 2) {

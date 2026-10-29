@@ -1,4 +1,5 @@
-/* GET /api/moves?tab=sports|markets&min=10000&league=NFL&before=<ms>&limit=30
+/* GET /api/moves?tab=sports|markets&min=10000&league=NFL&before=<ms>&limit=30&all=1&tracker=fed-rates
+ * all=1 keeps the low-interest markets the default feed leaves out; tracker narrows to one tracker's moves.
  * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
  * it is in FEATURES_READY) returns an empty list. */
 import { MEMBERS_ONLY } from "@/lib/copy";
@@ -23,12 +24,14 @@ export async function GET(req: NextRequest) {
   const min = Math.max(0, Number(p.get("min")) || 0);
   const before = Number(p.get("before")) || undefined;
   const limit = Math.min(50, Math.max(1, Number(p.get("limit")) || 30));
+  const all = p.get("all") === "1";
+  const tracker = /^[a-z0-9-]{2,40}$/.test(p.get("tracker") ?? "") ? p.get("tracker") : null;
   if (!hasDatabase()) return NextResponse.json({ items: [], status: { state: "behind", lastAt: null, text: "Catching up · waiting for the first update" } });
   const viewer = await memberOrNull();
   if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
   const db = getDb();
   const [items, status] = await Promise.all([
-    feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit }, now),
+    feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit, all, tracker }, now),
     feedStatus(db, now, tab ?? undefined),
   ]);
   return NextResponse.json({ items, status }, { headers: { "Cache-Control": "no-store" } });

@@ -1,8 +1,10 @@
-/* A move as one card (docs/INSIDIR-V2.md §6): a category tag, the trader's picture or monogram (./Avatar.tsx) and the sentence (its name opens the profile, /p/[id]), a
- * "New wallet" label, the payout line, the record line, at most one "why this matters" fact, the time,
- * and a footer row: Follow (traders), See market and the source link. Stock cards (SEC filings) carry the filing line,
- * Follow insider and Follow company (or Follow fund), the company's insider page and the SEC filing itself. Everything on it was sent by the server for this viewer's plan
- * and region (lib/moves/feed.ts). */
+/* A move as one card: what the money says first ("$17K says no runs in the 1st inning") with the market as a grey
+ * line, then where it stands (open: "In at 45% · now 61% ↑", the price of their side now, refreshed every minute by
+ * the feed; settled: "Won · +$188K" / "Lost · −$370K" from real payouts), the market's split when there is one,
+ * who moved (picture, name to their profile, record for members), and the buttons. Payout, the why line and the
+ * source are in Details. A group card ("4 big bets on Brewers · $68,765") opens to every bet in it. Stock cards
+ * say what was bought and by whom. Everything was sent by the server for this viewer's plan and region
+ * (lib/moves/feed.ts). */
 import Link from "next/link";
 import { TimeAgo } from "@/components/TimeAgo";
 import type { FeedItem } from "@/lib/moves/feed";
@@ -11,6 +13,7 @@ import type { FollowKind } from "@/lib/db/schema";
 import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
 import { Avatar } from "./Avatar";
+import { short } from "@/lib/moves/headline";
 
 const TAG: Record<string, { text: string; tint: string }> = {
   sports: { text: "Sports", tint: "green" },
@@ -32,36 +35,104 @@ function Sentence({ m }: { m: FeedItem }) {
   return <>{m.sentence.slice(0, at)}<Link className="move__name" href={href}>{name}</Link>{m.sentence.slice(at + name.length)}</>;
 }
 
-export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compact = false }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
+const pctOf = (p: number) => `${Math.round(p * 100)}%`;
+
+/** "$17K says …": the amount bold. */
+function Headline({ text }: { text: string }) {
+  const i = text.indexOf(" says ");
+  if (i < 0) return <>{text}</>;
+  return <><b>{text.slice(0, i)}</b>{text.slice(i)}</>;
+}
+
+/** Open: "In at 45% · now 61% ↑"; settled: "Won · +$188K". */
+function Standing({ m, now }: { m: FeedItem; now: number | null }) {
+  if (m.result) {
+    const label = m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded";
+    const v = m.pnl;
+    return (
+      <p className={`move__pnl move__pnl--${m.result}`} data-testid="move-result">
+        {label}{v !== null && m.result !== "void" ? ` · ${v >= 0 ? "+" : "−"}${short(Math.abs(v)).replace("−", "")}` : ""}
+      </p>
+    );
+  }
+  if (!m.inAt) return null;
+  const dir = now === null ? null : now > m.avgPrice + 0.005 ? "up" : now < m.avgPrice - 0.005 ? "down" : "flat";
+  return (
+    <p className="move__live" data-testid="move-live">
+      In at {m.inAt}<span className="move__chance"> chance</span>{now !== null ? <> · now {pctOf(now)} {dir === "up" ? <span className="move__up" aria-label="up">↑</span> : dir === "down" ? <span className="move__down" aria-label="down">↓</span> : null}</> : null}
+    </p>
+  );
+}
+
+/** "Pays $161 per $100 if it hits." */
+function pays(m: FeedItem): string | null {
+  if (m.source === "sec" || !(m.avgPrice > 0 && m.avgPrice < 1)) return null;
+  return `Pays $${Math.round(100 / m.avgPrice).toLocaleString("en-US")} per $100 if it hits.`;
+}
+
+export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compact = false, nowYes }: { m: FeedItem; follow: FollowState; trialHref: string; fresh?: boolean;
   /** Per-target follow state for SEC cards (the insider, the company, the fund); without it they start from `follow`
    *  (a member's "on" becomes "off": following again is harmless). */
   followFor?: (kind: FollowKind, target: string) => FollowState;
   /** No buttons (the home preview, where the one action is "See the live feed"). */
-  compact?: boolean }) {
+  compact?: boolean;
+  /** The market's YES price now, when the feed has a fresher one than the server sent. */
+  nowYes?: number | null }) {
   const tag = TAG[m.tab]!;
   const sub = m.source === "sec" ? (m.ticker ?? (m.note?.includes("13F") ? "Big fund" : null)) : m.leagueLabel ?? (m.league && m.league !== "other" ? m.league : null);
+  const now = nowYes !== undefined && nowYes !== null ? (m.outcomeSide === "yes" ? nowYes : 1 - nowYes) : m.nowPrice;
+  const payout = pays(m);
   return (
-    <article className={`move${fresh ? " move--fresh" : ""}`} data-move={m.id}>
+    <article className={`move move2${fresh ? " move--fresh" : ""}${m.bets ? " move--group" : ""}`} data-move={m.id}>
       <div className="move__top">
         <span className={`tag tag--${tag.tint}`}><span className="tag__dot" aria-hidden="true" />{tag.text}{sub ? ` · ${sub}` : ""}</span>
         <TimeAgo className="move__time" at={m.at} initial={m.ago} />
       </div>
-      <div className="move__lead">
-        <Avatar face={m.face} />
-        <p className="move__sentence"><Sentence m={m} /></p>
-      </div>
+      <h3 className="move__head"><Headline text={m.headline} /></h3>
+      <p className="move__subl">{m.subline}</p>
+      <Standing m={m} now={now} />
+      {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
+      {m.bets ? (
+        <details className="move__bets">
+          <summary>See all {m.bets.length} bets</summary>
+          <ol>
+            {m.bets.map(b => (
+              <li key={b.id}>
+                <b>{short(b.amount)}</b>
+                <span className="move__betwho">{b.who.href ? <Link href={b.who.href}>{b.who.name}</Link> : b.who.name}</span>
+                {b.inAt ? <span>in at {b.inAt}</span> : null}
+                <TimeAgo className="move__bettime" at={b.at} initial={b.ago} />
+              </li>
+            ))}
+          </ol>
+        </details>
+      ) : (
+        <div className="move__lead">
+          <Avatar face={m.face} />
+          <p className="move__by">
+            {m.who.href ? <Link className="move__name" href={m.who.href}>{m.who.name}</Link> : <span className="move__name">{m.who.name}</span>}
+            {m.topTrader ? <span className="move__top-trader"> · a top trader</span> : null}
+            {m.who.badge ? <> <span className="badge">{m.who.badge}</span></> : null}
+            {m.record ? <span className="move__rec">{m.record}</span> : null}
+          </p>
+        </div>
+      )}
       {m.context ? <p className="move__ctx">{m.context}</p> : null}
-      {m.who.badge ? <p><span className="badge">{m.who.badge}</span></p> : null}
-      {m.payout ? <p className="move__payout">{m.payout}</p> : null}
-      {m.note ? <p className="move__record">{m.note}</p> : null}
-      {m.record ? <p className="move__record">{m.record}</p> : m.wallet && follow !== "on" && follow !== "off" ? (
+      {m.record || m.bets ? null : m.wallet && follow !== "on" && follow !== "off" ? (
         // The public preview: a locked row where the record goes; the numbers never reach this page.
         <LockedRecord compact />
       ) : null}
-      {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
-      {m.why ? <p className="move__why">{m.why}</p> : null}
-      {m.result ? <p className={`move__result move__result--${m.result}`}>{m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : "Refunded"}</p> : null}
-      {compact ? (m.sourceLink ? <SourceA link={m.sourceLink} /> : null) : (
+      {!compact || m.source === "sec" ? (
+        <details className="move__more">
+          <summary>Details</summary>
+          {m.source === "sec" ? <p className="move__sentence"><Sentence m={m} /></p> : null}
+          {payout ? <p className="move__payout">{payout}</p> : null}
+          {m.note ? <p className="move__record">{m.note}</p> : null}
+          {m.why ? <p className="move__why">{m.why}</p> : null}
+          {m.sourceLink ? <p><SourceA link={m.sourceLink} className="source move__src" /></p> : null}
+        </details>
+      ) : null}
+      {compact ? null : (
         <div className="move__foot">
           {m.source === "sec" ? (
             <>
@@ -74,12 +145,10 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
             </>
           ) : (
             <>
-              {m.wallet ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}
+              {m.wallet && !m.bets ? <FollowButton kind="trader" target={m.wallet} state={follow} trialHref={trialHref} /> : null}
               <Link className="btn btn--secondary" href={`/market/${encodeURIComponent(m.marketId)}`}>See market</Link>
-              {m.who.href && !m.sentence.includes(m.who.name) ? <Link className="move__who" href={m.who.href}>{m.who.name}</Link> : null}
             </>
           )}
-          {m.sourceLink ? <SourceA link={m.sourceLink} className="source move__src" /> : null}
         </div>
       )}
     </article>
