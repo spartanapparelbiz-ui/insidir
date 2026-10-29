@@ -1,11 +1,12 @@
 /* A tracker's cover: deep colour (one family per group: stocks navy, markets indigo, styles plum, sports ocean), a
  * thin white curve of what its settled bets have made over 26 weeks (filings: the money its moves put in), and the
  * return in white. Every point is from TrackerStats (lib/trackers-store.ts); a tracker without a record says "New" and
- * draws no curve. Behind them, the tracker's subject drawn in line (components/SubjectArt): the field, the court, the
- * filing. 4:3 on cards; the small square version (thumbs) is the colour, the drawing and the curve. */
+ * draws no curve. Behind them, the league's own logo on a white badge (lib/tracker-logos.ts), or for trackers without
+ * one their subject drawn in line (components/SubjectArt): the whale, the Fed's columns, the filing. 4:3 on cards; the small square version (thumbs) is the colour, the drawing and the curve. */
 import type { ReactNode } from "react";
 import { SubjectArt } from "@/components/SubjectArt";
 import { trackerPhoto } from "@/lib/photos";
+import { trackerLogo } from "@/lib/tracker-logos";
 import { dollars } from "@/lib/moves/copy";
 import { returnPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
 import type { TrackerStats } from "@/lib/trackers-store";
@@ -37,9 +38,11 @@ export function coverFigure(t: Pick<Tracker, "kind">, s: CoverStats | null | und
 export function TrackerCover({ t, s, small = false, className, children }: { t: Tracker; s?: CoverStats | null; small?: boolean; className?: string; children?: ReactNode }) {
   const d = curvePath(s?.curve ?? [], 400, small ? 400 : 300, small ? 0.3 : 0.38, small ? 0.75 : 0.86);
   const f = small ? null : coverFigure(t, s);
+  const logo = trackerLogo(t.slug);
   return (
     <span className={`tcover${small ? " tcover--sm" : ""}${className ? ` ${className}` : ""}`} style={{ ["--tc" as string]: coverTone(t) }} aria-hidden={small || undefined}>
-      <SubjectArt subject={trackerPhoto(t.slug)} className="tcover__art" crop="contain" />
+      {logo ? <span className="tcover__logo"><img src={logo} alt="" decoding="async" /></span>
+        : <SubjectArt subject={trackerPhoto(t.slug)} className="tcover__art" crop="contain" />}
       {d ? <svg className="tcover__curve" viewBox={`0 0 400 ${small ? 400 : 300}`} preserveAspectRatio="none" aria-hidden="true"><path d={d} /></svg> : null}
       {f ? <span className="tcover__fig"><span className="tcover__n">{f.figure}</span>{f.label ? <span className="tcover__l">{f.label}</span> : null}</span> : null}
       {children}

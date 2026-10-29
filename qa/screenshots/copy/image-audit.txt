@@ -1,2 +1,4 @@
 Checked 382 tracker covers, 62 card thumbnails and 2 picture slots.
+Tracker logos: champions-league → /logos/leagues/ucl.webp, college-football → /logos/leagues/cfb.webp, la-liga → /logos/leagues/laliga.webp, mlb-big-money → /logos/leagues/mlb.svg, nba-big-money → /logos/leagues/nba.svg, nfl-big-money → /logos/leagues/nfl.svg, nhl-big-money → /logos/leagues/nhl.svg, premier-league → /logos/leagues/epl.webp, serie-a → /logos/leagues/seriea.webp, soccer-big-money → /logos/leagues/fifa.svg, ufc → /logos/leagues/ufc.webp
+Card logos: Chiefs to beat the Bills → /logos/teams/nfl/KC.svg; Bills to beat the Chiefs → /logos/teams/nfl/BUF.svg; Lakers to beat the Celtics → /logos/teams/nba/LAL.svg
 No blank, broken or off-subject images found.

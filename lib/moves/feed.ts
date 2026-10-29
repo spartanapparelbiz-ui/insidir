@@ -25,6 +25,7 @@ import { companyHref, personName, profileHref } from "@/lib/profiles/name";
 import type { FollowKind } from "@/lib/db/schema";
 import { whyLines } from "@/lib/profiles/why-facts";
 import { kalshiMatches, listMoves, recordsFor, type MoveQuery } from "./store";
+import { moveLogo } from "@/lib/logos";
 import { moveFace, type Face } from "./avatar";
 import { avatarsOrNone } from "./avatar-store";
 import type { League, Move, Tab } from "./types";
@@ -56,6 +57,8 @@ export interface FeedItem {
   /** Stocks: the line under the sentence (trade or filing date, 13F age) and the ticker for the tag. */
   note: string | null;
   ticker: string | null;
+  /** The real logo of what it's about (lib/logos.ts): the team, the league, the company; null to show the drawn subject. */
+  logo?: string | null;
   /** Home page only (lib/home/curate.ts): one line of context under the short sentence (the trimmed market title,
    *  or a stock's trade and filing dates). */
   context?: string | null;
@@ -195,6 +198,7 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,
       link: marketLink(m, region, matches.get(m.marketId) ?? null), result: m.result,
       note: m.detail ? stockNote(m.detail) : null, ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
+      logo: moveLogo({ ...m, leagueLabel: leagueLabel(m), ticker: m.detail?.kind === "insider" ? m.detail.ticker : null, company: m.detail?.company ?? null }),
       who: whoOf(m), face: moveFace(m, avatars), why: why.get(m.id) ?? null, sourceLink: moveSource(m),
       headline: headlineOf(m), subline: m.source === "sec" ? stockSub(m) : sublineOf({ ...m, leagueLabel: leagueLabel(m) }),
       inAt: m.source === "sec" ? null : chance(m.avgPrice), avgPrice: m.avgPrice, outcomeSide: m.outcomeSide,
