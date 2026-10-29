@@ -155,7 +155,7 @@ export default async function Home() {
           <div className="wrap sec3__foot"><Link className="btn btn--secondary" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
         </section>
 
-        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} title="One plan. Every tracker." />
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} title="One plan. Every tracker." />
         <FaqV2 />
       </main>
     </>

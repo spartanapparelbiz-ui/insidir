@@ -17,7 +17,7 @@ test("landing: the centred hero, one button to the trackers, the phones, then Fe
   await expect(page.locator(".nav__cta")).toHaveCount(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  await expect(page.locator(".fan .phone").first()).toBeVisible();
+  await expect(page.locator(".fan .phone--2")).toBeVisible();
   await expect(page.locator(".tfeat")).toHaveCount(4);
   await expect(page.locator(".tfeat").first()).toContainText("by Insidir");
   for (const h of ["Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
@@ -37,7 +37,7 @@ test("home hero: Explore trackers is recorded and opens /trackers, every tracker
   await expect(page.locator(".ttile")).toHaveCount(10);
   // The seed has fewer than 20 settled moves in every tracker: each says New, never a made-up record.
   for (const pill of await page.locator(".ttile .rpill").allInnerTexts()) expect(pill).toBe("New");
-  await page.locator(".ttile").filter({ hasText: "Biggest Bets" }).click();
+  await page.locator(`.ttile a[href="/trackers/biggest-bets"]`).click();
   await expect(page).toHaveURL(/\/trackers\/biggest-bets$/);
   await expect(page.getByRole("heading", { level: 1, name: "Biggest Bets" })).toBeVisible();
   await expect(page.getByText("A record shows once 20 of its moves have settled.")).toBeVisible();
