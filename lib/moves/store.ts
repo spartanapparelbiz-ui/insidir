@@ -117,15 +117,16 @@ export async function saveRealized(db: Db, id: string, r: Realized, now: Date): 
   }
 }
 
-/** Polymarket wallets seen moving in the last week whose record is missing or older than `staleMs`. */
+/** Polymarket wallets seen moving in the last week whose record is missing or older than `staleMs`; first, wallets
+ *  with 20+ markets whose record has no average price yet (read before it was kept), so proven traders show up fast. */
 export async function walletsToRecord(db: Db, now: number, staleMs: number, limit: number): Promise<Array<{ wallet: string; name: string | null }>> {
   // Wallets seen moving this week first, then the leaderboard's (terminal.tracked_wallets) for /top.
   const r = await db.execute(sql`select w.wallet, max(w.name) as name, max(w.at) as at from (
       select m.wallet, m.wallet_name as name, m.at from terminal.moves m where m.wallet is not null and m.at > ${new Date(now - 7 * 86_400_000)}
       union all select tw.wallet, tw.name, tw.added_at - interval '30 days' from terminal.tracked_wallets tw
     ) w left join terminal.trader_records t on t.wallet = w.wallet
-    where t.wallet is null or t.updated_at < ${new Date(now - staleMs)}
-    group by w.wallet order by max(w.at) desc limit ${limit}`);
+    where t.wallet is null or t.updated_at < ${new Date(now - staleMs)} or (t.avg_price is null and t.resolved >= 20)
+    group by w.wallet order by coalesce(bool_or(t.avg_price is null and t.resolved >= 20), false) desc, max(w.at) desc limit ${limit}`);
   return (r.rows as Array<{ wallet: string; name: string | null }>);
 }
 
