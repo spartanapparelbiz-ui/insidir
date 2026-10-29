@@ -6,18 +6,21 @@ import { q, signIn } from "./helpers";
 
 test("members open the app on Trackers: every tracker ranked by ROI with what it holds now, then today's largest positions", async ({ page, context }) => {
   await signIn(context, "insidir");
+  // The worker tags moves with their trackers; the seed doesn't, so tag the open $412K Chiefs position as Whales here.
+  await q("update terminal.moves set trackers = array['biggest-bets'] where id = 'e2e:m1'");
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every visible tracker, each with its holdings line ("N open · $X · largest: …" or "No open positions").
   const rows = page.locator(".tbook__row");
   expect(await rows.count()).toBeGreaterThan(20);
   for (const t of await page.locator(".tbook__hold").allInnerTexts()) expect(t).toMatch(/^(\d[\d,]* open · \$|No open positions)/);
-  await expect(page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold")).toContainText("open · $");
+  await expect(page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold")).toHaveText(/^1 open · \$412,000 · largest: Chiefs to beat the Bills$/);
+  await q("update terminal.moves set trackers = null where id = 'e2e:m1'");
   for (const h of ["Largest positions today", "Most active markets", "Tonight's games"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
   await expect(page.getByRole("link", { name: "Trackers" }).first()).toHaveAttribute("aria-current", "page");
   // The position check lives only in the app menu, never on the bar.
   await expect(page.locator(".nav__links").getByRole("link", { name: "Position check" })).toHaveCount(0);
-  await expect(page.locator(".nav__sheet").getByRole("link", { name: "Position check" })).toHaveAttribute("href", "/check");
+  await expect(page.locator('.nav__sheet a[href="/check"]')).toHaveText("Position check");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
@@ -49,7 +52,7 @@ test("a market: the price chart with its large positions, money by side and the 
   for (const h of ["Price", "Money by side"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
   const yes = await q<{ total: number }>("select coalesce(sum(amount), 0)::float as total from terminal.moves where market_id = '0xe2emarket1' and outcome_side = 'yes' and hidden_at is null and at <= now() - interval '0 minutes'");
   const tile = page.locator(".tile").first();
-  await expect(tile.locator("dt")).toContainText("All large positions");
+  await expect(tile.locator("dt")).toContainText("all large positions");
   if (yes[0]!.total > 0) await expect(tile.locator("dd")).not.toHaveText("$0");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

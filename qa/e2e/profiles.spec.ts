@@ -42,7 +42,7 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(tile("ROI")).toHaveText("95.2%"); // $1.2M on $1.26M put in
   await expect(tile("Largest gain")).toHaveText("+$310,000");
   await expect(tile("Average position size")).toHaveText("$20,000");
-  await expect(page.getByRole("img", { name: /^Profit, every resolved market: \+\$310,000 to \+\$1,2\d\d,\d{3}$/ })).toBeVisible();
+  await expect(page.getByRole("img", { name: /^Net P&L, every resolved market: \+\$310,000 to \+\$1,2\d\d,\d{3}$/ })).toBeVisible();
   const cats = page.getByRole("table", { name: "By category" });
   await expect(cats.getByRole("row", { name: /^NFL \d/ })).toBeVisible();
   await expect(cats.getByRole("row", { name: /^Markets \d/ })).toBeVisible();
@@ -57,7 +57,7 @@ test("profiles and Top are members only: a visitor is sent to log in, and no rec
     await page.goto("/top");
     await expect(page).toHaveURL(/\/login\?next=%2Ftop/);
   });
-  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Profit over time/);
+  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310,000|Net P&L over time/);
 });
 
 test("/top: 20+ resolved markets, ranked by profit, filtered by time and category, with Follow", async ({ page, context }) => {

@@ -41,7 +41,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.goto("/login");
   await post("/__google_user", { sub: `g_free_${w}`, email: email.toUpperCase(), email_verified: true });
   await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/(feed|onboarding)/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/onboarding/, { timeout: 15_000 });
   const u = (await q<{ id: string; plan: string; membership_id: string | null }>("select id, plan, membership_id from terminal.users where email = $1", [email]))[0]!;
   expect(u.membership_id).toBeNull();
 
@@ -51,7 +51,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.getByRole("button", { name: "Skip" }).click();
   await expect(page).toHaveURL(/\/feed\?first=1/);
   await page.goto("/start");
-  await expect(page).toHaveURL(/\/feed$/);
+  await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(400);
@@ -77,7 +77,7 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.context().clearCookies();
   await page.goto("/login");
   await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(1);
 
   // Someone not on the list (and with no membership) can't make an account this way.

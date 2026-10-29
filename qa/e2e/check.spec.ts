@@ -44,8 +44,8 @@ test.afterAll(async () => {
 test("a visitor checks a 3-leg parlay: every leg matched with a verdict, a share card, then the free check is used", async ({ page }, info) => {
   await q("delete from terminal.bet_checks");
   await page.goto("/");
-  await page.locator('[data-cta="hero"]').click();
-  await expect(page).toHaveURL(/\/check$/);
+  // The position check isn't on home any more: it opens from the app menu, or by its address.
+  await page.goto("/check");
   await expect(page.getByRole("heading", { level: 1, name: "Position check" })).toBeVisible();
   await page.locator("input[type=file][name=slip]").setInputFiles("test/fixtures/slips/draftkings-parlay.png");
   await expect(page.getByText("draftkings-parlay.png")).toBeVisible();

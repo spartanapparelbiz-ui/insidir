@@ -3,15 +3,17 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the centred hero, one button to Check your bet, the phones, then Featured, Top performers and Popular", async ({ page }) => {
+test("landing: the centred hero, one button to the trackers, the phones, the live portfolio, then Featured, Top performers and Popular", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
   await expect(page.getByText("Trackers follow large positions on Polymarket, Kalshi and SEC filings as they are opened and settled. Each one is a live portfolio with a public track record.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
   await expect(cta).toContainText("Explore trackers");
-  await expect(cta).toHaveAttribute("href", "/check");
-  await expect(page.getByRole("link", { name: "Explore the trackers" })).toHaveAttribute("href", "/trackers");
+  await expect(cta).toHaveAttribute("href", "/trackers");
+  await expect(page.getByRole("link", { name: "See the track record" })).toHaveAttribute("href", "/results");
+  await expect(page.getByRole("heading", { level: 2, name: "A live portfolio of big money" })).toBeVisible();
+  await expect(page.locator('main a[href="/check"]')).toHaveCount(0);
   // One black button (plus the nav's Get started): no offer bar, no sticky bar.
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
   await expect(page.locator(".trialbar")).toHaveCount(0);
@@ -32,16 +34,17 @@ test("landing: the centred hero, one button to Check your bet, the phones, then 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: Check your bet is recorded; the trackers link opens /trackers, every tracker listed with its record or New", async ({ page }) => {
+test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or New; the track record link opens /results", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("hero_cta_click");
   await page.goto("/");
   await page.locator('[data-cta="hero"]').click();
-  await expect(page).toHaveURL(/\/check$/);
+  await expect(page).toHaveURL(/\/trackers$/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
   await page.goto("/");
-  await page.getByRole("link", { name: "Explore the trackers" }).click();
-  await expect(page).toHaveURL(/\/trackers$/);
+  await page.getByRole("link", { name: "See the track record" }).click();
+  await expect(page).toHaveURL(/\/results$/);
+  await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
   await expect(page.locator(".ttile")).toHaveCount(32);
@@ -92,7 +95,7 @@ test("member feed: live moves with the record line; following a trader shows on 
   await signIn(context, "pro");
   await page.goto("/feed");
   await expect(page.locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
-  await expect(page.getByText("Won 41 of 63 · +$1.2M all-time").first()).toBeVisible();
+  await expect(page.getByText("Won 41 of 63 · Net P&L +$1.2M").first()).toBeVisible();
   await expect(page.locator(".move__live").first()).toContainText(/^Entry \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
@@ -229,7 +232,7 @@ test("results are public: totals match the trust block on /pricing, refunds labe
   await expect(total).toContainText("1 won, 1 lost, 1 closed before settlement");
   await expect(page.getByTestId("record-net")).toContainText("Net for these traders: +$126K");
   await expect(total).toContainText("What these positions realized");
-  await expect(page.locator(".rlist__res--sold").first()).toHaveText("Sold early");
+  await expect(page.locator(".rlist__res--sold").first()).toHaveText("Closed before settlement");
   const totalText = await total.innerText();
   await page.goto("/pricing");
   const home = await page.getByTestId("trust-record").innerText();
@@ -245,7 +248,7 @@ test("results are public: totals match the trust block on /pricing, refunds labe
 test("results show wins and losses; /terminal goes to the feed", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/results");
-  await expect(page.getByText("Real past moves. Not a promise.")).toBeVisible();
+  await expect(page.getByText("Real past positions. Not a promise.")).toBeVisible();
   await expect(page.locator(".rlist__res--won").first()).toBeVisible();
   await expect(page.locator(".rlist__res--lost").first()).toBeVisible();
   await page.goto("/terminal");
@@ -289,7 +292,7 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await expect(insider.locator(".res__st")).toHaveText("Purchase");
   // Never "just bought": the filing day, then the trade date; the note carries both dates (in Details).
   await insider.locator(".move__more summary").click();
-  await expect(insider.getByText(/^Filed (today|[A-Z][a-z]{2} \d{1,2}): Jane Fixture, CEO of E2E Fixture Devices, bought \$1\.4M of E2E Fixture Devices stock on Oct 22\.$/)).toBeVisible();
+  await expect(insider.getByText(/^Form 4 · Filed [A-Z][a-z]{2} \d{1,2} · CEO Jane Fixture purchased \$1\.4M of EXDV on Oct 22\.$/)).toBeVisible();
   await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
   await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
   await expect(insider.locator(".move__kind")).toHaveText("Stocks · EXDV");
@@ -298,7 +301,7 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   await expect(link).toHaveAttribute("target", "_blank");
   const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
   await fund.locator(".move__more summary").click();
-  await expect(fund.getByText(/^E2E Fixture Capital added \$250M of E2E Fixture Devices in Q3 \d{4}\.$/)).toBeVisible();
+  await expect(fund.getByText(/^13F · Q3 \d{4} · E2E Fixture Capital added \$250M of E2E Fixture Devices\.$/)).toBeVisible();
   await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
   // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
   await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);

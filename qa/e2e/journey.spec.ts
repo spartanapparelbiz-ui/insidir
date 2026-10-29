@@ -108,7 +108,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await expect(toast(page, "Test alert sent to 1 device")).toBeVisible();
     expect(pushes().slice(before).some(p => endpoint.endsWith(p.path))).toBe(true);
 
-    await expect(page.getByText("No alerts yet. When someone you follow moves, it shows up here.")).toBeVisible();
+    await expect(page.getByText("No alerts yet. New positions from accounts you follow are listed here.")).toBeVisible();
     await q("insert into terminal.alerts_sent (user_id, opp_id, channel) values ($1, 'move:e2e:m1', 'push') on conflict do nothing", [MOCK_USER.sub]);
     await page.reload();
     await expect(page.locator(".atable").getByText("$412,000 on Chiefs to win")).toBeVisible();

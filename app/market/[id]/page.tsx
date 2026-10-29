@@ -123,7 +123,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
         </header>
 
         {source === "polymarket" && !settled ? (
-          <Section id="smart-h" title="Smart money vs. the crowd" note={proven && proven.wallets
+          <Section id="smart-h" title="Proven traders vs. the market" note={proven && proven.wallets
             ? `${proven.wallets.toLocaleString("en-US")} proven ${proven.wallets === 1 ? "trader holds" : "traders hold"} ${dollars(provenMoney)} here. Proven: 20+ settled markets and a win rate above the prices they paid. Data, not a recommendation.`
             : `No proven trader holds this market right now (proven: 20+ settled markets and a win rate above the prices they paid). It needs ${SMART_MIN_WALLETS}+ of them and ${dollars(SMART_MIN_MONEY)}+ in.`}>
             <SplitBars side={yesLabel} rows={[

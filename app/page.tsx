@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Discover } from "@/components/home/Discover";
@@ -116,7 +117,8 @@ export default async function Home() {
   const now = Date.now();
   const [jar, viewer] = await Promise.all([cookies(), getViewer()]);
   const paid = isPaid(viewer.plan);
-  // Members land on Discover.
+  // Members open the app on Trackers; a new member goes through onboarding first (three skippable screens), once.
+  if (paid && viewer.user && !viewer.user.onboarded) redirect("/onboarding");
   if (paid) {
     return (
       <>

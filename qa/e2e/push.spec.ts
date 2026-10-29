@@ -139,7 +139,7 @@ test("move alert: the worker pushes a followed trader's new move, once, in plain
     const ravens = payloads.filter(p => p.body.includes("Ravens"));
     expect(ravens.length, log).toBe(1);
     const payload = ravens[0]!;
-    expect(payload.title).toBe("A trader you follow just moved");
+    expect(payload.title).toBe("New position from a trader you follow");
     expect(payload.body).toBe("E2E-Top · Top-ranked trader: $230,000 position on Ravens to win. Payout 2.00× if Ravens win.");
     expect(payload.url).toBe(`${APP_URL}/market/0xe2emarket9?from=alert`);
     const sent = await q("select 1 from terminal.alerts_sent where user_id = $1 and opp_id = $2", [ins.id, `move:${id}`]);

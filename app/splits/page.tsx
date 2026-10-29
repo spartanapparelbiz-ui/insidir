@@ -42,7 +42,7 @@ export default async function SplitsPage({ searchParams }: { searchParams: Promi
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/splits" trialHref={unlockHref()} />
       <main className="wrap app2 splitsp">
         <header className="phead">
-          <h1 className="phead__h">Smart money vs. the crowd</h1>
+          <h1 className="phead__h">Positioning</h1>
           <p className="phead__sub">Where accounts with a proven record are positioned against the market price, against large positions on a game, or against the stock chart. Largest gap first. Data, not a recommendation.</p>
         </header>
         <nav className="dfilters" aria-label="Show">
@@ -67,11 +67,11 @@ export default async function SplitsPage({ searchParams }: { searchParams: Promi
           </ol>
         ) : (
           <div className="tempty">
-            <p className="tempty__h">No splits right now</p>
+            <p className="tempty__h">No divergences right now</p>
             <p>A divergence is listed when proven traders and the price, or large positions overall, are 10+ points apart, or when insiders purchase a stock that fell 10%+ in 30 days.</p>
           </div>
         )}
-        <p className="tsec__note">Proven traders: 20+ settled markets on Polymarket and a win rate above the prices they paid. Smart money is their open money on each side; the crowd is the price now. Every split of {SPLIT_ALERT_GAP}+ points goes on the <Link href="/splits/scorecard">public scorecard</Link>, wins and losses.</p>
+        <p className="tsec__note">Proven traders: 20+ settled markets on Polymarket and a win rate above their average entry. Their open money on each side is compared with the market price now. Every divergence of {SPLIT_ALERT_GAP}+ points goes on the <Link href="/splits/scorecard">public scorecard</Link>, wins and losses.</p>
       </main>
     </>
   );

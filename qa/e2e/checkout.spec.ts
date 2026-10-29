@@ -70,6 +70,7 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await page.getByLabel("Password", { exact: true }).fill("a-good-password");
   await page.screenshot({ path: `qa/screenshots/login-${w}.png` });
   await page.getByRole("button", { name: "Log in" }).click();
+  // Back to where they were going (/feed); a plain log in opens the app on Trackers (below).
   await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
   const cookie = (await page.context().cookies()).find(c => c.name === "insidir_session")!;
   expect(cookie.httpOnly).toBe(true);
@@ -90,7 +91,7 @@ test("sign up on /start with a password → pay → You're in → log out → lo
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill("a-good-password");
   await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
 
   // A refund ends access; logging in again says so.
   await post("/__refund", { email });
@@ -127,7 +128,7 @@ test("Continue with Google: /start → checkout on the Google email → pay → 
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.goto("/login");
   await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/(feed|onboarding)$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/localhost:\d+\/(onboarding)?$/, { timeout: 15_000 });
 
   // A Google account without Insidir: told so, with the trial.
   await page.goto("/settings");
